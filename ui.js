@@ -1,0 +1,2358 @@
+/**
+ * Foolos Man Tycoon (فلوس مان تايكون)
+ * UI Controller (ui.js)
+ * Manages rendering, tab views, SVG charts, and interactive casino controls
+ */
+
+const UIController = (() => {
+  let activeTab = 'dashboard';
+  let tickIntervalId = null;
+
+  // Work shift cooldown state (2 seconds)
+  let workCooldownActive = false;
+  let workCooldownTimer = null;
+  const WORK_COOLDOWN_MS = 2000;
+
+  // Crash game state variables
+  let crashBetAmount = 0;
+  let crashMultiplier = 1.0;
+  let crashTarget = 1.0;
+  let crashState = 'idle'; // 'idle', 'running', 'cashed_out', 'crashed'
+  let crashAnimationId = null;
+  let crashStartTime = 0;
+
+  // UI Setup & Bindings
+  async function init() {
+    setupAuthPanel();
+    setupNavigation();
+    setupEventListeners();
+    setupAdminModal();
+
+    const isMaint = await checkMaintenanceMode();
+    if (isMaint) return; // Stop init if system in maintenance
+
+    // Auto-resume active session on page refresh
+    const savedUser = localStorage.getItem('foolos_active_session_user');
+    if (savedUser) {
+      try {
+        const playerState = await GameEngine.loadUserSession(savedUser);
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('main-game-layout').classList.remove('hidden');
+        setupRealTimeListeners(savedUser);
+        startGameLoop();
+        renderAll();
+        console.log(`[Session] Auto-resumed session for user: ${savedUser}`);
+      } catch (err) {
+        console.warn('[Session] Failed to auto-resume session:', err);
+        localStorage.removeItem('foolos_active_session_user');
+      }
+    }
+  }
+
+  // --- Auth View Panel Managers ---
+  function setupAuthPanel() {
+    const authSubmitBtn = document.getElementById('auth-submit');
+    const authRegBtn = document.getElementById('auth-switch-reg');
+    const authLoginBtn = document.getElementById('auth-switch-login');
+    const authModeTitle = document.getElementById('auth-mode-title');
+    const authActionBtn = document.getElementById('auth-action-text');
+
+    let mode = 'login'; // 'login' or 'register'
+
+    authRegBtn.addEventListener('click', () => {
+      mode = 'register';
+      authModeTitle.textContent = 'تسجيل حساب جديد';
+      authActionBtn.textContent = 'إنشاء حساب وبدء اللعب';
+      authRegBtn.classList.add('border-yellow-500', 'text-yellow-500');
+      authLoginBtn.classList.remove('border-yellow-500', 'text-yellow-500');
+    });
+
+    authLoginBtn.addEventListener('click', () => {
+      mode = 'login';
+      authModeTitle.textContent = 'تسجيل الدخول للمحفظة';
+      authActionBtn.textContent = 'دخول وتزامن الحساب';
+      authLoginBtn.classList.add('border-yellow-500', 'text-yellow-500');
+      authRegBtn.classList.remove('border-yellow-500', 'text-yellow-500');
+    });
+
+    authSubmitBtn.addEventListener('click', async () => {
+      const usernameInput = document.getElementById('auth-username').value.trim();
+      const pinInput = document.getElementById('auth-pin').value.trim();
+
+      if (!usernameInput || !pinInput) {
+        showToast('خطأ', 'يرجى ملء جميع الحقول للمتابعة.', 'error');
+        return;
+      }
+
+      try {
+        setAuthLoading(true);
+        let playerState;
+
+        if (mode === 'register') {
+          await AppDB.registerPlayer(usernameInput, pinInput);
+          playerState = await GameEngine.loadUserSession(usernameInput);
+          localStorage.setItem('foolos_active_session_user', usernameInput);
+          showToast('نجاح', 'تم تسجيل حسابك الجديد بنجاح! مرحباً بك.', 'success');
+        } else {
+          await AppDB.loginPlayer(usernameInput, pinInput);
+          playerState = await GameEngine.loadUserSession(usernameInput);
+          localStorage.setItem('foolos_active_session_user', usernameInput);
+          showToast('أهلاً بك', `تم تحميل بيانات الحساب: ${usernameInput}`, 'success');
+        }
+
+        // Hide auth screen and start game
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('main-game-layout').classList.remove('hidden');
+        
+        setupRealTimeListeners(usernameInput);
+        
+        startGameLoop();
+        renderAll();
+      } catch (err) {
+        showToast('فشل التحقق', err.message, 'error');
+      } finally {
+        setAuthLoading(false);
+      }
+    });
+  }
+
+  function setAuthLoading(loading) {
+    const btn = document.getElementById('auth-submit');
+    const text = document.getElementById('auth-action-text');
+    const spinner = document.getElementById('auth-spinner');
+    if (loading) {
+      btn.disabled = true;
+      text.classList.add('hidden');
+      spinner.classList.remove('hidden');
+    } else {
+      btn.disabled = false;
+      text.classList.remove('hidden');
+      spinner.classList.add('hidden');
+    }
+  }
+
+  // --- Navigation Controls ---
+  function setupNavigation() {
+    const navButtons = document.querySelectorAll('.nav-tab-btn');
+    navButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-tab');
+        switchTab(target);
+      });
+    });
+  }
+
+  function switchTab(tabId) {
+    activeTab = tabId;
+    
+    // Update active class styles in buttons
+    const navButtons = document.querySelectorAll('.nav-tab-btn');
+    navButtons.forEach(btn => {
+      const btnTab = btn.getAttribute('data-tab');
+      if (btnTab === tabId) {
+        btn.classList.add('text-yellow-500', 'glass-panel-active', 'border-b-2', 'border-yellow-500');
+        btn.classList.remove('text-slate-400');
+      } else {
+        btn.classList.remove('text-yellow-500', 'glass-panel-active', 'border-b-2', 'border-yellow-500');
+        btn.classList.add('text-slate-400');
+      }
+    });
+
+    // Toggle panels visibility
+    const panels = document.querySelectorAll('.game-panel');
+    panels.forEach(panel => {
+      const panelId = panel.getAttribute('id');
+      if (panelId === `panel-${tabId}`) {
+        panel.classList.remove('hidden');
+      } else {
+        panel.classList.add('hidden');
+      }
+    });
+
+    // Render tab-specific elements
+    renderAll();
+  }
+
+  // --- Core Game Loops (3 seconds ticking) ---
+  function startGameLoop() {
+    if (tickIntervalId) clearInterval(tickIntervalId);
+
+    // DB is already initialised by the boot sequence — just render settings
+    renderSettings();
+
+    tickIntervalId = setInterval(() => {
+      const updates = GameEngine.processTick();
+      if (!updates) return;
+
+      // Handle Jail lockouts overlay
+      const state = GameEngine.state;
+      const jailOverlay = document.getElementById('jail-overlay');
+      if (state.jailTimer > 0) {
+        jailOverlay.classList.remove('hidden');
+        document.getElementById('jail-countdown').textContent = state.jailTimer;
+      } else {
+        jailOverlay.classList.add('hidden');
+      }
+
+      if (updates.jailFree) {
+        showToast('العدالة', 'انتهت مدة محكوميتك. تم الإفراج عنك ويمكنك مزاولة نشاطك!', 'success');
+      }
+
+      // Display passive profit float triggers
+      if (updates.businessProfitGained > 0 || updates.rentGained > 0) {
+        const totalPassive = updates.businessProfitGained + updates.rentGained;
+        showPassiveGainFloat(`+${totalPassive.toLocaleString()}`);
+      }
+
+      // Toast alert for bank interest
+      if (updates.bankInterestGained > 0) {
+        console.log(`Interest compound gained: +${updates.bankInterestGained}`);
+      }
+
+      // Toast alert for investments maturing
+      updates.investmentsMatured.forEach(inv => {
+        showToast('استثمار ناضج', `اكتمل استثمار "${inv.name}". الأرباح الإجمالية المستلمة: ${inv.payout.toLocaleString()} EGP.`, 'success');
+      });
+
+      // Handle random Tip Events
+      if (updates.tipEvent) {
+        if (updates.tipEvent.gain > 0) {
+          showToast(updates.tipEvent.title, updates.tipEvent.message, 'success');
+        } else {
+          showToast(updates.tipEvent.title, updates.tipEvent.message, 'error');
+        }
+      }
+
+      // Handle Dynamic Stock Market Events
+      if (updates.marketEvent) {
+        showToast(updates.marketEvent.title, updates.marketEvent.desc, updates.marketEvent.toastType || 'info');
+        const ticker = document.getElementById('stock-market-news-ticker');
+        if (ticker) {
+          ticker.textContent = `${updates.marketEvent.title}: ${updates.marketEvent.desc}`;
+          ticker.classList.add('text-yellow-400');
+        }
+      }
+
+      // Refresh numbers
+      renderStatsBar();
+      
+      // Real-time tab updates (Preserve focus on active typing inputs)
+      if (activeTab === 'dashboard') renderDashboard();
+      if (activeTab === 'bank') renderBank();
+      if (activeTab === 'business') renderBusinesses();
+      if (activeTab === 'assets') renderAssets();
+      if (activeTab === 'stocks' && updates.stockMovement) {
+        // Only update stock prices DOM text without wiping active typing inputs
+        updateStockPricesInDOM();
+      }
+      if (activeTab === 'leaderboard') renderLeaderboard();
+
+    }, 3000);
+  }
+
+  // --- Dynamic Stats Bars Rendering ---
+  function renderStatsBar() {
+    const s = GameEngine.state;
+    if (!GameEngine.activeUsername) return;
+
+    document.getElementById('stat-username').textContent = GameEngine.activeUsername;
+    document.getElementById('stat-title').textContent = s.title;
+
+    // Show/Hide Admin Control Panel Button according to logged in account
+    const adminBtn = document.getElementById('btn-admin-panel-trigger');
+    if (adminBtn) {
+      if (GameEngine.activeUsername === 'FoolosAdmin_X99' || s.isAdmin) {
+        adminBtn.classList.remove('hidden');
+      } else {
+        adminBtn.classList.add('hidden');
+      }
+    }
+
+    // Currency values
+    document.getElementById('stat-cash').textContent = s.cash.toLocaleString();
+    document.getElementById('stat-bank').textContent = s.bank.toLocaleString();
+    document.getElementById('stat-networth').textContent = s.netWorth.toLocaleString();
+
+  }
+
+  // --- General Render Manager ---
+  function renderAll() {
+    renderStatsBar();
+    switch (activeTab) {
+      case 'dashboard':
+        renderDashboard();
+        break;
+      case 'careers':
+        renderCareers();
+        break;
+      case 'business':
+        renderBusinesses();
+        break;
+      case 'bank':
+        renderBank();
+        break;
+      case 'assets':
+        renderAssets();
+        break;
+      case 'stocks':
+        renderStocks();
+        break;
+      case 'store':
+        renderStore();
+        break;
+      case 'blackmarket':
+        renderBlackMarket();
+        break;
+      case 'casino':
+        renderCasino();
+        break;
+      case 'leaderboard':
+        renderLeaderboard();
+        break;
+      case 'settings':
+        renderSettings();
+        break;
+    }
+  }
+
+  // --- Tab 1: Dashboard Panel ---
+  function renderDashboard() {
+    const s = GameEngine.state;
+    document.getElementById('dash-uid').textContent = GameEngine.activeUsername;
+    document.getElementById('dash-title').textContent = s.title;
+    document.getElementById('dash-xp').textContent = s.xp.toLocaleString();
+    document.getElementById('dash-cash').textContent = s.cash.toLocaleString() + ' EGP';
+    document.getElementById('dash-bank').textContent = s.bank.toLocaleString() + ' EGP';
+    document.getElementById('dash-worth').textContent = s.netWorth.toLocaleString() + ' EGP';
+  }
+
+  // --- Tab 2: Careers Panel ---
+  function renderCareers() {
+    const s = GameEngine.state;
+    const container = document.getElementById('careers-list');
+    container.innerHTML = '';
+
+    Object.keys(GameEngine.JOBS).forEach(id => {
+      const job = GameEngine.JOBS[id];
+      const isCurrent = s.jobId === id;
+      const isUnlocked = s.xp >= job.xpNeeded;
+
+      const card = document.createElement('div');
+      card.className = `glass-panel p-4 rounded-xl flex flex-col justify-between items-start border ${isCurrent ? 'border-yellow-500 bg-yellow-950/20' : 'border-slate-800'}`;
+      
+      card.innerHTML = `
+        <div class="w-full flex justify-between items-center mb-2">
+          <h4 class="text-lg font-bold text-white">${job.name}</h4>
+          ${isCurrent ? '<span class="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded border border-yellow-500/30">الوظيفة الحالية</span>' : ''}
+        </div>
+        <div class="text-sm text-slate-400 space-y-1 mb-4 w-full">
+          <div class="flex justify-between"><span>الراتب الثابت:</span><span class="numbers-font text-emerald-400 font-semibold">+${job.salary} EGP / دورة</span></div>
+          <div class="flex justify-between"><span>العائد من الخبرة:</span><span class="numbers-font text-blue-400">+${job.xpReward} XP</span></div>
+          <div class="flex justify-between"><span>الخبرة المطلوبة:</span><span class="numbers-font">${job.xpNeeded} XP</span></div>
+        </div>
+        <button 
+          data-job-id="${id}"
+          class="w-full py-2 rounded-lg font-bold transition duration-300 text-sm ${
+            isCurrent 
+              ? 'bg-slate-700 text-slate-300 cursor-not-allowed' 
+              : isUnlocked 
+                ? 'bg-yellow-500 hover:bg-yellow-600 text-slate-950' 
+                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+          }"
+          ${isCurrent || !isUnlocked ? 'disabled' : ''}
+        >
+          ${isCurrent ? 'أنت تمارس هذه المهنة' : isUnlocked ? 'التحاق بهذه الوظيفة' : `مغلق (تحتاج لخبرة)`}
+        </button>
+      `;
+
+      // Apply Promotion Action
+      if (!isCurrent && isUnlocked) {
+        card.querySelector('button').addEventListener('click', () => {
+          try {
+            GameEngine.promoteJob(id);
+            showToast('تهانينا', `تم ترقيتك لوظيفة: ${job.name}`, 'success');
+            renderAll();
+          } catch (err) {
+            showToast('خطأ الترقية', err.message, 'error');
+          }
+        });
+      }
+
+      container.appendChild(card);
+    });
+  }
+
+  // --- Tab 3: Business Tycoon Panel ---
+  function renderBusinesses() {
+    const s = GameEngine.state;
+    const container = document.getElementById('businesses-list');
+    container.innerHTML = '';
+
+    Object.keys(GameEngine.BUSINESSES).forEach(key => {
+      const biz = GameEngine.BUSINESSES[key];
+      const bizState = s.businesses[key] || { level: 0, price: biz.optimumPrice, workers: 0 };
+      const isOwned = bizState.level > 0;
+
+      const card = document.createElement('div');
+      card.className = `glass-panel p-5 rounded-xl border border-slate-800 flex flex-col justify-between ${isOwned ? 'pulse-border-gold bg-slate-900/40' : ''}`;
+
+      if (!isOwned) {
+        // Render Purchase Form
+        card.innerHTML = `
+          <div class="mb-4">
+            <h4 class="text-lg font-bold text-slate-300">${biz.name}</h4>
+            <p class="text-xs text-slate-500 mt-1">شراء مشروع تجاري والبدء بجني الأرباح تلقائياً وتوظيف العمالة.</p>
+          </div>
+          <div class="text-sm text-slate-400 space-y-1 mb-6">
+            <div class="flex justify-between"><span>تكلفة التأسيس:</span><span class="numbers-font text-yellow-500 font-semibold">${biz.cost.toLocaleString()} EGP</span></div>
+            <div class="flex justify-between"><span>العائد التقريبي الأساسي:</span><span class="numbers-font text-emerald-400">~${biz.baseDemand * (biz.optimumPrice - biz.costOfGoods)} EGP / دورة</span></div>
+          </div>
+          <button class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition duration-300">
+            تأسيس المشروع واستثمار رأس المال
+          </button>
+        `;
+        card.querySelector('button').addEventListener('click', () => {
+          try {
+            GameEngine.purchaseBusiness(key);
+            showToast('نجاح التأسيس', `تم افتتاح مشروع "${biz.name}" بنجاح!`, 'success');
+            renderAll();
+          } catch (err) {
+            showToast('فشل المشروع', err.message, 'error');
+          }
+        });
+      } else {
+        // Upgrade prices & marketing
+        const nextUpgradeCost = Math.floor(biz.cost * Math.pow(1.6, bizState.level));
+        const workerHireCost = Math.floor(biz.cost * 0.15 * (1 + (bizState.workers || 0)));
+        const campaignCost = Math.floor(biz.cost * 0.25);
+        const marketingActive = (bizState.marketingTicks && bizState.marketingTicks > 0);
+        const marketingSecRemaining = marketingActive ? bizState.marketingTicks * 3 : 0;
+
+        // Demand estimation to display in UI
+        const price = bizState.price || biz.optimumPrice;
+        const opt = biz.optimumPrice;
+        let elasticityFactor = 1.0;
+        if (price > opt) {
+          elasticityFactor = Math.max(0, 1 - (price - opt) / opt);
+        } else if (price < opt) {
+          elasticityFactor = 1 + (opt - price) / opt * 0.3;
+        }
+
+        const costFactor = 1.0 + ((Math.sin(Date.now() / 20000) * 0.1) + 0.05);
+        const actualCostOfGoods = Math.floor(biz.costOfGoods * costFactor);
+
+        const upgradeFactor = Math.pow(biz.upgradeMultiplier, bizState.level - 1);
+        const workerFactor = 1 + ((bizState.workers || 0) * (biz.workerMultiplier - 1));
+        const marketingBoost = marketingActive ? 1.4 : 1.0;
+        const estimatedDemand = Math.floor(biz.baseDemand * upgradeFactor * elasticityFactor * workerFactor * marketingBoost);
+        const profitMargin = price - actualCostOfGoods;
+        const profitPerTick = Math.max(0, Math.floor(estimatedDemand * profitMargin * 0.15));
+
+        card.innerHTML = `
+          <div class="flex justify-between items-center mb-3">
+            <h4 class="text-lg font-bold text-white">${biz.name}</h4>
+            <span class="text-xs px-2.5 py-0.5 bg-yellow-500/20 text-yellow-500 rounded border border-yellow-500/30 font-bold">المستوى ${bizState.level}</span>
+          </div>
+          
+          <div class="text-xs text-slate-400 space-y-1 mb-4 border-b border-slate-800 pb-3">
+            <div class="flex justify-between"><span>العمالة الحالية:</span><span class="numbers-font text-white font-bold">${bizState.workers || 0} عمال</span></div>
+            <div class="flex justify-between"><span>تكلفة المواد/التشغيل التنافسية:</span><span class="numbers-font text-rose-400">${actualCostOfGoods} EGP/وحدة</span></div>
+            <div class="flex justify-between"><span>الطلب الحالي المتوقع:</span><span class="numbers-font text-sky-400 font-bold">${estimatedDemand} وحدة/دورة ${marketingActive ? '<span class="text-yellow-400 font-bold">(+40% ترويج)</span>' : ''}</span></div>
+            <div class="flex justify-between"><span>هامش ربح الوحدة:</span><span class="numbers-font ${profitMargin >= 0 ? 'text-teal-400' : 'text-rose-400'} font-bold">${profitMargin} EGP</span></div>
+            <div class="flex justify-between"><span>العائد الصافي الفعلي:</span><span class="numbers-font text-emerald-400 font-bold">+${profitPerTick.toLocaleString()} EGP / دورة</span></div>
+          </div>
+
+          <div class="mb-3">
+            <div class="flex justify-between text-xs text-slate-400 mb-1">
+              <span>تعديل سعر المنتج:</span>
+              <span class="numbers-font font-bold text-yellow-500"><span id="price-val-${key}">${price}</span> EGP (المثالي: ${biz.optimumPrice} EGP)</span>
+            </div>
+            <input 
+              type="range" 
+              min="${Math.floor(actualCostOfGoods)}" 
+              max="${Math.floor(biz.optimumPrice * 3)}" 
+              value="${price}" 
+              id="slider-${key}"
+              class="w-full accent-yellow-500"
+            />
+          </div>
+
+          <!-- Marketing Campaign Trigger -->
+          <div class="mb-3">
+            <button id="btn-marketing-${key}" class="w-full py-1.5 ${marketingActive ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40' : 'bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-300 border-indigo-500/40'} border rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
+              📢 ${marketingActive ? `حملة إعلانية نشطة (متبقي ${marketingSecRemaining}ث)` : `إطلاق حملة ترويجية مكثفة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP`}
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 mt-2">
+            <button id="btn-upgrade-${key}" class="py-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-lg text-xs font-bold transition">
+              ترقية المستوى<br><span class="numbers-font text-[10px] opacity-75">${nextUpgradeCost.toLocaleString()} EGP</span>
+            </button>
+            <button id="btn-hire-${key}" class="py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition">
+              توظيف عمالة<br><span class="numbers-font text-[10px] opacity-75">${workerHireCost.toLocaleString()} EGP</span>
+            </button>
+          </div>
+          ${(bizState.workers && bizState.workers > 0) ? `
+          <button id="btn-fire-${key}" class="w-full mt-2 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg text-xs transition">
+            تسريح عامل واحد
+          </button>` : ''}
+        `;
+
+        // Bind Price Slider Changes
+        const slider = card.querySelector(`#slider-${key}`);
+        slider.addEventListener('input', (e) => {
+          const val = parseInt(e.target.value);
+          card.querySelector(`#price-val-${key}`).textContent = val;
+          GameEngine.setBusinessPrice(key, val);
+        });
+
+        // Marketing Campaign Listener
+        card.querySelector(`#btn-marketing-${key}`).addEventListener('click', () => {
+          try {
+            const res = GameEngine.launchMarketingCampaign(key);
+            showToast('حملة ترويجية', `تم إطلاق حملة إعلانية مكثفة لمشروع "${biz.name}" بتكلفة ${res.cost.toLocaleString()} EGP!`, 'success');
+            renderAll();
+          } catch (err) {
+            showToast('فشل الحملة', err.message, 'error');
+          }
+        });
+
+        // Upgrade action
+        card.querySelector(`#btn-upgrade-${key}`).addEventListener('click', () => {
+          try {
+            GameEngine.upgradeBusiness(key);
+            showToast('ترقية ناجحة', `تم ترقية مشروع "${biz.name}" للمستوى التالي!`, 'success');
+            renderAll();
+          } catch (err) {
+            showToast('خطأ الترقية', err.message, 'error');
+          }
+        });
+
+        // Hire action
+        card.querySelector(`#btn-hire-${key}`).addEventListener('click', () => {
+          try {
+            GameEngine.hireWorker(key);
+            showToast('توظيف عمالة', `تم إضافة عامل جديد إلى "${biz.name}" لتسريع الإنتاج.`, 'success');
+            renderAll();
+          } catch (err) {
+            showToast('خطأ التوظيف', err.message, 'error');
+          }
+        });
+
+        // Fire action
+        if (bizState.workers > 0) {
+          card.querySelector(`#btn-fire-${key}`).addEventListener('click', () => {
+            try {
+              GameEngine.fireWorker(key);
+              showToast('تعديل عمالة', `تم تسريح عامل لتخفيض تكلفة الإنتاج لـ "${biz.name}".`, 'info');
+              renderAll();
+            } catch (err) {
+              showToast('خطأ', err.message, 'error');
+            }
+          });
+        }
+      }
+
+      container.appendChild(card);
+    });
+  }
+
+  // --- Tab 4: Bank & Wire Transfers Panel ---
+  function renderBank() {
+    const s = GameEngine.state;
+
+    // Display basic balances
+    document.getElementById('bank-cash').textContent = s.cash.toLocaleString() + ' EGP';
+    document.getElementById('bank-balance').textContent = s.bank.toLocaleString() + ' EGP';
+
+    // Show locked investments in bank
+    const invContainer = document.getElementById('investments-locked-list');
+    invContainer.innerHTML = '';
+
+    if (s.investments.length === 0) {
+      invContainer.innerHTML = `
+        <div class="text-center text-slate-500 text-sm py-4 border border-dashed border-slate-800 rounded-lg">
+          لا يوجد أصول مقفلة حالياً في الصناديق الاستثمارية.
+        </div>
+      `;
+    } else {
+      s.investments.forEach(inv => {
+        const remainingSec = inv.ticksRemaining * 3;
+        const totalPayout = Math.floor(inv.investedAmount * (1 + inv.rate));
+        
+        const row = document.createElement('div');
+        row.className = 'glass-panel p-3 rounded-lg border border-slate-800 flex justify-between items-center text-sm';
+        row.innerHTML = `
+          <div>
+            <h5 class="font-bold text-white">${inv.name}</h5>
+            <p class="text-xs text-slate-400 mt-1">الرأس مال المودع: <span class="numbers-font">${inv.investedAmount.toLocaleString()} EGP</span></p>
+          </div>
+          <div class="text-left">
+            <span class="text-emerald-400 font-bold numbers-font block">+${totalPayout.toLocaleString()} EGP</span>
+            <span class="text-[10px] px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full border border-slate-700 numbers-font inline-block mt-1">متبقي: ${remainingSec} ثانية</span>
+          </div>
+        `;
+        invContainer.appendChild(row);
+      });
+    }
+  }
+
+  // --- Work Shift Cooldown Controller ---
+  function startWorkCooldown(btn) {
+    if (!btn) return;
+    workCooldownActive = true;
+
+    const originalHTML = btn.innerHTML;
+    const originalClasses = btn.className;
+
+    // Apply disabled visual state
+    btn.disabled = true;
+    btn.className = btn.className
+      .replace(/bg-yellow-\d+/g, 'bg-slate-700')
+      .replace(/hover:bg-yellow-\d+/g, '')
+      .replace(/text-slate-950/g, 'text-slate-400');
+    btn.style.opacity = '0.65';
+    btn.style.cursor = 'not-allowed';
+
+    const totalMs = WORK_COOLDOWN_MS;
+    const tickMs = 50;
+    let elapsed = 0;
+
+    // Show countdown inside button
+    function renderCountdown() {
+      const remaining = Math.ceil((totalMs - elapsed) / 1000);
+      const progress = elapsed / totalMs;
+      const barWidth = Math.round(progress * 100);
+      btn.innerHTML = `
+        <span class="flex items-center justify-center gap-2 w-full">
+          <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          <span>مهلة زمنية... ${remaining}ث</span>
+        </span>
+        <div class="absolute bottom-0 right-0 h-0.5 bg-yellow-500/60 transition-all duration-75 rounded-b-lg" style="width: ${barWidth}%; left: 0;"></div>
+      `;
+      btn.style.position = 'relative';
+      btn.style.overflow = 'hidden';
+    }
+
+    renderCountdown();
+
+    workCooldownTimer = setInterval(() => {
+      elapsed += tickMs;
+      renderCountdown();
+
+      if (elapsed >= totalMs) {
+        clearInterval(workCooldownTimer);
+        workCooldownTimer = null;
+        workCooldownActive = false;
+
+        // Restore button
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        btn.className = originalClasses;
+        btn.style.opacity = '';
+        btn.style.cursor = '';
+        btn.style.position = '';
+        btn.style.overflow = '';
+      }
+    }, tickMs);
+  }
+
+  function setupEventListeners() {
+    const logoutBtn = document.getElementById('btn-user-logout');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        performLogout(true);
+      });
+    }
+
+    const s = GameEngine.state;
+
+    // Shift worker button click — with 2-second cooldown
+    const jobWorkBtn = document.getElementById('btn-perform-shift');
+    if (jobWorkBtn) {
+      jobWorkBtn.addEventListener('click', () => {
+        if (workCooldownActive) return;
+        try {
+          const res = GameEngine.performJobShift();
+          showToast('عمل نوبة', `كسبت +${res.salary} EGP و +${res.xp} خبرة.`, 'success');
+          renderAll();
+          startWorkCooldown(jobWorkBtn);
+        } catch (err) {
+          showToast('خطأ العمل', err.message, 'error');
+        }
+      });
+    }
+
+    // Bank Actions (Depositing)
+    document.getElementById('btn-bank-deposit').addEventListener('click', () => {
+      const input = document.getElementById('bank-amount-input');
+      const val = parseInt(input.value);
+      try {
+        if (!val || val <= 0) throw new Error("يرجى إدخال مبلغ صحيح للإيداع.");
+        GameEngine.depositToBank(val);
+        input.value = '';
+        showToast('إيداع بنكي', `تم إيداع ${val.toLocaleString()} EGP بنجاح في حسابك البنكي.`, 'success');
+        renderAll();
+      } catch (err) {
+        showToast('فشل الإيداع', err.message, 'error');
+      }
+    });
+
+    document.getElementById('btn-bank-withdraw').addEventListener('click', () => {
+      const input = document.getElementById('bank-amount-input');
+      const val = parseInt(input.value);
+      try {
+        if (!val || val <= 0) throw new Error("يرجى إدخال مبلغ صحيح للسحب.");
+        GameEngine.withdrawFromBank(val);
+        input.value = '';
+        showToast('سحب بنكي', `تم سحب ${val.toLocaleString()} EGP نقدية بنجاح.`, 'success');
+        renderAll();
+      } catch (err) {
+        showToast('فشل السحب', err.message, 'error');
+      }
+    });
+
+    // Preset Percentage shortcuts
+    const bankPresets = document.querySelectorAll('.bank-preset');
+    bankPresets.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.getAttribute('data-action');
+        const pct = parseFloat(btn.getAttribute('data-pct'));
+        const input = document.getElementById('bank-amount-input');
+        
+        if (action === 'deposit') {
+          input.value = Math.floor(GameEngine.state.cash * pct);
+        } else {
+          input.value = Math.floor(GameEngine.state.bank * pct);
+        }
+      });
+    });
+
+    // Wire Transfer Form Actions
+    document.getElementById('btn-wire-submit').addEventListener('click', async () => {
+      const recipient = document.getElementById('wire-recipient-input').value.trim();
+      const amount = parseInt(document.getElementById('wire-amount-input').value);
+      const wireSubmitBtn = document.getElementById('btn-wire-submit');
+      const btnText = document.getElementById('wire-btn-text');
+      const btnSpinner = document.getElementById('wire-btn-spinner');
+
+      try {
+        if (!recipient || isNaN(amount) || amount <= 0) {
+          throw new Error("يرجى تعبئة حقل المستلم ومبلغ التحويل بشكل صحيح.");
+        }
+
+        // Show spinner
+        wireSubmitBtn.disabled = true;
+        btnText.classList.add('hidden');
+        btnSpinner.classList.remove('hidden');
+
+        await AppDB.executeWireTransfer(GameEngine.activeUsername, recipient, amount);
+
+        // Reset fields
+        document.getElementById('wire-recipient-input').value = '';
+        document.getElementById('wire-amount-input').value = '';
+
+        showToast('حوالة صادرة', `تم تحويل مبلغ ${amount.toLocaleString()} EGP بنجاح إلى "${recipient}".`, 'success');
+        
+        // Log transaction locally
+        addTransferHistoryRow(recipient, amount);
+
+        renderAll();
+      } catch (err) {
+        showToast('فشل التحويل', err.message, 'error');
+      } finally {
+        wireSubmitBtn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnSpinner.classList.add('hidden');
+      }
+    });
+
+    // Investment purchase
+    const invButtons = document.querySelectorAll('.btn-invest-start');
+    invButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = btn.getAttribute('data-type');
+        const inputId = `invest-amount-${type}`;
+        const amount = parseInt(document.getElementById(inputId).value);
+
+        try {
+          if (isNaN(amount) || amount <= 0) throw new Error("يرجى إدخال مبلغ استثمار صحيح.");
+          GameEngine.startInvestment(type, amount);
+          document.getElementById(inputId).value = '';
+          showToast('استثمار مقفل', `تم قفل مبلغ الاستثمار في صندوق: ${GameEngine.INVESTMENTS[type].name}`, 'success');
+          renderAll();
+        } catch (err) {
+          showToast('فشل الاستثمار', err.message, 'error');
+        }
+      });
+    });
+
+    // Casino event bindings
+    document.getElementById('btn-flip-coin').addEventListener('click', () => {
+      const betInput = document.getElementById('coin-bet-input');
+      const choice = document.querySelector('input[name="coin-choice"]:checked').value;
+      const bet = parseInt(betInput.value);
+
+      try {
+        if (isNaN(bet) || bet <= 0) throw new Error("يرجى إدخال قيمة رهان صحيحة.");
+        
+        const coinVisual = document.getElementById('coin-visual');
+        coinVisual.style.transform = 'rotateY(1080deg)';
+        coinVisual.style.transition = 'transform 0.8s ease-out';
+        
+        setTimeout(() => {
+          try {
+            const res = GameEngine.playCoinFlip(bet, choice);
+            coinVisual.style.transform = 'rotateY(0deg)';
+            coinVisual.style.transition = 'none';
+
+            if (res.won) {
+              showToast('ربح الكازينو', `صبت التخمين الصحيح! كسبت +${res.profit.toLocaleString()} EGP.`, 'success');
+            } else {
+              showToast('خسارة كازينو', `لسوء الحظ، لم يصب تخمينك. خسرت -${res.loss.toLocaleString()} EGP.`, 'error');
+            }
+            renderAll();
+          } catch (e) {
+            showToast('خطأ رهان', e.message, 'error');
+          }
+        }, 800);
+
+      } catch (err) {
+        showToast('خطأ رهان', err.message, 'error');
+      }
+    });
+
+    // Slots Machine roll
+    document.getElementById('btn-slots-spin').addEventListener('click', () => {
+      const betInput = document.getElementById('slots-bet-input');
+      const bet = parseInt(betInput.value);
+
+      try {
+        if (isNaN(bet) || bet <= 0) throw new Error("يرجى تحديد مبلغ رهان صحيح.");
+        
+        // Disable spin during action
+        const spinBtn = document.getElementById('btn-slots-spin');
+        spinBtn.disabled = true;
+
+        // Run visual roll effect
+        const r1 = document.getElementById('slot-reel-1');
+        const r2 = document.getElementById('slot-reel-2');
+        const r3 = document.getElementById('slot-reel-3');
+
+        r1.classList.add('animate-pulse');
+        r2.classList.add('animate-pulse');
+        r3.classList.add('animate-pulse');
+
+        setTimeout(() => {
+          try {
+            const res = GameEngine.playSlots(bet);
+
+            r1.classList.remove('animate-pulse');
+            r2.classList.remove('animate-pulse');
+            r3.classList.remove('animate-pulse');
+
+            // Set reel values
+            r1.textContent = getReelSymbolText(res.reels[0]);
+            r2.textContent = getReelSymbolText(res.reels[1]);
+            r3.textContent = getReelSymbolText(res.reels[2]);
+
+            if (res.won) {
+              showToast('فوز الآلة', `${res.message} ربحت +${res.profit.toLocaleString()} EGP.`, 'success');
+            } else {
+              showToast('حظ أوفر', `${res.message} خسرت -${bet.toLocaleString()} EGP.`, 'error');
+            }
+            renderAll();
+          } catch (e) {
+            showToast('خطأ الآلة', e.message, 'error');
+          } finally {
+            spinBtn.disabled = false;
+          }
+        }, 1000);
+
+      } catch (err) {
+        showToast('خطأ رهان', err.message, 'error');
+      }
+    });
+
+    // Crash Betting interactions
+    document.getElementById('btn-crash-start').addEventListener('click', () => {
+      runCrashBet();
+    });
+
+    document.getElementById('btn-crash-cashout').addEventListener('click', () => {
+      cashoutCrash();
+    });
+
+    // NEW GAME 1: European Roulette Handler
+    const rouletteBtn = document.getElementById('btn-roulette-spin');
+    if (rouletteBtn) {
+      rouletteBtn.addEventListener('click', () => {
+        const betInput = document.getElementById('roulette-bet-input');
+        const bet = parseInt(betInput.value);
+        const choice = document.querySelector('input[name="roulette-choice"]:checked').value;
+        const wheel = document.getElementById('roulette-wheel');
+        const resNum = document.getElementById('roulette-result-num');
+
+        try {
+          if (isNaN(bet) || bet <= 0) throw new Error("يرجى تحديد مبلغ رهان صحيح للروليت.");
+          if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
+
+          rouletteBtn.disabled = true;
+          wheel.style.transform = `rotate(${3600 + Math.floor(Math.random()*360)}deg)`;
+          wheel.style.transition = 'all 1.5s cubic-bezier(0.15, 0.9, 0.25, 1)';
+
+          setTimeout(() => {
+            try {
+              // Deduct cash
+              GameEngine.state.cash -= bet;
+
+              // Generate 0 to 36
+              const landedNum = Math.floor(Math.random() * 37);
+              resNum.textContent = landedNum;
+
+              // Determine color
+              let color = 'green';
+              if (landedNum !== 0) {
+                const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+                color = redNumbers.includes(landedNum) ? 'red' : 'black';
+              }
+
+              let won = false;
+              let multiplier = 0;
+
+              if (choice === 'green' && landedNum === 0) {
+                won = true;
+                multiplier = 35;
+              } else if (choice === color && landedNum !== 0) {
+                won = true;
+                multiplier = 2;
+              }
+
+              if (won) {
+                const winAmount = bet * multiplier;
+                GameEngine.state.cash += winAmount;
+                const profit = winAmount - bet;
+                showToast('فوز الروليت!', `اصاب خيارك (${color === 'red' ? 'أحمر' : color === 'black' ? 'أسود' : 'الرقم صفر'})! ربحت +${profit.toLocaleString()} EGP!`, 'success');
+              } else {
+                showToast('خسارة الروليت', `استقرت العجلة على ${landedNum} (${color === 'red' ? 'أحمر' : color === 'black' ? 'أسود' : 'الصفر الأخضر'}). خسرت -${bet.toLocaleString()} EGP.`, 'error');
+              }
+
+              GameEngine.forceSaveState();
+              renderAll();
+            } catch (e) {
+              showToast('خطأ روليت', e.message, 'error');
+            } finally {
+              rouletteBtn.disabled = false;
+              wheel.style.transform = 'rotate(0deg)';
+              wheel.style.transition = 'none';
+            }
+          }, 1500);
+
+        } catch (err) {
+          showToast('خطأ رهان', err.message, 'error');
+        }
+      });
+    }
+
+    // NEW GAME 2: Wheel of Fortune Handler
+    const wheelBtn = document.getElementById('btn-wheel-spin');
+    if (wheelBtn) {
+      wheelBtn.addEventListener('click', () => {
+        const betInput = document.getElementById('wheel-bet-input');
+        const bet = parseInt(betInput.value);
+        const wheelVis = document.getElementById('wheel-of-fortune-visual');
+        const resText = document.getElementById('wheel-multiplier-result');
+
+        try {
+          if (isNaN(bet) || bet <= 0) throw new Error("يرجى تحديد مبلغ رهان صحيح لعجلة الحظ.");
+          if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
+
+          wheelBtn.disabled = true;
+          wheelVis.style.transform = `rotate(${2880 + Math.floor(Math.random()*360)}deg)`;
+          wheelVis.style.transition = 'all 1.5s cubic-bezier(0.25, 1, 0.3, 1)';
+
+          setTimeout(() => {
+            try {
+              GameEngine.state.cash -= bet;
+
+              // Wheel Multipliers distribution table
+              const multipliers = [0, 0.5, 1.2, 1.5, 2.0, 3.0, 5.0, 10.0];
+              const weights     = [15, 25, 25, 15, 10,  6,   3,    1]; // weight sum 100
+              
+              let rand = Math.floor(Math.random() * 100);
+              let cumulative = 0;
+              let selectedMult = 1.2;
+
+              for (let i = 0; i < multipliers.length; i++) {
+                cumulative += weights[i];
+                if (rand < cumulative) {
+                  selectedMult = multipliers[i];
+                  break;
+                }
+              }
+
+              resText.textContent = `${selectedMult}x`;
+              const payout = Math.floor(bet * selectedMult);
+              GameEngine.state.cash += payout;
+
+              if (selectedMult > 1.0) {
+                showToast('ضربة عجلة الحظ!', `حصلت على مضاعف ${selectedMult}x! ربحت +${(payout - bet).toLocaleString()} EGP.`, 'success');
+              } else if (selectedMult === 1.0) {
+                showToast('استرداد الرهان', `حصلت على 1.0x واسترددت رهانك بالكامل.`, 'info');
+              } else {
+                showToast('خسارة العجلة', `توقفت العجلة عند ${selectedMult}x. خسرت -${(bet - payout).toLocaleString()} EGP.`, 'error');
+              }
+
+              GameEngine.forceSaveState();
+              renderAll();
+            } catch (e) {
+              showToast('خطأ العجلة', e.message, 'error');
+            } finally {
+              wheelBtn.disabled = false;
+              wheelVis.style.transform = 'rotate(0deg)';
+              wheelVis.style.transition = 'none';
+            }
+          }, 1500);
+
+        } catch (err) {
+          showToast('خطأ رهان', err.message, 'error');
+        }
+      });
+    }
+  }
+
+  function getReelSymbolText(sym) {
+    // Emojis strictly forbidden, mapping representation texts instead
+    const map = {
+      'GOLD': 'ذهب [GOLD]',
+      'DIAMOND': 'ألماس [DIAMOND]',
+      'COIN': 'عملة [COIN]',
+      'BAG': 'حقيبة [BAG]',
+      'KEY': 'مفتاح [KEY]'
+    };
+    return map[sym] || sym;
+  }
+
+  function addTransferHistoryRow(recipient, amount) {
+    const list = document.getElementById('wire-history-list');
+    const emptyMsg = list.querySelector('.empty-wire-msg');
+    if (emptyMsg) emptyMsg.remove();
+
+    const row = document.createElement('div');
+    row.className = 'flex justify-between items-center text-xs text-slate-400 py-1.5 border-b border-slate-800/50';
+    row.innerHTML = `
+      <span>حوالة صادرة إلى <strong class="text-white">${recipient}</strong></span>
+      <span class="numbers-font text-rose-400">-${amount.toLocaleString()} EGP</span>
+    `;
+    list.prepend(row);
+  }
+
+  // --- Tab 5: Real Estate & Assets Panel ---
+  function renderAssets() {
+    const s = GameEngine.state;
+    const container = document.getElementById('assets-list');
+    container.innerHTML = '';
+
+    Object.keys(GameEngine.ASSETS).forEach(key => {
+      const asset = GameEngine.ASSETS[key];
+      const owned = s.assets[key] || 0;
+      
+      const card = document.createElement('div');
+      card.className = `glass-panel p-5 rounded-xl border border-slate-800 flex flex-col justify-between`;
+      card.innerHTML = `
+        <div class="flex justify-between items-start mb-3">
+          <div>
+            <h4 class="text-lg font-bold text-white">${asset.name}</h4>
+            <p class="text-xs text-slate-500 mt-1">توليد عائد مالي مستقر، وتقدير لقيمة العقار بمرور الوقت.</p>
+          </div>
+          <span class="text-xs px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold">مملوك: <span class="numbers-font">${owned}</span></span>
+        </div>
+
+        <div class="text-sm text-slate-400 space-y-1 mb-5 border-t border-b border-slate-800/80 py-3 my-2">
+          <div class="flex justify-between"><span>القيمة السوقية الحالية:</span><span class="numbers-font text-yellow-500 font-semibold">${asset.cost.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>عائد الإيجار السلبي:</span><span class="numbers-font text-emerald-400">+${Math.floor(asset.rent * 0.1)} EGP / دورة</span></div>
+          <div class="flex justify-between"><span>قيمة التسييل الفوري (85%):</span><span class="numbers-font text-amber-500/80">${Math.floor(asset.cost * 0.85).toLocaleString()} EGP</span></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btn-buy-asset-${key}" class="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition">
+            شراء وحدة إضافية
+          </button>
+          <button id="btn-sell-asset-${key}" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-xs font-bold transition" ${owned === 0 ? 'disabled' : ''}>
+            تسييل وبيع وحدة
+          </button>
+        </div>
+      `;
+
+      // Event handlers
+      card.querySelector(`#btn-buy-asset-${key}`).addEventListener('click', () => {
+        try {
+          GameEngine.buyAsset(key);
+          showToast('عقود عقارية', `تم شراء عقار "${asset.name}" بنجاح وإضافته لمحفظتك.`, 'success');
+          renderAll();
+        } catch (err) {
+          showToast('مرفوض', err.message, 'error');
+        }
+      });
+
+      card.querySelector(`#btn-sell-asset-${key}`).addEventListener('click', () => {
+        try {
+          const cashBack = GameEngine.sellAsset(key);
+          showToast('تسييل عقاري', `تم بيع العقار بنجاح وتسييل مبلغ بقيمة ${cashBack.toLocaleString()} EGP.`, 'success');
+          renderAll();
+        } catch (err) {
+          showToast('فشل التسييل', err.message, 'error');
+        }
+      });
+
+      container.appendChild(card);
+    });
+  }
+
+  // --- Tab 6: Stock Market Panel ---
+  function renderStocks() {
+    const s = GameEngine.state;
+    const container = document.getElementById('stocks-list');
+    container.innerHTML = '';
+
+    Object.keys(GameEngine.STOCKS).forEach(sym => {
+      const stock = GameEngine.STOCKS[sym];
+      const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
+      const currentPrice = prices[prices.length - 1];
+      const prevPrice = prices[prices.length - 2] || currentPrice;
+      
+      const changePct = ((currentPrice - prevPrice) / prevPrice) * 100;
+      const isUp = currentPrice >= prevPrice;
+
+      const ownedData = s.stocks[sym] || { shares: 0, avgPrice: 0 };
+      const totalWorth = ownedData.shares * currentPrice;
+      const totalProfit = (currentPrice - ownedData.avgPrice) * ownedData.shares;
+
+      const card = document.createElement('div');
+      card.className = `glass-panel p-5 rounded-xl border border-slate-800 flex flex-col justify-between`;
+      
+      // Inline dynamic SVG sparkline logic
+      const svgPath = generateSparklineSVG(prices);
+
+      card.innerHTML = `
+        <div class="flex justify-between items-start mb-3">
+          <div>
+            <h4 class="text-md font-bold text-white">${stock.name}</h4>
+            <span class="numbers-font text-xs text-slate-500 font-bold block mt-1">${stock.symbol}</span>
+          </div>
+          <div class="text-left">
+            <span class="numbers-font font-bold block ${isUp ? 'text-emerald-400 glow-emerald' : 'text-rose-400 glow-rose'}">${currentPrice} EGP</span>
+            <span class="numbers-font text-xs ${isUp ? 'text-emerald-500' : 'text-rose-500'} inline-block mt-0.5">${isUp ? '+' : ''}${changePct.toFixed(2)}%</span>
+          </div>
+        </div>
+
+        <div class="w-full h-16 bg-slate-950/50 rounded-lg p-1 border border-slate-900/60 my-2 overflow-hidden">
+          <svg viewBox="0 0 100 30" class="w-full h-full" preserveAspectRatio="none">
+            <path d="${svgPath}" fill="none" stroke="${isUp ? '#10b981' : '#f43f5e'}" stroke-width="1.8" />
+          </svg>
+        </div>
+
+        <div class="text-xs text-slate-400 space-y-1 mb-4 border-t border-slate-800 pt-3 mt-1">
+          <div class="flex justify-between"><span>الأسهم المملوكة:</span><span class="numbers-font text-white">${ownedData.shares} سهم</span></div>
+          <div class="flex justify-between"><span>متوسط سعر الشراء:</span><span class="numbers-font">${ownedData.avgPrice} EGP</span></div>
+          <div class="flex justify-between"><span>قيمة الأسهم الكلية:</span><span class="numbers-font text-yellow-500 font-semibold">${totalWorth.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>ربح/خسارة المحفظة:</span><span class="numbers-font font-bold ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString()} EGP</span></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <div class="flex flex-col">
+            <div class="flex gap-1 mb-1">
+              <button data-pct="0.25" class="btn-pct-buy flex-1 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded font-semibold">25%</button>
+              <button data-pct="0.50" class="btn-pct-buy flex-1 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded font-semibold">50%</button>
+              <button data-pct="1.00" class="btn-pct-buy flex-1 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-yellow-400 rounded font-bold">100%</button>
+            </div>
+            <input type="number" id="shares-buy-input-${sym}" placeholder="الكمية" class="glass-input w-full p-2 text-center text-xs rounded-lg mb-1.5" min="1" step="1"/>
+            <button id="btn-buy-shares-${sym}" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition">شراء الأسهم</button>
+          </div>
+          <div class="flex flex-col">
+            <div class="flex gap-1 mb-1">
+              <button id="btn-sell-all-${sym}" class="w-full py-0.5 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/30 text-[10px] text-rose-300 rounded font-bold" ${ownedData.shares === 0 ? 'disabled' : ''}>🔥 بيع كل الأسهم</button>
+            </div>
+            <input type="number" id="shares-sell-input-${sym}" placeholder="الكمية" class="glass-input w-full p-2 text-center text-xs rounded-lg mb-1.5" min="1" step="1"/>
+            <button id="btn-sell-shares-${sym}" class="py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition" ${ownedData.shares === 0 ? 'disabled' : ''}>بيع الأسهم</button>
+          </div>
+        </div>
+      `;
+
+      // Percentage Buy Click Listeners
+      card.querySelectorAll('.btn-pct-buy').forEach(pctBtn => {
+        pctBtn.addEventListener('click', () => {
+          const pct = parseFloat(pctBtn.getAttribute('data-pct'));
+          const availableCash = s.cash * pct;
+          const maxSharesPossible = Math.floor(availableCash / currentPrice);
+          const input = card.querySelector(`#shares-buy-input-${sym}`);
+          if (input) input.value = maxSharesPossible > 0 ? maxSharesPossible : 1;
+        });
+      });
+
+      // Sell All Shares trigger
+      const sellAllBtn = card.querySelector(`#btn-sell-all-${sym}`);
+      if (sellAllBtn) {
+        sellAllBtn.addEventListener('click', () => {
+          try {
+            if (ownedData.shares <= 0) throw new Error("لا تملك أي أسهم في هذه الشركة لبيعها.");
+            const res = GameEngine.sellStock(sym, ownedData.shares);
+            showToast('بيع كلي', `تمت بيع وتسييل كامل الأسهم (${res.shares} سهم) بقيمة +${res.totalPayout.toLocaleString()} EGP.`, 'success');
+            renderAll();
+          } catch (err) {
+            showToast('فشل البيع', err.message, 'error');
+          }
+        });
+      }
+
+      // Buy Shares trigger
+      card.querySelector(`#btn-buy-shares-${sym}`).addEventListener('click', () => {
+        const input = card.querySelector(`#shares-buy-input-${sym}`);
+        const count = parseInt(input.value);
+        try {
+          if (!count || count <= 0) throw new Error("يرجى إدخال عدد أسهم صحيح.");
+          const res = GameEngine.buyStock(sym, count);
+          input.value = '';
+          showToast('شراء أسهم', `تم شراء عدد ${res.shares} سهم من سهم "${stock.name}" بنجاح.`, 'success');
+          renderAll();
+        } catch (err) {
+          showToast('فشل الشراء', err.message, 'error');
+        }
+      });
+
+      // Sell Shares trigger
+      card.querySelector(`#btn-sell-shares-${sym}`).addEventListener('click', () => {
+        const input = card.querySelector(`#shares-sell-input-${sym}`);
+        const count = parseInt(input.value);
+        try {
+          if (!count || count <= 0) throw new Error("يرجى إدخال عدد أسهم صحيح.");
+          const res = GameEngine.sellStock(sym, count);
+          input.value = '';
+          showToast('بيع أسهم', `تمت تسييل عدد ${res.shares} سهم من سهم "${stock.name}" للسيولة.`, 'success');
+          renderAll();
+        } catch (err) {
+          showToast('فشل البيع', err.message, 'error');
+        }
+      });
+
+      container.appendChild(card);
+    });
+  }
+
+  // Selective DOM price update to prevent input field re-creation/wiping while typing
+  function updateStockPricesInDOM() {
+    const activeEl = document.activeElement;
+    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+      // User is currently typing inside an input field — skip DOM redraw to preserve focus
+      return;
+    }
+    renderStocks();
+  }
+
+  // Draw Line Charts inside SVG
+  function generateSparklineSVG(prices) {
+    if (prices.length < 2) return "M 0 15 L 100 15";
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const range = max - min === 0 ? 1 : max - min;
+
+    const width = 100;
+    const height = 30;
+
+    let path = "";
+    prices.forEach((price, idx) => {
+      const x = (idx / (prices.length - 1)) * width;
+      // Invert Y axis since SVG 0 is top
+      const y = height - ((price - min) / range) * (height - 6) - 3;
+      path += `${idx === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)} `;
+    });
+    return path;
+  }
+
+  // --- Tab 7: Store & Inventory Panel ---
+  function renderStore() {
+    const s = GameEngine.state;
+    
+    // Render store shelf
+    const shelf = document.getElementById('store-shelf');
+    shelf.innerHTML = '';
+
+    Object.keys(GameEngine.STORE_ITEMS).forEach(id => {
+      const item = GameEngine.STORE_ITEMS[id];
+      const count = s.inventory[id] || 0;
+      const ticksRemaining = (s.itemDurations && s.itemDurations[id]) ? s.itemDurations[id] : 0;
+      const secRemaining = ticksRemaining * 3;
+
+      const card = document.createElement('div');
+      card.className = 'glass-panel p-4 rounded-xl border border-slate-800 flex flex-col justify-between items-start';
+      card.innerHTML = `
+        <div class="mb-3 w-full">
+          <div class="flex justify-between items-center mb-1">
+            <h4 class="font-bold text-white text-sm">${item.name}</h4>
+            <span class="text-xs px-2 py-0.5 bg-slate-800 text-slate-400 border border-slate-700 rounded-full font-bold">متاح: <span class="numbers-font">${count}</span></span>
+          </div>
+          <p class="text-[11px] text-slate-400 leading-relaxed mb-2">${item.desc || 'مفعول خاص ومؤقت ينتهي ويدمر ذاته.'}</p>
+        </div>
+        <div class="w-full text-xs text-slate-400 space-y-1 mb-4 border-t border-slate-800/60 pt-2.5">
+          <div class="flex justify-between"><span>سعر البيع:</span><span class="numbers-font text-yellow-500 font-bold">${item.cost.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>مدة الصلاحية:</span><span class="numbers-font text-rose-400 font-semibold">${item.durationTicks * 3} ثانية</span></div>
+          ${count > 0 ? `<div class="flex justify-between"><span>عداد التدمير الذاتي:</span><span class="numbers-font text-yellow-400 font-bold animate-pulse">${secRemaining} ثانية متبقية</span></div>` : ''}
+        </div>
+        <button id="btn-buy-store-${id}" class="w-full py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-lg text-xs font-bold transition shadow-lg shadow-yellow-500/10">
+          شراء وتفعيل المفعول
+        </button>
+      `;
+
+      card.querySelector(`#btn-buy-store-${id}`).addEventListener('click', () => {
+        try {
+          GameEngine.buyStoreItem(id);
+          showToast('فاتورة متجر', `تم شراء "${item.name}" ودفع القيمة النقود.`, 'success');
+          renderAll();
+        } catch (err) {
+          showToast('رصيد معلق', err.message, 'error');
+        }
+      });
+
+      shelf.appendChild(card);
+    });
+
+    // Render backpack inventory
+    const bag = document.getElementById('backpack-inventory');
+    bag.innerHTML = '';
+
+    const usableItems = Object.keys(s.inventory).filter(id => s.inventory[id] > 0 && GameEngine.STORE_ITEMS[id]);
+
+    if (usableItems.length === 0) {
+      bag.innerHTML = `
+        <div class="col-span-full text-center text-slate-500 text-xs py-4">
+          حقيبة ظهرك فارغة تماماً. قم بزيارة الرف الأعلى لشراء عناصر الدعم والتعزيزات الفائقة.
+        </div>
+      `;
+    } else {
+      usableItems.forEach(id => {
+        const item = GameEngine.STORE_ITEMS[id];
+        const count = s.inventory[id];
+        const ticksRemaining = (s.itemDurations && s.itemDurations[id]) ? s.itemDurations[id] : 0;
+        const secRemaining = ticksRemaining * 3;
+
+        const card = document.createElement('div');
+        card.className = 'glass-panel p-3 rounded-lg border border-slate-800 flex justify-between items-center text-xs';
+        card.innerHTML = `
+          <div>
+            <h5 class="font-bold text-white mb-0.5">${item.name}</h5>
+            <p class="text-[10px] text-slate-400 leading-snug">${item.desc}</p>
+          </div>
+          <div class="text-left whitespace-nowrap mr-3">
+            <span class="text-[10px] text-yellow-400 border border-yellow-500/30 px-2 py-1 rounded bg-yellow-500/10 font-bold block mb-1">
+              ⏳ تدمير ذاتي: <span class="numbers-font">${secRemaining}ث</span>
+            </span>
+          </div>
+        `;
+
+        bag.appendChild(card);
+      });
+    }
+  }
+
+  // --- Tab 8: Black Market Panel ---
+  function renderBlackMarket() {
+    const s = GameEngine.state;
+    const container = document.getElementById('blackmarket-deals');
+    container.innerHTML = '';
+
+    Object.keys(GameEngine.BLACK_MARKET).forEach(id => {
+      const deal = GameEngine.BLACK_MARKET[id];
+      
+      const card = document.createElement('div');
+      card.className = 'glass-panel p-5 rounded-xl border border-slate-800 flex flex-col justify-between bg-gradient-to-br from-rose-950/10 to-slate-900/40';
+      
+      // Calculate active lawyer protection display
+      let protectionText = "";
+      let riskPct = Math.round((1 - deal.successChance) * 100);
+      if (s.inventory.premium_lawyer > 0) {
+        riskPct = Math.round(riskPct * (1 - GameEngine.STORE_ITEMS.premium_lawyer.value));
+        protectionText = `<span class="text-[10px] px-1.5 py-0.5 bg-sky-500/20 text-sky-400 rounded border border-sky-500/30 font-semibold block mt-1 text-center">حماية المحامي نشطة (-35% خطورة)</span>`;
+      }
+
+      card.innerHTML = `
+        <div class="mb-4">
+          <h4 class="text-md font-bold text-rose-400">${deal.name}</h4>
+          <p class="text-xs text-slate-500 mt-1">تجارة محظورة عالية المردود المالي ولكن تحمل مخاطرة المداهمة الأمنية والسجن.</p>
+        </div>
+
+        <div class="text-xs text-slate-400 space-y-1 mb-5 border-t border-b border-slate-800/80 py-3">
+          <div class="flex justify-between"><span>رأس المال المطلوب:</span><span class="numbers-font text-white">${deal.cost.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>العائد الإجمالي (الفوز):</span><span class="numbers-font text-emerald-400 font-bold">+${deal.payout.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>نسبة الإيقاف (الشرطة):</span><span class="numbers-font text-rose-400 font-bold">${riskPct}%</span></div>
+          <div class="flex justify-between"><span>عقوبة السجن:</span><span class="numbers-font text-amber-500">${deal.jailDuration * 3} ثانية</span></div>
+          ${protectionText}
+        </div>
+
+        <button id="btn-run-deal-${id}" class="w-full py-2.5 bg-rose-900/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 rounded-lg text-xs font-bold transition">
+          بدء المغامرة وتوقيع الصفقة
+        </button>
+      `;
+
+      card.querySelector(`#btn-run-deal-${id}`).addEventListener('click', () => {
+        try {
+          const res = GameEngine.runBlackMarketDeal(id);
+          if (res.success) {
+            showToast('ضربة معلم!', `نجحت الصفقة المشبوهة! وحصلت على ربح صافٍ قدره +${res.profit.toLocaleString()} EGP.`, 'success');
+          } else {
+            showToast('مداهمة الشرطة!', `تم رصد عمليتك وضبطك من السلطات! مصادرة ${res.confiscation.toLocaleString()} EGP وإيداعك السجن.`, 'error');
+          }
+          renderAll();
+        } catch (err) {
+          showToast('فشل المداهمة', err.message, 'error');
+        }
+      });
+
+      container.appendChild(card);
+    });
+  }
+
+  // --- Tab 9: Casino Panel ---
+  function renderCasino() {
+    // Basic view updates
+  }
+
+  // --- Casino Game: Crash Multiplier (Classic Rocket Animation) ---
+  function runCrashBet() {
+    const betInput = document.getElementById('crash-bet-input');
+    const bet = parseInt(betInput.value);
+
+    try {
+      if (crashState === 'running') return;
+      if (isNaN(bet) || bet <= 0) throw new Error("يرجى إدخال مبلغ رهان صحيح.");
+      if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
+
+      // Deduct cash immediately
+      GameEngine.state.cash -= bet;
+      crashBetAmount = bet;
+      crashMultiplier = 1.0;
+      crashState = 'running';
+
+      // Predetermine crash point
+      // 5% chance of instant crash at 1.00x
+      if (Math.random() < 0.05) {
+        crashTarget = 1.0;
+      } else {
+        // Exponential distribution (up to 15x maximum)
+        crashTarget = parseFloat((1 + Math.pow(Math.random(), 3) * 14).toFixed(2));
+      }
+
+      // Update Buttons
+      document.getElementById('btn-crash-start').classList.add('hidden');
+      const cashoutBtn = document.getElementById('btn-crash-cashout');
+      cashoutBtn.classList.remove('hidden');
+      cashoutBtn.disabled = false;
+      document.getElementById('crash-cashout-payout').textContent = bet;
+
+      document.getElementById('crash-status-text').textContent = 'الصاروخ يرتفع...';
+      document.getElementById('crash-status-text').className = 'text-lg font-bold text-yellow-500';
+
+      crashStartTime = Date.now();
+      animateCrashGame();
+
+    } catch (err) {
+      showToast('خطأ رهان', err.message, 'error');
+    }
+  }
+
+  function animateCrashGame() {
+    if (crashState !== 'running') return;
+
+    const elapsed = (Date.now() - crashStartTime) / 1000;
+    // Multiplier grows exponentially over seconds
+    crashMultiplier = parseFloat((Math.pow(1.09, elapsed * 3)).toFixed(2));
+
+    const display = document.getElementById('crash-multiplier-display');
+    display.textContent = `${crashMultiplier.toFixed(2)}x`;
+
+    // Draw curves on mock SVG path
+    const curve = document.getElementById('crash-svg-curve');
+    const rocket = document.getElementById('crash-svg-rocket');
+
+    // Chart bounds scaling coordinates
+    const x = Math.min(90, 10 + elapsed * 8);
+    const y = Math.max(10, 80 - Math.pow(elapsed * 1.5, 1.8));
+    curve.setAttribute('d', `M 10 80 Q 50 80 ${x} ${y}`);
+    rocket.setAttribute('cx', x);
+    rocket.setAttribute('cy', y);
+
+    // Update real-time cashout indicator returns
+    const currentPayout = Math.floor(crashBetAmount * crashMultiplier);
+    document.getElementById('crash-cashout-payout').textContent = currentPayout.toLocaleString();
+
+    // Check if crash target hit
+    if (crashMultiplier >= crashTarget) {
+      triggerCrash();
+      return;
+    }
+
+    crashAnimationId = requestAnimationFrame(animateCrashGame);
+  }
+
+  function triggerCrash() {
+    cancelAnimationFrame(crashAnimationId);
+    crashState = 'crashed';
+    
+    document.getElementById('crash-status-text').textContent = `انفجر الصاروخ عند ${crashTarget.toFixed(2)}x !`;
+    document.getElementById('crash-status-text').className = 'text-lg font-bold text-rose-500 animate-pulse';
+
+    // Highlight rocket crash point on SVG
+    document.getElementById('crash-svg-rocket').setAttribute('fill', '#f43f5e');
+
+    // Reset Buttons
+    document.getElementById('btn-crash-start').classList.remove('hidden');
+    document.getElementById('btn-crash-cashout').classList.add('hidden');
+
+    // Save and Sync
+    GameEngine.state.netWorth = GameEngine.state.netWorth; // force recalc
+    AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+
+    showToast('تحطم الصاروخ', `خسرت رهانك بالكامل البالغ -${crashBetAmount.toLocaleString()} EGP.`, 'error');
+    renderAll();
+  }
+
+  function cashoutCrash() {
+    if (crashState !== 'running') return;
+
+    cancelAnimationFrame(crashAnimationId);
+    crashState = 'cashed_out';
+
+    const winAmount = Math.floor(crashBetAmount * crashMultiplier);
+    GameEngine.state.cash += winAmount;
+
+    document.getElementById('crash-status-text').textContent = `تم صرف الأرباح عند ${crashMultiplier.toFixed(2)}x !`;
+    document.getElementById('crash-status-text').className = 'text-lg font-bold text-emerald-500';
+
+    // Reset Buttons
+    document.getElementById('btn-crash-start').classList.remove('hidden');
+    document.getElementById('btn-crash-cashout').classList.add('hidden');
+
+    GameEngine.state.netWorth = GameEngine.state.netWorth; // Force update
+    AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+
+    showToast('صرف الأرباح', `مبارك الفوز! كسبت صافي ربح قدره +${(winAmount - crashBetAmount).toLocaleString()} EGP.`, 'success');
+    renderAll();
+  }
+
+  // --- Tab 10: Leaderboard Panel ---
+  async function renderLeaderboard() {
+    const list = document.getElementById('leaderboard-rows');
+    list.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-center py-6 text-slate-500">
+          <span class="animate-pulse">جاري تحميل قائمة الأغنياء وتحديث الترتيب...</span>
+        </td>
+      </tr>
+    `;
+
+    try {
+      const players = await AppDB.getLeaderboard();
+      list.innerHTML = '';
+
+      players.forEach((player, idx) => {
+        const isSelf = player.username === GameEngine.activeUsername;
+        
+        const row = document.createElement('tr');
+        row.className = `border-b border-slate-800/50 text-sm ${isSelf ? 'bg-yellow-500/10 font-bold border-l-4 border-l-yellow-500' : ''}`;
+        
+        row.innerHTML = `
+          <td class="py-3.5 pr-4 pl-2 text-right numbers-font font-bold ${idx === 0 ? 'text-yellow-500 text-base' : idx === 1 ? 'text-slate-300' : idx === 2 ? 'text-amber-600' : 'text-slate-500'}">
+            #${idx + 1}
+          </td>
+          <td class="py-3.5 px-2 text-white">
+            ${player.username} ${isSelf ? '<span class="text-[10px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-500 rounded border border-yellow-500/20 mr-1.5">أنت</span>' : ''}
+          </td>
+          <td class="py-3.5 px-2 text-slate-400 text-xs">
+            ${player.title}
+          </td>
+          <td class="py-3.5 pl-4 pr-2 text-left numbers-font text-emerald-400 font-semibold">
+            ${player.netWorth.toLocaleString()} EGP
+          </td>
+        `;
+        list.appendChild(row);
+      });
+    } catch (err) {
+      list.innerHTML = `
+        <tr>
+          <td colspan="4" class="text-center py-6 text-rose-400">
+            فشل تحميل قائمة المتصدرين. تحقق من الاتصال بالشبكة.
+          </td>
+        </tr>
+      `;
+    }
+  }
+
+  // --- Tab 11: Settings (Connection & Sync Status) ---
+  function renderSettings() {
+    const configTextarea = document.getElementById('settings-firebase-config');
+    const statusText = document.getElementById('settings-sync-status');
+
+    // Live connection status
+    const isOnline = navigator.onLine;
+    const isFirebase = AppDB.isFirebaseReady;
+    const pending = AppDB.pendingSyncs;
+    const clientVer = AppDB.clientVersion;
+
+    if (isOnline && isFirebase) {
+      statusText.innerHTML = `
+        <span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30 font-bold text-xs inline-block ml-2">
+          متصل بـ Firebase — المزامنة الحية نشطة
+        </span>
+        ${pending > 0 ? `<span class="px-2.5 py-1 bg-yellow-500/20 text-yellow-500 rounded-full border border-yellow-500/30 font-bold text-xs inline-block ml-2">
+          ${pending} عملية مزامنة معلقة
+        </span>` : ''}
+      `;
+    } else if (isOnline) {
+      statusText.innerHTML = `
+        <span class="px-2.5 py-1 bg-yellow-500/20 text-yellow-500 rounded-full border border-yellow-500/30 font-bold text-xs inline-block ml-2">
+          متصل بالإنترنت — جاري محاولة الاتصال بـ Firebase...
+        </span>
+      `;
+    } else {
+      statusText.innerHTML = `
+        <span class="px-2.5 py-1 bg-rose-500/20 text-rose-400 rounded-full border border-rose-500/30 font-bold text-xs inline-block ml-2">
+          غير متصل — وضع محلي (Local-First)
+        </span>
+      `;
+    }
+
+    // Show version and architecture info in the textarea
+    if (configTextarea) {
+      configTextarea.readOnly = true;
+      configTextarea.value = JSON.stringify({
+        architecture: 'local-first',
+        clientVersion: clientVer,
+        firebaseConnected: isFirebase,
+        isOnline: isOnline,
+        pendingSyncOps: pending,
+        storage: 'LocalStorage + Firestore background sync',
+        note: 'تكوين Firebase مدمج داخلياً. البيانات تُحفظ محلياً أولاً وتتزامن تلقائياً عند الاتصال.'
+      }, null, 2);
+    }
+
+    // Re-wire the save/clear buttons to no-ops with an explanatory toast
+    const saveBtn = document.getElementById('btn-settings-save-config');
+    if (saveBtn) {
+      const newSaveBtn = saveBtn.cloneNode(true);
+      saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+      newSaveBtn.addEventListener('click', () => {
+        showToast('معلومة', 'تكوين Firebase مدمج داخلياً في هذا الإصدار. المزامنة تتم تلقائياً في الخلفية.', 'info');
+      });
+    }
+
+    const clearBtn = document.getElementById('btn-settings-clear-config');
+    if (clearBtn) {
+      const newClearBtn = clearBtn.cloneNode(true);
+      clearBtn.parentNode.replaceChild(newClearBtn, clearBtn);
+      newClearBtn.addEventListener('click', () => {
+        showToast('معلومة', 'لا يمكن مسح تكوين Firebase في هذا الإصدار. التكوين مدمج وثابت.', 'info');
+      });
+    }
+  }
+
+  // --- Helper Elements: Toast Notifications ---
+  function showToast(title, message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `glass-panel p-4 rounded-xl shadow-2xl border-l-4 transition-all duration-300 transform translate-x-20 opacity-0 text-sm max-w-sm w-80 ${
+      type === 'success' 
+        ? 'border-l-emerald-500 bg-emerald-950/20' 
+        : type === 'error' 
+          ? 'border-l-rose-500 bg-rose-950/20' 
+          : 'border-l-yellow-500 bg-yellow-950/20'
+    }`;
+
+    toast.innerHTML = `
+      <div class="font-bold text-white mb-1">${title}</div>
+      <div class="text-xs text-slate-300 leading-relaxed">${message}</div>
+    `;
+
+    container.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+      toast.classList.remove('translate-x-20', 'opacity-0');
+    }, 50);
+
+    // Auto dismiss after 4 seconds
+    setTimeout(() => {
+      toast.classList.add('translate-x-20', 'opacity-0');
+      setTimeout(() => {
+        toast.remove();
+      }, 300);
+    }, 4000);
+  }
+
+  // Floating Passive indicators
+  function showPassiveGainFloat(text) {
+    const parent = document.getElementById('passive-float-spawn');
+    if (!parent) return;
+
+    const el = document.createElement('div');
+    el.className = 'absolute text-emerald-400 font-bold text-sm numbers-font animate-float pointer-events-none glow-emerald';
+    el.textContent = text;
+    // Set random position inside spawn box
+    el.style.left = `${Math.floor(Math.random() * 50) + 20}%`;
+    el.style.top = `${Math.floor(Math.random() * 30) + 10}%`;
+
+    parent.appendChild(el);
+    setTimeout(() => {
+      el.remove();
+    }, 1200);
+  }
+
+  // --- Admin Panel Setup & Realtime Event Listeners ---
+
+  let activeListeners = [];
+
+  function setupRealTimeListeners(username) {
+    // Clean up existing listeners
+    activeListeners.forEach(unsub => unsub());
+    activeListeners = [];
+
+    // Show/Hide Admin Trigger Button
+    const adminTrigger = document.getElementById('btn-admin-panel-trigger');
+    if (adminTrigger) {
+      const isAdmin = (username === 'FoolosAdmin_X99' || (GameEngine.state && GameEngine.state.isAdmin));
+      if (isAdmin) {
+        adminTrigger.classList.remove('hidden');
+      } else {
+        adminTrigger.classList.add('hidden');
+      }
+    }
+
+    if (!AppDB.isFirebaseReady) return;
+
+    const db = firebase.firestore();
+
+    // 1. Broadcast Listener
+    let lastBroadcastTime = Date.now();
+    const unsubBroadcast = db.collection('globals').doc('broadcast')
+      .onSnapshot((doc) => {
+        if (!doc.exists) return;
+        const data = doc.data();
+        if (data.timestamp > lastBroadcastTime) {
+          lastBroadcastTime = data.timestamp;
+          showToast('بث الإدارة', data.message, 'info');
+        }
+      }, (err) => console.error("Broadcast listen err: ", err));
+    activeListeners.push(unsubBroadcast);
+
+    // 2. Maintenance Listener
+    const unsubMaintenance = db.collection('globals').doc('maintenance')
+      .onSnapshot((doc) => {
+        if (!doc.exists) return;
+        const data = doc.data();
+        if (data.enabled) {
+          const username = GameEngine.activeUsername;
+          const isAdmin = (username === 'FoolosAdmin_X99' || (GameEngine.state && GameEngine.state.isAdmin));
+          if (!isAdmin) {
+            handleMaintenanceMode(data.message);
+          }
+        } else {
+          hideMaintenanceOverlay();
+        }
+      }, (err) => console.error("Maintenance listen err: ", err));
+    activeListeners.push(unsubMaintenance);
+
+    // 3. Airdrop Listener
+    let lastAirdropTime = Date.now();
+    const unsubAirdrop = db.collection('globals').doc('airdrop')
+      .onSnapshot(async (doc) => {
+        if (!doc.exists) return;
+        const data = doc.data();
+        if (data.timestamp > lastAirdropTime) {
+          lastAirdropTime = data.timestamp;
+          const s = GameEngine.state;
+          s.cash += data.amount;
+          GameEngine.forceSaveState();
+          showToast('مكافأة عامة', `استلمت مكافأة عامة بقيمة +${data.amount.toLocaleString()} EGP!`, 'success');
+          renderAll();
+        }
+      }, (err) => console.error("Airdrop listen err: ", err));
+    activeListeners.push(unsubAirdrop);
+
+    // 3. User document listener for ban & external edits
+    const unsubUser = db.collection('players').doc(username)
+      .onSnapshot((doc) => {
+        if (!doc.exists) return;
+        const data = doc.data();
+
+        // Ban check
+        if (data.isBanned) {
+          unsubUser();
+          handleBannedUser();
+          return;
+        }
+
+        // External balance/jail modification
+        const s = GameEngine.state;
+        let modified = false;
+        if (data.cash !== undefined && data.cash !== s.cash) {
+          s.cash = data.cash;
+          modified = true;
+        }
+        if (data.bank !== undefined && data.bank !== s.bank) {
+          s.bank = data.bank;
+          modified = true;
+        }
+        if (data.jailTimer !== undefined && data.jailTimer !== s.jailTimer) {
+          s.jailTimer = data.jailTimer;
+          modified = true;
+        }
+
+        if (modified) {
+          GameEngine.forceSaveState();
+          showToast('إشعار النظام', 'تم تحديث بيانات حسابك من قبل الإدارة.', 'info');
+          renderAll();
+        }
+      }, (err) => console.error("User doc listen err: ", err));
+    activeListeners.push(unsubUser);
+  }
+
+  async function checkMaintenanceMode() {
+    try {
+      const status = await AppDB.getMaintenanceStatus();
+      if (status && status.enabled) {
+        const username = localStorage.getItem('foolos_active_session_user') || GameEngine.activeUsername;
+        const isAdmin = (username === 'FoolosAdmin_X99' || (GameEngine.state && GameEngine.state.isAdmin));
+        if (!isAdmin) {
+          handleMaintenanceMode(status.message);
+          return true;
+        }
+      }
+    } catch (e) { console.warn('Maintenance check err:', e); }
+    return false;
+  }
+
+  function handleMaintenanceMode(customMsg) {
+    const maintOverlay = document.getElementById('maintenance-overlay');
+    const mainGameLayout = document.getElementById('main-game-layout');
+    const authScreen = document.getElementById('auth-screen');
+    const msgText = document.getElementById('maintenance-msg-text');
+    if (maintOverlay) maintOverlay.classList.remove('hidden');
+    if (mainGameLayout) mainGameLayout.classList.add('hidden');
+    if (authScreen) authScreen.classList.add('hidden');
+    if (msgText && customMsg) msgText.textContent = customMsg;
+  }
+
+  function hideMaintenanceOverlay() {
+    const maintOverlay = document.getElementById('maintenance-overlay');
+    if (maintOverlay) maintOverlay.classList.add('hidden');
+  }
+
+  function updateMaintenanceUIState(isMaint) {
+    const badge = document.getElementById('admin-maintenance-badge');
+    const toggleBtn = document.getElementById('btn-admin-toggle-maintenance');
+    if (badge) {
+      if (isMaint) {
+        badge.textContent = 'وضع الصيانة نشط 🚨';
+        badge.className = 'text-[10px] px-2 py-0.5 bg-rose-500/20 text-rose-400 rounded border border-rose-500/30 font-bold animate-pulse';
+      } else {
+        badge.textContent = 'النظام يعمل بشكل طبيعي';
+        badge.className = 'text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold';
+      }
+    }
+    if (toggleBtn) {
+      if (isMaint) {
+        toggleBtn.textContent = '✅ إنهاء وضع الصيانة والعودة للتشغيل الطبيعي للجميع';
+        toggleBtn.className = 'w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-emerald-600/20';
+      } else {
+        toggleBtn.textContent = '🚨 إغلاق اللعبة وتفعيل وضع الصيانة الشامل للجميع';
+        toggleBtn.className = 'w-full py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-600/10';
+      }
+    }
+  }
+
+  function handleBannedUser() {
+    const banOverlay = document.getElementById('ban-overlay');
+    const mainGameLayout = document.getElementById('main-game-layout');
+    const authScreen = document.getElementById('auth-screen');
+    if (banOverlay) banOverlay.classList.remove('hidden');
+    if (mainGameLayout) mainGameLayout.classList.add('hidden');
+    if (authScreen) authScreen.classList.add('hidden');
+    performLogout(false);
+  }
+
+  function performLogout(showToastMsg = true) {
+    activeListeners.forEach(unsub => unsub());
+    activeListeners = [];
+    localStorage.removeItem('foolos_active_session_user');
+    GameEngine.logoutUser();
+    document.getElementById('auth-screen').classList.remove('hidden');
+    document.getElementById('main-game-layout').classList.add('hidden');
+    if (showToastMsg) {
+      showToast('تسجيل الخروج', 'تم تسجيل خروجك بنجاح وحفظ بيانات المحفظة.', 'info');
+    }
+  }
+
+  function setupAdminModal() {
+    const trigger = document.getElementById('btn-admin-panel-trigger');
+    const modal = document.getElementById('admin-panel-modal');
+    const closeBtn = document.getElementById('btn-admin-modal-close');
+
+    if (!trigger || !modal || !closeBtn) return;
+
+    // Trigger panel open
+    trigger.addEventListener('click', () => {
+      modal.classList.remove('hidden');
+      switchAdminTab('stats');
+    });
+
+    // Close panel
+    closeBtn.addEventListener('click', () => {
+      modal.classList.add('hidden');
+    });
+
+    // Tabs logic - bind all 6 subtabs
+    const tabs = ['stats', 'transfers', 'players', 'market', 'broadcast', 'system'];
+    tabs.forEach(t => {
+      const tabEl = document.getElementById(`tab-admin-${t}`);
+      if (tabEl) {
+        tabEl.addEventListener('click', () => {
+          switchAdminTab(t);
+        });
+      }
+    });
+
+    // Search Player logic
+    let searchedUser = null;
+    let searchedUserState = null;
+    const searchBtn = document.getElementById('btn-admin-search');
+    const searchInput = document.getElementById('admin-search-user');
+    const resultBox = document.getElementById('admin-player-result');
+
+    if (searchBtn && searchInput && resultBox) {
+      searchBtn.addEventListener('click', async () => {
+        const q = searchInput.value.trim();
+        if (!q) {
+          showToast('بحث الإدارة', 'يرجى إدخال اسم المستخدم للبحث.', 'error');
+          return;
+        }
+        try {
+          const state = await AppDB.adminGetPlayer(q);
+          searchedUser = q;
+          searchedUserState = state;
+
+          document.getElementById('admin-p-username').textContent = q;
+          document.getElementById('admin-p-worth').textContent = (state.netWorth || 0).toLocaleString();
+          document.getElementById('admin-p-cash').textContent = (state.cash || 0).toLocaleString();
+          document.getElementById('admin-p-bank').textContent = (state.bank || 0).toLocaleString();
+          document.getElementById('admin-p-jail').textContent = (state.jailTimer > 0) ? `سجين (${state.jailTimer}ث)` : 'حر طليق';
+          document.getElementById('admin-p-banned').textContent = state.isBanned ? 'محظور 🚫' : 'نشط';
+
+          document.getElementById('admin-input-cash').value = state.cash || 0;
+          document.getElementById('admin-input-bank').value = state.bank || 0;
+
+          resultBox.classList.remove('hidden');
+          logAdminAction(`تم البحث عن اللاعب: ${q}`);
+        } catch (err) {
+          resultBox.classList.add('hidden');
+          showToast('بحث الإدارة', err.message, 'error');
+        }
+      });
+    }
+
+    // Save Balance Action
+    const updateMoneyBtn = document.getElementById('btn-admin-update-money');
+    if (updateMoneyBtn) {
+      updateMoneyBtn.addEventListener('click', async () => {
+        if (!searchedUser || !searchedUserState) return;
+        const newCash = Number(document.getElementById('admin-input-cash').value);
+        const newBank = Number(document.getElementById('admin-input-bank').value);
+        try {
+          searchedUserState.cash = newCash;
+          searchedUserState.bank = newBank;
+          
+          // Recalculate netWorth on player state
+          let worth = newCash + newBank;
+          if (searchedUserState.assets) {
+            Object.keys(searchedUserState.assets).forEach(k => {
+              if (GameEngine.ASSETS[k]) worth += searchedUserState.assets[k] * GameEngine.ASSETS[k].cost;
+            });
+          }
+          if (searchedUserState.stocks) {
+            Object.keys(searchedUserState.stocks).forEach(sym => {
+              const shares = searchedUserState.stocks[sym].shares || 0;
+              const history = GameEngine.stockPrices[sym] || [GameEngine.STOCKS[sym].basePrice];
+              const currentPrice = history[history.length - 1];
+              worth += shares * currentPrice;
+            });
+          }
+          if (searchedUserState.investments) {
+            searchedUserState.investments.forEach(inv => worth += inv.investedAmount);
+          }
+          searchedUserState.netWorth = worth;
+
+          await AppDB.adminSavePlayer(searchedUser, searchedUserState);
+          showToast('إشراف الرصيد', 'تم حفظ وتحديث رصيد اللاعب بنجاح.', 'success');
+          
+          // Update view
+          document.getElementById('admin-p-cash').textContent = newCash.toLocaleString();
+          document.getElementById('admin-p-bank').textContent = newBank.toLocaleString();
+          document.getElementById('admin-p-worth').textContent = worth.toLocaleString();
+
+          logAdminAction(`تعديل رصيد اللاعب ${searchedUser} إلى: كاش ${newCash}، بنك ${newBank}`);
+        } catch (err) {
+          showToast('خطأ إشرافي', err.message, 'error');
+        }
+      });
+    }
+
+    // Release Jail Action
+    const releaseJailBtn = document.getElementById('btn-admin-release-jail');
+    if (releaseJailBtn) {
+      releaseJailBtn.addEventListener('click', async () => {
+        if (!searchedUser) return;
+        try {
+          await AppDB.adminReleaseJail(searchedUser);
+          showToast('إفراج إداري', `تم العفو المالي والإفراج عن اللاعب ${searchedUser} بنجاح.`, 'success');
+          document.getElementById('admin-p-jail').textContent = 'حر طليق';
+          logAdminAction(`إفراج قانوني وعفو عن اللاعب: ${searchedUser}`);
+        } catch (err) {
+          showToast('خطأ إشرافي', err.message, 'error');
+        }
+      });
+    }
+
+    // Ban Action
+    const banBtn = document.getElementById('btn-admin-ban');
+    if (banBtn) {
+      banBtn.addEventListener('click', async () => {
+        if (!searchedUser) return;
+        if (!confirm(`هل أنت متأكد من حظر حساب اللاعب ${searchedUser} نهائياً؟`)) return;
+        try {
+          await AppDB.adminBanPlayer(searchedUser);
+          showToast('حظر الإدارة', `تم حظر حساب اللاعب ${searchedUser} نهائياً.`, 'success');
+          document.getElementById('admin-p-banned').textContent = 'محظور 🚫';
+          logAdminAction(`حظر نهائي لحساب اللاعب: ${searchedUser}`);
+        } catch (err) {
+          showToast('خطأ حظر', err.message, 'error');
+        }
+      });
+    }
+
+    // Send Broadcast
+    const sendBroadcastBtn = document.getElementById('btn-admin-send-broadcast');
+    if (sendBroadcastBtn) {
+      sendBroadcastBtn.addEventListener('click', async () => {
+        const msg = document.getElementById('admin-broadcast-msg').value.trim();
+        if (!msg) {
+          showToast('بث الإدارة', 'يرجى كتابة نص الرسالة أولاً.', 'error');
+          return;
+        }
+        try {
+          await AppDB.sendBroadcast(msg);
+          if (AppDB.isFirebaseReady) {
+            showToast('نجاح البث', 'تم إرسال البث لجميع المشتركين بنجاح.', 'success');
+          } else {
+            showToast('بث محلي', `[بدون إنترنت] الرسالة ستُرسل عند الاتصال: "${msg}"`, 'info');
+          }
+          document.getElementById('admin-broadcast-msg').value = '';
+          logAdminAction(`إرسال إشعار عام: "${msg}"`);
+        } catch (err) {
+          showToast('فشل البث', err.message, 'error');
+        }
+      });
+    }
+
+    // Maintenance Mode Toggle Button
+    const maintToggleBtn = document.getElementById('btn-admin-toggle-maintenance');
+    if (maintToggleBtn) {
+      // Refresh badge state on load
+      AppDB.getMaintenanceStatus().then(st => {
+        updateMaintenanceUIState(st && st.enabled);
+      });
+
+      maintToggleBtn.addEventListener('click', async () => {
+        const currentSt = await AppDB.getMaintenanceStatus();
+        const nextState = !Boolean(currentSt && currentSt.enabled);
+        
+        const confirmMsg = nextState 
+          ? "هل أنت متأكد من رغبتك في إغلاق اللعبة وتفعيل وضع الصيانة لجميع اللاعبين؟"
+          : "هل تريد إنهاء وضع الصيانة وإتاحة اللعبة للجميع مجدداً؟";
+
+        if (!confirm(confirmMsg)) return;
+
+        try {
+          await AppDB.setMaintenanceMode(nextState);
+          updateMaintenanceUIState(nextState);
+          if (nextState) {
+            showToast('وضع الصيانة نشط', 'تم إغلاق الخوادم واللعبة ورسم شاشة الصيانة لجميع اللاعبين.', 'warning');
+            logAdminAction('تفعيل وضع الصيانة الفنية الشاملة وإغلاق الخوادم');
+          } else {
+            showToast('إنهاء الصيانة', 'تم إنهاء وضع الصيانة وفتح الخوادم للجميع.', 'success');
+            logAdminAction('إلغاء وضع الصيانة وإعادة فتح الخوادم للجميع');
+          }
+        } catch (err) {
+          showToast('فشل وضع الصيانة', err.message, 'error');
+        }
+      });
+    }
+
+    // Send Airdrop
+    const sendAirdropBtn = document.getElementById('btn-admin-send-airdrop');
+    if (sendAirdropBtn) {
+      sendAirdropBtn.addEventListener('click', async () => {
+        const amount = Number(document.getElementById('admin-airdrop-amount').value);
+        if (isNaN(amount) || amount <= 0) {
+          showToast('مكافأة الإدارة', 'يرجى إدخال مبلغ صحيح أكبر من صفر.', 'error');
+          return;
+        }
+        try {
+          await AppDB.sendAirdrop(amount);
+          if (AppDB.isFirebaseReady) {
+            showToast('نجاح التوزيع', 'تم توزيع المكافأة العامة على جميع اللاعبين بنجاح.', 'success');
+          } else {
+            showToast('مكافأة محلية', `[بدون إنترنت] ستُرسل المكافأة (+${amount} EGP) عند الاتصال.`, 'info');
+          }
+          document.getElementById('admin-airdrop-amount').value = '';
+          logAdminAction(`توزيع مكافأة عامة بقيمة: +${amount} EGP`);
+        } catch (err) {
+          showToast('فشل التوزيع', err.message, 'error');
+        }
+      });
+    }
+
+    // Wipe Leaderboard
+    const wipeLeaderboardBtn = document.getElementById('btn-admin-wipe-leaderboard');
+    if (wipeLeaderboardBtn) {
+      wipeLeaderboardBtn.addEventListener('click', async () => {
+        if (!confirm("تحذير: هل أنت متأكد من تصفير قائمة المتصدرين ومسح جميع الحسابات عدا حساب الإدارة؟")) return;
+        try {
+          await AppDB.adminWipeLeaderboard();
+          showToast('مسح المتصدرين', 'تم إعادة ضبط قائمة المتصدرين ومسح البيانات بنجاح.', 'success');
+          renderAll();
+          logAdminAction('إعادة ضبط وتصفير قائمة المتصدرين واللاعبين');
+        } catch (err) {
+          showToast('خطأ ضبط', err.message, 'error');
+        }
+      });
+    }
+
+    // Refresh Leaderboard / Cache
+    const refreshLeaderboardBtn = document.getElementById('btn-admin-refresh-leaderboard');
+    if (refreshLeaderboardBtn) {
+      refreshLeaderboardBtn.addEventListener('click', async () => {
+        try {
+          renderAll();
+          showToast('تحديث كاش', 'تم تحديث قائمة المتصدرين والبورصة بنجاح.', 'success');
+          logAdminAction('تحديث كاش البورصة والمتصدرين يدوياً');
+        } catch (err) {
+          showToast('خطأ تحديث', err.message, 'error');
+        }
+      });
+    }
+
+    // Admin Event Triggers Buttons
+    const eventBtns = document.querySelectorAll('.btn-admin-trigger-event');
+    eventBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const evType = btn.getAttribute('data-event');
+        const eventsMap = {
+          tech_boom: {
+            title: '🚀 طفرة تقنية وانتعاش الذكاء الاصطناعي',
+            desc: 'ارتفعت أرباح شركة فوري وصندوق CASH نتيجة استثمارات هائلة في الذكاء الاصطناعي!',
+            targetStocks: ['FWRY', 'CASH'],
+            multiplier: 1.25,
+            toastType: 'success'
+          },
+          cbe_rate_hike: {
+            title: '🏛️ قرار المركزي: رفع الفائدة 200 نقطة',
+            desc: 'البنك المركزي يرفع الفائدة! ارتفاع قوي لسهم CIB وانتكاسة خفيفة باقي الأسهم.',
+            targetStocks: ['COMI'],
+            multiplier: 1.30,
+            negativeTargets: ['EAST', 'FWRY'],
+            negativeMultiplier: 0.88,
+            toastType: 'warning'
+          },
+          telecom_expansion: {
+            title: '📶 رخصة 5G للمصرية للاتصالات',
+            desc: 'حصول المصرية للاتصالات على رخصة الجيل الخامس تطلق موجة شراء قياسية!',
+            targetStocks: ['ETEL'],
+            multiplier: 1.35,
+            toastType: 'success'
+          },
+          tobacco_monopoly: {
+            title: '🚬 اتفاقية احتكار وتصدير للشرقية للدخان',
+            desc: 'توقع عقد احتكاري ضخم لتصدير المنتجات للشرق الأوسط يطير بالسهم فوق 40%!',
+            targetStocks: ['EAST'],
+            multiplier: 1.40,
+            toastType: 'success'
+          },
+          tech_hack_scandal: {
+            title: '⚠️ ثغرة وأزمة حماية لشركة فوري',
+            desc: 'تسريب وتوقف خدمات الدفع الإلكتروني يتسبب بموجة بيع مكثفة ومخاوف استثمارية!',
+            targetStocks: ['FWRY'],
+            multiplier: 0.70,
+            toastType: 'error'
+          },
+          rate_cut_rally: {
+            title: '📈 خفض الفائدة وانتعاش حركة الاستثمار',
+            desc: 'البنك المركزي يخفض الفائدة لدعم حركة التجارة والإنتاج! صعود متزامن لكل الأسهم.',
+            targetStocks: ['COMI', 'FWRY', 'CASH', 'EAST', 'ETEL'],
+            multiplier: 1.20,
+            toastType: 'success'
+          },
+          oil_scandal: {
+            title: '📉 أزمة سلاسل الإمداد والشحن',
+            desc: 'تأخر شحنات التبغ والمواد الخام يؤدي لربكة ومبيعات مكثفة على سهم الشرقية للدخان!',
+            targetStocks: ['EAST'],
+            multiplier: 0.75,
+            toastType: 'error'
+          },
+          market_crash: {
+            title: '💥 ذعر اقتصادي وتصحيح هابط للبورصة',
+            desc: 'موجة بيع جني أرباح مكثفة تهبط بأغلب أسهم السوق بنسب متفاوتة!',
+            targetStocks: ['COMI', 'FWRY', 'CASH', 'EAST', 'ETEL'],
+            multiplier: 0.85,
+            toastType: 'error'
+          }
+        };
+
+        const ev = eventsMap[evType];
+        if (!ev) return;
+
+        ev.targetStocks.forEach(sym => {
+          if (GameEngine.stockPrices[sym]) {
+            const lastP = GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1];
+            const newP = Math.max(GameEngine.STOCKS[sym].floor, Math.floor(lastP * ev.multiplier));
+            GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1] = newP;
+          }
+        });
+
+        if (ev.negativeTargets) {
+          ev.negativeTargets.forEach(sym => {
+            if (GameEngine.stockPrices[sym]) {
+              const lastP = GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1];
+              const newP = Math.max(GameEngine.STOCKS[sym].floor, Math.floor(lastP * ev.negativeMultiplier));
+              GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1] = newP;
+            }
+          });
+        }
+
+        showToast(ev.title, ev.desc, ev.toastType || 'info');
+        const ticker = document.getElementById('stock-market-news-ticker');
+        if (ticker) {
+          ticker.textContent = `${ev.title}: ${ev.desc}`;
+        }
+        logAdminAction(`افتعال حدث اقتصادي: ${ev.title}`);
+        renderAll();
+      });
+    });
+
+    // Refresh transfers audit button
+    const refreshTransfersBtn = document.getElementById('btn-admin-refresh-transfers');
+    if (refreshTransfersBtn) {
+      refreshTransfersBtn.addEventListener('click', () => {
+        renderAdminTransfersMonitor();
+        showToast('تحديث التحويلات', 'تم جلب أحدث سجلات التحويلات المالية.', 'success');
+      });
+    }
+  }
+
+  async function renderAdminAnalyticsDashboard() {
+    try {
+      const stats = await AppDB.getSystemStats();
+      document.getElementById('adm-stat-players').textContent = stats.totalPlayers.toLocaleString();
+      document.getElementById('adm-stat-cash').textContent = `${stats.totalCash.toLocaleString()} EGP`;
+      document.getElementById('adm-stat-bank').textContent = `${stats.totalBank.toLocaleString()} EGP`;
+      document.getElementById('adm-stat-networth').textContent = `${stats.totalNetWorth.toLocaleString()} EGP`;
+      document.getElementById('adm-stat-jailed').textContent = stats.jailedCount.toLocaleString();
+      document.getElementById('adm-stat-banned').textContent = stats.bannedCount.toLocaleString();
+      logAdminAction(`تم تحديث لوحة الإحصائيات الشاملة — إجمالي الحسابات: ${stats.totalPlayers} | الثروة المنظومية: ${stats.totalNetWorth.toLocaleString()} EGP`);
+    } catch (e) {
+      console.warn('[Admin Dashboard] Failed to load stats:', e);
+    }
+  }
+
+  async function renderAdminTransfersMonitor() {
+    const tbody = document.getElementById('admin-transfers-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    try {
+      const transfers = await AppDB.adminGetTransfers();
+      if (!transfers || transfers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500">لا يوجد عمليات تحويل مالية مسجلة حالياً.</td></tr>`;
+        return;
+      }
+
+      transfers.forEach(trf => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-900/50 transition';
+        const dateStr = new Date(trf.timestamp).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        tr.innerHTML = `
+          <td class="py-2.5 font-bold text-white">${trf.sender}</td>
+          <td class="py-2.5 font-bold text-yellow-400">${trf.recipient}</td>
+          <td class="py-2.5 text-center numbers-font font-bold text-emerald-400">+${trf.amount.toLocaleString()} EGP</td>
+          <td class="py-2.5 text-center numbers-font text-slate-400">${dateStr}</td>
+          <td class="py-2.5 text-left"><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-semibold text-[10px]">${trf.status || 'مكتملة'}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-400">فشل تحميل سجل التحويلات.</td></tr>`;
+    }
+  }
+
+  function switchAdminTab(tabId) {
+    const subtabs = ['stats', 'transfers', 'players', 'market', 'broadcast', 'system'];
+    subtabs.forEach(t => {
+      const btn = document.getElementById(`tab-admin-${t}`);
+      const panel = document.getElementById(`admin-subpanel-${t}`);
+      if (!btn || !panel) return;
+      if (t === tabId) {
+        btn.classList.add('border-yellow-500', 'text-yellow-500');
+        btn.classList.remove('border-transparent', 'text-slate-400');
+        panel.classList.remove('hidden');
+      } else {
+        btn.classList.remove('border-yellow-500', 'text-yellow-500');
+        btn.classList.add('border-transparent', 'text-slate-400');
+        panel.classList.add('hidden');
+      }
+    });
+
+    if (tabId === 'stats') {
+      renderAdminAnalyticsDashboard();
+    } else if (tabId === 'transfers') {
+      renderAdminTransfersMonitor();
+    }
+  }
+
+  function logAdminAction(msg) {
+    const targets = [
+      document.getElementById('admin-action-logs'),
+      document.getElementById('admin-stats-live-log')
+    ];
+
+    const time = new Date().toLocaleTimeString('ar-EG');
+    targets.forEach(logBox => {
+      if (!logBox) return;
+      if (logBox.innerHTML.includes("لا يوجد عمليات مسجلة") || logBox.innerHTML.includes("Dyn live logs")) {
+        logBox.innerHTML = '';
+      }
+      const entry = document.createElement('div');
+      entry.className = 'border-b border-slate-900/50 pb-1 mb-1';
+      entry.innerHTML = `<span class="text-yellow-500 font-bold ml-1">[${time}]</span> ${msg}`;
+      logBox.insertBefore(entry, logBox.firstChild);
+    });
+  }
+
+  return {
+    init,
+    switchTab,
+    showToast
+  };
+})();
+
+// Export globally
+window.UIController = UIController;

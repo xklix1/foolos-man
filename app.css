@@ -1,0 +1,393 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+/* --- Core Spatial Grid & Typography System --- */
+:root {
+  --grid-unit: 8px;
+  --transition-bezier: cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-duration: 350ms;
+}
+
+body {
+  font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+  background-color: #03050c;
+  background-image: 
+    radial-gradient(circle at 80% 20%, rgba(234, 179, 8, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 10% 80%, rgba(16, 185, 129, 0.02) 0%, transparent 50%);
+  color: #f8fafc;
+  user-select: none;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* Cairo for headings & titles */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Cairo', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* Outfit for financial values */
+.numbers-font {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #05070f;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 99px;
+  transition: background var(--transition-duration) var(--transition-bezier);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* --- Refined Executive Glassmorphism & Shadow Architecture --- */
+.glass-panel {
+  background: rgba(13, 18, 33, 0.45) !important;
+  backdrop-filter: blur(20px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+  border-radius: 16px;
+  transition: 
+    transform var(--transition-duration) var(--transition-bezier),
+    border-color var(--transition-duration) var(--transition-bezier),
+    box-shadow var(--transition-duration) var(--transition-bezier),
+    background-color var(--transition-duration) var(--transition-bezier);
+}
+
+.glass-panel:hover {
+  background: rgba(18, 25, 46, 0.55) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+.glass-panel-active {
+  background: rgba(234, 179, 8, 0.06) !important;
+  border-color: rgba(234, 179, 8, 0.3) !important;
+  box-shadow: 
+    0 0 25px rgba(234, 179, 8, 0.08),
+    inset 0 0 8px rgba(234, 179, 8, 0.03) !important;
+  color: #eab308 !important;
+}
+
+.glass-input {
+  background: rgba(5, 7, 13, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  color: #f8fafc !important;
+  border-radius: 12px;
+  transition: all var(--transition-duration) var(--transition-bezier);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.glass-input:focus {
+  background: rgba(5, 7, 13, 0.85) !important;
+  border-color: rgba(234, 179, 8, 0.4) !important;
+  box-shadow: 
+    0 0 15px rgba(234, 179, 8, 0.12),
+    inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  outline: none;
+}
+
+/* Override tailwind default dark borders to match refined glassmorphism */
+.border-slate-800,
+.border-slate-800\/80,
+.border-slate-800\/50,
+.border-slate-800\/40,
+.border-slate-800\/60,
+.border-slate-700 {
+  border-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.bg-slate-950\/40,
+.bg-slate-950\/60,
+.bg-slate-950\/80,
+.bg-slate-900\/10 {
+  background-color: rgba(5, 7, 15, 0.45) !important;
+}
+
+/* --- Dynamic Feedback & Glowing Highlights --- */
+.glow-gold {
+  text-shadow: 0 0 12px rgba(234, 179, 8, 0.45);
+}
+
+.glow-emerald {
+  text-shadow: 0 0 12px rgba(16, 185, 129, 0.45);
+}
+
+.glow-rose {
+  text-shadow: 0 0 12px rgba(244, 63, 94, 0.45);
+}
+
+/* --- Interactive States & Animation System --- */
+button, 
+.nav-tab-btn, 
+.btn-invest-start, 
+.glass-panel input[type="radio"] {
+  cursor: pointer;
+  transition: 
+    transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:hover:not(:disabled),
+.btn-invest-start:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+button:active:not(:disabled),
+.btn-invest-start:active:not(:disabled) {
+  transform: translateY(1px) scale(0.97);
+}
+
+/* Smooth Navigation Tab Hover Effect */
+.nav-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.03) !important;
+  color: #ffffff;
+  transform: translateX(-2px);
+}
+
+/* Gold Button Special Styles */
+.bg-yellow-500 {
+  background-color: #eab308 !important;
+  box-shadow: 0 4px 15px rgba(234, 179, 8, 0.15);
+  transition: all var(--transition-duration) var(--transition-bezier);
+}
+.bg-yellow-500:hover {
+  background-color: #facc15 !important;
+  box-shadow: 0 6px 20px rgba(234, 179, 8, 0.3) !important;
+}
+
+/* Emerald Button Special Styles */
+.bg-emerald-600 {
+  background-color: #059669 !important;
+  box-shadow: 0 4px 15px rgba(5, 150, 105, 0.15);
+  transition: all var(--transition-duration) var(--transition-bezier);
+}
+.bg-emerald-600:hover {
+  background-color: #10b981 !important;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Rose Action Styles */
+.bg-rose-500\/10 {
+  background-color: rgba(244, 63, 94, 0.05) !important;
+  border-color: rgba(244, 63, 94, 0.15) !important;
+}
+
+/* --- Keyframe Animations --- */
+@keyframes pulse-gold {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(234, 179, 8, 0.15);
+    border-color: rgba(234, 179, 8, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(234, 179, 8, 0.45);
+    border-color: rgba(234, 179, 8, 0.45);
+  }
+}
+
+.pulse-border-gold {
+  animation: pulse-gold 2.5s infinite var(--transition-bezier);
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(10px) scale(0.95);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-50px) scale(0.85);
+    opacity: 0;
+  }
+}
+
+.animate-float {
+  animation: float-up 1500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes flash-red {
+  0%, 100% {
+    background-color: rgba(244, 63, 94, 0.05);
+    box-shadow: inset 0 0 20px rgba(244, 63, 94, 0.05);
+  }
+  50% {
+    background-color: rgba(244, 63, 94, 0.2);
+    box-shadow: inset 0 0 40px rgba(244, 63, 94, 0.15);
+  }
+}
+
+.animate-flash-red {
+  animation: flash-red 1.2s ease-in-out infinite;
+}
+
+@keyframes ticker-slide {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(50%);
+  }
+}
+
+.ticker-wrap {
+  overflow: hidden;
+  width: 100%;
+}
+
+.ticker-content {
+  display: flex;
+  width: max-content;
+  animation: ticker-slide 30s linear infinite;
+}
+
+.crash-rocket {
+  transition: transform 0.1s linear;
+}
+
+/* --- Layout Grid Configurations --- */
+@media (min-width: 1024px) {
+  .desktop-sidebar {
+    width: 290px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 40;
+    border-radius: 0 !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.04) !important;
+    border-right: none !important;
+    overflow-y: auto;
+  }
+  .desktop-content {
+    margin-right: 290px;
+    width: calc(100% - 290px);
+    height: 100vh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 1023px) {
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    height: 64px;
+    border-radius: 20px 20px 0 0 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: rgba(5, 7, 15, 0.92) !important;
+    backdrop-filter: blur(24px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(140%) !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .mobile-bottom-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .mobile-bottom-nav .nav-tab-btn {
+    min-width: 58px;
+    padding: 4px 6px;
+    flex-shrink: 0;
+  }
+  .mobile-content {
+    padding-bottom: 84px;
+  }
+  /* Mobile padding & touch friendliness */
+  .game-panel {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .glass-panel {
+    border-radius: 14px;
+  }
+}
+
+/* --- Refined Sub-cards inside Panels --- */
+.game-panel .bg-slate-950\/50,
+.game-panel .p-4.bg-slate-950\/40,
+.p-4.bg-slate-950\/40,
+.p-4.bg-slate-950\/60,
+.bg-slate-950\/50 {
+  background: rgba(8, 10, 20, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.03) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02), 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+  border-radius: 12px;
+}
+
+/* Glow Borders */
+.glow-border-gold {
+  box-shadow: 0 0 15px rgba(234, 179, 8, 0.15) !important;
+  border-color: rgba(234, 179, 8, 0.3) !important;
+}
+.glow-border-emerald {
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+.glow-border-rose {
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.15) !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+
+/* Deep Blurred Auth Screen */
+#auth-screen {
+  background: rgba(3, 5, 12, 0.82) !important;
+  backdrop-filter: blur(24px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(120%) !important;
+}
+
+/* Custom styled inputs */
+input[type="range"] {
+  height: 6px;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 99px;
+  background: #eab308;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+  transition: transform 0.1s var(--transition-bezier);
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Rose Button Disabled Style */
+.bg-rose-600:disabled {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.02) !important;
+  box-shadow: none !important;
+  cursor: not-allowed;
+}

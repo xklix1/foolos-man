@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>فلوس مان تايكون | Foolos Man Tycoon</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            darkbg: '#05070f',
+            cardbg: '#111827',
+            gold: {
+              DEFAULT: '#eab308',
+              50: '#fefce8',
+              100: '#fef9c3',
+              200: '#fef08a',
+              300: '#fde047',
+              400: '#facc15',
+              500: '#eab308',
+              600: '#ca8a04',
+              700: '#a16207',
+              800: '#854d0e',
+              900: '#713f12',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Custom App Stylesheet -->
+  <link rel="stylesheet" href="app.css?v=8">
+  
+  <!-- Firebase Compatibility SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-darkbg text-slate-100 min-h-screen relative">
+
+  <!-- ==================== FORCE UPDATE OVERLAY ==================== -->
+  <!-- Hidden by default; shown by JS when version is outdated -->
+  <div id="force-update-overlay" class="fixed inset-0 z-[200] hidden items-center justify-center bg-black/90 backdrop-blur-lg p-4">
+    <div class="w-full max-w-sm bg-slate-950 border border-yellow-500/40 rounded-2xl p-8 text-center shadow-2xl shadow-yellow-500/10">
+      <!-- Icon -->
+      <div class="w-16 h-16 mx-auto mb-5 rounded-full bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center">
+        <svg class="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+      </div>
+      <!-- Title -->
+      <h2 class="text-xl font-black text-white mb-1">تحديث إجباري مطلوب</h2>
+      <p class="text-xs text-yellow-500 font-bold tracking-widest mb-4 numbers-font">FORCE UPDATE REQUIRED</p>
+      <p class="text-sm text-slate-400 mb-2 leading-relaxed">
+        إصدار جديد من اللعبة متاح الآن. يجب تحديث التطبيق للاستمرار في اللعب والحفاظ على بياناتك.
+      </p>
+      <!-- Version info -->
+      <div class="flex justify-between text-[11px] text-slate-500 bg-slate-900 rounded-lg px-4 py-2 mb-6 numbers-font border border-slate-800">
+        <span>إصدارك الحالي: <span id="fu-client-ver" class="text-rose-400 font-bold">—</span></span>
+        <span>الإصدار الجديد: <span id="fu-remote-ver" class="text-emerald-400 font-bold">—</span></span>
+      </div>
+      <!-- Update Button -->
+      <button
+        id="btn-force-update"
+        class="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-xl transition-all duration-300 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        تحديث الآن
+      </button>
+      <p class="text-[10px] text-slate-600 mt-3">سيتم إعادة تحميل اللعبة تلقائياً لجلب أحدث إصدار</p>
+    </div>
+  </div>
+
+  <!-- ==================== CONNECTIVITY STATUS BADGE ==================== -->
+  <!-- Small floating badge showing online/offline + sync state -->
+  <div id="connectivity-badge" class="fixed bottom-4 left-4 z-[150] hidden items-center gap-1.5 bg-slate-900/90 border border-slate-700 rounded-full px-3 py-1.5 text-[10px] backdrop-blur-md shadow-lg transition-all duration-500">
+    <span id="conn-dot" class="w-2 h-2 rounded-full bg-slate-500 inline-block"></span>
+    <span id="conn-label" class="text-slate-400 font-medium">...</span>
+  </div>
+
+  <!-- ==================== AUTHENTICATION OVERLAY ==================== -->
+  <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+    <div class="glass-panel w-full max-w-md p-8 rounded-2xl border border-slate-800 text-center flex flex-col justify-center items-center">
+      <div class="w-16 h-16 bg-yellow-500/10 border border-yellow-500/30 rounded-full flex items-center justify-center mb-6">
+        <!-- Shield/Lock SVG -->
+        <svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+        </svg>
+      </div>
+      
+      <h2 id="auth-mode-title" class="text-2xl font-black text-white mb-2">تسجيل الدخول للمحفظة</h2>
+      <p class="text-xs text-slate-400 mb-6">أدخل اسم مستخدم فريد ورمز سري لتأسيس محفظتك وحفظ أرباحك.</p>
+      
+      <!-- Mode Switches -->
+      <div class="flex w-full border-b border-slate-800 mb-6 text-sm">
+        <button id="auth-switch-login" class="flex-1 pb-3 text-center border-b-2 border-yellow-500 text-yellow-500 font-bold transition">تسجيل الدخول</button>
+        <button id="auth-switch-reg" class="flex-1 pb-3 text-center border-b-2 border-transparent text-slate-400 transition">إنشاء حساب جديد</button>
+      </div>
+
+      <!-- Auth Inputs -->
+      <div class="space-y-4 w-full text-right mb-6">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">اسم المستخدم (بالأحرف أو الأرقام)</label>
+          <input type="text" id="auth-username" class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold" placeholder="مثال: abu_shehab" required>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">الرقم السري للمحفظة (PIN)</label>
+          <input type="password" id="auth-pin" class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold tracking-widest" placeholder="••••" required>
+        </div>
+      </div>
+
+      <!-- Submit button -->
+      <button id="auth-submit" class="w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold rounded-lg transition duration-300 flex items-center justify-center gap-2">
+        <span id="auth-action-text">دخول وتزامن الحساب</span>
+        <svg id="auth-spinner" class="hidden animate-spin h-5 w-5 text-slate-950" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== JAIL SYSTEM OVERLAY ==================== -->
+  <div id="jail-overlay" class="hidden fixed inset-0 z-40 bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-md p-8 rounded-2xl border border-rose-500/30 text-center animate-flash-red">
+      <div class="w-20 h-20 bg-rose-500/10 border border-rose-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
+        <!-- Jail/Prison SVG -->
+        <svg class="w-10 h-10 text-rose-500 animate-pulse" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+        </svg>
+      </div>
+      <h2 class="text-2xl font-black text-rose-500 mb-2">أنت رهن الاعتقال القانوني!</h2>
+      <p class="text-xs text-slate-400 mb-6">تم إلقاء القبض عليك متلبساً في تجارة السوق السوداء. الخدمات البنكية والاستثمارات معطلة حالياً.</p>
+      
+      <div class="p-4 bg-slate-950/80 rounded-xl border border-slate-800/80 mb-6 inline-block">
+        <span class="text-xs text-slate-400 block mb-1">الوقت المتبقي للإفراج</span>
+        <span id="jail-countdown" class="numbers-font text-3xl font-black text-white glow-gold">0</span>
+        <span class="text-xs text-slate-400 mr-1">ثانية</span>
+      </div>
+      
+      <p class="text-[10px] text-slate-500">ملاحظة: محامي الدفاع يبذل قصارى جهده، انتظر انتهاء الوقت التلقائي للخروج وممارسة أعمالك الحرة.</p>
+    </div>
+  </div>
+
+  <!-- ==================== MAINTENANCE SYSTEM OVERLAY ==================== -->
+  <div id="maintenance-overlay" class="hidden fixed inset-0 z-[150] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-md p-8 rounded-2xl border border-yellow-500/40 text-center shadow-2xl shadow-yellow-500/10">
+      <div class="w-20 h-20 bg-yellow-500/10 border border-yellow-500/30 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+        <svg class="w-10 h-10 text-yellow-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M11 4a2 2 0 114 0v1a2 2 0 01-2 2 2 2 0 01-2-2V4zm-6 8a2 2 0 114 0v1a2 2 0 01-2 2 2 2 0 01-2-2v-1zm12 4a2 2 0 114 0v1a2 2 0 01-2 2 2 2 0 01-2-2v-1zM4 19h16"></path>
+        </svg>
+      </div>
+      <h2 class="text-2xl font-black text-yellow-400 mb-2">الخوادم رهن الصيانة الفنية!</h2>
+      <p id="maintenance-msg-text" class="text-xs text-slate-300 mb-6 leading-relaxed">تخضع اللعبة حالياً لأعمال تحديث وصيانة طارئة من قبل الإدارة لتحسين الأداء وتأمين الحسابات. يرجى الانتظار والمحاولة لاحقاً.</p>
+      <div class="px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-[11px] text-yellow-400 font-bold mb-4">
+        🛠️ تفعيل وضع الصيانة الشامل بواسطة الأدمن
+      </div>
+      <button onclick="location.reload()" class="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-lg transition shadow-lg shadow-yellow-500/10">
+        إعادة فحص حالة الخادم
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== MAIN GAME SHELL LAYOUT ==================== -->
+  <div id="main-game-layout" class="hidden min-h-screen flex flex-col lg:flex-row">
+    
+    <!-- DESKTOP SIDEBAR / GLOBAL PANEL STATS -->
+    <aside class="desktop-sidebar glass-panel lg:border-l border-slate-800/80 flex flex-col justify-between p-6">
+      <div class="space-y-6">
+        <!-- Logo -->
+        <div class="flex items-center gap-3 border-b border-slate-800 pb-5">
+          <div class="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center text-slate-950 font-black text-xl shadow-md glow-gold">ف</div>
+          <div>
+            <h1 class="text-md font-bold leading-tight text-white">فلوس مان تايكون</h1>
+            <span class="text-[10px] text-slate-400 block mt-0.5">محاكي الاستثمار والاقتصاد الرقمي</span>
+          </div>
+        </div>
+
+        <!-- Player Quick Stats Profile -->
+        <div class="space-y-4">
+          <div class="p-3 bg-slate-950/40 rounded-xl border border-slate-800/50">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-[10px] text-slate-400 block">المحفظة النشطة</span>
+              <button id="btn-user-logout" title="تسجيل الخروج" class="text-[10px] text-rose-400 hover:text-rose-300 font-bold border border-rose-500/30 px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 transition flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                خروج
+              </button>
+            </div>
+            <div class="flex items-center justify-between mb-2">
+              <span id="stat-username" class="text-sm font-bold text-white">تحميل...</span>
+              <span id="stat-title" class="text-[10px] px-2 py-0.5 bg-yellow-500/10 text-yellow-500 rounded border border-yellow-500/20 font-bold">تحميل...</span>
+            </div>
+            <!-- Admin Panel Button (shown only when logged in as admin) -->
+            <button id="btn-admin-panel-trigger" class="hidden w-full py-1.5 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/40 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              لوحة التحكم والإشراف
+            </button>
+          </div>
+
+
+
+          <!-- Financial Stats -->
+          <div class="space-y-3 p-3 bg-slate-950/40 rounded-xl border border-slate-800/50">
+            <div class="flex justify-between items-center border-b border-slate-800/50 pb-2">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="text-xs text-slate-400">سيولة الكاش</span>
+              </div>
+              <span class="numbers-font text-sm font-bold text-yellow-500"><span id="stat-cash">0</span> EGP</span>
+            </div>
+            <div class="flex items-center justify-between border-b border-slate-800/50 pb-2">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path></svg>
+                <span class="text-xs text-slate-400">حساب البنك</span>
+              </div>
+              <span class="numbers-font text-sm font-bold text-emerald-400"><span id="stat-bank">0</span> EGP</span>
+            </div>
+            <div class="flex items-center justify-between pt-1">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                <span class="text-xs text-slate-400 font-bold text-white">إجمالي الثروة</span>
+              </div>
+              <span class="numbers-font text-base font-bold text-yellow-400 glow-gold"><span id="stat-networth">0</span> EGP</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Desktop Navigation Tab Items -->
+        <nav class="hidden lg:flex flex-col gap-1.5">
+          <button data-tab="dashboard" class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+            <span>حسابي</span>
+          </button>
+          <button data-tab="careers" class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            <span>المهن والوظائف</span>
+          </button>
+          <button data-tab="business" class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+            <span>إدارة الأعمال</span>
+          </button>
+          <button data-tab="bank" class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path></svg>
+            <span>البنك والتحويلات</span>
+          </button>
+          <button data-tab="assets" class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <span>ممتلكاتي والعقارات</span>
+          </button>
+          <button data-tab="stocks" class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+            <span>البورصة والأسهم</span>
+          </button>
+          <button data-tab="store" class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+            <span>المتجر والمستودع</span>
+          </button>
+          <button data-tab="blackmarket" class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            <span>السوق السوداء</span>
+          </button>
+          <button data-tab="casino" class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5a2 2 0 10-2 2h2zm0 0H4m8 0h8m-8 0a2 2 0 102 2h-2zm0 0a2 2 0 11-2 2h2z"></path></svg>
+            <span>كازينو التسلية</span>
+          </button>
+          <button data-tab="leaderboard" class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+            <span>توب الأغنياء</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="text-[10px] text-slate-500 border-t border-slate-800 pt-4 text-center">
+        الإصدار 1.0.0 &copy; 2026<br>مؤسسة فلوس مان تايكون المحدودة
+      </div>
+    </aside>
+
+    <!-- CONTENT DISPLAY CONTAINER -->
+    <main class="desktop-content flex-1 p-4 lg:p-8 overflow-y-auto mobile-content">
+      
+      <!-- HEADER QUICK BUTTONS -->
+      <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 bg-slate-900/20 p-4 rounded-xl border border-slate-800/40 backdrop-blur">
+        <div>
+          <h2 class="text-lg font-bold text-white">لوحة العمل والاستثمار</h2>
+          <p class="text-xs text-slate-400 mt-0.5">انقر للعمل، أسس مشاريعك الحرة، ودع الأرباح تصب في محفظتك تلقائياً.</p>
+        </div>
+        
+        <div id="passive-float-spawn" class="relative w-full sm:w-auto">
+          <button id="btn-perform-shift" class="w-full sm:w-auto px-6 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-lg transition duration-300 shadow-lg shadow-yellow-500/10 text-sm">
+            العمل في نوبة وظيفتك الحالية
+          </button>
+        </div>
+      </header>
+
+      <!-- ==================== TABS CONTAINER ==================== -->
+
+      <!-- TAB 1: حسابي (DASHBOARD) -->
+      <section id="panel-dashboard" class="game-panel space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+            <span class="text-xs text-slate-400 block mb-1">اسم الحساب</span>
+            <span id="dash-uid" class="text-xl font-bold text-white">...</span>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+            <span class="text-xs text-slate-400 block mb-1">الرتبة الاجتماعية</span>
+            <span id="dash-title" class="text-xl font-bold text-yellow-500 glow-gold">...</span>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+            <span class="text-xs text-slate-400 block mb-1">الخبرة الكلية المتراكمة</span>
+            <span class="text-xl font-bold text-sky-400"><span id="dash-xp" class="numbers-font">0</span> XP</span>
+          </div>
+        </div>
+
+        <div class="glass-panel p-8 rounded-2xl border border-slate-800">
+          <h3 class="text-lg font-bold text-white mb-6 border-b border-slate-800 pb-3">كشف حساب المحفظة المفصل</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="p-4 bg-slate-950/50 rounded-xl border border-slate-800/80">
+              <span class="text-xs text-slate-400 block mb-2">النقد المتوفر (الكاش)</span>
+              <span id="dash-cash" class="numbers-font text-2xl font-black text-yellow-500">0 EGP</span>
+              <p class="text-[10px] text-slate-500 mt-2">تستخدم السيولة النقدية مباشرة للشراء والاستثمار واللعب.</p>
+            </div>
+            <div class="p-4 bg-slate-950/50 rounded-xl border border-slate-800/80">
+              <span class="text-xs text-slate-400 block mb-2">رصيد حساب الادخار (البنك)</span>
+              <span id="dash-bank" class="numbers-font text-2xl font-black text-emerald-400">0 EGP</span>
+              <p class="text-[10px] text-slate-500 mt-2">تراكم فائدة مركبة تلقائية بمرور الوقت لكل دقيقة.</p>
+            </div>
+            <div class="p-4 bg-slate-950/50 rounded-xl border border-slate-800/80">
+              <span class="text-xs text-slate-400 block mb-2">القيمة الصافية للثروة</span>
+              <span id="dash-worth" class="numbers-font text-2xl font-black text-white glow-gold">0 EGP</span>
+              <p class="text-[10px] text-slate-500 mt-2">المجموع الكلي: كاش + بنك + قيمة عقارات + قيمة أسهم + استثمارات مقفلة.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: مهن (CAREERS) -->
+      <section id="panel-careers" class="game-panel hidden space-y-6">
+        <div class="bg-slate-900/10 p-4 rounded-xl border border-slate-800/40 mb-4">
+          <h3 class="text-md font-bold text-white">سلم الترقية الوظيفي</h3>
+          <p class="text-xs text-slate-400 mt-0.5">اكتسب المزيد من الخبرة (XP) بالضغط على زر "العمل" بالأعلى لتتمكن من الترقية وزيادة الدخل التلقائي.</p>
+        </div>
+        <div id="careers-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dyn list -->
+        </div>
+      </section>
+
+      <!-- TAB 3: الاعمال (BUSINESS TYCOON) -->
+      <section id="panel-business" class="game-panel hidden space-y-6">
+        <div class="bg-slate-900/10 p-4 rounded-xl border border-slate-800/40 mb-4">
+          <h3 class="text-md font-bold text-white">إمبراطورية التجارة وإدارة الأعمال</h3>
+          <p class="text-xs text-slate-400 mt-0.5">اشترِ المشاريع الحرة ووظف عمالة. اضبط السعر المناسب وفق مرونة الطلب لتحقيق أعلى ربح ممكن بالدورة.</p>
+        </div>
+        <div id="businesses-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Dyn list -->
+        </div>
+      </section>
+
+      <!-- TAB 4: البنك (BANK & TRANSFERS) -->
+      <section id="panel-bank" class="game-panel hidden space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Bank Account Manage -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col justify-between">
+            <div>
+              <h3 class="text-lg font-bold text-white mb-2">إدارة حساب الادخار</h3>
+              <p class="text-xs text-slate-400 mb-6">أودع أموالك في البنك لتحميها وتحصل على فائدة مركبة بمعدل 0.005% لكل دورة تيك.</p>
+              
+              <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="p-3 bg-slate-950/50 rounded-lg border border-slate-800">
+                  <span class="text-[10px] text-slate-400 block mb-1">السيولة النقدية المتوفرة</span>
+                  <span id="bank-cash" class="numbers-font font-bold text-yellow-500 text-sm">0 EGP</span>
+                </div>
+                <div class="p-3 bg-slate-950/50 rounded-lg border border-slate-800">
+                  <span class="text-[10px] text-slate-400 block mb-1">رصيد الادخار البنكي</span>
+                  <span id="bank-balance" class="numbers-font font-bold text-emerald-400 text-sm">0 EGP</span>
+                </div>
+              </div>
+
+              <!-- Action input -->
+              <div class="mb-4">
+                <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">المبلغ المطلوب إيداعه / سحبه</label>
+                <input type="number" id="bank-amount-input" class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold" placeholder="أدخل مبلغ صحيح">
+              </div>
+
+              <!-- Shortcut percentages -->
+              <div class="grid grid-cols-4 gap-2 mb-6">
+                <button data-action="deposit" data-pct="0.25" class="bank-preset py-1.5 bg-slate-800/80 hover:bg-slate-800 text-slate-300 rounded text-xs transition font-semibold">أودع 25%</button>
+                <button data-action="deposit" data-pct="0.50" class="bank-preset py-1.5 bg-slate-800/80 hover:bg-slate-800 text-slate-300 rounded text-xs transition font-semibold">أودع 50%</button>
+                <button data-action="deposit" data-pct="1.00" class="bank-preset py-1.5 bg-slate-800/80 hover:bg-slate-800 text-slate-300 rounded text-xs transition font-semibold">أودع الكل</button>
+                <button data-action="withdraw" data-pct="1.00" class="bank-preset py-1.5 bg-slate-800/80 hover:bg-slate-800 text-slate-300 rounded text-xs transition font-semibold">اسحب الكل</button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mt-4">
+              <button id="btn-bank-deposit" class="py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition">إيداع نقدية</button>
+              <button id="btn-bank-withdraw" class="py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 font-bold transition">سحب نقدية</button>
+            </div>
+          </div>
+
+          <!-- Wire Transfers -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col justify-between">
+            <div>
+              <h3 class="text-lg font-bold text-white mb-2">التحويلات المالية السريعة</h3>
+              <p class="text-xs text-slate-400 mb-6">حوّل مبالغ مالية إلى أي لاعب عبر خوادم اللعبة السحابية بكتابة اسمه بدقة.</p>
+              
+              <div class="space-y-4 text-right mb-6">
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">اسم مستخدم الطرف الثاني (المستلم)</label>
+                  <input type="text" id="wire-recipient-input" class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold" placeholder="مثال: COMI_CEO">
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">مبلغ التحويل كاش</label>
+                  <input type="number" id="wire-amount-input" class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold" placeholder="أدخل مبلغ الحوالة">
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <button id="btn-wire-submit" class="w-full py-3.5 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold rounded-lg transition duration-300 flex items-center justify-center gap-2">
+                <span id="wire-btn-text">تأكيد عملية التحويل المالي</span>
+                <svg id="wire-btn-spinner" class="hidden animate-spin h-5 w-5 text-slate-950" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Locked Capital / Investments & History -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+            <h3 class="text-sm font-bold text-white mb-4">صناديق الاستثمار المقفلة النشطة</h3>
+            <div id="investments-locked-list" class="space-y-3">
+              <!-- Dyn content -->
+            </div>
+          </div>
+
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+            <h3 class="text-sm font-bold text-white mb-4">سجل العمليات والتحويلات الأخيرة</h3>
+            <div id="wire-history-list" class="space-y-2 h-40 overflow-y-auto pr-1">
+              <div class="empty-wire-msg text-center text-slate-500 text-xs py-10">
+                لا يوجد حوالات صادرة مسجلة في الجلسة الحالية.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: ممتلكاتي (REAL ESTATE & ASSETS) -->
+      <section id="panel-assets" class="game-panel hidden space-y-6">
+        <div class="bg-slate-900/10 p-4 rounded-xl border border-slate-800/40 mb-4">
+          <h3 class="text-md font-bold text-white">الاستثمارات العقارية والأصول الرأسمالية</h3>
+          <p class="text-xs text-slate-400 mt-0.5">اشترِ العقارات لزيادة صافي ثروتك وجني عوائد إيجار سلبية تصب في حسابك التلقائي بشكل مستمر.</p>
+        </div>
+        <div id="assets-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Dyn list -->
+        </div>
+      </section>
+
+      <!-- TAB 6: بورصه (STOCK MARKET) -->
+      <section id="panel-stocks" class="game-panel hidden space-y-6">
+        <div class="bg-slate-900/40 p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          <div>
+            <h3 class="text-md font-bold text-white flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+              صالة تداول البورصة والأسهم الحية
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">تتحرك الأسهم تلقائياً وفقاً للطلب والأحداث الاقتصادية العشوائية المباشرة.</p>
+          </div>
+          <div class="bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 w-full md:w-auto text-xs flex items-center gap-2">
+            <span class="text-yellow-500 font-bold">📢 شريط الأخبار:</span>
+            <span id="stock-market-news-ticker" class="text-slate-300 font-medium">السوق مستقر وتداولات اعتيادية بين المتعاملين...</span>
+          </div>
+        </div>
+        <div id="stocks-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Dyn list -->
+        </div>
+      </section>
+
+      <!-- TAB 7: متجر (STORE & BAG) -->
+      <section id="panel-store" class="game-panel hidden space-y-6">
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+          <h3 class="text-md font-bold text-white mb-4">متجر المستلزمات ومقويات الكفاءة</h3>
+          <div id="store-shelf" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Dyn Shelf -->
+          </div>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+          <h3 class="text-md font-bold text-white mb-4">مستودع الأغراض وحقيبة الظهر</h3>
+          <div id="backpack-inventory" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <!-- Dyn items -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 8: سوق سوداء (BLACK MARKET / INVESTMENTS OPTIONS) -->
+      <section id="panel-blackmarket" class="game-panel hidden space-y-6">
+        <!-- Locked long term investments options -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+          <h3 class="text-md font-bold text-white mb-2">الاستثمار المقفل طويل الأجل</h3>
+          <p class="text-xs text-slate-400 mb-6">قفل جزء من سيولتك النقدية لفترة محددة لجني عوائد أرباح عالية ومضمونة عند الاستحقاق.</p>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <!-- Short deposit -->
+            <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl flex flex-col justify-between">
+              <div>
+                <h4 class="font-bold text-white text-sm">وديعة بنكية ربع سنوية</h4>
+                <p class="text-[10px] text-slate-500 mt-1">تجميد السيولة لتوفير التمويل المصرفي مقابل عائد أرباح إضافي.</p>
+                <div class="text-xs text-slate-400 space-y-1 my-3">
+                  <div class="flex justify-between"><span>مدة التجميد:</span><span class="numbers-font text-white">60 ثانية</span></div>
+                  <div class="flex justify-between"><span>عائد الأرباح:</span><span class="numbers-font text-emerald-400">+5% مضمونة</span></div>
+                  <div class="flex justify-between"><span>الحد الأدنى:</span><span class="numbers-font">10,000 جنيه</span></div>
+                </div>
+              </div>
+              <div class="mt-2">
+                <input type="number" id="invest-amount-short" placeholder="المبلغ المطلوب قفله" class="glass-input w-full p-2 text-center text-xs rounded mb-1.5 font-bold">
+                <button data-type="short" class="btn-invest-start w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-bold rounded transition">
+                  بدء الاستثمار
+                </button>
+              </div>
+            </div>
+
+            <!-- Real estate investment -->
+            <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl flex flex-col justify-between">
+              <div>
+                <h4 class="font-bold text-white text-sm">صندوق عقاري مغلق</h4>
+                <p class="text-[10px] text-slate-500 mt-1">المشاركة في تمويل تطوير مشاريع أبراج سكنية وتجارية حيوية.</p>
+                <div class="text-xs text-slate-400 space-y-1 my-3">
+                  <div class="flex justify-between"><span>مدة التجميد:</span><span class="numbers-font text-white">240 ثانية</span></div>
+                  <div class="flex justify-between"><span>عائد الأرباح:</span><span class="numbers-font text-emerald-400">+22% مضمونة</span></div>
+                  <div class="flex justify-between"><span>الحد الأدنى:</span><span class="numbers-font">50,000 جنيه</span></div>
+                </div>
+              </div>
+              <div class="mt-2">
+                <input type="number" id="invest-amount-realestate" placeholder="المبلغ المطلوب قفله" class="glass-input w-full p-2 text-center text-xs rounded mb-1.5 font-bold">
+                <button data-type="realestate" class="btn-invest-start w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-bold rounded transition">
+                  بدء الاستثمار
+                </button>
+              </div>
+            </div>
+
+            <!-- Venture capital -->
+            <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl flex flex-col justify-between">
+              <div>
+                <h4 class="font-bold text-white text-sm">رأس مال جريء بشركات ناشئة</h4>
+                <p class="text-[10px] text-slate-500 mt-1">التمويل التأسيسي لشركات التقنية الناشئة مقابل حصص ملكية استراتيجية.</p>
+                <div class="text-xs text-slate-400 space-y-1 my-3">
+                  <div class="flex justify-between"><span>مدة التجميد:</span><span class="numbers-font text-white">720 ثانية</span></div>
+                  <div class="flex justify-between"><span>عائد الأرباح:</span><span class="numbers-font text-emerald-400">+85% مضمونة</span></div>
+                  <div class="flex justify-between"><span>الحد الأدنى:</span><span class="numbers-font">200,000 جنيه</span></div>
+                </div>
+              </div>
+              <div class="mt-2">
+                <input type="number" id="invest-amount-venture" placeholder="المبلغ المطلوب قفله" class="glass-input w-full p-2 text-center text-xs rounded mb-1.5 font-bold">
+                <button data-type="venture" class="btn-invest-start w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-bold rounded transition">
+                  بدء الاستثمار
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- High Risk illegal Black Market deals -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+          <h3 class="text-md font-bold text-rose-500 mb-2 font-black">تجارة السوق السوداء المشبوهة</h3>
+          <p class="text-xs text-slate-400 mb-6">صفقات غير قانونية برؤوس أموال مرتفعة. نسب النجاح متفاوتة، والفشل يعرضك للاعتقال ومصادرة أموالك.</p>
+          <div id="blackmarket-deals" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Dyn deals -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 9: كازينو (CASINO) -->
+      <section id="panel-casino" class="game-panel hidden space-y-6">
+        <div class="bg-slate-900/40 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
+          <div>
+            <h3 class="text-md font-bold text-white flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse"></span>
+              صالة التسلية والرهانات المباشرة
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">العاب تفاعلية سريعة، اختر رهانك بحكمة وضاعف أرباحك.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          <!-- Coin Flip Game -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col justify-between hover:border-yellow-500/30 transition duration-300">
+            <div>
+              <h3 class="text-md font-bold text-white mb-1">🪙 توقع وجه العملة (Coin Flip)</h3>
+              <p class="text-xs text-slate-400 mb-4">تخمين بسيط بنسبة فوز 50% لمضاعفة الرهان x2.</p>
+              
+              <div class="flex justify-center my-6">
+                <div id="coin-visual" class="w-24 h-24 bg-gradient-to-tr from-yellow-600 via-yellow-400 to-amber-200 border-4 border-yellow-300 rounded-full flex items-center justify-center shadow-xl shadow-yellow-500/10 text-slate-950 font-black text-2xl numbers-font transition duration-500">
+                  ف
+                </div>
+              </div>
+
+              <div class="flex justify-center gap-4 mb-4">
+                <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
+                  <input type="radio" name="coin-choice" value="heads" checked class="accent-yellow-500">
+                  <span>وجه الصورة (طغراء)</span>
+                </label>
+                <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
+                  <input type="radio" name="coin-choice" value="tails" class="accent-yellow-500">
+                  <span>وجه الكتابة (نقش)</span>
+                </label>
+              </div>
+
+              <div>
+                <label class="block text-[10px] text-slate-500 mb-1 font-bold">قيمة الرهان (كاش)</label>
+                <input type="number" id="coin-bet-input" value="1000" class="glass-input w-full p-2 text-center text-xs rounded mb-4 font-bold">
+              </div>
+            </div>
+            <button id="btn-flip-coin" class="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-lg transition shadow-lg shadow-yellow-500/10">
+              رمي العملة المزدوجة
+            </button>
+          </div>
+
+          <!-- Slots Machine -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col justify-between hover:border-yellow-500/30 transition duration-300">
+            <div>
+              <h3 class="text-md font-bold text-white mb-1">🎰 آلة الحظ الذهبية (Slots)</h3>
+              <p class="text-xs text-slate-400 mb-4">رموز متطابقة تمنحك مضاعفات تتراوح بين x3 و x20.</p>
+              
+              <!-- Slot Reels view -->
+              <div class="grid grid-cols-3 gap-2 bg-slate-950 p-4 rounded-xl border border-slate-800 text-center my-4 shadow-inner">
+                <div id="slot-reel-1" class="py-5 bg-slate-900 border border-slate-800 text-yellow-400 font-black text-xl rounded-lg shadow transition duration-200">777</div>
+                <div id="slot-reel-2" class="py-5 bg-slate-900 border border-slate-800 text-yellow-400 font-black text-xl rounded-lg shadow transition duration-200">💎</div>
+                <div id="slot-reel-3" class="py-5 bg-slate-900 border border-slate-800 text-yellow-400 font-black text-xl rounded-lg shadow transition duration-200">🔔</div>
+              </div>
+
+              <div>
+                <label class="block text-[10px] text-slate-500 mb-1 font-bold">قيمة الرهان (كاش)</label>
+                <input type="number" id="slots-bet-input" value="1000" class="glass-input w-full p-2 text-center text-xs rounded mb-4 font-bold">
+              </div>
+            </div>
+            <button id="btn-slots-spin" class="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-lg transition shadow-lg shadow-yellow-500/10">
+              تدوير بكرات الحظ
+            </button>
+          </div>
+
+          <!-- Crash Rocket Game -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col justify-between hover:border-rose-500/30 transition duration-300">
+            <div>
+              <h3 class="text-md font-bold text-rose-400 mb-1">🚀 الانفجار والضربات (Crash)</h3>
+              <p class="text-xs text-slate-400 mb-4">يرتفع الصاروخ وتتضاعف أرباحك، اسحب قبل الانفجار!</p>
+              
+              <!-- Rocket Screen -->
+              <div class="h-28 bg-slate-950 rounded-xl p-2 border border-slate-800 relative mb-4 overflow-hidden shadow-inner">
+                <div id="crash-multiplier-display" class="absolute top-2 right-2 text-2xl font-black text-white glow-gold numbers-font">1.00x</div>
+                <div id="crash-status-text" class="absolute bottom-2 right-2 text-xs text-slate-500 font-semibold">جاهز للانطلاق</div>
+                
+                <svg viewBox="0 0 100 80" class="w-full h-full" preserveAspectRatio="none">
+                  <path id="crash-svg-curve" d="M 10 80 Q 50 80 10 80" fill="none" stroke="#eab308" stroke-width="2"/>
+                  <circle id="crash-svg-rocket" cx="10" cy="80" r="3" fill="#eab308"/>
+                </svg>
+              </div>
+
+              <div>
+                <label class="block text-[10px] text-slate-500 mb-1 font-bold">قيمة الرهان (كاش)</label>
+                <input type="number" id="crash-bet-input" value="1000" class="glass-input w-full p-2 text-center text-xs rounded mb-4 font-bold">
+              </div>
+            </div>
+
+            <div>
+              <button id="btn-crash-start" class="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-lg transition shadow-lg shadow-yellow-500/10">
+                إطلاق الصاروخ والرهان
+              </button>
+              <button id="btn-crash-cashout" class="hidden w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition shadow-lg shadow-emerald-600/20">
+                صرف الأرباح بقيمة: <span id="crash-cashout-payout" class="numbers-font font-bold">0</span> EGP
+              </button>
+            </div>
+          </div>
+
+          <!-- NEW GAME 1: European Roulette -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col justify-between hover:border-emerald-500/30 transition duration-300">
+            <div>
+              <h3 class="text-md font-bold text-emerald-400 mb-1">🎡 الروليت الملكي (Roulette)</h3>
+              <p class="text-xs text-slate-400 mb-4">رهان الألوان: أحمر (x2) أو أسود (x2) أو الرقم الأخضر الصفر (x35).</p>
+
+              <!-- Roulette Wheel Animation Visual -->
+              <div class="flex justify-center my-4">
+                <div id="roulette-wheel" class="w-24 h-24 rounded-full border-4 border-amber-500/40 bg-slate-950 flex items-center justify-center relative shadow-xl transition-all duration-700">
+                  <span id="roulette-result-num" class="text-2xl font-black text-emerald-400 numbers-font">0</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2 mb-4">
+                <label class="cursor-pointer p-2 rounded bg-rose-950/40 border border-rose-500/40 text-center text-xs font-bold text-rose-300 flex flex-col items-center">
+                  <input type="radio" name="roulette-choice" value="red" checked class="accent-rose-500 mb-1">
+                  <span>أحمر (x2)</span>
+                </label>
+                <label class="cursor-pointer p-2 rounded bg-slate-950 border border-slate-700 text-center text-xs font-bold text-slate-300 flex flex-col items-center">
+                  <input type="radio" name="roulette-choice" value="black" class="accent-slate-400 mb-1">
+                  <span>أسود (x2)</span>
+                </label>
+                <label class="cursor-pointer p-2 rounded bg-emerald-950/40 border border-emerald-500/40 text-center text-xs font-bold text-emerald-300 flex flex-col items-center">
+                  <input type="radio" name="roulette-choice" value="green" class="accent-emerald-500 mb-1">
+                  <span>صفر (x35)</span>
+                </label>
+              </div>
+
+              <div>
+                <label class="block text-[10px] text-slate-500 mb-1 font-bold">قيمة الرهان (كاش)</label>
+                <input type="number" id="roulette-bet-input" value="1000" class="glass-input w-full p-2 text-center text-xs rounded mb-4 font-bold">
+              </div>
+            </div>
+            <button id="btn-roulette-spin" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition shadow-lg shadow-emerald-600/20">
+              تدوير عجلة الروليت
+            </button>
+          </div>
+
+          <!-- NEW GAME 2: Wheel of Fortune -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col justify-between hover:border-purple-500/30 transition duration-300">
+            <div>
+              <h3 class="text-md font-bold text-purple-400 mb-1">🎯 عجلة الحظ الكبرى (Wheel)</h3>
+              <p class="text-xs text-slate-400 mb-4">أدر العجلة لتحصل على مضاعفات حظ تبدأ من 0.5x وتصل إلى 10x!</p>
+
+              <!-- Wheel visual -->
+              <div class="flex justify-center my-4">
+                <div id="wheel-of-fortune-visual" class="w-24 h-24 rounded-full border-4 border-purple-500/40 bg-gradient-to-br from-purple-900 via-slate-900 to-indigo-900 flex items-center justify-center relative shadow-xl transition-all duration-1000">
+                  <span id="wheel-multiplier-result" class="text-lg font-black text-purple-300 numbers-font">1.5x</span>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[10px] text-slate-500 mb-1 font-bold">قيمة الرهان (كاش)</label>
+                <input type="number" id="wheel-bet-input" value="1000" class="glass-input w-full p-2 text-center text-xs rounded mb-4 font-bold">
+              </div>
+            </div>
+            <button id="btn-wheel-spin" class="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition shadow-lg shadow-purple-600/20">
+              تدوير عجلة الحظ الكبرى
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- TAB 10: توب الاغنياء (GLOBAL LEADERBOARD) -->
+      <section id="panel-leaderboard" class="game-panel hidden space-y-6">
+        <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
+          <div class="p-6 border-b border-slate-800/80">
+            <h3 class="text-md font-bold text-white">قائمة أثرى أثرياء اللعبة</h3>
+            <p class="text-xs text-slate-400 mt-1">تحديث حي ومباشر لأعلى اللاعبين ثروة استناداً إلى صافي رأس المال والأصول الكلية المسجلة.</p>
+          </div>
+          
+          <div class="overflow-x-auto w-full">
+            <table class="w-full text-right border-collapse">
+              <thead>
+                <tr class="bg-slate-950/40 text-xs text-slate-400 font-bold border-b border-slate-800">
+                  <th class="py-3 pr-4 pl-2 text-right">المرتبة</th>
+                  <th class="py-3 px-2">اسم اللاعب</th>
+                  <th class="py-3 px-2">الرتبة</th>
+                  <th class="py-3 pl-4 pr-2 text-left">الثروة الكلية الصافية</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboard-rows" class="divide-y divide-slate-800/40">
+                <!-- Dyn table rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 11: التزامن السحابي (SETTINGS) -->
+      <section id="panel-settings" class="game-panel hidden space-y-6">
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+          <h3 class="text-md font-bold text-white mb-2">إعدادات الاتصال وقاعدة البيانات</h3>
+          <p class="text-xs text-slate-400 mb-6">اللعبة تستخدم افتراضياً قاعدة بيانات محلية محاكاة. يمكنك لصق مفاتيح Firebase Firestore الخاصة بمشروعك للربط والتزامن الحي مع خوادم اللعبة العالمية.</p>
+
+          <div class="mb-4 p-3 bg-slate-950/60 rounded-xl border border-slate-800 flex items-center justify-between">
+            <span class="text-xs text-slate-400">حالة التزامن النشطة حالياً:</span>
+            <div id="settings-sync-status">
+              <!-- Sync status -->
+            </div>
+          </div>
+
+          <div class="mb-6 text-right">
+            <label class="block text-xs text-slate-400 mb-2 font-bold mr-1">تكوين Firebase Config JSON</label>
+            <textarea id="settings-firebase-config" rows="7" class="glass-input w-full p-4 rounded-xl text-left numbers-font text-xs tracking-wide" style="font-family: monospace;"></textarea>
+          </div>
+
+          <div class="flex gap-3">
+            <button id="btn-settings-save-config" class="flex-1 py-3 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold rounded-lg transition duration-300">
+              حفظ المفاتيح وبدء التزامن
+            </button>
+            <button id="btn-settings-clear-config" class="py-3 px-6 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold rounded-lg transition">
+              مسح الإعدادات
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- MOBILE BOTTOM NAVIGATION BAR -->
+    <nav class="mobile-bottom-nav lg:hidden glass-panel border-t border-slate-800/80 flex justify-around items-center px-2">
+      <button data-tab="dashboard" class="nav-tab-btn flex flex-col items-center gap-1 text-yellow-500 text-[10px] font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+        <span>حسابي</span>
+      </button>
+      <button data-tab="careers" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+        <span>الوظائف</span>
+      </button>
+      <button data-tab="business" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+        <span>الأعمال</span>
+      </button>
+      <button data-tab="bank" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path></svg>
+        <span>التحويلات</span>
+      </button>
+      <button data-tab="assets" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+        <span>العقارات</span>
+      </button>
+      <button data-tab="stocks" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+        <span>البورصة</span>
+      </button>
+      <button data-tab="store" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+        <span>المتجر</span>
+      </button>
+      <button data-tab="blackmarket" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        <span>المحظورات</span>
+      </button>
+      <button data-tab="casino" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5a2 2 0 10-2 2h2zm0 0H4m8 0h8m-8 0a2 2 0 102 2h-2zm0 0a2 2 0 11-2 2h2z"></path></svg>
+        <span>كازينو</span>
+      </button>
+      <button data-tab="leaderboard" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+        <span>الأغنياء</span>
+      </button>
+      <button data-tab="settings" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        <span>الربط</span>
+      </button>
+    </nav>
+  </div>
+
+  </div>
+
+  <!-- ==================== BAN SYSTEM OVERLAY ==================== -->
+  <div id="ban-overlay" class="hidden fixed inset-0 z-50 bg-black/98 backdrop-blur-lg flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-md p-8 rounded-2xl border border-rose-600 text-center">
+      <div class="w-20 h-20 bg-rose-500/10 border border-rose-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
+        <!-- SVG block icon -->
+        <svg class="w-10 h-10 text-rose-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+        </svg>
+      </div>
+      <h2 class="text-2xl font-black text-rose-500 mb-2">تم حظر حسابك!</h2>
+      <p class="text-xs text-slate-400 mb-6">لقد تم تجميد وحظر حسابك من قبل الإدارة لمخالفتك شروط وقواعد الاستخدام المالية.</p>
+      <button onclick="location.reload()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-lg transition">
+        إعادة التحميل
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== ADMIN CONTROL PANEL OVERLAY ==================== -->
+  <div id="admin-panel-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-3xl p-6 rounded-2xl border border-yellow-500/20 max-h-[90vh] flex flex-col text-right">
+      
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
+        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+          <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+          </svg>
+          <span>لوحة التحكم والرقابة الإدارية</span>
+        </h3>
+        <button id="btn-admin-modal-close" class="p-1 hover:bg-slate-800 rounded-lg transition text-slate-400 hover:text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Tabs Navigation -->
+      <div class="flex border-b border-slate-800 text-xs sm:text-sm mb-4 overflow-x-auto">
+        <button id="tab-admin-stats" class="flex-1 pb-3 px-3 text-center border-b-2 border-yellow-500 text-yellow-500 font-bold transition whitespace-nowrap">📊 لوحة الإحصائيات</button>
+        <button id="tab-admin-transfers" class="flex-1 pb-3 px-3 text-center border-b-2 border-transparent text-slate-400 font-bold transition whitespace-nowrap">💸 مراقبة التحويلات</button>
+        <button id="tab-admin-players" class="flex-1 pb-3 px-3 text-center border-b-2 border-transparent text-slate-400 font-bold transition whitespace-nowrap">👤 إدارة اللاعبين</button>
+        <button id="tab-admin-market" class="flex-1 pb-3 px-3 text-center border-b-2 border-transparent text-slate-400 font-bold transition whitespace-nowrap">📈 التحكم بالبورصة</button>
+        <button id="tab-admin-broadcast" class="flex-1 pb-3 px-3 text-center border-b-2 border-transparent text-slate-400 font-bold transition whitespace-nowrap">📢 البث والمكافآت</button>
+        <button id="tab-admin-system" class="flex-1 pb-3 px-3 text-center border-b-2 border-transparent text-slate-400 font-bold transition whitespace-nowrap">⚙️ شؤون النظام</button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="flex-1 overflow-y-auto pr-1 space-y-4">
+        
+        <!-- PANEL STATS: Executive Analytics Dashboard -->
+        <div id="admin-subpanel-stats" class="space-y-4">
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl">
+              <span class="text-[10px] text-slate-400 block font-bold">إجمالي الحسابات المسجلة</span>
+              <span id="adm-stat-players" class="numbers-font text-lg font-black text-white">0</span>
+            </div>
+            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl">
+              <span class="text-[10px] text-slate-400 block font-bold">إجمالي الكاش المتداول</span>
+              <span id="adm-stat-cash" class="numbers-font text-lg font-black text-emerald-400">0 EGP</span>
+            </div>
+            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl">
+              <span class="text-[10px] text-slate-400 block font-bold">إجمالي الودائع البنكية</span>
+              <span id="adm-stat-bank" class="numbers-font text-lg font-black text-sky-400">0 EGP</span>
+            </div>
+            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl">
+              <span class="text-[10px] text-slate-400 block font-bold">إجمالي الثروة الكلية بالمنظومة</span>
+              <span id="adm-stat-networth" class="numbers-font text-lg font-black text-yellow-400 glow-gold">0 EGP</span>
+            </div>
+            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl">
+              <span class="text-[10px] text-slate-400 block font-bold">اللاعبين رهن السجن</span>
+              <span id="adm-stat-jailed" class="numbers-font text-lg font-black text-rose-400">0</span>
+            </div>
+            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl">
+              <span class="text-[10px] text-slate-400 block font-bold">الحسابات المحظورة</span>
+              <span id="adm-stat-banned" class="numbers-font text-lg font-black text-slate-400">0</span>
+            </div>
+          </div>
+
+          <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl space-y-3">
+            <div class="flex justify-between items-center">
+              <h4 class="text-xs font-bold text-white flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                سجل نشاط النظام والعمليات الإدارية الحية (Live Log)
+              </h4>
+              <button id="btn-admin-refresh-stats" class="px-3 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/40 rounded text-xs font-bold transition">إعادة المحاكاة والإنعاش</button>
+            </div>
+            <div id="admin-stats-live-log" class="text-[11px] text-slate-400 space-y-1.5 h-36 overflow-y-auto bg-slate-950 p-3 rounded-lg border border-slate-800/80 numbers-font text-right">
+              <!-- Dyn live logs -->
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL TRANSFERS: Live Wire Transfer Audit Monitor -->
+        <div id="admin-subpanel-transfers" class="hidden space-y-4">
+          <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl space-y-3">
+            <div class="flex justify-between items-center">
+              <div>
+                <h4 class="text-xs font-bold text-white">سجل مراقبة التحويلات المالية الحية بين اللاعبين</h4>
+                <p class="text-[10px] text-slate-400 mt-0.5">يعرض كافة التحويلات النقدية الصادرة والواردة مع تفاصيل الراسل والمستلم والتوقيت.</p>
+              </div>
+              <button id="btn-admin-refresh-transfers" class="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-bold rounded-lg transition">تحديث السجل</button>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-right text-xs">
+                <thead>
+                  <tr class="text-slate-500 border-b border-slate-800">
+                    <th class="pb-2">الراسل (Sender)</th>
+                    <th class="pb-2">المستلم (Recipient)</th>
+                    <th class="pb-2 text-center">المبلغ</th>
+                    <th class="pb-2 text-center">التوقيت</th>
+                    <th class="pb-2 text-left">الحالة</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-transfers-table-body" class="divide-y divide-slate-800/40">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL PLAYERS: Player Moderation -->
+        <div id="admin-subpanel-players" class="hidden space-y-4">
+          <div class="flex gap-2">
+            <input type="text" id="admin-search-user" placeholder="ابحث باسم المستخدم بدقة..." class="glass-input flex-1 p-2 text-center text-sm font-bold">
+            <button id="btn-admin-search" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-slate-950 rounded-lg text-sm font-bold transition">ابحث عن اللاعب</button>
+          </div>
+
+          <!-- Searched Player Info Container -->
+          <div id="admin-player-result" class="hidden p-4 bg-slate-950/60 border border-slate-800 rounded-xl space-y-4">
+            <div class="grid grid-cols-2 gap-4 text-xs text-slate-400">
+              <div><span class="font-bold text-white block">اسم اللاعب:</span> <span id="admin-p-username" class="numbers-font text-white text-sm">...</span></div>
+              <div><span class="font-bold text-white block">صافي الثروة:</span> <span id="admin-p-worth" class="numbers-font text-yellow-400 text-sm">... EGP</span></div>
+              <div><span class="font-bold text-white block">السيولة (كاش):</span> <span id="admin-p-cash" class="numbers-font text-sm">... EGP</span></div>
+              <div><span class="font-bold text-white block">رصيد البنك:</span> <span id="admin-p-bank" class="numbers-font text-sm">... EGP</span></div>
+              <div><span class="font-bold text-white block">الوضع القانوني:</span> <span id="admin-p-jail" class="text-sm">...</span></div>
+              <div><span class="font-bold text-white block">حالة الحظر:</span> <span id="admin-p-banned" class="text-sm">...</span></div>
+            </div>
+
+            <!-- Management Inputs and buttons -->
+            <div class="border-t border-slate-800/80 pt-3 space-y-3">
+              <h4 class="text-xs font-bold text-white">إجراء تعديلات مالية وقانونية</h4>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[10px] text-slate-400 mb-1">السيولة النقدية الجديدة</label>
+                  <input type="number" id="admin-input-cash" class="glass-input w-full p-2 text-xs text-center font-bold">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 mb-1">رصيد البنك الجديد</label>
+                  <input type="number" id="admin-input-bank" class="glass-input w-full p-2 text-xs text-center font-bold">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2 pt-1">
+                <button id="btn-admin-update-money" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition">حفظ الرصيد</button>
+                <button id="btn-admin-release-jail" class="py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold transition">إفراج قانوني</button>
+                <button id="btn-admin-ban" class="py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition">حظر حساب</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL MARKET: Stock Market Manipulator -->
+        <div id="admin-subpanel-market" class="hidden space-y-4">
+          <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl space-y-3">
+            <h4 class="text-xs font-bold text-white">افتغال حدث اقتصادي مفاجئ في البورصة</h4>
+            <p class="text-[10px] text-slate-400">اختر الحدث الاقتصادي المطلوب لتطبيقه فوراً على جميع الأسعار وشريط الأخبار.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button data-event="tech_boom" class="btn-admin-trigger-event py-2 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 rounded text-xs font-bold transition">🚀 طفرة الذكاء الاصطناعي (+25% فوري)</button>
+              <button data-event="cbe_rate_hike" class="btn-admin-trigger-event py-2 bg-amber-950/60 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300 rounded text-xs font-bold transition">🏛️ رفع الفائدة 200 نقطة (+30% CIB)</button>
+              <button data-event="telecom_expansion" class="btn-admin-trigger-event py-2 bg-sky-950/60 hover:bg-sky-900/60 border border-sky-500/40 text-sky-300 rounded text-xs font-bold transition">📶 رخصة 5G للمصرية للاتصالات (+35%)</button>
+              <button data-event="tobacco_monopoly" class="btn-admin-trigger-event py-2 bg-yellow-950/60 hover:bg-yellow-900/60 border border-yellow-500/40 text-yellow-300 rounded text-xs font-bold transition">🚬 احتكار وتصدير سهم الشرقية (+40%)</button>
+              <button data-event="tech_hack_scandal" class="btn-admin-trigger-event py-2 bg-purple-950/60 hover:bg-purple-900/60 border border-purple-500/40 text-purple-300 rounded text-xs font-bold transition">⚠️ اختراق سيبراني وخسارة فوري (-30%)</button>
+              <button data-event="rate_cut_rally" class="btn-admin-trigger-event py-2 bg-teal-950/60 hover:bg-teal-900/60 border border-teal-500/40 text-teal-300 rounded text-xs font-bold transition">📈 خفض الفائدة وانتعاش عام (+20%)</button>
+              <button data-event="oil_scandal" class="btn-admin-trigger-event py-2 bg-orange-950/60 hover:bg-orange-900/60 border border-orange-500/40 text-orange-300 rounded text-xs font-bold transition">📉 أزمة سلاسل الإمداد الشاملة (-25%)</button>
+              <button data-event="market_crash" class="btn-admin-trigger-event py-2 bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/40 text-rose-300 rounded text-xs font-bold transition">💥 انهيار وتصحيح البورصة (-15%)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL B: Broadcast & Airdrop -->
+        <div id="admin-subpanel-broadcast" class="hidden space-y-6">
+          <!-- Global Broadcast -->
+          <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl space-y-3">
+            <h4 class="text-sm font-bold text-white">إرسال بث فوري (Broadcast) للجميع</h4>
+            <p class="text-[10px] text-slate-500">سيتم عرض هذا النص كإشعار منبثق فوري لجميع اللاعبين المتصلين حالياً بالخادم.</p>
+            <textarea id="admin-broadcast-msg" rows="2" placeholder="اكتب رسالة الإعلان هنا..." class="glass-input w-full p-3 rounded-lg text-xs text-right"></textarea>
+            <button id="btn-admin-send-broadcast" class="w-full py-2.5 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-bold rounded-lg transition">إرسال الإشعار العام</button>
+          </div>
+
+          <!-- Global Airdrop -->
+          <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl space-y-3">
+            <h4 class="text-sm font-bold text-white">توزيع مكافأة مالية عامة (Airdrop)</h4>
+            <p class="text-[10px] text-slate-500">سيتم إضافة هذا المبلغ فورياً لحساب الكاش الخاص بجميع اللاعبين المتصل.</p>
+            <div class="flex gap-2">
+              <input type="number" id="admin-airdrop-amount" placeholder="مبلغ المكافأة بـ EGP" class="glass-input flex-1 p-2 text-center text-xs font-bold">
+              <button id="btn-admin-send-airdrop" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition">توزيع المكافأة</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL C: System Operations -->
+        <div id="admin-subpanel-system" class="hidden space-y-4">
+          <!-- Maintenance Mode Card -->
+          <div class="p-4 bg-yellow-950/20 border border-yellow-500/30 rounded-xl space-y-3">
+            <div class="flex justify-between items-center">
+              <div>
+                <h4 class="text-sm font-bold text-yellow-400 flex items-center gap-2">
+                  <span>🛠️ وضع الصيانة الشامل للنظام</span>
+                  <span id="admin-maintenance-badge" class="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold">النظام يعمل بشكل طبيعي</span>
+                </h4>
+                <p class="text-[10px] text-slate-400 mt-1">تفعيل وضع الصيانة يغلق اللعبة فوراً عن جميع اللاعبين ويعرض شاشة التنبيه.</p>
+              </div>
+            </div>
+            <button id="btn-admin-toggle-maintenance" class="w-full py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-600/10">
+              🚨 إغلاق اللعبة وتفعيل وضع الصيانة الشامل للجميع
+            </button>
+          </div>
+
+          <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl space-y-3">
+            <h4 class="text-sm font-bold text-white">التحكم في المتصدرين والنظام</h4>
+            <p class="text-[10px] text-slate-500">إجراءات إدارية جذرية لتنظيف قاعدة البيانات أو إعادة ضبط محاكاة اللعبة.</p>
+            <div class="flex gap-2">
+              <button id="btn-admin-wipe-leaderboard" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition">تصفير قائمة المتصدرين</button>
+              <button id="btn-admin-refresh-leaderboard" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg transition">تحديث الكاش</button>
+            </div>
+          </div>
+
+          <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl space-y-2">
+            <h4 class="text-xs font-bold text-white">سجل العمليات الإدارية الأخيرة</h4>
+            <div id="admin-action-logs" class="text-[10px] text-slate-500 space-y-1 h-24 overflow-y-auto bg-slate-950 p-2 rounded border border-slate-800/50 text-right">
+              <div>لا يوجد عمليات مسجلة في الجلسة الحالية.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FLOATING ADMIN PANEL TRIGGER BUTTON -->
+  <button id="btn-admin-panel-trigger" class="hidden fixed bottom-6 right-6 z-40 p-4 bg-yellow-500 hover:bg-yellow-600 text-slate-950 rounded-full shadow-2xl transition duration-300 hover:scale-110">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+    </svg>
+  </button>
+
+  <!-- FLOATING NOTIFICATIONS CONTAINER -->
+  <div id="toast-container" class="fixed bottom-4 left-4 z-50 space-y-2 pointer-events-none">
+    <!-- Dyn toasts -->
+  </div>
+
+  <!-- Script Initializers -->
+  <script src="db.js?v=8"></script>
+  <script src="game.js?v=8"></script>
+  <script src="ui.js?v=8"></script>
+  <script>
+    // ── Boot Sequence ──────────────────────────────
+    window.addEventListener('DOMContentLoaded', async () => {
+      // 1. Initialise DB (local-first, non-blocking)
+      await AppDB.init();
+
+      // 2. Version check — show Force Update modal if outdated
+      try {
+        const vcheck = await AppDB.checkVersion();
+        if (!vcheck.upToDate) {
+          const overlay = document.getElementById('force-update-overlay');
+          document.getElementById('fu-client-ver').textContent = vcheck.clientVersion;
+          document.getElementById('fu-remote-ver').textContent  = vcheck.remoteVersion;
+          overlay.classList.remove('hidden');
+          overlay.classList.add('flex');
+
+          document.getElementById('btn-force-update').addEventListener('click', () => {
+            const url = new URL(window.location.href);
+            url.searchParams.set('v', vcheck.remoteVersion + '_' + Date.now());
+            window.location.href = url.toString();
+          });
+          return; // Stop boot — force user to update
+        }
+      } catch (e) {
+        // Version check failure is non-fatal — continue booting
+        console.warn('[Boot] Version check skipped:', e.message);
+      }
+
+      // 3. Boot the UI
+      UIController.init();
+
+      // 4. Connectivity badge
+      _initConnectivityBadge();
+    });
+
+    function _initConnectivityBadge() {
+      const badge = document.getElementById('connectivity-badge');
+      const dot   = document.getElementById('conn-dot');
+      const label = document.getElementById('conn-label');
+
+      function update() {
+        badge.classList.remove('hidden');
+        badge.classList.add('flex');
+        if (navigator.onLine && AppDB.isFirebaseReady) {
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse';
+          label.textContent = AppDB.pendingSyncs > 0 ? `مزامنة... (${AppDB.pendingSyncs})` : 'متصل ومتزامن';
+          label.className = 'text-emerald-400 font-medium';
+        } else if (navigator.onLine) {
+          dot.className = 'w-2 h-2 rounded-full bg-yellow-400 inline-block animate-pulse';
+          label.textContent = 'متصل — بدون مزامنة';
+          label.className = 'text-yellow-400 font-medium';
+        } else {
+          dot.className = 'w-2 h-2 rounded-full bg-rose-400 inline-block';
+          label.textContent = 'غير متصل — محلي فقط';
+          label.className = 'text-rose-400 font-medium';
+        }
+      }
+
+      update();
+      setInterval(update, 3000);
+      window.addEventListener('foolos:online',  update);
+      window.addEventListener('foolos:offline', update);
+    }
+  </script>
+</body>
+</html>
