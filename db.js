@@ -307,12 +307,14 @@ const AppDB = (() => {
 
     const snapshot = await firestoreDb.collection('players')
       .orderBy('netWorth', 'desc')
-      .limit(25)
+      .limit(50) // fetch more to account for filtered entries
       .get();
 
     const entries = [];
     snapshot.forEach(doc => {
       const d = doc.data();
+      // Hide admin accounts and banned players from leaderboard
+      if (d.isAdmin || d.isBanned) return;
       entries.push({
         username: d.username || doc.id,
         netWorth: d.netWorth || 0,
@@ -321,7 +323,7 @@ const AppDB = (() => {
       });
     });
 
-    return entries;
+    return entries.slice(0, 25); // return top 25 after filtering
   }
 
   // ─────────────────────────────────────────────
