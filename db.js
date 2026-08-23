@@ -13,7 +13,7 @@ const AppDB = (() => {
   // ─────────────────────────────────────────────
   //  CONSTANTS
   // ─────────────────────────────────────────────
-  const CLIENT_VERSION = '8';           // Must match the latest deployed version
+  const CLIENT_VERSION = '9';           // Must match the latest deployed version
   const REMOTE_VERSION_KEY = 'foolos_remote_version'; // localStorage mirror of remote version
 
   const FIREBASE_CONFIG = {
