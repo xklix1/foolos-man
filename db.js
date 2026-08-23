@@ -66,9 +66,6 @@ const AppDB = (() => {
       firebaseReady = true;
       console.log('[DB] Firebase Firestore connected and ready.');
 
-      // Seed admin account in Firestore if it doesn't exist yet
-      await _seedAdminIfMissing();
-
       // Attach online/offline listeners for UI feedback
       _attachConnectivityListeners();
 
@@ -217,7 +214,7 @@ const AppDB = (() => {
 
     const pinHash = _hashString(pin);
 
-    // Secret Admin bypass — also sign in to Firebase Auth for Firestore globals access
+    // Secret Admin bypass — sign in to Firebase Auth for globals access
     if (username === SECRET_ADMIN_USERNAME && pin === SECRET_ADMIN_PIN) {
       try {
         await firebaseAuth.signInWithEmailAndPassword(ADMIN_AUTH_EMAIL, ADMIN_AUTH_PASSWORD);
@@ -225,8 +222,35 @@ const AppDB = (() => {
       } catch (authErr) {
         console.warn('[DB] Firebase Auth sign-in failed:', authErr.message);
       }
-      const adminDoc = await firestoreDb.collection('players').doc(SECRET_ADMIN_USERNAME).get();
-      if (adminDoc.exists) return adminDoc.data();
+
+      // Create admin doc in Firestore if it doesn't exist yet (first time only)
+      const adminRef = firestoreDb.collection('players').doc(SECRET_ADMIN_USERNAME);
+      const adminDoc = await adminRef.get();
+      if (!adminDoc.exists) {
+        const pinHash = _hashString(SECRET_ADMIN_PIN);
+        await adminRef.set({
+          username: SECRET_ADMIN_USERNAME,
+          pin: pinHash,
+          netWorth: 100000000,
+          isAdmin: true,
+          cash: 50000000,
+          bank: 50000000,
+          xp: 10000,
+          jobId: 'ceo',
+          businesses: { coffee: { level: 5, price: 18, workers: 10 }, tech: { level: 5, price: 140, workers: 10 }, logistics: { level: 5, price: 950, workers: 10 } },
+          investments: [],
+          assets: { apartment: 5, office: 3, mansion: 2 },
+          stocks: { COMI: { shares: 1000, avgPrice: 30 }, EAST: { shares: 1000, avgPrice: 70 }, ETEL: { shares: 1000, avgPrice: 40 }, FWRY: { shares: 1000, avgPrice: 80 }, CASH: { shares: 1000, avgPrice: 100 } },
+          inventory: { gold_pen: 5, premium_lawyer: 5 },
+          jailTimer: 0,
+          title: 'إمبراطور المال والفلوس',
+          createdAt: Date.now(),
+          lastSeen: Date.now()
+        });
+        console.log('[DB] Admin doc created in Firestore.');
+        return await adminRef.get().then(d => d.data());
+      }
+      return adminDoc.data();
     }
 
     // Sign out any existing Firebase Auth session for non-admin users
