@@ -253,26 +253,48 @@ const UIController = (() => {
   // --- Dynamic Stats Bars Rendering ---
   function renderStatsBar() {
     const s = GameEngine.state;
-    if (!GameEngine.activeUsername) return;
+    if (!GameEngine.activeUsername || !s) return;
 
-    document.getElementById('stat-username').textContent = GameEngine.activeUsername;
-    document.getElementById('stat-title').textContent = s.title;
+    const username = GameEngine.activeUsername;
+    const isAdmin = (username === 'FoolosAdmin_X99' || s.isAdmin);
 
-    // Show/Hide Admin Control Panel Button according to logged in account
+    // Desktop stats
+    const uEl = document.getElementById('stat-username');
+    if (uEl) uEl.textContent = username;
+    const tEl = document.getElementById('stat-title');
+    if (tEl) tEl.textContent = s.title;
+
+    const cEl = document.getElementById('stat-cash');
+    if (cEl) cEl.textContent = s.cash.toLocaleString();
+    const bEl = document.getElementById('stat-bank');
+    if (bEl) bEl.textContent = s.bank.toLocaleString();
+    const nEl = document.getElementById('stat-networth');
+    if (nEl) nEl.textContent = s.netWorth.toLocaleString();
+
+    // Mobile stats
+    const umEl = document.getElementById('stat-username-mobile');
+    if (umEl) umEl.textContent = username;
+    const tmEl = document.getElementById('stat-title-mobile');
+    if (tmEl) tmEl.textContent = s.title;
+
+    const cmEl = document.getElementById('stat-cash-mobile');
+    if (cmEl) cmEl.textContent = s.cash.toLocaleString();
+    const bmEl = document.getElementById('stat-bank-mobile');
+    if (bmEl) bmEl.textContent = s.bank.toLocaleString();
+    const nmEl = document.getElementById('stat-networth-mobile');
+    if (nmEl) nmEl.textContent = s.netWorth.toLocaleString();
+
+    // Show/Hide Admin Buttons
     const adminBtn = document.getElementById('btn-admin-panel-trigger');
     if (adminBtn) {
-      if (GameEngine.activeUsername === 'FoolosAdmin_X99' || s.isAdmin) {
-        adminBtn.classList.remove('hidden');
-      } else {
-        adminBtn.classList.add('hidden');
-      }
+      if (isAdmin) adminBtn.classList.remove('hidden');
+      else adminBtn.classList.add('hidden');
     }
-
-    // Currency values
-    document.getElementById('stat-cash').textContent = s.cash.toLocaleString();
-    document.getElementById('stat-bank').textContent = s.bank.toLocaleString();
-    document.getElementById('stat-networth').textContent = s.netWorth.toLocaleString();
-
+    const adminBtnMobile = document.getElementById('btn-admin-panel-trigger-mobile');
+    if (adminBtnMobile) {
+      if (isAdmin) adminBtnMobile.classList.remove('hidden');
+      else adminBtnMobile.classList.add('hidden');
+    }
   }
 
   // --- General Render Manager ---
@@ -666,17 +688,61 @@ const UIController = (() => {
         performLogout(true);
       });
     }
+    const logoutBtnMobile = document.getElementById('btn-user-logout-mobile');
+    if (logoutBtnMobile) {
+      logoutBtnMobile.addEventListener('click', () => {
+        performLogout(true);
+      });
+    }
+
+    const adminTriggerMobile = document.getElementById('btn-admin-panel-trigger-mobile');
+    const adminModal = document.getElementById('admin-panel-modal');
+    if (adminTriggerMobile && adminModal) {
+      adminTriggerMobile.addEventListener('click', () => {
+        adminModal.classList.remove('hidden');
+        switchAdminTab('stats');
+      });
+    }
+
+    // Quick Bet Presets (Casino)
+    const quickBetBtns = document.querySelectorAll('.btn-quick-bet');
+    quickBetBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = btn.getAttribute('data-target');
+        const input = document.getElementById(targetId);
+        if (!input) return;
+
+        const currentVal = parseInt(input.value) || 0;
+        const addAmount = parseInt(btn.getAttribute('data-amount'));
+        const action = btn.getAttribute('data-action');
+        const userCash = GameEngine.state.cash || 0;
+
+        if (!isNaN(addAmount)) {
+          input.value = Math.max(100, Math.min(userCash, currentVal + addAmount));
+        } else if (action === 'half') {
+          input.value = Math.max(100, Math.floor(currentVal / 2));
+        } else if (action === 'max') {
+          input.value = Math.max(100, Math.min(userCash, 50000000));
+        }
+
+        // Add subtle tactile bump animation
+        btn.classList.add('scale-90');
+        setTimeout(() => btn.classList.remove('scale-90'), 150);
+      });
+    });
 
     const s = GameEngine.state;
 
-    // Shift worker button click — with 2-second cooldown
+    // Shift worker button click — with 2-second cooldown + floating reward particle
     const jobWorkBtn = document.getElementById('btn-perform-shift');
     if (jobWorkBtn) {
       jobWorkBtn.addEventListener('click', () => {
         if (workCooldownActive) return;
         try {
           const res = GameEngine.performJobShift();
-          showToast('عمل نوبة', `كسبت +${res.salary} EGP و +${res.xp} خبرة.`, 'success');
+          showPassiveGainFloat(`+${res.salary.toLocaleString()} EGP ⚡`);
+          showToast('عمل نوبة', `كسبت +${res.salary.toLocaleString()} EGP و +${res.xp} خبرة.`, 'success');
           renderAll();
           startWorkCooldown(jobWorkBtn);
         } catch (err) {
