@@ -5,6 +5,8 @@
   --grid-unit: 8px;
   --transition-bezier: cubic-bezier(0.16, 1, 0.3, 1);
   --transition-duration: 350ms;
+  --bottom-nav-height: 72px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 body {
@@ -17,6 +19,9 @@ body {
   user-select: none;
   overflow-x: hidden;
   line-height: 1.6;
+  /* Prevent text resize on mobile rotation */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* Cairo for headings & titles */
@@ -35,8 +40,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
   background: #05070f;
@@ -44,13 +49,12 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.06);
   border-radius: 99px;
-  transition: background var(--transition-duration) var(--transition-bezier);
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.15);
 }
 
-/* --- Refined Executive Glassmorphism & Shadow Architecture --- */
+/* --- Glassmorphism --- */
 .glass-panel {
   background: rgba(13, 18, 33, 0.45) !important;
   backdrop-filter: blur(20px) saturate(140%) !important;
@@ -91,6 +95,9 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 12px;
   transition: all var(--transition-duration) var(--transition-bezier);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  /* Better touch targets on mobile */
+  min-height: 48px;
+  font-size: 16px; /* Prevents iOS zoom on focus */
 }
 
 .glass-input:focus {
@@ -102,7 +109,7 @@ h1, h2, h3, h4, h5, h6 {
   outline: none;
 }
 
-/* Override tailwind default dark borders to match refined glassmorphism */
+/* Override tailwind dark borders */
 .border-slate-800,
 .border-slate-800\/80,
 .border-slate-800\/50,
@@ -119,50 +126,48 @@ h1, h2, h3, h4, h5, h6 {
   background-color: rgba(5, 7, 15, 0.45) !important;
 }
 
-/* --- Dynamic Feedback & Glowing Highlights --- */
-.glow-gold {
-  text-shadow: 0 0 12px rgba(234, 179, 8, 0.45);
-}
+/* --- Glow Effects --- */
+.glow-gold   { text-shadow: 0 0 12px rgba(234, 179, 8, 0.45); }
+.glow-emerald { text-shadow: 0 0 12px rgba(16, 185, 129, 0.45); }
+.glow-rose   { text-shadow: 0 0 12px rgba(244, 63, 94, 0.45); }
 
-.glow-emerald {
-  text-shadow: 0 0 12px rgba(16, 185, 129, 0.45);
-}
-
-.glow-rose {
-  text-shadow: 0 0 12px rgba(244, 63, 94, 0.45);
-}
-
-/* --- Interactive States & Animation System --- */
+/* --- Interactive States --- */
 button, 
 .nav-tab-btn, 
-.btn-invest-start, 
+.btn-invest-start,
 .glass-panel input[type="radio"] {
   cursor: pointer;
   transition: 
     transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
     background-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Minimum touch target */
+  min-height: 44px;
 }
 
 button:hover:not(:disabled),
 .btn-invest-start:hover:not(:disabled) {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 button:active:not(:disabled),
 .btn-invest-start:active:not(:disabled) {
-  transform: translateY(1px) scale(0.97);
+  transform: scale(0.97);
 }
 
-/* Smooth Navigation Tab Hover Effect */
+/* Tap highlight removal for mobile */
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Desktop nav hover */
 .nav-tab-btn:hover {
   background: rgba(255, 255, 255, 0.03) !important;
   color: #ffffff;
-  transform: translateX(-2px);
 }
 
-/* Gold Button Special Styles */
+/* Gold Button */
 .bg-yellow-500 {
   background-color: #eab308 !important;
   box-shadow: 0 4px 15px rgba(234, 179, 8, 0.15);
@@ -173,7 +178,7 @@ button:active:not(:disabled),
   box-shadow: 0 6px 20px rgba(234, 179, 8, 0.3) !important;
 }
 
-/* Emerald Button Special Styles */
+/* Emerald Button */
 .bg-emerald-600 {
   background-color: #059669 !important;
   box-shadow: 0 4px 15px rgba(5, 150, 105, 0.15);
@@ -184,7 +189,7 @@ button:active:not(:disabled),
   box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3) !important;
 }
 
-/* Rose Action Styles */
+/* Rose */
 .bg-rose-500\/10 {
   background-color: rgba(244, 63, 94, 0.05) !important;
   border-color: rgba(244, 63, 94, 0.15) !important;
@@ -192,82 +197,42 @@ button:active:not(:disabled),
 
 /* --- Keyframe Animations --- */
 @keyframes pulse-gold {
-  0%, 100% {
-    box-shadow: 0 0 10px rgba(234, 179, 8, 0.15);
-    border-color: rgba(234, 179, 8, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 25px rgba(234, 179, 8, 0.45);
-    border-color: rgba(234, 179, 8, 0.45);
-  }
+  0%, 100% { box-shadow: 0 0 10px rgba(234, 179, 8, 0.15); border-color: rgba(234, 179, 8, 0.2); }
+  50%       { box-shadow: 0 0 25px rgba(234, 179, 8, 0.45); border-color: rgba(234, 179, 8, 0.45); }
 }
-
-.pulse-border-gold {
-  animation: pulse-gold 2.5s infinite var(--transition-bezier);
-}
+.pulse-border-gold { animation: pulse-gold 2.5s infinite var(--transition-bezier); }
 
 @keyframes float-up {
-  0% {
-    transform: translateY(10px) scale(0.95);
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  80% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-50px) scale(0.85);
-    opacity: 0;
-  }
+  0%   { transform: translateY(10px) scale(0.95); opacity: 0; }
+  20%  { opacity: 1; transform: translateY(0) scale(1); }
+  80%  { opacity: 1; }
+  100% { transform: translateY(-50px) scale(0.85); opacity: 0; }
 }
-
-.animate-float {
-  animation: float-up 1500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
-}
+.animate-float { animation: float-up 1500ms cubic-bezier(0.25, 1, 0.5, 1) forwards; }
 
 @keyframes flash-red {
-  0%, 100% {
-    background-color: rgba(244, 63, 94, 0.05);
-    box-shadow: inset 0 0 20px rgba(244, 63, 94, 0.05);
-  }
-  50% {
-    background-color: rgba(244, 63, 94, 0.2);
-    box-shadow: inset 0 0 40px rgba(244, 63, 94, 0.15);
-  }
+  0%, 100% { background-color: rgba(244, 63, 94, 0.05); box-shadow: inset 0 0 20px rgba(244, 63, 94, 0.05); }
+  50%       { background-color: rgba(244, 63, 94, 0.2);  box-shadow: inset 0 0 40px rgba(244, 63, 94, 0.15); }
 }
-
-.animate-flash-red {
-  animation: flash-red 1.2s ease-in-out infinite;
-}
+.animate-flash-red { animation: flash-red 1.2s ease-in-out infinite; }
 
 @keyframes ticker-slide {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(50%);
-  }
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(50%); }
 }
+.ticker-wrap    { overflow: hidden; width: 100%; }
+.ticker-content { display: flex; width: max-content; animation: ticker-slide 30s linear infinite; }
+.crash-rocket   { transition: transform 0.1s linear; }
 
-.ticker-wrap {
-  overflow: hidden;
-  width: 100%;
+@keyframes slide-up {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
+.animate-slide-up { animation: slide-up 0.3s var(--transition-bezier) forwards; }
 
-.ticker-content {
-  display: flex;
-  width: max-content;
-  animation: ticker-slide 30s linear infinite;
-}
-
-.crash-rocket {
-  transition: transform 0.1s linear;
-}
-
-/* --- Layout Grid Configurations --- */
+/* ═══════════════════════════════════════════
+   DESKTOP LAYOUT
+═══════════════════════════════════════════ */
 @media (min-width: 1024px) {
   .desktop-sidebar {
     width: 290px;
@@ -289,46 +254,254 @@ button:active:not(:disabled),
   }
 }
 
+/* ═══════════════════════════════════════════
+   MOBILE LAYOUT — Complete Overhaul
+═══════════════════════════════════════════ */
 @media (max-width: 1023px) {
+
+  /* ── Bottom Navigation Bar ── */
   .mobile-bottom-nav {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     z-index: 50;
-    height: 64px;
-    border-radius: 20px 20px 0 0 !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-    background: rgba(5, 7, 15, 0.92) !important;
-    backdrop-filter: blur(24px) saturate(140%) !important;
-    -webkit-backdrop-filter: blur(24px) saturate(140%) !important;
+    height: calc(var(--bottom-nav-height) + var(--safe-bottom));
+    padding-bottom: var(--safe-bottom);
+    border-radius: 22px 22px 0 0 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+    background: rgba(4, 6, 14, 0.96) !important;
+    backdrop-filter: blur(28px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(150%) !important;
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    box-shadow: 0 -4px 30px rgba(0,0,0,0.5), 0 -1px 0 rgba(255,255,255,0.04);
   }
-  .mobile-bottom-nav::-webkit-scrollbar {
-    display: none;
-  }
+
+  .mobile-bottom-nav::-webkit-scrollbar { display: none; }
+
+  /* Nav tab buttons — larger touch targets */
   .mobile-bottom-nav .nav-tab-btn {
-    min-width: 58px;
-    padding: 4px 6px;
+    min-width: 64px;
+    padding: 6px 8px 4px;
     flex-shrink: 0;
-  }
-  .mobile-content {
-    padding-bottom: 84px;
-  }
-  /* Mobile padding & touch friendliness */
-  .game-panel {
-    padding-left: 12px;
-    padding-right: 12px;
-  }
-  .glass-panel {
     border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(148, 163, 184, 0.7);
+    transition: all 0.2s var(--transition-bezier);
+    position: relative;
+    min-height: unset; /* override global */
+  }
+
+  .mobile-bottom-nav .nav-tab-btn svg {
+    width: 22px;
+    height: 22px;
+    transition: transform 0.2s var(--transition-bezier);
+  }
+
+  .mobile-bottom-nav .nav-tab-btn.glass-panel-active {
+    color: #eab308 !important;
+    background: rgba(234, 179, 8, 0.08) !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .mobile-bottom-nav .nav-tab-btn.glass-panel-active svg {
+    transform: translateY(-2px) scale(1.1);
+  }
+
+  /* Active indicator dot */
+  .mobile-bottom-nav .nav-tab-btn.glass-panel-active::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #eab308;
+    box-shadow: 0 0 6px rgba(234, 179, 8, 0.8);
+  }
+
+  /* Hide tab labels on very small screens */
+  .mobile-bottom-nav .nav-tab-btn .nav-label {
+    display: block;
+    font-size: 9px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  /* ── Mobile Content Padding ── */
+  .mobile-content {
+    padding-bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 12px);
+  }
+
+  /* ── Mobile Panel Padding ── */
+  .game-panel {
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 16px;
+  }
+
+  /* ── Glass Panel adjustments ── */
+  .glass-panel {
+    border-radius: 18px;
+  }
+
+  /* ── Larger tap targets for all mobile buttons ── */
+  button:not(.nav-tab-btn) {
+    min-height: 46px;
+    border-radius: 14px;
+    font-size: 14px;
+  }
+
+  /* ── Auth screen improvements ── */
+  #auth-screen > div {
+    padding: 28px 20px;
+    border-radius: 24px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* ── Mobile Stats Header (top bar) ── */
+  .mobile-stats-bar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: rgba(4, 6, 14, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 10px 16px;
+  }
+
+  /* ── Financial stat cards — tighter on mobile ── */
+  .stat-card-mobile {
+    background: rgba(8, 12, 26, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .stat-card-mobile .stat-label {
+    font-size: 10px;
+    color: rgba(148, 163, 184, 0.7);
+    font-weight: 600;
+  }
+
+  .stat-card-mobile .stat-value {
+    font-size: 15px;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+  }
+
+  /* ── Full-width action buttons on mobile ── */
+  .mobile-full-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 800;
+    border-radius: 16px;
+    letter-spacing: 0.01em;
+  }
+
+  /* ── Reduce excessive padding in cards ── */
+  .game-panel .p-6 {
+    padding: 16px !important;
+  }
+  .game-panel .p-4 {
+    padding: 12px !important;
+  }
+
+  /* ── Make tables/grids scroll horizontally ── */
+  .mobile-scroll-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Toast notifications — above bottom nav ── */
+  #toast-container {
+    bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 12px) !important;
+    left: 12px !important;
+    right: 12px !important;
+  }
+
+  /* ── Connectivity badge — avoid bottom nav ── */
+  #connectivity-badge {
+    bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 12px) !important;
+    left: 12px !important;
+    font-size: 9px !important;
+  }
+
+  /* ── Overlays — full safe area ── */
+  #jail-overlay,
+  #maintenance-overlay,
+  #force-update-overlay,
+  #connecting-overlay,
+  #offline-overlay {
+    padding-bottom: calc(var(--safe-bottom) + 16px);
+  }
+
+  /* ── Section headings on mobile ── */
+  .game-panel h2 {
+    font-size: 18px;
+  }
+  .game-panel h3 {
+    font-size: 15px;
+  }
+
+  /* ── Item/card grids — 1 col on small screens ── */
+  .mobile-grid-1 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Number inputs: bigger ── */
+  input[type="number"],
+  input[type="text"],
+  input[type="password"] {
+    font-size: 16px !important; /* Prevent iOS zoom */
+    padding: 12px 14px !important;
+  }
+
+  /* ── Reduce icon sizes ── */
+  .mobile-icon-sm svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+}
+
+/* Extra small phones (< 380px) */
+@media (max-width: 379px) {
+  .mobile-bottom-nav .nav-tab-btn {
+    min-width: 52px;
+    padding: 5px 4px 3px;
+  }
+  .mobile-bottom-nav .nav-tab-btn .nav-label {
+    display: none; /* Hide text labels on tiny screens */
+  }
+  .mobile-bottom-nav .nav-tab-btn svg {
+    width: 20px;
+    height: 20px;
   }
 }
 
-/* --- Refined Sub-cards inside Panels --- */
+/* ═══════════════════════════════════════════
+   SHARED COMPONENTS
+═══════════════════════════════════════════ */
+
+/* Sub-cards inside panels */
 .game-panel .bg-slate-950\/50,
 .game-panel .p-4.bg-slate-950\/40,
 .p-4.bg-slate-950\/40,
@@ -341,53 +514,51 @@ button:active:not(:disabled),
 }
 
 /* Glow Borders */
-.glow-border-gold {
-  box-shadow: 0 0 15px rgba(234, 179, 8, 0.15) !important;
-  border-color: rgba(234, 179, 8, 0.3) !important;
-}
-.glow-border-emerald {
-  box-shadow: 0 0 15px rgba(16, 185, 129, 0.15) !important;
-  border-color: rgba(16, 185, 129, 0.3) !important;
-}
-.glow-border-rose {
-  box-shadow: 0 0 15px rgba(244, 63, 94, 0.15) !important;
-  border-color: rgba(244, 63, 94, 0.3) !important;
-}
+.glow-border-gold    { box-shadow: 0 0 15px rgba(234, 179, 8, 0.15) !important;   border-color: rgba(234, 179, 8, 0.3) !important; }
+.glow-border-emerald { box-shadow: 0 0 15px rgba(16, 185, 129, 0.15) !important;  border-color: rgba(16, 185, 129, 0.3) !important; }
+.glow-border-rose    { box-shadow: 0 0 15px rgba(244, 63, 94, 0.15) !important;   border-color: rgba(244, 63, 94, 0.3) !important; }
 
-/* Deep Blurred Auth Screen */
+/* Auth Screen */
 #auth-screen {
   background: rgba(3, 5, 12, 0.82) !important;
   backdrop-filter: blur(24px) saturate(120%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(120%) !important;
 }
 
-/* Custom styled inputs */
+/* Range Input */
 input[type="range"] {
   height: 6px;
   -webkit-appearance: none;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 99px;
   outline: none;
+  min-height: unset;
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
   border-radius: 99px;
   background: #eab308;
   cursor: pointer;
   box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
   transition: transform 0.1s var(--transition-bezier);
 }
-input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
+input[type="range"]::-webkit-slider-thumb:hover,
+input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(1.25);
 }
 
-/* Rose Button Disabled Style */
+/* Disabled Rose Button */
 .bg-rose-600:disabled {
   background-color: rgba(255, 255, 255, 0.05) !important;
   color: rgba(255, 255, 255, 0.3) !important;
   border: 1px solid rgba(255, 255, 255, 0.02) !important;
   box-shadow: none !important;
   cursor: not-allowed;
+}
+
+/* Smooth page transition for tab switching */
+.game-panel {
+  animation: slide-up 0.25s var(--transition-bezier) both;
 }
