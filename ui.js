@@ -281,9 +281,6 @@ const UIController = (() => {
   function startGameLoop() {
     if (tickIntervalId) clearInterval(tickIntervalId);
 
-    // DB is already initialised by the boot sequence — just render settings
-    renderSettings();
-
     tickIntervalId = setInterval(() => {
       const updates = GameEngine.processTick();
       if (!updates) return;
@@ -434,9 +431,6 @@ const UIController = (() => {
         break;
       case 'leaderboard':
         renderLeaderboard();
-        break;
-      case 'settings':
-        renderSettings();
         break;
     }
   }
@@ -1345,6 +1339,16 @@ const UIController = (() => {
         }
       });
     }
+
+    // Leaderboard Manual Refresh Handler
+    const lbRefreshBtn = document.getElementById('btn-leaderboard-refresh');
+    if (lbRefreshBtn) {
+      lbRefreshBtn.addEventListener('click', async () => {
+        playCasinoSound('tick');
+        showToast('تحديث الترتيب', 'جاري جلب أحدث بيانات المتصدرين...', 'info');
+        await renderLeaderboard();
+      });
+    }
   }
 
   function getReelSymbolIcon(sym) {
@@ -1919,13 +1923,18 @@ const UIController = (() => {
     renderAll();
   }
 
-  // --- Tab 10: Leaderboard Panel ---
+  // --- Tab 10: Leaderboard Panel (Grand Tycoon Leaderboard & Podium) ---
   async function renderLeaderboard() {
     const list = document.getElementById('leaderboard-rows');
+    if (!list) return;
+
     list.innerHTML = `
       <tr>
-        <td colspan="4" class="text-center py-6 text-slate-500">
-          <span class="animate-pulse">جاري تحميل قائمة الأغنياء وتحديث الترتيب...</span>
+        <td colspan="4" class="text-center py-8 text-slate-400">
+          <div class="flex items-center justify-center gap-2">
+            <span class="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></span>
+            <span class="font-bold text-xs">جاري تحديث عرش الأثرياء المباشر...</span>
+          </div>
         </td>
       </tr>
     `;
@@ -1934,104 +1943,130 @@ const UIController = (() => {
       const players = await AppDB.getLeaderboard();
       list.innerHTML = '';
 
+      if (!players || players.length === 0) {
+        list.innerHTML = `
+          <tr>
+            <td colspan="4" class="text-center py-8 text-slate-500 text-xs">
+              لا توجد حسابات مسجلة حالياً في قائمة المتصدرين.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      // Update Podium Cards (Top 3)
+      const top1 = players[0];
+      const top2 = players[1];
+      const top3 = players[2];
+
+      // Podium 1 (Gold - 1st)
+      if (top1) {
+        const p1Name = document.getElementById('podium-name-1');
+        const p1Title = document.getElementById('podium-title-1');
+        const p1Worth = document.getElementById('podium-worth-1');
+        const p1Avatar = document.getElementById('podium-avatar-1');
+        if (p1Name) p1Name.textContent = top1.username;
+        if (p1Title) p1Title.textContent = top1.title || 'إمبراطور المال';
+        if (p1Worth) p1Worth.textContent = `${Number(top1.netWorth || 0).toLocaleString()} EGP`;
+        if (p1Avatar) p1Avatar.textContent = (top1.username || 'P').substring(0, 2).toUpperCase();
+      }
+
+      // Podium 2 (Silver - 2nd)
+      if (top2) {
+        const p2Name = document.getElementById('podium-name-2');
+        const p2Title = document.getElementById('podium-title-2');
+        const p2Worth = document.getElementById('podium-worth-2');
+        const p2Avatar = document.getElementById('podium-avatar-2');
+        if (p2Name) p2Name.textContent = top2.username;
+        if (p2Title) p2Title.textContent = top2.title || 'بارون التجارة';
+        if (p2Worth) p2Worth.textContent = `${Number(top2.netWorth || 0).toLocaleString()} EGP`;
+        if (p2Avatar) p2Avatar.textContent = (top2.username || 'P').substring(0, 2).toUpperCase();
+      }
+
+      // Podium 3 (Bronze - 3rd)
+      if (top3) {
+        const p3Name = document.getElementById('podium-name-3');
+        const p3Title = document.getElementById('podium-title-3');
+        const p3Worth = document.getElementById('podium-worth-3');
+        const p3Avatar = document.getElementById('podium-avatar-3');
+        if (p3Name) p3Name.textContent = top3.username;
+        if (p3Title) p3Title.textContent = top3.title || 'رجل أعمال كبار';
+        if (p3Worth) p3Worth.textContent = `${Number(top3.netWorth || 0).toLocaleString()} EGP`;
+        if (p3Avatar) p3Avatar.textContent = (top3.username || 'P').substring(0, 2).toUpperCase();
+      }
+
+      // Update Self Rank indicator
+      const activeUser = GameEngine.activeUsername;
+      const selfIndex = players.findIndex(p => p.username === activeUser);
+      const selfRankEl = document.getElementById('self-rank-num');
+      if (selfRankEl) {
+        selfRankEl.textContent = selfIndex !== -1 ? `#${selfIndex + 1}` : 'خارج قائمة الـ 25';
+      }
+
+      // Render Table Rows
       players.forEach((player, idx) => {
-        const isSelf = player.username === GameEngine.activeUsername;
+        const isSelf = player.username === activeUser;
+        const rank = idx + 1;
+        const initials = (player.username || 'P').substring(0, 2).toUpperCase();
         
         const row = document.createElement('tr');
-        row.className = `border-b border-slate-800/50 text-sm ${isSelf ? 'bg-yellow-500/10 font-bold border-l-4 border-l-yellow-500' : ''}`;
+        row.className = `border-b border-slate-800/40 text-xs transition duration-200 ${
+          isSelf 
+            ? 'bg-yellow-500/10 hover:bg-yellow-500/15 font-bold border-r-4 border-r-yellow-500' 
+            : idx < 3 ? 'bg-slate-900/30 hover:bg-slate-900/60' : 'hover:bg-slate-900/40'
+        }`;
         
+        let rankBadge = '';
+        if (rank === 1) {
+          rankBadge = `<span class="w-8 h-8 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 font-black flex items-center justify-center text-xs shadow-md glow-gold"><i class="fa-solid fa-crown text-[10px] ml-1"></i>1</span>`;
+        } else if (rank === 2) {
+          rankBadge = `<span class="w-8 h-8 rounded-xl bg-slate-700 border border-slate-400/60 text-slate-100 font-black flex items-center justify-center text-xs shadow"><i class="fa-solid fa-medal text-[10px] ml-1"></i>2</span>`;
+        } else if (rank === 3) {
+          rankBadge = `<span class="w-8 h-8 rounded-xl bg-amber-950 border border-amber-600/60 text-amber-400 font-black flex items-center justify-center text-xs shadow"><i class="fa-solid fa-award text-[10px] ml-1"></i>3</span>`;
+        } else {
+          rankBadge = `<span class="w-8 h-8 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 font-bold flex items-center justify-center text-xs numbers-font">#${rank}</span>`;
+        }
+
         row.innerHTML = `
-          <td class="py-3.5 pr-4 pl-2 text-right numbers-font font-bold ${idx === 0 ? 'text-yellow-500 text-base' : idx === 1 ? 'text-slate-300' : idx === 2 ? 'text-amber-600' : 'text-slate-500'}">
-            #${idx + 1}
+          <td class="py-3.5 pr-5 pl-2 text-right">
+            ${rankBadge}
           </td>
-          <td class="py-3.5 px-2 text-white">
-            ${player.username} ${isSelf ? '<span class="text-[10px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-500 rounded border border-yellow-500/20 mr-1.5">أنت</span>' : ''}
+          <td class="py-3.5 px-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-black text-slate-300 numbers-font">
+                ${initials}
+              </div>
+              <div>
+                <span class="font-black ${isSelf ? 'text-yellow-400 glow-gold' : rank === 1 ? 'text-yellow-300' : 'text-white'} text-sm block">
+                  ${player.username}
+                </span>
+                ${isSelf ? '<span class="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 rounded font-bold inline-block border border-yellow-500/30">أنت (حسابك)</span>' : ''}
+              </div>
+            </div>
           </td>
-          <td class="py-3.5 px-2 text-slate-400 text-xs">
-            ${player.title}
+          <td class="py-3.5 px-3 text-slate-400">
+            <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[10px] font-bold text-slate-300 inline-block">
+              ${player.title || 'مستثمر'}
+            </span>
           </td>
-          <td class="py-3.5 pl-4 pr-2 text-left numbers-font text-emerald-400 font-semibold">
-            ${player.netWorth.toLocaleString()} EGP
+          <td class="py-3.5 pl-5 pr-3 text-left">
+            <span class="numbers-font font-black ${rank === 1 ? 'text-yellow-400 text-sm glow-gold' : 'text-emerald-400 text-xs'}">
+              ${Number(player.netWorth || 0).toLocaleString()} EGP
+            </span>
           </td>
         `;
         list.appendChild(row);
       });
+
     } catch (err) {
       list.innerHTML = `
         <tr>
-          <td colspan="4" class="text-center py-6 text-rose-400">
-            فشل تحميل قائمة المتصدرين. تحقق من الاتصال بالشبكة.
+          <td colspan="4" class="text-center py-8 text-rose-400 text-xs">
+            <i class="fa-solid fa-circle-exclamation text-base mb-1 block"></i>
+            تعذر تحميل قائمة المتصدرين. تأكد من اتصالك بالإنترنت.
           </td>
         </tr>
       `;
-    }
-  }
-
-  // --- Tab 11: Settings (Connection & Sync Status) ---
-  function renderSettings() {
-    const configTextarea = document.getElementById('settings-firebase-config');
-    const statusText = document.getElementById('settings-sync-status');
-
-    // Live connection status
-    const isOnline = navigator.onLine;
-    const isFirebase = AppDB.isFirebaseReady;
-    const pending = AppDB.pendingSyncs;
-    const clientVer = AppDB.clientVersion;
-
-    if (isOnline && isFirebase) {
-      statusText.innerHTML = `
-        <span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30 font-bold text-xs inline-block ml-2">
-          متصل بـ Firebase — المزامنة الحية نشطة
-        </span>
-        ${pending > 0 ? `<span class="px-2.5 py-1 bg-yellow-500/20 text-yellow-500 rounded-full border border-yellow-500/30 font-bold text-xs inline-block ml-2">
-          ${pending} عملية مزامنة معلقة
-        </span>` : ''}
-      `;
-    } else if (isOnline) {
-      statusText.innerHTML = `
-        <span class="px-2.5 py-1 bg-yellow-500/20 text-yellow-500 rounded-full border border-yellow-500/30 font-bold text-xs inline-block ml-2">
-          متصل بالإنترنت — جاري محاولة الاتصال بـ Firebase...
-        </span>
-      `;
-    } else {
-      statusText.innerHTML = `
-        <span class="px-2.5 py-1 bg-rose-500/20 text-rose-400 rounded-full border border-rose-500/30 font-bold text-xs inline-block ml-2">
-          غير متصل — وضع محلي (Local-First)
-        </span>
-      `;
-    }
-
-    // Show version and architecture info in the textarea
-    if (configTextarea) {
-      configTextarea.readOnly = true;
-      configTextarea.value = JSON.stringify({
-        architecture: 'local-first',
-        clientVersion: clientVer,
-        firebaseConnected: isFirebase,
-        isOnline: isOnline,
-        pendingSyncOps: pending,
-        storage: 'LocalStorage + Firestore background sync',
-        note: 'تكوين Firebase مدمج داخلياً. البيانات تُحفظ محلياً أولاً وتتزامن تلقائياً عند الاتصال.'
-      }, null, 2);
-    }
-
-    // Re-wire the save/clear buttons to no-ops with an explanatory toast
-    const saveBtn = document.getElementById('btn-settings-save-config');
-    if (saveBtn) {
-      const newSaveBtn = saveBtn.cloneNode(true);
-      saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-      newSaveBtn.addEventListener('click', () => {
-        showToast('معلومة', 'تكوين Firebase مدمج داخلياً في هذا الإصدار. المزامنة تتم تلقائياً في الخلفية.', 'info');
-      });
-    }
-
-    const clearBtn = document.getElementById('btn-settings-clear-config');
-    if (clearBtn) {
-      const newClearBtn = clearBtn.cloneNode(true);
-      clearBtn.parentNode.replaceChild(newClearBtn, clearBtn);
-      newClearBtn.addEventListener('click', () => {
-        showToast('معلومة', 'لا يمكن مسح تكوين Firebase في هذا الإصدار. التكوين مدمج وثابت.', 'info');
-      });
     }
   }
 

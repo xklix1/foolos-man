@@ -1011,22 +1011,113 @@
         </div>
       </section>
 
-      <!-- TAB 10: توب الاغنياء (GLOBAL LEADERBOARD) -->
+      <!-- TAB 10: توب الاغنياء (GLOBAL LEADERBOARD & TYCOON PODIUM) -->
       <section id="panel-leaderboard" class="game-panel hidden space-y-6">
-        <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
-          <div class="p-6 border-b border-slate-800/80">
-            <h3 class="text-md font-bold text-white">قائمة أثرى أثرياء اللعبة</h3>
-            <p class="text-xs text-slate-400 mt-1">تحديث حي ومباشر لأعلى اللاعبين ثروة استناداً إلى صافي رأس المال والأصول الكلية المسجلة.</p>
+        
+        <!-- Header & Live Status Banner -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
+          <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-yellow-500/5 rounded-full blur-3xl pointer-events-none"></div>
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="text-xs text-emerald-400 font-bold">التصنيف المالي الحي والمباشر</span>
+            </div>
+            <h3 class="text-xl font-black text-white flex items-center gap-2.5">
+              <i class="fa-solid fa-trophy text-yellow-400 text-xl"></i>
+              <span>عرش أثرياء اللعبة (Top Tycoons)</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">ترتيب حيتان المال ورجال الأعمال استناداً إلى مجموع السيولة النقدية، الودائع، وقيمة الأصول الكلية.</p>
+          </div>
+          
+          <div class="flex items-center gap-3 w-full md:w-auto">
+            <div id="leaderboard-self-rank-badge" class="px-3.5 py-2 bg-slate-950/80 rounded-xl border border-yellow-500/30 flex items-center gap-2">
+              <i class="fa-solid fa-ranking-star text-yellow-400 text-sm"></i>
+              <span class="text-xs text-slate-300 font-bold">مركزك الحالي: <strong id="self-rank-num" class="text-yellow-400 font-black numbers-font">#--</strong></span>
+            </div>
+            <button id="btn-leaderboard-refresh" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition shadow-lg shadow-yellow-500/10 flex items-center gap-2">
+              <i class="fa-solid fa-arrows-rotate"></i>
+              <span>تحديث الترتيب</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- TOP 3 PODIUM DISPLAY -->
+        <div id="leaderboard-podium" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end pt-6">
+          
+          <!-- PODIUM 2: Silver (Rank 2) -->
+          <div id="podium-card-2" class="glass-panel p-5 rounded-2xl border border-slate-400/40 bg-gradient-to-b from-slate-800/40 via-slate-900/60 to-slate-950/80 flex flex-col items-center text-center relative shadow-lg order-2 md:order-1 hover:border-slate-300 transition duration-300">
+            <div class="w-10 h-10 -mt-9 mb-2 rounded-full bg-slate-700 border-2 border-slate-300 flex items-center justify-center text-slate-200 shadow-md">
+              <i class="fa-solid fa-medal text-lg text-slate-200"></i>
+            </div>
+            <span class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-slate-400/20 text-slate-200 border border-slate-400/30 mb-2">المركز الثاني #2</span>
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-slate-700 to-slate-500 flex items-center justify-center text-white text-xl font-black mb-2 shadow-inner border border-slate-400/40 numbers-font" id="podium-avatar-2">
+              --
+            </div>
+            <h4 id="podium-name-2" class="text-sm font-black text-white mb-0.5 truncate max-w-full">جاري التحميل...</h4>
+            <span id="podium-title-2" class="text-[10px] text-slate-400 mb-3 truncate max-w-full">--</span>
+            <div class="w-full pt-2.5 border-t border-slate-800/80 flex flex-col">
+              <span class="text-[9px] text-slate-500 font-bold">صافي الثروة</span>
+              <span id="podium-worth-2" class="numbers-font text-sm font-black text-slate-200">-- EGP</span>
+            </div>
+          </div>
+
+          <!-- PODIUM 1: Gold (Rank 1 - Champion) -->
+          <div id="podium-card-1" class="glass-panel p-6 rounded-2xl border-2 border-yellow-400/80 bg-gradient-to-b from-yellow-500/15 via-amber-950/40 to-slate-950/90 flex flex-col items-center text-center relative shadow-2xl order-1 md:order-2 glow-gold hover:border-yellow-300 transition duration-300 -translate-y-2">
+            <div class="absolute -top-6 text-yellow-400 text-3xl filter drop-shadow animate-bounce">
+              <i class="fa-solid fa-crown"></i>
+            </div>
+            <div class="w-12 h-12 -mt-7 mb-2 rounded-full bg-gradient-to-r from-yellow-500 to-amber-500 border-2 border-yellow-300 flex items-center justify-center text-slate-950 shadow-lg glow-gold">
+              <i class="fa-solid fa-trophy text-xl text-slate-950"></i>
+            </div>
+            <span class="text-xs font-black px-3 py-0.5 rounded-full bg-yellow-500/30 text-yellow-300 border border-yellow-500/50 mb-2 glow-gold">إمبراطور اللعبة #1</span>
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-yellow-500 via-amber-400 to-yellow-200 flex items-center justify-center text-slate-950 text-2xl font-black mb-2 shadow-xl border-2 border-yellow-300 numbers-font glow-gold" id="podium-avatar-1">
+              --
+            </div>
+            <h4 id="podium-name-1" class="text-base font-black text-yellow-300 mb-0.5 truncate max-w-full glow-gold">جاري التحميل...</h4>
+            <span id="podium-title-1" class="text-xs text-yellow-400/80 font-bold mb-3 truncate max-w-full">--</span>
+            <div class="w-full pt-3 border-t border-yellow-500/30 flex flex-col">
+              <span class="text-[10px] text-yellow-500/70 font-bold">الثروة الإجمالية الصافية</span>
+              <span id="podium-worth-1" class="numbers-font text-lg font-black text-yellow-400 glow-gold">-- EGP</span>
+            </div>
+          </div>
+
+          <!-- PODIUM 3: Bronze (Rank 3) -->
+          <div id="podium-card-3" class="glass-panel p-5 rounded-2xl border border-amber-700/50 bg-gradient-to-b from-amber-950/30 via-slate-900/60 to-slate-950/80 flex flex-col items-center text-center relative shadow-lg order-3 md:order-3 hover:border-amber-600 transition duration-300">
+            <div class="w-10 h-10 -mt-9 mb-2 rounded-full bg-amber-900 border-2 border-amber-600 flex items-center justify-center text-amber-300 shadow-md">
+              <i class="fa-solid fa-award text-lg text-amber-300"></i>
+            </div>
+            <span class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-700/20 text-amber-400 border border-amber-700/40 mb-2">المركز الثالث #3</span>
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-800 to-amber-600 flex items-center justify-center text-white text-xl font-black mb-2 shadow-inner border border-amber-600/40 numbers-font" id="podium-avatar-3">
+              --
+            </div>
+            <h4 id="podium-name-3" class="text-sm font-black text-white mb-0.5 truncate max-w-full">جاري التحميل...</h4>
+            <span id="podium-title-3" class="text-[10px] text-slate-400 mb-3 truncate max-w-full">--</span>
+            <div class="w-full pt-2.5 border-t border-slate-800/80 flex flex-col">
+              <span class="text-[9px] text-slate-500 font-bold">صافي الثروة</span>
+              <span id="podium-worth-3" class="numbers-font text-sm font-black text-amber-400">-- EGP</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- FULL LEADERBOARD TABLE -->
+        <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+          <div class="p-5 border-b border-slate-800/80 flex justify-between items-center bg-slate-950/40">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-list-ol text-yellow-400"></i>
+              <span>جدول الترتيب العام للمتصدرين (أفضل 25 مستثمر)</span>
+            </h3>
+            <span class="text-[11px] text-slate-400 font-medium">يتم تحديث الترتيب مع كل دورة مالية</span>
           </div>
           
           <div class="overflow-x-auto w-full">
             <table class="w-full text-right border-collapse">
               <thead>
-                <tr class="bg-slate-950/40 text-xs text-slate-400 font-bold border-b border-slate-800">
-                  <th class="py-3 pr-4 pl-2 text-right">المرتبة</th>
-                  <th class="py-3 px-2">اسم اللاعب</th>
-                  <th class="py-3 px-2">الرتبة</th>
-                  <th class="py-3 pl-4 pr-2 text-left">الثروة الكلية الصافية</th>
+                <tr class="bg-slate-950/80 text-[11px] text-slate-400 font-bold border-b border-slate-800">
+                  <th class="py-3.5 pr-5 pl-2 text-right">المرتبة</th>
+                  <th class="py-3.5 px-3">اللاعب ورتبة الحساب</th>
+                  <th class="py-3.5 px-3">اللقب الوظيفي</th>
+                  <th class="py-3.5 pl-5 pr-3 text-left">الثروة الكلية المسجلة</th>
                 </tr>
               </thead>
               <tbody id="leaderboard-rows" class="divide-y divide-slate-800/40">
@@ -1035,35 +1126,7 @@
             </table>
           </div>
         </div>
-      </section>
 
-      <!-- TAB 11: التزامن السحابي (SETTINGS) -->
-      <section id="panel-settings" class="game-panel hidden space-y-6">
-        <div class="glass-panel p-6 rounded-2xl border border-slate-800">
-          <h3 class="text-md font-bold text-white mb-2">إعدادات الاتصال وقاعدة البيانات</h3>
-          <p class="text-xs text-slate-400 mb-6">اللعبة تستخدم افتراضياً قاعدة بيانات محلية محاكاة. يمكنك لصق مفاتيح Firebase Firestore الخاصة بمشروعك للربط والتزامن الحي مع خوادم اللعبة العالمية.</p>
-
-          <div class="mb-4 p-3 bg-slate-950/60 rounded-xl border border-slate-800 flex items-center justify-between">
-            <span class="text-xs text-slate-400">حالة التزامن النشطة حالياً:</span>
-            <div id="settings-sync-status">
-              <!-- Sync status -->
-            </div>
-          </div>
-
-          <div class="mb-6 text-right">
-            <label class="block text-xs text-slate-400 mb-2 font-bold mr-1">تكوين Firebase Config JSON</label>
-            <textarea id="settings-firebase-config" rows="7" class="glass-input w-full p-4 rounded-xl text-left numbers-font text-xs tracking-wide" style="font-family: monospace;"></textarea>
-          </div>
-
-          <div class="flex gap-3">
-            <button id="btn-settings-save-config" class="flex-1 py-3 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold rounded-lg transition duration-300">
-              حفظ المفاتيح وبدء التزامن
-            </button>
-            <button id="btn-settings-clear-config" class="py-3 px-6 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold rounded-lg transition">
-              مسح الإعدادات
-            </button>
-          </div>
-        </div>
       </section>
 
     </main>
@@ -1109,10 +1172,6 @@
       <button data-tab="leaderboard" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
         <span>الأغنياء</span>
-      </button>
-      <button data-tab="settings" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-        <span>الربط</span>
       </button>
     </nav>
   </div>
