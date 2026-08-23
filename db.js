@@ -401,6 +401,7 @@ const AppDB = (() => {
 
   async function adminSavePlayer(username, playerState) {
     _requireOnline();
+    playerState.adminModifiedTimestamp = Date.now();
     await firestoreDb.collection('players').doc(username).set(playerState, { merge: true });
   }
 

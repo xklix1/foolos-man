@@ -1011,17 +1011,17 @@ const UIController = (() => {
           
           setTimeout(() => {
             try {
-              const res = GameEngine.playCoinFlip(bet, choice);
+              const res = GameEngine.playCoinFlip(bet, choice, coinFlipStreak);
               const isTails = (res.side === 'tails');
               coinVisual.style.transition = 'transform 0.3s ease-out';
               coinVisual.style.transform = isTails ? 'rotateY(180deg) scale(1)' : 'rotateY(0deg) scale(1)';
 
               const streakBadge = document.getElementById('coin-streak-badge');
               if (res.won) {
-                coinFlipStreak = res.streak || (coinFlipStreak + 1);
+                coinFlipStreak = (coinFlipStreak || 0) + 1;
                 playCasinoSound('win');
                 if (streakBadge) {
-                  streakBadge.textContent = `سلسلة الانتصارات: ${coinFlipStreak}x متتالية 🔥`;
+                  streakBadge.textContent = `سلسلة الانتصارات: ${coinFlipStreak}x متتالية`;
                   streakBadge.className = 'text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30 animate-pulse';
                 }
                 const multText = res.streakMultiplier > 1 ? ` (بونص سلسلة الفوز: ${res.streakMultiplier}x)` : '';
@@ -1061,7 +1061,7 @@ const UIController = (() => {
           if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
           
           slotsSpinBtn.disabled = true;
-          playCasinoSound('tick');
+          playCasinoSound('coin');
 
           const r1 = document.getElementById('slot-reel-1');
           const r2 = document.getElementById('slot-reel-2');
@@ -1076,7 +1076,6 @@ const UIController = (() => {
             r1.innerHTML = getReelSymbolIcon(tempIcons[Math.floor(Math.random()*tempIcons.length)]);
             r2.innerHTML = getReelSymbolIcon(tempIcons[Math.floor(Math.random()*tempIcons.length)]);
             r3.innerHTML = getReelSymbolIcon(tempIcons[Math.floor(Math.random()*tempIcons.length)]);
-            playCasinoSound('tick');
           }, 80);
 
           setTimeout(() => {
@@ -2178,9 +2177,13 @@ const UIController = (() => {
     activeListeners.push(unsubAirdrop);
 
     // 3. User document listener for ban & external edits
+    let lastAdminActionTimestamp = Date.now();
     const unsubUser = db.collection('players').doc(username)
       .onSnapshot((doc) => {
         if (!doc.exists) return;
+        // Ignore local pending writes to prevent circular sync loops
+        if (doc.metadata && doc.metadata.hasPendingWrites) return;
+
         const data = doc.data();
 
         // Ban check
@@ -2190,26 +2193,29 @@ const UIController = (() => {
           return;
         }
 
-        // External balance/jail modification
-        const s = GameEngine.state;
-        let modified = false;
-        if (data.cash !== undefined && data.cash !== s.cash) {
-          s.cash = data.cash;
-          modified = true;
-        }
-        if (data.bank !== undefined && data.bank !== s.bank) {
-          s.bank = data.bank;
-          modified = true;
-        }
-        if (data.jailTimer !== undefined && data.jailTimer !== s.jailTimer) {
-          s.jailTimer = data.jailTimer;
-          modified = true;
-        }
+        // Only process external admin modifications if explicitly timestamped
+        if (data.adminModifiedTimestamp && data.adminModifiedTimestamp > lastAdminActionTimestamp) {
+          lastAdminActionTimestamp = data.adminModifiedTimestamp;
+          const s = GameEngine.state;
+          let modified = false;
+          if (data.cash !== undefined && data.cash !== s.cash) {
+            s.cash = data.cash;
+            modified = true;
+          }
+          if (data.bank !== undefined && data.bank !== s.bank) {
+            s.bank = data.bank;
+            modified = true;
+          }
+          if (data.jailTimer !== undefined && data.jailTimer !== s.jailTimer) {
+            s.jailTimer = data.jailTimer;
+            modified = true;
+          }
 
-        if (modified) {
-          GameEngine.forceSaveState();
-          showToast('إشعار النظام', 'تم تحديث بيانات حسابك من قبل الإدارة.', 'info');
-          renderAll();
+          if (modified) {
+            GameEngine.forceSaveState();
+            showToast('إشعار النظام', 'تم تحديث بيانات حسابك من قبل الإدارة.', 'info');
+            renderAll();
+          }
         }
       }, (err) => console.error("User doc listen err: ", err));
     activeListeners.push(unsubUser);
