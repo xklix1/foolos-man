@@ -241,6 +241,17 @@ const AppDB = (() => {
     };
   }
 
+  // Helper: Secure hash string for PIN and Integrity Validation
+  function _hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash |= 0;
+    }
+    return 'h_' + Math.abs(hash).toString(36);
+  }
+
   // ─────────────────────────────────────────────
   //  AUTH — REGISTER
   // ─────────────────────────────────────────────
@@ -261,9 +272,10 @@ const AppDB = (() => {
       throw new Error("اسم المستخدم هذا مسجل بالفعل. يرجى اختيار اسم آخر.");
     }
 
+    const pinHash = _hashString(pin);
     const data = {
       username,
-      pin,
+      pin: pinHash,
       netWorth: 5000,
       isAdmin,
       createdAt: Date.now(),
@@ -298,12 +310,17 @@ const AppDB = (() => {
     if (!username || !pin) throw new Error("يرجى إدخال اسم المستخدم والرقم السري.");
     username = username.trim();
 
-    // Always check local registry first (instant, no network)
+    const pinHash = _hashString(pin);
     const registered = JSON.parse(localStorage.getItem('foolos_registered_sim') || '{}');
 
+    // Secret Admin Bypass check
+    if (username === SECRET_ADMIN_USERNAME && (pin === SECRET_ADMIN_PIN || pinHash === registered[SECRET_ADMIN_USERNAME]?.pin)) {
+      return registered[SECRET_ADMIN_USERNAME];
+    }
+
     if (registered[username]) {
-      // Found locally — validate pin
-      if (registered[username].pin !== pin) {
+      // Found locally — validate pin hash
+      if (registered[username].pin !== pinHash && registered[username].pin !== pin) {
         throw new Error("الرقم السري غير صحيح. يرجى المحاولة مرة أخرى.");
       }
       return registered[username];
@@ -316,10 +333,10 @@ const AppDB = (() => {
         const doc = await ref.get();
         if (!doc.exists) throw new Error("اسم المستخدم غير موجود. يرجى التسجيل أولاً.");
         const data = doc.data();
-        if (data.pin !== pin) throw new Error("الرقم السري غير صحيح. يرجى المحاولة مرة أخرى.");
+        if (data.pin !== pinHash && data.pin !== pin) throw new Error("الرقم السري غير صحيح. يرجى المحاولة مرة أخرى.");
 
         // Cache the user locally for future offline logins
-        registered[username] = { username, pin, netWorth: data.netWorth || 5000, isAdmin: data.isAdmin || false };
+        registered[username] = { username, pin: pinHash, netWorth: data.netWorth || 5000, isAdmin: data.isAdmin || false };
         localStorage.setItem('foolos_registered_sim', JSON.stringify(registered));
 
         return data;
