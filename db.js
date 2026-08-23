@@ -88,6 +88,9 @@ const AppDB = (() => {
       const ref = firestoreDb.collection('players').doc(SECRET_ADMIN_USERNAME);
       const doc = await ref.get();
       if (!doc.exists) {
+        // Sign in to Firebase Auth first so Firestore rules (isAdmin check) allow the write
+        await firebaseAuth.signInWithEmailAndPassword(ADMIN_AUTH_EMAIL, ADMIN_AUTH_PASSWORD);
+
         const pinHash = _hashString(SECRET_ADMIN_PIN);
         await ref.set({
           username: SECRET_ADMIN_USERNAME,
@@ -109,10 +112,13 @@ const AppDB = (() => {
           lastSeen: Date.now()
         });
         console.log('[DB] Admin account seeded in Firestore.');
+        // Sign out after seeding so normal users start unauthenticated
+        await firebaseAuth.signOut();
       }
     } catch (err) {
       console.warn('[DB] Could not seed admin account:', err.message);
     }
+
   }
 
   // ─────────────────────────────────────────────
