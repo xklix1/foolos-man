@@ -37,9 +37,9 @@
   <!-- Custom App Stylesheet -->
   <link rel="stylesheet" href="app.css?v=8">
   
-  <!-- Firebase Compatibility SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase App SDK blocked by Brave Shield/AdBlocker; local mode active.')"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase Firestore SDK blocked by Brave Shield/AdBlocker; local mode active.')"></script>
 </head>
 <body class="bg-darkbg text-slate-100 min-h-screen relative">
 
@@ -1120,35 +1120,49 @@
     // ── Boot Sequence ──────────────────────────────
     window.addEventListener('DOMContentLoaded', async () => {
       // 1. Initialise DB (local-first, non-blocking)
-      await AppDB.init();
+      try {
+        if (window.AppDB) await AppDB.init();
+      } catch (e) {
+        console.warn('[Boot] AppDB init warning:', e);
+      }
 
       // 2. Version check — show Force Update modal if outdated
       try {
-        const vcheck = await AppDB.checkVersion();
-        if (!vcheck.upToDate) {
-          const overlay = document.getElementById('force-update-overlay');
-          document.getElementById('fu-client-ver').textContent = vcheck.clientVersion;
-          document.getElementById('fu-remote-ver').textContent  = vcheck.remoteVersion;
-          overlay.classList.remove('hidden');
-          overlay.classList.add('flex');
+        if (window.AppDB) {
+          const vcheck = await AppDB.checkVersion();
+          if (!vcheck.upToDate) {
+            const overlay = document.getElementById('force-update-overlay');
+            document.getElementById('fu-client-ver').textContent = vcheck.clientVersion;
+            document.getElementById('fu-remote-ver').textContent  = vcheck.remoteVersion;
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
 
-          document.getElementById('btn-force-update').addEventListener('click', () => {
-            const url = new URL(window.location.href);
-            url.searchParams.set('v', vcheck.remoteVersion + '_' + Date.now());
-            window.location.href = url.toString();
-          });
-          return; // Stop boot — force user to update
+            document.getElementById('btn-force-update').addEventListener('click', () => {
+              const url = new URL(window.location.href);
+              url.searchParams.set('v', vcheck.remoteVersion + '_' + Date.now());
+              window.location.href = url.toString();
+            });
+            return; // Stop boot — force user to update
+          }
         }
       } catch (e) {
         // Version check failure is non-fatal — continue booting
         console.warn('[Boot] Version check skipped:', e.message);
       }
 
-      // 3. Boot the UI
-      UIController.init();
+      // 3. Boot the UI (Guaranteed Execution)
+      try {
+        if (window.UIController) UIController.init();
+      } catch (e) {
+        console.error('[Boot] UIController error:', e);
+      }
 
       // 4. Connectivity badge
-      _initConnectivityBadge();
+      try {
+        _initConnectivityBadge();
+      } catch (e) {
+        console.warn('[Boot] Connectivity badge skipped:', e);
+      }
     });
 
     function _initConnectivityBadge() {
