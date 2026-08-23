@@ -444,7 +444,7 @@ const GameEngine = (() => {
       const eventTypes = [
         {
           type: 'tech_boom',
-          title: '🚀 طفرة تقنية وانتعاش الذكاء الاصطناعي',
+          title: 'طفرة تقنية وانتعاش الذكاء الاصطناعي',
           desc: 'ارتفعت أرباح شركة فوري وصندوق CASH نتيجة استثمارات هائلة في الذكاء الاصطناعي!',
           targetStocks: ['FWRY', 'CASH'],
           multiplier: 1.25,
@@ -452,7 +452,7 @@ const GameEngine = (() => {
         },
         {
           type: 'cbe_rate_hike',
-          title: '🏛️ قرار المركزي: رفع الفائدة 200 نقطة',
+          title: 'قرار المركزي: رفع الفائدة 200 نقطة',
           desc: 'البنك المركزي يرفع الفائدة! ارتفاع قوي لسهم CIB وانتكاسة خفيفة باقي الأسهم.',
           targetStocks: ['COMI'],
           multiplier: 1.30,
@@ -462,7 +462,7 @@ const GameEngine = (() => {
         },
         {
           type: 'oil_scandal',
-          title: '📉 أزمة سلاسل الإمداد والشحن',
+          title: 'أزمة سلاسل الإمداد والشحن',
           desc: 'تأخر شحنات التبغ والمواد الخام يؤدي لربكة ومبيعات مكثفة على سهم الشرقية للدخان!',
           targetStocks: ['EAST'],
           multiplier: 0.75,
@@ -470,7 +470,7 @@ const GameEngine = (() => {
         },
         {
           type: 'telecom_expansion',
-          title: '📶 رخصة 5G للمصرية للاتصالات',
+          title: 'رخصة 5G للمصرية للاتصالات',
           desc: 'حصول المصرية للاتصالات على رخصة الجيل الخامس تطلق موجة شراء قياسية!',
           targetStocks: ['ETEL'],
           multiplier: 1.35,
@@ -478,7 +478,7 @@ const GameEngine = (() => {
         },
         {
           type: 'market_crash',
-          title: '💥 ذعر اقتصادي وتصحيح هابط للبورصة',
+          title: 'ذعر اقتصادي وتصحيح هابط للبورصة',
           desc: 'موجة بيع جني أرباح مكثفة تهبط بأغلب أسهم السوق بنسب متفاوتة!',
           targetStocks: ['COMI', 'FWRY', 'CASH', 'EAST', 'ETEL'],
           multiplier: 0.85,
@@ -1019,36 +1019,45 @@ const GameEngine = (() => {
     }
   }
 
-  // Casino Flip Game
-  function playCoinFlip(betAmount, choice) {
+  // Casino Flip Game with Streak Bonus
+  function playCoinFlip(betAmount, choice, currentStreak = 0) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يسمح لك بالدخول للكازينو.");
     if (betAmount <= 0) throw new Error("مبلغ الرهان يجب أن يكون أكبر من صفر جنيه.");
     if (state.cash < betAmount) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
 
     state.cash -= betAmount;
 
-    // 48.5% base win probability (+15% if VIP casino pass active)
-    let winChance = 0.485;
+    // 49.0% base win probability (+15% if VIP casino pass active)
+    let winChance = 0.49;
     if (state.inventory.vip_casino_pass > 0) {
       winChance += STORE_ITEMS.vip_casino_pass.value;
     }
     const roll = Math.random();
     const won = roll < winChance;
 
+    // Determine flipped side
+    let outcomeSide = choice;
+    if (!won) {
+      outcomeSide = choice === 'heads' ? 'tails' : 'heads';
+    }
+
     if (won) {
-      const payout = betAmount * 2;
+      // Streak bonus multiplier: 2.0x base, +0.25x per streak level up to 3.5x max
+      const streakBonus = Math.min(1.5, currentStreak * 0.25);
+      const mult = 2.0 + streakBonus;
+      const payout = Math.floor(betAmount * mult);
       state.cash += payout;
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
-      return { won: true, payout: payout, profit: betAmount };
+      return { won: true, side: outcomeSide, multiplier: mult, payout: payout, profit: payout - betAmount };
     } else {
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
-      return { won: false, loss: betAmount };
+      return { won: false, side: outcomeSide, loss: betAmount };
     }
   }
 
-  // Casino Slots Game
+  // Casino Slots Game with 5 Premium Tier Symbols
   function playSlots(betAmount) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك اللعب.");
     if (betAmount <= 0) throw new Error("مبلغ الرهان غير صالح.");
@@ -1056,28 +1065,49 @@ const GameEngine = (() => {
 
     state.cash -= betAmount;
 
-    // Reels Symbols (pure linear SVG themes, representation array)
-    const symbols = ['GOLD', 'DIAMOND', 'COIN', 'BAG', 'KEY']; // Gold, Diamond, Coin, Bag, Key
+    // Reels Symbols (CROWN, DIAMOND, GOLD, SACK, KEY)
+    const symbols = ['CROWN', 'DIAMOND', 'GOLD', 'SACK', 'KEY'];
     
-    // Choose 3 symbols
-    const r1 = symbols[Math.floor(Math.random() * symbols.length)];
-    const r2 = symbols[Math.floor(Math.random() * symbols.length)];
-    const r3 = symbols[Math.floor(Math.random() * symbols.length)];
+    // Weight distribution: VIP pass gives higher chance of high tier symbols
+    let hasVip = state.inventory.vip_casino_pass > 0;
+    
+    function getRandomSymbol() {
+      const r = Math.random();
+      if (hasVip) {
+        if (r < 0.15) return 'CROWN';
+        if (r < 0.35) return 'DIAMOND';
+        if (r < 0.60) return 'GOLD';
+        if (r < 0.82) return 'SACK';
+        return 'KEY';
+      } else {
+        if (r < 0.08) return 'CROWN';
+        if (r < 0.24) return 'DIAMOND';
+        if (r < 0.50) return 'GOLD';
+        if (r < 0.77) return 'SACK';
+        return 'KEY';
+      }
+    }
+
+    const r1 = getRandomSymbol();
+    const r2 = getRandomSymbol();
+    const r3 = getRandomSymbol();
 
     let multiplier = 0;
     let winMessage = "حظ أوفر المرة القادمة!";
+    let isJackpot = false;
 
     if (r1 === r2 && r2 === r3) {
       // 3 Matching
-      if (r1 === 'GOLD') { multiplier = 20; winMessage = "جاكبوت ذهبي ثلاثي!"; }
-      else if (r1 === 'DIAMOND') { multiplier = 15; winMessage = "ألماس ثلاثي نادر!"; }
-      else { multiplier = 8; winMessage = "ثلاثة رموز متطابقة!"; }
+      if (r1 === 'CROWN') { multiplier = 25; winMessage = "الجاكبوت الملكي الذهبي الأكبر!"; isJackpot = true; }
+      else if (r1 === 'DIAMOND') { multiplier = 18; winMessage = "ألماس ثلاثي أسطوري!"; isJackpot = true; }
+      else if (r1 === 'GOLD') { multiplier = 12; winMessage = "ثلاث سبائك ذهبية متطابقة!"; }
+      else if (r1 === 'SACK') { multiplier = 8; winMessage = "ثلاث حقائب أموال ضخمة!"; }
+      else { multiplier = 5; winMessage = "ثلاثة مفاتيح ذهبية نادرة!"; }
     } else if (r1 === r2 || r2 === r3 || r1 === r3) {
       // 2 Matching
       multiplier = 1.5;
-      winMessage = "رمزان متطابقان، ربح بسيط.";
+      winMessage = "رمزان متطابقان، جائزة ترضية!";
     } else {
-      // No matches
       multiplier = 0;
     }
 
@@ -1090,9 +1120,60 @@ const GameEngine = (() => {
     return {
       reels: [r1, r2, r3],
       won: payout > 0,
+      isJackpot: isJackpot,
+      multiplier: multiplier,
       payout: payout,
       profit: payout - betAmount,
       message: winMessage
+    };
+  }
+
+  // NEW Casino Game: Lucky Royale Dice (رمي النرد الملكي)
+  function playDice(betAmount, choice) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك اللعب.");
+    if (betAmount <= 0) throw new Error("مبلغ الرهان غير صالح.");
+    if (state.cash < betAmount) throw new Error("رصيدك الكاش لا يكفي لرهان النرد.");
+
+    state.cash -= betAmount;
+
+    // Roll 2 dice (1 to 6)
+    const d1 = Math.floor(Math.random() * 6) + 1;
+    const d2 = Math.floor(Math.random() * 6) + 1;
+    const sum = d1 + d2;
+    const isDouble = (d1 === d2);
+
+    let won = false;
+    let multiplier = 0;
+
+    if (choice === 'under' && sum < 7) {
+      won = true;
+      multiplier = 2.0;
+    } else if (choice === 'over' && sum > 7) {
+      won = true;
+      multiplier = 2.0;
+    } else if (choice === 'exact7' && sum === 7) {
+      won = true;
+      multiplier = 5.8;
+    } else if (choice === 'double' && isDouble) {
+      won = true;
+      multiplier = 3.5;
+    }
+
+    const payout = won ? Math.floor(betAmount * multiplier) : 0;
+    state.cash += payout;
+
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+
+    return {
+      d1,
+      d2,
+      sum,
+      isDouble,
+      won,
+      multiplier,
+      payout,
+      profit: payout - betAmount
     };
   }
 
@@ -1138,6 +1219,7 @@ const GameEngine = (() => {
     runBlackMarketDeal,
     playCoinFlip,
     playSlots,
+    playDice,
     forceSaveState
   };
 })();

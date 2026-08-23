@@ -13,6 +13,110 @@ const UIController = (() => {
   let workCooldownTimer = null;
   const WORK_COOLDOWN_MS = 2000;
 
+  // Casino sound and streak state
+  let casinoAudioCtx = null;
+  let casinoSoundEnabled = localStorage.getItem('foolos_casino_sound') !== 'false';
+  let coinFlipStreak = 0;
+
+  function getCasinoAudioCtx() {
+    if (!casinoAudioCtx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        casinoAudioCtx = new AudioCtx();
+      }
+    }
+    if (casinoAudioCtx && casinoAudioCtx.state === 'suspended') {
+      casinoAudioCtx.resume();
+    }
+    return casinoAudioCtx;
+  }
+
+  function playCasinoSound(type) {
+    if (!casinoSoundEnabled) return;
+    try {
+      const ctx = getCasinoAudioCtx();
+      if (!ctx) return;
+
+      if (type === 'coin') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(987.77, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1318.51, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+      } else if (type === 'win') {
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.08);
+          gain.gain.setValueAtTime(0.2, ctx.currentTime + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.08 + 0.25);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + idx * 0.08);
+          osc.stop(ctx.currentTime + idx * 0.08 + 0.25);
+        });
+      } else if (type === 'jackpot') {
+        const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.07);
+          gain.gain.setValueAtTime(0.25, ctx.currentTime + idx * 0.07);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.07 + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + idx * 0.07);
+          osc.stop(ctx.currentTime + idx * 0.07 + 0.35);
+        });
+      } else if (type === 'lose') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(320, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(140, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+      } else if (type === 'tick') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.05);
+      } else if (type === 'dice') {
+        [0, 0.06, 0.12, 0.18].forEach(t => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(300 + Math.random() * 200, ctx.currentTime + t);
+          gain.gain.setValueAtTime(0.1, ctx.currentTime + t);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.04);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + t);
+          osc.stop(ctx.currentTime + t + 0.04);
+        });
+      }
+    } catch (e) {}
+  }
+
   // Crash game state variables
   let crashBetAmount = 0;
   let crashMultiplier = 1.0;
@@ -855,103 +959,190 @@ const UIController = (() => {
       });
     });
 
-    // Casino event bindings
-    document.getElementById('btn-flip-coin').addEventListener('click', () => {
-      const betInput = document.getElementById('coin-bet-input');
-      const choice = document.querySelector('input[name="coin-choice"]:checked').value;
-      const bet = parseInt(betInput.value);
+    // Quick-bet modifier buttons for all casino games
+    document.querySelectorAll('.btn-quick-bet').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.dataset.target;
+        const input = document.getElementById(targetId);
+        if (!input) return;
+        let current = parseInt(input.value) || 0;
+        if (btn.dataset.amount) {
+          input.value = current + parseInt(btn.dataset.amount);
+        } else if (btn.dataset.action === 'half') {
+          input.value = Math.max(100, Math.floor(current / 2));
+        } else if (btn.dataset.action === 'max') {
+          input.value = Math.max(100, Math.floor(GameEngine.state.cash));
+        }
+        playCasinoSound('tick');
+      });
+    });
 
-      try {
-        if (isNaN(bet) || bet <= 0) throw new Error("يرجى إدخال قيمة رهان صحيحة.");
-        
-        const coinVisual = document.getElementById('coin-visual');
-        coinVisual.style.transform = 'rotateY(1080deg)';
-        coinVisual.style.transition = 'transform 0.8s ease-out';
-        
-        setTimeout(() => {
-          try {
-            const res = GameEngine.playCoinFlip(bet, choice);
-            coinVisual.style.transform = 'rotateY(0deg)';
-            coinVisual.style.transition = 'none';
+    // Sound toggle button
+    const soundToggleBtn = document.getElementById('btn-casino-sound-toggle');
+    if (soundToggleBtn) {
+      soundToggleBtn.addEventListener('click', () => {
+        casinoSoundEnabled = !casinoSoundEnabled;
+        localStorage.setItem('foolos_casino_sound', casinoSoundEnabled);
+        soundToggleBtn.innerHTML = casinoSoundEnabled 
+          ? '<i class="fa-solid fa-volume-high"></i><span>المؤثرات الصوتية: مفعلة</span>'
+          : '<i class="fa-solid fa-volume-xmark text-slate-500"></i><span class="text-slate-500">المؤثرات الصوتية: مكتومة</span>';
+        if (casinoSoundEnabled) playCasinoSound('coin');
+      });
+    }
 
-            if (res.won) {
-              showToast('ربح الكازينو', `صبت التخمين الصحيح! كسبت +${res.profit.toLocaleString()} EGP.`, 'success');
-            } else {
-              showToast('خسارة كازينو', `لسوء الحظ، لم يصب تخمينك. خسرت -${res.loss.toLocaleString()} EGP.`, 'error');
+    // Casino Game 1: 3D Royal Coin Flip
+    const coinFlipBtn = document.getElementById('btn-flip-coin');
+    if (coinFlipBtn) {
+      coinFlipBtn.addEventListener('click', () => {
+        const betInput = document.getElementById('coin-bet-input');
+        const choice = document.querySelector('input[name="coin-choice"]:checked').value;
+        const bet = parseInt(betInput.value);
+
+        try {
+          if (isNaN(bet) || bet <= 0) throw new Error("يرجى إدخال قيمة رهان صحيحة.");
+          if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
+          
+          coinFlipBtn.disabled = true;
+          playCasinoSound('coin');
+
+          const coinVisual = document.getElementById('coin-visual');
+          coinVisual.style.transition = 'transform 0.9s cubic-bezier(0.2, 0.8, 0.3, 1)';
+          coinVisual.style.transform = 'rotateY(1800deg) scale(1.1)';
+          
+          setTimeout(() => {
+            try {
+              const res = GameEngine.playCoinFlip(bet, choice);
+              const isTails = (res.side === 'tails');
+              coinVisual.style.transition = 'transform 0.3s ease-out';
+              coinVisual.style.transform = isTails ? 'rotateY(180deg) scale(1)' : 'rotateY(0deg) scale(1)';
+
+              const streakBadge = document.getElementById('coin-streak-badge');
+              if (res.won) {
+                coinFlipStreak = res.streak || (coinFlipStreak + 1);
+                playCasinoSound('win');
+                if (streakBadge) {
+                  streakBadge.textContent = `سلسلة الانتصارات: ${coinFlipStreak}x متتالية 🔥`;
+                  streakBadge.className = 'text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30 animate-pulse';
+                }
+                const multText = res.streakMultiplier > 1 ? ` (بونص سلسلة الفوز: ${res.streakMultiplier}x)` : '';
+                showToast('ربح ملكي!', `صبت التخمين (${res.side === 'heads' ? 'التاج الملكي' : 'الدرع الدفاعي'})!${multText} كسبت +${res.profit.toLocaleString()} EGP.`, 'success');
+              } else {
+                coinFlipStreak = 0;
+                playCasinoSound('lose');
+                if (streakBadge) {
+                  streakBadge.textContent = 'سلسلة الانتصارات: 0';
+                  streakBadge.className = 'text-[10px] text-slate-500 font-bold bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800';
+                }
+                showToast('خسارة الجولة', `لسوء الحظ، استقرت العملة على (${res.side === 'heads' ? 'التاج' : 'الدرع'}). خسرت -${res.loss.toLocaleString()} EGP.`, 'error');
+              }
+              renderAll();
+            } catch (e) {
+              showToast('خطأ رهان', e.message, 'error');
+            } finally {
+              coinFlipBtn.disabled = false;
             }
-            renderAll();
-          } catch (e) {
-            showToast('خطأ رهان', e.message, 'error');
-          }
-        }, 800);
+          }, 900);
 
-      } catch (err) {
-        showToast('خطأ رهان', err.message, 'error');
-      }
-    });
+        } catch (err) {
+          showToast('خطأ رهان', err.message, 'error');
+        }
+      });
+    }
 
-    // Slots Machine roll
-    document.getElementById('btn-slots-spin').addEventListener('click', () => {
-      const betInput = document.getElementById('slots-bet-input');
-      const bet = parseInt(betInput.value);
+    // Casino Game 2: Golden Neon Slots Machine
+    const slotsSpinBtn = document.getElementById('btn-slots-spin');
+    if (slotsSpinBtn) {
+      slotsSpinBtn.addEventListener('click', () => {
+        const betInput = document.getElementById('slots-bet-input');
+        const bet = parseInt(betInput.value);
 
-      try {
-        if (isNaN(bet) || bet <= 0) throw new Error("يرجى تحديد مبلغ رهان صحيح.");
-        
-        // Disable spin during action
-        const spinBtn = document.getElementById('btn-slots-spin');
-        spinBtn.disabled = true;
+        try {
+          if (isNaN(bet) || bet <= 0) throw new Error("يرجى تحديد مبلغ رهان صحيح.");
+          if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
+          
+          slotsSpinBtn.disabled = true;
+          playCasinoSound('tick');
 
-        // Run visual roll effect
-        const r1 = document.getElementById('slot-reel-1');
-        const r2 = document.getElementById('slot-reel-2');
-        const r3 = document.getElementById('slot-reel-3');
+          const r1 = document.getElementById('slot-reel-1');
+          const r2 = document.getElementById('slot-reel-2');
+          const r3 = document.getElementById('slot-reel-3');
 
-        r1.classList.add('animate-pulse');
-        r2.classList.add('animate-pulse');
-        r3.classList.add('animate-pulse');
+          r1.classList.add('slot-blur-spin');
+          r2.classList.add('slot-blur-spin');
+          r3.classList.add('slot-blur-spin');
 
-        setTimeout(() => {
-          try {
-            const res = GameEngine.playSlots(bet);
+          const tempIcons = ['CROWN', 'DIAMOND', 'GOLD', 'SACK', 'KEY'];
+          const spinInterval = setInterval(() => {
+            r1.innerHTML = getReelSymbolIcon(tempIcons[Math.floor(Math.random()*tempIcons.length)]);
+            r2.innerHTML = getReelSymbolIcon(tempIcons[Math.floor(Math.random()*tempIcons.length)]);
+            r3.innerHTML = getReelSymbolIcon(tempIcons[Math.floor(Math.random()*tempIcons.length)]);
+            playCasinoSound('tick');
+          }, 80);
 
-            r1.classList.remove('animate-pulse');
-            r2.classList.remove('animate-pulse');
-            r3.classList.remove('animate-pulse');
+          setTimeout(() => {
+            try {
+              const res = GameEngine.playSlots(bet);
+              clearInterval(spinInterval);
 
-            // Set reel values
-            r1.textContent = getReelSymbolText(res.reels[0]);
-            r2.textContent = getReelSymbolText(res.reels[1]);
-            r3.textContent = getReelSymbolText(res.reels[2]);
+              r1.classList.remove('slot-blur-spin');
+              r1.innerHTML = getReelSymbolIcon(res.reels[0]);
+              playCasinoSound('tick');
 
-            if (res.won) {
-              showToast('فوز الآلة', `${res.message} ربحت +${res.profit.toLocaleString()} EGP.`, 'success');
-            } else {
-              showToast('حظ أوفر', `${res.message} خسرت -${bet.toLocaleString()} EGP.`, 'error');
+              setTimeout(() => {
+                r2.classList.remove('slot-blur-spin');
+                r2.innerHTML = getReelSymbolIcon(res.reels[1]);
+                playCasinoSound('tick');
+
+                setTimeout(() => {
+                  r3.classList.remove('slot-blur-spin');
+                  r3.innerHTML = getReelSymbolIcon(res.reels[2]);
+
+                  if (res.won) {
+                    if (res.isJackpot) {
+                      playCasinoSound('jackpot');
+                      showToast('جاكبوت كاسح!', `🎉 مبروك! حصلت على الجاكبوت الذهبي الأقصى! ربحت +${res.profit.toLocaleString()} EGP!`, 'success');
+                    } else {
+                      playCasinoSound('win');
+                      showToast('فوز الآلة', `${res.message} ربحت +${res.profit.toLocaleString()} EGP!`, 'success');
+                    }
+                  } else {
+                    playCasinoSound('lose');
+                    showToast('حظ أوفر', `${res.message} خسرت -${bet.toLocaleString()} EGP.`, 'error');
+                  }
+                  renderAll();
+                  slotsSpinBtn.disabled = false;
+                }, 300);
+              }, 300);
+
+            } catch (e) {
+              clearInterval(spinInterval);
+              showToast('خطأ الآلة', e.message, 'error');
+              slotsSpinBtn.disabled = false;
             }
-            renderAll();
-          } catch (e) {
-            showToast('خطأ الآلة', e.message, 'error');
-          } finally {
-            spinBtn.disabled = false;
-          }
-        }, 1000);
+          }, 700);
 
-      } catch (err) {
-        showToast('خطأ رهان', err.message, 'error');
-      }
-    });
+        } catch (err) {
+          showToast('خطأ رهان', err.message, 'error');
+        }
+      });
+    }
 
-    // Crash Betting interactions
-    document.getElementById('btn-crash-start').addEventListener('click', () => {
-      runCrashBet();
-    });
+    // Casino Game 3: Rocket Crash Bet Handlers
+    const crashStartBtn = document.getElementById('btn-crash-start');
+    if (crashStartBtn) {
+      crashStartBtn.addEventListener('click', () => {
+        runCrashBet();
+      });
+    }
 
-    document.getElementById('btn-crash-cashout').addEventListener('click', () => {
-      cashoutCrash();
-    });
+    const crashCashoutBtn = document.getElementById('btn-crash-cashout');
+    if (crashCashoutBtn) {
+      crashCashoutBtn.addEventListener('click', () => {
+        cashoutCrash();
+      });
+    }
 
-    // NEW GAME 1: European Roulette Handler
+    // Casino Game 4: European Roulette Handler
     const rouletteBtn = document.getElementById('btn-roulette-spin');
     if (rouletteBtn) {
       rouletteBtn.addEventListener('click', () => {
@@ -966,22 +1157,22 @@ const UIController = (() => {
           if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
 
           rouletteBtn.disabled = true;
+          playCasinoSound('tick');
           wheel.style.transform = `rotate(${3600 + Math.floor(Math.random()*360)}deg)`;
-          wheel.style.transition = 'all 1.5s cubic-bezier(0.15, 0.9, 0.25, 1)';
+          wheel.style.transition = 'all 1.4s cubic-bezier(0.15, 0.9, 0.25, 1)';
 
           setTimeout(() => {
             try {
-              // Deduct cash
               GameEngine.state.cash -= bet;
 
-              // Generate 0 to 36
+              // 0 to 36
               const landedNum = Math.floor(Math.random() * 37);
               resNum.textContent = landedNum;
 
-              // Determine color
+              // Color determination
               let color = 'green';
+              const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
               if (landedNum !== 0) {
-                const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
                 color = redNumbers.includes(landedNum) ? 'red' : 'black';
               }
 
@@ -994,15 +1185,23 @@ const UIController = (() => {
               } else if (choice === color && landedNum !== 0) {
                 won = true;
                 multiplier = 2;
+              } else if (choice === 'even' && landedNum !== 0 && landedNum % 2 === 0) {
+                won = true;
+                multiplier = 2;
+              } else if (choice === 'odd' && landedNum !== 0 && landedNum % 2 !== 0) {
+                won = true;
+                multiplier = 2;
               }
 
               if (won) {
                 const winAmount = bet * multiplier;
                 GameEngine.state.cash += winAmount;
                 const profit = winAmount - bet;
-                showToast('فوز الروليت!', `اصاب خيارك (${color === 'red' ? 'أحمر' : color === 'black' ? 'أسود' : 'الرقم صفر'})! ربحت +${profit.toLocaleString()} EGP!`, 'success');
+                playCasinoSound('win');
+                showToast('فوز الروليت!', `أصابت روليت الحظ رقم ${landedNum} (${color === 'red' ? 'أحمر' : color === 'black' ? 'أسود' : 'الصفر الأخضر'})! ربحت +${profit.toLocaleString()} EGP!`, 'success');
               } else {
-                showToast('خسارة الروليت', `استقرت العجلة على ${landedNum} (${color === 'red' ? 'أحمر' : color === 'black' ? 'أسود' : 'الصفر الأخضر'}). خسرت -${bet.toLocaleString()} EGP.`, 'error');
+                playCasinoSound('lose');
+                showToast('خسارة الروليت', `استقرت العجلة على رقم ${landedNum} (${color === 'red' ? 'أحمر' : color === 'black' ? 'أسود' : 'الصفر الأخضر'}). خسرت -${bet.toLocaleString()} EGP.`, 'error');
               }
 
               GameEngine.forceSaveState();
@@ -1014,7 +1213,7 @@ const UIController = (() => {
               wheel.style.transform = 'rotate(0deg)';
               wheel.style.transition = 'none';
             }
-          }, 1500);
+          }, 1400);
 
         } catch (err) {
           showToast('خطأ رهان', err.message, 'error');
@@ -1022,7 +1221,7 @@ const UIController = (() => {
       });
     }
 
-    // NEW GAME 2: Wheel of Fortune Handler
+    // Casino Game 5: Wheel of Fortune Handler
     const wheelBtn = document.getElementById('btn-wheel-spin');
     if (wheelBtn) {
       wheelBtn.addEventListener('click', () => {
@@ -1036,8 +1235,9 @@ const UIController = (() => {
           if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
 
           wheelBtn.disabled = true;
+          playCasinoSound('tick');
           wheelVis.style.transform = `rotate(${2880 + Math.floor(Math.random()*360)}deg)`;
-          wheelVis.style.transition = 'all 1.5s cubic-bezier(0.25, 1, 0.3, 1)';
+          wheelVis.style.transition = 'all 1.4s cubic-bezier(0.25, 1, 0.3, 1)';
 
           setTimeout(() => {
             try {
@@ -1045,7 +1245,7 @@ const UIController = (() => {
 
               // Wheel Multipliers distribution table
               const multipliers = [0, 0.5, 1.2, 1.5, 2.0, 3.0, 5.0, 10.0];
-              const weights     = [15, 25, 25, 15, 10,  6,   3,    1]; // weight sum 100
+              const weights     = [15, 25, 25, 15, 10,  6,   3,    1];
               
               let rand = Math.floor(Math.random() * 100);
               let cumulative = 0;
@@ -1064,11 +1264,13 @@ const UIController = (() => {
               GameEngine.state.cash += payout;
 
               if (selectedMult > 1.0) {
+                playCasinoSound(selectedMult >= 5.0 ? 'jackpot' : 'win');
                 showToast('ضربة عجلة الحظ!', `حصلت على مضاعف ${selectedMult}x! ربحت +${(payout - bet).toLocaleString()} EGP.`, 'success');
               } else if (selectedMult === 1.0) {
                 showToast('استرداد الرهان', `حصلت على 1.0x واسترددت رهانك بالكامل.`, 'info');
               } else {
-                showToast('خسارة العجلة', `توقفت العجلة عند ${selectedMult}x. خسرت -${(bet - payout).toLocaleString()} EGP.`, 'error');
+                playCasinoSound('lose');
+                showToast('خسارة العجلة', `توقفت العجلة عند مضاعف ${selectedMult}x. خسرت -${(bet - payout).toLocaleString()} EGP.`, 'error');
               }
 
               GameEngine.forceSaveState();
@@ -1080,13 +1282,89 @@ const UIController = (() => {
               wheelVis.style.transform = 'rotate(0deg)';
               wheelVis.style.transition = 'none';
             }
-          }, 1500);
+          }, 1400);
 
         } catch (err) {
           showToast('خطأ رهان', err.message, 'error');
         }
       });
     }
+
+    // Casino Game 6: Lucky Royale Dice Handler
+    const diceRollBtn = document.getElementById('btn-dice-roll');
+    if (diceRollBtn) {
+      diceRollBtn.addEventListener('click', () => {
+        const betInput = document.getElementById('dice-bet-input');
+        const bet = parseInt(betInput.value);
+        const choice = document.querySelector('input[name="dice-choice"]:checked').value;
+        const d1 = document.getElementById('dice-visual-1');
+        const d2 = document.getElementById('dice-visual-2');
+        const sumDisplay = document.getElementById('dice-sum-display');
+
+        try {
+          if (isNaN(bet) || bet <= 0) throw new Error("يرجى تحديد مبلغ رهان صحيح للنرد.");
+          if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
+
+          diceRollBtn.disabled = true;
+          playCasinoSound('dice');
+
+          d1.classList.add('dice-rolling');
+          d2.classList.add('dice-rolling');
+
+          setTimeout(() => {
+            try {
+              const res = GameEngine.playDice(bet, choice);
+              d1.classList.remove('dice-rolling');
+              d2.classList.remove('dice-rolling');
+
+              d1.innerHTML = getDicePipIcon(res.die1);
+              d2.innerHTML = getDicePipIcon(res.die2);
+              if (sumDisplay) sumDisplay.textContent = res.sum;
+
+              if (res.won) {
+                playCasinoSound(res.multiplier >= 5 ? 'jackpot' : 'win');
+                showToast('فوز النرد الملكي!', `${res.message} ربحت +${res.profit.toLocaleString()} EGP!`, 'success');
+              } else {
+                playCasinoSound('lose');
+                showToast('خسارة النرد', `${res.message} خسرت -${res.loss.toLocaleString()} EGP.`, 'error');
+              }
+
+              renderAll();
+            } catch (e) {
+              showToast('خطأ النرد', e.message, 'error');
+            } finally {
+              diceRollBtn.disabled = false;
+            }
+          }, 800);
+
+        } catch (err) {
+          showToast('خطأ رهان', err.message, 'error');
+        }
+      });
+    }
+  }
+
+  function getReelSymbolIcon(sym) {
+    const map = {
+      'CROWN': '<i class="fa-solid fa-crown text-yellow-400 text-2xl"></i>',
+      'DIAMOND': '<i class="fa-solid fa-gem text-cyan-400 text-2xl"></i>',
+      'GOLD': '<i class="fa-solid fa-coins text-amber-400 text-2xl"></i>',
+      'SACK': '<i class="fa-solid fa-sack-dollar text-emerald-400 text-2xl"></i>',
+      'KEY': '<i class="fa-solid fa-key text-sky-400 text-2xl"></i>'
+    };
+    return map[sym] || `<span class="text-xs font-bold text-slate-300">${sym}</span>`;
+  }
+
+  function getDicePipIcon(n) {
+    const diceIcons = {
+      1: '<i class="fa-solid fa-dice-one"></i>',
+      2: '<i class="fa-solid fa-dice-two"></i>',
+      3: '<i class="fa-solid fa-dice-three"></i>',
+      4: '<i class="fa-solid fa-dice-four"></i>',
+      5: '<i class="fa-solid fa-dice-five"></i>',
+      6: '<i class="fa-solid fa-dice-six"></i>'
+    };
+    return diceIcons[n] || `<i class="fa-solid fa-dice-d6"></i>`;
   }
 
   function getReelSymbolText(sym) {
@@ -1481,10 +1759,20 @@ const UIController = (() => {
 
   // --- Tab 9: Casino Panel ---
   function renderCasino() {
-    // Basic view updates
+    const vipBadge = document.getElementById('casino-vip-badge');
+    if (vipBadge) {
+      const hasVIP = GameEngine.state.inventory && GameEngine.state.inventory.vip_casino_pass > 0;
+      if (hasVIP) {
+        vipBadge.innerHTML = '<i class="fa-solid fa-crown text-amber-400"></i><span>عضوية VIP نشطة (+15% حظ)</span>';
+        vipBadge.className = 'text-xs px-3 py-1 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-300 border border-amber-500/40 rounded-full font-bold shadow-sm flex items-center gap-1.5 glow-gold';
+      } else {
+        vipBadge.innerHTML = '<i class="fa-solid fa-gem text-slate-400"></i><span>عضو عادي (شراء تذكرة VIP من المتجر لرفع الحظ)</span>';
+        vipBadge.className = 'text-xs px-3 py-1 bg-slate-800/80 text-slate-400 border border-slate-700/80 rounded-full font-bold flex items-center gap-1.5';
+      }
+    }
   }
 
-  // --- Casino Game: Crash Multiplier (Classic Rocket Animation) ---
+  // --- Casino Game: Crash Multiplier (Classic Rocket Animation with Auto-Cashout) ---
   function runCrashBet() {
     const betInput = document.getElementById('crash-bet-input');
     const bet = parseInt(betInput.value);
@@ -1494,30 +1782,39 @@ const UIController = (() => {
       if (isNaN(bet) || bet <= 0) throw new Error("يرجى إدخال مبلغ رهان صحيح.");
       if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
 
+      playCasinoSound('tick');
+
       // Deduct cash immediately
       GameEngine.state.cash -= bet;
       crashBetAmount = bet;
       crashMultiplier = 1.0;
       crashState = 'running';
 
-      // Predetermine crash point
-      // 5% chance of instant crash at 1.00x
-      if (Math.random() < 0.05) {
+      // Predetermine crash point (VIP pass gives bonus endurance)
+      const hasVIP = GameEngine.state.inventory && GameEngine.state.inventory.vip_casino_pass > 0;
+      const instantCrashChance = hasVIP ? 0.02 : 0.05;
+
+      if (Math.random() < instantCrashChance) {
         crashTarget = 1.0;
       } else {
-        // Exponential distribution (up to 15x maximum)
-        crashTarget = parseFloat((1 + Math.pow(Math.random(), 3) * 14).toFixed(2));
+        // Exponential distribution up to 15x
+        crashTarget = parseFloat((1 + Math.pow(Math.random(), hasVIP ? 2.3 : 2.8) * 14).toFixed(2));
       }
 
-      // Update Buttons
+      // Update Buttons & Visuals
       document.getElementById('btn-crash-start').classList.add('hidden');
       const cashoutBtn = document.getElementById('btn-crash-cashout');
       cashoutBtn.classList.remove('hidden');
       cashoutBtn.disabled = false;
-      document.getElementById('crash-cashout-payout').textContent = bet;
+      document.getElementById('crash-cashout-payout').textContent = bet.toLocaleString();
 
-      document.getElementById('crash-status-text').textContent = 'الصاروخ يرتفع...';
-      document.getElementById('crash-status-text').className = 'text-lg font-bold text-yellow-500';
+      const statusText = document.getElementById('crash-status-text');
+      statusText.textContent = 'الصاروخ يرتفع...';
+      statusText.className = 'text-[11px] text-yellow-400 font-bold bg-slate-900 px-2 py-0.5 rounded-lg border border-yellow-500/30 animate-pulse';
+
+      // Reset Rocket SVG color
+      const rocket = document.getElementById('crash-svg-rocket');
+      if (rocket) rocket.setAttribute('fill', '#eab308');
 
       crashStartTime = Date.now();
       animateCrashGame();
@@ -1531,26 +1828,33 @@ const UIController = (() => {
     if (crashState !== 'running') return;
 
     const elapsed = (Date.now() - crashStartTime) / 1000;
-    // Multiplier grows exponentially over seconds
     crashMultiplier = parseFloat((Math.pow(1.09, elapsed * 3)).toFixed(2));
 
     const display = document.getElementById('crash-multiplier-display');
-    display.textContent = `${crashMultiplier.toFixed(2)}x`;
+    if (display) display.textContent = `${crashMultiplier.toFixed(2)}x`;
 
-    // Draw curves on mock SVG path
     const curve = document.getElementById('crash-svg-curve');
     const rocket = document.getElementById('crash-svg-rocket');
 
-    // Chart bounds scaling coordinates
-    const x = Math.min(90, 10 + elapsed * 8);
-    const y = Math.max(10, 80 - Math.pow(elapsed * 1.5, 1.8));
-    curve.setAttribute('d', `M 10 80 Q 50 80 ${x} ${y}`);
-    rocket.setAttribute('cx', x);
-    rocket.setAttribute('cy', y);
+    if (curve && rocket) {
+      const x = Math.min(90, 10 + elapsed * 8);
+      const y = Math.max(10, 80 - Math.pow(elapsed * 1.5, 1.8));
+      curve.setAttribute('d', `M 10 80 Q 50 80 ${x} ${y}`);
+      rocket.setAttribute('cx', x);
+      rocket.setAttribute('cy', y);
+    }
 
-    // Update real-time cashout indicator returns
     const currentPayout = Math.floor(crashBetAmount * crashMultiplier);
-    document.getElementById('crash-cashout-payout').textContent = currentPayout.toLocaleString();
+    const payoutEl = document.getElementById('crash-cashout-payout');
+    if (payoutEl) payoutEl.textContent = currentPayout.toLocaleString();
+
+    // Check Auto-Cashout
+    const autoInput = document.getElementById('crash-autocashout-input');
+    const autoVal = autoInput ? parseFloat(autoInput.value) : NaN;
+    if (!isNaN(autoVal) && autoVal > 1.0 && crashMultiplier >= autoVal) {
+      cashoutCrash();
+      return;
+    }
 
     // Check if crash target hit
     if (crashMultiplier >= crashTarget) {
@@ -1564,22 +1868,24 @@ const UIController = (() => {
   function triggerCrash() {
     cancelAnimationFrame(crashAnimationId);
     crashState = 'crashed';
+    playCasinoSound('lose');
     
-    document.getElementById('crash-status-text').textContent = `انفجر الصاروخ عند ${crashTarget.toFixed(2)}x !`;
-    document.getElementById('crash-status-text').className = 'text-lg font-bold text-rose-500 animate-pulse';
+    const statusText = document.getElementById('crash-status-text');
+    if (statusText) {
+      statusText.textContent = `انفجر عند ${crashTarget.toFixed(2)}x !`;
+      statusText.className = 'text-[11px] text-rose-400 font-bold bg-rose-950/80 px-2 py-0.5 rounded-lg border border-rose-500/40 animate-pulse';
+    }
 
-    // Highlight rocket crash point on SVG
-    document.getElementById('crash-svg-rocket').setAttribute('fill', '#f43f5e');
+    const rocket = document.getElementById('crash-svg-rocket');
+    if (rocket) rocket.setAttribute('fill', '#f43f5e');
 
-    // Reset Buttons
     document.getElementById('btn-crash-start').classList.remove('hidden');
     document.getElementById('btn-crash-cashout').classList.add('hidden');
 
-    // Save and Sync
-    GameEngine.state.netWorth = GameEngine.state.netWorth; // force recalc
+    GameEngine.state.netWorth = GameEngine.calculateNetWorth();
     AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
 
-    showToast('تحطم الصاروخ', `خسرت رهانك بالكامل البالغ -${crashBetAmount.toLocaleString()} EGP.`, 'error');
+    showToast('تحطم الصاروخ', `انفجر الصاروخ عند مضاعف ${crashTarget.toFixed(2)}x. خسرت رهانك -${crashBetAmount.toLocaleString()} EGP.`, 'error');
     renderAll();
   }
 
@@ -1592,17 +1898,21 @@ const UIController = (() => {
     const winAmount = Math.floor(crashBetAmount * crashMultiplier);
     GameEngine.state.cash += winAmount;
 
-    document.getElementById('crash-status-text').textContent = `تم صرف الأرباح عند ${crashMultiplier.toFixed(2)}x !`;
-    document.getElementById('crash-status-text').className = 'text-lg font-bold text-emerald-500';
+    playCasinoSound(crashMultiplier >= 5.0 ? 'jackpot' : 'win');
 
-    // Reset Buttons
+    const statusText = document.getElementById('crash-status-text');
+    if (statusText) {
+      statusText.textContent = `صُرفت الأرباح عند ${crashMultiplier.toFixed(2)}x !`;
+      statusText.className = 'text-[11px] text-emerald-400 font-bold bg-emerald-950/80 px-2 py-0.5 rounded-lg border border-emerald-500/40';
+    }
+
     document.getElementById('btn-crash-start').classList.remove('hidden');
     document.getElementById('btn-crash-cashout').classList.add('hidden');
 
-    GameEngine.state.netWorth = GameEngine.state.netWorth; // Force update
+    GameEngine.state.netWorth = GameEngine.calculateNetWorth();
     AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
 
-    showToast('صرف الأرباح', `مبارك الفوز! كسبت صافي ربح قدره +${(winAmount - crashBetAmount).toLocaleString()} EGP.`, 'success');
+    showToast('صرف الأرباح بنجاح', `تم صرف الأرباح عند مضاعف ${crashMultiplier.toFixed(2)}x! ربحت +${(winAmount - crashBetAmount).toLocaleString()} EGP!`, 'success');
     renderAll();
   }
 
