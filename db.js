@@ -286,17 +286,50 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  SAVE PLAYER STATE
+  //  SAVE PLAYER STATE (High Performance Debounced Sync)
   // ─────────────────────────────────────────────
-  async function savePlayerState(username, state) {
-    if (!username) return;
-    _requireOnline();
+  let _saveTimeout = null;
+  let _pendingSaveState = null;
+  let _pendingSaveUser = null;
 
+  async function savePlayerState(username, state, immediate = false) {
+    if (!username) return;
     state.username = username;
     state.lastSeen = Date.now();
 
-    const ref = firestoreDb.collection('players').doc(username);
-    await ref.set(state, { merge: true });
+    // Cache locally instantly
+    try {
+      localStorage.setItem(`foolos_state_${username}`, JSON.stringify(state));
+    } catch (e) {}
+
+    _pendingSaveUser = username;
+    _pendingSaveState = state;
+
+    if (immediate) {
+      if (_saveTimeout) {
+        clearTimeout(_saveTimeout);
+        _saveTimeout = null;
+      }
+      if (firebaseReady && firestoreDb) {
+        const ref = firestoreDb.collection('players').doc(username);
+        await ref.set(state, { merge: true });
+      }
+      return;
+    }
+
+    if (!_saveTimeout) {
+      _saveTimeout = setTimeout(async () => {
+        _saveTimeout = null;
+        if (_pendingSaveUser && _pendingSaveState && firebaseReady && firestoreDb) {
+          try {
+            const ref = firestoreDb.collection('players').doc(_pendingSaveUser);
+            await ref.set(_pendingSaveState, { merge: true });
+          } catch (err) {
+            console.warn('[DB] Debounced sync warning:', err.message);
+          }
+        }
+      }, 2000);
+    }
   }
 
   // ─────────────────────────────────────────────

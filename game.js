@@ -293,7 +293,7 @@ const GameEngine = (() => {
 
     // 1. Jail lockout processing
     if (state.jailTimer > 0) {
-      state.jailTimer = Math.max(0, state.jailTimer - 3);
+      state.jailTimer = Math.max(0, state.jailTimer - 1);
       if (state.jailTimer === 0) {
         updates.jailFree = true;
       }

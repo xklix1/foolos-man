@@ -346,9 +346,8 @@ const UIController = (() => {
         // Only update stock prices DOM text without wiping active typing inputs
         updateStockPricesInDOM();
       }
-      if (activeTab === 'leaderboard') renderLeaderboard();
 
-    }, 3000);
+    }, 1200);
   }
 
   // --- Dynamic Stats Bars Rendering ---
@@ -1001,7 +1000,7 @@ const UIController = (() => {
 
           const coinVisual = document.getElementById('coin-visual-3d') || document.getElementById('coin-visual');
           if (coinVisual) {
-            coinVisual.style.transition = 'transform 0.9s cubic-bezier(0.2, 0.8, 0.3, 1)';
+            coinVisual.style.transition = 'transform 0.45s cubic-bezier(0.2, 0.8, 0.3, 1)';
             coinVisual.style.transform = 'rotateY(1800deg) scale(1.1)';
           }
           
@@ -1010,7 +1009,7 @@ const UIController = (() => {
               const res = GameEngine.playCoinFlip(bet, choice, coinFlipStreak);
               const isTails = (res.side === 'tails');
               if (coinVisual) {
-                coinVisual.style.transition = 'transform 0.3s ease-out';
+                coinVisual.style.transition = 'transform 0.2s ease-out';
                 coinVisual.style.transform = isTails ? 'rotateY(1980deg) scale(1)' : 'rotateY(1800deg) scale(1)';
               }
 
@@ -1039,7 +1038,7 @@ const UIController = (() => {
             } finally {
               coinFlipBtn.disabled = false;
             }
-          }, 900);
+          }, 450);
 
         } catch (err) {
           showToast('خطأ رهان', err.message, 'error');
@@ -1074,7 +1073,7 @@ const UIController = (() => {
             r1.innerHTML = getReelSymbolIcon(tempIcons[Math.floor(Math.random()*tempIcons.length)]);
             r2.innerHTML = getReelSymbolIcon(tempIcons[Math.floor(Math.random()*tempIcons.length)]);
             r3.innerHTML = getReelSymbolIcon(tempIcons[Math.floor(Math.random()*tempIcons.length)]);
-          }, 80);
+          }, 45);
 
           setTimeout(() => {
             try {
@@ -1108,15 +1107,15 @@ const UIController = (() => {
                   }
                   renderAll();
                   slotsSpinBtn.disabled = false;
-                }, 300);
-              }, 300);
+                }, 140);
+              }, 140);
 
             } catch (e) {
               clearInterval(spinInterval);
               showToast('خطأ الآلة', e.message, 'error');
               slotsSpinBtn.disabled = false;
             }
-          }, 700);
+          }, 240);
 
         } catch (err) {
           showToast('خطأ رهان', err.message, 'error');
@@ -1155,8 +1154,8 @@ const UIController = (() => {
 
           rouletteBtn.disabled = true;
           playCasinoSound('tick');
-          wheel.style.transform = `rotate(${3600 + Math.floor(Math.random()*360)}deg)`;
-          wheel.style.transition = 'all 1.4s cubic-bezier(0.15, 0.9, 0.25, 1)';
+          wheel.style.transform = `rotate(${1800 + Math.floor(Math.random()*360)}deg)`;
+          wheel.style.transition = 'all 0.6s cubic-bezier(0.15, 0.9, 0.25, 1)';
 
           setTimeout(() => {
             try {
@@ -1210,7 +1209,7 @@ const UIController = (() => {
               wheel.style.transform = 'rotate(0deg)';
               wheel.style.transition = 'none';
             }
-          }, 1400);
+          }, 600);
 
         } catch (err) {
           showToast('خطأ رهان', err.message, 'error');
@@ -1233,8 +1232,8 @@ const UIController = (() => {
 
           wheelBtn.disabled = true;
           playCasinoSound('tick');
-          wheelVis.style.transform = `rotate(${2880 + Math.floor(Math.random()*360)}deg)`;
-          wheelVis.style.transition = 'all 1.4s cubic-bezier(0.25, 1, 0.3, 1)';
+          wheelVis.style.transform = `rotate(${1440 + Math.floor(Math.random()*360)}deg)`;
+          wheelVis.style.transition = 'all 0.6s cubic-bezier(0.25, 1, 0.3, 1)';
 
           setTimeout(() => {
             try {
@@ -1279,7 +1278,7 @@ const UIController = (() => {
               wheelVis.style.transform = 'rotate(0deg)';
               wheelVis.style.transition = 'none';
             }
-          }, 1400);
+          }, 600);
 
         } catch (err) {
           showToast('خطأ رهان', err.message, 'error');
@@ -1332,7 +1331,7 @@ const UIController = (() => {
             } finally {
               diceRollBtn.disabled = false;
             }
-          }, 800);
+          }, 350);
 
         } catch (err) {
           showToast('خطأ رهان', err.message, 'error');
@@ -1835,7 +1834,7 @@ const UIController = (() => {
     if (crashState !== 'running') return;
 
     const elapsed = (Date.now() - crashStartTime) / 1000;
-    crashMultiplier = parseFloat((Math.pow(1.09, elapsed * 3)).toFixed(2));
+    crashMultiplier = parseFloat((Math.pow(1.14, elapsed * 3.2)).toFixed(2));
 
     const display = document.getElementById('crash-multiplier-display');
     if (display) display.textContent = `${crashMultiplier.toFixed(2)}x`;
@@ -1844,8 +1843,8 @@ const UIController = (() => {
     const rocket = document.getElementById('crash-svg-rocket');
 
     if (curve && rocket) {
-      const x = Math.min(90, 10 + elapsed * 8);
-      const y = Math.max(10, 80 - Math.pow(elapsed * 1.5, 1.8));
+      const x = Math.min(90, 10 + elapsed * 12);
+      const y = Math.max(10, 80 - Math.pow(elapsed * 2.0, 1.6));
       curve.setAttribute('d', `M 10 80 Q 50 80 ${x} ${y}`);
       rocket.setAttribute('cx', x);
       rocket.setAttribute('cy', y);
