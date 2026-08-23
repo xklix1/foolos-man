@@ -345,7 +345,7 @@ const UIController = (() => {
           <h4 class="text-lg font-bold text-white">${job.name}</h4>
           ${isCurrent ? '<span class="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded border border-yellow-500/30">الوظيفة الحالية</span>' : ''}
         </div>
-        <div class="text-sm text-slate-400 space-y-1 mb-4 w-full">
+          <div class="text-sm text-slate-400 space-y-1 mb-4 w-full">
           <div class="flex justify-between"><span>الراتب الثابت:</span><span class="numbers-font text-emerald-400 font-semibold">+${job.salary} EGP / دورة</span></div>
           <div class="flex justify-between"><span>العائد من الخبرة:</span><span class="numbers-font text-blue-400">+${job.xpReward} XP</span></div>
           <div class="flex justify-between"><span>الخبرة المطلوبة:</span><span class="numbers-font">${job.xpNeeded} XP</span></div>
@@ -1661,34 +1661,55 @@ const UIController = (() => {
     const container = document.getElementById('toast-container');
     if (!container) return;
 
+    const icons = {
+      success: `<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`,
+      error:   `<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>`,
+      info:    `<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
+      warning: `<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>`,
+    };
+
+    const colors = {
+      success: { border: 'border-emerald-500/60', bg: 'bg-emerald-500/10', icon: 'text-emerald-400', dot: 'bg-emerald-400' },
+      error:   { border: 'border-rose-500/60',    bg: 'bg-rose-500/10',    icon: 'text-rose-400',    dot: 'bg-rose-400'    },
+      info:    { border: 'border-sky-500/60',      bg: 'bg-sky-500/10',      icon: 'text-sky-400',     dot: 'bg-sky-400'     },
+      warning: { border: 'border-yellow-500/60',  bg: 'bg-yellow-500/10',  icon: 'text-yellow-400',  dot: 'bg-yellow-400'  },
+    };
+
+    const c = colors[type] || colors.info;
+    const icon = icons[type] || icons.info;
+
     const toast = document.createElement('div');
-    toast.className = `glass-panel p-4 rounded-xl shadow-2xl border-l-4 transition-all duration-300 transform translate-x-20 opacity-0 text-sm max-w-sm w-80 ${
-      type === 'success' 
-        ? 'border-l-emerald-500 bg-emerald-950/20' 
-        : type === 'error' 
-          ? 'border-l-rose-500 bg-rose-950/20' 
-          : 'border-l-yellow-500 bg-yellow-950/20'
-    }`;
+    toast.className = `w-full pointer-events-auto`;
+    toast.style.cssText = 'transform: translateY(-16px); opacity: 0; transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease;';
 
     toast.innerHTML = `
-      <div class="font-bold text-white mb-1">${title}</div>
-      <div class="text-xs text-slate-300 leading-relaxed">${message}</div>
+      <div class="flex items-start gap-3 rounded-2xl px-4 py-3 shadow-2xl border backdrop-blur-xl ${c.border} ${c.bg}"
+           style="background: rgba(5,7,15,0.88); box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.04);">
+        <span class="mt-0.5 ${c.icon}">${icon}</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-bold text-white text-sm leading-tight">${title}</div>
+          ${message ? `<div class="text-xs text-slate-300 leading-relaxed mt-0.5 break-words">${message}</div>` : ''}
+        </div>
+        <span class="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${c.dot}"></span>
+      </div>
     `;
 
-    container.appendChild(toast);
+    container.prepend(toast);
 
-    // Animate in
-    setTimeout(() => {
-      toast.classList.remove('translate-x-20', 'opacity-0');
-    }, 50);
+    // Animate in from top
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        toast.style.transform = 'translateY(0)';
+        toast.style.opacity = '1';
+      });
+    });
 
-    // Auto dismiss after 4 seconds
+    // Auto dismiss after 3.5 seconds
     setTimeout(() => {
-      toast.classList.add('translate-x-20', 'opacity-0');
-      setTimeout(() => {
-        toast.remove();
-      }, 300);
-    }, 4000);
+      toast.style.transform = 'translateY(-12px)';
+      toast.style.opacity = '0';
+      setTimeout(() => toast.remove(), 350);
+    }, 3500);
   }
 
   // Floating Passive indicators
