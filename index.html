@@ -38,10 +38,48 @@
   <link rel="stylesheet" href="app.css?v=9">
   
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase App SDK blocked by Brave Shield/AdBlocker; local mode active.')"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase Firestore SDK blocked by Brave Shield/AdBlocker; local mode active.')"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase App SDK blocked.')"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase Firestore SDK blocked.')"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase Auth SDK blocked.')"></script>
 </head>
 <body class="bg-darkbg text-slate-100 min-h-screen relative">
+
+  <!-- ==================== CONNECTING OVERLAY ==================== -->
+  <div id="connecting-overlay" class="fixed inset-0 z-[300] hidden items-center justify-center bg-black/95 backdrop-blur-lg p-4">
+    <div class="w-full max-w-sm text-center">
+      <!-- Spinner -->
+      <div class="w-20 h-20 mx-auto mb-6 rounded-full border-4 border-yellow-500/20 border-t-yellow-400 animate-spin"></div>
+      <h2 class="text-xl font-black text-white mb-2">جارٍ الاتصال بالخوادم</h2>
+      <p class="text-sm text-slate-400">الرجاء الانتظار... يتم الاتصال بقاعدة بيانات اللعبة</p>
+      <p class="text-xs text-slate-600 mt-4 numbers-font">Connecting to Firebase...</p>
+    </div>
+  </div>
+
+  <!-- ==================== OFFLINE ERROR OVERLAY ==================== -->
+  <div id="offline-overlay" class="fixed inset-0 z-[300] hidden items-center justify-center bg-black/95 backdrop-blur-lg p-4">
+    <div class="w-full max-w-sm bg-slate-950 border border-rose-500/40 rounded-2xl p-8 text-center shadow-2xl shadow-rose-500/10">
+      <!-- Icon -->
+      <div class="w-16 h-16 mx-auto mb-5 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center">
+        <svg class="w-8 h-8 text-rose-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M3 3l18 18M9.879 9.879A3 3 0 0012 15a3 3 0 002.121-.879"/>
+        </svg>
+      </div>
+      <h2 class="text-xl font-black text-white mb-1">لا يوجد اتصال بالخوادم</h2>
+      <p class="text-xs text-rose-400 font-bold tracking-widest mb-4">NO SERVER CONNECTION</p>
+      <p class="text-sm text-slate-400 mb-6 leading-relaxed">
+        تعذّر الاتصال بقاعدة بيانات اللعبة. اللعبة تعمل بوضع أونلاين فقط — تحقق من اتصالك بالإنترنت وأعد المحاولة.
+      </p>
+      <button
+        id="btn-retry-connect"
+        class="w-full py-3 bg-rose-500 hover:bg-rose-400 text-white font-black rounded-xl transition-all duration-300 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        إعادة المحاولة
+      </button>
+    </div>
+  </div>
 
   <!-- ==================== FORCE UPDATE OVERLAY ==================== -->
   <!-- Hidden by default; shown by JS when version is outdated -->
@@ -1113,44 +1151,63 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=9"></script>
+  <script src="db.js?v=10"></script>
   <script src="game.js?v=9"></script>
   <script src="ui.js?v=9"></script>
   <script>
-    // ── Boot Sequence ──────────────────────────────
+    // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
-      // 1. Initialise DB (local-first, non-blocking)
+
+      // Show connecting overlay immediately
+      const connectingOverlay = document.getElementById('connecting-overlay');
+      const offlineOverlay    = document.getElementById('offline-overlay');
+      connectingOverlay.classList.remove('hidden');
+      connectingOverlay.classList.add('flex');
+
+      // 1. Initialise DB — BLOCKING until Firebase is ready
       try {
-        if (window.AppDB) await AppDB.init();
+        if (!window.AppDB) throw new Error('AppDB not loaded.');
+        await AppDB.init();
       } catch (e) {
-        console.warn('[Boot] AppDB init warning:', e);
+        console.error('[Boot] Firebase connection failed:', e.message);
+        // Hide connecting, show offline error
+        connectingOverlay.classList.add('hidden');
+        connectingOverlay.classList.remove('flex');
+        offlineOverlay.classList.remove('hidden');
+        offlineOverlay.classList.add('flex');
+
+        document.getElementById('btn-retry-connect').addEventListener('click', () => {
+          window.location.reload();
+        });
+        return; // Stop boot — no Firebase = no game
       }
+
+      // Hide connecting overlay
+      connectingOverlay.classList.add('hidden');
+      connectingOverlay.classList.remove('flex');
 
       // 2. Version check — show Force Update modal if outdated
       try {
-        if (window.AppDB) {
-          const vcheck = await AppDB.checkVersion();
-          if (!vcheck.upToDate) {
-            const overlay = document.getElementById('force-update-overlay');
-            document.getElementById('fu-client-ver').textContent = vcheck.clientVersion;
-            document.getElementById('fu-remote-ver').textContent  = vcheck.remoteVersion;
-            overlay.classList.remove('hidden');
-            overlay.classList.add('flex');
+        const vcheck = await AppDB.checkVersion();
+        if (!vcheck.upToDate) {
+          const overlay = document.getElementById('force-update-overlay');
+          document.getElementById('fu-client-ver').textContent = vcheck.clientVersion;
+          document.getElementById('fu-remote-ver').textContent  = vcheck.remoteVersion;
+          overlay.classList.remove('hidden');
+          overlay.classList.add('flex');
 
-            document.getElementById('btn-force-update').addEventListener('click', () => {
-              const url = new URL(window.location.href);
-              url.searchParams.set('v', vcheck.remoteVersion + '_' + Date.now());
-              window.location.href = url.toString();
-            });
-            return; // Stop boot — force user to update
-          }
+          document.getElementById('btn-force-update').addEventListener('click', () => {
+            const url = new URL(window.location.href);
+            url.searchParams.set('v', vcheck.remoteVersion + '_' + Date.now());
+            window.location.href = url.toString();
+          });
+          return;
         }
       } catch (e) {
-        // Version check failure is non-fatal — continue booting
         console.warn('[Boot] Version check skipped:', e.message);
       }
 
-      // 3. Boot the UI (Guaranteed Execution)
+      // 3. Boot the UI
       try {
         if (window.UIController) UIController.init();
       } catch (e) {
@@ -1163,6 +1220,17 @@
       } catch (e) {
         console.warn('[Boot] Connectivity badge skipped:', e);
       }
+
+      // 5. Offline listener — show overlay if connection drops mid-game
+      window.addEventListener('foolos:offline', () => {
+        offlineOverlay.classList.remove('hidden');
+        offlineOverlay.classList.add('flex');
+        document.getElementById('btn-retry-connect').onclick = () => window.location.reload();
+      });
+      window.addEventListener('foolos:online', () => {
+        offlineOverlay.classList.add('hidden');
+        offlineOverlay.classList.remove('flex');
+      });
     });
 
     function _initConnectivityBadge() {
@@ -1183,7 +1251,7 @@
           label.className = 'text-yellow-400 font-medium';
         } else {
           dot.className = 'w-2 h-2 rounded-full bg-rose-400 inline-block';
-          label.textContent = 'غير متصل — محلي فقط';
+          label.textContent = 'غير متصل — لا يمكن الحفظ';
           label.className = 'text-rose-400 font-medium';
         }
       }

@@ -1,20 +1,19 @@
 /**
  * Foolos Man Tycoon (فلوس مان تايكون)
- * Database Adapter v8 (db.js)
+ * Database Adapter v10 (db.js)
  *
- * Architecture:
- *  - LOCAL-FIRST: All reads/writes go to localStorage immediately — never blocks on network.
- *  - BACKGROUND SYNC: When online, silently push local state to Firestore.
- *  - OFFLINE RESILIENT: Firebase errors are swallowed; game always continues from local data.
- *  - VERSION CHECK: Exposes checkVersion() for the UI to enforce force-updates.
+ * Architecture: ONLINE-FIRST (Firebase-First)
+ *  - ALL reads/writes go directly to Firestore — no localStorage fallback.
+ *  - Game is BLOCKED until Firebase is connected and ready.
+ *  - If the user loses internet, the game shows an error and stops saving.
+ *  - No sync queue, no local simulation — Firestore is the single source of truth.
  */
 
 const AppDB = (() => {
   // ─────────────────────────────────────────────
   //  CONSTANTS
   // ─────────────────────────────────────────────
-  const CLIENT_VERSION = '9';           // Must match the latest deployed version
-  const REMOTE_VERSION_KEY = 'foolos_remote_version'; // localStorage mirror of remote version
+  const CLIENT_VERSION = '10';
 
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyC7KRj3-t_03HLMzJ10miVhdKWCpabPQB4",
@@ -26,42 +25,75 @@ const AppDB = (() => {
     measurementId: "G-54ZC388NW1"
   };
 
-  // Mock leaderboard players disabled (empty array)
-  const DEFAULT_MOCK_PLAYERS = [];
+  // Secret Admin Credentials
+  const SECRET_ADMIN_USERNAME = 'FoolosAdmin_X99';
+  const SECRET_ADMIN_PIN = '987654';
+
+  // Firebase Auth credentials for admin (grants Firestore write access to globals)
+  const ADMIN_AUTH_EMAIL    = 'khalid.newstart@gmail.com';
+  const ADMIN_AUTH_PASSWORD = 'khalid911';
 
   // ─────────────────────────────────────────────
   //  STATE
   // ─────────────────────────────────────────────
-  let firestoreDb = null;     // Firestore instance — null until Firebase loads
-  let firebaseReady = false;  // True once Firestore is connected and ready
-  let syncQueue = [];         // Pending sync ops queued while offline: [{type, username, data}]
-  let syncInProgress = false;
-  let onlineListenersAttached = false;
-
-  // Secret Admin Credentials Configuration
-  const SECRET_ADMIN_USERNAME = 'FoolosAdmin_X99';
-  const SECRET_ADMIN_PIN = '987654';
+  let firestoreDb   = null;
+  let firebaseAuth  = null;
+  let firebaseReady = false;
 
   // ─────────────────────────────────────────────
-  //  INIT — non-blocking, never throws
+  //  INIT — BLOCKING until Firebase is ready
   // ─────────────────────────────────────────────
+  /**
+   * Initialises Firebase and waits until Firestore is connected.
+   * Throws if Firebase SDK is not loaded or connection fails.
+   * The UI should show a loading overlay until this resolves.
+   */
   async function init() {
-    // Seed pre-created secure Admin Account automatically if missing
-    const registered = JSON.parse(localStorage.getItem('foolos_registered_sim') || '{}');
-    if (!registered[SECRET_ADMIN_USERNAME]) {
-      registered[SECRET_ADMIN_USERNAME] = {
-        username: SECRET_ADMIN_USERNAME,
-        pin: SECRET_ADMIN_PIN,
-        netWorth: 100000000, // 100M EGP initial admin wealth
-        isAdmin: true,
-        createdAt: Date.now(),
-        lastSeen: Date.now()
-      };
-      localStorage.setItem('foolos_registered_sim', JSON.stringify(registered));
+    if (!window.firebase) {
+      throw new Error('Firebase SDK غير محمّل. تحقق من اتصالك بالإنترنت وأعد تحميل الصفحة.');
+    }
 
-      // Seed initial admin game state if missing
-      if (!localStorage.getItem(`foolos_player_${SECRET_ADMIN_USERNAME}`)) {
-        const adminInitialState = {
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(FIREBASE_CONFIG);
+      }
+      firestoreDb  = firebase.firestore();
+      firebaseAuth = firebase.auth();
+
+      // Verify connectivity with a lightweight ping
+      await firestoreDb.collection('globals').doc('config').get();
+
+      firebaseReady = true;
+      console.log('[DB] Firebase Firestore connected and ready.');
+
+      // Seed admin account in Firestore if it doesn't exist yet
+      await _seedAdminIfMissing();
+
+      // Attach online/offline listeners for UI feedback
+      _attachConnectivityListeners();
+
+      return true;
+    } catch (err) {
+      firebaseReady = false;
+      console.error('[DB] Firebase connection failed:', err.message);
+      throw new Error('تعذّر الاتصال بخوادم اللعبة. تحقق من اتصالك بالإنترنت وأعد المحاولة.');
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  //  ADMIN SEED
+  // ─────────────────────────────────────────────
+  async function _seedAdminIfMissing() {
+    try {
+      const ref = firestoreDb.collection('players').doc(SECRET_ADMIN_USERNAME);
+      const doc = await ref.get();
+      if (!doc.exists) {
+        const pinHash = _hashString(SECRET_ADMIN_PIN);
+        await ref.set({
+          username: SECRET_ADMIN_USERNAME,
+          pin: pinHash,
+          netWorth: 100000000,
+          isAdmin: true,
           cash: 50000000,
           bank: 50000000,
           xp: 10000,
@@ -72,50 +104,14 @@ const AppDB = (() => {
           stocks: { COMI: { shares: 1000, avgPrice: 30 }, EAST: { shares: 1000, avgPrice: 70 }, ETEL: { shares: 1000, avgPrice: 40 }, FWRY: { shares: 1000, avgPrice: 80 }, CASH: { shares: 1000, avgPrice: 100 } },
           inventory: { gold_pen: 5, premium_lawyer: 5 },
           jailTimer: 0,
-          netWorth: 100000000,
-          title: 'إمبراطور المال والفلوس'
-        };
-        localStorage.setItem(`foolos_player_${SECRET_ADMIN_USERNAME}`, JSON.stringify(adminInitialState));
+          title: 'إمبراطور المال والفلوس',
+          createdAt: Date.now(),
+          lastSeen: Date.now()
+        });
+        console.log('[DB] Admin account seeded in Firestore.');
       }
-    }
-
-    // Try to connect Firebase in the background — game is already playable regardless
-    _tryConnectFirebase();
-
-    // Attach connectivity listeners once
-    _attachConnectivityListeners();
-
-    console.log('[DB] Local-first database initialized. Game is ready.');
-    return true;
-  }
-
-  // ─────────────────────────────────────────────
-  //  FIREBASE CONNECTION (background, non-blocking)
-  // ─────────────────────────────────────────────
-  async function _tryConnectFirebase() {
-    if (!navigator.onLine || !window.firebase) return;
-
-    try {
-      if (!firebase.apps.length) {
-        firebase.initializeApp(FIREBASE_CONFIG);
-      }
-      firestoreDb = firebase.firestore();
-
-      // Try to enable offline persistence (best-effort)
-      try {
-        await firestoreDb.enablePersistence({ synchronizeTabs: true });
-      } catch (e) {
-        // Persistence may fail in certain environments — not critical
-      }
-
-      firebaseReady = true;
-      console.log('[DB] Firebase Firestore connected.');
-
-      // Immediately flush any queued sync ops
-      _flushSyncQueue();
     } catch (err) {
-      console.warn('[DB] Firebase connection failed. Continuing in local-only mode.', err.message);
-      firebaseReady = false;
+      console.warn('[DB] Could not seed admin account:', err.message);
     }
   }
 
@@ -123,125 +119,27 @@ const AppDB = (() => {
   //  CONNECTIVITY LISTENERS
   // ─────────────────────────────────────────────
   function _attachConnectivityListeners() {
-    if (onlineListenersAttached) return;
-    onlineListenersAttached = true;
-
-    window.addEventListener('online', async () => {
-      console.log('[DB] Network restored. Attempting background sync...');
-      if (!firebaseReady) {
-        await _tryConnectFirebase();
-      } else {
-        _flushSyncQueue();
-      }
-
-      // Notify the UI layer that we're back online
+    window.addEventListener('online', () => {
+      console.log('[DB] Network restored.');
       window.dispatchEvent(new CustomEvent('foolos:online'));
     });
 
     window.addEventListener('offline', () => {
-      console.log('[DB] Network lost. Switching to local-only mode.');
+      console.log('[DB] Network lost.');
       firebaseReady = false;
       window.dispatchEvent(new CustomEvent('foolos:offline'));
     });
   }
 
   // ─────────────────────────────────────────────
-  //  SYNC QUEUE — flush when back online
+  //  HELPERS
   // ─────────────────────────────────────────────
-  function _queueSync(type, username, data) {
-    // Deduplicate: replace existing entry for same user+type
-    syncQueue = syncQueue.filter(op => !(op.type === type && op.username === username));
-    syncQueue.push({ type, username, data, queuedAt: Date.now() });
-  }
-
-  async function _flushSyncQueue() {
-    if (syncInProgress || !firebaseReady || syncQueue.length === 0) return;
-    syncInProgress = true;
-
-    const batch = [...syncQueue];
-    syncQueue = [];
-
-    for (const op of batch) {
-      try {
-        if (op.type === 'savePlayerState') {
-          await _firebaseSaveState(op.username, op.data);
-        } else if (op.type === 'updateLeaderboard') {
-          await _firebaseUpdateLeaderboard(op.username, op.data);
-        }
-      } catch (err) {
-        // Re-queue failed ops
-        console.warn('[DB] Sync op failed, re-queuing:', op.type, err.message);
-        syncQueue.push(op);
-      }
-    }
-
-    syncInProgress = false;
-    if (syncQueue.length > 0) {
-      console.log(`[DB] ${syncQueue.length} sync op(s) still pending.`);
+  function _requireOnline() {
+    if (!firebaseReady || !firestoreDb) {
+      throw new Error('لا يوجد اتصال بالخوادم. تحقق من اتصالك بالإنترنت.');
     }
   }
 
-  // ─────────────────────────────────────────────
-  //  FIREBASE WRITE HELPERS (internal)
-  // ─────────────────────────────────────────────
-  async function _firebaseSaveState(username, state) {
-    if (!firestoreDb) return;
-    const ref = firestoreDb.collection('players').doc(username);
-    await ref.set(state, { merge: true });
-  }
-
-  async function _firebaseUpdateLeaderboard(username, data) {
-    if (!firestoreDb) return;
-    const ref = firestoreDb.collection('players').doc(username);
-    await ref.set({
-      username,
-      netWorth: data.netWorth,
-      title: data.title,
-      lastSeen: Date.now()
-    }, { merge: true });
-  }
-
-  // ─────────────────────────────────────────────
-  //  VERSION CHECK
-  // ─────────────────────────────────────────────
-  /**
-   * Checks whether the running client is up-to-date.
-   * Strategy:
-   *   1. If online, fetch version from Firestore globals/config (best-effort).
-   *   2. Fall back to a locally cached remote version.
-   *   3. Compare against CLIENT_VERSION.
-   * Returns: { upToDate: boolean, clientVersion, remoteVersion }
-   */
-  async function checkVersion() {
-    let remoteVersion = CLIENT_VERSION; // Assume up-to-date if we can't fetch
-
-    if (firebaseReady && firestoreDb) {
-      try {
-        const doc = await firestoreDb.collection('globals').doc('config').get();
-        if (doc.exists && doc.data().version) {
-          remoteVersion = String(doc.data().version);
-          // Cache the fetched version locally
-          localStorage.setItem(REMOTE_VERSION_KEY, remoteVersion);
-        }
-      } catch (err) {
-        // Couldn't fetch remote version; fall back to cached
-        const cached = localStorage.getItem(REMOTE_VERSION_KEY);
-        if (cached) remoteVersion = cached;
-      }
-    } else {
-      // Offline: use cached remote version if available
-      const cached = localStorage.getItem(REMOTE_VERSION_KEY);
-      if (cached) remoteVersion = cached;
-    }
-
-    return {
-      upToDate: CLIENT_VERSION >= remoteVersion,
-      clientVersion: CLIENT_VERSION,
-      remoteVersion
-    };
-  }
-
-  // Helper: Secure hash string for PIN and Integrity Validation
   function _hashString(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -253,23 +151,39 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
+  //  VERSION CHECK
+  // ─────────────────────────────────────────────
+  async function checkVersion() {
+    _requireOnline();
+    try {
+      const doc = await firestoreDb.collection('globals').doc('config').get();
+      const remoteVersion = (doc.exists && doc.data().version) ? String(doc.data().version) : CLIENT_VERSION;
+      return {
+        upToDate: CLIENT_VERSION >= remoteVersion,
+        clientVersion: CLIENT_VERSION,
+        remoteVersion
+      };
+    } catch (err) {
+      return { upToDate: true, clientVersion: CLIENT_VERSION, remoteVersion: CLIENT_VERSION };
+    }
+  }
+
+  // ─────────────────────────────────────────────
   //  AUTH — REGISTER
   // ─────────────────────────────────────────────
   async function registerPlayer(username, pin) {
-    if (!username || !pin) throw new Error("يرجى إدخال اسم المستخدم والرقم السري.");
+    if (!username || !pin) throw new Error('يرجى إدخال اسم المستخدم والرقم السري.');
     username = username.trim();
+    _requireOnline();
 
-    // Prevent public creation of admin accounts or reserved keywords
     if (username.toLowerCase().includes('admin') || username === SECRET_ADMIN_USERNAME) {
-      throw new Error("اسم المستخدم هذا محظور ومحمي. يرجى اختيار اسم مستخدم عادي.");
+      throw new Error('اسم المستخدم هذا محظور ومحمي. يرجى اختيار اسم مستخدم عادي.');
     }
 
-    const isAdmin = false; // Public users can never register as admin
-
-    // LOCAL WRITE FIRST — never blocks
-    const registered = JSON.parse(localStorage.getItem('foolos_registered_sim') || '{}');
-    if (registered[username]) {
-      throw new Error("اسم المستخدم هذا مسجل بالفعل. يرجى اختيار اسم آخر.");
+    const ref = firestoreDb.collection('players').doc(username);
+    const existing = await ref.get();
+    if (existing.exists) {
+      throw new Error('اسم المستخدم هذا مسجل بالفعل. يرجى اختيار اسم آخر.');
     }
 
     const pinHash = _hashString(pin);
@@ -277,29 +191,13 @@ const AppDB = (() => {
       username,
       pin: pinHash,
       netWorth: 5000,
-      isAdmin,
+      isAdmin: false,
       createdAt: Date.now(),
       lastSeen: Date.now()
     };
 
-    registered[username] = data;
-    localStorage.setItem('foolos_registered_sim', JSON.stringify(registered));
-
-    // BACKGROUND SYNC to Firestore
-    if (firebaseReady) {
-      try {
-        const ref = firestoreDb.collection('players').doc(username);
-        const doc = await ref.get();
-        if (!doc.exists) {
-          await ref.set(data);
-        }
-      } catch (err) {
-        _queueSync('savePlayerState', username, data);
-      }
-    } else {
-      _queueSync('savePlayerState', username, data);
-    }
-
+    await ref.set(data);
+    console.log('[DB] Player registered:', username);
     return data;
   }
 
@@ -307,285 +205,144 @@ const AppDB = (() => {
   //  AUTH — LOGIN
   // ─────────────────────────────────────────────
   async function loginPlayer(username, pin) {
-    if (!username || !pin) throw new Error("يرجى إدخال اسم المستخدم والرقم السري.");
+    if (!username || !pin) throw new Error('يرجى إدخال اسم المستخدم والرقم السري.');
     username = username.trim();
+    _requireOnline();
 
     const pinHash = _hashString(pin);
-    const registered = JSON.parse(localStorage.getItem('foolos_registered_sim') || '{}');
 
-    // Secret Admin Bypass check
-    if (username === SECRET_ADMIN_USERNAME && (pin === SECRET_ADMIN_PIN || pinHash === registered[SECRET_ADMIN_USERNAME]?.pin)) {
-      return registered[SECRET_ADMIN_USERNAME];
-    }
-
-    if (registered[username]) {
-      // Found locally — validate pin hash
-      if (registered[username].pin !== pinHash && registered[username].pin !== pin) {
-        throw new Error("الرقم السري غير صحيح. يرجى المحاولة مرة أخرى.");
-      }
-      return registered[username];
-    }
-
-    // Not found locally — try Firestore if online
-    if (firebaseReady && firestoreDb) {
+    // Secret Admin bypass — also sign in to Firebase Auth for Firestore globals access
+    if (username === SECRET_ADMIN_USERNAME && pin === SECRET_ADMIN_PIN) {
       try {
-        const ref = firestoreDb.collection('players').doc(username);
-        const doc = await ref.get();
-        if (!doc.exists) throw new Error("اسم المستخدم غير موجود. يرجى التسجيل أولاً.");
-        const data = doc.data();
-        if (data.pin !== pinHash && data.pin !== pin) throw new Error("الرقم السري غير صحيح. يرجى المحاولة مرة أخرى.");
-
-        // Cache the user locally for future offline logins
-        registered[username] = { username, pin: pinHash, netWorth: data.netWorth || 5000, isAdmin: data.isAdmin || false };
-        localStorage.setItem('foolos_registered_sim', JSON.stringify(registered));
-
-        return data;
-      } catch (err) {
-        if (err.message.includes('غير موجود') || err.message.includes('غير صحيح')) throw err;
-        throw new Error("خطأ في الاتصال. تحقق من اتصالك بالإنترنت وحاول مجدداً.");
+        await firebaseAuth.signInWithEmailAndPassword(ADMIN_AUTH_EMAIL, ADMIN_AUTH_PASSWORD);
+        console.log('[DB] Admin signed in to Firebase Auth.');
+      } catch (authErr) {
+        console.warn('[DB] Firebase Auth sign-in failed:', authErr.message);
       }
+      const adminDoc = await firestoreDb.collection('players').doc(SECRET_ADMIN_USERNAME).get();
+      if (adminDoc.exists) return adminDoc.data();
     }
 
-    throw new Error("اسم المستخدم غير موجود. يرجى التسجيل أولاً.");
+    // Sign out any existing Firebase Auth session for non-admin users
+    if (firebaseAuth.currentUser) {
+      await firebaseAuth.signOut();
+    }
+
+    const ref = firestoreDb.collection('players').doc(username);
+    const doc = await ref.get();
+
+    if (!doc.exists) throw new Error('اسم المستخدم غير موجود. يرجى التسجيل أولاً.');
+
+    const data = doc.data();
+    if (data.pin !== pinHash && data.pin !== pin) {
+      throw new Error('الرقم السري غير صحيح. يرجى المحاولة مرة أخرى.');
+    }
+
+    // Update lastSeen
+    await ref.update({ lastSeen: Date.now() });
+
+    return data;
   }
 
   // ─────────────────────────────────────────────
   //  GET PLAYER STATE
   // ─────────────────────────────────────────────
   async function getPlayerState(username) {
-    // LOCAL FIRST — always return local data immediately
-    const localKey = `foolos_state_${username}`;
-    const localData = localStorage.getItem(localKey);
-    const localState = localData ? JSON.parse(localData) : null;
-
-    // Background: attempt to pull a fresher copy from Firestore if online
-    // (Only used if no local data exists, e.g. first login on a new device)
-    if (!localState && firebaseReady && firestoreDb) {
-      try {
-        const ref = firestoreDb.collection('players').doc(username);
-        const doc = await ref.get();
-        if (doc.exists) {
-          const remoteState = doc.data();
-          localStorage.setItem(localKey, JSON.stringify(remoteState));
-          return remoteState;
-        }
-      } catch (err) {
-        // Firebase read failed — return null and let game create fresh state
-      }
-    }
-
-    return localState;
+    _requireOnline();
+    const ref = firestoreDb.collection('players').doc(username);
+    const doc = await ref.get();
+    if (!doc.exists) return null;
+    return doc.data();
   }
 
   // ─────────────────────────────────────────────
-  //  SAVE PLAYER STATE — LOCAL FIRST, THEN SYNC
+  //  SAVE PLAYER STATE
   // ─────────────────────────────────────────────
   async function savePlayerState(username, state) {
     if (!username) return;
+    _requireOnline();
 
     state.username = username;
     state.lastSeen = Date.now();
 
-    // 1. WRITE TO LOCAL STORAGE IMMEDIATELY (synchronous, never fails)
-    localStorage.setItem(`foolos_state_${username}`, JSON.stringify(state));
-
-    // 2. UPDATE LOCAL LEADERBOARD
-    _updateLocalLeaderboard(username, state.netWorth, state.title || 'عامل مبتدئ');
-
-    // 3. BACKGROUND SYNC TO FIREBASE
-    if (firebaseReady && firestoreDb) {
-      try {
-        await _firebaseSaveState(username, state);
-      } catch (err) {
-        // Queue for later retry on reconnect
-        _queueSync('savePlayerState', username, state);
-      }
-    } else {
-      // Not online — queue for sync when back online
-      _queueSync('savePlayerState', username, state);
-    }
+    const ref = firestoreDb.collection('players').doc(username);
+    await ref.set(state, { merge: true });
   }
 
   // ─────────────────────────────────────────────
-  //  LOCAL LEADERBOARD
-  // ─────────────────────────────────────────────
-  function _updateLocalLeaderboard(username, netWorth, title) {
-    let board = JSON.parse(localStorage.getItem('foolos_simulated_leaderboard') || '[]');
-    const idx = board.findIndex(p => p.username === username);
-    if (idx !== -1) {
-      board[idx].netWorth = netWorth;
-      board[idx].title = title;
-      board[idx].lastSeen = Date.now();
-    } else {
-      board.push({ username, netWorth, title, lastSeen: Date.now() });
-    }
-    board.sort((a, b) => b.netWorth - a.netWorth);
-    localStorage.setItem('foolos_simulated_leaderboard', JSON.stringify(board));
-  }
-
-  // ─────────────────────────────────────────────
-  //  LEADERBOARD — LOCAL + REMOTE MERGE
+  //  LEADERBOARD — directly from Firestore
   // ─────────────────────────────────────────────
   async function getLeaderboard() {
-    // Return local board instantly
-    const localBoard = _getLocalLeaderboard();
+    _requireOnline();
 
-    // If online, try to merge fresh Firestore data (best-effort, non-blocking)
-    if (firebaseReady && firestoreDb) {
-      try {
-        const snapshot = await firestoreDb.collection('players')
-          .orderBy('netWorth', 'desc')
-          .limit(25)
-          .get();
+    const snapshot = await firestoreDb.collection('players')
+      .orderBy('netWorth', 'desc')
+      .limit(25)
+      .get();
 
-        const remoteEntries = [];
-        snapshot.forEach(doc => {
-          const d = doc.data();
-          remoteEntries.push({
-            username: d.username || doc.id,
-            netWorth: d.netWorth || 0,
-            title: d.title || 'عامل مبتدئ',
-            lastSeen: d.lastSeen || Date.now()
-          });
-        });
-
-        if (remoteEntries.length > 0) {
-          // Merge: prefer remote data for existing users, keep local-only users
-          const merged = [...remoteEntries];
-          localBoard.forEach(local => {
-            const inRemote = merged.some(r => r.username === local.username);
-            if (!inRemote) merged.push(local);
-          });
-          merged.sort((a, b) => b.netWorth - a.netWorth);
-          return merged;
-        }
-      } catch (err) {
-        // Firebase read failed — fall through to local data
-      }
-    }
-
-    return localBoard;
-  }
-
-  function _getLocalLeaderboard() {
-    // Collect all real registered players from local storage
-    const registered = JSON.parse(localStorage.getItem('foolos_registered_sim') || '{}');
-    const board = [];
-
-    Object.keys(registered).forEach(uname => {
-      const pData = registered[uname];
-      const pState = JSON.parse(localStorage.getItem(`foolos_player_${uname}`) || '{}');
-      board.push({
-        username: uname,
-        netWorth: pState.netWorth || pData.netWorth || 5000,
-        title: pState.title || 'عامل مبتدئ',
-        lastSeen: pData.lastSeen || Date.now()
+    const entries = [];
+    snapshot.forEach(doc => {
+      const d = doc.data();
+      entries.push({
+        username: d.username || doc.id,
+        netWorth: d.netWorth || 0,
+        title: d.title || 'عامل مبتدئ',
+        lastSeen: d.lastSeen || Date.now()
       });
     });
 
-    board.sort((a, b) => b.netWorth - a.netWorth);
-    return board;
+    return entries;
   }
 
   // ─────────────────────────────────────────────
-  //  WIRE TRANSFER
+  //  WIRE TRANSFER — Firestore atomic transaction
   // ─────────────────────────────────────────────
   async function executeWireTransfer(senderUsername, recipientUsername, amount) {
-    if (!senderUsername || !recipientUsername) throw new Error("بيانات التحويل غير مكتملة.");
-    if (senderUsername === recipientUsername) throw new Error("لا يمكنك التحويل لنفسك!");
-    if (amount <= 0) throw new Error("مبلغ التحويل يجب أن يكون أكبر من صفر.");
+    if (!senderUsername || !recipientUsername) throw new Error('بيانات التحويل غير مكتملة.');
+    if (senderUsername === recipientUsername) throw new Error('لا يمكنك التحويل لنفسك!');
+    if (amount <= 0) throw new Error('مبلغ التحويل يجب أن يكون أكبر من صفر.');
+    _requireOnline();
 
-    // Check if recipient is known (local or mock)
-    const registered = JSON.parse(localStorage.getItem('foolos_registered_sim') || '{}');
-    const isMockRecipient = DEFAULT_MOCK_PLAYERS.some(m => m.username === recipientUsername);
-    const isLocalRecipient = registered[recipientUsername] !== undefined;
-    let isFirebaseRecipient = false;
+    const db = firestoreDb;
+    const senderRef = db.collection('players').doc(senderUsername);
+    const recipientRef = db.collection('players').doc(recipientUsername);
 
-    if (!isMockRecipient && !isLocalRecipient && firebaseReady && firestoreDb) {
-      try {
-        const doc = await firestoreDb.collection('players').doc(recipientUsername).get();
-        isFirebaseRecipient = doc.exists;
-      } catch (e) { /* ignore */ }
+    // Verify recipient exists
+    const recipientDoc = await recipientRef.get();
+    if (!recipientDoc.exists) {
+      throw new Error('المستلم غير موجود. تحقق من كتابة الاسم بدقة.');
     }
 
-    if (!isMockRecipient && !isLocalRecipient && !isFirebaseRecipient) {
-      throw new Error("المستلم غير موجود. تحقق من كتابة الاسم بدقة.");
-    }
+    return await db.runTransaction(async (tx) => {
+      const [senderDoc, recDoc] = await Promise.all([
+        tx.get(senderRef),
+        tx.get(recipientRef)
+      ]);
 
-    // If online, prefer atomic Firestore transaction
-    if (firebaseReady && firestoreDb && (isLocalRecipient || isFirebaseRecipient)) {
-      try {
-        const db = firestoreDb;
-        const senderRef = db.collection('players').doc(senderUsername);
-        const recipientRef = db.collection('players').doc(recipientUsername);
+      const senderCash = (senderDoc.exists ? senderDoc.data().cash : 0) || 0;
+      if (senderCash < amount) throw new Error('رصيدك الحالي غير كافٍ لإتمام عملية التحويل.');
 
-        return await db.runTransaction(async (tx) => {
-          const [senderDoc, recipientDoc] = await Promise.all([
-            tx.get(senderRef),
-            tx.get(recipientRef)
-          ]);
+      const recipientCash = (recDoc.exists ? recDoc.data().cash : 0) || 0;
 
-          const senderCash = (senderDoc.exists ? senderDoc.data().cash : 0) || 0;
-          if (senderCash < amount) throw new Error("رصيدك الحالي غير كافٍ لإتمام عملية التحويل.");
+      tx.set(senderRef, {
+        cash: senderCash - amount,
+        netWorth: Math.max(0, (senderDoc.data().netWorth || 0) - amount)
+      }, { merge: true });
 
-          const recipientCash = (recipientDoc.exists ? recipientDoc.data().cash : 0) || 0;
-          tx.set(senderRef, { cash: senderCash - amount, netWorth: (senderDoc.data().netWorth || 0) - amount }, { merge: true });
-          tx.set(recipientRef, { cash: recipientCash + amount, netWorth: (recipientDoc.data().netWorth || 0) + amount }, { merge: true });
+      tx.set(recipientRef, {
+        cash: recipientCash + amount,
+        netWorth: (recDoc.data().netWorth || 0) + amount
+      }, { merge: true });
 
-          const logRef = db.collection('transfers').doc();
-          tx.set(logRef, { sender: senderUsername, recipient: recipientUsername, amount, timestamp: Date.now() });
-          return true;
-        });
-      } catch (err) {
-        if (err.message.includes('غير كافٍ')) throw err;
-        // Fall through to local transfer
-      }
-    }
+      const logRef = db.collection('transfers').doc();
+      tx.set(logRef, {
+        sender: senderUsername,
+        recipient: recipientUsername,
+        amount,
+        timestamp: Date.now()
+      });
 
-    // LOCAL TRANSFER FALLBACK
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const senderKey = `foolos_state_${senderUsername}`;
-        const senderState = JSON.parse(localStorage.getItem(senderKey));
-        if (!senderState || senderState.cash < amount) {
-          reject(new Error("رصيدك النقدي (الكاش) غير كافٍ للتحويل."));
-          return;
-        }
-        senderState.cash -= amount;
-        senderState.netWorth = Math.max(0, (senderState.netWorth || 0) - amount);
-        localStorage.setItem(senderKey, JSON.stringify(senderState));
-        _updateLocalLeaderboard(senderUsername, senderState.netWorth, senderState.title);
-
-        if (isLocalRecipient) {
-          const recKey = `foolos_state_${recipientUsername}`;
-          const recState = JSON.parse(localStorage.getItem(recKey) || '{"cash":0,"netWorth":0}');
-          recState.cash = (recState.cash || 0) + amount;
-          recState.netWorth = (recState.netWorth || 0) + amount;
-          localStorage.setItem(recKey, JSON.stringify(recState));
-          _updateLocalLeaderboard(recipientUsername, recState.netWorth, recState.title);
-        } else if (isMockRecipient) {
-          let board = JSON.parse(localStorage.getItem('foolos_simulated_leaderboard') || '[]');
-          const idx = board.findIndex(p => p.username === recipientUsername);
-          if (idx !== -1) { board[idx].netWorth += amount; }
-          localStorage.setItem('foolos_simulated_leaderboard', JSON.stringify(board));
-        }
-
-        // Save to global audit wire transfers log
-        const transferLog = JSON.parse(localStorage.getItem('foolos_wire_transfers_log') || '[]');
-        transferLog.unshift({
-          id: `TRF_${Date.now()}_${Math.floor(Math.random()*1000)}`,
-          sender: senderUsername,
-          recipient: recipientUsername,
-          amount: amount,
-          timestamp: Date.now(),
-          status: 'مكتملة'
-        });
-        // Limit log size to 100 entries
-        if (transferLog.length > 100) transferLog.length = 100;
-        localStorage.setItem('foolos_wire_transfers_log', JSON.stringify(transferLog));
-
-        resolve(true);
-      }, 600);
+      return true;
     });
   }
 
@@ -593,39 +350,26 @@ const AppDB = (() => {
   //  ADMIN FUNCTIONS
   // ─────────────────────────────────────────────
   async function sendBroadcast(message) {
-    if (firebaseReady && firestoreDb) {
-      await firestoreDb.collection('globals').doc('broadcast').set({ message, timestamp: Date.now() });
-    }
+    _requireOnline();
+    await firestoreDb.collection('globals').doc('broadcast').set({ message, timestamp: Date.now() });
   }
 
   async function sendAirdrop(amount) {
-    if (firebaseReady && firestoreDb) {
-      await firestoreDb.collection('globals').doc('airdrop').set({ amount: Number(amount), timestamp: Date.now() });
-    }
+    _requireOnline();
+    await firestoreDb.collection('globals').doc('airdrop').set({ amount: Number(amount), timestamp: Date.now() });
   }
 
   async function adminGetPlayer(username) {
+    _requireOnline();
     username = username.trim();
-
-    if (firebaseReady && firestoreDb) {
-      const doc = await firestoreDb.collection('players').doc(username).get();
-      if (!doc.exists) throw new Error("اسم المستخدم المطلوب غير مسجل بالخوادم.");
-      return doc.data();
-    }
-
-    const stateKey = `foolos_state_${username}`;
-    const data = localStorage.getItem(stateKey);
-    if (!data) throw new Error("اسم المستخدم المطلوب غير مسجل محلياً.");
-    return JSON.parse(data);
+    const doc = await firestoreDb.collection('players').doc(username).get();
+    if (!doc.exists) throw new Error('اسم المستخدم المطلوب غير مسجل بالخوادم.');
+    return doc.data();
   }
 
   async function adminSavePlayer(username, playerState) {
-    localStorage.setItem(`foolos_state_${username}`, JSON.stringify(playerState));
-    _updateLocalLeaderboard(username, playerState.netWorth, playerState.title);
-
-    if (firebaseReady && firestoreDb) {
-      await firestoreDb.collection('players').doc(username).set(playerState, { merge: true });
-    }
+    _requireOnline();
+    await firestoreDb.collection('players').doc(username).set(playerState, { merge: true });
   }
 
   async function adminReleaseJail(username) {
@@ -635,133 +379,85 @@ const AppDB = (() => {
   }
 
   async function adminBanPlayer(username) {
-    if (username === 'admin') throw new Error("لا يمكن حظر حساب الإدارة الرئيسي.");
+    if (username === SECRET_ADMIN_USERNAME) throw new Error('لا يمكن حظر حساب الإدارة الرئيسي.');
     const playerState = await adminGetPlayer(username);
     playerState.isBanned = true;
     await adminSavePlayer(username, playerState);
   }
 
   async function getSystemStats() {
-    const registered = JSON.parse(localStorage.getItem('foolos_registered_sim') || '{}');
-    const playerUsernames = new Set(Object.keys(registered));
+    _requireOnline();
+    const snapshot = await firestoreDb.collection('players').get();
 
-    // Also scan localStorage for any active state keys (foolos_state_*, foolos_player_*)
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key.startsWith('foolos_state_')) {
-        playerUsernames.add(key.replace('foolos_state_', ''));
-      } else if (key.startsWith('foolos_player_')) {
-        playerUsernames.add(key.replace('foolos_player_', ''));
-      }
-    }
+    let totalCash = 0, totalBank = 0, totalNetWorth = 0;
+    let jailedCount = 0, bannedCount = 0, totalPlayers = 0;
 
-    let totalCashInCirculation = 0;
-    let totalBankInCirculation = 0;
-    let totalNetWorthInCirculation = 0;
-    let jailedPlayersCount = 0;
-    let bannedPlayersCount = 0;
-
-    playerUsernames.forEach(uname => {
-      let pState = null;
-      const s1 = localStorage.getItem(`foolos_state_${uname}`);
-      const s2 = localStorage.getItem(`foolos_player_${uname}`);
-      if (s1) pState = JSON.parse(s1);
-      else if (s2) pState = JSON.parse(s2);
-
-      if (pState) {
-        totalCashInCirculation += Number(pState.cash || 0);
-        totalBankInCirculation += Number(pState.bank || 0);
-        totalNetWorthInCirculation += Number(pState.netWorth || 0);
-        if (pState.jailTimer > 0) jailedPlayersCount++;
-        if (pState.isBanned) bannedPlayersCount++;
-      } else if (registered[uname]) {
-        totalNetWorthInCirculation += Number(registered[uname].netWorth || 5000);
-      }
+    snapshot.forEach(doc => {
+      const d = doc.data();
+      totalPlayers++;
+      totalCash += Number(d.cash || 0);
+      totalBank += Number(d.bank || 0);
+      totalNetWorth += Number(d.netWorth || 0);
+      if (d.jailTimer > 0) jailedCount++;
+      if (d.isBanned) bannedCount++;
     });
 
-    return {
-      totalPlayers: playerUsernames.size,
-      totalCash: totalCashInCirculation,
-      totalBank: totalBankInCirculation,
-      totalNetWorth: totalNetWorthInCirculation,
-      jailedCount: jailedPlayersCount,
-      bannedCount: bannedPlayersCount,
-      activeVersion: CLIENT_VERSION
-    };
+    return { totalPlayers, totalCash, totalBank, totalNetWorth, jailedCount, bannedCount, activeVersion: CLIENT_VERSION };
   }
 
   async function adminWipeLeaderboard() {
-    const registered = JSON.parse(localStorage.getItem('foolos_registered_sim') || '{}');
+    _requireOnline();
     const activeUser = window.GameEngine ? GameEngine.activeUsername : '';
-    const newRegistered = {};
-    if (activeUser && registered[activeUser]) {
-      newRegistered[activeUser] = registered[activeUser];
-    }
-    if (registered[SECRET_ADMIN_USERNAME]) {
-      newRegistered[SECRET_ADMIN_USERNAME] = registered[SECRET_ADMIN_USERNAME];
-    }
-    localStorage.setItem('foolos_registered_sim', JSON.stringify(newRegistered));
-
-    if (firebaseReady && firestoreDb) {
-      const snapshot = await firestoreDb.collection('players').get();
-      const batch = firestoreDb.batch();
-      snapshot.forEach(doc => {
-        if (doc.id !== 'admin' && doc.id !== SECRET_ADMIN_USERNAME) batch.delete(doc.ref);
-      });
-      await batch.commit();
-    }
+    const snapshot = await firestoreDb.collection('players').get();
+    const batch = firestoreDb.batch();
+    snapshot.forEach(doc => {
+      if (doc.id !== SECRET_ADMIN_USERNAME && doc.id !== activeUser) {
+        batch.delete(doc.ref);
+      }
+    });
+    await batch.commit();
   }
 
   async function adminGetTransfers() {
-    if (firebaseReady && firestoreDb) {
-      try {
-        const snapshot = await firestoreDb.collection('transfers').orderBy('timestamp', 'desc').limit(50).get();
-        const docs = [];
-        snapshot.forEach(d => {
-          const data = d.data();
-          docs.push({
-            id: d.id,
-            sender: data.sender || 'مجهول',
-            recipient: data.recipient || 'مجهول',
-            amount: data.amount || 0,
-            timestamp: data.timestamp || Date.now(),
-            status: 'مكتملة سحابياً'
-          });
-        });
-        if (docs.length > 0) return docs;
-      } catch (e) { /* fall through to local */ }
-    }
+    _requireOnline();
+    const snapshot = await firestoreDb.collection('transfers')
+      .orderBy('timestamp', 'desc')
+      .limit(50)
+      .get();
 
-    return JSON.parse(localStorage.getItem('foolos_wire_transfers_log') || '[]');
+    const docs = [];
+    snapshot.forEach(d => {
+      const data = d.data();
+      docs.push({
+        id: d.id,
+        sender: data.sender || 'مجهول',
+        recipient: data.recipient || 'مجهول',
+        amount: data.amount || 0,
+        timestamp: data.timestamp || Date.now(),
+        status: 'مكتملة'
+      });
+    });
+    return docs;
   }
 
   async function setMaintenanceMode(enabled, msg = '') {
+    _requireOnline();
     const data = {
       enabled: Boolean(enabled),
       message: msg || 'تخضع اللعبة حالياً لأعمال تحديث وصيانة طارئة من قبل الإدارة لتحسين الأداء وتأمين الحسابات.',
       timestamp: Date.now()
     };
-    localStorage.setItem('foolos_maintenance_mode', JSON.stringify(data));
-
-    if (firebaseReady && firestoreDb) {
-      await firestoreDb.collection('globals').doc('maintenance').set(data, { merge: true });
-    }
+    await firestoreDb.collection('globals').doc('maintenance').set(data, { merge: true });
     return data;
   }
 
   async function getMaintenanceStatus() {
-    let localData = JSON.parse(localStorage.getItem('foolos_maintenance_mode') || '{"enabled": false}');
-    if (firebaseReady && firestoreDb) {
-      try {
-        const doc = await firestoreDb.collection('globals').doc('maintenance').get();
-        if (doc.exists) {
-          const remoteData = doc.data();
-          localData = remoteData;
-          localStorage.setItem('foolos_maintenance_mode', JSON.stringify(remoteData));
-        }
-      } catch (e) { /* fallback local */ }
-    }
-    return localData;
+    _requireOnline();
+    try {
+      const doc = await firestoreDb.collection('globals').doc('maintenance').get();
+      if (doc.exists) return doc.data();
+    } catch (e) { /* ignore */ }
+    return { enabled: false };
   }
 
   // ─────────────────────────────────────────────
@@ -771,7 +467,7 @@ const AppDB = (() => {
     get clientVersion() { return CLIENT_VERSION; },
     get isFirebaseReady() { return firebaseReady; },
     get isOnline() { return navigator.onLine && firebaseReady; },
-    get pendingSyncs() { return syncQueue.length; },
+    get pendingSyncs() { return 0; }, // No queue in online-first mode
 
     init,
     checkVersion,
@@ -795,9 +491,8 @@ const AppDB = (() => {
     setMaintenanceMode,
     getMaintenanceStatus,
 
-    // Legacy compat
-    get dbType() { return firebaseReady ? 'firebase' : 'simulated'; },
-    mockPlayers: DEFAULT_MOCK_PLAYERS
+    get dbType() { return firebaseReady ? 'firebase' : 'offline'; },
+    mockPlayers: []
   };
 })();
 
