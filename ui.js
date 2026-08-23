@@ -1005,16 +1005,20 @@ const UIController = (() => {
           coinFlipBtn.disabled = true;
           playCasinoSound('coin');
 
-          const coinVisual = document.getElementById('coin-visual');
-          coinVisual.style.transition = 'transform 0.9s cubic-bezier(0.2, 0.8, 0.3, 1)';
-          coinVisual.style.transform = 'rotateY(1800deg) scale(1.1)';
+          const coinVisual = document.getElementById('coin-visual-3d') || document.getElementById('coin-visual');
+          if (coinVisual) {
+            coinVisual.style.transition = 'transform 0.9s cubic-bezier(0.2, 0.8, 0.3, 1)';
+            coinVisual.style.transform = 'rotateY(1800deg) scale(1.1)';
+          }
           
           setTimeout(() => {
             try {
               const res = GameEngine.playCoinFlip(bet, choice, coinFlipStreak);
               const isTails = (res.side === 'tails');
-              coinVisual.style.transition = 'transform 0.3s ease-out';
-              coinVisual.style.transform = isTails ? 'rotateY(180deg) scale(1)' : 'rotateY(0deg) scale(1)';
+              if (coinVisual) {
+                coinVisual.style.transition = 'transform 0.3s ease-out';
+                coinVisual.style.transform = isTails ? 'rotateY(1980deg) scale(1)' : 'rotateY(1800deg) scale(1)';
+              }
 
               const streakBadge = document.getElementById('coin-streak-badge');
               if (res.won) {
