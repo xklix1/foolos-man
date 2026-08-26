@@ -56,7 +56,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=35">
+  <link rel="stylesheet" href="app.css?v=40">
   
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase App SDK blocked.')"></script>
@@ -698,7 +698,7 @@
             </div>
             <div class="flex items-center justify-between mb-2">
               <span id="stat-username" class="text-sm font-bold text-white">تحميل...</span>
-              <span id="stat-title" class="text-[10px] px-2 py-0.5 bg-yellow-500/10 text-yellow-500 rounded border border-yellow-500/20 font-bold">تحميل...</span>
+              <span id="stat-title" class="text-xs font-bold text-yellow-400">تحميل...</span>
             </div>
             <!-- Admin Panel Button (shown only when logged in as admin) -->
             <button id="btn-admin-panel-trigger" class="hidden w-full py-1.5 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/40 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
@@ -738,7 +738,7 @@
                 <i class="fa-solid fa-gem text-cyan-400 text-xs"></i>
                 <span class="text-xs font-bold text-white">إجمالي الثروة</span>
               </div>
-              <span class="numbers-font text-base font-bold text-yellow-400 glow-gold"><span id="stat-networth">0</span> EGP</span>
+              <span class="numbers-font text-base font-bold text-yellow-400"><span id="stat-networth">0</span> EGP</span>
             </div>
           </div>
         </div>
@@ -804,7 +804,7 @@
             <div>
               <div class="flex items-center gap-1.5">
                 <span id="stat-username-mobile" class="text-xs font-bold text-white">تحميل...</span>
-                <span id="stat-title-mobile" class="text-[9px] px-1.5 py-0.5 bg-yellow-500/10 text-yellow-500 rounded border border-yellow-500/20 font-bold">...</span>
+                <span id="stat-title-mobile" class="text-[10px] font-bold text-yellow-400">...</span>
               </div>
             </div>
           </div>
@@ -835,7 +835,7 @@
           </div>
           <div class="p-1.5 bg-slate-950/70 rounded-lg border border-slate-800/80 flex flex-col">
             <span class="text-[9px] text-slate-400 font-bold flex items-center justify-center gap-1">الثروة <i class="fa-solid fa-gem text-cyan-400 text-[10px]"></i></span>
-            <span class="numbers-font text-xs font-bold text-yellow-400 glow-gold truncate"><span id="stat-networth-mobile">0</span></span>
+            <span class="numbers-font text-xs font-bold text-yellow-400 truncate"><span id="stat-networth-mobile">0</span></span>
           </div>
         </div>
         <div class="px-2 py-1 bg-emerald-950/40 rounded-lg border border-emerald-500/20 flex justify-between items-center text-[10px]">
@@ -875,7 +875,7 @@
           </div>
           <div class="glass-panel p-6 rounded-2xl border border-slate-800">
             <span class="text-xs text-slate-400 block mb-1">الرتبة الاجتماعية</span>
-            <span id="dash-title" class="text-xl font-bold text-yellow-500 glow-gold">...</span>
+            <span id="dash-title" class="text-xl font-bold text-yellow-400">...</span>
           </div>
           <div class="glass-panel p-6 rounded-2xl border border-slate-800">
             <span class="text-xs text-slate-400 block mb-1">الخبرة الكلية المتراكمة</span>
@@ -906,7 +906,7 @@
             </div>
             <div class="p-4 bg-slate-950/50 rounded-xl border border-slate-800/80">
               <span class="text-xs text-slate-400 block mb-2">القيمة الصافية للثروة</span>
-              <span id="dash-worth" class="numbers-font text-2xl font-black text-white glow-gold">0 EGP</span>
+              <span id="dash-worth" class="numbers-font text-2xl font-black text-white">0 EGP</span>
               <p class="text-[10px] text-slate-500 mt-2">المجموع الكلي: كاش + بنك + أموال مشبوهة + عقارات + أسهم.</p>
             </div>
           </div>
@@ -2297,12 +2297,74 @@
         <div id="admin-subpanel-market" class="hidden space-y-4">
           <!-- Sudden Market Triggers -->
           <div class="p-3.5 bg-slate-900/50 border border-slate-800 rounded-xl space-y-3">
+          <!-- Custom Stock Market Event Creator (إنشاء وافتعال خبر وأثر مخصص) -->
+          <div class="p-4 bg-gradient-to-r from-slate-950/90 via-slate-900/80 to-slate-950/90 border border-yellow-500/40 rounded-xl space-y-3.5 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
+              <h4 class="text-xs font-black text-white flex items-center gap-2">
+                <i class="fa-solid fa-newspaper text-yellow-400 text-sm"></i>
+                <span class="text-yellow-400">إطلاق خبر وافتعال حركة مخصصة في البورصة</span>
+              </h4>
+              <span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">تأثير فوري مباشر</span>
+            </div>
+
+            <!-- News Headline Input -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 mb-1">عنوان ونص الخبر الاقتصادي العاجل:</label>
+              <input type="text" id="adm-custom-news-title" placeholder="مثال: استحواذ استثماري ضخم أو نتائج أرباح تاريخية غير مسبوقة..." class="glass-input w-full p-2.5 text-xs text-right font-bold rounded-lg border border-slate-700 bg-slate-950 text-white placeholder-slate-500">
+            </div>
+
+            <!-- Stock Selection & Direction & Percentage -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <!-- Affected Stock Selector -->
+              <div>
+                <label class="block text-[11px] font-bold text-slate-300 mb-1">السهم المتأثر:</label>
+                <select id="adm-custom-stock-select" class="glass-input w-full p-2 text-xs font-bold rounded-lg border border-slate-700 bg-slate-950 text-white">
+                  <option value="ALL">🌐 كافة الأسهم (سوق عام)</option>
+                  <option value="COMI">🏦 البنك التجاري الدولي (COMI)</option>
+                  <option value="EAST">🚬 الشرقية للدخان (EAST)</option>
+                  <option value="ETEL">📡 المصرية للاتصالات (ETEL)</option>
+                  <option value="FWRY">💳 شركة فوري للمدفوعات (FWRY)</option>
+                  <option value="CASH">💰 صندوق كاش الاستثماري (CASH)</option>
+                  <option value="BITC">🪙 عملة البيتكوين الرقمية (BITC)</option>
+                  <option value="GOLD">🥇 سبيكة الذهب عيار 24 (GOLD)</option>
+                  <option value="AIX">🤖 سهم الذكاء الاصطناعي (AIX)</option>
+                </select>
+              </div>
+
+              <!-- Direction: Profit / Loss -->
+              <div>
+                <label class="block text-[11px] font-bold text-slate-300 mb-1">نوع التأثير (ربح / خسارة):</label>
+                <select id="adm-custom-stock-direction" class="glass-input w-full p-2 text-xs font-bold rounded-lg border border-slate-700 bg-slate-950 text-white">
+                  <option value="up" class="text-emerald-400 font-bold">📈 صعود وربح (ارتفاع السعر)</option>
+                  <option value="down" class="text-rose-400 font-bold">📉 هبوط وخسارة (انخفاض السعر)</option>
+                </select>
+              </div>
+
+              <!-- Percentage Change -->
+              <div>
+                <label class="block text-[11px] font-bold text-slate-300 mb-1">النسبة المئوية للتغير (%):</label>
+                <div class="flex items-center gap-1.5">
+                  <input type="number" id="adm-custom-stock-pct" placeholder="25" min="1" max="500" value="25" class="glass-input w-full p-2 text-xs font-bold text-center rounded-lg border border-slate-700 bg-slate-950 text-yellow-400 font-mono">
+                  <span class="text-xs font-bold text-slate-400">%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button id="btn-admin-broadcast-custom-event" class="w-full py-2.5 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-lg text-xs transition duration-200 shadow-lg shadow-yellow-500/20 flex items-center justify-center gap-2">
+              <i class="fa-solid fa-bullhorn text-sm"></i>
+              <span>نشر الخبر وتطبيق التغير في أسعار البورصة فوراً</span>
+            </button>
+          </div>
+
+          <!-- Quick Presets -->
+          <div class="p-3.5 bg-slate-900/50 border border-slate-800 rounded-xl space-y-3">
             <div class="flex justify-between items-center">
               <h4 class="text-xs font-bold text-white flex items-center gap-2">
                 <i class="fa-solid fa-bolt text-yellow-400"></i>
-                <span>افتعال حدث اقتصادي فوري في البورصة</span>
+                <span>أحداث اقتصادية جاهزة وسريعة</span>
               </h4>
-              <span class="text-[10px] text-slate-400">يؤثر فورياً على أسعار الأسهم وشريط الأخبار</span>
+              <span class="text-[10px] text-slate-400">تأثير مسبق الإعداد</span>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -2346,12 +2408,12 @@
             <div class="flex justify-between items-center">
               <h4 class="text-xs font-bold text-white flex items-center gap-2">
                 <i class="fa-solid fa-sliders text-yellow-400"></i>
-                <span>التحكم المباشر في أسعار الأسهم</span>
+                <span>التحكم المباشر في أسعار الأسهم (8 أسهم)</span>
               </h4>
               <button id="btn-admin-reset-market-baseline" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold transition">إعادة الأسعار للقيمة الأساسية</button>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
               <div class="p-2.5 bg-slate-950 border border-slate-800/80 rounded-lg flex flex-col justify-between">
                 <div class="flex justify-between items-center">
                   <span class="font-bold text-white text-[11px]">البنك التجاري (COMI)</span>
@@ -2398,12 +2460,45 @@
 
               <div class="p-2.5 bg-slate-950 border border-slate-800/80 rounded-lg flex flex-col justify-between">
                 <div class="flex justify-between items-center">
-                  <span class="font-bold text-white text-[11px]">صندوق كاش المالي (CASH)</span>
+                  <span class="font-bold text-white text-[11px]">صندوق كاش (CASH)</span>
                   <span id="adm-stock-price-CASH" class="numbers-font text-yellow-400 font-bold text-xs">... EGP</span>
                 </div>
                 <div class="flex gap-1 mt-2">
                   <input type="number" id="adm-input-stock-CASH" placeholder="السعر الجديد" class="glass-input flex-1 p-1 text-center text-xs font-mono font-bold">
                   <button data-symbol="CASH" class="btn-admin-apply-stock-price px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold">تطبيق</button>
+                </div>
+              </div>
+
+              <div class="p-2.5 bg-slate-950 border border-slate-800/80 rounded-lg flex flex-col justify-between">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-white text-[11px]">البيتكوين (BITC)</span>
+                  <span id="adm-stock-price-BITC" class="numbers-font text-yellow-400 font-bold text-xs">... EGP</span>
+                </div>
+                <div class="flex gap-1 mt-2">
+                  <input type="number" id="adm-input-stock-BITC" placeholder="السعر الجديد" class="glass-input flex-1 p-1 text-center text-xs font-mono font-bold">
+                  <button data-symbol="BITC" class="btn-admin-apply-stock-price px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold">تطبيق</button>
+                </div>
+              </div>
+
+              <div class="p-2.5 bg-slate-950 border border-slate-800/80 rounded-lg flex flex-col justify-between">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-white text-[11px]">الذهب 24k (GOLD)</span>
+                  <span id="adm-stock-price-GOLD" class="numbers-font text-yellow-400 font-bold text-xs">... EGP</span>
+                </div>
+                <div class="flex gap-1 mt-2">
+                  <input type="number" id="adm-input-stock-GOLD" placeholder="السعر الجديد" class="glass-input flex-1 p-1 text-center text-xs font-mono font-bold">
+                  <button data-symbol="GOLD" class="btn-admin-apply-stock-price px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold">تطبيق</button>
+                </div>
+              </div>
+
+              <div class="p-2.5 bg-slate-950 border border-slate-800/80 rounded-lg flex flex-col justify-between">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-white text-[11px]">الذكاء الاصطناعي (AIX)</span>
+                  <span id="adm-stock-price-AIX" class="numbers-font text-yellow-400 font-bold text-xs">... EGP</span>
+                </div>
+                <div class="flex gap-1 mt-2">
+                  <input type="number" id="adm-input-stock-AIX" placeholder="السعر الجديد" class="glass-input flex-1 p-1 text-center text-xs font-mono font-bold">
+                  <button data-symbol="AIX" class="btn-admin-apply-stock-price px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold">تطبيق</button>
                 </div>
               </div>
             </div>
@@ -2556,9 +2651,9 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=35"></script>
-  <script src="game.js?v=35"></script>
-  <script src="ui.js?v=35"></script>
+  <script src="db.js?v=40"></script>
+  <script src="game.js?v=40"></script>
+  <script src="ui.js?v=40"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

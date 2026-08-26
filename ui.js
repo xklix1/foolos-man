@@ -4111,12 +4111,84 @@ const UIController = (() => {
     //  MODULE: MARKET CONTROL & DIRECT PRICING
     // ─────────────────────────────────────────────
     function renderAdminStockPrices() {
-      const symbols = ['COMI', 'EAST', 'ETEL', 'FWRY', 'CASH'];
+      const symbols = ['COMI', 'EAST', 'ETEL', 'FWRY', 'CASH', 'BITC', 'GOLD', 'AIX'];
       symbols.forEach(sym => {
         const priceEl = document.getElementById(`adm-stock-price-${sym}`);
         if (priceEl && GameEngine.stockPrices[sym]) {
           const p = GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1];
           priceEl.textContent = `${p.toLocaleString()} EGP`;
+        }
+      });
+    }
+
+    // Custom Stock Market Event Broadcast & Impact Controller
+    const broadcastCustomEventBtn = document.getElementById('btn-admin-broadcast-custom-event');
+    if (broadcastCustomEventBtn) {
+      broadcastCustomEventBtn.addEventListener('click', () => {
+        const titleInput = document.getElementById('adm-custom-news-title');
+        const symbolSelect = document.getElementById('adm-custom-stock-select');
+        const directionSelect = document.getElementById('adm-custom-stock-direction');
+        const pctInput = document.getElementById('adm-custom-stock-pct');
+
+        let rawTitle = (titleInput ? titleInput.value.trim() : '');
+        const targetSymbol = symbolSelect ? symbolSelect.value : 'ALL';
+        const direction = directionSelect ? directionSelect.value : 'up';
+        const pctVal = pctInput ? Math.max(1, Math.min(500, parseFloat(pctInput.value) || 25)) : 25;
+        const multiplier = direction === 'up' ? (1 + pctVal / 100) : Math.max(0.05, 1 - pctVal / 100);
+        const isUp = direction === 'up';
+
+        // Auto-generate title if empty
+        if (!rawTitle) {
+          if (targetSymbol === 'ALL') {
+            rawTitle = isUp 
+              ? `انتعاش عام وموجة صعود قياسية لكافة الأسهم (+${pctVal}%)` 
+              : `تصحيح هبوطي وموجة بيع وضغط على كافة الأسهم (-${pctVal}%)`;
+          } else {
+            const stockName = GameEngine.STOCKS[targetSymbol]?.name || targetSymbol;
+            rawTitle = isUp 
+              ? `أرباح قياسية وإقبال استثماري يرفع سهم ${stockName} (+${pctVal}%)` 
+              : `ضغوط بيعية وتراجع في أداء سهم ${stockName} (-${pctVal}%)`;
+          }
+        }
+
+        const affectedSymbols = targetSymbol === 'ALL' ? Object.keys(GameEngine.STOCKS) : [targetSymbol];
+
+        affectedSymbols.forEach(sym => {
+          if (GameEngine.stockPrices[sym]) {
+            const hist = GameEngine.stockPrices[sym];
+            const lastP = hist[hist.length - 1];
+            const newP = Math.max(GameEngine.STOCKS[sym]?.floor || 1, Math.round(lastP * multiplier));
+            hist[hist.length - 1] = newP;
+          }
+        });
+
+        const icon = isUp ? '📈' : '📉';
+        const formattedTicker = `${icon} عاجل من البورصة: ${rawTitle}`;
+        const toastType = isUp ? 'success' : 'error';
+
+        showToast(isUp ? '📈 انتعاش في البورصة' : '📉 تراجع في البورصة', rawTitle, toastType);
+        
+        const ticker = document.getElementById('stock-market-news-ticker');
+        if (ticker) {
+          ticker.textContent = formattedTicker;
+          ticker.className = `font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`;
+        }
+
+        logAdminAction(`إطلاق خبر بورصة مخصص: "${rawTitle}" [${targetSymbol} | ${isUp ? '+' : '-'}${pctVal}%]`);
+        renderAdminStockPrices();
+        renderAll();
+
+        // Broadcast to Firebase globals if available
+        if (AppDB.isFirebaseReady) {
+          try {
+            firebase.firestore().collection('globals').doc('market_event').set({
+              title: formattedTicker,
+              desc: rawTitle,
+              targetSymbol: targetSymbol,
+              multiplier: multiplier,
+              timestamp: Date.now()
+            }, { merge: true }).catch(() => {});
+          } catch(e) {}
         }
       });
     }
