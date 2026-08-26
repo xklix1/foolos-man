@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=10">
+  <link rel="stylesheet" href="app.css?v=12">
   
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase App SDK blocked.')"></script>
@@ -126,10 +126,450 @@
     <span id="conn-label" class="text-slate-400 font-medium">...</span>
   </div>
 
+  <!-- ==================== EPIC GAME START MENU / TITLE SCREEN ==================== -->
+  <div id="start-menu-screen" class="fixed inset-0 z-50 flex flex-col justify-between overflow-y-auto overflow-x-hidden p-4 sm:p-8 select-none">
+    
+    <!-- Ambient Animated Background Canvas / Layers -->
+    <div class="start-menu-bg-wrapper pointer-events-none absolute inset-0 overflow-hidden">
+      <div class="start-menu-ambient-orb orb-1"></div>
+      <div class="start-menu-ambient-orb orb-2"></div>
+      <div class="start-menu-ambient-orb orb-3"></div>
+      <div class="start-menu-grid-overlay"></div>
+      <div id="start-menu-particles" class="start-menu-particles-container"></div>
+    </div>
+
+    <!-- Top Bar: Sound, Fullscreen, Server Status -->
+    <header class="relative z-10 flex items-center justify-between w-full max-w-6xl mx-auto pt-2">
+      <!-- Game Version Badge -->
+      <div class="flex items-center gap-2">
+        <span class="px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-yellow-500/5">
+          <i class="fa-solid fa-gamepad text-yellow-400"></i>
+          <span>الإصدار التايكون الفاخر v2.5</span>
+        </span>
+        <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/60 text-slate-300 text-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>خوادم الأونلاين نشطة</span>
+        </span>
+      </div>
+
+      <!-- Quick Control Action Icons -->
+      <div class="flex items-center gap-2">
+        <!-- Audio SFX Toggle Button -->
+        <button id="btn-menu-sound-toggle" title="كتم/تشغيل المؤثرات الصوتية" class="start-menu-icon-btn p-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-yellow-500/60 text-slate-300 hover:text-yellow-400 transition">
+          <i id="menu-sound-icon" class="fa-solid fa-volume-high text-sm"></i>
+        </button>
+        <!-- Fullscreen Toggle Button -->
+        <button id="btn-menu-fullscreen" title="ملء الشاشة" class="start-menu-icon-btn p-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-yellow-500/60 text-slate-300 hover:text-yellow-400 transition">
+          <i class="fa-solid fa-expand text-sm"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Center Hero Section: Title & Menu Options -->
+    <main class="relative z-10 w-full max-w-4xl mx-auto my-auto py-8 flex flex-col items-center text-center">
+      
+      <!-- Crown Icon & Game Title -->
+      <div class="mb-8 flex flex-col items-center transform transition duration-500 hover:scale-[1.02]">
+        <div class="relative mb-3">
+          <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-amber-600 via-yellow-500 to-yellow-300 p-0.5 shadow-2xl shadow-yellow-500/25 flex items-center justify-center animate-title-float">
+            <div class="w-full h-full bg-slate-950/90 rounded-[22px] flex items-center justify-center backdrop-blur-xl">
+              <i class="fa-solid fa-crown text-3xl sm:text-4xl text-yellow-400 drop-shadow-[0_0_15px_rgba(234,179,8,0.7)]"></i>
+            </div>
+          </div>
+          <!-- Sparkles -->
+          <span class="absolute -top-1 -right-1 text-yellow-300 text-lg animate-ping">✦</span>
+          <span class="absolute -bottom-1 -left-1 text-amber-400 text-sm animate-pulse">★</span>
+        </div>
+
+        <h1 class="game-main-title text-4xl sm:text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-400 to-yellow-500 drop-shadow-[0_4px_24px_rgba(234,179,8,0.4)] tracking-tight">
+          فلوس مان تايكون
+        </h1>
+        <p class="game-sub-title text-sm sm:text-lg text-slate-300 font-bold mt-2 max-w-lg leading-relaxed flex items-center justify-center gap-2">
+          <span>⚔️</span>
+          <span>من الصفر إلى عرش المليارات • محاكي إمبراطورية المال</span>
+          <span>💰</span>
+        </p>
+      </div>
+
+      <!-- Quick Resume Player Prestige Card (Visible when user has saved active session) -->
+      <div id="start-menu-player-card" class="hidden w-full max-w-md mb-6 p-4 rounded-2xl glass-panel border border-yellow-500/40 bg-slate-950/80 shadow-2xl shadow-yellow-500/10 text-right transform transition hover:border-yellow-400">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-[11px] font-bold text-yellow-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-yellow-400 animate-ping"></span>
+            محفظتك المحفوظة والجاهزة للمتابعة
+          </span>
+          <span id="start-card-title" class="text-[10px] px-2.5 py-0.5 bg-yellow-500/20 text-yellow-300 rounded-full border border-yellow-500/30 font-black">
+            تحميل...
+          </span>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-600 text-slate-950 font-black text-xl flex items-center justify-center shadow-lg shadow-yellow-500/20">
+            <span id="start-card-avatar">ف</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 id="start-card-username" class="text-base font-black text-white truncate">اللاعب النشط</h3>
+            <div class="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+              <span>صافي الثروة:</span>
+              <span id="start-card-worth" class="numbers-font font-black text-yellow-400">0 EGP</span>
+            </div>
+          </div>
+          <button id="btn-start-card-switch" title="تبديل الحساب" class="text-xs text-slate-400 hover:text-rose-400 px-2 py-1 rounded bg-slate-900 border border-slate-800 transition">
+            تبديل
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Buttons Navigation Matrix -->
+      <div class="w-full max-w-md space-y-3">
+        
+        <!-- Continue Empire Button (Visible when session exists) -->
+        <button id="btn-menu-continue" class="hidden menu-btn-game menu-btn-primary w-full py-4 px-6 rounded-2xl flex items-center justify-between text-slate-950 font-black text-base transition duration-300 shadow-xl group">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-slate-950/20 flex items-center justify-center text-slate-950 group-hover:scale-110 transition">
+              <i class="fa-solid fa-play text-base"></i>
+            </div>
+            <div class="text-right">
+              <span class="block leading-tight text-base">متابعة الإمبراطورية</span>
+              <span class="block text-[11px] font-bold opacity-80 mt-0.5">استكمال إدارتك للأموال والمشاريع</span>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-left text-sm opacity-70 group-hover:-translate-x-1 transition"></i>
+        </button>
+
+        <!-- New Game / Register Button -->
+        <button id="btn-menu-newgame" class="menu-btn-game menu-btn-primary w-full py-4 px-6 rounded-2xl flex items-center justify-between text-slate-950 font-black text-base transition duration-300 shadow-xl group">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-slate-950/20 flex items-center justify-center text-slate-950 group-hover:scale-110 transition">
+              <i class="fa-solid fa-rocket text-base"></i>
+            </div>
+            <div class="text-right">
+              <span class="block leading-tight text-base">بدء رحلة جديدة</span>
+              <span class="block text-[11px] font-bold opacity-80 mt-0.5">تأسيس محفظة والانطلاق من الصفر</span>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-left text-sm opacity-70 group-hover:-translate-x-1 transition"></i>
+        </button>
+
+        <!-- Login / Switch Account Button -->
+        <button id="btn-menu-login" class="menu-btn-game menu-btn-secondary w-full py-3.5 px-6 rounded-2xl flex items-center justify-between text-white font-black text-sm transition duration-300 shadow-lg group">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 flex items-center justify-center group-hover:scale-110 transition">
+              <i class="fa-solid fa-key text-xs"></i>
+            </div>
+            <div class="text-right">
+              <span class="block leading-tight text-sm">تسجيل الدخول لمحفظة سابقة</span>
+              <span class="block text-[10px] text-slate-400 font-normal mt-0.5">استعادة حسابك المحفوظ بكلمة المرور (PIN)</span>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-left text-xs text-slate-400 group-hover:-translate-x-1 transition"></i>
+        </button>
+
+        <!-- Secondary Grid: Hall of Fame, Guide, Settings -->
+        <div class="grid grid-cols-3 gap-2.5 pt-2">
+          
+          <!-- Hall of Fame / Leaderboard Button -->
+          <button id="btn-menu-leaderboard" class="menu-btn-sub p-3 rounded-xl glass-panel border border-slate-800 hover:border-yellow-500/50 flex flex-col items-center justify-center gap-1.5 transition duration-200 group">
+            <div class="w-9 h-9 rounded-xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center group-hover:scale-110 transition">
+              <i class="fa-solid fa-trophy text-sm"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-200 group-hover:text-yellow-400 transition">عرش الأثرياء</span>
+          </button>
+
+          <!-- How to Play & Guide Button -->
+          <button id="btn-menu-guide" class="menu-btn-sub p-3 rounded-xl glass-panel border border-slate-800 hover:border-yellow-500/50 flex flex-col items-center justify-center gap-1.5 transition duration-200 group">
+            <div class="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center group-hover:scale-110 transition">
+              <i class="fa-solid fa-book-open text-sm"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-200 group-hover:text-sky-400 transition">دليل الملياردير</span>
+          </button>
+
+          <!-- Settings & Audio Button -->
+          <button id="btn-menu-settings" class="menu-btn-sub p-3 rounded-xl glass-panel border border-slate-800 hover:border-yellow-500/50 flex flex-col items-center justify-center gap-1.5 transition duration-200 group">
+            <div class="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:scale-110 transition">
+              <i class="fa-solid fa-sliders text-sm"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-200 group-hover:text-purple-400 transition">الإعدادات</span>
+          </button>
+
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- Bottom Footer Credits & Server Status -->
+    <footer class="relative z-10 flex flex-col sm:flex-row items-center justify-between w-full max-w-6xl mx-auto py-3 text-slate-500 text-[11px] border-t border-slate-900/60 gap-2">
+      <div class="flex items-center gap-2">
+        <span>© 2026 فلوس مان تايكون المحدودة</span>
+        <span>•</span>
+        <span class="text-yellow-500/80">جميع الحقوق محفوظة</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="flex items-center gap-1">
+          <i class="fa-solid fa-shield-halved text-emerald-400 text-[10px]"></i>
+          حفظ سحابي مشفر
+        </span>
+        <span>•</span>
+        <span class="text-slate-400">Press <kbd class="px-1.5 py-0.5 bg-slate-900 border border-slate-800 rounded text-[10px] text-yellow-400 font-mono">ESC</kbd> للقائمة</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ==================== START MENU: HALL OF FAME (LEADERBOARD) MODAL ==================== -->
+  <div id="start-menu-leaderboard-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+    <div class="glass-panel w-full max-w-2xl max-h-[85vh] flex flex-col rounded-3xl border border-yellow-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-400">
+            <i class="fa-solid fa-crown text-lg"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-black text-white">قاعة الشرف وعرش الأثرياء</h2>
+            <p class="text-xs text-slate-400">أعلى أصحاب الثروات في سيرفر فلوس مان تايكون المباشر</p>
+          </div>
+        </div>
+        <button id="btn-close-menu-leaderboard" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Top 3 Podium Preview in Start Menu -->
+      <div class="grid grid-cols-3 gap-2 sm:gap-4 my-4">
+        <!-- Rank 2 (Silver) -->
+        <div class="p-3 bg-slate-900/60 rounded-2xl border border-slate-700/50 text-center flex flex-col items-center justify-between">
+          <div class="w-8 h-8 rounded-full bg-slate-700 text-slate-200 font-black text-xs flex items-center justify-center border border-slate-500 mb-1">
+            2
+          </div>
+          <span id="start-podium-name-2" class="text-xs font-bold text-white truncate max-w-full">تحميل...</span>
+          <span id="start-podium-worth-2" class="text-[11px] font-black text-slate-300 numbers-font mt-1">0 EGP</span>
+        </div>
+        <!-- Rank 1 (Gold - Elevated) -->
+        <div class="p-3 bg-yellow-500/10 rounded-2xl border border-yellow-500/50 text-center flex flex-col items-center justify-between shadow-lg shadow-yellow-500/10 -translate-y-2">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shadow mb-1">
+            👑 1
+          </div>
+          <span id="start-podium-name-1" class="text-xs font-black text-yellow-400 truncate max-w-full">تحميل...</span>
+          <span id="start-podium-worth-1" class="text-xs font-black text-yellow-300 numbers-font mt-1">0 EGP</span>
+        </div>
+        <!-- Rank 3 (Bronze) -->
+        <div class="p-3 bg-amber-950/40 rounded-2xl border border-amber-800/40 text-center flex flex-col items-center justify-between">
+          <div class="w-8 h-8 rounded-full bg-amber-900 text-amber-300 font-black text-xs flex items-center justify-center border border-amber-700 mb-1">
+            3
+          </div>
+          <span id="start-podium-name-3" class="text-xs font-bold text-amber-200 truncate max-w-full">تحميل...</span>
+          <span id="start-podium-worth-3" class="text-[11px] font-black text-amber-400 numbers-font mt-1">0 EGP</span>
+        </div>
+      </div>
+
+      <!-- Leaderboard Rows Scrollable Container -->
+      <div class="flex-1 overflow-y-auto pr-1">
+        <table class="w-full text-right text-xs">
+          <thead class="text-[11px] text-slate-400 border-b border-slate-800 pb-2">
+            <tr>
+              <th class="py-2 pr-2">الترتيب</th>
+              <th class="py-2">اللاعب</th>
+              <th class="py-2">اللقب</th>
+              <th class="py-2 pl-2 text-left">الثروة الإجمالية</th>
+            </tr>
+          </thead>
+          <tbody id="start-menu-leaderboard-rows" class="divide-y divide-slate-900/60">
+            <tr>
+              <td colspan="4" class="py-6 text-center text-slate-400">
+                <i class="fa-solid fa-spinner animate-spin ml-2"></i>
+                جاري جلب قائمة المتصدرين...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="pt-4 border-t border-slate-800 mt-2 flex justify-between items-center text-xs">
+        <span class="text-slate-400">تحديث مباشر من خوادم السيرفر</span>
+        <button id="btn-refresh-start-leaderboard" class="px-3 py-1.5 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold transition flex items-center gap-1.5">
+          <i class="fa-solid fa-rotate text-xs"></i>
+          <span>تحديث القائمة</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== START MENU: TYCOON GUIDE MODAL ==================== -->
+  <div id="start-menu-guide-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+    <div class="glass-panel w-full max-w-2xl max-h-[85vh] flex flex-col rounded-3xl border border-sky-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
+            <i class="fa-solid fa-book-open text-lg"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-black text-white">دليل الملياردير وقواعد اللعب</h2>
+            <p class="text-xs text-slate-400">تعلم أسرار صناعة الثروة والترقي في مراتب المال</p>
+          </div>
+        </div>
+        <button id="btn-close-menu-guide" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Guide Content Scrollable -->
+      <div class="flex-1 overflow-y-auto space-y-4 pr-1 py-4 text-xs text-slate-300">
+        
+        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+          <h3 class="text-sm font-black text-yellow-400 mb-1 flex items-center gap-2">
+            <i class="fa-solid fa-briefcase"></i>
+            <span>1. الوظائف والعمل اليومي</span>
+          </h3>
+          <p class="leading-relaxed text-slate-400">
+            ابدأ من وظيفة "عامل باليومية" وقم بأداء نوبات العمل لكسب الكاش والخبرة (XP). كلما زادت خبرتك يمكنك الترقية إلى وظائف أعلى (محاسب، مدير فرع، رئيس مجلس إدارة) برواتب ضخمة.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+          <h3 class="text-sm font-black text-emerald-400 mb-1 flex items-center gap-2">
+            <i class="fa-solid fa-building"></i>
+            <span>2. تأسيس وإدارة الشركات والأعمال</span>
+          </h3>
+          <p class="leading-relaxed text-slate-400">
+            شراء المشاريع (عربة قهوة، شركة برمجيات، مجمع لوجستي، مصنع طاقة شمسية) يمنحك تدفقاً نقدياً سلبياً مستمراً مع كل ثانية. يمكنك توظيف عمال إضافيين وتطوير خطوط الإنتاج لمضاعفة الإيرادات.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+          <h3 class="text-sm font-black text-sky-400 mb-1 flex items-center gap-2">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>3. بورصة الأسهم المصرية الحية</span>
+          </h3>
+          <p class="leading-relaxed text-slate-400">
+            تداول أسهم كبرى الشركات (CIB، فوري، المصرية للاتصالات). اشترِ الأسهم في فترات الهبوط وبعها عند القمم مع مراقبة الأخبار والأحداث الاقتصادية المباشرة لتحقيق أرباح رأسمالية خيالية.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+          <h3 class="text-sm font-black text-purple-400 mb-1 flex items-center gap-2">
+            <i class="fa-solid fa-building-columns"></i>
+            <span>4. البنك والفوائد والتحويلات</span>
+          </h3>
+          <p class="leading-relaxed text-slate-400">
+            احفظ أموالك في البنك لتحصل على فائدة مركبة دورية. كما يمكنك تحويل الأموال مباشرة لأي لاعب آخر في السيرفر عبر اسم المستخدم.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+          <h3 class="text-sm font-black text-rose-400 mb-1 flex items-center gap-2">
+            <i class="fa-solid fa-dice"></i>
+            <span>5. كازينو التسلية والسوق السوداء</span>
+          </h3>
+          <p class="leading-relaxed text-slate-400">
+            جرّب حظك في ألعاب الكازينو (روليت، لعبة الصعود والتفجير Crash، رمي العملة). وانتبه من صفقات السوق السوداء؛ أرباحها هائلة لكن خطر السجن والملاحقة القانونية يتربص بك دائماً!
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="pt-4 border-t border-slate-800 mt-2 flex justify-end">
+        <button id="btn-guide-start-playing" class="px-5 py-2.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black transition">
+          فهمت القواعد! انطلق الآن 🚀
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== START MENU: SETTINGS & AUDIO MODAL ==================== -->
+  <div id="start-menu-settings-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+    <div class="glass-panel w-full max-w-md flex flex-col rounded-3xl border border-purple-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+            <i class="fa-solid fa-sliders text-lg"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-black text-white">إعدادات اللعبة والصوت</h2>
+            <p class="text-xs text-slate-400">تخصيص التجربة والمؤثرات الصوتية والبصرية</p>
+          </div>
+        </div>
+        <button id="btn-close-menu-settings" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Settings Items -->
+      <div class="space-y-4 my-5 text-xs text-slate-300">
+        
+        <!-- Sound FX Toggle -->
+        <div class="flex items-center justify-between p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-volume-high text-yellow-400 text-base"></i>
+            <div>
+              <span class="font-bold text-white block">المؤثرات الصوتية (Sound FX)</span>
+              <span class="text-[10px] text-slate-400">أصوات النقر والربح والكازينو والتنبيهات</span>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="setting-sfx-toggle" class="sr-only peer" checked>
+            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+          </label>
+        </div>
+
+        <!-- Ambient Synth / Music Toggle -->
+        <div class="flex items-center justify-between p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-music text-sky-400 text-base"></i>
+            <div>
+              <span class="font-bold text-white block">الموسيقى المحيطية (Ambient Sound)</span>
+              <span class="text-[10px] text-slate-400">موسيقى هادئة سينمائية لأجواء اللعبة</span>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="setting-music-toggle" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
+          </label>
+        </div>
+
+        <!-- Glow & Visual FX Toggle -->
+        <div class="flex items-center justify-between p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-wand-magic-sparkles text-purple-400 text-base"></i>
+            <div>
+              <span class="font-bold text-white block">تأثيرات الإضاءة والنيون (Glow FX)</span>
+              <span class="text-[10px] text-slate-400">توهج الذهب والجزيئات المتحركة</span>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="setting-glow-toggle" class="sr-only peer" checked>
+            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+          </label>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="pt-4 border-t border-slate-800 mt-2 flex justify-between items-center">
+        <button id="btn-settings-test-sound" class="text-xs text-yellow-400 hover:underline font-bold">
+          <i class="fa-solid fa-play mr-1"></i> تجربة نغمة الصوت
+        </button>
+        <button id="btn-save-settings" class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold transition text-xs">
+          حفظ التفضيلات
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== AUTHENTICATION OVERLAY ==================== -->
-  <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-    <div class="glass-panel w-full max-w-md p-8 rounded-2xl border border-slate-800 text-center flex flex-col justify-center items-center">
-      <div class="w-16 h-16 bg-yellow-500/10 border border-yellow-500/30 rounded-full flex items-center justify-center mb-6">
+  <div id="auth-screen" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+    <div class="glass-panel w-full max-w-md p-8 rounded-3xl border border-yellow-500/40 text-center flex flex-col justify-center items-center relative shadow-2xl bg-slate-950/95">
+      
+      <!-- Back to Start Menu Button -->
+      <button id="btn-auth-back-to-menu" title="الرجوع للقائمة الرئيسية" class="absolute top-5 right-5 w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+
+      <div class="w-16 h-16 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl flex items-center justify-center mb-5 shadow-lg shadow-yellow-500/10">
         <!-- Shield/Lock SVG -->
         <svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
@@ -137,7 +577,7 @@
       </div>
       
       <h2 id="auth-mode-title" class="text-2xl font-black text-white mb-2">تسجيل الدخول للمحفظة</h2>
-      <p class="text-xs text-slate-400 mb-6">أدخل اسم مستخدم فريد ورمز سري لتأسيس محفظتك وحفظ أرباحك.</p>
+      <p class="text-xs text-slate-400 mb-6">أدخل اسم مستخدم فريد ورمز سري لتأسيس محفظتك وحفظ أرباحك السحابية.</p>
       
       <!-- Mode Switches -->
       <div class="flex w-full border-b border-slate-800 mb-6 text-sm">
@@ -158,12 +598,17 @@
       </div>
 
       <!-- Submit button -->
-      <button id="auth-submit" class="w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold rounded-lg transition duration-300 flex items-center justify-center gap-2">
+      <button id="auth-submit" class="w-full py-3.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-xl transition duration-300 flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 text-sm">
         <span id="auth-action-text">دخول وتزامن الحساب</span>
         <svg id="auth-spinner" class="hidden animate-spin h-5 w-5 text-slate-950" viewBox="0 0 24 24" fill="none">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
+      </button>
+
+      <!-- Quick Back link -->
+      <button id="btn-auth-cancel-bottom" class="mt-4 text-xs text-slate-400 hover:text-white transition font-medium">
+        ← العودة للقائمة الرئيسية
       </button>
     </div>
   </div>
@@ -228,12 +673,19 @@
         <!-- Player Quick Stats Profile -->
         <div class="space-y-4">
           <div class="p-3 bg-slate-950/40 rounded-xl border border-slate-800/50">
-            <div class="flex justify-between items-center mb-1">
+            <div class="flex justify-between items-center mb-2">
               <span class="text-[10px] text-slate-400 block">المحفظة النشطة</span>
-              <button id="btn-user-logout" title="تسجيل الخروج" class="text-[10px] text-rose-400 hover:text-rose-300 font-bold border border-rose-500/30 px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 transition flex items-center gap-1">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                خروج
-              </button>
+              <div class="flex items-center gap-1.5">
+                <!-- Return to Start Menu Button -->
+                <button id="btn-open-start-menu" title="الرجوع للقائمة الرئيسية" class="text-[10px] text-yellow-400 hover:text-yellow-300 font-bold border border-yellow-500/30 px-2 py-0.5 rounded bg-yellow-500/10 hover:bg-yellow-500/20 transition flex items-center gap-1">
+                  <i class="fa-solid fa-house text-[10px]"></i>
+                  القائمة
+                </button>
+                <button id="btn-user-logout" title="تسجيل الخروج" class="text-[10px] text-rose-400 hover:text-rose-300 font-bold border border-rose-500/30 px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 transition flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                  خروج
+                </button>
+              </div>
             </div>
             <div class="flex items-center justify-between mb-2">
               <span id="stat-username" class="text-sm font-bold text-white">تحميل...</span>
@@ -338,6 +790,10 @@
             </div>
           </div>
           <div class="flex items-center gap-1.5">
+            <button id="btn-open-start-menu-mobile" title="الرجوع للقائمة الرئيسية" class="px-2.5 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1">
+              <i class="fa-solid fa-house text-[10px]"></i>
+              <span>القائمة</span>
+            </button>
             <button id="btn-admin-panel-trigger-mobile" class="hidden px-2.5 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/40 rounded-lg text-[10px] font-bold transition flex items-center gap-1.5">
               <i class="fa-solid fa-crown text-yellow-400 text-xs"></i>
               <span>الإدارة</span>
@@ -1445,9 +1901,9 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=10"></script>
-  <script src="game.js?v=9"></script>
-  <script src="ui.js?v=9"></script>
+  <script src="db.js?v=12"></script>
+  <script src="game.js?v=12"></script>
+  <script src="ui.js?v=12"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

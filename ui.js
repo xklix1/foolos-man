@@ -13,28 +13,116 @@ const UIController = (() => {
   let workCooldownTimer = null;
   const WORK_COOLDOWN_MS = 2000;
 
-  // Casino sound and streak state
-  let casinoAudioCtx = null;
-  let casinoSoundEnabled = localStorage.getItem('foolos_casino_sound') !== 'false';
+  // Sound FX & Audio System State
+  let audioCtx = null;
+  let sfxEnabled = localStorage.getItem('foolos_sfx_enabled') !== 'false';
+  let musicEnabled = localStorage.getItem('foolos_music_enabled') === 'true';
+  let glowEnabled = localStorage.getItem('foolos_glow_enabled') !== 'false';
   let coinFlipStreak = 0;
+  let ambientOscillator = null;
+  let ambientGainNode = null;
 
-  function getCasinoAudioCtx() {
-    if (!casinoAudioCtx) {
+  function getAudioCtx() {
+    if (!audioCtx) {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (AudioCtx) {
-        casinoAudioCtx = new AudioCtx();
+        audioCtx = new AudioCtx();
       }
     }
-    if (casinoAudioCtx && casinoAudioCtx.state === 'suspended') {
-      casinoAudioCtx.resume();
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
     }
-    return casinoAudioCtx;
+    return audioCtx;
+  }
+
+  function playMenuSound(type) {
+    if (!sfxEnabled) return;
+    try {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+
+      if (type === 'hover') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1200, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1600, ctx.currentTime + 0.035);
+        gain.gain.setValueAtTime(0.04, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.035);
+      } else if (type === 'click') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.08);
+      } else if (type === 'start') {
+        const freqs = [440, 554.37, 659.25, 880];
+        freqs.forEach((f, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, ctx.currentTime + idx * 0.07);
+          gain.gain.setValueAtTime(0.18, ctx.currentTime + idx * 0.07);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.07 + 0.28);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + idx * 0.07);
+          osc.stop(ctx.currentTime + idx * 0.07 + 0.28);
+        });
+      } else if (type === 'back') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(260, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+      } else if (type === 'modal_open') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.1);
+      } else if (type === 'modal_close') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(300, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.08);
+      }
+    } catch (e) {}
   }
 
   function playCasinoSound(type) {
-    if (!casinoSoundEnabled) return;
+    if (!sfxEnabled) return;
     try {
-      const ctx = getCasinoAudioCtx();
+      const ctx = getAudioCtx();
       if (!ctx) return;
 
       if (type === 'coin') {
@@ -117,6 +205,41 @@ const UIController = (() => {
     } catch (e) {}
   }
 
+  function setAmbientMusicState(enabled) {
+    musicEnabled = enabled;
+    localStorage.setItem('foolos_music_enabled', enabled ? 'true' : 'false');
+    try {
+      if (!enabled) {
+        if (ambientOscillator) {
+          ambientOscillator.stop();
+          ambientOscillator.disconnect();
+          ambientOscillator = null;
+        }
+        return;
+      }
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      if (ambientOscillator) return; // Already running
+
+      ambientOscillator = ctx.createOscillator();
+      ambientGainNode = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+
+      ambientOscillator.type = 'sine';
+      ambientOscillator.frequency.setValueAtTime(110, ctx.currentTime); // A2 deep drone
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(320, ctx.currentTime);
+
+      ambientGainNode.gain.setValueAtTime(0.03, ctx.currentTime);
+
+      ambientOscillator.connect(filter);
+      filter.connect(ambientGainNode);
+      ambientGainNode.connect(ctx.destination);
+      ambientOscillator.start();
+    } catch (e) {}
+  }
+
   // Crash game state variables
   let crashBetAmount = 0;
   let crashMultiplier = 1.0;
@@ -127,6 +250,7 @@ const UIController = (() => {
 
   // UI Setup & Bindings
   async function init() {
+    setupStartMenu();
     setupAuthPanel();
     setupNavigation();
     setupEventListeners();
@@ -135,25 +259,440 @@ const UIController = (() => {
     const isMaint = await checkMaintenanceMode();
     if (isMaint) return; // Stop init if system in maintenance
 
-    // Auto-resume active session on page refresh
-    const savedUser = localStorage.getItem('foolos_active_session_user');
-    if (savedUser) {
-      try {
-        const playerState = await GameEngine.loadUserSession(savedUser);
-        document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('main-game-layout').classList.remove('hidden');
-        setupRealTimeListeners(savedUser);
-        startGameLoop();
-        renderAll();
-        console.log(`[Session] Auto-resumed session for user: ${savedUser}`);
-      } catch (err) {
-        console.warn('[Session] Failed to auto-resume session:', err);
-        localStorage.removeItem('foolos_active_session_user');
+    // Refresh Start Menu player prestige card
+    await refreshStartMenuCard();
+  }
+
+  // --- Start Menu Controller & Particle Generator ---
+  function setupStartMenu() {
+    initStartMenuParticles();
+
+    // 1. Continue Button
+    const continueBtn = document.getElementById('btn-menu-continue');
+    if (continueBtn) {
+      continueBtn.addEventListener('click', async () => {
+        const savedUser = localStorage.getItem('foolos_active_session_user');
+        if (savedUser) {
+          playMenuSound('start');
+          await launchGameSession(savedUser);
+        } else {
+          showAuthModal('login');
+        }
+      });
+    }
+
+    // 2. New Game Button
+    const newGameBtn = document.getElementById('btn-menu-newgame');
+    if (newGameBtn) {
+      newGameBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        showAuthModal('register');
+      });
+    }
+
+    // 3. Login / Switch Button
+    const loginBtn = document.getElementById('btn-menu-login');
+    if (loginBtn) {
+      loginBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        showAuthModal('login');
+      });
+    }
+
+    const switchCardBtn = document.getElementById('btn-start-card-switch');
+    if (switchCardBtn) {
+      switchCardBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playMenuSound('click');
+        showAuthModal('login');
+      });
+    }
+
+    // 4. Hall of Fame / Leaderboard Modal in Start Menu
+    const menuLeaderboardBtn = document.getElementById('btn-menu-leaderboard');
+    const startLeaderboardModal = document.getElementById('start-menu-leaderboard-modal');
+    const closeLeaderboardBtn = document.getElementById('btn-close-menu-leaderboard');
+    const refreshStartLdBtn = document.getElementById('btn-refresh-start-leaderboard');
+
+    if (menuLeaderboardBtn && startLeaderboardModal) {
+      menuLeaderboardBtn.addEventListener('click', () => {
+        playMenuSound('modal_open');
+        startLeaderboardModal.classList.remove('hidden');
+        renderStartMenuLeaderboard();
+      });
+    }
+
+    if (closeLeaderboardBtn && startLeaderboardModal) {
+      closeLeaderboardBtn.addEventListener('click', () => {
+        playMenuSound('modal_close');
+        startLeaderboardModal.classList.add('hidden');
+      });
+    }
+
+    if (refreshStartLdBtn) {
+      refreshStartLdBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        renderStartMenuLeaderboard();
+      });
+    }
+
+    // 5. Tycoon Guide Modal in Start Menu
+    const menuGuideBtn = document.getElementById('btn-menu-guide');
+    const startGuideModal = document.getElementById('start-menu-guide-modal');
+    const closeGuideBtn = document.getElementById('btn-close-menu-guide');
+    const guidePlayBtn = document.getElementById('btn-guide-start-playing');
+
+    if (menuGuideBtn && startGuideModal) {
+      menuGuideBtn.addEventListener('click', () => {
+        playMenuSound('modal_open');
+        startGuideModal.classList.remove('hidden');
+      });
+    }
+
+    if (closeGuideBtn && startGuideModal) {
+      closeGuideBtn.addEventListener('click', () => {
+        playMenuSound('modal_close');
+        startGuideModal.classList.add('hidden');
+      });
+    }
+
+    if (guidePlayBtn && startGuideModal) {
+      guidePlayBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        startGuideModal.classList.add('hidden');
+        const savedUser = localStorage.getItem('foolos_active_session_user');
+        if (savedUser) {
+          launchGameSession(savedUser);
+        } else {
+          showAuthModal('register');
+        }
+      });
+    }
+
+    // 6. Settings Modal in Start Menu
+    const menuSettingsBtn = document.getElementById('btn-menu-settings');
+    const startSettingsModal = document.getElementById('start-menu-settings-modal');
+    const closeSettingsBtn = document.getElementById('btn-close-menu-settings');
+    const saveSettingsBtn = document.getElementById('btn-save-settings');
+    const testSoundBtn = document.getElementById('btn-settings-test-sound');
+    const sfxToggle = document.getElementById('setting-sfx-toggle');
+    const musicToggle = document.getElementById('setting-music-toggle');
+    const glowToggle = document.getElementById('setting-glow-toggle');
+    const menuSoundBtn = document.getElementById('btn-menu-sound-toggle');
+    const menuSoundIcon = document.getElementById('menu-sound-icon');
+    const fullscreenBtn = document.getElementById('btn-menu-fullscreen');
+
+    if (sfxToggle) sfxToggle.checked = sfxEnabled;
+    if (musicToggle) musicToggle.checked = musicEnabled;
+    if (glowToggle) glowToggle.checked = glowEnabled;
+    updateSoundIconState();
+
+    if (menuSettingsBtn && startSettingsModal) {
+      menuSettingsBtn.addEventListener('click', () => {
+        playMenuSound('modal_open');
+        startSettingsModal.classList.remove('hidden');
+      });
+    }
+
+    if (closeSettingsBtn && startSettingsModal) {
+      closeSettingsBtn.addEventListener('click', () => {
+        playMenuSound('modal_close');
+        startSettingsModal.classList.add('hidden');
+      });
+    }
+
+    if (saveSettingsBtn && startSettingsModal) {
+      saveSettingsBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        sfxEnabled = sfxToggle.checked;
+        localStorage.setItem('foolos_sfx_enabled', sfxEnabled ? 'true' : 'false');
+        setAmbientMusicState(musicToggle.checked);
+        glowEnabled = glowToggle.checked;
+        localStorage.setItem('foolos_glow_enabled', glowEnabled ? 'true' : 'false');
+        updateSoundIconState();
+        startSettingsModal.classList.add('hidden');
+        showToast('تم حفظ الإعدادات', 'تم تحديث تفضيلات الصوت والمؤثرات بنجاح.', 'success');
+      });
+    }
+
+    if (testSoundBtn) {
+      testSoundBtn.addEventListener('click', () => {
+        playMenuSound('start');
+      });
+    }
+
+    if (menuSoundBtn) {
+      menuSoundBtn.addEventListener('click', () => {
+        sfxEnabled = !sfxEnabled;
+        localStorage.setItem('foolos_sfx_enabled', sfxEnabled ? 'true' : 'false');
+        if (sfxToggle) sfxToggle.checked = sfxEnabled;
+        updateSoundIconState();
+        if (sfxEnabled) playMenuSound('click');
+      });
+    }
+
+    if (fullscreenBtn) {
+      fullscreenBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        toggleFullscreen();
+      });
+    }
+
+    // 7. In-game Return to Start Menu Buttons
+    const openMenuSidebarBtn = document.getElementById('btn-open-start-menu');
+    const openMenuMobileBtn = document.getElementById('btn-open-start-menu-mobile');
+
+    if (openMenuSidebarBtn) {
+      openMenuSidebarBtn.addEventListener('click', () => {
+        playMenuSound('back');
+        returnToStartMenu();
+      });
+    }
+
+    if (openMenuMobileBtn) {
+      openMenuMobileBtn.addEventListener('click', () => {
+        playMenuSound('back');
+        returnToStartMenu();
+      });
+    }
+
+    // 8. Auth Back Buttons
+    const authBackBtn = document.getElementById('btn-auth-back-to-menu');
+    const authCancelBtn = document.getElementById('btn-auth-cancel-bottom');
+
+    if (authBackBtn) {
+      authBackBtn.addEventListener('click', () => {
+        playMenuSound('back');
+        closeAuthModal();
+      });
+    }
+    if (authCancelBtn) {
+      authCancelBtn.addEventListener('click', () => {
+        playMenuSound('back');
+        closeAuthModal();
+      });
+    }
+
+    // Add sound triggers on all menu buttons
+    document.querySelectorAll('.menu-btn-game, .menu-btn-sub, .start-menu-icon-btn').forEach(btn => {
+      btn.addEventListener('mouseenter', () => playMenuSound('hover'));
+    });
+
+    // Global ESC handler
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modals = [
+          document.getElementById('start-menu-leaderboard-modal'),
+          document.getElementById('start-menu-guide-modal'),
+          document.getElementById('start-menu-settings-modal'),
+          document.getElementById('auth-screen')
+        ];
+        let modalClosed = false;
+        modals.forEach(m => {
+          if (m && !m.classList.contains('hidden')) {
+            m.classList.add('hidden');
+            modalClosed = true;
+          }
+        });
+        if (!modalClosed) {
+          const startMenu = document.getElementById('start-menu-screen');
+          const mainLayout = document.getElementById('main-game-layout');
+          if (mainLayout && !mainLayout.classList.contains('hidden')) {
+            returnToStartMenu();
+          } else if (startMenu && !startMenu.classList.contains('hidden')) {
+            const savedUser = localStorage.getItem('foolos_active_session_user');
+            if (savedUser && GameEngine.state) {
+              launchGameSession(savedUser);
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function initStartMenuParticles() {
+    const container = document.getElementById('start-menu-particles');
+    if (!container) return;
+    container.innerHTML = '';
+    const symbols = ['🪙', '💵', '💎', '📈', '🏛️', '💰', '👑', '★'];
+    const particleCount = 18;
+
+    for (let i = 0; i < particleCount; i++) {
+      const p = document.createElement('div');
+      p.className = 'menu-particle';
+      p.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      p.style.left = `${Math.random() * 96}%`;
+      p.style.fontSize = `${12 + Math.random() * 16}px`;
+      p.style.animationDelay = `${Math.random() * 9}s`;
+      p.style.animationDuration = `${7 + Math.random() * 7}s`;
+      container.appendChild(p);
+    }
+  }
+
+  function updateSoundIconState() {
+    const icon = document.getElementById('menu-sound-icon');
+    if (icon) {
+      icon.className = sfxEnabled ? 'fa-solid fa-volume-high text-sm' : 'fa-solid fa-volume-xmark text-sm text-rose-400';
+    }
+  }
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
       }
     }
   }
 
-  // --- Auth View Panel Managers ---
+  async function refreshStartMenuCard() {
+    const savedUser = localStorage.getItem('foolos_active_session_user');
+    const playerCard = document.getElementById('start-menu-player-card');
+    const continueBtn = document.getElementById('btn-menu-continue');
+
+    if (!savedUser) {
+      if (playerCard) playerCard.classList.add('hidden');
+      if (continueBtn) continueBtn.classList.add('hidden');
+      return;
+    }
+
+    try {
+      let state = GameEngine.state;
+      if (!state || GameEngine.activeUsername !== savedUser) {
+        state = await AppDB.getPlayerState(savedUser);
+      }
+      if (state) {
+        const nameEl = document.getElementById('start-card-username');
+        const titleEl = document.getElementById('start-card-title');
+        const worthEl = document.getElementById('start-card-worth');
+        const avatarEl = document.getElementById('start-card-avatar');
+
+        if (nameEl) nameEl.textContent = savedUser;
+        if (titleEl) titleEl.textContent = state.title || 'مستثمر صاعد';
+        if (worthEl) worthEl.textContent = `${(state.netWorth || (state.cash + state.bank) || 0).toLocaleString()} EGP`;
+        if (avatarEl) avatarEl.textContent = (savedUser.substring(0, 2)).toUpperCase();
+
+        if (playerCard) playerCard.classList.remove('hidden');
+        if (continueBtn) continueBtn.classList.remove('hidden');
+      }
+    } catch (err) {
+      console.warn('[Start Menu] Failed to load cached player card:', err);
+    }
+  }
+
+  async function launchGameSession(username) {
+    try {
+      const playerState = await GameEngine.loadUserSession(username);
+      document.getElementById('start-menu-screen').classList.add('hidden');
+      document.getElementById('auth-screen').classList.add('hidden');
+      document.getElementById('main-game-layout').classList.remove('hidden');
+      setupRealTimeListeners(username);
+      startGameLoop();
+      renderAll();
+      showToast('أهلاً بعودتك', `تم استئناف جلسة الإمبراطور: ${username}`, 'success');
+    } catch (err) {
+      showToast('خطأ في التحميل', err.message, 'error');
+      localStorage.removeItem('foolos_active_session_user');
+      refreshStartMenuCard();
+    }
+  }
+
+  function returnToStartMenu() {
+    refreshStartMenuCard();
+    document.getElementById('start-menu-screen').classList.remove('hidden');
+    document.getElementById('main-game-layout').classList.add('hidden');
+    document.getElementById('auth-screen').classList.add('hidden');
+  }
+
+  function showAuthModal(mode = 'login') {
+    const authScreen = document.getElementById('auth-screen');
+    const authRegBtn = document.getElementById('auth-switch-reg');
+    const authLoginBtn = document.getElementById('auth-switch-login');
+    const authModeTitle = document.getElementById('auth-mode-title');
+    const authActionBtn = document.getElementById('auth-action-text');
+
+    if (mode === 'register') {
+      authModeTitle.textContent = 'تسجيل حساب جديد';
+      authActionBtn.textContent = 'إنشاء حساب وبدء اللعب';
+      authRegBtn.classList.add('border-yellow-500', 'text-yellow-500');
+      authLoginBtn.classList.remove('border-yellow-500', 'text-yellow-500');
+    } else {
+      authModeTitle.textContent = 'تسجيل الدخول للمحفظة';
+      authActionBtn.textContent = 'دخول وتزامن الحساب';
+      authLoginBtn.classList.add('border-yellow-500', 'text-yellow-500');
+      authRegBtn.classList.remove('border-yellow-500', 'text-yellow-500');
+    }
+
+    if (authScreen) {
+      authScreen.classList.remove('hidden');
+      document.getElementById('start-menu-screen').classList.add('hidden');
+    }
+  }
+
+  function closeAuthModal() {
+    const authScreen = document.getElementById('auth-screen');
+    if (authScreen) authScreen.classList.add('hidden');
+    document.getElementById('start-menu-screen').classList.remove('hidden');
+  }
+
+  async function renderStartMenuLeaderboard() {
+    const tbody = document.getElementById('start-menu-leaderboard-rows');
+    if (!tbody) return;
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="py-6 text-center text-slate-400">
+          <i class="fa-solid fa-spinner animate-spin ml-2"></i>
+          جاري جلب أحدث بيانات المتصدرين...
+        </td>
+      </tr>
+    `;
+
+    try {
+      const players = await AppDB.getLeaderboard();
+      tbody.innerHTML = '';
+
+      if (!players || players.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-500">لا يوجد متصدرين مسجلين حالياً.</td></tr>`;
+        return;
+      }
+
+      // Podium Top 3
+      const top1 = players[0];
+      const top2 = players[1];
+      const top3 = players[2];
+
+      if (top1) {
+        document.getElementById('start-podium-name-1').textContent = top1.username;
+        document.getElementById('start-podium-worth-1').textContent = `${Number(top1.netWorth || 0).toLocaleString()} EGP`;
+      }
+      if (top2) {
+        document.getElementById('start-podium-name-2').textContent = top2.username;
+        document.getElementById('start-podium-worth-2').textContent = `${Number(top2.netWorth || 0).toLocaleString()} EGP`;
+      }
+      if (top3) {
+        document.getElementById('start-podium-name-3').textContent = top3.username;
+        document.getElementById('start-podium-worth-3').textContent = `${Number(top3.netWorth || 0).toLocaleString()} EGP`;
+      }
+
+      // Rows
+      players.slice(0, 10).forEach((p, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-900/50 transition';
+        const rank = idx + 1;
+        tr.innerHTML = `
+          <td class="py-2.5 pr-2 font-bold ${rank === 1 ? 'text-yellow-400 font-black' : rank <= 3 ? 'text-white' : 'text-slate-400'}">#${rank}</td>
+          <td class="py-2.5 font-bold text-white">${p.username}</td>
+          <td class="py-2.5 text-slate-400">${p.title || 'مستثمر'}</td>
+          <td class="py-2.5 pl-2 text-left numbers-font font-black ${rank === 1 ? 'text-yellow-400' : 'text-emerald-400'}">${Number(p.netWorth || 0).toLocaleString()} EGP</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-rose-400">تعذر تحميل المتصدرين. تحقق من اتصالك.</td></tr>`;
+    }
+  }
+
   function setupAuthPanel() {
     const authSubmitBtn = document.getElementById('auth-submit');
     const authRegBtn = document.getElementById('auth-switch-reg');
@@ -163,61 +702,74 @@ const UIController = (() => {
 
     let mode = 'login'; // 'login' or 'register'
 
-    authRegBtn.addEventListener('click', () => {
-      mode = 'register';
-      authModeTitle.textContent = 'تسجيل حساب جديد';
-      authActionBtn.textContent = 'إنشاء حساب وبدء اللعب';
-      authRegBtn.classList.add('border-yellow-500', 'text-yellow-500');
-      authLoginBtn.classList.remove('border-yellow-500', 'text-yellow-500');
-    });
+    if (authRegBtn) {
+      authRegBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        mode = 'register';
+        authModeTitle.textContent = 'تسجيل حساب جديد';
+        authActionBtn.textContent = 'إنشاء حساب وبدء اللعب';
+        authRegBtn.classList.add('border-yellow-500', 'text-yellow-500');
+        authLoginBtn.classList.remove('border-yellow-500', 'text-yellow-500');
+      });
+    }
 
-    authLoginBtn.addEventListener('click', () => {
-      mode = 'login';
-      authModeTitle.textContent = 'تسجيل الدخول للمحفظة';
-      authActionBtn.textContent = 'دخول وتزامن الحساب';
-      authLoginBtn.classList.add('border-yellow-500', 'text-yellow-500');
-      authRegBtn.classList.remove('border-yellow-500', 'text-yellow-500');
-    });
+    if (authLoginBtn) {
+      authLoginBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        mode = 'login';
+        authModeTitle.textContent = 'تسجيل الدخول للمحفظة';
+        authActionBtn.textContent = 'دخول وتزامن الحساب';
+        authLoginBtn.classList.add('border-yellow-500', 'text-yellow-500');
+        authRegBtn.classList.remove('border-yellow-500', 'text-yellow-500');
+      });
+    }
 
-    authSubmitBtn.addEventListener('click', async () => {
-      const usernameInput = document.getElementById('auth-username').value.trim();
-      const pinInput = document.getElementById('auth-pin').value.trim();
+    if (authSubmitBtn) {
+      authSubmitBtn.addEventListener('click', async () => {
+        const usernameInput = document.getElementById('auth-username').value.trim();
+        const pinInput = document.getElementById('auth-pin').value.trim();
 
-      if (!usernameInput || !pinInput) {
-        showToast('خطأ', 'يرجى ملء جميع الحقول للمتابعة.', 'error');
-        return;
-      }
-
-      try {
-        setAuthLoading(true);
-        let playerState;
-
-        if (mode === 'register') {
-          await AppDB.registerPlayer(usernameInput, pinInput);
-          playerState = await GameEngine.loadUserSession(usernameInput);
-          localStorage.setItem('foolos_active_session_user', usernameInput);
-          showToast('نجاح', 'تم تسجيل حسابك الجديد بنجاح! مرحباً بك.', 'success');
-        } else {
-          await AppDB.loginPlayer(usernameInput, pinInput);
-          playerState = await GameEngine.loadUserSession(usernameInput);
-          localStorage.setItem('foolos_active_session_user', usernameInput);
-          showToast('أهلاً بك', `تم تحميل بيانات الحساب: ${usernameInput}`, 'success');
+        if (!usernameInput || !pinInput) {
+          showToast('خطأ', 'يرجى ملء جميع الحقول للمتابعة.', 'error');
+          playMenuSound('back');
+          return;
         }
 
-        // Hide auth screen and start game
-        document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('main-game-layout').classList.remove('hidden');
-        
-        setupRealTimeListeners(usernameInput);
-        
-        startGameLoop();
-        renderAll();
-      } catch (err) {
-        showToast('فشل التحقق', err.message, 'error');
-      } finally {
-        setAuthLoading(false);
-      }
-    });
+        try {
+          setAuthLoading(true);
+          let playerState;
+
+          if (mode === 'register') {
+            await AppDB.registerPlayer(usernameInput, pinInput);
+            playerState = await GameEngine.loadUserSession(usernameInput);
+            localStorage.setItem('foolos_active_session_user', usernameInput);
+            showToast('نجاح', 'تم تسجيل حسابك الجديد بنجاح! مرحباً بك.', 'success');
+          } else {
+            await AppDB.loginPlayer(usernameInput, pinInput);
+            playerState = await GameEngine.loadUserSession(usernameInput);
+            localStorage.setItem('foolos_active_session_user', usernameInput);
+            showToast('أهلاً بك', `تم تحميل بيانات الحساب: ${usernameInput}`, 'success');
+          }
+
+          playMenuSound('start');
+
+          // Hide auth screen & start menu, show game
+          document.getElementById('auth-screen').classList.add('hidden');
+          document.getElementById('start-menu-screen').classList.add('hidden');
+          document.getElementById('main-game-layout').classList.remove('hidden');
+          
+          setupRealTimeListeners(usernameInput);
+          
+          startGameLoop();
+          renderAll();
+        } catch (err) {
+          showToast('فشل التحقق', err.message, 'error');
+          playMenuSound('back');
+        } finally {
+          setAuthLoading(false);
+        }
+      });
+    }
   }
 
   function setAuthLoading(loading) {
@@ -2278,10 +2830,12 @@ const UIController = (() => {
     const maintOverlay = document.getElementById('maintenance-overlay');
     const mainGameLayout = document.getElementById('main-game-layout');
     const authScreen = document.getElementById('auth-screen');
+    const startMenu = document.getElementById('start-menu-screen');
     const msgText = document.getElementById('maintenance-msg-text');
     if (maintOverlay) maintOverlay.classList.remove('hidden');
     if (mainGameLayout) mainGameLayout.classList.add('hidden');
     if (authScreen) authScreen.classList.add('hidden');
+    if (startMenu) startMenu.classList.add('hidden');
     if (msgText && customMsg) msgText.textContent = customMsg;
   }
 
@@ -2317,9 +2871,11 @@ const UIController = (() => {
     const banOverlay = document.getElementById('ban-overlay');
     const mainGameLayout = document.getElementById('main-game-layout');
     const authScreen = document.getElementById('auth-screen');
+    const startMenu = document.getElementById('start-menu-screen');
     if (banOverlay) banOverlay.classList.remove('hidden');
     if (mainGameLayout) mainGameLayout.classList.add('hidden');
     if (authScreen) authScreen.classList.add('hidden');
+    if (startMenu) startMenu.classList.add('hidden');
     performLogout(false);
   }
 
@@ -2328,8 +2884,10 @@ const UIController = (() => {
     activeListeners = [];
     localStorage.removeItem('foolos_active_session_user');
     GameEngine.logoutUser();
-    document.getElementById('auth-screen').classList.remove('hidden');
+    document.getElementById('auth-screen').classList.add('hidden');
     document.getElementById('main-game-layout').classList.add('hidden');
+    document.getElementById('start-menu-screen').classList.remove('hidden');
+    refreshStartMenuCard();
     if (showToastMsg) {
       showToast('تسجيل الخروج', 'تم تسجيل خروجك بنجاح وحفظ بيانات المحفظة.', 'info');
     }
@@ -2791,7 +3349,9 @@ const UIController = (() => {
   return {
     init,
     switchTab,
-    showToast
+    showToast,
+    returnToStartMenu,
+    playMenuSound
   };
 })();
 
