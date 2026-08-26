@@ -1115,8 +1115,29 @@ const GameEngine = (() => {
   }
 
   // --- Active Session Setters ---
+  async function syncItemsConfig() {
+    try {
+      const itemsConfig = await AppDB.getItemsConfig();
+      if (itemsConfig) {
+        Object.keys(itemsConfig).forEach(itemId => {
+          if (STORE_ITEMS[itemId]) {
+            if (itemsConfig[itemId].cost != null) {
+              STORE_ITEMS[itemId].cost = itemsConfig[itemId].cost;
+            }
+            if (itemsConfig[itemId].durationTicks != null) {
+              STORE_ITEMS[itemId].durationTicks = itemsConfig[itemId].durationTicks;
+            }
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('[GameEngine] Failed to sync store items config:', e);
+    }
+  }
+
   async function loadUserSession(username) {
     activeUsername = username;
+    await syncItemsConfig();
     const dbState = await AppDB.getPlayerState(username);
     if (dbState) {
       // Deep-merge with defaults so new keys added later are always present
@@ -2160,6 +2181,7 @@ const GameEngine = (() => {
     BLACK_MARKET_GEAR,
 
     loadUserSession,
+    syncItemsConfig,
     logoutUser,
     processTick,
     performJobShift,

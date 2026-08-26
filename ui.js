@@ -1033,6 +1033,10 @@ const UIController = (() => {
     activeTab = tabId;
     if (tabId === 'bank') {
       fetchAndRenderTransferRequests(true);
+    } else if (tabId === 'store') {
+      GameEngine.syncItemsConfig().then(() => {
+        renderStore();
+      });
     }
     
     // Update active class styles in buttons
@@ -5354,6 +5358,52 @@ const UIController = (() => {
     }
   }
 
+  // Store Items Configuration Event Listeners (Admin)
+  const itemSelect = document.getElementById('admin-item-config-select');
+  if (itemSelect) {
+    itemSelect.addEventListener('change', () => {
+      const itemId = itemSelect.value;
+      const item = GameEngine.STORE_ITEMS[itemId];
+      if (item) {
+        document.getElementById('admin-item-config-cost').value = item.cost;
+        document.getElementById('admin-item-config-duration').value = item.durationTicks * 3;
+      }
+    });
+  }
+
+  const saveItemConfigBtn = document.getElementById('btn-admin-save-item-config');
+  if (saveItemConfigBtn) {
+    saveItemConfigBtn.addEventListener('click', async () => {
+      const itemId = document.getElementById('admin-item-config-select').value;
+      const cost = Number(document.getElementById('admin-item-config-cost').value);
+      const durationSec = Number(document.getElementById('admin-item-config-duration').value);
+
+      if (isNaN(cost) || cost <= 0 || isNaN(durationSec) || durationSec <= 0) {
+        showToast('خطأ إعدادات', 'يرجى إدخال قيم صحيحة وموجبة للسعر والمدة.', 'error');
+        return;
+      }
+
+      try {
+        saveItemConfigBtn.disabled = true;
+        saveItemConfigBtn.textContent = 'جاري حفظ التعديلات...';
+
+        await AppDB.adminSaveItemConfig(itemId, cost, durationSec);
+        
+        await GameEngine.syncItemsConfig();
+        
+        showToast('تحديث الإعدادات', `تم حفظ وتعميم إعدادات الأداة بنجاح! السعر: ${cost.toLocaleString()} ج.م، المدة: ${durationSec} ثانية.`, 'success');
+        logAdminAction(`تحديث إعدادات الأداة (${itemId}): سعر ${cost.toLocaleString()} ج.م، مدة ${durationSec}ث`);
+        renderAll();
+      } catch (err) {
+        showToast('فشل حفظ الإعدادات', err.message, 'error');
+      } finally {
+        saveItemConfigBtn.disabled = false;
+        saveItemConfigBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>حفظ وتعميم إعدادات الأداة فوراً</span>';
+      }
+    });
+  }
+}
+
   function switchAdminTab(tabId) {
     const subtabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'system'];
     subtabs.forEach(t => {
@@ -5379,6 +5429,15 @@ const UIController = (() => {
       renderAdminTransfersMonitor();
     } else if (tabId === 'market') {
       if (window._adminRenderStockPrices) window._adminRenderStockPrices();
+    } else if (tabId === 'system') {
+      const itSelect = document.getElementById('admin-item-config-select');
+      if (itSelect) {
+        const initItem = GameEngine.STORE_ITEMS[itSelect.value];
+        if (initItem) {
+          document.getElementById('admin-item-config-cost').value = initItem.cost;
+          document.getElementById('admin-item-config-duration').value = initItem.durationTicks * 3;
+        }
+      }
     }
   }
 

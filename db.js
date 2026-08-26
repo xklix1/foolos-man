@@ -582,6 +582,41 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
+  //  ITEMS CONFIGURATION — Firestore Operations
+  // ─────────────────────────────────────────────
+  async function adminSaveItemConfig(itemId, cost, durationSeconds) {
+    _requireOnline();
+    await _ensureAdminAuth();
+    
+    cost = Number(cost);
+    const durationTicks = Math.round(Number(durationSeconds) / 3);
+    if (isNaN(cost) || cost <= 0 || isNaN(durationTicks) || durationTicks <= 0) {
+      throw new Error('القيم المدخلة غير صالحة.');
+    }
+
+    const docRef = firestoreDb.collection('globals').doc('itemsConfig');
+    
+    return await firestoreDb.runTransaction(async (tx) => {
+      const doc = await tx.get(docRef);
+      const data = doc.exists ? doc.data() : {};
+      data[itemId] = { cost, durationTicks };
+      tx.set(docRef, data);
+      return true;
+    });
+  }
+
+  async function getItemsConfig() {
+    _requireOnline();
+    try {
+      const doc = await firestoreDb.collection('globals').doc('itemsConfig').get();
+      if (doc.exists) return doc.data();
+    } catch (e) {
+      console.warn('[DB] Failed to load items config:', e);
+    }
+    return null;
+  }
+
+  // ─────────────────────────────────────────────
   // ─────────────────────────────────────────────
   //  ADMIN FUNCTIONS
   // ─────────────────────────────────────────────
@@ -1105,6 +1140,10 @@ const AppDB = (() => {
     getSentTransferRequests,
     acceptTransferRequest,
     rejectTransferRequest,
+
+    // Items Config API
+    adminSaveItemConfig,
+    getItemsConfig,
 
     // Admin API
     sendBroadcast,

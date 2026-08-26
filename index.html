@@ -3254,6 +3254,49 @@
             </button>
           </div>
 
+          <!-- Items Configuration Card (New Feature) -->
+          <div class="p-3.5 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2.5">
+            <div class="flex justify-between items-center">
+              <div>
+                <h4 class="text-xs font-bold text-white flex items-center gap-2">
+                  <i class="fa-solid fa-gears text-yellow-400"></i>
+                  <span>التحكم بأسعار ومدد تشغيل أدوات المتجر (Items Configuration)</span>
+                </h4>
+                <p class="text-[10px] text-slate-400 mt-0.5">تعديل تكلفة شراء أي أداة ومدة مفعولها (بالثواني) لجميع اللاعبين.</p>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">الأداة (Item)</label>
+                <select id="admin-item-config-select" class="glass-input w-full p-2 text-xs text-right bg-slate-900 border border-slate-800 text-white rounded-lg">
+                  <option value="gold_pen">القلم الذهبي للمدراء</option>
+                  <option value="premium_lawyer">توكيل محامٍ دولي</option>
+                  <option value="energy_drink">مشروب الطاقة والتركيز</option>
+                  <option value="tax_shield">درع الإعفاء الضريبي</option>
+                  <option value="market_scanner">ماسح البورصة والتداول</option>
+                  <option value="vip_casino_pass">بطاقة VIP للكازينو</option>
+                  <option value="quantum_cpu">معالج الحوسبة الكمومية</option>
+                  <option value="diamond_card">عضوية النادي الماسي</option>
+                  <option value="cronos_gear">ساعة الكرونوس</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">سعر الشراء (EGP)</label>
+                <input type="number" id="admin-item-config-cost" min="1" class="glass-input w-full p-2 text-xs text-center font-bold font-mono">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">مدة المفعول (ثواني)</label>
+                <input type="number" id="admin-item-config-duration" min="1" class="glass-input w-full p-2 text-xs text-center font-bold font-mono">
+              </div>
+            </div>
+
+            <button id="btn-admin-save-item-config" class="w-full py-2.5 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 font-bold rounded-lg text-xs transition shadow-lg flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span>حفظ وتعميم إعدادات الأداة فوراً</span>
+            </button>
+          </div>
+
           <!-- DANGER ZONE: Economy & Database Resets -->
           <div class="p-3.5 bg-rose-950/30 border border-rose-500/40 rounded-xl space-y-3">
             <div class="border-b border-rose-500/20 pb-2">
