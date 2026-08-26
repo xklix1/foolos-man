@@ -4171,6 +4171,8 @@ const UIController = (() => {
         document.getElementById('admin-p-worth').textContent = `${(state.netWorth || 0).toLocaleString()} EGP`;
         document.getElementById('admin-p-cash').textContent = (state.cash || 0).toLocaleString();
         document.getElementById('admin-p-bank').textContent = (state.bank || 0).toLocaleString();
+        const dirtyEl = document.getElementById('admin-p-dirty');
+        if (dirtyEl) dirtyEl.textContent = (state.dirtyCash || 0).toLocaleString();
         document.getElementById('admin-p-title').textContent = state.title || 'عامل مبتدئ';
 
         const roleBadge = document.getElementById('admin-p-badge-role');
