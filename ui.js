@@ -336,16 +336,43 @@ const UIController = (() => {
       });
     }
 
-    // 5. Tycoon Guide Modal in Start Menu
+    // 5. Tycoon Guide Modal (Dual-Mode: Detailed Master Guide & Compact Quick Guide)
     const menuGuideBtn = document.getElementById('btn-menu-guide');
+    const inGameGuideBtn = document.getElementById('btn-ingame-guide');
+    const inGameGuideMobileBtn = document.getElementById('btn-ingame-guide-mobile');
     const startGuideModal = document.getElementById('start-menu-guide-modal');
     const closeGuideBtn = document.getElementById('btn-close-menu-guide');
     const guidePlayBtn = document.getElementById('btn-guide-start-playing');
 
-    if (menuGuideBtn && startGuideModal) {
-      menuGuideBtn.addEventListener('click', () => {
-        playMenuSound('modal_open');
-        startGuideModal.classList.remove('hidden');
+    const tabDetailedBtn = document.getElementById('btn-guide-tab-detailed');
+    const tabCompactBtn = document.getElementById('btn-guide-tab-compact');
+    const viewDetailed = document.getElementById('guide-view-detailed');
+    const viewCompact = document.getElementById('guide-view-compact');
+
+    const openGuideModal = () => {
+      playMenuSound('modal_open');
+      if (startGuideModal) startGuideModal.classList.remove('hidden');
+    };
+
+    if (menuGuideBtn) menuGuideBtn.addEventListener('click', openGuideModal);
+    if (inGameGuideBtn) inGameGuideBtn.addEventListener('click', openGuideModal);
+    if (inGameGuideMobileBtn) inGameGuideMobileBtn.addEventListener('click', openGuideModal);
+
+    if (tabDetailedBtn && tabCompactBtn && viewDetailed && viewCompact) {
+      tabDetailedBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        viewDetailed.classList.remove('hidden');
+        viewCompact.classList.add('hidden');
+        tabDetailedBtn.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-500 to-amber-600 text-slate-950 shadow-md';
+        tabCompactBtn.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800';
+      });
+
+      tabCompactBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        viewCompact.classList.remove('hidden');
+        viewDetailed.classList.add('hidden');
+        tabCompactBtn.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md';
+        tabDetailedBtn.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800';
       });
     }
 

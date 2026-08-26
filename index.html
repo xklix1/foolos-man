@@ -56,7 +56,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=60">
+  <link rel="stylesheet" href="app.css?v=65">
   
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase App SDK blocked.')"></script>
@@ -407,18 +407,22 @@
     </div>
   </div>
 
-  <!-- ==================== START MENU: TYCOON GUIDE MODAL ==================== -->
-  <div id="start-menu-guide-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
-    <div class="glass-panel w-full max-w-2xl max-h-[85vh] flex flex-col rounded-3xl border border-sky-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
+  <!-- ==================== TYCOON GUIDE MODAL (DUAL MODE) ==================== -->
+  <div id="start-menu-guide-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in">
+    <div class="glass-panel w-full max-w-3xl max-h-[90vh] flex flex-col rounded-3xl border border-yellow-500/40 p-4 sm:p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
+      
       <!-- Modal Header -->
-      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
-            <i class="fa-solid fa-book-open text-lg"></i>
+          <div class="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-400 shrink-0">
+            <i class="fa-solid fa-crown text-lg"></i>
           </div>
           <div>
-            <h2 class="text-lg font-black text-white">دليل الملياردير وقواعد اللعب</h2>
-            <p class="text-xs text-slate-400">تعلم أسرار صناعة الثروة والترقي في مراتب المال</p>
+            <h2 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+              <span>دليل الملياردير الإمبراطوري</span>
+              <span class="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 text-[10px] border border-yellow-500/30">الإصدار الشامل ⭐</span>
+            </h2>
+            <p class="text-[11px] text-slate-400">أسرار الهيمنة وصناعة الثروة من الصفر حتى قمة عرش أثرياء رأس المال</p>
           </div>
         </div>
         <button id="btn-close-menu-guide" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
@@ -426,67 +430,265 @@
         </button>
       </div>
 
-      <!-- Guide Content Scrollable -->
-      <div class="flex-1 overflow-y-auto space-y-4 pr-1 py-4 text-xs text-slate-300">
-        
-        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <h3 class="text-sm font-black text-yellow-400 mb-1 flex items-center gap-2">
-            <i class="fa-solid fa-briefcase"></i>
-            <span>1. الوظائف والعمل اليومي</span>
-          </h3>
-          <p class="leading-relaxed text-slate-400">
-            ابدأ من وظيفة "عامل باليومية" وقم بأداء نوبات العمل لكسب الكاش والخبرة (XP). كلما زادت خبرتك يمكنك الترقية إلى وظائف أعلى (محاسب، مدير فرع، رئيس مجلس إدارة) برواتب ضخمة.
-          </p>
+      <!-- Mode Switcher Tabs -->
+      <div class="flex items-center gap-2 pt-3 pb-1 border-b border-slate-800/80">
+        <button id="btn-guide-tab-detailed" class="flex-1 py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-500 to-amber-600 text-slate-950 shadow-md">
+          <i class="fa-solid fa-book-open"></i>
+          <span>👑 الدليل الإمبراطوري الشامل (المفصل)</span>
+        </button>
+        <button id="btn-guide-tab-compact" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800">
+          <i class="fa-solid fa-bolt"></i>
+          <span>⚡ الدليل السريع والمختصر</span>
+        </button>
+      </div>
+
+      <!-- Scrollable Guide Content -->
+      <div class="flex-1 overflow-y-auto space-y-4 pr-1 py-4 text-xs text-slate-300 custom-scrollbar">
+
+        <!-- ================= MODE 1: DETAILED MASTER GUIDE ================= -->
+        <div id="guide-view-detailed" class="space-y-4">
+          
+          <!-- Hero Concept Card -->
+          <div class="p-4 rounded-2xl bg-gradient-to-br from-yellow-500/10 via-slate-900/80 to-slate-950 border border-yellow-500/30">
+            <h3 class="text-sm font-black text-yellow-400 mb-1.5 flex items-center gap-2">
+              <i class="fa-solid fa-trophy text-yellow-400"></i>
+              <span>الهدف الأسمى: كيف تبدأ من الصفر وتتربع على عرش السيرفر؟</span>
+            </h3>
+            <p class="leading-relaxed text-slate-300 text-xs">
+              أنت تبدأ مسيرتك كـ <strong class="text-white font-bold">عامل باليومية</strong> برأس مال متواضع. مهمتك هي تشغيل السيولة الذكية، تأسيس وتوسيع الشركات، تملك الأصول الفاخرة، والمضاربة في البورصة لتتصدر قائمة <strong class="text-yellow-400 font-bold">أثرياء رأس المال (Top Tycoons)</strong> على مستوى السيرفر!
+            </p>
+          </div>
+
+          <!-- 4 Financial Balances Grid -->
+          <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800">
+            <h3 class="text-xs font-black text-white mb-2.5 flex items-center gap-2">
+              <i class="fa-solid fa-wallet text-emerald-400"></i>
+              <span>محفظتك المالية: فهم الأرصدة الأربعة</span>
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
+              <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80">
+                <span class="font-black text-yellow-400 flex items-center gap-1.5 mb-1"><i class="fa-solid fa-money-bill-wave"></i> 1. سيولة الكاش:</span>
+                <span class="text-slate-400 leading-normal block">أموالك النقدية النظيفة في جيبك؛ للشراء اليومي، توظيف العمال، والمضاربة المباشرة.</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80">
+                <span class="font-black text-emerald-400 flex items-center gap-1.5 mb-1"><i class="fa-solid fa-building-columns"></i> 2. رصيد البنك:</span>
+                <span class="text-slate-400 leading-normal block">خزنتك الآمنة؛ تنمو تلقائياً مع كل دقيقة بفضل <strong class="text-emerald-300">الفائدة المصرفية المركبة</strong>.</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80">
+                <span class="font-black text-rose-400 flex items-center gap-1.5 mb-1"><i class="fa-solid fa-user-secret"></i> 3. الأموال المشبوهة:</span>
+                <span class="text-slate-400 leading-normal block">أرباح السوق السوداء؛ يجب إدخالها في <strong class="text-rose-300">غسيل الأموال</strong> لتتحول لكاش بنكي نظيف.</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80">
+                <span class="font-black text-cyan-400 flex items-center gap-1.5 mb-1"><i class="fa-solid fa-gem"></i> 4. صافي الثروة (Net Worth):</span>
+                <span class="text-slate-400 leading-normal block">مجموع كل ممتلكاتك (كاش + بنك + أموال مشبوهة + قيمة شركاتك وأسهمك وعقاراتك).</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 1: Dashboard -->
+          <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+            <h3 class="text-sm font-black text-yellow-400 flex items-center gap-2">
+              <i class="fa-solid fa-gauge-high"></i>
+              <span>1. حسابي ولوحة العمل (Dashboard)</span>
+            </h3>
+            <p class="leading-relaxed text-slate-300">
+              • <strong class="text-white">النوبة العادية</strong>: تمنحك الراتب المخصص لوظيفتك مع نقاط خبرة.<br>
+              • <strong class="text-amber-400">النوبة الإضافية (Overtime 🔥)</strong>: تمنحك <strong class="text-yellow-400">2.5 ضعف الراتب + 3 أضعاف نقاط الخبرة</strong> لتسريع ترقيتك.<br>
+              • <strong class="text-emerald-400">ترخيص الإدارة الذاتية (12-Hour AFK)</strong>: يتيح لشركاتك حصد وضخ ملايين الأرباح تلقائياً أثناء إغلاق اللعبة وخروجك لمدة تصل إلى 12 ساعة.
+            </p>
+          </div>
+
+          <!-- Section 2: Jobs -->
+          <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+            <h3 class="text-sm font-black text-blue-400 flex items-center gap-2">
+              <i class="fa-solid fa-user-tie"></i>
+              <span>2. المسار المهني والوظائف (10 مراتب)</span>
+            </h3>
+            <p class="leading-relaxed text-slate-300">
+              تدرج من <strong class="text-white">عامل باليومية (12 ج.م)</strong> ➔ محاسب صندوق ➔ محاسب قانوني ➔ مدير فرع ➔ مدير تنفيذي ➔ رئيس مجلس إدارة ➔ مستشار اقتصادي ➔ محافظ البنك المركزي ➔ رئيس الصندوق السيادي ➔ حتى تصل إلى <strong class="text-yellow-400 font-bold">إمبراطور كبار المستثمرين (65,000 ج.م في النوبة!)</strong>.
+            </p>
+          </div>
+
+          <!-- Section 3: Businesses -->
+          <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+            <h3 class="text-sm font-black text-emerald-400 flex items-center gap-2">
+              <i class="fa-solid fa-city"></i>
+              <span>3. إمبراطورية الأعمال والشركات (10 قطاعات)</span>
+            </h3>
+            <p class="leading-relaxed text-slate-300">
+              ماكينة التدفق النقدي بالثانية؛ من <strong class="text-white">عربة القهوة</strong> وسلسلة السوبرماركت، إلى مصافي البترول و<strong class="text-cyan-400 font-bold">مؤسسة استكشاف الفضاء</strong>.<br>
+              • <strong class="text-yellow-400">التسعير الذكي</strong>: اضبط السعر قريباً من التوازني لتعظيم الشراء.<br>
+              • <strong class="text-emerald-400">توظيف العمال والتطوير</strong>: يضاعف طاقتك الإنتاجية وتدفقك النقدي لكل ثانية.
+            </p>
+          </div>
+
+          <!-- Section 4: Bank -->
+          <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+            <h3 class="text-sm font-black text-purple-400 flex items-center gap-2">
+              <i class="fa-solid fa-landmark"></i>
+              <span>4. البنك المركزي والتحويلات الفورية</span>
+            </h3>
+            <p class="leading-relaxed text-slate-300">
+              • <strong class="text-white">الفائدة المركبة</strong>: أرباح بنكية تنمو تلقائياً مع مرور الوقت.<br>
+              • <strong class="text-purple-300">القروض الميسرة</strong>: تمويل فوري لاقتناص الصفقات الكبرى وسداده بأقساط مريحة.<br>
+              • <strong class="text-yellow-400">التحويل السحابي اللحظي</strong>: أرسل الكاش لأي لاعب متصل في السيرفر عبر اسمه فقط في ثوانٍ.
+            </p>
+          </div>
+
+          <!-- Section 5: Assets -->
+          <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+            <h3 class="text-sm font-black text-cyan-400 flex items-center gap-2">
+              <i class="fa-solid fa-gem"></i>
+              <span>5. العقارات والأصول المليارية</span>
+            </h3>
+            <p class="leading-relaxed text-slate-300">
+              امتلك الشقق، المكاتب، ناطحات السحاب، اليخوت الملكية، الجزر الخاصة، و<strong class="text-cyan-300 font-bold">المحطة المدارية الفضائية</strong> التي تضخ في جيبك <strong class="text-emerald-400">عوائد إيجار كاش مستمرة كل ثانية</strong> وترفع ثروتك الصافية.
+            </p>
+          </div>
+
+          <!-- Section 6: Stock Market -->
+          <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+            <h3 class="text-sm font-black text-sky-400 flex items-center gap-2">
+              <i class="fa-solid fa-chart-line"></i>
+              <span>6. البورصة وأسواق المال (8 أسهم وأصول)</span>
+            </h3>
+            <p class="leading-relaxed text-slate-300">
+              تداول في <strong class="text-white">CIB، الشرقية للدخان، المصرية للاتصالات، فوري، البيتكوين، سبائك الذهب، والذكاء الاصطناعي</strong>.<br>
+              • راقب <strong class="text-sky-300">شريط الأخبار العاجلة</strong>؛ فالأخبار تحرك الأسعار صعوداً وهبوطاً.<br>
+              • احصل على <strong class="text-yellow-400">توزيعات أرباح دورية</strong> مستمرة لمجرد الاحتفاظ بالأسهم.
+            </p>
+          </div>
+
+          <!-- Section 7: VIP Store -->
+          <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+            <h3 class="text-sm font-black text-amber-400 flex items-center gap-2">
+              <i class="fa-solid fa-store"></i>
+              <span>7. متجر كبار الشخصيات (VIP Items)</span>
+            </h3>
+            <p class="leading-relaxed text-slate-300">
+              • <strong class="text-yellow-400">القلم الذهبي</strong>: +50% زيادة في خبرة الوظيفة XP.<br>
+              • <strong class="text-blue-400">المحامي الدولي</strong>: حماية وتخفيض لمخاطر الشرطة بالسوق السوداء.<br>
+              • <strong class="text-cyan-400">معالج الكوانتم</strong>: مضاعفة أرباح كافة شركاتك بنسبة +50%.<br>
+              • <strong class="text-purple-400">البطاقة الماسية</strong>: مضاعفة فوائد البنك وتخفيض ضرائب الثروة.
+            </p>
+          </div>
+
+          <!-- Section 8: Black Market -->
+          <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+            <h3 class="text-sm font-black text-rose-400 flex items-center gap-2">
+              <i class="fa-solid fa-mask"></i>
+              <span>8. السوق السوداء وغسيل الأموال (عالم الظلال)</span>
+            </h3>
+            <p class="leading-relaxed text-slate-300">
+              صفقات سرية كبرى بأرباح خيالية من تهريب البضائع والآثار والماس حتى <strong class="text-rose-400 font-bold">عملية العراب (Godfather)</strong>.<br>
+              • احذر من كبسات الشرطة والسجن؛ واستخدم الرشوة أو المحامي للخروج.<br>
+              • مرر الأموال المشبوهة عبر <strong class="text-emerald-400">غسيل الأموال</strong> لتتحول لرصيد بنكي شرعي.
+            </p>
+          </div>
+
+          <!-- Section 9: Casino -->
+          <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+            <h3 class="text-sm font-black text-pink-400 flex items-center gap-2">
+              <i class="fa-solid fa-dice"></i>
+              <span>9. كازينو الأثرياء والمجازفة</span>
+            </h3>
+            <p class="leading-relaxed text-slate-300">
+              ألعاب حظ راقية: <strong class="text-white">الروليت الملكي (أرباح تصل إلى 36 ضعفاً)</strong>، رمي العملة ثلاثي الأبعاد 3D، ماكينة السلوتس، والنرد. وبطاقة <strong class="text-yellow-400">VIP Casino Pass</strong> ترفع حظوظك وأرباحك بنسبة +15%.
+            </p>
+          </div>
+
+          <!-- Section 10: Leaderboard -->
+          <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+            <h3 class="text-sm font-black text-yellow-400 flex items-center gap-2">
+              <i class="fa-solid fa-trophy text-yellow-400"></i>
+              <span>10. عرش أثرياء رأس المال (قائمة الشرف)</span>
+            </h3>
+            <p class="leading-relaxed text-slate-300">
+              الترتيب الحي المباشر لكافة لاعبي السيرفر. أصحاب المراكز الثلاثة يتوجون على منصة المجد بالتاج الذهبي 👑 والدرع الفضي 🥈 والبرونزي 🥉 أمام كل زوار اللعبة!
+            </p>
+          </div>
+
+          <!-- 3 Golden Rules -->
+          <div class="p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/40">
+            <h3 class="text-xs font-black text-yellow-400 mb-2 flex items-center gap-2">
+              <i class="fa-solid fa-lightbulb"></i>
+              <span>الوصايا الذهبية لحيتان المال للمليار الأول:</span>
+            </h3>
+            <ul class="space-y-1.5 text-[11px] text-slate-300 list-disc list-inside">
+              <li><strong class="text-white">لا تدع الكاش راكداً</strong>: ضخ كل قرش في شراء الشركات وتوظيف العمال لضمان تدفق لحظي مستمر.</li>
+              <li><strong class="text-white">جدد رخصة الـ 12 ساعة دائماً</strong>: لجمع ملايين الأرباح وأنت نائم وخارج اللعبة.</li>
+              <li><strong class="text-white">اقتنص فرص البورصة مع الأخبار</strong>: اشترِ الأسهم في القاع عند صدور الأخبار وبعها عند القمم.</li>
+            </ul>
+          </div>
+
         </div>
 
-        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <h3 class="text-sm font-black text-emerald-400 mb-1 flex items-center gap-2">
-            <i class="fa-solid fa-building"></i>
-            <span>2. تأسيس وإدارة الشركات والأعمال</span>
-          </h3>
-          <p class="leading-relaxed text-slate-400">
-            شراء المشاريع (عربة قهوة، شركة برمجيات، مجمع لوجستي، مصنع طاقة شمسية) يمنحك تدفقاً نقدياً سلبياً مستمراً مع كل ثانية. يمكنك توظيف عمال إضافيين وتطوير خطوط الإنتاج لمضاعفة الإيرادات.
-          </p>
-        </div>
+        <!-- ================= MODE 2: COMPACT QUICK GUIDE ================= -->
+        <div id="guide-view-compact" class="hidden space-y-3">
+          
+          <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800">
+            <h3 class="text-xs font-black text-yellow-400 mb-1 flex items-center gap-2">
+              <i class="fa-solid fa-briefcase"></i>
+              <span>1. العمل والوظائف</span>
+            </h3>
+            <p class="text-[11px] leading-relaxed text-slate-400">
+              أدِّ نوبات العمل واكسب الكاش والخبرة (XP). ترقّ من عامل باليومية إلى إمبراطور المستثمرين لرفع راتبك لأعلى المستويات.
+            </p>
+          </div>
 
-        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <h3 class="text-sm font-black text-sky-400 mb-1 flex items-center gap-2">
-            <i class="fa-solid fa-chart-line"></i>
-            <span>3. بورصة الأسهم المصرية الحية</span>
-          </h3>
-          <p class="leading-relaxed text-slate-400">
-            تداول أسهم كبرى الشركات (CIB، فوري، المصرية للاتصالات). اشترِ الأسهم في فترات الهبوط وبعها عند القمم مع مراقبة الأخبار والأحداث الاقتصادية المباشرة لتحقيق أرباح رأسمالية خيالية.
-          </p>
-        </div>
+          <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800">
+            <h3 class="text-xs font-black text-emerald-400 mb-1 flex items-center gap-2">
+              <i class="fa-solid fa-building"></i>
+              <span>2. الشركات والتدفق النقدي</span>
+            </h3>
+            <p class="text-[11px] leading-relaxed text-slate-400">
+              اشترِ المشاريع (عربة قهوة، برمجيات، مصافي بترول، محطة فضاء)، وظف عمالاً، وطوّر الإنتاج لربح كاش دائم كل ثانية.
+            </p>
+          </div>
 
-        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <h3 class="text-sm font-black text-purple-400 mb-1 flex items-center gap-2">
-            <i class="fa-solid fa-building-columns"></i>
-            <span>4. البنك والفوائد والتحويلات</span>
-          </h3>
-          <p class="leading-relaxed text-slate-400">
-            احفظ أموالك في البنك لتحصل على فائدة مركبة دورية. كما يمكنك تحويل الأموال مباشرة لأي لاعب آخر في السيرفر عبر اسم المستخدم.
-          </p>
-        </div>
+          <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800">
+            <h3 class="text-xs font-black text-sky-400 mb-1 flex items-center gap-2">
+              <i class="fa-solid fa-chart-line"></i>
+              <span>3. البورصة والأصول المالية</span>
+            </h3>
+            <p class="text-[11px] leading-relaxed text-slate-400">
+              تداول 8 أسهم وأصول مالية (CIB، فوري، بيتكوين، ذهب). تابع شريط الأخبار واشترِ في القاع وبع عند القمم لتحقيق مكاسب رأسمالية.
+            </p>
+          </div>
 
-        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <h3 class="text-sm font-black text-rose-400 mb-1 flex items-center gap-2">
-            <i class="fa-solid fa-dice"></i>
-            <span>5. كازينو التسلية والسوق السوداء</span>
-          </h3>
-          <p class="leading-relaxed text-slate-400">
-            جرّب حظك في ألعاب الكازينو (روليت، لعبة الصعود والتفجير Crash، رمي العملة). وانتبه من صفقات السوق السوداء؛ أرباحها هائلة لكن خطر السجن والملاحقة القانونية يتربص بك دائماً!
-          </p>
+          <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800">
+            <h3 class="text-xs font-black text-purple-400 mb-1 flex items-center gap-2">
+              <i class="fa-solid fa-building-columns"></i>
+              <span>4. البنك والتحويلات والعقارات</span>
+            </h3>
+            <p class="text-[11px] leading-relaxed text-slate-400">
+              استفد من الفوائد المركبة بالبنك، واقتنِ العقارات الفاخرة لجني إيجارات لحظية، وحول الأموال لأي لاعب بالسيرفر فوراً.
+            </p>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800">
+            <h3 class="text-xs font-black text-rose-400 mb-1 flex items-center gap-2">
+              <i class="fa-solid fa-dice"></i>
+              <span>5. الكازينو والسوق السوداء</span>
+            </h3>
+            <p class="text-[11px] leading-relaxed text-slate-400">
+              جرّب حظك في الروليت والسلوتس، ونفّذ صفقات السوق السوداء السرية مع تبييض الأموال المشبوهة بحذر لتجنب السجن.
+            </p>
+          </div>
+
         </div>
 
       </div>
 
       <!-- Modal Footer -->
-      <div class="pt-4 border-t border-slate-800 mt-2 flex justify-end">
-        <button id="btn-guide-start-playing" class="px-5 py-2.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black transition">
-          فهمت القواعد! انطلق الآن 🚀
+      <div class="pt-3 border-t border-slate-800 mt-2 flex items-center justify-between">
+        <span class="text-[10px] text-slate-400 hidden sm:inline-block">💡 يمكنك الرجوع للدليل في أي وقت من القائمة أو شريط اللعبة</span>
+        <button id="btn-guide-start-playing" class="px-5 py-2.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black transition text-xs flex items-center gap-2 mr-auto sm:mr-0">
+          <span>فهمت القواعد! انطلق الآن</span>
+          <i class="fa-solid fa-rocket"></i>
         </button>
       </div>
+
     </div>
   </div>
 
@@ -685,6 +887,10 @@
             <div class="flex justify-between items-center mb-2">
               <span class="text-[10px] text-slate-400 block">المحفظة النشطة</span>
               <div class="flex items-center gap-1.5">
+                <button id="btn-ingame-guide" title="دليل الملياردير" class="text-[10px] text-sky-400 hover:text-sky-300 font-bold border border-sky-500/30 px-2 py-0.5 rounded bg-sky-500/10 hover:bg-sky-500/20 transition flex items-center gap-1">
+                  <i class="fa-solid fa-book-open text-[10px]"></i>
+                  الدليل
+                </button>
                 <!-- Return to Start Menu Button -->
                 <button id="btn-open-start-menu" title="الرجوع للقائمة الرئيسية" class="text-[10px] text-yellow-400 hover:text-yellow-300 font-bold border border-yellow-500/30 px-2 py-0.5 rounded bg-yellow-500/10 hover:bg-yellow-500/20 transition flex items-center gap-1">
                   <i class="fa-solid fa-house text-[10px]"></i>
@@ -809,7 +1015,11 @@
             </div>
           </div>
           <div class="flex items-center gap-1.5">
-            <button id="btn-open-start-menu-mobile" title="الرجوع للقائمة الرئيسية" class="px-2.5 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1">
+            <button id="btn-ingame-guide-mobile" title="دليل الملياردير" class="px-2 py-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1">
+              <i class="fa-solid fa-book-open text-[10px]"></i>
+              <span>الدليل</span>
+            </button>
+            <button id="btn-open-start-menu-mobile" title="الرجوع للقائمة الرئيسية" class="px-2 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1">
               <i class="fa-solid fa-house text-[10px]"></i>
               <span>القائمة</span>
             </button>
@@ -817,7 +1027,7 @@
               <i class="fa-solid fa-crown text-yellow-400 text-xs"></i>
               <span>الإدارة</span>
             </button>
-            <button id="btn-user-logout-mobile" title="تسجيل الخروج" class="text-[10px] text-rose-400 hover:text-rose-300 font-bold border border-rose-500/30 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition flex items-center gap-1">
+            <button id="btn-user-logout-mobile" title="تسجيل الخروج" class="text-[10px] text-rose-400 hover:text-rose-300 font-bold border border-rose-500/30 px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition flex items-center gap-1">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
               خروج
             </button>
@@ -2651,9 +2861,9 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=60"></script>
-  <script src="game.js?v=60"></script>
-  <script src="ui.js?v=60"></script>
+  <script src="db.js?v=65"></script>
+  <script src="game.js?v=65"></script>
+  <script src="ui.js?v=65"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
