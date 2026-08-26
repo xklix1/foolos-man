@@ -1,5 +1,5 @@
 /**
- * Foolos Man Tycoon (فلوس مان تايكون)
+ * Ras ALmal Tycoon (رأس المال)
  * Simulation Engine (game.js)
  * Manages game state, ticks, algorithms, and business logic
  */

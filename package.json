@@ -1,7 +1,7 @@
 {
-  "name": "foolos-man-tycoon",
-  "version": "1.0.0",
-  "description": "فلوس مان تايكون - محاكي الاستثمار والاقتصاد الرقمي",
+  "name": "ras-almal-tycoon",
+  "version": "2.5.0",
+  "description": "رأس المال (Ras ALmal) - محاكي الاستثمار والاقتصاد الرقمي وإمبراطورية الأعمال",
   "main": "index.html",
   "scripts": {
     "start": "node server.js",

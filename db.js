@@ -1,6 +1,6 @@
 /**
- * Foolos Man Tycoon (فلوس مان تايكون)
- * Database Adapter v10 (db.js)
+ * Ras ALmal Tycoon (رأس المال)
+ * Database Adapter v12 (db.js)
  *
  * Architecture: ONLINE-FIRST (Firebase-First)
  *  - ALL reads/writes go directly to Firestore — no localStorage fallback.

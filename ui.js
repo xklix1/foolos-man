@@ -1,5 +1,5 @@
 /**
- * Foolos Man Tycoon (فلوس مان تايكون)
+ * Ras ALmal Tycoon (رأس المال)
  * UI Controller (ui.js)
  * Manages rendering, tab views, SVG charts, and interactive casino controls
  */
