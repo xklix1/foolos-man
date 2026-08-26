@@ -1847,6 +1847,7 @@ const GameEngine = (() => {
 
     const payout = won ? Math.floor(betAmount * multiplier) : 0;
     state.cash += payout;
+    sanitizeGameState();
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
 
@@ -1860,7 +1861,21 @@ const GameEngine = (() => {
     };
   }
 
+  function sanitizeGameState() {
+    if (!state) return;
+    const numFields = ['cash', 'bank', 'dirtyCash', 'netWorth', 'xp'];
+    numFields.forEach(k => {
+      if (typeof state[k] !== 'number' || isNaN(state[k]) || !isFinite(state[k]) || state[k] < 0) {
+        state[k] = 0;
+      }
+      if (state[k] > 100000000000000) {
+        state[k] = 100000000000000;
+      }
+    });
+  }
+
   function forceSaveState() {
+    sanitizeGameState();
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
     AppDB.savePlayerState(activeUsername, state);

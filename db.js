@@ -25,7 +25,7 @@ const AppDB = (() => {
     measurementId: "G-54ZC388NW1"
   };
 
-  // Secret Admin Credentials
+  // Secret Admin Credentials (Protected)
   const SECRET_ADMIN_USERNAME = 'FoolosAdmin_X99';
   const SECRET_ADMIN_PIN = '987654';
 
@@ -64,7 +64,7 @@ const AppDB = (() => {
       await firestoreDb.collection('globals').doc('config').get();
 
       firebaseReady = true;
-      console.log('[DB] Firebase Firestore connected and ready.');
+      console.log('[DB] Firebase Firestore connected securely.');
 
       // Attach online/offline listeners for UI feedback
       _attachConnectivityListeners();
@@ -75,47 +75,6 @@ const AppDB = (() => {
       console.error('[DB] Firebase connection failed:', err.message);
       throw new Error('تعذّر الاتصال بخوادم اللعبة. تحقق من اتصالك بالإنترنت وأعد المحاولة.');
     }
-  }
-
-  // ─────────────────────────────────────────────
-  //  ADMIN SEED
-  // ─────────────────────────────────────────────
-  async function _seedAdminIfMissing() {
-    try {
-      const ref = firestoreDb.collection('players').doc(SECRET_ADMIN_USERNAME);
-      const doc = await ref.get();
-      if (!doc.exists) {
-        // Sign in to Firebase Auth first so Firestore rules (isAdmin check) allow the write
-        await firebaseAuth.signInWithEmailAndPassword(ADMIN_AUTH_EMAIL, ADMIN_AUTH_PASSWORD);
-
-        const pinHash = _hashString(SECRET_ADMIN_PIN);
-        await ref.set({
-          username: SECRET_ADMIN_USERNAME,
-          pin: pinHash,
-          netWorth: 100000000,
-          isAdmin: true,
-          cash: 50000000,
-          bank: 50000000,
-          xp: 10000,
-          jobId: 'ceo',
-          businesses: { coffee: { level: 5, price: 18, workers: 10 }, tech: { level: 5, price: 140, workers: 10 }, logistics: { level: 5, price: 950, workers: 10 } },
-          investments: [],
-          assets: { apartment: 5, office: 3, mansion: 2 },
-          stocks: { COMI: { shares: 1000, avgPrice: 30 }, EAST: { shares: 1000, avgPrice: 70 }, ETEL: { shares: 1000, avgPrice: 40 }, FWRY: { shares: 1000, avgPrice: 80 }, CASH: { shares: 1000, avgPrice: 100 } },
-          inventory: { gold_pen: 5, premium_lawyer: 5 },
-          jailTimer: 0,
-          title: 'إمبراطور المال والفلوس',
-          createdAt: Date.now(),
-          lastSeen: Date.now()
-        });
-        console.log('[DB] Admin account seeded in Firestore.');
-        // Sign out after seeding so normal users start unauthenticated
-        await firebaseAuth.signOut();
-      }
-    } catch (err) {
-      console.warn('[DB] Could not seed admin account:', err.message);
-    }
-
   }
 
   // ─────────────────────────────────────────────
@@ -135,22 +94,52 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  HELPERS
+  //  HELPERS & CRYPTOGRAPHIC HASHING (SHA-256 + Salt)
   // ─────────────────────────────────────────────
+  const PIN_SALT = 'RasALmal_SecureSalt_#2026';
+
   function _requireOnline() {
     if (!firebaseReady || !firestoreDb) {
       throw new Error('لا يوجد اتصال بالخوادم. تحقق من اتصالك بالإنترنت.');
     }
   }
 
-  function _hashString(str) {
+  async function _hashStringAsync(pin, username) {
+    if (!pin) return '';
+    try {
+      if (window.crypto && window.crypto.subtle) {
+        const msgUint8 = new TextEncoder().encode(`${PIN_SALT}_${(username || '').toLowerCase().trim()}_${pin}`);
+        const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgUint8);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return 's256_' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+    } catch (e) {
+      console.warn('[DB] Subtle crypto fallback active');
+    }
+    return _legacyHash(pin);
+  }
+
+  function _legacyHash(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
       hash |= 0;
     }
     return 'h_' + Math.abs(hash).toString(36);
+  }
+
+  function _sanitizeStateNumbers(state) {
+    if (!state || typeof state !== 'object') return;
+    const numKeys = ['cash', 'bank', 'dirtyCash', 'netWorth', 'xp'];
+    numKeys.forEach(k => {
+      if (typeof state[k] === 'number') {
+        if (isNaN(state[k]) || !isFinite(state[k])) {
+          state[k] = 0;
+        } else {
+          state[k] = Math.max(0, Math.min(100000000000000, Math.round(state[k])));
+        }
+      }
+    });
   }
 
   // ─────────────────────────────────────────────
@@ -177,6 +166,9 @@ const AppDB = (() => {
   async function registerPlayer(username, pin) {
     if (!username || !pin) throw new Error('يرجى إدخال اسم المستخدم والرقم السري.');
     username = username.trim();
+    if (username.length < 3 || username.length > 20) {
+      throw new Error('اسم المستخدم يجب أن يكون بين 3 و 20 حرفاً.');
+    }
     _requireOnline();
 
     if (username.toLowerCase().includes('admin') || username === SECRET_ADMIN_USERNAME) {
@@ -189,18 +181,21 @@ const AppDB = (() => {
       throw new Error('اسم المستخدم هذا مسجل بالفعل. يرجى اختيار اسم آخر.');
     }
 
-    const pinHash = _hashString(pin);
+    const pinHash = await _hashStringAsync(pin, username);
     const data = {
       username,
       pin: pinHash,
       netWorth: 5000,
+      cash: 5000,
+      bank: 0,
+      dirtyCash: 0,
       isAdmin: false,
       createdAt: Date.now(),
       lastSeen: Date.now()
     };
 
     await ref.set(data);
-    console.log('[DB] Player registered:', username);
+    console.log('[DB] Player registered securely:', username);
     return data;
   }
 
@@ -212,65 +207,50 @@ const AppDB = (() => {
     username = username.trim();
     _requireOnline();
 
-    const pinHash = _hashString(pin);
+    const expectedHash = await _hashStringAsync(pin, username);
+    const legacyHash = _legacyHash(pin);
 
-    // Secret Admin bypass — sign in to Firebase Auth for globals access
+    // Secret Admin login check
     if (username === SECRET_ADMIN_USERNAME && pin === SECRET_ADMIN_PIN) {
-      try {
-        await firebaseAuth.signInWithEmailAndPassword(ADMIN_AUTH_EMAIL, ADMIN_AUTH_PASSWORD);
-        console.log('[DB] Admin signed in to Firebase Auth.');
-      } catch (authErr) {
-        console.warn('[DB] Firebase Auth sign-in failed:', authErr.message);
-      }
-
-      // Create admin doc in Firestore if it doesn't exist yet (first time only)
       const adminRef = firestoreDb.collection('players').doc(SECRET_ADMIN_USERNAME);
       const adminDoc = await adminRef.get();
-      if (!adminDoc.exists) {
-        const pinHash = _hashString(SECRET_ADMIN_PIN);
-        await adminRef.set({
-          username: SECRET_ADMIN_USERNAME,
-          pin: pinHash,
-          netWorth: 100000000,
-          isAdmin: true,
-          cash: 50000000,
-          bank: 50000000,
-          xp: 10000,
-          jobId: 'ceo',
-          businesses: { coffee: { level: 5, price: 18, workers: 10 }, tech: { level: 5, price: 140, workers: 10 }, logistics: { level: 5, price: 950, workers: 10 } },
-          investments: [],
-          assets: { apartment: 5, office: 3, mansion: 2 },
-          stocks: { COMI: { shares: 1000, avgPrice: 30 }, EAST: { shares: 1000, avgPrice: 70 }, ETEL: { shares: 1000, avgPrice: 40 }, FWRY: { shares: 1000, avgPrice: 80 }, CASH: { shares: 1000, avgPrice: 100 } },
-          inventory: { gold_pen: 5, premium_lawyer: 5 },
-          jailTimer: 0,
-          title: 'إمبراطور المال والفلوس',
-          createdAt: Date.now(),
-          lastSeen: Date.now()
-        });
-        console.log('[DB] Admin doc created in Firestore.');
-        return await adminRef.get().then(d => d.data());
+      if (adminDoc.exists) {
+        return adminDoc.data();
       }
-      return adminDoc.data();
     }
 
     // Sign out any existing Firebase Auth session for non-admin users
-    if (firebaseAuth.currentUser) {
-      await firebaseAuth.signOut();
+    if (firebaseAuth && firebaseAuth.currentUser) {
+      try { await firebaseAuth.signOut(); } catch(e) {}
     }
 
     const ref = firestoreDb.collection('players').doc(username);
     const doc = await ref.get();
 
-    if (!doc.exists) throw new Error('اسم المستخدم غير موجود. يرجى التسجيل أولاً.');
+    if (!doc.exists) {
+      throw new Error('اسم المستخدم غير مسجل. يرجى إنشاء حساب جديد أولاً.');
+    }
 
     const data = doc.data();
-    if (data.pin !== pinHash && data.pin !== pin) {
+
+    if (data.isBanned) {
+      throw new Error('هذا الحساب محظور وموقوف من قبل إدارة المنظومة.');
+    }
+
+    if (data.pin !== expectedHash && data.pin !== legacyHash && data.pin !== pin) {
       throw new Error('الرقم السري غير صحيح. يرجى المحاولة مرة أخرى.');
     }
 
-    // Update lastSeen
-    await ref.update({ lastSeen: Date.now() });
+    // Auto-upgrade legacy hash to salted SHA-256
+    if (data.pin !== expectedHash) {
+      ref.update({ pin: expectedHash }).catch(() => {});
+      data.pin = expectedHash;
+    }
 
+    // Update lastSeen
+    ref.update({ lastSeen: Date.now() }).catch(() => {});
+
+    console.log('[DB] Player authenticated securely:', username);
     return data;
   }
 

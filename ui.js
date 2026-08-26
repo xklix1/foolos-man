@@ -3647,7 +3647,20 @@ const UIController = (() => {
 
     if (!modal) return;
 
-    const openModal = () => {
+    const openModal = async () => {
+      if (!AppDB.isAdminAuthenticated()) {
+        const adminEmail = prompt('🔐 توثيق صلاحيات الإدارة العليا (Firebase Admin Auth):\nأدخل البريد الإلكتروني للإدارة:', 'khalid.newstart@gmail.com');
+        if (!adminEmail) return;
+        const adminPass = prompt('أدخل كلمة المرور الخاصة بحساب Firebase Admin:');
+        if (!adminPass) return;
+        try {
+          await AppDB.loginAdminWithCredentials(adminEmail.trim(), adminPass.trim());
+          showToast('توثيق الإدارة', 'تم توثيق جلسة الإدارة العليا بنجاح وبأمان تام.', 'success');
+        } catch (e) {
+          showToast('فشل التوثيق', 'بيانات الدخول الإدارية غير صحيحة أو تعذر الاتصال.', 'error');
+          return;
+        }
+      }
       modal.classList.remove('hidden');
       switchAdminTab('stats');
     };

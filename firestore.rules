@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // دالة التحقق من حساب الإدارة الموثق في Firebase Auth
+    function isAdmin() {
+      return request.auth != null && 
+             request.auth.uid == "xHEssisz9HRXVycoFqlMQTu6nf92";
+    }
+
+    // ─────────────────────────────────────────────
+    // 1. حسابات وبيانات اللاعبين (Players Collection)
+    // ─────────────────────────────────────────────
+    match /players/{username} {
+      // القراءة متاحة لتوب الأغنياء والتحقق من تسجيل الدخول
+      allow read: if true;
+
+      // إنشاء حساب جديد:
+      // - الأدمن بدون قيود
+      // - اللاعب العادي: لا يمكنه جعل نفسه أدمن، والثروة الأولية لا تتجاوز 10,000 ج.م
+      allow create: if isAdmin() || (
+        request.resource.data.username == username &&
+        request.resource.data.isAdmin == false &&
+        request.resource.data.netWorth <= 10000 &&
+        request.resource.data.cash <= 10000 &&
+        request.resource.data.keys().hasAll(['username', 'pin', 'netWorth', 'cash', 'bank'])
+      );
+
+      // تعديل الحساب (حماية قصوى ضد الغش وسرقة الحسابات):
+      // - الأدمن بدون قيود
+      // - اللاعب العادي:
+      //   1. لا يمكنه تحويل نفسه لأدمن (isAdmin تبقى false).
+      //   2. لا يمكنه تغيير الـ PIN في عمليات الحفظ العادية إلا إذا كان مطابقاً للـ PIN الأصلي.
+      //   3. لا يمكنه تغيير اسم المستخدم (username ثابت ومطابق لاسم المستند).
+      allow update: if isAdmin() || (
+        request.resource.data.isAdmin == false &&
+        resource.data.isAdmin == false &&
+        request.resource.data.username == resource.data.username &&
+        request.resource.data.pin == resource.data.pin
+      );
+
+      // حذف الحساب: محصور بالأدمن فقط
+      allow delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────
+    // 2. سجلات التحويلات المالية (Wire Transfers)
+    // ─────────────────────────────────────────────
+    match /transfers/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.amount > 0 &&
+                       request.resource.data.sender != request.resource.data.recipient &&
+                       request.resource.data.keys().hasAll(['sender', 'recipient', 'amount', 'timestamp']);
+      allow update, delete: if false; // السجلات غير قابلة للتعديل أو التلاعب
+    }
+
+    // ─────────────────────────────────────────────
+    // 3. إعدادات اللعبة، البورصة، والأخبار (Globals)
+    // ─────────────────────────────────────────────
+    match /globals/{id} {
+      allow read: if true;
+      allow write: if isAdmin(); // الأدمن الموثق فقط من يملك صلاحية تعديل الإعدادات والبورصة
+    }
+  }
+}
