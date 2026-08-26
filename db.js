@@ -637,7 +637,7 @@ const AppDB = (() => {
       quantity,
       soldCount: 0,
       createdTimestamp: Date.now(),
-      createdBy: activeAdminUsername || 'FoolosAdmin_X99'
+      createdBy: SECRET_ADMIN_USERNAME || 'FoolosAdmin_X99'
     });
     return true;
   }
