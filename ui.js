@@ -30,9 +30,86 @@ const UIController = (() => {
       }
     }
     if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume();
+      audioCtx.resume().catch(() => {});
     }
     return audioCtx;
+  }
+
+  // Global user interaction audio unlocker
+  const _unlockAudio = () => {
+    getAudioCtx();
+    window.removeEventListener('pointerdown', _unlockAudio);
+    window.removeEventListener('keydown', _unlockAudio);
+  };
+  window.addEventListener('pointerdown', _unlockAudio, { once: true });
+  window.addEventListener('keydown', _unlockAudio, { once: true });
+
+  // ─────────────────────────────────────────────
+  //  TOP NOTIFICATIONS (TOAST ENGINE)
+  // ─────────────────────────────────────────────
+  function showToast(title, message, type = 'info', duration = 3800) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    // Trigger corresponding audio chime
+    if (sfxEnabled) {
+      if (type === 'success') playMenuSound('success');
+      else if (type === 'error') playMenuSound('error');
+      else if (type === 'warning') playMenuSound('back');
+      else playMenuSound('click');
+    }
+
+    const toast = document.createElement('div');
+    toast.className = 'pointer-events-auto w-full flex items-start gap-3 p-3.5 rounded-2xl border shadow-2xl backdrop-blur-xl transition-all duration-300 transform -translate-y-4 opacity-0 cursor-pointer select-none';
+
+    let borderColor = 'border-sky-500/40';
+    let bgColor = 'bg-slate-950/95';
+    let iconHtml = '<i class="fa-solid fa-circle-info text-sky-400 text-base"></i>';
+    let titleColor = 'text-sky-400';
+
+    if (type === 'success') {
+      borderColor = 'border-emerald-500/50 shadow-emerald-500/10';
+      iconHtml = '<i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>';
+      titleColor = 'text-emerald-400';
+    } else if (type === 'error') {
+      borderColor = 'border-rose-500/50 shadow-rose-500/10';
+      iconHtml = '<i class="fa-solid fa-circle-xmark text-rose-400 text-base"></i>';
+      titleColor = 'text-rose-400';
+    } else if (type === 'warning') {
+      borderColor = 'border-amber-500/50 shadow-amber-500/10';
+      iconHtml = '<i class="fa-solid fa-triangle-exclamation text-amber-400 text-base"></i>';
+      titleColor = 'text-amber-400';
+    }
+
+    toast.classList.add(...borderColor.split(' '), ...bgColor.split(' '));
+
+    toast.innerHTML = `
+      <div class="mt-0.5 shrink-0">${iconHtml}</div>
+      <div class="flex-1 min-w-0">
+        <h4 class="text-xs font-black ${titleColor} leading-tight mb-0.5">${title || 'إشعار المنظومة'}</h4>
+        <p class="text-[11px] text-slate-300 leading-snug break-words">${message || ''}</p>
+      </div>
+      <button class="text-slate-500 hover:text-white transition text-xs shrink-0 px-1">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    `;
+
+    const dismiss = () => {
+      toast.classList.add('-translate-y-4', 'opacity-0', 'scale-95');
+      setTimeout(() => {
+        if (toast.parentElement) toast.parentElement.removeChild(toast);
+      }, 250);
+    };
+
+    toast.addEventListener('click', dismiss);
+    setTimeout(dismiss, duration);
+
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => {
+      toast.classList.remove('-translate-y-4', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+    });
   }
 
   function playMenuSound(type) {
@@ -78,6 +155,34 @@ const UIController = (() => {
           gain.connect(ctx.destination);
           osc.start(ctx.currentTime + idx * 0.07);
           osc.stop(ctx.currentTime + idx * 0.07 + 0.28);
+        });
+      } else if (type === 'success') {
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.05);
+          gain.gain.setValueAtTime(0.14, ctx.currentTime + idx * 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.05 + 0.2);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + idx * 0.05);
+          osc.stop(ctx.currentTime + idx * 0.05 + 0.2);
+        });
+      } else if (type === 'error') {
+        const freqs = [320, 220];
+        freqs.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.08);
+          gain.gain.setValueAtTime(0.14, ctx.currentTime + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.08 + 0.16);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + idx * 0.08);
+          osc.stop(ctx.currentTime + idx * 0.08 + 0.16);
         });
       } else if (type === 'back') {
         const osc = ctx.createOscillator();
@@ -890,6 +995,9 @@ const UIController = (() => {
   }
 
   function switchTab(tabId) {
+    if (activeTab !== tabId) {
+      playMenuSound('click');
+    }
     activeTab = tabId;
     
     // Update active class styles in buttons
