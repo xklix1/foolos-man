@@ -715,10 +715,25 @@ const UIController = (() => {
 
   async function launchGameSession(username) {
     try {
+      // Check maintenance mode on session launch
+      const maintStatus = await AppDB.getMaintenanceStatus();
+      if (maintStatus && maintStatus.enabled) {
+        const isAdmin = Boolean(username === 'FoolosAdmin_X99');
+        if (!isAdmin) {
+          const checkUser = await AppDB.getPlayerState(username);
+          if (!checkUser || !checkUser.isAdmin) {
+            handleMaintenanceMode(maintStatus.message);
+            showToast('وضع الصيانة', 'الخادم تحت الصيانة الفنية حالياً. الدخول متاح فقط لحساب الإدارة.', 'warning');
+            return;
+          }
+        }
+      }
+
       const playerState = await GameEngine.loadUserSession(username);
       const mainLayout = document.getElementById('main-game-layout');
       document.getElementById('start-menu-screen').classList.add('hidden');
       document.getElementById('auth-screen').classList.add('hidden');
+      hideMaintenanceOverlay();
       if (mainLayout) {
         mainLayout.classList.remove('hidden');
         mainLayout.classList.add('flex');
@@ -915,6 +930,22 @@ const UIController = (() => {
 
         try {
           setAuthLoading(true);
+
+          // Enforce Maintenance Gatekeeper (Admin only)
+          const maintStatus = await AppDB.getMaintenanceStatus();
+          if (maintStatus && maintStatus.enabled) {
+            const isAdminUser = Boolean(usernameInput === 'FoolosAdmin_X99');
+            if (mode === 'register' && !isAdminUser) {
+              throw new Error("الخادم قيد الصيانة الفنية حالياً. تسجيل الحسابات الجديدة معطل حتى انتهاء الصيانة.");
+            }
+            if (mode === 'login' && !isAdminUser) {
+              const checkPlayer = await AppDB.getPlayerState(usernameInput);
+              if (!checkPlayer || !checkPlayer.isAdmin) {
+                throw new Error("الخادم تحت وضع الصيانة الفنية حالياً. تسجيل الدخول مقتصر على حسابات الإدارة فقط.");
+              }
+            }
+          }
+
           let playerState;
 
           if (mode === 'register') {
@@ -931,7 +962,8 @@ const UIController = (() => {
 
           playMenuSound('start');
 
-          // Hide auth screen & start menu, show game
+          // Hide auth screen, start menu & maintenance overlay, show game
+          hideMaintenanceOverlay();
           document.getElementById('auth-screen').classList.add('hidden');
           document.getElementById('start-menu-screen').classList.add('hidden');
           const mainLayout = document.getElementById('main-game-layout');
@@ -3650,6 +3682,22 @@ const UIController = (() => {
       }, (err) => console.error("Broadcast listen err: ", err));
     activeListeners.push(unsubBroadcast);
 
+    // Maintenance Screen Admin Login Button
+    const maintAdminLoginBtn = document.getElementById('btn-maintenance-admin-login');
+    if (maintAdminLoginBtn) {
+      maintAdminLoginBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        hideMaintenanceOverlay();
+        showAuthModal('login');
+        const uInput = document.getElementById('auth-username');
+        if (uInput) {
+          uInput.value = 'FoolosAdmin_X99';
+          const pInput = document.getElementById('auth-pin');
+          if (pInput) pInput.focus();
+        }
+      });
+    }
+
     // 2. Maintenance Listener
     const unsubMaintenance = db.collection('globals').doc('maintenance')
       .onSnapshot((doc) => {
@@ -3818,11 +3866,16 @@ const UIController = (() => {
       const status = await AppDB.getMaintenanceStatus();
       if (status && status.enabled) {
         const username = localStorage.getItem('foolos_active_session_user') || GameEngine.activeUsername;
-        const isAdmin = (username === 'FoolosAdmin_X99' || (GameEngine.state && GameEngine.state.isAdmin));
+        const isAdmin = Boolean(username === 'FoolosAdmin_X99' || (GameEngine.state && GameEngine.state.isAdmin));
         if (!isAdmin) {
           handleMaintenanceMode(status.message);
           return true;
+        } else {
+          hideMaintenanceOverlay();
+          return false;
         }
+      } else {
+        hideMaintenanceOverlay();
       }
     } catch (e) { console.warn('Maintenance check err:', e); }
     return false;
