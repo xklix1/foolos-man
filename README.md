@@ -1,5 +1,7 @@
 # رأس المال | Ras ALmal (Business Empire Tycoon)
 
+🌐 **رابط اللعبة المباشر (Live App):** [https://ras-almal.vercel.app](https://ras-almal.vercel.app)
+
 محاكي اقتصادي واستثماري متكامل باللغة العربية مع دعم كامل للاتجاه من اليمين لليسار (RTL) وتزامن حي مع قاعدة البيانات السحابية (Firebase Firestore) ولوحة تحكم وإدارة شاملة.
 
 ---
