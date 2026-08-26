@@ -8,12 +8,16 @@ const GameEngine = (() => {
   // --- Game Configurations & Data Tables ---
 
   const JOBS = {
-    worker:     { id: 'worker',     name: 'عامل باليومية',              salary: 12,   xpReward: 4,  xpNeeded: 0 },
-    cashier:    { id: 'cashier',    name: 'محاسب صندوق',                salary: 32,   xpReward: 7,  xpNeeded: 80 },
-    accountant: { id: 'accountant', name: 'محاسب مالي قانوني',          salary: 85,   xpReward: 12, xpNeeded: 280 },
-    manager:    { id: 'manager',    name: 'مدير فرع',                   salary: 210,  xpReward: 18, xpNeeded: 850 },
-    director:   { id: 'director',  name: 'مدير تنفيذي للمجموعة',       salary: 540,  xpReward: 26, xpNeeded: 2400 },
-    ceo:        { id: 'ceo',       name: 'رئيس مجلس الإدارة',           salary: 1400, xpReward: 40, xpNeeded: 6500 }
+    worker:        { id: 'worker',        name: 'عامل باليومية',              salary: 12,    xpReward: 4,   xpNeeded: 0 },
+    cashier:       { id: 'cashier',       name: 'محاسب صندوق',                salary: 32,    xpReward: 7,   xpNeeded: 80 },
+    accountant:    { id: 'accountant',    name: 'محاسب مالي قانوني',          salary: 85,    xpReward: 12,  xpNeeded: 280 },
+    manager:       { id: 'manager',       name: 'مدير فرع',                   salary: 210,   xpReward: 18,  xpNeeded: 850 },
+    director:      { id: 'director',      name: 'مدير تنفيذي للمجموعة',       salary: 540,   xpReward: 26,  xpNeeded: 2400 },
+    ceo:           { id: 'ceo',           name: 'رئيس مجلس الإدارة',           salary: 1400,  xpReward: 40,  xpNeeded: 6500 },
+    consultant:    { id: 'consultant',    name: 'مستشار اقتصادي ووزير سابق',  salary: 3800,  xpReward: 65,  xpNeeded: 16000 },
+    bank_governor: { id: 'bank_governor', name: 'محافظ البنك المركزي',        salary: 9500,  xpReward: 100, xpNeeded: 40000 },
+    sovereign_head:{ id: 'sovereign_head',name: 'رئيس صندوق الاستثمار السيادي',salary: 24000, xpReward: 160, xpNeeded: 95000 },
+    oligarch:      { id: 'oligarch',      name: 'إمبراطور كبار المستثمرين',  salary: 65000, xpReward: 280, xpNeeded: 220000 }
   };
 
   const BUSINESSES = {
@@ -82,21 +86,73 @@ const GameEngine = (() => {
       upgradeMultiplier: 1.80,
       workerMultiplier: 1.35,
       workerWage: 2800
+    },
+    media_studio: {
+      id: 'media_studio',
+      name: 'مؤسسة إنتاج إعلامي وسينمائي',
+      cost: 85000000,
+      baseDemand: 5,
+      optimumPrice: 28000,
+      costOfGoods: 8500,
+      upgradeMultiplier: 1.82,
+      workerMultiplier: 1.38,
+      workerWage: 6500
+    },
+    private_bank: {
+      id: 'private_bank',
+      name: 'بنك استثماري وشركة وساطة مالية',
+      cost: 250000000,
+      baseDemand: 3,
+      optimumPrice: 95000,
+      costOfGoods: 26000,
+      upgradeMultiplier: 1.85,
+      workerMultiplier: 1.40,
+      workerWage: 18000
+    },
+    oil_refinery: {
+      id: 'oil_refinery',
+      name: 'مجمع مصافي البترول والطاقة',
+      cost: 750000000,
+      baseDemand: 4,
+      optimumPrice: 310000,
+      costOfGoods: 80000,
+      upgradeMultiplier: 1.88,
+      workerMultiplier: 1.45,
+      workerWage: 52000
+    },
+    space_tech: {
+      id: 'space_tech',
+      name: 'مؤسسة استكشاف الفضاء والأقمار الصناعية',
+      cost: 2500000000,
+      baseDemand: 2,
+      optimumPrice: 1250000,
+      costOfGoods: 320000,
+      upgradeMultiplier: 1.92,
+      workerMultiplier: 1.50,
+      workerWage: 180000
     }
   };
 
   const ASSETS = {
     apartment: { id: 'apartment', name: 'شقة سكنية مؤجرة', cost: 180000, rent: 140, appreciation: 0.0008 },
     office: { id: 'office', name: 'مبنى مكاتب تجارية', cost: 1200000, rent: 1100, appreciation: 0.0012 },
-    mansion: { id: 'mansion', name: 'قصر ريفي فاخر', cost: 5500000, rent: 5800, appreciation: 0.0015 }
+    mansion: { id: 'mansion', name: 'قصر ريفي فاخر', cost: 5500000, rent: 5800, appreciation: 0.0015 },
+    skyline_tower: { id: 'skyline_tower', name: 'برج ناطحة سحاب تجاري', cost: 25000000, rent: 28000, appreciation: 0.0018 },
+    luxury_resort: { id: 'luxury_resort', name: 'منتجع وفندق سياحي 5 نجوم', cost: 120000000, rent: 145000, appreciation: 0.0020 },
+    mega_yacht: { id: 'mega_yacht', name: 'يخت ملكي فاخر خاص', cost: 450000000, rent: 560000, appreciation: 0.0022 },
+    private_island: { id: 'private_island', name: 'جزيرة استوائية خاصة', cost: 1800000000, rent: 2400000, appreciation: 0.0025 },
+    orbital_station: { id: 'orbital_station', name: 'محطة مدارية فضائية خاصة', cost: 8000000000, rent: 12000000, appreciation: 0.0030 }
   };
 
   const STOCKS = {
-    COMI: { name: 'البنك التجاري الدولي', symbol: 'COMI', basePrice: 32, volatility: 0.03, reversion: 0.01, floor: 15 },
-    EAST: { name: 'الشرقية للدخان', symbol: 'EAST', basePrice: 78, volatility: 0.05, reversion: 0.015, floor: 30 },
-    ETEL: { name: 'المصرية للاتصالات', symbol: 'ETEL', basePrice: 42, volatility: 0.04, reversion: 0.012, floor: 20 },
-    FWRY: { name: 'فوري للمدفوعات الإلكترونية', symbol: 'FWRY', basePrice: 85, volatility: 0.06, reversion: 0.02, floor: 40 },
-    CASH: { name: 'صندوق الاستثمار التقني البديل', symbol: 'CASH', basePrice: 110, volatility: 0.08, reversion: 0.025, floor: 25 }
+    COMI: { name: 'البنك التجاري الدولي', symbol: 'COMI', basePrice: 32, volatility: 0.03, reversion: 0.01, floor: 15, dividend: 0.0001 },
+    EAST: { name: 'الشرقية للدخان', symbol: 'EAST', basePrice: 78, volatility: 0.05, reversion: 0.015, floor: 30, dividend: 0.0002 },
+    ETEL: { name: 'المصرية للاتصالات', symbol: 'ETEL', basePrice: 42, volatility: 0.04, reversion: 0.012, floor: 20, dividend: 0.00015 },
+    FWRY: { name: 'فوري للمدفوعات الإلكترونية', symbol: 'FWRY', basePrice: 85, volatility: 0.06, reversion: 0.02, floor: 40, dividend: 0.0001 },
+    CASH: { name: 'صندوق الاستثمار التقني البديل', symbol: 'CASH', basePrice: 110, volatility: 0.08, reversion: 0.025, floor: 25, dividend: 0.0003 },
+    BITC: { name: 'مؤشر البيتكوين والأصول الرقمية', symbol: 'BITC', basePrice: 280, volatility: 0.12, reversion: 0.03, floor: 50, dividend: 0 },
+    GOLD: { name: 'صندوق سبائك الذهب الخالص', symbol: 'GOLD', basePrice: 190, volatility: 0.025, reversion: 0.008, floor: 90, dividend: 0.00025 },
+    AIX:  { name: 'صندوق الذكاء الاصطناعي العالمي', symbol: 'AIX', basePrice: 340, volatility: 0.09, reversion: 0.022, floor: 80, dividend: 0.0002 }
   };
 
   const STORE_ITEMS = {
@@ -153,13 +209,33 @@ const GameEngine = (() => {
       effect: 'casino_luck_boost', 
       value: 0.15,
       durationTicks: 100 // 100 ticks = 300 seconds (5 minutes)
+    },
+    quantum_cpu: {
+      id: 'quantum_cpu',
+      name: 'معالج الحوسبة الكمومية (Quantum Core)',
+      cost: 650000,
+      desc: 'يضاعف أرباح وتدفقات كافة مشاريعك وشركاتك بنسبة +50% لمدة 6 دقائق.',
+      effect: 'biz_multiplier',
+      value: 1.5,
+      durationTicks: 120
+    },
+    diamond_card: {
+      id: 'diamond_card',
+      name: 'عضوية النادي الماسي للبنوك الدولية',
+      cost: 2000000,
+      desc: 'ترفع فوائد الودائع البنكية وتخفض ضرائب الثروة بنسبة 50% لمدة 10 دقائق.',
+      effect: 'bank_perk',
+      value: 0.5,
+      durationTicks: 200
     }
   };
 
   const INVESTMENTS = {
     short: { id: 'short', name: 'وديعة بنكية ربع سنوية', durationTicks: 20, rate: 0.06, minAmount: 10000, desc: 'تجميد السيولة لتوفير التمويل المصرفي مقابل عائد أرباح إضافي (+6%).' },
     medium: { id: 'medium', name: 'صندوق استثمار عقاري وسندات', durationTicks: 45, rate: 0.20, minAmount: 50000, desc: 'استثمار مضمون في أصول إنشائية وتجارية مدرة للدخل (+20%).' },
-    long: { id: 'long', name: 'صندوق أسهم وتحوط دولي خاص', durationTicks: 90, rate: 0.55, minAmount: 200000, desc: 'محفظة استثمارية مغلقة في أسواق المال العالمية بعوائد استثنائية (+55%).' }
+    long: { id: 'long', name: 'صندوق أسهم وتحوط دولي خاص', durationTicks: 90, rate: 0.55, minAmount: 200000, desc: 'محفظة استثمارية مغلقة في أسواق المال العالمية بعوائد استثنائية (+55%).' },
+    venture: { id: 'venture', name: 'صندوق الاكتتابات والشركات المليارية', durationTicks: 200, rate: 1.40, minAmount: 1000000, desc: 'استثمار استراتيجي مغلق في شركات التكنولوجيا الصاعدة بعوائد فائقة (+140%).' },
+    imperial: { id: 'imperial', name: 'صندوق الثروة الإمبراطوري الماسي', durationTicks: 400, rate: 3.00, minAmount: 10000000, desc: 'خزينة مقفلة لكبار أثرياء العالم تمنح عائداً أسطورياً ثلاثي الأضعاف (+300%).' }
   };
 
   const BLACK_MARKET = {
@@ -234,6 +310,42 @@ const GameEngine = (() => {
       repGain: 800,
       icon: 'fa-shield-halved',
       tier: 'أسطوري'
+    },
+    defense_tech: {
+      id: 'defense_tech',
+      name: 'صفقة تكنولوجيا دفاعية وشفرات رادار مسربة',
+      desc: 'بيع شفرات منظومات دفاع جوي فائقة التطور لجهات أجنبية خاصة.',
+      cost: 15000000,
+      payout: 75000000,
+      successChance: 0.20,
+      jailDuration: 240,
+      repGain: 1500,
+      icon: 'fa-jet-fighter',
+      tier: 'أسطوري'
+    },
+    satellite_hack: {
+      id: 'satellite_hack',
+      name: 'السيطرة على شبكة أقمار صناعية وتشفيرها',
+      desc: 'اختراق منظومة البث الفضائي العالمية وطلب فدية بمليارات الدولارات.',
+      cost: 60000000,
+      payout: 320000000,
+      successChance: 0.16,
+      jailDuration: 300,
+      repGain: 3500,
+      icon: 'fa-satellite',
+      tier: 'خطر مطلق'
+    },
+    godfather: {
+      id: 'godfather',
+      name: 'عملية العراب: السيطرة على كارتيل التجارة العالمي',
+      desc: 'الانقلاب الشامل والسيطرة على مقاليد إمبراطورية السوق السوداء العالمية.',
+      cost: 250000000,
+      payout: 1500000000,
+      successChance: 0.12,
+      jailDuration: 400,
+      repGain: 10000,
+      icon: 'fa-crown',
+      tier: 'سيد الظلال'
     }
   };
 
@@ -261,6 +373,22 @@ const GameEngine = (() => {
       cost: 150000,
       icon: 'fa-shield-virus',
       durationTicks: 120
+    },
+    diplomatic_bag: {
+      id: 'diplomatic_bag',
+      name: 'حقيبة التشفير الدبلوماسية المصفحة',
+      desc: 'تحمي 50% من الأموال المشبوهة من المصادرة التامة حتى في حال فشل الصفقة والقبض عليك.',
+      cost: 500000,
+      icon: 'fa-briefcase',
+      durationTicks: 200
+    },
+    commissioner_wire: {
+      id: 'commissioner_wire',
+      name: 'شريحة اتصال كبار المسؤولين (VIP Wire)',
+      desc: 'تخفض تكلفة الرشوة وإسقاط الملاحقات الأمنية بنسبة 50%.',
+      cost: 1200000,
+      icon: 'fa-mobile-retro',
+      durationTicks: 250
     }
   };
 
@@ -279,20 +407,33 @@ const GameEngine = (() => {
       logistics: { level: 0, price: 1100, workers: 0 },
       supermarket: { level: 0, price: 450, workers: 0 },
       solar_factory: { level: 0, price: 3200, workers: 0 },
-      private_hospital: { level: 0, price: 11500, workers: 0 }
+      private_hospital: { level: 0, price: 11500, workers: 0 },
+      media_studio: { level: 0, price: 28000, workers: 0 },
+      private_bank: { level: 0, price: 95000, workers: 0 },
+      oil_refinery: { level: 0, price: 310000, workers: 0 },
+      space_tech: { level: 0, price: 1250000, workers: 0 }
     },
     investments: [], // Array of { id, investedAmount, ticksRemaining, rate, name }
+    activeLoan: null, // Stores { amount, totalDue, ticksRemaining }
     assets: {
       apartment: 0,
       office: 0,
-      mansion: 0
+      mansion: 0,
+      skyline_tower: 0,
+      luxury_resort: 0,
+      mega_yacht: 0,
+      private_island: 0,
+      orbital_station: 0
     },
     stocks: {
       COMI: { shares: 0, avgPrice: 0 },
       EAST: { shares: 0, avgPrice: 0 },
       ETEL: { shares: 0, avgPrice: 0 },
       FWRY: { shares: 0, avgPrice: 0 },
-      CASH: { shares: 0, avgPrice: 0 }
+      CASH: { shares: 0, avgPrice: 0 },
+      BITC: { shares: 0, avgPrice: 0 },
+      GOLD: { shares: 0, avgPrice: 0 },
+      AIX:  { shares: 0, avgPrice: 0 }
     },
     inventory: {
       gold_pen: 0,
@@ -303,7 +444,11 @@ const GameEngine = (() => {
       vip_casino_pass: 0,
       radar_jammer: 0,
       fake_passport: 0,
-      crypto_cleaner: 0
+      crypto_cleaner: 0,
+      diplomatic_bag: 0,
+      commissioner_wire: 0,
+      quantum_cpu: 0,
+      diamond_card: 0
     },
     itemDurations: {}, // Stores { itemId: ticksRemaining } for self-destruction timer
     jailTimer: 0,
@@ -1572,6 +1717,149 @@ const GameEngine = (() => {
     };
   }
 
+  // Perform Overtime Double Shift
+  function performOvertimeShift() {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك العمل.");
+    const job = JOBS[state.jobId] || JOBS.worker;
+    const isEnergyBoosted = (state.inventory && state.inventory.energy_drink > 0);
+    const xpBonus = (state.inventory && state.inventory.gold_pen > 0) ? (1 + STORE_ITEMS.gold_pen.value) : 1.0;
+    
+    // Overtime gives 2.5x base salary and 3x XP
+    const salaryMultiplier = (isEnergyBoosted ? STORE_ITEMS.energy_drink.value : 1.0) * 2.5;
+    const earnedSalary = Math.floor(job.salary * salaryMultiplier);
+    const earnedXp = Math.ceil(job.xpReward * 3 * xpBonus);
+
+    state.cash += earnedSalary;
+    state.xp += earnedXp;
+    state.netWorth = calculateNetWorth();
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
+    AppDB.savePlayerState(activeUsername, state);
+
+    return {
+      earnedSalary,
+      earnedXp,
+      jobTitle: job.name,
+      newTitle: state.title
+    };
+  }
+
+  // Bank Loan: Take instant liquidity loan (up to 35% of Net Worth)
+  function takeBankLoan(amount) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك طلب قروض بنكية.");
+    if (state.activeLoan && state.activeLoan.amount > 0) {
+      throw new Error(`لديك قرض قائم بالفعل بقيمة ${state.activeLoan.totalDue.toLocaleString()} EGP يجب سداده أولاً!`);
+    }
+    const maxLoan = Math.max(50000, Math.floor(state.netWorth * 0.35));
+    if (amount <= 0 || amount > maxLoan) {
+      throw new Error(`الحد الأقصى للقرض المسموح لك هو ${maxLoan.toLocaleString()} جنيه.`);
+    }
+    const totalDue = Math.floor(amount * 1.15); // 15% interest fee
+    state.activeLoan = {
+      amount,
+      totalDue,
+      ticksRemaining: 150 // 450 seconds (7.5 minutes) to repay
+    };
+    state.cash += amount;
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+    return { amount, totalDue, ticksRemaining: 150 };
+  }
+
+  // Bank Loan: Repay
+  function repayBankLoan() {
+    if (!state.activeLoan || state.activeLoan.totalDue <= 0) {
+      throw new Error("لا توجد قروض مستحقة السداد عليك حالياً!");
+    }
+    const due = state.activeLoan.totalDue;
+    const totalFunds = (state.cash || 0) + (state.bank || 0);
+    if (totalFunds < due) {
+      throw new Error(`إجمالي رصيدك بالكاش والبنك (${totalFunds.toLocaleString()} EGP) لا يكفي لسداد القرض (${due.toLocaleString()} EGP).`);
+    }
+    if (state.cash >= due) {
+      state.cash -= due;
+    } else {
+      const rem = due - state.cash;
+      state.cash = 0;
+      state.bank -= rem;
+    }
+    state.activeLoan = null;
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+    return { repaid: due };
+  }
+
+  // European Roulette Wheel Game
+  function playRoulette(betAmount, betType, betValue) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يسمح لك بالدخول للكازينو.");
+    if (betAmount <= 0) throw new Error("مبلغ الرهان يجب أن يكون أكبر من صفر.");
+    if (state.cash < betAmount) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
+
+    state.cash -= betAmount;
+
+    // Roulette wheel number: 0 to 36
+    const rolledNumber = Math.floor(Math.random() * 37);
+    const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+    const isRed = redNumbers.includes(rolledNumber);
+    const isBlack = rolledNumber > 0 && !isRed;
+    const isGreen = (rolledNumber === 0);
+
+    let won = false;
+    let multiplier = 0;
+
+    if (betType === 'number') {
+      if (Number(betValue) === rolledNumber) {
+        won = true;
+        multiplier = 36; // Straight up 36x
+      }
+    } else if (betType === 'color') {
+      if (betValue === 'red' && isRed) {
+        won = true;
+        multiplier = 2.0;
+      } else if (betValue === 'black' && isBlack) {
+        won = true;
+        multiplier = 2.0;
+      }
+    } else if (betType === 'parity') {
+      if (betValue === 'even' && rolledNumber > 0 && rolledNumber % 2 === 0) {
+        won = true;
+        multiplier = 2.0;
+      } else if (betValue === 'odd' && rolledNumber % 2 !== 0) {
+        won = true;
+        multiplier = 2.0;
+      }
+    } else if (betType === 'dozen') {
+      if (betValue === '1' && rolledNumber >= 1 && rolledNumber <= 12) {
+        won = true;
+        multiplier = 3.0;
+      } else if (betValue === '2' && rolledNumber >= 13 && rolledNumber <= 24) {
+        won = true;
+        multiplier = 3.0;
+      } else if (betValue === '3' && rolledNumber >= 25 && rolledNumber <= 36) {
+        won = true;
+        multiplier = 3.0;
+      }
+    }
+
+    // VIP casino pass perk (+15% payout boost if won)
+    if (won && state.inventory && state.inventory.vip_casino_pass > 0) {
+      multiplier *= 1.15;
+    }
+
+    const payout = won ? Math.floor(betAmount * multiplier) : 0;
+    state.cash += payout;
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+
+    return {
+      rolledNumber,
+      color: isGreen ? 'green' : (isRed ? 'red' : 'black'),
+      won,
+      multiplier,
+      payout,
+      profit: payout - betAmount
+    };
+  }
+
   function forceSaveState() {
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
@@ -1596,6 +1884,7 @@ const GameEngine = (() => {
     logoutUser,
     processTick,
     performJobShift,
+    performOvertimeShift,
     promoteJob,
     purchaseBusiness,
     upgradeBusiness,
@@ -1605,6 +1894,8 @@ const GameEngine = (() => {
     launchMarketingCampaign,
     depositToBank,
     withdrawFromBank,
+    takeBankLoan,
+    repayBankLoan,
     buyAsset,
     sellAsset,
     buyStock,
@@ -1619,6 +1910,7 @@ const GameEngine = (() => {
     playCoinFlip,
     playSlots,
     playDice,
+    playRoulette,
     calculatePassiveIncomePerTick,
     calculatePassiveIncomePerSecond,
     calculateNetWorth,

@@ -1472,6 +1472,34 @@ const UIController = (() => {
     const balEl = document.getElementById('bank-balance');
     if (balEl) balEl.textContent = s.bank.toLocaleString() + ' EGP';
 
+    // Update Loan Info
+    const maxLoan = Math.max(50000, Math.floor(s.netWorth * 0.35));
+    const maxLoanEl = document.getElementById('loan-max-limit');
+    if (maxLoanEl) maxLoanEl.textContent = `${maxLoan.toLocaleString()} EGP`;
+
+    const activeLoanEl = document.getElementById('loan-active-amount');
+    const dueLoanEl = document.getElementById('loan-due-amount');
+    const loanTimeEl = document.getElementById('loan-time-left');
+    const loanBadgeEl = document.getElementById('loan-status-badge');
+
+    if (s.activeLoan && s.activeLoan.amount > 0) {
+      if (activeLoanEl) activeLoanEl.textContent = `${s.activeLoan.amount.toLocaleString()} EGP`;
+      if (dueLoanEl) dueLoanEl.textContent = `${s.activeLoan.totalDue.toLocaleString()} EGP`;
+      if (loanTimeEl) loanTimeEl.textContent = `${s.activeLoan.ticksRemaining * 3} ثانية`;
+      if (loanBadgeEl) {
+        loanBadgeEl.textContent = 'قرض نشط (يلزم السداد)';
+        loanBadgeEl.className = 'text-[10px] px-2.5 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-full font-bold';
+      }
+    } else {
+      if (activeLoanEl) activeLoanEl.textContent = 'لا يوجد قرض';
+      if (dueLoanEl) dueLoanEl.textContent = '0 EGP';
+      if (loanTimeEl) loanTimeEl.textContent = '--';
+      if (loanBadgeEl) {
+        loanBadgeEl.textContent = 'مؤهل للاقتراض';
+        loanBadgeEl.className = 'text-[10px] px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full font-bold';
+      }
+    }
+
     if (s.investments && s.investments.length > 0) {
       s.investments.forEach((inv, idx) => {
         const secEl = document.getElementById(`inv-sec-${idx}`);
@@ -1614,6 +1642,23 @@ const UIController = (() => {
       });
     }
 
+    // Overtime Double Shift Button
+    const overtimeWorkBtn = document.getElementById('btn-perform-overtime-shift');
+    if (overtimeWorkBtn) {
+      overtimeWorkBtn.addEventListener('click', () => {
+        if (workCooldownActive) return;
+        try {
+          const res = GameEngine.performOvertimeShift();
+          showPassiveGainFloat(`+${res.earnedSalary.toLocaleString()} EGP 🔥`);
+          showToast('نوبة عمل إضافية مضاعفة', `كسبت +${res.earnedSalary.toLocaleString()} EGP و +${res.earnedXp} خبرة مضاعفة!`, 'success');
+          renderAll();
+          startWorkCooldown(overtimeWorkBtn);
+        } catch (err) {
+          showToast('خطأ العمل الإضافي', err.message, 'error');
+        }
+      });
+    }
+
     // 12-Hour AFK Auto-Manager Renewal Button
     const renewAfkBtn = document.getElementById('btn-renew-afk-manager');
     if (renewAfkBtn) {
@@ -1630,33 +1675,71 @@ const UIController = (() => {
     }
 
     // Bank Actions (Depositing)
-    document.getElementById('btn-bank-deposit').addEventListener('click', () => {
-      const input = document.getElementById('bank-amount-input');
-      const val = parseInt(input.value);
-      try {
-        if (!val || val <= 0) throw new Error("يرجى إدخال مبلغ صحيح للإيداع.");
-        GameEngine.depositToBank(val);
-        input.value = '';
-        showToast('إيداع بنكي', `تم إيداع ${val.toLocaleString()} EGP بنجاح في حسابك البنكي.`, 'success');
-        renderAll();
-      } catch (err) {
-        showToast('فشل الإيداع', err.message, 'error');
-      }
-    });
+    const depositBtn = document.getElementById('btn-bank-deposit');
+    if (depositBtn) {
+      depositBtn.addEventListener('click', () => {
+        const input = document.getElementById('bank-amount-input');
+        const val = parseInt(input.value);
+        try {
+          if (!val || val <= 0) throw new Error("يرجى إدخال مبلغ صحيح للإيداع.");
+          GameEngine.depositToBank(val);
+          input.value = '';
+          showToast('إيداع بنكي', `تم إيداع ${val.toLocaleString()} EGP بنجاح في حسابك البنكي.`, 'success');
+          renderAll();
+        } catch (err) {
+          showToast('فشل الإيداع', err.message, 'error');
+        }
+      });
+    }
 
-    document.getElementById('btn-bank-withdraw').addEventListener('click', () => {
-      const input = document.getElementById('bank-amount-input');
-      const val = parseInt(input.value);
-      try {
-        if (!val || val <= 0) throw new Error("يرجى إدخال مبلغ صحيح للسحب.");
-        GameEngine.withdrawFromBank(val);
-        input.value = '';
-        showToast('سحب بنكي', `تم سحب ${val.toLocaleString()} EGP نقدية بنجاح.`, 'success');
-        renderAll();
-      } catch (err) {
-        showToast('فشل السحب', err.message, 'error');
-      }
-    });
+    const withdrawBtn = document.getElementById('btn-bank-withdraw');
+    if (withdrawBtn) {
+      withdrawBtn.addEventListener('click', () => {
+        const input = document.getElementById('bank-amount-input');
+        const val = parseInt(input.value);
+        try {
+          if (!val || val <= 0) throw new Error("يرجى إدخال مبلغ صحيح للسحب.");
+          GameEngine.withdrawFromBank(val);
+          input.value = '';
+          showToast('سحب بنكي', `تم سحب ${val.toLocaleString()} EGP نقدية بنجاح.`, 'success');
+          renderAll();
+        } catch (err) {
+          showToast('فشل السحب', err.message, 'error');
+        }
+      });
+    }
+
+    // Bank Loan Request Action
+    const takeLoanBtn = document.getElementById('btn-take-loan');
+    if (takeLoanBtn) {
+      takeLoanBtn.addEventListener('click', () => {
+        const input = document.getElementById('bank-loan-input');
+        const val = parseInt(input.value);
+        try {
+          if (!val || val <= 0) throw new Error("يرجى إدخال مبلغ صحيح للاقتراض.");
+          const res = GameEngine.takeBankLoan(val);
+          input.value = '';
+          showToast('تمويل مصرفي', `تم صرف قرض فوري بقيمة ${res.amount.toLocaleString()} EGP وإيداعه في الكاش!`, 'success');
+          renderAll();
+        } catch (err) {
+          showToast('رفض القرض', err.message, 'error');
+        }
+      });
+    }
+
+    // Bank Loan Repayment Action
+    const repayLoanBtn = document.getElementById('btn-repay-loan');
+    if (repayLoanBtn) {
+      repayLoanBtn.addEventListener('click', () => {
+        try {
+          const res = GameEngine.repayBankLoan();
+          showToast('سداد القرض', `تم سداد القرض بالكامل بقيمة ${res.repaid.toLocaleString()} EGP بنجاح وتصفية المستحقات!`, 'success');
+          renderAll();
+        } catch (err) {
+          showToast('فشل السداد', err.message, 'error');
+        }
+      });
+    }
 
     // Preset Percentage shortcuts
     const bankPresets = document.querySelectorAll('.bank-preset');
