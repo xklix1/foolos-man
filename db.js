@@ -219,6 +219,15 @@ const AppDB = (() => {
 
     // Secret Admin login check
     if (username === SECRET_ADMIN_USERNAME && pin === SECRET_ADMIN_PIN) {
+      if (firebaseAuth) {
+        try {
+          await firebaseAuth.signInWithEmailAndPassword(ADMIN_AUTH_EMAIL, ADMIN_AUTH_PASSWORD);
+          console.log('[DB] Admin authenticated via Firebase Auth successfully.');
+        } catch (e) {
+          console.error('[DB] Firebase Auth Admin sign-in failed:', e.message);
+          throw new Error('فشل التحقق الإداري في الخوادم: ' + e.message);
+        }
+      }
       const adminRef = firestoreDb.collection('players').doc(SECRET_ADMIN_USERNAME);
       const adminDoc = await adminRef.get();
       if (adminDoc.exists) {
