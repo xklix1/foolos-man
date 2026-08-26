@@ -93,12 +93,6 @@ const GameEngine = (() => {
     CASH: { name: 'صندوق الاستثمار التقني البديل', symbol: 'CASH', basePrice: 110, volatility: 0.08, reversion: 0.025, floor: 25 }
   };
 
-  const INVESTMENTS = {
-    short: { id: 'short', name: 'وديعة بنكية ربع سنوية', durationTicks: 20, rate: 0.05, minCost: 10000 },
-    realestate: { id: 'realestate', name: 'صندوق استثمار عقاري مغلق', durationTicks: 80, rate: 0.22, minCost: 50000 },
-    venture: { id: 'venture', name: 'رأس مال جريء في شركات ناشئة', durationTicks: 240, rate: 0.85, minCost: 200000 }
-  };
-
   const STORE_ITEMS = {
     gold_pen: { 
       id: 'gold_pen', 
