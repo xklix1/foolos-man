@@ -843,12 +843,14 @@ const GameEngine = (() => {
       }
     }
 
-    // Progressive Wealth Tax on Ultra-High Net Worth
+    // Progressive Wealth Tax on Ultra-High Net Worth (With a safety buffer to prevent draining all liquid cash)
     if (state.netWorth > 3000000) {
       const taxReport = calculateTaxReport();
       const tax = taxReport.taxPerSecond;
-      if (tax > 0 && (state.cash || 0) > 0) {
-        const actualDeducted = Math.min(state.cash || 0, tax);
+      const safetyBuffer = 50000; // Keep at least 50,000 EGP cash for gameplay usability
+      const taxableCash = Math.max(0, (state.cash || 0) - safetyBuffer);
+      if (tax > 0 && taxableCash > 0) {
+        const actualDeducted = Math.min(taxableCash, tax);
         state.cash -= actualDeducted;
         state.totalTaxesPaid = (state.totalTaxesPaid || 0) + actualDeducted;
       }
