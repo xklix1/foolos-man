@@ -104,6 +104,14 @@ const AppDB = (() => {
     }
   }
 
+  async function _ensureAdminAuth() {
+    _requireOnline();
+    if (firebaseAuth && (!firebaseAuth.currentUser || firebaseAuth.currentUser.email !== ADMIN_AUTH_EMAIL)) {
+      console.log('[DB] Authenticating admin credentials on-demand...');
+      await firebaseAuth.signInWithEmailAndPassword(ADMIN_AUTH_EMAIL, ADMIN_AUTH_PASSWORD);
+    }
+  }
+
   async function _hashStringAsync(pin, username) {
     if (!pin) return '';
     try {
@@ -275,6 +283,14 @@ const AppDB = (() => {
   // ─────────────────────────────────────────────
   async function getPlayerState(username) {
     _requireOnline();
+    if (username === SECRET_ADMIN_USERNAME) {
+      try {
+        await _ensureAdminAuth();
+        console.log('[DB] Admin auto-authenticated via getPlayerState.');
+      } catch (e) {
+        console.error('[DB] Admin auto-auth failed:', e.message);
+      }
+    }
     const ref = firestoreDb.collection('players').doc(username);
     const doc = await ref.get();
     if (!doc.exists) return null;
@@ -475,6 +491,7 @@ const AppDB = (() => {
 
   async function adminSavePlayer(username, playerState) {
     _requireOnline();
+    await _ensureAdminAuth();
     username = username.trim();
     playerState.adminModifiedTimestamp = Date.now();
     await firestoreDb.collection('players').doc(username).set(playerState, { merge: true });
@@ -482,6 +499,7 @@ const AppDB = (() => {
 
   async function adminResetPlayer(username) {
     _requireOnline();
+    await _ensureAdminAuth();
     username = username.trim();
     
     // Fetch existing player doc to preserve the user's PIN and admin flag
@@ -570,6 +588,7 @@ const AppDB = (() => {
 
   async function adminDeletePlayer(username) {
     _requireOnline();
+    await _ensureAdminAuth();
     username = username.trim();
     if (username === SECRET_ADMIN_USERNAME) {
       throw new Error('لا يمكن حذف حساب الإدارة الرئيسي.');
@@ -579,6 +598,7 @@ const AppDB = (() => {
 
   async function adminChangePlayerPin(username, newPin) {
     _requireOnline();
+    await _ensureAdminAuth();
     username = username.trim();
     if (!newPin || String(newPin).trim().length < 3) {
       throw new Error('يجب أن يتكون الرقم السري من 3 خانات على الأقل.');
@@ -588,22 +608,30 @@ const AppDB = (() => {
   }
 
   async function adminReleaseJail(username) {
+    _requireOnline();
+    await _ensureAdminAuth();
     username = username.trim();
     await firestoreDb.collection('players').doc(username).set({ jailTimer: 0 }, { merge: true });
   }
 
   async function adminSetPlayerJail(username, jailSeconds = 300) {
+    _requireOnline();
+    await _ensureAdminAuth();
     username = username.trim();
     await firestoreDb.collection('players').doc(username).set({ jailTimer: Number(jailSeconds) }, { merge: true });
   }
 
   async function adminBanPlayer(username) {
+    _requireOnline();
+    await _ensureAdminAuth();
     username = username.trim();
     if (username === SECRET_ADMIN_USERNAME) throw new Error('لا يمكن حظر حساب الإدارة الرئيسي.');
     await firestoreDb.collection('players').doc(username).set({ isBanned: true }, { merge: true });
   }
 
   async function adminUnbanPlayer(username) {
+    _requireOnline();
+    await _ensureAdminAuth();
     username = username.trim();
     await firestoreDb.collection('players').doc(username).set({ isBanned: false }, { merge: true });
   }
@@ -613,6 +641,7 @@ const AppDB = (() => {
   // ─────────────────────────────────────────────
   async function sendBroadcast(message, title = '📢 إعلان إداري عاجل') {
     _requireOnline();
+    await _ensureAdminAuth();
     if (!message || !message.trim()) throw new Error('يرجى كتابة نص الرسالة أولاً.');
     const data = {
       id: Date.now(),
@@ -627,6 +656,7 @@ const AppDB = (() => {
 
   async function sendAirdrop(amount, target = 'ALL') {
     _requireOnline();
+    await _ensureAdminAuth();
     amount = Number(amount);
     if (!amount || amount <= 0) throw new Error('مبلغ المكافأة يجب أن يكون رقماً موجباً أكبر من صفر.');
     target = (target || 'ALL').trim();
@@ -674,6 +704,7 @@ const AppDB = (() => {
 
   async function adminResetAllPlayers() {
     _requireOnline();
+    await _ensureAdminAuth();
     const snapshot = await firestoreDb.collection('players').get();
     let count = 0;
     
@@ -775,6 +806,7 @@ const AppDB = (() => {
 
   async function adminWipeLeaderboard() {
     _requireOnline();
+    await _ensureAdminAuth();
     const snapshot = await firestoreDb.collection('players').get();
     let count = 0;
     let batch = firestoreDb.batch();
@@ -800,6 +832,7 @@ const AppDB = (() => {
 
   async function adminClearTransfers() {
     _requireOnline();
+    await _ensureAdminAuth();
     const snapshot = await firestoreDb.collection('transfers').limit(100).get();
     const batch = firestoreDb.batch();
     let count = 0;
@@ -857,6 +890,7 @@ const AppDB = (() => {
 
   async function setMaintenanceMode(enabled, msg = '') {
     _requireOnline();
+    await _ensureAdminAuth();
     const data = {
       enabled: Boolean(enabled),
       message: msg || 'تخضع اللعبة حالياً لأعمال تحديث وصيانة طارئة من قبل الإدارة لتحسين الأداء وتأمين الحسابات.',
