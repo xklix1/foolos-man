@@ -1807,60 +1807,51 @@
           </div>
         </div>
 
-        <!-- TOP 3 PODIUM DISPLAY -->
-        <div id="leaderboard-podium" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end pt-6">
+        <!-- COMPACT TOP 3 HERO BAR -->
+        <div id="leaderboard-podium" class="grid grid-cols-3 gap-2 sm:gap-3">
           
           <!-- PODIUM 2: Silver (Rank 2) -->
-          <div id="podium-card-2" class="glass-panel p-5 rounded-2xl border border-slate-400/40 bg-gradient-to-b from-slate-800/40 via-slate-900/60 to-slate-950/80 flex flex-col items-center text-center relative shadow-lg order-2 md:order-1 hover:border-slate-300 transition duration-300">
-            <div class="w-10 h-10 -mt-9 mb-2 rounded-full bg-slate-700 border-2 border-slate-300 flex items-center justify-center text-slate-200 shadow-md">
-              <i class="fa-solid fa-medal text-lg text-slate-200"></i>
+          <div id="podium-card-2" class="glass-panel p-2.5 sm:p-3 rounded-xl border border-slate-700/60 bg-slate-900/70 flex items-center gap-2 sm:gap-3 shadow-md order-2 sm:order-1 min-w-0">
+            <div class="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-slate-800 border border-slate-500 text-slate-200 font-black text-xs flex items-center justify-center flex-shrink-0 shadow">
+              <span id="podium-avatar-2">2</span>
             </div>
-            <span class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-slate-400/20 text-slate-200 border border-slate-400/30 mb-2">المركز الثاني #2</span>
-            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-slate-700 to-slate-500 flex items-center justify-center text-white text-xl font-black mb-2 shadow-inner border border-slate-400/40 numbers-font" id="podium-avatar-2">
-              --
-            </div>
-            <h4 id="podium-name-2" class="text-sm font-black text-white mb-0.5 truncate max-w-full">جاري التحميل...</h4>
-            <span id="podium-title-2" class="text-[10px] text-slate-400 mb-3 truncate max-w-full">--</span>
-            <div class="w-full pt-2.5 border-t border-slate-800/80 flex flex-col">
-              <span class="text-[9px] text-slate-500 font-bold">صافي الثروة</span>
-              <span id="podium-worth-2" class="numbers-font text-sm font-black text-slate-200">-- EGP</span>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1">
+                <span class="text-[9px] px-1 rounded bg-slate-700 text-slate-300 font-bold">#2</span>
+                <span id="podium-name-2" class="text-xs font-bold text-white truncate block">تحميل...</span>
+              </div>
+              <span id="podium-worth-2" class="numbers-font text-[10px] sm:text-xs font-black text-slate-300 block truncate">-- EGP</span>
+              <span id="podium-title-2" class="hidden">--</span>
             </div>
           </div>
 
           <!-- PODIUM 1: Gold (Rank 1 - Champion) -->
-          <div id="podium-card-1" class="glass-panel p-6 rounded-2xl border-2 border-yellow-400/80 bg-gradient-to-b from-yellow-500/15 via-amber-950/40 to-slate-950/90 flex flex-col items-center text-center relative shadow-2xl order-1 md:order-2 glow-gold hover:border-yellow-300 transition duration-300 -translate-y-2">
-            <div class="absolute -top-6 text-yellow-400 text-3xl filter drop-shadow animate-bounce">
-              <i class="fa-solid fa-crown"></i>
+          <div id="podium-card-1" class="glass-panel p-2.5 sm:p-3 rounded-xl border border-yellow-500/60 bg-gradient-to-r from-yellow-500/15 via-amber-950/40 to-yellow-500/15 flex items-center gap-2 sm:gap-3 shadow-lg glow-gold order-1 sm:order-2 min-w-0">
+            <div class="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-tr from-yellow-500 to-amber-500 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center flex-shrink-0 shadow-md">
+              <span id="podium-avatar-1">👑</span>
             </div>
-            <div class="w-12 h-12 -mt-7 mb-2 rounded-full bg-gradient-to-r from-yellow-500 to-amber-500 border-2 border-yellow-300 flex items-center justify-center text-slate-950 shadow-lg glow-gold">
-              <i class="fa-solid fa-trophy text-xl text-slate-950"></i>
-            </div>
-            <span class="text-xs font-black px-3 py-0.5 rounded-full bg-yellow-500/30 text-yellow-300 border border-yellow-500/50 mb-2 glow-gold">إمبراطور اللعبة #1</span>
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-yellow-500 via-amber-400 to-yellow-200 flex items-center justify-center text-slate-950 text-2xl font-black mb-2 shadow-xl border-2 border-yellow-300 numbers-font glow-gold" id="podium-avatar-1">
-              --
-            </div>
-            <h4 id="podium-name-1" class="text-base font-black text-yellow-300 mb-0.5 truncate max-w-full glow-gold">جاري التحميل...</h4>
-            <span id="podium-title-1" class="text-xs text-yellow-400/80 font-bold mb-3 truncate max-w-full">--</span>
-            <div class="w-full pt-3 border-t border-yellow-500/30 flex flex-col">
-              <span class="text-[10px] text-yellow-500/70 font-bold">الثروة الإجمالية الصافية</span>
-              <span id="podium-worth-1" class="numbers-font text-lg font-black text-yellow-400 glow-gold">-- EGP</span>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1">
+                <span class="text-[9px] px-1 rounded bg-yellow-500/30 text-yellow-300 font-black glow-gold">#1</span>
+                <span id="podium-name-1" class="text-xs font-black text-yellow-300 truncate block">تحميل...</span>
+              </div>
+              <span id="podium-worth-1" class="numbers-font text-xs sm:text-sm font-black text-yellow-400 glow-gold block truncate">-- EGP</span>
+              <span id="podium-title-1" class="hidden">--</span>
             </div>
           </div>
 
           <!-- PODIUM 3: Bronze (Rank 3) -->
-          <div id="podium-card-3" class="glass-panel p-5 rounded-2xl border border-amber-700/50 bg-gradient-to-b from-amber-950/30 via-slate-900/60 to-slate-950/80 flex flex-col items-center text-center relative shadow-lg order-3 md:order-3 hover:border-amber-600 transition duration-300">
-            <div class="w-10 h-10 -mt-9 mb-2 rounded-full bg-amber-900 border-2 border-amber-600 flex items-center justify-center text-amber-300 shadow-md">
-              <i class="fa-solid fa-award text-lg text-amber-300"></i>
+          <div id="podium-card-3" class="glass-panel p-2.5 sm:p-3 rounded-xl border border-amber-800/60 bg-slate-900/70 flex items-center gap-2 sm:gap-3 shadow-md order-3 sm:order-3 min-w-0">
+            <div class="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-amber-950 border border-amber-700 text-amber-300 font-black text-xs flex items-center justify-center flex-shrink-0 shadow">
+              <span id="podium-avatar-3">3</span>
             </div>
-            <span class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-700/20 text-amber-400 border border-amber-700/40 mb-2">المركز الثالث #3</span>
-            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-800 to-amber-600 flex items-center justify-center text-white text-xl font-black mb-2 shadow-inner border border-amber-600/40 numbers-font" id="podium-avatar-3">
-              --
-            </div>
-            <h4 id="podium-name-3" class="text-sm font-black text-white mb-0.5 truncate max-w-full">جاري التحميل...</h4>
-            <span id="podium-title-3" class="text-[10px] text-slate-400 mb-3 truncate max-w-full">--</span>
-            <div class="w-full pt-2.5 border-t border-slate-800/80 flex flex-col">
-              <span class="text-[9px] text-slate-500 font-bold">صافي الثروة</span>
-              <span id="podium-worth-3" class="numbers-font text-sm font-black text-amber-400">-- EGP</span>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1">
+                <span class="text-[9px] px-1 rounded bg-amber-800/40 text-amber-400 font-bold">#3</span>
+                <span id="podium-name-3" class="text-xs font-bold text-amber-200 truncate block">تحميل...</span>
+              </div>
+              <span id="podium-worth-3" class="numbers-font text-[10px] sm:text-xs font-black text-amber-400 block truncate">-- EGP</span>
+              <span id="podium-title-3" class="hidden">--</span>
             </div>
           </div>
 
