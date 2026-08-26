@@ -227,6 +227,15 @@ const GameEngine = (() => {
       effect: 'bank_perk',
       value: 0.5,
       durationTicks: 200
+    },
+    cronos_gear: {
+      id: 'cronos_gear',
+      name: 'ساعة الكرونوس لتسريع العمليات',
+      cost: 400000,
+      desc: 'تقلل وقت التبريد (Cooldown) للعمليات المشبوهة وفترات نوبات العمل بنسبة 50% لمدة 5 دقائق.',
+      effect: 'cooldown_reduction',
+      value: 0.50,
+      durationTicks: 300
     }
   };
 
@@ -497,7 +506,8 @@ const GameEngine = (() => {
       diplomatic_bag: 0,
       commissioner_wire: 0,
       quantum_cpu: 0,
-      diamond_card: 0
+      diamond_card: 0,
+      cronos_gear: 0
     },
     itemDurations: {}, // Stores { itemId: ticksRemaining } for self-destruction timer
     blackMarketCooldowns: {}, // Stores { dealId: expiresAtTimestamp } for operation cooldowns
@@ -1597,8 +1607,10 @@ const GameEngine = (() => {
     const finalSuccessChance = Math.min(0.92, deal.successChance + successBonus);
 
     // Prepare Cooldown Timers (Full cooldown for success, Half cooldown for failure)
-    const fullCdMs = (deal.cooldownSec || 120) * 1000;
-    const halfCdMs = Math.floor(((deal.cooldownSec || 120) / 2) * 1000);
+    const hasCronos = Boolean(state.inventory && state.inventory.cronos_gear > 0);
+    const cdMultiplier = hasCronos ? 0.5 : 1.0;
+    const fullCdMs = Math.floor((deal.cooldownSec || 120) * cdMultiplier * 1000);
+    const halfCdMs = Math.floor(((deal.cooldownSec || 120) / 2) * cdMultiplier * 1000);
     if (!state.blackMarketCooldowns) state.blackMarketCooldowns = {};
 
     const roll = Math.random();
@@ -1616,7 +1628,7 @@ const GameEngine = (() => {
         profit: deal.payout - deal.cost,
         repGain: deal.repGain || 20,
         lawyerAssisted: hasLawyer,
-        cooldownSec: deal.cooldownSec || 120,
+        cooldownSec: Math.floor((deal.cooldownSec || 120) * cdMultiplier),
         finalChancePct: Math.round(finalSuccessChance * 100)
       };
     } else {
@@ -1634,7 +1646,7 @@ const GameEngine = (() => {
           acquittedByLawyer: true,
           confiscation: 0,
           jailDuration: 0,
-          cooldownSec: Math.floor((deal.cooldownSec || 120) / 2),
+          cooldownSec: Math.floor((deal.cooldownSec || 120) / 2 * cdMultiplier),
           message: 'تدخل المحامي الدولي وأسقط القضية وأثبت براءتك دون سجن أو غرامات! (فترة تهدئة مخفضة للنصف)'
         };
       }
@@ -1651,7 +1663,7 @@ const GameEngine = (() => {
           escaped: true,
           confiscation: 0,
           jailDuration: 0,
-          cooldownSec: Math.floor((deal.cooldownSec || 120) / 2),
+          cooldownSec: Math.floor((deal.cooldownSec || 120) / 2 * cdMultiplier),
           message: 'تمكنت من الهروب الفوري باستخدام جواز السفر الدبلوماسي المزور! (فترة تهدئة مخفضة للنصف)'
         };
       }
@@ -1677,7 +1689,7 @@ const GameEngine = (() => {
         confiscatedDirty,
         confiscatedClean,
         jailDuration: deal.jailDuration,
-        cooldownSec: Math.floor((deal.cooldownSec || 120) / 2)
+        cooldownSec: Math.floor((deal.cooldownSec || 120) / 2 * cdMultiplier)
       };
     }
   }

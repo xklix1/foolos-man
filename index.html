@@ -1319,7 +1319,65 @@
           </div>
         </div>
 
-        <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+        <!-- Transfer Requests (New Feature) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <!-- Create Transfer Request -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col justify-between">
+            <div>
+              <h3 class="text-lg font-bold text-white mb-2">طلب تحويل أموال</h3>
+              <p class="text-xs text-slate-400 mb-6">أرسل طلب تحويل للاعب آخر ليقوم بتحويل مبلغ محدد إليك. الطلب يتطلب موافقته ويصلح لمدة 24 ساعة.</p>
+              
+              <div class="space-y-4 text-right mb-6">
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">اسم مستخدم الطرف الثاني (المطلوب التحويل منه)</label>
+                  <input type="text" id="request-recipient-input" class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold" placeholder="مثال: COMI_CEO">
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">المبلغ المطلوب تحويله كاش</label>
+                  <input type="number" id="request-amount-input" class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold" placeholder="أدخل مبلغ الطلب">
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <button id="btn-request-submit" class="w-full py-3.5 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-bold rounded-lg transition duration-300 flex items-center justify-center gap-2">
+                <span>إرسال طلب التحويل</span>
+                <svg id="request-btn-spinner" class="hidden animate-spin h-5 w-5 text-slate-950" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Pending Requests Lists (Incoming / Sent) -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-bell text-yellow-400"></i>
+                <span>صندوق طلبات التحويل المعلقة</span>
+              </h3>
+              <!-- Tabs for Incoming / Sent inside requests box -->
+              <div class="flex gap-1 bg-slate-950/80 p-0.5 rounded-lg border border-slate-800">
+                <button id="btn-req-tab-incoming" class="px-3 py-1 text-[11px] font-bold rounded bg-yellow-500 text-slate-950 transition">الواردة (<span id="count-incoming-reqs">0</span>)</button>
+                <button id="btn-req-tab-sent" class="px-3 py-1 text-[11px] font-bold rounded text-slate-400 hover:text-white transition">المرسلة (<span id="count-sent-reqs">0</span>)</button>
+              </div>
+            </div>
+
+            <!-- List content -->
+            <div id="incoming-requests-list" class="space-y-3 flex-1 overflow-y-auto max-h-56 pr-1">
+              <!-- Dynamically rendered incoming requests -->
+              <div class="text-center text-slate-500 text-xs py-8">لا يوجد طلبات واردة حالياً.</div>
+            </div>
+
+            <div id="sent-requests-list" class="hidden space-y-3 flex-1 overflow-y-auto max-h-56 pr-1">
+              <!-- Dynamically rendered sent requests -->
+              <div class="text-center text-slate-500 text-xs py-8">لا يوجد طلبات مرسلة حالياً.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800 mt-6">
           <h3 class="text-sm font-bold text-white mb-4">سجل العمليات والتحويلات الأخيرة</h3>
           <div id="wire-history-list" class="space-y-2 h-36 overflow-y-auto pr-1">
             <div class="empty-wire-msg text-center text-slate-500 text-xs py-10">
@@ -2722,6 +2780,46 @@
                   </button>
                 </div>
               </div>
+            </div>
+
+            <!-- Give Businesses & Properties (New Feature) -->
+            <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-2.5 mt-4">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-building text-yellow-400"></i>
+                  <span>منح وتعديل أملاك اللاعب (الشركات والمشاريع)</span>
+                </span>
+                <span class="text-[10px] text-slate-400">تحديد مستوى المشروع وعدد الموظفين</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div>
+                  <label class="block text-[10px] text-slate-400 mb-1">نوع المشروع</label>
+                  <select id="admin-input-biz-type" class="glass-input w-full p-2 text-xs text-right bg-slate-900 border border-slate-800 text-white rounded-lg">
+                    <option value="coffee">عربة قهوة مختصة</option>
+                    <option value="tech">شركة برمجيات وتطبيقات</option>
+                    <option value="logistics">مجمع خدمات لوجستية وشحن</option>
+                    <option value="supermarket">سلسلة سوبرماركت وتجزئة</option>
+                    <option value="solar_factory">مصنع ألواح الطاقة الشمسية</option>
+                    <option value="private_hospital">مستشفى ومجمع طبي تخصصي</option>
+                    <option value="media_studio">مؤسسة إنتاج إعلامي وسينمائي</option>
+                    <option value="private_bank">بنك استثماري ووساطة مالية</option>
+                    <option value="oil_refinery">مجمع مصافي البترول والطاقة</option>
+                    <option value="space_tech">مؤسسة استكشاف الفضاء</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 mb-1">مستوى المشروع (Level)</label>
+                  <input type="number" id="admin-input-biz-level" min="0" max="100" class="glass-input w-full p-2 text-xs text-center font-bold font-mono" value="1">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 mb-1">عدد الموظفين (Workers)</label>
+                  <input type="number" id="admin-input-biz-workers" min="0" max="1000" class="glass-input w-full p-2 text-xs text-center font-bold font-mono" value="0">
+                </div>
+              </div>
+              <button id="btn-admin-update-biz" class="w-full py-2.5 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-lg text-xs font-bold transition shadow-lg flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-building-circle-check"></i>
+                <span>حفظ وتطبيق الأملاك فوراً</span>
+              </button>
             </div>
 
           </div>

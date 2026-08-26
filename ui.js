@@ -1031,6 +1031,9 @@ const UIController = (() => {
       playMenuSound('click');
     }
     activeTab = tabId;
+    if (tabId === 'bank') {
+      fetchAndRenderTransferRequests(true);
+    }
     
     // Update active class styles in buttons
     const navButtons = document.querySelectorAll('.nav-tab-btn');
@@ -1681,6 +1684,8 @@ const UIController = (() => {
         invContainer.appendChild(row);
       });
     }
+    // Fetch and render transfer requests
+    fetchAndRenderTransferRequests();
   }
 
   function updateBankInDOM() {
@@ -1745,7 +1750,8 @@ const UIController = (() => {
     btn.style.opacity = '0.65';
     btn.style.cursor = 'not-allowed';
 
-    const totalMs = WORK_COOLDOWN_MS;
+    const hasCronos = GameEngine.state && GameEngine.state.inventory && GameEngine.state.inventory.cronos_gear > 0;
+    const totalMs = hasCronos ? Math.floor(WORK_COOLDOWN_MS * 0.5) : WORK_COOLDOWN_MS;
     const tickMs = 50;
     let elapsed = 0;
 
@@ -2052,6 +2058,68 @@ const UIController = (() => {
         btnSpinner.classList.add('hidden');
       }
     });
+
+    // Transfer Request Submission
+    const btnRequestSubmit = document.getElementById('btn-request-submit');
+    if (btnRequestSubmit) {
+      btnRequestSubmit.addEventListener('click', async () => {
+        const recipient = document.getElementById('request-recipient-input').value.trim();
+        const amount = parseInt(document.getElementById('request-amount-input').value);
+        const spinner = document.getElementById('request-btn-spinner');
+
+        try {
+          if (!recipient || isNaN(amount) || amount <= 0) {
+            throw new Error("يرجى تعبئة حقل المستلم ومبلغ الطلب بشكل صحيح.");
+          }
+
+          btnRequestSubmit.disabled = true;
+          if (spinner) spinner.classList.remove('hidden');
+
+          await AppDB.createTransferRequest(GameEngine.activeUsername, recipient, amount);
+
+          // Reset fields
+          document.getElementById('request-recipient-input').value = '';
+          document.getElementById('request-amount-input').value = '';
+
+          showToast('طلب تحويل', `تم إرسال طلب التحويل بمبلغ ${amount.toLocaleString()} EGP إلى "${recipient}" بنجاح.`, 'success');
+          
+          await fetchAndRenderTransferRequests(true);
+        } catch (err) {
+          showToast('فشل طلب التحويل', err.message, 'error');
+        } finally {
+          btnRequestSubmit.disabled = false;
+          if (spinner) spinner.classList.add('hidden');
+        }
+      });
+    }
+
+    // Toggle Transfer Requests Tabs
+    const tabIncomingBtn = document.getElementById('btn-req-tab-incoming');
+    const tabSentBtn = document.getElementById('btn-req-tab-sent');
+    const incomingList = document.getElementById('incoming-requests-list');
+    const sentList = document.getElementById('sent-requests-list');
+
+    if (tabIncomingBtn && tabSentBtn) {
+      tabIncomingBtn.addEventListener('click', () => {
+        requestsTabActive = 'incoming';
+        tabIncomingBtn.classList.add('bg-yellow-500', 'text-slate-950');
+        tabIncomingBtn.classList.remove('text-slate-400');
+        tabSentBtn.classList.remove('bg-yellow-500', 'text-slate-950');
+        tabSentBtn.classList.add('text-slate-400');
+        if (incomingList) incomingList.classList.remove('hidden');
+        if (sentList) sentList.classList.add('hidden');
+      });
+
+      tabSentBtn.addEventListener('click', () => {
+        requestsTabActive = 'sent';
+        tabSentBtn.classList.add('bg-yellow-500', 'text-slate-950');
+        tabSentBtn.classList.remove('text-slate-400');
+        tabIncomingBtn.classList.remove('bg-yellow-500', 'text-slate-950');
+        tabIncomingBtn.classList.add('text-slate-400');
+        if (sentList) sentList.classList.remove('hidden');
+        if (incomingList) incomingList.classList.add('hidden');
+      });
+    }
 
     // Investment purchase
     const invButtons = document.querySelectorAll('.btn-invest-start');
@@ -4206,6 +4274,14 @@ const UIController = (() => {
         document.getElementById('admin-input-cash').value = state.cash || 0;
         document.getElementById('admin-input-bank').value = state.bank || 0;
 
+        const bizSelect = document.getElementById('admin-input-biz-type');
+        if (bizSelect) {
+          const selectedBiz = bizSelect.value;
+          const bizData = (state.businesses && state.businesses[selectedBiz]) || { level: 0, workers: 0 };
+          document.getElementById('admin-input-biz-level').value = bizData.level || 0;
+          document.getElementById('admin-input-biz-workers').value = bizData.workers || 0;
+        }
+
         if (resultCard) {
           resultCard.classList.remove('hidden');
           resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -4352,6 +4428,95 @@ const UIController = (() => {
           loadAdminPlayersDirectory(false);
         } catch (err) {
           showToast('فشل تعديل الرصيد', err.message, 'error');
+        }
+      });
+    }
+
+    // Business Moderation Event Listeners
+    const bizSelect = document.getElementById('admin-input-biz-type');
+    if (bizSelect) {
+      bizSelect.addEventListener('change', () => {
+        if (selectedPlayerState && selectedPlayerState.businesses) {
+          const bizKey = bizSelect.value;
+          const bizData = selectedPlayerState.businesses[bizKey] || { level: 0, workers: 0 };
+          document.getElementById('admin-input-biz-level').value = bizData.level || 0;
+          document.getElementById('admin-input-biz-workers').value = bizData.workers || 0;
+        }
+      });
+    }
+
+    const updateBizBtn = document.getElementById('btn-admin-update-biz');
+    if (updateBizBtn) {
+      updateBizBtn.addEventListener('click', async () => {
+        if (!selectedPlayer || !selectedPlayerState) {
+          showToast('تعديل الأملاك', 'يرجى اختيار لاعب أولاً من القائمة.', 'error');
+          return;
+        }
+        const bizKey = document.getElementById('admin-input-biz-type').value;
+        const level = parseInt(document.getElementById('admin-input-biz-level').value) || 0;
+        const workers = parseInt(document.getElementById('admin-input-biz-workers').value) || 0;
+
+        if (isNaN(level) || level < 0 || isNaN(workers) || workers < 0) {
+          showToast('خطأ مدخلات', 'يرجى إدخال قيم صحيحة للمستوى والموظفين.', 'error');
+          return;
+        }
+
+        if (!selectedPlayerState.businesses) selectedPlayerState.businesses = {};
+        
+        const bizConfig = GameEngine.BUSINESSES[bizKey];
+        const price = (selectedPlayerState.businesses[bizKey] && selectedPlayerState.businesses[bizKey].price) || (bizConfig ? bizConfig.optimumPrice : 10);
+        
+        selectedPlayerState.businesses[bizKey] = {
+          level: level,
+          workers: workers,
+          price: price
+        };
+
+        try {
+          updateBizBtn.disabled = true;
+          updateBizBtn.innerHTML = 'جاري الحفظ والتزامن...';
+          
+          // Re-calculate Net Worth of selected player state
+          let worth = (selectedPlayerState.cash || 0) + (selectedPlayerState.bank || 0) + (selectedPlayerState.dirtyCash || 0);
+          
+          if (selectedPlayerState.assets) {
+            Object.keys(selectedPlayerState.assets).forEach(k => {
+              if (GameEngine.ASSETS && GameEngine.ASSETS[k]) worth += (selectedPlayerState.assets[k] || 0) * GameEngine.ASSETS[k].cost;
+            });
+          }
+          if (selectedPlayerState.stocks) {
+            Object.keys(selectedPlayerState.stocks).forEach(sym => {
+              const shares = (selectedPlayerState.stocks[sym] && selectedPlayerState.stocks[sym].shares) || 0;
+              const history = GameEngine.stockPrices[sym] || [GameEngine.STOCKS[sym]?.basePrice || 10];
+              const currentPrice = history[history.length - 1];
+              worth += shares * currentPrice;
+            });
+          }
+          if (selectedPlayerState.investments && Array.isArray(selectedPlayerState.investments)) {
+            selectedPlayerState.investments.forEach(inv => worth += (inv.investedAmount || 0));
+          }
+          selectedPlayerState.netWorth = worth;
+          
+          await AppDB.adminSavePlayer(selectedPlayer, selectedPlayerState);
+          
+          if (selectedPlayer === GameEngine.activeUsername) {
+            GameEngine.state.businesses[bizKey] = { level, workers, price };
+            GameEngine.state.netWorth = worth;
+            try {
+              localStorage.setItem(`foolos_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+            } catch (e) {}
+            renderAll();
+          }
+          
+          document.getElementById('admin-p-worth').textContent = `${worth.toLocaleString()} EGP`;
+          showToast('تحديث الأملاك', `تم تحديث أملاك اللاعب (${bizConfig ? bizConfig.name : bizKey}) بنجاح إلى مستوى ${level} وعدد موظفين ${workers}.`, 'success');
+          logAdminAction(`تعديل أملاك اللاعب ${selectedPlayer}: ${bizKey} -> مستوى ${level}، موظفين ${workers}`);
+          loadAdminPlayersDirectory(false);
+        } catch (err) {
+          showToast('خطأ في الحفظ', err.message, 'error');
+        } finally {
+          updateBizBtn.disabled = false;
+          updateBizBtn.innerHTML = '<i class="fa-solid fa-building-circle-check"></i> <span>حفظ وتطبيق الأملاك فوراً</span>';
         }
       });
     }
@@ -5234,6 +5399,204 @@ const UIController = (() => {
       entry.innerHTML = `<span class="text-yellow-500 font-bold ml-1 font-mono">[${time}]</span> ${msg}`;
       logBox.insertBefore(entry, logBox.firstChild);
     });
+  }
+
+  // ─────────────────────────────────────────────
+  //  TRANSFER REQUESTS — UI Rendering & State
+  // ─────────────────────────────────────────────
+  let lastRequestsFetchTime = 0;
+  let cachedIncomingRequests = [];
+  let cachedSentRequests = [];
+  let requestsTabActive = 'incoming';
+
+  async function fetchAndRenderTransferRequests(force = false) {
+    const s = GameEngine.state;
+    if (!GameEngine.activeUsername || !s) return;
+    const username = GameEngine.activeUsername;
+
+    const now = Date.now();
+    if (force || now - lastRequestsFetchTime > 10000) {
+      lastRequestsFetchTime = now;
+      try {
+        const [incoming, sent] = await Promise.all([
+          AppDB.getIncomingTransferRequests(username),
+          AppDB.getSentTransferRequests(username)
+        ]);
+        cachedIncomingRequests = incoming;
+        cachedSentRequests = sent;
+      } catch (err) {
+        console.error('Error fetching transfer requests:', err);
+      }
+    }
+
+    renderRequestsListDOM();
+  }
+
+  function renderRequestsListDOM() {
+    const username = GameEngine.activeUsername;
+    const incomingList = document.getElementById('incoming-requests-list');
+    const sentList = document.getElementById('sent-requests-list');
+    const countIncomingEl = document.getElementById('count-incoming-reqs');
+    const countSentEl = document.getElementById('count-sent-reqs');
+
+    if (!incomingList || !sentList) return;
+
+    const now = Date.now();
+    const twentyFourHours = 24 * 60 * 60 * 1000;
+
+    const pendingIncomingCount = cachedIncomingRequests.filter(r => r.status === 'pending' && (now - r.timestamp <= twentyFourHours)).length;
+    const pendingSentCount = cachedSentRequests.filter(r => r.status === 'pending' && (now - r.timestamp <= twentyFourHours)).length;
+
+    if (countIncomingEl) countIncomingEl.textContent = pendingIncomingCount;
+    if (countSentEl) countSentEl.textContent = pendingSentCount;
+
+    // Render Incoming Requests
+    if (cachedIncomingRequests.length === 0) {
+      incomingList.innerHTML = `<div class="text-center text-slate-500 text-xs py-8">لا يوجد طلبات واردة حالياً.</div>`;
+    } else {
+      incomingList.innerHTML = '';
+      cachedIncomingRequests.forEach(r => {
+        const age = now - r.timestamp;
+        const isExpired = r.status === 'pending' && age > twentyFourHours;
+        const remainingMs = twentyFourHours - age;
+
+        let statusText = '';
+        let statusClass = '';
+        let actionButtons = '';
+
+        if (r.status === 'accepted') {
+          statusText = 'تم القبول والتحويل ✔️';
+          statusClass = 'text-emerald-400 font-bold';
+        } else if (r.status === 'rejected') {
+          statusText = 'تم الرفض ❌';
+          statusClass = 'text-rose-400 font-bold';
+        } else if (isExpired) {
+          statusText = 'منتهي الصلاحية (24س) ⚠️';
+          statusClass = 'text-slate-500 font-bold';
+        } else {
+          const remainingHours = Math.floor(remainingMs / (1000 * 60 * 60));
+          const remainingMins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+          statusText = `معلق - متبقي ${remainingHours}س و ${remainingMins}د`;
+          statusClass = 'text-yellow-400 font-bold';
+
+          actionButtons = `
+            <div class="flex gap-1.5 mt-2">
+              <button data-id="${r.id}" class="btn-req-accept flex-grow py-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black rounded text-[10px] transition">قبول ودفع</button>
+              <button data-id="${r.id}" class="btn-req-reject flex-grow py-1 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/20 rounded text-[10px] transition">رفض</button>
+            </div>
+          `;
+        }
+
+        const div = document.createElement('div');
+        div.className = 'glass-panel p-3.5 rounded-xl border border-slate-800 flex flex-col justify-between text-xs mb-2';
+        div.innerHTML = `
+          <div class="flex justify-between items-center mb-1">
+            <span class="font-bold text-white">المرسل: ${r.sender}</span>
+            <span class="numbers-font text-yellow-500 font-bold text-sm">${r.amount.toLocaleString()} EGP</span>
+          </div>
+          <div class="flex justify-between items-center text-[10px] text-slate-400">
+            <span>الحالة: <span class="${statusClass}">${statusText}</span></span>
+            <span class="numbers-font">${new Date(r.timestamp).toLocaleTimeString('ar-EG')}</span>
+          </div>
+          ${actionButtons}
+        `;
+
+        const acceptBtn = div.querySelector('.btn-req-accept');
+        const rejectBtn = div.querySelector('.btn-req-reject');
+        if (acceptBtn) {
+          acceptBtn.addEventListener('click', async () => {
+            try {
+              acceptBtn.disabled = true;
+              if (rejectBtn) rejectBtn.disabled = true;
+              acceptBtn.textContent = 'جاري المعالجة...';
+
+              await AppDB.acceptTransferRequest(r.id, username);
+              showToast('موافقة الطلب', `تم قبول طلب التحويل ودفع ${r.amount.toLocaleString()} EGP بنجاح!`, 'success');
+              
+              const updatedState = await AppDB.getPlayerState(username);
+              if (updatedState) {
+                GameEngine.state.cash = updatedState.cash;
+                GameEngine.state.bank = updatedState.bank;
+                GameEngine.state.netWorth = updatedState.netWorth;
+              }
+              await fetchAndRenderTransferRequests(true);
+              renderAll();
+            } catch (err) {
+              showToast('خطأ في قبول الطلب', err.message, 'error');
+              acceptBtn.disabled = false;
+              if (rejectBtn) rejectBtn.disabled = false;
+              acceptBtn.textContent = 'قبول ودفع';
+            }
+          });
+        }
+        if (rejectBtn) {
+          rejectBtn.addEventListener('click', async () => {
+            try {
+              if (acceptBtn) acceptBtn.disabled = true;
+              rejectBtn.disabled = true;
+              rejectBtn.textContent = 'جاري الرفض...';
+
+              await AppDB.rejectTransferRequest(r.id, username);
+              showToast('رفض الطلب', 'تم رفض طلب التحويل بنجاح.', 'info');
+              
+              await fetchAndRenderTransferRequests(true);
+            } catch (err) {
+              showToast('خطأ في رفض الطلب', err.message, 'error');
+              if (acceptBtn) acceptBtn.disabled = false;
+              rejectBtn.disabled = false;
+              rejectBtn.textContent = 'رفض';
+            }
+          });
+        }
+
+        incomingList.appendChild(div);
+      });
+    }
+
+    // Render Sent Requests
+    if (cachedSentRequests.length === 0) {
+      sentList.innerHTML = `<div class="text-center text-slate-500 text-xs py-8">لا يوجد طلبات مرسلة حالياً.</div>`;
+    } else {
+      sentList.innerHTML = '';
+      cachedSentRequests.forEach(r => {
+        const age = now - r.timestamp;
+        const isExpired = r.status === 'pending' && age > twentyFourHours;
+        const remainingMs = twentyFourHours - age;
+
+        let statusText = '';
+        let statusClass = '';
+
+        if (r.status === 'accepted') {
+          statusText = 'تم القبول والتحويل ✔️';
+          statusClass = 'text-emerald-400 font-bold';
+        } else if (r.status === 'rejected') {
+          statusText = 'تم الرفض ❌';
+          statusClass = 'text-rose-400 font-bold';
+        } else if (isExpired) {
+          statusText = 'منتهي الصلاحية ⚠️';
+          statusClass = 'text-slate-500 font-bold';
+        } else {
+          const remainingHours = Math.floor(remainingMs / (1000 * 60 * 60));
+          const remainingMins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+          statusText = `معلق - متبقي ${remainingHours}س و ${remainingMins}د`;
+          statusClass = 'text-yellow-400 font-bold';
+        }
+
+        const div = document.createElement('div');
+        div.className = 'glass-panel p-3.5 rounded-xl border border-slate-800 flex flex-col justify-between text-xs mb-2';
+        div.innerHTML = `
+          <div class="flex justify-between items-center mb-1">
+            <span class="font-bold text-white">المستلم: ${r.recipient}</span>
+            <span class="numbers-font text-yellow-500 font-bold text-sm">${r.amount.toLocaleString()} EGP</span>
+          </div>
+          <div class="flex justify-between items-center text-[10px] text-slate-400">
+            <span>الحالة: <span class="${statusClass}">${statusText}</span></span>
+            <span class="numbers-font">${new Date(r.timestamp).toLocaleTimeString('ar-EG')}</span>
+          </div>
+        `;
+        sentList.appendChild(div);
+      });
+    }
   }
 
   return {

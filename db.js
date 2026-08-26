@@ -424,6 +424,164 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
+  //  TRANSFER REQUESTS — Firestore Operations
+  // ─────────────────────────────────────────────
+  async function createTransferRequest(senderUsername, recipientUsername, amount) {
+    if (!senderUsername || !recipientUsername) throw new Error('بيانات الطلب غير مكتملة.');
+    if (senderUsername === recipientUsername) throw new Error('لا يمكنك إرسال طلب تحويل لنفسك!');
+    amount = Number(amount);
+    if (isNaN(amount) || amount <= 0) throw new Error('مبلغ الطلب يجب أن يكون أكبر من صفر.');
+    _requireOnline();
+
+    // Verify recipient exists
+    const recRef = firestoreDb.collection('players').doc(recipientUsername);
+    const recDoc = await recRef.get();
+    if (!recDoc.exists) {
+      throw new Error('اللاعب المستلم غير موجود. تحقق من كتابة الاسم بدقة.');
+    }
+
+    const requestData = {
+      sender: senderUsername,
+      recipient: recipientUsername,
+      amount: amount,
+      status: 'pending',
+      timestamp: Date.now()
+    };
+
+    const docRef = await firestoreDb.collection('transferRequests').add(requestData);
+    return { id: docRef.id, ...requestData };
+  }
+
+  async function getIncomingTransferRequests(username) {
+    _requireOnline();
+    const snapshot = await firestoreDb.collection('transferRequests')
+      .where('recipient', '==', username)
+      .orderBy('timestamp', 'desc')
+      .get();
+    
+    const list = [];
+    snapshot.forEach(doc => {
+      list.push({ id: doc.id, ...doc.data() });
+    });
+    return list;
+  }
+
+  async function getSentTransferRequests(username) {
+    _requireOnline();
+    const snapshot = await firestoreDb.collection('transferRequests')
+      .where('sender', '==', username)
+      .orderBy('timestamp', 'desc')
+      .get();
+    
+    const list = [];
+    snapshot.forEach(doc => {
+      list.push({ id: doc.id, ...doc.data() });
+    });
+    return list;
+  }
+
+  async function acceptTransferRequest(requestId, recipientUsername) {
+    _requireOnline();
+    const db = firestoreDb;
+    const reqRef = db.collection('transferRequests').doc(requestId);
+    
+    return await db.runTransaction(async (tx) => {
+      const reqDoc = await tx.get(reqRef);
+      if (!reqDoc.exists) throw new Error('طلب التحويل غير موجود.');
+      
+      const reqData = reqDoc.data();
+      if (reqData.recipient !== recipientUsername) {
+        throw new Error('غير مصرح لك بقبول هذا الطلب.');
+      }
+      if (reqData.status !== 'pending') {
+        throw new Error('هذا الطلب تم الرد عليه مسبقاً أو انتهت صلاحيته.');
+      }
+      
+      // Check 24 hour expiration
+      const elapsed = Date.now() - reqData.timestamp;
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+      if (elapsed > twentyFourHours) {
+        throw new Error('انتهت صلاحية هذا الطلب (أكثر من 24 ساعة).');
+      }
+      
+      const amount = Number(reqData.amount);
+      const senderRef = db.collection('players').doc(reqData.sender);
+      const recipientRef = db.collection('players').doc(reqData.recipient);
+      
+      const [senderDoc, recDoc] = await Promise.all([
+        tx.get(senderRef),
+        tx.get(recipientRef)
+      ]);
+      
+      if (!recDoc.exists) throw new Error('اللاعب المستلم غير موجود.');
+      if (!senderDoc.exists) throw new Error('اللاعب المرسل غير موجود.');
+      
+      const recCash = (recDoc.data().cash || 0);
+      if (recCash < amount) {
+        throw new Error('رصيدك الحالي غير كافٍ لقبول هذا الطلب ودفع القيمة.');
+      }
+      
+      // Deduct from recipient
+      tx.set(recipientRef, {
+        cash: recCash - amount,
+        netWorth: Math.max(0, (recDoc.data().netWorth || 0) - amount)
+      }, { merge: true });
+      
+      // Add to sender
+      const senderCash = (senderDoc.data().cash || 0);
+      tx.set(senderRef, {
+        cash: senderCash + amount,
+        netWorth: (senderDoc.data().netWorth || 0) + amount
+      }, { merge: true });
+      
+      // Update request status
+      tx.update(reqRef, { status: 'accepted' });
+      
+      // Add transaction log
+      const logRef = db.collection('transfers').doc();
+      tx.set(logRef, {
+        sender: reqData.recipient, // recipient of request is sender of money
+        recipient: reqData.sender, // sender of request is recipient of money
+        amount,
+        timestamp: Date.now(),
+        isFromRequest: true,
+        requestId: requestId
+      });
+      
+      return true;
+    });
+  }
+
+  async function rejectTransferRequest(requestId, recipientUsername) {
+    _requireOnline();
+    const db = firestoreDb;
+    const reqRef = db.collection('transferRequests').doc(requestId);
+    
+    return await db.runTransaction(async (tx) => {
+      const reqDoc = await tx.get(reqRef);
+      if (!reqDoc.exists) throw new Error('طلب التحويل غير موجود.');
+      
+      const reqData = reqDoc.data();
+      if (reqData.recipient !== recipientUsername) {
+        throw new Error('غير مصرح لك برفض هذا الطلب.');
+      }
+      if (reqData.status !== 'pending') {
+        throw new Error('هذا الطلب تم الرد عليه مسبقاً أو انتهت صلاحيته.');
+      }
+      
+      // Check 24 hour expiration
+      const elapsed = Date.now() - reqData.timestamp;
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+      if (elapsed > twentyFourHours) {
+        throw new Error('انتهت صلاحية هذا الطلب.');
+      }
+      
+      tx.update(reqRef, { status: 'rejected' });
+      return true;
+    });
+  }
+
+  // ─────────────────────────────────────────────
   // ─────────────────────────────────────────────
   //  ADMIN FUNCTIONS
   // ─────────────────────────────────────────────
@@ -556,21 +714,22 @@ const AppDB = (() => {
       },
       investments: [],
       activeLoan: null,
-      inventory: {
-        gold_pen: 0,
-        premium_lawyer: 0,
-        energy_drink: 0,
-        tax_shield: 0,
-        market_scanner: 0,
-        vip_casino_pass: 0,
-        radar_jammer: 0,
-        fake_passport: 0,
-        crypto_cleaner: 0,
-        diplomatic_bag: 0,
-        commissioner_wire: 0,
-        quantum_cpu: 0,
-        diamond_card: 0
-      },
+        inventory: {
+          gold_pen: 0,
+          premium_lawyer: 0,
+          energy_drink: 0,
+          tax_shield: 0,
+          market_scanner: 0,
+          vip_casino_pass: 0,
+          radar_jammer: 0,
+          fake_passport: 0,
+          crypto_cleaner: 0,
+          diplomatic_bag: 0,
+          commissioner_wire: 0,
+          quantum_cpu: 0,
+          diamond_card: 0,
+          cronos_gear: 0
+        },
       itemDurations: {},
       jailTimer: 0,
       afkManagerExpiresAt: 0,
@@ -787,7 +946,8 @@ const AppDB = (() => {
           diplomatic_bag: 0,
           commissioner_wire: 0,
           quantum_cpu: 0,
-          diamond_card: 0
+          diamond_card: 0,
+          cronos_gear: 0
         },
         itemDurations: {},
         jailTimer: 0,
@@ -938,6 +1098,13 @@ const AppDB = (() => {
     savePlayerState,
     getLeaderboard,
     executeWireTransfer,
+
+    // Transfer Requests API
+    createTransferRequest,
+    getIncomingTransferRequests,
+    getSentTransferRequests,
+    acceptTransferRequest,
+    rejectTransferRequest,
 
     // Admin API
     sendBroadcast,
