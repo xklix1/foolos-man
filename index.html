@@ -56,7 +56,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=12">
+  <link rel="stylesheet" href="app.css?v=30">
   
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase App SDK blocked.')"></script>
@@ -844,29 +844,30 @@
         </div>
       </div>
 
-      <!-- HEADER QUICK BUTTONS -->
-      <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 bg-slate-900/20 p-4 rounded-xl border border-slate-800/40 backdrop-blur">
-        <div>
-          <h2 class="text-lg font-bold text-white">لوحة العمل والاستثمار</h2>
-          <p class="text-xs text-slate-400 mt-0.5">انقر للعمل، أسس مشاريعك الحرة، ودع الأرباح تصب في محفظتك تلقائياً.</p>
-        </div>
-        
-        <div id="passive-float-spawn" class="relative w-full sm:w-auto flex flex-col sm:flex-row gap-2">
-          <button id="btn-perform-shift" class="w-full sm:w-auto px-5 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-lg transition duration-300 shadow-lg shadow-yellow-500/10 text-xs flex items-center justify-center gap-2">
-            <span>العمل بنوبة اعتيادية</span>
-            <i class="fa-solid fa-bolt text-xs opacity-75"></i>
-          </button>
-          <button id="btn-perform-overtime-shift" class="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-lg transition duration-300 shadow-lg shadow-orange-500/20 text-xs flex items-center justify-center gap-2">
-            <span>نوبة إضافية مضاعفة (x2.5 راتب + x3 خبرة)</span>
-            <i class="fa-solid fa-fire text-xs"></i>
-          </button>
-        </div>
-      </header>
-
       <!-- ==================== TABS CONTAINER ==================== -->
 
       <!-- TAB 1: حسابي (DASHBOARD) -->
       <section id="panel-dashboard" class="game-panel space-y-6">
+        
+        <!-- HEADER QUICK BUTTONS -->
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/40 p-4 rounded-2xl border border-slate-800/80 backdrop-blur">
+          <div>
+            <h2 class="text-base font-bold text-white">لوحة العمل والاستثمار اليومي</h2>
+            <p class="text-xs text-slate-400 mt-0.5">انقر للعمل، أسس مشاريعك الحرة، ودع الأرباح تصب في محفظتك تلقائياً.</p>
+          </div>
+          
+          <div id="passive-float-spawn" class="relative w-full sm:w-auto flex flex-col sm:flex-row gap-2">
+            <button id="btn-perform-shift" class="w-full sm:w-auto px-5 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-xl transition duration-300 shadow-lg shadow-yellow-500/10 text-xs flex items-center justify-center gap-2">
+              <span>العمل بنوبة اعتيادية</span>
+              <i class="fa-solid fa-bolt text-xs opacity-75"></i>
+            </button>
+            <button id="btn-perform-overtime-shift" class="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl transition duration-300 shadow-lg shadow-orange-500/20 text-xs flex items-center justify-center gap-2">
+              <span>نوبة إضافية مضاعفة (x2.5 راتب + x3 خبرة)</span>
+              <i class="fa-solid fa-fire text-xs"></i>
+            </button>
+          </div>
+        </header>
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="glass-panel p-6 rounded-2xl border border-slate-800">
             <span class="text-xs text-slate-400 block mb-1">اسم الحساب</span>
@@ -2522,9 +2523,9 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=16"></script>
-  <script src="game.js?v=16"></script>
-  <script src="ui.js?v=16"></script>
+  <script src="db.js?v=30"></script>
+  <script src="game.js?v=30"></script>
+  <script src="ui.js?v=30"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

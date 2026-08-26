@@ -583,6 +583,7 @@ const UIController = (() => {
 
   async function launchGameSession(username) {
     try {
+      const playerState = await GameEngine.loadUserSession(username);
       const mainLayout = document.getElementById('main-game-layout');
       document.getElementById('start-menu-screen').classList.add('hidden');
       document.getElementById('auth-screen').classList.add('hidden');
