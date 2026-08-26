@@ -1813,8 +1813,13 @@ const UIController = (() => {
         if (workCooldownActive) return;
         try {
           const res = GameEngine.performJobShift();
+          const boosts = [];
+          if (res.isEnergyBoosted) boosts.push('⚡ مضاعفة الطاقة 2x');
+          if (res.isPenBoosted) boosts.push('✍️ القلم الذهبي +50% XP');
+          const boostText = boosts.length > 0 ? ` (${boosts.join(' + ')})` : '';
+
           showPassiveGainFloat(`+${res.salary.toLocaleString()} EGP ⚡`);
-          showToast('عمل نوبة', `كسبت +${res.salary.toLocaleString()} EGP و +${res.xp} خبرة.`, 'success');
+          showToast('عمل نوبة', `كسبت +${res.salary.toLocaleString()} EGP و +${res.xp} خبرة${boostText}.`, 'success');
           renderAll();
           startWorkCooldown(jobWorkBtn);
         } catch (err) {
@@ -1830,8 +1835,13 @@ const UIController = (() => {
         if (workCooldownActive) return;
         try {
           const res = GameEngine.performOvertimeShift();
+          const boosts = [];
+          if (res.isEnergyBoosted) boosts.push('⚡ مشروب الطاقة 2x');
+          if (res.isPenBoosted) boosts.push('✍️ القلم الذهبي +50% XP');
+          const boostText = boosts.length > 0 ? ` (${boosts.join(' + ')})` : '';
+
           showPassiveGainFloat(`+${res.earnedSalary.toLocaleString()} EGP 🔥`);
-          showToast('نوبة عمل إضافية مضاعفة', `كسبت +${res.earnedSalary.toLocaleString()} EGP و +${res.earnedXp} خبرة مضاعفة!`, 'success');
+          showToast('نوبة عمل إضافية مضاعفة', `كسبت +${res.earnedSalary.toLocaleString()} EGP و +${res.earnedXp} خبرة مضاعفة${boostText}!`, 'success');
           renderAll();
           startWorkCooldown(overtimeWorkBtn);
         } catch (err) {

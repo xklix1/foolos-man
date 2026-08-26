@@ -579,7 +579,9 @@ const GameEngine = (() => {
           const workerFactor = 1 + ((bizState.workers || 0) * (bizConfig.workerMultiplier - 1));
           const demand = Math.floor(bizConfig.baseDemand * upgradeFactor * elasticity * workerFactor * marketingBoost);
           const margin = price - actualCostOfGoods;
-          const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12));
+          const hasQuantum = (state.inventory && state.inventory.quantum_cpu > 0);
+          const quantumMultiplier = hasQuantum ? 1.5 : 1.0;
+          const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12 * quantumMultiplier));
           const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
           const netProfit = Math.max(0, grossProfit - workerPayroll);
           income += netProfit;
@@ -713,8 +715,10 @@ const GameEngine = (() => {
         // Margin per unit = Price - Dynamic Cost of Goods
         const margin = price - actualCostOfGoods;
         
-        // Final profit per tick = gross margin minus worker wages
-        const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12));
+        // Final profit per tick = gross margin (boosted by Quantum CPU +50%) minus worker wages
+        const hasQuantum = (state.inventory && state.inventory.quantum_cpu > 0);
+        const quantumMultiplier = hasQuantum ? 1.5 : 1.0;
+        const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12 * quantumMultiplier));
         const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
         const profit = Math.max(0, grossProfit - workerPayroll);
         
@@ -1114,12 +1118,15 @@ const GameEngine = (() => {
   // Shift Work click
   function performJobShift() {
     if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك العمل.");
-    const job = JOBS[state.jobId];
+    const job = JOBS[state.jobId] || JOBS.worker;
     if (!job) throw new Error("الوظيفة غير صالحة.");
 
     // Calculate XP boosters & energy drink salary multipliers
-    const xpBoost = state.inventory.gold_pen > 0 ? (1 + STORE_ITEMS.gold_pen.value) : 1.0;
-    const salaryMultiplier = state.inventory.energy_drink > 0 ? STORE_ITEMS.energy_drink.value : 1.0;
+    const isPenActive = (state.inventory && state.inventory.gold_pen > 0);
+    const isEnergyActive = (state.inventory && state.inventory.energy_drink > 0);
+
+    const xpBoost = isPenActive ? (1 + (STORE_ITEMS.gold_pen ? STORE_ITEMS.gold_pen.value : 0.5)) : 1.0;
+    const salaryMultiplier = isEnergyActive ? (STORE_ITEMS.energy_drink ? STORE_ITEMS.energy_drink.value : 2.0) : 1.0;
 
     const finalXpReward = Math.ceil(job.xpReward * xpBoost);
     const finalSalary = Math.floor(job.salary * salaryMultiplier);
@@ -1134,8 +1141,10 @@ const GameEngine = (() => {
     AppDB.savePlayerState(activeUsername, state);
 
     return {
-      salary: job.salary,
-      xp: finalXpReward
+      salary: finalSalary,
+      xp: finalXpReward,
+      isEnergyBoosted: isEnergyActive,
+      isPenBoosted: isPenActive
     };
   }
 
@@ -1190,7 +1199,10 @@ const GameEngine = (() => {
     if (!bizState || bizState.level === 0) throw new Error("يجب شراء هذا المشروع أولاً قبل ترقيته.");
 
     // Upgrade cost scales exponentially based on current level (1.75x scaling)
-    const upgradeCost = Math.floor(biz.cost * Math.pow(1.75, bizState.level));
+    const baseCost = Math.floor(biz.cost * Math.pow(1.75, bizState.level));
+    const hasTaxShield = (state.inventory && state.inventory.tax_shield > 0);
+    const upgradeCost = hasTaxShield ? Math.floor(baseCost * 0.75) : baseCost;
+
     if (state.cash < upgradeCost) {
       throw new Error(`رصيدك غير كافٍ للترقية. تحتاج: ${upgradeCost.toLocaleString()} EGP — لديك: ${state.cash.toLocaleString()} EGP`);
     }
@@ -1202,7 +1214,8 @@ const GameEngine = (() => {
     AppDB.savePlayerState(activeUsername, state);
     return {
       level: bizState.level,
-      cost: upgradeCost
+      cost: upgradeCost,
+      savedDiscount: hasTaxShield ? (baseCost - upgradeCost) : 0
     };
   }
 
@@ -1797,11 +1810,14 @@ const GameEngine = (() => {
   function performOvertimeShift() {
     if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك العمل.");
     const job = JOBS[state.jobId] || JOBS.worker;
-    const isEnergyBoosted = (state.inventory && state.inventory.energy_drink > 0);
-    const xpBonus = (state.inventory && state.inventory.gold_pen > 0) ? (1 + STORE_ITEMS.gold_pen.value) : 1.0;
+    const isEnergyActive = (state.inventory && state.inventory.energy_drink > 0);
+    const isPenActive = (state.inventory && state.inventory.gold_pen > 0);
+    
+    const xpBonus = isPenActive ? (1 + (STORE_ITEMS.gold_pen ? STORE_ITEMS.gold_pen.value : 0.5)) : 1.0;
+    const energyMult = isEnergyActive ? (STORE_ITEMS.energy_drink ? STORE_ITEMS.energy_drink.value : 2.0) : 1.0;
     
     // Overtime gives 2.5x base salary and 3x XP
-    const salaryMultiplier = (isEnergyBoosted ? STORE_ITEMS.energy_drink.value : 1.0) * 2.5;
+    const salaryMultiplier = energyMult * 2.5;
     const earnedSalary = Math.floor(job.salary * salaryMultiplier);
     const earnedXp = Math.ceil(job.xpReward * 3 * xpBonus);
 
@@ -1815,7 +1831,9 @@ const GameEngine = (() => {
       earnedSalary,
       earnedXp,
       jobTitle: job.name,
-      newTitle: state.title
+      newTitle: state.title,
+      isEnergyBoosted: isEnergyActive,
+      isPenBoosted: isPenActive
     };
   }
 
