@@ -592,12 +592,16 @@ const UIController = (() => {
       renderAll();
       showToast('أهلاً بعودتك', `تم استئناف جلسة الإمبراطور: ${username}`, 'success');
 
-      // Check and display offline idle earnings
+      // Check and display offline idle earnings with 12-Hour Manager context
       if (playerState && playerState.offlineReport) {
         const rep = playerState.offlineReport;
         const mins = Math.max(1, Math.round(rep.seconds / 60));
         setTimeout(() => {
-          showToast('💰 أرباح أثناء غيابك!', `جمعت إمبراطوريتك أرباحاً قدرها +${rep.earnings.toLocaleString()} EGP أثناء غيابك (${mins} دقيقة)!`, 'success');
+          if (rep.earnings > 0) {
+            showToast('💰 أرباح أثناء غيابك!', `جمعت إمبراطوريتك +${rep.earnings.toLocaleString()} EGP أثناء غيابك (${mins} دقيقة) بفضل ترخيص الإدارة الذاتية!`, 'success');
+          } else if (rep.expiredDuringAbsence) {
+            showToast('⚠️ تنبيه الإدارة الذاتية', 'انتهت صلاحية ترخيص الـ 12 ساعة أثناء غيابك! يرجى الضغط على زر التجديد لمواصلة جمع الأرباح عند الخروج.', 'warning');
+          }
         }, 1200);
         delete playerState.offlineReport;
       }
@@ -773,12 +777,16 @@ const UIController = (() => {
           startGameLoop();
           renderAll();
 
-          // Check and display offline idle earnings
+          // Check and display offline idle earnings with 12-Hour Manager context
           if (playerState && playerState.offlineReport) {
             const rep = playerState.offlineReport;
             const mins = Math.max(1, Math.round(rep.seconds / 60));
             setTimeout(() => {
-              showToast('💰 أرباح أثناء غيابك!', `جمعت إمبراطوريتك أرباحاً قدرها +${rep.earnings.toLocaleString()} EGP أثناء غيابك (${mins} دقيقة)!`, 'success');
+              if (rep.earnings > 0) {
+                showToast('💰 أرباح أثناء غيابك!', `جمعت إمبراطوريتك +${rep.earnings.toLocaleString()} EGP أثناء غيابك (${mins} دقيقة) بفضل ترخيص الإدارة الذاتية!`, 'success');
+              } else if (rep.expiredDuringAbsence) {
+                showToast('⚠️ تنبيه الإدارة الذاتية', 'انتهت صلاحية ترخيص الـ 12 ساعة أثناء غيابك! يرجى الضغط على زر التجديد لمواصلة جمع الأرباح عند الخروج.', 'warning');
+              }
             }, 1200);
             delete playerState.offlineReport;
           }
@@ -1028,12 +1036,65 @@ const UIController = (() => {
   // --- Tab 1: Dashboard Panel ---
   function renderDashboard() {
     const s = GameEngine.state;
+    if (!s) return;
+
     document.getElementById('dash-uid').textContent = GameEngine.activeUsername;
     document.getElementById('dash-title').textContent = s.title;
     document.getElementById('dash-xp').textContent = s.xp.toLocaleString();
     document.getElementById('dash-cash').textContent = s.cash.toLocaleString() + ' EGP';
     document.getElementById('dash-bank').textContent = s.bank.toLocaleString() + ' EGP';
     document.getElementById('dash-worth').textContent = s.netWorth.toLocaleString() + ' EGP';
+
+    // 12-Hour AFK Auto-Manager Status & Countdown
+    const badgeEl = document.getElementById('afk-manager-status-badge');
+    const barEl = document.getElementById('afk-manager-progress-bar');
+    const timeEl = document.getElementById('afk-manager-time-left');
+    const btnTextEl = document.getElementById('btn-renew-afk-text');
+
+    const now = Date.now();
+    const expiry = s.afkManagerExpiresAt || 0;
+    const remainingMs = Math.max(0, expiry - now);
+
+    if (remainingMs > 0) {
+      const totalSec = Math.floor(remainingMs / 1000);
+      const hours = Math.floor(totalSec / 3600);
+      const mins = Math.floor((totalSec % 3600) / 60);
+      const secs = totalSec % 60;
+      const formatted = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      const pct = Math.min(100, Math.max(2, Math.round((remainingMs / (12 * 3600 * 1000)) * 100)));
+
+      if (badgeEl) {
+        badgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>نشط (تجميع مستمر)`;
+        badgeEl.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-black border bg-emerald-500/20 text-emerald-300 border-emerald-500/30 flex items-center gap-1';
+      }
+      if (barEl) {
+        barEl.style.width = `${pct}%`;
+        barEl.className = 'bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-500';
+      }
+      if (timeEl) {
+        timeEl.textContent = `${formatted} متبقية`;
+        timeEl.className = 'numbers-font text-xs font-bold text-emerald-400';
+      }
+      if (btnTextEl) {
+        btnTextEl.textContent = 'تمديد وردية الإدارة (12 ساعة)';
+      }
+    } else {
+      if (badgeEl) {
+        badgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>متوقف (يلزم التفعيل)`;
+        badgeEl.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-black border bg-rose-500/20 text-rose-300 border-rose-500/30 flex items-center gap-1';
+      }
+      if (barEl) {
+        barEl.style.width = '0%';
+        barEl.className = 'bg-rose-500 h-full transition-all duration-500';
+      }
+      if (timeEl) {
+        timeEl.textContent = 'منتهي (انتهت الـ 12 ساعة)';
+        timeEl.className = 'numbers-font text-xs font-bold text-rose-400';
+      }
+      if (btnTextEl) {
+        btnTextEl.textContent = 'تفعيل وردية الإدارة (12 ساعة)';
+      }
+    }
   }
 
   // --- Tab 2: Careers Panel ---
@@ -1538,6 +1599,21 @@ const UIController = (() => {
           startWorkCooldown(jobWorkBtn);
         } catch (err) {
           showToast('خطأ العمل', err.message, 'error');
+        }
+      });
+    }
+
+    // 12-Hour AFK Auto-Manager Renewal Button
+    const renewAfkBtn = document.getElementById('btn-renew-afk-manager');
+    if (renewAfkBtn) {
+      renewAfkBtn.addEventListener('click', () => {
+        try {
+          const res = GameEngine.renewAfkManager();
+          playMenuSound('success');
+          showToast('تجديد وردية الإدارة', 'تم تفعيل ترخيص الإدارة الذاتية والأرباح أثناء الغياب لمدة 12 ساعة بنجاح! ⚡', 'success');
+          renderAll();
+        } catch (err) {
+          showToast('خطأ التجديد', err.message, 'error');
         }
       });
     }

@@ -300,6 +300,7 @@ const GameEngine = (() => {
     },
     itemDurations: {}, // Stores { itemId: ticksRemaining } for self-destruction timer
     jailTimer: 0,
+    afkManagerExpiresAt: 0, // 12-hour active manager timestamp
     netWorth: 6000,
     title: 'عامل مبتدئ'
   };
@@ -760,35 +761,62 @@ const GameEngine = (() => {
         investments: Array.isArray(dbState.investments) ? dbState.investments : []
       };
 
-      // Calculate offline idle earnings if returning after being away
+      // Calculate offline idle earnings if returning after being away (Requires active 12-hour AFK Manager)
       if (dbState.lastActiveTimestamp && dbState.lastActiveTimestamp > 0) {
         const now = Date.now();
-        const elapsedSeconds = Math.max(0, Math.floor((now - dbState.lastActiveTimestamp) / 1000));
-        if (elapsedSeconds >= 10 && (state.jailTimer || 0) <= 0) {
+        const managerExpiry = dbState.afkManagerExpiresAt || 0;
+        
+        // Effective offline time is capped by when the 12-hour manager expired
+        const effectiveEnd = Math.min(now, managerExpiry);
+        const elapsedSinceLastActive = Math.max(0, Math.floor((effectiveEnd - dbState.lastActiveTimestamp) / 1000));
+        
+        if (elapsedSinceLastActive >= 10 && (state.jailTimer || 0) <= 0) {
           // Cap at 12 hours (43,200 seconds)
-          const cappedSeconds = Math.min(43200, elapsedSeconds);
+          const cappedSeconds = Math.min(43200, elapsedSinceLastActive);
           const incomePerSec = calculatePassiveIncomePerSecond();
           const offlineEarnings = Math.floor(incomePerSec * cappedSeconds);
           if (offlineEarnings > 0) {
             state.cash += offlineEarnings;
             state.offlineReport = {
               seconds: cappedSeconds,
-              earnings: offlineEarnings
+              earnings: offlineEarnings,
+              wasManagerActive: true,
+              expiredDuringAbsence: now > managerExpiry
             };
           }
+        } else if (now > managerExpiry && managerExpiry > 0) {
+          state.offlineReport = {
+            seconds: 0,
+            earnings: 0,
+            wasManagerActive: false,
+            expiredDuringAbsence: true
+          };
         }
       }
       state.lastActiveTimestamp = Date.now();
       state.netWorth = calculateNetWorth();
       await AppDB.savePlayerState(username, state);
     } else {
-      // Create new clean state — deep-copy to avoid shared object references
+      // Create new clean state — give new players their initial 12-hour manager permit
       state = JSON.parse(JSON.stringify(INITIAL_STATE));
+      state.afkManagerExpiresAt = Date.now() + (12 * 60 * 60 * 1000);
       state.lastActiveTimestamp = Date.now();
       await AppDB.savePlayerState(username, state);
     }
     initStocks();
     return state;
+  }
+
+  function renewAfkManager() {
+    if (!activeUsername) throw new Error("لا توجد جلسة لاعب نشطة.");
+    const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
+    state.afkManagerExpiresAt = Date.now() + TWELVE_HOURS_MS;
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+    return {
+      expiresAt: state.afkManagerExpiresAt,
+      remainingMs: TWELVE_HOURS_MS
+    };
   }
 
   function logoutUser() {
@@ -1513,6 +1541,7 @@ const GameEngine = (() => {
     calculatePassiveIncomePerTick,
     calculatePassiveIncomePerSecond,
     calculateNetWorth,
+    renewAfkManager,
     forceSaveState
   };
 })();
