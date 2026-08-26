@@ -1487,18 +1487,19 @@ const GameEngine = (() => {
       state.cash -= remainingCost;
     }
 
-    // Calculate risk modifiers
-    let riskReduction = 0;
-    if (state.inventory && state.inventory.premium_lawyer > 0) {
-      riskReduction += (STORE_ITEMS.premium_lawyer.value || 0.35); // 35% lawyer protection
+    // Calculate risk & success modifiers
+    let successBonus = 0;
+    const hasLawyer = Boolean(state.inventory && state.inventory.premium_lawyer > 0);
+    const hasJammer = Boolean(state.inventory && state.inventory.radar_jammer > 0);
+
+    if (hasLawyer) {
+      successBonus += 0.22; // +22% direct success boost from Lawyer
     }
-    if (state.inventory && state.inventory.radar_jammer > 0) {
-      riskReduction += 0.20; // 20% radar jammer protection
+    if (hasJammer) {
+      successBonus += 0.15; // +15% direct success boost from Jammer
     }
 
-    const baseFailChance = 1 - deal.successChance;
-    const finalFailChance = Math.max(0.05, baseFailChance * (1 - riskReduction));
-    const finalSuccessChance = 1 - finalFailChance;
+    const finalSuccessChance = Math.min(0.92, deal.successChance + successBonus);
 
     const roll = Math.random();
     if (roll < finalSuccessChance) {
@@ -1512,31 +1513,51 @@ const GameEngine = (() => {
         success: true,
         payout: deal.payout,
         profit: deal.payout - deal.cost,
-        repGain: deal.repGain || 20
+        repGain: deal.repGain || 20,
+        lawyerAssisted: hasLawyer,
+        finalChancePct: Math.round(finalSuccessChance * 100)
       };
     } else {
       // CAUGHT BY POLICE!
-      // Check if player has diplomatic fake passport to escape jail!
+      // 1. Lawyer Acquittal: 50% chance the lawyer dismisses charges immediately!
+      if (hasLawyer && Math.random() < 0.50) {
+        recordPlayerActivity('براءة قضائية', `تدخل المحامي وأثبت براءة اللاعب في صفقة "${deal.name}" دون عقوبة`, 'blackmarket');
+        state.netWorth = calculateNetWorth();
+        AppDB.savePlayerState(activeUsername, state);
+        return {
+          success: false,
+          escaped: true,
+          acquittedByLawyer: true,
+          confiscation: 0,
+          jailDuration: 0,
+          message: 'تدخل المحامي الدولي وأسقط القضية وأثبت براءتك دون سجن أو غرامات!'
+        };
+      }
+
+      // 2. Diplomatic Fake Passport Emergency Escape
       if (state.inventory && state.inventory.fake_passport > 0) {
         state.inventory.fake_passport--;
         if (state.itemDurations) delete state.itemDurations.fake_passport;
+        recordPlayerActivity('هروب دبلوماسي', `استخدام جواز السفر المزور للهروب من المداهمة في صفقة "${deal.name}"`, 'blackmarket');
         state.netWorth = calculateNetWorth();
         AppDB.savePlayerState(activeUsername, state);
         return {
           success: false,
           escaped: true,
           confiscation: 0,
-          jailDuration: 0
+          jailDuration: 0,
+          message: 'تمكنت من الهروب الفوري باستخدام جواز السفر الدبلوماسي المزور!'
         };
       }
 
-      // Confiscate 100% of illegal dirty cash + 20% fine on remaining clean cash
-      const confiscatedDirty = state.dirtyCash || 0;
-      const confiscatedClean = Math.floor((state.cash || 0) * 0.20);
+      // 3. Arrest & Confiscation (Diplomatic bag protects 50% of dirty cash)
+      const hasDiplomaticBag = Boolean(state.inventory && state.inventory.diplomatic_bag > 0);
+      const confiscatedDirty = hasDiplomaticBag ? Math.floor((state.dirtyCash || 0) * 0.5) : (state.dirtyCash || 0);
+      const confiscatedClean = Math.floor((state.cash || 0) * 0.15);
       const totalConfiscation = confiscatedDirty + confiscatedClean;
       
-      state.dirtyCash = 0;
-      state.cash -= confiscatedClean;
+      state.dirtyCash = Math.max(0, (state.dirtyCash || 0) - confiscatedDirty);
+      state.cash = Math.max(0, (state.cash || 0) - confiscatedClean);
       state.jailTimer = deal.jailDuration;
       state.heatLevel = Math.min(5, (state.heatLevel || 0) + 1);
 
@@ -1627,6 +1648,7 @@ const GameEngine = (() => {
     
     state.dirtyCash = Math.max(0, state.dirtyCash - amount);
     state.bank = (state.bank || 0) + cleanedAmount;
+    recordPlayerActivity('غسيل أموال', `غسيل ${amount.toLocaleString()} ج.م وتحويل ${cleanedAmount.toLocaleString()} ج.م إلى رصيد البنك النظيف`, 'banking');
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
     return {
