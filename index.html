@@ -871,21 +871,29 @@
 
         <div class="glass-panel p-8 rounded-2xl border border-slate-800">
           <h3 class="text-lg font-bold text-white mb-6 border-b border-slate-800 pb-3">كشف حساب المحفظة المفصل</h3>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="p-4 bg-slate-950/50 rounded-xl border border-slate-800/80">
               <span class="text-xs text-slate-400 block mb-2">النقد المتوفر (الكاش)</span>
               <span id="dash-cash" class="numbers-font text-2xl font-black text-yellow-500">0 EGP</span>
-              <p class="text-[10px] text-slate-500 mt-2">تستخدم السيولة النقدية مباشرة للشراء والاستثمار واللعب.</p>
+              <p class="text-[10px] text-slate-500 mt-2">سيولة نقدية شرعية ونظيفة للشراء والاستثمار.</p>
             </div>
             <div class="p-4 bg-slate-950/50 rounded-xl border border-slate-800/80">
               <span class="text-xs text-slate-400 block mb-2">رصيد حساب الادخار (البنك)</span>
               <span id="dash-bank" class="numbers-font text-2xl font-black text-emerald-400">0 EGP</span>
               <p class="text-[10px] text-slate-500 mt-2">تراكم فائدة مركبة تلقائية بمرور الوقت لكل دقيقة.</p>
             </div>
+            <div class="p-4 bg-rose-950/30 rounded-xl border border-rose-500/30">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-rose-300 font-bold">أموال مشبوهة (غير مشروعة)</span>
+                <i class="fa-solid fa-skull-crossbones text-rose-400 text-xs"></i>
+              </div>
+              <span id="dash-dirty-cash" class="numbers-font text-2xl font-black text-rose-400">0 EGP</span>
+              <p class="text-[10px] text-rose-300/70 mt-2">أرباح السوق السوداء التي تحتاج لغسيل مالي لإيداعها بالبنك.</p>
+            </div>
             <div class="p-4 bg-slate-950/50 rounded-xl border border-slate-800/80">
               <span class="text-xs text-slate-400 block mb-2">القيمة الصافية للثروة</span>
               <span id="dash-worth" class="numbers-font text-2xl font-black text-white glow-gold">0 EGP</span>
-              <p class="text-[10px] text-slate-500 mt-2">المجموع الكلي: كاش + بنك + قيمة عقارات + قيمة أسهم + استثمارات مقفلة.</p>
+              <p class="text-[10px] text-slate-500 mt-2">المجموع الكلي: كاش + بنك + أموال مشبوهة + عقارات + أسهم.</p>
             </div>
           </div>
         </div>
@@ -1098,15 +1106,20 @@
                 <span>السوق السوداء وعالم الصفقات السرية</span>
               </h3>
             </div>
-            <p class="text-xs text-slate-400 max-w-xl">عائدات مالية طائلة ومخاطر أمنية مضاعفة. قُد صفقات التهريب، اغسل الأموال، واحصل على أدوات التخفي لتفادي السجن والمصادرات.</p>
+            <p class="text-xs text-slate-400 max-w-xl">عائدات مالية طائلة ومخاطر أمنية مضاعفة. أرباح الصفقات غير مشروعة (أموال مشبوهة) وتتطلب غسيلها لتتحول لرصيد بنكي شرعي.</p>
           </div>
 
           <!-- Underworld Status & Quick Bribe -->
           <div class="flex items-center flex-wrap gap-2 w-full md:w-auto">
+            <!-- Underworld Dirty Cash Badge -->
+            <div class="px-3.5 py-2 bg-rose-950/90 border border-rose-500/50 rounded-xl text-xs font-bold text-rose-300 flex items-center gap-2 shadow-inner">
+              <i class="fa-solid fa-sack-dollar text-rose-400"></i>
+              <span>أموال مشبوهة: <strong id="underworld-dirty-cash-val" class="numbers-font text-rose-300 font-black">0</strong> EGP</span>
+            </div>
             <!-- Underworld Rep Badge -->
             <div class="px-3.5 py-2 bg-rose-950/60 border border-rose-500/30 rounded-xl text-xs font-bold text-rose-300 flex items-center gap-2">
-              <i class="fa-solid fa-skull-crossbones text-rose-400"></i>
-              <span>سمعة المافيا: <strong id="underworld-rep-val" class="numbers-font text-white">0</strong> نقطة</span>
+              <i class="fa-solid fa-mask text-rose-400"></i>
+              <span>السمعة: <strong id="underworld-rep-val" class="numbers-font text-white">0</strong></span>
             </div>
             <!-- Police Heat Stars -->
             <div class="px-3.5 py-2 bg-slate-900/80 border border-slate-700 rounded-xl text-xs font-bold text-yellow-400 flex items-center gap-1.5">
@@ -1128,22 +1141,22 @@
               <i class="fa-solid fa-box-open text-rose-400"></i>
               <span>عمليات وصفقات السوق السوداء المتاحة</span>
             </h4>
-            <span class="text-[11px] text-slate-400">تتجدد الفرص وتتضاعف الأرباح مع زيادة رتبتك الإجرامية</span>
+            <span class="text-[11px] text-slate-400">تتجدد الفرص وتتضاعف الأرباح غير المشروعة مع زيادة رتبتك الإجرامية</span>
           </div>
           <div id="blackmarket-deals" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <!-- Rendered dynamically by ui.js -->
           </div>
         </div>
 
-        <!-- SECTION 2: غرفة غسيل الأموال السريعة -->
+        <!-- SECTION 2: غرفة غسيل وتبييض الأموال غير المشروعة -->
         <div class="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-900/40">
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 pb-3 border-b border-slate-800">
             <div>
               <h4 class="text-md font-bold text-white flex items-center gap-2">
                 <i class="fa-solid fa-money-bill-transfer text-emerald-400"></i>
-                <span>غرفة غسيل الأموال وتحويل الكاش المشبوه</span>
+                <span>غرفة غسيل وتبييض الأموال غير المشروعة</span>
               </h4>
-              <p class="text-xs text-slate-400 mt-1">حوّل أموال الكاش النقدية مباشرة لحسابك البنكي المعتمد بدون إثارة الشبهات (عمولة غسيل 12% أو 5% مع مشفر Zero-Trace).</p>
+              <p class="text-xs text-slate-400 mt-1">حوّل الأرباح المشبوهة المكتسبة من صفقات السوق السوداء إلى رصيد بنكي شرعي نظيف (عمولة غسيل 12% أو 5% مع مشفر Zero-Trace).</p>
             </div>
             <div class="text-xs px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-lg font-bold">
               العمولة الحالية: <span id="laundering-fee-badge" class="numbers-font font-black">12%</span>
@@ -1153,20 +1166,20 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             <div class="md:col-span-2 space-y-2">
               <div class="flex justify-between text-xs text-slate-400">
-                <span>المبلغ المراد غسيله وتحويله للبنك:</span>
-                <span class="text-yellow-400 font-bold">المتاح كاش: <span id="laundering-max-cash" class="numbers-font">0</span> EGP</span>
+                <span>المبلغ المشبوه المراد غسيله وإيداعه بالبنك:</span>
+                <span class="text-rose-400 font-bold">المتاح كاش مشبوه: <span id="laundering-max-cash" class="numbers-font">0</span> EGP</span>
               </div>
               <div class="flex gap-2">
-                <input type="number" id="laundering-amount-input" placeholder="أدخل مبلغ الكاش" min="100" class="glass-input flex-1 p-2.5 text-xs rounded-xl text-center font-bold">
+                <input type="number" id="laundering-amount-input" placeholder="أدخل مبلغ المال المشبوه للغسيل" min="100" class="glass-input flex-1 p-2.5 text-xs rounded-xl text-center font-bold">
                 <button type="button" id="btn-launder-25" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl font-bold transition">25%</button>
                 <button type="button" id="btn-launder-50" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl font-bold transition">50%</button>
-                <button type="button" id="btn-launder-100" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-yellow-400 text-xs rounded-xl font-bold transition">100%</button>
+                <button type="button" id="btn-launder-100" class="px-3 py-2 bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 text-rose-300 text-xs rounded-xl font-bold transition">100% (الكل)</button>
               </div>
             </div>
             <div>
-              <button id="btn-execute-laundering" type="button" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-lg">
+              <button id="btn-execute-laundering" type="button" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-lg">
                 <i class="fa-solid fa-arrows-rotate"></i>
-                <span>بدء دورة الغسيل المالي</span>
+                <span>غسيل وتحويل إلى البنك</span>
               </button>
             </div>
           </div>

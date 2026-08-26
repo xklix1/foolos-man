@@ -1048,6 +1048,8 @@ const UIController = (() => {
     document.getElementById('dash-xp').textContent = s.xp.toLocaleString();
     document.getElementById('dash-cash').textContent = s.cash.toLocaleString() + ' EGP';
     document.getElementById('dash-bank').textContent = s.bank.toLocaleString() + ' EGP';
+    const dashDirtyEl = document.getElementById('dash-dirty-cash');
+    if (dashDirtyEl) dashDirtyEl.textContent = (s.dirtyCash || 0).toLocaleString() + ' EGP';
     document.getElementById('dash-worth').textContent = s.netWorth.toLocaleString() + ' EGP';
 
     // 12-Hour AFK Auto-Manager Status & Countdown
@@ -2600,6 +2602,9 @@ const UIController = (() => {
     if (!s) return;
 
     // 1. Underworld Status Hub
+    const dirtyValEl = document.getElementById('underworld-dirty-cash-val');
+    if (dirtyValEl) dirtyValEl.textContent = (s.dirtyCash || 0).toLocaleString();
+
     const repValEl = document.getElementById('underworld-rep-val');
     if (repValEl) repValEl.textContent = (s.underworldRep || 0).toLocaleString();
 
@@ -2612,7 +2617,7 @@ const UIController = (() => {
 
     // 2. Money Laundering Status & Presets
     const maxCashEl = document.getElementById('laundering-max-cash');
-    if (maxCashEl) maxCashEl.textContent = s.cash.toLocaleString();
+    if (maxCashEl) maxCashEl.textContent = (s.dirtyCash || 0).toLocaleString();
 
     const feeBadgeEl = document.getElementById('laundering-fee-badge');
     const hasCryptoCleaner = s.inventory && s.inventory.crypto_cleaner > 0;
@@ -2671,10 +2676,10 @@ const UIController = (() => {
             
             <div class="text-xs text-slate-400 space-y-1.5 border-t border-b border-slate-800/80 py-2.5 my-3">
               <div class="flex justify-between"><span>رأس المال المطلوب:</span><span class="numbers-font text-white font-bold">${deal.cost.toLocaleString()} EGP</span></div>
-              <div class="flex justify-between"><span>العائد الإجمالي (الفوز):</span><span class="numbers-font text-emerald-400 font-bold">+${deal.payout.toLocaleString()} EGP</span></div>
-              <div class="flex justify-between"><span>الربح الصافي المتوقع:</span><span class="numbers-font text-teal-400 font-semibold">+${(deal.payout - deal.cost).toLocaleString()} EGP</span></div>
+              <div class="flex justify-between"><span>العائد المشبوه (الفوز):</span><span class="numbers-font text-rose-400 font-bold">+${deal.payout.toLocaleString()} EGP</span></div>
+              <div class="flex justify-between"><span>الربح الصافي غير المشروع:</span><span class="numbers-font text-teal-400 font-semibold">+${(deal.payout - deal.cost).toLocaleString()} EGP</span></div>
               <div class="flex justify-between"><span>نسبة النجاح المقدرة:</span><span class="numbers-font ${successPct >= 70 ? 'text-emerald-400' : successPct >= 50 ? 'text-yellow-400' : 'text-rose-400'} font-black">${successPct}%</span></div>
-              <div class="flex justify-between"><span>عقوبة السجن والمصادرة:</span><span class="numbers-font text-rose-400">${deal.jailDuration * 3} ثانية (مصادرة 20%)</span></div>
+              <div class="flex justify-between"><span>عقوبة المداهمة:</span><span class="numbers-font text-rose-400">${deal.jailDuration * 3} ثانية (مصادرة المشبوه + 20%)</span></div>
               <div class="flex justify-between"><span>نقاط سمعة المافيا:</span><span class="numbers-font text-rose-300 font-bold">+${deal.repGain || 20} نقطة</span></div>
             </div>
 
@@ -2697,13 +2702,13 @@ const UIController = (() => {
           try {
             const res = GameEngine.runBlackMarketDeal(id);
             if (res.success) {
-              showToast('ضربة معلم!', `نجحت العملية السرية! ربح صافٍ قدره +${res.profit.toLocaleString()} EGP واكتسبت ${res.repGain} نقطة سمعة في السوق السوداء.`, 'success');
+              showToast('ضربة معلم!', `نجحت العملية السرية! ربح مشبوه قدره +${res.payout.toLocaleString()} EGP أضيف لخزينتك ويجب غسله (+${res.repGain} سمعة).`, 'success');
               playMenuSound('success');
             } else if (res.escaped) {
               showToast('هروب دبلوماسي!', `تمت المداهمة ولكنك استخدمت جواز السفر المزور وهربت فوراً دون سجن أو غرامات!`, 'warning');
               playMenuSound('click');
             } else {
-              showToast('مداهمة الشرطة!', `تم ضبط عمليتك! مصادرة ${res.confiscation.toLocaleString()} EGP وإيداعك السجن لـ ${res.jailDuration * 3} ثانية.`, 'error');
+              showToast('مداهمة الشرطة!', `تم ضبط عمليتك! مصادرة كافة الأموال المشبوهة وغرامة ${res.confiscation.toLocaleString()} EGP وسجن ${res.jailDuration * 3} ثانية.`, 'error');
               playMenuSound('error');
             }
             renderAll();
@@ -2788,12 +2793,12 @@ const UIController = (() => {
       });
     }
 
-    // Money Laundering Input Presets
+    // Money Laundering Input Presets (Calculates from Dirty Cash)
     const launderInput = document.getElementById('laundering-amount-input');
     const setLaunderPct = (pct) => {
       const s = GameEngine.state;
       if (!s || !launderInput) return;
-      const amt = Math.floor(s.cash * pct);
+      const amt = Math.floor((s.dirtyCash || 0) * pct);
       launderInput.value = amt > 0 ? amt : '';
     };
 
@@ -2813,7 +2818,7 @@ const UIController = (() => {
         try {
           const res = GameEngine.launderMoney(val);
           launderInput.value = '';
-          showToast('تم الغسيل المالي', `تم غسيل ${res.amount.toLocaleString()} EGP وإيداع صافي ${res.cleanedAmount.toLocaleString()} EGP بحسابك البنكي (خصم عمولة ${res.feeRate}% = ${res.fee.toLocaleString()} EGP).`, 'success');
+          showToast('تم الغسيل المالي', `تم غسيل وتبييض ${res.amount.toLocaleString()} EGP وإيداع صافي ${res.cleanedAmount.toLocaleString()} EGP بحسابك البنكي (خصم عمولة ${res.feeRate}% = ${res.fee.toLocaleString()} EGP).`, 'success');
           renderAll();
         } catch (err) {
           showToast('فشل الغسيل', err.message, 'error');

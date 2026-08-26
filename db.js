@@ -497,6 +497,7 @@ const AppDB = (() => {
       username: username,
       cash: 5000,
       bank: 0,
+      dirtyCash: 0,
       netWorth: 5000,
       xp: 0,
       jobId: 'unemployed',
@@ -566,6 +567,7 @@ const AppDB = (() => {
         batch.set(doc.ref, {
           cash: 5000,
           bank: 0,
+          dirtyCash: 0,
           netWorth: 5000,
           businesses: {},
           assets: {},

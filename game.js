@@ -268,6 +268,7 @@ const GameEngine = (() => {
   const INITIAL_STATE = {
     cash: 1500,
     bank: 500,
+    dirtyCash: 0,
     xp: 0,
     underworldRep: 0,
     heatLevel: 0,
@@ -332,9 +333,9 @@ const GameEngine = (() => {
     });
   }
 
-  // Calculate Net Worth: Cash + Bank + (Real Estate * Cost) + (Stocks * currentPrice) + Locked Investments
+  // Calculate Net Worth: Cash + Bank + DirtyCash + (Real Estate * Cost) + (Stocks * currentPrice) + Locked Investments
   function calculateNetWorth() {
-    let worth = state.cash + state.bank;
+    let worth = (state.cash || 0) + (state.bank || 0) + (state.dirtyCash || 0);
     
     // Add real estate assets value
     Object.keys(state.assets).forEach(key => {
@@ -538,6 +539,22 @@ const GameEngine = (() => {
         }
       }
     });
+
+    // 4.5 Passive Business Front Laundering (واجهات الشركات لغسيل الأموال تلقائياً بدون عمولة)
+    if ((state.dirtyCash || 0) > 0 && state.businesses) {
+      let bizFrontCapacity = 0;
+      Object.keys(state.businesses).forEach(k => {
+        const b = state.businesses[k];
+        if (b && b.level > 0) {
+          bizFrontCapacity += b.level * 250; // Each business level launders 250 EGP per tick automatically
+        }
+      });
+      if (bizFrontCapacity > 0) {
+        const autoCleaned = Math.min(state.dirtyCash, bizFrontCapacity);
+        state.dirtyCash -= autoCleaned;
+        state.cash += autoCleaned; // Added as clean legitimate cash
+      }
+    }
 
     // Progressive Wealth Tax on Ultra-High Net Worth
     if (state.netWorth > 3000000) {
@@ -782,6 +799,7 @@ const GameEngine = (() => {
       state = {
         ...INITIAL_STATE,
         ...dbState,
+        dirtyCash: Number(dbState.dirtyCash || 0),
         businesses: mergedBusinesses,
         assets: mergedAssets,
         stocks: mergedStocks,
@@ -1207,12 +1225,19 @@ const GameEngine = (() => {
     const deal = BLACK_MARKET[dealId];
     if (!deal) throw new Error("الصفقة غير متوفرة.");
 
-    if (state.cash < deal.cost) {
+    const totalCashAvailable = (state.cash || 0) + (state.dirtyCash || 0);
+    if (totalCashAvailable < deal.cost) {
       throw new Error(`تحتاج لرأسمال ${deal.cost.toLocaleString()} جنيه للقيام بهذه الصفقة المشبوهة.`);
     }
 
-    // Deduct raw capital cost immediately
-    state.cash -= deal.cost;
+    // Deduct cost: first from dirtyCash if available, then remaining from clean cash
+    if ((state.dirtyCash || 0) >= deal.cost) {
+      state.dirtyCash -= deal.cost;
+    } else {
+      const remainingCost = deal.cost - (state.dirtyCash || 0);
+      state.dirtyCash = 0;
+      state.cash -= remainingCost;
+    }
 
     // Calculate risk modifiers
     let riskReduction = 0;
@@ -1229,8 +1254,8 @@ const GameEngine = (() => {
 
     const roll = Math.random();
     if (roll < finalSuccessChance) {
-      // SUCCESS: High ROI Payout & Underworld Rep Gain
-      state.cash += deal.payout;
+      // SUCCESS: High ROI Payout into DIRTY CASH (أرباح السوق السوداء غير مشروعة ويجب غسيلها)
+      state.dirtyCash = (state.dirtyCash || 0) + deal.payout;
       state.underworldRep = (state.underworldRep || 0) + (deal.repGain || 20);
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
@@ -1256,9 +1281,13 @@ const GameEngine = (() => {
         };
       }
 
-      // Fine (20% of remaining cash) and lock in jail
-      const confiscation = Math.floor(state.cash * 0.20);
-      state.cash -= confiscation;
+      // Confiscate 100% of illegal dirty cash + 20% fine on remaining clean cash
+      const confiscatedDirty = state.dirtyCash || 0;
+      const confiscatedClean = Math.floor((state.cash || 0) * 0.20);
+      const totalConfiscation = confiscatedDirty + confiscatedClean;
+      
+      state.dirtyCash = 0;
+      state.cash -= confiscatedClean;
       state.jailTimer = deal.jailDuration;
       state.heatLevel = Math.min(5, (state.heatLevel || 0) + 1);
 
@@ -1267,7 +1296,9 @@ const GameEngine = (() => {
       return {
         success: false,
         escaped: false,
-        confiscation: confiscation,
+        confiscation: totalConfiscation,
+        confiscatedDirty,
+        confiscatedClean,
         jailDuration: deal.jailDuration
       };
     }
@@ -1279,11 +1310,19 @@ const GameEngine = (() => {
     const item = BLACK_MARKET_GEAR[gearId];
     if (!item) throw new Error("المعدة غير متوفرة.");
 
-    if (state.cash < item.cost) {
-      throw new Error(`سعر المعدة ${item.cost.toLocaleString()} جنيه. رصيدك النقدي لا يكفي.`);
+    const totalCash = (state.cash || 0) + (state.dirtyCash || 0);
+    if (totalCash < item.cost) {
+      throw new Error(`سعر المعدة ${item.cost.toLocaleString()} جنيه. رصيدك لا يكفي.`);
     }
 
-    state.cash -= item.cost;
+    if ((state.dirtyCash || 0) >= item.cost) {
+      state.dirtyCash -= item.cost;
+    } else {
+      const rem = item.cost - (state.dirtyCash || 0);
+      state.dirtyCash = 0;
+      state.cash -= rem;
+    }
+
     if (!state.inventory) state.inventory = {};
     state.inventory[gearId] = (state.inventory[gearId] || 0) + 1;
 
@@ -1300,11 +1339,18 @@ const GameEngine = (() => {
     if (state.jailTimer <= 0 && (!state.heatLevel || state.heatLevel <= 0)) {
       throw new Error("سجلك نظيف حالياً ولا توجد ملاحقات أمنية أو أحكام سجن عليك!");
     }
-    const bribeCost = Math.max(15000, Math.floor(state.cash * 0.15) + (state.jailTimer * 1000));
-    if (state.cash < bribeCost) {
+    const bribeCost = Math.max(15000, Math.floor((state.cash || 0) * 0.15) + ((state.jailTimer || 0) * 1000));
+    const totalCash = (state.cash || 0) + (state.dirtyCash || 0);
+    if (totalCash < bribeCost) {
       throw new Error(`تكلفة الرشوة والوساطة ${bribeCost.toLocaleString()} جنيه. رصيدك لا يكفي.`);
     }
-    state.cash -= bribeCost;
+    if ((state.dirtyCash || 0) >= bribeCost) {
+      state.dirtyCash -= bribeCost;
+    } else {
+      const rem = bribeCost - (state.dirtyCash || 0);
+      state.dirtyCash = 0;
+      state.cash -= rem;
+    }
     state.jailTimer = 0;
     state.heatLevel = 0;
     state.netWorth = calculateNetWorth();
@@ -1312,18 +1358,25 @@ const GameEngine = (() => {
     return { bribeCost };
   }
 
-  // Instant Money Laundering
+  // Instant Money Laundering (غسيل الأموال غير المشروعة وتحويلها لرصيد بنكي نظيف)
   function launderMoney(amount) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إدارة عمليات غسيل الأموال.");
     if (!amount || isNaN(amount) || amount <= 0) throw new Error("يرجى إدخال مبلغ صحيح للغسيل.");
-    if (state.cash < amount) throw new Error("لا تملك هذا المبلغ نقداً للغسيل.");
+    
+    const availableDirty = state.dirtyCash || 0;
+    if (availableDirty <= 0) {
+      throw new Error("لا توجد أموال مشبوهة أو أرباح غير مشروعة في حوزتك لغسيلها حالياً.");
+    }
+    if (availableDirty < amount) {
+      throw new Error(`المبلغ المطلوب (${amount.toLocaleString()} ج.م) أكبر من رصيد الأموال غير المشروعة المتاحة (${availableDirty.toLocaleString()} ج.م).`);
+    }
     
     const feeRate = (state.inventory && state.inventory.crypto_cleaner > 0) ? 0.05 : 0.12;
     const fee = Math.floor(amount * feeRate);
     const cleanedAmount = amount - fee;
     
-    state.cash -= amount;
-    state.bank += cleanedAmount;
+    state.dirtyCash = Math.max(0, state.dirtyCash - amount);
+    state.bank = (state.bank || 0) + cleanedAmount;
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
     return {
