@@ -685,6 +685,20 @@ const GameEngine = (() => {
     };
   }
 
+  function fileTaxDeclaration() {
+    const cost = 100000;
+    if ((state.cash || 0) < cost) {
+      throw new Error(`تحتاج إلى ${cost.toLocaleString()} ج.م كاش لتقديم الإقرار والتسوية الضريبية.`);
+    }
+    state.cash -= cost;
+    state.totalTaxesPaid = (state.totalTaxesPaid || 0) + cost;
+    state.xp = (state.xp || 0) + 250;
+    recordPlayerActivity('إقرار ضريبي', `تقديم إقرار ضريبي طوعي وتسوية ${cost.toLocaleString()} ج.م (+250 XP)`, 'banking');
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+    return { cost, xpGain: 250 };
+  }
+
   function calculatePassiveIncomePerSecond() {
     return calculatePassiveIncomePerTick();
   }
