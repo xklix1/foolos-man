@@ -8,10 +8,10 @@ const UIController = (() => {
   let activeTab = 'dashboard';
   let tickIntervalId = null;
 
-  // Work shift cooldown state (2 seconds)
+  // Work shift cooldown state (2.5 seconds)
   let workCooldownActive = false;
   let workCooldownTimer = null;
-  const WORK_COOLDOWN_MS = 2000;
+  const WORK_COOLDOWN_MS = 2500;
 
   // Sound FX & Audio System State
   let audioCtx = null;
@@ -1216,7 +1216,7 @@ const UIController = (() => {
           }
         });
       } else {
-        const nextUpgradeCost = Math.floor(biz.cost * Math.pow(1.6, bizState.level));
+        const nextUpgradeCost = Math.floor(biz.cost * Math.pow(1.75, bizState.level));
         const workerHireCost = Math.floor(biz.cost * 0.15 * (1 + (bizState.workers || 0)));
         const campaignCost = Math.floor(biz.cost * 0.25);
         const marketingActive = (bizState.marketingTicks && bizState.marketingTicks > 0);
@@ -1238,7 +1238,9 @@ const UIController = (() => {
         const marketingBoost = marketingActive ? 1.4 : 1.0;
         const estimatedDemand = Math.floor(biz.baseDemand * upgradeFactor * elasticityFactor * workerFactor * marketingBoost);
         const profitMargin = price - actualCostOfGoods;
-        const profitPerTick = Math.max(0, Math.floor(estimatedDemand * profitMargin * 0.15));
+        const grossProfit = Math.max(0, Math.floor(estimatedDemand * profitMargin * 0.12));
+        const workerPayroll = (bizState.workers || 0) * (biz.workerWage || 0);
+        const profitPerTick = Math.max(0, grossProfit - workerPayroll);
 
         card.innerHTML = `
           <div class="flex justify-between items-center mb-3">
@@ -1247,8 +1249,8 @@ const UIController = (() => {
           </div>
           
           <div class="text-xs text-slate-400 space-y-1 mb-4 border-b border-slate-800 pb-3">
-            <div class="flex justify-between"><span>العمالة الحالية:</span><span id="biz-workers-${key}" class="numbers-font text-white font-bold">${bizState.workers || 0} عمال</span></div>
-            <div class="flex justify-between"><span>تكلفة المواد/التشغيل التنافسية:</span><span id="biz-cog-${key}" class="numbers-font text-rose-400">${actualCostOfGoods} EGP/وحدة</span></div>
+            <div class="flex justify-between"><span>العمالة الحالية:</span><span id="biz-workers-${key}" class="numbers-font text-white font-bold">${bizState.workers || 0} عمال (أجور: -${workerPayroll} EGP/دورة)</span></div>
+            <div class="flex justify-between"><span>تكلفة المواد/التشغيل:</span><span id="biz-cog-${key}" class="numbers-font text-rose-400">${actualCostOfGoods} EGP/وحدة</span></div>
             <div class="flex justify-between"><span>الطلب الحالي المتوقع:</span><span id="biz-demand-${key}" class="numbers-font text-sky-400 font-bold">${estimatedDemand} وحدة/دورة ${marketingActive ? '<span class="text-yellow-400 font-bold">(+40% ترويج)</span>' : ''}</span></div>
             <div class="flex justify-between"><span>هامش ربح الوحدة:</span><span id="biz-margin-${key}" class="numbers-font ${profitMargin >= 0 ? 'text-teal-400' : 'text-rose-400'} font-bold">${profitMargin} EGP</span></div>
             <div class="flex justify-between"><span>العائد الصافي الفعلي:</span><span id="biz-profit-${key}" class="numbers-font text-emerald-400 font-bold">+${profitPerTick.toLocaleString()} EGP / دورة</span></div>
@@ -1385,7 +1387,9 @@ const UIController = (() => {
       const marketingBoost = marketingActive ? 1.4 : 1.0;
       const estimatedDemand = Math.floor(biz.baseDemand * upgradeFactor * elasticityFactor * workerFactor * marketingBoost);
       const profitMargin = price - actualCostOfGoods;
-      const profitPerTick = Math.max(0, Math.floor(estimatedDemand * profitMargin * 0.15));
+      const grossProfit = Math.max(0, Math.floor(estimatedDemand * profitMargin * 0.12));
+      const workerPayroll = (bizState.workers || 0) * (biz.workerWage || 0);
+      const profitPerTick = Math.max(0, grossProfit - workerPayroll);
 
       const cogEl = document.getElementById(`biz-cog-${key}`);
       if (cogEl) cogEl.textContent = `${actualCostOfGoods} EGP/وحدة`;

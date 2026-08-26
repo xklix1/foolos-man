@@ -8,81 +8,87 @@ const GameEngine = (() => {
   // --- Game Configurations & Data Tables ---
 
   const JOBS = {
-    worker:     { id: 'worker',     name: 'عامل باليومية',              salary: 15,   xpReward: 5,  xpNeeded: 0 },
-    cashier:    { id: 'cashier',    name: 'محاسب صندوق',                salary: 45,   xpReward: 8,  xpNeeded: 120 },
-    accountant: { id: 'accountant', name: 'محاسب مالي قانوني',          salary: 110,  xpReward: 12, xpNeeded: 350 },
-    manager:    { id: 'manager',    name: 'مدير فرع',                   salary: 280,  xpReward: 18, xpNeeded: 900 },
-    director:   { id: 'director',  name: 'مدير تنفيذي للمجموعة',       salary: 650,  xpReward: 25, xpNeeded: 2500 },
-    ceo:        { id: 'ceo',       name: 'رئيس مجلس الإدارة',           salary: 1500, xpReward: 35, xpNeeded: 6000 }
+    worker:     { id: 'worker',     name: 'عامل باليومية',              salary: 12,   xpReward: 4,  xpNeeded: 0 },
+    cashier:    { id: 'cashier',    name: 'محاسب صندوق',                salary: 32,   xpReward: 7,  xpNeeded: 80 },
+    accountant: { id: 'accountant', name: 'محاسب مالي قانوني',          salary: 85,   xpReward: 12, xpNeeded: 280 },
+    manager:    { id: 'manager',    name: 'مدير فرع',                   salary: 210,  xpReward: 18, xpNeeded: 850 },
+    director:   { id: 'director',  name: 'مدير تنفيذي للمجموعة',       salary: 540,  xpReward: 26, xpNeeded: 2400 },
+    ceo:        { id: 'ceo',       name: 'رئيس مجلس الإدارة',           salary: 1400, xpReward: 40, xpNeeded: 6500 }
   };
 
   const BUSINESSES = {
     coffee: {
       id: 'coffee',
       name: 'عربة قهوة مختصة',
-      cost: 12000,
-      baseDemand: 30,
-      optimumPrice: 18,
-      costOfGoods: 6,
-      upgradeMultiplier: 1.5,
-      workerMultiplier: 1.15
+      cost: 15000,
+      baseDemand: 22,
+      optimumPrice: 22,
+      costOfGoods: 9,
+      upgradeMultiplier: 1.45,
+      workerMultiplier: 1.15,
+      workerWage: 6
     },
     tech: {
       id: 'tech',
       name: 'شركة برمجيات وتطبيقات',
-      cost: 95000,
-      baseDemand: 10,
-      optimumPrice: 140,
-      costOfGoods: 35,
-      upgradeMultiplier: 1.6,
-      workerMultiplier: 1.2
+      cost: 110000,
+      baseDemand: 8,
+      optimumPrice: 160,
+      costOfGoods: 55,
+      upgradeMultiplier: 1.55,
+      workerMultiplier: 1.20,
+      workerWage: 25
     },
     logistics: {
       id: 'logistics',
       name: 'مجمع خدمات لوجستية وشحن',
-      cost: 520000,
-      baseDemand: 4,
-      optimumPrice: 950,
-      costOfGoods: 220,
-      upgradeMultiplier: 1.7,
-      workerMultiplier: 1.25
+      cost: 650000,
+      baseDemand: 5,
+      optimumPrice: 1100,
+      costOfGoods: 360,
+      upgradeMultiplier: 1.65,
+      workerMultiplier: 1.25,
+      workerWage: 110
     },
     supermarket: {
       id: 'supermarket',
       name: 'سلسلة سوبرماركت وتجزئة',
-      cost: 1850000,
-      baseDemand: 18,
-      optimumPrice: 380,
-      costOfGoods: 110,
-      upgradeMultiplier: 1.75,
-      workerMultiplier: 1.28
+      cost: 2400000,
+      baseDemand: 16,
+      optimumPrice: 450,
+      costOfGoods: 180,
+      upgradeMultiplier: 1.70,
+      workerMultiplier: 1.28,
+      workerWage: 320
     },
     solar_factory: {
       id: 'solar_factory',
       name: 'مصنع ألواح الطاقة الشمسية',
-      cost: 6500000,
-      baseDemand: 8,
-      optimumPrice: 2400,
-      costOfGoods: 750,
-      upgradeMultiplier: 1.8,
-      workerMultiplier: 1.3
+      cost: 8500000,
+      baseDemand: 7,
+      optimumPrice: 3200,
+      costOfGoods: 1250,
+      upgradeMultiplier: 1.75,
+      workerMultiplier: 1.30,
+      workerWage: 950
     },
     private_hospital: {
       id: 'private_hospital',
       name: 'مستشفى ومجمع طبي تخصصي',
-      cost: 22000000,
-      baseDemand: 5,
-      optimumPrice: 8500,
-      costOfGoods: 2100,
-      upgradeMultiplier: 1.85,
-      workerMultiplier: 1.35
+      cost: 32000000,
+      baseDemand: 4,
+      optimumPrice: 11500,
+      costOfGoods: 3800,
+      upgradeMultiplier: 1.80,
+      workerMultiplier: 1.35,
+      workerWage: 2800
     }
   };
 
   const ASSETS = {
-    apartment: { id: 'apartment', name: 'شقة سكنية مؤجرة', cost: 150000, rent: 180, appreciation: 0.001 },
-    office: { id: 'office', name: 'مبنى مكاتب تجارية', cost: 980000, rent: 1350, appreciation: 0.0015 },
-    mansion: { id: 'mansion', name: 'قصر ريفي فاخر', cost: 4500000, rent: 7200, appreciation: 0.002 }
+    apartment: { id: 'apartment', name: 'شقة سكنية مؤجرة', cost: 180000, rent: 140, appreciation: 0.0008 },
+    office: { id: 'office', name: 'مبنى مكاتب تجارية', cost: 1200000, rent: 1100, appreciation: 0.0012 },
+    mansion: { id: 'mansion', name: 'قصر ريفي فاخر', cost: 5500000, rent: 5800, appreciation: 0.0015 }
   };
 
   const STOCKS = {
@@ -161,10 +167,10 @@ const GameEngine = (() => {
       id: 'contraband_cigars',
       name: 'تهريب بضائع وسيجار جمركي فاخر',
       desc: 'إدخال شحنة بضائع حصرية عبر الميناء بدون دفع رسوم جمركية.',
-      cost: 5000,
-      payout: 16000,
-      successChance: 0.88,
-      jailDuration: 15,
+      cost: 6000,
+      payout: 15000,
+      successChance: 0.82,
+      jailDuration: 18,
       repGain: 15,
       icon: 'fa-box-open',
       tier: 'سهل'
@@ -173,10 +179,10 @@ const GameEngine = (() => {
       id: 'electronics',
       name: 'تهريب حاوية أجهزة إلكترونية حديثة',
       desc: 'استيراد غير رسمي لأجهزة هواتف ومعدات حاسوبية من وراء الجمارك.',
-      cost: 25000,
-      payout: 90000,
-      successChance: 0.78,
-      jailDuration: 30,
+      cost: 35000,
+      payout: 88000,
+      successChance: 0.72,
+      jailDuration: 35,
       repGain: 35,
       icon: 'fa-laptop-code',
       tier: 'متوسط'
@@ -185,10 +191,10 @@ const GameEngine = (() => {
       id: 'arms_intel',
       name: 'صفقة تسريب سيرفرات وبيانات استخباراتية',
       desc: 'بيع وثائق حساسة وشفرات سرية لجهات استثمارية عالمية.',
-      cost: 80000,
-      payout: 340000,
-      successChance: 0.65,
-      jailDuration: 50,
+      cost: 110000,
+      payout: 320000,
+      successChance: 0.58,
+      jailDuration: 60,
       repGain: 80,
       icon: 'fa-user-secret',
       tier: 'متقدم'
@@ -197,10 +203,10 @@ const GameEngine = (() => {
       id: 'crypto',
       name: 'اختراق منصات رقمية وغسيل عملات مشفرة',
       desc: 'هجوم سيبراني معقد على محافظ العملات المشفرة مع تحويل الأصول لخوادم خارجية.',
-      cost: 250000,
-      payout: 1200000,
-      successChance: 0.52,
-      jailDuration: 75,
+      cost: 380000,
+      payout: 1250000,
+      successChance: 0.46,
+      jailDuration: 90,
       repGain: 160,
       icon: 'fa-network-wired',
       tier: 'محترف'
@@ -209,10 +215,10 @@ const GameEngine = (() => {
       id: 'artifacts',
       name: 'تهريب آثار ومخطوطات نادرة لمزادات سرية',
       desc: 'صفقة كبرى لبيع قطع أثرية نادرة لكبار هواة الجمع في السوق السوداء الدولية.',
-      cost: 750000,
-      payout: 4200000,
-      successChance: 0.42,
-      jailDuration: 110,
+      cost: 1200000,
+      payout: 4600000,
+      successChance: 0.36,
+      jailDuration: 130,
       repGain: 320,
       icon: 'fa-gem',
       tier: 'خطر جداً'
@@ -221,10 +227,10 @@ const GameEngine = (() => {
       id: 'diamond_heist',
       name: 'عملية السطو الكبرى على خزائن الماس الدولية',
       desc: 'أضخم عملية سرقة منظمة في التاريخ لخزينة الماس والسبائك البنكية.',
-      cost: 2500000,
-      payout: 18000000,
-      successChance: 0.30,
-      jailDuration: 150,
+      cost: 4000000,
+      payout: 20000000,
+      successChance: 0.24,
+      jailDuration: 180,
       repGain: 800,
       icon: 'fa-shield-halved',
       tier: 'أسطوري'
@@ -260,19 +266,19 @@ const GameEngine = (() => {
 
   // --- Initial Default Player State ---
   const INITIAL_STATE = {
-    cash: 5000,
-    bank: 1000,
+    cash: 1500,
+    bank: 500,
     xp: 0,
     underworldRep: 0,
     heatLevel: 0,
     jobId: 'worker',
     businesses: {
-      coffee: { level: 0, price: 18, workers: 0 },
-      tech: { level: 0, price: 140, workers: 0 },
-      logistics: { level: 0, price: 950, workers: 0 },
-      supermarket: { level: 0, price: 380, workers: 0 },
-      solar_factory: { level: 0, price: 2400, workers: 0 },
-      private_hospital: { level: 0, price: 8500, workers: 0 }
+      coffee: { level: 0, price: 22, workers: 0 },
+      tech: { level: 0, price: 160, workers: 0 },
+      logistics: { level: 0, price: 1100, workers: 0 },
+      supermarket: { level: 0, price: 450, workers: 0 },
+      solar_factory: { level: 0, price: 3200, workers: 0 },
+      private_hospital: { level: 0, price: 11500, workers: 0 }
     },
     investments: [], // Array of { id, investedAmount, ticksRemaining, rate, name }
     assets: {
@@ -301,7 +307,7 @@ const GameEngine = (() => {
     itemDurations: {}, // Stores { itemId: ticksRemaining } for self-destruction timer
     jailTimer: 0,
     afkManagerExpiresAt: 0, // 12-hour active manager timestamp
-    netWorth: 6000,
+    netWorth: 2000,
     title: 'عامل مبتدئ'
   };
 
@@ -353,14 +359,14 @@ const GameEngine = (() => {
 
   // Update Player Title based on Net Worth and XP
   function getAppropriateTitle(worth, xp) {
-    if (worth >= 10000000 && xp >= 5000) return 'إمبراطور المال والفلوس';
-    if (worth >= 5000000 && xp >= 2500) return 'ملياردير عصامي';
-    if (worth >= 1000000 && xp >= 1000) return 'مليونير فخم';
-    if (worth >= 500000 && xp >= 500) return 'سيد الأعمال';
-    if (worth >= 200000) return 'مستثمر طموح';
-    if (worth >= 50000) return 'تاجر صاعد';
-    if (xp >= 300) return 'موظف متميز';
-    if (xp >= 100) return 'عامل ماهر';
+    if (worth >= 50000000 && xp >= 10000) return 'إمبراطور المال والفلوس';
+    if (worth >= 25000000 && xp >= 5000) return 'ملياردير عصامي';
+    if (worth >= 5000000 && xp >= 2000) return 'مليونير فخم';
+    if (worth >= 1500000 && xp >= 800) return 'سيد الأعمال';
+    if (worth >= 400000 && xp >= 350) return 'مستثمر طموح';
+    if (worth >= 100000 && xp >= 120) return 'تاجر صاعد';
+    if (xp >= 60) return 'موظف متميز';
+    if (xp >= 20) return 'عامل ماهر';
     return 'عامل مبتدئ';
   }
 
@@ -369,7 +375,7 @@ const GameEngine = (() => {
     let income = 0;
     if (!state) return 0;
 
-    // 1. Businesses income
+    // 1. Businesses income (Gross Revenue minus Worker Wages Payroll)
     if (state.businesses) {
       Object.keys(state.businesses).forEach(key => {
         const bizState = state.businesses[key];
@@ -387,8 +393,10 @@ const GameEngine = (() => {
           const workerFactor = 1 + ((bizState.workers || 0) * (bizConfig.workerMultiplier - 1));
           const demand = Math.floor(bizConfig.baseDemand * upgradeFactor * elasticity * workerFactor * marketingBoost);
           const margin = price - actualCostOfGoods;
-          const profit = Math.max(0, Math.floor(demand * margin * 0.15));
-          income += profit;
+          const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12));
+          const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
+          const netProfit = Math.max(0, grossProfit - workerPayroll);
+          income += netProfit;
         }
       });
     }
@@ -403,9 +411,17 @@ const GameEngine = (() => {
       });
     }
 
-    // 3. Bank interest
+    // 3. Bank interest (0.003% per tick = ~3.5% APY)
     if (state.bank && state.bank > 0) {
-      income += Math.floor(state.bank * 0.00005);
+      income += Math.floor(state.bank * 0.00003);
+    }
+
+    // 4. Wealth Tax deduction for ultra-high net worth
+    if (state.netWorth > 3000000) {
+      const taxShieldActive = state.inventory && state.inventory.tax_shield > 0;
+      const taxRate = taxShieldActive ? 0.000005 : 0.00002;
+      const tax = Math.floor((state.netWorth - 3000000) * taxRate);
+      income = Math.max(0, income - tax);
     }
 
     return income;
@@ -456,9 +472,9 @@ const GameEngine = (() => {
       return updates;
     }
 
-    // 2. Bank compound interest accrual (0.005% per tick = ~6% APY)
+    // 2. Bank compound interest accrual (0.003% per tick = ~3.5% APY)
     if (state.bank > 0) {
-      const rate = 0.00005; // 0.005% per 3s tick
+      const rate = 0.00003;
       const interest = Math.floor(state.bank * rate);
       if (interest > 0) {
         state.bank += interest;
@@ -474,7 +490,7 @@ const GameEngine = (() => {
       updates.businessProfitGained += currentJob.salary;
     }
 
-    // 4. Businesses passive income ticking
+    // 4. Businesses passive income ticking (Gross revenue minus Worker Wages Payroll)
     Object.keys(state.businesses).forEach(key => {
       const bizState = state.businesses[key];
       const bizConfig = BUSINESSES[key];
@@ -511,8 +527,10 @@ const GameEngine = (() => {
         // Margin per unit = Price - Dynamic Cost of Goods
         const margin = price - actualCostOfGoods;
         
-        // Final profit per tick = demand * margin
-        const profit = Math.max(0, Math.floor(demand * margin * 0.15));
+        // Final profit per tick = gross margin minus worker wages
+        const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12));
+        const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
+        const profit = Math.max(0, grossProfit - workerPayroll);
         
         if (profit > 0) {
           state.cash += profit;
@@ -520,6 +538,16 @@ const GameEngine = (() => {
         }
       }
     });
+
+    // Progressive Wealth Tax on Ultra-High Net Worth
+    if (state.netWorth > 3000000) {
+      const taxShieldActive = state.inventory && state.inventory.tax_shield > 0;
+      const taxRate = taxShieldActive ? 0.000005 : 0.00002;
+      const tax = Math.floor((state.netWorth - 3000000) * taxRate);
+      if (tax > 0) {
+        state.cash = Math.max(0, state.cash - tax);
+      }
+    }
 
     // 5. Assets / Real Estate passive rental income ticking
     Object.keys(state.assets).forEach(key => {
@@ -904,8 +932,8 @@ const GameEngine = (() => {
     const bizState = state.businesses[key];
     if (!bizState || bizState.level === 0) throw new Error("يجب شراء هذا المشروع أولاً قبل ترقيته.");
 
-    // Upgrade cost scales exponentially based on current level
-    const upgradeCost = Math.floor(biz.cost * Math.pow(1.6, bizState.level));
+    // Upgrade cost scales exponentially based on current level (1.75x scaling)
+    const upgradeCost = Math.floor(biz.cost * Math.pow(1.75, bizState.level));
     if (state.cash < upgradeCost) {
       throw new Error(`رصيدك غير كافٍ للترقية. تحتاج: ${upgradeCost.toLocaleString()} EGP — لديك: ${state.cash.toLocaleString()} EGP`);
     }
