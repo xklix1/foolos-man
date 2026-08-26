@@ -782,50 +782,82 @@ const GameEngine = (() => {
       updates.stockMovement = true;
     });
 
-    // 8. Dynamic Market Events (Boom, Crash, Scandals, Tech Breakout)
-    if (!updates.tipEvent && Math.random() < 0.08) { // 8% chance per tick (~every 35s)
+    // 8. Dynamic Market Events (All 8 Assets: COMI, EAST, ETEL, FWRY, CASH, BITC, GOLD, AIX)
+    if (!updates.tipEvent && Math.random() < 0.12) { // 12% chance per tick (~every 20-30s)
       const eventTypes = [
         {
-          type: 'tech_boom',
-          title: 'طفرة تقنية وانتعاش الذكاء الاصطناعي',
-          desc: 'ارتفعت أرباح شركة فوري وصندوق CASH نتيجة استثمارات هائلة في الذكاء الاصطناعي!',
-          targetStocks: ['FWRY', 'CASH'],
-          multiplier: 1.25,
+          type: 'crypto_bull_run',
+          title: '🚀 انفجار سعر البيتكوين والأصول الرقمية',
+          desc: 'موجة سيولة دولية قياسية تقفز بسهم BITC وصندوق الذكاء الاصطناعي AIX لقمم جديدة!',
+          targetStocks: ['BITC', 'AIX'],
+          multiplier: 1.32,
+          toastType: 'success'
+        },
+        {
+          type: 'gold_surge',
+          title: '👑 ارتفاع تاريخي لسبائك الذهب 24k',
+          desc: 'إقبال هائل من البنوك المركزية على شراء الذهب كملاذ آمن يرفع سهم GOLD بقوة!',
+          targetStocks: ['GOLD', 'CASH'],
+          multiplier: 1.28,
+          toastType: 'success'
+        },
+        {
+          type: 'ai_breakthrough',
+          title: '🤖 طفرة تكنولوجية في أبحاث الذكاء الاصطناعي',
+          desc: 'إطلاق نماذج ذكاء اصطناعي فائقة يرفع أسهم AIX وفوري FWRY إلى مستويات غير مسبوقة!',
+          targetStocks: ['AIX', 'FWRY'],
+          multiplier: 1.30,
           toastType: 'success'
         },
         {
           type: 'cbe_rate_hike',
-          title: 'قرار المركزي: رفع الفائدة 200 نقطة',
-          desc: 'البنك المركزي يرفع الفائدة! ارتفاع قوي لسهم CIB وانتكاسة خفيفة باقي الأسهم.',
-          targetStocks: ['COMI'],
-          multiplier: 1.30,
+          title: '🏛️ قرار المركزي: رفع الفائدة المصرفية',
+          desc: 'البنك المركزي يرفع الفائدة! ارتفاع قوي لسهم CIB وانتكاسة تصحيحية لأسهم التجزئة.',
+          targetStocks: ['COMI', 'CASH'],
+          multiplier: 1.25,
           negativeTargets: ['EAST', 'FWRY'],
           negativeMultiplier: 0.88,
           toastType: 'warning'
         },
         {
-          type: 'oil_scandal',
-          title: 'أزمة سلاسل الإمداد والشحن',
-          desc: 'تأخر شحنات التبغ والمواد الخام يؤدي لربكة ومبيعات مكثفة على سهم الشرقية للدخان!',
-          targetStocks: ['EAST'],
-          multiplier: 0.75,
-          toastType: 'error'
-        },
-        {
-          type: 'telecom_expansion',
-          title: 'رخصة 5G للمصرية للاتصالات',
-          desc: 'حصول المصرية للاتصالات على رخصة الجيل الخامس تطلق موجة شراء قياسية!',
+          type: '5g_telecom_license',
+          title: '📡 المصرية للاتصالات تطلق خدمات 5G رسمياً',
+          desc: 'توسعات كبرى في شبكات الاتصالات والألياف تطلق موجة شراء قياسية على سهم ETEL!',
           targetStocks: ['ETEL'],
           multiplier: 1.35,
           toastType: 'success'
         },
         {
-          type: 'market_crash',
-          title: 'ذعر اقتصادي وتصحيح هابط للبورصة',
-          desc: 'موجة بيع جني أرباح مكثفة تهبط بأغلب أسهم السوق بنسب متفاوتة!',
-          targetStocks: ['COMI', 'FWRY', 'CASH', 'EAST', 'ETEL'],
-          multiplier: 0.85,
+          type: 'fintech_boom',
+          title: '💳 طفرة المدفوعات الرقمية والشمول المالي',
+          desc: 'حوافز حكومية وتوسع هائل في المعاملات الإلكترونية يقفز بسهم فوري FWRY للأعلى!',
+          targetStocks: ['FWRY'],
+          multiplier: 1.28,
+          toastType: 'success'
+        },
+        {
+          type: 'supply_chain_relief',
+          title: '🚢 انفراج سلاسل التوريد والشحن الدولي',
+          desc: 'وصول شحنات التبغ والمواد الخام للموانئ يؤدي لقفزة في أرباح الشرقية للدخان EAST!',
+          targetStocks: ['EAST'],
+          multiplier: 1.26,
+          toastType: 'success'
+        },
+        {
+          type: 'crypto_flash_correction',
+          title: '📉 تصحيح هابط مفاجئ في أسواق العملات المشفرة',
+          desc: 'جني أرباح سريع يضغط على البيتكوين BITC مؤقتاً قبل استعادة مسار الصعود!',
+          targetStocks: ['BITC'],
+          multiplier: 0.82,
           toastType: 'error'
+        },
+        {
+          type: 'global_market_correction',
+          title: '⚡ تصحيح هابط عام في أسواق الأسهم',
+          desc: 'موجة بيع لجني الأرباح تهبط بأسهم البورصة بنسب طفيفة تتيح فرص شراء ذهبية في القاع!',
+          targetStocks: ['COMI', 'FWRY', 'EAST', 'ETEL', 'AIX'],
+          multiplier: 0.88,
+          toastType: 'warning'
         }
       ];
 
@@ -853,38 +885,47 @@ const GameEngine = (() => {
       updates.marketEvent = selectedEvent;
     }
 
-
-
-    // 9. Random Tip / Gratuities events (spaced every ~5 minutes = 300,000 ms)
-    const TIP_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+    // 9. Random Life & Career Opportunities (Cooldown: 45 seconds)
+    const TIP_COOLDOWN_MS = 45 * 1000; // 45 seconds for rich gameplay
     const now = Date.now();
     if (!lastTipEventTimestamp) lastTipEventTimestamp = now;
 
-    if (!updates.tipEvent && (now - lastTipEventTimestamp >= TIP_COOLDOWN_MS) && Math.random() < 0.35) {
+    if (!updates.tipEvent && (now - lastTipEventTimestamp >= TIP_COOLDOWN_MS) && Math.random() < 0.40) {
       lastTipEventTimestamp = now;
       const eventChance = Math.random();
       let tipTitle = "";
       let tipText = "";
       let amountGained = 0;
+      let xpBonus = 0;
 
-      if (eventChance < 0.5) {
-        // Customer tip
-        amountGained = Math.floor(250 + Math.random() * 500);
-        tipTitle = "بقشيش إضافي";
-        tipText = `حصلت على بقشيش سخي من أحد العملاء لقاء خدمتك السريعة بقيمة ${amountGained} جنيه.`;
-      } else if (eventChance < 0.8) {
-        // Passersby / Street cash find
+      if (eventChance < 0.35) {
+        // Customer VIP Tip
         amountGained = Math.floor(500 + Math.random() * 1500);
-        tipTitle = "محفظة مفقودة";
-        tipText = `عثرت على مبلغ مالي ملقى على الطريق ولم تجد صاحبه بقيمة ${amountGained} جنيه.`;
+        xpBonus = 15;
+        tipTitle = "💵 إكرامية من عميل VIP";
+        tipText = `حصلت على إكرامية سخية لقاء كفاءتك الاستثنائية بقيمة +${amountGained.toLocaleString()} EGP!`;
+      } else if (eventChance < 0.65) {
+        // Fast Commercial Deal
+        amountGained = Math.floor(3000 + Math.random() * 12000);
+        xpBonus = 35;
+        tipTitle = "🤝 صفقة وساطة سريعة";
+        tipText = `أتممت صفقة وساطة تجارية ناجحة وحصدت عمولة كاش بقيمة +${amountGained.toLocaleString()} EGP!`;
+      } else if (eventChance < 0.85) {
+        // Performance Bonus
+        amountGained = Math.floor(15000 + Math.random() * 45000);
+        xpBonus = 80;
+        tipTitle = "⭐ مكافأة تميز وإدارة";
+        tipText = `منحك مجلس الإدارة مكافأة تميز مفاجئة تقديراً لنمو استثماراتك بقيمة +${amountGained.toLocaleString()} EGP!`;
       } else {
-        // Business bonus
-        amountGained = Math.floor(2000 + Math.random() * 5000);
-        tipTitle = "علاوة تقديرية";
-        tipText = `منحك رئيسك مكافأة تشجيعية مفاجئة لقاء أدائك الاستثنائي بقيمة ${amountGained} جنيه.`;
+        // Angel Investor Dividend
+        amountGained = Math.floor(50000 + Math.random() * 150000);
+        xpBonus = 150;
+        tipTitle = "💎 منحة شريك استثماري";
+        tipText = `قام مستثمر ملاكي بضخ أرباح إضافية في محفظتك بقيمة +${amountGained.toLocaleString()} EGP!`;
       }
 
       state.cash += amountGained;
+      state.xp += xpBonus;
       updates.tipEvent = {
         title: tipTitle,
         message: tipText,
