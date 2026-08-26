@@ -5,6 +5,7 @@
  */
 
 const GameEngine = (() => {
+  console.log('[GAME] Simulation Engine Loaded (v=107)');
   // --- Game Configurations & Data Tables ---
 
   const JOBS = {

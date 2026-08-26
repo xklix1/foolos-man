@@ -5,6 +5,7 @@
  */
 
 const UIController = (() => {
+  console.log('[UI] Controller Loaded (v=107)');
   let activeTab = 'dashboard';
   let tickIntervalId = null;
 
