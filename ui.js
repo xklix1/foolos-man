@@ -3399,29 +3399,111 @@ const UIController = (() => {
         // Only process external admin modifications if explicitly timestamped
         if (data.adminModifiedTimestamp && data.adminModifiedTimestamp > lastAdminActionTimestamp) {
           lastAdminActionTimestamp = data.adminModifiedTimestamp;
-          const s = GameEngine.state;
-          let modified = false;
-          if (data.cash !== undefined && data.cash !== s.cash) {
-            s.cash = data.cash;
-            modified = true;
-          }
-          if (data.bank !== undefined && data.bank !== s.bank) {
-            s.bank = data.bank;
-            modified = true;
-          }
-          if (data.jailTimer !== undefined && data.jailTimer !== s.jailTimer) {
-            s.jailTimer = data.jailTimer;
-            modified = true;
-          }
+          
+          // Comprehensive state synchronization from admin action
+          GameEngine.state.cash = typeof data.cash === 'number' ? data.cash : 0;
+          GameEngine.state.bank = typeof data.bank === 'number' ? data.bank : 0;
+          GameEngine.state.dirtyCash = typeof data.dirtyCash === 'number' ? data.dirtyCash : 0;
+          GameEngine.state.netWorth = typeof data.netWorth === 'number' ? data.netWorth : 0;
+          GameEngine.state.xp = typeof data.xp === 'number' ? data.xp : 0;
+          GameEngine.state.jobId = data.jobId || 'worker';
+          GameEngine.state.title = data.title || 'عامل مبتدئ';
+          GameEngine.state.underworldRep = typeof data.underworldRep === 'number' ? data.underworldRep : 0;
+          GameEngine.state.heatLevel = typeof data.heatLevel === 'number' ? data.heatLevel : 0;
+          GameEngine.state.jailTimer = typeof data.jailTimer === 'number' ? data.jailTimer : 0;
+          GameEngine.state.afkManagerExpiresAt = typeof data.afkManagerExpiresAt === 'number' ? data.afkManagerExpiresAt : 0;
+          GameEngine.state.activeLoan = data.activeLoan || null;
+          GameEngine.state.investments = Array.isArray(data.investments) ? JSON.parse(JSON.stringify(data.investments)) : [];
+          GameEngine.state.businesses = data.businesses ? JSON.parse(JSON.stringify(data.businesses)) : {};
+          GameEngine.state.assets = data.assets ? JSON.parse(JSON.stringify(data.assets)) : {};
+          GameEngine.state.stocks = data.stocks ? JSON.parse(JSON.stringify(data.stocks)) : {};
+          GameEngine.state.inventory = data.inventory ? JSON.parse(JSON.stringify(data.inventory)) : {};
+          GameEngine.state.itemDurations = data.itemDurations ? JSON.parse(JSON.stringify(data.itemDurations)) : {};
 
-          if (modified) {
-            GameEngine.forceSaveState();
-            showToast('إشعار النظام', 'تم تحديث بيانات حسابك من قبل الإدارة.', 'info');
-            renderAll();
-          }
+          // Recalculate net worth based on new clean state
+          GameEngine.calculateTotalNetWorth();
+
+          try {
+            localStorage.setItem(`foolos_state_${GameEngine.activeUsername}`, JSON.stringify(GameEngine.state));
+          } catch (e) {}
+
+          showToast('إشعار النظام', 'تم تحديث أو تصفير بيانات حسابك من قبل الإدارة.', 'info');
+          renderAll();
         }
       }, (err) => console.error("User doc listen err: ", err));
     activeListeners.push(unsubUser);
+  }
+
+  function applyCompleteZeroStateToGameEngine(username) {
+    if (!GameEngine.state) return;
+    GameEngine.state.cash = 0;
+    GameEngine.state.bank = 0;
+    GameEngine.state.dirtyCash = 0;
+    GameEngine.state.netWorth = 0;
+    GameEngine.state.xp = 0;
+    GameEngine.state.jobId = 'worker';
+    GameEngine.state.title = 'عامل مبتدئ';
+    GameEngine.state.underworldRep = 0;
+    GameEngine.state.heatLevel = 0;
+    GameEngine.state.jailTimer = 0;
+    GameEngine.state.afkManagerExpiresAt = 0;
+    GameEngine.state.activeLoan = null;
+    GameEngine.state.investments = [];
+    GameEngine.state.businesses = {
+      coffee: { level: 0, price: 22, workers: 0 },
+      tech: { level: 0, price: 160, workers: 0 },
+      logistics: { level: 0, price: 1100, workers: 0 },
+      supermarket: { level: 0, price: 450, workers: 0 },
+      solar_factory: { level: 0, price: 3200, workers: 0 },
+      private_hospital: { level: 0, price: 11500, workers: 0 },
+      media_studio: { level: 0, price: 28000, workers: 0 },
+      private_bank: { level: 0, price: 95000, workers: 0 },
+      oil_refinery: { level: 0, price: 310000, workers: 0 },
+      space_tech: { level: 0, price: 1250000, workers: 0 }
+    };
+    GameEngine.state.assets = {
+      apartment: 0,
+      office: 0,
+      mansion: 0,
+      skyline_tower: 0,
+      luxury_resort: 0,
+      mega_yacht: 0,
+      private_island: 0,
+      orbital_station: 0
+    };
+    GameEngine.state.stocks = {
+      COMI: { shares: 0, avgPrice: 0 },
+      EAST: { shares: 0, avgPrice: 0 },
+      ETEL: { shares: 0, avgPrice: 0 },
+      FWRY: { shares: 0, avgPrice: 0 },
+      CASH: { shares: 0, avgPrice: 0 },
+      BITC: { shares: 0, avgPrice: 0 },
+      GOLD: { shares: 0, avgPrice: 0 },
+      AIX:  { shares: 0, avgPrice: 0 }
+    };
+    GameEngine.state.inventory = {
+      gold_pen: 0,
+      premium_lawyer: 0,
+      energy_drink: 0,
+      tax_shield: 0,
+      market_scanner: 0,
+      vip_casino_pass: 0,
+      radar_jammer: 0,
+      fake_passport: 0,
+      crypto_cleaner: 0,
+      diplomatic_bag: 0,
+      commissioner_wire: 0,
+      quantum_cpu: 0,
+      diamond_card: 0
+    };
+    GameEngine.state.itemDurations = {};
+    GameEngine.state.offlineReport = null;
+
+    if (username) {
+      try {
+        localStorage.setItem(`foolos_state_${username}`, JSON.stringify(GameEngine.state));
+      } catch (e) {}
+    }
   }
 
   async function checkMaintenanceMode() {
@@ -3939,50 +4021,7 @@ const UIController = (() => {
 
           // If active user is the reset user, sync immediately
           if (selectedPlayer === GameEngine.activeUsername) {
-            GameEngine.state.cash = 0;
-            GameEngine.state.bank = 0;
-            GameEngine.state.dirtyCash = 0;
-            GameEngine.state.netWorth = 0;
-            GameEngine.state.xp = 0;
-            GameEngine.state.jobId = 'worker';
-            GameEngine.state.title = 'عامل مبتدئ';
-            GameEngine.state.underworldRep = 0;
-            GameEngine.state.heatLevel = 0;
-            GameEngine.state.businesses = {
-              coffee: { level: 0, price: 22, workers: 0 },
-              tech: { level: 0, price: 160, workers: 0 },
-              logistics: { level: 0, price: 1100, workers: 0 },
-              supermarket: { level: 0, price: 450, workers: 0 },
-              solar_factory: { level: 0, price: 3200, workers: 0 },
-              private_hospital: { level: 0, price: 11500, workers: 0 }
-            };
-            GameEngine.state.assets = { apartment: 0, office: 0, mansion: 0 };
-            GameEngine.state.stocks = {
-              COMI: { shares: 0, avgPrice: 0 },
-              EAST: { shares: 0, avgPrice: 0 },
-              ETEL: { shares: 0, avgPrice: 0 },
-              FWRY: { shares: 0, avgPrice: 0 },
-              CASH: { shares: 0, avgPrice: 0 }
-            };
-            GameEngine.state.investments = [];
-            GameEngine.state.inventory = {
-              gold_pen: 0,
-              premium_lawyer: 0,
-              energy_drink: 0,
-              tax_shield: 0,
-              market_scanner: 0,
-              vip_casino_pass: 0,
-              radar_jammer: 0,
-              fake_passport: 0,
-              crypto_cleaner: 0
-            };
-            GameEngine.state.itemDurations = {};
-            GameEngine.state.jailTimer = 0;
-            GameEngine.state.afkManagerExpiresAt = 0;
-            GameEngine.state.offlineReport = null;
-            try {
-              localStorage.setItem(`foolos_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
-            } catch (e) {}
+            applyCompleteZeroStateToGameEngine(selectedPlayer);
             renderAll();
           }
 
@@ -4281,39 +4320,7 @@ const UIController = (() => {
           const count = await AppDB.adminResetAllPlayers();
           
           if (GameEngine.activeUsername && GameEngine.activeUsername !== 'FoolosAdmin_X99') {
-            GameEngine.state.cash = 0;
-            GameEngine.state.bank = 0;
-            GameEngine.state.dirtyCash = 0;
-            GameEngine.state.netWorth = 0;
-            GameEngine.state.xp = 0;
-            GameEngine.state.jobId = 'worker';
-            GameEngine.state.title = 'عامل مبتدئ';
-            GameEngine.state.underworldRep = 0;
-            GameEngine.state.heatLevel = 0;
-            GameEngine.state.businesses = {
-              coffee: { level: 0, price: 22, workers: 0 },
-              tech: { level: 0, price: 160, workers: 0 },
-              logistics: { level: 0, price: 1100, workers: 0 },
-              supermarket: { level: 0, price: 450, workers: 0 },
-              solar_factory: { level: 0, price: 3200, workers: 0 },
-              private_hospital: { level: 0, price: 11500, workers: 0 }
-            };
-            GameEngine.state.assets = { apartment: 0, office: 0, mansion: 0 };
-            GameEngine.state.stocks = {
-              COMI: { shares: 0, avgPrice: 0 },
-              EAST: { shares: 0, avgPrice: 0 },
-              ETEL: { shares: 0, avgPrice: 0 },
-              FWRY: { shares: 0, avgPrice: 0 },
-              CASH: { shares: 0, avgPrice: 0 }
-            };
-            GameEngine.state.investments = [];
-            GameEngine.state.inventory = {};
-            GameEngine.state.itemDurations = {};
-            GameEngine.state.jailTimer = 0;
-            GameEngine.state.afkManagerExpiresAt = 0;
-            try {
-              localStorage.setItem(`foolos_state_${GameEngine.activeUsername}`, JSON.stringify(GameEngine.state));
-            } catch (e) {}
+            applyCompleteZeroStateToGameEngine(GameEngine.activeUsername);
             renderAll();
           }
 
