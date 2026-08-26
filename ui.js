@@ -583,10 +583,13 @@ const UIController = (() => {
 
   async function launchGameSession(username) {
     try {
-      const playerState = await GameEngine.loadUserSession(username);
+      const mainLayout = document.getElementById('main-game-layout');
       document.getElementById('start-menu-screen').classList.add('hidden');
       document.getElementById('auth-screen').classList.add('hidden');
-      document.getElementById('main-game-layout').classList.remove('hidden');
+      if (mainLayout) {
+        mainLayout.classList.remove('hidden');
+        mainLayout.classList.add('flex');
+      }
       setupRealTimeListeners(username);
       startGameLoop();
       renderAll();
@@ -615,7 +618,11 @@ const UIController = (() => {
   function returnToStartMenu() {
     refreshStartMenuCard();
     document.getElementById('start-menu-screen').classList.remove('hidden');
-    document.getElementById('main-game-layout').classList.add('hidden');
+    const mainLayout = document.getElementById('main-game-layout');
+    if (mainLayout) {
+      mainLayout.classList.add('hidden');
+      mainLayout.classList.remove('flex');
+    }
     document.getElementById('auth-screen').classList.add('hidden');
   }
 
@@ -770,7 +777,11 @@ const UIController = (() => {
           // Hide auth screen & start menu, show game
           document.getElementById('auth-screen').classList.add('hidden');
           document.getElementById('start-menu-screen').classList.add('hidden');
-          document.getElementById('main-game-layout').classList.remove('hidden');
+          const mainLayout = document.getElementById('main-game-layout');
+          if (mainLayout) {
+            mainLayout.classList.remove('hidden');
+            mainLayout.classList.add('flex');
+          }
           
           setupRealTimeListeners(usernameInput);
           
@@ -3570,7 +3581,10 @@ const UIController = (() => {
     const authScreen = document.getElementById('auth-screen');
     const startMenu = document.getElementById('start-menu-screen');
     if (banOverlay) banOverlay.classList.remove('hidden');
-    if (mainGameLayout) mainGameLayout.classList.add('hidden');
+    if (mainGameLayout) {
+      mainGameLayout.classList.add('hidden');
+      mainGameLayout.classList.remove('flex');
+    }
     if (authScreen) authScreen.classList.add('hidden');
     if (startMenu) startMenu.classList.add('hidden');
     performLogout(false);
@@ -3582,7 +3596,11 @@ const UIController = (() => {
     localStorage.removeItem('foolos_active_session_user');
     GameEngine.logoutUser();
     document.getElementById('auth-screen').classList.add('hidden');
-    document.getElementById('main-game-layout').classList.add('hidden');
+    const mainLayout = document.getElementById('main-game-layout');
+    if (mainLayout) {
+      mainLayout.classList.add('hidden');
+      mainLayout.classList.remove('flex');
+    }
     document.getElementById('start-menu-screen').classList.remove('hidden');
     refreshStartMenuCard();
     if (showToastMsg) {
