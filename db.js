@@ -412,6 +412,7 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
+  // ─────────────────────────────────────────────
   //  ADMIN FUNCTIONS
   // ─────────────────────────────────────────────
   async function sendBroadcast(message) {
@@ -419,9 +420,30 @@ const AppDB = (() => {
     await firestoreDb.collection('globals').doc('broadcast').set({ message, timestamp: Date.now() });
   }
 
-  async function sendAirdrop(amount) {
+  async function sendAirdrop(amount, recipient = null) {
     _requireOnline();
-    await firestoreDb.collection('globals').doc('airdrop').set({ amount: Number(amount), timestamp: Date.now() });
+    const payload = { 
+      amount: Number(amount), 
+      recipient: (recipient && recipient !== 'ALL') ? recipient.trim() : 'ALL', 
+      timestamp: Date.now() 
+    };
+    await firestoreDb.collection('globals').doc('airdrop').set(payload);
+    
+    // If targeted at a single player, inject directly into their doc as well
+    if (recipient && recipient !== 'ALL') {
+      try {
+        const pRef = firestoreDb.collection('players').doc(recipient.trim());
+        const pDoc = await pRef.get();
+        if (pDoc.exists) {
+          const pData = pDoc.data();
+          const newCash = (pData.cash || 0) + Number(amount);
+          const newWorth = (pData.netWorth || 0) + Number(amount);
+          await pRef.set({ cash: newCash, netWorth: newWorth }, { merge: true });
+        }
+      } catch (e) {
+        console.warn('[DB] Targeted airdrop direct save error:', e);
+      }
+    }
   }
 
   async function adminGetPlayer(username) {
@@ -432,23 +454,166 @@ const AppDB = (() => {
     return doc.data();
   }
 
+  async function adminGetAllPlayers() {
+    _requireOnline();
+    const snapshot = await firestoreDb.collection('players').get();
+    const players = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      players.push({
+        username: data.username || doc.id,
+        netWorth: Number(data.netWorth || 0),
+        cash: Number(data.cash || 0),
+        bank: Number(data.bank || 0),
+        title: data.title || 'عامل مبتدئ',
+        jobId: data.jobId || 'unemployed',
+        jailTimer: Number(data.jailTimer || 0),
+        isBanned: Boolean(data.isBanned),
+        isAdmin: Boolean(data.isAdmin || doc.id === SECRET_ADMIN_USERNAME),
+        createdAt: data.createdAt || 0,
+        lastSeen: data.lastSeen || 0,
+        raw: data
+      });
+    });
+    // Sort by NetWorth descending
+    players.sort((a, b) => b.netWorth - a.netWorth);
+    return players;
+  }
+
   async function adminSavePlayer(username, playerState) {
     _requireOnline();
+    username = username.trim();
     playerState.adminModifiedTimestamp = Date.now();
     await firestoreDb.collection('players').doc(username).set(playerState, { merge: true });
   }
 
+  async function adminResetPlayer(username) {
+    _requireOnline();
+    username = username.trim();
+    if (username === SECRET_ADMIN_USERNAME) {
+      throw new Error('لا يمكن تصفير حساب الإدارة الرئيسي.');
+    }
+    const freshData = {
+      username: username,
+      cash: 5000,
+      bank: 0,
+      netWorth: 5000,
+      xp: 0,
+      jobId: 'unemployed',
+      businesses: {},
+      investments: [],
+      assets: {},
+      stocks: {},
+      inventory: {},
+      jailTimer: 0,
+      isBanned: false,
+      title: 'عامل مبتدئ',
+      lastSeen: Date.now(),
+      adminModifiedTimestamp: Date.now()
+    };
+    await firestoreDb.collection('players').doc(username).set(freshData, { merge: true });
+    return freshData;
+  }
+
+  async function adminDeletePlayer(username) {
+    _requireOnline();
+    username = username.trim();
+    if (username === SECRET_ADMIN_USERNAME) {
+      throw new Error('لا يمكن حذف حساب الإدارة الرئيسي.');
+    }
+    await firestoreDb.collection('players').doc(username).delete();
+  }
+
+  async function adminChangePlayerPin(username, newPin) {
+    _requireOnline();
+    username = username.trim();
+    if (!newPin || String(newPin).trim().length < 3) {
+      throw new Error('يجب أن يتكون الرقم السري من 3 خانات على الأقل.');
+    }
+    const pinHash = _hashString(String(newPin).trim());
+    await firestoreDb.collection('players').doc(username).set({ pin: pinHash }, { merge: true });
+  }
+
   async function adminReleaseJail(username) {
-    const playerState = await adminGetPlayer(username);
-    playerState.jailTimer = 0;
-    await adminSavePlayer(username, playerState);
+    username = username.trim();
+    await firestoreDb.collection('players').doc(username).set({ jailTimer: 0 }, { merge: true });
+  }
+
+  async function adminSetPlayerJail(username, jailSeconds = 300) {
+    username = username.trim();
+    await firestoreDb.collection('players').doc(username).set({ jailTimer: Number(jailSeconds) }, { merge: true });
   }
 
   async function adminBanPlayer(username) {
+    username = username.trim();
     if (username === SECRET_ADMIN_USERNAME) throw new Error('لا يمكن حظر حساب الإدارة الرئيسي.');
-    const playerState = await adminGetPlayer(username);
-    playerState.isBanned = true;
-    await adminSavePlayer(username, playerState);
+    await firestoreDb.collection('players').doc(username).set({ isBanned: true }, { merge: true });
+  }
+
+  async function adminUnbanPlayer(username) {
+    username = username.trim();
+    await firestoreDb.collection('players').doc(username).set({ isBanned: false }, { merge: true });
+  }
+
+  async function adminResetAllPlayers() {
+    _requireOnline();
+    const snapshot = await firestoreDb.collection('players').get();
+    const batch = firestoreDb.batch();
+    let count = 0;
+    
+    snapshot.forEach(doc => {
+      if (doc.id !== SECRET_ADMIN_USERNAME) {
+        batch.set(doc.ref, {
+          cash: 5000,
+          bank: 0,
+          netWorth: 5000,
+          businesses: {},
+          assets: {},
+          stocks: {},
+          investments: [],
+          jailTimer: 0,
+          adminModifiedTimestamp: Date.now()
+        }, { merge: true });
+        count++;
+      }
+    });
+    
+    if (count > 0) {
+      await batch.commit();
+    }
+    return count;
+  }
+
+  async function adminWipeLeaderboard() {
+    _requireOnline();
+    const snapshot = await firestoreDb.collection('players').get();
+    const batch = firestoreDb.batch();
+    let count = 0;
+    snapshot.forEach(doc => {
+      if (doc.id !== SECRET_ADMIN_USERNAME) {
+        batch.delete(doc.ref);
+        count++;
+      }
+    });
+    if (count > 0) {
+      await batch.commit();
+    }
+    return count;
+  }
+
+  async function adminClearTransfers() {
+    _requireOnline();
+    const snapshot = await firestoreDb.collection('transfers').limit(100).get();
+    const batch = firestoreDb.batch();
+    let count = 0;
+    snapshot.forEach(doc => {
+      batch.delete(doc.ref);
+      count++;
+    });
+    if (count > 0) {
+      await batch.commit();
+    }
+    return count;
   }
 
   async function getSystemStats() {
@@ -469,19 +634,6 @@ const AppDB = (() => {
     });
 
     return { totalPlayers, totalCash, totalBank, totalNetWorth, jailedCount, bannedCount, activeVersion: CLIENT_VERSION };
-  }
-
-  async function adminWipeLeaderboard() {
-    _requireOnline();
-    const activeUser = window.GameEngine ? GameEngine.activeUsername : '';
-    const snapshot = await firestoreDb.collection('players').get();
-    const batch = firestoreDb.batch();
-    snapshot.forEach(doc => {
-      if (doc.id !== SECRET_ADMIN_USERNAME && doc.id !== activeUser) {
-        batch.delete(doc.ref);
-      }
-    });
-    await batch.commit();
   }
 
   async function adminGetTransfers() {
@@ -544,14 +696,22 @@ const AppDB = (() => {
     getLeaderboard,
     executeWireTransfer,
 
-    // Admin
+    // Admin API
     sendBroadcast,
     sendAirdrop,
     adminGetPlayer,
+    adminGetAllPlayers,
     adminSavePlayer,
+    adminResetPlayer,
+    adminDeletePlayer,
+    adminChangePlayerPin,
     adminReleaseJail,
+    adminSetPlayerJail,
     adminBanPlayer,
+    adminUnbanPlayer,
+    adminResetAllPlayers,
     adminWipeLeaderboard,
+    adminClearTransfers,
     getSystemStats,
     adminGetTransfers,
     setMaintenanceMode,

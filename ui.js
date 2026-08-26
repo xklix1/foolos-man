@@ -994,6 +994,11 @@ const UIController = (() => {
       if (isAdmin) adminBtnMobile.classList.remove('hidden');
       else adminBtnMobile.classList.add('hidden');
     }
+    const adminBtnFab = document.getElementById('btn-admin-panel-trigger-fab');
+    if (adminBtnFab) {
+      if (isAdmin) adminBtnFab.classList.remove('hidden');
+      else adminBtnFab.classList.add('hidden');
+    }
   }
 
   // --- General Render Manager ---
@@ -3414,25 +3419,32 @@ const UIController = (() => {
   }
 
   function setupAdminModal() {
-    const trigger = document.getElementById('btn-admin-panel-trigger');
+    const triggerSide = document.getElementById('btn-admin-panel-trigger');
+    const triggerMobile = document.getElementById('btn-admin-panel-trigger-mobile');
+    const triggerFab = document.getElementById('btn-admin-panel-trigger-fab');
     const modal = document.getElementById('admin-panel-modal');
     const closeBtn = document.getElementById('btn-admin-modal-close');
 
-    if (!trigger || !modal || !closeBtn) return;
+    if (!modal) return;
 
-    // Trigger panel open
-    trigger.addEventListener('click', () => {
+    const openModal = () => {
       modal.classList.remove('hidden');
       switchAdminTab('stats');
-    });
+    };
+
+    if (triggerSide) triggerSide.addEventListener('click', openModal);
+    if (triggerMobile) triggerMobile.addEventListener('click', openModal);
+    if (triggerFab) triggerFab.addEventListener('click', openModal);
 
     // Close panel
-    closeBtn.addEventListener('click', () => {
-      modal.classList.add('hidden');
-    });
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        modal.classList.add('hidden');
+      });
+    }
 
     // Tabs logic - bind all 6 subtabs
-    const tabs = ['stats', 'transfers', 'players', 'market', 'broadcast', 'system'];
+    const tabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'system'];
     tabs.forEach(t => {
       const tabEl = document.getElementById(`tab-admin-${t}`);
       if (tabEl) {
@@ -3442,86 +3454,293 @@ const UIController = (() => {
       }
     });
 
-    // Search Player logic
-    let searchedUser = null;
-    let searchedUserState = null;
-    const searchBtn = document.getElementById('btn-admin-search');
+    // ─────────────────────────────────────────────
+    //  MODULE: PLAYERS DIRECTORY & MANAGEMENT
+    // ─────────────────────────────────────────────
+    let cachedPlayers = [];
+    let selectedPlayer = null;
+    let selectedPlayerState = null;
+    let activeFilter = 'all';
+
     const searchInput = document.getElementById('admin-search-user');
-    const resultBox = document.getElementById('admin-player-result');
+    const searchBtn = document.getElementById('btn-admin-search');
+    const refreshListBtn = document.getElementById('btn-admin-refresh-players-list');
+    const playersTableBody = document.getElementById('admin-players-table-body');
+    const resultCard = document.getElementById('admin-player-result');
 
-    if (searchBtn && searchInput && resultBox) {
-      searchBtn.addEventListener('click', async () => {
-        const q = searchInput.value.trim();
-        if (!q) {
-          showToast('بحث الإدارة', 'يرجى إدخال اسم المستخدم للبحث.', 'error');
-          return;
+    async function loadAdminPlayersDirectory(showToastNotice = false) {
+      if (!playersTableBody) return;
+      playersTableBody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-slate-400">جاري فحص وتحديث بيانات اللاعبين...</td></tr>';
+      try {
+        cachedPlayers = await AppDB.adminGetAllPlayers();
+        renderPlayersTable();
+        updateFilterCounts();
+        if (showToastNotice) {
+          showToast('قائمة اللاعبين', `تم جلب بيانات ${cachedPlayers.length} لاعب بنجاح.`, 'success');
         }
-        try {
-          const state = await AppDB.adminGetPlayer(q);
-          searchedUser = q;
-          searchedUserState = state;
+      } catch (err) {
+        playersTableBody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-400">تعذر تحميل القائمة: ${err.message}</td></tr>`;
+      }
+    }
 
-          document.getElementById('admin-p-username').textContent = q;
-          document.getElementById('admin-p-worth').textContent = (state.netWorth || 0).toLocaleString();
-          document.getElementById('admin-p-cash').textContent = (state.cash || 0).toLocaleString();
-          document.getElementById('admin-p-bank').textContent = (state.bank || 0).toLocaleString();
-          document.getElementById('admin-p-jail').textContent = (state.jailTimer > 0) ? `سجين (${state.jailTimer}ث)` : 'حر طليق';
-          document.getElementById('admin-p-banned').textContent = state.isBanned ? 'محظور 🚫' : 'نشط';
+    function updateFilterCounts() {
+      const countAll = cachedPlayers.length;
+      const countJailed = cachedPlayers.filter(p => p.jailTimer > 0).length;
+      const countBanned = cachedPlayers.filter(p => p.isBanned).length;
 
-          document.getElementById('admin-input-cash').value = state.cash || 0;
-          document.getElementById('admin-input-bank').value = state.bank || 0;
+      const elAll = document.getElementById('adm-filter-count-all');
+      const elJailed = document.getElementById('adm-filter-count-jailed');
+      const elBanned = document.getElementById('adm-filter-count-banned');
+      const elTotal = document.getElementById('admin-players-total-label');
 
-          resultBox.classList.remove('hidden');
-          logAdminAction(`تم البحث عن اللاعب: ${q}`);
-        } catch (err) {
-          resultBox.classList.add('hidden');
-          showToast('بحث الإدارة', err.message, 'error');
+      if (elAll) elAll.textContent = countAll;
+      if (elJailed) elJailed.textContent = countJailed;
+      if (elBanned) elBanned.textContent = countBanned;
+      if (elTotal) elTotal.textContent = `${countAll} لاعب مسجل`;
+    }
+
+    function renderPlayersTable() {
+      if (!playersTableBody) return;
+      const query = (searchInput ? searchInput.value.trim().toLowerCase() : '');
+      
+      let filtered = cachedPlayers.filter(p => {
+        const matchesQuery = !query || p.username.toLowerCase().includes(query) || (p.title && p.title.toLowerCase().includes(query));
+        if (!matchesQuery) return false;
+
+        if (activeFilter === 'jailed') return p.jailTimer > 0;
+        if (activeFilter === 'banned') return p.isBanned;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        playersTableBody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-500">لا يوجد حسابات مطابقة لمعايير البحث الحالية.</td></tr>';
+        return;
+      }
+
+      playersTableBody.innerHTML = '';
+      filtered.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.className = `hover:bg-slate-800/60 transition cursor-pointer ${selectedPlayer === p.username ? 'bg-yellow-500/10 border-r-2 border-yellow-500' : ''}`;
+        
+        let statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">نشط</span>';
+        if (p.isBanned) {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">محظور 🚫</span>';
+        } else if (p.jailTimer > 0) {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">سجين (${p.jailTimer}ث)</span>`;
+        } else if (p.isAdmin) {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">الإدارة ⭐</span>';
+        }
+
+        tr.innerHTML = `
+          <td class="p-2.5 flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full bg-slate-800 text-yellow-400 flex items-center justify-center font-bold text-[10px]">
+              ${p.username.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div class="font-bold text-white">${p.username} ${p.username === GameEngine.activeUsername ? '<span class="text-[9px] text-yellow-400">(أنت)</span>' : ''}</div>
+              <div class="text-[10px] text-slate-400 font-sans">${p.title || 'عامل مبتدئ'}</div>
+            </div>
+          </td>
+          <td class="p-2.5 text-center numbers-font font-bold text-yellow-400">${(p.netWorth || 0).toLocaleString()} EGP</td>
+          <td class="p-2.5 text-center numbers-font font-bold text-emerald-400">${(p.cash || 0).toLocaleString()} EGP</td>
+          <td class="p-2.5 text-center">${statusBadge}</td>
+          <td class="p-2.5 text-left">
+            <button data-user="${p.username}" class="btn-select-player px-2.5 py-1 bg-yellow-500/20 hover:bg-yellow-500 text-yellow-400 hover:text-slate-950 rounded text-[10px] font-bold transition">إدارة ⚡</button>
+          </td>
+        `;
+
+        tr.addEventListener('click', (e) => {
+          selectPlayerForModeration(p.username);
+        });
+
+        playersTableBody.appendChild(tr);
+      });
+    }
+
+    async function selectPlayerForModeration(username) {
+      if (!username) return;
+      try {
+        const state = await AppDB.adminGetPlayer(username);
+        selectedPlayer = username;
+        selectedPlayerState = state;
+
+        document.getElementById('admin-p-username').textContent = username;
+        document.getElementById('admin-p-worth').textContent = `${(state.netWorth || 0).toLocaleString()} EGP`;
+        document.getElementById('admin-p-cash').textContent = (state.cash || 0).toLocaleString();
+        document.getElementById('admin-p-bank').textContent = (state.bank || 0).toLocaleString();
+        document.getElementById('admin-p-title').textContent = state.title || 'عامل مبتدئ';
+
+        const roleBadge = document.getElementById('admin-p-badge-role');
+        if (roleBadge) {
+          roleBadge.textContent = state.isAdmin ? 'مدير النظام (Admin)' : 'حساب لاعب';
+          roleBadge.className = state.isAdmin 
+            ? 'text-[10px] px-2 py-0.5 rounded font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+            : 'text-[10px] px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-300';
+        }
+
+        const statusBadge = document.getElementById('admin-p-badge-status');
+        if (statusBadge) {
+          if (state.isBanned) {
+            statusBadge.textContent = 'محظور نهائياً 🚫';
+            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30';
+          } else if (state.jailTimer > 0) {
+            statusBadge.textContent = `مسجون (${state.jailTimer} ثانية)`;
+            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30';
+          } else {
+            statusBadge.textContent = 'نشط وحر طليق';
+            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+          }
+        }
+
+        document.getElementById('admin-input-cash').value = state.cash || 0;
+        document.getElementById('admin-input-bank').value = state.bank || 0;
+
+        if (resultCard) {
+          resultCard.classList.remove('hidden');
+          resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        renderPlayersTable();
+        logAdminAction(`تم فتح ملف الحساب للاعب: ${username}`);
+      } catch (err) {
+        showToast('خطأ فحص اللاعب', err.message, 'error');
+      }
+    }
+
+    // Filter Buttons
+    const filterBtns = document.querySelectorAll('.admin-player-filter-btn');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => {
+          b.classList.remove('bg-yellow-500', 'text-slate-950');
+          b.classList.add('bg-slate-800', 'text-slate-300');
+        });
+        btn.classList.remove('bg-slate-800', 'text-slate-300');
+        btn.classList.add('bg-yellow-500', 'text-slate-950');
+        activeFilter = btn.getAttribute('data-filter');
+        renderPlayersTable();
+      });
+    });
+
+    // Live search filter input
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        renderPlayersTable();
+      });
+    }
+
+    // Search Button
+    if (searchBtn && searchInput) {
+      searchBtn.addEventListener('click', () => {
+        const q = searchInput.value.trim();
+        if (q) {
+          selectPlayerForModeration(q);
+        } else {
+          showToast('بحث اللاعبين', 'يرجى إدخال اسم المستخدم للبحث.', 'warning');
         }
       });
     }
 
-    // Save Balance Action
+    if (refreshListBtn) {
+      refreshListBtn.addEventListener('click', () => {
+        loadAdminPlayersDirectory(true);
+      });
+    }
+
+    // Quick Injection Buttons (+100K, +500K, +1M, +10M)
+    const quickInjectBtns = document.querySelectorAll('.btn-quick-inject');
+    quickInjectBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const addAmount = Number(btn.getAttribute('data-add') || 0);
+        const cashInp = document.getElementById('admin-input-cash');
+        if (cashInp) {
+          const current = Number(cashInp.value || 0);
+          cashInp.value = Math.max(0, current + addAmount);
+          cashInp.classList.add('glow-gold');
+          setTimeout(() => cashInp.classList.remove('glow-gold'), 600);
+        }
+      });
+    });
+
+    // Quick Zero Buttons
+    const quickZeroBtns = document.querySelectorAll('.btn-quick-set-zero');
+    quickZeroBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetType = btn.getAttribute('data-set-zero');
+        if (targetType === 'cash') {
+          const c = document.getElementById('admin-input-cash');
+          if (c) c.value = 0;
+        } else if (targetType === 'bank') {
+          const b = document.getElementById('admin-input-bank');
+          if (b) b.value = 0;
+        }
+      });
+    });
+
+    // Save Balance Action with FULL REAL-TIME SYNC
     const updateMoneyBtn = document.getElementById('btn-admin-update-money');
     if (updateMoneyBtn) {
       updateMoneyBtn.addEventListener('click', async () => {
-        if (!searchedUser || !searchedUserState) return;
+        if (!selectedPlayer || !selectedPlayerState) {
+          showToast('تعديل الرصيد', 'يرجى اختيار لاعب أولاً من القائمة.', 'error');
+          return;
+        }
         const newCash = Number(document.getElementById('admin-input-cash').value);
         const newBank = Number(document.getElementById('admin-input-bank').value);
+
+        if (isNaN(newCash) || isNaN(newBank) || newCash < 0 || newBank < 0) {
+          showToast('خطأ مدخلات', 'يرجى إدخال مبالغ صحيحة وموجبة.', 'error');
+          return;
+        }
+
         try {
-          searchedUserState.cash = newCash;
-          searchedUserState.bank = newBank;
+          selectedPlayerState.cash = newCash;
+          selectedPlayerState.bank = newBank;
           
-          // Recalculate netWorth on player state
+          // Accurate NetWorth calculation
           let worth = newCash + newBank;
-          if (searchedUserState.assets) {
-            Object.keys(searchedUserState.assets).forEach(k => {
-              if (GameEngine.ASSETS[k]) worth += searchedUserState.assets[k] * GameEngine.ASSETS[k].cost;
+          if (selectedPlayerState.assets) {
+            Object.keys(selectedPlayerState.assets).forEach(k => {
+              if (GameEngine.ASSETS && GameEngine.ASSETS[k]) worth += (selectedPlayerState.assets[k] || 0) * GameEngine.ASSETS[k].cost;
             });
           }
-          if (searchedUserState.stocks) {
-            Object.keys(searchedUserState.stocks).forEach(sym => {
-              const shares = searchedUserState.stocks[sym].shares || 0;
-              const history = GameEngine.stockPrices[sym] || [GameEngine.STOCKS[sym].basePrice];
+          if (selectedPlayerState.stocks) {
+            Object.keys(selectedPlayerState.stocks).forEach(sym => {
+              const shares = (selectedPlayerState.stocks[sym] && selectedPlayerState.stocks[sym].shares) || 0;
+              const history = GameEngine.stockPrices[sym] || [GameEngine.STOCKS[sym]?.basePrice || 10];
               const currentPrice = history[history.length - 1];
               worth += shares * currentPrice;
             });
           }
-          if (searchedUserState.investments) {
-            searchedUserState.investments.forEach(inv => worth += inv.investedAmount);
+          if (selectedPlayerState.investments && Array.isArray(selectedPlayerState.investments)) {
+            selectedPlayerState.investments.forEach(inv => worth += (inv.investedAmount || 0));
           }
-          searchedUserState.netWorth = worth;
+          selectedPlayerState.netWorth = worth;
 
-          await AppDB.adminSavePlayer(searchedUser, searchedUserState);
-          showToast('إشراف الرصيد', 'تم حفظ وتحديث رصيد اللاعب بنجاح.', 'success');
-          
-          // Update view
+          // Save to Firestore
+          await AppDB.adminSavePlayer(selectedPlayer, selectedPlayerState);
+
+          // CRITICAL: If the edited user is currently logged in, sync GameEngine memory & localStorage immediately!
+          if (selectedPlayer === GameEngine.activeUsername) {
+            GameEngine.state.cash = newCash;
+            GameEngine.state.bank = newBank;
+            GameEngine.state.netWorth = worth;
+            try {
+              localStorage.setItem(`foolos_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+            } catch (e) {}
+            renderAll();
+          }
+
+          // Update UI Card
           document.getElementById('admin-p-cash').textContent = newCash.toLocaleString();
           document.getElementById('admin-p-bank').textContent = newBank.toLocaleString();
-          document.getElementById('admin-p-worth').textContent = worth.toLocaleString();
+          document.getElementById('admin-p-worth').textContent = `${worth.toLocaleString()} EGP`;
 
-          logAdminAction(`تعديل رصيد اللاعب ${searchedUser} إلى: كاش ${newCash}، بنك ${newBank}`);
+          showToast('تم الحفظ بنجاح', `تم تحديث رصيد اللاعب ${selectedPlayer} بنجاح (كاش: ${newCash.toLocaleString()}، بنك: ${newBank.toLocaleString()}).`, 'success');
+          logAdminAction(`تعديل رصيد اللاعب ${selectedPlayer} إلى كاش: ${newCash.toLocaleString()} ج.م، بنك: ${newBank.toLocaleString()} ج.م`);
+          
+          loadAdminPlayersDirectory(false);
         } catch (err) {
-          showToast('خطأ إشرافي', err.message, 'error');
+          showToast('فشل تعديل الرصيد', err.message, 'error');
         }
       });
     }
@@ -3530,148 +3749,216 @@ const UIController = (() => {
     const releaseJailBtn = document.getElementById('btn-admin-release-jail');
     if (releaseJailBtn) {
       releaseJailBtn.addEventListener('click', async () => {
-        if (!searchedUser) return;
+        if (!selectedPlayer) return;
         try {
-          await AppDB.adminReleaseJail(searchedUser);
-          showToast('إفراج إداري', `تم العفو المالي والإفراج عن اللاعب ${searchedUser} بنجاح.`, 'success');
-          document.getElementById('admin-p-jail').textContent = 'حر طليق';
-          logAdminAction(`إفراج قانوني وعفو عن اللاعب: ${searchedUser}`);
+          await AppDB.adminReleaseJail(selectedPlayer);
+          if (selectedPlayer === GameEngine.activeUsername) {
+            GameEngine.state.jailTimer = 0;
+            renderAll();
+          }
+          showToast('عفو قانوني', `تم الإفراج عن اللاعب ${selectedPlayer} وإلغاء عقوبة السجن.`, 'success');
+          logAdminAction(`عفو وإفراج قانوني عن اللاعب: ${selectedPlayer}`);
+          selectPlayerForModeration(selectedPlayer);
         } catch (err) {
           showToast('خطأ إشرافي', err.message, 'error');
         }
       });
     }
 
-    // Ban Action
+    // Jail Player Action (5 mins)
+    const jailPlayerBtn = document.getElementById('btn-admin-jail-player');
+    if (jailPlayerBtn) {
+      jailPlayerBtn.addEventListener('click', async () => {
+        if (!selectedPlayer) return;
+        try {
+          await AppDB.adminSetPlayerJail(selectedPlayer, 300);
+          if (selectedPlayer === GameEngine.activeUsername) {
+            GameEngine.state.jailTimer = 300;
+            renderAll();
+          }
+          showToast('عقوبة السجن', `تم إيداع اللاعب ${selectedPlayer} في السجن لمدة 5 دقائق.`, 'warning');
+          logAdminAction(`إيداع اللاعب ${selectedPlayer} في السجن لمدة 300 ثانية`);
+          selectPlayerForModeration(selectedPlayer);
+        } catch (err) {
+          showToast('خطأ إشرافي', err.message, 'error');
+        }
+      });
+    }
+
+    // Ban Player Action
     const banBtn = document.getElementById('btn-admin-ban');
     if (banBtn) {
       banBtn.addEventListener('click', async () => {
-        if (!searchedUser) return;
-        if (!confirm(`هل أنت متأكد من حظر حساب اللاعب ${searchedUser} نهائياً؟`)) return;
+        if (!selectedPlayer) return;
+        if (!confirm(`هل أنت متأكد من حظر حساب اللاعب ${selectedPlayer} نهائياً ومنعه من الدخول؟`)) return;
         try {
-          await AppDB.adminBanPlayer(searchedUser);
-          showToast('حظر الإدارة', `تم حظر حساب اللاعب ${searchedUser} نهائياً.`, 'success');
-          document.getElementById('admin-p-banned').textContent = 'محظور 🚫';
-          logAdminAction(`حظر نهائي لحساب اللاعب: ${searchedUser}`);
+          await AppDB.adminBanPlayer(selectedPlayer);
+          showToast('حظر الحساب', `تم حظر حساب اللاعب ${selectedPlayer} نهائياً.`, 'success');
+          logAdminAction(`حظر نهائي لحساب اللاعب: ${selectedPlayer}`);
+          selectPlayerForModeration(selectedPlayer);
         } catch (err) {
           showToast('خطأ حظر', err.message, 'error');
         }
       });
     }
 
-    // Send Broadcast
-    const sendBroadcastBtn = document.getElementById('btn-admin-send-broadcast');
-    if (sendBroadcastBtn) {
-      sendBroadcastBtn.addEventListener('click', async () => {
-        const msg = document.getElementById('admin-broadcast-msg').value.trim();
-        if (!msg) {
-          showToast('بث الإدارة', 'يرجى كتابة نص الرسالة أولاً.', 'error');
-          return;
-        }
+    // Unban Player Action
+    const unbanBtn = document.getElementById('btn-admin-unban');
+    if (unbanBtn) {
+      unbanBtn.addEventListener('click', async () => {
+        if (!selectedPlayer) return;
         try {
-          await AppDB.sendBroadcast(msg);
-          if (AppDB.isFirebaseReady) {
-            showToast('نجاح البث', 'تم إرسال البث لجميع المشتركين بنجاح.', 'success');
-          } else {
-            showToast('بث محلي', `[بدون إنترنت] الرسالة ستُرسل عند الاتصال: "${msg}"`, 'info');
-          }
-          document.getElementById('admin-broadcast-msg').value = '';
-          logAdminAction(`إرسال إشعار عام: "${msg}"`);
+          await AppDB.adminUnbanPlayer(selectedPlayer);
+          showToast('فك الحظر', `تم رفع الحظر عن حساب اللاعب ${selectedPlayer} بنجاح.`, 'success');
+          logAdminAction(`رفع الحظر وإعادة تنشيط حساب اللاعب: ${selectedPlayer}`);
+          selectPlayerForModeration(selectedPlayer);
         } catch (err) {
-          showToast('فشل البث', err.message, 'error');
+          showToast('خطأ فك الحظر', err.message, 'error');
         }
       });
     }
 
-    // Maintenance Mode Toggle Button
-    const maintToggleBtn = document.getElementById('btn-admin-toggle-maintenance');
-    if (maintToggleBtn) {
-      // Refresh badge state on load
-      AppDB.getMaintenanceStatus().then(st => {
-        updateMaintenanceUIState(st && st.enabled);
+    // Change Player PIN
+    const changePinBtn = document.getElementById('btn-admin-change-pin');
+    if (changePinBtn) {
+      changePinBtn.addEventListener('click', async () => {
+        if (!selectedPlayer) return;
+        const newPin = prompt(`أدخل الرقم السري (PIN) الجديد لحساب ${selectedPlayer}:`);
+        if (!newPin || newPin.trim().length < 3) {
+          if (newPin !== null) showToast('تغيير PIN', 'يجب أن يتكون الرقم السري من 3 خانات على الأقل.', 'error');
+          return;
+        }
+        try {
+          await AppDB.adminChangePlayerPin(selectedPlayer, newPin.trim());
+          showToast('تغيير PIN', `تم تعيين الرقم السري الجديد للاعب ${selectedPlayer} بنجاح.`, 'success');
+          logAdminAction(`تغيير الرقم السري لحساب اللاعب: ${selectedPlayer}`);
+        } catch (err) {
+          showToast('خطأ تغيير PIN', err.message, 'error');
+        }
       });
+    }
 
-      maintToggleBtn.addEventListener('click', async () => {
-        const currentSt = await AppDB.getMaintenanceStatus();
-        const nextState = !Boolean(currentSt && currentSt.enabled);
-        
-        const confirmMsg = nextState 
-          ? "هل أنت متأكد من رغبتك في إغلاق اللعبة وتفعيل وضع الصيانة لجميع اللاعبين؟"
-          : "هل تريد إنهاء وضع الصيانة وإتاحة اللعبة للجميع مجدداً؟";
-
+    // RESET SPECIFIC PLAYER ACCOUNT
+    const resetPlayerAccountBtn = document.getElementById('btn-admin-reset-player-account');
+    if (resetPlayerAccountBtn) {
+      resetPlayerAccountBtn.addEventListener('click', async () => {
+        if (!selectedPlayer) return;
+        const confirmMsg = `تحذير هام: هل أنت متأكد من تصفير حساب اللاعب "${selectedPlayer}" بالكامل؟\nسيتم مسح كافة الأصول والشركات والأسهم والاستثمارات وإعادة الرصيد إلى 5,000 ج.م كبداية جديدة.`;
         if (!confirm(confirmMsg)) return;
 
         try {
-          await AppDB.setMaintenanceMode(nextState);
-          updateMaintenanceUIState(nextState);
-          if (nextState) {
-            showToast('وضع الصيانة نشط', 'تم إغلاق الخوادم واللعبة ورسم شاشة الصيانة لجميع اللاعبين.', 'warning');
-            logAdminAction('تفعيل وضع الصيانة الفنية الشاملة وإغلاق الخوادم');
-          } else {
-            showToast('إنهاء الصيانة', 'تم إنهاء وضع الصيانة وفتح الخوادم للجميع.', 'success');
-            logAdminAction('إلغاء وضع الصيانة وإعادة فتح الخوادم للجميع');
+          const freshData = await AppDB.adminResetPlayer(selectedPlayer);
+
+          // If active user is the reset user, sync immediately
+          if (selectedPlayer === GameEngine.activeUsername) {
+            GameEngine.state.cash = 5000;
+            GameEngine.state.bank = 0;
+            GameEngine.state.netWorth = 5000;
+            GameEngine.state.xp = 0;
+            GameEngine.state.jobId = 'unemployed';
+            GameEngine.state.businesses = {};
+            GameEngine.state.assets = {};
+            GameEngine.state.stocks = {};
+            GameEngine.state.investments = [];
+            GameEngine.state.inventory = {};
+            GameEngine.state.jailTimer = 0;
+            try {
+              localStorage.setItem(`foolos_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+            } catch (e) {}
+            renderAll();
           }
+
+          showToast('تصفير الحساب', `تم تصفير حساب اللاعب ${selectedPlayer} بنجاح وإعادة ضبطه كبداية جديدة (5,000 EGP).`, 'success');
+          logAdminAction(`تصفير شامل لتقدم وأرصدة حساب اللاعب: ${selectedPlayer}`);
+          selectPlayerForModeration(selectedPlayer);
+          loadAdminPlayersDirectory(false);
         } catch (err) {
-          showToast('فشل وضع الصيانة', err.message, 'error');
+          showToast('خطأ تصفير الحساب', err.message, 'error');
         }
       });
     }
 
-    // Send Airdrop
-    const sendAirdropBtn = document.getElementById('btn-admin-send-airdrop');
-    if (sendAirdropBtn) {
-      sendAirdropBtn.addEventListener('click', async () => {
-        const amount = Number(document.getElementById('admin-airdrop-amount').value);
-        if (isNaN(amount) || amount <= 0) {
-          showToast('مكافأة الإدارة', 'يرجى إدخال مبلغ صحيح أكبر من صفر.', 'error');
+    // DELETE SPECIFIC PLAYER ACCOUNT
+    const deletePlayerAccountBtn = document.getElementById('btn-admin-delete-player-account');
+    if (deletePlayerAccountBtn) {
+      deletePlayerAccountBtn.addEventListener('click', async () => {
+        if (!selectedPlayer) return;
+        if (!confirm(`⚠️ تحذير نهائي: هل أنت متأكد من حذف وثيقة وحساب اللاعب "${selectedPlayer}" نهائياً من الخوادم؟`)) return;
+        
+        try {
+          await AppDB.adminDeletePlayer(selectedPlayer);
+          showToast('حذف الحساب', `تم حذف حساب اللاعب ${selectedPlayer} نهائياً من قاعدة البيانات.`, 'success');
+          logAdminAction(`حذف نهائي لوثيقة حساب اللاعب: ${selectedPlayer}`);
+          
+          if (resultCard) resultCard.classList.add('hidden');
+          selectedPlayer = null;
+          selectedPlayerState = null;
+          loadAdminPlayersDirectory(false);
+        } catch (err) {
+          showToast('خطأ حذف الحساب', err.message, 'error');
+        }
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    //  MODULE: MARKET CONTROL & DIRECT PRICING
+    // ─────────────────────────────────────────────
+    function renderAdminStockPrices() {
+      const symbols = ['COMI', 'EAST', 'ETEL', 'FWRY', 'CASH'];
+      symbols.forEach(sym => {
+        const priceEl = document.getElementById(`adm-stock-price-${sym}`);
+        if (priceEl && GameEngine.stockPrices[sym]) {
+          const p = GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1];
+          priceEl.textContent = `${p.toLocaleString()} EGP`;
+        }
+      });
+    }
+
+    // Apply Direct Stock Price Buttons
+    const applyStockPriceBtns = document.querySelectorAll('.btn-admin-apply-stock-price');
+    applyStockPriceBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sym = btn.getAttribute('data-symbol');
+        const inp = document.getElementById(`adm-input-stock-${sym}`);
+        if (!sym || !inp) return;
+        const newPrice = Number(inp.value);
+        if (isNaN(newPrice) || newPrice <= 0) {
+          showToast('تعديل السهم', 'يرجى إدخال سعر صحيح أكبر من صفر.', 'error');
           return;
         }
-        try {
-          await AppDB.sendAirdrop(amount);
-          if (AppDB.isFirebaseReady) {
-            showToast('نجاح التوزيع', 'تم توزيع المكافأة العامة على جميع اللاعبين بنجاح.', 'success');
-          } else {
-            showToast('مكافأة محلية', `[بدون إنترنت] ستُرسل المكافأة (+${amount} EGP) عند الاتصال.`, 'info');
+
+        if (GameEngine.stockPrices[sym]) {
+          GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1] = newPrice;
+          renderAdminStockPrices();
+          renderAll();
+          
+          const ticker = document.getElementById('stock-market-news-ticker');
+          if (ticker) {
+            ticker.textContent = `تدخل إداري مباشر: تم تعديل سعر سهم (${sym}) إلى ${newPrice.toLocaleString()} ج.م`;
           }
-          document.getElementById('admin-airdrop-amount').value = '';
-          logAdminAction(`توزيع مكافأة عامة بقيمة: +${amount} EGP`);
-        } catch (err) {
-          showToast('فشل التوزيع', err.message, 'error');
+          showToast('تعديل السعر', `تم تغيير سعر سهم ${sym} فورياً إلى ${newPrice.toLocaleString()} ج.م`, 'success');
+          logAdminAction(`تعديل مباشر لسعر سهم ${sym} -> ${newPrice.toLocaleString()} EGP`);
+          inp.value = '';
         }
+      });
+    });
+
+    // Reset Market to Baseline
+    const resetMarketBaselineBtn = document.getElementById('btn-admin-reset-market-baseline');
+    if (resetMarketBaselineBtn) {
+      resetMarketBaselineBtn.addEventListener('click', () => {
+        Object.keys(GameEngine.STOCKS).forEach(sym => {
+          const base = GameEngine.STOCKS[sym].basePrice;
+          GameEngine.stockPrices[sym] = [base];
+        });
+        renderAdminStockPrices();
+        renderAll();
+        showToast('إعادة ضبط البورصة', 'تم إعادة أسعار جميع الأسهم إلى القيمة الأساسية.', 'success');
+        logAdminAction('إعادة ضبط أسعار كافة الأسهم في البورصة للقيمة الأساسية');
       });
     }
 
-    // Wipe Leaderboard
-    const wipeLeaderboardBtn = document.getElementById('btn-admin-wipe-leaderboard');
-    if (wipeLeaderboardBtn) {
-      wipeLeaderboardBtn.addEventListener('click', async () => {
-        if (!confirm("تحذير: هل أنت متأكد من تصفير قائمة المتصدرين ومسح جميع الحسابات عدا حساب الإدارة؟")) return;
-        try {
-          await AppDB.adminWipeLeaderboard();
-          showToast('مسح المتصدرين', 'تم إعادة ضبط قائمة المتصدرين ومسح البيانات بنجاح.', 'success');
-          renderAll();
-          logAdminAction('إعادة ضبط وتصفير قائمة المتصدرين واللاعبين');
-        } catch (err) {
-          showToast('خطأ ضبط', err.message, 'error');
-        }
-      });
-    }
-
-    // Refresh Leaderboard / Cache
-    const refreshLeaderboardBtn = document.getElementById('btn-admin-refresh-leaderboard');
-    if (refreshLeaderboardBtn) {
-      refreshLeaderboardBtn.addEventListener('click', async () => {
-        try {
-          renderAll();
-          showToast('تحديث كاش', 'تم تحديث قائمة المتصدرين والبورصة بنجاح.', 'success');
-          logAdminAction('تحديث كاش البورصة والمتصدرين يدوياً');
-        } catch (err) {
-          showToast('خطأ تحديث', err.message, 'error');
-        }
-      });
-    }
-
-    // Admin Event Triggers Buttons
+    // Market Sudden Event Triggers
     const eventBtns = document.querySelectorAll('.btn-admin-trigger-event');
     eventBtns.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -3743,7 +4030,7 @@ const UIController = (() => {
         ev.targetStocks.forEach(sym => {
           if (GameEngine.stockPrices[sym]) {
             const lastP = GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1];
-            const newP = Math.max(GameEngine.STOCKS[sym].floor, Math.floor(lastP * ev.multiplier));
+            const newP = Math.max(GameEngine.STOCKS[sym]?.floor || 1, Math.floor(lastP * ev.multiplier));
             GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1] = newP;
           }
         });
@@ -3752,7 +4039,7 @@ const UIController = (() => {
           ev.negativeTargets.forEach(sym => {
             if (GameEngine.stockPrices[sym]) {
               const lastP = GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1];
-              const newP = Math.max(GameEngine.STOCKS[sym].floor, Math.floor(lastP * ev.negativeMultiplier));
+              const newP = Math.max(GameEngine.STOCKS[sym]?.floor || 1, Math.floor(lastP * ev.negativeMultiplier));
               GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1] = newP;
             }
           });
@@ -3764,11 +4051,162 @@ const UIController = (() => {
           ticker.textContent = `${ev.title}: ${ev.desc}`;
         }
         logAdminAction(`افتعال حدث اقتصادي: ${ev.title}`);
+        renderAdminStockPrices();
         renderAll();
       });
     });
 
-    // Refresh transfers audit button
+    // ─────────────────────────────────────────────
+    //  MODULE: BROADCAST & AIRDROP
+    // ─────────────────────────────────────────────
+    const broadcastPresets = document.querySelectorAll('.btn-broadcast-preset');
+    broadcastPresets.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const msg = btn.getAttribute('data-msg');
+        const tx = document.getElementById('admin-broadcast-msg');
+        if (tx && msg) tx.value = msg;
+      });
+    });
+
+    const sendBroadcastBtn = document.getElementById('btn-admin-send-broadcast');
+    if (sendBroadcastBtn) {
+      sendBroadcastBtn.addEventListener('click', async () => {
+        const msg = document.getElementById('admin-broadcast-msg').value.trim();
+        if (!msg) {
+          showToast('بث الإدارة', 'يرجى كتابة نص الرسالة أولاً.', 'error');
+          return;
+        }
+        try {
+          await AppDB.sendBroadcast(msg);
+          showToast('نجاح البث', 'تم إرسال البث لجميع المشتركين بنجاح.', 'success');
+          document.getElementById('admin-broadcast-msg').value = '';
+          logAdminAction(`إرسال إشعار عام: "${msg}"`);
+        } catch (err) {
+          showToast('فشل البث', err.message, 'error');
+        }
+      });
+    }
+
+    const airdropPresets = document.querySelectorAll('.btn-airdrop-preset');
+    airdropPresets.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const amt = btn.getAttribute('data-airdrop');
+        const inp = document.getElementById('admin-airdrop-amount');
+        if (inp && amt) inp.value = amt;
+      });
+    });
+
+    const sendAirdropBtn = document.getElementById('btn-admin-send-airdrop');
+    if (sendAirdropBtn) {
+      sendAirdropBtn.addEventListener('click', async () => {
+        const amount = Number(document.getElementById('admin-airdrop-amount').value);
+        const target = (document.getElementById('admin-airdrop-target')?.value || 'ALL').trim();
+
+        if (isNaN(amount) || amount <= 0) {
+          showToast('مكافأة الإدارة', 'يرجى إدخال مبلغ صحيح أكبر من صفر.', 'error');
+          return;
+        }
+        try {
+          await AppDB.sendAirdrop(amount, target);
+          showToast('نجاح التوزيع', `تم توزيع المكافأة (+${amount.toLocaleString()} EGP) للمستهدفين (${target}) بنجاح.`, 'success');
+          document.getElementById('admin-airdrop-amount').value = '';
+          logAdminAction(`توزيع مكافأة مالية: +${amount.toLocaleString()} EGP -> ${target}`);
+        } catch (err) {
+          showToast('فشل التوزيع', err.message, 'error');
+        }
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    //  MODULE: SYSTEM & DANGER ZONE
+    // ─────────────────────────────────────────────
+    const maintToggleBtn = document.getElementById('btn-admin-toggle-maintenance');
+    if (maintToggleBtn) {
+      AppDB.getMaintenanceStatus().then(st => {
+        updateMaintenanceUIState(st && st.enabled);
+      });
+
+      maintToggleBtn.addEventListener('click', async () => {
+        const currentSt = await AppDB.getMaintenanceStatus();
+        const nextState = !Boolean(currentSt && currentSt.enabled);
+        
+        const confirmMsg = nextState 
+          ? "هل أنت متأكد من رغبتك في إغلاق اللعبة وتفعيل وضع الصيانة لجميع اللاعبين؟"
+          : "هل تريد إنهاء وضع الصيانة وإتاحة اللعبة للجميع مجدداً؟";
+
+        if (!confirm(confirmMsg)) return;
+
+        try {
+          await AppDB.setMaintenanceMode(nextState);
+          updateMaintenanceUIState(nextState);
+          if (nextState) {
+            showToast('وضع الصيانة نشط', 'تم إغلاق الخوادم وتفعيل وضع الصيانة.', 'warning');
+            logAdminAction('تفعيل وضع الصيانة الشامل وإغلاق الخوادم');
+          } else {
+            showToast('إنهاء الصيانة', 'تم إنهاء وضع الصيانة وفتح الخوادم للجميع.', 'success');
+            logAdminAction('إلغاء وضع الصيانة وإعادة فتح الخوادم');
+          }
+        } catch (err) {
+          showToast('فشل وضع الصيانة', err.message, 'error');
+        }
+      });
+    }
+
+    // RESET ALL PLAYERS' ECONOMY
+    const resetAllEconomyBtn = document.getElementById('btn-admin-reset-all-economy');
+    if (resetAllEconomyBtn) {
+      resetAllEconomyBtn.addEventListener('click', async () => {
+        const confirmMsg = "⚠️ تحذير خطير: هل أنت متأكد من تصفير اقتصاد اللعبة لكافة اللاعبين المسجلين؟\nسيتم إعادة ضبط كاش وأصول وشركات كافة الحسابات إلى 5,000 ج.م كبداية جديدة للجميع.";
+        if (!confirm(confirmMsg)) return;
+
+        try {
+          const count = await AppDB.adminResetAllPlayers();
+          showToast('تصفير الاقتصاد', `تم تصفير أرصدة واقتصاد ${count} حساب لاعب بنجاح.`, 'success');
+          logAdminAction(`تصفير شامل لاقتصاد اللعبة — تم إعادة ضبط ${count} حساب إلى 5,000 EGP`);
+          loadAdminPlayersDirectory(false);
+          renderAll();
+        } catch (err) {
+          showToast('خطأ تصفير الاقتصاد', err.message, 'error');
+        }
+      });
+    }
+
+    // WIPE ALL PLAYERS DATA (FULL DATABASE WIPE)
+    const wipeLeaderboardBtn = document.getElementById('btn-admin-wipe-leaderboard');
+    if (wipeLeaderboardBtn) {
+      wipeLeaderboardBtn.addEventListener('click', async () => {
+        const confirmMsg = "⚠️ تحذير نهائي وقاطع: هل أنت متأكد من حذف كافة حسابات اللاعبين نهائياً من قاعدة البيانات عدا حساب الأدمن الرئيسي؟\nهذا الإجراء لا يمكن التراجع عنه!";
+        if (!confirm(confirmMsg)) return;
+
+        try {
+          const count = await AppDB.adminWipeLeaderboard();
+          showToast('مسح الحسابات', `تم حذف ${count} حساب لاعب نهائياً ومسح قائمة المتصدرين.`, 'success');
+          logAdminAction(`مسح وتطهير شامل لقاعدة البيانات — تم حذف ${count} حساب`);
+          loadAdminPlayersDirectory(false);
+          renderAll();
+        } catch (err) {
+          showToast('خطأ مسح الحسابات', err.message, 'error');
+        }
+      });
+    }
+
+    // Clear Wire Transfers logs
+    const clearTransfersBtn = document.getElementById('btn-admin-clear-transfers-log');
+    if (clearTransfersBtn) {
+      clearTransfersBtn.addEventListener('click', async () => {
+        if (!confirm("هل تريد تفريغ سجل التحويلات المالية القديمة لتنظيف قاعدة البيانات؟")) return;
+        try {
+          const count = await AppDB.adminClearTransfers();
+          showToast('تفريغ السجل', `تم مسح ${count} حركة تحويل مالي من السجل.`, 'success');
+          logAdminAction(`تفريغ وتنظيف سجل التحويلات المالية (${count} عملية)`);
+          renderAdminTransfersMonitor();
+        } catch (err) {
+          showToast('خطأ تفريغ السجل', err.message, 'error');
+        }
+      });
+    }
+
+    // Refresh Transfers Audit Button
     const refreshTransfersBtn = document.getElementById('btn-admin-refresh-transfers');
     if (refreshTransfersBtn) {
       refreshTransfersBtn.addEventListener('click', () => {
@@ -3776,18 +4214,39 @@ const UIController = (() => {
         showToast('تحديث التحويلات', 'تم جلب أحدث سجلات التحويلات المالية.', 'success');
       });
     }
+
+    // Refresh Stats Button
+    const refreshStatsBtn = document.getElementById('btn-admin-refresh-stats');
+    if (refreshStatsBtn) {
+      refreshStatsBtn.addEventListener('click', () => {
+        renderAdminAnalyticsDashboard();
+        showToast('تحديث الإحصائيات', 'تم تحديث لوحة الإحصائيات الحية بنجاح.', 'success');
+      });
+    }
+
+    // Expose loader to global scope of module
+    window._adminReloadPlayers = loadAdminPlayersDirectory;
+    window._adminRenderStockPrices = renderAdminStockPrices;
   }
 
   async function renderAdminAnalyticsDashboard() {
     try {
       const stats = await AppDB.getSystemStats();
-      document.getElementById('adm-stat-players').textContent = stats.totalPlayers.toLocaleString();
-      document.getElementById('adm-stat-cash').textContent = `${stats.totalCash.toLocaleString()} EGP`;
-      document.getElementById('adm-stat-bank').textContent = `${stats.totalBank.toLocaleString()} EGP`;
-      document.getElementById('adm-stat-networth').textContent = `${stats.totalNetWorth.toLocaleString()} EGP`;
-      document.getElementById('adm-stat-jailed').textContent = stats.jailedCount.toLocaleString();
-      document.getElementById('adm-stat-banned').textContent = stats.bannedCount.toLocaleString();
-      logAdminAction(`تم تحديث لوحة الإحصائيات الشاملة — إجمالي الحسابات: ${stats.totalPlayers} | الثروة المنظومية: ${stats.totalNetWorth.toLocaleString()} EGP`);
+      const elP = document.getElementById('adm-stat-players');
+      const elC = document.getElementById('adm-stat-cash');
+      const elB = document.getElementById('adm-stat-bank');
+      const elNW = document.getElementById('adm-stat-networth');
+      const elJ = document.getElementById('adm-stat-jailed');
+      const elBan = document.getElementById('adm-stat-banned');
+
+      if (elP) elP.textContent = (stats.totalPlayers || 0).toLocaleString();
+      if (elC) elC.textContent = `${(stats.totalCash || 0).toLocaleString()} EGP`;
+      if (elB) elB.textContent = `${(stats.totalBank || 0).toLocaleString()} EGP`;
+      if (elNW) elNW.textContent = `${(stats.totalNetWorth || 0).toLocaleString()} EGP`;
+      if (elJ) elJ.textContent = (stats.jailedCount || 0).toLocaleString();
+      if (elBan) elBan.textContent = (stats.bannedCount || 0).toLocaleString();
+
+      logAdminAction(`تحديث الإحصائيات — الحسابات: ${stats.totalPlayers} | الثروة الكلية: ${(stats.totalNetWorth || 0).toLocaleString()} EGP`);
     } catch (e) {
       console.warn('[Admin Dashboard] Failed to load stats:', e);
     }
@@ -3796,45 +4255,46 @@ const UIController = (() => {
   async function renderAdminTransfersMonitor() {
     const tbody = document.getElementById('admin-transfers-table-body');
     if (!tbody) return;
-    tbody.innerHTML = '';
+    tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-slate-400">جاري تحميل سجل التحويلات...</td></tr>';
 
     try {
       const transfers = await AppDB.adminGetTransfers();
       if (!transfers || transfers.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500">لا يوجد عمليات تحويل مالية مسجلة حالياً.</td></tr>`;
+        tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-500">لا يوجد عمليات تحويل مالية مسجلة حالياً.</td></tr>';
         return;
       }
 
+      tbody.innerHTML = '';
       transfers.forEach(trf => {
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-900/50 transition';
+        tr.className = 'hover:bg-slate-850 transition';
         const dateStr = new Date(trf.timestamp).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         tr.innerHTML = `
-          <td class="py-2.5 font-bold text-white">${trf.sender}</td>
-          <td class="py-2.5 font-bold text-yellow-400">${trf.recipient}</td>
-          <td class="py-2.5 text-center numbers-font font-bold text-emerald-400">+${trf.amount.toLocaleString()} EGP</td>
-          <td class="py-2.5 text-center numbers-font text-slate-400">${dateStr}</td>
-          <td class="py-2.5 text-left"><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-semibold text-[10px]">${trf.status || 'مكتملة'}</span></td>
+          <td class="p-2.5 font-bold text-white">${trf.sender}</td>
+          <td class="p-2.5 font-bold text-yellow-400">${trf.recipient}</td>
+          <td class="p-2.5 text-center numbers-font font-bold text-emerald-400">+${(trf.amount || 0).toLocaleString()} EGP</td>
+          <td class="p-2.5 text-center numbers-font text-slate-400 text-[11px]">${dateStr}</td>
+          <td class="p-2.5 text-left"><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-bold text-[10px]">${trf.status || 'مكتملة'}</span></td>
         `;
         tbody.appendChild(tr);
       });
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-400">فشل تحميل سجل التحويلات.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-400">فشل تحميل سجل التحويلات: ${e.message}</td></tr>`;
     }
   }
 
   function switchAdminTab(tabId) {
-    const subtabs = ['stats', 'transfers', 'players', 'market', 'broadcast', 'system'];
+    const subtabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'system'];
     subtabs.forEach(t => {
       const btn = document.getElementById(`tab-admin-${t}`);
       const panel = document.getElementById(`admin-subpanel-${t}`);
       if (!btn || !panel) return;
       if (t === tabId) {
-        btn.classList.add('border-yellow-500', 'text-yellow-500');
-        btn.classList.remove('border-transparent', 'text-slate-400');
+        btn.classList.add('border-yellow-500/40', 'bg-yellow-500/10', 'text-yellow-400', 'active-admin-tab');
+        btn.classList.remove('border-transparent', 'text-slate-400', 'hover:bg-slate-900');
         panel.classList.remove('hidden');
       } else {
-        btn.classList.remove('border-yellow-500', 'text-yellow-500');
+        btn.classList.remove('border-yellow-500/40', 'bg-yellow-500/10', 'text-yellow-400', 'active-admin-tab');
         btn.classList.add('border-transparent', 'text-slate-400');
         panel.classList.add('hidden');
       }
@@ -3842,8 +4302,12 @@ const UIController = (() => {
 
     if (tabId === 'stats') {
       renderAdminAnalyticsDashboard();
+    } else if (tabId === 'players') {
+      if (window._adminReloadPlayers) window._adminReloadPlayers(false);
     } else if (tabId === 'transfers') {
       renderAdminTransfersMonitor();
+    } else if (tabId === 'market') {
+      if (window._adminRenderStockPrices) window._adminRenderStockPrices();
     }
   }
 
@@ -3860,8 +4324,8 @@ const UIController = (() => {
         logBox.innerHTML = '';
       }
       const entry = document.createElement('div');
-      entry.className = 'border-b border-slate-900/50 pb-1 mb-1';
-      entry.innerHTML = `<span class="text-yellow-500 font-bold ml-1">[${time}]</span> ${msg}`;
+      entry.className = 'border-b border-slate-900/60 pb-1 mb-1';
+      entry.innerHTML = `<span class="text-yellow-500 font-bold ml-1 font-mono">[${time}]</span> ${msg}`;
       logBox.insertBefore(entry, logBox.firstChild);
     });
   }

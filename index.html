@@ -1842,103 +1842,305 @@
   </div>
 
   <!-- ==================== ADMIN CONTROL PANEL OVERLAY ==================== -->
-  <div id="admin-panel-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-panel w-full max-w-3xl p-6 rounded-2xl border border-yellow-500/20 max-h-[90vh] flex flex-col text-right">
+  <div id="admin-panel-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-lg flex items-center justify-center p-2 sm:p-4">
+    <div class="glass-panel w-full max-w-4xl p-4 sm:p-6 rounded-2xl border border-yellow-500/30 max-h-[92vh] flex flex-col text-right shadow-2xl shadow-yellow-500/10 bg-slate-950/90 text-slate-100">
       
       <!-- Modal Header -->
-      <div class="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
-        <h3 class="text-xl font-bold text-white flex items-center gap-2">
-          <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-          </svg>
-          <span>لوحة التحكم والرقابة الإدارية</span>
-        </h3>
-        <button id="btn-admin-modal-close" class="p-1 hover:bg-slate-800 rounded-lg transition text-slate-400 hover:text-white">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-yellow-600 to-amber-400 flex items-center justify-center text-slate-950 shadow-lg shadow-yellow-500/20 font-black">
+            <i class="fa-solid fa-shield-halved text-base"></i>
+          </div>
+          <div>
+            <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+              <span>لوحة التحكم والرقابة الإدارية المركزية</span>
+              <span class="text-[10px] px-2 py-0.5 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full font-bold">Admin Root</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">إدارة اللاعبين، تعديل الأرصدة، تصفير الحسابات، والتحكم بالاقتصاد والنظام</p>
+          </div>
+        </div>
+        <button id="btn-admin-modal-close" class="p-2 hover:bg-slate-800 rounded-xl transition text-slate-400 hover:text-white" title="إغلاق">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
         </button>
       </div>
 
       <!-- Tabs Navigation -->
-      <div class="flex border-b border-slate-800 text-xs sm:text-sm mb-4 overflow-x-auto">
-        <button id="tab-admin-stats" class="flex-1 pb-3 px-3 text-center border-b-2 border-yellow-500 text-yellow-500 font-bold transition whitespace-nowrap flex items-center justify-center gap-1.5"><i class="fa-solid fa-chart-pie"></i><span>لوحة الإحصائيات</span></button>
-        <button id="tab-admin-transfers" class="flex-1 pb-3 px-3 text-center border-b-2 border-transparent text-slate-400 font-bold transition whitespace-nowrap flex items-center justify-center gap-1.5"><i class="fa-solid fa-money-bill-transfer"></i><span>مراقبة التحويلات</span></button>
-        <button id="tab-admin-players" class="flex-1 pb-3 px-3 text-center border-b-2 border-transparent text-slate-400 font-bold transition whitespace-nowrap flex items-center justify-center gap-1.5"><i class="fa-solid fa-users"></i><span>إدارة اللاعبين</span></button>
-        <button id="tab-admin-market" class="flex-1 pb-3 px-3 text-center border-b-2 border-transparent text-slate-400 font-bold transition whitespace-nowrap flex items-center justify-center gap-1.5"><i class="fa-solid fa-chart-line"></i><span>التحكم بالبورصة</span></button>
-        <button id="tab-admin-broadcast" class="flex-1 pb-3 px-3 text-center border-b-2 border-transparent text-slate-400 font-bold transition whitespace-nowrap flex items-center justify-center gap-1.5"><i class="fa-solid fa-bullhorn"></i><span>البث والمكافآت</span></button>
-        <button id="tab-admin-system" class="flex-1 pb-3 px-3 text-center border-b-2 border-transparent text-slate-400 font-bold transition whitespace-nowrap flex items-center justify-center gap-1.5"><i class="fa-solid fa-gears"></i><span>شؤون النظام</span></button>
+      <div class="flex border-b border-slate-800/80 text-xs sm:text-sm mb-3 overflow-x-auto gap-1 pb-1 scrollbar-none">
+        <button id="tab-admin-stats" class="admin-tab-btn px-3 py-2 rounded-lg border border-yellow-500/40 bg-yellow-500/10 text-yellow-400 font-bold transition whitespace-nowrap flex items-center gap-1.5 active-admin-tab"><i class="fa-solid fa-chart-pie"></i><span>الإحصائيات</span></button>
+        <button id="tab-admin-players" class="admin-tab-btn px-3 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-1.5"><i class="fa-solid fa-users-gear"></i><span>إدارة اللاعبين والأرصدة</span></button>
+        <button id="tab-admin-transfers" class="admin-tab-btn px-3 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-1.5"><i class="fa-solid fa-money-bill-transfer"></i><span>مراقبة التحويلات</span></button>
+        <button id="tab-admin-market" class="admin-tab-btn px-3 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-1.5"><i class="fa-solid fa-chart-line"></i><span>التحكم بالبورصة</span></button>
+        <button id="tab-admin-broadcast" class="admin-tab-btn px-3 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-1.5"><i class="fa-solid fa-bullhorn"></i><span>البث والمكافآت</span></button>
+        <button id="tab-admin-system" class="admin-tab-btn px-3 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation text-rose-400"></i><span class="text-rose-400">شؤون وتصفير النظام</span></button>
       </div>
 
       <!-- Tab Content Area -->
-      <div class="flex-1 overflow-y-auto pr-1 space-y-4">
+      <div class="flex-1 overflow-y-auto pr-1 space-y-4 text-xs">
         
-        <!-- PANEL STATS: Executive Analytics Dashboard -->
+        <!-- 1. PANEL STATS -->
         <div id="admin-subpanel-stats" class="space-y-4">
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl admin-card-metric">
-              <span class="text-[10px] text-slate-400 block font-bold">إجمالي الحسابات المسجلة</span>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col justify-between">
+              <div class="flex justify-between items-center text-slate-400 mb-1">
+                <span class="text-[10px] font-bold">الحسابات المسجلة</span>
+                <i class="fa-solid fa-users text-yellow-500/80"></i>
+              </div>
               <span id="adm-stat-players" class="numbers-font text-lg font-black text-white">0</span>
             </div>
-            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl admin-card-metric">
-              <span class="text-[10px] text-slate-400 block font-bold">إجمالي الكاش المتداول</span>
-              <span id="adm-stat-cash" class="numbers-font text-lg font-black text-emerald-400">0 EGP</span>
+            <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col justify-between">
+              <div class="flex justify-between items-center text-slate-400 mb-1">
+                <span class="text-[10px] font-bold">الكاش المتداول</span>
+                <i class="fa-solid fa-money-bill-wave text-emerald-400"></i>
+              </div>
+              <span id="adm-stat-cash" class="numbers-font text-base sm:text-lg font-black text-emerald-400">0 EGP</span>
             </div>
-            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl admin-card-metric">
-              <span class="text-[10px] text-slate-400 block font-bold">إجمالي الودائع البنكية</span>
-              <span id="adm-stat-bank" class="numbers-font text-lg font-black text-sky-400">0 EGP</span>
+            <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col justify-between">
+              <div class="flex justify-between items-center text-slate-400 mb-1">
+                <span class="text-[10px] font-bold">الودائع البنكية</span>
+                <i class="fa-solid fa-building-columns text-sky-400"></i>
+              </div>
+              <span id="adm-stat-bank" class="numbers-font text-base sm:text-lg font-black text-sky-400">0 EGP</span>
             </div>
-            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl admin-card-metric">
-              <span class="text-[10px] text-slate-400 block font-bold">إجمالي الثروة الكلية بالمنظومة</span>
-              <span id="adm-stat-networth" class="numbers-font text-lg font-black text-yellow-400 glow-gold">0 EGP</span>
+            <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col justify-between">
+              <div class="flex justify-between items-center text-slate-400 mb-1">
+                <span class="text-[10px] font-bold">إجمالي الثروة الشاملة</span>
+                <i class="fa-solid fa-gem text-amber-400"></i>
+              </div>
+              <span id="adm-stat-networth" class="numbers-font text-base sm:text-lg font-black text-yellow-400">0 EGP</span>
             </div>
-            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl admin-card-metric">
-              <span class="text-[10px] text-slate-400 block font-bold">اللاعبين رهن السجن</span>
+            <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col justify-between">
+              <div class="flex justify-between items-center text-slate-400 mb-1">
+                <span class="text-[10px] font-bold">اللاعبين بالسجن</span>
+                <i class="fa-solid fa-handcuffs text-rose-400"></i>
+              </div>
               <span id="adm-stat-jailed" class="numbers-font text-lg font-black text-rose-400">0</span>
             </div>
-            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl admin-card-metric">
-              <span class="text-[10px] text-slate-400 block font-bold">الحسابات المحظورة</span>
+            <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col justify-between">
+              <div class="flex justify-between items-center text-slate-400 mb-1">
+                <span class="text-[10px] font-bold">الحسابات المحظورة</span>
+                <i class="fa-solid fa-user-slash text-rose-500"></i>
+              </div>
               <span id="adm-stat-banned" class="numbers-font text-lg font-black text-slate-400">0</span>
             </div>
           </div>
 
-          <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl space-y-3">
+          <!-- Server Health & Live Logs -->
+          <div class="p-3 bg-slate-900/40 border border-slate-800 rounded-xl space-y-2.5">
             <div class="flex justify-between items-center">
               <h4 class="text-xs font-bold text-white flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                سجل نشاط النظام والعمليات الإدارية الحية (Live Log)
+                <span>سجل العمليات والنشاط الإداري الحي (Live Log)</span>
               </h4>
-              <button id="btn-admin-refresh-stats" class="px-3 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/40 rounded text-xs font-bold transition">إعادة المحاكاة والإنعاش</button>
+              <button id="btn-admin-refresh-stats" class="px-2.5 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/40 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>تحديث البيانات</span>
+              </button>
             </div>
-            <div id="admin-stats-live-log" class="text-[11px] text-slate-400 space-y-1.5 h-36 overflow-y-auto bg-slate-950 p-3 rounded-lg border border-slate-800/80 numbers-font text-right">
+            <div id="admin-stats-live-log" class="text-[11px] text-slate-300 space-y-1.5 h-40 overflow-y-auto bg-slate-950 p-3 rounded-lg border border-slate-800/80 numbers-font text-right font-mono">
               <!-- Dyn live logs -->
             </div>
           </div>
         </div>
 
-        <!-- PANEL TRANSFERS: Live Wire Transfer Audit Monitor -->
-        <div id="admin-subpanel-transfers" class="hidden space-y-4">
-          <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl space-y-3">
-            <div class="flex justify-between items-center">
-              <div>
-                <h4 class="text-xs font-bold text-white">سجل مراقبة التحويلات المالية الحية بين اللاعبين</h4>
-                <p class="text-[10px] text-slate-400 mt-0.5">يعرض كافة التحويلات النقدية الصادرة والواردة مع تفاصيل الراسل والمستلم والتوقيت.</p>
-              </div>
-              <button id="btn-admin-refresh-transfers" class="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-bold rounded-lg transition">تحديث السجل</button>
+        <!-- 2. PANEL PLAYERS: DIRECTORY & MODERATION -->
+        <div id="admin-subpanel-players" class="hidden space-y-4">
+          <!-- Search & Filter Bar -->
+          <div class="flex flex-col sm:flex-row gap-2">
+            <div class="relative flex-1">
+              <input type="text" id="admin-search-user" placeholder="ابحث باسم المستخدم أو اختر من القائمة..." class="glass-input w-full pr-9 pl-3 py-2 text-xs font-bold text-right">
+              <i class="fa-solid fa-magnifying-glass absolute right-3 top-2.5 text-slate-500"></i>
             </div>
+            <div class="flex gap-1.5">
+              <button id="btn-admin-search" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-slate-950 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-user-check"></i>
+                <span>عرض الحساب</span>
+              </button>
+              <button id="btn-admin-refresh-players-list" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition" title="تحديث القائمة">
+                <i class="fa-solid fa-rotate"></i>
+              </button>
+            </div>
+          </div>
 
-            <div class="overflow-x-auto">
+          <!-- Quick Filters Pills -->
+          <div class="flex items-center gap-1.5 text-[11px] overflow-x-auto pb-1">
+            <span class="text-slate-400 font-bold ml-1">تصفية:</span>
+            <button data-filter="all" class="admin-player-filter-btn px-2.5 py-1 rounded-md bg-yellow-500 text-slate-950 font-bold">الكل (<span id="adm-filter-count-all">0</span>)</button>
+            <button data-filter="jailed" class="admin-player-filter-btn px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">المسجونين (<span id="adm-filter-count-jailed">0</span>)</button>
+            <button data-filter="banned" class="admin-player-filter-btn px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">المحظورين (<span id="adm-filter-count-banned">0</span>)</button>
+          </div>
+
+          <!-- Player Directory Table/List -->
+          <div class="p-3 bg-slate-900/50 border border-slate-800 rounded-xl space-y-2">
+            <div class="flex justify-between items-center text-slate-400">
+              <span class="font-bold text-white text-xs">قائمة اللاعبين المسجلين بالخادم</span>
+              <span class="text-[10px]" id="admin-players-total-label">0 لاعب</span>
+            </div>
+            <div class="max-h-48 overflow-y-auto border border-slate-800/80 rounded-lg">
               <table class="w-full text-right text-xs">
-                <thead>
-                  <tr class="text-slate-500 border-b border-slate-800">
-                    <th class="pb-2">الراسل (Sender)</th>
-                    <th class="pb-2">المستلم (Recipient)</th>
-                    <th class="pb-2 text-center">المبلغ</th>
-                    <th class="pb-2 text-center">التوقيت</th>
-                    <th class="pb-2 text-left">الحالة</th>
+                <thead class="bg-slate-950 text-slate-400 sticky top-0">
+                  <tr class="border-b border-slate-800">
+                    <th class="p-2">اللاعب</th>
+                    <th class="p-2 text-center">صافي الثروة</th>
+                    <th class="p-2 text-center">الكاش</th>
+                    <th class="p-2 text-center">الحالة</th>
+                    <th class="p-2 text-left">إجراء</th>
                   </tr>
                 </thead>
-                <tbody id="admin-transfers-table-body" class="divide-y divide-slate-800/40">
+                <tbody id="admin-players-table-body" class="divide-y divide-slate-800/40 font-mono">
+                  <tr><td colspan="5" class="py-4 text-center text-slate-500">جاري تحميل قائمة اللاعبين...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Searched / Selected Player Management Card -->
+          <div id="admin-player-result" class="hidden p-4 bg-slate-900/80 border border-yellow-500/40 rounded-xl space-y-4 shadow-xl">
+            <!-- Player Details Header -->
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-yellow-400 text-base">
+                  <i class="fa-solid fa-user"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span id="admin-p-username" class="font-black text-white text-sm sm:text-base">...</span>
+                    <span id="admin-p-badge-role" class="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-300">عادي</span>
+                    <span id="admin-p-badge-status" class="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-400">نشط</span>
+                  </div>
+                  <div class="text-[10px] text-slate-400 flex items-center gap-3 mt-0.5">
+                    <span>الرتبة: <strong id="admin-p-title" class="text-slate-200">...</strong></span>
+                    <span>صافي الثروة: <strong id="admin-p-worth" class="text-yellow-400 numbers-font font-bold">... EGP</strong></span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-left text-[10px] text-slate-400">
+                <div>السيولة الحالية: <span id="admin-p-cash" class="text-emerald-400 numbers-font font-bold">...</span> EGP</div>
+                <div>رصيد البنك: <span id="admin-p-bank" class="text-sky-400 numbers-font font-bold">...</span> EGP</div>
+              </div>
+            </div>
+
+            <!-- Balance Injection & Quick Modifiers -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2.5">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-coins text-yellow-400"></i>
+                  <span>تعديل الرصيد وحقن الأموال</span>
+                </span>
+                <span class="text-[10px] text-slate-400">أزرار إضافة فورية أو إدخال رقم محدد</span>
+              </div>
+
+              <!-- Quick Injection Buttons -->
+              <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                <button data-add="100000" class="btn-quick-inject py-1.5 bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-300 rounded font-bold text-[11px] transition">+100K</button>
+                <button data-add="500000" class="btn-quick-inject py-1.5 bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-300 rounded font-bold text-[11px] transition">+500K</button>
+                <button data-add="1000000" class="btn-quick-inject py-1.5 bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-300 rounded font-bold text-[11px] transition">+1M</button>
+                <button data-add="10000000" class="btn-quick-inject py-1.5 bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-300 rounded font-bold text-[11px] transition">+10M</button>
+                <button data-set-zero="cash" class="btn-quick-set-zero py-1.5 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 rounded font-bold text-[10px] transition">تصفير كاش</button>
+                <button data-set-zero="bank" class="btn-quick-set-zero py-1.5 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 rounded font-bold text-[10px] transition">تصفير بنك</button>
+              </div>
+
+              <!-- Precise Inputs -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                <div>
+                  <label class="block text-[10px] text-slate-400 mb-1">السيولة النقدية (Cash EGP)</label>
+                  <input type="number" id="admin-input-cash" class="glass-input w-full p-2 text-xs text-center font-bold font-mono">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 mb-1">الوديعة البنكية (Bank EGP)</label>
+                  <input type="number" id="admin-input-bank" class="glass-input w-full p-2 text-xs text-center font-bold font-mono">
+                </div>
+              </div>
+
+              <button id="btn-admin-update-money" class="w-full py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-bold transition shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>حفظ وتطبيق الرصيد فوراً</span>
+              </button>
+            </div>
+
+            <!-- Account Reset & Legal Controls -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <!-- Legal & Security Box -->
+              <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2">
+                <span class="text-xs font-bold text-white block">إجراءات الحظر والقانون والأمان</span>
+                <div class="grid grid-cols-2 gap-1.5">
+                  <button id="btn-admin-release-jail" class="py-2 bg-sky-950 hover:bg-sky-900 text-sky-300 border border-sky-500/30 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-key"></i>
+                    <span>إفراج قانوني</span>
+                  </button>
+                  <button id="btn-admin-jail-player" class="py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-handcuffs"></i>
+                    <span>سجن 5 دقائق</span>
+                  </button>
+                  <button id="btn-admin-ban" class="py-2 bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-500/30 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-ban"></i>
+                    <span>حظر الحساب</span>
+                  </button>
+                  <button id="btn-admin-unban" class="py-2 bg-teal-950 hover:bg-teal-900 text-teal-300 border border-teal-500/30 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-user-check"></i>
+                    <span>فك الحظر</span>
+                  </button>
+                </div>
+                <button id="btn-admin-change-pin" class="w-full py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1">
+                  <i class="fa-solid fa-lock"></i>
+                  <span>تغيير الرقم السري (PIN)</span>
+                </button>
+              </div>
+
+              <!-- Reset & Danger Box -->
+              <div class="bg-rose-950/20 p-3 rounded-xl border border-rose-500/30 space-y-2 flex flex-col justify-between">
+                <div>
+                  <span class="text-xs font-bold text-rose-300 block flex items-center gap-1.5">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>تصفير أو حذف حساب اللاعب</span>
+                  </span>
+                  <p class="text-[10px] text-slate-400 mt-1">تصفير الحساب يمسح كافة الشركات والأصول والأسهم ويعيد الكاش إلى 5,000 ج.م كبداية جديدة.</p>
+                </div>
+                <div class="space-y-1.5 pt-2">
+                  <button id="btn-admin-reset-player-account" class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 rounded-lg text-[11px] font-black transition flex items-center justify-center gap-1.5 shadow-md">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>تصفير حساب اللاعب بالكامل (Reset)</span>
+                  </button>
+                  <button id="btn-admin-delete-player-account" class="w-full py-2 bg-rose-700 hover:bg-rose-600 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5 shadow-md">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>حذف حساب اللاعب نهائياً</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 3. PANEL TRANSFERS -->
+        <div id="admin-subpanel-transfers" class="hidden space-y-4">
+          <div class="p-3.5 bg-slate-900/50 border border-slate-800 rounded-xl space-y-3">
+            <div class="flex justify-between items-center">
+              <div>
+                <h4 class="text-xs font-bold text-white">سجل مراقبة وتدقيق التحويلات المالية الحية</h4>
+                <p class="text-[10px] text-slate-400">سجل لحظي لكافة الحركات المالية المتبادلة بين محافظ اللاعبين في الخادم.</p>
+              </div>
+              <div class="flex gap-2">
+                <button id="btn-admin-refresh-transfers" class="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-bold rounded-lg transition flex items-center gap-1">
+                  <i class="fa-solid fa-rotate"></i>
+                  <span>تحديث</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto border border-slate-800/80 rounded-lg">
+              <table class="w-full text-right text-xs">
+                <thead class="bg-slate-950 text-slate-400">
+                  <tr class="border-b border-slate-800">
+                    <th class="p-2.5">الراسل</th>
+                    <th class="p-2.5">المستلم</th>
+                    <th class="p-2.5 text-center">المبلغ</th>
+                    <th class="p-2.5 text-center">التوقيت</th>
+                    <th class="p-2.5 text-left">الحالة</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-transfers-table-body" class="divide-y divide-slate-800/40 font-mono">
                   <!-- Dynamic rows -->
                 </tbody>
               </table>
@@ -1946,127 +2148,245 @@
           </div>
         </div>
 
-        <!-- PANEL PLAYERS: Player Moderation -->
-        <div id="admin-subpanel-players" class="hidden space-y-4">
-          <div class="flex gap-2">
-            <input type="text" id="admin-search-user" placeholder="ابحث باسم المستخدم بدقة..." class="glass-input flex-1 p-2 text-center text-sm font-bold">
-            <button id="btn-admin-search" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-slate-950 rounded-lg text-sm font-bold transition">ابحث عن اللاعب</button>
-          </div>
-
-          <!-- Searched Player Info Container -->
-          <div id="admin-player-result" class="hidden p-4 bg-slate-950/60 border border-slate-800 rounded-xl space-y-4">
-            <div class="grid grid-cols-2 gap-4 text-xs text-slate-400">
-              <div><span class="font-bold text-white block">اسم اللاعب:</span> <span id="admin-p-username" class="numbers-font text-white text-sm">...</span></div>
-              <div><span class="font-bold text-white block">صافي الثروة:</span> <span id="admin-p-worth" class="numbers-font text-yellow-400 text-sm">... EGP</span></div>
-              <div><span class="font-bold text-white block">السيولة (كاش):</span> <span id="admin-p-cash" class="numbers-font text-sm">... EGP</span></div>
-              <div><span class="font-bold text-white block">رصيد البنك:</span> <span id="admin-p-bank" class="numbers-font text-sm">... EGP</span></div>
-              <div><span class="font-bold text-white block">الوضع القانوني:</span> <span id="admin-p-jail" class="text-sm">...</span></div>
-              <div><span class="font-bold text-white block">حالة الحظر:</span> <span id="admin-p-banned" class="text-sm">...</span></div>
-            </div>
-
-            <!-- Management Inputs and buttons -->
-            <div class="border-t border-slate-800/80 pt-3 space-y-3">
-              <h4 class="text-xs font-bold text-white">إجراء تعديلات مالية وقانونية</h4>
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label class="block text-[10px] text-slate-400 mb-1">السيولة النقدية الجديدة</label>
-                  <input type="number" id="admin-input-cash" class="glass-input w-full p-2 text-xs text-center font-bold">
-                </div>
-                <div>
-                  <label class="block text-[10px] text-slate-400 mb-1">رصيد البنك الجديد</label>
-                  <input type="number" id="admin-input-bank" class="glass-input w-full p-2 text-xs text-center font-bold">
-                </div>
-              </div>
-
-              <div class="grid grid-cols-3 gap-2 pt-1">
-                <button id="btn-admin-update-money" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition">حفظ الرصيد</button>
-                <button id="btn-admin-release-jail" class="py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold transition">إفراج قانوني</button>
-                <button id="btn-admin-ban" class="py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition">حظر حساب</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- PANEL MARKET: Stock Market Manipulator -->
+        <!-- 4. PANEL MARKET -->
         <div id="admin-subpanel-market" class="hidden space-y-4">
-          <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl space-y-3">
-            <h4 class="text-xs font-bold text-white">افتغال حدث اقتصادي مفاجئ في البورصة</h4>
-            <p class="text-[10px] text-slate-400">اختر الحدث الاقتصادي المطلوب لتطبيقه فوراً على جميع الأسعار وشريط الأخبار.</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button data-event="tech_boom" class="btn-admin-trigger-event py-2 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 rounded text-xs font-bold transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-microchip"></i><span>طفرة الذكاء الاصطناعي (+25% فوري)</span></button>
-              <button data-event="cbe_rate_hike" class="btn-admin-trigger-event py-2 bg-amber-950/60 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300 rounded text-xs font-bold transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-landmark"></i><span>رفع الفائدة 200 نقطة (+30% CIB)</span></button>
-              <button data-event="telecom_expansion" class="btn-admin-trigger-event py-2 bg-sky-950/60 hover:bg-sky-900/60 border border-sky-500/40 text-sky-300 rounded text-xs font-bold transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-tower-broadcast"></i><span>رخصة 5G للمصرية للاتصالات (+35%)</span></button>
-              <button data-event="tobacco_monopoly" class="btn-admin-trigger-event py-2 bg-yellow-950/60 hover:bg-yellow-900/60 border border-yellow-500/40 text-yellow-300 rounded text-xs font-bold transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-boxes-stacked"></i><span>احتكار وتصدير سهم الشرقية (+40%)</span></button>
-              <button data-event="tech_hack_scandal" class="btn-admin-trigger-event py-2 bg-purple-950/60 hover:bg-purple-900/60 border border-purple-500/40 text-purple-300 rounded text-xs font-bold transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-shield-halved"></i><span>اختراق سيبراني وخسارة فوري (-30%)</span></button>
-              <button data-event="rate_cut_rally" class="btn-admin-trigger-event py-2 bg-teal-950/60 hover:bg-teal-900/60 border border-teal-500/40 text-teal-300 rounded text-xs font-bold transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-arrow-trend-up"></i><span>خفض الفائدة وانتعاش عام (+20%)</span></button>
-              <button data-event="oil_scandal" class="btn-admin-trigger-event py-2 bg-orange-950/60 hover:bg-orange-900/60 border border-orange-500/40 text-orange-300 rounded text-xs font-bold transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-arrow-trend-down"></i><span>أزمة سلاسل الإمداد الشاملة (-25%)</span></button>
-              <button data-event="market_crash" class="btn-admin-trigger-event py-2 bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/40 text-rose-300 rounded text-xs font-bold transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-burst"></i><span>انهيار وتصحيح البورصة (-15%)</span></button>
-            </div>
-          </div>
-        </div>
-
-        <!-- PANEL B: Broadcast & Airdrop -->
-        <div id="admin-subpanel-broadcast" class="hidden space-y-6">
-          <!-- Global Broadcast -->
-          <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl space-y-3">
-            <h4 class="text-sm font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-bullhorn text-yellow-400"></i>
-              <span>إرسال بث فوري (Broadcast) للجميع</span>
-            </h4>
-            <p class="text-[10px] text-slate-500">سيتم عرض هذا النص كإشعار منبثق فوري لجميع اللاعبين المتصلين حالياً بالخادم.</p>
-            <textarea id="admin-broadcast-msg" rows="2" placeholder="اكتب رسالة الإعلان هنا..." class="glass-input w-full p-3 rounded-lg text-xs text-right"></textarea>
-            <button id="btn-admin-send-broadcast" class="w-full py-2.5 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-bold rounded-lg transition">إرسال الإشعار العام</button>
-          </div>
-
-          <!-- Global Airdrop -->
-          <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl space-y-3">
-            <h4 class="text-sm font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-gift text-emerald-400"></i>
-              <span>توزيع مكافأة مالية عامة (Airdrop)</span>
-            </h4>
-            <p class="text-[10px] text-slate-500">سيتم إضافة هذا المبلغ فورياً لحساب الكاش الخاص بجميع اللاعبين المتصل.</p>
-            <div class="flex gap-2">
-              <input type="number" id="admin-airdrop-amount" placeholder="مبلغ المكافأة بـ EGP" class="glass-input flex-1 p-2 text-center text-xs font-bold">
-              <button id="btn-admin-send-airdrop" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition">توزيع المكافأة</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- PANEL C: System Operations -->
-        <div id="admin-subpanel-system" class="hidden space-y-4">
-          <!-- Maintenance Mode Card -->
-          <div class="p-4 bg-yellow-950/20 border border-yellow-500/30 rounded-xl space-y-3">
+          <!-- Sudden Market Triggers -->
+          <div class="p-3.5 bg-slate-900/50 border border-slate-800 rounded-xl space-y-3">
             <div class="flex justify-between items-center">
-              <div>
-                <h4 class="text-sm font-bold text-yellow-400 flex items-center gap-2">
-                  <i class="fa-solid fa-screwdriver-wrench"></i>
-                  <span>وضع الصيانة الشامل للنظام</span>
-                  <span id="admin-maintenance-badge" class="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold">النظام يعمل بشكل طبيعي</span>
-                </h4>
-                <p class="text-[10px] text-slate-400 mt-1">تفعيل وضع الصيانة يغلق اللعبة فوراً عن جميع اللاعبين ويعرض شاشة التنبيه.</p>
+              <h4 class="text-xs font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-bolt text-yellow-400"></i>
+                <span>افتعال حدث اقتصادي فوري في البورصة</span>
+              </h4>
+              <span class="text-[10px] text-slate-400">يؤثر فورياً على أسعار الأسهم وشريط الأخبار</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button data-event="tech_boom" class="btn-admin-trigger-event p-2.5 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 rounded-lg text-xs font-bold transition flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-microchip"></i> طفرة الذكاء الاصطناعي</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded font-mono">+25% فوري</span>
+              </button>
+              <button data-event="cbe_rate_hike" class="btn-admin-trigger-event p-2.5 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-bold transition flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-landmark"></i> رفع الفائدة 200 نقطة</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono">+30% CIB</span>
+              </button>
+              <button data-event="telecom_expansion" class="btn-admin-trigger-event p-2.5 bg-sky-950/40 hover:bg-sky-900/60 border border-sky-500/40 text-sky-300 rounded-lg text-xs font-bold transition flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-tower-broadcast"></i> رخصة 5G للمصرية للاتصالات</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-sky-500/20 text-sky-300 rounded font-mono">+35% ETEL</span>
+              </button>
+              <button data-event="tobacco_monopoly" class="btn-admin-trigger-event p-2.5 bg-yellow-950/40 hover:bg-yellow-900/60 border border-yellow-500/40 text-yellow-300 rounded-lg text-xs font-bold transition flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-boxes-stacked"></i> احتكار وتصدير الشرقية للدخان</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-300 rounded font-mono">+40% EAST</span>
+              </button>
+              <button data-event="tech_hack_scandal" class="btn-admin-trigger-event p-2.5 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/40 text-purple-300 rounded-lg text-xs font-bold transition flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-shield-halved"></i> اختراق سيبراني وأزمة دفع</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-300 rounded font-mono">-30% FWRY</span>
+              </button>
+              <button data-event="rate_cut_rally" class="btn-admin-trigger-event p-2.5 bg-teal-950/40 hover:bg-teal-900/60 border border-teal-500/40 text-teal-300 rounded-lg text-xs font-bold transition flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-arrow-trend-up"></i> خفض الفائدة وانتعاش عام</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-teal-500/20 text-teal-300 rounded font-mono">+20% للكل</span>
+              </button>
+              <button data-event="oil_scandal" class="btn-admin-trigger-event p-2.5 bg-orange-950/40 hover:bg-orange-900/60 border border-orange-500/40 text-orange-300 rounded-lg text-xs font-bold transition flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-truck-ramp-box"></i> أزمة سلاسل الإمداد والشحن</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-orange-500/20 text-orange-300 rounded font-mono">-25% EAST</span>
+              </button>
+              <button data-event="market_crash" class="btn-admin-trigger-event p-2.5 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/40 text-rose-300 rounded-lg text-xs font-bold transition flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-burst"></i> انهيار وتصحيح هابط للبورصة</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-rose-500/20 text-rose-300 rounded font-mono">-15% للكل</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Direct Stock Price Controller -->
+          <div class="p-3.5 bg-slate-900/50 border border-slate-800 rounded-xl space-y-3">
+            <div class="flex justify-between items-center">
+              <h4 class="text-xs font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-sliders text-yellow-400"></i>
+                <span>التحكم المباشر في أسعار الأسهم</span>
+              </h4>
+              <button id="btn-admin-reset-market-baseline" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold transition">إعادة الأسعار للقيمة الأساسية</button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              <div class="p-2.5 bg-slate-950 border border-slate-800/80 rounded-lg flex flex-col justify-between">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-white text-[11px]">البنك التجاري (COMI)</span>
+                  <span id="adm-stock-price-COMI" class="numbers-font text-yellow-400 font-bold text-xs">... EGP</span>
+                </div>
+                <div class="flex gap-1 mt-2">
+                  <input type="number" id="adm-input-stock-COMI" placeholder="السعر الجديد" class="glass-input flex-1 p-1 text-center text-xs font-mono font-bold">
+                  <button data-symbol="COMI" class="btn-admin-apply-stock-price px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold">تطبيق</button>
+                </div>
+              </div>
+
+              <div class="p-2.5 bg-slate-950 border border-slate-800/80 rounded-lg flex flex-col justify-between">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-white text-[11px]">الشرقية للدخان (EAST)</span>
+                  <span id="adm-stock-price-EAST" class="numbers-font text-yellow-400 font-bold text-xs">... EGP</span>
+                </div>
+                <div class="flex gap-1 mt-2">
+                  <input type="number" id="adm-input-stock-EAST" placeholder="السعر الجديد" class="glass-input flex-1 p-1 text-center text-xs font-mono font-bold">
+                  <button data-symbol="EAST" class="btn-admin-apply-stock-price px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold">تطبيق</button>
+                </div>
+              </div>
+
+              <div class="p-2.5 bg-slate-950 border border-slate-800/80 rounded-lg flex flex-col justify-between">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-white text-[11px]">المصرية للاتصالات (ETEL)</span>
+                  <span id="adm-stock-price-ETEL" class="numbers-font text-yellow-400 font-bold text-xs">... EGP</span>
+                </div>
+                <div class="flex gap-1 mt-2">
+                  <input type="number" id="adm-input-stock-ETEL" placeholder="السعر الجديد" class="glass-input flex-1 p-1 text-center text-xs font-mono font-bold">
+                  <button data-symbol="ETEL" class="btn-admin-apply-stock-price px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold">تطبيق</button>
+                </div>
+              </div>
+
+              <div class="p-2.5 bg-slate-950 border border-slate-800/80 rounded-lg flex flex-col justify-between">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-white text-[11px]">شركة فوري (FWRY)</span>
+                  <span id="adm-stock-price-FWRY" class="numbers-font text-yellow-400 font-bold text-xs">... EGP</span>
+                </div>
+                <div class="flex gap-1 mt-2">
+                  <input type="number" id="adm-input-stock-FWRY" placeholder="السعر الجديد" class="glass-input flex-1 p-1 text-center text-xs font-mono font-bold">
+                  <button data-symbol="FWRY" class="btn-admin-apply-stock-price px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold">تطبيق</button>
+                </div>
+              </div>
+
+              <div class="p-2.5 bg-slate-950 border border-slate-800/80 rounded-lg flex flex-col justify-between">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-white text-[11px]">صندوق كاش المالي (CASH)</span>
+                  <span id="adm-stock-price-CASH" class="numbers-font text-yellow-400 font-bold text-xs">... EGP</span>
+                </div>
+                <div class="flex gap-1 mt-2">
+                  <input type="number" id="adm-input-stock-CASH" placeholder="السعر الجديد" class="glass-input flex-1 p-1 text-center text-xs font-mono font-bold">
+                  <button data-symbol="CASH" class="btn-admin-apply-stock-price px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold">تطبيق</button>
+                </div>
               </div>
             </div>
-            <button id="btn-admin-toggle-maintenance" class="w-full py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-600/10 flex items-center justify-center gap-2">
-              <i class="fa-solid fa-triangle-exclamation"></i>
-              <span>إغلاق اللعبة وتفعيل وضع الصيانة الشامل للجميع</span>
+          </div>
+        </div>
+
+        <!-- 5. PANEL BROADCAST & AIRDROP -->
+        <div id="admin-subpanel-broadcast" class="hidden space-y-4">
+          <!-- Global Broadcast -->
+          <div class="p-3.5 bg-slate-900/50 border border-slate-800 rounded-xl space-y-3">
+            <h4 class="text-xs font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-bullhorn text-yellow-400"></i>
+              <span>إرسال بث وتنبيه عام لجميع اللاعبين</span>
+            </h4>
+            
+            <!-- Broadcast Presets -->
+            <div class="flex flex-wrap gap-1.5 text-[10px]">
+              <button data-msg="🛠️ تنبيه إداري: سيتم إجراء صيانة سريعة للخوادم بعد قليل لتحديث النظام." class="btn-broadcast-preset px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold">صيانة قادمة</button>
+              <button data-msg="🎁 مكافأة خاصة: تم إيداع منحة إدارية في حسابات جميع اللاعبين النشطين!" class="btn-broadcast-preset px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold">مكافأة عامة</button>
+              <button data-msg="📈 فرصة استثمارية: انتعاش قياسي مرتقب في سوق الأسهم والبورصة اليوم!" class="btn-broadcast-preset px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold">فرصة بورصة</button>
+              <button data-msg="⚠️ تحذير: يُمنع استخدام أي ثغرات أو برامج تلاعب لتفادي الحظر النهائي الفوري." class="btn-broadcast-preset px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold">تحذير أمني</button>
+            </div>
+
+            <textarea id="admin-broadcast-msg" rows="2" placeholder="اكتب نص الإشعار هنا أو اختر من النماذج الجاهزة أعلاه..." class="glass-input w-full p-2.5 rounded-lg text-xs text-right"></textarea>
+            <button id="btn-admin-send-broadcast" class="w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>إرسال البث لجميع المتصلين فوراً</span>
             </button>
           </div>
 
-          <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl space-y-3">
-            <h4 class="text-sm font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-sliders"></i>
-              <span>التحكم في المتصدرين والنظام</span>
+          <!-- Global & Targeted Airdrop -->
+          <div class="p-3.5 bg-slate-900/50 border border-slate-800 rounded-xl space-y-3">
+            <h4 class="text-xs font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-gift text-emerald-400"></i>
+              <span>توزيع مكافأة مالية (Airdrop)</span>
             </h4>
-            <p class="text-[10px] text-slate-500">إجراءات إدارية جذرية لتنظيف قاعدة البيانات أو إعادة ضبط محاكاة اللعبة.</p>
-            <div class="flex gap-2">
-              <button id="btn-admin-wipe-leaderboard" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition">تصفير قائمة المتصدرين</button>
-              <button id="btn-admin-refresh-leaderboard" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg transition">تحديث الكاش</button>
+            <p class="text-[10px] text-slate-400">سيتم إضافة هذا المبلغ فوراً إلى كاش اللاعبين المستهدفين.</p>
+            
+            <!-- Quick amount buttons -->
+            <div class="flex gap-1.5">
+              <button data-airdrop="50000" class="btn-airdrop-preset flex-1 py-1.5 bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/30 rounded text-xs font-bold">+50K</button>
+              <button data-airdrop="250000" class="btn-airdrop-preset flex-1 py-1.5 bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/30 rounded text-xs font-bold">+250K</button>
+              <button data-airdrop="1000000" class="btn-airdrop-preset flex-1 py-1.5 bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/30 rounded text-xs font-bold">+1M</button>
+              <button data-airdrop="5000000" class="btn-airdrop-preset flex-1 py-1.5 bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/30 rounded text-xs font-bold">+5M</button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">المستلم (الجميع أو اسم لاعب محدد)</label>
+                <input type="text" id="admin-airdrop-target" value="ALL" placeholder="ALL أو اسم اللاعب" class="glass-input w-full p-2 text-xs font-bold text-center">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">مبلغ المكافأة (EGP)</label>
+                <input type="number" id="admin-airdrop-amount" placeholder="مثال: 100000" class="glass-input w-full p-2 text-xs font-bold text-center font-mono">
+              </div>
+            </div>
+
+            <button id="btn-admin-send-airdrop" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-hand-holding-dollar"></i>
+              <span>توزيع المكافأة المالية</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 6. PANEL SYSTEM & RESET (DANGER ZONE) -->
+        <div id="admin-subpanel-system" class="hidden space-y-4">
+          <!-- Maintenance Mode Card -->
+          <div class="p-3.5 bg-amber-950/20 border border-amber-500/30 rounded-xl space-y-2.5">
+            <div class="flex justify-between items-center">
+              <div>
+                <h4 class="text-xs font-bold text-amber-400 flex items-center gap-2">
+                  <i class="fa-solid fa-screwdriver-wrench"></i>
+                  <span>وضع الصيانة الشامل للنظام</span>
+                  <span id="admin-maintenance-badge" class="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold">الخادم متاح للجميع</span>
+                </h4>
+                <p class="text-[10px] text-slate-400 mt-0.5">تفعيل الصيانة يغلق اللعبة عن جميع اللاعبين مع عرض شاشة تنبيه إدارية.</p>
+              </div>
+            </div>
+            <button id="btn-admin-toggle-maintenance" class="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-600/10 flex items-center justify-center gap-2">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span id="admin-maintenance-btn-text">تفعيل وضع الصيانة الشامل وإغلاق الخوادم</span>
+            </button>
+          </div>
+
+          <!-- DANGER ZONE: Economy & Database Resets -->
+          <div class="p-3.5 bg-rose-950/30 border border-rose-500/40 rounded-xl space-y-3">
+            <div class="border-b border-rose-500/20 pb-2">
+              <h4 class="text-xs font-black text-rose-400 flex items-center gap-2">
+                <i class="fa-solid fa-biohazard text-sm"></i>
+                <span>المنطقة الخطرة: تصفير الاقتصاد وإعادة ضبط الخادم</span>
+              </h4>
+              <p class="text-[10px] text-slate-400 mt-0.5">عمليات حساسة لا يمكن التراجع عنها تؤثر على قاعدة البيانات بأكملها.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <!-- Reset Economy -->
+              <div class="p-2.5 bg-slate-950 border border-slate-800 rounded-lg flex flex-col justify-between space-y-2">
+                <div>
+                  <span class="text-xs font-bold text-amber-400 block">🔄 تصفير اقتصاد اللعبة</span>
+                  <p class="text-[10px] text-slate-400 mt-1">يعيد أرصدة كافة اللاعبين إلى 5,000 ج.م ويمسح الأصول والشركات مع الإبقاء على الحسابات.</p>
+                </div>
+                <button id="btn-admin-reset-all-economy" class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 rounded font-black text-[10px] transition">تصفير أرصدة المنظومة</button>
+              </div>
+
+              <!-- Wipe All Accounts -->
+              <div class="p-2.5 bg-slate-950 border border-rose-900/50 rounded-lg flex flex-col justify-between space-y-2">
+                <div>
+                  <span class="text-xs font-bold text-rose-400 block">🗑️ مسح كافة الحسابات</span>
+                  <p class="text-[10px] text-slate-400 mt-1">يحذف كافة وثائق اللاعبين المسجلين من Firestore عدا حساب الأدمن.</p>
+                </div>
+                <button id="btn-admin-wipe-leaderboard" class="w-full py-2 bg-rose-700 hover:bg-rose-600 text-white rounded font-bold text-[10px] transition">مسح شامل للحسابات</button>
+              </div>
+
+              <!-- Clear Transfers -->
+              <div class="p-2.5 bg-slate-950 border border-slate-800 rounded-lg flex flex-col justify-between space-y-2">
+                <div>
+                  <span class="text-xs font-bold text-slate-300 block">🧹 تفريغ سجل التحويلات</span>
+                  <p class="text-[10px] text-slate-400 mt-1">يحذف سجلات التحويلات المالية القديمة لتخفيف قاعدة البيانات وتحسين السرعة.</p>
+                </div>
+                <button id="btn-admin-clear-transfers-log" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded font-bold text-[10px] transition">مسح سجل التحويلات</button>
+              </div>
             </div>
           </div>
 
-          <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl space-y-2">
-            <h4 class="text-xs font-bold text-white">سجل العمليات الإدارية الأخيرة</h4>
-            <div id="admin-action-logs" class="text-[10px] text-slate-500 space-y-1 h-24 overflow-y-auto bg-slate-950 p-2 rounded border border-slate-800/50 text-right">
+          <!-- Session Action Logs -->
+          <div class="p-3 bg-slate-900/40 border border-slate-800 rounded-xl space-y-2">
+            <h4 class="text-xs font-bold text-white">سجل العمليات الإدارية في هذه الجلسة</h4>
+            <div id="admin-action-logs" class="text-[10px] text-slate-400 space-y-1 h-24 overflow-y-auto bg-slate-950 p-2 rounded border border-slate-800/60 text-right font-mono">
               <div>لا يوجد عمليات مسجلة في الجلسة الحالية.</div>
             </div>
           </div>
@@ -2077,8 +2397,8 @@
     </div>
   </div>
 
-  <!-- FLOATING ADMIN PANEL TRIGGER BUTTON -->
-  <button id="btn-admin-panel-trigger" class="hidden fixed bottom-6 right-6 z-40 p-4 bg-yellow-500 hover:bg-yellow-600 text-slate-950 rounded-full shadow-2xl transition duration-300 hover:scale-110">
+  <!-- FLOATING ADMIN PANEL TRIGGER BUTTON (FAB) -->
+  <button id="btn-admin-panel-trigger-fab" class="hidden fixed bottom-6 right-6 z-40 p-4 bg-gradient-to-tr from-yellow-600 to-amber-400 hover:from-yellow-500 hover:to-amber-300 text-slate-950 rounded-full shadow-2xl transition duration-300 hover:scale-110 shadow-yellow-500/20" title="لوحة التحكم الإدارية">
     <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
       <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
