@@ -493,6 +493,7 @@ const GameEngine = (() => {
     itemDurations: {}, // Stores { itemId: ticksRemaining } for self-destruction timer
     jailTimer: 0,
     afkManagerExpiresAt: 0, // 12-hour active manager timestamp
+    activityLog: [], // Rolling audit log of player actions
     netWorth: 2000,
     title: 'عامل مبتدئ'
   };
@@ -501,6 +502,20 @@ const GameEngine = (() => {
   let stockPrices = {}; // Stores { SYMBOL: [priceHistory...] }
   let activeUsername = "";
   let lastTipEventTimestamp = 0;
+
+  // Record player action in rolling audit log
+  function recordPlayerActivity(action, details, category = 'info') {
+    if (!state.activityLog) state.activityLog = [];
+    state.activityLog.unshift({
+      timestamp: Date.now(),
+      action: action,
+      details: details,
+      category: category // 'work' | 'business' | 'stock' | 'investment' | 'banking' | 'casino' | 'blackmarket' | 'store'
+    });
+    if (state.activityLog.length > 40) {
+      state.activityLog.length = 40; // Keep last 40 entries
+    }
+  }
 
   // Initialize Stock Price Histories
   function initStocks() {
@@ -1186,6 +1201,7 @@ const GameEngine = (() => {
     state.cash -= biz.cost;
     bizState.level = 1;
 
+    recordPlayerActivity('شراء مشروع', `شراء مشروع "${biz.name}" بسعر ${biz.cost.toLocaleString()} ج.م`, 'business');
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
     return biz;
@@ -1210,6 +1226,7 @@ const GameEngine = (() => {
     state.cash -= upgradeCost;
     bizState.level++;
 
+    recordPlayerActivity('ترقية مشروع', `ترقية مشروع "${biz.name}" إلى المستوى ${bizState.level}`, 'business');
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
     return {
@@ -1382,6 +1399,7 @@ const GameEngine = (() => {
     state.stocks[sym].shares = newShares;
     state.stocks[sym].avgPrice = newAvg;
 
+    recordPlayerActivity('شراء أسهم', `شراء ${shares} سهم (${sym}) بإجمالي ${totalCost.toLocaleString()} ج.م`, 'stock');
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
     return { shares, price: currentPrice, totalCost };
@@ -1415,6 +1433,7 @@ const GameEngine = (() => {
     }
     state.cash += totalReturn;
 
+    recordPlayerActivity('بيع أسهم', `بيع ${shares} سهم (${sym}) بعائد ${totalReturn.toLocaleString()} ج.م`, 'stock');
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
     return { shares, price: currentPrice, totalReturn };
@@ -1437,6 +1456,7 @@ const GameEngine = (() => {
     if (!state.itemDurations) state.itemDurations = {};
     state.itemDurations[itemId] = item.durationTicks;
 
+    recordPlayerActivity('شراء متجر', `شراء أداة "${item.name}" من المتجر`, 'store');
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
     return item;
@@ -1485,6 +1505,7 @@ const GameEngine = (() => {
       // SUCCESS: High ROI Payout into DIRTY CASH (أرباح السوق السوداء غير مشروعة ويجب غسيلها)
       state.dirtyCash = (state.dirtyCash || 0) + deal.payout;
       state.underworldRep = (state.underworldRep || 0) + (deal.repGain || 20);
+      recordPlayerActivity('سوق سوداء', `نجاح صفقة "${deal.name}" (+${deal.payout.toLocaleString()} ج.م كاش مشبوه)`, 'blackmarket');
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
       return {
@@ -1519,6 +1540,7 @@ const GameEngine = (() => {
       state.jailTimer = deal.jailDuration;
       state.heatLevel = Math.min(5, (state.heatLevel || 0) + 1);
 
+      recordPlayerActivity('مداهمة وسجن', `فشل صفقة "${deal.name}" ومصادرة ${totalConfiscation.toLocaleString()} ج.م وسجن ${deal.jailDuration}ث`, 'blackmarket');
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
       return {
@@ -1644,6 +1666,7 @@ const GameEngine = (() => {
       rate: plan.rate
     });
 
+    recordPlayerActivity('استثمار مالي', `إيداع ${amount.toLocaleString()} ج.م في "${plan.name}"`, 'investment');
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
     return { plan, amount };
@@ -1677,10 +1700,12 @@ const GameEngine = (() => {
       const mult = 2.0 + streakBonus;
       const payout = Math.floor(betAmount * mult);
       state.cash += payout;
+      recordPlayerActivity('رمي العملة', `فوز برهان الكازينو +${payout.toLocaleString()} ج.م (مضاعف x${mult.toFixed(2)})`, 'casino');
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
       return { won: true, side: outcomeSide, multiplier: mult, payout: payout, profit: payout - betAmount };
     } else {
+      recordPlayerActivity('رمي العملة', `خسارة رهان الكازينو ${betAmount.toLocaleString()} ج.م`, 'casino');
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
       return { won: false, side: outcomeSide, loss: betAmount };

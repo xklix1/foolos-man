@@ -602,6 +602,70 @@ const AppDB = (() => {
     await firestoreDb.collection('players').doc(username).set({ isBanned: false }, { merge: true });
   }
 
+  // ─────────────────────────────────────────────
+  //  ADMIN BROADCAST & AIRDROP
+  // ─────────────────────────────────────────────
+  async function sendBroadcast(message, title = '📢 إعلان إداري عاجل') {
+    _requireOnline();
+    if (!message || !message.trim()) throw new Error('يرجى كتابة نص الرسالة أولاً.');
+    const data = {
+      id: Date.now(),
+      title: title,
+      message: message.trim(),
+      timestamp: Date.now(),
+      sender: 'الإدارة'
+    };
+    await firestoreDb.collection('globals').doc('broadcast').set(data);
+    return data;
+  }
+
+  async function sendAirdrop(amount, target = 'ALL') {
+    _requireOnline();
+    amount = Number(amount);
+    if (!amount || amount <= 0) throw new Error('مبلغ المكافأة يجب أن يكون رقماً موجباً أكبر من صفر.');
+    target = (target || 'ALL').trim();
+
+    if (target === 'ALL' || target.toUpperCase() === 'ALL') {
+      const snapshot = await firestoreDb.collection('players').get();
+      let batch = firestoreDb.batch();
+      let batchOps = 0;
+      let count = 0;
+
+      for (const doc of snapshot.docs) {
+        const d = doc.data() || {};
+        const currentCash = Number(d.cash || 0);
+        batch.update(doc.ref, {
+          cash: currentCash + amount,
+          lastAirdrop: { amount, timestamp: Date.now() }
+        });
+        count++;
+        batchOps++;
+        if (batchOps >= 400) {
+          await batch.commit();
+          batch = firestoreDb.batch();
+          batchOps = 0;
+        }
+      }
+      if (batchOps > 0) {
+        await batch.commit();
+      }
+
+      // Also publish to global broadcast
+      await sendBroadcast(`🎁 تم توزيع مكافأة ومنحة مالية إدارية قدرها +${amount.toLocaleString()} EGP لجميع اللاعبين!`, '🎉 مكافأة مالية عامة');
+      return { count, amount, target: 'ALL' };
+    } else {
+      const docRef = firestoreDb.collection('players').doc(target);
+      const doc = await docRef.get();
+      if (!doc.exists) throw new Error(`اللاعب "${target}" غير مسجل في قاعدة البيانات.`);
+      const currentCash = Number(doc.data().cash || 0);
+      await docRef.update({
+        cash: currentCash + amount,
+        lastAirdrop: { amount, timestamp: Date.now() }
+      });
+      return { count: 1, amount, target };
+    }
+  }
+
   async function adminResetAllPlayers() {
     _requireOnline();
     const snapshot = await firestoreDb.collection('players').get();

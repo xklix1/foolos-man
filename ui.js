@@ -3802,6 +3802,33 @@ const UIController = (() => {
 
     if (!modal) return;
 
+    // Live Clock Interval in Admin Header
+    setInterval(() => {
+      const clockEl = document.getElementById('adm-live-clock');
+      if (clockEl) {
+        clockEl.textContent = new Date().toLocaleTimeString('ar-EG');
+      }
+    }, 1000);
+
+    // Real-time Global Admin Broadcasts Listener
+    let isFirstBroadcastSnapshot = true;
+    if (window.firebase && firebase.firestore && AppDB.isFirebaseReady) {
+      try {
+        firebase.firestore().collection('globals').doc('broadcast').onSnapshot(doc => {
+          if (!doc.exists) return;
+          const d = doc.data();
+          if (!d || !d.message) return;
+          if (isFirstBroadcastSnapshot) {
+            isFirstBroadcastSnapshot = false;
+            // Skip broadcasts older than 5 minutes
+            if (Date.now() - (d.timestamp || 0) > 300000) return;
+          }
+          showToast(d.title || '📢 إعلان إداري عاجل', d.message, 'info');
+          playMenuSound('success');
+        });
+      } catch(e) {}
+    }
+
     const openModal = () => {
       playMenuSound('modal_open');
       modal.classList.remove('hidden');
@@ -4262,6 +4289,124 @@ const UIController = (() => {
         }
       });
     }
+
+    // ─────────────────────────────────────────────
+    //  MODULE: LIVE PLAYER ACTIVITY AUDIT LOG
+    // ─────────────────────────────────────────────
+    const inspectLogsBtn = document.getElementById('btn-admin-inspect-logs');
+    const logModal = document.getElementById('admin-player-log-modal');
+    const closeLogModalBtn = document.getElementById('btn-admin-close-log-modal');
+    const logFeed = document.getElementById('admin-player-log-feed');
+    let currentLogFilter = 'all';
+
+    function renderPlayerLogFeed(pState) {
+      if (!logFeed) return;
+      const logs = (pState && pState.activityLog) || [];
+      const filtered = logs.filter(l => currentLogFilter === 'all' || l.category === currentLogFilter);
+
+      if (filtered.length === 0) {
+        logFeed.innerHTML = `
+          <div class="p-6 text-center text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">
+            <i class="fa-solid fa-clipboard-list text-2xl mb-2 text-slate-600 block"></i>
+            <span>لا توجد عمليات مسجلة لهذا اللاعب في هذا التصنيف حتى الآن.</span>
+          </div>
+        `;
+        return;
+      }
+
+      logFeed.innerHTML = '';
+      filtered.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'p-2.5 bg-slate-900/70 hover:bg-slate-900 border border-slate-800/80 rounded-xl flex items-center justify-between gap-2 transition';
+        
+        let icon = '<i class="fa-solid fa-circle-info text-sky-400"></i>';
+        let badgeColor = 'bg-sky-500/10 text-sky-400 border-sky-500/20';
+        
+        if (item.category === 'business') {
+          icon = '<i class="fa-solid fa-briefcase text-emerald-400"></i>';
+          badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+        } else if (item.category === 'stock') {
+          icon = '<i class="fa-solid fa-chart-line text-yellow-400"></i>';
+          badgeColor = 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+        } else if (item.category === 'investment') {
+          icon = '<i class="fa-solid fa-vault text-amber-400"></i>';
+          badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+        } else if (item.category === 'casino') {
+          icon = '<i class="fa-solid fa-dice text-purple-400"></i>';
+          badgeColor = 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+        } else if (item.category === 'blackmarket') {
+          icon = '<i class="fa-solid fa-skull-crossbones text-rose-400"></i>';
+          badgeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+        } else if (item.category === 'banking') {
+          icon = '<i class="fa-solid fa-building-columns text-teal-400"></i>';
+          badgeColor = 'bg-teal-500/10 text-teal-400 border-teal-500/20';
+        } else if (item.category === 'store') {
+          icon = '<i class="fa-solid fa-bag-shopping text-cyan-400"></i>';
+          badgeColor = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
+        }
+
+        const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--';
+
+        div.innerHTML = `
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center text-xs border border-slate-800">
+              ${icon}
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-white">${item.action}</span>
+                <span class="text-[9px] px-1.5 py-0.2 rounded border ${badgeColor} font-sans">${item.category}</span>
+              </div>
+              <div class="text-[11px] text-slate-300 mt-0.5">${item.details}</div>
+            </div>
+          </div>
+          <div class="text-[10px] text-slate-400 font-mono text-left shrink-0">
+            ${dateStr}
+          </div>
+        `;
+        logFeed.appendChild(div);
+      });
+    }
+
+    if (inspectLogsBtn && logModal) {
+      inspectLogsBtn.addEventListener('click', async () => {
+        if (!selectedPlayer) return;
+        try {
+          const pState = await AppDB.adminGetPlayer(selectedPlayer);
+          selectedPlayerState = pState;
+          document.getElementById('adm-log-modal-username').textContent = `@${selectedPlayer}`;
+          document.getElementById('adm-log-stat-worth').textContent = `${(pState.netWorth || 0).toLocaleString()} EGP`;
+          document.getElementById('adm-log-stat-cash').textContent = `${((pState.cash || 0) + (pState.bank || 0)).toLocaleString()} EGP`;
+          document.getElementById('adm-log-stat-heat').textContent = `${pState.heatLevel || 0} / 5`;
+          document.getElementById('adm-log-stat-jail').textContent = (pState.jailTimer > 0) ? `مسجون (${pState.jailTimer}ث)` : 'حر طليق';
+          
+          currentLogFilter = 'all';
+          renderPlayerLogFeed(pState);
+          logModal.classList.remove('hidden');
+        } catch(e) {
+          showToast('سجل النشاط', e.message, 'error');
+        }
+      });
+    }
+
+    if (closeLogModalBtn && logModal) {
+      closeLogModalBtn.addEventListener('click', () => {
+        logModal.classList.add('hidden');
+      });
+    }
+
+    // Filter pills inside log modal
+    const logFilterBtns = document.querySelectorAll('.btn-log-filter');
+    logFilterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        logFilterBtns.forEach(b => {
+          b.className = 'btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition';
+        });
+        btn.className = 'btn-log-filter px-3 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-lg font-bold transition';
+        currentLogFilter = btn.getAttribute('data-log-filter') || 'all';
+        if (selectedPlayerState) renderPlayerLogFeed(selectedPlayerState);
+      });
+    });
 
     // ─────────────────────────────────────────────
     //  MODULE: MARKET CONTROL & DIRECT PRICING
