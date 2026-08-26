@@ -233,10 +233,11 @@ const GameEngine = (() => {
   const INVESTMENTS = {
     short: {
       id: 'short',
-      name: 'وديعة بنكية ربع سنوية',
+      name: 'وديعة بنكية قصيرة الأجل',
       durationTicks: 600, // 10 minutes
       rate: 0.08,
       minAmount: 10000,
+      maxAmount: 100000,
       desc: 'تجميد السيولة لمدة 10 دقائق لتوفير التمويل المصرفي مقابل عائد أرباح إضافي (+8%).'
     },
     medium: {
@@ -245,6 +246,7 @@ const GameEngine = (() => {
       durationTicks: 1800, // 30 minutes
       rate: 0.25,
       minAmount: 50000,
+      maxAmount: 500000,
       desc: 'استثمار مضمون في أصول إنشائية وتجارية مدرة للدخل لمدة 30 دقيقة (+25%).'
     },
     long: {
@@ -253,6 +255,7 @@ const GameEngine = (() => {
       durationTicks: 7200, // 2 hours
       rate: 0.65,
       minAmount: 250000,
+      maxAmount: 3000000,
       desc: 'محفظة استثمارية مغلقة في أسواق المال العالمية لمدة ساعتين بعوائد استثنائية (+65%).'
     },
     venture: {
@@ -261,6 +264,7 @@ const GameEngine = (() => {
       durationTicks: 21600, // 6 hours
       rate: 1.50,
       minAmount: 1500000,
+      maxAmount: 20000000,
       desc: 'استثمار استراتيجي مغلق في شركات التكنولوجيا الصاعدة لمدة 6 ساعات بعوائد فائقة (+150%).'
     },
     imperial: {
@@ -269,6 +273,7 @@ const GameEngine = (() => {
       durationTicks: 43200, // 12 hours (43,200 seconds)
       rate: 3.00,
       minAmount: 10000000,
+      maxAmount: 100000000,
       desc: 'خزينة مقفلة لكبار أثرياء العالم لمدة 12 ساعة تمنح عائداً أسطورياً أربعة أضعاف (+300%).'
     }
   };
@@ -1603,6 +1608,9 @@ const GameEngine = (() => {
     if (!plan) throw new Error("خطة الاستثمار غير موجودة.");
     if (!amount || isNaN(amount) || amount < plan.minAmount) {
       throw new Error(`الحد الأدنى للاستثمار في "${plan.name}" هو ${plan.minAmount.toLocaleString()} جنيه.`);
+    }
+    if (plan.maxAmount && amount > plan.maxAmount) {
+      throw new Error(`الحد الأقصى للإيداع في "${plan.name}" هو ${plan.maxAmount.toLocaleString()} جنيه.`);
     }
     if (state.cash < amount) {
       throw new Error(`رصيدك النقدي ${state.cash.toLocaleString()} جنيه لا يكفي لاستثمار ${amount.toLocaleString()} جنيه.`);
