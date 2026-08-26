@@ -490,19 +490,18 @@ const AppDB = (() => {
   async function adminResetPlayer(username) {
     _requireOnline();
     username = username.trim();
-    if (username === SECRET_ADMIN_USERNAME) {
-      throw new Error('لا يمكن تصفير حساب الإدارة الرئيسي.');
-    }
     
-    // Fetch existing player doc to preserve the user's PIN
+    // Fetch existing player doc to preserve the user's PIN and admin flag
     const docRef = firestoreDb.collection('players').doc(username);
     const existingSnap = await docRef.get();
     const existingData = existingSnap.exists ? existingSnap.data() : {};
-    const existingPin = existingData.pin || '';
+    const existingPin = existingData.pin || (username === SECRET_ADMIN_USERNAME ? _hashString(SECRET_ADMIN_PIN) : '');
+    const isAdmin = Boolean(existingData.isAdmin || username === SECRET_ADMIN_USERNAME);
 
     const freshZeroState = {
       username: username,
       pin: existingPin,
+      isAdmin: isAdmin,
       cash: 0,
       bank: 0,
       dirtyCash: 0,
@@ -625,88 +624,89 @@ const AppDB = (() => {
     let batchOps = 0;
     
     for (const doc of snapshot.docs) {
-      if (doc.id !== SECRET_ADMIN_USERNAME) {
-        const existingData = doc.data() || {};
-        const freshZeroState = {
-          username: doc.id,
-          pin: existingData.pin || '',
-          cash: 0,
-          bank: 0,
-          dirtyCash: 0,
-          netWorth: 0,
-          xp: 0,
-          jobId: 'worker',
-          title: 'عامل مبتدئ',
-          underworldRep: 0,
-          heatLevel: 0,
-          businesses: {
-            coffee: { level: 0, price: 22, workers: 0 },
-            tech: { level: 0, price: 160, workers: 0 },
-            logistics: { level: 0, price: 1100, workers: 0 },
-            supermarket: { level: 0, price: 450, workers: 0 },
-            solar_factory: { level: 0, price: 3200, workers: 0 },
-            private_hospital: { level: 0, price: 11500, workers: 0 },
-            media_studio: { level: 0, price: 28000, workers: 0 },
-            private_bank: { level: 0, price: 95000, workers: 0 },
-            oil_refinery: { level: 0, price: 310000, workers: 0 },
-            space_tech: { level: 0, price: 1250000, workers: 0 }
-          },
-          assets: {
-            apartment: 0,
-            office: 0,
-            mansion: 0,
-            skyline_tower: 0,
-            luxury_resort: 0,
-            mega_yacht: 0,
-            private_island: 0,
-            orbital_station: 0
-          },
-          stocks: {
-            COMI: { shares: 0, avgPrice: 0 },
-            EAST: { shares: 0, avgPrice: 0 },
-            ETEL: { shares: 0, avgPrice: 0 },
-            FWRY: { shares: 0, avgPrice: 0 },
-            CASH: { shares: 0, avgPrice: 0 },
-            BITC: { shares: 0, avgPrice: 0 },
-            GOLD: { shares: 0, avgPrice: 0 },
-            AIX:  { shares: 0, avgPrice: 0 }
-          },
-          investments: [],
-          activeLoan: null,
-          inventory: {
-            gold_pen: 0,
-            premium_lawyer: 0,
-            energy_drink: 0,
-            tax_shield: 0,
-            market_scanner: 0,
-            vip_casino_pass: 0,
-            radar_jammer: 0,
-            fake_passport: 0,
-            crypto_cleaner: 0,
-            diplomatic_bag: 0,
-            commissioner_wire: 0,
-            quantum_cpu: 0,
-            diamond_card: 0
-          },
-          itemDurations: {},
-          jailTimer: 0,
-          afkManagerExpiresAt: 0,
-          offlineReport: null,
-          isBanned: false,
-          createdAt: existingData.createdAt || Date.now(),
-          lastSeen: Date.now(),
-          adminModifiedTimestamp: Date.now()
-        };
-        
-        batch.set(doc.ref, freshZeroState);
-        count++;
-        batchOps++;
-        
-        if (batchOps >= 400) {
-          await batch.commit();
-          batch = firestoreDb.batch();
-          batchOps = 0;
-        }
+      const existingData = doc.data() || {};
+      const isAdmin = Boolean(existingData.isAdmin || doc.id === SECRET_ADMIN_USERNAME);
+      const existingPin = existingData.pin || (doc.id === SECRET_ADMIN_USERNAME ? _hashString(SECRET_ADMIN_PIN) : '');
+      const freshZeroState = {
+        username: doc.id,
+        pin: existingPin,
+        isAdmin: isAdmin,
+        cash: 0,
+        bank: 0,
+        dirtyCash: 0,
+        netWorth: 0,
+        xp: 0,
+        jobId: 'worker',
+        title: 'عامل مبتدئ',
+        underworldRep: 0,
+        heatLevel: 0,
+        businesses: {
+          coffee: { level: 0, price: 22, workers: 0 },
+          tech: { level: 0, price: 160, workers: 0 },
+          logistics: { level: 0, price: 1100, workers: 0 },
+          supermarket: { level: 0, price: 450, workers: 0 },
+          solar_factory: { level: 0, price: 3200, workers: 0 },
+          private_hospital: { level: 0, price: 11500, workers: 0 },
+          media_studio: { level: 0, price: 28000, workers: 0 },
+          private_bank: { level: 0, price: 95000, workers: 0 },
+          oil_refinery: { level: 0, price: 310000, workers: 0 },
+          space_tech: { level: 0, price: 1250000, workers: 0 }
+        },
+        assets: {
+          apartment: 0,
+          office: 0,
+          mansion: 0,
+          skyline_tower: 0,
+          luxury_resort: 0,
+          mega_yacht: 0,
+          private_island: 0,
+          orbital_station: 0
+        },
+        stocks: {
+          COMI: { shares: 0, avgPrice: 0 },
+          EAST: { shares: 0, avgPrice: 0 },
+          ETEL: { shares: 0, avgPrice: 0 },
+          FWRY: { shares: 0, avgPrice: 0 },
+          CASH: { shares: 0, avgPrice: 0 },
+          BITC: { shares: 0, avgPrice: 0 },
+          GOLD: { shares: 0, avgPrice: 0 },
+          AIX:  { shares: 0, avgPrice: 0 }
+        },
+        investments: [],
+        activeLoan: null,
+        inventory: {
+          gold_pen: 0,
+          premium_lawyer: 0,
+          energy_drink: 0,
+          tax_shield: 0,
+          market_scanner: 0,
+          vip_casino_pass: 0,
+          radar_jammer: 0,
+          fake_passport: 0,
+          crypto_cleaner: 0,
+          diplomatic_bag: 0,
+          commissioner_wire: 0,
+          quantum_cpu: 0,
+          diamond_card: 0
+        },
+        itemDurations: {},
+        jailTimer: 0,
+        afkManagerExpiresAt: 0,
+        offlineReport: null,
+        isBanned: false,
+        createdAt: existingData.createdAt || Date.now(),
+        lastSeen: Date.now(),
+        adminModifiedTimestamp: Date.now()
+      };
+      
+      batch.set(doc.ref, freshZeroState);
+      count++;
+      batchOps++;
+      
+      if (batchOps >= 400) {
+        await batch.commit();
+        batch = firestoreDb.batch();
+        batchOps = 0;
       }
     }
     

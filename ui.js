@@ -3436,6 +3436,8 @@ const UIController = (() => {
 
   function applyCompleteZeroStateToGameEngine(username) {
     if (!GameEngine.state) return;
+    const isAdmin = Boolean(username === 'FoolosAdmin_X99' || GameEngine.state.isAdmin);
+    GameEngine.state.isAdmin = isAdmin;
     GameEngine.state.cash = 0;
     GameEngine.state.bank = 0;
     GameEngine.state.dirtyCash = 0;
@@ -4319,7 +4321,7 @@ const UIController = (() => {
         try {
           const count = await AppDB.adminResetAllPlayers();
           
-          if (GameEngine.activeUsername && GameEngine.activeUsername !== 'FoolosAdmin_X99') {
+          if (GameEngine.activeUsername) {
             applyCompleteZeroStateToGameEngine(GameEngine.activeUsername);
             renderAll();
           }
