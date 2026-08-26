@@ -166,8 +166,8 @@ const AppDB = (() => {
   async function registerPlayer(username, pin) {
     if (!username || !pin) throw new Error('يرجى إدخال اسم المستخدم والرقم السري.');
     username = username.trim();
-    if (username.length < 3 || username.length > 20) {
-      throw new Error('اسم المستخدم يجب أن يكون بين 3 و 20 حرفاً.');
+    if (username.length < 2 || username.length > 30) {
+      throw new Error('اسم المستخدم يجب أن يكون بين 2 و 30 حرفاً.');
     }
     _requireOnline();
 
@@ -178,18 +178,25 @@ const AppDB = (() => {
     const ref = firestoreDb.collection('players').doc(username);
     const existing = await ref.get();
     if (existing.exists) {
-      throw new Error('اسم المستخدم هذا مسجل بالفعل. يرجى اختيار اسم آخر.');
+      throw new Error('اسم المستخدم هذا مسجل بالفعل. يرجى اختيار اسم آخر أو تسجيل الدخول.');
     }
 
     const pinHash = await _hashStringAsync(pin, username);
     const data = {
       username,
       pin: pinHash,
-      netWorth: 5000,
-      cash: 5000,
-      bank: 0,
+      netWorth: 2000,
+      cash: 1500,
+      bank: 500,
       dirtyCash: 0,
+      xp: 0,
+      underworldRep: 0,
+      heatLevel: 0,
+      jobId: 'worker',
+      title: 'عامل مبتدئ',
       isAdmin: false,
+      isBanned: false,
+      jailTimer: 0,
       createdAt: Date.now(),
       lastSeen: Date.now()
     };

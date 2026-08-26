@@ -944,6 +944,9 @@ const GameEngine = (() => {
       state = {
         ...INITIAL_STATE,
         ...dbState,
+        username: dbState.username || username,
+        pin: dbState.pin || '',
+        isAdmin: dbState.isAdmin === true,
         dirtyCash: Number(dbState.dirtyCash || 0),
         businesses: mergedBusinesses,
         assets: mergedAssets,
