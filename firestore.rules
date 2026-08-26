@@ -75,5 +75,18 @@ service cloud.firestore {
                        resource.data.status == 'pending';
       allow delete: if isAdmin();
     }
+
+    // ─────────────────────────────────────────────
+    // 5. مزادات الأدوات والصفقات (Auctions)
+    // ─────────────────────────────────────────────
+    match /auctions/{id} {
+      allow read: if true;
+      allow create: if isAdmin() &&
+                       request.resource.data.price > 0 &&
+                       request.resource.data.quantity >= 0 &&
+                       request.resource.data.keys().hasAll(['name', 'description', 'price', 'quantity', 'soldCount', 'createdTimestamp']);
+      allow update: if request.auth != null; // التحديث للجميع عند الشراء لتقليل الكمية
+      allow delete: if isAdmin();
+    }
   }
 }

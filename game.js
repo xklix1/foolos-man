@@ -510,6 +510,7 @@ const GameEngine = (() => {
       cronos_gear: 0
     },
     itemDurations: {}, // Stores { itemId: ticksRemaining } for self-destruction timer
+    customItems: [], // Array of { auctionId, name, description, price, timestamp }
     blackMarketCooldowns: {}, // Stores { dealId: expiresAtTimestamp } for operation cooldowns
     jailTimer: 0,
     afkManagerExpiresAt: 0, // 12-hour active manager timestamp
@@ -1179,7 +1180,8 @@ const GameEngine = (() => {
         assets: mergedAssets,
         stocks: mergedStocks,
         inventory: mergedInventory,
-        investments: Array.isArray(dbState.investments) ? dbState.investments : []
+        investments: Array.isArray(dbState.investments) ? dbState.investments : [],
+        customItems: Array.isArray(dbState.customItems) ? dbState.customItems : []
       };
 
       // Calculate offline idle earnings if returning after being away (Requires active 12-hour AFK Manager)

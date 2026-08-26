@@ -989,6 +989,10 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
             <span>المتجر والمستودع</span>
           </button>
+          <button data-tab="auctions" class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+            <i class="fa-solid fa-gavel w-4 text-center text-amber-500"></i>
+            <span>المزادات والصفقات الخاصة</span>
+          </button>
           <button data-tab="blackmarket" class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
             <span>السوق السوداء</span>
@@ -1652,6 +1656,50 @@
           <h3 class="text-md font-bold text-white mb-4">مستودع الأغراض وحقيبة الظهر</h3>
           <div id="backpack-inventory" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <!-- Dyn items -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 12: المزادات والصفقات الخاصة (AUCTIONS) -->
+      <section id="panel-auctions" class="game-panel hidden space-y-6">
+        <!-- Auctions Header -->
+        <div class="glass-panel p-6 rounded-2xl border border-amber-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl" style="background: radial-gradient(ellipse at 80% 0%, rgba(245,158,11,0.12), rgba(15,23,42,0.95)) !important;">
+          <div>
+            <div class="flex items-center gap-2 mb-1.5">
+              <i class="fa-solid fa-gavel text-amber-500 text-xl animate-pulse"></i>
+              <h2 class="text-lg font-black text-white">المزادات والصفقات الخاصة المفتوحة</h2>
+            </div>
+            <p class="text-xs text-slate-400">هنا يعرض المسؤولون والمدراء صفقات ومقتنيات حصرية محدودة. سارع بالشراء قبل نفاد الكمية!</p>
+          </div>
+          <div class="px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl flex items-center gap-3">
+            <div>
+              <span class="text-[10px] text-slate-500 block">رصيد الكاش الحالي</span>
+              <span id="auction-player-cash" class="numbers-font text-yellow-500 font-extrabold text-sm">0 EGP</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auction Items Grid -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+          <h3 class="text-md font-bold text-white mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-fire text-amber-500 text-sm"></i>
+            <span>أحدث الصفقات النادرة المطروحة</span>
+          </h3>
+          <div id="auctions-shelf" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Dyn Shelf for Auctions -->
+            <div class="col-span-full text-center text-slate-500 text-xs py-12">لا توجد مزادات أو صفقات نشطة حالياً.</div>
+          </div>
+        </div>
+
+        <!-- Custom Collectibles Inventory -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+          <h3 class="text-md font-bold text-white mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-gem text-yellow-500 text-sm"></i>
+            <span>مقتنياتك وممتلكاتك النادرة الخاصة (Collectibles)</span>
+          </h3>
+          <div id="player-collectibles" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <!-- Dyn list of collectibles bought by the player -->
+            <div class="col-span-full text-center text-slate-500 text-xs py-8">لم تقم بشراء أي مقتنيات نادرة من المزادات حتى الآن.</div>
           </div>
         </div>
       </section>
@@ -2460,6 +2508,10 @@
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
         <span>المتجر</span>
       </button>
+      <button data-tab="auctions" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
+        <i class="fa-solid fa-gavel text-base text-amber-500"></i>
+        <span>المزادات</span>
+      </button>
       <button data-tab="blackmarket" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
         <span>السوق السوداء</span>
@@ -2538,6 +2590,7 @@
       <button id="tab-admin-transfers" class="admin-tab-btn px-4 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-2"><i class="fa-solid fa-money-bill-transfer"></i><span>مراقبة التحويلات المالية</span></button>
       <button id="tab-admin-market" class="admin-tab-btn px-4 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-2"><i class="fa-solid fa-chart-line"></i><span>التحكم بالبورصة والأحداث</span></button>
       <button id="tab-admin-broadcast" class="admin-tab-btn px-4 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-2"><i class="fa-solid fa-bullhorn"></i><span>البث والمكافآت العامة</span></button>
+      <button id="tab-admin-auctions" class="admin-tab-btn px-4 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-2"><i class="fa-solid fa-gavel text-amber-500"></i><span>إدارة المزادات والصفقات</span></button>
       <button id="tab-admin-system" class="admin-tab-btn px-4 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation text-rose-400"></i><span class="text-rose-400">شؤون وتصفير النظام</span></button>
     </nav>
 
@@ -3342,6 +3395,70 @@
             <h4 class="text-xs font-bold text-white">سجل العمليات الإدارية في هذه الجلسة</h4>
             <div id="admin-action-logs" class="text-[10px] text-slate-400 space-y-1 h-24 overflow-y-auto bg-slate-950 p-2 rounded border border-slate-800/60 text-right font-mono">
               <div>لا يوجد عمليات مسجلة في الجلسة الحالية.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. PANEL AUCTIONS MANAGEMENT -->
+        <div id="admin-subpanel-auctions" class="hidden space-y-4">
+          <!-- Create Auction Item Card -->
+          <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
+            <h4 class="text-xs font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-gavel text-yellow-400"></i>
+              <span>طرح غرض جديد للمزاد والصفقات الخاصة</span>
+            </h4>
+            <p class="text-[10px] text-slate-400">إنشاء غرض مخصص نادر بحد أقصى للكمية المتاحة وسعر محدد، ليتمكن اللاعبون من شرائه حياً من صفحة المزادات.</p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">اسم الغرض (Item Name)</label>
+                <input type="text" id="admin-auction-name" placeholder="مثال: سيارة بوجاتي ملكية نادرة" class="glass-input w-full p-2 text-xs text-right text-white bg-slate-950 border border-slate-800 rounded-lg">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">وصف الغرض (Description)</label>
+                <input type="text" id="admin-auction-desc" placeholder="تفاصيل ووصف الغرض للمشترين" class="glass-input w-full p-2 text-xs text-right text-white bg-slate-950 border border-slate-800 rounded-lg">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">السعر المطلوب (ج.م EGP)</label>
+                <input type="number" id="admin-auction-price" min="1" placeholder="سعر الشراء الفوري بالجنيه" class="glass-input w-full p-2 text-xs text-center font-bold font-mono text-white bg-slate-950 border border-slate-800 rounded-lg">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">الكمية المتاحة (Quantity)</label>
+                <input type="number" id="admin-auction-qty" min="1" placeholder="عدد القطع المتوفرة" class="glass-input w-full p-2 text-xs text-center font-bold font-mono text-white bg-slate-950 border border-slate-800 rounded-lg">
+              </div>
+            </div>
+
+            <button id="btn-admin-create-auction" class="w-full py-2.5 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 font-bold rounded-lg text-xs transition shadow-lg flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-plus"></i>
+              <span>طرح الغرض للبيع فوراً في المزادات</span>
+            </button>
+          </div>
+
+          <!-- Current Auction Items List -->
+          <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
+            <h4 class="text-xs font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-yellow-500"></i>
+              <span>الأغراض المعروضة حالياً في المزادات</span>
+            </h4>
+            
+            <div class="overflow-x-auto">
+              <table class="w-full text-right text-xs">
+                <thead>
+                  <tr class="border-b border-slate-800 text-slate-400">
+                    <th class="pb-2">اسم الغرض</th>
+                    <th class="pb-2">الوصف</th>
+                    <th class="pb-2 text-center">السعر</th>
+                    <th class="pb-2 text-center">المبيعات</th>
+                    <th class="pb-2 text-left">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-auctions-list" class="divide-y divide-slate-800/40">
+                  <tr><td colspan="5" class="py-4 text-center text-slate-500">جاري تحميل الأغراض المعروضة...</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

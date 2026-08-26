@@ -1037,6 +1037,8 @@ const UIController = (() => {
       GameEngine.syncItemsConfig().then(() => {
         renderStore();
       });
+    } else if (tabId === 'auctions') {
+      fetchAndRenderAuctions();
     }
     
     // Update active class styles in buttons
@@ -1240,6 +1242,9 @@ const UIController = (() => {
         break;
       case 'store':
         renderStore();
+        break;
+      case 'auctions':
+        renderAuctionsTab();
         break;
       case 'blackmarket':
         renderBlackMarket();
@@ -4114,8 +4119,8 @@ const UIController = (() => {
       });
     }
 
-    // Tabs logic - bind all 6 subtabs
-    const tabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'system'];
+    // Tabs logic - bind all 7 subtabs
+    const tabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'auctions', 'system'];
     tabs.forEach(t => {
       const tabEl = document.getElementById(`tab-admin-${t}`);
       if (tabEl) {
@@ -5299,6 +5304,91 @@ const UIController = (() => {
       });
     }
 
+    // Store Items Configuration Event Listeners (Admin)
+    const itemSelect = document.getElementById('admin-item-config-select');
+    if (itemSelect) {
+      itemSelect.addEventListener('change', () => {
+        const itemId = itemSelect.value;
+        const item = GameEngine.STORE_ITEMS[itemId];
+        if (item) {
+          document.getElementById('admin-item-config-cost').value = item.cost;
+          document.getElementById('admin-item-config-duration').value = item.durationTicks * 3;
+        }
+      });
+    }
+
+    const saveItemConfigBtn = document.getElementById('btn-admin-save-item-config');
+    if (saveItemConfigBtn) {
+      saveItemConfigBtn.addEventListener('click', async () => {
+        const itemId = document.getElementById('admin-item-config-select').value;
+        const cost = Number(document.getElementById('admin-item-config-cost').value);
+        const durationSec = Number(document.getElementById('admin-item-config-duration').value);
+
+        if (isNaN(cost) || cost <= 0 || isNaN(durationSec) || durationSec <= 0) {
+          showToast('خطأ إعدادات', 'يرجى إدخال قيم صحيحة وموجبة للسعر والمدة.', 'error');
+          return;
+        }
+
+        try {
+          saveItemConfigBtn.disabled = true;
+          saveItemConfigBtn.textContent = 'جاري حفظ التعديلات...';
+
+          await AppDB.adminSaveItemConfig(itemId, cost, durationSec);
+          
+          await GameEngine.syncItemsConfig();
+          
+          showToast('تحديث الإعدادات', `تم حفظ وتعميم إعدادات الأداة بنجاح! السعر: ${cost.toLocaleString()} ج.م، المدة: ${durationSec} ثانية.`, 'success');
+          logAdminAction(`تحديث إعدادات الأداة (${itemId}): سعر ${cost.toLocaleString()} ج.م، مدة ${durationSec}ث`);
+          renderAll();
+        } catch (err) {
+          showToast('فشل حفظ الإعدادات', err.message, 'error');
+        } finally {
+          saveItemConfigBtn.disabled = false;
+          saveItemConfigBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>حفظ وتعميم إعدادات الأداة فوراً</span>';
+        }
+      });
+    }
+
+    // Admin Auctions creation button listener
+    const btnCreateAuction = document.getElementById('btn-admin-create-auction');
+    if (btnCreateAuction) {
+      btnCreateAuction.addEventListener('click', async () => {
+        const name = document.getElementById('admin-auction-name').value.trim();
+        const desc = document.getElementById('admin-auction-desc').value.trim();
+        const price = Number(document.getElementById('admin-auction-price').value);
+        const qty = Number(document.getElementById('admin-auction-qty').value);
+
+        if (!name || isNaN(price) || price <= 0 || isNaN(qty) || qty < 0) {
+          showToast('خطأ إعدادات', 'يرجى إدخال قيم صحيحة وموجبة للاسم، السعر، والكمية.', 'error');
+          return;
+        }
+
+        try {
+          btnCreateAuction.disabled = true;
+          btnCreateAuction.textContent = 'جاري نشر المزاد...';
+
+          await AppDB.adminCreateAuctionItem(name, desc, price, qty);
+          
+          showToast('تم النشر', `تم طرح الغرض "${name}" بنجاح في صفحة المزادات.`, 'success');
+          logAdminAction(`طرح غرض في المزاد: ${name} (سعر ${price.toLocaleString()} ج.م، كمية ${qty})`);
+          
+          // Clear inputs
+          document.getElementById('admin-auction-name').value = '';
+          document.getElementById('admin-auction-desc').value = '';
+          document.getElementById('admin-auction-price').value = '';
+          document.getElementById('admin-auction-qty').value = '';
+
+          // Re-render
+          fetchAndRenderAdminAuctions();
+        } catch (err) {
+          showToast('فشل إنشاء المزاد', err.message, 'error');
+        } finally {
+          btnCreateAuction.disabled = false;
+          btnCreateAuction.innerHTML = '<i class="fa-solid fa-plus"></i> <span>طرح الغرض للبيع فوراً في المزادات</span>';
+        }
+      });
+    }
+
     // Expose loader to global scope of module
     window._adminReloadPlayers = loadAdminPlayersDirectory;
     window._adminRenderStockPrices = renderAdminStockPrices;
@@ -5358,54 +5448,8 @@ const UIController = (() => {
     }
   }
 
-  // Store Items Configuration Event Listeners (Admin)
-  const itemSelect = document.getElementById('admin-item-config-select');
-  if (itemSelect) {
-    itemSelect.addEventListener('change', () => {
-      const itemId = itemSelect.value;
-      const item = GameEngine.STORE_ITEMS[itemId];
-      if (item) {
-        document.getElementById('admin-item-config-cost').value = item.cost;
-        document.getElementById('admin-item-config-duration').value = item.durationTicks * 3;
-      }
-    });
-  }
-
-  const saveItemConfigBtn = document.getElementById('btn-admin-save-item-config');
-  if (saveItemConfigBtn) {
-    saveItemConfigBtn.addEventListener('click', async () => {
-      const itemId = document.getElementById('admin-item-config-select').value;
-      const cost = Number(document.getElementById('admin-item-config-cost').value);
-      const durationSec = Number(document.getElementById('admin-item-config-duration').value);
-
-      if (isNaN(cost) || cost <= 0 || isNaN(durationSec) || durationSec <= 0) {
-        showToast('خطأ إعدادات', 'يرجى إدخال قيم صحيحة وموجبة للسعر والمدة.', 'error');
-        return;
-      }
-
-      try {
-        saveItemConfigBtn.disabled = true;
-        saveItemConfigBtn.textContent = 'جاري حفظ التعديلات...';
-
-        await AppDB.adminSaveItemConfig(itemId, cost, durationSec);
-        
-        await GameEngine.syncItemsConfig();
-        
-        showToast('تحديث الإعدادات', `تم حفظ وتعميم إعدادات الأداة بنجاح! السعر: ${cost.toLocaleString()} ج.م، المدة: ${durationSec} ثانية.`, 'success');
-        logAdminAction(`تحديث إعدادات الأداة (${itemId}): سعر ${cost.toLocaleString()} ج.م، مدة ${durationSec}ث`);
-        renderAll();
-      } catch (err) {
-        showToast('فشل حفظ الإعدادات', err.message, 'error');
-      } finally {
-        saveItemConfigBtn.disabled = false;
-        saveItemConfigBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>حفظ وتعميم إعدادات الأداة فوراً</span>';
-      }
-    });
-  }
-}
-
   function switchAdminTab(tabId) {
-    const subtabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'system'];
+    const subtabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'auctions', 'system'];
     subtabs.forEach(t => {
       const btn = document.getElementById(`tab-admin-${t}`);
       const panel = document.getElementById(`admin-subpanel-${t}`);
@@ -5429,6 +5473,8 @@ const UIController = (() => {
       renderAdminTransfersMonitor();
     } else if (tabId === 'market') {
       if (window._adminRenderStockPrices) window._adminRenderStockPrices();
+    } else if (tabId === 'auctions') {
+      fetchAndRenderAdminAuctions();
     } else if (tabId === 'system') {
       const itSelect = document.getElementById('admin-item-config-select');
       if (itSelect) {
@@ -5655,6 +5701,221 @@ const UIController = (() => {
         `;
         sentList.appendChild(div);
       });
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  //  AUCTIONS & SPECIAL DEALS — UI Rendering & State
+  // ─────────────────────────────────────────────
+  async function fetchAndRenderAuctions() {
+    const shelf = document.getElementById('auctions-shelf');
+    if (!shelf) return;
+
+    shelf.innerHTML = `<div class="col-span-full text-center text-slate-500 text-xs py-12 flex flex-col items-center justify-center gap-2">
+      <i class="fa-solid fa-spinner animate-spin text-amber-500 text-lg"></i>
+      <span>جاري تحميل الصفقات المعروضة من السيرفر...</span>
+    </div>`;
+
+    try {
+      const items = await AppDB.getAuctionItems();
+      renderAuctionsShelfDOM(items);
+    } catch (e) {
+      shelf.innerHTML = `<div class="col-span-full text-center text-rose-400 text-xs py-12">فشل تحميل صفقات المزادات: ${e.message}</div>`;
+    }
+
+    renderPlayerCollectiblesDOM();
+  }
+
+  function renderAuctionsShelfDOM(items) {
+    const shelf = document.getElementById('auctions-shelf');
+    if (!shelf) return;
+
+    if (!items || items.length === 0) {
+      shelf.innerHTML = `<div class="col-span-full text-center text-slate-500 text-xs py-12">لا توجد مزادات أو صفقات نشطة حالياً.</div>`;
+      return;
+    }
+
+    shelf.innerHTML = '';
+    items.forEach(item => {
+      const totalQty = Number(item.quantity || 0);
+      const sold = Number(item.soldCount || 0);
+      const remaining = Math.max(0, totalQty - sold);
+
+      const isSoldOut = remaining <= 0;
+      let btnHtml = '';
+
+      if (isSoldOut) {
+        btnHtml = `<button disabled class="w-full py-2 bg-slate-800 text-slate-500 font-bold rounded-lg text-xs cursor-not-allowed">نفذت الكمية ❌</button>`;
+      } else {
+        btnHtml = `<button data-id="${item.id}" class="btn-buy-auction-item w-full py-2 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-black rounded-lg text-xs transition duration-200 shadow-md">شراء الآن 💰</button>`;
+      }
+
+      const card = document.createElement('div');
+      card.className = 'glass-panel p-4.5 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3 relative overflow-hidden';
+      if (isSoldOut) card.classList.add('opacity-60');
+      
+      card.innerHTML = `
+        <div>
+          <div class="flex justify-between items-start gap-2 mb-1.5">
+            <h4 class="text-xs font-black text-white">${item.name}</h4>
+            <span class="text-[10px] px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/25 rounded font-bold whitespace-nowrap">صفقة نادرة</span>
+          </div>
+          <p class="text-[10px] text-slate-400 leading-relaxed">${item.description || 'لا يوجد وصف متوفر.'}</p>
+        </div>
+
+        <div class="space-y-2 border-t border-slate-800/40 pt-2.5">
+          <div class="flex justify-between items-center text-[10px]">
+            <span class="text-slate-500">سعر الشراء الفوري</span>
+            <span class="numbers-font text-yellow-500 font-black text-sm">${item.price.toLocaleString()} EGP</span>
+          </div>
+          <div class="flex justify-between items-center text-[10px]">
+            <span class="text-slate-500">الكمية المتبقية</span>
+            <span class="font-bold text-slate-300">${isSoldOut ? 'انتهى المعروض' : `${remaining} / ${totalQty} قطعة`}</span>
+          </div>
+        </div>
+
+        ${btnHtml}
+      `;
+
+      const buyBtn = card.querySelector('.btn-buy-auction-item');
+      if (buyBtn) {
+        buyBtn.addEventListener('click', async () => {
+          try {
+            buyBtn.disabled = true;
+            buyBtn.textContent = 'جاري الشراء...';
+            
+            const result = await AppDB.purchaseAuctionItem(item.id, GameEngine.activeUsername);
+            
+            showToast('تم الشراء بنجاح', `تهانينا! قمت بشراء "${result.name}" بسعر ${result.price.toLocaleString()} ج.م. تم إضافته لمقتنياتك النادرة.`, 'success');
+            playMenuSound('success');
+            
+            GameEngine.state.cash = result.newCash;
+            GameEngine.state.netWorth = result.newNetWorth;
+            if (!GameEngine.state.customItems) GameEngine.state.customItems = [];
+            GameEngine.state.customItems.push({
+              auctionId: item.id,
+              name: item.name,
+              description: item.description,
+              price: item.price,
+              timestamp: Date.now()
+            });
+
+            fetchAndRenderAuctions();
+            renderAll();
+          } catch (err) {
+            showToast('فشل الشراء', err.message, 'error');
+            buyBtn.disabled = false;
+            buyBtn.textContent = 'شراء الآن 💰';
+          }
+        });
+      }
+
+      shelf.appendChild(card);
+    });
+  }
+
+  function renderPlayerCollectiblesDOM() {
+    const container = document.getElementById('player-collectibles');
+    if (!container) return;
+
+    const items = (GameEngine.state && GameEngine.state.customItems) || [];
+    if (items.length === 0) {
+      container.innerHTML = `<div class="col-span-full text-center text-slate-500 text-xs py-8">لم تقم بشراء أي مقتنيات نادرة من المزادات حتى الآن.</div>`;
+      return;
+    }
+
+    container.innerHTML = '';
+    items.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'glass-panel p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/[0.02] flex flex-col justify-between space-y-2';
+      
+      const timeStr = new Date(item.timestamp).toLocaleDateString('ar-EG', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      card.innerHTML = `
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <span class="font-black text-amber-400 text-xs flex items-center gap-1.5">
+              <i class="fa-solid fa-gem text-[10px]"></i>
+              <span>${item.name}</span>
+            </span>
+            <span class="numbers-font text-[10px] text-slate-500 font-bold">${item.price.toLocaleString()} ج.م</span>
+          </div>
+          <p class="text-[10px] text-slate-400">${item.description || 'لا يوجد وصف متوفر.'}</p>
+        </div>
+        <div class="text-[9px] text-slate-500 text-left border-t border-slate-800/40 pt-1.5 mt-1 font-mono">
+          تملكها منذ: ${timeStr}
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function renderAuctionsTab() {
+    const aucCashEl = document.getElementById('auction-player-cash');
+    if (aucCashEl && GameEngine.state) {
+      aucCashEl.textContent = `${GameEngine.state.cash.toLocaleString()} EGP`;
+    }
+    renderPlayerCollectiblesDOM();
+  }
+
+  async function fetchAndRenderAdminAuctions() {
+    const tbody = document.getElementById('admin-auctions-list');
+    if (!tbody) return;
+
+    try {
+      const items = await AppDB.getAuctionItems();
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500">لا توجد أغراض معروضة في المزادات حالياً.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = '';
+      items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-slate-800/60 hover:bg-slate-900/30 text-xs';
+        
+        const total = Number(item.quantity || 0);
+        const sold = Number(item.soldCount || 0);
+        const remaining = Math.max(0, total - sold);
+
+        tr.innerHTML = `
+          <td class="py-2.5 font-bold text-white">${item.name}</td>
+          <td class="py-2.5 text-slate-400 max-w-[200px] truncate">${item.description || '-'}</td>
+          <td class="py-2.5 text-center font-bold text-yellow-500 font-mono">${item.price.toLocaleString()} ج.م</td>
+          <td class="py-2.5 text-center font-bold font-mono text-slate-300">${sold} مبيعة / ${remaining} متبقي (${total} إجمالي)</td>
+          <td class="py-2.5 text-left">
+            <button data-id="${item.id}" class="btn-admin-delete-auction py-1 px-3 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/20 rounded font-bold transition text-[10px]">حذف المعروض</button>
+          </td>
+        `;
+
+        const deleteBtn = tr.querySelector('.btn-admin-delete-auction');
+        if (deleteBtn) {
+          deleteBtn.addEventListener('click', async () => {
+            if (!confirm(`هل أنت متأكد من حذف الغرض "${item.name}" من المزادات؟`)) return;
+            try {
+              deleteBtn.disabled = true;
+              deleteBtn.textContent = 'جاري الحذف...';
+              await AppDB.adminDeleteAuctionItem(item.id);
+              showToast('تم الحذف', 'تم حذف غرض المزاد بنجاح.', 'info');
+              logAdminAction(`حذف غرض المزاد: ${item.name}`);
+              fetchAndRenderAdminAuctions();
+            } catch (err) {
+              showToast('فشل الحذف', err.message, 'error');
+              deleteBtn.disabled = false;
+              deleteBtn.textContent = 'حذف المعروض';
+            }
+          });
+        }
+
+        tbody.appendChild(tr);
+      });
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-400">فشل تحميل قائمة المزادات الإدارية: ${e.message}</td></tr>`;
     }
   }
 

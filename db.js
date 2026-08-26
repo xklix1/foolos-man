@@ -617,6 +617,114 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
+  //  AUCTION SYSTEM — Firestore Operations
+  // ─────────────────────────────────────────────
+  async function adminCreateAuctionItem(name, description, price, quantity) {
+    _requireOnline();
+    await _ensureAdminAuth();
+    
+    price = Number(price);
+    quantity = Number(quantity);
+    if (!name || isNaN(price) || price <= 0 || isNaN(quantity) || quantity < 0) {
+      throw new Error('القيم المدخلة لإنشاء الغرض غير صالحة.');
+    }
+
+    const docRef = firestoreDb.collection('auctions').doc();
+    await docRef.set({
+      name,
+      description: description || '',
+      price,
+      quantity,
+      soldCount: 0,
+      createdTimestamp: Date.now(),
+      createdBy: activeAdminUsername || 'FoolosAdmin_X99'
+    });
+    return true;
+  }
+
+  async function adminDeleteAuctionItem(auctionId) {
+    _requireOnline();
+    await _ensureAdminAuth();
+    await firestoreDb.collection('auctions').doc(auctionId).delete();
+    return true;
+  }
+
+  async function getAuctionItems() {
+    _requireOnline();
+    const snap = await firestoreDb.collection('auctions')
+      .orderBy('createdTimestamp', 'desc')
+      .get();
+    
+    const items = [];
+    snap.forEach(doc => {
+      items.push({ id: doc.id, ...doc.data() });
+    });
+    return items;
+  }
+
+  async function purchaseAuctionItem(auctionId, username) {
+    _requireOnline();
+    const db = firestoreDb;
+    const auctionRef = db.collection('auctions').doc(auctionId);
+    const playerRef = db.collection('players').doc(username);
+
+    return await db.runTransaction(async (tx) => {
+      const [auctionDoc, playerDoc] = await Promise.all([
+        tx.get(auctionRef),
+        tx.get(playerRef)
+      ]);
+
+      if (!auctionDoc.exists) throw new Error('غرض المزاد غير موجود.');
+      if (!playerDoc.exists) throw new Error('بيانات اللاعب غير موجودة.');
+
+      const auction = auctionDoc.data();
+      const player = playerDoc.data();
+
+      const remaining = (auction.quantity || 0) - (auction.soldCount || 0);
+      if (remaining <= 0) {
+        throw new Error('عذراً، لقد نفذت الكمية المتاحة من هذا الغرض.');
+      }
+
+      if ((player.cash || 0) < auction.price) {
+        throw new Error(`لا تملك رصيد كاش كافي للشراء! السعر: ${auction.price.toLocaleString()} ج.م بينما كاشك الحالي: ${(player.cash || 0).toLocaleString()} ج.م.`);
+      }
+
+      const newCash = (player.cash || 0) - auction.price;
+      const worth = (player.netWorth || 0) - auction.price;
+      const customItems = player.customItems || [];
+      customItems.push({
+        auctionId: auctionId,
+        name: auction.name,
+        description: auction.description || '',
+        price: auction.price,
+        timestamp: Date.now()
+      });
+
+      tx.update(playerRef, {
+        cash: newCash,
+        customItems: customItems,
+        netWorth: worth
+      });
+
+      const newSoldCount = (auction.soldCount || 0) + 1;
+      const buyers = auction.buyers || [];
+      buyers.push({ username, timestamp: Date.now() });
+
+      tx.update(auctionRef, {
+        soldCount: newSoldCount,
+        buyers: buyers
+      });
+
+      return {
+        name: auction.name,
+        price: auction.price,
+        newCash: newCash,
+        newNetWorth: worth
+      };
+    });
+  }
+
+  // ─────────────────────────────────────────────
   // ─────────────────────────────────────────────
   //  ADMIN FUNCTIONS
   // ─────────────────────────────────────────────
@@ -1144,6 +1252,12 @@ const AppDB = (() => {
     // Items Config API
     adminSaveItemConfig,
     getItemsConfig,
+
+    // Auctions API
+    adminCreateAuctionItem,
+    adminDeleteAuctionItem,
+    getAuctionItems,
+    purchaseAuctionItem,
 
     // Admin API
     sendBroadcast,
