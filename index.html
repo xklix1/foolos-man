@@ -56,7 +56,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=102">
+  <link rel="stylesheet" href="app.css?v=103">
   
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase App SDK blocked.')"></script>
@@ -975,6 +975,10 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
             <span>البورصة والأسهم</span>
           </button>
+          <button data-tab="taxes" class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+            <i class="fa-solid fa-landmark-dome w-4 text-center text-rose-400"></i>
+            <span>مصلحة الضرائب</span>
+          </button>
           <button data-tab="store" class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
             <span>المتجر والمستودع</span>
@@ -1350,7 +1354,228 @@
         </div>
       </section>
 
-      <!-- TAB 7: متجر (STORE & BAG) -->
+      <!-- TAB 7: مصلحة الضرائب والمالية العامة (TAX AUTHORITY & FISCAL POLICY) -->
+      <section id="panel-taxes" class="game-panel hidden space-y-6">
+        <!-- Top Hero Card -->
+        <div class="glass-panel p-6 rounded-2xl border border-rose-500/20 bg-gradient-to-r from-slate-950 via-rose-950/20 to-slate-950 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2.5">
+              <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-landmark-dome"></i>
+              </div>
+              <div>
+                <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                  <span>مصلحة الضرائب والمالية العامة (Tax Authority)</span>
+                  <span id="tax-compliance-badge" class="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">ممتثل ضريبياً 🟢</span>
+                </h3>
+                <p class="text-xs text-slate-400">إدارة الوعاء الضريبي، نسب الاستقطاع للثروات الكبرى، وتفعيل الدروع الضريبية القانونية</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Investor ID Pill -->
+          <div class="flex items-center gap-2 bg-slate-900/80 px-3.5 py-2 rounded-xl border border-slate-800 text-xs">
+            <span class="text-slate-400">الرقم الضريبي للممول:</span>
+            <span id="tax-investor-id" class="font-mono font-bold text-yellow-400">EG-TAX-0000</span>
+          </div>
+        </div>
+
+        <!-- 4 Live Telemetry KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- KPI 1: Taxable Net Worth -->
+          <div class="glass-panel p-4 rounded-2xl border border-slate-800/80 bg-slate-950/60 flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs text-slate-400 font-bold">الوعاء الضريبي الخاضع</span>
+                <i class="fa-solid fa-coins text-amber-400 text-sm"></i>
+              </div>
+              <span id="tax-kpi-taxable" class="numbers-font text-2xl font-black text-amber-400">0 EGP</span>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-2">صافي الثروة الفائض عن حد الإعفاء (3,000,000 ج.م).</p>
+          </div>
+
+          <!-- KPI 2: Current Bracket -->
+          <div class="glass-panel p-4 rounded-2xl border border-slate-800/80 bg-slate-950/60 flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs text-slate-400 font-bold">الشريحة الضريبية الحالية</span>
+                <i class="fa-solid fa-layer-group text-sky-400 text-sm"></i>
+              </div>
+              <span id="tax-kpi-bracket" class="text-sm font-black text-emerald-400 block mt-1">معفى تماماً (أقل من 3M)</span>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-2">تُحدد الشريحة تصاعدياً وفق حجم الثروة الإجمالية.</p>
+          </div>
+
+          <!-- KPI 3: Live Deduction Rate -->
+          <div class="glass-panel p-4 rounded-2xl border border-slate-800/80 bg-slate-950/60 flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs text-slate-400 font-bold">الاستقطاع الدوري اللحظي</span>
+                <i class="fa-solid fa-receipt text-rose-400 text-sm"></i>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span id="tax-kpi-deduction" class="numbers-font text-2xl font-black text-rose-400">0</span>
+                <span class="text-xs text-slate-400 font-bold">EGP/ثانية</span>
+              </div>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-2 flex items-center justify-between">
+              <span>النسبة الفعالة:</span>
+              <span id="tax-kpi-rate-pct" class="numbers-font font-bold text-yellow-400">0.0000%</span>
+            </div>
+          </div>
+
+          <!-- KPI 4: Total Taxes Paid -->
+          <div class="glass-panel p-4 rounded-2xl border border-slate-800/80 bg-slate-950/60 flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs text-slate-400 font-bold">إجمالي الضرائب المدفوعة</span>
+                <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+              </div>
+              <span id="tax-kpi-total-paid" class="numbers-font text-2xl font-black text-white">0 EGP</span>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-2">مجموع ما تم توريده للمالية العامة منذ بدء النشاط.</p>
+          </div>
+        </div>
+
+        <!-- Tax Shield & Optimization Center -->
+        <div class="glass-panel p-6 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/20 via-slate-950 to-amber-950/20 relative overflow-hidden shadow-xl">
+          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div class="space-y-2 max-w-2xl">
+              <div class="flex items-center gap-2">
+                <span class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-lg">
+                  <i class="fa-solid fa-shield-halved"></i>
+                </span>
+                <div>
+                  <h4 class="text-base font-bold text-white flex items-center gap-2">
+                    <span>منظومة الدرع الضريبي والاستشارات المحاسبية (Tax Shield)</span>
+                    <span id="tax-shield-active-badge" class="text-[10px] px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full font-bold">غير مفعل</span>
+                  </h4>
+                  <p class="text-xs text-slate-300">تحوط قانوني متقدم يخفض ضريبة الثروة بنسبة 75% ويمنحك خصماً على توسعة الشركات.</p>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs text-slate-300">
+                <div class="flex items-center gap-2 p-2.5 bg-slate-900/60 rounded-xl border border-slate-800">
+                  <i class="fa-solid fa-percent text-emerald-400"></i>
+                  <span>تخفيض فوري بنسبة <strong class="text-emerald-400">75%</strong> من ضريبة الثروة المستقطعة.</span>
+                </div>
+                <div class="flex items-center gap-2 p-2.5 bg-slate-900/60 rounded-xl border border-slate-800">
+                  <i class="fa-solid fa-building-circle-check text-cyan-400"></i>
+                  <span>خصم <strong class="text-cyan-400">15% إلى 25%</strong> على تكاليف ترقية الشركات والمشاريع.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="w-full lg:w-auto shrink-0 flex flex-col items-center gap-2">
+              <button id="btn-tax-buy-shield" class="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span id="tax-buy-shield-label">شراء وتفعيل الدرع الضريبي (550,000 EGP)</span>
+              </button>
+              <span id="tax-shield-time-left" class="text-[11px] text-slate-400 font-mono">المدة: 30 دقيقة (1,800 ثانية)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Official Tax Brackets Scale Table -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+          <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
+            <div>
+              <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-scale-balanced text-yellow-400"></i>
+                <span>جدول الشرائح الضريبية الرسمية لثروات رأس المال</span>
+              </h4>
+              <p class="text-xs text-slate-400 mt-0.5">سلم تصاعدي عادل يحمي المبتدئين ويستقطع نسباً مدروسة من كبار الممولين</p>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 font-bold bg-slate-900/40">
+                  <th class="p-3">الشريحة</th>
+                  <th class="p-3">نطاق صافي الثروة</th>
+                  <th class="p-3 text-center">النسبة الأساسية</th>
+                  <th class="p-3 text-center">مع الدرع الضريبي (-75%)</th>
+                  <th class="p-3 text-left">الحالة الحالية</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 font-sans">
+                <!-- Bracket 1 -->
+                <tr class="hover:bg-slate-900/30 transition">
+                  <td class="p-3 font-bold text-white flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span>الشريحة الأولى (المبتدئين)</span>
+                  </td>
+                  <td class="p-3 numbers-font text-slate-300 font-bold">0 إلى 3,000,000 EGP</td>
+                  <td class="p-3 text-center font-bold text-emerald-400">0% (معفى تماماً)</td>
+                  <td class="p-3 text-center font-bold text-emerald-400">0% (معفى)</td>
+                  <td class="p-3 text-left">
+                    <span id="tax-badge-row-1" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">شريحتك الحالية</span>
+                  </td>
+                </tr>
+                <!-- Bracket 2 -->
+                <tr class="hover:bg-slate-900/30 transition">
+                  <td class="p-3 font-bold text-white flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                    <span>الشريحة الفضية (المستثمر المتوسط)</span>
+                  </td>
+                  <td class="p-3 numbers-font text-slate-300 font-bold">3,000,000 إلى 15,000,000 EGP</td>
+                  <td class="p-3 text-center font-bold text-sky-400">0.0020% / ث</td>
+                  <td class="p-3 text-center font-bold text-yellow-400">0.0005% / ث</td>
+                  <td class="p-3 text-left">
+                    <span id="tax-badge-row-2" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">غير خاضع</span>
+                  </td>
+                </tr>
+                <!-- Bracket 3 -->
+                <tr class="hover:bg-slate-900/30 transition">
+                  <td class="p-3 font-bold text-white flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span>شريحة كبار الممولين</span>
+                  </td>
+                  <td class="p-3 numbers-font text-slate-300 font-bold">15,000,000 إلى 50,000,000 EGP</td>
+                  <td class="p-3 text-center font-bold text-amber-400">0.0035% / ث</td>
+                  <td class="p-3 text-center font-bold text-yellow-400">0.0008% / ث</td>
+                  <td class="p-3 text-left">
+                    <span id="tax-badge-row-3" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">غير خاضع</span>
+                  </td>
+                </tr>
+                <!-- Bracket 4 -->
+                <tr class="hover:bg-slate-900/30 transition">
+                  <td class="p-3 font-bold text-white flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                    <span>شريحة حيتان المال والمليارديرات</span>
+                  </td>
+                  <td class="p-3 numbers-font text-slate-300 font-bold">أكثر من 50,000,000 EGP</td>
+                  <td class="p-3 text-center font-bold text-rose-400">0.0050% / ث</td>
+                  <td class="p-3 text-center font-bold text-yellow-400">0.0012% / ث</td>
+                  <td class="p-3 text-left">
+                    <span id="tax-badge-row-4" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">غير خاضع</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Voluntary Filing & Compliance Settlement Card -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-900/40 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div class="space-y-1 max-w-xl">
+            <h4 class="text-sm font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-file-signature text-emerald-400"></i>
+              <span>تقديم الإقرار الضريبي الطوعي السنوي</span>
+            </h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              سداد تسوية ضريبية طوعية سنوية يُمنحك <strong class="text-yellow-400">شهادة الامتثال الضريبي الذهبية</strong> ومكافأة بونص <strong class="text-emerald-400">+250 نقطة خبرة XP و+50 سمعة استثمارية</strong>.
+            </p>
+          </div>
+          <button id="btn-file-tax-return" class="w-full md:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border border-slate-700">
+            <i class="fa-solid fa-stamp"></i>
+            <span>تقديم الإقرار والتسوية (100,000 EGP)</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- TAB 8: متجر (STORE & BAG) -->
       <section id="panel-store" class="game-panel hidden space-y-6">
         <div class="glass-panel p-6 rounded-2xl border border-slate-800">
           <h3 class="text-md font-bold text-white mb-4">متجر المستلزمات ومقويات الكفاءة</h3>
@@ -2162,6 +2387,10 @@
       <button data-tab="stocks" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
         <span>البورصة</span>
+      </button>
+      <button data-tab="taxes" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
+        <i class="fa-solid fa-landmark-dome text-base text-rose-400"></i>
+        <span>الضرائب</span>
       </button>
       <button data-tab="store" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
@@ -3052,9 +3281,9 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=102"></script>
-  <script src="game.js?v=102"></script>
-  <script src="ui.js?v=102"></script>
+  <script src="db.js?v=103"></script>
+  <script src="game.js?v=103"></script>
+  <script src="ui.js?v=103"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

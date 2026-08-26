@@ -1108,6 +1108,7 @@ const UIController = (() => {
       else if (activeTab === 'business') updateBusinessesInDOM();
       else if (activeTab === 'assets') updateAssetsInDOM();
       else if (activeTab === 'stocks') updateStockPricesInDOM();
+      else if (activeTab === 'taxes') renderTaxesTab();
 
     }, 1000);
   }
@@ -1193,6 +1194,9 @@ const UIController = (() => {
         break;
       case 'stocks':
         renderStocks();
+        break;
+      case 'taxes':
+        renderTaxesTab();
         break;
       case 'store':
         renderStore();
@@ -1861,6 +1865,35 @@ const UIController = (() => {
           renderAll();
         } catch (err) {
           showToast('خطأ التجديد', err.message, 'error');
+        }
+      });
+    }
+
+    // Tax Authority Panel Buttons
+    const buyTaxShieldBtn = document.getElementById('btn-tax-buy-shield');
+    if (buyTaxShieldBtn) {
+      buyTaxShieldBtn.addEventListener('click', () => {
+        try {
+          GameEngine.buyStoreItem('tax_shield');
+          playMenuSound('success');
+          showToast('الدرع الضريبي', 'تم شراء وتفعيل الدرع الضريبي بنجاح! تم خفض ضريبة الثروة بنسبة 75% وتفعيل خصم ترقية المشاريع.', 'success');
+          renderAll();
+        } catch (err) {
+          showToast('فشل التفعيل', err.message, 'error');
+        }
+      });
+    }
+
+    const fileTaxReturnBtn = document.getElementById('btn-file-tax-return');
+    if (fileTaxReturnBtn) {
+      fileTaxReturnBtn.addEventListener('click', () => {
+        try {
+          const res = GameEngine.fileTaxDeclaration();
+          playMenuSound('success');
+          showToast('إقرار ضريبي طوعي', `تم تقديم الإقرار الضريبي وتسوية ${res.cost.toLocaleString()} ج.م بنجاح (+${res.xpGain} XP).`, 'success');
+          renderAll();
+        } catch (err) {
+          showToast('فشل تقديم الإقرار', err.message, 'error');
         }
       });
     }
@@ -2783,7 +2816,83 @@ const UIController = (() => {
     return path;
   }
 
-  // --- Tab 7: Store & Inventory Panel ---
+  // --- Tab 7: Tax Authority & Fiscal Policy Panel ---
+  function renderTaxesTab() {
+    if (!GameEngine.calculateTaxReport) return;
+    const s = GameEngine.state;
+    const taxReport = GameEngine.calculateTaxReport();
+
+    // Investor Tax ID & Status
+    const idEl = document.getElementById('tax-investor-id');
+    if (idEl) {
+      idEl.textContent = `EG-TAX-${(GameEngine.activeUsername || 'ANON').toUpperCase().substring(0, 10)}`;
+    }
+
+    // 4 KPI Cards
+    const taxableEl = document.getElementById('tax-kpi-taxable');
+    if (taxableEl) taxableEl.textContent = `${taxReport.taxableNetWorth.toLocaleString()} EGP`;
+
+    const bracketEl = document.getElementById('tax-kpi-bracket');
+    if (bracketEl) {
+      bracketEl.textContent = taxReport.bracketName;
+      bracketEl.className = `text-sm font-black ${taxReport.bracketColor} block mt-1`;
+    }
+
+    const deductionEl = document.getElementById('tax-kpi-deduction');
+    if (deductionEl) deductionEl.textContent = taxReport.taxPerSecond.toLocaleString();
+
+    const ratePctEl = document.getElementById('tax-kpi-rate-pct');
+    if (ratePctEl) ratePctEl.textContent = taxReport.effectiveRatePct;
+
+    const totalPaidEl = document.getElementById('tax-kpi-total-paid');
+    if (totalPaidEl) totalPaidEl.textContent = `${(taxReport.totalTaxesPaid || 0).toLocaleString()} EGP`;
+
+    // Tax Shield Status Card
+    const shieldBadge = document.getElementById('tax-shield-active-badge');
+    const shieldTimeLeft = document.getElementById('tax-shield-time-left');
+    const buyShieldLabel = document.getElementById('tax-buy-shield-label');
+
+    if (shieldBadge) {
+      if (taxReport.taxShieldActive) {
+        shieldBadge.className = 'text-[10px] px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full font-bold animate-pulse';
+        shieldBadge.textContent = 'نشط وفعال 🛡️ (-75%)';
+      } else {
+        shieldBadge.className = 'text-[10px] px-2.5 py-0.5 bg-slate-800 text-slate-400 rounded-full font-bold';
+        shieldBadge.textContent = 'غير مفعل ⚠️';
+      }
+    }
+
+    if (shieldTimeLeft) {
+      if (taxReport.taxShieldActive) {
+        const sec = (taxReport.shieldDurationTicks || 0) * 3;
+        shieldTimeLeft.textContent = `متبقي على الصلاحية: ${sec} ثانية`;
+        shieldTimeLeft.className = 'text-[11px] text-emerald-400 font-mono font-bold';
+      } else {
+        shieldTimeLeft.textContent = 'المدة: 30 دقيقة (1,800 ثانية)';
+        shieldTimeLeft.className = 'text-[11px] text-slate-400 font-mono';
+      }
+    }
+
+    if (buyShieldLabel) {
+      buyShieldLabel.textContent = taxReport.taxShieldActive ? 'تجديد وتمديد الدرع الضريبي (550,000 EGP)' : 'شراء وتفعيل الدرع الضريبي (550,000 EGP)';
+    }
+
+    // Active row badges in table
+    for (let i = 1; i <= 4; i++) {
+      const badge = document.getElementById(`tax-badge-row-${i}`);
+      if (badge) {
+        if (taxReport.bracketId === i) {
+          badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+          badge.textContent = 'شريحتك الحالية 👈';
+        } else {
+          badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-500';
+          badge.textContent = 'غير خاضع';
+        }
+      }
+    }
+  }
+
+  // --- Tab 8: Store & Inventory Panel ---
   function renderStore() {
     const s = GameEngine.state;
     

@@ -494,6 +494,7 @@ const GameEngine = (() => {
     jailTimer: 0,
     afkManagerExpiresAt: 0, // 12-hour active manager timestamp
     activityLog: [], // Rolling audit log of player actions
+    totalTaxesPaid: 0, // Cumulative taxes paid to public treasury
     netWorth: 2000,
     title: 'عامل مبتدئ'
   };
@@ -621,13 +622,67 @@ const GameEngine = (() => {
 
     // 4. Wealth Tax deduction for ultra-high net worth
     if (state.netWorth > 3000000) {
-      const taxShieldActive = state.inventory && state.inventory.tax_shield > 0;
-      const taxRate = taxShieldActive ? 0.000005 : 0.00002;
-      const tax = Math.floor((state.netWorth - 3000000) * taxRate);
-      income = Math.max(0, income - tax);
+      const taxReport = calculateTaxReport();
+      income = Math.max(0, income - taxReport.taxPerSecond);
     }
 
     return income;
+  }
+
+  // Tax Report & Bracket Engine
+  function calculateTaxReport() {
+    const netWorth = calculateNetWorth();
+    const taxShieldActive = Boolean(state.inventory && state.inventory.tax_shield > 0);
+    const shieldDurationTicks = (state.itemDurations && state.itemDurations.tax_shield) || 0;
+
+    if (netWorth <= 3000000) {
+      return {
+        taxableNetWorth: 0,
+        bracketName: 'الشريحة الأولى (معفى تماماً)',
+        bracketId: 1,
+        bracketColor: 'text-emerald-400',
+        baseRatePct: '0.0000%',
+        effectiveRatePct: '0.0000%',
+        taxPerSecond: 0,
+        taxShieldActive,
+        shieldDurationTicks,
+        totalTaxesPaid: state.totalTaxesPaid || 0
+      };
+    }
+
+    const taxable = netWorth - 3000000;
+    let baseRate = 0.000020;
+    let bracketName = 'الشريحة الفضية (3M - 15M ج.م)';
+    let bracketId = 2;
+    let bracketColor = 'text-sky-400';
+
+    if (netWorth > 50000000) {
+      baseRate = 0.000050;
+      bracketName = 'شريحة حيتان المال والمليارديرات (+50M ج.م)';
+      bracketId = 4;
+      bracketColor = 'text-rose-400';
+    } else if (netWorth > 15000000) {
+      baseRate = 0.000035;
+      bracketName = 'شريحة كبار الممولين (15M - 50M ج.م)';
+      bracketId = 3;
+      bracketColor = 'text-amber-400';
+    }
+
+    const effectiveRate = taxShieldActive ? (baseRate * 0.25) : baseRate;
+    const taxPerSecond = Math.max(1, Math.floor(taxable * effectiveRate));
+
+    return {
+      taxableNetWorth: taxable,
+      bracketName,
+      bracketId,
+      bracketColor,
+      baseRatePct: (baseRate * 100).toFixed(4) + '%',
+      effectiveRatePct: (effectiveRate * 100).toFixed(4) + '%',
+      taxPerSecond,
+      taxShieldActive,
+      shieldDurationTicks,
+      totalTaxesPaid: state.totalTaxesPaid || 0
+    };
   }
 
   function calculatePassiveIncomePerSecond() {
@@ -762,11 +817,12 @@ const GameEngine = (() => {
 
     // Progressive Wealth Tax on Ultra-High Net Worth
     if (state.netWorth > 3000000) {
-      const taxShieldActive = state.inventory && state.inventory.tax_shield > 0;
-      const taxRate = taxShieldActive ? 0.000005 : 0.00002;
-      const tax = Math.floor((state.netWorth - 3000000) * taxRate);
-      if (tax > 0) {
-        state.cash = Math.max(0, state.cash - tax);
+      const taxReport = calculateTaxReport();
+      const tax = taxReport.taxPerSecond;
+      if (tax > 0 && (state.cash || 0) > 0) {
+        const actualDeducted = Math.min(state.cash || 0, tax);
+        state.cash -= actualDeducted;
+        state.totalTaxesPaid = (state.totalTaxesPaid || 0) + actualDeducted;
       }
     }
 
@@ -2068,6 +2124,8 @@ const GameEngine = (() => {
     playSlots,
     playDice,
     playRoulette,
+    calculateTaxReport,
+    fileTaxDeclaration,
     calculatePassiveIncomePerTick,
     calculatePassiveIncomePerSecond,
     calculateNetWorth,
