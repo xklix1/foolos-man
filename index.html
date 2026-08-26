@@ -56,7 +56,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=101">
+  <link rel="stylesheet" href="app.css?v=102">
   
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase App SDK blocked.')"></script>
@@ -2592,18 +2592,149 @@
             <div class="flex justify-between items-center">
               <h4 class="text-xs font-bold text-white flex items-center gap-2">
                 <i class="fa-solid fa-bolt text-yellow-400"></i>
-                <span>أحداث اقتصادية جاهزة وسريعة</span>
+                <span>أحداث اقتصادية وأخبار جاهزة وسريعة (اختر للتطبيق الفوري)</span>
               </h4>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button data-event="tech_boom" class="btn-admin-trigger-event p-2.5 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 rounded-lg text-xs font-bold transition flex items-center justify-between">
-                <span class="flex items-center gap-2"><i class="fa-solid fa-microchip"></i> طفرة الذكاء الاصطناعي</span>
-                <span class="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded font-mono">+25%</span>
+            <!-- Quick Template Selector Dropdown -->
+            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex items-center gap-2">
+              <label class="text-[11px] font-bold text-slate-300 shrink-0">اختر نموذج خبر جاهز:</label>
+              <select id="adm-market-preset-select" class="glass-input flex-1 p-1.5 text-xs text-right bg-slate-900 text-white rounded">
+                <option value="">-- اضغط للاختيار من النماذج الجاهزة وتعبئة النموذج تلقائياً --</option>
+                <option value="crypto_frenzy">🚀 [صعود] انفجار سعر البيتكوين التاريخي (+50%)</option>
+                <option value="gold_rally">🥇 [صعود] طفرة الذهب والملاذ الآمن عيار 24 (+35%)</option>
+                <option value="tech_boom">🤖 [صعود] ثورة واستثمارات الذكاء الاصطناعي (+35%)</option>
+                <option value="cbe_rate_hike">🏛️ [مختلط] البنك المركزي يرفع الفائدة (+30% للبنك التجاري)</option>
+                <option value="telecom_expansion">📶 [صعود] رخصة 5G وعقد كابلات المصرية للاتصالات (+35%)</option>
+                <option value="tobacco_monopoly">🚬 [صعود] اتفاقية تصدير احتكارية للشرقية للدخان (+40%)</option>
+                <option value="rate_cut_rally">📈 [صعود عام] خفض الفائدة وانتعاش شامل لكافة الأسهم (+25%)</option>
+                <option value="crypto_crash">📉 [هبوط] ضغوط تنظيمية وهبوط البيتكوين (-35%)</option>
+                <option value="tech_hack_scandal">⚠️ [هبوط] ثغرة وقرصنة دفع إلكتروني لشركة فوري (-30%)</option>
+                <option value="oil_scandal">🚢 [هبوط] أزمة سلاسل إمداد للشرقية للدخان (-25%)</option>
+                <option value="market_crash">💥 [هبوط عام] ذعر اقتصادي وتصحيح هابط عام لكافة الأسهم (-20%)</option>
+              </select>
+            </div>
+
+            <!-- 10 Instant Execution Event Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-1">
+              <!-- Event 1: Tech Boom -->
+              <button data-event="tech_boom" class="btn-admin-trigger-event p-2.5 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 rounded-lg text-xs font-bold transition flex items-center justify-between text-right">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-microchip text-emerald-400"></i>
+                  <div>
+                    <div class="font-bold">طفرة الذكاء الاصطناعي</div>
+                    <div class="text-[9px] text-slate-400 font-sans">AIX, FWRY, CASH</div>
+                  </div>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded font-mono font-bold">+35%</span>
               </button>
-              <button data-event="market_crash" class="btn-admin-trigger-event p-2.5 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/40 text-rose-300 rounded-lg text-xs font-bold transition flex items-center justify-between">
-                <span class="flex items-center gap-2"><i class="fa-solid fa-burst"></i> انهيار وتصحيح هابط للبورصة</span>
-                <span class="text-[10px] px-1.5 py-0.5 bg-rose-500/20 text-rose-300 rounded font-mono">-15%</span>
+
+              <!-- Event 2: Crypto Frenzy -->
+              <button data-event="crypto_frenzy" class="btn-admin-trigger-event p-2.5 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-bold transition flex items-center justify-between text-right">
+                <div class="flex items-center gap-2">
+                  <i class="fa-brands fa-bitcoin text-amber-400"></i>
+                  <div>
+                    <div class="font-bold">انفجار البيتكوين</div>
+                    <div class="text-[9px] text-slate-400 font-sans">BITC</div>
+                  </div>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono font-bold">+50%</span>
+              </button>
+
+              <!-- Event 3: Gold Rally -->
+              <button data-event="gold_rally" class="btn-admin-trigger-event p-2.5 bg-yellow-950/40 hover:bg-yellow-900/60 border border-yellow-500/40 text-yellow-300 rounded-lg text-xs font-bold transition flex items-center justify-between text-right">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-coins text-yellow-400"></i>
+                  <div>
+                    <div class="font-bold">ملاذ الذهب 24k</div>
+                    <div class="text-[9px] text-slate-400 font-sans">GOLD</div>
+                  </div>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-300 rounded font-mono font-bold">+35%</span>
+              </button>
+
+              <!-- Event 4: CBE Rate Hike -->
+              <button data-event="cbe_rate_hike" class="btn-admin-trigger-event p-2.5 bg-blue-950/40 hover:bg-blue-900/60 border border-blue-500/40 text-blue-300 rounded-lg text-xs font-bold transition flex items-center justify-between text-right">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-landmark text-blue-400"></i>
+                  <div>
+                    <div class="font-bold">رفع فائدة المركزي</div>
+                    <div class="text-[9px] text-slate-400 font-sans">COMI (+30%)</div>
+                  </div>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded font-mono font-bold">+30%</span>
+              </button>
+
+              <!-- Event 5: Telecom Deal -->
+              <button data-event="telecom_expansion" class="btn-admin-trigger-event p-2.5 bg-teal-950/40 hover:bg-teal-900/60 border border-teal-500/40 text-teal-300 rounded-lg text-xs font-bold transition flex items-center justify-between text-right">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-tower-cell text-teal-400"></i>
+                  <div>
+                    <div class="font-bold">رخصة 5G اتصالات</div>
+                    <div class="text-[9px] text-slate-400 font-sans">ETEL</div>
+                  </div>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 bg-teal-500/20 text-teal-300 rounded font-mono font-bold">+35%</span>
+              </button>
+
+              <!-- Event 6: Tobacco Export -->
+              <button data-event="tobacco_monopoly" class="btn-admin-trigger-event p-2.5 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 rounded-lg text-xs font-bold transition flex items-center justify-between text-right">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-smoking text-emerald-400"></i>
+                  <div>
+                    <div class="font-bold">تصدير الشرقية للدخان</div>
+                    <div class="text-[9px] text-slate-400 font-sans">EAST</div>
+                  </div>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded font-mono font-bold">+40%</span>
+              </button>
+
+              <!-- Event 7: Rate Cut Rally (All Up) -->
+              <button data-event="rate_cut_rally" class="btn-admin-trigger-event p-2.5 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 rounded-lg text-xs font-bold transition flex items-center justify-between text-right">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-chart-line text-emerald-400"></i>
+                  <div>
+                    <div class="font-bold">انتعاش شامل للسوق</div>
+                    <div class="text-[9px] text-slate-400 font-sans">كافة الأسهم (ALL)</div>
+                  </div>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded font-mono font-bold">+25%</span>
+              </button>
+
+              <!-- Event 8: Crypto Crash -->
+              <button data-event="crypto_crash" class="btn-admin-trigger-event p-2.5 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/40 text-rose-300 rounded-lg text-xs font-bold transition flex items-center justify-between text-right">
+                <div class="flex items-center gap-2">
+                  <i class="fa-brands fa-bitcoin text-rose-400"></i>
+                  <div>
+                    <div class="font-bold">حظر وهبوط الكريبتو</div>
+                    <div class="text-[9px] text-slate-400 font-sans">BITC</div>
+                  </div>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 bg-rose-500/20 text-rose-300 rounded font-mono font-bold">-35%</span>
+              </button>
+
+              <!-- Event 9: Fawry Hack Scandal -->
+              <button data-event="tech_hack_scandal" class="btn-admin-trigger-event p-2.5 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/40 text-rose-300 rounded-lg text-xs font-bold transition flex items-center justify-between text-right">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-triangle-exclamation text-rose-400"></i>
+                  <div>
+                    <div class="font-bold">أزمة دفع سهم فوري</div>
+                    <div class="text-[9px] text-slate-400 font-sans">FWRY</div>
+                  </div>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 bg-rose-500/20 text-rose-300 rounded font-mono font-bold">-30%</span>
+              </button>
+
+              <!-- Event 10: Market Crash (All Down) -->
+              <button data-event="market_crash" class="btn-admin-trigger-event p-2.5 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/40 text-rose-300 rounded-lg text-xs font-bold transition flex items-center justify-between text-right">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-burst text-rose-400"></i>
+                  <div>
+                    <div class="font-bold">انهيار وتصحيح هابط</div>
+                    <div class="text-[9px] text-slate-400 font-sans">كافة الأسهم (ALL)</div>
+                  </div>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 bg-rose-500/20 text-rose-300 rounded font-mono font-bold">-20%</span>
               </button>
             </div>
           </div>
@@ -2843,6 +2974,70 @@
     </div>
   </div>
 
+  <!-- LIVE PLAYER ACTIVITY AUDIT LOG MODAL -->
+  <div id="admin-player-log-modal" class="hidden fixed inset-0 z-[600] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 text-right">
+    <div class="glass-panel w-full max-w-3xl max-h-[90vh] bg-slate-950 border border-amber-500/40 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <!-- Header -->
+      <div class="p-4 bg-slate-900/80 border-b border-amber-500/20 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-base">
+            <i class="fa-solid fa-list-check"></i>
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2">
+              <span>سجل مراقبة نشاط وحركات اللاعب:</span>
+              <span id="adm-log-modal-username" class="text-amber-400 font-mono">@...</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">تدقيق مالي ولحظي لكافة الصفقات والمشاريع والمراهنات والأموال</p>
+          </div>
+        </div>
+        <button id="btn-admin-close-log-modal" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-rose-900/60 text-slate-400 hover:text-rose-300 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Quick Metrics Summary Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 bg-slate-900/40 border-b border-slate-800 text-center">
+        <div class="p-2 bg-slate-950/60 rounded-lg border border-slate-800">
+          <span class="text-[10px] text-slate-400 block">صافي الثروة</span>
+          <span id="adm-log-stat-worth" class="numbers-font font-black text-yellow-400 text-xs">...</span>
+        </div>
+        <div class="p-2 bg-slate-950/60 rounded-lg border border-slate-800">
+          <span class="text-[10px] text-slate-400 block">السيولة (كاش + بنك)</span>
+          <span id="adm-log-stat-cash" class="numbers-font font-black text-emerald-400 text-xs">...</span>
+        </div>
+        <div class="p-2 bg-slate-950/60 rounded-lg border border-slate-800">
+          <span class="text-[10px] text-slate-400 block">مستوى الملاحقة Heat</span>
+          <span id="adm-log-stat-heat" class="numbers-font font-black text-rose-400 text-xs">...</span>
+        </div>
+        <div class="p-2 bg-slate-950/60 rounded-lg border border-slate-800">
+          <span class="text-[10px] text-slate-400 block">حالة السجن</span>
+          <span id="adm-log-stat-jail" class="font-bold text-amber-300 text-xs">...</span>
+        </div>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="p-2.5 bg-slate-950/70 border-b border-slate-800 flex flex-wrap gap-1.5 text-[11px] overflow-x-auto">
+        <button data-log-filter="all" class="btn-log-filter px-3 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-lg font-bold transition">الكل</button>
+        <button data-log-filter="business" class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">المشاريع</button>
+        <button data-log-filter="stock" class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">الأسهم</button>
+        <button data-log-filter="investment" class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">الاستثمار</button>
+        <button data-log-filter="casino" class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">الكازينو</button>
+        <button data-log-filter="blackmarket" class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">السوق السوداء</button>
+        <button data-log-filter="banking" class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">البنوك والقروض</button>
+        <button data-log-filter="store" class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">المتجر والمعدات</button>
+      </div>
+
+      <!-- Feed Container -->
+      <div id="admin-player-log-feed" class="flex-1 overflow-y-auto p-4 space-y-2 max-h-[50vh] min-h-[220px]">
+        <div class="p-6 text-center text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">
+          <i class="fa-solid fa-clipboard-list text-2xl mb-2 text-slate-600 block"></i>
+          <span>جاري جلب سجل النشاط...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- FLOATING ADMIN PANEL TRIGGER BUTTON (FAB) -->
   <button id="btn-admin-panel-trigger-fab" class="hidden fixed bottom-6 right-6 z-40 p-4 bg-gradient-to-tr from-yellow-600 to-amber-400 hover:from-yellow-500 hover:to-amber-300 text-slate-950 rounded-full shadow-2xl transition duration-300 hover:scale-110 shadow-yellow-500/20" title="لوحة التحكم الإدارية">
     <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2857,9 +3052,9 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=101"></script>
-  <script src="game.js?v=101"></script>
-  <script src="ui.js?v=101"></script>
+  <script src="db.js?v=102"></script>
+  <script src="game.js?v=102"></script>
+  <script src="ui.js?v=102"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

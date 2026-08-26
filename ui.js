@@ -4494,6 +4494,97 @@ const UIController = (() => {
       });
     }
 
+    // Market Preset Select Dropdown Auto-filler
+    const marketPresetSelect = document.getElementById('adm-market-preset-select');
+    if (marketPresetSelect) {
+      marketPresetSelect.addEventListener('change', () => {
+        const val = marketPresetSelect.value;
+        if (!val) return;
+        const titleInput = document.getElementById('adm-custom-news-title');
+        const symbolSelect = document.getElementById('adm-custom-stock-select');
+        const directionSelect = document.getElementById('adm-custom-stock-direction');
+        const pctInput = document.getElementById('adm-custom-stock-pct');
+
+        const presetTemplates = {
+          crypto_frenzy: {
+            title: 'صناديق استثمارية سيادية تبدأ الشراء المباشر للبيتكوين!',
+            symbol: 'BITC',
+            dir: 'up',
+            pct: 50
+          },
+          gold_rally: {
+            title: 'إقبال استثماري عالمي للتحوط بسبائك الذهب عيار 24!',
+            symbol: 'GOLD',
+            dir: 'up',
+            pct: 35
+          },
+          tech_boom: {
+            title: 'إطلاق نموذج ذكاء اصطناعي خارق يحقق أرباحاً قياسية لشركات التقنية!',
+            symbol: 'AIX',
+            dir: 'up',
+            pct: 35
+          },
+          cbe_rate_hike: {
+            title: 'البنك المركزي يرفع الفائدة 200 نقطة لدعم القطاع المصرفي!',
+            symbol: 'COMI',
+            dir: 'up',
+            pct: 30
+          },
+          telecom_expansion: {
+            title: 'المصرية للاتصالات تفوز بعقد حصري لتمرير كابلات البيانات البحرية ورخصة 5G!',
+            symbol: 'ETEL',
+            dir: 'up',
+            pct: 35
+          },
+          tobacco_monopoly: {
+            title: 'توقيع عقد تصدير احتكاري ضخم لمنتجات الشرقية للدخان بالشرق الأوسط!',
+            symbol: 'EAST',
+            dir: 'up',
+            pct: 40
+          },
+          rate_cut_rally: {
+            title: 'البنك المركزي يخفض الفائدة لدعم حركة التجارة وصعود كافة الأسهم!',
+            symbol: 'ALL',
+            dir: 'up',
+            pct: 25
+          },
+          crypto_crash: {
+            title: 'حظر تداول العملات المشفرة في بعض البنوك المركزية يضغط على البيتكوين!',
+            symbol: 'BITC',
+            dir: 'down',
+            pct: 35
+          },
+          tech_hack_scandal: {
+            title: 'تسريب وتوقف خدمات الدفع الإلكتروني يتسبب بموجة بيع على سهم فوري!',
+            symbol: 'FWRY',
+            dir: 'down',
+            pct: 30
+          },
+          oil_scandal: {
+            title: 'تأخر شحنات المواد الخام يؤدي لضغوط بيعية على سهم الشرقية للدخان!',
+            symbol: 'EAST',
+            dir: 'down',
+            pct: 25
+          },
+          market_crash: {
+            title: 'موجة بيع جني أرباح مكثفة تهبط بأسهم البورصة وتصحيح هبوطي عام!',
+            symbol: 'ALL',
+            dir: 'down',
+            pct: 20
+          }
+        };
+
+        const tpl = presetTemplates[val];
+        if (tpl) {
+          if (titleInput) titleInput.value = tpl.title;
+          if (symbolSelect) symbolSelect.value = tpl.symbol;
+          if (directionSelect) directionSelect.value = tpl.dir;
+          if (pctInput) pctInput.value = tpl.pct;
+          showToast('نموذج جاهز', `تم اختيار نموذج "${tpl.title.substring(0, 28)}..." وتعبئة الحقول.`, 'info');
+        }
+      });
+    }
+
     // Apply Direct Stock Price Buttons
     const applyStockPriceBtns = document.querySelectorAll('.btn-admin-apply-stock-price');
     applyStockPriceBtns.forEach(btn => {
@@ -4546,9 +4637,23 @@ const UIController = (() => {
         const eventsMap = {
           tech_boom: {
             title: '🚀 طفرة تقنية وانتعاش الذكاء الاصطناعي',
-            desc: 'ارتفعت أرباح شركة فوري وصندوق CASH نتيجة استثمارات هائلة في الذكاء الاصطناعي!',
-            targetStocks: ['FWRY', 'CASH'],
-            multiplier: 1.25,
+            desc: 'ارتفعت أرباح قطاع التكنولوجيا وأسهم AIX و FWRY و CASH نتيجة استثمارات قياسية!',
+            targetStocks: ['AIX', 'FWRY', 'CASH'],
+            multiplier: 1.35,
+            toastType: 'success'
+          },
+          crypto_frenzy: {
+            title: '🚀 صعود تاريخي وانفجار سعر البيتكوين',
+            desc: 'صناديق استثمارية سيادية عملاقة تبدأ في الشراء المباشر للبيتكوين (+50%)!',
+            targetStocks: ['BITC'],
+            multiplier: 1.50,
+            toastType: 'success'
+          },
+          gold_rally: {
+            title: '🥇 إقبال قياسي وطفرة في أسعار الذهب',
+            desc: 'توترات اقتصادية عالمية تدفع المستثمرين للتحوط بسبائك الذهب 24k (+35%)!',
+            targetStocks: ['GOLD'],
+            multiplier: 1.35,
             toastType: 'success'
           },
           cbe_rate_hike: {
@@ -4562,7 +4667,7 @@ const UIController = (() => {
           },
           telecom_expansion: {
             title: '📶 رخصة 5G للمصرية للاتصالات',
-            desc: 'حصول المصرية للاتصالات على رخصة الجيل الخامس تطلق موجة شراء قياسية!',
+            desc: 'حصول المصرية للاتصالات على رخصة الجيل الخامس وتوسعة الكابلات البحرية (+35%)!',
             targetStocks: ['ETEL'],
             multiplier: 1.35,
             toastType: 'success'
@@ -4574,6 +4679,13 @@ const UIController = (() => {
             multiplier: 1.40,
             toastType: 'success'
           },
+          crypto_crash: {
+            title: '📉 ضغوط تنظيمية وهبوط حاد للبيتكوين',
+            desc: 'حظر تداول العملات المشفرة في بعض البنوك المركزية يضغط على البيتكوين (-35%)!',
+            targetStocks: ['BITC'],
+            multiplier: 0.65,
+            toastType: 'error'
+          },
           tech_hack_scandal: {
             title: '⚠️ ثغرة وأزمة حماية لشركة فوري',
             desc: 'تسريب وتوقف خدمات الدفع الإلكتروني يتسبب بموجة بيع مكثفة ومخاوف استثمارية!',
@@ -4583,13 +4695,13 @@ const UIController = (() => {
           },
           rate_cut_rally: {
             title: '📈 خفض الفائدة وانتعاش حركة الاستثمار',
-            desc: 'البنك المركزي يخفض الفائدة لدعم حركة التجارة والإنتاج! صعود متزامن لكل الأسهم.',
-            targetStocks: ['COMI', 'FWRY', 'CASH', 'EAST', 'ETEL'],
-            multiplier: 1.20,
+            desc: 'البنك المركزي يخفض الفائدة لدعم حركة التجارة والإنتاج! صعود متزامن لكل الأسهم (+25%).',
+            targetStocks: ['COMI', 'FWRY', 'CASH', 'EAST', 'ETEL', 'BITC', 'GOLD', 'AIX'],
+            multiplier: 1.25,
             toastType: 'success'
           },
           oil_scandal: {
-            title: '📉 أزمة سلاسل الإمداد والشحن',
+            title: '🚢 أزمة سلاسل الإمداد والشحن',
             desc: 'تأخر شحنات التبغ والمواد الخام يؤدي لربكة ومبيعات مكثفة على سهم الشرقية للدخان!',
             targetStocks: ['EAST'],
             multiplier: 0.75,
@@ -4597,9 +4709,9 @@ const UIController = (() => {
           },
           market_crash: {
             title: '💥 ذعر اقتصادي وتصحيح هابط للبورصة',
-            desc: 'موجة بيع جني أرباح مكثفة تهبط بأغلب أسهم السوق بنسب متفاوتة!',
-            targetStocks: ['COMI', 'FWRY', 'CASH', 'EAST', 'ETEL'],
-            multiplier: 0.85,
+            desc: 'موجة بيع جني أرباح مكثفة تهبط بجميع أسهم البورصة وتصحيح هبوطي عام (-20%)!',
+            targetStocks: ['COMI', 'FWRY', 'CASH', 'EAST', 'ETEL', 'BITC', 'GOLD', 'AIX'],
+            multiplier: 0.80,
             toastType: 'error'
           }
         };
