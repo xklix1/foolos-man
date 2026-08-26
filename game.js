@@ -156,10 +156,112 @@ const GameEngine = (() => {
     }
   };
 
+  const INVESTMENTS = {
+    short: { id: 'short', name: 'وديعة بنكية ربع سنوية', durationTicks: 20, rate: 0.06, minAmount: 10000, desc: 'تجميد السيولة لتوفير التمويل المصرفي مقابل عائد أرباح إضافي (+6%).' },
+    medium: { id: 'medium', name: 'صندوق استثمار عقاري وسندات', durationTicks: 45, rate: 0.20, minAmount: 50000, desc: 'استثمار مضمون في أصول إنشائية وتجارية مدرة للدخل (+20%).' },
+    long: { id: 'long', name: 'صندوق أسهم وتحوط دولي خاص', durationTicks: 90, rate: 0.55, minAmount: 200000, desc: 'محفظة استثمارية مغلقة في أسواق المال العالمية بعوائد استثنائية (+55%).' }
+  };
+
   const BLACK_MARKET = {
-    electronics: { id: 'electronics', name: 'تهريب حاوية إلكترونيات غير مرخصة', cost: 3000, payout: 9500, successChance: 0.85, jailDuration: 20 },
-    crypto: { id: 'crypto', name: 'اختراق خوادم وتحويل أصول رقمية مشبوهة', cost: 20000, payout: 82000, successChance: 0.65, jailDuration: 45 },
-    artifacts: { id: 'artifacts', name: 'صفقة تهريب آثار ومخطوطات نادرة', cost: 90000, payout: 460000, successChance: 0.45, jailDuration: 90 }
+    contraband_cigars: {
+      id: 'contraband_cigars',
+      name: 'تهريب بضائع وسيجار جمركي فاخر',
+      desc: 'إدخال شحنة بضائع حصرية عبر الميناء بدون دفع رسوم جمركية.',
+      cost: 5000,
+      payout: 16000,
+      successChance: 0.88,
+      jailDuration: 15,
+      repGain: 15,
+      icon: 'fa-box-open',
+      tier: 'سهل'
+    },
+    electronics: {
+      id: 'electronics',
+      name: 'تهريب حاوية أجهزة إلكترونية حديثة',
+      desc: 'استيراد غير رسمي لأجهزة هواتف ومعدات حاسوبية من وراء الجمارك.',
+      cost: 25000,
+      payout: 90000,
+      successChance: 0.78,
+      jailDuration: 30,
+      repGain: 35,
+      icon: 'fa-laptop-code',
+      tier: 'متوسط'
+    },
+    arms_intel: {
+      id: 'arms_intel',
+      name: 'صفقة تسريب سيرفرات وبيانات استخباراتية',
+      desc: 'بيع وثائق حساسة وشفرات سرية لجهات استثمارية عالمية.',
+      cost: 80000,
+      payout: 340000,
+      successChance: 0.65,
+      jailDuration: 50,
+      repGain: 80,
+      icon: 'fa-user-secret',
+      tier: 'متقدم'
+    },
+    crypto: {
+      id: 'crypto',
+      name: 'اختراق منصات رقمية وغسيل عملات مشفرة',
+      desc: 'هجوم سيبراني معقد على محافظ العملات المشفرة مع تحويل الأصول لخوادم خارجية.',
+      cost: 250000,
+      payout: 1200000,
+      successChance: 0.52,
+      jailDuration: 75,
+      repGain: 160,
+      icon: 'fa-network-wired',
+      tier: 'محترف'
+    },
+    artifacts: {
+      id: 'artifacts',
+      name: 'تهريب آثار ومخطوطات نادرة لمزادات سرية',
+      desc: 'صفقة كبرى لبيع قطع أثرية نادرة لكبار هواة الجمع في السوق السوداء الدولية.',
+      cost: 750000,
+      payout: 4200000,
+      successChance: 0.42,
+      jailDuration: 110,
+      repGain: 320,
+      icon: 'fa-gem',
+      tier: 'خطر جداً'
+    },
+    diamond_heist: {
+      id: 'diamond_heist',
+      name: 'عملية السطو الكبرى على خزائن الماس الدولية',
+      desc: 'أضخم عملية سرقة منظمة في التاريخ لخزينة الماس والسبائك البنكية.',
+      cost: 2500000,
+      payout: 18000000,
+      successChance: 0.30,
+      jailDuration: 150,
+      repGain: 800,
+      icon: 'fa-shield-halved',
+      tier: 'أسطوري'
+    }
+  };
+
+  const BLACK_MARKET_GEAR = {
+    radar_jammer: {
+      id: 'radar_jammer',
+      name: 'جهاز تشويش رادارات الشرطة',
+      desc: 'يقلل احتمالية المداهمة الأمنية في صفقات السوق السوداء بنسبة 20% لمدة 5 دقائق.',
+      cost: 80000,
+      icon: 'fa-satellite-dish',
+      durationTicks: 100
+    },
+    fake_passport: {
+      id: 'fake_passport',
+      name: 'جواز سفر دبلوماسي مزور',
+      desc: 'حماية وتأمين ضد السجن — يمنحك مهرباً فورياً عند المداهمة وتفادي العقوبة.',
+      cost: 200000,
+      icon: 'fa-passport',
+      durationTicks: 150
+    },
+    crypto_cleaner: {
+      id: 'crypto_cleaner',
+      name: 'بروتوكول تشفير مالي (Zero-Trace)',
+      desc: 'يخفض عمولة غسيل الأموال إلى 5% بدلاً من 12% لتعظيم تحويل الكاش.',
+      cost: 150000,
+      icon: 'fa-shield-virus',
+      durationTicks: 120
+    }
   };
 
   // --- Initial Default Player State ---
@@ -167,6 +269,8 @@ const GameEngine = (() => {
     cash: 5000,
     bank: 1000,
     xp: 0,
+    underworldRep: 0,
+    heatLevel: 0,
     jobId: 'worker',
     businesses: {
       coffee: { level: 0, price: 18, workers: 0 },
@@ -195,7 +299,10 @@ const GameEngine = (() => {
       energy_drink: 0,
       tax_shield: 0,
       market_scanner: 0,
-      vip_casino_pass: 0
+      vip_casino_pass: 0,
+      radar_jammer: 0,
+      fake_passport: 0,
+      crypto_cleaner: 0
     },
     itemDurations: {}, // Stores { itemId: ticksRemaining } for self-destruction timer
     jailTimer: 0,
@@ -980,43 +1087,151 @@ const GameEngine = (() => {
     // Deduct raw capital cost immediately
     state.cash -= deal.cost;
 
-    // Calculate legal protection risk reducer
-    // Premium lawyer item reduces fail chance
-    let protectionFactor = 1.0;
-    if (state.inventory.premium_lawyer > 0) {
-      protectionFactor = 1 - STORE_ITEMS.premium_lawyer.value; // e.g. -35% risk
+    // Calculate risk modifiers
+    let riskReduction = 0;
+    if (state.inventory && state.inventory.premium_lawyer > 0) {
+      riskReduction += (STORE_ITEMS.premium_lawyer.value || 0.35); // 35% lawyer protection
+    }
+    if (state.inventory && state.inventory.radar_jammer > 0) {
+      riskReduction += 0.20; // 20% radar jammer protection
     }
 
     const baseFailChance = 1 - deal.successChance;
-    const modifiedFailChance = baseFailChance * protectionFactor;
-    const finalSuccessChance = 1 - modifiedFailChance;
+    const finalFailChance = Math.max(0.05, baseFailChance * (1 - riskReduction));
+    const finalSuccessChance = 1 - finalFailChance;
 
     const roll = Math.random();
     if (roll < finalSuccessChance) {
-      // SUCCESS: High ROI Payout
+      // SUCCESS: High ROI Payout & Underworld Rep Gain
       state.cash += deal.payout;
+      state.underworldRep = (state.underworldRep || 0) + (deal.repGain || 20);
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
       return {
         success: true,
         payout: deal.payout,
-        profit: deal.payout - deal.cost
+        profit: deal.payout - deal.cost,
+        repGain: deal.repGain || 20
       };
     } else {
       // CAUGHT BY POLICE!
+      // Check if player has diplomatic fake passport to escape jail!
+      if (state.inventory && state.inventory.fake_passport > 0) {
+        state.inventory.fake_passport--;
+        if (state.itemDurations) delete state.itemDurations.fake_passport;
+        state.netWorth = calculateNetWorth();
+        AppDB.savePlayerState(activeUsername, state);
+        return {
+          success: false,
+          escaped: true,
+          confiscation: 0,
+          jailDuration: 0
+        };
+      }
+
       // Fine (20% of remaining cash) and lock in jail
       const confiscation = Math.floor(state.cash * 0.20);
       state.cash -= confiscation;
       state.jailTimer = deal.jailDuration;
+      state.heatLevel = Math.min(5, (state.heatLevel || 0) + 1);
 
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
       return {
         success: false,
+        escaped: false,
         confiscation: confiscation,
         jailDuration: deal.jailDuration
       };
     }
+  }
+
+  // Buy Black Market Gear
+  function buyBlackMarketGear(gearId) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك شراء معدات السوق السوداء.");
+    const item = BLACK_MARKET_GEAR[gearId];
+    if (!item) throw new Error("المعدة غير متوفرة.");
+
+    if (state.cash < item.cost) {
+      throw new Error(`سعر المعدة ${item.cost.toLocaleString()} جنيه. رصيدك النقدي لا يكفي.`);
+    }
+
+    state.cash -= item.cost;
+    if (!state.inventory) state.inventory = {};
+    state.inventory[gearId] = (state.inventory[gearId] || 0) + 1;
+
+    if (!state.itemDurations) state.itemDurations = {};
+    state.itemDurations[gearId] = item.durationTicks;
+
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+    return item;
+  }
+
+  // Bribe Police to clear Jail & Heat
+  function bribePolice() {
+    if (state.jailTimer <= 0 && (!state.heatLevel || state.heatLevel <= 0)) {
+      throw new Error("سجلك نظيف حالياً ولا توجد ملاحقات أمنية أو أحكام سجن عليك!");
+    }
+    const bribeCost = Math.max(15000, Math.floor(state.cash * 0.15) + (state.jailTimer * 1000));
+    if (state.cash < bribeCost) {
+      throw new Error(`تكلفة الرشوة والوساطة ${bribeCost.toLocaleString()} جنيه. رصيدك لا يكفي.`);
+    }
+    state.cash -= bribeCost;
+    state.jailTimer = 0;
+    state.heatLevel = 0;
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+    return { bribeCost };
+  }
+
+  // Instant Money Laundering
+  function launderMoney(amount) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إدارة عمليات غسيل الأموال.");
+    if (!amount || isNaN(amount) || amount <= 0) throw new Error("يرجى إدخال مبلغ صحيح للغسيل.");
+    if (state.cash < amount) throw new Error("لا تملك هذا المبلغ نقداً للغسيل.");
+    
+    const feeRate = (state.inventory && state.inventory.crypto_cleaner > 0) ? 0.05 : 0.12;
+    const fee = Math.floor(amount * feeRate);
+    const cleanedAmount = amount - fee;
+    
+    state.cash -= amount;
+    state.bank += cleanedAmount;
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+    return {
+      amount,
+      fee,
+      feeRate: Math.round(feeRate * 100),
+      cleanedAmount
+    };
+  }
+
+  // Start Locked Term Investment
+  function startInvestment(planId, amount) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إدارة استثمارات بنكية.");
+    const plan = INVESTMENTS[planId];
+    if (!plan) throw new Error("خطة الاستثمار غير موجودة.");
+    if (!amount || isNaN(amount) || amount < plan.minAmount) {
+      throw new Error(`الحد الأدنى للاستثمار في "${plan.name}" هو ${plan.minAmount.toLocaleString()} جنيه.`);
+    }
+    if (state.cash < amount) {
+      throw new Error(`رصيدك النقدي ${state.cash.toLocaleString()} جنيه لا يكفي لاستثمار ${amount.toLocaleString()} جنيه.`);
+    }
+
+    state.cash -= amount;
+    if (!state.investments) state.investments = [];
+    state.investments.push({
+      id: plan.id,
+      name: plan.name,
+      investedAmount: amount,
+      ticksRemaining: plan.durationTicks,
+      rate: plan.rate
+    });
+
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+    return { plan, amount };
   }
 
   // Casino Flip Game with Streak Bonus
@@ -1195,6 +1410,7 @@ const GameEngine = (() => {
     INVESTMENTS,
     STORE_ITEMS,
     BLACK_MARKET,
+    BLACK_MARKET_GEAR,
 
     loadUserSession,
     logoutUser,
@@ -1217,6 +1433,9 @@ const GameEngine = (() => {
     buyStoreItem,
     useStoreItem,
     runBlackMarketDeal,
+    buyBlackMarketGear,
+    bribePolice,
+    launderMoney,
     playCoinFlip,
     playSlots,
     playDice,

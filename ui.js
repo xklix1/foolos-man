@@ -2464,60 +2464,251 @@ const UIController = (() => {
     }
   }
 
-  // --- Tab 8: Black Market Panel ---
+  // --- Tab 8: Black Market Panel (السوق السوداء) ---
+  let blackMarketListenersAttached = false;
+
   function renderBlackMarket() {
     const s = GameEngine.state;
-    const container = document.getElementById('blackmarket-deals');
-    container.innerHTML = '';
+    if (!s) return;
 
-    Object.keys(GameEngine.BLACK_MARKET).forEach(id => {
-      const deal = GameEngine.BLACK_MARKET[id];
+    // 1. Underworld Status Hub
+    const repValEl = document.getElementById('underworld-rep-val');
+    if (repValEl) repValEl.textContent = (s.underworldRep || 0).toLocaleString();
+
+    const heatEl = document.getElementById('police-heat-display');
+    if (heatEl) {
+      const heat = Math.min(5, Math.max(0, s.heatLevel || 0));
+      const stars = '⭐'.repeat(heat) + '☆'.repeat(5 - heat);
+      heatEl.textContent = `الملاحقة: ${stars}`;
+    }
+
+    // 2. Money Laundering Status & Presets
+    const maxCashEl = document.getElementById('laundering-max-cash');
+    if (maxCashEl) maxCashEl.textContent = s.cash.toLocaleString();
+
+    const feeBadgeEl = document.getElementById('laundering-fee-badge');
+    const hasCryptoCleaner = s.inventory && s.inventory.crypto_cleaner > 0;
+    if (feeBadgeEl) {
+      feeBadgeEl.textContent = hasCryptoCleaner ? '5% (Zero-Trace نشط)' : '12%';
+      feeBadgeEl.className = hasCryptoCleaner ? 'numbers-font font-black text-cyan-400' : 'numbers-font font-black text-emerald-400';
+    }
+
+    // 3. Render Black Market Operations
+    const dealsContainer = document.getElementById('blackmarket-deals');
+    if (dealsContainer) {
+      dealsContainer.innerHTML = '';
       
-      const card = document.createElement('div');
-      card.className = 'glass-panel p-5 rounded-xl border border-slate-800 flex flex-col justify-between bg-gradient-to-br from-rose-950/10 to-slate-900/40';
-      
-      // Calculate active lawyer protection display
-      let protectionText = "";
-      let riskPct = Math.round((1 - deal.successChance) * 100);
-      if (s.inventory.premium_lawyer > 0) {
-        riskPct = Math.round(riskPct * (1 - GameEngine.STORE_ITEMS.premium_lawyer.value));
-        protectionText = `<span class="text-[10px] px-1.5 py-0.5 bg-sky-500/20 text-sky-400 rounded border border-sky-500/30 font-semibold block mt-1 text-center">حماية المحامي نشطة (-35% خطورة)</span>`;
-      }
+      const hasLawyer = s.inventory && s.inventory.premium_lawyer > 0;
+      const hasJammer = s.inventory && s.inventory.radar_jammer > 0;
+      const hasPassport = s.inventory && s.inventory.fake_passport > 0;
 
-      card.innerHTML = `
-        <div class="mb-4">
-          <h4 class="text-md font-bold text-rose-400">${deal.name}</h4>
-          <p class="text-xs text-slate-500 mt-1">تجارة محظورة عالية المردود المالي ولكن تحمل مخاطرة المداهمة الأمنية والسجن.</p>
-        </div>
+      let riskDiscount = 0;
+      if (hasLawyer) riskDiscount += 0.35;
+      if (hasJammer) riskDiscount += 0.20;
 
-        <div class="text-xs text-slate-400 space-y-1 mb-5 border-t border-b border-slate-800/80 py-3">
-          <div class="flex justify-between"><span>رأس المال المطلوب:</span><span class="numbers-font text-white">${deal.cost.toLocaleString()} EGP</span></div>
-          <div class="flex justify-between"><span>العائد الإجمالي (الفوز):</span><span class="numbers-font text-emerald-400 font-bold">+${deal.payout.toLocaleString()} EGP</span></div>
-          <div class="flex justify-between"><span>نسبة الإيقاف (الشرطة):</span><span class="numbers-font text-rose-400 font-bold">${riskPct}%</span></div>
-          <div class="flex justify-between"><span>عقوبة السجن:</span><span class="numbers-font text-amber-500">${deal.jailDuration * 3} ثانية</span></div>
-          ${protectionText}
-        </div>
+      Object.keys(GameEngine.BLACK_MARKET).forEach(id => {
+        const deal = GameEngine.BLACK_MARKET[id];
+        const baseFailChance = 1 - deal.successChance;
+        const finalFailChance = Math.max(0.05, baseFailChance * (1 - riskDiscount));
+        const riskPct = Math.round(finalFailChance * 100);
+        const successPct = 100 - riskPct;
 
-        <button id="btn-run-deal-${id}" class="w-full py-2.5 bg-rose-900/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 rounded-lg text-xs font-bold transition">
-          بدء المغامرة وتوقيع الصفقة
-        </button>
-      `;
+        let badgeStyle = 'bg-slate-800 text-slate-300 border-slate-700';
+        if (deal.tier === 'سهل') badgeStyle = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+        else if (deal.tier === 'متوسط') badgeStyle = 'bg-sky-500/20 text-sky-400 border-sky-500/30';
+        else if (deal.tier === 'متقدم') badgeStyle = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+        else if (deal.tier === 'محترف') badgeStyle = 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+        else if (deal.tier === 'خطر جداً') badgeStyle = 'bg-rose-500/20 text-rose-400 border-rose-500/30';
+        else if (deal.tier === 'أسطوري') badgeStyle = 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40 glow-gold';
 
-      card.querySelector(`#btn-run-deal-${id}`).addEventListener('click', () => {
-        try {
-          const res = GameEngine.runBlackMarketDeal(id);
-          if (res.success) {
-            showToast('ضربة معلم!', `نجحت الصفقة المشبوهة! وحصلت على ربح صافٍ قدره +${res.profit.toLocaleString()} EGP.`, 'success');
-          } else {
-            showToast('مداهمة الشرطة!', `تم رصد عمليتك وضبطك من السلطات! مصادرة ${res.confiscation.toLocaleString()} EGP وإيداعك السجن.`, 'error');
+        const card = document.createElement('div');
+        card.className = 'glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col justify-between hover:border-rose-500/40 transition duration-300 shadow-lg';
+        card.style.background = 'radial-gradient(ellipse at top left, rgba(225,29,72,0.08), rgba(15,23,42,0.95))';
+
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-start mb-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                  <i class="fa-solid ${deal.icon || 'fa-box-open'} text-sm"></i>
+                </div>
+                <div>
+                  <h4 class="text-sm font-bold text-white">${deal.name}</h4>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full border font-bold ${badgeStyle}">${deal.tier}</span>
+                </div>
+              </div>
+            </div>
+            
+            <p class="text-xs text-slate-400 mt-1 mb-3">${deal.desc}</p>
+            
+            <div class="text-xs text-slate-400 space-y-1.5 border-t border-b border-slate-800/80 py-2.5 my-3">
+              <div class="flex justify-between"><span>رأس المال المطلوب:</span><span class="numbers-font text-white font-bold">${deal.cost.toLocaleString()} EGP</span></div>
+              <div class="flex justify-between"><span>العائد الإجمالي (الفوز):</span><span class="numbers-font text-emerald-400 font-bold">+${deal.payout.toLocaleString()} EGP</span></div>
+              <div class="flex justify-between"><span>الربح الصافي المتوقع:</span><span class="numbers-font text-teal-400 font-semibold">+${(deal.payout - deal.cost).toLocaleString()} EGP</span></div>
+              <div class="flex justify-between"><span>نسبة النجاح المقدرة:</span><span class="numbers-font ${successPct >= 70 ? 'text-emerald-400' : successPct >= 50 ? 'text-yellow-400' : 'text-rose-400'} font-black">${successPct}%</span></div>
+              <div class="flex justify-between"><span>عقوبة السجن والمصادرة:</span><span class="numbers-font text-rose-400">${deal.jailDuration * 3} ثانية (مصادرة 20%)</span></div>
+              <div class="flex justify-between"><span>نقاط سمعة المافيا:</span><span class="numbers-font text-rose-300 font-bold">+${deal.repGain || 20} نقطة</span></div>
+            </div>
+
+            ${(hasLawyer || hasJammer || hasPassport) ? `
+              <div class="flex flex-wrap gap-1 mb-3">
+                ${hasLawyer ? '<span class="text-[10px] px-1.5 py-0.5 bg-sky-500/20 text-sky-300 rounded border border-sky-500/30">محامي (-35% خطر)</span>' : ''}
+                ${hasJammer ? '<span class="text-[10px] px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">تشويش (-20% خطر)</span>' : ''}
+                ${hasPassport ? '<span class="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">جواز مزور (مهرب مؤمن)</span>' : ''}
+              </div>
+            ` : ''}
+          </div>
+
+          <button id="btn-run-deal-${id}" class="w-full py-2.5 bg-gradient-to-r from-rose-900/60 to-rose-800/60 hover:from-rose-800 hover:to-rose-700 border border-rose-500/40 text-rose-100 rounded-xl text-xs font-black transition shadow-md flex items-center justify-center gap-2">
+            <i class="fa-solid fa-handshake"></i>
+            <span>توقيع وتنفيذ العملية</span>
+          </button>
+        `;
+
+        card.querySelector(`#btn-run-deal-${id}`).addEventListener('click', () => {
+          try {
+            const res = GameEngine.runBlackMarketDeal(id);
+            if (res.success) {
+              showToast('ضربة معلم!', `نجحت العملية السرية! ربح صافٍ قدره +${res.profit.toLocaleString()} EGP واكتسبت ${res.repGain} نقطة سمعة في السوق السوداء.`, 'success');
+              playMenuSound('success');
+            } else if (res.escaped) {
+              showToast('هروب دبلوماسي!', `تمت المداهمة ولكنك استخدمت جواز السفر المزور وهربت فوراً دون سجن أو غرامات!`, 'warning');
+              playMenuSound('click');
+            } else {
+              showToast('مداهمة الشرطة!', `تم ضبط عمليتك! مصادرة ${res.confiscation.toLocaleString()} EGP وإيداعك السجن لـ ${res.jailDuration * 3} ثانية.`, 'error');
+              playMenuSound('error');
+            }
+            renderAll();
+          } catch (err) {
+            showToast('خطأ في العملية', err.message, 'error');
           }
+        });
+
+        dealsContainer.appendChild(card);
+      });
+    }
+
+    // 4. Render Black-Ops Gear
+    const gearContainer = document.getElementById('blackmarket-gear-list');
+    if (gearContainer) {
+      gearContainer.innerHTML = '';
+      Object.keys(GameEngine.BLACK_MARKET_GEAR).forEach(gearId => {
+        const gear = GameEngine.BLACK_MARKET_GEAR[gearId];
+        const ownedCount = (s.inventory && s.inventory[gearId]) || 0;
+        const ticksLeft = (s.itemDurations && s.itemDurations[gearId]) || 0;
+        const secLeft = ticksLeft * 3;
+
+        const card = document.createElement('div');
+        card.className = 'glass-panel p-4 rounded-xl border border-slate-800 flex flex-col justify-between bg-slate-950/40';
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                  <i class="fa-solid ${gear.icon || 'fa-microchip'}"></i>
+                </div>
+                <h5 class="font-bold text-white text-xs">${gear.name}</h5>
+              </div>
+              <span class="text-[10px] px-2 py-0.5 ${ownedCount > 0 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'} rounded-full font-bold">
+                ${ownedCount > 0 ? `نشط (${secLeft}ث)` : 'غير مفعل'}
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-400 mb-3">${gear.desc}</p>
+            <div class="flex justify-between items-center text-xs text-slate-300 border-t border-slate-800/80 pt-2 mb-3">
+              <span>السعر:</span>
+              <span class="numbers-font text-yellow-400 font-bold">${gear.cost.toLocaleString()} EGP</span>
+            </div>
+          </div>
+          <button id="btn-buy-gear-${gearId}" class="w-full py-2 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-200 rounded-lg text-xs font-bold transition">
+            شراء وتفعيل المعدة
+          </button>
+        `;
+
+        card.querySelector(`#btn-buy-gear-${gearId}`).addEventListener('click', () => {
+          try {
+            GameEngine.buyBlackMarketGear(gearId);
+            showToast('تجهيز العتاد', `تم شراء وتفعيل "${gear.name}" بنجاح!`, 'success');
+            renderAll();
+          } catch (err) {
+            showToast('فشل الشراء', err.message, 'error');
+          }
+        });
+
+        gearContainer.appendChild(card);
+      });
+    }
+
+    // 5. Setup Black Market static listeners once
+    setupBlackMarketListeners();
+  }
+
+  function setupBlackMarketListeners() {
+    if (blackMarketListenersAttached) return;
+    blackMarketListenersAttached = true;
+
+    // Bribe Police Button
+    const bribeBtn = document.getElementById('btn-bribe-police');
+    if (bribeBtn) {
+      bribeBtn.addEventListener('click', () => {
+        try {
+          const res = GameEngine.bribePolice();
+          showToast('تمت الصفقة', `تم دفع ${res.bribeCost.toLocaleString()} EGP كرشوة وإسقاط جميع الملاحقات والإفراج الفوري!`, 'success');
           renderAll();
         } catch (err) {
-          showToast('فشل المداهمة', err.message, 'error');
+          showToast('فشل الرشوة', err.message, 'error');
         }
       });
+    }
 
-      container.appendChild(card);
+    // Money Laundering Input Presets
+    const launderInput = document.getElementById('laundering-amount-input');
+    const setLaunderPct = (pct) => {
+      const s = GameEngine.state;
+      if (!s || !launderInput) return;
+      const amt = Math.floor(s.cash * pct);
+      launderInput.value = amt > 0 ? amt : '';
+    };
+
+    const b25 = document.getElementById('btn-launder-25');
+    if (b25) b25.addEventListener('click', () => setLaunderPct(0.25));
+    const b50 = document.getElementById('btn-launder-50');
+    if (b50) b50.addEventListener('click', () => setLaunderPct(0.50));
+    const b100 = document.getElementById('btn-launder-100');
+    if (b100) b100.addEventListener('click', () => setLaunderPct(1.00));
+
+    // Execute Money Laundering
+    const execLaunderBtn = document.getElementById('btn-execute-laundering');
+    if (execLaunderBtn) {
+      execLaunderBtn.addEventListener('click', () => {
+        if (!launderInput) return;
+        const val = parseInt(launderInput.value);
+        try {
+          const res = GameEngine.launderMoney(val);
+          launderInput.value = '';
+          showToast('تم الغسيل المالي', `تم غسيل ${res.amount.toLocaleString()} EGP وإيداع صافي ${res.cleanedAmount.toLocaleString()} EGP بحسابك البنكي (خصم عمولة ${res.feeRate}% = ${res.fee.toLocaleString()} EGP).`, 'success');
+          renderAll();
+        } catch (err) {
+          showToast('فشل الغسيل', err.message, 'error');
+        }
+      });
+    }
+
+    // Term Investment Start Buttons
+    document.querySelectorAll('.btn-invest-start').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = btn.getAttribute('data-type');
+        const input = document.getElementById(`invest-amount-${type}`);
+        if (!input) return;
+        const amt = parseInt(input.value);
+        try {
+          const res = GameEngine.startInvestment(type, amt);
+          input.value = '';
+          showToast('بدء الاستثمار', `تم إيداع ${res.amount.toLocaleString()} EGP في "${res.plan.name}" بنجاح!`, 'success');
+          renderAll();
+        } catch (err) {
+          showToast('فشل الاستثمار', err.message, 'error');
+        }
+      });
     });
   }
 

@@ -1039,40 +1039,184 @@
         </div>
       </section>
 
-      <!-- TAB 8: سوق سوداء (BLACK MARKET / INVESTMENTS OPTIONS) -->
+      <!-- TAB 8: السوق السوداء (BLACK MARKET & UNDERWORLD HUB) -->
       <section id="panel-blackmarket" class="game-panel hidden space-y-6">
-        <!-- Locked long term investments options -->
+        
+        <!-- Black Market Hero & Status Hub -->
+        <div class="glass-panel p-5 lg:p-6 rounded-2xl border border-rose-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl" style="background: radial-gradient(ellipse at 80% 0%, rgba(225,29,72,0.14), rgba(15,23,42,0.95)) !important;">
+          <div>
+            <div class="flex items-center gap-2 mb-1.5">
+              <span class="w-3 h-3 rounded-full bg-rose-500 animate-ping"></span>
+              <h3 class="text-xl font-black text-white flex items-center gap-2">
+                <i class="fa-solid fa-user-secret text-rose-500 text-2xl"></i>
+                <span>السوق السوداء وعالم الصفقات السرية</span>
+              </h3>
+            </div>
+            <p class="text-xs text-slate-400 max-w-xl">عائدات مالية طائلة ومخاطر أمنية مضاعفة. قُد صفقات التهريب، اغسل الأموال، واحصل على أدوات التخفي لتفادي السجن والمصادرات.</p>
+          </div>
+
+          <!-- Underworld Status & Quick Bribe -->
+          <div class="flex items-center flex-wrap gap-2 w-full md:w-auto">
+            <!-- Underworld Rep Badge -->
+            <div class="px-3.5 py-2 bg-rose-950/60 border border-rose-500/30 rounded-xl text-xs font-bold text-rose-300 flex items-center gap-2">
+              <i class="fa-solid fa-skull-crossbones text-rose-400"></i>
+              <span>سمعة المافيا: <strong id="underworld-rep-val" class="numbers-font text-white">0</strong> نقطة</span>
+            </div>
+            <!-- Police Heat Stars -->
+            <div class="px-3.5 py-2 bg-slate-900/80 border border-slate-700 rounded-xl text-xs font-bold text-yellow-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-shield-halved text-yellow-400"></i>
+              <span id="police-heat-display">الملاحقة: ⭐☆☆☆☆</span>
+            </div>
+            <!-- Quick Bribe Police Button -->
+            <button id="btn-bribe-police" type="button" class="px-3.5 py-2 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-slate-950 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-md">
+              <i class="fa-solid fa-handshake-simple"></i>
+              <span>رشوة وإسقاط الملاحقة</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SECTION 1: صفقات التهريب والعمليات السرية -->
+        <div class="space-y-3">
+          <div class="flex justify-between items-center px-1">
+            <h4 class="text-md font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-box-open text-rose-400"></i>
+              <span>عمليات وصفقات السوق السوداء المتاحة</span>
+            </h4>
+            <span class="text-[11px] text-slate-400">تتجدد الفرص وتتضاعف الأرباح مع زيادة رتبتك الإجرامية</span>
+          </div>
+          <div id="blackmarket-deals" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- Rendered dynamically by ui.js -->
+          </div>
+        </div>
+
+        <!-- SECTION 2: غرفة غسيل الأموال السريعة -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-900/40">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 pb-3 border-b border-slate-800">
+            <div>
+              <h4 class="text-md font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-money-bill-transfer text-emerald-400"></i>
+                <span>غرفة غسيل الأموال وتحويل الكاش المشبوه</span>
+              </h4>
+              <p class="text-xs text-slate-400 mt-1">حوّل أموال الكاش النقدية مباشرة لحسابك البنكي المعتمد بدون إثارة الشبهات (عمولة غسيل 12% أو 5% مع مشفر Zero-Trace).</p>
+            </div>
+            <div class="text-xs px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-lg font-bold">
+              العمولة الحالية: <span id="laundering-fee-badge" class="numbers-font font-black">12%</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+            <div class="md:col-span-2 space-y-2">
+              <div class="flex justify-between text-xs text-slate-400">
+                <span>المبلغ المراد غسيله وتحويله للبنك:</span>
+                <span class="text-yellow-400 font-bold">المتاح كاش: <span id="laundering-max-cash" class="numbers-font">0</span> EGP</span>
+              </div>
+              <div class="flex gap-2">
+                <input type="number" id="laundering-amount-input" placeholder="أدخل مبلغ الكاش" min="100" class="glass-input flex-1 p-2.5 text-xs rounded-xl text-center font-bold">
+                <button type="button" id="btn-launder-25" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl font-bold transition">25%</button>
+                <button type="button" id="btn-launder-50" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl font-bold transition">50%</button>
+                <button type="button" id="btn-launder-100" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-yellow-400 text-xs rounded-xl font-bold transition">100%</button>
+              </div>
+            </div>
+            <div>
+              <button id="btn-execute-laundering" type="button" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-lg">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>بدء دورة الغسيل المالي</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: عتاد ومعدات التخفي والتشويش الحصرية -->
+        <div class="space-y-3">
+          <div class="flex justify-between items-center px-1">
+            <h4 class="text-md font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-microchip text-indigo-400"></i>
+              <span>عتاد التخفي وأدوات التشويش (Black-Ops)</span>
+            </h4>
+            <span class="text-[11px] text-slate-400">معدات خاصة تقلل المخاطر وتؤمن عملياتك</span>
+          </div>
+          <div id="blackmarket-gear-list" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <!-- Rendered dynamically by ui.js -->
+          </div>
+        </div>
+
+        <!-- SECTION 4: الاستثمار المقفل طويل الأجل -->
         <div class="glass-panel p-6 rounded-2xl border border-slate-800">
-          <h3 class="text-md font-bold text-white mb-2">الاستثمار المقفل طويل الأجل</h3>
-          <p class="text-xs text-slate-400 mb-6">قفل جزء من سيولتك النقدية لفترة محددة لجني عوائد أرباح عالية ومضمونة عند الاستحقاق.</p>
+          <div class="mb-4">
+            <h4 class="text-md font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-vault text-yellow-400"></i>
+              <span>الاستثمار المقفل والصناديق الاستثمارية السرية</span>
+            </h4>
+            <p class="text-xs text-slate-400 mt-1">تجميد السيولة في صناديق استثمارية خاصة لتحصيل عوائد ربحية ثابتة ومضمونة عند انتهاء مدة التجميد.</p>
+          </div>
           
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <!-- Short deposit -->
-            <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-xl flex flex-col justify-between">
+            <div class="p-5 bg-slate-950/50 border border-slate-800 rounded-xl flex flex-col justify-between hover:border-slate-700 transition">
               <div>
-                <h4 class="font-bold text-white text-sm">وديعة بنكية ربع سنوية</h4>
-                <p class="text-[10px] text-slate-500 mt-1">تجميد السيولة لتوفير التمويل المصرفي مقابل عائد أرباح إضافي.</p>
-                <div class="text-xs text-slate-400 space-y-1 my-3">
-                  <div class="flex justify-between"><span>مدة التجميد:</span><span class="numbers-font text-white">60 ثانية</span></div>
-                  <div class="flex justify-between"><span>عائد الأرباح:</span><span class="numbers-font text-emerald-400">+5% مضمونة</span></div>
-                  <div class="flex justify-between"><span>الحد الأدنى:</span><span class="numbers-font">10,000 جنيه</span></div>
+                <div class="flex justify-between items-center mb-1">
+                  <h5 class="font-bold text-white text-sm">وديعة بنكية ربع سنوية</h5>
+                  <span class="text-[10px] px-2 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full font-bold">قصيرة الأجل</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1">تجميد السيولة لتوفير التمويل المصرفي مقابل عائد أرباح إضافي.</p>
+                <div class="text-xs text-slate-400 space-y-1.5 my-3 border-t border-b border-slate-800/80 py-2.5">
+                  <div class="flex justify-between"><span>مدة التجميد:</span><span class="numbers-font text-white font-bold">30 ثانية</span></div>
+                  <div class="flex justify-between"><span>عائد الأرباح:</span><span class="numbers-font text-emerald-400 font-bold">+6% مضمونة</span></div>
+                  <div class="flex justify-between"><span>الحد الأدنى:</span><span class="numbers-font text-yellow-500">10,000 EGP</span></div>
                 </div>
               </div>
               <div class="mt-2">
-                <input type="number" id="invest-amount-short" placeholder="المبلغ المطلوب قفله" class="glass-input w-full p-2 text-center text-xs rounded mb-1.5 font-bold">
-                <button data-type="short" class="btn-invest-start w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-bold rounded transition">
+                <input type="number" id="invest-amount-short" placeholder="المبلغ المطلوب قفله" class="glass-input w-full p-2.5 text-center text-xs rounded-xl mb-2 font-bold">
+                <button data-type="short" class="btn-invest-start w-full py-2.5 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-black rounded-xl transition">
                   بدء الاستثمار
-        <div class="bg-rose-950/20 p-4 rounded-xl border border-rose-500/30 flex justify-between items-center">
-          <div>
-            <h3 class="text-md font-bold text-rose-400 flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
-              سوق المعاملات غير المصرح بها
-            </h3>
-            <p class="text-xs text-slate-400 mt-0.5">عائدات ضخمة مصحوبة بمخاطر أمنية قد تزج بك في السجن وتجمد أرصدتك.</p>
+                </button>
+              </div>
+            </div>
+
+            <!-- Medium deposit -->
+            <div class="p-5 bg-slate-950/50 border border-slate-800 rounded-xl flex flex-col justify-between hover:border-slate-700 transition">
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <h5 class="font-bold text-white text-sm">صندوق استثمار عقاري وسندات</h5>
+                  <span class="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full font-bold">متوسط الأجل</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1">استثمار مضمون في أصول إنشائية وتجارية مدرة للدخل.</p>
+                <div class="text-xs text-slate-400 space-y-1.5 my-3 border-t border-b border-slate-800/80 py-2.5">
+                  <div class="flex justify-between"><span>مدة التجميد:</span><span class="numbers-font text-white font-bold">70 ثانية</span></div>
+                  <div class="flex justify-between"><span>عائد الأرباح:</span><span class="numbers-font text-emerald-400 font-bold">+20% مضمونة</span></div>
+                  <div class="flex justify-between"><span>الحد الأدنى:</span><span class="numbers-font text-yellow-500">50,000 EGP</span></div>
+                </div>
+              </div>
+              <div class="mt-2">
+                <input type="number" id="invest-amount-medium" placeholder="المبلغ المطلوب قفله" class="glass-input w-full p-2.5 text-center text-xs rounded-xl mb-2 font-bold">
+                <button data-type="medium" class="btn-invest-start w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl transition">
+                  بدء الاستثمار
+                </button>
+              </div>
+            </div>
+
+            <!-- Long deposit -->
+            <div class="p-5 bg-slate-950/50 border border-slate-800 rounded-xl flex flex-col justify-between hover:border-slate-700 transition">
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <h5 class="font-bold text-white text-sm">صندوق أسهم وتحوط دولي خاص</h5>
+                  <span class="text-[10px] px-2 py-0.5 bg-indigo-500/20 text-indigo-400 rounded-full font-bold">طويل الأجل</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1">محفظة استثمارية مغلقة في أسواق المال بعوائد استثنائية.</p>
+                <div class="text-xs text-slate-400 space-y-1.5 my-3 border-t border-b border-slate-800/80 py-2.5">
+                  <div class="flex justify-between"><span>مدة التجميد:</span><span class="numbers-font text-white font-bold">140 ثانية</span></div>
+                  <div class="flex justify-between"><span>عائد الأرباح:</span><span class="numbers-font text-emerald-400 font-bold">+55% مضمونة</span></div>
+                  <div class="flex justify-between"><span>الحد الأدنى:</span><span class="numbers-font text-yellow-500">200,000 EGP</span></div>
+                </div>
+              </div>
+              <div class="mt-2">
+                <input type="number" id="invest-amount-long" placeholder="المبلغ المطلوب قفله" class="glass-input w-full p-2.5 text-center text-xs rounded-xl mb-2 font-bold">
+                <button data-type="long" class="btn-invest-start w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-black rounded-xl transition">
+                  بدء الاستثمار
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-        <div id="blackmarket-list" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <!-- Dyn list -->
         </div>
       </section>
 
@@ -1619,7 +1763,7 @@
       </button>
       <button data-tab="blackmarket" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-        <span>المحظورات</span>
+        <span>السوق السوداء</span>
       </button>
       <button data-tab="casino" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5a2 2 0 10-2 2h2zm0 0H4m8 0h8m-8 0a2 2 0 102 2h-2zm0 0a2 2 0 11-2 2h2z"></path></svg>
