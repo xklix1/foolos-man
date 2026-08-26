@@ -611,14 +611,20 @@ const AppDB = (() => {
     _requireOnline();
     await _ensureAdminAuth();
     username = username.trim();
-    await firestoreDb.collection('players').doc(username).set({ jailTimer: 0 }, { merge: true });
+    await firestoreDb.collection('players').doc(username).set({ 
+      jailTimer: 0,
+      adminModifiedTimestamp: Date.now()
+    }, { merge: true });
   }
 
   async function adminSetPlayerJail(username, jailSeconds = 300) {
     _requireOnline();
     await _ensureAdminAuth();
     username = username.trim();
-    await firestoreDb.collection('players').doc(username).set({ jailTimer: Number(jailSeconds) }, { merge: true });
+    await firestoreDb.collection('players').doc(username).set({ 
+      jailTimer: Number(jailSeconds),
+      adminModifiedTimestamp: Date.now()
+    }, { merge: true });
   }
 
   async function adminBanPlayer(username) {
@@ -626,14 +632,20 @@ const AppDB = (() => {
     await _ensureAdminAuth();
     username = username.trim();
     if (username === SECRET_ADMIN_USERNAME) throw new Error('لا يمكن حظر حساب الإدارة الرئيسي.');
-    await firestoreDb.collection('players').doc(username).set({ isBanned: true }, { merge: true });
+    await firestoreDb.collection('players').doc(username).set({ 
+      isBanned: true,
+      adminModifiedTimestamp: Date.now()
+    }, { merge: true });
   }
 
   async function adminUnbanPlayer(username) {
     _requireOnline();
     await _ensureAdminAuth();
     username = username.trim();
-    await firestoreDb.collection('players').doc(username).set({ isBanned: false }, { merge: true });
+    await firestoreDb.collection('players').doc(username).set({ 
+      isBanned: false,
+      adminModifiedTimestamp: Date.now()
+    }, { merge: true });
   }
 
   // ─────────────────────────────────────────────
