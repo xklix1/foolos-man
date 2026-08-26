@@ -4,6 +4,9 @@
  * Manages game state, ticks, algorithms, and business logic
  */
 
+var activeAdminUsername = 'FoolosAdmin_X99';
+if (typeof window !== 'undefined') window.activeAdminUsername = 'FoolosAdmin_X99';
+
 const GameEngine = (() => {
   console.log('[GAME] Simulation Engine Loaded (v=107)');
   // --- Game Configurations & Data Tables ---

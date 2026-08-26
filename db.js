@@ -9,6 +9,9 @@
  *  - No sync queue, no local simulation — Firestore is the single source of truth.
  */
 
+var activeAdminUsername = 'FoolosAdmin_X99';
+if (typeof window !== 'undefined') window.activeAdminUsername = 'FoolosAdmin_X99';
+
 const AppDB = (() => {
   console.log('[DB] Adapter Loaded (v=107)');
   // ─────────────────────────────────────────────

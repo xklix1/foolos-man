@@ -4,6 +4,9 @@
  * Manages rendering, tab views, SVG charts, and interactive casino controls
  */
 
+var activeAdminUsername = 'FoolosAdmin_X99';
+if (typeof window !== 'undefined') window.activeAdminUsername = 'FoolosAdmin_X99';
+
 const UIController = (() => {
   console.log('[UI] Controller Loaded (v=107)');
   let activeTab = 'dashboard';
