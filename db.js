@@ -402,10 +402,7 @@ const AppDB = (() => {
   // ─────────────────────────────────────────────
   //  ADMIN FUNCTIONS
   // ─────────────────────────────────────────────
-  async function sendBroadcast(message) {
-    _requireOnline();
-    await firestoreDb.collection('globals').doc('broadcast').set({ message, timestamp: Date.now() });
-  }
+  // sendBroadcast is defined in the ADMIN BROADCAST & AIRDROP section below
 
   async function sendAirdrop(amount, recipient = null) {
     _requireOnline();

@@ -288,6 +288,7 @@ const GameEngine = (() => {
       successChance: 0.82,
       jailDuration: 18,
       repGain: 15,
+      cooldownSec: 60, // 1 min (30s on fail)
       icon: 'fa-box-open',
       tier: 'سهل'
     },
@@ -300,6 +301,7 @@ const GameEngine = (() => {
       successChance: 0.72,
       jailDuration: 35,
       repGain: 35,
+      cooldownSec: 180, // 3 min (90s on fail)
       icon: 'fa-laptop-code',
       tier: 'متوسط'
     },
@@ -312,6 +314,7 @@ const GameEngine = (() => {
       successChance: 0.58,
       jailDuration: 60,
       repGain: 80,
+      cooldownSec: 360, // 6 min (3 min on fail)
       icon: 'fa-user-secret',
       tier: 'متقدم'
     },
@@ -324,6 +327,7 @@ const GameEngine = (() => {
       successChance: 0.46,
       jailDuration: 90,
       repGain: 160,
+      cooldownSec: 600, // 10 min (5 min on fail)
       icon: 'fa-network-wired',
       tier: 'محترف'
     },
@@ -336,6 +340,7 @@ const GameEngine = (() => {
       successChance: 0.36,
       jailDuration: 130,
       repGain: 320,
+      cooldownSec: 1200, // 20 min (10 min on fail)
       icon: 'fa-gem',
       tier: 'خطر جداً'
     },
@@ -348,6 +353,7 @@ const GameEngine = (() => {
       successChance: 0.24,
       jailDuration: 180,
       repGain: 800,
+      cooldownSec: 2400, // 40 min (20 min on fail)
       icon: 'fa-shield-halved',
       tier: 'أسطوري'
     },
@@ -360,6 +366,7 @@ const GameEngine = (() => {
       successChance: 0.20,
       jailDuration: 240,
       repGain: 1500,
+      cooldownSec: 3600, // 1 hour (30 min on fail)
       icon: 'fa-jet-fighter',
       tier: 'أسطوري'
     },
@@ -372,6 +379,7 @@ const GameEngine = (() => {
       successChance: 0.16,
       jailDuration: 300,
       repGain: 3500,
+      cooldownSec: 7200, // 2 hours (1 hour on fail)
       icon: 'fa-satellite',
       tier: 'خطر مطلق'
     },
@@ -384,6 +392,7 @@ const GameEngine = (() => {
       successChance: 0.12,
       jailDuration: 400,
       repGain: 10000,
+      cooldownSec: 14400, // 4 hours (2 hours on fail)
       icon: 'fa-crown',
       tier: 'سيد الظلال'
     }
@@ -491,6 +500,7 @@ const GameEngine = (() => {
       diamond_card: 0
     },
     itemDurations: {}, // Stores { itemId: ticksRemaining } for self-destruction timer
+    blackMarketCooldowns: {}, // Stores { dealId: expiresAtTimestamp } for operation cooldowns
     jailTimer: 0,
     afkManagerExpiresAt: 0, // 12-hour active manager timestamp
     activityLog: [], // Rolling audit log of player actions
@@ -1547,6 +1557,15 @@ const GameEngine = (() => {
     const deal = BLACK_MARKET[dealId];
     if (!deal) throw new Error("الصفقة غير متوفرة.");
 
+    // 1. Check Cooldown
+    if (state.blackMarketCooldowns && state.blackMarketCooldowns[dealId] > Date.now()) {
+      const remainingSec = Math.ceil((state.blackMarketCooldowns[dealId] - Date.now()) / 1000);
+      const mins = Math.floor(remainingSec / 60);
+      const secs = remainingSec % 60;
+      const timeStr = mins > 0 ? `${mins} دقيقة و ${secs} ثانية` : `${secs} ثانية`;
+      throw new Error(`العملية في فترة تهدئة أمنية (كول داون)! يرجى الانتظار ${timeStr}.`);
+    }
+
     const totalCashAvailable = (state.cash || 0) + (state.dirtyCash || 0);
     if (totalCashAvailable < deal.cost) {
       throw new Error(`تحتاج لرأسمال ${deal.cost.toLocaleString()} جنيه للقيام بهذه الصفقة المشبوهة.`);
@@ -1575,11 +1594,17 @@ const GameEngine = (() => {
 
     const finalSuccessChance = Math.min(0.92, deal.successChance + successBonus);
 
+    // Prepare Cooldown Timers (Full cooldown for success, Half cooldown for failure)
+    const fullCdMs = (deal.cooldownSec || 120) * 1000;
+    const halfCdMs = Math.floor(((deal.cooldownSec || 120) / 2) * 1000);
+    if (!state.blackMarketCooldowns) state.blackMarketCooldowns = {};
+
     const roll = Math.random();
     if (roll < finalSuccessChance) {
-      // SUCCESS: High ROI Payout into DIRTY CASH (أرباح السوق السوداء غير مشروعة ويجب غسيلها)
+      // SUCCESS: High ROI Payout into DIRTY CASH + Full Cooldown
       state.dirtyCash = (state.dirtyCash || 0) + deal.payout;
       state.underworldRep = (state.underworldRep || 0) + (deal.repGain || 20);
+      state.blackMarketCooldowns[dealId] = Date.now() + fullCdMs;
       recordPlayerActivity('سوق سوداء', `نجاح صفقة "${deal.name}" (+${deal.payout.toLocaleString()} ج.م كاش مشبوه)`, 'blackmarket');
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
@@ -1589,13 +1614,16 @@ const GameEngine = (() => {
         profit: deal.payout - deal.cost,
         repGain: deal.repGain || 20,
         lawyerAssisted: hasLawyer,
+        cooldownSec: deal.cooldownSec || 120,
         finalChancePct: Math.round(finalSuccessChance * 100)
       };
     } else {
-      // CAUGHT BY POLICE!
+      // CAUGHT BY POLICE! Apply Half Cooldown on Failure
+      state.blackMarketCooldowns[dealId] = Date.now() + halfCdMs;
+
       // 1. Lawyer Acquittal: 50% chance the lawyer dismisses charges immediately!
       if (hasLawyer && Math.random() < 0.50) {
-        recordPlayerActivity('براءة قضائية', `تدخل المحامي وأثبت براءة اللاعب في صفقة "${deal.name}" دون عقوبة`, 'blackmarket');
+        recordPlayerActivity('براءة قضائية', `تدخل المحامي وأثبت براءة اللاعب في صفقة "${deal.name}" دون عقوبة (كول داون مخفض 50%)`, 'blackmarket');
         state.netWorth = calculateNetWorth();
         AppDB.savePlayerState(activeUsername, state);
         return {
@@ -1604,7 +1632,8 @@ const GameEngine = (() => {
           acquittedByLawyer: true,
           confiscation: 0,
           jailDuration: 0,
-          message: 'تدخل المحامي الدولي وأسقط القضية وأثبت براءتك دون سجن أو غرامات!'
+          cooldownSec: Math.floor((deal.cooldownSec || 120) / 2),
+          message: 'تدخل المحامي الدولي وأسقط القضية وأثبت براءتك دون سجن أو غرامات! (فترة تهدئة مخفضة للنصف)'
         };
       }
 
@@ -1612,7 +1641,7 @@ const GameEngine = (() => {
       if (state.inventory && state.inventory.fake_passport > 0) {
         state.inventory.fake_passport--;
         if (state.itemDurations) delete state.itemDurations.fake_passport;
-        recordPlayerActivity('هروب دبلوماسي', `استخدام جواز السفر المزور للهروب من المداهمة في صفقة "${deal.name}"`, 'blackmarket');
+        recordPlayerActivity('هروب دبلوماسي', `استخدام جواز السفر المزور للهروب من المداهمة في صفقة "${deal.name}" (كول داون مخفض 50%)`, 'blackmarket');
         state.netWorth = calculateNetWorth();
         AppDB.savePlayerState(activeUsername, state);
         return {
@@ -1620,7 +1649,8 @@ const GameEngine = (() => {
           escaped: true,
           confiscation: 0,
           jailDuration: 0,
-          message: 'تمكنت من الهروب الفوري باستخدام جواز السفر الدبلوماسي المزور!'
+          cooldownSec: Math.floor((deal.cooldownSec || 120) / 2),
+          message: 'تمكنت من الهروب الفوري باستخدام جواز السفر الدبلوماسي المزور! (فترة تهدئة مخفضة للنصف)'
         };
       }
 
@@ -1635,7 +1665,7 @@ const GameEngine = (() => {
       state.jailTimer = deal.jailDuration;
       state.heatLevel = Math.min(5, (state.heatLevel || 0) + 1);
 
-      recordPlayerActivity('مداهمة وسجن', `فشل صفقة "${deal.name}" ومصادرة ${totalConfiscation.toLocaleString()} ج.م وسجن ${deal.jailDuration}ث`, 'blackmarket');
+      recordPlayerActivity('مداهمة وسجن', `فشل صفقة "${deal.name}" ومصادرة ${totalConfiscation.toLocaleString()} ج.م وسجن ${deal.jailDuration}ث (كول داون مخفض 50%)`, 'blackmarket');
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
       return {
@@ -1644,7 +1674,8 @@ const GameEngine = (() => {
         confiscation: totalConfiscation,
         confiscatedDirty,
         confiscatedClean,
-        jailDuration: deal.jailDuration
+        jailDuration: deal.jailDuration,
+        cooldownSec: Math.floor((deal.cooldownSec || 120) / 2)
       };
     }
   }

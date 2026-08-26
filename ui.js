@@ -1141,6 +1141,7 @@ const UIController = (() => {
       else if (activeTab === 'assets') updateAssetsInDOM();
       else if (activeTab === 'stocks') updateStockPricesInDOM();
       else if (activeTab === 'taxes') renderTaxesTab();
+      else if (activeTab === 'blackmarket') updateBlackMarketCooldownsInDOM();
 
     }, 1000);
   }
@@ -3067,10 +3068,27 @@ const UIController = (() => {
         else if (deal.tier === 'متقدم') badgeStyle = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
         else if (deal.tier === 'محترف') badgeStyle = 'bg-purple-500/20 text-purple-400 border-purple-500/30';
         else if (deal.tier === 'خطر جداً') badgeStyle = 'bg-rose-500/20 text-rose-400 border-rose-500/30';
-        else if (deal.tier === 'أسطوري') badgeStyle = 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40 glow-gold';
+        else if (deal.tier === 'أسطوري') badgeStyle = 'bg-purple-500/20 text-purple-300 border-purple-500/40';
+        else if (deal.tier === 'خطر مطلق') badgeStyle = 'bg-red-600/20 text-red-400 border-red-500/40';
+        else if (deal.tier === 'سيد الظلال') badgeStyle = 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40 glow-gold';
+
+        const now = Date.now();
+        const cdExpiresAt = (s.blackMarketCooldowns && s.blackMarketCooldowns[id]) || 0;
+        const remainingMs = Math.max(0, cdExpiresAt - now);
+        const isOnCooldown = remainingMs > 0;
+        const remSec = Math.ceil(remainingMs / 1000);
+        const remMins = Math.floor(remSec / 60);
+        const remSecsFormatted = (remSec % 60).toString().padStart(2, '0');
+        const cdFormatted = remMins > 0 ? `${remMins}:${remSecsFormatted}` : `${remSec} ثانية`;
+
+        const cdSec = deal.cooldownSec || 120;
+        const cdSuccessStr = cdSec >= 3600 ? `${Math.round(cdSec / 3600)} ساعة` : cdSec >= 60 ? `${Math.round(cdSec / 60)} دقيقة` : `${cdSec} ثانية`;
+        const failCdSec = Math.floor(cdSec / 2);
+        const cdFailStr = failCdSec >= 3600 ? `${(failCdSec / 3600).toFixed(1)} ساعة` : failCdSec >= 60 ? `${Math.round(failCdSec / 60)} دقيقة` : `${failCdSec} ثانية`;
 
         const card = document.createElement('div');
-        card.className = 'glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col justify-between hover:border-rose-500/40 transition duration-300 shadow-lg';
+        card.id = `bm-deal-card-${id}`;
+        card.className = 'glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col justify-between hover:border-rose-500/40 transition duration-300 shadow-lg relative overflow-hidden';
         card.style.background = 'radial-gradient(ellipse at top left, rgba(225,29,72,0.08), rgba(15,23,42,0.95))';
 
         card.innerHTML = `
@@ -3094,36 +3112,39 @@ const UIController = (() => {
               <div class="flex justify-between"><span>العائد المشبوه (الفوز):</span><span class="numbers-font text-rose-400 font-bold">+${deal.payout.toLocaleString()} EGP</span></div>
               <div class="flex justify-between"><span>الربح الصافي غير المشروع:</span><span class="numbers-font text-teal-400 font-semibold">+${(deal.payout - deal.cost).toLocaleString()} EGP</span></div>
               <div class="flex justify-between"><span>نسبة النجاح المقدرة:</span><span class="numbers-font ${successPct >= 70 ? 'text-emerald-400' : successPct >= 50 ? 'text-yellow-400' : 'text-rose-400'} font-black">${successPct}%</span></div>
+              <div class="flex justify-between"><span>فترة التهدئة (كول داون):</span><span class="numbers-font text-amber-400 font-bold">${cdSuccessStr} (${cdFailStr} عند الفشل)</span></div>
               <div class="flex justify-between"><span>عقوبة المداهمة:</span><span class="numbers-font text-rose-400">${deal.jailDuration * 3} ثانية (مصادرة المشبوه + 20%)</span></div>
               <div class="flex justify-between"><span>نقاط سمعة المافيا:</span><span class="numbers-font text-rose-300 font-bold">+${deal.repGain || 20} نقطة</span></div>
             </div>
 
             ${(hasLawyer || hasJammer || hasPassport) ? `
               <div class="flex flex-wrap gap-1 mb-3">
-                ${hasLawyer ? '<span class="text-[10px] px-1.5 py-0.5 bg-sky-500/20 text-sky-300 rounded border border-sky-500/30">محامي (-35% خطر)</span>' : ''}
-                ${hasJammer ? '<span class="text-[10px] px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">تشويش (-20% خطر)</span>' : ''}
+                ${hasLawyer ? '<span class="text-[10px] px-1.5 py-0.5 bg-sky-500/20 text-sky-300 rounded border border-sky-500/30">محامي (+22% نجاح / براءة 50%)</span>' : ''}
+                ${hasJammer ? '<span class="text-[10px] px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">تشويش (+15% نجاح)</span>' : ''}
                 ${hasPassport ? '<span class="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">جواز مزور (مهرب مؤمن)</span>' : ''}
               </div>
             ` : ''}
           </div>
 
-          <button id="btn-run-deal-${id}" class="w-full py-2.5 bg-gradient-to-r from-rose-900/60 to-rose-800/60 hover:from-rose-800 hover:to-rose-700 border border-rose-500/40 text-rose-100 rounded-xl text-xs font-black transition shadow-md flex items-center justify-center gap-2">
-            <i class="fa-solid fa-handshake"></i>
-            <span>توقيع وتنفيذ العملية</span>
-          </button>
+          <div id="bm-deal-btn-wrapper-${id}">
+            <button id="btn-run-deal-${id}" ${isOnCooldown ? 'disabled' : ''} class="w-full py-2.5 ${isOnCooldown ? 'bg-slate-900 border border-amber-500/30 text-amber-400 cursor-not-allowed opacity-90' : 'bg-gradient-to-r from-rose-900/60 to-rose-800/60 hover:from-rose-800 hover:to-rose-700 border border-rose-500/40 text-rose-100'} rounded-xl text-xs font-black transition shadow-md flex items-center justify-center gap-2">
+              <i class="fa-solid ${isOnCooldown ? 'fa-hourglass-half text-amber-400 animate-spin' : 'fa-handshake'}"></i>
+              <span>${isOnCooldown ? `تهدئة أمنية (${cdFormatted})` : 'توقيع وتنفيذ العملية'}</span>
+            </button>
+          </div>
         `;
 
         card.querySelector(`#btn-run-deal-${id}`).addEventListener('click', () => {
           try {
             const res = GameEngine.runBlackMarketDeal(id);
             if (res.success) {
-              showToast('ضربة معلم!', `نجحت العملية السرية! ربح مشبوه قدره +${res.payout.toLocaleString()} EGP أضيف لخزينتك ويجب غسله (+${res.repGain} سمعة).`, 'success');
+              showToast('ضربة معلم!', `نجحت العملية السرية! ربح مشبوه قدره +${res.payout.toLocaleString()} EGP أضيف لخزينتك ويجب غسله (+${res.repGain} سمعة). كول داون: ${Math.round((res.cooldownSec || 60)/60)}د`, 'success');
               playMenuSound('success');
             } else if (res.escaped) {
-              showToast('هروب دبلوماسي!', `تمت المداهمة ولكنك استخدمت جواز السفر المزور وهربت فوراً دون سجن أو غرامات!`, 'warning');
+              showToast('هروب دبلوماسي!', `تمت المداهمة ولكنك استخدمت جواز السفر المزور وهربت فوراً دون سجن أو غرامات! (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30)/60)}د)`, 'warning');
               playMenuSound('click');
             } else {
-              showToast('مداهمة الشرطة!', `تم ضبط عمليتك! مصادرة كافة الأموال المشبوهة وغرامة ${res.confiscation.toLocaleString()} EGP وسجن ${res.jailDuration * 3} ثانية.`, 'error');
+              showToast('مداهمة الشرطة!', `تم ضبط عمليتك! مصادرة كافة الأموال المشبوهة وغرامة ${res.confiscation.toLocaleString()} EGP وسجن ${res.jailDuration * 3} ثانية. (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30)/60)}د)`, 'error');
               playMenuSound('error');
             }
             renderAll();
@@ -3188,6 +3209,34 @@ const UIController = (() => {
 
     // 5. Setup Black Market static listeners once
     setupBlackMarketListeners();
+  }
+
+  function updateBlackMarketCooldownsInDOM() {
+    const s = GameEngine.state;
+    if (!s || !GameEngine.BLACK_MARKET) return;
+    const now = Date.now();
+
+    Object.keys(GameEngine.BLACK_MARKET).forEach(id => {
+      const btn = document.getElementById(`btn-run-deal-${id}`);
+      if (!btn) return;
+      const cdExpiresAt = (s.blackMarketCooldowns && s.blackMarketCooldowns[id]) || 0;
+      const remainingMs = Math.max(0, cdExpiresAt - now);
+      const isOnCooldown = remainingMs > 0;
+
+      if (isOnCooldown) {
+        const remSec = Math.ceil(remainingMs / 1000);
+        const remMins = Math.floor(remSec / 60);
+        const remSecsFormatted = (remSec % 60).toString().padStart(2, '0');
+        const cdFormatted = remMins > 0 ? `${remMins}:${remSecsFormatted}` : `${remSec} ثانية`;
+        btn.disabled = true;
+        btn.className = 'w-full py-2.5 bg-slate-900 border border-amber-500/30 text-amber-400 rounded-xl text-xs font-black transition shadow-md flex items-center justify-center gap-2 cursor-not-allowed opacity-90';
+        btn.innerHTML = `<i class="fa-solid fa-hourglass-half text-amber-400 animate-spin"></i><span>تهدئة أمنية (${cdFormatted})</span>`;
+      } else if (btn.disabled) {
+        btn.disabled = false;
+        btn.className = 'w-full py-2.5 bg-gradient-to-r from-rose-900/60 to-rose-800/60 hover:from-rose-800 hover:to-rose-700 border border-rose-500/40 text-rose-100 rounded-xl text-xs font-black transition shadow-md flex items-center justify-center gap-2';
+        btn.innerHTML = `<i class="fa-solid fa-handshake"></i><span>توقيع وتنفيذ العملية</span>`;
+      }
+    });
   }
 
   function setupBlackMarketListeners() {
@@ -3675,9 +3724,11 @@ const UIController = (() => {
       .onSnapshot((doc) => {
         if (!doc.exists) return;
         const data = doc.data();
+        if (!data || !data.message) return;
         if (data.timestamp > lastBroadcastTime) {
           lastBroadcastTime = data.timestamp;
-          showToast('بث الإدارة', data.message, 'info');
+          showToast(data.title || '📢 إعلان إداري عاجل', data.message, 'info');
+          playMenuSound('success');
         }
       }, (err) => console.error("Broadcast listen err: ", err));
     activeListeners.push(unsubBroadcast);
@@ -3972,24 +4023,7 @@ const UIController = (() => {
       }
     }, 1000);
 
-    // Real-time Global Admin Broadcasts Listener
-    let isFirstBroadcastSnapshot = true;
-    if (window.firebase && firebase.firestore && AppDB.isFirebaseReady) {
-      try {
-        firebase.firestore().collection('globals').doc('broadcast').onSnapshot(doc => {
-          if (!doc.exists) return;
-          const d = doc.data();
-          if (!d || !d.message) return;
-          if (isFirstBroadcastSnapshot) {
-            isFirstBroadcastSnapshot = false;
-            // Skip broadcasts older than 5 minutes
-            if (Date.now() - (d.timestamp || 0) > 300000) return;
-          }
-          showToast(d.title || '📢 إعلان إداري عاجل', d.message, 'info');
-          playMenuSound('success');
-        });
-      } catch(e) {}
-    }
+    // Broadcast listener is handled by setupRealTimeListeners() to avoid duplicate toasts
 
     const openModal = () => {
       playMenuSound('modal_open');
@@ -4087,13 +4121,17 @@ const UIController = (() => {
         const tr = document.createElement('tr');
         tr.className = `hover:bg-slate-800/60 transition cursor-pointer ${selectedPlayer === p.username ? 'bg-yellow-500/10 border-r-2 border-yellow-500' : ''}`;
         
-        let statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">نشط</span>';
+        const isOnlineThreshold = 2 * 60 * 1000; // 2 minutes
+        const isPlayerOnline = p.lastActiveTimestamp && (Date.now() - p.lastActiveTimestamp) < isOnlineThreshold;
+        let statusBadge = isPlayerOnline 
+          ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">متصل 🟢</span>'
+          : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-500/10 text-slate-400 border border-slate-500/20">غير نشط ⚫</span>';
         if (p.isBanned) {
           statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">محظور 🚫</span>';
         } else if (p.jailTimer > 0) {
-          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">سجين (${p.jailTimer}ث)</span>`;
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">سجين (${p.jailTimer}ث)${isPlayerOnline ? ' 🟢' : ''}</span>`;
         } else if (p.isAdmin) {
-          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">الإدارة ⭐</span>';
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">الإدارة ⭐${isPlayerOnline ? ' 🟢' : ' ⚫'}</span>`;
         }
 
         tr.innerHTML = `
@@ -4145,15 +4183,21 @@ const UIController = (() => {
 
         const statusBadge = document.getElementById('admin-p-badge-status');
         if (statusBadge) {
+          const onlineThreshold = 2 * 60 * 1000; // 2 minutes
+          const isOnline = state.lastActiveTimestamp && (Date.now() - state.lastActiveTimestamp) < onlineThreshold;
+          const lastSeenText = state.lastActiveTimestamp ? new Date(state.lastActiveTimestamp).toLocaleTimeString('ar-EG') : 'غير معروف';
           if (state.isBanned) {
             statusBadge.textContent = 'محظور نهائياً 🚫';
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30';
           } else if (state.jailTimer > 0) {
-            statusBadge.textContent = `مسجون (${state.jailTimer} ثانية)`;
+            statusBadge.textContent = `مسجون (${state.jailTimer} ثانية) ${isOnline ? '🟢 متصل' : '⚫ غير نشط'}`;
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30';
-          } else {
-            statusBadge.textContent = 'نشط وحر طليق';
+          } else if (isOnline) {
+            statusBadge.textContent = `متصل الآن 🟢 (آخر نشاط: ${lastSeenText})`;
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+          } else {
+            statusBadge.textContent = `غير نشط ⚫ (آخر ظهور: ${lastSeenText})`;
+            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-slate-600/20 text-slate-400 border border-slate-500/30';
           }
         }
 
