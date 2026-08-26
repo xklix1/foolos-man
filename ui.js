@@ -829,13 +829,15 @@ const UIController = (() => {
     renderAll();
   }
 
-  // --- Core Game Loops (3 seconds ticking) ---
+  // --- Core Game Loops (Optimized 1.5s ticker with zero-lag in-place updates) ---
   function startGameLoop() {
     if (tickIntervalId) clearInterval(tickIntervalId);
 
     tickIntervalId = setInterval(() => {
+      // If document is completely hidden/minimized, still process state silently without heavy DOM operations
+      const isHidden = document.hidden;
       const updates = GameEngine.processTick();
-      if (!updates) return;
+      if (!updates || isHidden) return;
 
       // Handle Jail lockouts overlay
       const state = GameEngine.state;
@@ -851,7 +853,7 @@ const UIController = (() => {
         showToast('العدالة', 'انتهت مدة محكوميتك. تم الإفراج عنك ويمكنك مزاولة نشاطك!', 'success');
       }
 
-      // Display passive profit float triggers
+      // Display passive profit float triggers (lightweight)
       if (updates.businessProfitGained > 0 || updates.rentGained > 0) {
         const totalPassive = updates.businessProfitGained + updates.rentGained;
         showPassiveGainFloat(`+${totalPassive.toLocaleString()}`);
@@ -863,17 +865,15 @@ const UIController = (() => {
       }
 
       // Toast alert for investments maturing
-      updates.investmentsMatured.forEach(inv => {
-        showToast('استثمار ناضج', `اكتمل استثمار "${inv.name}". الأرباح الإجمالية المستلمة: ${inv.payout.toLocaleString()} EGP.`, 'success');
-      });
+      if (updates.investmentsMatured && updates.investmentsMatured.length > 0) {
+        updates.investmentsMatured.forEach(inv => {
+          showToast('استثمار ناضج', `اكتمل استثمار "${inv.name}". الأرباح الإجمالية المستلمة: ${inv.payout.toLocaleString()} EGP.`, 'success');
+        });
+      }
 
       // Handle random Tip Events
       if (updates.tipEvent) {
-        if (updates.tipEvent.gain > 0) {
-          showToast(updates.tipEvent.title, updates.tipEvent.message, 'success');
-        } else {
-          showToast(updates.tipEvent.title, updates.tipEvent.message, 'error');
-        }
+        showToast(updates.tipEvent.title, updates.tipEvent.message, updates.tipEvent.gain > 0 ? 'success' : 'error');
       }
 
       // Handle Dynamic Stock Market Events
@@ -886,20 +886,16 @@ const UIController = (() => {
         }
       }
 
-      // Refresh numbers
+      // Fast in-place numerical updates without DOM destruction
       renderStatsBar();
       
-      // Real-time tab updates (Preserve focus on active typing inputs)
       if (activeTab === 'dashboard') renderDashboard();
-      if (activeTab === 'bank') renderBank();
-      if (activeTab === 'business') renderBusinesses();
-      if (activeTab === 'assets') renderAssets();
-      if (activeTab === 'stocks' && updates.stockMovement) {
-        // Only update stock prices DOM text without wiping active typing inputs
-        updateStockPricesInDOM();
-      }
+      else if (activeTab === 'bank') updateBankInDOM();
+      else if (activeTab === 'business') updateBusinessesInDOM();
+      else if (activeTab === 'assets') updateAssetsInDOM();
+      else if (activeTab === 'stocks') updateStockPricesInDOM();
 
-    }, 1200);
+    }, 1500);
   }
 
   // --- Dynamic Stats Bars Rendering ---
@@ -1053,18 +1049,41 @@ const UIController = (() => {
     });
   }
 
-  // --- Tab 3: Business Tycoon Panel ---
-  function renderBusinesses() {
+  // --- Tab 3: Business Tycoon Panel (High-Performance In-Place Updates) ---
+  let lastBizLevels = {};
+
+  function renderBusinesses(force = false) {
     const s = GameEngine.state;
     const container = document.getElementById('businesses-list');
+    if (!container) return;
+
+    let needsRebuild = force || container.children.length === 0;
+    if (!needsRebuild) {
+      for (const key of Object.keys(GameEngine.BUSINESSES)) {
+        const currentLevel = (s.businesses[key] && s.businesses[key].level) || 0;
+        if (lastBizLevels[key] !== currentLevel) {
+          needsRebuild = true;
+          break;
+        }
+      }
+    }
+
+    if (!needsRebuild) {
+      updateBusinessesInDOM();
+      return;
+    }
+
     container.innerHTML = '';
+    lastBizLevels = {};
 
     Object.keys(GameEngine.BUSINESSES).forEach(key => {
       const biz = GameEngine.BUSINESSES[key];
       const bizState = s.businesses[key] || { level: 0, price: biz.optimumPrice, workers: 0 };
       const isOwned = bizState.level > 0;
+      lastBizLevels[key] = bizState.level;
 
       const card = document.createElement('div');
+      card.id = `biz-card-${key}`;
       card.className = `glass-panel p-5 rounded-xl border border-slate-800 flex flex-col justify-between ${isOwned ? 'pulse-border-gold bg-slate-900/40' : ''}`;
 
       if (!isOwned) {
@@ -1086,20 +1105,19 @@ const UIController = (() => {
           try {
             GameEngine.purchaseBusiness(key);
             showToast('نجاح التأسيس', `تم افتتاح مشروع "${biz.name}" بنجاح!`, 'success');
-            renderAll();
+            renderBusinesses(true);
+            renderStatsBar();
           } catch (err) {
             showToast('فشل المشروع', err.message, 'error');
           }
         });
       } else {
-        // Upgrade prices & marketing
         const nextUpgradeCost = Math.floor(biz.cost * Math.pow(1.6, bizState.level));
         const workerHireCost = Math.floor(biz.cost * 0.15 * (1 + (bizState.workers || 0)));
         const campaignCost = Math.floor(biz.cost * 0.25);
         const marketingActive = (bizState.marketingTicks && bizState.marketingTicks > 0);
         const marketingSecRemaining = marketingActive ? bizState.marketingTicks * 3 : 0;
 
-        // Demand estimation to display in UI
         const price = bizState.price || biz.optimumPrice;
         const opt = biz.optimumPrice;
         let elasticityFactor = 1.0;
@@ -1111,9 +1129,8 @@ const UIController = (() => {
 
         const costFactor = 1.0 + ((Math.sin(Date.now() / 20000) * 0.1) + 0.05);
         const actualCostOfGoods = Math.floor(biz.costOfGoods * costFactor);
-
         const upgradeFactor = Math.pow(biz.upgradeMultiplier, bizState.level - 1);
-        const workerFactor = 1 + ((bizState.workers || 0) * (biz.workerMultiplier - 1));
+        const workerFactor = 1 + ((bizState.workers || 0) * ((biz.workerMultiplier || 1.2) - 1));
         const marketingBoost = marketingActive ? 1.4 : 1.0;
         const estimatedDemand = Math.floor(biz.baseDemand * upgradeFactor * elasticityFactor * workerFactor * marketingBoost);
         const profitMargin = price - actualCostOfGoods;
@@ -1122,15 +1139,15 @@ const UIController = (() => {
         card.innerHTML = `
           <div class="flex justify-between items-center mb-3">
             <h4 class="text-lg font-bold text-white">${biz.name}</h4>
-            <span class="text-xs px-2.5 py-0.5 bg-yellow-500/20 text-yellow-500 rounded border border-yellow-500/30 font-bold">المستوى ${bizState.level}</span>
+            <span id="biz-level-badge-${key}" class="text-xs px-2.5 py-0.5 bg-yellow-500/20 text-yellow-500 rounded border border-yellow-500/30 font-bold">المستوى ${bizState.level}</span>
           </div>
           
           <div class="text-xs text-slate-400 space-y-1 mb-4 border-b border-slate-800 pb-3">
-            <div class="flex justify-between"><span>العمالة الحالية:</span><span class="numbers-font text-white font-bold">${bizState.workers || 0} عمال</span></div>
-            <div class="flex justify-between"><span>تكلفة المواد/التشغيل التنافسية:</span><span class="numbers-font text-rose-400">${actualCostOfGoods} EGP/وحدة</span></div>
-            <div class="flex justify-between"><span>الطلب الحالي المتوقع:</span><span class="numbers-font text-sky-400 font-bold">${estimatedDemand} وحدة/دورة ${marketingActive ? '<span class="text-yellow-400 font-bold">(+40% ترويج)</span>' : ''}</span></div>
-            <div class="flex justify-between"><span>هامش ربح الوحدة:</span><span class="numbers-font ${profitMargin >= 0 ? 'text-teal-400' : 'text-rose-400'} font-bold">${profitMargin} EGP</span></div>
-            <div class="flex justify-between"><span>العائد الصافي الفعلي:</span><span class="numbers-font text-emerald-400 font-bold">+${profitPerTick.toLocaleString()} EGP / دورة</span></div>
+            <div class="flex justify-between"><span>العمالة الحالية:</span><span id="biz-workers-${key}" class="numbers-font text-white font-bold">${bizState.workers || 0} عمال</span></div>
+            <div class="flex justify-between"><span>تكلفة المواد/التشغيل التنافسية:</span><span id="biz-cog-${key}" class="numbers-font text-rose-400">${actualCostOfGoods} EGP/وحدة</span></div>
+            <div class="flex justify-between"><span>الطلب الحالي المتوقع:</span><span id="biz-demand-${key}" class="numbers-font text-sky-400 font-bold">${estimatedDemand} وحدة/دورة ${marketingActive ? '<span class="text-yellow-400 font-bold">(+40% ترويج)</span>' : ''}</span></div>
+            <div class="flex justify-between"><span>هامش ربح الوحدة:</span><span id="biz-margin-${key}" class="numbers-font ${profitMargin >= 0 ? 'text-teal-400' : 'text-rose-400'} font-bold">${profitMargin} EGP</span></div>
+            <div class="flex justify-between"><span>العائد الصافي الفعلي:</span><span id="biz-profit-${key}" class="numbers-font text-emerald-400 font-bold">+${profitPerTick.toLocaleString()} EGP / دورة</span></div>
           </div>
 
           <div class="mb-3">
@@ -1151,16 +1168,16 @@ const UIController = (() => {
           <!-- Marketing Campaign Trigger -->
           <div class="mb-3">
             <button id="btn-marketing-${key}" class="w-full py-1.5 ${marketingActive ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40' : 'bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-300 border-indigo-500/40'} border rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
-              📢 ${marketingActive ? `حملة إعلانية نشطة (متبقي ${marketingSecRemaining}ث)` : `إطلاق حملة ترويجية مكثفة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP`}
+              📢 <span id="biz-mktg-text-${key}">${marketingActive ? `حملة إعلانية نشطة (متبقي ${marketingSecRemaining}ث)` : `إطلاق حملة ترويجية مكثفة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP`}</span>
             </button>
           </div>
 
           <div class="grid grid-cols-2 gap-2 mt-2">
             <button id="btn-upgrade-${key}" class="py-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-lg text-xs font-bold transition">
-              ترقية المستوى<br><span class="numbers-font text-[10px] opacity-75">${nextUpgradeCost.toLocaleString()} EGP</span>
+              ترقية المستوى<br><span id="biz-upgrade-cost-${key}" class="numbers-font text-[10px] opacity-75">${nextUpgradeCost.toLocaleString()} EGP</span>
             </button>
             <button id="btn-hire-${key}" class="py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition">
-              توظيف عمالة<br><span class="numbers-font text-[10px] opacity-75">${workerHireCost.toLocaleString()} EGP</span>
+              توظيف عمالة<br><span id="biz-hire-cost-${key}" class="numbers-font text-[10px] opacity-75">${workerHireCost.toLocaleString()} EGP</span>
             </button>
           </div>
           ${(bizState.workers && bizState.workers > 0) ? `
@@ -1173,8 +1190,10 @@ const UIController = (() => {
         const slider = card.querySelector(`#slider-${key}`);
         slider.addEventListener('input', (e) => {
           const val = parseInt(e.target.value);
-          card.querySelector(`#price-val-${key}`).textContent = val;
+          const pv = card.querySelector(`#price-val-${key}`);
+          if (pv) pv.textContent = val;
           GameEngine.setBusinessPrice(key, val);
+          updateBusinessesInDOM();
         });
 
         // Marketing Campaign Listener
@@ -1182,7 +1201,8 @@ const UIController = (() => {
           try {
             const res = GameEngine.launchMarketingCampaign(key);
             showToast('حملة ترويجية', `تم إطلاق حملة إعلانية مكثفة لمشروع "${biz.name}" بتكلفة ${res.cost.toLocaleString()} EGP!`, 'success');
-            renderAll();
+            renderBusinesses(true);
+            renderStatsBar();
           } catch (err) {
             showToast('فشل الحملة', err.message, 'error');
           }
@@ -1193,7 +1213,8 @@ const UIController = (() => {
           try {
             GameEngine.upgradeBusiness(key);
             showToast('ترقية ناجحة', `تم ترقية مشروع "${biz.name}" للمستوى التالي!`, 'success');
-            renderAll();
+            renderBusinesses(true);
+            renderStatsBar();
           } catch (err) {
             showToast('خطأ الترقية', err.message, 'error');
           }
@@ -1204,7 +1225,8 @@ const UIController = (() => {
           try {
             GameEngine.hireWorker(key);
             showToast('توظيف عمالة', `تم إضافة عامل جديد إلى "${biz.name}" لتسريع الإنتاج.`, 'success');
-            renderAll();
+            renderBusinesses(true);
+            renderStatsBar();
           } catch (err) {
             showToast('خطأ التوظيف', err.message, 'error');
           }
@@ -1212,19 +1234,78 @@ const UIController = (() => {
 
         // Fire action
         if (bizState.workers > 0) {
-          card.querySelector(`#btn-fire-${key}`).addEventListener('click', () => {
-            try {
-              GameEngine.fireWorker(key);
-              showToast('تعديل عمالة', `تم تسريح عامل لتخفيض تكلفة الإنتاج لـ "${biz.name}".`, 'info');
-              renderAll();
-            } catch (err) {
-              showToast('خطأ', err.message, 'error');
-            }
-          });
+          const fireBtn = card.querySelector(`#btn-fire-${key}`);
+          if (fireBtn) {
+            fireBtn.addEventListener('click', () => {
+              try {
+                GameEngine.fireWorker(key);
+                showToast('تعديل عمالة', `تم تسريح عامل لتخفيض تكلفة الإنتاج لـ "${biz.name}".`, 'info');
+                renderBusinesses(true);
+                renderStatsBar();
+              } catch (err) {
+                showToast('خطأ', err.message, 'error');
+              }
+            });
+          }
         }
       }
 
       container.appendChild(card);
+    });
+  }
+
+  function updateBusinessesInDOM() {
+    const s = GameEngine.state;
+    const container = document.getElementById('businesses-list');
+    if (!container || container.children.length === 0) return;
+
+    Object.keys(GameEngine.BUSINESSES).forEach(key => {
+      const biz = GameEngine.BUSINESSES[key];
+      const bizState = s.businesses[key];
+      if (!bizState || bizState.level <= 0) return;
+
+      const price = bizState.price || biz.optimumPrice;
+      const opt = biz.optimumPrice;
+      let elasticityFactor = 1.0;
+      if (price > opt) {
+        elasticityFactor = Math.max(0, 1 - (price - opt) / opt);
+      } else if (price < opt) {
+        elasticityFactor = 1 + (opt - price) / opt * 0.3;
+      }
+
+      const costFactor = 1.0 + ((Math.sin(Date.now() / 20000) * 0.1) + 0.05);
+      const actualCostOfGoods = Math.floor(biz.costOfGoods * costFactor);
+      const upgradeFactor = Math.pow(biz.upgradeMultiplier, bizState.level - 1);
+      const workerFactor = 1 + ((bizState.workers || 0) * ((biz.workerMultiplier || 1.2) - 1));
+      const marketingActive = (bizState.marketingTicks && bizState.marketingTicks > 0);
+      const marketingBoost = marketingActive ? 1.4 : 1.0;
+      const estimatedDemand = Math.floor(biz.baseDemand * upgradeFactor * elasticityFactor * workerFactor * marketingBoost);
+      const profitMargin = price - actualCostOfGoods;
+      const profitPerTick = Math.max(0, Math.floor(estimatedDemand * profitMargin * 0.15));
+
+      const cogEl = document.getElementById(`biz-cog-${key}`);
+      if (cogEl) cogEl.textContent = `${actualCostOfGoods} EGP/وحدة`;
+
+      const demandEl = document.getElementById(`biz-demand-${key}`);
+      if (demandEl) demandEl.innerHTML = `${estimatedDemand} وحدة/دورة ${marketingActive ? '<span class="text-yellow-400 font-bold">(+40% ترويج)</span>' : ''}`;
+
+      const marginEl = document.getElementById(`biz-margin-${key}`);
+      if (marginEl) {
+        marginEl.textContent = `${profitMargin} EGP`;
+        marginEl.className = `numbers-font ${profitMargin >= 0 ? 'text-teal-400' : 'text-rose-400'} font-bold`;
+      }
+
+      const profitEl = document.getElementById(`biz-profit-${key}`);
+      if (profitEl) profitEl.textContent = `+${profitPerTick.toLocaleString()} EGP / دورة`;
+
+      const mktgTextEl = document.getElementById(`biz-mktg-text-${key}`);
+      if (mktgTextEl) {
+        const campaignCost = Math.floor(biz.cost * 0.25);
+        const marketingSecRemaining = marketingActive ? bizState.marketingTicks * 3 : 0;
+        mktgTextEl.textContent = marketingActive 
+          ? `حملة إعلانية نشطة (متبقي ${marketingSecRemaining}ث)` 
+          : `إطلاق حملة ترويجية مكثفة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP`;
+      }
     });
   }
 
@@ -1238,6 +1319,7 @@ const UIController = (() => {
 
     // Show locked investments in bank
     const invContainer = document.getElementById('investments-locked-list');
+    if (!invContainer) return;
     invContainer.innerHTML = '';
 
     if (s.investments.length === 0) {
@@ -1247,7 +1329,7 @@ const UIController = (() => {
         </div>
       `;
     } else {
-      s.investments.forEach(inv => {
+      s.investments.forEach((inv, idx) => {
         const remainingSec = inv.ticksRemaining * 3;
         const totalPayout = Math.floor(inv.investedAmount * (1 + inv.rate));
         
@@ -1260,10 +1342,27 @@ const UIController = (() => {
           </div>
           <div class="text-left">
             <span class="text-emerald-400 font-bold numbers-font block">+${totalPayout.toLocaleString()} EGP</span>
-            <span class="text-[10px] px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full border border-slate-700 numbers-font inline-block mt-1">متبقي: ${remainingSec} ثانية</span>
+            <span id="inv-sec-${idx}" class="text-[10px] px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full border border-slate-700 numbers-font inline-block mt-1">متبقي: ${remainingSec} ثانية</span>
           </div>
         `;
         invContainer.appendChild(row);
+      });
+    }
+  }
+
+  function updateBankInDOM() {
+    const s = GameEngine.state;
+    const cashEl = document.getElementById('bank-cash');
+    if (cashEl) cashEl.textContent = s.cash.toLocaleString() + ' EGP';
+    const balEl = document.getElementById('bank-balance');
+    if (balEl) balEl.textContent = s.bank.toLocaleString() + ' EGP';
+
+    if (s.investments && s.investments.length > 0) {
+      s.investments.forEach((inv, idx) => {
+        const secEl = document.getElementById(`inv-sec-${idx}`);
+        if (secEl) {
+          secEl.textContent = `متبقي: ${inv.ticksRemaining * 3} ثانية`;
+        }
       });
     }
   }
@@ -1951,17 +2050,39 @@ const UIController = (() => {
     list.prepend(row);
   }
 
-  // --- Tab 5: Real Estate & Assets Panel ---
-  function renderAssets() {
+  // --- Tab 5: Real Estate & Assets Panel (High-Performance In-Place Updates) ---
+  let lastAssetsOwned = {};
+
+  function renderAssets(force = false) {
     const s = GameEngine.state;
     const container = document.getElementById('assets-list');
+    if (!container) return;
+
+    let needsRebuild = force || container.children.length === 0;
+    if (!needsRebuild) {
+      for (const key of Object.keys(GameEngine.ASSETS)) {
+        if (lastAssetsOwned[key] !== (s.assets[key] || 0)) {
+          needsRebuild = true;
+          break;
+        }
+      }
+    }
+
+    if (!needsRebuild) {
+      updateAssetsInDOM();
+      return;
+    }
+
     container.innerHTML = '';
+    lastAssetsOwned = {};
 
     Object.keys(GameEngine.ASSETS).forEach(key => {
       const asset = GameEngine.ASSETS[key];
       const owned = s.assets[key] || 0;
+      lastAssetsOwned[key] = owned;
       
       const card = document.createElement('div');
+      card.id = `asset-card-${key}`;
       card.className = `glass-panel p-5 rounded-xl border border-slate-800 flex flex-col justify-between`;
       card.innerHTML = `
         <div class="flex justify-between items-start mb-3">
@@ -1969,13 +2090,13 @@ const UIController = (() => {
             <h4 class="text-lg font-bold text-white">${asset.name}</h4>
             <p class="text-xs text-slate-500 mt-1">توليد عائد مالي مستقر، وتقدير لقيمة العقار بمرور الوقت.</p>
           </div>
-          <span class="text-xs px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold">مملوك: <span class="numbers-font">${owned}</span></span>
+          <span class="text-xs px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold">مملوك: <span id="asset-owned-${key}" class="numbers-font">${owned}</span></span>
         </div>
 
         <div class="text-sm text-slate-400 space-y-1 mb-5 border-t border-b border-slate-800/80 py-3 my-2">
-          <div class="flex justify-between"><span>القيمة السوقية الحالية:</span><span class="numbers-font text-yellow-500 font-semibold">${asset.cost.toLocaleString()} EGP</span></div>
-          <div class="flex justify-between"><span>عائد الإيجار السلبي:</span><span class="numbers-font text-emerald-400">+${Math.floor(asset.rent * 0.1)} EGP / دورة</span></div>
-          <div class="flex justify-between"><span>قيمة التسييل الفوري (85%):</span><span class="numbers-font text-amber-500/80">${Math.floor(asset.cost * 0.85).toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>القيمة السوقية الحالية:</span><span id="asset-cost-${key}" class="numbers-font text-yellow-500 font-semibold">${asset.cost.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>عائد الإيجار السلبي:</span><span id="asset-rent-${key}" class="numbers-font text-emerald-400">+${Math.floor(asset.rent * 0.1)} EGP / دورة</span></div>
+          <div class="flex justify-between"><span>قيمة التسييل الفوري (85%):</span><span id="asset-liquid-${key}" class="numbers-font text-amber-500/80">${Math.floor(asset.cost * 0.85).toLocaleString()} EGP</span></div>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
@@ -1988,12 +2109,12 @@ const UIController = (() => {
         </div>
       `;
 
-      // Event handlers
       card.querySelector(`#btn-buy-asset-${key}`).addEventListener('click', () => {
         try {
           GameEngine.buyAsset(key);
           showToast('عقود عقارية', `تم شراء عقار "${asset.name}" بنجاح وإضافته لمحفظتك.`, 'success');
-          renderAll();
+          renderAssets(true);
+          renderStatsBar();
         } catch (err) {
           showToast('مرفوض', err.message, 'error');
         }
@@ -2003,7 +2124,8 @@ const UIController = (() => {
         try {
           const cashBack = GameEngine.sellAsset(key);
           showToast('تسييل عقاري', `تم بيع العقار بنجاح وتسييل مبلغ بقيمة ${cashBack.toLocaleString()} EGP.`, 'success');
-          renderAll();
+          renderAssets(true);
+          renderStatsBar();
         } catch (err) {
           showToast('فشل التسييل', err.message, 'error');
         }
@@ -2013,11 +2135,44 @@ const UIController = (() => {
     });
   }
 
-  // --- Tab 6: Stock Market Panel ---
-  function renderStocks() {
+  function updateAssetsInDOM() {
+    const s = GameEngine.state;
+    Object.keys(GameEngine.ASSETS).forEach(key => {
+      const asset = GameEngine.ASSETS[key];
+      const owned = s.assets[key] || 0;
+
+      const ownedEl = document.getElementById(`asset-owned-${key}`);
+      if (ownedEl) ownedEl.textContent = owned;
+
+      const costEl = document.getElementById(`asset-cost-${key}`);
+      if (costEl) costEl.textContent = `${asset.cost.toLocaleString()} EGP`;
+
+      const rentEl = document.getElementById(`asset-rent-${key}`);
+      if (rentEl) rentEl.textContent = `+${Math.floor(asset.rent * 0.1)} EGP / دورة`;
+
+      const liquidEl = document.getElementById(`asset-liquid-${key}`);
+      if (liquidEl) liquidEl.textContent = `${Math.floor(asset.cost * 0.85).toLocaleString()} EGP`;
+
+      const sellBtn = document.getElementById(`btn-sell-asset-${key}`);
+      if (sellBtn) sellBtn.disabled = (owned === 0);
+    });
+  }
+
+  // --- Tab 6: Stock Market Panel (Optimized In-Place Updates) ---
+  let lastStocksBuilt = false;
+
+  function renderStocks(force = false) {
     const s = GameEngine.state;
     const container = document.getElementById('stocks-list');
+    if (!container) return;
+
+    if (!force && lastStocksBuilt && container.children.length > 0) {
+      updateStockPricesInDOM();
+      return;
+    }
+
     container.innerHTML = '';
+    lastStocksBuilt = true;
 
     Object.keys(GameEngine.STOCKS).forEach(sym => {
       const stock = GameEngine.STOCKS[sym];
@@ -2033,9 +2188,9 @@ const UIController = (() => {
       const totalProfit = (currentPrice - ownedData.avgPrice) * ownedData.shares;
 
       const card = document.createElement('div');
+      card.id = `stock-card-${sym}`;
       card.className = `glass-panel p-5 rounded-xl border border-slate-800 flex flex-col justify-between`;
       
-      // Inline dynamic SVG sparkline logic
       const svgPath = generateSparklineSVG(prices);
 
       card.innerHTML = `
@@ -2045,22 +2200,22 @@ const UIController = (() => {
             <span class="numbers-font text-xs text-slate-500 font-bold block mt-1">${stock.symbol}</span>
           </div>
           <div class="text-left">
-            <span class="numbers-font font-bold block ${isUp ? 'text-emerald-400 glow-emerald' : 'text-rose-400 glow-rose'}">${currentPrice} EGP</span>
-            <span class="numbers-font text-xs ${isUp ? 'text-emerald-500' : 'text-rose-500'} inline-block mt-0.5">${isUp ? '+' : ''}${changePct.toFixed(2)}%</span>
+            <span id="stock-price-${sym}" class="numbers-font font-bold block ${isUp ? 'text-emerald-400 glow-emerald' : 'text-rose-400 glow-rose'}">${currentPrice} EGP</span>
+            <span id="stock-change-${sym}" class="numbers-font text-xs ${isUp ? 'text-emerald-500' : 'text-rose-500'} inline-block mt-0.5">${isUp ? '+' : ''}${changePct.toFixed(2)}%</span>
           </div>
         </div>
 
         <div class="w-full h-16 bg-slate-950/50 rounded-lg p-1 border border-slate-900/60 my-2 overflow-hidden">
           <svg viewBox="0 0 100 30" class="w-full h-full" preserveAspectRatio="none">
-            <path d="${svgPath}" fill="none" stroke="${isUp ? '#10b981' : '#f43f5e'}" stroke-width="1.8" />
+            <path id="stock-svg-path-${sym}" d="${svgPath}" fill="none" stroke="${isUp ? '#10b981' : '#f43f5e'}" stroke-width="1.8" />
           </svg>
         </div>
 
         <div class="text-xs text-slate-400 space-y-1 mb-4 border-t border-slate-800 pt-3 mt-1">
-          <div class="flex justify-between"><span>الأسهم المملوكة:</span><span class="numbers-font text-white">${ownedData.shares} سهم</span></div>
-          <div class="flex justify-between"><span>متوسط سعر الشراء:</span><span class="numbers-font">${ownedData.avgPrice} EGP</span></div>
-          <div class="flex justify-between"><span>قيمة الأسهم الكلية:</span><span class="numbers-font text-yellow-500 font-semibold">${totalWorth.toLocaleString()} EGP</span></div>
-          <div class="flex justify-between"><span>ربح/خسارة المحفظة:</span><span class="numbers-font font-bold ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>الأسهم المملوكة:</span><span id="stock-shares-${sym}" class="numbers-font text-white">${ownedData.shares} سهم</span></div>
+          <div class="flex justify-between"><span>متوسط سعر الشراء:</span><span id="stock-avg-${sym}" class="numbers-font">${ownedData.avgPrice} EGP</span></div>
+          <div class="flex justify-between"><span>قيمة الأسهم الكلية:</span><span id="stock-worth-${sym}" class="numbers-font text-yellow-500 font-semibold">${totalWorth.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>ربح/خسارة المحفظة:</span><span id="stock-profit-${sym}" class="numbers-font font-bold ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString()} EGP</span></div>
         </div>
 
         <div class="grid grid-cols-2 gap-2 mb-2">
@@ -2087,8 +2242,10 @@ const UIController = (() => {
       card.querySelectorAll('.btn-pct-buy').forEach(pctBtn => {
         pctBtn.addEventListener('click', () => {
           const pct = parseFloat(pctBtn.getAttribute('data-pct'));
-          const availableCash = s.cash * pct;
-          const maxSharesPossible = Math.floor(availableCash / currentPrice);
+          const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
+          const currP = prices[prices.length - 1];
+          const availableCash = GameEngine.state.cash * pct;
+          const maxSharesPossible = Math.floor(availableCash / currP);
           const input = card.querySelector(`#shares-buy-input-${sym}`);
           if (input) input.value = maxSharesPossible > 0 ? maxSharesPossible : 1;
         });
@@ -2099,10 +2256,12 @@ const UIController = (() => {
       if (sellAllBtn) {
         sellAllBtn.addEventListener('click', () => {
           try {
-            if (ownedData.shares <= 0) throw new Error("لا تملك أي أسهم في هذه الشركة لبيعها.");
-            const res = GameEngine.sellStock(sym, ownedData.shares);
+            const owned = GameEngine.state.stocks[sym] || { shares: 0 };
+            if (owned.shares <= 0) throw new Error("لا تملك أي أسهم في هذه الشركة لبيعها.");
+            const res = GameEngine.sellStock(sym, owned.shares);
             showToast('بيع كلي', `تمت بيع وتسييل كامل الأسهم (${res.shares} سهم) بقيمة +${res.totalPayout.toLocaleString()} EGP.`, 'success');
-            renderAll();
+            renderStocks(true);
+            renderStatsBar();
           } catch (err) {
             showToast('فشل البيع', err.message, 'error');
           }
@@ -2118,7 +2277,8 @@ const UIController = (() => {
           const res = GameEngine.buyStock(sym, count);
           input.value = '';
           showToast('شراء أسهم', `تم شراء عدد ${res.shares} سهم من سهم "${stock.name}" بنجاح.`, 'success');
-          renderAll();
+          renderStocks(true);
+          renderStatsBar();
         } catch (err) {
           showToast('فشل الشراء', err.message, 'error');
         }
@@ -2133,7 +2293,8 @@ const UIController = (() => {
           const res = GameEngine.sellStock(sym, count);
           input.value = '';
           showToast('بيع أسهم', `تمت تسييل عدد ${res.shares} سهم من سهم "${stock.name}" للسيولة.`, 'success');
-          renderAll();
+          renderStocks(true);
+          renderStatsBar();
         } catch (err) {
           showToast('فشل البيع', err.message, 'error');
         }
@@ -2143,14 +2304,59 @@ const UIController = (() => {
     });
   }
 
-  // Selective DOM price update to prevent input field re-creation/wiping while typing
   function updateStockPricesInDOM() {
-    const activeEl = document.activeElement;
-    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
-      // User is currently typing inside an input field — skip DOM redraw to preserve focus
-      return;
-    }
-    renderStocks();
+    const s = GameEngine.state;
+    Object.keys(GameEngine.STOCKS).forEach(sym => {
+      const stock = GameEngine.STOCKS[sym];
+      const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
+      const currentPrice = prices[prices.length - 1];
+      const prevPrice = prices[prices.length - 2] || currentPrice;
+      const changePct = ((currentPrice - prevPrice) / prevPrice) * 100;
+      const isUp = currentPrice >= prevPrice;
+
+      const ownedData = s.stocks[sym] || { shares: 0, avgPrice: 0 };
+      const totalWorth = ownedData.shares * currentPrice;
+      const totalProfit = (currentPrice - ownedData.avgPrice) * ownedData.shares;
+
+      const priceEl = document.getElementById(`stock-price-${sym}`);
+      if (priceEl) {
+        priceEl.textContent = `${currentPrice} EGP`;
+        priceEl.className = `numbers-font font-bold block ${isUp ? 'text-emerald-400 glow-emerald' : 'text-rose-400 glow-rose'}`;
+      }
+
+      const changeEl = document.getElementById(`stock-change-${sym}`);
+      if (changeEl) {
+        changeEl.textContent = `${isUp ? '+' : ''}${changePct.toFixed(2)}%`;
+        changeEl.className = `numbers-font text-xs ${isUp ? 'text-emerald-500' : 'text-rose-500'} inline-block mt-0.5`;
+      }
+
+      const svgPathEl = document.getElementById(`stock-svg-path-${sym}`);
+      if (svgPathEl) {
+        svgPathEl.setAttribute('d', generateSparklineSVG(prices));
+        svgPathEl.setAttribute('stroke', isUp ? '#10b981' : '#f43f5e');
+      }
+
+      const worthEl = document.getElementById(`stock-worth-${sym}`);
+      if (worthEl) worthEl.textContent = `${totalWorth.toLocaleString()} EGP`;
+
+      const profitEl = document.getElementById(`stock-profit-${sym}`);
+      if (profitEl) {
+        profitEl.textContent = `${totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString()} EGP`;
+        profitEl.className = `numbers-font font-bold ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+      }
+
+      const sharesEl = document.getElementById(`stock-shares-${sym}`);
+      if (sharesEl) sharesEl.textContent = `${ownedData.shares} سهم`;
+
+      const avgEl = document.getElementById(`stock-avg-${sym}`);
+      if (avgEl) avgEl.textContent = `${ownedData.avgPrice} EGP`;
+
+      const sellAllBtn = document.getElementById(`btn-sell-all-${sym}`);
+      if (sellAllBtn) sellAllBtn.disabled = (ownedData.shares === 0);
+
+      const sellBtn = document.getElementById(`btn-sell-shares-${sym}`);
+      if (sellBtn) sellBtn.disabled = (ownedData.shares === 0);
+    });
   }
 
   // Draw Line Charts inside SVG
