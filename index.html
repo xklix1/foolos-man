@@ -714,6 +714,16 @@
               </div>
               <span class="numbers-font text-sm font-bold text-emerald-400"><span id="stat-bank">0</span> EGP</span>
             </div>
+            <div class="flex items-center justify-between border-b border-slate-800/50 pb-2">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-arrow-trend-up text-emerald-400 text-xs"></i>
+                <span class="text-xs text-slate-400">التدفق اللحظي</span>
+              </div>
+              <span class="numbers-font text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span id="stat-cashflow">+0</span> EGP/ث
+              </span>
+            </div>
             <div class="flex items-center justify-between pt-1">
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-gem text-cyan-400 text-xs"></i>
@@ -804,7 +814,7 @@
             </button>
           </div>
         </div>
-        <!-- 3 Financial Pills -->
+        <!-- 3 Financial Pills + Live Cashflow -->
         <div class="grid grid-cols-3 gap-1.5 text-center">
           <div class="p-1.5 bg-slate-950/70 rounded-lg border border-slate-800/80 flex flex-col">
             <span class="text-[9px] text-slate-400 font-bold flex items-center justify-center gap-1">الكاش <i class="fa-solid fa-money-bill-wave text-yellow-400 text-[10px]"></i></span>
@@ -818,6 +828,10 @@
             <span class="text-[9px] text-slate-400 font-bold flex items-center justify-center gap-1">الثروة <i class="fa-solid fa-gem text-cyan-400 text-[10px]"></i></span>
             <span class="numbers-font text-xs font-bold text-yellow-400 glow-gold truncate"><span id="stat-networth-mobile">0</span></span>
           </div>
+        </div>
+        <div class="px-2 py-1 bg-emerald-950/40 rounded-lg border border-emerald-500/20 flex justify-between items-center text-[10px]">
+          <span class="text-slate-300 font-bold flex items-center gap-1.5"><i class="fa-solid fa-arrow-trend-up text-emerald-400"></i> التدفق النقدي اللحظي:</span>
+          <span class="numbers-font font-black text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span><span id="stat-cashflow-mobile">+0</span> EGP/ث</span>
         </div>
       </div>
 
@@ -2045,9 +2059,9 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=13"></script>
-  <script src="game.js?v=13"></script>
-  <script src="ui.js?v=13"></script>
+  <script src="db.js?v=14"></script>
+  <script src="game.js?v=14"></script>
+  <script src="ui.js?v=14"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

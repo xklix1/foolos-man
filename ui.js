@@ -591,6 +591,16 @@ const UIController = (() => {
       startGameLoop();
       renderAll();
       showToast('أهلاً بعودتك', `تم استئناف جلسة الإمبراطور: ${username}`, 'success');
+
+      // Check and display offline idle earnings
+      if (playerState && playerState.offlineReport) {
+        const rep = playerState.offlineReport;
+        const mins = Math.max(1, Math.round(rep.seconds / 60));
+        setTimeout(() => {
+          showToast('💰 أرباح أثناء غيابك!', `جمعت إمبراطوريتك أرباحاً قدرها +${rep.earnings.toLocaleString()} EGP أثناء غيابك (${mins} دقيقة)!`, 'success');
+        }, 1200);
+        delete playerState.offlineReport;
+      }
     } catch (err) {
       showToast('خطأ في التحميل', err.message, 'error');
       localStorage.removeItem('foolos_active_session_user');
@@ -762,6 +772,16 @@ const UIController = (() => {
           
           startGameLoop();
           renderAll();
+
+          // Check and display offline idle earnings
+          if (playerState && playerState.offlineReport) {
+            const rep = playerState.offlineReport;
+            const mins = Math.max(1, Math.round(rep.seconds / 60));
+            setTimeout(() => {
+              showToast('💰 أرباح أثناء غيابك!', `جمعت إمبراطوريتك أرباحاً قدرها +${rep.earnings.toLocaleString()} EGP أثناء غيابك (${mins} دقيقة)!`, 'success');
+            }, 1200);
+            delete playerState.offlineReport;
+          }
         } catch (err) {
           showToast('فشل التحقق', err.message, 'error');
           playMenuSound('back');
@@ -829,23 +849,38 @@ const UIController = (() => {
     renderAll();
   }
 
-  // --- Core Game Loops (Optimized 1.5s ticker with zero-lag in-place updates) ---
+  // --- Core Game Loops (Continuous 1.0s real-time profit tracking) ---
+  let visibilityListenerAttached = false;
+
   function startGameLoop() {
     if (tickIntervalId) clearInterval(tickIntervalId);
 
+    // Setup tab focus/visibility listener for instant catch-up
+    if (!visibilityListenerAttached) {
+      visibilityListenerAttached = true;
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && GameEngine.activeUsername) {
+          renderAll();
+        }
+      });
+      window.addEventListener('focus', () => {
+        if (GameEngine.activeUsername) {
+          renderAll();
+        }
+      });
+    }
+
     tickIntervalId = setInterval(() => {
-      // If document is completely hidden/minimized, still process state silently without heavy DOM operations
-      const isHidden = document.hidden;
       const updates = GameEngine.processTick();
-      if (!updates || isHidden) return;
+      if (!updates) return;
 
       // Handle Jail lockouts overlay
       const state = GameEngine.state;
       const jailOverlay = document.getElementById('jail-overlay');
-      if (state.jailTimer > 0) {
+      if (state && state.jailTimer > 0) {
         jailOverlay.classList.remove('hidden');
         document.getElementById('jail-countdown').textContent = state.jailTimer;
-      } else {
+      } else if (jailOverlay) {
         jailOverlay.classList.add('hidden');
       }
 
@@ -886,7 +921,7 @@ const UIController = (() => {
         }
       }
 
-      // Fast in-place numerical updates without DOM destruction
+      // Fast in-place numerical updates on every tick without DOM destruction
       renderStatsBar();
       
       if (activeTab === 'dashboard') renderDashboard();
@@ -895,7 +930,7 @@ const UIController = (() => {
       else if (activeTab === 'assets') updateAssetsInDOM();
       else if (activeTab === 'stocks') updateStockPricesInDOM();
 
-    }, 1500);
+    }, 1000);
   }
 
   // --- Dynamic Stats Bars Rendering ---
@@ -919,6 +954,11 @@ const UIController = (() => {
     const nEl = document.getElementById('stat-networth');
     if (nEl) nEl.textContent = s.netWorth.toLocaleString();
 
+    // Live Cashflow Rate
+    const cashflow = GameEngine.calculatePassiveIncomePerSecond ? GameEngine.calculatePassiveIncomePerSecond() : 0;
+    const cfEl = document.getElementById('stat-cashflow');
+    if (cfEl) cfEl.textContent = `+${cashflow.toLocaleString()}`;
+
     // Mobile stats
     const umEl = document.getElementById('stat-username-mobile');
     if (umEl) umEl.textContent = username;
@@ -931,6 +971,9 @@ const UIController = (() => {
     if (bmEl) bmEl.textContent = s.bank.toLocaleString();
     const nmEl = document.getElementById('stat-networth-mobile');
     if (nmEl) nmEl.textContent = s.netWorth.toLocaleString();
+
+    const cfmEl = document.getElementById('stat-cashflow-mobile');
+    if (cfmEl) cfmEl.textContent = `+${cashflow.toLocaleString()}`;
 
     // Show/Hide Admin Buttons
     const adminBtn = document.getElementById('btn-admin-panel-trigger');

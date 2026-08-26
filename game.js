@@ -363,6 +363,57 @@ const GameEngine = (() => {
     return 'عامل مبتدئ';
   }
 
+  // Calculate total passive cashflow per tick from all businesses, real estate, and bank interest
+  function calculatePassiveIncomePerTick() {
+    let income = 0;
+    if (!state) return 0;
+
+    // 1. Businesses income
+    if (state.businesses) {
+      Object.keys(state.businesses).forEach(key => {
+        const bizState = state.businesses[key];
+        const bizConfig = BUSINESSES[key];
+        if (bizState && bizState.level > 0 && bizConfig) {
+          const price = bizState.price || bizConfig.optimumPrice;
+          const opt = bizConfig.optimumPrice;
+          let elasticity = 1.0;
+          if (price > opt) elasticity = Math.max(0, 1 - (price - opt) / opt);
+          else if (price < opt) elasticity = 1 + (opt - price) / opt * 0.3;
+
+          const marketingBoost = (bizState.marketingTicks && bizState.marketingTicks > 0) ? 1.4 : 1.0;
+          const actualCostOfGoods = Math.floor(bizConfig.costOfGoods * 1.05);
+          const upgradeFactor = Math.pow(bizConfig.upgradeMultiplier, bizState.level - 1);
+          const workerFactor = 1 + ((bizState.workers || 0) * (bizConfig.workerMultiplier - 1));
+          const demand = Math.floor(bizConfig.baseDemand * upgradeFactor * elasticity * workerFactor * marketingBoost);
+          const margin = price - actualCostOfGoods;
+          const profit = Math.max(0, Math.floor(demand * margin * 0.15));
+          income += profit;
+        }
+      });
+    }
+
+    // 2. Real estate rental income
+    if (state.assets) {
+      Object.keys(state.assets).forEach(key => {
+        const owned = state.assets[key] || 0;
+        if (owned > 0 && ASSETS[key]) {
+          income += owned * Math.floor(ASSETS[key].rent * 0.1);
+        }
+      });
+    }
+
+    // 3. Bank interest
+    if (state.bank && state.bank > 0) {
+      income += Math.floor(state.bank * 0.00005);
+    }
+
+    return income;
+  }
+
+  function calculatePassiveIncomePerSecond() {
+    return calculatePassiveIncomePerTick();
+  }
+
   // Apply appreciation or depreciation to Assets Cost (Simulated over time)
   function adjustAssetAppreciation() {
     // Modify asset base costs slightly in local config
@@ -653,6 +704,9 @@ const GameEngine = (() => {
     // Adjust assets market rates
     adjustAssetAppreciation();
 
+    // Set last active timestamp for continuous profit tracking
+    state.lastActiveTimestamp = Date.now();
+
     // Recalculate net worth and title
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
@@ -705,9 +759,32 @@ const GameEngine = (() => {
         inventory: mergedInventory,
         investments: Array.isArray(dbState.investments) ? dbState.investments : []
       };
+
+      // Calculate offline idle earnings if returning after being away
+      if (dbState.lastActiveTimestamp && dbState.lastActiveTimestamp > 0) {
+        const now = Date.now();
+        const elapsedSeconds = Math.max(0, Math.floor((now - dbState.lastActiveTimestamp) / 1000));
+        if (elapsedSeconds >= 10 && (state.jailTimer || 0) <= 0) {
+          // Cap at 12 hours (43,200 seconds)
+          const cappedSeconds = Math.min(43200, elapsedSeconds);
+          const incomePerSec = calculatePassiveIncomePerSecond();
+          const offlineEarnings = Math.floor(incomePerSec * cappedSeconds);
+          if (offlineEarnings > 0) {
+            state.cash += offlineEarnings;
+            state.offlineReport = {
+              seconds: cappedSeconds,
+              earnings: offlineEarnings
+            };
+          }
+        }
+      }
+      state.lastActiveTimestamp = Date.now();
+      state.netWorth = calculateNetWorth();
+      await AppDB.savePlayerState(username, state);
     } else {
       // Create new clean state — deep-copy to avoid shared object references
       state = JSON.parse(JSON.stringify(INITIAL_STATE));
+      state.lastActiveTimestamp = Date.now();
       await AppDB.savePlayerState(username, state);
     }
     initStocks();
@@ -1433,6 +1510,9 @@ const GameEngine = (() => {
     playCoinFlip,
     playSlots,
     playDice,
+    calculatePassiveIncomePerTick,
+    calculatePassiveIncomePerSecond,
+    calculateNetWorth,
     forceSaveState
   };
 })();
