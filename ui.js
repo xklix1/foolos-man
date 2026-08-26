@@ -3848,7 +3848,7 @@ const UIController = (() => {
     if (resetPlayerAccountBtn) {
       resetPlayerAccountBtn.addEventListener('click', async () => {
         if (!selectedPlayer) return;
-        const confirmMsg = `تحذير هام: هل أنت متأكد من تصفير حساب اللاعب "${selectedPlayer}" بالكامل؟\nسيتم مسح كافة الأصول والشركات والأسهم والاستثمارات وإعادة الرصيد إلى 5,000 ج.م كبداية جديدة.`;
+        const confirmMsg = `تحذير قاطع: هل أنت متأكد من تصفير حساب اللاعب "${selectedPlayer}" بالكامل من كل شيء؟\nسيتم تصفير الكاش والبنك والأموال المشبوهة، ومسح كافة الأصول والشركات والأسهم والاستثمارات والمخزون ونقاط الخبرة والرتبة والملاحقات (تصفير شامل 0 EGP).`;
         if (!confirm(confirmMsg)) return;
 
         try {
@@ -3856,25 +3856,55 @@ const UIController = (() => {
 
           // If active user is the reset user, sync immediately
           if (selectedPlayer === GameEngine.activeUsername) {
-            GameEngine.state.cash = 5000;
+            GameEngine.state.cash = 0;
             GameEngine.state.bank = 0;
-            GameEngine.state.netWorth = 5000;
+            GameEngine.state.dirtyCash = 0;
+            GameEngine.state.netWorth = 0;
             GameEngine.state.xp = 0;
-            GameEngine.state.jobId = 'unemployed';
-            GameEngine.state.businesses = {};
-            GameEngine.state.assets = {};
-            GameEngine.state.stocks = {};
+            GameEngine.state.jobId = 'worker';
+            GameEngine.state.title = 'عامل مبتدئ';
+            GameEngine.state.underworldRep = 0;
+            GameEngine.state.heatLevel = 0;
+            GameEngine.state.businesses = {
+              coffee: { level: 0, price: 22, workers: 0 },
+              tech: { level: 0, price: 160, workers: 0 },
+              logistics: { level: 0, price: 1100, workers: 0 },
+              supermarket: { level: 0, price: 450, workers: 0 },
+              solar_factory: { level: 0, price: 3200, workers: 0 },
+              private_hospital: { level: 0, price: 11500, workers: 0 }
+            };
+            GameEngine.state.assets = { apartment: 0, office: 0, mansion: 0 };
+            GameEngine.state.stocks = {
+              COMI: { shares: 0, avgPrice: 0 },
+              EAST: { shares: 0, avgPrice: 0 },
+              ETEL: { shares: 0, avgPrice: 0 },
+              FWRY: { shares: 0, avgPrice: 0 },
+              CASH: { shares: 0, avgPrice: 0 }
+            };
             GameEngine.state.investments = [];
-            GameEngine.state.inventory = {};
+            GameEngine.state.inventory = {
+              gold_pen: 0,
+              premium_lawyer: 0,
+              energy_drink: 0,
+              tax_shield: 0,
+              market_scanner: 0,
+              vip_casino_pass: 0,
+              radar_jammer: 0,
+              fake_passport: 0,
+              crypto_cleaner: 0
+            };
+            GameEngine.state.itemDurations = {};
             GameEngine.state.jailTimer = 0;
+            GameEngine.state.afkManagerExpiresAt = 0;
+            GameEngine.state.offlineReport = null;
             try {
               localStorage.setItem(`foolos_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
             } catch (e) {}
             renderAll();
           }
 
-          showToast('تصفير الحساب', `تم تصفير حساب اللاعب ${selectedPlayer} بنجاح وإعادة ضبطه كبداية جديدة (5,000 EGP).`, 'success');
-          logAdminAction(`تصفير شامل لتقدم وأرصدة حساب اللاعب: ${selectedPlayer}`);
+          showToast('تصفير الحساب', `تم تصفير حساب اللاعب "${selectedPlayer}" بالكامل من كل شيء بنجاح (0 EGP).`, 'success');
+          logAdminAction(`تصفير شامل ونهائي لكافة أرصدة وممتلكات حساب اللاعب: ${selectedPlayer}`);
           selectPlayerForModeration(selectedPlayer);
           loadAdminPlayersDirectory(false);
         } catch (err) {
@@ -4161,17 +4191,55 @@ const UIController = (() => {
     const resetAllEconomyBtn = document.getElementById('btn-admin-reset-all-economy');
     if (resetAllEconomyBtn) {
       resetAllEconomyBtn.addEventListener('click', async () => {
-        const confirmMsg = "⚠️ تحذير خطير: هل أنت متأكد من تصفير اقتصاد اللعبة لكافة اللاعبين المسجلين؟\nسيتم إعادة ضبط كاش وأصول وشركات كافة الحسابات إلى 5,000 ج.م كبداية جديدة للجميع.";
+        const confirmMsg = "⚠️ تحذير خطير: هل أنت متأكد من تصفير أرصدة وممتلكات المنظومة لكافة اللاعبين المسجلين؟\nسيتم تصفير كاش وبنك وأصول وأسهم وشركات ومخزون كافة الحسابات بالكامل مع الإبقاء على الحسابات وأرقامها السرية.";
         if (!confirm(confirmMsg)) return;
 
         try {
           const count = await AppDB.adminResetAllPlayers();
-          showToast('تصفير الاقتصاد', `تم تصفير أرصدة واقتصاد ${count} حساب لاعب بنجاح.`, 'success');
-          logAdminAction(`تصفير شامل لاقتصاد اللعبة — تم إعادة ضبط ${count} حساب إلى 5,000 EGP`);
+          
+          if (GameEngine.activeUsername && GameEngine.activeUsername !== 'FoolosAdmin_X99') {
+            GameEngine.state.cash = 0;
+            GameEngine.state.bank = 0;
+            GameEngine.state.dirtyCash = 0;
+            GameEngine.state.netWorth = 0;
+            GameEngine.state.xp = 0;
+            GameEngine.state.jobId = 'worker';
+            GameEngine.state.title = 'عامل مبتدئ';
+            GameEngine.state.underworldRep = 0;
+            GameEngine.state.heatLevel = 0;
+            GameEngine.state.businesses = {
+              coffee: { level: 0, price: 22, workers: 0 },
+              tech: { level: 0, price: 160, workers: 0 },
+              logistics: { level: 0, price: 1100, workers: 0 },
+              supermarket: { level: 0, price: 450, workers: 0 },
+              solar_factory: { level: 0, price: 3200, workers: 0 },
+              private_hospital: { level: 0, price: 11500, workers: 0 }
+            };
+            GameEngine.state.assets = { apartment: 0, office: 0, mansion: 0 };
+            GameEngine.state.stocks = {
+              COMI: { shares: 0, avgPrice: 0 },
+              EAST: { shares: 0, avgPrice: 0 },
+              ETEL: { shares: 0, avgPrice: 0 },
+              FWRY: { shares: 0, avgPrice: 0 },
+              CASH: { shares: 0, avgPrice: 0 }
+            };
+            GameEngine.state.investments = [];
+            GameEngine.state.inventory = {};
+            GameEngine.state.itemDurations = {};
+            GameEngine.state.jailTimer = 0;
+            GameEngine.state.afkManagerExpiresAt = 0;
+            try {
+              localStorage.setItem(`foolos_state_${GameEngine.activeUsername}`, JSON.stringify(GameEngine.state));
+            } catch (e) {}
+            renderAll();
+          }
+
+          showToast('تصفير أرصدة المنظومة', `تم تصفير حسابات وأرصدة ${count} لاعب في المنظومة بالكامل بنجاح.`, 'success');
+          logAdminAction(`تصفير شامل لأرصدة المنظومة — تم تصفير ${count} حساب لاعب بالكامل`);
           loadAdminPlayersDirectory(false);
-          renderAll();
+          renderAdminAnalyticsDashboard();
         } catch (err) {
-          showToast('خطأ تصفير الاقتصاد', err.message, 'error');
+          showToast('خطأ تصفير المنظومة', err.message, 'error');
         }
       });
     }

@@ -493,27 +493,70 @@ const AppDB = (() => {
     if (username === SECRET_ADMIN_USERNAME) {
       throw new Error('لا يمكن تصفير حساب الإدارة الرئيسي.');
     }
-    const freshData = {
+    
+    // Fetch existing player doc to preserve the user's PIN
+    const docRef = firestoreDb.collection('players').doc(username);
+    const existingSnap = await docRef.get();
+    const existingData = existingSnap.exists ? existingSnap.data() : {};
+    const existingPin = existingData.pin || '';
+
+    const freshZeroState = {
       username: username,
-      cash: 5000,
+      pin: existingPin,
+      cash: 0,
       bank: 0,
       dirtyCash: 0,
-      netWorth: 5000,
+      netWorth: 0,
       xp: 0,
-      jobId: 'unemployed',
-      businesses: {},
-      investments: [],
-      assets: {},
-      stocks: {},
-      inventory: {},
-      jailTimer: 0,
-      isBanned: false,
+      jobId: 'worker',
       title: 'عامل مبتدئ',
+      underworldRep: 0,
+      heatLevel: 0,
+      businesses: {
+        coffee: { level: 0, price: 22, workers: 0 },
+        tech: { level: 0, price: 160, workers: 0 },
+        logistics: { level: 0, price: 1100, workers: 0 },
+        supermarket: { level: 0, price: 450, workers: 0 },
+        solar_factory: { level: 0, price: 3200, workers: 0 },
+        private_hospital: { level: 0, price: 11500, workers: 0 }
+      },
+      assets: {
+        apartment: 0,
+        office: 0,
+        mansion: 0
+      },
+      stocks: {
+        COMI: { shares: 0, avgPrice: 0 },
+        EAST: { shares: 0, avgPrice: 0 },
+        ETEL: { shares: 0, avgPrice: 0 },
+        FWRY: { shares: 0, avgPrice: 0 },
+        CASH: { shares: 0, avgPrice: 0 }
+      },
+      investments: [],
+      inventory: {
+        gold_pen: 0,
+        premium_lawyer: 0,
+        energy_drink: 0,
+        tax_shield: 0,
+        market_scanner: 0,
+        vip_casino_pass: 0,
+        radar_jammer: 0,
+        fake_passport: 0,
+        crypto_cleaner: 0
+      },
+      itemDurations: {},
+      jailTimer: 0,
+      afkManagerExpiresAt: 0,
+      offlineReport: null,
+      isBanned: false,
+      createdAt: existingData.createdAt || Date.now(),
       lastSeen: Date.now(),
       adminModifiedTimestamp: Date.now()
     };
-    await firestoreDb.collection('players').doc(username).set(freshData, { merge: true });
-    return freshData;
+
+    // Full overwrite without merge so every single field is completely reset
+    await docRef.set(freshZeroState);
+    return freshZeroState;
   }
 
   async function adminDeletePlayer(username) {
@@ -559,28 +602,77 @@ const AppDB = (() => {
   async function adminResetAllPlayers() {
     _requireOnline();
     const snapshot = await firestoreDb.collection('players').get();
-    const batch = firestoreDb.batch();
     let count = 0;
     
-    snapshot.forEach(doc => {
+    let batch = firestoreDb.batch();
+    let batchOps = 0;
+    
+    for (const doc of snapshot.docs) {
       if (doc.id !== SECRET_ADMIN_USERNAME) {
-        batch.set(doc.ref, {
-          cash: 5000,
+        const existingData = doc.data() || {};
+        const freshZeroState = {
+          username: doc.id,
+          pin: existingData.pin || '',
+          cash: 0,
           bank: 0,
           dirtyCash: 0,
-          netWorth: 5000,
-          businesses: {},
-          assets: {},
-          stocks: {},
+          netWorth: 0,
+          xp: 0,
+          jobId: 'worker',
+          title: 'عامل مبتدئ',
+          underworldRep: 0,
+          heatLevel: 0,
+          businesses: {
+            coffee: { level: 0, price: 22, workers: 0 },
+            tech: { level: 0, price: 160, workers: 0 },
+            logistics: { level: 0, price: 1100, workers: 0 },
+            supermarket: { level: 0, price: 450, workers: 0 },
+            solar_factory: { level: 0, price: 3200, workers: 0 },
+            private_hospital: { level: 0, price: 11500, workers: 0 }
+          },
+          assets: { apartment: 0, office: 0, mansion: 0 },
+          stocks: {
+            COMI: { shares: 0, avgPrice: 0 },
+            EAST: { shares: 0, avgPrice: 0 },
+            ETEL: { shares: 0, avgPrice: 0 },
+            FWRY: { shares: 0, avgPrice: 0 },
+            CASH: { shares: 0, avgPrice: 0 }
+          },
           investments: [],
+          inventory: {
+            gold_pen: 0,
+            premium_lawyer: 0,
+            energy_drink: 0,
+            tax_shield: 0,
+            market_scanner: 0,
+            vip_casino_pass: 0,
+            radar_jammer: 0,
+            fake_passport: 0,
+            crypto_cleaner: 0
+          },
+          itemDurations: {},
           jailTimer: 0,
+          afkManagerExpiresAt: 0,
+          offlineReport: null,
+          isBanned: false,
+          createdAt: existingData.createdAt || Date.now(),
+          lastSeen: Date.now(),
           adminModifiedTimestamp: Date.now()
-        }, { merge: true });
+        };
+        
+        batch.set(doc.ref, freshZeroState);
         count++;
+        batchOps++;
+        
+        if (batchOps >= 400) {
+          await batch.commit();
+          batch = firestoreDb.batch();
+          batchOps = 0;
+        }
       }
-    });
+    }
     
-    if (count > 0) {
+    if (batchOps > 0) {
       await batch.commit();
     }
     return count;
@@ -589,15 +681,23 @@ const AppDB = (() => {
   async function adminWipeLeaderboard() {
     _requireOnline();
     const snapshot = await firestoreDb.collection('players').get();
-    const batch = firestoreDb.batch();
     let count = 0;
-    snapshot.forEach(doc => {
+    let batch = firestoreDb.batch();
+    let batchOps = 0;
+
+    for (const doc of snapshot.docs) {
       if (doc.id !== SECRET_ADMIN_USERNAME) {
         batch.delete(doc.ref);
         count++;
+        batchOps++;
+        if (batchOps >= 400) {
+          await batch.commit();
+          batch = firestoreDb.batch();
+          batchOps = 0;
+        }
       }
-    });
-    if (count > 0) {
+    }
+    if (batchOps > 0) {
       await batch.commit();
     }
     return count;
