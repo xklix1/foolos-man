@@ -698,15 +698,39 @@ const UIController = (() => {
       }
 
       // Rows
-      players.slice(0, 10).forEach((p, idx) => {
+      players.slice(0, 15).forEach((p, idx) => {
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-900/50 transition';
         const rank = idx + 1;
+        const initials = (p.username || 'P').substring(0, 2).toUpperCase();
+        tr.className = `transition duration-150 border-b border-slate-900/60 ${rank === 1 ? 'bg-yellow-500/10' : 'hover:bg-slate-900/50'}`;
+        
+        let rankBadge = '';
+        if (rank === 1) {
+          rankBadge = `<span class="w-6 h-6 rounded-lg bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center shadow">👑1</span>`;
+        } else if (rank === 2) {
+          rankBadge = `<span class="w-6 h-6 rounded-lg bg-slate-700 border border-slate-500 text-slate-200 font-black text-[10px] flex items-center justify-center">🥈2</span>`;
+        } else if (rank === 3) {
+          rankBadge = `<span class="w-6 h-6 rounded-lg bg-amber-950 border border-amber-700 text-amber-300 font-black text-[10px] flex items-center justify-center">🥉3</span>`;
+        } else {
+          rankBadge = `<span class="text-slate-400 font-bold numbers-font text-xs">#${rank}</span>`;
+        }
+
         tr.innerHTML = `
-          <td class="py-2.5 pr-2 font-bold ${rank === 1 ? 'text-yellow-400 font-black' : rank <= 3 ? 'text-white' : 'text-slate-400'}">#${rank}</td>
-          <td class="py-2.5 font-bold text-white">${p.username}</td>
-          <td class="py-2.5 text-slate-400">${p.title || 'مستثمر'}</td>
-          <td class="py-2.5 pl-2 text-left numbers-font font-black ${rank === 1 ? 'text-yellow-400' : 'text-emerald-400'}">${Number(p.netWorth || 0).toLocaleString()} EGP</td>
+          <td class="py-2.5 pr-2 text-right">${rankBadge}</td>
+          <td class="py-2.5">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded bg-slate-800 border border-slate-700 text-[9px] font-black text-slate-300 flex items-center justify-center numbers-font">
+                ${initials}
+              </div>
+              <span class="font-black ${rank === 1 ? 'text-yellow-400 glow-gold' : 'text-white'} text-xs truncate max-w-[110px] sm:max-w-none">${p.username}</span>
+            </div>
+          </td>
+          <td class="py-2.5 text-slate-400">
+            <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300 inline-block truncate max-w-[90px] sm:max-w-none">${p.title || 'مستثمر'}</span>
+          </td>
+          <td class="py-2.5 pl-2 text-left numbers-font font-black ${rank === 1 ? 'text-yellow-400 text-xs glow-gold' : 'text-emerald-400 text-xs'} whitespace-nowrap">
+            ${Number(p.netWorth || 0).toLocaleString()} EGP
+          </td>
         `;
         tbody.appendChild(tr);
       });
@@ -3144,7 +3168,7 @@ const UIController = (() => {
         if (p1Name) p1Name.textContent = top1.username;
         if (p1Title) p1Title.textContent = top1.title || 'إمبراطور المال';
         if (p1Worth) p1Worth.textContent = `${Number(top1.netWorth || 0).toLocaleString()} EGP`;
-        if (p1Avatar) p1Avatar.textContent = (top1.username || 'P').substring(0, 2).toUpperCase();
+        if (p1Avatar) p1Avatar.innerHTML = `<span class="text-sm sm:text-base font-black">${(top1.username || 'P').substring(0, 2).toUpperCase()}</span>`;
       }
 
       // Podium 2 (Silver - 2nd)
@@ -3156,7 +3180,7 @@ const UIController = (() => {
         if (p2Name) p2Name.textContent = top2.username;
         if (p2Title) p2Title.textContent = top2.title || 'بارون التجارة';
         if (p2Worth) p2Worth.textContent = `${Number(top2.netWorth || 0).toLocaleString()} EGP`;
-        if (p2Avatar) p2Avatar.textContent = (top2.username || 'P').substring(0, 2).toUpperCase();
+        if (p2Avatar) p2Avatar.innerHTML = `<span class="text-xs sm:text-sm font-black">${(top2.username || 'P').substring(0, 2).toUpperCase()}</span>`;
       }
 
       // Podium 3 (Bronze - 3rd)
@@ -3168,7 +3192,7 @@ const UIController = (() => {
         if (p3Name) p3Name.textContent = top3.username;
         if (p3Title) p3Title.textContent = top3.title || 'رجل أعمال كبار';
         if (p3Worth) p3Worth.textContent = `${Number(top3.netWorth || 0).toLocaleString()} EGP`;
-        if (p3Avatar) p3Avatar.textContent = (top3.username || 'P').substring(0, 2).toUpperCase();
+        if (p3Avatar) p3Avatar.innerHTML = `<span class="text-xs sm:text-sm font-black">${(top3.username || 'P').substring(0, 2).toUpperCase()}</span>`;
       }
 
       // Update Self Rank indicator
@@ -3176,7 +3200,7 @@ const UIController = (() => {
       const selfIndex = players.findIndex(p => p.username === activeUser);
       const selfRankEl = document.getElementById('self-rank-num');
       if (selfRankEl) {
-        selfRankEl.textContent = selfIndex !== -1 ? `#${selfIndex + 1}` : 'خارج قائمة الـ 25';
+        selfRankEl.textContent = selfIndex !== -1 ? `#${selfIndex + 1} من ${players.length}` : 'خارج قائمة الـ 25';
       }
 
       // Render Table Rows
@@ -3188,45 +3212,50 @@ const UIController = (() => {
         const row = document.createElement('tr');
         row.className = `border-b border-slate-800/40 text-xs transition duration-200 ${
           isSelf 
-            ? 'bg-yellow-500/10 hover:bg-yellow-500/15 font-bold border-r-4 border-r-yellow-500' 
-            : idx < 3 ? 'bg-slate-900/30 hover:bg-slate-900/60' : 'hover:bg-slate-900/40'
+            ? 'bg-yellow-500/15 hover:bg-yellow-500/20 font-bold border-r-4 border-r-yellow-500 shadow-inner' 
+            : rank === 1 ? 'bg-gradient-to-r from-yellow-500/10 via-amber-950/20 to-transparent hover:bg-yellow-500/15'
+            : rank === 2 ? 'bg-gradient-to-r from-slate-700/10 via-slate-800/20 to-transparent hover:bg-slate-800/30'
+            : rank === 3 ? 'bg-gradient-to-r from-amber-900/10 via-amber-950/20 to-transparent hover:bg-amber-900/20'
+            : 'hover:bg-slate-900/50'
         }`;
         
         let rankBadge = '';
         if (rank === 1) {
-          rankBadge = `<span class="w-8 h-8 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 font-black flex items-center justify-center text-xs shadow-md glow-gold"><i class="fa-solid fa-crown text-[10px] ml-1"></i>1</span>`;
+          rankBadge = `<span class="w-8 h-8 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 font-black flex items-center justify-center text-xs shadow-md glow-gold"><i class="fa-solid fa-crown text-[10px] ml-0.5"></i>1</span>`;
         } else if (rank === 2) {
-          rankBadge = `<span class="w-8 h-8 rounded-xl bg-slate-700 border border-slate-400/60 text-slate-100 font-black flex items-center justify-center text-xs shadow"><i class="fa-solid fa-medal text-[10px] ml-1"></i>2</span>`;
+          rankBadge = `<span class="w-8 h-8 rounded-xl bg-slate-700 border border-slate-400/60 text-slate-100 font-black flex items-center justify-center text-xs shadow"><i class="fa-solid fa-medal text-[10px] ml-0.5"></i>2</span>`;
         } else if (rank === 3) {
-          rankBadge = `<span class="w-8 h-8 rounded-xl bg-amber-950 border border-amber-600/60 text-amber-400 font-black flex items-center justify-center text-xs shadow"><i class="fa-solid fa-award text-[10px] ml-1"></i>3</span>`;
+          rankBadge = `<span class="w-8 h-8 rounded-xl bg-amber-950 border border-amber-600/60 text-amber-400 font-black flex items-center justify-center text-xs shadow"><i class="fa-solid fa-award text-[10px] ml-0.5"></i>3</span>`;
+        } else if (rank <= 10) {
+          rankBadge = `<span class="w-7 h-7 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 font-bold flex items-center justify-center text-xs numbers-font">#${rank}</span>`;
         } else {
-          rankBadge = `<span class="w-8 h-8 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 font-bold flex items-center justify-center text-xs numbers-font">#${rank}</span>`;
+          rankBadge = `<span class="w-7 h-7 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 font-medium flex items-center justify-center text-[11px] numbers-font">#${rank}</span>`;
         }
 
         row.innerHTML = `
-          <td class="py-3.5 pr-5 pl-2 text-right">
+          <td class="py-3 pr-4 pl-2 text-right">
             ${rankBadge}
           </td>
-          <td class="py-3.5 px-3">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-black text-slate-300 numbers-font">
+          <td class="py-3 px-3">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg ${rank === 1 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 glow-gold' : 'bg-slate-800 border border-slate-700 text-slate-300'} flex items-center justify-center text-[10px] font-black numbers-font flex-shrink-0">
                 ${initials}
               </div>
-              <div>
-                <span class="font-black ${isSelf ? 'text-yellow-400 glow-gold' : rank === 1 ? 'text-yellow-300' : 'text-white'} text-sm block">
+              <div class="min-w-0">
+                <span class="font-black ${isSelf ? 'text-yellow-400 glow-gold' : rank === 1 ? 'text-yellow-300' : 'text-white'} text-xs sm:text-sm block truncate">
                   ${player.username}
                 </span>
-                ${isSelf ? '<span class="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 rounded font-bold inline-block border border-yellow-500/30">أنت (حسابك)</span>' : ''}
+                ${isSelf ? '<span class="text-[8.5px] px-1.5 py-0.2 bg-yellow-500/20 text-yellow-400 rounded font-black inline-block border border-yellow-500/30">أنت (حسابك)</span>' : ''}
               </div>
             </div>
           </td>
-          <td class="py-3.5 px-3 text-slate-400">
-            <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[10px] font-bold text-slate-300 inline-block">
+          <td class="py-3 px-3 text-slate-400">
+            <span class="px-2 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-[9.5px] sm:text-[10.5px] font-bold text-slate-300 inline-block truncate max-w-[120px] sm:max-w-none">
               ${player.title || 'مستثمر'}
             </span>
           </td>
-          <td class="py-3.5 pl-5 pr-3 text-left">
-            <span class="numbers-font font-black ${rank === 1 ? 'text-yellow-400 text-sm glow-gold' : 'text-emerald-400 text-xs'}">
+          <td class="py-3 pl-4 pr-3 text-left">
+            <span class="numbers-font font-black ${rank === 1 ? 'text-yellow-400 text-xs sm:text-sm glow-gold' : 'text-emerald-400 text-xs sm:text-sm'} whitespace-nowrap">
               ${Number(player.netWorth || 0).toLocaleString()} EGP
             </span>
           </td>
