@@ -159,47 +159,47 @@ const GameEngine = (() => {
     gold_pen: { 
       id: 'gold_pen', 
       name: 'القلم الذهبي للمدراء', 
-      cost: 15000, 
-      desc: 'يزيد خبرتك الوظيفية XP بنسبة +50%. ينتهي مفعوله ويدمر ذاته بعد 300 ثانية.',
+      cost: 25000, 
+      desc: 'يزيد خبرتك الوظيفية XP بنسبة +35% لتسريع الترقيات. ينتهي مفعوله بعد دقيقتين.',
       effect: 'xp_boost', 
-      value: 0.5,
-      durationTicks: 100 // 100 ticks = 300 seconds (5 minutes)
+      value: 0.35,
+      durationTicks: 120 // 2 minutes
     },
     premium_lawyer: { 
       id: 'premium_lawyer', 
       name: 'توكيل محامٍ دولي قدير', 
-      cost: 45000, 
-      desc: 'يخفض خطورة القبض في التجارة المحظورة بنسبة -35%. ينتهي عقد المحامي وتدمر صلاحيته بعد 450 ثانية.',
+      cost: 150000, 
+      desc: 'يخفض خطورة القبض في صفقات السوق المحظورة بنسبة -18% لمدة 4 دقائق.',
       effect: 'legal_protection', 
-      value: 0.35,
-      durationTicks: 150 // 150 ticks = 450 seconds (7.5 minutes)
+      value: 0.18,
+      durationTicks: 240
     },
     energy_drink: { 
       id: 'energy_drink', 
       name: 'مشروب الطاقة والتركيز الفائق', 
-      cost: 8500, 
-      desc: 'يضاعف راتبك في نوبات العمل x2. ينتهي مفعوله ويدمر ذاته بعد 180 ثانية.',
+      cost: 18000, 
+      desc: 'يمنحك نشاطاً فائقاً ويزيد راتب نوبات العمل بنسبة +60% لمدة 90 ثانية.',
       effect: 'salary_multiplier', 
-      value: 2.0,
-      durationTicks: 60 // 60 ticks = 180 seconds (3 minutes)
+      value: 1.60,
+      durationTicks: 90
     },
     tax_shield: { 
       id: 'tax_shield', 
       name: 'درع الإعفاء والملاذ الضريبي', 
-      cost: 80000, 
-      desc: 'يمنحك خصماً قدره 25% على تكاليف صيانة وترقية الشركات. ينتهي وتدمر صلاحيته بعد 600 ثانية.',
+      cost: 180000, 
+      desc: 'يمنحك خصماً قدره 15% على ترقيات الشركات ويخفض ضريبة الثروة بنسبة 50% لمدة 3 دقائق.',
       effect: 'upgrade_discount', 
-      value: 0.25,
-      durationTicks: 200 // 200 ticks = 600 seconds (10 minutes)
+      value: 0.15,
+      durationTicks: 180
     },
     market_scanner: { 
       id: 'market_scanner', 
       name: 'ماسح البورصة والتداول الذكي', 
-      cost: 120000, 
-      desc: 'يحميك من الانهيارات المفاجئة لأسهمك المملوكة ويحدد نقطة الدعم. يدمر ذاته بعد 360 ثانية.',
+      cost: 250000, 
+      desc: 'يخفف أثر الهبوط والتصحيحات العكسية لأسهمك بنسبة 40% لمدة 3 دقائق.',
       effect: 'stock_shield', 
-      value: 0.20,
-      durationTicks: 120 // 120 ticks = 360 seconds (6 minutes)
+      value: 0.40,
+      durationTicks: 180
     },
     vip_casino_pass: { 
       id: 'vip_casino_pass', 
@@ -393,42 +393,42 @@ const GameEngine = (() => {
     radar_jammer: {
       id: 'radar_jammer',
       name: 'جهاز تشويش رادارات الشرطة',
-      desc: 'يقلل احتمالية المداهمة الأمنية في صفقات السوق السوداء بنسبة 20% لمدة 5 دقائق.',
-      cost: 80000,
+      desc: 'يقلل احتمالية المداهمة الأمنية في صفقات السوق السوداء بنسبة 12% لمدة 4 دقائق.',
+      cost: 150000,
       icon: 'fa-satellite-dish',
-      durationTicks: 100
+      durationTicks: 240
     },
     fake_passport: {
       id: 'fake_passport',
       name: 'جواز سفر دبلوماسي مزور',
-      desc: 'حماية وتأمين ضد السجن — يمنحك مهرباً فورياً عند المداهمة وتفادي العقوبة.',
-      cost: 200000,
+      desc: 'حماية طوارئ لمرة واحدة — يضمن لك الهروب وتفادي السجن عند أول مداهمة.',
+      cost: 600000,
       icon: 'fa-passport',
-      durationTicks: 150
+      durationTicks: 300
     },
     crypto_cleaner: {
       id: 'crypto_cleaner',
       name: 'بروتوكول تشفير مالي (Zero-Trace)',
-      desc: 'يخفض عمولة غسيل الأموال إلى 5% بدلاً من 12% لتعظيم تحويل الكاش.',
-      cost: 150000,
+      desc: 'يخفض عمولة غسيل الأموال إلى 6% بدلاً من 12% لتعظيم تحويل الكاش.',
+      cost: 450000,
       icon: 'fa-shield-virus',
-      durationTicks: 120
+      durationTicks: 200
     },
     diplomatic_bag: {
       id: 'diplomatic_bag',
       name: 'حقيبة التشفير الدبلوماسية المصفحة',
-      desc: 'تحمي 50% من الأموال المشبوهة من المصادرة التامة حتى في حال فشل الصفقة والقبض عليك.',
-      cost: 500000,
+      desc: 'تحمي 35% من الأموال المشبوهة من المصادرة التامة في حال المداهمة.',
+      cost: 800000,
       icon: 'fa-briefcase',
-      durationTicks: 200
+      durationTicks: 240
     },
     commissioner_wire: {
       id: 'commissioner_wire',
       name: 'شريحة اتصال كبار المسؤولين (VIP Wire)',
-      desc: 'تخفض تكلفة الرشوة وإسقاط الملاحقات الأمنية بنسبة 50%.',
-      cost: 1200000,
+      desc: 'تخفض تكلفة الرشوة وإسقاط الملاحقات الأمنية بنسبة 35%.',
+      cost: 1800000,
       icon: 'fa-mobile-retro',
-      durationTicks: 250
+      durationTicks: 300
     }
   };
 
@@ -1420,7 +1420,7 @@ const GameEngine = (() => {
     return { shares, price: currentPrice, totalReturn };
   }
 
-  // Store: Buy Item
+  // Store: Buy Item (Refreshes duration, prevents exploit stacking)
   function buyStoreItem(itemId) {
     const item = STORE_ITEMS[itemId];
     if (!item) throw new Error("المنتج المطلوب غير متوفر بالمتجر.");
@@ -1430,7 +1430,8 @@ const GameEngine = (() => {
     }
 
     state.cash -= item.cost;
-    state.inventory[itemId] = (state.inventory[itemId] || 0) + 1;
+    if (!state.inventory) state.inventory = {};
+    state.inventory[itemId] = 1;
 
     // Initialize/Reset item self-destruction timer
     if (!state.itemDurations) state.itemDurations = {};
