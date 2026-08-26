@@ -409,7 +409,7 @@ const GameEngine = (() => {
     crypto_cleaner: {
       id: 'crypto_cleaner',
       name: 'بروتوكول تشفير مالي (Zero-Trace)',
-      desc: 'يخفض عمولة غسيل الأموال إلى 6% بدلاً من 12% لتعظيم تحويل الكاش.',
+      desc: 'يخفض ضريبة غسيل وتبييض الأموال إلى الحد الأدنى القانوني 25% بدلاً من 35%.',
       cost: 450000,
       icon: 'fa-shield-virus',
       durationTicks: 200
@@ -813,19 +813,23 @@ const GameEngine = (() => {
       }
     });
 
-    // 4.5 Passive Business Front Laundering (واجهات الشركات لغسيل الأموال تلقائياً بدون عمولة)
+    // 4.5 Passive Business Front Laundering (واجهات الشركات لغسيل الأموال بضريبة 25% كحد أدنى)
     if ((state.dirtyCash || 0) > 0 && state.businesses) {
       let bizFrontCapacity = 0;
       Object.keys(state.businesses).forEach(k => {
         const b = state.businesses[k];
         if (b && b.level > 0) {
-          bizFrontCapacity += b.level * 250; // Each business level launders 250 EGP per tick automatically
+          bizFrontCapacity += b.level * 250; // Each business level provides laundering capacity per tick
         }
       });
       if (bizFrontCapacity > 0) {
-        const autoCleaned = Math.min(state.dirtyCash, bizFrontCapacity);
-        state.dirtyCash -= autoCleaned;
+        const autoAmount = Math.min(state.dirtyCash, bizFrontCapacity);
+        const autoFeeRate = 0.25; // Never less than 25% laundering tax
+        const autoFee = Math.floor(autoAmount * autoFeeRate);
+        const autoCleaned = autoAmount - autoFee;
+        state.dirtyCash -= autoAmount;
         state.cash += autoCleaned; // Added as clean legitimate cash
+        state.totalTaxesPaid = (state.totalTaxesPaid || 0) + autoFee;
       }
     }
 
@@ -1712,13 +1716,16 @@ const GameEngine = (() => {
       throw new Error(`المبلغ المطلوب (${amount.toLocaleString()} ج.م) أكبر من رصيد الأموال غير المشروعة المتاحة (${availableDirty.toLocaleString()} ج.م).`);
     }
     
-    const feeRate = (state.inventory && state.inventory.crypto_cleaner > 0) ? 0.05 : 0.12;
+    // Money laundering tax rate: base 35%, drops to 25% with crypto_cleaner (Never less than 25%)
+    const hasCryptoCleaner = Boolean(state.inventory && state.inventory.crypto_cleaner > 0);
+    const feeRate = hasCryptoCleaner ? 0.25 : 0.35;
     const fee = Math.floor(amount * feeRate);
     const cleanedAmount = amount - fee;
     
     state.dirtyCash = Math.max(0, state.dirtyCash - amount);
     state.bank = (state.bank || 0) + cleanedAmount;
-    recordPlayerActivity('غسيل أموال', `غسيل ${amount.toLocaleString()} ج.م وتحويل ${cleanedAmount.toLocaleString()} ج.م إلى رصيد البنك النظيف`, 'banking');
+    state.totalTaxesPaid = (state.totalTaxesPaid || 0) + fee;
+    recordPlayerActivity('غسيل أموال', `غسيل ${amount.toLocaleString()} ج.م (ضريبة/عمولة ${Math.round(feeRate * 100)}% = ${fee.toLocaleString()} ج.م) وتحويل صافي ${cleanedAmount.toLocaleString()} ج.م إلى رصيد البنك النظيف`, 'blackmarket');
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
     return {

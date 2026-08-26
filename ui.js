@@ -3003,9 +3003,9 @@ const UIController = (() => {
     if (maxCashEl) maxCashEl.textContent = (s.dirtyCash || 0).toLocaleString();
 
     const feeBadgeEl = document.getElementById('laundering-fee-badge');
-    const hasCryptoCleaner = s.inventory && s.inventory.crypto_cleaner > 0;
+    const hasCryptoCleaner = Boolean(s.inventory && s.inventory.crypto_cleaner > 0);
     if (feeBadgeEl) {
-      feeBadgeEl.textContent = hasCryptoCleaner ? '5% (Zero-Trace نشط)' : '12%';
+      feeBadgeEl.textContent = hasCryptoCleaner ? '25% (Zero-Trace نشط)' : '35%';
       feeBadgeEl.className = hasCryptoCleaner ? 'numbers-font font-black text-cyan-400' : 'numbers-font font-black text-emerald-400';
     }
 
@@ -3201,7 +3201,7 @@ const UIController = (() => {
         try {
           const res = GameEngine.launderMoney(val);
           launderInput.value = '';
-          showToast('تم الغسيل المالي', `تم غسيل وتبييض ${res.amount.toLocaleString()} EGP وإيداع صافي ${res.cleanedAmount.toLocaleString()} EGP بحسابك البنكي (خصم عمولة ${res.feeRate}% = ${res.fee.toLocaleString()} EGP).`, 'success');
+          showToast('تم الغسيل المالي', `تم غسيل وتبييض ${res.amount.toLocaleString()} EGP وإيداع صافي ${res.cleanedAmount.toLocaleString()} EGP بحسابك البنكي (خصم ضريبة غسيل ${res.feeRate}% = ${res.fee.toLocaleString()} EGP).`, 'success');
           renderAll();
         } catch (err) {
           showToast('فشل الغسيل', err.message, 'error');
