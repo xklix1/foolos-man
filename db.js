@@ -725,6 +725,153 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
+  //  GIFT CODES SYSTEM — Firestore Operations
+  // ─────────────────────────────────────────────
+  async function adminCreateGiftCode(code, rewardType, details, maxUses) {
+    _requireOnline();
+    await _ensureAdminAuth();
+    
+    const normalizedCode = code.trim().toUpperCase();
+    if (!normalizedCode) throw new Error('يرجى إدخال رمز الكود.');
+
+    maxUses = Number(maxUses) || 0;
+    
+    const docRef = firestoreDb.collection('giftCodes').doc(normalizedCode);
+    const doc = await docRef.get();
+    if (doc.exists) throw new Error('هذا الكود موجود بالفعل!');
+
+    await docRef.set({
+      rewardType,
+      rewardDetails: details,
+      maxUses,
+      usedCount: 0,
+      redeemedUsers: [],
+      createdTimestamp: Date.now()
+    });
+    return true;
+  }
+
+  async function adminDeleteGiftCode(code) {
+    _requireOnline();
+    await _ensureAdminAuth();
+    const normalizedCode = code.trim().toUpperCase();
+    await firestoreDb.collection('giftCodes').doc(normalizedCode).delete();
+    return true;
+  }
+
+  async function adminGetGiftCodes() {
+    _requireOnline();
+    await _ensureAdminAuth();
+    const snap = await firestoreDb.collection('giftCodes')
+      .orderBy('createdTimestamp', 'desc')
+      .get();
+    const codes = [];
+    snap.forEach(doc => {
+      codes.push({ id: doc.id, ...doc.data() });
+    });
+    return codes;
+  }
+
+  async function redeemGiftCode(code, username) {
+    _requireOnline();
+    const normalizedCode = code.trim().toUpperCase();
+    if (!normalizedCode) throw new Error('يرجى إدخال رمز الكود.');
+
+    const db = firestoreDb;
+    const codeRef = db.collection('giftCodes').doc(normalizedCode);
+    const playerRef = db.collection('players').doc(username);
+
+    return await db.runTransaction(async (tx) => {
+      const [codeDoc, playerDoc] = await Promise.all([
+        tx.get(codeRef),
+        tx.get(playerRef)
+      ]);
+
+      if (!codeDoc.exists) throw new Error('كود الهدية غير صحيح أو غير مفعل.');
+      if (!playerDoc.exists) throw new Error('حساب اللاعب غير موجود.');
+
+      const codeData = codeDoc.data();
+      const playerData = playerDoc.data();
+
+      const redeemedList = codeData.redeemedUsers || [];
+      if (redeemedList.includes(username)) {
+        throw new Error('لقد قمت باسترداد هذا الكود مسبقاً!');
+      }
+
+      if (codeData.maxUses > 0 && (codeData.usedCount || 0) >= codeData.maxUses) {
+        throw new Error('عذراً، لقد نفذت مرات استخدام هذا الكود المتاحة.');
+      }
+
+      let rewardText = '';
+      const updates = {};
+
+      if (codeData.rewardType === 'cash') {
+        const amount = Number(codeData.rewardDetails.amount || 0);
+        if (amount <= 0) throw new Error('تفاصيل المكافأة المالية غير صالحة.');
+        
+        const newCash = (playerData.cash || 0) + amount;
+        const newNetWorth = (playerData.netWorth || 0) + amount;
+
+        updates.cash = newCash;
+        updates.netWorth = newNetWorth;
+        rewardText = `مبلغ مالي بقيمة ${amount.toLocaleString()} ج.م`;
+
+      } else if (codeData.rewardType === 'business') {
+        const bId = codeData.rewardDetails.businessId;
+        const lvl = Number(codeData.rewardDetails.level || 1);
+        const workers = Number(codeData.rewardDetails.workers || 0);
+
+        if (!bId) throw new Error('تفاصيل مكافأة الأملاك غير صالحة.');
+
+        const playerBusinesses = playerData.businesses || {};
+        playerBusinesses[bId] = {
+          level: lvl,
+          price: playerBusinesses[bId]?.price || 22,
+          workers: workers
+        };
+
+        updates.businesses = playerBusinesses;
+        rewardText = `مشروع/شركة بمستوى ${lvl} وعدد ${workers} عمال`;
+
+      } else if (codeData.rewardType === 'item') {
+        const itemId = codeData.rewardDetails.itemId;
+        if (!itemId) throw new Error('تفاصيل مكافأة الأداة غير صالحة.');
+
+        const inventory = playerData.inventory || {};
+        inventory[itemId] = (inventory[itemId] || 0) + 1;
+        updates.inventory = inventory;
+
+        const durations = playerData.itemDurations || {};
+        let durationTicks = 100;
+        if (window.GameEngine && window.GameEngine.STORE_ITEMS && window.GameEngine.STORE_ITEMS[itemId]) {
+          durationTicks = window.GameEngine.STORE_ITEMS[itemId].durationTicks;
+        }
+        durations[itemId] = durationTicks;
+        updates.itemDurations = durations;
+
+        rewardText = `أداة/عنصر من المتجر (${itemId})`;
+      } else {
+        throw new Error('نوع المكافأة غير معروف.');
+      }
+
+      tx.update(playerRef, updates);
+
+      redeemedList.push(username);
+      tx.update(codeRef, {
+        usedCount: (codeData.usedCount || 0) + 1,
+        redeemedUsers: redeemedList
+      });
+
+      return {
+        rewardType: codeData.rewardType,
+        rewardDetails: codeData.rewardDetails,
+        rewardText: rewardText,
+        playerUpdates: updates
+      };
+    });
+  }
+
+  // ─────────────────────────────────────────────
   // ─────────────────────────────────────────────
   //  ADMIN FUNCTIONS
   // ─────────────────────────────────────────────
@@ -1258,6 +1405,12 @@ const AppDB = (() => {
     adminDeleteAuctionItem,
     getAuctionItems,
     purchaseAuctionItem,
+
+    // Gift Codes API
+    adminCreateGiftCode,
+    adminDeleteGiftCode,
+    adminGetGiftCodes,
+    redeemGiftCode,
 
     // Admin API
     sendBroadcast,

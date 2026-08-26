@@ -1806,6 +1806,49 @@ const UIController = (() => {
   }
 
   function setupEventListeners() {
+    // Gift Code Redeem Listener (Player)
+    const btnPlayerRedeemGift = document.getElementById('btn-player-redeem-gift');
+    if (btnPlayerRedeemGift) {
+      btnPlayerRedeemGift.addEventListener('click', async () => {
+        const codeInput = document.getElementById('player-gift-code-input');
+        if (!codeInput) return;
+        const code = codeInput.value.trim();
+        if (!code) {
+          showToast('خطأ إدخال', 'يرجى إدخال رمز الكود أولاً.', 'error');
+          return;
+        }
+
+        try {
+          btnPlayerRedeemGift.disabled = true;
+          btnPlayerRedeemGift.textContent = 'جاري التحقق...';
+
+          const result = await AppDB.redeemGiftCode(code, GameEngine.activeUsername);
+          
+          showToast('تم استرداد الهدية! 🎉', `تهانينا! حصلت على: ${result.rewardText}`, 'success');
+          playMenuSound('success');
+          
+          // Apply changes to local GameEngine.state
+          if (result.rewardType === 'cash') {
+            GameEngine.state.cash = result.playerUpdates.cash;
+            GameEngine.state.netWorth = result.playerUpdates.netWorth;
+          } else if (result.rewardType === 'business') {
+            GameEngine.state.businesses = result.playerUpdates.businesses;
+          } else if (result.rewardType === 'item') {
+            GameEngine.state.inventory = result.playerUpdates.inventory;
+            GameEngine.state.itemDurations = result.playerUpdates.itemDurations;
+          }
+
+          codeInput.value = '';
+          renderAll();
+        } catch (err) {
+          showToast('فشل استرداد الكود', err.message, 'error');
+        } finally {
+          btnPlayerRedeemGift.disabled = false;
+          btnPlayerRedeemGift.innerHTML = '<i class="fa-solid fa-gift"></i> <span>استرداد الهدية</span>';
+        }
+      });
+    }
+
     const logoutBtn = document.getElementById('btn-user-logout');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', () => {
@@ -4119,8 +4162,8 @@ const UIController = (() => {
       });
     }
 
-    // Tabs logic - bind all 7 subtabs
-    const tabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'auctions', 'system'];
+    // Tabs logic - bind all 8 subtabs
+    const tabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'auctions', 'giftcodes', 'system'];
     tabs.forEach(t => {
       const tabEl = document.getElementById(`tab-admin-${t}`);
       if (tabEl) {
@@ -5389,6 +5432,78 @@ const UIController = (() => {
       });
     }
 
+    // Admin Gift Codes Select Change Listener
+    const giftRewardTypeSelect = document.getElementById('admin-gift-reward-type');
+    if (giftRewardTypeSelect) {
+      giftRewardTypeSelect.addEventListener('change', () => {
+        const type = giftRewardTypeSelect.value;
+        document.getElementById('admin-gift-box-cash').classList.toggle('hidden', type !== 'cash');
+        document.getElementById('admin-gift-box-business').classList.toggle('hidden', type !== 'business');
+        document.getElementById('admin-gift-box-item').classList.toggle('hidden', type !== 'item');
+      });
+    }
+
+    // Admin Create Gift Code Click Listener
+    const btnCreateGiftCode = document.getElementById('btn-admin-create-giftcode');
+    if (btnCreateGiftCode) {
+      btnCreateGiftCode.addEventListener('click', async () => {
+        const code = document.getElementById('admin-gift-code').value.trim();
+        const type = document.getElementById('admin-gift-reward-type').value;
+        const maxUses = Number(document.getElementById('admin-gift-max-uses').value) || 0;
+
+        if (!code) {
+          showToast('خطأ إدخال', 'يرجى إدخال رمز كود الهدية.', 'error');
+          return;
+        }
+
+        const details = {};
+        if (type === 'cash') {
+          const amt = Number(document.getElementById('admin-gift-cash-amount').value);
+          if (isNaN(amt) || amt <= 0) {
+            showToast('خطأ إدخال', 'يرجى إدخال مبلغ مالي صحيح وموجب.', 'error');
+            return;
+          }
+          details.amount = amt;
+        } else if (type === 'business') {
+          const bId = document.getElementById('admin-gift-business-id').value;
+          const lvl = Number(document.getElementById('admin-gift-business-lvl').value);
+          const workers = Number(document.getElementById('admin-gift-business-workers').value);
+          if (isNaN(lvl) || lvl <= 0 || isNaN(workers) || workers < 0) {
+            showToast('خطأ إدخال', 'يرجى إدخال مستوى وعدد عمال صحيحين.', 'error');
+            return;
+          }
+          details.businessId = bId;
+          details.level = lvl;
+          details.workers = workers;
+        } else if (type === 'item') {
+          const itemId = document.getElementById('admin-gift-item-id').value;
+          details.itemId = itemId;
+        }
+
+        try {
+          btnCreateGiftCode.disabled = true;
+          btnCreateGiftCode.textContent = 'جاري توليد الكود...';
+
+          await AppDB.adminCreateGiftCode(code, type, details, maxUses);
+          
+          showToast('تم إنشاء الكود', `تم نشر كود الهدية "${code.toUpperCase()}" بنجاح في المنظومة.`, 'success');
+          logAdminAction(`إنشاء كود الهدية: ${code.toUpperCase()} (النوع: ${type})`);
+          
+          // Clear inputs
+          document.getElementById('admin-gift-code').value = '';
+          document.getElementById('admin-gift-max-uses').value = '0';
+          document.getElementById('admin-gift-cash-amount').value = '';
+          
+          fetchAndRenderAdminGiftCodes();
+        } catch (err) {
+          showToast('فشل الإنشاء', err.message, 'error');
+        } finally {
+          btnCreateGiftCode.disabled = false;
+          btnCreateGiftCode.innerHTML = '<i class="fa-solid fa-plus"></i> <span>توليد ونشر كود الهدية فوراً</span>';
+        }
+      });
+    }
+
     // Expose loader to global scope of module
     window._adminReloadPlayers = loadAdminPlayersDirectory;
     window._adminRenderStockPrices = renderAdminStockPrices;
@@ -5449,7 +5564,7 @@ const UIController = (() => {
   }
 
   function switchAdminTab(tabId) {
-    const subtabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'auctions', 'system'];
+    const subtabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'auctions', 'giftcodes', 'system'];
     subtabs.forEach(t => {
       const btn = document.getElementById(`tab-admin-${t}`);
       const panel = document.getElementById(`admin-subpanel-${t}`);
@@ -5475,6 +5590,8 @@ const UIController = (() => {
       if (window._adminRenderStockPrices) window._adminRenderStockPrices();
     } else if (tabId === 'auctions') {
       fetchAndRenderAdminAuctions();
+    } else if (tabId === 'giftcodes') {
+      fetchAndRenderAdminGiftCodes();
     } else if (tabId === 'system') {
       const itSelect = document.getElementById('admin-item-config-select');
       if (itSelect) {
@@ -5916,6 +6033,95 @@ const UIController = (() => {
       });
     } catch (e) {
       tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-400">فشل تحميل قائمة المزادات الإدارية: ${e.message}</td></tr>`;
+    }
+  }
+
+  async function fetchAndRenderAdminGiftCodes() {
+    const tbody = document.getElementById('admin-giftcodes-list');
+    if (!tbody) return;
+
+    try {
+      const codes = await AppDB.adminGetGiftCodes();
+      if (codes.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500">لا توجد أكواد هدايا نشطة حالياً.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = '';
+      codes.forEach(code => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-slate-800/60 hover:bg-slate-900/30 text-xs';
+
+        let rewardDesc = '';
+        if (code.rewardType === 'cash') {
+          rewardDesc = `${Number(code.rewardDetails.amount || 0).toLocaleString()} ج.م`;
+        } else if (code.rewardType === 'business') {
+          const businessNames = {
+            coffee: 'عربة قهوة مختصة',
+            supermarket: 'سوبر ماركت',
+            tech: 'شركة برمجيات وتطبيقات',
+            logistics: 'شركة شحن ولوجستيات',
+            solar_factory: 'محطة طاقة شمسية',
+            private_hospital: 'مستشفى خاص',
+            media_studio: 'ستوديو إنتاج إعلامي',
+            private_bank: 'بنك استثماري خاص',
+            oil_refinery: 'مصفاة بترول وتكرير',
+            space_tech: 'شركة استكشاف الفضاء'
+          };
+          const bName = businessNames[code.rewardDetails.businessId] || code.rewardDetails.businessId;
+          rewardDesc = `${bName} (مستوى ${code.rewardDetails.level} | عمال ${code.rewardDetails.workers})`;
+        } else if (code.rewardType === 'item') {
+          const itemNames = {
+            gold_pen: 'القلم الذهبي للمدراء',
+            premium_lawyer: 'توكيل محامٍ دولي',
+            energy_drink: 'مشروب الطاقة والتركيز',
+            tax_shield: 'درع الإعفاء الضريبي',
+            market_scanner: 'ماسح البورصة والتداول',
+            vip_casino_pass: 'بطاقة VIP للكازينو',
+            quantum_cpu: 'معالج الحوسبة الكمومية',
+            diamond_card: 'عضوية النادي الماسي',
+            cronos_gear: 'ساعة الكرونوس'
+          };
+          const itName = itemNames[code.rewardDetails.itemId] || code.rewardDetails.itemId;
+          rewardDesc = itName;
+        }
+
+        const maxStr = code.maxUses > 0 ? `${code.maxUses}` : '♾️';
+        const usageText = `${code.usedCount || 0} / ${maxStr}`;
+
+        tr.innerHTML = `
+          <td class="py-2.5 font-black text-emerald-400 font-mono">${code.id}</td>
+          <td class="py-2.5 text-slate-300 font-bold">${code.rewardType === 'cash' ? 'مالي 💰' : code.rewardType === 'business' ? 'أملاك/شركة 🏢' : 'أداة 🎒'}</td>
+          <td class="py-2.5 text-center text-slate-400 font-bold">${rewardDesc}</td>
+          <td class="py-2.5 text-center font-bold font-mono text-slate-300">${usageText}</td>
+          <td class="py-2.5 text-left">
+            <button data-id="${code.id}" class="btn-admin-delete-giftcode py-1 px-3 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/20 rounded font-bold transition text-[10px]">حذف الكود</button>
+          </td>
+        `;
+
+        const deleteBtn = tr.querySelector('.btn-admin-delete-giftcode');
+        if (deleteBtn) {
+          deleteBtn.addEventListener('click', async () => {
+            if (!confirm(`هل أنت متأكد من حذف كود الهدية "${code.id}"؟`)) return;
+            try {
+              deleteBtn.disabled = true;
+              deleteBtn.textContent = 'جاري الحذف...';
+              await AppDB.adminDeleteGiftCode(code.id);
+              showToast('تم الحذف', 'تم حذف كود الهدية بنجاح.', 'info');
+              logAdminAction(`حذف كود الهدية: ${code.id}`);
+              fetchAndRenderAdminGiftCodes();
+            } catch (err) {
+              showToast('فشل الحذف', err.message, 'error');
+              deleteBtn.disabled = false;
+              deleteBtn.textContent = 'حذف الكود';
+            }
+          });
+        }
+
+        tbody.appendChild(tr);
+      });
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-400">فشل تحميل الأكواد: ${e.message}</td></tr>`;
     }
   }
 

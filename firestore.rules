@@ -88,5 +88,17 @@ service cloud.firestore {
       allow update: if request.auth != null; // التحديث للجميع عند الشراء لتقليل الكمية
       allow delete: if isAdmin();
     }
+
+    // ─────────────────────────────────────────────
+    // 6. أكواد الهدايا والمكافآت (Gift Codes)
+    // ─────────────────────────────────────────────
+    match /giftCodes/{code} {
+      allow read: if request.auth != null;
+      allow create: if isAdmin() &&
+                       request.resource.data.rewardType in ['cash', 'business', 'item'] &&
+                       request.resource.data.keys().hasAll(['rewardType', 'rewardDetails', 'maxUses', 'usedCount', 'redeemedUsers', 'createdTimestamp']);
+      allow update: if request.auth != null; // التحديث للاعبين لتسجيل الاسترداد
+      allow delete: if isAdmin();
+    }
   }
 }

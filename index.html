@@ -1658,6 +1658,22 @@
             <!-- Dyn items -->
           </div>
         </div>
+
+        <!-- Gift Code Redeem Card (New Feature) -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
+          <h3 class="text-md font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-gift text-emerald-400"></i>
+            <span>استرداد أكواد الهدايا والمكافآت</span>
+          </h3>
+          <p class="text-xs text-slate-400">هل تملك كود هدية مالي، أداة، أو شركة مقدمة من الإدارة؟ أدخله هنا لتحصل على جائزتك فوراً.</p>
+          <div class="flex gap-2 max-w-md">
+            <input type="text" id="player-gift-code-input" placeholder="أدخل رمز الكود هنا (مثال: WELCOME)" class="glass-input flex-grow p-2.5 text-xs text-center font-bold font-mono text-white bg-slate-950 border border-slate-800 rounded-xl uppercase">
+            <button id="btn-player-redeem-gift" class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black rounded-xl text-xs transition shadow-lg flex items-center gap-1.5 whitespace-nowrap">
+              <i class="fa-solid fa-gift"></i>
+              <span>استرداد الهدية</span>
+            </button>
+          </div>
+        </div>
       </section>
 
       <!-- TAB 12: المزادات والصفقات الخاصة (AUCTIONS) -->
@@ -2591,6 +2607,7 @@
       <button id="tab-admin-market" class="admin-tab-btn px-4 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-2"><i class="fa-solid fa-chart-line"></i><span>التحكم بالبورصة والأحداث</span></button>
       <button id="tab-admin-broadcast" class="admin-tab-btn px-4 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-2"><i class="fa-solid fa-bullhorn"></i><span>البث والمكافآت العامة</span></button>
       <button id="tab-admin-auctions" class="admin-tab-btn px-4 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-2"><i class="fa-solid fa-gavel text-amber-500"></i><span>إدارة المزادات والصفقات</span></button>
+      <button id="tab-admin-giftcodes" class="admin-tab-btn px-4 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-2"><i class="fa-solid fa-gift text-emerald-400"></i><span>أكواد الهدايا والمكافآت</span></button>
       <button id="tab-admin-system" class="admin-tab-btn px-4 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation text-rose-400"></i><span class="text-rose-400">شؤون وتصفير النظام</span></button>
     </nav>
 
@@ -3457,6 +3474,119 @@
                 </thead>
                 <tbody id="admin-auctions-list" class="divide-y divide-slate-800/40">
                   <tr><td colspan="5" class="py-4 text-center text-slate-500">جاري تحميل الأغراض المعروضة...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. PANEL GIFT CODES MANAGEMENT -->
+        <div id="admin-subpanel-giftcodes" class="hidden space-y-4">
+          <!-- Create Gift Code Card -->
+          <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
+            <h4 class="text-xs font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-gift text-emerald-400 animate-bounce"></i>
+              <span>صناعة كود هدايا ومكافآت جديد</span>
+            </h4>
+            <p class="text-[10px] text-slate-400">يمكنك إنشاء كود مخصص وإسناد جائزة معينة له (أموال، أو مشروع بمواصفات معينة، أو أداة من المتجر).</p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">رمز الكود (Gift Code)</label>
+                <input type="text" id="admin-gift-code" placeholder="مثال: EID2026" class="glass-input w-full p-2 text-xs text-center font-black font-mono text-white bg-slate-950 border border-slate-800 rounded-lg uppercase">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">نوع المكافأة (Reward Type)</label>
+                <select id="admin-gift-reward-type" class="glass-input w-full p-2 text-xs text-right bg-slate-900 border border-slate-800 text-white rounded-lg">
+                  <option value="cash">مبلغ مالي (Cash)</option>
+                  <option value="business">شركة / مشروع (Business)</option>
+                  <option value="item">أداة من المتجر (Store Item)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">مرات الاستخدام الكلية (0 تعني غير محدود)</label>
+                <input type="number" id="admin-gift-max-uses" min="0" value="0" class="glass-input w-full p-2 text-xs text-center font-bold font-mono text-white bg-slate-950 border border-slate-800 rounded-lg">
+              </div>
+            </div>
+
+            <!-- Dynamic Reward Config Boxes -->
+            <!-- 1. Cash Box -->
+            <div id="admin-gift-box-cash" class="p-3 bg-slate-950/80 border border-slate-800/80 rounded-xl space-y-2">
+              <label class="block text-[10px] text-slate-400">المبلغ المالي الممنوح (ج.م EGP)</label>
+              <input type="number" id="admin-gift-cash-amount" min="1" placeholder="مثال: 500000" class="glass-input w-full max-w-xs p-2 text-xs text-center font-bold font-mono text-white bg-slate-900 border border-slate-800 rounded-lg">
+            </div>
+
+            <!-- 2. Business Box (Hidden by default) -->
+            <div id="admin-gift-box-business" class="hidden p-3 bg-slate-950/80 border border-slate-800/80 rounded-xl space-y-2">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div>
+                  <label class="block text-[10px] text-slate-400 mb-1">المشروع / الشركة</label>
+                  <select id="admin-gift-business-id" class="glass-input w-full p-2 text-xs text-right bg-slate-900 border border-slate-800 text-white rounded-lg">
+                    <option value="coffee">عربة قهوة مختصة</option>
+                    <option value="supermarket">سوبر ماركت</option>
+                    <option value="tech">شركة برمجيات وتطبيقات</option>
+                    <option value="logistics">شركة شحن ولوجستيات</option>
+                    <option value="solar_factory">محطة طاقة شمسية</option>
+                    <option value="private_hospital">مستشفى خاص</option>
+                    <option value="media_studio">ستوديو إنتاج إعلامي</option>
+                    <option value="private_bank">بنك استثماري خاص</option>
+                    <option value="oil_refinery">مصفاة بترول وتكرير</option>
+                    <option value="space_tech">شركة استكشاف الفضاء</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 mb-1">المستوى (Level)</label>
+                  <input type="number" id="admin-gift-business-lvl" min="1" max="100" value="1" class="glass-input w-full p-2 text-xs text-center font-bold font-mono text-white bg-slate-950 border border-slate-800 rounded-lg">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-400 mb-1">الموظفين (Workers)</label>
+                  <input type="number" id="admin-gift-business-workers" min="0" max="1000" value="0" class="glass-input w-full p-2 text-xs text-center font-bold font-mono text-white bg-slate-950 border border-slate-800 rounded-lg">
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Item Box (Hidden by default) -->
+            <div id="admin-gift-box-item" class="hidden p-3 bg-slate-950/80 border border-slate-800/80 rounded-xl space-y-2">
+              <label class="block text-[10px] text-slate-400 mb-1">الأداة / العنصر من المتجر</label>
+              <select id="admin-gift-item-id" class="glass-input w-full max-w-xs p-2 text-xs text-right bg-slate-900 border border-slate-800 text-white rounded-lg">
+                <option value="gold_pen">القلم الذهبي للمدراء</option>
+                <option value="premium_lawyer">توكيل محامٍ دولي</option>
+                <option value="energy_drink">مشروب الطاقة والتركيز</option>
+                <option value="tax_shield">درع الإعفاء الضريبي</option>
+                <option value="market_scanner">ماسح البورصة والتداول</option>
+                <option value="vip_casino_pass">بطاقة VIP للكازينو</option>
+                <option value="quantum_cpu">معالج الحوسبة الكمومية</option>
+                <option value="diamond_card">عضوية النادي الماسي</option>
+                <option value="cronos_gear">ساعة الكرونوس</option>
+              </select>
+            </div>
+
+            <button id="btn-admin-create-giftcode" class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold rounded-lg text-xs transition shadow-lg flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-plus"></i>
+              <span>توليد ونشر كود الهدية فوراً</span>
+            </button>
+          </div>
+
+          <!-- Current Gift Codes List -->
+          <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
+            <h4 class="text-xs font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-yellow-500"></i>
+              <span>أكواد الهدايا الفعالة حالياً في النظام</span>
+            </h4>
+            
+            <div class="overflow-x-auto">
+              <table class="w-full text-right text-xs">
+                <thead>
+                  <tr class="border-b border-slate-800 text-slate-400">
+                    <th class="pb-2">رمز الكود</th>
+                    <th class="pb-2">نوع المكافأة</th>
+                    <th class="pb-2 text-center">تفاصيل الهدية</th>
+                    <th class="pb-2 text-center">الاستخدام</th>
+                    <th class="pb-2 text-left">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-giftcodes-list" class="divide-y divide-slate-800/40">
+                  <tr><td colspan="5" class="py-4 text-center text-slate-500">جاري تحميل الأكواد الفعالة...</td></tr>
                 </tbody>
               </table>
             </div>
