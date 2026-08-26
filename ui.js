@@ -1596,6 +1596,16 @@ const UIController = (() => {
   }
 
   // --- Tab 4: Bank & Wire Transfers Panel ---
+  function formatInvestmentDuration(totalSeconds) {
+    if (!totalSeconds || totalSeconds <= 0) return 'جاهز للاستلام! ⚡';
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    if (hrs > 0) return `${hrs}س ${mins}د ${secs}ث`;
+    if (mins > 0) return `${mins}د ${secs}ث`;
+    return `${secs} ثانية`;
+  }
+
   function renderBank() {
     const s = GameEngine.state;
 
@@ -1616,7 +1626,7 @@ const UIController = (() => {
       `;
     } else {
       s.investments.forEach((inv, idx) => {
-        const remainingSec = inv.ticksRemaining * 3;
+        const remainingSec = inv.ticksRemaining || 0;
         const totalPayout = Math.floor(inv.investedAmount * (1 + inv.rate));
         
         const row = document.createElement('div');
@@ -1628,7 +1638,7 @@ const UIController = (() => {
           </div>
           <div class="text-left">
             <span class="text-emerald-400 font-bold numbers-font block">+${totalPayout.toLocaleString()} EGP</span>
-            <span id="inv-sec-${idx}" class="text-[10px] px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full border border-slate-700 numbers-font inline-block mt-1">متبقي: ${remainingSec} ثانية</span>
+            <span id="inv-sec-${idx}" class="text-[10px] px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full border border-slate-700 numbers-font inline-block mt-1">متبقي: ${formatInvestmentDuration(remainingSec)}</span>
           </div>
         `;
         invContainer.appendChild(row);
@@ -1675,7 +1685,7 @@ const UIController = (() => {
       s.investments.forEach((inv, idx) => {
         const secEl = document.getElementById(`inv-sec-${idx}`);
         if (secEl) {
-          secEl.textContent = `متبقي: ${inv.ticksRemaining * 3} ثانية`;
+          secEl.textContent = `متبقي: ${formatInvestmentDuration(inv.ticksRemaining || 0)}`;
         }
       });
     }
@@ -3782,20 +3792,8 @@ const UIController = (() => {
 
     if (!modal) return;
 
-    const openModal = async () => {
-      if (!AppDB.isAdminAuthenticated()) {
-        const adminEmail = prompt('🔐 توثيق صلاحيات الإدارة العليا (Firebase Admin Auth):\nأدخل البريد الإلكتروني للإدارة:', 'khalid.newstart@gmail.com');
-        if (!adminEmail) return;
-        const adminPass = prompt('أدخل كلمة المرور الخاصة بحساب Firebase Admin:');
-        if (!adminPass) return;
-        try {
-          await AppDB.loginAdminWithCredentials(adminEmail.trim(), adminPass.trim());
-          showToast('توثيق الإدارة', 'تم توثيق جلسة الإدارة العليا بنجاح وبأمان تام.', 'success');
-        } catch (e) {
-          showToast('فشل التوثيق', 'بيانات الدخول الإدارية غير صحيحة أو تعذر الاتصال.', 'error');
-          return;
-        }
-      }
+    const openModal = () => {
+      playMenuSound('modal_open');
       modal.classList.remove('hidden');
       switchAdminTab('stats');
     };

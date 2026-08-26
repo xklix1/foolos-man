@@ -231,11 +231,46 @@ const GameEngine = (() => {
   };
 
   const INVESTMENTS = {
-    short: { id: 'short', name: 'وديعة بنكية ربع سنوية', durationTicks: 20, rate: 0.06, minAmount: 10000, desc: 'تجميد السيولة لتوفير التمويل المصرفي مقابل عائد أرباح إضافي (+6%).' },
-    medium: { id: 'medium', name: 'صندوق استثمار عقاري وسندات', durationTicks: 45, rate: 0.20, minAmount: 50000, desc: 'استثمار مضمون في أصول إنشائية وتجارية مدرة للدخل (+20%).' },
-    long: { id: 'long', name: 'صندوق أسهم وتحوط دولي خاص', durationTicks: 90, rate: 0.55, minAmount: 200000, desc: 'محفظة استثمارية مغلقة في أسواق المال العالمية بعوائد استثنائية (+55%).' },
-    venture: { id: 'venture', name: 'صندوق الاكتتابات والشركات المليارية', durationTicks: 200, rate: 1.40, minAmount: 1000000, desc: 'استثمار استراتيجي مغلق في شركات التكنولوجيا الصاعدة بعوائد فائقة (+140%).' },
-    imperial: { id: 'imperial', name: 'صندوق الثروة الإمبراطوري الماسي', durationTicks: 400, rate: 3.00, minAmount: 10000000, desc: 'خزينة مقفلة لكبار أثرياء العالم تمنح عائداً أسطورياً ثلاثي الأضعاف (+300%).' }
+    short: {
+      id: 'short',
+      name: 'وديعة بنكية ربع سنوية',
+      durationTicks: 600, // 10 minutes
+      rate: 0.08,
+      minAmount: 10000,
+      desc: 'تجميد السيولة لمدة 10 دقائق لتوفير التمويل المصرفي مقابل عائد أرباح إضافي (+8%).'
+    },
+    medium: {
+      id: 'medium',
+      name: 'صندوق استثمار عقاري وسندات',
+      durationTicks: 1800, // 30 minutes
+      rate: 0.25,
+      minAmount: 50000,
+      desc: 'استثمار مضمون في أصول إنشائية وتجارية مدرة للدخل لمدة 30 دقيقة (+25%).'
+    },
+    long: {
+      id: 'long',
+      name: 'صندوق أسهم وتحوط دولي خاص',
+      durationTicks: 7200, // 2 hours
+      rate: 0.65,
+      minAmount: 250000,
+      desc: 'محفظة استثمارية مغلقة في أسواق المال العالمية لمدة ساعتين بعوائد استثنائية (+65%).'
+    },
+    venture: {
+      id: 'venture',
+      name: 'صندوق الاكتتابات والشركات المليارية',
+      durationTicks: 21600, // 6 hours
+      rate: 1.50,
+      minAmount: 1500000,
+      desc: 'استثمار استراتيجي مغلق في شركات التكنولوجيا الصاعدة لمدة 6 ساعات بعوائد فائقة (+150%).'
+    },
+    imperial: {
+      id: 'imperial',
+      name: 'صندوق الثروة الإمبراطوري الماسي',
+      durationTicks: 43200, // 12 hours (43,200 seconds)
+      rate: 3.00,
+      minAmount: 10000000,
+      desc: 'خزينة مقفلة لكبار أثرياء العالم لمدة 12 ساعة تمنح عائداً أسطورياً أربعة أضعاف (+300%).'
+    }
   };
 
   const BLACK_MARKET = {
@@ -722,10 +757,20 @@ const GameEngine = (() => {
       }
     });
 
-    // 6. Investments duration counters
+    // 6. Investments duration counters (Real-time and offline timestamp accurate)
+    const nowTimestamp = Date.now();
     const remainingInvestments = [];
     state.investments.forEach(inv => {
-      inv.ticksRemaining--;
+      if (inv.maturesAt) {
+        if (nowTimestamp >= inv.maturesAt) {
+          inv.ticksRemaining = 0;
+        } else {
+          inv.ticksRemaining = Math.max(0, Math.ceil((inv.maturesAt - nowTimestamp) / 1000));
+        }
+      } else {
+        inv.ticksRemaining--;
+      }
+
       if (inv.ticksRemaining <= 0) {
         // Investment matures!
         const payout = Math.floor(inv.investedAmount * (1 + inv.rate));
@@ -1357,31 +1402,6 @@ const GameEngine = (() => {
     return { shares, price: currentPrice, totalReturn };
   }
 
-  // Lock Investment
-  function startInvestment(type, amount) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك بدء صناديق استثمارية.");
-    const inv = INVESTMENTS[type];
-    if (!inv) throw new Error("هذا الخيار الاستثماري غير متاح.");
-    if (amount < inv.minCost) {
-      throw new Error(`الحد الأدنى للمشاركة في هذا الاستثمار هو ${inv.minCost.toLocaleString()} جنيه.`);
-    }
-    if (state.cash < amount) {
-      throw new Error("رصيدك النقدي (الكاش) لا يكفي لتمويل هذا الاستثمار.");
-    }
-
-    state.cash -= amount;
-    state.investments.push({
-      id: inv.id,
-      name: inv.name,
-      investedAmount: amount,
-      ticksRemaining: inv.durationTicks,
-      rate: inv.rate
-    });
-
-    state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
-  }
-
   // Store: Buy Item
   function buyStoreItem(itemId) {
     const item = STORE_ITEMS[itemId];
@@ -1576,7 +1596,7 @@ const GameEngine = (() => {
     };
   }
 
-  // Start Locked Term Investment
+  // Start Locked Term Investment (With offline timestamp support)
   function startInvestment(planId, amount) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إدارة استثمارات بنكية.");
     const plan = INVESTMENTS[planId];
@@ -1590,11 +1610,15 @@ const GameEngine = (() => {
 
     state.cash -= amount;
     if (!state.investments) state.investments = [];
+    const nowTime = Date.now();
     state.investments.push({
       id: plan.id,
       name: plan.name,
       investedAmount: amount,
       ticksRemaining: plan.durationTicks,
+      totalDuration: plan.durationTicks,
+      createdAt: nowTime,
+      maturesAt: nowTime + (plan.durationTicks * 1000),
       rate: plan.rate
     });
 
