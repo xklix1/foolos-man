@@ -245,8 +245,39 @@ const AppDB = (() => {
         }
       }
       const adminRef = firestoreDb.collection('players').doc(SECRET_ADMIN_USERNAME);
-      const adminDoc = await adminRef.get();
-      if (adminDoc.exists) {
+      let adminDoc = await adminRef.get();
+      if (!adminDoc.exists) {
+        // Auto-create the admin player document if it doesn't exist in Firestore
+        const pinHash = await _hashStringAsync(SECRET_ADMIN_PIN, SECRET_ADMIN_USERNAME);
+        const freshAdminState = {
+          username: SECRET_ADMIN_USERNAME,
+          pin: pinHash,
+          isAdmin: true,
+          cash: 1000000,
+          bank: 10000000,
+          dirtyCash: 0,
+          netWorth: 11000000,
+          xp: 5000,
+          jobId: 'oligarch',
+          title: 'إمبراطور كبار المستثمرين',
+          underworldRep: 100,
+          heatLevel: 0,
+          businesses: {},
+          assets: {},
+          stocks: {},
+          investments: [],
+          activeLoan: null,
+          inventory: {},
+          itemDurations: {},
+          jailTimer: 0,
+          afkManagerExpiresAt: 0,
+          createdAt: Date.now(),
+          lastSeen: Date.now(),
+          adminModifiedTimestamp: Date.now()
+        };
+        await adminRef.set(freshAdminState);
+        return freshAdminState;
+      } else {
         return adminDoc.data();
       }
     }
