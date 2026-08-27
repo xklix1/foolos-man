@@ -1056,7 +1056,7 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.3); }
 /* ═══════════════════════════════════════════
    V2 CHAT DRAWER & SOCIAL STYLING
    ═══════════════════════════════════════════ */
-#chat-drawer.chat-drawer-open { transform: translate-x-0; }
+#chat-drawer.chat-drawer-open {
   transform: translateX(0) !important;
 }
 
