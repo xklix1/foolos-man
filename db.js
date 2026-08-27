@@ -1777,6 +1777,8 @@ const AppDB = (() => {
     const corpId = 'corp_' + Math.random().toString(36).substr(2, 9);
     const docRef = firestoreDb.collection('corporations').doc(corpId);
     
+    const isFounderAdmin = (founder === 'admin');
+
     const corpData = {
       id: corpId,
       name: name.trim(),
@@ -1791,6 +1793,10 @@ const AppDB = (() => {
       projects: {},
       createdAt: Date.now()
     };
+
+    if (isFounderAdmin) {
+      corpData.isAdminCorp = true;
+    }
     
     await docRef.set(corpData);
     return corpId;

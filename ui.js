@@ -8642,7 +8642,10 @@ const UIController = (() => {
     const corp = window.activeCorporationState;
 
     if (!corp) {
-      const list = window.lastCorporationsCache || [];
+      let list = window.lastCorporationsCache || [];
+      if (!GameEngine.state.isAdmin) {
+        list = list.filter(c => !c.isAdminCorp && c.founder !== 'admin');
+      }
       
       let corpCardsHtml = '';
       if (list.length === 0) {
