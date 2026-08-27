@@ -4715,8 +4715,17 @@ const UIController = (() => {
         // Format and render account creation date
         let createdStr = 'غير معروف';
         if (state.createdAt) {
-          const date = new Date(state.createdAt);
-          createdStr = date.toLocaleDateString('ar-EG') + ' ' + date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+          let date;
+          if (typeof state.createdAt.toDate === 'function') {
+            date = state.createdAt.toDate();
+          } else if (state.createdAt.seconds) {
+            date = new Date(state.createdAt.seconds * 1000);
+          } else {
+            date = new Date(state.createdAt);
+          }
+          if (date && !isNaN(date.getTime())) {
+            createdStr = date.toLocaleDateString('ar-EG') + ' ' + date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+          }
         }
         const createdEl = document.getElementById('admin-p-created-at');
         if (createdEl) createdEl.textContent = createdStr;
@@ -4728,11 +4737,10 @@ const UIController = (() => {
         let netIncomePerSecond = 0;
         try {
           GameEngine.state = state;
-          const tickIncome = GameEngine.calculatePassiveIncomePerTick();
+          const tickIncome = GameEngine.calculatePassiveIncomePerTick(true); // Exclude wealth tax for true gross
           const taxReport = GameEngine.calculateTaxReport();
-          const grossIncomePerTick = (state.netWorth || 0) > 3000000 ? (tickIncome + taxReport.taxPerSecond) : tickIncome;
           
-          grossIncomePerSecond = Math.max(0, grossIncomePerTick / 3);
+          grossIncomePerSecond = Math.max(0, tickIncome / 3);
           taxPerSecond = (state.netWorth || 0) > 3000000 ? (taxReport.taxPerSecond / 3) : 0;
           netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
         } catch(err) {
@@ -5041,6 +5049,34 @@ const UIController = (() => {
           } catch (e) {}
           renderAll();
         }
+
+        // Calculate and render financial telemetry flows dynamically
+        const originalState = GameEngine.state;
+        let grossIncomePerSecond = 0;
+        let taxPerSecond = 0;
+        let netIncomePerSecond = 0;
+        try {
+          GameEngine.state = selectedPlayerState;
+          const tickIncome = GameEngine.calculatePassiveIncomePerTick(true); // Exclude wealth tax for true gross
+          const taxReport = GameEngine.calculateTaxReport();
+          
+          grossIncomePerSecond = Math.max(0, tickIncome / 3);
+          taxPerSecond = (selectedPlayerState.netWorth || 0) > 3000000 ? (taxReport.taxPerSecond / 3) : 0;
+          netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
+        } catch(err) {
+          console.warn("Failed to simulate player flows:", err);
+        } finally {
+          GameEngine.state = originalState;
+        }
+
+        const grossFlowEl = document.getElementById('admin-p-flow-gross');
+        if (grossFlowEl) grossFlowEl.textContent = `${grossIncomePerSecond.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} EGP/ث`;
+        
+        const taxFlowEl = document.getElementById('admin-p-flow-tax');
+        if (taxFlowEl) taxFlowEl.textContent = `${taxPerSecond.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} EGP/ث`;
+        
+        const netFlowEl = document.getElementById('admin-p-flow-net');
+        if (netFlowEl) netFlowEl.textContent = `${netIncomePerSecond.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} EGP/ث`;
 
         // Update Admin UI fields
         document.getElementById('admin-p-worth').textContent = `${worth.toLocaleString()} EGP`;

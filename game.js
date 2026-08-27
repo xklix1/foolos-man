@@ -663,7 +663,7 @@ const GameEngine = (() => {
   }
 
   // Calculate total passive cashflow per tick from all businesses, real estate, and bank interest
-  function calculatePassiveIncomePerTick() {
+  function calculatePassiveIncomePerTick(excludeTax = false) {
     let income = 0;
     if (!state) return 0;
 
@@ -776,7 +776,7 @@ const GameEngine = (() => {
     }
 
     // 4. Wealth Tax deduction for ultra-high net worth
-    if (state.netWorth > 3000000) {
+    if (state.netWorth > 3000000 && !excludeTax) {
       const taxReport = calculateTaxReport();
       income = Math.max(0, income - taxReport.taxPerSecond);
     }
@@ -2326,6 +2326,7 @@ const GameEngine = (() => {
 
   return {
     get state() { return state; },
+    set state(val) { state = val; },
     get stockPrices() { return stockPrices; },
     get activeUsername() { return activeUsername; },
     
