@@ -56,7 +56,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=111">
+  <link rel="stylesheet" href="app.css?v=112">
   
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous" onerror="console.warn('Firebase App SDK blocked.')"></script>
@@ -87,8 +87,11 @@
       </div>
       <h2 class="text-xl font-black text-white mb-1">لا يوجد اتصال بالخوادم</h2>
       <p class="text-xs text-rose-400 font-bold tracking-widest mb-4">NO SERVER CONNECTION</p>
-      <p class="text-sm text-slate-400 mb-6 leading-relaxed">
+      <p class="text-sm text-slate-400 mb-4 leading-relaxed">
         تعذّر الاتصال بقاعدة بيانات اللعبة. اللعبة تعمل بوضع أونلاين فقط — تحقق من اتصالك بالإنترنت وأعد المحاولة.
+      </p>
+      <p id="offline-error-description" class="text-[10px] text-rose-400 bg-rose-950/40 p-2.5 rounded-xl border border-rose-500/20 font-mono mb-6 text-center break-all">
+        جاري تهيئة قاعدة البيانات...
       </p>
       <button
         id="btn-retry-connect"
@@ -4175,9 +4178,9 @@
     window.activeAdminUsername = 'khalid.newstart';
     var activeAdminUsername = 'khalid.newstart';
   </script>
-  <script src="db.js?v=111"></script>
-  <script src="game.js?v=111"></script>
-  <script src="ui.js?v=111"></script>
+  <script src="db.js?v=112"></script>
+  <script src="game.js?v=112"></script>
+  <script src="ui.js?v=112"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -4199,6 +4202,11 @@
         connectingOverlay.classList.remove('flex');
         offlineOverlay.classList.remove('hidden');
         offlineOverlay.classList.add('flex');
+
+        const errDesc = document.getElementById('offline-error-description');
+        if (errDesc) {
+          errDesc.textContent = `تفاصيل الخطأ: ${e.message}`;
+        }
 
         document.getElementById('btn-retry-connect').addEventListener('click', () => {
           window.location.reload();

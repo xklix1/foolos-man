@@ -79,7 +79,7 @@ const AppDB = (() => {
     } catch (err) {
       firebaseReady = false;
       console.error('[DB] Firebase initialization failed:', err.message);
-      throw new Error('تعذّر تهيئة خوادم اللعبة. تحقق من اتصالك بالإنترنت وأعد المحاولة.');
+      throw new Error('تعذّر تهيئة خوادم اللعبة: ' + err.message);
     }
   }
 
