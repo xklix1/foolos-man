@@ -118,7 +118,7 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
     match /chat/{messageId} {
       allow read: if true;
-      allow create: if request.resource.data.message.size() <= 200;
+      allow create: if request.resource.data.message != null && request.resource.data.message is string;
       allow update, delete: if isAdmin();
     }
 

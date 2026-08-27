@@ -1533,6 +1533,7 @@ const AppDB = (() => {
         await firestoreDb.collection('chat').add(msgData);
       } catch (err) {
         console.error('[DB] Chat send failed:', err);
+        throw new Error('فشل إرسال الرسالة إلى الخادم: ' + err.message);
       }
     } else {
       const localChat = JSON.parse(localStorage.getItem('foolos_local_chat') || '[]');
