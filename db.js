@@ -1940,6 +1940,82 @@ const AppDB = (() => {
     return true;
   }
 
+  async function kickCorpMember(corpId, targetUsername) {
+    _requireOnline();
+    const currentUser = GameEngine.state.username;
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    await firestoreDb.runTransaction(async transaction => {
+      const doc = await transaction.get(docRef);
+      if (!doc.exists) throw new Error('الشركة غير موجودة.');
+      const data = doc.data();
+      if (data.founder !== currentUser) throw new Error('فقط المؤسس يملك صلاحية الطرد.');
+      if (targetUsername === currentUser) throw new Error('لا يمكنك طرد نفسك.');
+      const members = (data.members || []).filter(m => m !== targetUsername);
+      const contributions = { ...(data.contributions || {}) };
+      delete contributions[targetUsername];
+      const total = Object.values(contributions).reduce((s, v) => s + v, 0);
+      transaction.update(docRef, { members, contributions, totalContributions: total });
+    });
+    return true;
+  }
+
+  async function editCorpInfo(corpId, newName, newDesc) {
+    _requireOnline();
+    const currentUser = GameEngine.state.username;
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    const doc = await docRef.get();
+    if (!doc.exists) throw new Error('الشركة غير موجودة.');
+    if (doc.data().founder !== currentUser) throw new Error('فقط المؤسس يمكنه تعديل بيانات الشركة.');
+    await docRef.update({ name: newName, desc: newDesc || '' });
+    return true;
+  }
+
+  async function transferCorpOwnership(corpId, newFounder) {
+    _requireOnline();
+    const currentUser = GameEngine.state.username;
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    await firestoreDb.runTransaction(async transaction => {
+      const doc = await transaction.get(docRef);
+      if (!doc.exists) throw new Error('الشركة غير موجودة.');
+      const data = doc.data();
+      if (data.founder !== currentUser) throw new Error('فقط المؤسس يمكنه نقل الملكية.');
+      if (!(data.members || []).includes(newFounder)) throw new Error('العضو المختار غير موجود في الشركة.');
+      transaction.update(docRef, { founder: newFounder });
+    });
+    return true;
+  }
+
+  async function dissolveCorporation(corpId) {
+    _requireOnline();
+    const currentUser = GameEngine.state.username;
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    await firestoreDb.runTransaction(async transaction => {
+      const doc = await transaction.get(docRef);
+      if (!doc.exists) throw new Error('الشركة غير موجودة.');
+      const data = doc.data();
+      if (data.founder !== currentUser) throw new Error('فقط المؤسس يمكنه حل الشركة.');
+      const treasury = data.treasury || 0;
+      const total = data.totalContributions || 0;
+      const members = data.members || [];
+      // Refund each member proportionally
+      for (const member of members) {
+        const cont = (data.contributions || {})[member] || 0;
+        const share = total > 0 ? cont / total : (member === data.founder ? 1 : 0);
+        const refund = Math.floor(treasury * share);
+        if (refund > 0) {
+          const playerRef = firestoreDb.collection('players').doc(member);
+          const playerDoc = await transaction.get(playerRef);
+          if (playerDoc.exists) {
+            const pData = playerDoc.data();
+            transaction.update(playerRef, { cash: (pData.cash || 0) + refund });
+          }
+        }
+      }
+      transaction.delete(docRef);
+    });
+    return true;
+  }
+
   // ─────────────────────────────────────────────
   //  PUBLIC API
   // ─────────────────────────────────────────────
@@ -1947,7 +2023,7 @@ const AppDB = (() => {
     get clientVersion() { return CLIENT_VERSION; },
     get isFirebaseReady() { return firebaseReady; },
     get isOnline() { return navigator.onLine && firebaseReady; },
-    get pendingSyncs() { return 0; }, // No queue in online-first mode
+    get pendingSyncs() { return 0; },
 
     init,
     checkVersion,
@@ -2033,6 +2109,12 @@ const AppDB = (() => {
     buyCorporationProject,
     adminDeleteCorporation,
     adminEditCorporationTreasury,
+
+    // V2: FOUNDER MANAGEMENT API
+    kickCorpMember,
+    editCorpInfo,
+    transferCorpOwnership,
+    dissolveCorporation,
 
     get dbType() { return firebaseReady ? 'firebase' : 'offline'; },
     mockPlayers: []

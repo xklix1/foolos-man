@@ -8751,11 +8751,20 @@ const UIController = (() => {
       membersList.forEach(m => {
         const cAmt = corp.contributions ? (corp.contributions[m] || 0) : 0;
         let mShare = totalCont > 0 ? (cAmt / totalCont) : (m === corp.founder ? 1.0 : 0.0);
+        const isMe = m === currentUsername;
+        const isMemberFounder = m === corp.founder;
         membersHtml += `
           <tr class="border-b border-slate-900 text-xs">
-            <td class="py-2.5 text-slate-300 font-bold">${m} ${m === corp.founder ? '<span class="text-[9px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">مؤسس</span>' : ''}</td>
+            <td class="py-2.5 text-slate-300 font-bold">
+              ${m} 
+              ${isMemberFounder ? '<span class="text-[9px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">مؤسس 👑</span>' : ''}
+              ${isMe && !isMemberFounder ? '<span class="text-[9px] bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded ml-1">أنت</span>' : ''}
+            </td>
             <td class="py-2.5 text-slate-400 numbers-font">${cAmt.toLocaleString()} EGP</td>
             <td class="py-2.5 text-emerald-400 font-bold numbers-font">${(mShare * 100).toFixed(2)}%</td>
+            <td class="py-2.5">
+              ${isFounder && !isMemberFounder ? `<button onclick="window.UI.kickCorpMemberAction('${corp.id}','${m}')" class="text-[9px] bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 px-2 py-1 rounded-lg transition font-bold"><i class='fa-solid fa-user-slash'></i></button>` : ''}
+            </td>
           </tr>
         `;
       });
@@ -8895,6 +8904,54 @@ const UIController = (() => {
             </div>
           </div>
         </div>
+
+        ${isFounder ? `
+        <div class="mt-6 glass-panel p-6 rounded-2xl border border-amber-500/20 bg-amber-950/5 space-y-5">
+          <h3 class="text-sm font-black text-amber-400 flex items-center gap-2">
+            <i class="fa-solid fa-crown"></i>
+            <span>لوحة تحكم المؤسس</span>
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <!-- تعديل الاسم والوصف -->
+            <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-4 space-y-3">
+              <h4 class="text-xs font-black text-white flex items-center gap-1.5"><i class="fa-solid fa-pen text-indigo-400"></i> تعديل بيانات الشركة</h4>
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">اسم جديد للشركة</label>
+                <input id="edit-corp-name" type="text" value="${corp.name}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">وصف جديد للشركة</label>
+                <textarea id="edit-corp-desc" rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 resize-none">${corp.desc || ''}</textarea>
+              </div>
+              <button onclick="window.UI.editCorpInfoAction('${corp.id}')" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black transition">
+                <i class="fa-solid fa-floppy-disk ml-1"></i> حفظ التعديلات
+              </button>
+            </div>
+
+            <!-- نقل الملكية وحل الشركة -->
+            <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-4 space-y-3">
+              <h4 class="text-xs font-black text-white flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate text-amber-400"></i> نقل الملكية</h4>
+              <p class="text-[10px] text-slate-500">اختر عضواً لنقل لقب المؤسس إليه. لا يمكن التراجع عن هذه الخطوة.</p>
+              <select id="transfer-corp-target" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                <option value="">-- اختر عضواً --</option>
+                ${membersList.filter(m => m !== currentUsername).map(m => `<option value="${m}">${m}</option>`).join('')}
+              </select>
+              <button onclick="window.UI.transferCorpOwnershipAction('${corp.id}')" class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-black transition">
+                <i class="fa-solid fa-user-shield ml-1"></i> تأكيد نقل الملكية
+              </button>
+
+              <div class="border-t border-slate-800 pt-3 mt-3">
+                <h4 class="text-xs font-black text-rose-400 flex items-center gap-1.5 mb-2"><i class="fa-solid fa-triangle-exclamation"></i> منطقة الخطر</h4>
+                <button onclick="window.UI.dissolveCorpAction('${corp.id}')" class="w-full py-2 bg-rose-700/30 hover:bg-rose-700/50 border border-rose-700/40 text-rose-300 rounded-xl text-xs font-black transition">
+                  <i class="fa-solid fa-bomb ml-1"></i> حل الشركة وإعادة الخزينة للمساهمين
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>` : ''}
       `;
     }
   }
@@ -9031,6 +9088,55 @@ const UIController = (() => {
     }
   }
 
+  async function kickCorpMemberAction(corpId, targetUsername) {
+    if (!confirm(`هل أنت متأكد من طرد "${targetUsername}" من الشركة؟ سيتم احتساب حصته كأموال معلقة في الخزينة.`)) return;
+    try {
+      await DB.kickCorpMember(corpId, targetUsername);
+      showToast('تم الطرد', `تم طرد ${targetUsername} من الشركة بنجاح.`, 'success');
+      renderCorporationsTab();
+    } catch (e) {
+      showToast('خطأ', e.message || 'فشل تنفيذ عملية الطرد.', 'error');
+    }
+  }
+
+  async function editCorpInfoAction(corpId) {
+    const newName = document.getElementById('edit-corp-name')?.value?.trim();
+    const newDesc = document.getElementById('edit-corp-desc')?.value?.trim();
+    if (!newName) { showToast('خطأ', 'يجب إدخال اسم صالح للشركة.', 'error'); return; }
+    try {
+      await DB.editCorpInfo(corpId, newName, newDesc);
+      showToast('تم الحفظ ✅', 'تم تحديث بيانات الشركة بنجاح.', 'success');
+      renderCorporationsTab();
+    } catch (e) {
+      showToast('خطأ', e.message || 'فشل تحديث البيانات.', 'error');
+    }
+  }
+
+  async function transferCorpOwnershipAction(corpId) {
+    const target = document.getElementById('transfer-corp-target')?.value;
+    if (!target) { showToast('خطأ', 'يجب اختيار عضو لنقل الملكية إليه.', 'error'); return; }
+    if (!confirm(`هل أنت متأكد من نقل ملكية الشركة إلى "${target}"؟ لن تتمكن من التراجع!`)) return;
+    try {
+      await DB.transferCorpOwnership(corpId, target);
+      showToast('تم النقل 👑', `انتقلت ملكية الشركة إلى ${target}.`, 'success');
+      renderCorporationsTab();
+    } catch (e) {
+      showToast('خطأ', e.message || 'فشل نقل الملكية.', 'error');
+    }
+  }
+
+  async function dissolveCorpAction(corpId) {
+    if (!confirm('⚠️ تحذير: سيتم حل الشركة نهائياً وإعادة توزيع الخزينة على المساهمين بحسب حصصهم. هل تريد المتابعة؟')) return;
+    if (!confirm('تأكيد أخير: هذا الإجراء لا رجعة فيه. هل أنت متأكد 100%؟')) return;
+    try {
+      await DB.dissolveCorporation(corpId);
+      showToast('تم الحل 💥', 'تم حل الشركة وإعادة توزيع الخزينة على المساهمين.', 'success');
+      renderCorporationsTab();
+    } catch (e) {
+      showToast('خطأ', e.message || 'فشل حل الشركة.', 'error');
+    }
+  }
+
   return {
     init,
     switchTab,
@@ -9048,7 +9154,11 @@ const UIController = (() => {
     createCorporationAction,
     joinCorporationAction,
     contributeCorporationAction,
-    buyCorporationProjectAction
+    buyCorporationProjectAction,
+    kickCorpMemberAction,
+    editCorpInfoAction,
+    transferCorpOwnershipAction,
+    dissolveCorpAction
   };
 })();
 
