@@ -162,7 +162,7 @@
       <div class="flex items-center gap-2">
         <span class="px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-yellow-500/5">
           <i class="fa-solid fa-gamepad text-yellow-400"></i>
-          <span>الإصدار 1</span>
+          <span>الإصدار V1.01</span>
         </span>
         <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/60 text-slate-300 text-xs">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -172,6 +172,10 @@
 
       <!-- Quick Control Action Icons -->
       <div class="flex items-center gap-2">
+        <!-- Language Switcher Button -->
+        <button id="btn-lang-toggle" title="تغيير اللغة / Change Language" class="start-menu-icon-btn px-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-yellow-500/60 text-slate-300 hover:text-yellow-400 transition font-bold text-xs">
+          EN
+        </button>
         <!-- Audio SFX Toggle Button -->
         <button id="btn-menu-sound-toggle" title="كتم/تشغيل المؤثرات الصوتية" class="start-menu-icon-btn p-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-yellow-500/60 text-slate-300 hover:text-yellow-400 transition">
           <i id="menu-sound-icon" class="fa-solid fa-volume-high text-sm"></i>
@@ -872,6 +876,23 @@
     </div>
   </div>
 
+  <!-- ==================== MAINTENANCE POPUP MODAL ==================== -->
+  <div id="maintenance-popup-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+    <div class="glass-panel w-full max-w-md p-8 rounded-3xl border border-yellow-500/40 text-center flex flex-col justify-center items-center relative shadow-2xl bg-slate-950/95">
+      <button id="btn-close-maintenance-popup" type="button" class="absolute top-5 right-5 w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <div class="w-16 h-16 bg-yellow-500/10 border border-yellow-500/30 rounded-full flex items-center justify-center mb-4 animate-pulse">
+        <i class="fa-solid fa-screwdriver-wrench text-2xl text-yellow-400"></i>
+      </div>
+      <h3 class="text-xl font-black text-yellow-400 mb-2">اللعبة في وضع الصيانة</h3>
+      <p id="maintenance-popup-msg" class="text-xs text-slate-300 leading-relaxed mb-6">تخضع اللعبة حالياً لأعمال تحديث وصيانة طارئة. يرجى المحاولة لاحقاً.</p>
+      <button id="btn-confirm-maintenance-popup" type="button" class="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-xl transition shadow-lg">
+        حسناً
+      </button>
+    </div>
+  </div>
+
   <!-- ==================== MAIN GAME SHELL LAYOUT ==================== -->
   <div id="main-game-layout" class="hidden min-h-screen flex-col lg:flex-row">
     
@@ -916,6 +937,11 @@
             <button id="btn-admin-panel-trigger" class="hidden w-full py-1.5 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/40 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-crown text-yellow-400 text-xs"></i>
               <span>لوحة التحكم والإشراف</span>
+            </button>
+            <!-- Language Switcher In-game Button -->
+            <button id="btn-lang-toggle-ingame" type="button" class="w-full mt-1.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-[10px] font-bold text-slate-300 transition flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-language text-xs"></i>
+              <span>Language: English</span>
             </button>
           </div>
 
@@ -1040,6 +1066,10 @@
             <button id="btn-admin-panel-trigger-mobile" class="hidden px-2.5 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/40 rounded-lg text-[10px] font-bold transition flex items-center gap-1.5">
               <i class="fa-solid fa-crown text-yellow-400 text-xs"></i>
               <span>الإدارة</span>
+            </button>
+            <button id="btn-lang-toggle-mobile" type="button" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-[10px] font-bold transition flex items-center gap-1">
+              <i class="fa-solid fa-language text-[10px]"></i>
+              <span>EN</span>
             </button>
             <button id="btn-user-logout-mobile" title="تسجيل الخروج" class="text-[10px] text-rose-400 hover:text-rose-300 font-bold border border-rose-500/30 px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition flex items-center gap-1">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
@@ -2664,7 +2694,7 @@
           <!-- Quick Telemetry and Refresh -->
           <div class="p-3.5 bg-slate-900/40 border border-slate-800 rounded-xl flex flex-wrap justify-between items-center gap-2">
             <div class="text-[11px] text-slate-400 flex items-center gap-4">
-              <span>إصدار النظام: <strong id="adm-stat-version" class="text-white font-mono">v1.0.0</strong></span>
+              <span>إصدار النظام: <strong id="adm-stat-version" class="text-white font-mono">V1.01</strong></span>
               <span>نوع التخزين: <strong id="adm-stat-db" class="text-emerald-400 font-mono">Cloud Firestore</strong></span>
             </div>
             <button id="btn-admin-refresh-stats" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
@@ -2754,6 +2784,26 @@
                 <div>السيولة الحالية: <span id="admin-p-cash" class="text-emerald-400 numbers-font font-bold">...</span> EGP</div>
                 <div>رصيد البنك: <span id="admin-p-bank" class="text-sky-400 numbers-font font-bold">...</span> EGP</div>
                 <div>أموال غير مشروعة: <span id="admin-p-dirty" class="text-rose-400 numbers-font font-bold">...</span> EGP</div>
+              </div>
+            </div>
+
+            <!-- Detailed Financials & Metadata (New) -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/80 text-xs">
+              <div class="space-y-1">
+                <span class="text-slate-400 block">تاريخ إنشاء الحساب:</span>
+                <strong id="admin-p-created-at" class="text-white">...</strong>
+              </div>
+              <div class="space-y-1">
+                <span class="text-slate-400 block">التدفق اللحظي الإجمالي:</span>
+                <strong id="admin-p-flow-gross" class="text-emerald-400 numbers-font">... EGP/ث</strong>
+              </div>
+              <div class="space-y-1">
+                <span class="text-slate-400 block">الاستقطاع الضريبي اللحظي:</span>
+                <strong id="admin-p-flow-tax" class="text-rose-400 numbers-font">... EGP/ث</strong>
+              </div>
+              <div class="space-y-1">
+                <span class="text-slate-400 block">صافي التدفق (الفرق):</span>
+                <strong id="admin-p-flow-net" class="text-sky-400 numbers-font">... EGP/ث</strong>
               </div>
             </div>
 

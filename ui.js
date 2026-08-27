@@ -12,6 +12,231 @@ const UIController = (() => {
   let activeTab = 'dashboard';
   let tickIntervalId = null;
 
+  // Translation System (New)
+  const currentLang = localStorage.getItem('game_lang') || 'ar';
+  window.currentLang = currentLang;
+  
+  // Set layout direction on load
+  document.documentElement.dir = currentLang === 'en' ? 'ltr' : 'rtl';
+  if (currentLang === 'en') {
+    document.documentElement.lang = 'en';
+  }
+
+  const translationDict = {
+    // Nav / Sidebar
+    "حسابي": "My Account",
+    "المهن والوظائف": "Careers & Jobs",
+    "إدارة الأعمال": "Businesses",
+    "البنك والتحويلات": "Banking & Wire",
+    "ممتلكاتي والعقارات": "Real Estate",
+    "البورصة والأسهم": "Stock Market",
+    "مصلحة الضرائب": "Tax Department",
+    "المتجر والمستودع": "VIP Shop & Inventory",
+    "المزادات والصفقات الخاصة": "Auctions & Special",
+    "السوق السوداء": "Black Market",
+    "كازينو التسلية": "Casino & Slots",
+    "توب الأغنياء": "Leaderboard",
+    "خروج": "Logout",
+    "القائمة": "Menu",
+    "الدليل": "Guide",
+    "الإدارة": "Admin",
+    "الإصدار 1": "Version V1.01",
+    "الإصدار V1.01": "Version V1.01",
+    "خوادم الأونلاين نشطة": "Online Servers Active",
+    "المحفظة النشطة": "Active Profile",
+    "سيولة الكاش": "Cash Balance",
+    "حساب البنك": "Bank Account",
+    "التدفق اللحظي": "Passive Cashflow",
+    "إجمالي الثروة": "Net Worth",
+    "من الصفر إلى عرش المليارات • محاكي إمبراطورية المال والاستثمار": "From Scratch to Billions • Business Empire Tycoon",
+    "محفظتك المحفوظة والجاهزة للمتابعة": "Your Saved Wallet Profile",
+    "تسجيل الدخول للمحفظة": "Login to Wallet",
+    "رأس المال • Ras ALmal": "Ras ALmal Tycoon",
+    "أدخل اسم مستخدم فريد ورمز سري لتأسيس محفظتك وحفظ أرباحك السحابية.": "Enter username & PIN to manage your wallet and save progress.",
+    "تسجيل الدخول": "Login",
+    "إنشاء حساب جديد": "Register",
+    "اسم المستخدم (بالأحرف أو الأرقام)": "Username (letters & numbers)",
+    "الرقم السري للمحفظة (PIN)": "PIN Code (numbers)",
+    "دخول وتزامن الحساب": "Login & Sync",
+    "متابعة الإمبراطورية": "Continue Empire",
+    "استكمال إدارتك للأموال والمشاريع": "Resume managing funds & business",
+    "بدء رحلة جديدة": "Start New Journey",
+    "تأسيس محفظة والانطلاق من الصفر": "Create profile & launch from scratch",
+    "تسجيل الدخول لمحفظة سابقة": "Login to existing wallet",
+    "استعادة حسابك المحفوظ بكلمة المرور (PIN)": "Restore saved wallet via PIN",
+    "عرش الأثرياء": "Wealthiest Leaderboard",
+    "دليل الملياردير": "Billionaire Guide",
+    "الإعدادات": "Settings",
+    "إعدادات اللعبة والصوت": "Game & Sound Settings",
+    "تخصيص التجربة والمؤثرات الصوتية والبصرية": "Customize audio & visual preferences",
+    "المؤثرات الصوتية (Sound FX)": "Sound FX",
+    "أصوات النقر والربح والكازينو والتنبيهات": "Click sounds, earnings, casino, and alerts",
+    "الموسيقى المحيطية (Ambient Sound)": "Ambient Sound / Synth",
+    "موسيقى هادئة سينمائية لأجواء اللعبة": "Quiet cinematic music for game atmosphere",
+    "تأثيرات الإضاءة والنيون (Glow FX)": "Glow & Visual FX",
+    "تأثير التوهج والفلورسنت (Glow FX)": "Glow & Visual FX",
+    "توهج الذهب والجزيئات المتحركة": "Glow details and animated particles",
+    "تجربة نغمة الصوت": "Test Sound Tone",
+    "حفظ التفضيلات": "Save Preferences",
+    "قاعة الشرف وعرش الأثرياء": "Hall of Fame & Leaderboard",
+    "أعلى أصحاب الثروات في سيرفر رأس المال (Ras ALmal) المباشر": "Top billionaires on the live Ras ALmal server",
+    "دليل الملياردير الإمبراطوري": "Billionaire Imperial Guide",
+    "أسرار الهيمنة وصناعة الثروة من الصفر حتى قمة عرش أثرياء رأس المال": "Secrets of wealth and dominance from scratch to the throne of Ras ALmal",
+    "👑 الدليل الإمبراطوري الشامل (المفصل)": "👑 Detailed Billionaire Guide",
+    "⚡ الدليل السريع والمختصر": "⚡ Compact Quick Guide",
+    "الإصدار الشامل ⭐": "Imperial Edition ⭐",
+    "إنشاء محفظة جديدة وبدء اللعب": "Create Profile & Play",
+    "الرجوع للقائمة الرئيسية": "Return to Menu",
+    "تغيير اللغة / Change Language": "اللغة: العربية",
+    "EN": "العربية",
+    "لوحة العمل والاستثمار اليومي": "Daily Work & Investment Board",
+    "انقر للعمل، أسس مشاريعك الحرة، ودع الأرباح تصب في محفظتك تلقائياً.": "Click to work, build businesses, and accumulate passive income directly.",
+    "العمل بنوبة اعتيادية": "Perform Regular Shift",
+    "نوبة إضافية مضاعفة (x2.5 راتب + x3 خبرة)": "Double Overtime Shift (x2.5 Pay, x3 XP)",
+    "لوحة التحكم والإشراف": "Admin Dashboard",
+    "إصدار النظام": "System Version",
+    "نوع التخزين": "Storage Type",
+    "تحديث الإحصائيات الحية": "Refresh Stats",
+    "اللعبة في وضع الصيانة": "Game Under Maintenance",
+    "تخضع اللعبة حالياً لأعمال تحديث وصيانة طارئة. يرجى المحاولة لاحقاً.": "The game is currently under maintenance. Please try again later.",
+    "حسناً": "OK",
+    "الخوادم رهن الصيانة الفنية!": "Servers Under Maintenance!",
+    "تخضع اللعبة حالياً لأعمال تحديث وصيانة طارئة من قبل الإدارة لتحسين الأداء وتأمين الحسابات. يرجى الانتظار والمحاولة لاحقاً.": "The game is currently undergoing maintenance. Please try again later.",
+    "إعادة فحص حالة الخادم": "Re-check Server Status",
+    "بوابة دخول الإدارة والمشرفين (Admin Portal)": "Admin Portal Portal",
+
+    // Jobs
+    "عامل باليومية": "Daily Laborer",
+    "محاسب صندوق": "Cashier",
+    "محاسب مالي قانوني": "Certified Accountant",
+    "مدير فرع": "Branch Manager",
+    "مدير تنفيذي للمجموعة": "Group CEO",
+    "رئيس مجلس الإدارة": "Chairman",
+    "مستشار اقتصادي ووزير سابق": "Economic Advisor & Ex-Minister",
+    "محافظ البنك المركزي": "Central Bank Governor",
+    "رئيس صندوق الاستثمار السيادي": "Sovereign Fund President",
+    "إمبراطور كبار المستثمرين": "Emperor of Investors",
+
+    // Businesses
+    "عربة القهوة الشعبية": "Street Coffee Cart",
+    "سلسلة سوبرماركت البقالة": "Grocery Supermarket Chain",
+    "شركة النقل والشحن البري": "Land Shipping & Logistics",
+    "مصنع الملابس المنسوجة": "Woven Clothing Factory",
+    "مجموعة سلسلة المطاعم الفاخرة": "Luxury Restaurant Chain",
+    "شركة البرمجيات والتقنية": "Software & Tech Company",
+    "شركة الاتصالات والشبكات": "Telecom & Networks",
+    "مصنع البتروكيماويات والغاز": "Petrochemicals & Gas Plant",
+    "شركة الملاحة والتنقيب عن الذهب": "Navigation & Gold Mining",
+    "مؤسسة استكشاف وتعدين الفضاء": "Space Mining Corporation",
+
+    // Assets
+    "شقة سكنية متوسطة": "Standard Apartment",
+    "فيلا سكنية بحديقة": "Residential Villa",
+    "مبنى إداري تجاري": "Commercial Office Building",
+    "فندق سياحي فاخر": "Luxury Tourist Hotel",
+    "منتجع شاطئي استوائي": "Tropical Beach Resort",
+    "يخت ملكي فاخر خاص": "Giant Royal Yacht",
+    "ناطحة سحاب استثمارية": "Investment Skyscraper",
+    "جزيرة خاصة مشفرة": "Private Encrypted Island",
+    "مجمع قنوات السويس اللوجستي": "Suez Canal Logistics Hub",
+    "المحطة المدارية الفضائية": "Orbit Space Station",
+
+    // Stocks
+    "البنك التجاري الدولي": "Commercial International Bank",
+    "الشرقية للدخان": "Eastern Tobacco Company",
+    "المصرية للاتصالات": "Telecom Egypt",
+    "فوري للمدفوعات الإلكترونية": "Fawry Payments",
+    "صندوق الاستثمار التقني البديل": "Alternative Tech Fund",
+    "مؤشر البيتكوين والأصول الرقمية": "Bitcoin Index (Crypto)",
+    "صندوق سبائك الذهب الخالص": "Pure Gold Bullion Fund",
+    "صندوق الذكاء الاصطناعي العالمي": "Global AI Index Fund",
+
+    // Black Market
+    "تهريب سجائر": "Cigarettes Smuggling",
+    "أجهزة إلكترونية": "Electronics Smuggling",
+    "تسريب بيانات": "Intelligence Data Leak",
+    "غسيل أموال سويسري": "Swiss Laundering Hub",
+    "اختراق كريبتو": "Crypto Hacking",
+    "تهريب الآثار": "Antiques Smuggling",
+    "سطو الماس": "Grand Diamond Heist",
+    "تهريب اليورانيوم": "Uranium Smuggling",
+    "تكنولوجيا دفاعية": "Defense Tech Smuggling",
+    "قرصنة البنوك": "Central Bank Cyber Heist",
+    "أقمار صناعية": "Satellite Network Hack",
+    "عملية العرّاب": "Operation Godfather",
+    "تهريب بضائع وسيجار جمركي فاخر": "Cigarettes Smuggling",
+    "تهريب حاوية أجهزة إلكترونية حديثة": "Electronics Smuggling",
+    "صفقة تسريب سيرفرات وبيانات استخباراتية": "Intelligence Data Leak",
+    "مركز غسيل الأموال السويسري": "Swiss Money Laundering Hub",
+    "اختراق منصات رقمية وغسيل عملات مشفرة": "Crypto Hacking",
+    "تهريب آثار ومخطوطات نادرة لمزادات سرية": "Antiques Smuggling",
+    "عملية السطو الكبرى على خزائن الماس الدولية": "Grand Diamond Heist",
+    "تهريب اليورانيوم المخصب الدولي": "Uranium Smuggling",
+    "صفقة تكنولوجيا دفاعية وشفرات رادار مسربة": "Defense Tech Smuggling",
+    "قرصنة واختراق البنوك المركزية": "Central Bank Cyber Heist",
+    "السيطرة على شبكة أقمار صناعية وتشفيرها": "Satellite Network Hack",
+    "عملية العراب: السيطرة على كارتيل التجارة العالمي": "Operation Godfather",
+
+    // Shop Items
+    "جهاز تشويش رادارات الشرطة": "Police Radar Jammer",
+    "جواز سفر دبلوماسي مزور": "Fake Diplomatic Passport",
+    "المحامي الدولي الكبير": "Premium International Lawyer",
+    "الحقيبة الدبلوماسية المؤمنة": "Secured Diplomatic Bag",
+    "القلم الذهبي لكتابة العقود": "Golden Pen (XP Boost)",
+    "معالج الكوانتم الخارق للبيانات": "Quantum CPU (Biz Boost)",
+    "بطاقة العضوية الماسية للبنك": "Diamond Banking Card",
+    "بطاقة حظ الكازينو الذهبية": "Golden Casino VIP Pass",
+    "ساعة كورنوس لتسريع الزمن": "Cronos Time Accelerator",
+    "ترخيص الإدارة الذاتية والمساعدة": "Auto AFK Manager License",
+
+    // General Words
+    "رصيد البنك:": "Bank Balance:",
+    "السيولة النقدية:": "Cash Balance:",
+    "العائد المتوقع:": "Expected Yield:",
+    "التكلفة الاستثمارية:": "Investment Cost:",
+    "شراء وتملك العقار": "Purchase Property",
+    "الراتب المضمون:": "Guaranteed Pay:",
+    "العائد من الخبرة:": "Experience Gain:",
+    "الترقية والتعيين بالوظيفة": "Apply for Promotion",
+    "الرتبة الحالية": "Current Rank",
+    "مغلق": "Locked",
+    "توقيع وتنفيذ العملية": "Sign & Execute",
+    "تفاصيل العملية": "Deal Details",
+    "تاريخ إنشاء الحساب:": "Account Created:",
+    "التدفق اللحظي الإجمالي:": "Gross Passive Flow:",
+    "الاستقطاع الضريبي اللحظي:": "Periodic Tax:",
+    "صافي التدفق (الفرق):": "Net Flow (Diff):",
+    "إحصائيات الخادم الحية": "Live Server Statistics",
+    "المستخدمين المسجلين": "Registered Users",
+    "إجمالي ثروة السيرفر": "Total Server Wealth",
+    "المساجين حالياً": "Jailed Players",
+    "الحسابات المحظورة": "Banned Players"
+  };
+
+  function translateDOM(root = document.body) {
+    if (window.currentLang === 'ar') return;
+    
+    // Recursively walk text nodes
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+    let node;
+    while (node = walker.nextNode()) {
+      const text = node.nodeValue.trim();
+      if (text && translationDict[text]) {
+        node.nodeValue = node.nodeValue.replace(text, translationDict[text]);
+      }
+    }
+
+    // Translate input placeholders, titles, values
+    const elements = root.querySelectorAll('[placeholder], [title], input[type="button"], input[type="submit"]');
+    elements.forEach(el => {
+      const ph = el.getAttribute('placeholder');
+      if (ph && translationDict[ph.trim()]) el.setAttribute('placeholder', translationDict[ph.trim()]);
+      
+      const title = el.getAttribute('title');
+      if (title && translationDict[title.trim()]) el.setAttribute('title', translationDict[title.trim()]);
+    });
+  }
+
   // Work shift cooldown state (2.5 seconds)
   let workCooldownActive = false;
   let workCooldownTimer = null;
@@ -365,8 +590,12 @@ const UIController = (() => {
     setupEventListeners();
     setupAdminModal();
 
+    if (window.currentLang === 'en') {
+      translateDOM(document.body);
+    }
+
     const isMaint = await checkMaintenanceMode();
-    if (isMaint) return; // Stop init if system in maintenance
+    if (isMaint) return;
 
     // Refresh Start Menu player prestige card
     await refreshStartMenuCard();
@@ -574,6 +803,40 @@ const UIController = (() => {
       });
     }
 
+    // Language Toggle Buttons Binding (New)
+    const langToggleBtn = document.getElementById('btn-lang-toggle');
+    if (langToggleBtn) {
+      langToggleBtn.textContent = currentLang === 'ar' ? 'EN' : 'العربية';
+      langToggleBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        const nextLang = currentLang === 'ar' ? 'en' : 'ar';
+        localStorage.setItem('game_lang', nextLang);
+        location.reload();
+      });
+    }
+
+    const langToggleIngameBtn = document.getElementById('btn-lang-toggle-ingame');
+    if (langToggleIngameBtn) {
+      langToggleIngameBtn.querySelector('span').textContent = currentLang === 'ar' ? 'Language: English' : 'اللغة: العربية';
+      langToggleIngameBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        const nextLang = currentLang === 'ar' ? 'en' : 'ar';
+        localStorage.setItem('game_lang', nextLang);
+        location.reload();
+      });
+    }
+
+    const langToggleMobileBtn = document.getElementById('btn-lang-toggle-mobile');
+    if (langToggleMobileBtn) {
+      langToggleMobileBtn.querySelector('span').textContent = currentLang === 'ar' ? 'EN' : 'العربية';
+      langToggleMobileBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        const nextLang = currentLang === 'ar' ? 'en' : 'ar';
+        localStorage.setItem('game_lang', nextLang);
+        location.reload();
+      });
+    }
+
     // 7. In-game Return to Start Menu Buttons
     const openMenuSidebarBtn = document.getElementById('btn-open-start-menu');
     const openMenuMobileBtn = document.getElementById('btn-open-start-menu-mobile');
@@ -726,8 +989,7 @@ const UIController = (() => {
         if (!isAdmin) {
           const checkUser = await AppDB.getPlayerState(username);
           if (!checkUser || !checkUser.isAdmin) {
-            handleMaintenanceMode(maintStatus.message);
-            showToast('وضع الصيانة', 'الخادم تحت الصيانة الفنية حالياً. الدخول متاح فقط لحساب الإدارة.', 'warning');
+            showMaintenancePopup(maintStatus.message);
             return;
           }
         }
@@ -940,12 +1202,14 @@ const UIController = (() => {
           if (maintStatus && maintStatus.enabled) {
             const isAdminUser = Boolean(usernameInput === 'khalid.newstart');
             if (mode === 'register' && !isAdminUser) {
-              throw new Error("الخادم قيد الصيانة الفنية حالياً. تسجيل الحسابات الجديدة معطل حتى انتهاء الصيانة.");
+              showMaintenancePopup(maintStatus.message || 'الخادم قيد الصيانة الفنية حالياً. تسجيل الحسابات الجديدة معطل.');
+              return;
             }
             if (mode === 'login' && !isAdminUser) {
               const checkPlayer = await AppDB.getPlayerState(usernameInput);
               if (!checkPlayer || !checkPlayer.isAdmin) {
-                throw new Error("الخادم تحت وضع الصيانة الفنية حالياً. تسجيل الدخول مقتصر على حسابات الإدارة فقط.");
+                showMaintenancePopup(maintStatus.message || 'الخادم تحت وضع الصيانة الفنية حالياً. تسجيل الدخول مقتصر على حسابات الإدارة فقط.');
+                return;
               }
             }
           }
@@ -1259,6 +1523,9 @@ const UIController = (() => {
       case 'leaderboard':
         renderLeaderboard();
         break;
+    }
+    if (window.currentLang === 'en') {
+      translateDOM(document.body);
     }
   }
 
@@ -1810,6 +2077,23 @@ const UIController = (() => {
   }
 
   function setupEventListeners() {
+    // Maintenance Popup Modal Event Listeners (New)
+    const maintPopup = document.getElementById('maintenance-popup-modal');
+    const btnCloseMaintPopup = document.getElementById('btn-close-maintenance-popup');
+    const btnConfirmMaintPopup = document.getElementById('btn-confirm-maintenance-popup');
+    if (maintPopup) {
+      if (btnCloseMaintPopup) {
+        btnCloseMaintPopup.addEventListener('click', () => {
+          maintPopup.classList.add('hidden');
+        });
+      }
+      if (btnConfirmMaintPopup) {
+        btnConfirmMaintPopup.addEventListener('click', () => {
+          maintPopup.classList.add('hidden');
+        });
+      }
+    }
+
     // Gift Code Redeem Listener (Player)
     const btnPlayerRedeemGift = document.getElementById('btn-player-redeem-gift');
     if (btnPlayerRedeemGift) {
@@ -3181,13 +3465,20 @@ const UIController = (() => {
 
       Object.keys(GameEngine.BLACK_MARKET).forEach(id => {
         const deal = GameEngine.BLACK_MARKET[id];
+        
+        // Check reputation limit lock
+        const repNeeded = deal.repNeeded || 0;
+        const playerRep = s.underworldRep || 0;
+        const isLockedByRep = playerRep < repNeeded;
+
         const baseFailChance = 1 - deal.successChance;
-        const finalFailChance = Math.max(0.05, baseFailChance * (1 - riskDiscount));
+        const finalFailChance = deal.successChance === 1.0 ? 0 : Math.max(0.05, baseFailChance * (1 - riskDiscount));
         const riskPct = Math.round(finalFailChance * 100);
         const successPct = 100 - riskPct;
 
         let badgeStyle = 'bg-slate-800 text-slate-300 border-slate-700';
-        if (deal.tier === 'سهل') badgeStyle = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+        if (deal.tier === 'عملية خاصة') badgeStyle = 'bg-rose-500/20 text-rose-300 border-rose-500/40 glow-gold animate-pulse';
+        else if (deal.tier === 'سهل') badgeStyle = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
         else if (deal.tier === 'متوسط') badgeStyle = 'bg-sky-500/20 text-sky-400 border-sky-500/30';
         else if (deal.tier === 'متقدم') badgeStyle = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
         else if (deal.tier === 'محترف') badgeStyle = 'bg-purple-500/20 text-purple-400 border-purple-500/30';
@@ -3210,12 +3501,38 @@ const UIController = (() => {
         const failCdSec = Math.floor(cdSec / 2);
         const cdFailStr = failCdSec >= 3600 ? `${(failCdSec / 3600).toFixed(1)} ساعة` : failCdSec >= 60 ? `${Math.round(failCdSec / 60)} دقيقة` : `${failCdSec} ثانية`;
 
+        const costLabel = deal.requireDirtyCost ? 'الأموال المشبوهة المطلوبة:' : 'رأس المال المطلوب:';
+        const costValStr = `${deal.cost.toLocaleString()} EGP`;
+        const payoutLabel = deal.cleanPayout ? 'العائد النظيف (الفوز):' : 'العائد المشبوه (الفوز):';
+        const payoutValStr = `+${deal.payout.toLocaleString()} EGP`;
+        const payoutColor = deal.cleanPayout ? 'text-emerald-400' : 'text-rose-400';
+        const netProfitLabel = deal.cleanPayout ? 'المال المغسول الصافي:' : 'الربح الصافي غير المشروع:';
+        const netProfitVal = deal.payout - deal.cost;
+        const netProfitSign = netProfitVal >= 0 ? '+' : '';
+        const netProfitColor = deal.cleanPayout ? 'text-emerald-400' : (netProfitVal >= 0 ? 'text-teal-400' : 'text-rose-500');
+
+        const repLossVal = deal.repLoss || Math.floor((deal.repGain || 20) * 1.2);
+        const repGainStr = deal.repGain > 0 ? `+${deal.repGain} نقطة` : 'لا يوجد';
+        const repLossStr = repLossVal > 0 ? `-${repLossVal} نقطة` : 'لا يوجد';
+
         const card = document.createElement('div');
         card.id = `bm-deal-card-${id}`;
-        card.className = 'glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col justify-between hover:border-rose-500/40 transition duration-300 shadow-lg relative overflow-hidden';
+        card.className = isLockedByRep 
+          ? 'glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col justify-between opacity-40 relative overflow-hidden saturate-50 select-none'
+          : 'glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col justify-between hover:border-rose-500/40 transition duration-300 shadow-lg relative overflow-hidden';
         card.style.background = 'radial-gradient(ellipse at top left, rgba(225,29,72,0.08), rgba(15,23,42,0.95))';
 
+        const lockOverlay = isLockedByRep ? `
+          <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2.5 z-10">
+            <div class="w-11 h-11 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+              <i class="fa-solid fa-lock"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-300">مغلق! يتطلب سمعة ${deal.repNeeded} نقطة</span>
+          </div>
+        ` : '';
+
         card.innerHTML = `
+          ${lockOverlay}
           <div>
             <div class="flex justify-between items-start mb-2">
               <div class="flex items-center gap-2.5">
@@ -3232,13 +3549,14 @@ const UIController = (() => {
             <p class="text-xs text-slate-400 mt-1 mb-3">${deal.desc}</p>
             
             <div class="text-xs text-slate-400 space-y-1.5 border-t border-b border-slate-800/80 py-2.5 my-3">
-              <div class="flex justify-between"><span>رأس المال المطلوب:</span><span class="numbers-font text-white font-bold">${deal.cost.toLocaleString()} EGP</span></div>
-              <div class="flex justify-between"><span>العائد المشبوه (الفوز):</span><span class="numbers-font text-rose-400 font-bold">+${deal.payout.toLocaleString()} EGP</span></div>
-              <div class="flex justify-between"><span>الربح الصافي غير المشروع:</span><span class="numbers-font text-teal-400 font-semibold">+${(deal.payout - deal.cost).toLocaleString()} EGP</span></div>
+              <div class="flex justify-between"><span>${costLabel}</span><span class="numbers-font text-white font-bold">${costValStr}</span></div>
+              <div class="flex justify-between"><span>${payoutLabel}</span><span class="numbers-font ${payoutColor} font-bold">${payoutValStr}</span></div>
+              <div class="flex justify-between"><span>${netProfitLabel}</span><span class="numbers-font ${netProfitColor} font-semibold">${netProfitSign}${netProfitVal.toLocaleString()} EGP</span></div>
               <div class="flex justify-between"><span>نسبة النجاح المقدرة:</span><span class="numbers-font ${successPct >= 70 ? 'text-emerald-400' : successPct >= 50 ? 'text-yellow-400' : 'text-rose-400'} font-black">${successPct}%</span></div>
               <div class="flex justify-between"><span>فترة التهدئة (كول داون):</span><span class="numbers-font text-amber-400 font-bold">${cdSuccessStr} (${cdFailStr} عند الفشل)</span></div>
               <div class="flex justify-between"><span>عقوبة المداهمة:</span><span class="numbers-font text-rose-400">${deal.jailDuration * 3} ثانية (مصادرة المشبوه + 20%)</span></div>
-              <div class="flex justify-between"><span>نقاط سمعة المافيا:</span><span class="numbers-font text-rose-300 font-bold">+${deal.repGain || 20} نقطة</span></div>
+              <div class="flex justify-between"><span>زيادة السمعة:</span><span class="numbers-font text-rose-300 font-bold">${repGainStr}</span></div>
+              <div class="flex justify-between"><span>عقوبة خسارة السمعة:</span><span class="numbers-font text-rose-500 font-bold">${repLossStr}</span></div>
             </div>
 
             ${(hasLawyer || hasJammer || hasPassport) ? `
@@ -3251,31 +3569,36 @@ const UIController = (() => {
           </div>
 
           <div id="bm-deal-btn-wrapper-${id}">
-            <button id="btn-run-deal-${id}" ${isOnCooldown ? 'disabled' : ''} class="w-full py-2.5 ${isOnCooldown ? 'bg-slate-900 border border-amber-500/30 text-amber-400 cursor-not-allowed opacity-90' : 'bg-gradient-to-r from-rose-900/60 to-rose-800/60 hover:from-rose-800 hover:to-rose-700 border border-rose-500/40 text-rose-100'} rounded-xl text-xs font-black transition shadow-md flex items-center justify-center gap-2">
-              <i class="fa-solid ${isOnCooldown ? 'fa-hourglass-half text-amber-400 animate-spin' : 'fa-handshake'}"></i>
-              <span>${isOnCooldown ? `تهدئة أمنية (${cdFormatted})` : 'توقيع وتنفيذ العملية'}</span>
+            <button id="btn-run-deal-${id}" ${(isOnCooldown || isLockedByRep) ? 'disabled' : ''} class="w-full py-2.5 ${(isOnCooldown || isLockedByRep) ? 'bg-slate-900 border border-amber-500/30 text-amber-400 cursor-not-allowed opacity-90' : 'bg-gradient-to-r from-rose-900/60 to-rose-800/60 hover:from-rose-800 hover:to-rose-700 border border-rose-500/40 text-rose-100'} rounded-xl text-xs font-black transition shadow-md flex items-center justify-center gap-2">
+              <i class="fa-solid ${(isOnCooldown && !isLockedByRep) ? 'fa-hourglass-half text-amber-400 animate-spin' : 'fa-handshake'}"></i>
+              <span>${isLockedByRep ? 'مغلق (سمعة غير كافية)' : (isOnCooldown ? `تهدئة أمنية (${cdFormatted})` : 'توقيع وتنفيذ العملية')}</span>
             </button>
           </div>
         `;
 
-        card.querySelector(`#btn-run-deal-${id}`).addEventListener('click', () => {
-          try {
-            const res = GameEngine.runBlackMarketDeal(id);
-            if (res.success) {
-              showToast('ضربة معلم!', `نجحت العملية السرية! ربح مشبوه قدره +${res.payout.toLocaleString()} EGP أضيف لخزينتك ويجب غسله (+${res.repGain} سمعة). كول داون: ${Math.round((res.cooldownSec || 60)/60)}د`, 'success');
-              playMenuSound('success');
-            } else if (res.escaped) {
-              showToast('هروب دبلوماسي!', `تمت المداهمة ولكنك استخدمت جواز السفر المزور وهربت فوراً دون سجن أو غرامات! (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30)/60)}د)`, 'warning');
-              playMenuSound('click');
-            } else {
-              showToast('مداهمة الشرطة!', `تم ضبط عمليتك! مصادرة كافة الأموال المشبوهة وغرامة ${res.confiscation.toLocaleString()} EGP وسجن ${res.jailDuration * 3} ثانية. (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30)/60)}د)`, 'error');
-              playMenuSound('error');
+        if (!isLockedByRep) {
+          card.querySelector(`#btn-run-deal-${id}`).addEventListener('click', () => {
+            try {
+              const res = GameEngine.runBlackMarketDeal(id);
+              if (res.success) {
+                const payoutText = deal.cleanPayout ? 'كاش نظيف' : 'ربح مشبوه';
+                const repText = res.repGain > 0 ? ` (+${res.repGain} سمعة)` : '';
+                showToast('ضربة معلم!', `نجحت العملية السرية! ${payoutText} قدره +${res.payout.toLocaleString()} EGP أضيف لخزينتك${repText}. كول داون: ${Math.round((res.cooldownSec || 60)/60)}د`, 'success');
+                playMenuSound('success');
+              } else if (res.escaped) {
+                showToast('هروب دبلوماسي!', `تمت المداهمة ولكنك استخدمت جواز السفر المزور وهربت فوراً دون سجن أو غرامات! (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30)/60)}د)`, 'warning');
+                playMenuSound('click');
+              } else {
+                const repLossText = res.repLoss > 0 ? ` وفقدان -${res.repLoss} سمعة` : '';
+                showToast('مداهمة الشرطة!', `تم ضبط عمليتك! مصادرة كافة الأموال المشبوهة وغرامة ${res.confiscation.toLocaleString()} EGP وسجن ${res.jailDuration * 3} ثانية${repLossText}. (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30)/60)}د)`, 'error');
+                playMenuSound('error');
+              }
+              renderAll();
+            } catch (err) {
+              showToast('خطأ في العملية', err.message, 'error');
             }
-            renderAll();
-          } catch (err) {
-            showToast('خطأ في العملية', err.message, 'error');
-          }
-        });
+          });
+        }
 
         dealsContainer.appendChild(card);
       });
@@ -4092,8 +4415,11 @@ const UIController = (() => {
         const username = localStorage.getItem('foolos_active_session_user') || GameEngine.activeUsername;
         const isAdmin = Boolean(username === 'khalid.newstart' || (GameEngine.state && GameEngine.state.isAdmin));
         if (!isAdmin) {
-          handleMaintenanceMode(status.message);
-          return true;
+          const mainLayout = document.getElementById('main-game-layout');
+          if (mainLayout && !mainLayout.classList.contains('hidden')) {
+            handleMaintenanceMode(status.message);
+            return true;
+          }
         } else {
           hideMaintenanceOverlay();
           return false;
@@ -4103,6 +4429,18 @@ const UIController = (() => {
       }
     } catch (e) { console.warn('Maintenance check err:', e); }
     return false;
+  }
+
+  function showMaintenancePopup(msg) {
+    const popup = document.getElementById('maintenance-popup-modal');
+    const msgEl = document.getElementById('maintenance-popup-msg');
+    if (msgEl && msg) {
+      msgEl.textContent = msg;
+    }
+    if (popup) {
+      popup.classList.remove('hidden');
+    }
+    setAuthLoading(false);
   }
 
   function handleMaintenanceMode(customMsg) {
@@ -4347,6 +4685,44 @@ const UIController = (() => {
         const dirtyEl = document.getElementById('admin-p-dirty');
         if (dirtyEl) dirtyEl.textContent = (state.dirtyCash || 0).toLocaleString();
         document.getElementById('admin-p-title').textContent = state.title || 'عامل مبتدئ';
+
+        // Format and render account creation date
+        let createdStr = 'غير معروف';
+        if (state.createdAt) {
+          const date = new Date(state.createdAt);
+          createdStr = date.toLocaleDateString('ar-EG') + ' ' + date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        }
+        const createdEl = document.getElementById('admin-p-created-at');
+        if (createdEl) createdEl.textContent = createdStr;
+
+        // Calculate and render financial telemetry flows
+        const originalState = GameEngine.state;
+        let grossIncomePerSecond = 0;
+        let taxPerSecond = 0;
+        let netIncomePerSecond = 0;
+        try {
+          GameEngine.state = state;
+          const tickIncome = GameEngine.calculatePassiveIncomePerTick();
+          const taxReport = GameEngine.calculateTaxReport();
+          const grossIncomePerTick = (state.netWorth || 0) > 3000000 ? (tickIncome + taxReport.taxPerSecond) : tickIncome;
+          
+          grossIncomePerSecond = Math.max(0, grossIncomePerTick / 3);
+          taxPerSecond = (state.netWorth || 0) > 3000000 ? (taxReport.taxPerSecond / 3) : 0;
+          netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
+        } catch(err) {
+          console.warn("Failed to simulate player flows:", err);
+        } finally {
+          GameEngine.state = originalState;
+        }
+
+        const grossFlowEl = document.getElementById('admin-p-flow-gross');
+        if (grossFlowEl) grossFlowEl.textContent = `${grossIncomePerSecond.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} EGP/ث`;
+        
+        const taxFlowEl = document.getElementById('admin-p-flow-tax');
+        if (taxFlowEl) taxFlowEl.textContent = `${taxPerSecond.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} EGP/ث`;
+        
+        const netFlowEl = document.getElementById('admin-p-flow-net');
+        if (netFlowEl) netFlowEl.textContent = `${netIncomePerSecond.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} EGP/ث`;
 
         const roleBadge = document.getElementById('admin-p-badge-role');
         if (roleBadge) {

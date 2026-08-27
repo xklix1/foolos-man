@@ -17,7 +17,7 @@ const AppDB = (() => {
   // ─────────────────────────────────────────────
   //  CONSTANTS
   // ─────────────────────────────────────────────
-  const CLIENT_VERSION = '10';
+  const CLIENT_VERSION = 'V1.01';
 
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyC7KRj3-t_03HLMzJ10miVhdKWCpabPQB4",

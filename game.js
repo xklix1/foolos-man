@@ -149,14 +149,14 @@ const GameEngine = (() => {
   };
 
   const STOCKS = {
-    COMI: { name: 'البنك التجاري الدولي', symbol: 'COMI', basePrice: 32, volatility: 0.03, reversion: 0.01, floor: 15, dividend: 0.0001 },
-    EAST: { name: 'الشرقية للدخان', symbol: 'EAST', basePrice: 78, volatility: 0.05, reversion: 0.015, floor: 30, dividend: 0.0002 },
-    ETEL: { name: 'المصرية للاتصالات', symbol: 'ETEL', basePrice: 42, volatility: 0.04, reversion: 0.012, floor: 20, dividend: 0.00015 },
-    FWRY: { name: 'فوري للمدفوعات الإلكترونية', symbol: 'FWRY', basePrice: 85, volatility: 0.06, reversion: 0.02, floor: 40, dividend: 0.0001 },
-    CASH: { name: 'صندوق الاستثمار التقني البديل', symbol: 'CASH', basePrice: 110, volatility: 0.08, reversion: 0.025, floor: 25, dividend: 0.0003 },
-    BITC: { name: 'مؤشر البيتكوين والأصول الرقمية', symbol: 'BITC', basePrice: 280, volatility: 0.12, reversion: 0.03, floor: 50, dividend: 0 },
-    GOLD: { name: 'صندوق سبائك الذهب الخالص', symbol: 'GOLD', basePrice: 190, volatility: 0.025, reversion: 0.008, floor: 90, dividend: 0.00025 },
-    AIX:  { name: 'صندوق الذكاء الاصطناعي العالمي', symbol: 'AIX', basePrice: 340, volatility: 0.09, reversion: 0.022, floor: 80, dividend: 0.0002 }
+    COMI: { name: 'البنك التجاري الدولي', symbol: 'COMI', basePrice: 32, volatility: 0.015, reversion: 0.01, floor: 15, dividend: 0.0001 },
+    EAST: { name: 'الشرقية للدخان', symbol: 'EAST', basePrice: 78, volatility: 0.02, reversion: 0.015, floor: 30, dividend: 0.0002 },
+    ETEL: { name: 'المصرية للاتصالات', symbol: 'ETEL', basePrice: 42, volatility: 0.018, reversion: 0.012, floor: 20, dividend: 0.00015 },
+    FWRY: { name: 'فوري للمدفوعات الإلكترونية', symbol: 'FWRY', basePrice: 85, volatility: 0.025, reversion: 0.02, floor: 40, dividend: 0.0001 },
+    CASH: { name: 'صندوق الاستثمار التقني البديل', symbol: 'CASH', basePrice: 110, volatility: 0.03, reversion: 0.025, floor: 25, dividend: 0.0003 },
+    BITC: { name: 'مؤشر البيتكوين والأصول الرقمية', symbol: 'BITC', basePrice: 280, volatility: 0.05, reversion: 0.03, floor: 50, dividend: 0 },
+    GOLD: { name: 'صندوق سبائك الذهب الخالص', symbol: 'GOLD', basePrice: 190, volatility: 0.01, reversion: 0.008, floor: 90, dividend: 0.00025 },
+    AIX:  { name: 'صندوق الذكاء الاصطناعي العالمي', symbol: 'AIX', basePrice: 340, volatility: 0.035, reversion: 0.022, floor: 80, dividend: 0.0002 }
   };
 
   const STORE_ITEMS = {
@@ -300,8 +300,10 @@ const GameEngine = (() => {
       payout: 15000,
       successChance: 0.82,
       jailDuration: 18,
-      repGain: 15,
-      cooldownSec: 60, // 1 min (30s on fail)
+      repGain: 5,
+      repLoss: 10,
+      repNeeded: 0,
+      cooldownSec: 60,
       icon: 'fa-box-open',
       tier: 'سهل'
     },
@@ -313,8 +315,10 @@ const GameEngine = (() => {
       payout: 88000,
       successChance: 0.72,
       jailDuration: 35,
-      repGain: 35,
-      cooldownSec: 180, // 3 min (90s on fail)
+      repGain: 10,
+      repLoss: 20,
+      repNeeded: 0,
+      cooldownSec: 180,
       icon: 'fa-laptop-code',
       tier: 'متوسط'
     },
@@ -326,10 +330,29 @@ const GameEngine = (() => {
       payout: 320000,
       successChance: 0.58,
       jailDuration: 60,
-      repGain: 80,
-      cooldownSec: 360, // 6 min (3 min on fail)
+      repGain: 25,
+      repLoss: 50,
+      repNeeded: 0,
+      cooldownSec: 360,
       icon: 'fa-user-secret',
       tier: 'متقدم'
+    },
+    swiss_laundry: {
+      id: 'swiss_laundry',
+      name: 'مركز غسيل الأموال السويسري',
+      desc: 'قنوات بنكية سويسرية سرية لغسيل الأموال المشبوهة بأمان تام ونسبة عمولة منخفضة جداً (15% فاقد).',
+      cost: 1000000,
+      payout: 850000,
+      successChance: 1.0,
+      jailDuration: 0,
+      repGain: 0,
+      repLoss: 0,
+      repNeeded: 250,
+      cooldownSec: 900, // 15 mins
+      icon: 'fa-building-columns',
+      tier: 'عملية خاصة',
+      cleanPayout: true,
+      requireDirtyCost: true
     },
     crypto: {
       id: 'crypto',
@@ -339,8 +362,10 @@ const GameEngine = (() => {
       payout: 1250000,
       successChance: 0.46,
       jailDuration: 90,
-      repGain: 160,
-      cooldownSec: 600, // 10 min (5 min on fail)
+      repGain: 50,
+      repLoss: 100,
+      repNeeded: 0,
+      cooldownSec: 600,
       icon: 'fa-network-wired',
       tier: 'محترف'
     },
@@ -352,8 +377,10 @@ const GameEngine = (() => {
       payout: 4600000,
       successChance: 0.36,
       jailDuration: 130,
-      repGain: 320,
-      cooldownSec: 1200, // 20 min (10 min on fail)
+      repGain: 100,
+      repLoss: 200,
+      repNeeded: 300,
+      cooldownSec: 1200,
       icon: 'fa-gem',
       tier: 'خطر جداً'
     },
@@ -365,10 +392,27 @@ const GameEngine = (() => {
       payout: 20000000,
       successChance: 0.24,
       jailDuration: 180,
-      repGain: 800,
-      cooldownSec: 2400, // 40 min (20 min on fail)
+      repGain: 250,
+      repLoss: 500,
+      repNeeded: 800,
+      cooldownSec: 2400,
       icon: 'fa-shield-halved',
       tier: 'أسطوري'
+    },
+    uranium_smuggling: {
+      id: 'uranium_smuggling',
+      name: 'تهريب اليورانيوم المخصب الدولي',
+      desc: 'صفقة تهريب وتوريد شحنة يورانيوم مخصب لتشغيل مفاعلات طاقة خاصة تابعة لمنظمات دولية سرية.',
+      cost: 30000000,
+      payout: 180000000,
+      successChance: 0.25,
+      jailDuration: 100,
+      repGain: 1000,
+      repLoss: 2000,
+      repNeeded: 1500,
+      cooldownSec: 2700, // 45 min
+      icon: 'fa-radiation',
+      tier: 'عملية خاصة'
     },
     defense_tech: {
       id: 'defense_tech',
@@ -378,10 +422,27 @@ const GameEngine = (() => {
       payout: 75000000,
       successChance: 0.20,
       jailDuration: 240,
-      repGain: 1500,
-      cooldownSec: 3600, // 1 hour (30 min on fail)
+      repGain: 500,
+      repLoss: 1000,
+      repNeeded: 2000,
+      cooldownSec: 3600,
       icon: 'fa-jet-fighter',
       tier: 'أسطوري'
+    },
+    central_bank_hack: {
+      id: 'central_bank_hack',
+      name: 'قرصنة واختراق البنوك المركزية',
+      desc: 'فرض السيطرة والقرصنة السيبرانية على خوادم بنوك مركزية كبرى وسحب احتياطيات رقمية.',
+      cost: 120000000,
+      payout: 850000000,
+      successChance: 0.18,
+      jailDuration: 140,
+      repGain: 3000,
+      repLoss: 6000,
+      repNeeded: 5000,
+      cooldownSec: 7200, // 2 hours
+      icon: 'fa-terminal',
+      tier: 'عملية خاصة'
     },
     satellite_hack: {
       id: 'satellite_hack',
@@ -391,8 +452,10 @@ const GameEngine = (() => {
       payout: 320000000,
       successChance: 0.16,
       jailDuration: 300,
-      repGain: 3500,
-      cooldownSec: 7200, // 2 hours (1 hour on fail)
+      repGain: 1000,
+      repLoss: 2000,
+      repNeeded: 4500,
+      cooldownSec: 7200,
       icon: 'fa-satellite',
       tier: 'خطر مطلق'
     },
@@ -404,8 +467,10 @@ const GameEngine = (() => {
       payout: 1500000000,
       successChance: 0.12,
       jailDuration: 400,
-      repGain: 10000,
-      cooldownSec: 14400, // 4 hours (2 hours on fail)
+      repGain: 3000,
+      repLoss: 6000,
+      repNeeded: 10000,
+      cooldownSec: 14400,
       icon: 'fa-crown',
       tier: 'سيد الظلال'
     }
@@ -1596,6 +1661,12 @@ const GameEngine = (() => {
     const deal = BLACK_MARKET[dealId];
     if (!deal) throw new Error("الصفقة غير متوفرة.");
 
+    // 0. Check reputation requirement
+    const repNeeded = deal.repNeeded || 0;
+    if ((state.underworldRep || 0) < repNeeded) {
+      throw new Error(`تحتاج إلى سمعة لا تقل عن ${repNeeded} نقطة في العالم السفلي للقيام بهذه الصفقة.`);
+    }
+
     // 1. Check Cooldown
     if (state.blackMarketCooldowns && state.blackMarketCooldowns[dealId] > Date.now()) {
       const remainingSec = Math.ceil((state.blackMarketCooldowns[dealId] - Date.now()) / 1000);
@@ -1603,6 +1674,11 @@ const GameEngine = (() => {
       const secs = remainingSec % 60;
       const timeStr = mins > 0 ? `${mins} دقيقة و ${secs} ثانية` : `${secs} ثانية`;
       throw new Error(`العملية في فترة تهدئة أمنية (كول داون)! يرجى الانتظار ${timeStr}.`);
+    }
+
+    // 2. Check Dirty Cash requirement if requireDirtyCost is true
+    if (deal.requireDirtyCost && (state.dirtyCash || 0) < deal.cost) {
+      throw new Error(`تحتاج لـ ${deal.cost.toLocaleString()} EGP من الأموال المشبوهة (الكاش المتسخ) تحديداً لغسيلها.`);
     }
 
     const totalCashAvailable = (state.cash || 0) + (state.dirtyCash || 0);
@@ -1642,18 +1718,24 @@ const GameEngine = (() => {
 
     const roll = Math.random();
     if (roll < finalSuccessChance) {
-      // SUCCESS: High ROI Payout into DIRTY CASH + Full Cooldown
-      state.dirtyCash = (state.dirtyCash || 0) + deal.payout;
-      state.underworldRep = (state.underworldRep || 0) + (deal.repGain || 20);
+      // SUCCESS: High ROI Payout into DIRTY or CLEAN CASH + Full Cooldown
+      if (deal.cleanPayout) {
+        state.cash = (state.cash || 0) + deal.payout;
+      } else {
+        state.dirtyCash = (state.dirtyCash || 0) + deal.payout;
+      }
+      state.underworldRep = (state.underworldRep || 0) + (deal.repGain || 0);
       state.blackMarketCooldowns[dealId] = Date.now() + fullCdMs;
-      recordPlayerActivity('سوق سوداء', `نجاح صفقة "${deal.name}" (+${deal.payout.toLocaleString()} ج.م كاش مشبوه)`, 'blackmarket');
+
+      const payoutTypeStr = deal.cleanPayout ? 'كاش نظيف' : 'كاش مشبوه';
+      recordPlayerActivity('سوق سوداء', `نجاح صفقة "${deal.name}" (+${deal.payout.toLocaleString()} ج.م ${payoutTypeStr})`, 'blackmarket');
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
       return {
         success: true,
         payout: deal.payout,
         profit: deal.payout - deal.cost,
-        repGain: deal.repGain || 20,
+        repGain: deal.repGain || 0,
         lawyerAssisted: hasLawyer,
         cooldownSec: Math.floor((deal.cooldownSec || 120) * cdMultiplier),
         finalChancePct: Math.round(finalSuccessChance * 100)
@@ -1706,7 +1788,11 @@ const GameEngine = (() => {
       state.jailTimer = deal.jailDuration;
       state.heatLevel = Math.min(5, (state.heatLevel || 0) + 1);
 
-      recordPlayerActivity('مداهمة وسجن', `فشل صفقة "${deal.name}" ومصادرة ${totalConfiscation.toLocaleString()} ج.م وسجن ${deal.jailDuration}ث (كول داون مخفض 50%)`, 'blackmarket');
+      // Apply reputation loss on arrest
+      const repLoss = deal.repLoss || Math.floor((deal.repGain || 20) * 1.2);
+      state.underworldRep = Math.max(0, (state.underworldRep || 0) - repLoss);
+
+      recordPlayerActivity('مداهمة وسجن', `فشل صفقة "${deal.name}" ومصادرة ${totalConfiscation.toLocaleString()} ج.م وسجن ${deal.jailDuration}ث وفقدان -${repLoss} سمعة (كول داون مخفض 50%)`, 'blackmarket');
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
       return {
@@ -1716,6 +1802,7 @@ const GameEngine = (() => {
         confiscatedDirty,
         confiscatedClean,
         jailDuration: deal.jailDuration,
+        repLoss: repLoss,
         cooldownSec: Math.floor((deal.cooldownSec || 120) / 2 * cdMultiplier)
       };
     }
