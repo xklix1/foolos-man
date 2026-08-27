@@ -1014,7 +1014,7 @@
     </aside>
 
     <!-- CONTENT DISPLAY CONTAINER -->
-    <main class="desktop-content flex-1 p-3 lg:p-8 overflow-y-auto mobile-content">
+    <main class="desktop-content flex-1 min-w-0 p-3 lg:p-8 overflow-y-auto mobile-content">
       
       <!-- MOBILE TOP STICKY BAR (Visible on mobile screens <1024px) -->
       <div class="lg:hidden mobile-top-bar glass-panel p-3 mb-4 rounded-xl border border-slate-800 flex flex-col gap-2 sticky top-2 z-30 shadow-xl" style="background: rgba(8,12,28,0.92) !important; backdrop-filter: blur(24px) !important;">
@@ -2387,16 +2387,16 @@
         <div id="leaderboard-podium" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 items-stretch">
           
           <!-- PODIUM 2: Silver (Rank 2) -->
-          <div id="podium-card-2" class="glass-panel p-3.5 rounded-2xl border border-slate-600/60 bg-gradient-to-b from-slate-800/40 via-slate-900/70 to-slate-950/90 flex items-center sm:flex-col sm:justify-between sm:text-center gap-3 shadow-lg order-2 sm:order-1 relative overflow-hidden group hover:border-slate-400 transition duration-300">
+          <div id="podium-card-2" class="glass-panel p-3.5 rounded-2xl border border-slate-600/60 bg-gradient-to-b from-slate-800/40 via-slate-900/70 to-slate-950/90 flex items-center sm:flex-col sm:justify-between sm:text-center gap-3 shadow-lg order-2 sm:order-1 relative overflow-hidden group hover:border-slate-400 transition duration-300 min-w-0">
             <div class="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-slate-400 to-slate-600"></div>
-            <div class="flex items-center sm:flex-col gap-2.5 sm:gap-1.5">
-              <div class="relative">
+            <div class="flex items-center sm:flex-col gap-2.5 sm:gap-1.5 min-w-0 w-full">
+              <div class="relative flex-shrink-0">
                 <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-slate-700 to-slate-500 flex items-center justify-center text-white text-base sm:text-lg font-black shadow-inner border border-slate-400/50 numbers-font" id="podium-avatar-2">
                   🥈
                 </div>
                 <span class="absolute -bottom-1.5 -right-1.5 text-[10px] px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-200 border border-slate-400/50 font-black">#2</span>
               </div>
-              <div class="text-right sm:text-center min-w-0">
+              <div class="text-right sm:text-center min-w-0 flex-1">
                 <span class="text-[9px] font-black text-slate-400 uppercase block tracking-wider">المركز الثاني</span>
                 <h4 id="podium-name-2" class="text-xs sm:text-sm font-black text-white truncate max-w-full">تحميل...</h4>
                 <span id="podium-title-2" class="text-[10px] text-slate-400 block truncate">--</span>
@@ -2409,16 +2409,16 @@
           </div>
 
           <!-- PODIUM 1: Gold (Rank 1 - Champion Emperor) -->
-          <div id="podium-card-1" class="glass-panel p-4 rounded-2xl border-2 border-yellow-400/90 bg-gradient-to-b from-yellow-500/20 via-amber-950/40 to-slate-950/95 flex items-center sm:flex-col sm:justify-between sm:text-center gap-3 shadow-2xl order-1 sm:order-2 glow-gold relative overflow-hidden group hover:border-yellow-300 transition duration-300 sm:-translate-y-1">
+          <div id="podium-card-1" class="glass-panel p-4 rounded-2xl border-2 border-yellow-400/90 bg-gradient-to-b from-yellow-500/20 via-amber-950/40 to-slate-950/95 flex items-center sm:flex-col sm:justify-between sm:text-center gap-3 shadow-2xl order-1 sm:order-2 glow-gold relative overflow-hidden group hover:border-yellow-300 transition duration-300 sm:-translate-y-1 min-w-0">
             <div class="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 animate-pulse"></div>
-            <div class="flex items-center sm:flex-col gap-2.5 sm:gap-1.5">
-              <div class="relative">
+            <div class="flex items-center sm:flex-col gap-2.5 sm:gap-1.5 min-w-0 w-full">
+              <div class="relative flex-shrink-0">
                 <div class="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-yellow-500 via-amber-400 to-yellow-200 flex items-center justify-center text-slate-950 text-lg sm:text-2xl font-black shadow-xl border-2 border-yellow-300 numbers-font glow-gold" id="podium-avatar-1">
                   👑
                 </div>
                 <span class="absolute -bottom-1.5 -right-1.5 text-[10px] px-2 py-0.2 rounded-full bg-yellow-500 text-slate-950 border border-yellow-300 font-black glow-gold">#1</span>
               </div>
-              <div class="text-right sm:text-center min-w-0">
+              <div class="text-right sm:text-center min-w-0 flex-1">
                 <span class="text-[9px] font-black text-yellow-400 uppercase block tracking-wider flex items-center justify-start sm:justify-center gap-1">
                   <i class="fa-solid fa-crown text-[9px]"></i> إمبراطور اللعبة
                 </span>
@@ -2433,16 +2433,16 @@
           </div>
 
           <!-- PODIUM 3: Bronze (Rank 3) -->
-          <div id="podium-card-3" class="glass-panel p-3.5 rounded-2xl border border-amber-700/60 bg-gradient-to-b from-amber-950/30 via-slate-900/70 to-slate-950/90 flex items-center sm:flex-col sm:justify-between sm:text-center gap-3 shadow-lg order-3 sm:order-3 relative overflow-hidden group hover:border-amber-500 transition duration-300">
+          <div id="podium-card-3" class="glass-panel p-3.5 rounded-2xl border border-amber-700/60 bg-gradient-to-b from-amber-950/30 via-slate-900/70 to-slate-950/90 flex items-center sm:flex-col sm:justify-between sm:text-center gap-3 shadow-lg order-3 sm:order-3 relative overflow-hidden group hover:border-amber-500 transition duration-300 min-w-0">
             <div class="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-amber-600 to-amber-800"></div>
-            <div class="flex items-center sm:flex-col gap-2.5 sm:gap-1.5">
-              <div class="relative">
+            <div class="flex items-center sm:flex-col gap-2.5 sm:gap-1.5 min-w-0 w-full">
+              <div class="relative flex-shrink-0">
                 <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-800 to-amber-600 flex items-center justify-center text-amber-200 text-base sm:text-lg font-black shadow-inner border border-amber-600/50 numbers-font" id="podium-avatar-3">
                   🥉
                 </div>
                 <span class="absolute -bottom-1.5 -right-1.5 text-[10px] px-1.5 py-0.2 rounded-full bg-amber-900 text-amber-300 border border-amber-600/50 font-black">#3</span>
               </div>
-              <div class="text-right sm:text-center min-w-0">
+              <div class="text-right sm:text-center min-w-0 flex-1">
                 <span class="text-[9px] font-black text-amber-400 uppercase block tracking-wider">المركز الثالث</span>
                 <h4 id="podium-name-3" class="text-xs sm:text-sm font-black text-white truncate max-w-full">تحميل...</h4>
                 <span id="podium-title-3" class="text-[10px] text-slate-400 block truncate">--</span>
