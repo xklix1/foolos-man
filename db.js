@@ -1763,6 +1763,132 @@ const AppDB = (() => {
         });
       });
     }
+  // ─────────────────────────────────────────────
+  //  V2: CORPORATIONS API
+  // ─────────────────────────────────────────────
+  async function createCorporation(name, desc, founder) {
+    _requireOnline();
+    if (!name || !founder) throw new Error('يرجى ملء جميع الحقول المطلوبة لتأسيس الشركة.');
+    
+    const corpId = 'corp_' + Math.random().toString(36).substr(2, 9);
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    
+    const corpData = {
+      id: corpId,
+      name: name.trim(),
+      desc: desc ? desc.trim() : '',
+      founder,
+      treasury: 0,
+      totalContributions: 0,
+      members: [founder],
+      contributions: {
+        [founder]: 0
+      },
+      projects: {},
+      createdAt: Date.now()
+    };
+    
+    await docRef.set(corpData);
+    return corpId;
+  }
+
+  function listenToCorporations(callback) {
+    if (firebaseReady) {
+      return firestoreDb.collection('corporations')
+        .onSnapshot(snapshot => {
+          const list = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            data.id = doc.id;
+            list.push(data);
+          });
+          callback(list);
+        }, err => {
+          console.warn('[DB] Failed to listen to corporations:', err);
+        });
+    } else {
+      callback([]);
+      return () => {};
+    }
+  }
+
+  async function joinCorporation(corpId, username) {
+    _requireOnline();
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    
+    await firestoreDb.runTransaction(async transaction => {
+      const doc = await transaction.get(docRef);
+      if (!doc.exists) throw new Error('الشركة المشتركة غير موجودة.');
+      const data = doc.data();
+      
+      const members = data.members || [];
+      if (members.includes(username)) throw new Error('أنت عضو في هذه الشركة بالفعل.');
+      
+      members.push(username);
+      
+      const contributions = data.contributions || {};
+      contributions[username] = 0;
+      
+      transaction.update(docRef, {
+        members,
+        contributions
+      });
+    });
+    return true;
+  }
+
+  async function contributeToCorporation(corpId, username, amount) {
+    _requireOnline();
+    if (amount <= 0) throw new Error('يجب أن تكون قيمة المساهمة أكبر من الصفر.');
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    
+    await firestoreDb.runTransaction(async transaction => {
+      const doc = await transaction.get(docRef);
+      if (!doc.exists) throw new Error('الشركة غير موجودة.');
+      const data = doc.data();
+      
+      const members = data.members || [];
+      if (!members.includes(username)) throw new Error('يجب أن تنضم للشركة أولاً لكي تساهم فيها.');
+      
+      const contributions = data.contributions || {};
+      contributions[username] = (contributions[username] || 0) + amount;
+      
+      const totalContributions = (data.totalContributions || 0) + amount;
+      const treasury = (data.treasury || 0) + amount;
+      
+      transaction.update(docRef, {
+        contributions,
+        totalContributions,
+        treasury
+      });
+    });
+    return true;
+  }
+
+  async function buyCorporationProject(corpId, projectId, projectCost) {
+    _requireOnline();
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    
+    await firestoreDb.runTransaction(async transaction => {
+      const doc = await transaction.get(docRef);
+      if (!doc.exists) throw new Error('الشركة غير موجودة.');
+      const data = doc.data();
+      
+      if (data.treasury < projectCost) {
+        throw new Error(`رصيد الخزينة غير كافٍ. تحتاج الشركة لـ ${projectCost.toLocaleString()} EGP.`);
+      }
+      
+      const projects = data.projects || {};
+      if (projects[projectId]) throw new Error('الشركة تمتلك هذا المشروع بالفعل.');
+      
+      projects[projectId] = true;
+      const treasury = data.treasury - projectCost;
+      
+      transaction.update(docRef, {
+        projects,
+        treasury
+      });
+    });
     return true;
   }
 
@@ -1850,6 +1976,13 @@ const AppDB = (() => {
     listenToLiveAuctions,
     registerForAuction,
     placeAuctionBid,
+
+    // V2: CORPORATIONS API
+    createCorporation,
+    listenToCorporations,
+    joinCorporation,
+    contributeToCorporation,
+    buyCorporationProject,
 
     get dbType() { return firebaseReady ? 'firebase' : 'offline'; },
     mockPlayers: []

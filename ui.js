@@ -15,7 +15,7 @@ const UIController = (() => {
   // Translation System (New)
   const currentLang = localStorage.getItem('game_lang') || 'ar';
   window.currentLang = currentLang;
-  
+
   // Set layout direction on load
   document.documentElement.dir = currentLang === 'en' ? 'ltr' : 'rtl';
   if (currentLang === 'en') {
@@ -216,7 +216,7 @@ const UIController = (() => {
 
   function translateDOM(root = document.body) {
     if (window.currentLang === 'ar') return;
-    
+
     // Recursively walk text nodes
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
     let node;
@@ -232,7 +232,7 @@ const UIController = (() => {
     elements.forEach(el => {
       const ph = el.getAttribute('placeholder');
       if (ph && translationDict[ph.trim()]) el.setAttribute('placeholder', translationDict[ph.trim()]);
-      
+
       const title = el.getAttribute('title');
       if (title && translationDict[title.trim()]) el.setAttribute('title', translationDict[title.trim()]);
     });
@@ -260,7 +260,7 @@ const UIController = (() => {
       }
     }
     if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume().catch(() => {});
+      audioCtx.resume().catch(() => { });
     }
     return audioCtx;
   }
@@ -451,7 +451,7 @@ const UIController = (() => {
         osc.start();
         osc.stop(ctx.currentTime + 0.08);
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   function playCasinoSound(type) {
@@ -537,7 +537,7 @@ const UIController = (() => {
           osc.stop(ctx.currentTime + t + 0.04);
         });
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   function setAmbientMusicState(enabled) {
@@ -572,7 +572,7 @@ const UIController = (() => {
       filter.connect(ambientGainNode);
       ambientGainNode.connect(ctx.destination);
       ambientOscillator.start();
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // Crash game state variables
@@ -938,10 +938,10 @@ const UIController = (() => {
 
   function toggleFullscreen() {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
+      document.documentElement.requestFullscreen().catch(() => { });
     } else {
       if (document.exitFullscreen) {
-        document.exitFullscreen().catch(() => {});
+        document.exitFullscreen().catch(() => { });
       }
     }
   }
@@ -1118,7 +1118,7 @@ const UIController = (() => {
         const rank = idx + 1;
         const initials = (p.username || 'P').substring(0, 2).toUpperCase();
         tr.className = `transition duration-150 border-b border-slate-900/60 ${rank === 1 ? 'bg-yellow-500/10' : 'hover:bg-slate-900/50'}`;
-        
+
         let rankBadge = '';
         if (rank === 1) {
           rankBadge = `<span class="w-6 h-6 rounded-lg bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center shadow">👑1</span>`;
@@ -1241,9 +1241,9 @@ const UIController = (() => {
             mainLayout.classList.remove('hidden');
             mainLayout.classList.add('flex');
           }
-          
+
           setupRealTimeListeners(usernameInput);
-          
+
           startGameLoop();
           renderAll();
 
@@ -1309,8 +1309,11 @@ const UIController = (() => {
       });
     } else if (tabId === 'auctions') {
       fetchAndRenderAuctions();
+      renderAcquisitionMarket();
+    } else if (tabId === 'corporations') {
+      renderCorporationsTab();
     }
-    
+
     // Update active class styles in buttons
     const navButtons = document.querySelectorAll('.nav-tab-btn');
     navButtons.forEach(btn => {
@@ -1417,7 +1420,7 @@ const UIController = (() => {
 
       // Fast in-place numerical updates on every tick without DOM destruction
       renderStatsBar();
-      
+
       if (activeTab === 'dashboard') renderDashboard();
       else if (activeTab === 'bank') updateBankInDOM();
       else if (activeTab === 'business') updateBusinessesInDOM();
@@ -1427,6 +1430,20 @@ const UIController = (() => {
       else if (activeTab === 'blackmarket') updateBlackMarketCooldownsInDOM();
 
       checkAndClaimDividends();
+
+      // V2: Check and auto-activate pending live auctions from cache
+      if (window.lastLiveAuctionsCache) {
+        window.lastLiveAuctionsCache.forEach(auc => {
+          if (auc.status === 'pending') {
+            checkAndStartAuction(auc);
+          }
+        });
+      }
+
+      // V2: Refresh live auctions timer tick in real-time
+      if (activeTab === 'auctions' && window.lastLiveAuctionsCache) {
+        renderLiveAuctions(window.lastLiveAuctionsCache);
+      }
     }, 1000);
   }
 
@@ -1615,7 +1632,7 @@ const UIController = (() => {
 
       const card = document.createElement('div');
       card.className = `glass-panel p-4 rounded-xl flex flex-col justify-between items-start border ${isCurrent ? 'border-yellow-500 bg-yellow-950/20' : 'border-slate-800'}`;
-      
+
       card.innerHTML = `
         <div class="w-full flex justify-between items-center mb-2">
           <h4 class="text-lg font-bold text-white">${job.name}</h4>
@@ -1628,13 +1645,12 @@ const UIController = (() => {
         </div>
         <button 
           data-job-id="${id}"
-          class="w-full py-2 rounded-lg font-bold transition duration-300 text-sm ${
-            isCurrent 
-              ? 'bg-slate-700 text-slate-300 cursor-not-allowed' 
-              : isUnlocked 
-                ? 'bg-yellow-500 hover:bg-yellow-600 text-slate-950' 
-                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-          }"
+          class="w-full py-2 rounded-lg font-bold transition duration-300 text-sm ${isCurrent
+          ? 'bg-slate-700 text-slate-300 cursor-not-allowed'
+          : isUnlocked
+            ? 'bg-yellow-500 hover:bg-yellow-600 text-slate-950'
+            : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+        }"
           ${isCurrent || !isUnlocked ? 'disabled' : ''}
         >
           ${isCurrent ? 'أنت تمارس هذه المهنة' : isUnlocked ? 'التحاق بهذه الوظيفة' : `مغلق (تحتاج لخبرة)`}
@@ -1915,8 +1931,8 @@ const UIController = (() => {
       if (mktgTextEl) {
         const campaignCost = Math.floor(biz.cost * 0.25);
         const marketingSecRemaining = marketingActive ? bizState.marketingTicks * 3 : 0;
-        mktgTextEl.textContent = marketingActive 
-          ? `حملة إعلانية نشطة (متبقي ${marketingSecRemaining}ث)` 
+        mktgTextEl.textContent = marketingActive
+          ? `حملة إعلانية نشطة (متبقي ${marketingSecRemaining}ث)`
           : `إطلاق حملة ترويجية مكثفة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP`;
       }
     });
@@ -1955,7 +1971,7 @@ const UIController = (() => {
       s.investments.forEach((inv, idx) => {
         const remainingSec = inv.ticksRemaining || 0;
         const totalPayout = Math.floor(inv.investedAmount * (1 + inv.rate));
-        
+
         const row = document.createElement('div');
         row.className = 'glass-panel p-3 rounded-lg border border-slate-800 flex justify-between items-center text-sm';
         row.innerHTML = `
@@ -2118,10 +2134,10 @@ const UIController = (() => {
           btnPlayerRedeemGift.textContent = 'جاري التحقق...';
 
           const result = await AppDB.redeemGiftCode(code, GameEngine.activeUsername);
-          
+
           showToast('تم استرداد الهدية! 🎉', `تهانينا! حصلت على: ${result.rewardText}`, 'success');
           playMenuSound('success');
-          
+
           // Apply changes to local GameEngine.state
           if (result.rewardType === 'cash') {
             GameEngine.state.cash = result.playerUpdates.cash;
@@ -2358,7 +2374,7 @@ const UIController = (() => {
         const action = btn.getAttribute('data-action');
         const pct = parseFloat(btn.getAttribute('data-pct'));
         const input = document.getElementById('bank-amount-input');
-        
+
         if (action === 'deposit') {
           input.value = Math.floor(GameEngine.state.cash * pct);
         } else {
@@ -2392,7 +2408,7 @@ const UIController = (() => {
         document.getElementById('wire-amount-input').value = '';
 
         showToast('حوالة صادرة', `تم تحويل مبلغ ${amount.toLocaleString()} EGP بنجاح إلى "${recipient}".`, 'success');
-        
+
         // Log transaction locally
         addTransferHistoryRow(recipient, amount);
 
@@ -2429,7 +2445,7 @@ const UIController = (() => {
           document.getElementById('request-amount-input').value = '';
 
           showToast('طلب تحويل', `تم إرسال طلب التحويل بمبلغ ${amount.toLocaleString()} EGP إلى "${recipient}" بنجاح.`, 'success');
-          
+
           await fetchAndRenderTransferRequests(true);
         } catch (err) {
           showToast('فشل طلب التحويل', err.message, 'error');
@@ -2512,7 +2528,7 @@ const UIController = (() => {
       soundToggleBtn.addEventListener('click', () => {
         casinoSoundEnabled = !casinoSoundEnabled;
         localStorage.setItem('foolos_casino_sound', casinoSoundEnabled);
-        soundToggleBtn.innerHTML = casinoSoundEnabled 
+        soundToggleBtn.innerHTML = casinoSoundEnabled
           ? '<i class="fa-solid fa-volume-high"></i><span>المؤثرات الصوتية: مفعلة</span>'
           : '<i class="fa-solid fa-volume-xmark text-slate-500"></i><span class="text-slate-500">المؤثرات الصوتية: مكتومة</span>';
         if (casinoSoundEnabled) playCasinoSound('coin');
@@ -2530,7 +2546,7 @@ const UIController = (() => {
         try {
           if (isNaN(bet) || bet <= 0) throw new Error("يرجى إدخال قيمة رهان صحيحة.");
           if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
-          
+
           coinFlipBtn.disabled = true;
           playCasinoSound('coin');
 
@@ -2539,7 +2555,7 @@ const UIController = (() => {
             coinVisual.style.transition = 'transform 0.45s cubic-bezier(0.2, 0.8, 0.3, 1)';
             coinVisual.style.transform = 'rotateY(1800deg) scale(1.1)';
           }
-          
+
           setTimeout(() => {
             try {
               const res = GameEngine.playCoinFlip(bet, choice, coinFlipStreak);
@@ -2592,7 +2608,7 @@ const UIController = (() => {
         try {
           if (isNaN(bet) || bet <= 0) throw new Error("يرجى تحديد مبلغ رهان صحيح.");
           if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
-          
+
           slotsSpinBtn.disabled = true;
           playCasinoSound('coin');
 
@@ -2606,9 +2622,9 @@ const UIController = (() => {
 
           const tempIcons = ['CROWN', 'DIAMOND', 'GOLD', 'SACK', 'KEY'];
           const spinInterval = setInterval(() => {
-            r1.innerHTML = getReelSymbolIcon(tempIcons[Math.floor(Math.random()*tempIcons.length)]);
-            r2.innerHTML = getReelSymbolIcon(tempIcons[Math.floor(Math.random()*tempIcons.length)]);
-            r3.innerHTML = getReelSymbolIcon(tempIcons[Math.floor(Math.random()*tempIcons.length)]);
+            r1.innerHTML = getReelSymbolIcon(tempIcons[Math.floor(Math.random() * tempIcons.length)]);
+            r2.innerHTML = getReelSymbolIcon(tempIcons[Math.floor(Math.random() * tempIcons.length)]);
+            r3.innerHTML = getReelSymbolIcon(tempIcons[Math.floor(Math.random() * tempIcons.length)]);
           }, 45);
 
           setTimeout(() => {
@@ -2690,7 +2706,7 @@ const UIController = (() => {
 
           rouletteBtn.disabled = true;
           playCasinoSound('tick');
-          wheel.style.transform = `rotate(${1800 + Math.floor(Math.random()*360)}deg)`;
+          wheel.style.transform = `rotate(${1800 + Math.floor(Math.random() * 360)}deg)`;
           wheel.style.transition = 'all 0.6s cubic-bezier(0.15, 0.9, 0.25, 1)';
 
           setTimeout(() => {
@@ -2703,7 +2719,7 @@ const UIController = (() => {
 
               // Color determination
               let color = 'green';
-              const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+              const redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
               if (landedNum !== 0) {
                 color = redNumbers.includes(landedNum) ? 'red' : 'black';
               }
@@ -2768,7 +2784,7 @@ const UIController = (() => {
 
           wheelBtn.disabled = true;
           playCasinoSound('tick');
-          wheelVis.style.transform = `rotate(${1440 + Math.floor(Math.random()*360)}deg)`;
+          wheelVis.style.transform = `rotate(${1440 + Math.floor(Math.random() * 360)}deg)`;
           wheelVis.style.transition = 'all 0.6s cubic-bezier(0.25, 1, 0.3, 1)';
 
           setTimeout(() => {
@@ -2777,8 +2793,8 @@ const UIController = (() => {
 
               // Wheel Multipliers distribution table
               const multipliers = [0, 0.5, 1.2, 1.5, 2.0, 3.0, 5.0, 10.0];
-              const weights     = [15, 25, 25, 15, 10,  6,   3,    1];
-              
+              const weights = [15, 25, 25, 15, 10, 6, 3, 1];
+
               let rand = Math.floor(Math.random() * 100);
               let cumulative = 0;
               let selectedMult = 1.2;
@@ -2966,7 +2982,7 @@ const UIController = (() => {
       const asset = GameEngine.ASSETS[key];
       const owned = s.assets[key] || 0;
       lastAssetsOwned[key] = owned;
-      
+
       const card = document.createElement('div');
       card.id = `asset-card-${key}`;
       card.className = `glass-panel p-5 rounded-xl border border-slate-800 flex flex-col justify-between`;
@@ -3065,7 +3081,7 @@ const UIController = (() => {
       const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
       const currentPrice = prices[prices.length - 1];
       const prevPrice = prices[prices.length - 2] || currentPrice;
-      
+
       const changePct = ((currentPrice - prevPrice) / prevPrice) * 100;
       const isUp = currentPrice >= prevPrice;
 
@@ -3076,7 +3092,7 @@ const UIController = (() => {
       const card = document.createElement('div');
       card.id = `stock-card-${sym}`;
       card.className = `glass-panel p-5 rounded-xl border border-slate-800 flex flex-col justify-between`;
-      
+
       const svgPath = generateSparklineSVG(prices);
 
       card.innerHTML = `
@@ -3344,7 +3360,7 @@ const UIController = (() => {
   // --- Tab 8: Store & Inventory Panel ---
   function renderStore() {
     const s = GameEngine.state;
-    
+
     // Render store shelf
     const shelf = document.getElementById('store-shelf');
     shelf.innerHTML = '';
@@ -3462,7 +3478,7 @@ const UIController = (() => {
     const dealsContainer = document.getElementById('blackmarket-deals');
     if (dealsContainer) {
       dealsContainer.innerHTML = '';
-      
+
       const hasLawyer = s.inventory && s.inventory.premium_lawyer > 0;
       const hasJammer = s.inventory && s.inventory.radar_jammer > 0;
       const hasPassport = s.inventory && s.inventory.fake_passport > 0;
@@ -3473,7 +3489,7 @@ const UIController = (() => {
 
       Object.keys(GameEngine.BLACK_MARKET).forEach(id => {
         const deal = GameEngine.BLACK_MARKET[id];
-        
+
         // Check reputation limit lock
         const repNeeded = deal.repNeeded || 0;
         const playerRep = s.underworldRep || 0;
@@ -3525,7 +3541,7 @@ const UIController = (() => {
 
         const card = document.createElement('div');
         card.id = `bm-deal-card-${id}`;
-        card.className = isLockedByRep 
+        card.className = isLockedByRep
           ? 'glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col justify-between opacity-40 relative overflow-hidden saturate-50 select-none'
           : 'glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col justify-between hover:border-rose-500/40 transition duration-300 shadow-lg relative overflow-hidden';
         card.style.background = 'radial-gradient(ellipse at top left, rgba(225,29,72,0.08), rgba(15,23,42,0.95))';
@@ -3591,14 +3607,14 @@ const UIController = (() => {
               if (res.success) {
                 const payoutText = deal.cleanPayout ? 'كاش نظيف' : 'ربح مشبوه';
                 const repText = res.repGain > 0 ? ` (+${res.repGain} سمعة)` : '';
-                showToast('ضربة معلم!', `نجحت العملية السرية! ${payoutText} قدره +${res.payout.toLocaleString()} EGP أضيف لخزينتك${repText}. كول داون: ${Math.round((res.cooldownSec || 60)/60)}د`, 'success');
+                showToast('ضربة معلم!', `نجحت العملية السرية! ${payoutText} قدره +${res.payout.toLocaleString()} EGP أضيف لخزينتك${repText}. كول داون: ${Math.round((res.cooldownSec || 60) / 60)}د`, 'success');
                 playMenuSound('success');
               } else if (res.escaped) {
-                showToast('هروب دبلوماسي!', `تمت المداهمة ولكنك استخدمت جواز السفر المزور وهربت فوراً دون سجن أو غرامات! (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30)/60)}د)`, 'warning');
+                showToast('هروب دبلوماسي!', `تمت المداهمة ولكنك استخدمت جواز السفر المزور وهربت فوراً دون سجن أو غرامات! (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30) / 60)}د)`, 'warning');
                 playMenuSound('click');
               } else {
                 const repLossText = res.repLoss > 0 ? ` وفقدان -${res.repLoss} سمعة` : '';
-                showToast('مداهمة الشرطة!', `تم ضبط عمليتك! مصادرة كافة الأموال المشبوهة وغرامة ${res.confiscation.toLocaleString()} EGP وسجن ${res.jailDuration * 3} ثانية${repLossText}. (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30)/60)}د)`, 'error');
+                showToast('مداهمة الشرطة!', `تم ضبط عمليتك! مصادرة كافة الأموال المشبوهة وغرامة ${res.confiscation.toLocaleString()} EGP وسجن ${res.jailDuration * 3} ثانية${repLossText}. (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30) / 60)}د)`, 'error');
                 playMenuSound('error');
               }
               renderAll();
@@ -3876,7 +3892,7 @@ const UIController = (() => {
     cancelAnimationFrame(crashAnimationId);
     crashState = 'crashed';
     playCasinoSound('lose');
-    
+
     const statusText = document.getElementById('crash-status-text');
     if (statusText) {
       statusText.textContent = `انفجر عند ${crashTarget.toFixed(2)}x !`;
@@ -4008,17 +4024,16 @@ const UIController = (() => {
         const isSelf = player.username === activeUser;
         const rank = idx + 1;
         const initials = (player.username || 'P').substring(0, 2).toUpperCase();
-        
+
         const row = document.createElement('tr');
-        row.className = `border-b border-slate-800/40 text-xs transition duration-200 ${
-          isSelf 
-            ? 'bg-yellow-500/15 hover:bg-yellow-500/20 font-bold border-r-4 border-r-yellow-500 shadow-inner' 
+        row.className = `border-b border-slate-800/40 text-xs transition duration-200 ${isSelf
+            ? 'bg-yellow-500/15 hover:bg-yellow-500/20 font-bold border-r-4 border-r-yellow-500 shadow-inner'
             : rank === 1 ? 'bg-gradient-to-r from-yellow-500/10 via-amber-950/20 to-transparent hover:bg-yellow-500/15'
-            : rank === 2 ? 'bg-gradient-to-r from-slate-700/10 via-slate-800/20 to-transparent hover:bg-slate-800/30'
-            : rank === 3 ? 'bg-gradient-to-r from-amber-900/10 via-amber-950/20 to-transparent hover:bg-amber-900/20'
-            : 'hover:bg-slate-900/50'
-        }`;
-        
+              : rank === 2 ? 'bg-gradient-to-r from-slate-700/10 via-slate-800/20 to-transparent hover:bg-slate-800/30'
+                : rank === 3 ? 'bg-gradient-to-r from-amber-900/10 via-amber-950/20 to-transparent hover:bg-amber-900/20'
+                  : 'hover:bg-slate-900/50'
+          }`;
+
         let rankBadge = '';
         if (rank === 1) {
           rankBadge = `<span class="w-8 h-8 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 font-black flex items-center justify-center text-xs shadow-md glow-gold"><i class="fa-solid fa-crown text-[10px] ml-0.5"></i>1</span>`;
@@ -4082,16 +4097,16 @@ const UIController = (() => {
 
     const icons = {
       success: `<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`,
-      error:   `<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>`,
-      info:    `<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
+      error: `<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>`,
+      info: `<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
       warning: `<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>`,
     };
 
     const colors = {
       success: { border: 'border-emerald-500/60', bg: 'bg-emerald-500/10', icon: 'text-emerald-400', dot: 'bg-emerald-400' },
-      error:   { border: 'border-rose-500/60',    bg: 'bg-rose-500/10',    icon: 'text-rose-400',    dot: 'bg-rose-400'    },
-      info:    { border: 'border-sky-500/60',      bg: 'bg-sky-500/10',      icon: 'text-sky-400',     dot: 'bg-sky-400'     },
-      warning: { border: 'border-yellow-500/60',  bg: 'bg-yellow-500/10',  icon: 'text-yellow-400',  dot: 'bg-yellow-400'  },
+      error: { border: 'border-rose-500/60', bg: 'bg-rose-500/10', icon: 'text-rose-400', dot: 'bg-rose-400' },
+      info: { border: 'border-sky-500/60', bg: 'bg-sky-500/10', icon: 'text-sky-400', dot: 'bg-sky-400' },
+      warning: { border: 'border-yellow-500/60', bg: 'bg-yellow-500/10', icon: 'text-yellow-400', dot: 'bg-yellow-400' },
     };
 
     const c = colors[type] || colors.info;
@@ -4206,6 +4221,25 @@ const UIController = (() => {
     });
     if (typeof unsubAuctions === 'function') activeListeners.push(unsubAuctions);
 
+    // 5. V2 Corporations Listener
+    const unsubCorporations = AppDB.listenToCorporations(list => {
+      window.lastCorporationsCache = list;
+      
+      // Update the player's active corporation cache
+      if (GameEngine.state && GameEngine.state.username) {
+        const myCorp = list.find(c => c.members && c.members.includes(GameEngine.state.username));
+        window.activeCorporationState = myCorp || null;
+      } else {
+        window.activeCorporationState = null;
+      }
+      
+      // If currently on corporations tab, redraw it
+      if (activeTab === 'corporations') {
+        renderCorporationsTab();
+      }
+    });
+    if (typeof unsubCorporations === 'function') activeListeners.push(unsubCorporations);
+
     // Maintenance Screen Admin Login Button
     const maintAdminLoginBtn = document.getElementById('btn-maintenance-admin-login');
     if (maintAdminLoginBtn) {
@@ -4265,7 +4299,7 @@ const UIController = (() => {
         if (!data || !data.timestamp) return;
         if (data.timestamp > lastMarketEventTime) {
           lastMarketEventTime = data.timestamp;
-          
+
           if (data.resetBaseline) {
             Object.keys(GameEngine.STOCKS).forEach(sym => {
               const base = GameEngine.STOCKS[sym].basePrice;
@@ -4288,17 +4322,17 @@ const UIController = (() => {
               }
             });
           }
-          
+
           const isUp = !data.title.includes('📉') && !data.title.includes('هبوط') && !data.title.includes('خسارة') && !data.title.includes('تصحيح') && !data.title.includes('انهيار') && !data.title.includes('أزمة') && !data.title.includes('تراجع');
           const toastType = isUp ? 'success' : 'error';
           showToast(isUp ? '📈 تحديث البورصة' : '📉 تقلب البورصة', data.desc || data.title, toastType);
-          
+
           const ticker = document.getElementById('stock-market-news-ticker');
           if (ticker) {
             ticker.textContent = data.title;
             ticker.className = `font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`;
           }
-          
+
           renderAdminStockPrices();
           renderAll();
         }
@@ -4325,7 +4359,7 @@ const UIController = (() => {
         // Only process external admin modifications if explicitly timestamped
         if (data.adminModifiedTimestamp && data.adminModifiedTimestamp > lastAdminActionTimestamp) {
           lastAdminActionTimestamp = data.adminModifiedTimestamp;
-          
+
           // Comprehensive state synchronization from admin action
           GameEngine.state.cash = typeof data.cash === 'number' ? data.cash : 0;
           GameEngine.state.bank = typeof data.bank === 'number' ? data.bank : 0;
@@ -4351,7 +4385,7 @@ const UIController = (() => {
 
           try {
             localStorage.setItem(`foolos_state_${GameEngine.activeUsername}`, JSON.stringify(GameEngine.state));
-          } catch (e) {}
+          } catch (e) { }
 
           showToast('إشعار النظام', 'تم تحديث أو تصفير بيانات حسابك من قبل الإدارة.', 'info');
           renderAll();
@@ -4407,7 +4441,7 @@ const UIController = (() => {
       CASH: { shares: 0, avgPrice: 0 },
       BITC: { shares: 0, avgPrice: 0 },
       GOLD: { shares: 0, avgPrice: 0 },
-      AIX:  { shares: 0, avgPrice: 0 }
+      AIX: { shares: 0, avgPrice: 0 }
     };
     GameEngine.state.inventory = {
       gold_pen: 0,
@@ -4430,7 +4464,7 @@ const UIController = (() => {
     if (username) {
       try {
         localStorage.setItem(`foolos_state_${username}`, JSON.stringify(GameEngine.state));
-      } catch (e) {}
+      } catch (e) { }
     }
   }
 
@@ -4638,7 +4672,7 @@ const UIController = (() => {
     function renderPlayersTable() {
       if (!playersTableBody) return;
       const query = (searchInput ? searchInput.value.trim().toLowerCase() : '');
-      
+
       let filtered = cachedPlayers.filter(p => {
         const matchesQuery = !query || p.username.toLowerCase().includes(query) || (p.title && p.title.toLowerCase().includes(query));
         if (!matchesQuery) return false;
@@ -4657,10 +4691,10 @@ const UIController = (() => {
       filtered.forEach(p => {
         const tr = document.createElement('tr');
         tr.className = `hover:bg-slate-800/60 transition cursor-pointer ${selectedPlayer === p.username ? 'bg-yellow-500/10 border-r-2 border-yellow-500' : ''}`;
-        
+
         const isOnlineThreshold = 2 * 60 * 1000; // 2 minutes
         const isPlayerOnline = p.lastActiveTimestamp && (Date.now() - p.lastActiveTimestamp) < isOnlineThreshold;
-        let statusBadge = isPlayerOnline 
+        let statusBadge = isPlayerOnline
           ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">متصل 🟢</span>'
           : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-500/10 text-slate-400 border border-slate-500/20">غير نشط ⚫</span>';
         if (p.isBanned) {
@@ -4739,29 +4773,29 @@ const UIController = (() => {
           GameEngine.state = state;
           const tickIncome = GameEngine.calculatePassiveIncomePerTick(true); // Exclude wealth tax for true gross
           const taxReport = GameEngine.calculateTaxReport();
-          
+
           grossIncomePerSecond = Math.max(0, tickIncome / 3);
           taxPerSecond = (state.netWorth || 0) > 3000000 ? (taxReport.taxPerSecond / 3) : 0;
           netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
-        } catch(err) {
+        } catch (err) {
           console.warn("Failed to simulate player flows:", err);
         } finally {
           GameEngine.state = originalState;
         }
 
         const grossFlowEl = document.getElementById('admin-p-flow-gross');
-        if (grossFlowEl) grossFlowEl.textContent = `${grossIncomePerSecond.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} EGP/ث`;
-        
+        if (grossFlowEl) grossFlowEl.textContent = `${grossIncomePerSecond.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث`;
+
         const taxFlowEl = document.getElementById('admin-p-flow-tax');
-        if (taxFlowEl) taxFlowEl.textContent = `${taxPerSecond.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} EGP/ث`;
-        
+        if (taxFlowEl) taxFlowEl.textContent = `${taxPerSecond.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث`;
+
         const netFlowEl = document.getElementById('admin-p-flow-net');
-        if (netFlowEl) netFlowEl.textContent = `${netIncomePerSecond.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} EGP/ث`;
+        if (netFlowEl) netFlowEl.textContent = `${netIncomePerSecond.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث`;
 
         const roleBadge = document.getElementById('admin-p-badge-role');
         if (roleBadge) {
           roleBadge.textContent = state.isAdmin ? 'مدير النظام (Admin)' : 'حساب لاعب';
-          roleBadge.className = state.isAdmin 
+          roleBadge.className = state.isAdmin
             ? 'text-[10px] px-2 py-0.5 rounded font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
             : 'text-[10px] px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-300';
         }
@@ -4811,7 +4845,7 @@ const UIController = (() => {
     }
 
     // ==================== PLAYER POSSESSIONS & BACKUP EXPORT & GRANT ACTIONS ====================
-    
+
     // RENDER PLAYER POSSESSIONS DIRECTORY
     function renderPlayerPossessions(state) {
       const container = document.getElementById('admin-p-possessions-container');
@@ -5046,7 +5080,7 @@ const UIController = (() => {
           GameEngine.state.netWorth = worth;
           try {
             localStorage.setItem(`foolos_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
-          } catch (e) {}
+          } catch (e) { }
           renderAll();
         }
 
@@ -5059,24 +5093,24 @@ const UIController = (() => {
           GameEngine.state = selectedPlayerState;
           const tickIncome = GameEngine.calculatePassiveIncomePerTick(true); // Exclude wealth tax for true gross
           const taxReport = GameEngine.calculateTaxReport();
-          
+
           grossIncomePerSecond = Math.max(0, tickIncome / 3);
           taxPerSecond = (selectedPlayerState.netWorth || 0) > 3000000 ? (taxReport.taxPerSecond / 3) : 0;
           netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
-        } catch(err) {
+        } catch (err) {
           console.warn("Failed to simulate player flows:", err);
         } finally {
           GameEngine.state = originalState;
         }
 
         const grossFlowEl = document.getElementById('admin-p-flow-gross');
-        if (grossFlowEl) grossFlowEl.textContent = `${grossIncomePerSecond.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} EGP/ث`;
-        
+        if (grossFlowEl) grossFlowEl.textContent = `${grossIncomePerSecond.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث`;
+
         const taxFlowEl = document.getElementById('admin-p-flow-tax');
-        if (taxFlowEl) taxFlowEl.textContent = `${taxPerSecond.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} EGP/ث`;
-        
+        if (taxFlowEl) taxFlowEl.textContent = `${taxPerSecond.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث`;
+
         const netFlowEl = document.getElementById('admin-p-flow-net');
-        if (netFlowEl) netFlowEl.textContent = `${netIncomePerSecond.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} EGP/ث`;
+        if (netFlowEl) netFlowEl.textContent = `${netIncomePerSecond.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث`;
 
         // Update Admin UI fields
         document.getElementById('admin-p-worth').textContent = `${worth.toLocaleString()} EGP`;
@@ -5302,7 +5336,7 @@ const UIController = (() => {
         try {
           selectedPlayerState.cash = newCash;
           selectedPlayerState.bank = newBank;
-          
+
           // Accurate NetWorth calculation
           let worth = newCash + newBank;
           if (selectedPlayerState.assets) {
@@ -5333,7 +5367,7 @@ const UIController = (() => {
             GameEngine.state.netWorth = worth;
             try {
               localStorage.setItem(`foolos_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
-            } catch (e) {}
+            } catch (e) { }
             renderAll();
           }
 
@@ -5344,7 +5378,7 @@ const UIController = (() => {
 
           showToast('تم الحفظ بنجاح', `تم تحديث رصيد اللاعب ${selectedPlayer} بنجاح (كاش: ${newCash.toLocaleString()}، بنك: ${newBank.toLocaleString()}).`, 'success');
           logAdminAction(`تعديل رصيد اللاعب ${selectedPlayer} إلى كاش: ${newCash.toLocaleString()} ج.م، بنك: ${newBank.toLocaleString()} ج.م`);
-          
+
           loadAdminPlayersDirectory(false);
         } catch (err) {
           showToast('فشل تعديل الرصيد', err.message, 'error');
@@ -5382,10 +5416,10 @@ const UIController = (() => {
         }
 
         if (!selectedPlayerState.businesses) selectedPlayerState.businesses = {};
-        
+
         const bizConfig = GameEngine.BUSINESSES[bizKey];
         const price = (selectedPlayerState.businesses[bizKey] && selectedPlayerState.businesses[bizKey].price) || (bizConfig ? bizConfig.optimumPrice : 10);
-        
+
         selectedPlayerState.businesses[bizKey] = {
           level: level,
           workers: workers,
@@ -5395,10 +5429,10 @@ const UIController = (() => {
         try {
           updateBizBtn.disabled = true;
           updateBizBtn.innerHTML = 'جاري الحفظ والتزامن...';
-          
+
           // Re-calculate Net Worth of selected player state
           let worth = (selectedPlayerState.cash || 0) + (selectedPlayerState.bank || 0) + (selectedPlayerState.dirtyCash || 0);
-          
+
           if (selectedPlayerState.assets) {
             Object.keys(selectedPlayerState.assets).forEach(k => {
               if (GameEngine.ASSETS && GameEngine.ASSETS[k]) worth += (selectedPlayerState.assets[k] || 0) * GameEngine.ASSETS[k].cost;
@@ -5416,18 +5450,18 @@ const UIController = (() => {
             selectedPlayerState.investments.forEach(inv => worth += (inv.investedAmount || 0));
           }
           selectedPlayerState.netWorth = worth;
-          
+
           await AppDB.adminSavePlayer(selectedPlayer, selectedPlayerState);
-          
+
           if (selectedPlayer === GameEngine.activeUsername) {
             GameEngine.state.businesses[bizKey] = { level, workers, price };
             GameEngine.state.netWorth = worth;
             try {
               localStorage.setItem(`foolos_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
-            } catch (e) {}
+            } catch (e) { }
             renderAll();
           }
-          
+
           document.getElementById('admin-p-worth').textContent = `${worth.toLocaleString()} EGP`;
           showToast('تحديث الأملاك', `تم تحديث أملاك اللاعب (${bizConfig ? bizConfig.name : bizKey}) بنجاح إلى مستوى ${level} وعدد موظفين ${workers}.`, 'success');
           logAdminAction(`تعديل أملاك اللاعب ${selectedPlayer}: ${bizKey} -> مستوى ${level}، موظفين ${workers}`);
@@ -5567,12 +5601,12 @@ const UIController = (() => {
       deletePlayerAccountBtn.addEventListener('click', async () => {
         if (!selectedPlayer) return;
         if (!confirm(`⚠️ تحذير نهائي: هل أنت متأكد من حذف وثيقة وحساب اللاعب "${selectedPlayer}" نهائياً من الخوادم؟`)) return;
-        
+
         try {
           await AppDB.adminDeletePlayer(selectedPlayer);
           showToast('حذف الحساب', `تم حذف حساب اللاعب ${selectedPlayer} نهائياً من قاعدة البيانات.`, 'success');
           logAdminAction(`حذف نهائي لوثيقة حساب اللاعب: ${selectedPlayer}`);
-          
+
           if (resultCard) resultCard.classList.add('hidden');
           selectedPlayer = null;
           selectedPlayerState = null;
@@ -5611,10 +5645,10 @@ const UIController = (() => {
       filtered.forEach(item => {
         const div = document.createElement('div');
         div.className = 'p-2.5 bg-slate-900/70 hover:bg-slate-900 border border-slate-800/80 rounded-xl flex items-center justify-between gap-2 transition';
-        
+
         let icon = '<i class="fa-solid fa-circle-info text-sky-400"></i>';
         let badgeColor = 'bg-sky-500/10 text-sky-400 border-sky-500/20';
-        
+
         if (item.category === 'business') {
           icon = '<i class="fa-solid fa-briefcase text-emerald-400"></i>';
           badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
@@ -5672,11 +5706,11 @@ const UIController = (() => {
           document.getElementById('adm-log-stat-cash').textContent = `${((pState.cash || 0) + (pState.bank || 0)).toLocaleString()} EGP`;
           document.getElementById('adm-log-stat-heat').textContent = `${pState.heatLevel || 0} / 5`;
           document.getElementById('adm-log-stat-jail').textContent = (pState.jailTimer > 0) ? `مسجون (${pState.jailTimer}ث)` : 'حر طليق';
-          
+
           currentLogFilter = 'all';
           renderPlayerLogFeed(pState);
           logModal.classList.remove('hidden');
-        } catch(e) {
+        } catch (e) {
           showToast('سجل النشاط', e.message, 'error');
         }
       });
@@ -5734,13 +5768,13 @@ const UIController = (() => {
         // Auto-generate title if empty
         if (!rawTitle) {
           if (targetSymbol === 'ALL') {
-            rawTitle = isUp 
-              ? `انتعاش عام وموجة صعود قياسية لكافة الأسهم (+${pctVal}%)` 
+            rawTitle = isUp
+              ? `انتعاش عام وموجة صعود قياسية لكافة الأسهم (+${pctVal}%)`
               : `تصحيح هبوطي وموجة بيع وضغط على كافة الأسهم (-${pctVal}%)`;
           } else {
             const stockName = GameEngine.STOCKS[targetSymbol]?.name || targetSymbol;
-            rawTitle = isUp 
-              ? `أرباح قياسية وإقبال استثماري يرفع سهم ${stockName} (+${pctVal}%)` 
+            rawTitle = isUp
+              ? `أرباح قياسية وإقبال استثماري يرفع سهم ${stockName} (+${pctVal}%)`
               : `ضغوط بيعية وتراجع في أداء سهم ${stockName} (-${pctVal}%)`;
           }
         }
@@ -5763,8 +5797,8 @@ const UIController = (() => {
               timestamp: Date.now()
             }).then(() => {
               logAdminAction(`إطلاق خبر بورصة مخصص: "${rawTitle}" [${targetSymbol} | ${isUp ? '+' : '-'}${pctVal}%]`);
-            }).catch(() => {});
-          } catch(e) {}
+            }).catch(() => { });
+          } catch (e) { }
         } else {
           showToast('إطلاق الخبر', 'يجب الاتصال بقاعدة البيانات لنشر أحداث البورصة.', 'error');
         }
@@ -6098,8 +6132,8 @@ const UIController = (() => {
       maintToggleBtn.addEventListener('click', async () => {
         const currentSt = await AppDB.getMaintenanceStatus();
         const nextState = !Boolean(currentSt && currentSt.enabled);
-        
-        const confirmMsg = nextState 
+
+        const confirmMsg = nextState
           ? "هل أنت متأكد من رغبتك في إغلاق اللعبة وتفعيل وضع الصيانة لجميع اللاعبين؟"
           : "هل تريد إنهاء وضع الصيانة وإتاحة اللعبة للجميع مجدداً؟";
 
@@ -6130,7 +6164,7 @@ const UIController = (() => {
 
         try {
           const count = await AppDB.adminResetAllPlayers();
-          
+
           if (GameEngine.activeUsername) {
             applyCompleteZeroStateToGameEngine(GameEngine.activeUsername);
             renderAll();
@@ -6229,9 +6263,9 @@ const UIController = (() => {
           saveItemConfigBtn.textContent = 'جاري حفظ التعديلات...';
 
           await AppDB.adminSaveItemConfig(itemId, cost, durationSec);
-          
+
           await GameEngine.syncItemsConfig();
-          
+
           showToast('تحديث الإعدادات', `تم حفظ وتعميم إعدادات الأداة بنجاح! السعر: ${cost.toLocaleString()} ج.م، المدة: ${durationSec} ثانية.`, 'success');
           logAdminAction(`تحديث إعدادات الأداة (${itemId}): سعر ${cost.toLocaleString()} ج.م، مدة ${durationSec}ث`);
           renderAll();
@@ -6263,10 +6297,10 @@ const UIController = (() => {
           btnCreateAuction.textContent = 'جاري نشر المزاد...';
 
           await AppDB.adminCreateAuctionItem(name, desc, price, qty);
-          
+
           showToast('تم النشر', `تم طرح الغرض "${name}" بنجاح في صفحة المزادات.`, 'success');
           logAdminAction(`طرح غرض في المزاد: ${name} (سعر ${price.toLocaleString()} ج.م، كمية ${qty})`);
-          
+
           // Clear inputs
           document.getElementById('admin-auction-name').value = '';
           document.getElementById('admin-auction-desc').value = '';
@@ -6337,15 +6371,15 @@ const UIController = (() => {
           btnCreateGiftCode.textContent = 'جاري توليد الكود...';
 
           await AppDB.adminCreateGiftCode(code, type, details, maxUses);
-          
+
           showToast('تم إنشاء الكود', `تم نشر كود الهدية "${code.toUpperCase()}" بنجاح في المنظومة.`, 'success');
           logAdminAction(`إنشاء كود الهدية: ${code.toUpperCase()} (النوع: ${type})`);
-          
+
           // Clear inputs
           document.getElementById('admin-gift-code').value = '';
           document.getElementById('admin-gift-max-uses').value = '0';
           document.getElementById('admin-gift-cash-amount').value = '';
-          
+
           fetchAndRenderAdminGiftCodes();
         } catch (err) {
           showToast('فشل الإنشاء', err.message, 'error');
@@ -6586,7 +6620,7 @@ const UIController = (() => {
 
               await AppDB.acceptTransferRequest(r.id, username);
               showToast('موافقة الطلب', `تم قبول طلب التحويل ودفع ${r.amount.toLocaleString()} EGP بنجاح!`, 'success');
-              
+
               const updatedState = await AppDB.getPlayerState(username);
               if (updatedState) {
                 GameEngine.state.cash = updatedState.cash;
@@ -6612,7 +6646,7 @@ const UIController = (() => {
 
               await AppDB.rejectTransferRequest(r.id, username);
               showToast('رفض الطلب', 'تم رفض طلب التحويل بنجاح.', 'info');
-              
+
               await fetchAndRenderTransferRequests(true);
             } catch (err) {
               showToast('خطأ في رفض الطلب', err.message, 'error');
@@ -6722,7 +6756,7 @@ const UIController = (() => {
       const card = document.createElement('div');
       card.className = 'glass-panel p-4.5 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3 relative overflow-hidden';
       if (isSoldOut) card.classList.add('opacity-60');
-      
+
       card.innerHTML = `
         <div>
           <div class="flex justify-between items-start gap-2 mb-1.5">
@@ -6752,12 +6786,12 @@ const UIController = (() => {
           try {
             buyBtn.disabled = true;
             buyBtn.textContent = 'جاري الشراء...';
-            
+
             const result = await AppDB.purchaseAuctionItem(item.id, GameEngine.activeUsername);
-            
+
             showToast('تم الشراء بنجاح', `تهانينا! قمت بشراء "${result.name}" بسعر ${result.price.toLocaleString()} ج.م. تم إضافته لمقتنياتك النادرة.`, 'success');
             playMenuSound('success');
-            
+
             GameEngine.state.cash = result.newCash;
             GameEngine.state.netWorth = result.newNetWorth;
             if (!GameEngine.state.customItems) GameEngine.state.customItems = [];
@@ -6797,7 +6831,7 @@ const UIController = (() => {
     items.forEach(item => {
       const card = document.createElement('div');
       card.className = 'glass-panel p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/[0.02] flex flex-col justify-between space-y-2';
-      
+
       const timeStr = new Date(item.timestamp).toLocaleDateString('ar-EG', {
         month: 'short',
         day: 'numeric',
@@ -6847,7 +6881,7 @@ const UIController = (() => {
       items.forEach(item => {
         const tr = document.createElement('tr');
         tr.className = 'border-b border-slate-800/60 hover:bg-slate-900/30 text-xs';
-        
+
         const total = Number(item.quantity || 0);
         const sold = Number(item.soldCount || 0);
         const remaining = Math.max(0, total - sold);
@@ -7020,7 +7054,7 @@ const UIController = (() => {
       chatSendBtn.addEventListener('click', async () => {
         const text = chatInput.value.trim();
         if (!text) return;
-        
+
         if (Date.now() - lastChatSent < 3000) {
           const warnEl = document.getElementById('chat-cooldown-timer');
           if (warnEl) {
@@ -7347,7 +7381,7 @@ const UIController = (() => {
             document.getElementById('restore-file-name-label').textContent = 'اختر ملف JSON الاحتياطي...';
             uploadRestoreBtn.disabled = true;
             fileInput.value = '';
-            
+
             const updatedState = await AppDB.getPlayerState(targetUser);
             if (updatedState) loadAdminPlayerWorkspace(updatedState);
           } catch (err) {
@@ -7386,7 +7420,7 @@ const UIController = (() => {
 
           await AppDB.adminCreateLiveAuction(type, 'live_' + Math.random().toString(36).substr(2, 9), name, basePrice, condType, startVal);
           showToast('تم إطلاق المزاد الحي', `تم إدراج المزاد الحي (${name}) في السيرفر بنجاح وهو بانتظار المسجلين.`, 'success');
-          
+
           nameInput.value = '';
           priceInput.value = '';
           condValInput.value = '';
@@ -7402,18 +7436,18 @@ const UIController = (() => {
   function renderChatMessages(msgs) {
     const container = document.getElementById('chat-messages-container');
     if (!container) return;
-    
+
     container.innerHTML = '';
-    
+
     msgs.forEach(msg => {
       if (GameEngine.state.blockedUsers && GameEngine.state.blockedUsers.includes(msg.sender)) return;
 
       const isMe = msg.sender === GameEngine.state.username;
       const bubbleClass = isMe ? 'chat-bubble-sent' : 'chat-bubble-received';
       const alignClass = isMe ? 'text-left flex flex-col items-end' : 'text-right flex flex-col items-start';
-      
+
       const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      
+
       const msgDiv = document.createElement('div');
       msgDiv.className = `w-full flex flex-col ${alignClass}`;
       msgDiv.innerHTML = `
@@ -7437,10 +7471,10 @@ const UIController = (() => {
     const inboxPanel = document.getElementById('mailbox-inbox-panel');
     const unreadBadge = document.getElementById('mailbox-unread-badge');
     const unreadBadgeMobile = document.getElementById('mailbox-unread-badge-mobile');
-    
+
     if (!inboxPanel) return;
     inboxPanel.innerHTML = '';
-    
+
     let pendingCount = 0;
     const requests = mails.filter(m => m.type !== 'dm');
 
@@ -7451,10 +7485,10 @@ const UIController = (() => {
     } else {
       requests.forEach(mail => {
         if (mail.status === 'pending') pendingCount++;
-        
+
         const mailDiv = document.createElement('div');
         mailDiv.className = `p-4 rounded-xl border ${mail.status === 'pending' ? 'bg-slate-900/60 border-emerald-500/20' : 'bg-slate-900/20 border-slate-800'} text-xs text-slate-300 space-y-3`;
-        
+
         let contentHtml = '';
         let actionsHtml = '';
 
@@ -7531,7 +7565,7 @@ const UIController = (() => {
 
     const chats = {};
     const dms = mails.filter(m => m.type === 'dm');
-    
+
     if (GameEngine.state.friends) {
       GameEngine.state.friends.forEach(f => {
         chats[f] = { username: f, lastMsg: 'اضغط لبدء المحادثة الخاصة...', timestamp: 0 };
@@ -7593,9 +7627,9 @@ const UIController = (() => {
           const isMe = dm.sender === GameEngine.state.username;
           const bubbleClass = isMe ? 'chat-bubble-sent' : 'chat-bubble-received';
           const alignClass = isMe ? 'items-end' : 'items-start';
-          
+
           const timeStr = new Date(dm.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          
+
           const msgDiv = document.createElement('div');
           msgDiv.className = `w-full flex flex-col ${alignClass}`;
           msgDiv.innerHTML = `
@@ -7645,13 +7679,13 @@ const UIController = (() => {
       document.getElementById('profile-card-networth').textContent = `${(pState.netWorth || 0).toLocaleString()} EGP`;
       document.getElementById('profile-card-reputation').textContent = `${(pState.underworldRep || 0).toLocaleString()} ⭐`;
       document.getElementById('profile-card-createdat').textContent = pState.createdAt ? new Date(pState.createdAt).toLocaleDateString() : 'غير معروف';
-      
+
       const jobMap = { 'worker': 'عامل', 'accountant': 'محاسب', 'marketer': 'مسوق', 'admin': 'إداري رئيسي' };
       document.getElementById('profile-card-job').textContent = jobMap[pState.jobId] || pState.jobId || 'عامل';
 
       const summaryContainer = document.getElementById('profile-card-assets-summary');
       summaryContainer.innerHTML = '';
-      
+
       let bizCount = 0;
       if (pState.businesses) {
         Object.keys(pState.businesses).forEach(k => {
@@ -7675,7 +7709,7 @@ const UIController = (() => {
       summaryContainer.appendChild(p2);
 
       const isMe = pState.username === GameEngine.state.username;
-      
+
       const btnAddFriend = document.getElementById('btn-profile-add-friend');
       const btnProfileDM = document.getElementById('btn-profile-dm');
       const btnProfileJob = document.getElementById('btn-profile-job-offer');
@@ -7763,7 +7797,7 @@ const UIController = (() => {
         await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
         await AppDB.updateMailStatus(mailId, 'accepted');
         showToast('تم قبول الصداقة', `أنت واللاعب ${mailDoc.sender} أصدقاء الآن! 🎉`, 'success');
-        
+
         await AppDB.sendMail(GameEngine.state.username, mailDoc.sender, 'dm', { message: 'مرحباً بك! لقد قبلت طلب الصداقة، يمكننا الآن التنسيق في الصفقات والشراكات.' });
       } else if (action === 'job_accept') {
         GameEngine.state.hiredJob = {
@@ -7774,13 +7808,13 @@ const UIController = (() => {
           salary: mailDoc.payload.salary
         };
         GameEngine.state.lastPuzzleSolved = Date.now();
-        
+
         await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
         await AppDB.updateMailStatus(mailId, 'accepted');
         showToast('تم التوظيف! 💼', `لقد التحقت بالعمل لدى ${mailDoc.sender} براتب ثنائي قدره ${mailDoc.payload.salary} EGP!`, 'success');
 
         await AppDB.sendMail(GameEngine.state.username, mailDoc.sender, 'dm', { message: `مرحباً! لقد قبلت عرض التوظيف في شركتك (${mailDoc.payload.businessName}). بدأت في حل المهام الآن.` });
-        
+
         await AppDB.sendMail(GameEngine.state.username, mailDoc.sender, 'system_add_employee', {
           employee: GameEngine.state.username,
           businessId: mailDoc.payload.businessId,
@@ -7800,7 +7834,7 @@ const UIController = (() => {
         showToast('شراكة معتمدة! 🤝', `أصبحت شريكاً رسمياً بنسبة ${Math.round(mailDoc.payload.sharePct * 100)}% من عوائد المشروع!`, 'success');
 
         await AppDB.sendMail(GameEngine.state.username, mailDoc.sender, 'dm', { message: `مرحباً شريكي! لقد قبلت دعوة الشراكة الاستثمارية في المشروع. لنعمل على تنمية الأرباح.` });
-        
+
         await AppDB.sendMail(GameEngine.state.username, mailDoc.sender, 'system_add_partner', {
           partner: GameEngine.state.username,
           businessId: mailDoc.payload.businessId,
@@ -7826,7 +7860,7 @@ const UIController = (() => {
   function openJobOfferForm(username) {
     const select = document.getElementById('job-offer-business-select');
     if (!select) return;
-    
+
     select.innerHTML = '';
     let hasBiz = false;
 
@@ -7885,10 +7919,10 @@ const UIController = (() => {
 
   function checkAndOpenRiddleVerification() {
     if (!GameEngine.state.hiredJob) return;
-    
+
     const lastSolved = GameEngine.state.lastPuzzleSolved || 0;
     const timeElapsed = Date.now() - lastSolved;
-    
+
     if (timeElapsed >= 86400000) {
       const numA = Math.floor(Math.random() * 40) + 10;
       const numB = Math.floor(Math.random() * 40) + 10;
@@ -7900,10 +7934,55 @@ const UIController = (() => {
     }
   }
 
+  async function checkAndStartAuction(auc) {
+    if (auc.status !== 'pending') return;
+    let shouldStart = false;
+    if (auc.startConditionType === 'players') {
+      const regCount = auc.registeredPlayers ? auc.registeredPlayers.length : 0;
+      if (regCount >= auc.startConditionValue) {
+        shouldStart = true;
+      }
+    } else if (auc.startConditionType === 'time') {
+      if (Date.now() >= auc.startConditionValue) {
+        shouldStart = true;
+      }
+    }
+
+    if (shouldStart) {
+      if (window.activeAuctionStartLock && window.activeAuctionStartLock[auc.id]) return;
+      if (!window.activeAuctionStartLock) window.activeAuctionStartLock = {};
+      window.activeAuctionStartLock[auc.id] = true;
+
+      try {
+        if (typeof firebase !== 'undefined' && AppDB.isFirebaseReady) {
+          const db = firebase.firestore();
+          await db.collection('liveAuctions').doc(auc.id).update({
+            status: 'active',
+            timerResetTimestamp: Date.now() + 30000
+          });
+          console.log(`[Auction] Activated auction ${auc.id}`);
+        }
+      } catch (err) {
+        console.error('[Auction] Activation failed:', err);
+      } finally {
+        delete window.activeAuctionStartLock[auc.id];
+      }
+    }
+  }
+
   function renderLiveAuctions(list) {
     const shelf = document.getElementById('live-auctions-shelf');
     if (!shelf) return;
-    
+
+    // Save current user bid inputs to prevent resetting them on redraw
+    const savedInputs = {};
+    list.forEach(auc => {
+      const inputEl = document.getElementById(`bid-input-${auc.id}`);
+      if (inputEl) {
+        savedInputs[auc.id] = inputEl.value;
+      }
+    });
+
     shelf.innerHTML = '';
     const active = list.filter(auc => auc.status !== 'ended');
 
@@ -7915,16 +7994,16 @@ const UIController = (() => {
     active.forEach(auc => {
       const card = document.createElement('div');
       card.className = 'p-5 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-4 flex flex-col justify-between';
-      
+
       const isRegistered = auc.registeredPlayers && auc.registeredPlayers.includes(GameEngine.state.username);
-      
+
       let badgeHtml = '';
       let actionBtnHtml = '';
       let timerHtml = '';
 
       if (auc.status === 'pending') {
         badgeHtml = '<span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[10px] text-slate-400">مرحلة التسجيل</span>';
-        
+
         let condText = '';
         if (auc.startConditionType === 'players') {
           condText = `يبدأ المزاد بمجرد تسجيل <strong>${auc.startConditionValue} لاعبين</strong> (المسجلون الآن: ${auc.registeredPlayers ? auc.registeredPlayers.length : 0})`;
@@ -7933,16 +8012,16 @@ const UIController = (() => {
           condText = `يبدأ المزاد تلقائياً بعد مرور <strong>${diff} دقيقة</strong>`;
         }
 
-        actionBtnHtml = isRegistered 
+        actionBtnHtml = isRegistered
           ? `<button class="w-full py-2 bg-slate-800 border border-slate-700 text-slate-400 rounded-xl text-xs font-bold" disabled>أنت مسجل في المزاد بالفعل ✅</button>`
           : `<button onclick="window.UI.registerForAuction('${auc.id}')" class="w-full py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition">تسجيل للمشاركة في المزاد</button>`;
-          
+
         timerHtml = `<div class="text-[10px] text-slate-400 text-center">${condText}</div>`;
       } else if (auc.status === 'active') {
         badgeHtml = '<span class="px-2 py-0.5 rounded bg-yellow-500/10 border border-yellow-500/20 text-[10px] text-yellow-400 font-bold animate-pulse">مزايدة نشطة حية 🔥</span>';
-        
+
         const remSecs = Math.max(0, Math.ceil((auc.timerResetTimestamp - Date.now()) / 1000));
-        
+
         if (remSecs === 0 && auc.timerResetTimestamp > 0) {
           triggerEndAuction(auc.id);
         }
@@ -7958,9 +8037,11 @@ const UIController = (() => {
           actionBtnHtml = `<button class="w-full py-2 bg-slate-900 border border-slate-800 text-slate-500 rounded-xl text-xs font-bold" disabled>لم تقم بالتسجيل المسبق</button>`;
         } else {
           const nextMinBid = Math.floor(auc.currentBid * 1.05);
+          const savedVal = savedInputs[auc.id];
+          const valToUse = savedVal !== undefined ? savedVal : nextMinBid;
           actionBtnHtml = `
             <div class="flex gap-2">
-              <input type="number" id="bid-input-${auc.id}" min="${nextMinBid}" value="${nextMinBid}" class="w-2/3 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-black text-white text-center">
+              <input type="number" id="bid-input-${auc.id}" min="${nextMinBid}" value="${valToUse}" class="w-2/3 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-black text-white text-center">
               <button onclick="window.UI.placeAuctionBid('${auc.id}')" class="flex-1 py-1.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition">زايد</button>
             </div>
           `;
@@ -8009,7 +8090,7 @@ const UIController = (() => {
     if (!input) return;
     const val = parseInt(input.value || '0');
     if (val <= 0) return;
-    
+
     // Check if player has enough money
     if (GameEngine.state.cash < val && GameEngine.state.bank < val) {
       showToast('رصيد غير كافي', 'لا تملك رصيداً كافياً لتقديم هذا العرض.', 'error');
@@ -8024,6 +8105,200 @@ const UIController = (() => {
     }
   }
 
+  function calculatePlayerNetWorth(playerState) {
+    let worth = (playerState.cash || 0) + (playerState.bank || 0) + (playerState.dirtyCash || 0);
+
+    if (playerState.assets) {
+      Object.keys(playerState.assets).forEach(key => {
+        const cost = GameEngine.ASSETS[key] ? GameEngine.ASSETS[key].cost : 0;
+        worth += (playerState.assets[key] || 0) * cost;
+      });
+    }
+
+    if (playerState.stocks) {
+      Object.keys(playerState.stocks).forEach(sym => {
+        const shares = playerState.stocks[sym].shares || 0;
+        const currentPrice = GameEngine.stockPrices && GameEngine.stockPrices[sym]
+          ? GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1]
+          : (GameEngine.STOCKS[sym] ? GameEngine.STOCKS[sym].basePrice : 0);
+        worth += shares * currentPrice;
+      });
+    }
+
+    if (playerState.investments) {
+      playerState.investments.forEach(inv => {
+        worth += (inv.investedAmount || 0);
+      });
+    }
+
+    return worth;
+  }
+
+  async function renderAcquisitionMarket() {
+    const shelf = document.getElementById('acquisition-market-shelf');
+    if (!shelf) return;
+
+    shelf.innerHTML = '<div class="col-span-full text-center text-slate-400 text-xs py-8">جاري جلب قائمة الشركات المتعثرة...</div>';
+
+    try {
+      if (typeof firebase === 'undefined' || !AppDB.isFirebaseReady) {
+        shelf.innerHTML = '<div class="col-span-full text-center text-slate-500 text-xs py-8">سوق الاستحواذ متاح فقط في وضع الأونلاين.</div>';
+        return;
+      }
+
+      const allPlayers = await AppDB.adminGetAllPlayers();
+      const currentUsername = GameEngine.state.username;
+      
+      const distressed = [];
+
+      allPlayers.forEach(p => {
+        const pState = p.raw;
+        if (p.username !== currentUsername && p.cash <= 0 && pState && pState.businesses) {
+          Object.keys(pState.businesses).forEach(bizId => {
+            const biz = pState.businesses[bizId];
+            if (biz && biz.level > 0) {
+              distressed.push({
+                player: p.username,
+                playerState: pState,
+                bizId: bizId,
+                level: biz.level,
+                bizConfig: GameEngine.BUSINESSES[bizId]
+              });
+            }
+          });
+        }
+      });
+
+      if (distressed.length === 0) {
+        shelf.innerHTML = '<div class="col-span-full text-center text-slate-500 text-xs py-8">لا توجد شركات متعثرة معروضة للاستحواذ حالياً.</div>';
+        return;
+      }
+
+      shelf.innerHTML = '';
+      distressed.forEach(item => {
+        let totalInvestment = item.bizConfig.cost;
+        for (let lvl = 0; lvl < item.level - 1; lvl++) {
+          totalInvestment += Math.floor(item.bizConfig.cost * Math.pow(item.bizConfig.upgradeMultiplier, lvl));
+        }
+
+        const discountedPrice = Math.floor(totalInvestment * 0.55);
+
+        const card = document.createElement('div');
+        card.className = 'p-5 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-4 flex flex-col justify-between';
+        
+        card.innerHTML = `
+          <div class="flex justify-between items-start border-b border-slate-800 pb-3">
+            <div>
+              <h4 class="font-black text-white text-sm">${item.bizConfig.name || item.bizId}</h4>
+              <span class="text-[10px] text-slate-400">المالك المتعثر: <strong class="text-rose-400 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${item.player}')">${item.player}</strong></span>
+            </div>
+            <span class="px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-[10px] text-rose-400 font-bold">فرصة استحواذ 📉</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3 py-2 text-xs">
+            <div class="p-2 bg-slate-950/40 rounded-xl border border-slate-900">
+              <span class="text-[9px] text-slate-400 block mb-0.5">المستوى الحالي:</span>
+              <span class="font-bold text-slate-300">مستوى ${item.level}</span>
+            </div>
+            <div class="p-2 bg-slate-950/40 rounded-xl border border-slate-900">
+              <span class="text-[9px] text-slate-400 block mb-0.5">القيمة المقدرة:</span>
+              <span class="numbers-font font-bold text-slate-400 line-through">${totalInvestment.toLocaleString()} EGP</span>
+            </div>
+          </div>
+          <div class="flex justify-between items-center bg-slate-950/80 p-2.5 rounded-xl border border-slate-900">
+            <span class="text-[10px] text-emerald-400 font-bold">سعر الاستحواذ والإنقاذ (خصم 45%):</span>
+            <span class="numbers-font font-black text-emerald-400 text-sm">${discountedPrice.toLocaleString()} EGP</span>
+          </div>
+          <button onclick="window.UI.acquireDistressedBusiness('${item.player}', '${item.bizId}', ${discountedPrice})" class="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black transition">استحواذ وإنقاذ الشركة</button>
+        `;
+        
+        shelf.appendChild(card);
+      });
+
+    } catch (err) {
+      shelf.innerHTML = `<div class="col-span-full text-center text-rose-500 text-xs py-8">فشل تحميل سوق الاستحواذ: ${err.message}</div>`;
+    }
+  }
+
+  async function acquireDistressedBusiness(sellerUsername, bizId, price) {
+    if (!confirm(`هل أنت متأكد من رغبتك في الاستحواذ على شركة (${bizId}) الخاصة باللاعب (${sellerUsername}) مقابل ${price.toLocaleString()} EGP؟ سيتم تحويل المبلغ له مباشرة لإنقاذه من التعثر المالي.`)) return;
+
+    try {
+      const buyerCash = GameEngine.state.cash;
+      const buyerBank = GameEngine.state.bank;
+      if (buyerCash < price && buyerBank < price) {
+        showToast('رصيد غير كافي', 'لا تملك رصيداً كافياً لإتمام عملية الاستحواذ والإنقاذ.', 'error');
+        return;
+      }
+
+      const sellerState = await AppDB.adminGetPlayer(sellerUsername);
+      if (!sellerState) {
+        showToast('خطأ الاستحواذ', 'تعذر العثور على بيانات البائع.', 'error');
+        return;
+      }
+
+      const sellerRaw = sellerState.raw || sellerState;
+
+      if (!sellerRaw.businesses || !sellerRaw.businesses[bizId] || sellerRaw.businesses[bizId].level <= 0) {
+        showToast('خطأ الاستحواذ', 'لم تعد هذه الشركة معروضة للاستحواذ.', 'error');
+        renderAcquisitionMarket();
+        return;
+      }
+      if (sellerRaw.cash > 0) {
+        showToast('خطأ الاستحواذ', 'اللاعب لم يعد متعثراً مالياً.', 'error');
+        renderAcquisitionMarket();
+        return;
+      }
+
+      if (GameEngine.state.cash >= price) {
+        GameEngine.state.cash -= price;
+      } else {
+        GameEngine.state.bank -= price;
+      }
+
+      const acquiredLevel = sellerRaw.businesses[bizId].level;
+      GameEngine.state.businesses = GameEngine.state.businesses || {};
+      
+      const buyerBiz = GameEngine.state.businesses[bizId];
+      let newLevel = acquiredLevel;
+      if (buyerBiz && buyerBiz.level > 0) {
+        newLevel = Math.max(buyerBiz.level, acquiredLevel) + 1;
+        showToast('دمج وتطوير الشركة', `بما أنك تملك هذا المشروع بالفعل، تم دمج الكيانين وترقية مستواك إلى المستوى ${newLevel}!`, 'info');
+      }
+
+      GameEngine.state.businesses[bizId] = {
+        id: bizId,
+        name: GameEngine.BUSINESSES[bizId].name,
+        level: newLevel,
+        workers: buyerBiz ? (buyerBiz.workers || 0) : 0,
+        price: buyerBiz ? (buyerBiz.price || 0) : 0,
+        marketingTicks: buyerBiz ? (buyerBiz.marketingTicks || 0) : 0,
+        employees: buyerBiz ? (buyerBiz.employees || {}) : {}
+      };
+
+      sellerRaw.businesses[bizId].level = 0;
+      sellerRaw.businesses[bizId].workers = 0;
+      sellerRaw.cash += price;
+
+      GameEngine.state.netWorth = GameEngine.calculateNetWorth();
+      sellerRaw.netWorth = calculatePlayerNetWorth(sellerRaw);
+
+      await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+      await AppDB.adminSavePlayer(sellerUsername, sellerRaw);
+
+      await AppDB.sendMail('SYSTEM_ACQUISITION', sellerUsername, 'system_notification', {
+        message: `🤝 تم الاستحواذ وإنقاذ مشروعك (${GameEngine.BUSINESSES[bizId].name}) من قبل اللاعب (${GameEngine.state.username})! تمت إضافة +${price.toLocaleString()} EGP لحسابك وتمت تسوية تعثرك المالي.`
+      });
+
+      showToast('تم الاستحواذ والإنقاذ! 🎉', `لقد تملكت الشركة بنجاح وتم تحويل ${price.toLocaleString()} EGP لمساعدة اللاعب ${sellerUsername}.`, 'success');
+      
+      renderAll();
+      renderAcquisitionMarket();
+
+    } catch (err) {
+      showToast('فشل الاستحواذ', err.message, 'error');
+    }
+  }
+
   async function triggerEndAuction(auctionId) {
     if (window.activeAuctionEndLock && window.activeAuctionEndLock[auctionId]) return;
     if (!window.activeAuctionEndLock) window.activeAuctionEndLock = {};
@@ -8033,7 +8308,7 @@ const UIController = (() => {
       if (typeof firebase !== 'undefined' && AppDB.isFirebaseReady) {
         const db = firebase.firestore();
         const docRef = db.collection('liveAuctions').doc(auctionId);
-        
+
         await db.runTransaction(async transaction => {
           const doc = await transaction.get(docRef);
           if (!doc.exists) return;
@@ -8071,7 +8346,7 @@ const UIController = (() => {
 
   async function processInboxSystemMessages(mails) {
     if (!mails || mails.length === 0) return;
-    
+
     const wins = mails.filter(m => m.type === 'auction_win' && m.status === 'pending');
     for (const win of wins) {
       try {
@@ -8086,7 +8361,7 @@ const UIController = (() => {
 
         const type = win.payload.itemType;
         const id = win.payload.itemId;
-        
+
         if (type === 'property') {
           GameEngine.state.assets = GameEngine.state.assets || {};
           GameEngine.state.assets[id] = (GameEngine.state.assets[id] || 0) + 1;
@@ -8109,7 +8384,7 @@ const UIController = (() => {
         GameEngine.state.netWorth = GameEngine.calculateNetWorth();
         await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
         await AppDB.updateMailStatus(win.id, 'accepted');
-        
+
         showToast('🏆 فزت بالمزاد!', `تهانينا! لقد فزت بمزاد (${win.payload.itemName}) مقابل ${price.toLocaleString()} EGP تم خصمها من حسابك.`, 'success');
         renderAll();
       } catch (err) {
@@ -8128,7 +8403,7 @@ const UIController = (() => {
         const biz = GameEngine.state.businesses[bizId];
         biz.employees = biz.employees || {};
         biz.employees[emp] = { role, salary };
-        
+
         await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
         await AppDB.updateMailStatus(add.id, 'accepted');
         showToast('موظف جديد 💼', `التحق اللاعب ${emp} بالعمل في مشروعك (${biz.name || bizId}) كمساعد براتب ${salary} EGP/ث!`, 'success');
@@ -8146,7 +8421,7 @@ const UIController = (() => {
         const biz = GameEngine.state.businesses[bizId];
         biz.partners = biz.partners || {};
         biz.partners[partner] = sharePct;
-        
+
         const currentOwnerShare = biz.partners[GameEngine.state.username] !== undefined ? biz.partners[GameEngine.state.username] : 1.0;
         biz.partners[GameEngine.state.username] = Math.max(0.01, currentOwnerShare - sharePct);
 
@@ -8197,12 +8472,384 @@ const UIController = (() => {
     }
   }
 
+  // ─────────────────────────────────────────────
+  //  V2: CORPORATIONS UI & ACTIONS
+  // ─────────────────────────────────────────────
+  async function renderCorporationsTab() {
+    const container = document.getElementById('corporations-main-container');
+    if (!container) return;
+
+    if (typeof firebase === 'undefined' || !AppDB.isFirebaseReady) {
+      container.innerHTML = `
+        <div class="glass-panel p-6 text-center rounded-2xl border border-slate-800 bg-slate-950/40">
+          <p class="text-slate-400 text-xs py-8">الشركات المشتركة متاحة فقط في وضع الأونلاين (مع اتصال سحابة Firebase).</p>
+        </div>
+      `;
+      return;
+    }
+
+    const currentUsername = GameEngine.state.username;
+    const corp = window.activeCorporationState;
+
+    if (!corp) {
+      const list = window.lastCorporationsCache || [];
+      
+      let corpCardsHtml = '';
+      if (list.length === 0) {
+        corpCardsHtml = `
+          <div class="col-span-full text-center text-slate-500 text-xs py-12">
+            لا توجد أي شركات مشتركة مسجلة في السيرفر حالياً. كن أول من يؤسس شركة!
+          </div>
+        `;
+      } else {
+        list.forEach(c => {
+          const membersCount = c.members ? c.members.length : 0;
+          const treasuryVal = c.treasury || 0;
+          corpCardsHtml += `
+            <div class="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-950/20 hover:border-indigo-500/30 transition flex flex-col justify-between">
+              <div>
+                <h4 class="text-sm font-black text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-building text-indigo-400"></i>
+                  <span>${c.name}</span>
+                </h4>
+                <p class="text-slate-400 text-xs mt-1 min-h-[32px]">${c.desc || 'لا يوجد وصف.'}</p>
+                <div class="grid grid-cols-2 gap-2 mt-4 bg-slate-950/50 p-2.5 rounded-xl border border-slate-900/60 text-[10px]">
+                  <div>
+                    <span class="text-slate-500 block">المؤسس</span>
+                    <span class="text-slate-300 font-bold">${c.founder}</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-500 block">عدد الأعضاء</span>
+                    <span class="text-slate-300 font-bold">${membersCount} لاعب</span>
+                  </div>
+                  <div class="col-span-2 border-t border-slate-900/40 pt-2 mt-1">
+                    <span class="text-slate-500 block">خزينة الشركة</span>
+                    <span class="text-emerald-400 font-black numbers-font text-xs">${treasuryVal.toLocaleString()} EGP</span>
+                  </div>
+                </div>
+              </div>
+              <button onclick="window.UI.joinCorporationAction('${c.id}')" class="w-full mt-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">تقديم طلب انضمام</button>
+            </div>
+          `;
+        });
+      }
+
+      container.innerHTML = `
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-950/40 space-y-4">
+            <h3 class="text-sm font-black text-white flex items-center gap-1.5">
+              <i class="fa-solid fa-plus text-indigo-500"></i>
+              <span>تأسيس شركة مشتركة جديدة</span>
+            </h3>
+            <p class="text-slate-400 text-[11px]">يتطلب تأسيس شركة دفع رسوم تنظيمية باهظة للبلدية تبلغ 100 مليار جنيه. ستبدأ الخزينة من الصفر وسينبغي ضخ مساهمات لشراء المشاريع.</p>
+            
+            <div class="space-y-3">
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">اسم الشركة</label>
+                <input id="create-corp-name" type="text" placeholder="مثال: تحالف المقاولون العرب" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500">
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">وصف نشاط الشركة (اختياري)</label>
+                <textarea id="create-corp-desc" rows="3" placeholder="اكتب نبذة عن رؤية وتوجه التحالف المالي..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+              </div>
+            </div>
+
+            <button onclick="window.UI.createCorporationAction()" class="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-600/10 transition">
+              تأسيس الشركة (خصم 100 مليار ج.م)
+            </button>
+          </div>
+
+          <div class="lg:col-span-2 space-y-4">
+            <h3 class="text-sm font-black text-white flex items-center gap-1.5">
+              <i class="fa-solid fa-list text-slate-400"></i>
+              <span>قائمة الشركات المسجلة على السيرفر</span>
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${corpCardsHtml}
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      const isFounder = corp.founder === currentUsername;
+      const membersList = corp.members || [];
+      const totalCont = corp.totalContributions || 0;
+      const myCont = corp.contributions ? (corp.contributions[currentUsername] || 0) : 0;
+      
+      let sharePct = 0;
+      if (totalCont > 0) {
+        sharePct = myCont / totalCont;
+      } else if (currentUsername === corp.founder) {
+        sharePct = 1.0;
+      }
+
+      let totalCorpTickProfit = 0;
+      if (corp.projects) {
+        Object.keys(corp.projects).forEach(projId => {
+          if (corp.projects[projId] && GameEngine.CORP_PROJECTS[projId]) {
+            totalCorpTickProfit += GameEngine.CORP_PROJECTS[projId].profitPerTick;
+          }
+        });
+      }
+
+      const myShareTickProfit = Math.floor(totalCorpTickProfit * sharePct);
+
+      let membersHtml = '';
+      membersList.forEach(m => {
+        const cAmt = corp.contributions ? (corp.contributions[m] || 0) : 0;
+        let mShare = totalCont > 0 ? (cAmt / totalCont) : (m === corp.founder ? 1.0 : 0.0);
+        membersHtml += `
+          <tr class="border-b border-slate-900 text-xs">
+            <td class="py-2.5 text-slate-300 font-bold">${m} ${m === corp.founder ? '<span class="text-[9px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">مؤسس</span>' : ''}</td>
+            <td class="py-2.5 text-slate-400 numbers-font">${cAmt.toLocaleString()} EGP</td>
+            <td class="py-2.5 text-emerald-400 font-bold numbers-font">${(mShare * 100).toFixed(2)}%</td>
+          </tr>
+        `;
+      });
+
+      let projectsHtml = '';
+      Object.keys(GameEngine.CORP_PROJECTS).forEach(projId => {
+        const p = GameEngine.CORP_PROJECTS[projId];
+        const owned = corp.projects && corp.projects[projId];
+        
+        let statusBadge = '';
+        let projectActionBtn = '';
+        
+        if (owned) {
+          statusBadge = '<span class="text-[10px] bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-full font-bold">مملوك للشركة ✅</span>';
+          projectActionBtn = `<button class="w-full py-2 bg-slate-900 border border-slate-800 text-slate-500 rounded-xl text-xs font-bold" disabled>يولد أرباحاً للمساهمين</button>`;
+        } else {
+          statusBadge = '<span class="text-[10px] bg-slate-800 border border-slate-700 text-slate-400 px-2 py-0.5 rounded-full font-bold">غير مملوك</span>';
+          if (isFounder) {
+            projectActionBtn = `<button onclick="window.UI.buyCorporationProjectAction('${corp.id}', '${p.id}', ${p.cost})" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">شراء المشروع من الخزينة</button>`;
+          } else {
+            projectActionBtn = `<button class="w-full py-2 bg-slate-900 border border-slate-800 text-slate-600 rounded-xl text-xs font-bold" disabled>متاح للمؤسس فقط</button>`;
+          }
+        }
+
+        projectsHtml += `
+          <div class="glass-panel p-5 rounded-2xl border ${owned ? 'border-emerald-500/20 bg-emerald-950/5' : 'border-slate-800 bg-slate-950/20'} flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex justify-between items-start gap-2">
+                <h4 class="text-xs font-black text-white">${p.name}</h4>
+                ${statusBadge}
+              </div>
+              <div class="grid grid-cols-2 gap-2 mt-4 bg-slate-950/50 p-2.5 rounded-xl border border-slate-900/60 text-[10px]">
+                <div>
+                  <span class="text-slate-500 block">تكلفة الاستثمار</span>
+                  <span class="text-slate-300 font-bold numbers-font text-xs">${p.cost.toLocaleString()} EGP</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block">العائد الإجمالي</span>
+                  <span class="text-emerald-400 font-black numbers-font text-xs">+${p.profitPerTick.toLocaleString()}/tick</span>
+                </div>
+              </div>
+            </div>
+            ${projectActionBtn}
+          </div>
+        `;
+      });
+
+      container.innerHTML = `
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 glass-panel p-6 rounded-2xl border border-indigo-500/10 bg-slate-950/40 relative overflow-hidden flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-start">
+                <h3 class="text-lg font-black text-white flex items-center gap-2">
+                  <i class="fa-solid fa-building text-indigo-500"></i>
+                  <span>${corp.name}</span>
+                </h3>
+                <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full font-bold">عضو مساهم</span>
+              </div>
+              <p class="text-slate-400 text-xs mt-2">${corp.desc || 'لا يوجد وصف تجاري.'}</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6 bg-slate-950/70 p-4 rounded-xl border border-slate-900">
+              <div>
+                <span class="text-[10px] text-slate-500 block">الخزينة المتوفرة</span>
+                <span class="text-emerald-400 font-black text-sm numbers-font">${(corp.treasury || 0).toLocaleString()} EGP</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-500 block">مساهماتك الشخصية</span>
+                <span class="text-slate-300 font-bold text-sm numbers-font">${myCont.toLocaleString()} EGP</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-500 block">حصتك من الأرباح</span>
+                <span class="text-indigo-400 font-black text-sm numbers-font">${(sharePct * 100).toFixed(2)}%</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-500 block">أرباحك / tick</span>
+                <span class="text-emerald-400 font-black text-sm numbers-font">+${myShareTickProfit.toLocaleString()} EGP</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-950/40 space-y-4">
+            <h3 class="text-sm font-black text-white flex items-center gap-1.5">
+              <i class="fa-solid fa-piggy-bank text-indigo-400"></i>
+              <span>ضخ أموال في الخزينة المشتركة</span>
+            </h3>
+            <p class="text-slate-400 text-[11px]">كل مبلغ تضخه يزيد من حجم الخزينة لشراء المشاريع، ويرفع حصتك المئوية من الأرباح تلقائياً مقارنة بالشركاء الآخرين.</p>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">المبلغ المراد ضخه (EGP)</label>
+              <input id="contribute-corp-amount" type="number" placeholder="مثال: 5000000000" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500">
+            </div>
+            <button onclick="window.UI.contributeCorporationAction('${corp.id}')" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-600/10 transition">
+              تأكيد ضخ السيولة
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          <div class="lg:col-span-2 space-y-4">
+            <h3 class="text-sm font-black text-white flex items-center gap-1.5">
+              <i class="fa-solid fa-industry text-slate-400"></i>
+              <span>مشاريع الشركة العملاقة (Megaprojects)</span>
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${projectsHtml}
+            </div>
+          </div>
+
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-950/40 space-y-4 h-fit">
+            <h3 class="text-sm font-black text-white flex items-center gap-1.5">
+              <i class="fa-solid fa-users text-slate-400"></i>
+              <span>الشركاء والمساهمين (${membersList.length})</span>
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-right">
+                <thead>
+                  <tr class="border-b border-slate-800 text-[10px] text-slate-500">
+                    <th class="pb-2">الاسم</th>
+                    <th class="pb-2">المساهمة</th>
+                    <th class="pb-2">الحصة</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${membersHtml}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  async function createCorporationAction() {
+    const nameInput = document.getElementById('create-corp-name');
+    const descInput = document.getElementById('create-corp-desc');
+    if (!nameInput) return;
+
+    const name = nameInput.value.trim();
+    const desc = descInput ? descInput.value.trim() : '';
+
+    if (!name) {
+      showToast('خطأ التأسيس', 'يرجى إدخال اسم للشركة المشتركة أولاً.', 'error');
+      return;
+    }
+
+    const cost = 100000000000;
+    const currentCash = GameEngine.state.cash;
+    const currentBank = GameEngine.state.bank;
+
+    if (currentCash < cost && currentBank < cost) {
+      showToast('رصيد غير كافي', 'تأسيس الشركة يتطلب دفع 100 مليار جنيه، ورصيدك الحالي لا يكفي.', 'error');
+      return;
+    }
+
+    if (!confirm(`هل أنت متأكد من رغبتك في تأسيس شركة "${name}" مقابل دفع رسوم باهظة تبلغ 100,000,000,000 EGP من رصيدك؟`)) return;
+
+    try {
+      if (GameEngine.state.cash >= cost) {
+        GameEngine.state.cash -= cost;
+      } else {
+        GameEngine.state.bank -= cost;
+      }
+
+      GameEngine.state.netWorth = GameEngine.calculateNetWorth();
+      await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+
+      const corpId = await AppDB.createCorporation(name, desc, GameEngine.state.username);
+
+      showToast('مبروك التأسيس! 🏢🎉', `تم تأسيس شركة مشتركة باسم "${name}" بنجاح وخصم 100 مليار جنيه رسوم تأسيس.`, 'success');
+      playMenuSound('success');
+      renderAll();
+
+    } catch (err) {
+      showToast('فشل التأسيس', err.message, 'error');
+    }
+  }
+
+  async function joinCorporationAction(corpId) {
+    try {
+      await AppDB.joinCorporation(corpId, GameEngine.state.username);
+      showToast('تم الانضمام! 🤝', 'لقد انضممت بنجاح لعضوية الشركة المشتركة. يمكنك الآن ضخ المساهمات ومتابعة الأرباح.', 'success');
+      playMenuSound('success');
+    } catch (err) {
+      showToast('فشل الانضمام', err.message, 'error');
+    }
+  }
+
+  async function contributeCorporationAction(corpId) {
+    const amountInput = document.getElementById('contribute-corp-amount');
+    if (!amountInput) return;
+
+    const amount = Math.floor(Number(amountInput.value));
+    if (isNaN(amount) || amount <= 0) {
+      showToast('مبلغ غير صحيح', 'يرجى إدخال قيمة مساهمة صحيحة أكبر من الصفر.', 'error');
+      return;
+    }
+
+    const currentCash = GameEngine.state.cash;
+    const currentBank = GameEngine.state.bank;
+
+    if (currentCash < amount && currentBank < amount) {
+      showToast('رصيد غير كافي', 'لا تملك سيولة كافية لضخ هذا المبلغ.', 'error');
+      return;
+    }
+
+    if (!confirm(`هل أنت متأكد من رغبتك في ضخ ${amount.toLocaleString()} EGP من رصيدك في خزينة الشركة المشتركة؟`)) return;
+
+    try {
+      if (GameEngine.state.cash >= amount) {
+        GameEngine.state.cash -= amount;
+      } else {
+        GameEngine.state.bank -= amount;
+      }
+
+      GameEngine.state.netWorth = GameEngine.calculateNetWorth();
+      await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+
+      await AppDB.contributeToCorporation(corpId, GameEngine.state.username, amount);
+      
+      showToast('تم ضخ السيولة! 💸', `لقد ساهمت بـ ${amount.toLocaleString()} EGP في خزينة الشركة بنجاح وتم زيادة حصتك من الأرباح.`, 'success');
+      playMenuSound('success');
+      
+      amountInput.value = '';
+      renderAll();
+
+    } catch (err) {
+      showToast('فشل المساهمة', err.message, 'error');
+    }
+  }
+
+  async function buyCorporationProjectAction(corpId, projectId, cost) {
+    try {
+      await AppDB.buyCorporationProject(corpId, projectId, cost);
+      showToast('تم الشراء بنجاح! 🚀✅', 'تم شراء المشروع العملاق وسوف يساهم في مضاعفة أرباح الشركاء والتحالف بالكامل من الآن.', 'success');
+      playMenuSound('success');
+    } catch (err) {
+      showToast('فشل شراء المشروع', err.message, 'error');
+    }
+  }
+
   async function loadAdminPlayerWorkspace(playerState) {
     const listSelect = document.getElementById('admin-player-backups-select');
     if (!listSelect) return;
-    
+
     listSelect.innerHTML = '<option value="">جاري جلب النسخ الاحتياطية...</option>';
-    
+
     try {
       const dates = await AppDB.getPlayerBackupDates(playerState.username);
       listSelect.innerHTML = '';
@@ -8231,7 +8878,14 @@ const UIController = (() => {
     handleMailAction,
     deleteMail,
     registerForAuction,
-    placeAuctionBid
+    placeAuctionBid,
+    acquireDistressedBusiness,
+    renderAcquisitionMarket,
+    renderCorporationsTab,
+    createCorporationAction,
+    joinCorporationAction,
+    contributeCorporationAction,
+    buyCorporationProjectAction
   };
 })();
 

@@ -12,16 +12,16 @@ const GameEngine = (() => {
   // --- Game Configurations & Data Tables ---
 
   const JOBS = {
-    worker:        { id: 'worker',        name: 'عامل باليومية',              salary: 12,    xpReward: 4,   xpNeeded: 0 },
-    cashier:       { id: 'cashier',       name: 'محاسب صندوق',                salary: 32,    xpReward: 7,   xpNeeded: 80 },
-    accountant:    { id: 'accountant',    name: 'محاسب مالي قانوني',          salary: 85,    xpReward: 12,  xpNeeded: 280 },
-    manager:       { id: 'manager',       name: 'مدير فرع',                   salary: 210,   xpReward: 18,  xpNeeded: 850 },
-    director:      { id: 'director',      name: 'مدير تنفيذي للمجموعة',       salary: 540,   xpReward: 26,  xpNeeded: 2400 },
-    ceo:           { id: 'ceo',           name: 'رئيس مجلس الإدارة',           salary: 1400,  xpReward: 40,  xpNeeded: 6500 },
-    consultant:    { id: 'consultant',    name: 'مستشار اقتصادي ووزير سابق',  salary: 3800,  xpReward: 65,  xpNeeded: 16000 },
-    bank_governor: { id: 'bank_governor', name: 'محافظ البنك المركزي',        salary: 9500,  xpReward: 100, xpNeeded: 40000 },
-    sovereign_head:{ id: 'sovereign_head',name: 'رئيس صندوق الاستثمار السيادي',salary: 24000, xpReward: 160, xpNeeded: 95000 },
-    oligarch:      { id: 'oligarch',      name: 'إمبراطور كبار المستثمرين',  salary: 65000, xpReward: 280, xpNeeded: 220000 }
+    worker: { id: 'worker', name: 'عامل باليومية', salary: 12, xpReward: 4, xpNeeded: 0 },
+    cashier: { id: 'cashier', name: 'محاسب صندوق', salary: 32, xpReward: 7, xpNeeded: 80 },
+    accountant: { id: 'accountant', name: 'محاسب مالي قانوني', salary: 85, xpReward: 12, xpNeeded: 280 },
+    manager: { id: 'manager', name: 'مدير فرع', salary: 210, xpReward: 18, xpNeeded: 850 },
+    director: { id: 'director', name: 'مدير تنفيذي للمجموعة', salary: 540, xpReward: 26, xpNeeded: 2400 },
+    ceo: { id: 'ceo', name: 'رئيس مجلس الإدارة', salary: 1400, xpReward: 40, xpNeeded: 6500 },
+    consultant: { id: 'consultant', name: 'مستشار اقتصادي ووزير سابق', salary: 3800, xpReward: 65, xpNeeded: 16000 },
+    bank_governor: { id: 'bank_governor', name: 'محافظ البنك المركزي', salary: 9500, xpReward: 100, xpNeeded: 40000 },
+    sovereign_head: { id: 'sovereign_head', name: 'رئيس صندوق الاستثمار السيادي', salary: 24000, xpReward: 160, xpNeeded: 95000 },
+    oligarch: { id: 'oligarch', name: 'إمبراطور كبار المستثمرين', salary: 65000, xpReward: 280, xpNeeded: 220000 }
   };
 
   const BUSINESSES = {
@@ -156,61 +156,68 @@ const GameEngine = (() => {
     CASH: { name: 'صندوق الاستثمار التقني البديل', symbol: 'CASH', basePrice: 110, volatility: 0.03, reversion: 0.025, floor: 25, dividend: 0.0003 },
     BITC: { name: 'مؤشر البيتكوين والأصول الرقمية', symbol: 'BITC', basePrice: 280, volatility: 0.05, reversion: 0.03, floor: 50, dividend: 0 },
     GOLD: { name: 'صندوق سبائك الذهب الخالص', symbol: 'GOLD', basePrice: 190, volatility: 0.01, reversion: 0.008, floor: 90, dividend: 0.00025 },
-    AIX:  { name: 'صندوق الذكاء الاصطناعي العالمي', symbol: 'AIX', basePrice: 340, volatility: 0.035, reversion: 0.022, floor: 80, dividend: 0.0002 }
+    AIX: { name: 'صندوق الذكاء الاصطناعي العالمي', symbol: 'AIX', basePrice: 340, volatility: 0.035, reversion: 0.022, floor: 80, dividend: 0.0002 }
+  };
+
+  const CORP_PROJECTS = {
+    gigafactory: { id: 'gigafactory', name: 'مجمع أشباه الموصلات والرقائق', cost: 12000000000, profitPerTick: 25000000 },
+    zohr_field: { id: 'zohr_field', name: 'حق امتياز حقل غاز ظهر الطبيعي', cost: 38000000000, profitPerTick: 95000000 },
+    asteroid_mining: { id: 'asteroid_mining', name: 'وكالة تعدين الكويكبات الفضائية', cost: 95000000000, profitPerTick: 280000000 },
+    submarine_cables: { id: 'submarine_cables', name: 'شبكة الألياف البحرية العالمية', cost: 220000000000, profitPerTick: 750000000 }
   };
 
   const STORE_ITEMS = {
-    gold_pen: { 
-      id: 'gold_pen', 
-      name: 'القلم الذهبي للمدراء', 
-      cost: 25000, 
+    gold_pen: {
+      id: 'gold_pen',
+      name: 'القلم الذهبي للمدراء',
+      cost: 25000,
       desc: 'يزيد خبرتك الوظيفية XP بنسبة +35% لتسريع الترقيات. ينتهي مفعوله بعد دقيقتين.',
-      effect: 'xp_boost', 
+      effect: 'xp_boost',
       value: 0.35,
       durationTicks: 120 // 2 minutes
     },
-    premium_lawyer: { 
-      id: 'premium_lawyer', 
-      name: 'توكيل محامٍ دولي قدير', 
-      cost: 150000, 
+    premium_lawyer: {
+      id: 'premium_lawyer',
+      name: 'توكيل محامٍ دولي قدير',
+      cost: 150000,
       desc: 'يخفض خطورة القبض في صفقات السوق المحظورة بنسبة -18% لمدة 4 دقائق.',
-      effect: 'legal_protection', 
+      effect: 'legal_protection',
       value: 0.18,
       durationTicks: 240
     },
-    energy_drink: { 
-      id: 'energy_drink', 
-      name: 'مشروب الطاقة والتركيز الفائق', 
-      cost: 18000, 
+    energy_drink: {
+      id: 'energy_drink',
+      name: 'مشروب الطاقة والتركيز الفائق',
+      cost: 18000,
       desc: 'يمنحك نشاطاً فائقاً ويزيد راتب نوبات العمل بنسبة +60% لمدة 90 ثانية.',
-      effect: 'salary_multiplier', 
+      effect: 'salary_multiplier',
       value: 1.60,
       durationTicks: 90
     },
-    tax_shield: { 
-      id: 'tax_shield', 
-      name: 'درع الإعفاء والملاذ الضريبي', 
-      cost: 180000, 
+    tax_shield: {
+      id: 'tax_shield',
+      name: 'درع الإعفاء والملاذ الضريبي',
+      cost: 180000,
       desc: 'يمنحك خصماً قدره 15% على ترقيات الشركات ويخفض ضريبة الثروة بنسبة 50% لمدة 12 ساعة.',
-      effect: 'upgrade_discount', 
+      effect: 'upgrade_discount',
       value: 0.15,
       durationTicks: 14400
     },
-    market_scanner: { 
-      id: 'market_scanner', 
-      name: 'ماسح البورصة والتداول الذكي', 
-      cost: 250000, 
+    market_scanner: {
+      id: 'market_scanner',
+      name: 'ماسح البورصة والتداول الذكي',
+      cost: 250000,
       desc: 'يخفف أثر الهبوط والتصحيحات العكسية لأسهمك بنسبة 40% لمدة 3 دقائق.',
-      effect: 'stock_shield', 
+      effect: 'stock_shield',
       value: 0.40,
       durationTicks: 180
     },
-    vip_casino_pass: { 
-      id: 'vip_casino_pass', 
-      name: 'بطاقة VIP لكازينو الحظ', 
-      cost: 250000, 
+    vip_casino_pass: {
+      id: 'vip_casino_pass',
+      name: 'بطاقة VIP لكازينو الحظ',
+      cost: 250000,
       desc: 'ترفع نسبة الفوز في الكازينو وعجلة الحظ بنسبة +15%. تنتهي وتدمر صلاحيتها بعد 300 ثانية.',
-      effect: 'casino_luck_boost', 
+      effect: 'casino_luck_boost',
       value: 0.15,
       durationTicks: 100 // 100 ticks = 300 seconds (5 minutes)
     },
@@ -560,7 +567,7 @@ const GameEngine = (() => {
       CASH: { shares: 0, avgPrice: 0 },
       BITC: { shares: 0, avgPrice: 0 },
       GOLD: { shares: 0, avgPrice: 0 },
-      AIX:  { shares: 0, avgPrice: 0 }
+      AIX: { shares: 0, avgPrice: 0 }
     },
     inventory: {
       gold_pen: 0,
@@ -627,7 +634,7 @@ const GameEngine = (() => {
   // Calculate Net Worth: Cash + Bank + DirtyCash + (Real Estate * Cost) + (Stocks * currentPrice) + Locked Investments
   function calculateNetWorth() {
     let worth = (state.cash || 0) + (state.bank || 0) + (state.dirtyCash || 0);
-    
+
     // Add real estate assets value
     Object.keys(state.assets).forEach(key => {
       worth += state.assets[key] * ASSETS[key].cost;
@@ -806,18 +813,18 @@ const GameEngine = (() => {
     }
 
     const taxable = netWorth - 3000000;
-    let baseRate = 0.000020;
+    let baseRate = 0.000002;
     let bracketName = 'الشريحة الفضية (3M - 15M ج.م)';
     let bracketId = 2;
     let bracketColor = 'text-sky-400';
 
     if (netWorth > 50000000) {
-      baseRate = 0.000050;
+      baseRate = 0.000005;
       bracketName = 'شريحة حيتان المال والمليارديرات (+50M ج.م)';
       bracketId = 4;
       bracketColor = 'text-rose-400';
     } else if (netWorth > 15000000) {
-      baseRate = 0.000035;
+      baseRate = 0.0000035;
       bracketName = 'شريحة كبار الممولين (15M - 50M ج.م)';
       bracketId = 3;
       bracketColor = 'text-amber-400';
@@ -928,7 +935,7 @@ const GameEngine = (() => {
         const price = bizState.price || bizConfig.optimumPrice;
         const opt = bizConfig.optimumPrice;
         let elasticityFactor = 1.0;
-        
+
         if (price > opt) {
           elasticityFactor = Math.max(0, 1 - (price - opt) / opt);
         } else if (price < opt) {
@@ -950,23 +957,52 @@ const GameEngine = (() => {
         const upgradeFactor = Math.pow(bizConfig.upgradeMultiplier, bizState.level - 1);
         const workerFactor = 1 + ((bizState.workers || 0) * (bizConfig.workerMultiplier - 1));
         const demand = Math.floor(bizConfig.baseDemand * upgradeFactor * elasticityFactor * workerFactor * marketingBoost);
-        
+
         // Margin per unit = Price - Dynamic Cost of Goods
         const margin = price - actualCostOfGoods;
-        
+
         // Final profit per tick = gross margin (boosted by Quantum CPU +50%) minus worker wages
         const hasQuantum = (state.inventory && state.inventory.quantum_cpu > 0);
         const quantumMultiplier = hasQuantum ? 1.5 : 1.0;
         const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12 * quantumMultiplier));
         const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
         const profit = Math.max(0, grossProfit - workerPayroll);
-        
+
         if (profit > 0) {
           state.bank += profit;
           updates.businessProfitGained += profit;
         }
       }
     });
+
+    // V2: Joint Corporation Passive Profit Ticks
+    if (typeof window !== 'undefined' && window.activeCorporationState) {
+      const corp = window.activeCorporationState;
+      const username = state.username;
+      if (corp.members && corp.members.includes(username) && corp.projects) {
+        let totalCont = corp.totalContributions || 0;
+        let myCont = corp.contributions ? (corp.contributions[username] || 0) : 0;
+        let sharePct = 0;
+        if (totalCont > 0) {
+          sharePct = myCont / totalCont;
+        } else if (username === corp.founder) {
+          sharePct = 1.0;
+        }
+        
+        let totalCorpTickProfit = 0;
+        Object.keys(corp.projects).forEach(projId => {
+          if (corp.projects[projId] && CORP_PROJECTS[projId]) {
+            totalCorpTickProfit += CORP_PROJECTS[projId].profitPerTick;
+          }
+        });
+        
+        const corpProfitGained = Math.floor(totalCorpTickProfit * sharePct);
+        if (corpProfitGained > 0) {
+          state.bank += corpProfitGained;
+          updates.businessProfitGained += corpProfitGained;
+        }
+      }
+    }
 
     // 4.5 Passive Business Front Laundering (واجهات الشركات لغسيل الأموال بضريبة 25% كحد أدنى)
     if ((state.dirtyCash || 0) > 0 && state.businesses) {
@@ -988,16 +1024,29 @@ const GameEngine = (() => {
       }
     }
 
-    // Progressive Wealth Tax on Ultra-High Net Worth (With a safety buffer to prevent draining all liquid cash)
+    // Progressive Wealth Tax on Ultra-High Net Worth (Taxes are deducted from bank first, fallback to cash with safety buffer)
     if (state.netWorth > 3000000) {
       const taxReport = calculateTaxReport();
       const tax = taxReport.taxPerSecond;
-      const safetyBuffer = 50000; // Keep at least 50,000 EGP cash for gameplay usability
-      const taxableCash = Math.max(0, (state.cash || 0) - safetyBuffer);
-      if (tax > 0 && taxableCash > 0) {
-        const actualDeducted = Math.min(taxableCash, tax);
-        state.cash -= actualDeducted;
-        state.totalTaxesPaid = (state.totalTaxesPaid || 0) + actualDeducted;
+      if (tax > 0) {
+        let remainingTax = tax;
+        
+        // 1. Try to deduct from bank first
+        if (state.bank > 0) {
+          const bankDeducted = Math.min(state.bank, remainingTax);
+          state.bank -= bankDeducted;
+          remainingTax -= bankDeducted;
+          state.totalTaxesPaid = (state.totalTaxesPaid || 0) + bankDeducted;
+        }
+        
+        // 2. If there's still tax remaining, deduct from cash (keeping a 50k safety buffer)
+        if (remainingTax > 0) {
+          const safetyBuffer = 50000; // Keep at least 50,000 EGP cash for gameplay usability
+          const taxableCash = Math.max(0, (state.cash || 0) - safetyBuffer);
+          const cashDeducted = Math.min(taxableCash, remainingTax);
+          state.cash -= cashDeducted;
+          state.totalTaxesPaid = (state.totalTaxesPaid || 0) + cashDeducted;
+        }
       }
     }
 
@@ -1162,7 +1211,7 @@ const GameEngine = (() => {
       ];
 
       const selectedEvent = eventTypes[Math.floor(Math.random() * eventTypes.length)];
-      
+
       // Apply market shock to target stocks
       selectedEvent.targetStocks.forEach(sym => {
         if (stockPrices[sym]) {
@@ -1322,25 +1371,75 @@ const GameEngine = (() => {
       if (dbState.lastActiveTimestamp && dbState.lastActiveTimestamp > 0) {
         const now = Date.now();
         const managerExpiry = dbState.afkManagerExpiresAt || 0;
-        
+
         // Effective offline time is capped by when the 12-hour manager expired
         const effectiveEnd = Math.min(now, managerExpiry);
         const elapsedSinceLastActive = Math.max(0, Math.floor((effectiveEnd - dbState.lastActiveTimestamp) / 1000));
-        
+
+        let offlineCorpEarnings = 0;
+        if (typeof firebase !== 'undefined' && AppDB.isFirebaseReady) {
+          try {
+            const db = firebase.firestore();
+            const snapshot = await db.collection('corporations').where('members', 'array-contains', username).get();
+            if (!snapshot.empty) {
+              const corp = snapshot.docs[0].data();
+              
+              let totalCont = corp.totalContributions || 0;
+              let myCont = corp.contributions ? (corp.contributions[username] || 0) : 0;
+              let sharePct = 0;
+              if (totalCont > 0) {
+                sharePct = myCont / totalCont;
+              } else if (username === corp.founder) {
+                sharePct = 1.0;
+              }
+              
+              let totalCorpTickProfit = 0;
+              if (corp.projects) {
+                Object.keys(corp.projects).forEach(projId => {
+                  if (corp.projects[projId] && CORP_PROJECTS[projId]) {
+                    totalCorpTickProfit += CORP_PROJECTS[projId].profitPerTick;
+                  }
+                });
+              }
+              
+              const corpProfitPerSecond = totalCorpTickProfit / 3;
+              const elapsedSeconds = Math.max(0, Math.floor((now - dbState.lastActiveTimestamp) / 1000));
+              const cappedSecondsCorp = Math.min(elapsedSeconds, 43200);
+              
+              offlineCorpEarnings = Math.floor(cappedSecondsCorp * corpProfitPerSecond * sharePct);
+              if (offlineCorpEarnings > 0) {
+                state.bank += offlineCorpEarnings;
+                window.offlineCorpIncomeGained = offlineCorpEarnings;
+              }
+            }
+          } catch (e) {
+            console.warn('[Offline Corp] Failed to calculate:', e);
+          }
+        }
+
         if (elapsedSinceLastActive >= 10 && (state.jailTimer || 0) <= 0) {
           // Cap at 12 hours (43,200 seconds)
           const cappedSeconds = Math.min(43200, elapsedSinceLastActive);
           const incomePerSec = calculatePassiveIncomePerSecond();
           const offlineEarnings = Math.floor(incomePerSec * cappedSeconds);
-          if (offlineEarnings > 0) {
+          if (offlineEarnings > 0 || offlineCorpEarnings > 0) {
             state.bank += offlineEarnings;
             state.offlineReport = {
               seconds: cappedSeconds,
-              earnings: offlineEarnings,
+              earnings: (offlineEarnings || 0) + (offlineCorpEarnings || 0),
+              corpEarnings: offlineCorpEarnings,
               wasManagerActive: true,
               expiredDuringAbsence: now > managerExpiry
             };
           }
+        } else if (offlineCorpEarnings > 0) {
+          state.offlineReport = {
+            seconds: 0,
+            earnings: offlineCorpEarnings,
+            corpEarnings: offlineCorpEarnings,
+            wasManagerActive: true,
+            expiredDuringAbsence: false
+          };
         } else if (now > managerExpiry && managerExpiry > 0) {
           state.offlineReport = {
             seconds: 0,
@@ -1529,7 +1628,7 @@ const GameEngine = (() => {
     const bizState = state.businesses[key];
     if (!bizState || bizState.level === 0) throw new Error("المشروع مغلق حالياً.");
     if (price <= 0) throw new Error("سعر البيع يجب أن يكون أعلى من صفر جنيه.");
-    
+
     // Price capping: Max 10x optimum price to keep numbers sensible
     const maxPrice = BUSINESSES[key].optimumPrice * 10;
     if (price > maxPrice) throw new Error(`الحد الأقصى المسموح به للسعر هو ${maxPrice} جنيه.`);
@@ -1847,7 +1946,7 @@ const GameEngine = (() => {
       const confiscatedDirty = hasDiplomaticBag ? Math.floor((state.dirtyCash || 0) * 0.5) : (state.dirtyCash || 0);
       const confiscatedClean = Math.floor((state.cash || 0) * 0.15);
       const totalConfiscation = confiscatedDirty + confiscatedClean;
-      
+
       state.dirtyCash = Math.max(0, (state.dirtyCash || 0) - confiscatedDirty);
       state.cash = Math.max(0, (state.cash || 0) - confiscatedClean);
       state.jailTimer = deal.jailDuration;
@@ -1931,7 +2030,7 @@ const GameEngine = (() => {
   function launderMoney(amount) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إدارة عمليات غسيل الأموال.");
     if (!amount || isNaN(amount) || amount <= 0) throw new Error("يرجى إدخال مبلغ صحيح للغسيل.");
-    
+
     const availableDirty = state.dirtyCash || 0;
     if (availableDirty <= 0) {
       throw new Error("لا توجد أموال مشبوهة أو أرباح غير مشروعة في حوزتك لغسيلها حالياً.");
@@ -1939,13 +2038,13 @@ const GameEngine = (() => {
     if (availableDirty < amount) {
       throw new Error(`المبلغ المطلوب (${amount.toLocaleString()} ج.م) أكبر من رصيد الأموال غير المشروعة المتاحة (${availableDirty.toLocaleString()} ج.م).`);
     }
-    
+
     // Money laundering tax rate: base 35%, drops to 25% with crypto_cleaner (Never less than 25%)
     const hasCryptoCleaner = Boolean(state.inventory && state.inventory.crypto_cleaner > 0);
     const feeRate = hasCryptoCleaner ? 0.25 : 0.35;
     const fee = Math.floor(amount * feeRate);
     const cleanedAmount = amount - fee;
-    
+
     state.dirtyCash = Math.max(0, state.dirtyCash - amount);
     state.bank = (state.bank || 0) + cleanedAmount;
     state.totalTaxesPaid = (state.totalTaxesPaid || 0) + fee;
@@ -2045,10 +2144,10 @@ const GameEngine = (() => {
 
     // Reels Symbols (CROWN, DIAMOND, GOLD, SACK, KEY)
     const symbols = ['CROWN', 'DIAMOND', 'GOLD', 'SACK', 'KEY'];
-    
+
     // Weight distribution: VIP pass gives higher chance of high tier symbols
     let hasVip = state.inventory.vip_casino_pass > 0;
-    
+
     function getRandomSymbol() {
       const r = Math.random();
       if (hasVip) {
@@ -2161,10 +2260,10 @@ const GameEngine = (() => {
     const job = JOBS[state.jobId] || JOBS.worker;
     const isEnergyActive = (state.inventory && state.inventory.energy_drink > 0);
     const isPenActive = (state.inventory && state.inventory.gold_pen > 0);
-    
+
     const xpBonus = isPenActive ? (1 + (STORE_ITEMS.gold_pen ? STORE_ITEMS.gold_pen.value : 0.5)) : 1.0;
     const energyMult = isEnergyActive ? (STORE_ITEMS.energy_drink ? STORE_ITEMS.energy_drink.value : 2.0) : 1.0;
-    
+
     // Overtime gives 2.5x base salary and 3x XP
     const salaryMultiplier = energyMult * 2.5;
     const earnedSalary = Math.floor(job.salary * salaryMultiplier);
@@ -2241,7 +2340,7 @@ const GameEngine = (() => {
 
     // Roulette wheel number: 0 to 36
     const rolledNumber = Math.floor(Math.random() * 37);
-    const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+    const redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
     const isRed = redNumbers.includes(rolledNumber);
     const isBlack = rolledNumber > 0 && !isRed;
     const isGreen = (rolledNumber === 0);
@@ -2329,11 +2428,12 @@ const GameEngine = (() => {
     set state(val) { state = val; },
     get stockPrices() { return stockPrices; },
     get activeUsername() { return activeUsername; },
-    
+
     JOBS,
     BUSINESSES,
     ASSETS,
     STOCKS,
+    CORP_PROJECTS,
     INVESTMENTS,
     STORE_ITEMS,
     BLACK_MARKET,

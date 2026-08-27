@@ -103,7 +103,7 @@ service cloud.firestore {
     // 7. النسخ الاحتياطية للاعبين (Player Backups)
     // ─────────────────────────────────────────────
     match /players/{username}/backups/{dateString} {
-      allow read, write: if isAdmin() || (request.auth != null);
+      allow read, write: if isAdmin();
     }
 
     // ─────────────────────────────────────────────
