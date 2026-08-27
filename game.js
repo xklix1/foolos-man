@@ -690,9 +690,74 @@ const GameEngine = (() => {
           const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12 * quantumMultiplier));
           const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
           const netProfit = Math.max(0, grossProfit - workerPayroll);
-          income += netProfit;
+
+          // V2: Supply Chain Synergies Multiplier
+          let synergyMultiplier = 1.0;
+          if (key === 'logistics' && (state.assets.mega_yacht > 0 || state.assets.private_island > 0)) {
+            synergyMultiplier = 1.15;
+          } else if (key === 'coffee' && (state.businesses.supermarket && state.businesses.supermarket.level > 0)) {
+            synergyMultiplier = 1.10;
+          } else if (key === 'tech' && (state.businesses.private_bank && state.businesses.private_bank.level > 0)) {
+            synergyMultiplier = 1.20;
+          } else if (key === 'space_tech' && (state.assets.orbital_station > 0)) {
+            synergyMultiplier = 1.30;
+          }
+
+          // V2: Franchise Multiplier
+          const franchiseMultiplier = bizState.isFranchise ? 1.25 : 1.0;
+
+          // V2: Employee Boost & Salary Deductions
+          let employeeBoost = 1.0;
+          let employeePayrollDeduction = 0;
+          if (bizState.employees) {
+            Object.keys(bizState.employees).forEach(empUser => {
+              const empData = bizState.employees[empUser];
+              let solved = false;
+              if (typeof window !== 'undefined' && window.employeesCache && window.employeesCache[empUser]) {
+                const empState = window.employeesCache[empUser];
+                if (empState.lastPuzzleSolved && (Date.now() - empState.lastPuzzleSolved < 86400000)) {
+                  solved = true;
+                }
+              }
+              if (solved) {
+                employeeBoost += 0.30;
+                employeePayrollDeduction += (empData.salary || 0);
+              }
+            });
+          }
+
+          let finalNetProfit = Math.max(0, Math.floor(netProfit * synergyMultiplier * franchiseMultiplier * employeeBoost) - employeePayrollDeduction);
+
+          // V2: Partner Profit Sharing Deductions
+          if (bizState.partners) {
+            const ownerShare = bizState.partners[state.username] !== undefined ? bizState.partners[state.username] : 1.0;
+            const ownerNetProfit = Math.floor(finalNetProfit * ownerShare);
+
+            if (typeof window !== 'undefined') {
+              if (!window.pendingDividends) window.pendingDividends = {};
+              if (!window.pendingDividends[key]) window.pendingDividends[key] = {};
+
+              Object.keys(bizState.partners).forEach(partner => {
+                if (partner !== state.username) {
+                  const partnerShare = bizState.partners[partner] || 0;
+                  const partnerAmt = Math.floor(finalNetProfit * partnerShare);
+                  if (partnerAmt > 0) {
+                    window.pendingDividends[key][partner] = (window.pendingDividends[key][partner] || 0) + partnerAmt;
+                  }
+                }
+              });
+            }
+            finalNetProfit = ownerNetProfit;
+          }
+
+          income += finalNetProfit;
         }
       });
+    }
+
+    // V2: Add Hired Job Salary
+    if (state.hiredJob && state.lastPuzzleSolved && (Date.now() - state.lastPuzzleSolved < 86400000)) {
+      income += (state.hiredJob.salary || 0);
     }
 
     // 2. Real estate rental income

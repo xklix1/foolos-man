@@ -40,8 +40,9 @@ const UIController = (() => {
     "القائمة": "Menu",
     "الدليل": "Guide",
     "الإدارة": "Admin",
-    "الإصدار 1": "Version V1.01",
-    "الإصدار V1.01": "Version V1.01",
+    "الإصدار 1": "Version V2",
+    "الإصدار V1.01": "Version V2",
+    "الإصدار V2": "Version V2",
     "خوادم الأونلاين نشطة": "Online Servers Active",
     "المحفظة النشطة": "Active Profile",
     "سيولة الكاش": "Cash Balance",
@@ -1005,6 +1006,7 @@ const UIController = (() => {
         mainLayout.classList.add('flex');
       }
       setupRealTimeListeners(username);
+      AppDB.checkAndCreateDailyBackup(username, GameEngine.state);
       startGameLoop();
       renderAll();
       showToast('أهلاً بعودتك', `تم استئناف جلسة الإمبراطور: ${username}`, 'success');
@@ -1333,6 +1335,10 @@ const UIController = (() => {
       }
     });
 
+    if (tabId === 'careers') {
+      checkAndOpenRiddleVerification();
+    }
+
     // Render tab-specific elements
     renderAll();
   }
@@ -1420,6 +1426,7 @@ const UIController = (() => {
       else if (activeTab === 'taxes') renderTaxesTab();
       else if (activeTab === 'blackmarket') updateBlackMarketCooldownsInDOM();
 
+      checkAndClaimDividends();
     }, 1000);
   }
 
@@ -2877,6 +2884,7 @@ const UIController = (() => {
         await renderLeaderboard();
       });
     }
+    setupV2UIHandlers();
   }
 
   function getReelSymbolIcon(sym) {
@@ -4180,6 +4188,24 @@ const UIController = (() => {
       }, (err) => console.error("Broadcast listen err: ", err));
     activeListeners.push(unsubBroadcast);
 
+    // 2. V2 Public Chat Listener
+    const unsubChat = AppDB.listenToChatMessages(msgs => {
+      renderChatMessages(msgs);
+    });
+    if (typeof unsubChat === 'function') activeListeners.push(unsubChat);
+
+    // 3. V2 Mailbox Listener
+    const unsubMail = AppDB.listenToMailbox(username, mails => {
+      renderMailbox(mails);
+    });
+    if (typeof unsubMail === 'function') activeListeners.push(unsubMail);
+
+    // 4. V2 Live Auctions Listener
+    const unsubAuctions = AppDB.listenToLiveAuctions(list => {
+      renderLiveAuctions(list);
+    });
+    if (typeof unsubAuctions === 'function') activeListeners.push(unsubAuctions);
+
     // Maintenance Screen Admin Login Button
     const maintAdminLoginBtn = document.getElementById('btn-maintenance-admin-login');
     if (maintAdminLoginBtn) {
@@ -4769,6 +4795,7 @@ const UIController = (() => {
         }
         renderPlayersTable();
         renderPlayerPossessions(state);
+        loadAdminPlayerWorkspace(state);
         logAdminAction(`تم فتح ملف الحساب للاعب: ${username}`);
       } catch (err) {
         showToast('خطأ فحص اللاعب', err.message, 'error');
@@ -6914,14 +6941,1266 @@ const UIController = (() => {
     }
   }
 
+  }
+
+  // ─────────────────────────────────────────────
+  //  V2 variables & handlers
+  // ─────────────────────────────────────────────
+  let lastChatSent = 0;
+  let currentActiveDMUser = '';
+  let mailboxActiveTab = 'inbox';
+  let selectedRestoreFileContent = null;
+  window.employeesCache = {};
+
+  function setupV2UIHandlers() {
+    const chatTrigger = document.getElementById('btn-floating-chat-trigger');
+    const closeChatDrawer = document.getElementById('btn-close-chat-drawer');
+    const chatDrawer = document.getElementById('chat-drawer');
+    const chatInput = document.getElementById('chat-message-input');
+    const chatSendBtn = document.getElementById('btn-send-chat-message');
+    const charCounter = document.getElementById('chat-char-counter');
+
+    if (chatTrigger && chatDrawer) {
+      chatTrigger.addEventListener('click', () => {
+        chatDrawer.classList.toggle('chat-drawer-open');
+        const unreadDot = document.getElementById('chat-unread-dot');
+        if (unreadDot) {
+          unreadDot.classList.add('hidden');
+          unreadDot.textContent = '0';
+        }
+      });
+    }
+    if (closeChatDrawer && chatDrawer) {
+      closeChatDrawer.addEventListener('click', () => {
+        chatDrawer.classList.remove('chat-drawer-open');
+      });
+    }
+
+    if (chatInput && charCounter) {
+      chatInput.addEventListener('input', () => {
+        charCounter.textContent = `${chatInput.value.length} / 200`;
+      });
+    }
+
+    if (chatSendBtn && chatInput) {
+      chatSendBtn.addEventListener('click', async () => {
+        const text = chatInput.value.trim();
+        if (!text) return;
+        
+        if (Date.now() - lastChatSent < 3000) {
+          const warnEl = document.getElementById('chat-cooldown-timer');
+          if (warnEl) {
+            warnEl.classList.remove('hidden');
+            setTimeout(() => warnEl.classList.add('hidden'), 2000);
+          }
+          return;
+        }
+
+        try {
+          chatSendBtn.disabled = true;
+          await AppDB.sendChatMessage(GameEngine.state.username, GameEngine.state.title, text);
+          chatInput.value = '';
+          charCounter.textContent = '0 / 200';
+          lastChatSent = Date.now();
+        } catch (err) {
+          showToast('خطأ إرسال', err.message, 'error');
+        } finally {
+          chatSendBtn.disabled = false;
+        }
+      });
+
+      chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') chatSendBtn.click();
+      });
+    }
+
+    const btnMailbox = document.getElementById('btn-open-mailbox');
+    const btnMailboxMobile = document.getElementById('btn-open-mailbox-mobile');
+    const btnCloseMailbox = document.getElementById('btn-close-mailbox-modal');
+    const mailboxModal = document.getElementById('mailbox-modal');
+
+    if (btnMailbox && mailboxModal) {
+      btnMailbox.addEventListener('click', () => {
+        mailboxModal.classList.remove('hidden');
+        switchMailboxTab('inbox');
+      });
+    }
+    if (btnMailboxMobile && mailboxModal) {
+      btnMailboxMobile.addEventListener('click', () => {
+        mailboxModal.classList.remove('hidden');
+        switchMailboxTab('inbox');
+      });
+    }
+    if (btnCloseMailbox && mailboxModal) {
+      btnCloseMailbox.addEventListener('click', () => {
+        mailboxModal.classList.add('hidden');
+      });
+    }
+
+    const btnMailTabInbox = document.getElementById('btn-mail-tab-inbox');
+    const btnMailTabDMs = document.getElementById('btn-mail-tab-dms');
+    if (btnMailTabInbox) {
+      btnMailTabInbox.addEventListener('click', () => switchMailboxTab('inbox'));
+    }
+    if (btnMailTabDMs) {
+      btnMailTabDMs.addEventListener('click', () => switchMailboxTab('dms'));
+    }
+
+    const btnSendDM = document.getElementById('btn-send-dm-message');
+    const dmInput = document.getElementById('dm-message-input');
+    if (btnSendDM && dmInput) {
+      btnSendDM.addEventListener('click', async () => {
+        const text = dmInput.value.trim();
+        if (!text || !currentActiveDMUser) return;
+        try {
+          await AppDB.sendMail(GameEngine.state.username, currentActiveDMUser, 'dm', { message: text });
+          dmInput.value = '';
+        } catch (err) {
+          showToast('خطأ إرسال خاصة', err.message, 'error');
+        }
+      });
+      dmInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') btnSendDM.click();
+      });
+    }
+
+    const btnCloseProfile = document.getElementById('btn-close-profile-modal');
+    if (btnCloseProfile) {
+      btnCloseProfile.addEventListener('click', () => {
+        document.getElementById('player-profile-modal').classList.add('hidden');
+      });
+    }
+
+    const btnAddFriend = document.getElementById('btn-profile-add-friend');
+    const btnProfileDM = document.getElementById('btn-profile-dm');
+    const btnProfileJob = document.getElementById('btn-profile-job-offer');
+    const btnProfilePartnership = document.getElementById('btn-profile-partnership');
+    const btnProfileBlock = document.getElementById('btn-profile-block-player');
+
+    if (btnAddFriend) {
+      btnAddFriend.addEventListener('click', async () => {
+        const target = btnAddFriend.dataset.username;
+        if (!target) return;
+        try {
+          await AppDB.sendMail(GameEngine.state.username, target, 'friend_request', {});
+          showToast('طلب صداقة', `تم إرسال طلب صداقة إلى ${target} بنجاح!`, 'success');
+        } catch (err) {
+          showToast('خطأ طلب صداقة', err.message, 'error');
+        }
+      });
+    }
+
+    if (btnProfileDM) {
+      btnProfileDM.addEventListener('click', () => {
+        const target = btnProfileDM.dataset.username;
+        if (!target) return;
+        document.getElementById('player-profile-modal').classList.add('hidden');
+        mailboxModal.classList.remove('hidden');
+        switchMailboxTab('dms');
+        openPrivateChat(target);
+      });
+    }
+
+    if (btnProfileJob) {
+      btnProfileJob.addEventListener('click', () => {
+        const target = btnProfileJob.dataset.username;
+        if (!target) return;
+        openJobOfferForm(target);
+      });
+    }
+
+    if (btnProfilePartnership) {
+      btnProfilePartnership.addEventListener('click', () => {
+        const target = btnProfilePartnership.dataset.username;
+        if (!target) return;
+        openPartnershipForm(target);
+      });
+    }
+
+    if (btnProfileBlock) {
+      btnProfileBlock.addEventListener('click', () => {
+        const target = btnProfileBlock.dataset.username;
+        if (!target) return;
+        GameEngine.state.blockedUsers = GameEngine.state.blockedUsers || [];
+        if (GameEngine.state.blockedUsers.includes(target)) {
+          GameEngine.state.blockedUsers = GameEngine.state.blockedUsers.filter(u => u !== target);
+          btnProfileBlock.innerHTML = '<i class="fa-solid fa-ban"></i> <span>حظر اللاعب</span>';
+          showToast('إلغاء حظر', `تم إلغاء حظر اللاعب ${target}.`, 'info');
+        } else {
+          GameEngine.state.blockedUsers.push(target);
+          btnProfileBlock.innerHTML = '<i class="fa-solid fa-ban"></i> <span class="text-rose-500">إلغاء الحظر</span>';
+          showToast('حظر اللاعب', `تم حظر اللاعب ${target}. لن تظهر رسائله في الشات العام.`, 'warning');
+        }
+        AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        renderAll();
+      });
+    }
+
+    const closeJobBtn = document.getElementById('btn-close-job-offer-modal');
+    if (closeJobBtn) closeJobBtn.addEventListener('click', () => document.getElementById('job-offer-form-modal').classList.add('hidden'));
+
+    const closePartBtn = document.getElementById('btn-close-partnership-modal');
+    if (closePartBtn) closePartBtn.addEventListener('click', () => document.getElementById('partnership-form-modal').classList.add('hidden'));
+
+    const submitJobBtn = document.getElementById('btn-submit-job-offer');
+    if (submitJobBtn) {
+      submitJobBtn.addEventListener('click', async () => {
+        const target = document.getElementById('job-offer-target-username').value;
+        const bizSelect = document.getElementById('job-offer-business-select');
+        const roleSelect = document.getElementById('job-offer-role-select');
+        const salaryInput = document.getElementById('job-offer-salary-input');
+
+        const businessId = bizSelect.value;
+        const role = roleSelect.value;
+        const salary = parseInt(salaryInput.value || '0');
+
+        if (!businessId || !role || salary <= 0) {
+          showToast('خطأ إدخال', 'يرجى ملء جميع حقول عقد التوظيف براتب صحيح أكبر من الصفر.', 'error');
+          return;
+        }
+
+        try {
+          const bizName = GameEngine.state.businesses[businessId].name || businessId;
+          await AppDB.sendMail(GameEngine.state.username, target, 'job_offer', {
+            businessId,
+            businessName: bizName,
+            role,
+            salary
+          });
+          document.getElementById('job-offer-form-modal').classList.add('hidden');
+          showToast('عقد توظيف', `تم إرسال عرض العمل إلى ${target} بنجاح!`, 'success');
+        } catch (err) {
+          showToast('خطأ عقد التوظيف', err.message, 'error');
+        }
+      });
+    }
+
+    const submitPartnershipBtn = document.getElementById('btn-submit-partnership');
+    if (submitPartnershipBtn) {
+      submitPartnershipBtn.addEventListener('click', async () => {
+        const target = document.getElementById('partnership-target-username').value;
+        const bizSelect = document.getElementById('partnership-business-select');
+        const shareInput = document.getElementById('partnership-share-input');
+
+        const businessId = bizSelect.value;
+        const sharePct = parseInt(shareInput.value || '0');
+
+        if (!businessId || sharePct <= 0 || sharePct >= 100) {
+          showToast('خطأ إدخال', 'يرجى إدخال نسبة مئوية صحيحة بين 1% و 99%.', 'error');
+          return;
+        }
+
+        try {
+          const bizName = GameEngine.state.businesses[businessId].name || businessId;
+          await AppDB.sendMail(GameEngine.state.username, target, 'partnership_invite', {
+            businessId,
+            businessName: bizName,
+            sharePct: sharePct / 100
+          });
+          document.getElementById('partnership-form-modal').classList.add('hidden');
+          showToast('دعوة شراكة', `تم إرسال دعوة الشراكة الاستثمارية إلى ${target} بنجاح!`, 'success');
+        } catch (err) {
+          showToast('خطأ الشراكة', err.message, 'error');
+        }
+      });
+    }
+
+    const submitRiddleBtn = document.getElementById('btn-submit-riddle');
+    if (submitRiddleBtn) {
+      submitRiddleBtn.addEventListener('click', () => {
+        const answerInput = document.getElementById('riddle-answer-input');
+        const typedVal = parseInt(answerInput.value || '');
+        if (typedVal === window.activeRiddleAnswer) {
+          GameEngine.state.lastPuzzleSolved = Date.now();
+          AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+          document.getElementById('riddle-verification-modal').classList.add('hidden');
+          showToast('تم التحقق بنجاح! 🎉', 'لقد أثبت وجودك البشري، تم صرف راتبك وتنشيط بونوص الشركة +30% لـ 24 ساعة القادمة.', 'success');
+          renderAll();
+        } else {
+          showToast('إجابة خاطئة ❌', 'المعادلة الرياضية خاطئة، يرجى المحاولة والتركيز ثانية.', 'error');
+        }
+      });
+    }
+
+    const adminDownloadSelectedBtn = document.getElementById('btn-admin-download-selected-backup');
+    const adminRestoreSelectedBtn = document.getElementById('btn-admin-restore-selected-backup');
+    const adminBackupsSelect = document.getElementById('admin-player-backups-select');
+
+    if (adminDownloadSelectedBtn) {
+      adminDownloadSelectedBtn.addEventListener('click', async () => {
+        const targetUser = document.getElementById('admin-p-username').textContent;
+        const selectedDate = adminBackupsSelect.value;
+        if (!selectedDate) {
+          showToast('خطأ اختيار', 'يرجى اختيار نسخة احتياطية أولاً.', 'error');
+          return;
+        }
+        const bState = await AppDB.getPlayerBackupState(targetUser, selectedDate);
+        if (bState) {
+          const blob = new Blob([JSON.stringify(bState, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `backup_${targetUser}_${selectedDate}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showToast('تم التنزيل', 'تم تحميل ملف النسخة الاحتياطية بنجاح.', 'success');
+        }
+      });
+    }
+
+    if (adminRestoreSelectedBtn) {
+      adminRestoreSelectedBtn.addEventListener('click', async () => {
+        const targetUser = document.getElementById('admin-p-username').textContent;
+        const selectedDate = adminBackupsSelect.value;
+        if (!selectedDate) {
+          showToast('خطأ اختيار', 'يرجى اختيار تاريخ للنسخة الاحتياطية.', 'error');
+          return;
+        }
+        if (confirm(`هل أنت متأكد من رغبتك في استعادة حساب اللاعب ${targetUser} إلى نسخة تاريخ ${selectedDate}؟ سيتم محو البيانات الحالية.`)) {
+          const bState = await AppDB.getPlayerBackupState(targetUser, selectedDate);
+          if (bState) {
+            await AppDB.adminRestorePlayerFromState(targetUser, bState);
+            showToast('تم الاسترجاع', `تمت استعادة حساب اللاعب ${targetUser} بنجاح من قاعدة البيانات.`, 'success');
+            const updatedState = await AppDB.getPlayerState(targetUser);
+            if (updatedState) loadAdminPlayerWorkspace(updatedState);
+          }
+        }
+      });
+    }
+
+    const fileInput = document.getElementById('admin-restore-file-input');
+    const triggerFileBtn = document.getElementById('btn-trigger-file-restore');
+    const uploadRestoreBtn = document.getElementById('btn-admin-upload-restore');
+
+    if (triggerFileBtn && fileInput) {
+      triggerFileBtn.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const parsed = JSON.parse(event.target.result);
+              const targetUser = document.getElementById('admin-p-username').textContent;
+              if (parsed.username !== targetUser) {
+                showToast('تنبيه عدم مطابقة', `اسم اللاعب في ملف الاحتياطي (${parsed.username}) لا يطابق اللاعب الذي تقوم بفحصه حالياً (${targetUser})!`, 'warning');
+              }
+              selectedRestoreFileContent = parsed;
+              document.getElementById('restore-file-name-label').textContent = file.name;
+              uploadRestoreBtn.disabled = false;
+            } catch (err) {
+              showToast('خطأ قراءة ملف', 'الملف الاحتياطي غير صالح أو معطوب.', 'error');
+              selectedRestoreFileContent = null;
+              uploadRestoreBtn.disabled = true;
+            }
+          };
+          reader.readAsText(file);
+        }
+      });
+    }
+
+    if (uploadRestoreBtn) {
+      uploadRestoreBtn.addEventListener('click', async () => {
+        const targetUser = document.getElementById('admin-p-username').textContent;
+        if (!selectedRestoreFileContent) return;
+        if (confirm(`هل أنت متأكد من استيراد ورفع ملف JSON الخارجي لاستعادة حساب اللاعب ${targetUser}؟ سيتم استبدال كامل الحساب الحالي.`)) {
+          try {
+            await AppDB.adminRestorePlayerFromState(targetUser, selectedRestoreFileContent);
+            showToast('استيراد ناجح! 🎉', `تم رفع الملف الخارجي واستعادة الحساب بالكامل لـ ${targetUser}.`, 'success');
+            selectedRestoreFileContent = null;
+            document.getElementById('restore-file-name-label').textContent = 'اختر ملف JSON الاحتياطي...';
+            uploadRestoreBtn.disabled = true;
+            fileInput.value = '';
+            
+            const updatedState = await AppDB.getPlayerState(targetUser);
+            if (updatedState) loadAdminPlayerWorkspace(updatedState);
+          } catch (err) {
+            showToast('فشل الاستعادة', err.message, 'error');
+          }
+        }
+      });
+    }
+
+    const adminCreateLiveAuctionBtn = document.getElementById('btn-admin-create-live-auction');
+    if (adminCreateLiveAuctionBtn) {
+      adminCreateLiveAuctionBtn.addEventListener('click', async () => {
+        const nameInput = document.getElementById('admin-live-auction-name');
+        const typeSelect = document.getElementById('admin-live-auction-type');
+        const priceInput = document.getElementById('admin-live-auction-baseprice');
+        const condTypeSelect = document.getElementById('admin-live-auction-cond-type');
+        const condValInput = document.getElementById('admin-live-auction-cond-value');
+
+        const name = nameInput.value.trim();
+        const type = typeSelect.value;
+        const basePrice = parseInt(priceInput.value || '0');
+        const condType = condTypeSelect.value;
+        const condVal = parseInt(condValInput.value || '0');
+
+        if (!name || basePrice <= 0 || condVal <= 0) {
+          showToast('خطأ إدخال', 'يرجى ملء جميع تفاصيل المزاد الحي الجديد بقيم صحيحة.', 'error');
+          return;
+        }
+
+        try {
+          adminCreateLiveAuctionBtn.disabled = true;
+          let startVal = condVal;
+          if (condType === 'time') {
+            startVal = Date.now() + (condVal * 60 * 1000);
+          }
+
+          await AppDB.adminCreateLiveAuction(type, 'live_' + Math.random().toString(36).substr(2, 9), name, basePrice, condType, startVal);
+          showToast('تم إطلاق المزاد الحي', `تم إدراج المزاد الحي (${name}) في السيرفر بنجاح وهو بانتظار المسجلين.`, 'success');
+          
+          nameInput.value = '';
+          priceInput.value = '';
+          condValInput.value = '';
+        } catch (err) {
+          showToast('فشل المزاد', err.message, 'error');
+        } finally {
+          adminCreateLiveAuctionBtn.disabled = false;
+        }
+      });
+    }
+  }
+
+  function renderChatMessages(msgs) {
+    const container = document.getElementById('chat-messages-container');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    msgs.forEach(msg => {
+      if (GameEngine.state.blockedUsers && GameEngine.state.blockedUsers.includes(msg.sender)) return;
+
+      const isMe = msg.sender === GameEngine.state.username;
+      const bubbleClass = isMe ? 'chat-bubble-sent' : 'chat-bubble-received';
+      const alignClass = isMe ? 'text-left flex flex-col items-end' : 'text-right flex flex-col items-start';
+      
+      const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `w-full flex flex-col ${alignClass}`;
+      msgDiv.innerHTML = `
+        <div class="flex items-center gap-1.5 mb-0.5">
+          <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
+          <span class="text-[10px] font-bold text-yellow-400 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${msg.sender}')">${msg.sender}</span>
+          <span class="text-[8px] px-1 bg-slate-900 border border-slate-800 rounded-md text-slate-400">${msg.senderTitle}</span>
+        </div>
+        <div class="chat-message-bubble ${bubbleClass}">
+          ${msg.message}
+        </div>
+      `;
+      container.appendChild(msgDiv);
+    });
+
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function renderMailbox(mails) {
+    window.lastMailsCache = mails;
+    const inboxPanel = document.getElementById('mailbox-inbox-panel');
+    const unreadBadge = document.getElementById('mailbox-unread-badge');
+    const unreadBadgeMobile = document.getElementById('mailbox-unread-badge-mobile');
+    
+    if (!inboxPanel) return;
+    inboxPanel.innerHTML = '';
+    
+    let pendingCount = 0;
+    const requests = mails.filter(m => m.type !== 'dm');
+
+    processInboxSystemMessages(mails);
+
+    if (requests.length === 0) {
+      inboxPanel.innerHTML = '<div class="text-center text-slate-500 text-xs py-12">لا توجد رسائل أو طلبات جديدة في صندوقك.</div>';
+    } else {
+      requests.forEach(mail => {
+        if (mail.status === 'pending') pendingCount++;
+        
+        const mailDiv = document.createElement('div');
+        mailDiv.className = `p-4 rounded-xl border ${mail.status === 'pending' ? 'bg-slate-900/60 border-emerald-500/20' : 'bg-slate-900/20 border-slate-800'} text-xs text-slate-300 space-y-3`;
+        
+        let contentHtml = '';
+        let actionsHtml = '';
+
+        if (mail.type === 'friend_request') {
+          contentHtml = `يريد اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> إضافتك كصديق في اللعبة.`;
+          if (mail.status === 'pending') {
+            actionsHtml = `
+              <div class="flex gap-2">
+                <button onclick="window.UI.handleMailAction('${mail.id}', 'friend_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول الصداقة</button>
+                <button onclick="window.UI.handleMailAction('${mail.id}', 'reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
+              </div>
+            `;
+          } else {
+            actionsHtml = `<span class="text-[10px] text-slate-500 font-bold">${mail.status === 'accepted' ? 'تم قبول الصداقة ✅' : 'تم الرفض ❌'}</span>`;
+          }
+        } else if (mail.type === 'job_offer') {
+          contentHtml = `يعرض عليك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> العمل كمساعد في شركته: (<span class="text-sky-400 font-bold">${mail.payload.businessName}</span>) براتب دوري قدره <strong class="text-yellow-500 numbers-font font-bold">${mail.payload.salary} EGP</strong> لكل ثانية عمل.`;
+          if (mail.status === 'pending') {
+            actionsHtml = `
+              <div class="flex gap-2">
+                <button onclick="window.UI.handleMailAction('${mail.id}', 'job_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول عقد العمل</button>
+                <button onclick="window.UI.handleMailAction('${mail.id}', 'reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
+              </div>
+            `;
+          } else {
+            actionsHtml = `<span class="text-[10px] text-slate-500 font-bold">${mail.status === 'accepted' ? 'تم قبول عقد العمل ✅' : 'تم الرفض ❌'}</span>`;
+          }
+        } else if (mail.type === 'partnership_invite') {
+          const pct = Math.round(mail.payload.sharePct * 100);
+          contentHtml = `يدعوك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> لتكون شريكاً استثمارياً مساهماً في شركته: (<span class="text-emerald-400 font-bold">${mail.payload.businessName}</span>) مقابل نسبة توزيع أرباح قدرها <strong class="text-emerald-400 font-bold">${pct}%</strong> من صافي العائد.`;
+          if (mail.status === 'pending') {
+            actionsHtml = `
+              <div class="flex gap-2">
+                <button onclick="window.UI.handleMailAction('${mail.id}', 'partnership_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول الشراكة</button>
+                <button onclick="window.UI.handleMailAction('${mail.id}', 'reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
+              </div>
+            `;
+          } else {
+            actionsHtml = `<span class="text-[10px] text-slate-500 font-bold">${mail.status === 'accepted' ? 'تم قبول الشراكة ✅' : 'تم الرفض ❌'}</span>`;
+          }
+        }
+
+        mailDiv.innerHTML = `
+          <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
+            <span class="text-[10px] text-slate-500 font-bold">${new Date(mail.timestamp).toLocaleString()}</span>
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[9px] text-slate-400">${mail.type === 'friend_request' ? 'طلب صداقة' : mail.type === 'job_offer' ? 'عقد عمل' : 'دعوة شراكة'}</span>
+          </div>
+          <div>${contentHtml}</div>
+          <div class="flex justify-between items-center pt-1">
+            ${actionsHtml}
+            <button onclick="window.UI.deleteMail('${mail.id}')" class="text-[10px] text-rose-400 hover:underline"><i class="fa-solid fa-trash mr-1"></i> حذف الرسالة</button>
+          </div>
+        `;
+        inboxPanel.appendChild(mailDiv);
+      });
+    }
+
+    if (unreadBadge) {
+      unreadBadge.textContent = pendingCount;
+      unreadBadge.classList.toggle('hidden', pendingCount === 0);
+    }
+    if (unreadBadgeMobile) {
+      unreadBadgeMobile.textContent = pendingCount;
+      unreadBadgeMobile.classList.toggle('hidden', pendingCount === 0);
+    }
+
+    renderDMsConversationList(mails);
+  }
+
+  function renderDMsConversationList(mails) {
+    const container = document.getElementById('dm-friends-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const chats = {};
+    const dms = mails.filter(m => m.type === 'dm');
+    
+    if (GameEngine.state.friends) {
+      GameEngine.state.friends.forEach(f => {
+        chats[f] = { username: f, lastMsg: 'اضغط لبدء المحادثة الخاصة...', timestamp: 0 };
+      });
+    }
+
+    dms.forEach(m => {
+      const partner = m.sender === GameEngine.state.username ? m.recipient : m.sender;
+      if (!chats[partner] || m.timestamp > chats[partner].timestamp) {
+        chats[partner] = {
+          username: partner,
+          lastMsg: m.payload.message,
+          timestamp: m.timestamp
+        };
+      }
+    });
+
+    const list = Object.values(chats);
+    if (list.length === 0) {
+      container.innerHTML = '<div class="text-[10px] text-slate-500 text-center py-6">قم بإضافة أصدقاء لبدء دردشة خاصة.</div>';
+    } else {
+      list.forEach(c => {
+        const item = document.createElement('div');
+        item.className = `p-2.5 rounded-lg border ${currentActiveDMUser === c.username ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-slate-900/40 border-slate-900'} cursor-pointer hover:bg-slate-800/40 transition`;
+        item.innerHTML = `
+          <div class="flex justify-between items-center mb-0.5">
+            <span class="font-bold text-white text-xs truncate">${c.username}</span>
+          </div>
+          <p class="text-[9px] text-slate-400 truncate">${c.lastMsg}</p>
+        `;
+        item.addEventListener('click', () => openPrivateChat(c.username));
+        container.appendChild(item);
+      });
+    }
+  }
+
+  function openPrivateChat(partner) {
+    currentActiveDMUser = partner;
+    document.getElementById('dm-active-username').textContent = partner;
+    document.getElementById('dm-active-status').textContent = 'دردشة نشطة 🟢';
+    document.getElementById('dm-message-input').disabled = false;
+    document.getElementById('btn-send-dm-message').disabled = false;
+
+    const inbox = document.getElementById('mailbox-modal');
+    if (inbox && !inbox.classList.contains('hidden')) {
+      renderDMsConversationList(window.lastMailsCache || []);
+    }
+
+    if (window.unsubActivePrivateChat) window.unsubActivePrivateChat();
+    window.unsubActivePrivateChat = AppDB.listenToPrivateChat(GameEngine.state.username, partner, dms => {
+      const messagesContainer = document.getElementById('dm-messages-container');
+      if (!messagesContainer) return;
+      messagesContainer.innerHTML = '';
+
+      if (dms.length === 0) {
+        messagesContainer.innerHTML = '<div class="text-center text-slate-500 text-xs py-12">لا توجد رسائل سابقة. ابدأ المحادثة الآن!</div>';
+      } else {
+        dms.forEach(dm => {
+          const isMe = dm.sender === GameEngine.state.username;
+          const bubbleClass = isMe ? 'chat-bubble-sent' : 'chat-bubble-received';
+          const alignClass = isMe ? 'items-end' : 'items-start';
+          
+          const timeStr = new Date(dm.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          
+          const msgDiv = document.createElement('div');
+          msgDiv.className = `w-full flex flex-col ${alignClass}`;
+          msgDiv.innerHTML = `
+            <span class="text-[8px] text-slate-500 mb-0.5 px-1">${timeStr}</span>
+            <div class="chat-message-bubble ${bubbleClass}">
+              ${dm.payload.message}
+            </div>
+          `;
+          messagesContainer.appendChild(msgDiv);
+        });
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    });
+  }
+
+  function switchMailboxTab(tab) {
+    mailboxActiveTab = tab;
+    const inboxPanel = document.getElementById('mailbox-inbox-panel');
+    const dmsPanel = document.getElementById('mailbox-dms-panel');
+    const btnInbox = document.getElementById('btn-mail-tab-inbox');
+    const btnDMs = document.getElementById('btn-mail-tab-dms');
+
+    if (tab === 'inbox') {
+      inboxPanel.classList.remove('hidden');
+      dmsPanel.classList.add('hidden');
+      btnInbox.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 shadow-md';
+      btnDMs.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800';
+    } else {
+      inboxPanel.classList.add('hidden');
+      dmsPanel.classList.remove('hidden');
+      btnInbox.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800';
+      btnDMs.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 shadow-md';
+    }
+  }
+
+  async function openPlayerProfileCard(username) {
+    if (!username) return;
+    try {
+      const pState = await AppDB.adminGetPlayer(username);
+      if (!pState) {
+        showToast('خطأ بروفايل', 'الملف التعريفي للاعب غير موجود.', 'error');
+        return;
+      }
+
+      document.getElementById('profile-card-username').textContent = pState.username;
+      document.getElementById('profile-card-title').textContent = pState.title || 'عامل مبتدئ';
+      document.getElementById('profile-card-networth').textContent = `${(pState.netWorth || 0).toLocaleString()} EGP`;
+      document.getElementById('profile-card-reputation').textContent = `${(pState.underworldRep || 0).toLocaleString()} ⭐`;
+      document.getElementById('profile-card-createdat').textContent = pState.createdAt ? new Date(pState.createdAt).toLocaleDateString() : 'غير معروف';
+      
+      const jobMap = { 'worker': 'عامل', 'accountant': 'محاسب', 'marketer': 'مسوق', 'admin': 'إداري رئيسي' };
+      document.getElementById('profile-card-job').textContent = jobMap[pState.jobId] || pState.jobId || 'عامل';
+
+      const summaryContainer = document.getElementById('profile-card-assets-summary');
+      summaryContainer.innerHTML = '';
+      
+      let bizCount = 0;
+      if (pState.businesses) {
+        Object.keys(pState.businesses).forEach(k => {
+          if (pState.businesses[k].level > 0) bizCount++;
+        });
+      }
+
+      let propCount = 0;
+      if (pState.assets) {
+        Object.keys(pState.assets).forEach(k => {
+          propCount += (pState.assets[k] || 0);
+        });
+      }
+
+      const p1 = document.createElement('p');
+      p1.innerHTML = `• عدد المشاريع التجارية المشغلة: <strong class="text-white">${bizCount}</strong>`;
+      summaryContainer.appendChild(p1);
+
+      const p2 = document.createElement('p');
+      p2.innerHTML = `• إجمالي العقارات والأصول المشتراة: <strong class="text-white">${propCount}</strong>`;
+      summaryContainer.appendChild(p2);
+
+      const isMe = pState.username === GameEngine.state.username;
+      
+      const btnAddFriend = document.getElementById('btn-profile-add-friend');
+      const btnProfileDM = document.getElementById('btn-profile-dm');
+      const btnProfileJob = document.getElementById('btn-profile-job-offer');
+      const btnProfilePartnership = document.getElementById('btn-profile-partnership');
+      const btnProfileBlock = document.getElementById('btn-profile-block-player');
+
+      if (isMe) {
+        if (btnAddFriend) btnAddFriend.classList.add('hidden');
+        if (btnProfileDM) btnProfileDM.classList.add('hidden');
+        if (btnProfileJob) btnProfileJob.classList.add('hidden');
+        if (btnProfilePartnership) btnProfilePartnership.classList.add('hidden');
+        if (btnProfileBlock) btnProfileBlock.classList.add('hidden');
+      } else {
+        if (btnAddFriend) {
+          btnAddFriend.classList.remove('hidden');
+          btnAddFriend.dataset.username = username;
+          if (GameEngine.state.friends && GameEngine.state.friends.includes(username)) {
+            btnAddFriend.disabled = true;
+            btnAddFriend.innerHTML = '<i class="fa-solid fa-check"></i> <span>صديق بالفعل</span>';
+          } else {
+            btnAddFriend.disabled = false;
+            btnAddFriend.innerHTML = '<i class="fa-solid fa-user-plus"></i> <span>إضافة صديق</span>';
+          }
+        }
+        if (btnProfileDM) {
+          btnProfileDM.classList.remove('hidden');
+          btnProfileDM.dataset.username = username;
+        }
+        if (btnProfileJob) {
+          btnProfileJob.classList.remove('hidden');
+          btnProfileJob.dataset.username = username;
+        }
+        if (btnProfilePartnership) {
+          btnProfilePartnership.classList.remove('hidden');
+          btnProfilePartnership.dataset.username = username;
+        }
+        if (btnProfileBlock) {
+          btnProfileBlock.classList.remove('hidden');
+          btnProfileBlock.dataset.username = username;
+          if (GameEngine.state.blockedUsers && GameEngine.state.blockedUsers.includes(username)) {
+            btnProfileBlock.innerHTML = '<i class="fa-solid fa-ban"></i> <span class="text-rose-500">إلغاء الحظر</span>';
+          } else {
+            btnProfileBlock.innerHTML = '<i class="fa-solid fa-ban"></i> <span>حظر اللاعب</span>';
+          }
+        }
+      }
+
+      const isOnline = pState.lastSeen && (Date.now() - pState.lastSeen < 120000);
+      const onlineBadge = document.getElementById('profile-card-online-badge');
+      if (onlineBadge) {
+        if (isOnline) {
+          onlineBadge.textContent = 'متصل الآن 🟢';
+          onlineBadge.className = 'px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/20 text-emerald-400 text-[9px]';
+        } else {
+          onlineBadge.textContent = 'غير متصل ⚪';
+          onlineBadge.className = 'px-2 py-0.5 rounded-full bg-slate-900 text-slate-400 text-[9px] border border-slate-800';
+        }
+      }
+
+      document.getElementById('player-profile-modal').classList.remove('hidden');
+
+      if (!isMe && typeof firebase !== 'undefined' && AppDB.isFirebaseReady) {
+        firebase.firestore().collection('players').doc(username)
+          .onSnapshot(doc => {
+            if (doc.exists) {
+              window.employeesCache[username] = doc.data();
+            }
+          });
+      }
+    } catch (err) {
+      showToast('خطأ بروفايل', err.message, 'error');
+    }
+  }
+
+  async function handleMailAction(mailId, action) {
+    try {
+      const mailDoc = (window.lastMailsCache || []).find(m => m.id === mailId);
+      if (!mailDoc) return;
+
+      if (action === 'friend_accept') {
+        GameEngine.state.friends = GameEngine.state.friends || [];
+        if (!GameEngine.state.friends.includes(mailDoc.sender)) {
+          GameEngine.state.friends.push(mailDoc.sender);
+        }
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        await AppDB.updateMailStatus(mailId, 'accepted');
+        showToast('تم قبول الصداقة', `أنت واللاعب ${mailDoc.sender} أصدقاء الآن! 🎉`, 'success');
+        
+        await AppDB.sendMail(GameEngine.state.username, mailDoc.sender, 'dm', { message: 'مرحباً بك! لقد قبلت طلب الصداقة، يمكننا الآن التنسيق في الصفقات والشراكات.' });
+      } else if (action === 'job_accept') {
+        GameEngine.state.hiredJob = {
+          employer: mailDoc.sender,
+          businessId: mailDoc.payload.businessId,
+          businessName: mailDoc.payload.businessName,
+          role: mailDoc.payload.role,
+          salary: mailDoc.payload.salary
+        };
+        GameEngine.state.lastPuzzleSolved = Date.now();
+        
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        await AppDB.updateMailStatus(mailId, 'accepted');
+        showToast('تم التوظيف! 💼', `لقد التحقت بالعمل لدى ${mailDoc.sender} براتب ثنائي قدره ${mailDoc.payload.salary} EGP!`, 'success');
+
+        await AppDB.sendMail(GameEngine.state.username, mailDoc.sender, 'dm', { message: `مرحباً! لقد قبلت عرض التوظيف في شركتك (${mailDoc.payload.businessName}). بدأت في حل المهام الآن.` });
+        
+        await AppDB.sendMail(GameEngine.state.username, mailDoc.sender, 'system_add_employee', {
+          employee: GameEngine.state.username,
+          businessId: mailDoc.payload.businessId,
+          role: mailDoc.payload.role,
+          salary: mailDoc.payload.salary
+        });
+      } else if (action === 'partnership_accept') {
+        GameEngine.state.partnerships = GameEngine.state.partnerships || [];
+        GameEngine.state.partnerships.push({
+          employer: mailDoc.sender,
+          businessId: mailDoc.payload.businessId,
+          businessName: mailDoc.payload.businessName,
+          sharePct: mailDoc.payload.sharePct
+        });
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        await AppDB.updateMailStatus(mailId, 'accepted');
+        showToast('شراكة معتمدة! 🤝', `أصبحت شريكاً رسمياً بنسبة ${Math.round(mailDoc.payload.sharePct * 100)}% من عوائد المشروع!`, 'success');
+
+        await AppDB.sendMail(GameEngine.state.username, mailDoc.sender, 'dm', { message: `مرحباً شريكي! لقد قبلت دعوة الشراكة الاستثمارية في المشروع. لنعمل على تنمية الأرباح.` });
+        
+        await AppDB.sendMail(GameEngine.state.username, mailDoc.sender, 'system_add_partner', {
+          partner: GameEngine.state.username,
+          businessId: mailDoc.payload.businessId,
+          sharePct: mailDoc.payload.sharePct
+        });
+      } else if (action === 'reject') {
+        await AppDB.updateMailStatus(mailId, 'rejected');
+        showToast('تم الرفض', 'تم رفض الطلب بنجاح.', 'info');
+      }
+      renderAll();
+    } catch (err) {
+      showToast('فشل العملية', err.message, 'error');
+    }
+  }
+
+  function deleteMail(mailId) {
+    if (confirm('هل أنت متأكد من رغبتك في حذف هذه الرسالة نهائياً؟')) {
+      AppDB.deleteMail(mailId);
+      showToast('حذف الرسالة', 'تم مسح الرسالة من صندوق الوارد.', 'info');
+    }
+  }
+
+  function openJobOfferForm(username) {
+    const select = document.getElementById('job-offer-business-select');
+    if (!select) return;
+    
+    select.innerHTML = '';
+    let hasBiz = false;
+
+    if (GameEngine.state.businesses) {
+      Object.keys(GameEngine.state.businesses).forEach(k => {
+        const biz = GameEngine.state.businesses[k];
+        if (biz.level > 0) {
+          hasBiz = true;
+          const opt = document.createElement('option');
+          opt.value = k;
+          opt.textContent = `${biz.name || k} (المستوى ${biz.level})`;
+          select.appendChild(opt);
+        }
+      });
+    }
+
+    if (!hasBiz) {
+      showToast('لا تملك شركات', 'يجب أن تملك مشروعاً تجارياً واحداً على الأقل لتوظيف لاعبين آخرين.', 'error');
+      return;
+    }
+
+    document.getElementById('job-offer-target-username').value = username;
+    document.getElementById('job-offer-form-modal').classList.remove('hidden');
+    document.getElementById('player-profile-modal').classList.add('hidden');
+  }
+
+  function openPartnershipForm(username) {
+    const select = document.getElementById('partnership-business-select');
+    if (!select) return;
+
+    select.innerHTML = '';
+    let hasBiz = false;
+
+    if (GameEngine.state.businesses) {
+      Object.keys(GameEngine.state.businesses).forEach(k => {
+        const biz = GameEngine.state.businesses[k];
+        if (biz.level > 0) {
+          hasBiz = true;
+          const opt = document.createElement('option');
+          opt.value = k;
+          opt.textContent = `${biz.name || k} (المستوى ${biz.level})`;
+          select.appendChild(opt);
+        }
+      });
+    }
+
+    if (!hasBiz) {
+      showToast('لا تملك شركات', 'يجب أن تملك مشروعاً تجارياً واحداً على الأقل لإرسال دعوات الشراكة.', 'error');
+      return;
+    }
+
+    document.getElementById('partnership-target-username').value = username;
+    document.getElementById('partnership-form-modal').classList.remove('hidden');
+    document.getElementById('player-profile-modal').classList.add('hidden');
+  }
+
+  function checkAndOpenRiddleVerification() {
+    if (!GameEngine.state.hiredJob) return;
+    
+    const lastSolved = GameEngine.state.lastPuzzleSolved || 0;
+    const timeElapsed = Date.now() - lastSolved;
+    
+    if (timeElapsed >= 86400000) {
+      const numA = Math.floor(Math.random() * 40) + 10;
+      const numB = Math.floor(Math.random() * 40) + 10;
+      window.activeRiddleAnswer = numA + numB;
+
+      document.getElementById('riddle-equation-text').textContent = `${numA} + ${numB} = ?`;
+      document.getElementById('riddle-answer-input').value = '';
+      document.getElementById('riddle-verification-modal').classList.remove('hidden');
+    }
+  }
+
+  function renderLiveAuctions(list) {
+    const shelf = document.getElementById('live-auctions-shelf');
+    if (!shelf) return;
+    
+    shelf.innerHTML = '';
+    const active = list.filter(auc => auc.status !== 'ended');
+
+    if (active.length === 0) {
+      shelf.innerHTML = '<div class="col-span-full text-center text-slate-500 text-xs py-8">لا توجد مزادات حية متاحة حالياً. يرجى الانتظار لطرح مزاد جديد من قبل الإدارة.</div>';
+      return;
+    }
+
+    active.forEach(auc => {
+      const card = document.createElement('div');
+      card.className = 'p-5 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-4 flex flex-col justify-between';
+      
+      const isRegistered = auc.registeredPlayers && auc.registeredPlayers.includes(GameEngine.state.username);
+      
+      let badgeHtml = '';
+      let actionBtnHtml = '';
+      let timerHtml = '';
+
+      if (auc.status === 'pending') {
+        badgeHtml = '<span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[10px] text-slate-400">مرحلة التسجيل</span>';
+        
+        let condText = '';
+        if (auc.startConditionType === 'players') {
+          condText = `يبدأ المزاد بمجرد تسجيل <strong>${auc.startConditionValue} لاعبين</strong> (المسجلون الآن: ${auc.registeredPlayers ? auc.registeredPlayers.length : 0})`;
+        } else {
+          const diff = Math.max(0, Math.ceil((auc.startConditionValue - Date.now()) / 60000));
+          condText = `يبدأ المزاد تلقائياً بعد مرور <strong>${diff} دقيقة</strong>`;
+        }
+
+        actionBtnHtml = isRegistered 
+          ? `<button class="w-full py-2 bg-slate-800 border border-slate-700 text-slate-400 rounded-xl text-xs font-bold" disabled>أنت مسجل في المزاد بالفعل ✅</button>`
+          : `<button onclick="window.UI.registerForAuction('${auc.id}')" class="w-full py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition">تسجيل للمشاركة في المزاد</button>`;
+          
+        timerHtml = `<div class="text-[10px] text-slate-400 text-center">${condText}</div>`;
+      } else if (auc.status === 'active') {
+        badgeHtml = '<span class="px-2 py-0.5 rounded bg-yellow-500/10 border border-yellow-500/20 text-[10px] text-yellow-400 font-bold animate-pulse">مزايدة نشطة حية 🔥</span>';
+        
+        const remSecs = Math.max(0, Math.ceil((auc.timerResetTimestamp - Date.now()) / 1000));
+        
+        if (remSecs === 0 && auc.timerResetTimestamp > 0) {
+          triggerEndAuction(auc.id);
+        }
+
+        timerHtml = `
+          <div class="flex justify-between items-center bg-slate-950/80 p-2.5 rounded-xl border border-slate-900">
+            <span class="text-[10px] text-slate-400">الوقت المتبقي للمزايدة:</span>
+            <span class="numbers-font font-black text-rose-500 text-base animate-pulse">${remSecs} ثانية</span>
+          </div>
+        `;
+
+        if (!isRegistered) {
+          actionBtnHtml = `<button class="w-full py-2 bg-slate-900 border border-slate-800 text-slate-500 rounded-xl text-xs font-bold" disabled>لم تقم بالتسجيل المسبق</button>`;
+        } else {
+          const nextMinBid = Math.floor(auc.currentBid * 1.05);
+          actionBtnHtml = `
+            <div class="flex gap-2">
+              <input type="number" id="bid-input-${auc.id}" min="${nextMinBid}" value="${nextMinBid}" class="w-2/3 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-black text-white text-center">
+              <button onclick="window.UI.placeAuctionBid('${auc.id}')" class="flex-1 py-1.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition">زايد</button>
+            </div>
+          `;
+        }
+      }
+
+      card.innerHTML = `
+        <div class="flex justify-between items-start border-b border-slate-800 pb-3">
+          <div>
+            <h4 class="font-black text-white text-sm">${auc.itemName}</h4>
+            <span class="text-[10px] text-slate-400">${auc.itemType === 'property' ? 'عقار مالي' : auc.itemType === 'business' ? 'مشروع تجاري' : 'غرض مقتنيات'}</span>
+          </div>
+          ${badgeHtml}
+        </div>
+        <div class="grid grid-cols-2 gap-3 py-2 text-xs">
+          <div class="p-2 bg-slate-950/40 rounded-xl border border-slate-900">
+            <span class="text-[9px] text-slate-400 block mb-0.5">السعر الابتدائي:</span>
+            <span class="numbers-font font-bold text-slate-300">${auc.basePrice.toLocaleString()} EGP</span>
+          </div>
+          <div class="p-2 bg-slate-950/40 rounded-xl border border-slate-900">
+            <span class="text-[9px] text-slate-400 block mb-0.5">أعلى عرض حالي:</span>
+            <span class="numbers-font font-black text-yellow-500">${auc.currentBid.toLocaleString()} EGP</span>
+          </div>
+        </div>
+        <div class="text-[10px] text-slate-400">
+          <span>أعلى مزايد الآن: <strong class="text-white">${auc.highestBidder || 'لا يوجد'}</strong></span>
+        </div>
+        ${timerHtml}
+        ${actionBtnHtml}
+      `;
+      shelf.appendChild(card);
+    });
+  }
+
+  async function registerForAuction(auctionId) {
+    try {
+      await AppDB.registerForAuction(auctionId, GameEngine.state.username);
+      showToast('تم التسجيل بنجاح', 'تم تسجيل اسمك للمزايدة الحية بنجاح.', 'success');
+    } catch (err) {
+      showToast('فشل التسجيل', err.message, 'error');
+    }
+  }
+
+  async function placeAuctionBid(auctionId) {
+    const input = document.getElementById(`bid-input-${auctionId}`);
+    if (!input) return;
+    const val = parseInt(input.value || '0');
+    if (val <= 0) return;
+    
+    // Check if player has enough money
+    if (GameEngine.state.cash < val && GameEngine.state.bank < val) {
+      showToast('رصيد غير كافي', 'لا تملك رصيداً كافياً لتقديم هذا العرض.', 'error');
+      return;
+    }
+
+    try {
+      await AppDB.placeAuctionBid(auctionId, GameEngine.state.username, val);
+      showToast('تمت المزايدة', 'لقد قدمت عرض مزايدة أعلى بنجاح! 🚀', 'success');
+    } catch (err) {
+      showToast('فشل المزايدة', err.message, 'error');
+    }
+  }
+
+  async function triggerEndAuction(auctionId) {
+    if (window.activeAuctionEndLock && window.activeAuctionEndLock[auctionId]) return;
+    if (!window.activeAuctionEndLock) window.activeAuctionEndLock = {};
+    window.activeAuctionEndLock[auctionId] = true;
+
+    try {
+      if (typeof firebase !== 'undefined' && AppDB.isFirebaseReady) {
+        const db = firebase.firestore();
+        const docRef = db.collection('liveAuctions').doc(auctionId);
+        
+        await db.runTransaction(async transaction => {
+          const doc = await transaction.get(docRef);
+          if (!doc.exists) return;
+          const data = doc.data();
+          if (data.status !== 'active') return;
+
+          transaction.update(docRef, { status: 'ended' });
+
+          const winner = data.highestBidder;
+          const price = data.currentBid;
+
+          if (winner) {
+            const winMail = {
+              sender: 'SYSTEM_AUCTION',
+              recipient: winner,
+              type: 'auction_win',
+              payload: {
+                auctionId,
+                itemName: data.itemName,
+                itemType: data.itemType,
+                itemId: data.itemId,
+                price
+              },
+              timestamp: Date.now(),
+              status: 'pending'
+            };
+            transaction.set(db.collection('mailbox').doc('win_' + auctionId), winMail);
+          }
+        });
+      }
+    } catch (err) {
+      console.error('[Auction] Auto-end failed:', err);
+    }
+  }
+
+  async function processInboxSystemMessages(mails) {
+    if (!mails || mails.length === 0) return;
+    
+    const wins = mails.filter(m => m.type === 'auction_win' && m.status === 'pending');
+    for (const win of wins) {
+      try {
+        const price = win.payload.price;
+        if (GameEngine.state.cash >= price) {
+          GameEngine.state.cash -= price;
+        } else if (GameEngine.state.bank >= price) {
+          GameEngine.state.bank -= price;
+        } else {
+          GameEngine.state.cash -= price;
+        }
+
+        const type = win.payload.itemType;
+        const id = win.payload.itemId;
+        
+        if (type === 'property') {
+          GameEngine.state.assets = GameEngine.state.assets || {};
+          GameEngine.state.assets[id] = (GameEngine.state.assets[id] || 0) + 1;
+        } else if (type === 'business') {
+          GameEngine.state.businesses = GameEngine.state.businesses || {};
+          GameEngine.state.businesses[id] = {
+            id,
+            name: win.payload.itemName,
+            level: 1,
+            workers: 0,
+            price: 0,
+            marketingTicks: 0,
+            employees: {}
+          };
+        } else if (type === 'item') {
+          GameEngine.state.inventory = GameEngine.state.inventory || {};
+          GameEngine.state.inventory[id] = (GameEngine.state.inventory[id] || 0) + 1;
+        }
+
+        GameEngine.state.netWorth = GameEngine.calculateNetWorth();
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        await AppDB.updateMailStatus(win.id, 'accepted');
+        
+        showToast('🏆 فزت بالمزاد!', `تهانينا! لقد فزت بمزاد (${win.payload.itemName}) مقابل ${price.toLocaleString()} EGP تم خصمها من حسابك.`, 'success');
+        renderAll();
+      } catch (err) {
+        console.error('[Mailbox System] Failed to process auction win:', err);
+      }
+    }
+
+    const empAdds = mails.filter(m => m.type === 'system_add_employee' && m.status === 'pending');
+    for (const add of empAdds) {
+      const bizId = add.payload.businessId;
+      const emp = add.payload.employee;
+      const role = add.payload.role;
+      const salary = add.payload.salary;
+
+      if (GameEngine.state.businesses && GameEngine.state.businesses[bizId]) {
+        const biz = GameEngine.state.businesses[bizId];
+        biz.employees = biz.employees || {};
+        biz.employees[emp] = { role, salary };
+        
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        await AppDB.updateMailStatus(add.id, 'accepted');
+        showToast('موظف جديد 💼', `التحق اللاعب ${emp} بالعمل في مشروعك (${biz.name || bizId}) كمساعد براتب ${salary} EGP/ث!`, 'success');
+        renderAll();
+      }
+    }
+
+    const partAdds = mails.filter(m => m.type === 'system_add_partner' && m.status === 'pending');
+    for (const add of partAdds) {
+      const bizId = add.payload.businessId;
+      const partner = add.payload.partner;
+      const sharePct = add.payload.sharePct;
+
+      if (GameEngine.state.businesses && GameEngine.state.businesses[bizId]) {
+        const biz = GameEngine.state.businesses[bizId];
+        biz.partners = biz.partners || {};
+        biz.partners[partner] = sharePct;
+        
+        const currentOwnerShare = biz.partners[GameEngine.state.username] !== undefined ? biz.partners[GameEngine.state.username] : 1.0;
+        biz.partners[GameEngine.state.username] = Math.max(0.01, currentOwnerShare - sharePct);
+
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        await AppDB.updateMailStatus(add.id, 'accepted');
+        showToast('شريك جديد 🤝', `انضم اللاعب ${partner} كشريك استثماري بنسبة أرباح ${Math.round(sharePct * 100)}%!`, 'success');
+        renderAll();
+      }
+    }
+
+    const divs = mails.filter(m => m.type === 'dividend_claim' && m.status === 'pending');
+    for (const div of divs) {
+      try {
+        const amt = div.payload.amount;
+        GameEngine.state.cash += amt;
+        GameEngine.state.netWorth = GameEngine.calculateNetWorth();
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        await AppDB.updateMailStatus(div.id, 'accepted');
+        showToast('💸 أرباح شراكة استثمارية', `تمت إضافة +${amt.toLocaleString()} EGP من أرباحك في شراكة مشروع (${div.payload.businessId})!`, 'success');
+        renderAll();
+      } catch (err) {
+        console.error('Failed to process dividend claim:', err);
+      }
+    }
+  }
+
+  async function checkAndClaimDividends() {
+    if (!GameEngine.state || !AppDB.isFirebaseReady) return;
+    if (window.pendingDividends) {
+      const keys = Object.keys(window.pendingDividends);
+      for (const bizId of keys) {
+        const partners = window.pendingDividends[bizId];
+        for (const partner of Object.keys(partners)) {
+          const amt = partners[partner];
+          if (amt > 0) {
+            try {
+              await AppDB.sendMail('SYSTEM_DIVIDEND', partner, 'dividend_claim', {
+                businessId: bizId,
+                amount: amt
+              });
+              partners[partner] = 0;
+            } catch (e) {
+              console.error('Failed to send dividend mail:', e);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  async function loadAdminPlayerWorkspace(playerState) {
+    const listSelect = document.getElementById('admin-player-backups-select');
+    if (!listSelect) return;
+    
+    listSelect.innerHTML = '<option value="">جاري جلب النسخ الاحتياطية...</option>';
+    
+    try {
+      const dates = await AppDB.getPlayerBackupDates(playerState.username);
+      listSelect.innerHTML = '';
+      if (dates.length === 0) {
+        listSelect.innerHTML = '<option value="">لا توجد نسخ احتياطية متوفرة...</option>';
+      } else {
+        dates.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d;
+          opt.textContent = `نسخة يوم ${d}`;
+          listSelect.appendChild(opt);
+        });
+      }
+    } catch (err) {
+      listSelect.innerHTML = '<option value="">فشل جلب النسخ الاحتياطية</option>';
+    }
+  }
+
   return {
     init,
     switchTab,
     showToast,
     returnToStartMenu,
-    playMenuSound
+    playMenuSound,
+    openPlayerProfileCard,
+    handleMailAction,
+    deleteMail,
+    registerForAuction,
+    placeAuctionBid
   };
 })();
 
 // Export globally
 window.UIController = UIController;
+window.UI = UIController;

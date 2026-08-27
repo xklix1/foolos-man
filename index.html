@@ -162,7 +162,7 @@
       <div class="flex items-center gap-2">
         <span class="px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-yellow-500/5">
           <i class="fa-solid fa-gamepad text-yellow-400"></i>
-          <span>الإصدار V1.01</span>
+          <span>الإصدار V2</span>
         </span>
         <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/60 text-slate-300 text-xs">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -913,10 +913,15 @@
           <div class="p-3 bg-slate-950/40 rounded-xl border border-slate-800/50">
             <div class="flex justify-between items-center mb-2">
               <span class="text-[10px] text-slate-400 block">المحفظة النشطة</span>
-              <div class="flex items-center gap-1.5">
+              <div class="flex items-center gap-1.5 flex-wrap">
                 <button id="btn-ingame-guide" title="دليل الملياردير" class="text-[10px] text-sky-400 hover:text-sky-300 font-bold border border-sky-500/30 px-2 py-0.5 rounded bg-sky-500/10 hover:bg-sky-500/20 transition flex items-center gap-1">
                   <i class="fa-solid fa-book-open text-[10px]"></i>
                   الدليل
+                </button>
+                <button id="btn-open-mailbox" title="صندوق البريد والرسائل" class="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold border border-emerald-500/30 px-2 py-0.5 rounded bg-emerald-500/10 hover:bg-emerald-500/20 transition flex items-center gap-1 relative">
+                  <i class="fa-solid fa-envelope text-[10px]"></i>
+                  <span>البريد</span>
+                  <span id="mailbox-unread-badge" class="hidden absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-rose-500 text-white rounded-full text-[8px] font-black flex items-center justify-center animate-bounce">0</span>
                 </button>
                 <!-- Return to Start Menu Button -->
                 <button id="btn-open-start-menu" title="الرجوع للقائمة الرئيسية" class="text-[10px] text-yellow-400 hover:text-yellow-300 font-bold border border-yellow-500/30 px-2 py-0.5 rounded bg-yellow-500/10 hover:bg-yellow-500/20 transition flex items-center gap-1">
@@ -1054,10 +1059,15 @@
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-1.5">
+          <div class="flex items-center gap-1.5 flex-wrap">
             <button id="btn-ingame-guide-mobile" title="دليل الملياردير" class="px-2 py-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1">
               <i class="fa-solid fa-book-open text-[10px]"></i>
               <span>الدليل</span>
+            </button>
+            <button id="btn-open-mailbox-mobile" title="صندوق البريد والرسائل" class="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 relative">
+              <i class="fa-solid fa-envelope text-[10px]"></i>
+              <span>البريد</span>
+              <span id="mailbox-unread-badge-mobile" class="hidden absolute -top-1 -right-1 w-3.5 h-3.5 bg-rose-500 text-white rounded-full text-[8px] font-black flex items-center justify-center animate-bounce">0</span>
             </button>
             <button id="btn-open-start-menu-mobile" title="الرجوع للقائمة الرئيسية" class="px-2 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1">
               <i class="fa-solid fa-house text-[10px]"></i>
@@ -1734,6 +1744,17 @@
           <div id="auctions-shelf" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <!-- Dyn Shelf for Auctions -->
             <div class="col-span-full text-center text-slate-500 text-xs py-12">لا توجد مزادات أو صفقات نشطة حالياً.</div>
+          </div>
+        </div>
+
+        <!-- Live Sync Auctions Section -->
+        <div class="glass-panel p-6 rounded-2xl border border-yellow-500/20 bg-slate-950/40">
+          <h3 class="text-md font-bold text-white mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-gavel text-yellow-500 text-sm animate-pulse"></i>
+            <span>المزادات الحية والمباشرة (Live Sync Auctions)</span>
+          </h3>
+          <div id="live-auctions-shelf" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="col-span-full text-center text-slate-500 text-xs py-8">لا توجد مزادات حية متاحة حالياً. يرجى الانتظار لطرح مزاد جديد من قبل الإدارة.</div>
           </div>
         </div>
 
@@ -2694,7 +2715,7 @@
           <!-- Quick Telemetry and Refresh -->
           <div class="p-3.5 bg-slate-900/40 border border-slate-800 rounded-xl flex flex-wrap justify-between items-center gap-2">
             <div class="text-[11px] text-slate-400 flex items-center gap-4">
-              <span>إصدار النظام: <strong id="adm-stat-version" class="text-white font-mono">V1.01</strong></span>
+              <span>إصدار النظام: <strong id="adm-stat-version" class="text-white font-mono">V2</strong></span>
               <span>نوع التخزين: <strong id="adm-stat-db" class="text-emerald-400 font-mono">Cloud Firestore</strong></span>
             </div>
             <button id="btn-admin-refresh-stats" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
@@ -2817,6 +2838,49 @@
                 <i class="fa-solid fa-file-arrow-down text-sm"></i>
                 <span>تحميل تقرير الحساب</span>
               </button>
+            </div>
+
+            <!-- Daily Backups & Restore Section -->
+            <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
+              <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-clock-rotate-left text-yellow-500"></i>
+                  <span>النسخ الاحتياطية اليومية واسترجاع الحساب (Daily Backups & Restore)</span>
+                </span>
+                <span class="text-[10px] text-slate-400">تنزيل النسخ اليومية أو استعادتها</span>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-3">
+                <div class="flex-1">
+                  <label class="block text-[10px] text-slate-400 mb-1">النسخ الاحتياطية المتوفرة (آخر 24 ساعة):</label>
+                  <select id="admin-player-backups-select" class="glass-input w-full p-2.5 text-xs text-right text-white bg-slate-950 border border-slate-800 rounded-lg">
+                    <option value="">لا توجد نسخ احتياطية متوفرة...</option>
+                  </select>
+                </div>
+                <div class="flex items-end gap-2">
+                  <button id="btn-admin-download-selected-backup" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                    <i class="fa-solid fa-file-arrow-down"></i>
+                    <span>تنزيل JSON</span>
+                  </button>
+                  <button id="btn-admin-restore-selected-backup" class="px-4 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-lg text-xs font-black transition flex items-center gap-1 shadow-lg shadow-yellow-500/10">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>استرجاع للنسخة</span>
+                  </button>
+                </div>
+              </div>
+              <div class="pt-2 border-t border-slate-800/80">
+                <label class="block text-[10px] text-slate-400 mb-1">استعادة حساب اللاعب برفع ملف JSON خارجي:</label>
+                <div class="flex gap-2">
+                  <input type="file" id="admin-restore-file-input" accept=".json" class="hidden">
+                  <button id="btn-trigger-file-restore" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-upload"></i>
+                    <span id="restore-file-name-label">اختر ملف JSON الاحتياطي...</span>
+                  </button>
+                  <button id="btn-admin-upload-restore" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-black transition flex items-center gap-1 shadow-lg disabled:opacity-50" disabled>
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span>استعادة ورفع</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             <!-- Balance Injection & Quick Modifiers -->
@@ -3565,6 +3629,53 @@
             </button>
           </div>
 
+          <!-- Create Live Auction Card -->
+          <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3 mt-3">
+            <h4 class="text-xs font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-gavel text-amber-500 animate-pulse"></i>
+              <span>إطلق مزاد حي تنافسي متزامن (V2 Live Sync Auction)</span>
+            </h4>
+            <p class="text-[10px] text-slate-400">اطرح مزاداً مباشراً يتنافس فيه اللاعبون بالوقت الفعلي. مع كل مزايدة جديدة يُعاد ضبط مؤقت المزاد لـ 30 ثانية.</p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">اسم المزاد / الغرض (Item Name)</label>
+                <input type="text" id="admin-live-auction-name" placeholder="مثال: ترخيص علامة تجارية لشركة فود كارت" class="glass-input w-full p-2 text-xs text-right text-white bg-slate-950 border border-slate-800 rounded-lg">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">نوع المزاد (Item Type)</label>
+                <select id="admin-live-auction-type" class="glass-input w-full p-2 text-xs text-right text-white bg-slate-950 border border-slate-800 rounded-lg">
+                  <option value="item">غرض فريد / مقتنيات</option>
+                  <option value="business">شركة تجارية</option>
+                  <option value="property">عقار استثماري</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">السعر الابتدائي (EGP)</label>
+                <input type="number" id="admin-live-auction-baseprice" min="1" placeholder="مثال: 500,000" class="glass-input w-full p-2 text-xs text-center font-bold text-white bg-slate-950 border border-slate-800 rounded-lg">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">شرط البدء (Condition Type)</label>
+                <select id="admin-live-auction-cond-type" class="glass-input w-full p-2 text-xs text-right text-white bg-slate-950 border border-slate-800 rounded-lg">
+                  <option value="players">بعدد اللاعبين المسجلين</option>
+                  <option value="time">بعد مرور مؤقت زمني</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">قيمة الشرط (عدد أو دقائق)</label>
+                <input type="number" id="admin-live-auction-cond-value" min="1" placeholder="مثال: 3 لاعبين أو 5 دقائق" class="glass-input w-full p-2 text-xs text-center font-bold text-white bg-slate-950 border border-slate-800 rounded-lg">
+              </div>
+            </div>
+
+            <button id="btn-admin-create-live-auction" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-bold rounded-lg text-xs transition shadow-lg flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-fire"></i>
+              <span>طرح المزاد الحي الحصري للمسجلين</span>
+            </button>
+          </div>
+
           <!-- Current Auction Items List -->
           <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
             <h4 class="text-xs font-bold text-white flex items-center gap-2">
@@ -3780,6 +3891,279 @@
       <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
     </svg>
   </button>
+
+  </div>
+
+  <!-- ==================== V2: CHAT SIDEBAR DRAWER ==================== -->
+  <div id="chat-drawer" class="fixed top-0 bottom-0 right-0 z-[100] w-[360px] max-w-full bg-slate-950/98 border-l border-slate-800/80 shadow-2xl transition-all duration-300 translate-x-full flex flex-col backdrop-blur-xl">
+    <!-- Chat Header -->
+    <div class="p-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/40">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-comments text-yellow-500"></i>
+        <span class="font-black text-white text-sm">الدردشة العامة المباشرة</span>
+      </div>
+      <button id="btn-close-chat-drawer" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-800">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <!-- Messages Container -->
+    <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
+      <!-- Dyn Messages -->
+    </div>
+    <!-- Chat Input Area -->
+    <div class="p-4 border-t border-slate-800/80 bg-slate-900/20">
+      <div class="flex gap-2">
+        <input type="text" id="chat-message-input" placeholder="اكتب رسالتك هنا... (الحد الأقصى 200 حرف)" maxlength="200" class="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-yellow-500/50">
+        <button id="btn-send-chat-message" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition">إرسال</button>
+      </div>
+      <div class="flex justify-between items-center mt-2 text-[10px] text-slate-500 px-1">
+        <span id="chat-char-counter">0 / 200</span>
+        <span id="chat-cooldown-timer" class="text-yellow-500 font-bold hidden">الرجاء الانتظار 3 ثوانٍ...</span>
+      </div>
+    </div>
+  </div>
+  <!-- Floating Chat Button -->
+  <button id="btn-floating-chat-trigger" class="fixed bottom-4 right-4 z-[90] w-12 h-12 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-full flex items-center justify-center shadow-2xl transition duration-300 hover:scale-110 cursor-pointer">
+    <i class="fa-solid fa-comments text-lg"></i>
+    <span id="chat-unread-dot" class="hidden absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-rose-500 text-white rounded-full text-[8px] font-black flex items-center justify-center animate-pulse">0</span>
+  </button>
+
+  <!-- ==================== V2: MAILBOX & DIRECT MESSAGES MODAL ==================== -->
+  <div id="mailbox-modal" class="hidden fixed inset-0 z-[120] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+    <div class="glass-panel w-full max-w-2xl max-h-[85vh] flex flex-col rounded-3xl border border-emerald-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <i class="fa-solid fa-envelope text-lg"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-black text-white">صندوق البريد والرسائل الخاصة</h2>
+            <p class="text-xs text-slate-400">تابع المراسلات، عروض العمل، دعوات الشراكة الاستثمارية ومحادثاتك</p>
+          </div>
+        </div>
+        <button id="btn-close-mailbox-modal" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Tabs Switcher -->
+      <div class="flex items-center gap-2 pt-3 pb-1 border-b border-slate-800/80">
+        <button id="btn-mail-tab-inbox" class="flex-1 py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 shadow-md">
+          <i class="fa-solid fa-inbox"></i>
+          <span>الرسائل والتنبيهات</span>
+        </button>
+        <button id="btn-mail-tab-dms" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span>المحادثات الخاصة (DMs)</span>
+        </button>
+      </div>
+
+      <!-- Inbox Panel -->
+      <div id="mailbox-inbox-panel" class="flex-1 overflow-y-auto py-4 space-y-3">
+        <!-- Dynamic Inbox Items -->
+        <div class="text-center text-slate-500 text-xs py-12">لا توجد رسائل أو طلبات جديدة في صندوقك.</div>
+      </div>
+
+      <!-- DMs Panel -->
+      <div id="mailbox-dms-panel" class="hidden flex-1 flex gap-4 overflow-hidden h-[50vh]">
+        <!-- Conversations List (Left side) -->
+        <div class="w-1/3 border-l border-slate-800/80 pr-1 overflow-y-auto space-y-2 flex flex-col h-full py-3">
+          <h4 class="text-xs font-black text-slate-400 mb-2 font-bold">الأصدقاء النشطون</h4>
+          <div id="dm-friends-list" class="space-y-1.5 flex-1">
+            <!-- Dynamic active chats list -->
+            <div class="text-[10px] text-slate-500 text-center py-6">قم بإضافة أصدقاء لبدء دردشة خاصة.</div>
+          </div>
+        </div>
+
+        <!-- Chat Area (Right side) -->
+        <div class="flex-1 flex flex-col h-full py-3">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-800 mb-2">
+            <span id="dm-active-username" class="text-sm font-bold text-white">الدردشة الخاصة</span>
+            <span id="dm-active-status" class="text-[10px] text-slate-500">اختر محادثة للبدء</span>
+          </div>
+          <!-- Messages -->
+          <div id="dm-messages-container" class="flex-1 overflow-y-auto p-2 space-y-2 bg-slate-900/20 rounded-xl border border-slate-900/60 scrollbar-thin">
+            <!-- Dynamic DMs messages -->
+            <div class="text-center text-slate-500 text-xs py-12">يرجى تحديد صديق للدردشة معه.</div>
+          </div>
+          <!-- Send input -->
+          <div class="flex gap-2 mt-2">
+            <input type="text" id="dm-message-input" placeholder="اكتب رسالتك الخاصة..." class="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500/50" disabled>
+            <button id="btn-send-dm-message" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black transition" disabled>إرسال</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== V2: PLAYER PROFILE CARD MODAL ==================== -->
+  <div id="player-profile-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+    <div class="glass-panel w-full max-w-md rounded-3xl border border-yellow-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
+      <!-- Profile Header -->
+      <div class="flex items-center gap-4 border-b border-slate-800 pb-4">
+        <div class="w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400">
+          <i class="fa-solid fa-user text-2xl"></i>
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <h3 id="profile-card-username" class="text-lg font-black text-white">---</h3>
+            <span id="profile-card-online-badge" class="px-2 py-0.5 rounded-full bg-slate-900 text-slate-400 text-[9px] border border-slate-800">غير متصل</span>
+          </div>
+          <p id="profile-card-title" class="text-xs text-yellow-400 font-bold">عامل مبتدئ</p>
+        </div>
+        <button id="btn-close-profile-modal" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-2 gap-3.5 my-4 text-xs">
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+          <span class="text-slate-400 block text-[10px] mb-0.5">إجمالي الثروة (Net Worth)</span>
+          <span id="profile-card-networth" class="numbers-font font-black text-yellow-500 text-sm">0 EGP</span>
+        </div>
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+          <span class="text-slate-400 block text-[10px] mb-0.5">السمعة بالعالم السفلي</span>
+          <span id="profile-card-reputation" class="numbers-font font-black text-rose-500 text-sm">0 ⭐</span>
+        </div>
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+          <span class="text-slate-400 block text-[10px] mb-0.5">تاريخ انضمامه</span>
+          <span id="profile-card-createdat" class="numbers-font font-bold text-white text-xs">---</span>
+        </div>
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+          <span class="text-slate-400 block text-[10px] mb-0.5">الوظيفة والمهنة الحالية</span>
+          <span id="profile-card-job" class="font-bold text-white text-xs">عامل مبتدئ</span>
+        </div>
+      </div>
+
+      <!-- Assets Summary -->
+      <div class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-300 mb-4">
+        <h4 class="font-bold text-white mb-2 flex items-center gap-1.5"><i class="fa-solid fa-briefcase text-yellow-500"></i> ممتلكات وأعمال اللاعب</h4>
+        <div id="profile-card-assets-summary" class="space-y-1">
+          <!-- Dyn text summary of assets -->
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="space-y-2 border-t border-slate-800 pt-4">
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btn-profile-add-friend" class="py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>إضافة صديق</span>
+          </button>
+          <button id="btn-profile-dm" class="py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold border border-slate-800 transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-comments"></i>
+            <span>مراسلة خاصة</span>
+          </button>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btn-profile-job-offer" class="py-2.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-briefcase"></i>
+            <span>تقديم عرض عمل</span>
+          </button>
+          <button id="btn-profile-partnership" class="py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-handshake"></i>
+            <span>دعوة شراكة</span>
+          </button>
+        </div>
+        <button id="btn-profile-block-player" class="w-full py-2 bg-rose-950/20 hover:bg-rose-950/40 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-ban"></i>
+          <span>حظر اللاعب</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== V2: EMPLOYEE MATH RIDDLE MODAL ==================== -->
+  <div id="riddle-verification-modal" class="hidden fixed inset-0 z-[140] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in">
+    <div class="glass-panel w-full max-w-sm rounded-3xl border border-yellow-500/50 p-6 shadow-2xl bg-slate-950/95 overflow-hidden text-center">
+      <div class="w-12 h-12 rounded-full bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-400 mx-auto mb-4 animate-bounce">
+        <i class="fa-solid fa-calculator text-xl"></i>
+      </div>
+      <h3 class="text-md font-black text-white mb-1">التحقق اليومي من التواجد البشري</h3>
+      <p class="text-xs text-slate-400 mb-5">يرجى حل المعادلة الرياضية البسيطة التالية لإثبات وجودك ولإرسال بونوص العمل والإنتاجية للشركة وصرف راتبك:</p>
+      
+      <!-- Riddle Equation -->
+      <div class="py-4 bg-slate-900 border border-slate-800 rounded-2xl mb-4 font-mono font-black text-2xl text-yellow-400 tracking-wider">
+        <span id="riddle-equation-text">15 + 24 = ?</span>
+      </div>
+
+      <!-- Input and Action -->
+      <div class="space-y-3">
+        <input type="number" id="riddle-answer-input" placeholder="أدخل النتيجة الرقمية هنا..." class="w-full text-center px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-lg text-white font-black focus:outline-none focus:border-yellow-500">
+        <button id="btn-submit-riddle" class="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-xl text-sm transition shadow-lg shadow-yellow-500/10">تأكيد الحل والاستحقاق</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== V2: SEND JOB OFFER FORM MODAL ==================== -->
+  <div id="job-offer-form-modal" class="hidden fixed inset-0 z-[140] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+    <div class="glass-panel w-full max-w-sm rounded-3xl border border-sky-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+        <h3 class="text-sm font-black text-white flex items-center gap-1.5"><i class="fa-solid fa-briefcase text-sky-400"></i> تقديم عرض توظيف رسمي</h3>
+        <button id="btn-close-job-offer-modal" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-4 text-xs text-slate-300">
+        <div>
+          <label class="block text-slate-400 mb-1 font-bold">اللاعب المستهدف:</label>
+          <input type="text" id="job-offer-target-username" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white font-bold" readonly>
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1 font-bold">اختر الشركة الموظِّفة:</label>
+          <select id="job-offer-business-select" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-sky-500">
+            <!-- Dynamic option list of user businesses -->
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1 font-bold">اختر المسمى الوظيفي:</label>
+          <select id="job-offer-role-select" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-sky-500">
+            <option value="worker">عامل تشغيل (+30% إنتاجية)</option>
+            <option value="accountant">محاسب قانوني (+30% إنتاجية)</option>
+            <option value="marketer">مسؤول تسويق وركود (+30% إنتاجية)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1 font-bold">الراتب المقترح لكل ثانية عمل (خصم من أرباحك للموظف):</label>
+          <div class="relative">
+            <input type="number" id="job-offer-salary-input" placeholder="الراتب المقترح بالـ EGP" class="w-full px-3 py-2 pl-12 bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-sky-500">
+            <span class="absolute left-3 top-2.5 text-slate-500 font-bold">EGP</span>
+          </div>
+        </div>
+        <button id="btn-submit-job-offer" class="w-full py-3 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg">إرسال عقد التوظيف</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== V2: SEND PARTNERSHIP FORM MODAL ==================== -->
+  <div id="partnership-form-modal" class="hidden fixed inset-0 z-[140] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+    <div class="glass-panel w-full max-w-sm rounded-3xl border border-emerald-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+        <h3 class="text-sm font-black text-white flex items-center gap-1.5"><i class="fa-solid fa-handshake text-emerald-400"></i> دعوة شراكة استثمارية</h3>
+        <button id="btn-close-partnership-modal" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-4 text-xs text-slate-300">
+        <div>
+          <label class="block text-slate-400 mb-1 font-bold">الشريك المستهدف:</label>
+          <input type="text" id="partnership-target-username" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white font-bold" readonly>
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1 font-bold">اختر شركتك للدعوة:</label>
+          <select id="partnership-business-select" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500">
+            <!-- Dynamic option list of user businesses -->
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1 font-bold">النسبة المئوية المقترحة لأرباح الشريك (من صافي الربح):</label>
+          <div class="relative">
+            <input type="number" id="partnership-share-input" placeholder="النسبة المقترحة (مثال: 40)" min="1" max="99" class="w-full px-3 py-2 pl-10 bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500">
+            <span class="absolute left-3 top-2.5 text-slate-500 font-bold">%</span>
+          </div>
+        </div>
+        <button id="btn-submit-partnership" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg">إرسال دعوة الشراكة</button>
+      </div>
+    </div>
+  </div>
 
   <!-- FLOATING NOTIFICATIONS CONTAINER — top center -->
   <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[500] flex flex-col items-center gap-2 pointer-events-none w-full px-4" style="max-width:420px">

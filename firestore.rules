@@ -98,5 +98,43 @@ service cloud.firestore {
       allow update: if true;
       allow delete: if isAdmin() || true;
     }
+
+    // ─────────────────────────────────────────────
+    // 7. النسخ الاحتياطية للاعبين (Player Backups)
+    // ─────────────────────────────────────────────
+    match /players/{username}/backups/{dateString} {
+      allow read, write: if isAdmin() || (request.auth != null);
+    }
+
+    // ─────────────────────────────────────────────
+    // 8. الدردشة العامة (Public Chat)
+    // ─────────────────────────────────────────────
+    match /chat/{messageId} {
+      allow read: if true;
+      allow create: if request.resource.data.message.size() <= 200;
+      allow update, delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────
+    // 9. صندوق البريد والتنبيهات (Mailbox & Letters)
+    // ─────────────────────────────────────────────
+    match /mailbox/{mailId} {
+      allow read, write: if true;
+    }
+
+    // ─────────────────────────────────────────────
+    // 10. الشركات المشتركة (Corporations)
+    // ─────────────────────────────────────────────
+    match /corporations/{corpId} {
+      allow read, write: if true;
+    }
+
+    // ─────────────────────────────────────────────
+    // 11. المزادات الحية (Live Auctions)
+    // ─────────────────────────────────────────────
+    match /liveAuctions/{auctionId} {
+      allow read, write: if true;
+      allow delete: if isAdmin();
+    }
   }
 }

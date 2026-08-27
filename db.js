@@ -17,7 +17,7 @@ const AppDB = (() => {
   // ─────────────────────────────────────────────
   //  CONSTANTS
   // ─────────────────────────────────────────────
-  const CLIENT_VERSION = 'V1.01';
+  const CLIENT_VERSION = 'V2';
 
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyC7KRj3-t_03HLMzJ10miVhdKWCpabPQB4",
@@ -1411,6 +1411,360 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
+  //  V2: DAILY BACKUPS & RESTORE API
+  // ─────────────────────────────────────────────
+  async function checkAndCreateDailyBackup(username, state) {
+    if (!username || !state) return;
+    const dateStr = _getLocalDateString();
+    
+    if (firebaseReady) {
+      try {
+        const backupRef = firestoreDb.collection('players').doc(username).collection('backups').doc(dateStr);
+        const doc = await backupRef.get();
+        if (!doc.exists) {
+          const backupData = JSON.parse(JSON.stringify(state));
+          backupData.backupDate = dateStr;
+          backupData.backupTimestamp = Date.now();
+          await backupRef.set(backupData);
+          console.log(`[DB] Daily backup created in Firebase for ${username} on ${dateStr}`);
+        }
+      } catch (err) {
+        console.error('[DB] Failed to create daily backup in Firebase:', err);
+      }
+    } else {
+      const key = `foolos_backup_${username}_${dateStr}`;
+      if (!localStorage.getItem(key)) {
+        const backupData = JSON.parse(JSON.stringify(state));
+        backupData.backupDate = dateStr;
+        backupData.backupTimestamp = Date.now();
+        localStorage.setItem(key, JSON.stringify(backupData));
+        console.log(`[DB] Daily backup created in LocalStorage for ${username} on ${dateStr}`);
+      }
+    }
+  }
+
+  async function getPlayerBackupDates(username) {
+    if (!username) return [];
+    if (firebaseReady) {
+      try {
+        const snapshot = await firestoreDb.collection('players').doc(username).collection('backups').get();
+        const dates = [];
+        snapshot.forEach(doc => {
+          dates.push(doc.id);
+        });
+        return dates.sort().reverse();
+      } catch (err) {
+        console.error('[DB] Failed to fetch player backup dates:', err);
+        return [];
+      }
+    } else {
+      const dates = [];
+      const prefix = `foolos_backup_${username}_`;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(prefix)) {
+          dates.push(key.replace(prefix, ''));
+        }
+      }
+      return dates.sort().reverse();
+    }
+  }
+
+  async function getPlayerBackupState(username, dateStr) {
+    if (!username || !dateStr) return null;
+    if (firebaseReady) {
+      try {
+        const doc = await firestoreDb.collection('players').doc(username).collection('backups').doc(dateStr).get();
+        return doc.exists ? doc.data() : null;
+      } catch (err) {
+        console.error('[DB] Failed to get backup state:', err);
+        return null;
+      }
+    } else {
+      const key = `foolos_backup_${username}_${dateStr}`;
+      const data = localStorage.getItem(key);
+      return data ? JSON.parse(data) : null;
+    }
+  }
+
+  async function adminRestorePlayerFromState(username, targetState) {
+    if (!username || !targetState) throw new Error('بيانات الاسترجاع غير مكتملة.');
+    const cleanState = JSON.parse(JSON.stringify(targetState));
+    delete cleanState.backupDate;
+    delete cleanState.backupTimestamp;
+
+    if (firebaseReady) {
+      _requireOnline();
+      await _ensureAdminAuth();
+      await firestoreDb.collection('players').doc(username).set(cleanState);
+      console.log(`[DB] Restored ${username} from backup state.`);
+    } else {
+      localStorage.setItem(`foolos_state_${username}`, JSON.stringify(cleanState));
+    }
+    return true;
+  }
+
+  function _getLocalDateString() {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // ─────────────────────────────────────────────
+  //  V2: CHAT SYSTEM API
+  // ─────────────────────────────────────────────
+  async function sendChatMessage(sender, title, message) {
+    if (!message) return;
+    if (message.length > 200) throw new Error('الرسالة طويلة جداً (الحد الأقصى 200 حرف)');
+    
+    const msgData = {
+      sender,
+      senderTitle: title || 'عامل مبتدئ',
+      message: message.trim(),
+      timestamp: Date.now()
+    };
+
+    if (firebaseReady) {
+      try {
+        await firestoreDb.collection('chat').add(msgData);
+      } catch (err) {
+        console.error('[DB] Chat send failed:', err);
+      }
+    } else {
+      const localChat = JSON.parse(localStorage.getItem('foolos_local_chat') || '[]');
+      localChat.push(msgData);
+      if (localChat.length > 100) localChat.shift();
+      localStorage.setItem('foolos_local_chat', JSON.stringify(localChat));
+      window.dispatchEvent(new Event('storage'));
+    }
+  }
+
+  function listenToChatMessages(callback) {
+    if (firebaseReady) {
+      return firestoreDb.collection('chat')
+        .orderBy('timestamp', 'desc')
+        .limit(100)
+        .onSnapshot(snapshot => {
+          const msgs = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            data.id = doc.id;
+            msgs.push(data);
+          });
+          callback(msgs.reverse());
+        }, err => {
+          console.warn('[DB] Failed to listen to chat:', err);
+        });
+    } else {
+      const checkLocal = () => {
+        const msgs = JSON.parse(localStorage.getItem('foolos_local_chat') || '[]');
+        callback(msgs);
+      };
+      window.addEventListener('storage', checkLocal);
+      checkLocal();
+      return () => window.removeEventListener('storage', checkLocal);
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  //  V2: MAILBOX & SOCIAL API
+  // ─────────────────────────────────────────────
+  async function sendMail(sender, recipient, type, payload) {
+    if (!recipient) throw new Error('يرجى تحديد المرسل إليه.');
+    const mailData = {
+      sender,
+      recipient,
+      type,
+      payload: payload || {},
+      timestamp: Date.now(),
+      status: 'pending'
+    };
+
+    if (firebaseReady) {
+      await firestoreDb.collection('mailbox').add(mailData);
+    } else {
+      const localMail = JSON.parse(localStorage.getItem('foolos_local_mail') || '[]');
+      mailData.id = 'mail_' + Math.random().toString(36).substr(2, 9);
+      localMail.push(mailData);
+      localStorage.setItem('foolos_local_mail', JSON.stringify(localMail));
+      window.dispatchEvent(new Event('storage'));
+    }
+    return true;
+  }
+
+  function listenToMailbox(username, callback) {
+    if (!username) return () => {};
+    if (firebaseReady) {
+      return firestoreDb.collection('mailbox')
+        .where('recipient', '==', username)
+        .onSnapshot(snapshot => {
+          const mails = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            data.id = doc.id;
+            mails.push(data);
+          });
+          mails.sort((a, b) => b.timestamp - a.timestamp);
+          callback(mails);
+        });
+    } else {
+      const checkLocal = () => {
+        const localMail = JSON.parse(localStorage.getItem('foolos_local_mail') || '[]');
+        const userMail = localMail.filter(m => m.recipient === username);
+        userMail.sort((a, b) => b.timestamp - a.timestamp);
+        callback(userMail);
+      };
+      window.addEventListener('storage', checkLocal);
+      checkLocal();
+      return () => window.removeEventListener('storage', checkLocal);
+    }
+  }
+
+  function listenToPrivateChat(userA, userB, callback) {
+    if (!userA || !userB) return () => {};
+    if (firebaseReady) {
+      return firestoreDb.collection('mailbox')
+        .where('type', '==', 'dm')
+        .onSnapshot(snapshot => {
+          const dms = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            data.id = doc.id;
+            if ((data.sender === userA && data.recipient === userB) || (data.sender === userB && data.recipient === userA)) {
+              dms.push(data);
+            }
+          });
+          dms.sort((a, b) => a.timestamp - b.timestamp);
+          callback(dms);
+        });
+    } else {
+      const checkLocal = () => {
+        const localMail = JSON.parse(localStorage.getItem('foolos_local_mail') || '[]');
+        const dms = localMail.filter(m => m.type === 'dm' && 
+          ((m.sender === userA && m.recipient === userB) || (m.sender === userB && m.recipient === userA))
+        );
+        dms.sort((a, b) => a.timestamp - b.timestamp);
+        callback(dms);
+      };
+      window.addEventListener('storage', checkLocal);
+      checkLocal();
+      return () => window.removeEventListener('storage', checkLocal);
+    }
+  }
+
+  async function updateMailStatus(mailId, status) {
+    if (firebaseReady) {
+      await firestoreDb.collection('mailbox').doc(mailId).update({ status });
+    } else {
+      const localMail = JSON.parse(localStorage.getItem('foolos_local_mail') || '[]');
+      const mail = localMail.find(m => m.id === mailId);
+      if (mail) {
+        mail.status = status;
+        localStorage.setItem('foolos_local_mail', JSON.stringify(localMail));
+        window.dispatchEvent(new Event('storage'));
+      }
+    }
+  }
+
+  async function deleteMail(mailId) {
+    if (firebaseReady) {
+      await firestoreDb.collection('mailbox').doc(mailId).delete();
+    } else {
+      let localMail = JSON.parse(localStorage.getItem('foolos_local_mail') || '[]');
+      localMail = localMail.filter(m => m.id !== mailId);
+      localStorage.setItem('foolos_local_mail', JSON.stringify(localMail));
+      window.dispatchEvent(new Event('storage'));
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  //  V2: LIVE AUCTIONS API
+  // ─────────────────────────────────────────────
+  async function adminCreateLiveAuction(itemType, itemId, itemName, basePrice, startConditionType, startConditionValue) {
+    _requireOnline();
+    await _ensureAdminAuth();
+    const auctionData = {
+      itemType,
+      itemId,
+      itemName,
+      basePrice,
+      currentBid: basePrice,
+      highestBidder: '',
+      status: 'pending',
+      startConditionType,
+      startConditionValue,
+      registeredPlayers: [],
+      timerSeconds: 30,
+      timerResetTimestamp: 0,
+      createdAt: Date.now()
+    };
+    await firestoreDb.collection('liveAuctions').add(auctionData);
+    return true;
+  }
+
+  function listenToLiveAuctions(callback) {
+    if (firebaseReady) {
+      return firestoreDb.collection('liveAuctions')
+        .onSnapshot(snapshot => {
+          const list = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            data.id = doc.id;
+            list.push(data);
+          });
+          callback(list);
+        });
+    } else {
+      callback([]);
+      return () => {};
+    }
+  }
+
+  async function registerForAuction(auctionId, username) {
+    if (firebaseReady) {
+      const docRef = firestoreDb.collection('liveAuctions').doc(auctionId);
+      await firestoreDb.runTransaction(async transaction => {
+        const doc = await transaction.get(docRef);
+        if (!doc.exists) throw new Error('المزاد غير موجود.');
+        const data = doc.data();
+        if (data.status !== 'pending') throw new Error('انتهى التسجيل في المزاد.');
+        
+        const registered = data.registeredPlayers || [];
+        if (!registered.includes(username)) {
+          registered.push(username);
+          transaction.update(docRef, { registeredPlayers: registered });
+        }
+      });
+    }
+    return true;
+  }
+
+  async function placeAuctionBid(auctionId, username, bidAmount) {
+    if (firebaseReady) {
+      const docRef = firestoreDb.collection('liveAuctions').doc(auctionId);
+      await firestoreDb.runTransaction(async transaction => {
+        const doc = await transaction.get(docRef);
+        if (!doc.exists) throw new Error('المزاد غير موجود.');
+        const data = doc.data();
+        if (data.status !== 'active') throw new Error('المزاد غير نشط حالياً.');
+        
+        if (bidAmount <= data.currentBid) {
+          throw new Error(`يجب أن تكون المزايدة أعلى من السعر الحالي (${data.currentBid.toLocaleString()} EGP).`);
+        }
+
+        transaction.update(docRef, {
+          currentBid: bidAmount,
+          highestBidder: username,
+          timerResetTimestamp: Date.now() + 30000
+        });
+      });
+    }
+    return true;
+  }
+
+  // ─────────────────────────────────────────────
   //  PUBLIC API
   // ─────────────────────────────────────────────
   return {
@@ -1471,6 +1825,29 @@ const AppDB = (() => {
     adminGetTransfers,
     setMaintenanceMode,
     getMaintenanceStatus,
+
+    // V2: DAILY BACKUPS & RESTORE API
+    checkAndCreateDailyBackup,
+    getPlayerBackupDates,
+    getPlayerBackupState,
+    adminRestorePlayerFromState,
+
+    // V2: CHAT SYSTEM API
+    sendChatMessage,
+    listenToChatMessages,
+
+    // V2: MAILBOX & SOCIAL API
+    sendMail,
+    listenToMailbox,
+    listenToPrivateChat,
+    updateMailStatus,
+    deleteMail,
+
+    // V2: LIVE AUCTIONS API
+    adminCreateLiveAuction,
+    listenToLiveAuctions,
+    registerForAuction,
+    placeAuctionBid
 
     get dbType() { return firebaseReady ? 'firebase' : 'offline'; },
     mockPlayers: []
