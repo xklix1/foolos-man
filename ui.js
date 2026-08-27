@@ -1766,7 +1766,9 @@ const UIController = (() => {
         card.innerHTML = `
           <div class="flex justify-between items-center mb-3">
             <h4 class="text-lg font-bold text-white">${biz.name}</h4>
-            <span id="biz-level-badge-${key}" class="text-xs px-2.5 py-0.5 bg-yellow-500/20 text-yellow-500 rounded border border-yellow-500/30 font-bold">المستوى ${bizState.level}</span>
+            <span id="biz-level-badge-${key}" class="text-xs px-2.5 py-0.5 ${bizState.isFranchise ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'} rounded border font-bold">
+              ${bizState.isFranchise ? 'علامة تجارية 👑' : `المستوى ${bizState.level}`}
+            </span>
           </div>
           
           <div class="text-xs text-slate-400 space-y-1 mb-4 border-b border-slate-800 pb-3">
@@ -1774,7 +1776,7 @@ const UIController = (() => {
             <div class="flex justify-between"><span>تكلفة المواد/التشغيل:</span><span id="biz-cog-${key}" class="numbers-font text-rose-400">${actualCostOfGoods} EGP/وحدة</span></div>
             <div class="flex justify-between"><span>الطلب الحالي المتوقع:</span><span id="biz-demand-${key}" class="numbers-font text-sky-400 font-bold">${estimatedDemand} وحدة/دورة ${marketingActive ? '<span class="text-yellow-400 font-bold">(+40% ترويج)</span>' : ''}</span></div>
             <div class="flex justify-between"><span>هامش ربح الوحدة:</span><span id="biz-margin-${key}" class="numbers-font ${profitMargin >= 0 ? 'text-teal-400' : 'text-rose-400'} font-bold">${profitMargin} EGP</span></div>
-            <div class="flex justify-between"><span>العائد الصافي الفعلي:</span><span id="biz-profit-${key}" class="numbers-font text-emerald-400 font-bold">+${profitPerTick.toLocaleString()} EGP / دورة</span></div>
+            <div class="flex justify-between"><span>العائد الصافي الفعلي:</span><span id="biz-profit-${key}" class="numbers-font text-emerald-400 font-bold">+${profitPerTick.toLocaleString()} EGP / دورة ${bizState.isFranchise ? '<span class="text-amber-400 text-[10px] font-black">(+25% براند)</span>' : ''}</span></div>
           </div>
 
           <div class="mb-3">
@@ -1800,17 +1802,32 @@ const UIController = (() => {
           </div>
 
           <div class="grid grid-cols-2 gap-2 mt-2">
-            <button id="btn-upgrade-${key}" class="py-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-lg text-xs font-bold transition">
-              ترقية المستوى<br><span id="biz-upgrade-cost-${key}" class="numbers-font text-[10px] opacity-75">${nextUpgradeCost.toLocaleString()} EGP</span>
-            </button>
+            ${bizState.isFranchise ? `
+              <button disabled class="py-2 bg-amber-950/20 text-amber-500/50 border border-amber-500/10 rounded-lg text-xs font-bold cursor-not-allowed">
+                علامة مسجلة 👑
+              </button>
+            ` : bizState.level >= 10 ? `
+              <button id="btn-upgrade-${key}" class="py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-black transition">
+                ترقية لبراند 👑<br><span id="biz-upgrade-cost-${key}" class="numbers-font text-[9px] opacity-80">${(biz.cost * 15).toLocaleString()} EGP</span>
+              </button>
+            ` : `
+              <button id="btn-upgrade-${key}" class="py-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-lg text-xs font-bold transition">
+                ترقية المستوى<br><span id="biz-upgrade-cost-${key}" class="numbers-font text-[10px] opacity-75">${nextUpgradeCost.toLocaleString()} EGP</span>
+              </button>
+            `}
             <button id="btn-hire-${key}" class="py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition">
               توظيف عمالة<br><span id="biz-hire-cost-${key}" class="numbers-font text-[10px] opacity-75">${workerHireCost.toLocaleString()} EGP</span>
             </button>
           </div>
-          ${(bizState.workers && bizState.workers > 0) ? `
-          <button id="btn-fire-${key}" class="w-full mt-2 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg text-xs transition">
-            تسريح عامل واحد
-          </button>` : ''}
+          ${bizState.isFranchise ? `
+            <button id="btn-sell-franchise-${key}" class="w-full mt-2 py-2 bg-amber-500/15 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-black transition flex items-center justify-center gap-1 shadow-md">
+              <i class="fa-solid fa-sign-out"></i> بيع العلامة التجارية (تصفية واسترداد مالي)
+            </button>
+          ` : (bizState.workers && bizState.workers > 0) ? `
+            <button id="btn-fire-${key}" class="w-full mt-2 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg text-xs transition">
+              تسريح عامل واحد
+            </button>
+          ` : ''}
         `;
 
         // Bind Price Slider Changes
@@ -1836,16 +1853,41 @@ const UIController = (() => {
         });
 
         // Upgrade action
-        card.querySelector(`#btn-upgrade-${key}`).addEventListener('click', () => {
-          try {
-            GameEngine.upgradeBusiness(key);
-            showToast('ترقية ناجحة', `تم ترقية مشروع "${biz.name}" للمستوى التالي!`, 'success');
-            renderBusinesses(true);
-            renderStatsBar();
-          } catch (err) {
-            showToast('خطأ الترقية', err.message, 'error');
-          }
-        });
+        const btnUpgrade = card.querySelector(`#btn-upgrade-${key}`);
+        if (btnUpgrade) {
+          btnUpgrade.addEventListener('click', () => {
+            try {
+              if (bizState.level >= 10 && !bizState.isFranchise) {
+                GameEngine.convertToFranchise(key);
+                showToast('علامة تجارية 👑', `تم تسجيل مشروع "${biz.name}" كعلامة تجارية مسجلة بنجاح! 🎉`, 'success');
+              } else {
+                GameEngine.upgradeBusiness(key);
+                showToast('ترقية ناجحة', `تم ترقية مشروع "${biz.name}" للمستوى التالي!`, 'success');
+              }
+              renderBusinesses(true);
+              renderStatsBar();
+            } catch (err) {
+              showToast('خطأ الترقية', err.message, 'error');
+            }
+          });
+        }
+
+        // Sell Franchise action
+        const btnSellFranchise = card.querySelector(`#btn-sell-franchise-${key}`);
+        if (btnSellFranchise) {
+          btnSellFranchise.addEventListener('click', () => {
+            const payoutAmount = Math.floor(biz.cost * 45);
+            if (!confirm(`هل أنت متأكد من رغبتك في بيع العلامة التجارية لـ "${biz.name}" بالكامل والخروج من المشروع؟ ستحصل على تعويض نقدي فوري قدره ${payoutAmount.toLocaleString()} EGP!`)) return;
+            try {
+              const res = GameEngine.sellFranchise(key);
+              showToast('استراتيجية خروج 💸', `تم بيع وتصفية علامة "${biz.name}" واستلام مبلغ ${res.payout.toLocaleString()} EGP بنجاح!`, 'success');
+              renderBusinesses(true);
+              renderStatsBar();
+            } catch (err) {
+              showToast('خطأ التصفية', err.message, 'error');
+            }
+          });
+        }
 
         // Hire action
         card.querySelector(`#btn-hire-${key}`).addEventListener('click', () => {

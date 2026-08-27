@@ -1564,9 +1564,10 @@ const GameEngine = (() => {
     if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إجراء ترقيات.");
     const biz = BUSINESSES[key];
     const bizState = state.businesses[key];
-    if (!bizState || bizState.level === 0) throw new Error("يجب شراء هذا المشروع أولاً قبل ترقيته.");
+    if (bizState.level >= 10) {
+      throw new Error("لقد وصل المشروع للحد الأقصى من المستويات (المستوى 10). يرجى تحويله لعلامة تجارية (Franchise) للترقية للمستوى الأعلى.");
+    }
 
-    // Upgrade cost scales exponentially based on current level (1.75x scaling)
     const baseCost = Math.floor(biz.cost * Math.pow(1.75, bizState.level));
     const hasTaxShield = (state.inventory && state.inventory.tax_shield > 0);
     const upgradeCost = hasTaxShield ? Math.floor(baseCost * 0.75) : baseCost;
@@ -1586,6 +1587,47 @@ const GameEngine = (() => {
       cost: upgradeCost,
       savedDiscount: hasTaxShield ? (baseCost - upgradeCost) : 0
     };
+  }
+
+  function convertToFranchise(key) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك تعديل الشركات.");
+    const biz = BUSINESSES[key];
+    const bizState = state.businesses[key];
+    if (!bizState || bizState.level < 10) throw new Error("يجب ترقية المشروع للمستوى 10 أولاً.");
+    if (bizState.isFranchise) throw new Error("هذا المشروع علامة تجارية مسجلة بالفعل.");
+
+    const franchiseCost = Math.floor(biz.cost * 15);
+    if (state.cash < franchiseCost) {
+      throw new Error(`رصيدك غير كافٍ لتسجيل العلامة التجارية. تحتاج: ${franchiseCost.toLocaleString()} EGP`);
+    }
+
+    state.cash -= franchiseCost;
+    bizState.isFranchise = true;
+
+    recordPlayerActivity('تسجيل علامة تجارية', `تحويل مشروع "${biz.name}" إلى علامة تجارية مسجلة (Franchise)`, 'business');
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+    return true;
+  }
+
+  function sellFranchise(key) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    const biz = BUSINESSES[key];
+    const bizState = state.businesses[key];
+    if (!bizState || !bizState.isFranchise) throw new Error("المشروع ليس علامة تجارية مسجلة للبيع.");
+
+    const sellPayout = Math.floor(biz.cost * 45);
+    state.cash += sellPayout;
+
+    // Reset business to level 0 (not owned)
+    bizState.level = 0;
+    bizState.workers = 0;
+    bizState.isFranchise = false;
+
+    recordPlayerActivity('بيع علامة تجارية', `بيع العلامة التجارية "${biz.name}" (استراتيجية خروج) بمبلغ ${sellPayout.toLocaleString()} EGP`, 'business');
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+    return { payout: sellPayout };
   }
 
   // Hire Workers for Business
@@ -2448,6 +2490,8 @@ const GameEngine = (() => {
     promoteJob,
     purchaseBusiness,
     upgradeBusiness,
+    convertToFranchise,
+    sellFranchise,
     hireWorker,
     fireWorker,
     setBusinessPrice,
