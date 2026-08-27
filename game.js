@@ -160,10 +160,13 @@ const GameEngine = (() => {
   };
 
   const CORP_PROJECTS = {
-    gigafactory: { id: 'gigafactory', name: 'مجمع أشباه الموصلات والرقائق', cost: 12000000000, profitPerTick: 25000000 },
-    zohr_field: { id: 'zohr_field', name: 'حق امتياز حقل غاز ظهر الطبيعي', cost: 38000000000, profitPerTick: 95000000 },
-    asteroid_mining: { id: 'asteroid_mining', name: 'وكالة تعدين الكويكبات الفضائية', cost: 95000000000, profitPerTick: 280000000 },
-    submarine_cables: { id: 'submarine_cables', name: 'شبكة الألياف البحرية العالمية', cost: 220000000000, profitPerTick: 750000000 }
+    gigafactory: { id: 'gigafactory', name: 'مجمع أشباه الموصلات والرقائق', cost: 12000000000, profitPerTick: 25000000, minMembers: 1 },
+    zohr_field: { id: 'zohr_field', name: 'حق امتياز حقل غاز ظهر الطبيعي', cost: 38000000000, profitPerTick: 95000000, minMembers: 1 },
+    asteroid_mining: { id: 'asteroid_mining', name: 'وكالة تعدين الكويكبات الفضائية', cost: 95000000000, profitPerTick: 280000000, minMembers: 1 },
+    submarine_cables: { id: 'submarine_cables', name: 'شبكة الألياف البحرية العالمية', cost: 220000000000, profitPerTick: 750000000, minMembers: 2 },
+    medical_city: { id: 'medical_city', name: 'المدينة الطبية العالمية المتكاملة', cost: 500000000000, profitPerTick: 1850000000, minMembers: 3 },
+    nuclear_reactor: { id: 'nuclear_reactor', name: 'المفاعل النووي القومي لإنتاج الطاقة', cost: 1200000000000, profitPerTick: 4600000000, minMembers: 8 },
+    mars_colony: { id: 'mars_colony', name: 'مستعمرة التعدين المريخية المستقلة', cost: 3500000000000, profitPerTick: 15000000000, minMembers: 15 }
   };
 
   const STORE_ITEMS = {

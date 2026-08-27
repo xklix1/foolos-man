@@ -1833,6 +1833,7 @@ const AppDB = (() => {
       
       const members = data.members || [];
       if (members.includes(username)) throw new Error('أنت عضو في هذه الشركة بالفعل.');
+      if (members.length >= 25) throw new Error('فشل الانضمام: الشركة وصلت للحد الأقصى من الأعضاء المسموح به (25 عضواً).');
       
       members.push(username);
       
@@ -1888,6 +1889,24 @@ const AppDB = (() => {
         throw new Error(`رصيد الخزينة غير كافٍ. تحتاج الشركة لـ ${projectCost.toLocaleString()} EGP.`);
       }
       
+      const projRequirements = {
+        gigafactory: { name: 'مجمع أشباه الموصلات والرقائق', minMembers: 1 },
+        zohr_field: { name: 'حق امتياز حقل غاز ظهر الطبيعي', minMembers: 1 },
+        asteroid_mining: { name: 'وكالة تعدين الكويكبات الفضائية', minMembers: 1 },
+        submarine_cables: { id: 'submarine_cables', name: 'شبكة الألياف البحرية العالمية', minMembers: 2 },
+        medical_city: { id: 'medical_city', name: 'المدينة الطبية العالمية المتكاملة', minMembers: 3 },
+        nuclear_reactor: { id: 'nuclear_reactor', name: 'المفاعل النووي القومي لإنتاج الطاقة', minMembers: 8 },
+        mars_colony: { id: 'mars_colony', name: 'مستعمرة التعدين المريخية المستقلة', minMembers: 15 }
+      };
+
+      const req = projRequirements[projectId];
+      if (req) {
+        const currentMembers = (data.members || []).length;
+        if (currentMembers < req.minMembers) {
+          throw new Error(`شرط غير مستوفٍ: يتطلب شراء "${req.name}" وجود ${req.minMembers} مساهمين على الأقل في الشركة (المتوفر حالياً: ${currentMembers}).`);
+        }
+      }
+
       const projects = data.projects || {};
       if (projects[projectId]) throw new Error('الشركة تمتلك هذا المشروع بالفعل.');
       

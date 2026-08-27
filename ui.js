@@ -8764,6 +8764,8 @@ const UIController = (() => {
       Object.keys(GameEngine.CORP_PROJECTS).forEach(projId => {
         const p = GameEngine.CORP_PROJECTS[projId];
         const owned = corp.projects && corp.projects[projId];
+        const membersCount = corp.members ? corp.members.length : 0;
+        const meetsCondition = membersCount >= (p.minMembers || 1);
         
         let statusBadge = '';
         let projectActionBtn = '';
@@ -8774,7 +8776,11 @@ const UIController = (() => {
         } else {
           statusBadge = '<span class="text-[10px] bg-slate-800 border border-slate-700 text-slate-400 px-2 py-0.5 rounded-full font-bold">غير مملوك</span>';
           if (isFounder) {
-            projectActionBtn = `<button onclick="window.UI.buyCorporationProjectAction('${corp.id}', '${p.id}', ${p.cost})" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">شراء المشروع من الخزينة</button>`;
+            if (meetsCondition) {
+              projectActionBtn = `<button onclick="window.UI.buyCorporationProjectAction('${corp.id}', '${p.id}', ${p.cost})" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">شراء المشروع من الخزينة</button>`;
+            } else {
+              projectActionBtn = `<button class="w-full py-2 bg-slate-900 border border-slate-800 text-rose-500/70 rounded-xl text-xs font-bold cursor-not-allowed" disabled>الشرط غير مستوفٍ ❌</button>`;
+            }
           } else {
             projectActionBtn = `<button class="w-full py-2 bg-slate-900 border border-slate-800 text-slate-600 rounded-xl text-xs font-bold" disabled>متاح للمؤسس فقط</button>`;
           }
@@ -8796,6 +8802,10 @@ const UIController = (() => {
                   <span class="text-slate-500 block">العائد الإجمالي</span>
                   <span class="text-emerald-400 font-black numbers-font text-xs">+${p.profitPerTick.toLocaleString()}/tick</span>
                 </div>
+              </div>
+              <div class="mt-3 text-[9.5px] ${meetsCondition ? 'text-emerald-400/90' : 'text-rose-400'} font-bold flex items-center gap-1">
+                <i class="fa-solid fa-users text-[10px]"></i>
+                <span>شرط المساهمين: لا يقل عن ${p.minMembers} لاعبين (المتوفر: ${membersCount})</span>
               </div>
             </div>
             ${projectActionBtn}
