@@ -4,8 +4,8 @@
  * Manages rendering, tab views, SVG charts, and interactive casino controls
  */
 
-var activeAdminUsername = 'FoolosAdmin_X99';
-if (typeof window !== 'undefined') window.activeAdminUsername = 'FoolosAdmin_X99';
+var activeAdminUsername = 'khalid.newstart';
+if (typeof window !== 'undefined') window.activeAdminUsername = 'khalid.newstart';
 
 const UIController = (() => {
   console.log('[UI] Controller Loaded (v=107)');
@@ -722,7 +722,7 @@ const UIController = (() => {
       // Check maintenance mode on session launch
       const maintStatus = await AppDB.getMaintenanceStatus();
       if (maintStatus && maintStatus.enabled) {
-        const isAdmin = Boolean(username === 'FoolosAdmin_X99');
+        const isAdmin = Boolean(username === 'khalid.newstart');
         if (!isAdmin) {
           const checkUser = await AppDB.getPlayerState(username);
           if (!checkUser || !checkUser.isAdmin) {
@@ -938,7 +938,7 @@ const UIController = (() => {
           // Enforce Maintenance Gatekeeper (Admin only)
           const maintStatus = await AppDB.getMaintenanceStatus();
           if (maintStatus && maintStatus.enabled) {
-            const isAdminUser = Boolean(usernameInput === 'FoolosAdmin_X99');
+            const isAdminUser = Boolean(usernameInput === 'khalid.newstart');
             if (mode === 'register' && !isAdminUser) {
               throw new Error("الخادم قيد الصيانة الفنية حالياً. تسجيل الحسابات الجديدة معطل حتى انتهاء الصيانة.");
             }
@@ -1165,7 +1165,7 @@ const UIController = (() => {
     if (!GameEngine.activeUsername || !s) return;
 
     const username = GameEngine.activeUsername;
-    const isAdmin = (username === 'FoolosAdmin_X99' || s.isAdmin);
+    const isAdmin = (username === 'khalid.newstart' || s.isAdmin);
 
     // Desktop stats
     const uEl = document.getElementById('stat-username');
@@ -3830,7 +3830,7 @@ const UIController = (() => {
     // Show/Hide Admin Trigger Button
     const adminTrigger = document.getElementById('btn-admin-panel-trigger');
     if (adminTrigger) {
-      const isAdmin = (username === 'FoolosAdmin_X99' || (GameEngine.state && GameEngine.state.isAdmin));
+      const isAdmin = (username === 'khalid.newstart' || (GameEngine.state && GameEngine.state.isAdmin));
       if (isAdmin) {
         adminTrigger.classList.remove('hidden');
       } else {
@@ -3866,7 +3866,7 @@ const UIController = (() => {
         showAuthModal('login');
         const uInput = document.getElementById('auth-username');
         if (uInput) {
-          uInput.value = 'FoolosAdmin_X99';
+          uInput.value = 'khalid.newstart';
           const pInput = document.getElementById('auth-pin');
           if (pInput) pInput.focus();
         }
@@ -3880,7 +3880,7 @@ const UIController = (() => {
         const data = doc.data();
         if (data.enabled) {
           const username = GameEngine.activeUsername;
-          const isAdmin = (username === 'FoolosAdmin_X99' || (GameEngine.state && GameEngine.state.isAdmin));
+          const isAdmin = (username === 'khalid.newstart' || (GameEngine.state && GameEngine.state.isAdmin));
           if (!isAdmin) {
             handleMaintenanceMode(data.message);
           }
@@ -3906,6 +3906,55 @@ const UIController = (() => {
         }
       }, (err) => console.error("Airdrop listen err: ", err));
     activeListeners.push(unsubAirdrop);
+
+    // 5. Market Event Realtime Listener
+    let lastMarketEventTime = Date.now();
+    const unsubMarket = db.collection('globals').doc('market_event')
+      .onSnapshot((doc) => {
+        if (!doc.exists) return;
+        const data = doc.data();
+        if (!data || !data.timestamp) return;
+        if (data.timestamp > lastMarketEventTime) {
+          lastMarketEventTime = data.timestamp;
+          
+          if (data.resetBaseline) {
+            Object.keys(GameEngine.STOCKS).forEach(sym => {
+              const base = GameEngine.STOCKS[sym].basePrice;
+              GameEngine.stockPrices[sym] = [base];
+            });
+          } else if (data.directPrice && data.targetSymbol) {
+            const sym = data.targetSymbol;
+            if (GameEngine.stockPrices[sym]) {
+              GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1] = data.directPrice;
+            }
+          } else if (data.targets) {
+            Object.keys(data.targets).forEach(sym => {
+              if (GameEngine.stockPrices[sym]) {
+                const mult = data.targets[sym];
+                const history = GameEngine.stockPrices[sym];
+                const lastP = history[history.length - 1];
+                const floor = GameEngine.STOCKS[sym]?.floor || 15;
+                const newP = Math.max(floor, Math.floor(lastP * mult));
+                history[history.length - 1] = newP;
+              }
+            });
+          }
+          
+          const isUp = !data.title.includes('📉') && !data.title.includes('هبوط') && !data.title.includes('خسارة') && !data.title.includes('تصحيح') && !data.title.includes('انهيار') && !data.title.includes('أزمة') && !data.title.includes('تراجع');
+          const toastType = isUp ? 'success' : 'error';
+          showToast(isUp ? '📈 تحديث البورصة' : '📉 تقلب البورصة', data.desc || data.title, toastType);
+          
+          const ticker = document.getElementById('stock-market-news-ticker');
+          if (ticker) {
+            ticker.textContent = data.title;
+            ticker.className = `font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`;
+          }
+          
+          renderAdminStockPrices();
+          renderAll();
+        }
+      }, (err) => console.error("Market event listen err: ", err));
+    activeListeners.push(unsubMarket);
 
     // 3. User document listener for ban & external edits
     let lastAdminActionTimestamp = Date.now();
@@ -3964,7 +4013,7 @@ const UIController = (() => {
 
   function applyCompleteZeroStateToGameEngine(username) {
     if (!GameEngine.state) return;
-    const isAdmin = Boolean(username === 'FoolosAdmin_X99' || GameEngine.state.isAdmin);
+    const isAdmin = Boolean(username === 'khalid.newstart' || GameEngine.state.isAdmin);
     GameEngine.state.isAdmin = isAdmin;
     GameEngine.state.cash = 0;
     GameEngine.state.bank = 0;
@@ -4041,7 +4090,7 @@ const UIController = (() => {
       const status = await AppDB.getMaintenanceStatus();
       if (status && status.enabled) {
         const username = localStorage.getItem('foolos_active_session_user') || GameEngine.activeUsername;
-        const isAdmin = Boolean(username === 'FoolosAdmin_X99' || (GameEngine.state && GameEngine.state.isAdmin));
+        const isAdmin = Boolean(username === 'khalid.newstart' || (GameEngine.state && GameEngine.state.isAdmin));
         if (!isAdmin) {
           handleMaintenanceMode(status.message);
           return true;
@@ -4343,10 +4392,386 @@ const UIController = (() => {
           resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
         renderPlayersTable();
+        renderPlayerPossessions(state);
         logAdminAction(`تم فتح ملف الحساب للاعب: ${username}`);
       } catch (err) {
         showToast('خطأ فحص اللاعب', err.message, 'error');
       }
+    }
+
+    // ==================== PLAYER POSSESSIONS & BACKUP EXPORT & GRANT ACTIONS ====================
+    
+    // RENDER PLAYER POSSESSIONS DIRECTORY
+    function renderPlayerPossessions(state) {
+      const container = document.getElementById('admin-p-possessions-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      let hasItems = false;
+
+      // 1. Current Job
+      if (state.jobId || state.title) {
+        hasItems = true;
+        const jobDiv = document.createElement('div');
+        jobDiv.className = 'flex justify-between items-center bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/80 hover:border-yellow-500/20 transition';
+        jobDiv.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="text-base">💼</span>
+            <div>
+              <div class="font-bold text-slate-200">الوظيفة الحالية</div>
+              <div class="text-[10px] text-slate-400 font-sans">${state.title || 'عامل مبتدئ'}</div>
+            </div>
+          </div>
+          <select class="admin-inline-job-select bg-slate-950 border border-slate-700 text-slate-300 p-1.5 rounded-md text-[10px] focus:outline-none focus:border-yellow-500">
+            ${Object.keys(GameEngine.JOBS).map(jk => '<option value="' + jk + '" ' + (state.jobId === jk ? 'selected' : '') + '>' + GameEngine.JOBS[jk].name + '</option>').join('')}
+          </select>
+        `;
+        jobDiv.querySelector('.admin-inline-job-select').addEventListener('change', async (e) => {
+          const jobKey = e.target.value;
+          state.jobId = jobKey;
+          state.title = GameEngine.JOBS[jobKey].name;
+          await saveAndSyncPlayerPossessions();
+        });
+        container.appendChild(jobDiv);
+      }
+
+      // 2. Businesses / Projects
+      if (state.businesses) {
+        Object.keys(state.businesses).forEach(bk => {
+          const biz = state.businesses[bk];
+          if (!biz || biz.level <= 0) return;
+          hasItems = true;
+          const bizConfig = GameEngine.BUSINESSES[bk];
+          const bizName = bizConfig ? bizConfig.name : bk;
+
+          const bizDiv = document.createElement('div');
+          bizDiv.className = 'flex justify-between items-center bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/80 hover:border-yellow-500/20 transition gap-2 mt-2';
+          bizDiv.innerHTML = `
+            <div class="flex items-center gap-2 flex-1 text-right">
+              <span class="text-base">🏢</span>
+              <div>
+                <div class="font-bold text-slate-200">${bizName}</div>
+                <div class="text-[10px] text-slate-400">المستوى: <span class="text-yellow-400 font-bold font-mono">${biz.level}</span> | الموظفين: <span class="text-sky-400 font-bold font-mono">${biz.workers}</span></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1">
+              <button class="btn-inline-biz-lvl-dec px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold" title="تقليل المستوى">-L</button>
+              <button class="btn-inline-biz-lvl-inc px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold" title="زيادة المستوى">+L</button>
+              <span class="text-slate-700 mx-0.5">|</span>
+              <button class="btn-inline-biz-wrk-dec px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold" title="تقليل الموظفين">-W</button>
+              <button class="btn-inline-biz-wrk-inc px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold" title="زيادة الموظفين">+W</button>
+              <button class="btn-inline-biz-del ml-1 p-1.5 text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition" title="حذف المشروع"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+          `;
+
+          bizDiv.querySelector('.btn-inline-biz-lvl-dec').addEventListener('click', async () => {
+            biz.level = Math.max(0, biz.level - 1);
+            await saveAndSyncPlayerPossessions();
+          });
+          bizDiv.querySelector('.btn-inline-biz-lvl-inc').addEventListener('click', async () => {
+            biz.level += 1;
+            await saveAndSyncPlayerPossessions();
+          });
+          bizDiv.querySelector('.btn-inline-biz-wrk-dec').addEventListener('click', async () => {
+            biz.workers = Math.max(0, biz.workers - 1);
+            await saveAndSyncPlayerPossessions();
+          });
+          bizDiv.querySelector('.btn-inline-biz-wrk-inc').addEventListener('click', async () => {
+            biz.workers += 1;
+            await saveAndSyncPlayerPossessions();
+          });
+          bizDiv.querySelector('.btn-inline-biz-del').addEventListener('click', async () => {
+            if (confirm(`هل أنت متأكد من حذف مشروع "${bizName}" لللاعب؟`)) {
+              biz.level = 0;
+              biz.workers = 0;
+              await saveAndSyncPlayerPossessions();
+            }
+          });
+
+          container.appendChild(bizDiv);
+        });
+      }
+
+      // 3. Assets / Real Estate
+      if (state.assets) {
+        Object.keys(state.assets).forEach(ak => {
+          const qty = state.assets[ak] || 0;
+          if (qty <= 0) return;
+          hasItems = true;
+          const assetConfig = GameEngine.ASSETS[ak];
+          const assetName = assetConfig ? assetConfig.name : ak;
+
+          const assetDiv = document.createElement('div');
+          assetDiv.className = 'flex justify-between items-center bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/80 hover:border-yellow-500/20 transition mt-2';
+          assetDiv.innerHTML = `
+            <div class="flex items-center gap-2 text-right">
+              <span class="text-base">🏡</span>
+              <div>
+                <div class="font-bold text-slate-200">${assetName}</div>
+                <div class="text-[10px] text-slate-400">العدد المملوك: <strong class="text-emerald-400 font-mono">${qty}</strong></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1">
+              <button class="btn-inline-ast-dec px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold">-</button>
+              <button class="btn-inline-ast-inc px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold">+</button>
+              <button class="btn-inline-ast-del ml-1 p-1.5 text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition" title="حذف الأصل"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+          `;
+
+          assetDiv.querySelector('.btn-inline-ast-dec').addEventListener('click', async () => {
+            state.assets[ak] = Math.max(0, qty - 1);
+            await saveAndSyncPlayerPossessions();
+          });
+          assetDiv.querySelector('.btn-inline-ast-inc').addEventListener('click', async () => {
+            state.assets[ak] = qty + 1;
+            await saveAndSyncPlayerPossessions();
+          });
+          assetDiv.querySelector('.btn-inline-ast-del').addEventListener('click', async () => {
+            if (confirm(`هل أنت متأكد من حذف عقارات "${assetName}" بالكامل لللاعب؟`)) {
+              state.assets[ak] = 0;
+              await saveAndSyncPlayerPossessions();
+            }
+          });
+
+          container.appendChild(assetDiv);
+        });
+      }
+
+      // 4. Stocks
+      if (state.stocks) {
+        Object.keys(state.stocks).forEach(sk => {
+          const stockData = state.stocks[sk];
+          if (!stockData || stockData.shares <= 0) return;
+          hasItems = true;
+          const stockConfig = GameEngine.STOCKS[sk];
+          const stockName = stockConfig ? stockConfig.name : sk;
+
+          const stockDiv = document.createElement('div');
+          stockDiv.className = 'flex justify-between items-center bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/80 hover:border-yellow-500/20 transition gap-2 mt-2';
+          stockDiv.innerHTML = `
+            <div class="flex items-center gap-2 flex-1 text-right">
+              <span class="text-base">📈</span>
+              <div>
+                <div class="font-bold text-slate-200">${sk} (${stockName})</div>
+                <div class="text-[10px] text-slate-400">الأسهم: <span class="text-yellow-400 font-bold font-mono">${stockData.shares}</span> | متوسط الشراء: <span class="text-sky-400 font-bold font-mono">${stockData.avgPrice} EGP</span></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1">
+              <button class="btn-inline-stk-edit px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold">تعديل</button>
+              <button class="btn-inline-stk-del p-1.5 text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition" title="حذف الأسهم"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+          `;
+
+          stockDiv.querySelector('.btn-inline-stk-edit').addEventListener('click', async () => {
+            const newShares = prompt(`أدخل عدد الأسهم الجديد لسهم (${sk}):`, stockData.shares);
+            if (newShares === null) return;
+            const newPrice = prompt(`أدخل متوسط سعر الشراء الجديد للسهم:`, stockData.avgPrice);
+            if (newPrice === null) return;
+
+            const sharesVal = parseInt(newShares) || 0;
+            const priceVal = parseFloat(newPrice) || 0;
+
+            if (sharesVal < 0 || priceVal < 0) {
+              showToast('خطأ إدخال', 'يرجى إدخال قيم صحيحة للأسهم والأسعار.', 'error');
+              return;
+            }
+
+            stockData.shares = sharesVal;
+            stockData.avgPrice = priceVal;
+            await saveAndSyncPlayerPossessions();
+          });
+
+          stockDiv.querySelector('.btn-inline-stk-del').addEventListener('click', async () => {
+            if (confirm(`هل أنت متأكد من حذف أسهم "${sk}" لللاعب؟`)) {
+              stockData.shares = 0;
+              await saveAndSyncPlayerPossessions();
+            }
+          });
+
+          container.appendChild(stockDiv);
+        });
+      }
+
+      if (!hasItems) {
+        container.innerHTML = `<p class="text-slate-500 text-[10px] text-center py-2">لا يوجد أملاك أو وظائف لعرضها حالياً لهذا اللاعب.</p>`;
+      }
+    }
+
+    // SAVE AND SYNC PLAYER STATE & POSSESSIONS
+    async function saveAndSyncPlayerPossessions() {
+      if (!selectedPlayer || !selectedPlayerState) return;
+      try {
+        // Re-calculate Net Worth of selected player state
+        let worth = (selectedPlayerState.cash || 0) + (selectedPlayerState.bank || 0) + (selectedPlayerState.dirtyCash || 0);
+
+        if (selectedPlayerState.assets) {
+          Object.keys(selectedPlayerState.assets).forEach(k => {
+            if (GameEngine.ASSETS && GameEngine.ASSETS[k]) worth += (selectedPlayerState.assets[k] || 0) * GameEngine.ASSETS[k].cost;
+          });
+        }
+        if (selectedPlayerState.stocks) {
+          Object.keys(selectedPlayerState.stocks).forEach(sym => {
+            const shares = (selectedPlayerState.stocks[sym] && selectedPlayerState.stocks[sym].shares) || 0;
+            const history = GameEngine.stockPrices[sym] || [GameEngine.STOCKS[sym]?.basePrice || 10];
+            const currentPrice = history[history.length - 1];
+            worth += shares * currentPrice;
+          });
+        }
+        if (selectedPlayerState.investments && Array.isArray(selectedPlayerState.investments)) {
+          selectedPlayerState.investments.forEach(inv => worth += (inv.investedAmount || 0));
+        }
+        selectedPlayerState.netWorth = worth;
+
+        // Save to DB
+        await AppDB.adminSavePlayer(selectedPlayer, selectedPlayerState);
+
+        // Sync local GameEngine state if we edited ourselves
+        if (selectedPlayer === GameEngine.activeUsername) {
+          GameEngine.state.jobId = selectedPlayerState.jobId || 'worker';
+          GameEngine.state.title = selectedPlayerState.title || 'عامل مبتدئ';
+          GameEngine.state.businesses = JSON.parse(JSON.stringify(selectedPlayerState.businesses || {}));
+          GameEngine.state.assets = JSON.parse(JSON.stringify(selectedPlayerState.assets || {}));
+          GameEngine.state.stocks = JSON.parse(JSON.stringify(selectedPlayerState.stocks || {}));
+          GameEngine.state.netWorth = worth;
+          try {
+            localStorage.setItem(`foolos_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+          } catch (e) {}
+          renderAll();
+        }
+
+        // Update Admin UI fields
+        document.getElementById('admin-p-worth').textContent = `${worth.toLocaleString()} EGP`;
+        document.getElementById('admin-p-title').textContent = selectedPlayerState.title || 'عامل مبتدئ';
+
+        // Re-render
+        renderPlayerPossessions(selectedPlayerState);
+        loadAdminPlayersDirectory(false);
+        showToast('حفظ التعديلات', 'تم تحديث ممتلكات اللاعب بنجاح وحفظها.', 'success');
+      } catch (err) {
+        showToast('خطأ حفظ ممتلكات', err.message, 'error');
+      }
+    }
+
+    // Dynamic Select Populate for Grant Tool
+    function populateGrantItemSelect() {
+      const typeSelect = document.getElementById('admin-grant-type');
+      const itemSelect = document.getElementById('admin-grant-item-select');
+      if (!typeSelect || !itemSelect) return;
+
+      const type = typeSelect.value;
+      itemSelect.innerHTML = '';
+
+      // Toggle fields visibility
+      document.getElementById('admin-grant-fields-job').classList.toggle('hidden', type !== 'job');
+      document.getElementById('admin-grant-fields-business').classList.toggle('hidden', type !== 'business');
+      document.getElementById('admin-grant-fields-asset').classList.toggle('hidden', type !== 'asset');
+      document.getElementById('admin-grant-fields-stock').classList.toggle('hidden', type !== 'stock');
+
+      let options = [];
+      if (type === 'job') {
+        Object.keys(GameEngine.JOBS).forEach(k => {
+          options.push({ value: k, text: GameEngine.JOBS[k].name });
+        });
+      } else if (type === 'business') {
+        Object.keys(GameEngine.BUSINESSES).forEach(k => {
+          options.push({ value: k, text: GameEngine.BUSINESSES[k].name });
+        });
+      } else if (type === 'asset') {
+        Object.keys(GameEngine.ASSETS).forEach(k => {
+          options.push({ value: k, text: GameEngine.ASSETS[k].name });
+        });
+      } else if (type === 'stock') {
+        Object.keys(GameEngine.STOCKS).forEach(k => {
+          options.push({ value: k, text: `${k} (${GameEngine.STOCKS[k].name})` });
+        });
+      }
+
+      options.forEach(opt => {
+        const el = document.createElement('option');
+        el.value = opt.value;
+        el.textContent = opt.text;
+        itemSelect.appendChild(el);
+      });
+    }
+
+    const grantTypeSelect = document.getElementById('admin-grant-type');
+    if (grantTypeSelect) {
+      grantTypeSelect.addEventListener('change', populateGrantItemSelect);
+      populateGrantItemSelect(); // Initial load
+    }
+
+    // Grant Possession Action
+    const grantPossessionBtn = document.getElementById('btn-admin-grant-possession');
+    if (grantPossessionBtn) {
+      grantPossessionBtn.addEventListener('click', async () => {
+        if (!selectedPlayer || !selectedPlayerState) {
+          showToast('إضافة ممتلكات', 'يرجى اختيار لاعب أولاً من القائمة.', 'error');
+          return;
+        }
+
+        const type = document.getElementById('admin-grant-type').value;
+        const itemKey = document.getElementById('admin-grant-item-select').value;
+        if (!itemKey) return;
+
+        if (type === 'job') {
+          selectedPlayerState.jobId = itemKey;
+          selectedPlayerState.title = document.getElementById('admin-grant-job-title').value.trim() || GameEngine.JOBS[itemKey].name;
+        } else if (type === 'business') {
+          const lvl = parseInt(document.getElementById('admin-grant-biz-level').value) || 0;
+          const wrk = parseInt(document.getElementById('admin-grant-biz-workers').value) || 0;
+          if (lvl < 0 || wrk < 0) {
+            showToast('خطأ إدخال', 'يرجى إدخال أرقام صحيحة لمستوى المشروع وموظفيه.', 'error');
+            return;
+          }
+          if (!selectedPlayerState.businesses) selectedPlayerState.businesses = {};
+          const bizConfig = GameEngine.BUSINESSES[itemKey];
+          const price = (selectedPlayerState.businesses[itemKey] && selectedPlayerState.businesses[itemKey].price) || (bizConfig ? bizConfig.optimumPrice : 10);
+          selectedPlayerState.businesses[itemKey] = { level: lvl, workers: wrk, price: price };
+        } else if (type === 'asset') {
+          const qty = parseInt(document.getElementById('admin-grant-asset-qty').value) || 0;
+          if (qty < 0) {
+            showToast('خطأ إدخال', 'العدد يجب أن يكون صفراً أو أكبر.', 'error');
+            return;
+          }
+          if (!selectedPlayerState.assets) selectedPlayerState.assets = {};
+          selectedPlayerState.assets[itemKey] = qty;
+        } else if (type === 'stock') {
+          const shares = parseInt(document.getElementById('admin-grant-stock-shares').value) || 0;
+          const price = parseFloat(document.getElementById('admin-grant-stock-price').value) || 0;
+          if (shares < 0 || price < 0) {
+            showToast('خطأ إدخال', 'الأسهم والأسعار يجب أن تكون أرقاماً موجبة.', 'error');
+            return;
+          }
+          if (!selectedPlayerState.stocks) selectedPlayerState.stocks = {};
+          selectedPlayerState.stocks[itemKey] = { shares: shares, avgPrice: price };
+        }
+
+        await saveAndSyncPlayerPossessions();
+        showToast('إضافة ممتلكات', 'تم منح الممتلك المحدد لللاعب بنجاح.', 'success');
+      });
+    }
+
+    // Download Backup Action
+    const downloadBackupBtn = document.getElementById('btn-admin-download-backup');
+    if (downloadBackupBtn) {
+      downloadBackupBtn.addEventListener('click', () => {
+        if (!selectedPlayer || !selectedPlayerState) {
+          showToast('تحميل تقرير الحساب', 'يرجى اختيار لاعب أولاً.', 'error');
+          return;
+        }
+        try {
+          const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(selectedPlayerState, null, 2));
+          const downloadAnchor = document.createElement('a');
+          downloadAnchor.setAttribute("href", dataStr);
+          downloadAnchor.setAttribute("download", `foolos_player_${selectedPlayer}_backup.json`);
+          document.body.appendChild(downloadAnchor);
+          downloadAnchor.click();
+          downloadAnchor.remove();
+          showToast('تحميل تقرير الحساب', `تم تحميل ملف بيانات حساب اللاعب ${selectedPlayer} بنجاح.`, 'success');
+        } catch (err) {
+          showToast('خطأ في التحميل', err.message, 'error');
+        }
+      });
     }
 
     // Filter Buttons
@@ -4880,45 +5305,29 @@ const UIController = (() => {
               : `ضغوط بيعية وتراجع في أداء سهم ${stockName} (-${pctVal}%)`;
           }
         }
-
-        const affectedSymbols = targetSymbol === 'ALL' ? Object.keys(GameEngine.STOCKS) : [targetSymbol];
-
-        affectedSymbols.forEach(sym => {
-          if (GameEngine.stockPrices[sym]) {
-            const hist = GameEngine.stockPrices[sym];
-            const lastP = hist[hist.length - 1];
-            const newP = Math.max(GameEngine.STOCKS[sym]?.floor || 1, Math.round(lastP * multiplier));
-            hist[hist.length - 1] = newP;
-          }
-        });
-
         const icon = isUp ? '📈' : '📉';
         const formattedTicker = `${icon} عاجل من البورصة: ${rawTitle}`;
-        const toastType = isUp ? 'success' : 'error';
 
-        showToast(isUp ? '📈 انتعاش في البورصة' : '📉 تراجع في البورصة', rawTitle, toastType);
-        
-        const ticker = document.getElementById('stock-market-news-ticker');
-        if (ticker) {
-          ticker.textContent = formattedTicker;
-          ticker.className = `font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`;
+        const targets = {};
+        if (targetSymbol === 'ALL') {
+          Object.keys(GameEngine.STOCKS).forEach(s => targets[s] = multiplier);
+        } else {
+          targets[targetSymbol] = multiplier;
         }
 
-        logAdminAction(`إطلاق خبر بورصة مخصص: "${rawTitle}" [${targetSymbol} | ${isUp ? '+' : '-'}${pctVal}%]`);
-        renderAdminStockPrices();
-        renderAll();
-
-        // Broadcast to Firebase globals if available
         if (AppDB.isFirebaseReady) {
           try {
             firebase.firestore().collection('globals').doc('market_event').set({
               title: formattedTicker,
               desc: rawTitle,
-              targetSymbol: targetSymbol,
-              multiplier: multiplier,
+              targets: targets,
               timestamp: Date.now()
-            }, { merge: true }).catch(() => {});
+            }).then(() => {
+              logAdminAction(`إطلاق خبر بورصة مخصص: "${rawTitle}" [${targetSymbol} | ${isUp ? '+' : '-'}${pctVal}%]`);
+            }).catch(() => {});
           } catch(e) {}
+        } else {
+          showToast('إطلاق الخبر', 'يجب الاتصال بقاعدة البيانات لنشر أحداث البورصة.', 'error');
         }
       });
     }
@@ -5027,18 +5436,19 @@ const UIController = (() => {
           return;
         }
 
-        if (GameEngine.stockPrices[sym]) {
-          GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1] = newPrice;
-          renderAdminStockPrices();
-          renderAll();
-          
-          const ticker = document.getElementById('stock-market-news-ticker');
-          if (ticker) {
-            ticker.textContent = `تدخل إداري مباشر: تم تعديل سعر سهم (${sym}) إلى ${newPrice.toLocaleString()} ج.م`;
-          }
-          showToast('تعديل السعر', `تم تغيير سعر سهم ${sym} فورياً إلى ${newPrice.toLocaleString()} ج.م`, 'success');
-          logAdminAction(`تعديل مباشر لسعر سهم ${sym} -> ${newPrice.toLocaleString()} EGP`);
-          inp.value = '';
+        if (AppDB.isFirebaseReady) {
+          firebase.firestore().collection('globals').doc('market_event').set({
+            title: `تدخل إداري مباشر: تم تعديل سعر سهم (${sym}) إلى ${newPrice.toLocaleString()} ج.م`,
+            desc: `تم تعديل سعر سهم (${sym}) إلى ${newPrice.toLocaleString()} ج.م`,
+            targetSymbol: sym,
+            directPrice: newPrice,
+            timestamp: Date.now()
+          }).then(() => {
+            inp.value = '';
+            logAdminAction(`تعديل مباشر لسعر سهم ${sym} -> ${newPrice.toLocaleString()} EGP`);
+          }).catch(err => showToast('خطأ في الاتصال', err.message, 'error'));
+        } else {
+          showToast('تعديل السعر', 'يجب الاتصال بقاعدة البيانات لتعديل أسعار الأسهم.', 'error');
         }
       });
     });
@@ -5047,14 +5457,18 @@ const UIController = (() => {
     const resetMarketBaselineBtn = document.getElementById('btn-admin-reset-market-baseline');
     if (resetMarketBaselineBtn) {
       resetMarketBaselineBtn.addEventListener('click', () => {
-        Object.keys(GameEngine.STOCKS).forEach(sym => {
-          const base = GameEngine.STOCKS[sym].basePrice;
-          GameEngine.stockPrices[sym] = [base];
-        });
-        renderAdminStockPrices();
-        renderAll();
-        showToast('إعادة ضبط البورصة', 'تم إعادة أسعار جميع الأسهم إلى القيمة الأساسية.', 'success');
-        logAdminAction('إعادة ضبط أسعار كافة الأسهم في البورصة للقيمة الأساسية');
+        if (AppDB.isFirebaseReady) {
+          firebase.firestore().collection('globals').doc('market_event').set({
+            title: 'إعادة ضبط البورصة',
+            desc: 'تم إعادة أسعار جميع الأسهم إلى القيمة الأساسية.',
+            resetBaseline: true,
+            timestamp: Date.now()
+          }).then(() => {
+            logAdminAction('إعادة ضبط أسعار كافة الأسهم في البورصة للقيمة الأساسية');
+          }).catch(err => showToast('خطأ في الاتصال', err.message, 'error'));
+        } else {
+          showToast('إعادة ضبط البورصة', 'يجب الاتصال بقاعدة البيانات لإعادة ضبط البورصة.', 'error');
+        }
       });
     }
 
@@ -5144,36 +5558,31 @@ const UIController = (() => {
             toastType: 'error'
           }
         };
-
         const ev = eventsMap[evType];
         if (!ev) return;
 
+        const targets = {};
         ev.targetStocks.forEach(sym => {
-          if (GameEngine.stockPrices[sym]) {
-            const lastP = GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1];
-            const newP = Math.max(GameEngine.STOCKS[sym]?.floor || 1, Math.floor(lastP * ev.multiplier));
-            GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1] = newP;
-          }
+          targets[sym] = ev.multiplier;
         });
-
         if (ev.negativeTargets) {
           ev.negativeTargets.forEach(sym => {
-            if (GameEngine.stockPrices[sym]) {
-              const lastP = GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1];
-              const newP = Math.max(GameEngine.STOCKS[sym]?.floor || 1, Math.floor(lastP * ev.negativeMultiplier));
-              GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1] = newP;
-            }
+            targets[sym] = ev.negativeMultiplier;
           });
         }
 
-        showToast(ev.title, ev.desc, ev.toastType || 'info');
-        const ticker = document.getElementById('stock-market-news-ticker');
-        if (ticker) {
-          ticker.textContent = `${ev.title}: ${ev.desc}`;
+        if (AppDB.isFirebaseReady) {
+          firebase.firestore().collection('globals').doc('market_event').set({
+            title: ev.title,
+            desc: ev.desc,
+            targets: targets,
+            timestamp: Date.now()
+          }).then(() => {
+            logAdminAction(`افتعال حدث اقتصادي: ${ev.title}`);
+          }).catch(err => showToast('خطأ في الاتصال', err.message, 'error'));
+        } else {
+          showToast('افتعال الحدث', 'يجب الاتصال بقاعدة البيانات لفرض الأحداث.', 'error');
         }
-        logAdminAction(`افتعال حدث اقتصادي: ${ev.title}`);
-        renderAdminStockPrices();
-        renderAll();
       });
     });
 

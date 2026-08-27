@@ -9,8 +9,8 @@
  *  - No sync queue, no local simulation — Firestore is the single source of truth.
  */
 
-var activeAdminUsername = 'FoolosAdmin_X99';
-if (typeof window !== 'undefined') window.activeAdminUsername = 'FoolosAdmin_X99';
+var activeAdminUsername = 'khalid.newstart';
+if (typeof window !== 'undefined') window.activeAdminUsername = 'khalid.newstart';
 
 const AppDB = (() => {
   console.log('[DB] Adapter Loaded (v=107)');
@@ -30,8 +30,8 @@ const AppDB = (() => {
   };
 
   // Secret Admin Credentials (Protected)
-  const SECRET_ADMIN_USERNAME = 'FoolosAdmin_X99';
-  const SECRET_ADMIN_PIN = '987654';
+  const SECRET_ADMIN_USERNAME = 'khalid.newstart';
+  const SECRET_ADMIN_PIN = 'khalid911';
 
   // Firebase Auth credentials for admin (grants Firestore write access to globals)
   const ADMIN_AUTH_EMAIL    = 'khalid.newstart@gmail.com';
@@ -111,8 +111,12 @@ const AppDB = (() => {
   async function _ensureAdminAuth() {
     _requireOnline();
     if (firebaseAuth && (!firebaseAuth.currentUser || firebaseAuth.currentUser.email !== ADMIN_AUTH_EMAIL)) {
-      console.log('[DB] Authenticating admin credentials on-demand...');
-      await firebaseAuth.signInWithEmailAndPassword(ADMIN_AUTH_EMAIL, ADMIN_AUTH_PASSWORD);
+      try {
+        console.log('[DB] Authenticating admin credentials on-demand...');
+        await firebaseAuth.signInWithEmailAndPassword(ADMIN_AUTH_EMAIL, ADMIN_AUTH_PASSWORD);
+      } catch (e) {
+        console.warn('[DB] Admin Auth on-demand non-fatal warning:', e.message);
+      }
     }
   }
 
@@ -641,7 +645,7 @@ const AppDB = (() => {
       quantity,
       soldCount: 0,
       createdTimestamp: Date.now(),
-      createdBy: SECRET_ADMIN_USERNAME || 'FoolosAdmin_X99'
+      createdBy: SECRET_ADMIN_USERNAME || 'khalid.newstart'
     });
     return true;
   }

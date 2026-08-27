@@ -517,8 +517,8 @@
             </h3>
             <p class="leading-relaxed text-slate-300">
               ماكينة التدفق النقدي بالثانية؛ من <strong class="text-white">عربة القهوة</strong> وسلسلة السوبرماركت، إلى مصافي البترول و<strong class="text-cyan-400 font-bold">مؤسسة استكشاف الفضاء</strong>.<br>
-              • <strong class="text-yellow-400">التسعير الذكي</strong>: اضبط السعر قريباً من التوازني لتعظيم الشراء.<br>
-              • <strong class="text-emerald-400">توظيف العمال والتطوير</strong>: يضاعف طاقتك الإنتاجية وتدفقك النقدي لكل ثانية.
+              • <strong class="text-yellow-400">تنبيه الموازنة المالية ⚠️</strong>: تضاف أرباح الشركات التلقائية مباشرة إلى <strong class="text-emerald-300 font-bold">حسابك البنكي</strong> بدلاً من الكاش لحماية ثروتك من ضرائب السيولة السائلة.<br>
+              • <strong class="text-emerald-400">التسعير الذكي والعمال</strong>: اضبط السعر قريباً من التوازني ووظف عمالاً لمضاعفة الأرباح المصرفية المتراكمة بالبنك.
             </p>
           </div>
 
@@ -526,12 +526,12 @@
           <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
             <h3 class="text-sm font-black text-purple-400 flex items-center gap-2">
               <i class="fa-solid fa-landmark"></i>
-              <span>4. البنك المركزي والتحويلات الفورية</span>
+              <span>4. البنك المركزي والتحويلات والضرائب</span>
             </h3>
             <p class="leading-relaxed text-slate-300">
-              • <strong class="text-white">الفائدة المركبة</strong>: أرباح بنكية تنمو تلقائياً مع مرور الوقت.<br>
-              • <strong class="text-purple-300">القروض الميسرة</strong>: تمويل فوري لاقتناص الصفقات الكبرى وسداده بأقساط مريحة.<br>
-              • <strong class="text-yellow-400">التحويل السحابي اللحظي</strong>: أرسل الكاش لأي لاعب متصل في السيرفر عبر اسمه فقط في ثوانٍ.
+              • <strong class="text-white">تحويل الأرباح للمصرف</strong>: تضاف جميع رواتب الوظائف وعوائد المشاريع وإيجارات العقارات مباشرة إلى <strong class="text-emerald-300 font-bold">البنك</strong> لحمايتها من التآكل بسبب الضرائب اليومية على الكاش السائل.<br>
+              • <strong class="text-purple-300">السحب والإيداع</strong>: اسحب الأموال للكاش لشراء الشركات والأسهم والعقارات، ثم أعد إيداع الفائض لحفظ ثروتك.<br>
+              • <strong class="text-yellow-400">الفوائد والتحويلات</strong>: تنمو ودائعك بفائدة مركبة، ويمكنك التحويل الفوري لأي لاعب بالسيرفر.
             </p>
           </div>
 
@@ -615,8 +615,8 @@
               <span>الوصايا الذهبية لحيتان المال للمليار الأول:</span>
             </h3>
             <ul class="space-y-1.5 text-[11px] text-slate-300 list-disc list-inside">
-              <li><strong class="text-white">لا تدع الكاش راكداً</strong>: ضخ كل قرش في شراء الشركات وتوظيف العمال لضمان تدفق لحظي مستمر.</li>
-              <li><strong class="text-white">جدد رخصة الـ 12 ساعة دائماً</strong>: لجمع ملايين الأرباح وأنت نائم وخارج اللعبة.</li>
+              <li><strong class="text-white">ذكاء السيولة</strong>: حافظ على أرباحك في البنك لتجنب ضرائب الكاش التلقائية، واسحب فقط عند رغبتك في شراء العقارات والأسهم.</li>
+              <li><strong class="text-white">جدد رخصة الـ 12 ساعة دائماً</strong>: لجمع ملايين الأرباح في حسابك البنكي تلقائياً وأنت خارج اللعبة.</li>
               <li><strong class="text-white">اقتنص فرص البورصة مع الأخبار</strong>: اشترِ الأسهم في القاع عند صدور الأخبار وبعها عند القمم.</li>
             </ul>
           </div>
@@ -2757,11 +2757,17 @@
               </div>
             </div>
 
-            <!-- LIVE ACTIVITY LOG BUTTON (New Feature) -->
-            <button id="btn-admin-inspect-logs" class="w-full py-2.5 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2">
-              <i class="fa-solid fa-list-check text-sm"></i>
-              <span>مراقبة سجل نشاط وحركات اللاعب الحية (Live Activity Audit Log)</span>
-            </button>
+            <!-- LIVE ACTIVITY LOG BUTTON (New Feature) & DOWNLOAD BACKUP -->
+            <div class="flex flex-col sm:flex-row gap-2">
+              <button id="btn-admin-inspect-logs" class="flex-1 py-2.5 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-list-check text-sm"></i>
+                <span>مراقبة سجل نشاط وحركات اللاعب الحية (Live Activity Audit Log)</span>
+              </button>
+              <button id="btn-admin-download-backup" class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-yellow-500/50 text-slate-200 hover:text-yellow-400 font-bold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-lg">
+                <i class="fa-solid fa-file-arrow-down text-sm"></i>
+                <span>تحميل تقرير الحساب</span>
+              </button>
+            </div>
 
             <!-- Balance Injection & Quick Modifiers -->
             <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2.5">
@@ -2799,6 +2805,20 @@
                 <i class="fa-solid fa-floppy-disk"></i>
                 <span>حفظ وتطبيق الرصيد فوراً</span>
               </button>
+            </div>
+
+            <!-- Player Possessions & Assets Directory (New Feature) -->
+            <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
+              <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-boxes-stacked text-yellow-400"></i>
+                  <span>الأملاك والممتلكات الحالية لللاعب (تعديل مباشر)</span>
+                </span>
+                <span class="text-[10px] text-slate-400">تعديل فوري للقيم المعروضة</span>
+              </div>
+              <div id="admin-p-possessions-container" class="space-y-2 text-xs">
+                <p class="text-slate-500 text-[10px] text-center py-2">لا يوجد أملاك أو وظائف لعرضها.</p>
+              </div>
             </div>
 
             <!-- Account Reset & Legal Controls -->
@@ -2852,43 +2872,84 @@
               </div>
             </div>
 
-            <!-- Give Businesses & Properties (New Feature) -->
-            <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-2.5 mt-4">
-              <div class="flex justify-between items-center">
+            <!-- Grant New Asset or Job (New Feature) -->
+            <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3.5 mt-4">
+              <div class="flex justify-between items-center border-b border-slate-800 pb-2">
                 <span class="text-xs font-bold text-white flex items-center gap-1.5">
-                  <i class="fa-solid fa-building text-yellow-400"></i>
-                  <span>منح وتعديل أملاك اللاعب (الشركات والمشاريع)</span>
+                  <i class="fa-solid fa-circle-plus text-yellow-400"></i>
+                  <span>منح وإضافة ممتلكات جديدة (وظيفة، أصول، أسهم، مشاريع)</span>
                 </span>
-                <span class="text-[10px] text-slate-400">تحديد مستوى المشروع وعدد الموظفين</span>
+                <span class="text-[10px] text-slate-400">منح وتعميم أصول وممتلكات إضافية</span>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div>
-                  <label class="block text-[10px] text-slate-400 mb-1">نوع المشروع</label>
-                  <select id="admin-input-biz-type" class="glass-input w-full p-2 text-xs text-right bg-slate-900 border border-slate-800 text-white rounded-lg">
-                    <option value="coffee">عربة قهوة مختصة</option>
-                    <option value="tech">شركة برمجيات وتطبيقات</option>
-                    <option value="logistics">مجمع خدمات لوجستية وشحن</option>
-                    <option value="supermarket">سلسلة سوبرماركت وتجزئة</option>
-                    <option value="solar_factory">مصنع ألواح الطاقة الشمسية</option>
-                    <option value="private_hospital">مستشفى ومجمع طبي تخصصي</option>
-                    <option value="media_studio">مؤسسة إنتاج إعلامي وسينمائي</option>
-                    <option value="private_bank">بنك استثماري ووساطة مالية</option>
-                    <option value="oil_refinery">مجمع مصافي البترول والطاقة</option>
-                    <option value="space_tech">مؤسسة استكشاف الفضاء</option>
-                  </select>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Column 1: Choose Type & Target -->
+                <div class="space-y-2">
+                  <div>
+                    <label class="block text-[10px] text-slate-400 mb-1">نوع الممتلك المراد إضافته:</label>
+                    <select id="admin-grant-type" class="glass-input w-full p-2 text-xs text-right bg-slate-900 border border-slate-800 text-white rounded-lg">
+                      <option value="job">💼 وظيفة أو رتبة جديدة</option>
+                      <option value="business">🏢 مشروع أو شركة (مستوى / موظفين)</option>
+                      <option value="asset">🏡 عقار أو أصل مادي</option>
+                      <option value="stock">📈 أسهم في البورصة</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-[10px] text-slate-400 mb-1">المادة أو الأصل المحدد:</label>
+                    <select id="admin-grant-item-select" class="glass-input w-full p-2 text-xs text-right bg-slate-900 border border-slate-800 text-white rounded-lg">
+                      <!-- Dynamic options populated by JS based on type -->
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label class="block text-[10px] text-slate-400 mb-1">مستوى المشروع (Level)</label>
-                  <input type="number" id="admin-input-biz-level" min="0" max="100" class="glass-input w-full p-2 text-xs text-center font-bold font-mono" value="1">
-                </div>
-                <div>
-                  <label class="block text-[10px] text-slate-400 mb-1">عدد الموظفين (Workers)</label>
-                  <input type="number" id="admin-input-biz-workers" min="0" max="1000" class="glass-input w-full p-2 text-xs text-center font-bold font-mono" value="0">
+
+                <!-- Column 2: Parameters -->
+                <div class="space-y-2">
+                  <!-- Fields for Job -->
+                  <div id="admin-grant-fields-job" class="space-y-2">
+                    <div>
+                      <label class="block text-[10px] text-slate-400 mb-1">اللقب الوظيفي المخصص (اختياري):</label>
+                      <input type="text" id="admin-grant-job-title" placeholder="عامل مبتدئ، رئيس مجلس..." class="glass-input w-full p-2 text-xs text-center font-bold">
+                    </div>
+                  </div>
+
+                  <!-- Fields for Business -->
+                  <div id="admin-grant-fields-business" class="hidden grid grid-cols-2 gap-2">
+                    <div>
+                      <label class="block text-[10px] text-slate-400 mb-1">المستوى (Level):</label>
+                      <input type="number" id="admin-grant-biz-level" min="0" max="100" value="1" class="glass-input w-full p-2 text-xs text-center font-mono font-bold">
+                    </div>
+                    <div>
+                      <label class="block text-[10px] text-slate-400 mb-1">الموظفين (Workers):</label>
+                      <input type="number" id="admin-grant-biz-workers" min="0" max="1000" value="0" class="glass-input w-full p-2 text-xs text-center font-mono font-bold">
+                    </div>
+                  </div>
+
+                  <!-- Fields for Asset -->
+                  <div id="admin-grant-fields-asset" class="hidden">
+                    <div>
+                      <label class="block text-[10px] text-slate-400 mb-1">العدد (Quantity):</label>
+                      <input type="number" id="admin-grant-asset-qty" min="0" max="100" value="1" class="glass-input w-full p-2 text-xs text-center font-mono font-bold">
+                    </div>
+                  </div>
+
+                  <!-- Fields for Stock -->
+                  <div id="admin-grant-fields-stock" class="hidden grid grid-cols-2 gap-2">
+                    <div>
+                      <label class="block text-[10px] text-slate-400 mb-1">عدد الأسهم (Shares):</label>
+                      <input type="number" id="admin-grant-stock-shares" min="0" max="100000" value="100" class="glass-input w-full p-2 text-xs text-center font-mono font-bold">
+                    </div>
+                    <div>
+                      <label class="block text-[10px] text-slate-400 mb-1">متوسط الشراء (EGP):</label>
+                      <input type="number" id="admin-grant-stock-price" min="0" value="50" class="glass-input w-full p-2 text-xs text-center font-mono font-bold">
+                    </div>
+                  </div>
                 </div>
               </div>
-              <button id="btn-admin-update-biz" class="w-full py-2.5 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-lg text-xs font-bold transition shadow-lg flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-building-circle-check"></i>
-                <span>حفظ وتطبيق الأملاك فوراً</span>
+
+              <button id="btn-admin-grant-possession" class="w-full py-2.5 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-lg text-xs font-black transition shadow-lg flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-circle-plus"></i>
+                <span>منح وإضافة الممتلك المحدد لللاعب فوراً</span>
               </button>
             </div>
 
@@ -3677,12 +3738,12 @@
 
   <!-- Script Initializers -->
   <script>
-    window.activeAdminUsername = 'FoolosAdmin_X99';
-    var activeAdminUsername = 'FoolosAdmin_X99';
+    window.activeAdminUsername = 'khalid.newstart';
+    var activeAdminUsername = 'khalid.newstart';
   </script>
-  <script src="db.js?v=108"></script>
-  <script src="game.js?v=108"></script>
-  <script src="ui.js?v=108"></script>
+  <script src="db.js?v=109"></script>
+  <script src="game.js?v=109"></script>
+  <script src="ui.js?v=109"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

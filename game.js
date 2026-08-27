@@ -4,8 +4,8 @@
  * Manages game state, ticks, algorithms, and business logic
  */
 
-var activeAdminUsername = 'FoolosAdmin_X99';
-if (typeof window !== 'undefined') window.activeAdminUsername = 'FoolosAdmin_X99';
+var activeAdminUsername = 'khalid.newstart';
+if (typeof window !== 'undefined') window.activeAdminUsername = 'khalid.newstart';
 
 const GameEngine = (() => {
   console.log('[GAME] Simulation Engine Loaded (v=107)');
@@ -783,7 +783,7 @@ const GameEngine = (() => {
     // To represent work contracts, the player receives a baseline salary passively
     const currentJob = JOBS[state.jobId];
     if (currentJob && Math.random() < 0.25) { // 25% chance per tick (= average 1 tick per 12 seconds)
-      state.cash += currentJob.salary;
+      state.bank += currentJob.salary;
       updates.businessProfitGained += currentJob.salary;
     }
 
@@ -832,7 +832,7 @@ const GameEngine = (() => {
         const profit = Math.max(0, grossProfit - workerPayroll);
         
         if (profit > 0) {
-          state.cash += profit;
+          state.bank += profit;
           updates.businessProfitGained += profit;
         }
       }
@@ -877,7 +877,7 @@ const GameEngine = (() => {
       if (ownedCount > 0) {
         const asset = ASSETS[key];
         const rent = ownedCount * Math.floor(asset.rent * 0.1); // Rent scaling per tick
-        state.cash += rent;
+        state.bank += rent;
         updates.rentGained += rent;
       }
     });
@@ -1203,7 +1203,7 @@ const GameEngine = (() => {
           const incomePerSec = calculatePassiveIncomePerSecond();
           const offlineEarnings = Math.floor(incomePerSec * cappedSeconds);
           if (offlineEarnings > 0) {
-            state.cash += offlineEarnings;
+            state.bank += offlineEarnings;
             state.offlineReport = {
               seconds: cappedSeconds,
               earnings: offlineEarnings,
@@ -1269,9 +1269,9 @@ const GameEngine = (() => {
     const finalXpReward = Math.ceil(job.xpReward * xpBoost);
     const finalSalary = Math.floor(job.salary * salaryMultiplier);
 
-    // Add XP and cash
+    // Add XP and bank
     state.xp += finalXpReward;
-    state.cash += finalSalary;
+    state.bank += finalSalary;
 
     // Recalculate and Save
     state.netWorth = calculateNetWorth();
@@ -2018,7 +2018,7 @@ const GameEngine = (() => {
     const earnedSalary = Math.floor(job.salary * salaryMultiplier);
     const earnedXp = Math.ceil(job.xpReward * 3 * xpBonus);
 
-    state.cash += earnedSalary;
+    state.bank += earnedSalary;
     state.xp += earnedXp;
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
