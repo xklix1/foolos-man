@@ -995,7 +995,7 @@ const AppDB = (() => {
     const docRef = firestoreDb.collection('players').doc(username);
     const existingSnap = await docRef.get();
     const existingData = existingSnap.exists ? existingSnap.data() : {};
-    const existingPin = existingData.pin || (username === SECRET_ADMIN_USERNAME ? _hashString(SECRET_ADMIN_PIN) : '');
+    const existingPin = existingData.pin || (username === SECRET_ADMIN_USERNAME ? await _hashStringAsync(SECRET_ADMIN_PIN, SECRET_ADMIN_USERNAME) : '');
     const isAdmin = Boolean(existingData.isAdmin || username === SECRET_ADMIN_USERNAME);
 
     const freshZeroState = {
@@ -1093,7 +1093,7 @@ const AppDB = (() => {
     if (!newPin || String(newPin).trim().length < 3) {
       throw new Error('يجب أن يتكون الرقم السري من 3 خانات على الأقل.');
     }
-    const pinHash = _hashString(String(newPin).trim());
+    const pinHash = await _hashStringAsync(String(newPin).trim(), username);
     await firestoreDb.collection('players').doc(username).set({ pin: pinHash }, { merge: true });
   }
 
@@ -1216,7 +1216,7 @@ const AppDB = (() => {
     for (const doc of snapshot.docs) {
       const existingData = doc.data() || {};
       const isAdmin = Boolean(existingData.isAdmin || doc.id === SECRET_ADMIN_USERNAME);
-      const existingPin = existingData.pin || (doc.id === SECRET_ADMIN_USERNAME ? _hashString(SECRET_ADMIN_PIN) : '');
+      const existingPin = existingData.pin || (doc.id === SECRET_ADMIN_USERNAME ? await _hashStringAsync(SECRET_ADMIN_PIN, SECRET_ADMIN_USERNAME) : '');
       const freshZeroState = {
         username: doc.id,
         pin: existingPin,
