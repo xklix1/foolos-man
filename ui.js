@@ -7680,8 +7680,9 @@ const UIController = (() => {
       document.getElementById('profile-card-reputation').textContent = `${(pState.underworldRep || 0).toLocaleString()} ⭐`;
       document.getElementById('profile-card-createdat').textContent = pState.createdAt ? new Date(pState.createdAt).toLocaleDateString() : 'غير معروف';
 
-      const jobMap = { 'worker': 'عامل', 'accountant': 'محاسب', 'marketer': 'مسوق', 'admin': 'إداري رئيسي' };
-      document.getElementById('profile-card-job').textContent = jobMap[pState.jobId] || pState.jobId || 'عامل';
+      const jobConfig = GameEngine.JOBS && GameEngine.JOBS[pState.jobId];
+      const jobName = jobConfig ? jobConfig.name : (pState.jobId || 'عامل باليومية');
+      document.getElementById('profile-card-job').textContent = jobName;
 
       const summaryContainer = document.getElementById('profile-card-assets-summary');
       summaryContainer.innerHTML = '';
