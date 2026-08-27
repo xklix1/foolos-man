@@ -3981,7 +3981,11 @@ const UIController = (() => {
         const p1Title = document.getElementById('podium-title-1');
         const p1Worth = document.getElementById('podium-worth-1');
         const p1Avatar = document.getElementById('podium-avatar-1');
-        if (p1Name) p1Name.textContent = top1.username;
+        if (p1Name) {
+          p1Name.textContent = top1.username;
+          p1Name.classList.add('cursor-pointer', 'hover:underline');
+          p1Name.onclick = () => openPlayerProfileCard(top1.username);
+        }
         if (p1Title) p1Title.textContent = top1.title || 'إمبراطور المال';
         if (p1Worth) p1Worth.textContent = `${Number(top1.netWorth || 0).toLocaleString()} EGP`;
         if (p1Avatar) p1Avatar.innerHTML = `<span class="text-sm sm:text-base font-black">${(top1.username || 'P').substring(0, 2).toUpperCase()}</span>`;
@@ -3993,7 +3997,11 @@ const UIController = (() => {
         const p2Title = document.getElementById('podium-title-2');
         const p2Worth = document.getElementById('podium-worth-2');
         const p2Avatar = document.getElementById('podium-avatar-2');
-        if (p2Name) p2Name.textContent = top2.username;
+        if (p2Name) {
+          p2Name.textContent = top2.username;
+          p2Name.classList.add('cursor-pointer', 'hover:underline');
+          p2Name.onclick = () => openPlayerProfileCard(top2.username);
+        }
         if (p2Title) p2Title.textContent = top2.title || 'بارون التجارة';
         if (p2Worth) p2Worth.textContent = `${Number(top2.netWorth || 0).toLocaleString()} EGP`;
         if (p2Avatar) p2Avatar.innerHTML = `<span class="text-xs sm:text-sm font-black">${(top2.username || 'P').substring(0, 2).toUpperCase()}</span>`;
@@ -4005,7 +4013,11 @@ const UIController = (() => {
         const p3Title = document.getElementById('podium-title-3');
         const p3Worth = document.getElementById('podium-worth-3');
         const p3Avatar = document.getElementById('podium-avatar-3');
-        if (p3Name) p3Name.textContent = top3.username;
+        if (p3Name) {
+          p3Name.textContent = top3.username;
+          p3Name.classList.add('cursor-pointer', 'hover:underline');
+          p3Name.onclick = () => openPlayerProfileCard(top3.username);
+        }
         if (p3Title) p3Title.textContent = top3.title || 'رجل أعمال كبار';
         if (p3Worth) p3Worth.textContent = `${Number(top3.netWorth || 0).toLocaleString()} EGP`;
         if (p3Avatar) p3Avatar.innerHTML = `<span class="text-xs sm:text-sm font-black">${(top3.username || 'P').substring(0, 2).toUpperCase()}</span>`;
@@ -4057,7 +4069,7 @@ const UIController = (() => {
                 ${initials}
               </div>
               <div class="min-w-0">
-                <span class="font-black ${isSelf ? 'text-yellow-400 glow-gold' : rank === 1 ? 'text-yellow-300' : 'text-white'} text-xs sm:text-sm block truncate">
+                <span class="font-black ${isSelf ? 'text-yellow-400 glow-gold' : rank === 1 ? 'text-yellow-300' : 'text-white'} text-xs sm:text-sm block truncate cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${player.username}')">
                   ${player.username}
                 </span>
                 ${isSelf ? '<span class="text-[8.5px] px-1.5 py-0.2 bg-yellow-500/20 text-yellow-400 rounded font-black inline-block border border-yellow-500/30">أنت (حسابك)</span>' : ''}
