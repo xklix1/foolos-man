@@ -7771,26 +7771,37 @@ const UIController = (() => {
       const summaryContainer = document.getElementById('profile-card-assets-summary');
       summaryContainer.innerHTML = '';
 
-      let bizCount = 0;
+      let bizList = [];
       if (pState.businesses) {
         Object.keys(pState.businesses).forEach(k => {
-          if (pState.businesses[k].level > 0) bizCount++;
+          const biz = pState.businesses[k];
+          if (biz && biz.level > 0) {
+            const config = GameEngine.BUSINESSES && GameEngine.BUSINESSES[k];
+            const bizName = config ? config.name : k;
+            bizList.push(`${bizName} (مستوى ${biz.level})`);
+          }
         });
       }
 
-      let propCount = 0;
+      let assetList = [];
       if (pState.assets) {
         Object.keys(pState.assets).forEach(k => {
-          propCount += (pState.assets[k] || 0);
+          const qty = pState.assets[k] || 0;
+          if (qty > 0) {
+            const config = GameEngine.ASSETS && GameEngine.ASSETS[k];
+            const assetName = config ? config.name : k;
+            assetList.push(`${assetName} (عدد: ${qty})`);
+          }
         });
       }
 
-      const p1 = document.createElement('p');
-      p1.innerHTML = `• عدد المشاريع التجارية المشغلة: <strong class="text-white">${bizCount}</strong>`;
+      const p1 = document.createElement('div');
+      p1.className = 'mb-2';
+      p1.innerHTML = `<span class="text-slate-400">🏢 المشاريع التجارية:</span><div class="pl-2 mt-1 text-white font-bold">${bizList.length > 0 ? bizList.map(b => `• ${b}`).join('<br>') : 'لا توجد مشاريع نشطة'}</div>`;
       summaryContainer.appendChild(p1);
 
-      const p2 = document.createElement('p');
-      p2.innerHTML = `• إجمالي العقارات والأصول المشتراة: <strong class="text-white">${propCount}</strong>`;
+      const p2 = document.createElement('div');
+      p2.innerHTML = `<span class="text-slate-400">🏡 العقارات والأصول:</span><div class="pl-2 mt-1 text-white font-bold">${assetList.length > 0 ? assetList.map(a => `• ${a}`).join('<br>') : 'لا توجد عقارات مملوكة'}</div>`;
       summaryContainer.appendChild(p2);
 
       const isMe = pState.username === GameEngine.state.username;
