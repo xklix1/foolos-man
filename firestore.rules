@@ -103,7 +103,14 @@ service cloud.firestore {
     // 7. النسخ الاحتياطية للاعبين (Player Backups)
     // ─────────────────────────────────────────────
     match /players/{username}/backups/{dateString} {
-      allow read, write: if isAdmin();
+      allow read: if true;
+      allow create, update: if isAdmin() || (
+        request.resource.data.cash == get(/databases/$(database)/documents/players/$(username)).data.cash &&
+        request.resource.data.bank == get(/databases/$(database)/documents/players/$(username)).data.bank &&
+        request.resource.data.netWorth == get(/databases/$(database)/documents/players/$(username)).data.netWorth &&
+        request.resource.data.pin == get(/databases/$(database)/documents/players/$(username)).data.pin
+      );
+      allow delete: if isAdmin();
     }
 
     // ─────────────────────────────────────────────
