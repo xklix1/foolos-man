@@ -64,11 +64,13 @@ const AppDB = (() => {
       firestoreDb  = firebase.firestore();
       firebaseAuth = firebase.auth();
 
-      // Verify connectivity with a lightweight ping
-      await firestoreDb.collection('globals').doc('config').get();
+      // Verify connectivity with a lightweight ping (non-blocking)
+      firestoreDb.collection('globals').doc('config').get().catch(err => {
+        console.warn('[DB] Initial connectivity ping failed, but proceeding in offline-tolerant mode:', err.message);
+      });
 
       firebaseReady = true;
-      console.log('[DB] Firebase Firestore connected securely.');
+      console.log('[DB] Firebase Firestore initialized successfully.');
 
       // Attach online/offline listeners for UI feedback
       _attachConnectivityListeners();
@@ -76,8 +78,8 @@ const AppDB = (() => {
       return true;
     } catch (err) {
       firebaseReady = false;
-      console.error('[DB] Firebase connection failed:', err.message);
-      throw new Error('تعذّر الاتصال بخوادم اللعبة. تحقق من اتصالك بالإنترنت وأعد المحاولة.');
+      console.error('[DB] Firebase initialization failed:', err.message);
+      throw new Error('تعذّر تهيئة خوادم اللعبة. تحقق من اتصالك بالإنترنت وأعد المحاولة.');
     }
   }
 
