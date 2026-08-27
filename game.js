@@ -191,10 +191,10 @@ const GameEngine = (() => {
       id: 'tax_shield', 
       name: 'درع الإعفاء والملاذ الضريبي', 
       cost: 180000, 
-      desc: 'يمنحك خصماً قدره 15% على ترقيات الشركات ويخفض ضريبة الثروة بنسبة 50% لمدة 3 دقائق.',
+      desc: 'يمنحك خصماً قدره 15% على ترقيات الشركات ويخفض ضريبة الثروة بنسبة 50% لمدة 12 ساعة.',
       effect: 'upgrade_discount', 
       value: 0.15,
-      durationTicks: 180
+      durationTicks: 14400
     },
     market_scanner: { 
       id: 'market_scanner', 

@@ -3317,7 +3317,7 @@ const UIController = (() => {
         shieldTimeLeft.textContent = `متبقي على الصلاحية: ${sec} ثانية`;
         shieldTimeLeft.className = 'text-[11px] text-emerald-400 font-mono font-bold';
       } else {
-        shieldTimeLeft.textContent = 'المدة: 30 دقيقة (1,800 ثانية)';
+        shieldTimeLeft.textContent = 'المدة: 12 ساعة (43,200 ثانية)';
         shieldTimeLeft.className = 'text-[11px] text-slate-400 font-mono';
       }
     }
