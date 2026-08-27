@@ -1847,7 +1847,7 @@ const AppDB = (() => {
     adminCreateLiveAuction,
     listenToLiveAuctions,
     registerForAuction,
-    placeAuctionBid
+    placeAuctionBid,
 
     get dbType() { return firebaseReady ? 'firebase' : 'offline'; },
     mockPlayers: []
