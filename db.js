@@ -1895,6 +1895,25 @@ const AppDB = (() => {
     });
     return true;
   }
+  async function adminDeleteCorporation(corpId) {
+    _requireOnline();
+    await _ensureAdminAuth();
+    if (!corpId) throw new Error('مُعرّف الشركة مطلوب.');
+    await firestoreDb.collection('corporations').doc(corpId).delete();
+    return true;
+  }
+
+  async function adminEditCorporationTreasury(corpId, newTreasury) {
+    _requireOnline();
+    await _ensureAdminAuth();
+    if (!corpId) throw new Error('مُعرّف الشركة مطلوب.');
+    const amount = parseFloat(newTreasury);
+    if (isNaN(amount) || amount < 0) throw new Error('قيمة الخزينة غير صالحة.');
+    await firestoreDb.collection('corporations').doc(corpId).update({
+      treasury: amount
+    });
+    return true;
+  }
 
   // ─────────────────────────────────────────────
   //  PUBLIC API
@@ -1987,6 +2006,8 @@ const AppDB = (() => {
     joinCorporation,
     contributeToCorporation,
     buyCorporationProject,
+    adminDeleteCorporation,
+    adminEditCorporationTreasury,
 
     get dbType() { return firebaseReady ? 'firebase' : 'offline'; },
     mockPlayers: []

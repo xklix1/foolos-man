@@ -3324,6 +3324,11 @@
       <button id="tab-admin-giftcodes"
         class="admin-tab-btn px-4 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-2"><i
           class="fa-solid fa-gift text-emerald-400"></i><span>أكواد الهدايا والمكافآت</span></button>
+      <button id="tab-admin-corporations"
+        class="admin-tab-btn px-4 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-2">
+        <i class="fa-solid fa-building-user text-violet-400"></i>
+        <span>إدارة الشركات المشتركة</span>
+      </button>
       <button id="tab-admin-system"
         class="admin-tab-btn px-4 py-2 rounded-lg border border-transparent hover:bg-slate-900 text-slate-400 font-bold transition whitespace-nowrap flex items-center gap-2"><i
           class="fa-solid fa-triangle-exclamation text-rose-400"></i><span class="text-rose-400">شؤون وتصفير
@@ -4650,6 +4655,37 @@
               <tbody id="admin-giftcodes-list" class="divide-y divide-slate-800/40">
                 <tr>
                   <td colspan="5" class="py-4 text-center text-slate-500">جاري تحميل الأكواد الفعالة...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9. PANEL CORPORATIONS MANAGEMENT -->
+      <div id="admin-subpanel-corporations" class="hidden space-y-4">
+        <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
+          <h4 class="text-xs font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-building-user text-violet-400"></i>
+            <span>الشركات والتحالفات المشتركة المسجلة في الخادم</span>
+          </h4>
+          <p class="text-[10px] text-slate-400">مراقبة التكتلات المالية ومخازن الخزينة الضخمة وإدارتها وحذفها لتصحيح التضخم.</p>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400">
+                  <th class="pb-2">اسم الشركة</th>
+                  <th class="pb-2">المؤسس</th>
+                  <th class="pb-2 text-center">الخزينة (EGP)</th>
+                  <th class="pb-2 text-center">عدد الأعضاء</th>
+                  <th class="pb-2 text-center">المشاريع المستحوذ عليها</th>
+                  <th class="pb-2 text-left">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="admin-corporations-list" class="divide-y divide-slate-800/40">
+                <tr>
+                  <td colspan="6" class="py-4 text-center text-slate-500">جاري تحميل التحالفات والشركات...</td>
                 </tr>
               </tbody>
             </table>

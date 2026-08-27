@@ -4613,8 +4613,8 @@ const UIController = (() => {
       });
     }
 
-    // Tabs logic - bind all 8 subtabs
-    const tabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'auctions', 'giftcodes', 'system'];
+    // Tabs logic - bind all 9 subtabs
+    const tabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'auctions', 'giftcodes', 'system', 'corporations'];
     tabs.forEach(t => {
       const tabEl = document.getElementById(`tab-admin-${t}`);
       if (tabEl) {
@@ -6449,8 +6449,90 @@ const UIController = (() => {
     }
   }
 
+  let adminCorpsUnsubscribe = null;
+
+  function renderAdminCorporationsPanel() {
+    const tbody = document.getElementById('admin-corporations-list');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-slate-500">جاري تحميل الشركات...</td></tr>';
+
+    if (adminCorpsUnsubscribe) {
+      adminCorpsUnsubscribe();
+      adminCorpsUnsubscribe = null;
+    }
+
+    adminCorpsUnsubscribe = AppDB.listenToCorporations(corps => {
+      tbody.innerHTML = '';
+      if (!corps || corps.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-slate-500">لا توجد شركات مشتركة مسجلة حالياً.</td></tr>';
+        return;
+      }
+
+      corps.forEach(corp => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-850 transition border-b border-slate-800/40';
+
+        const projKeys = Object.keys(corp.projects || {}).filter(k => corp.projects[k] === true);
+        const projNames = projKeys.map(k => {
+          const p = GameEngine.CORP_PROJECTS[k];
+          return p ? p.name : k;
+        }).join('، ') || 'لا توجد مشاريع';
+
+        tr.innerHTML = `
+          <td class="p-2.5 font-bold text-white">
+            <div>${corp.name}</div>
+            <div class="text-[10px] text-slate-500 font-normal">${corp.desc || 'لا يوجد وصف'}</div>
+          </td>
+          <td class="p-2.5 font-bold text-slate-300">${corp.founder}</td>
+          <td class="p-2.5 text-center font-mono text-emerald-400 font-bold">${(corp.treasury || 0).toLocaleString()} EGP</td>
+          <td class="p-2.5 text-center font-mono text-slate-300 font-bold">${(corp.members || []).length} عضو</td>
+          <td class="p-2.5 text-center text-slate-400 max-w-[200px] truncate" title="${projNames}">${projNames}</td>
+          <td class="p-2.5 text-left space-x-1 space-x-reverse">
+            <button data-id="${corp.id}" data-name="${corp.name}" class="btn-admin-edit-corp-treasury py-1 px-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/20 rounded font-bold transition text-[10px]">تعديل الخزينة</button>
+            <button data-id="${corp.id}" data-name="${corp.name}" class="btn-admin-delete-corp py-1 px-2.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/20 rounded font-bold transition text-[10px]">تفكيك</button>
+          </td>
+        `;
+
+        // Bind Edit Treasury Button
+        const btnEdit = tr.querySelector('.btn-admin-edit-corp-treasury');
+        btnEdit.addEventListener('click', async () => {
+          const corpId = btnEdit.dataset.id;
+          const corpName = btnEdit.dataset.name;
+          const currentTreasury = corp.treasury || 0;
+          const val = prompt(`أدخل الرصيد الجديد لخزينة شركة "${corpName}":`, currentTreasury);
+          if (val === null || val.trim() === '') return;
+          try {
+            await AppDB.adminEditCorporationTreasury(corpId, val);
+            showToast('تعديل الخزينة', `تم تعديل رصيد خزينة شركة ${corpName} بنجاح.`, 'success');
+            logAdminAction(`تعديل خزينة الشركة المشتركة: ${corpName}`);
+          } catch (e) {
+            showToast('خطأ تعديل الخزينة', e.message, 'error');
+          }
+        });
+
+        // Bind Delete Button
+        const btnDel = tr.querySelector('.btn-admin-delete-corp');
+        btnDel.addEventListener('click', async () => {
+          const corpId = btnDel.dataset.id;
+          const corpName = btnDel.dataset.name;
+          if (!confirm(`هل أنت متأكد تماماً من تفكيك وحذف شركة "${corpName}" نهائياً من قاعدة البيانات؟\nلا يمكن استرجاع هذا الإجراء.`)) return;
+          try {
+            await AppDB.adminDeleteCorporation(corpId);
+            showToast('تفكيك شركة', `تم تفكيك وحذف شركة ${corpName} بنجاح.`, 'success');
+            logAdminAction(`تفكيك وحذف الشركة المشتركة: ${corpName}`);
+          } catch (e) {
+            showToast('خطأ تفكيك شركة', e.message, 'error');
+          }
+        });
+
+        tbody.appendChild(tr);
+      });
+    });
+  }
+
   function switchAdminTab(tabId) {
-    const subtabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'auctions', 'giftcodes', 'system'];
+    const subtabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'auctions', 'giftcodes', 'system', 'corporations'];
     subtabs.forEach(t => {
       const btn = document.getElementById(`tab-admin-${t}`);
       const panel = document.getElementById(`admin-subpanel-${t}`);
@@ -6478,6 +6560,8 @@ const UIController = (() => {
       fetchAndRenderAdminAuctions();
     } else if (tabId === 'giftcodes') {
       fetchAndRenderAdminGiftCodes();
+    } else if (tabId === 'corporations') {
+      renderAdminCorporationsPanel();
     } else if (tabId === 'system') {
       const itSelect = document.getElementById('admin-item-config-select');
       if (itSelect) {
