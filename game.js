@@ -802,9 +802,8 @@ const GameEngine = (() => {
           const workerFactor = 1 + ((bizState.workers || 0) * (bizConfig.workerMultiplier - 1));
           const demand = Math.floor(bizConfig.baseDemand * upgradeFactor * elasticity * workerFactor * marketingBoost);
           const margin = price - actualCostOfGoods;
-          const hasQuantum = (state.inventory && state.inventory.quantum_cpu > 0);
-          const quantumMultiplier = hasQuantum ? 1.5 : 1.0;
-          const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12 * quantumMultiplier));
+          const boost = window.serverBoostMultiplier || 1.0;
+          const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12 * quantumMultiplier * boost));
           const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
           const netProfit = Math.max(0, grossProfit - workerPayroll);
 
@@ -1061,9 +1060,11 @@ const GameEngine = (() => {
     // 3. Careers Auto Salary (earned automatically every 4 ticks)
     // To represent work contracts, the player receives a baseline salary passively
     const currentJob = JOBS[state.jobId];
-    if (currentJob && Math.random() < 0.25) { // 25% chance per tick (= average 1 tick per 12 seconds)
-      state.bank += currentJob.salary;
-      updates.businessProfitGained += currentJob.salary;
+    if (currentJob && Math.random() < 0.25) {
+      const boost = window.serverBoostMultiplier || 1.0;
+      const salaryEarned = Math.floor(currentJob.salary * boost);
+      state.bank += salaryEarned;
+      updates.businessProfitGained += salaryEarned;
     }
 
     // 4. Businesses passive income ticking (Gross revenue minus Worker Wages Payroll)
@@ -1105,8 +1106,8 @@ const GameEngine = (() => {
 
         // Final profit per tick = gross margin (boosted by Quantum CPU +50%) minus worker wages
         const hasQuantum = (state.inventory && state.inventory.quantum_cpu > 0);
-        const quantumMultiplier = hasQuantum ? 1.5 : 1.0;
-        const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12 * quantumMultiplier));
+        const boost = window.serverBoostMultiplier || 1.0;
+        const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12 * quantumMultiplier * boost));
         const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
         const profit = Math.max(0, grossProfit - workerPayroll);
 
@@ -1693,8 +1694,9 @@ const GameEngine = (() => {
     const xpBoost = isPenActive ? (1 + (STORE_ITEMS.gold_pen ? STORE_ITEMS.gold_pen.value : 0.5)) : 1.0;
     const salaryMultiplier = isEnergyActive ? (STORE_ITEMS.energy_drink ? STORE_ITEMS.energy_drink.value : 2.0) : 1.0;
 
-    const finalXpReward = Math.ceil(job.xpReward * xpBoost);
-    const finalSalary = Math.floor(job.salary * salaryMultiplier);
+    const boost = window.serverBoostMultiplier || 1.0;
+    const finalXpReward = Math.ceil(job.xpReward * xpBoost * boost);
+    const finalSalary = Math.floor(job.salary * salaryMultiplier * boost);
 
     // Add XP and bank
     state.xp += finalXpReward;
@@ -2505,9 +2507,9 @@ const GameEngine = (() => {
     const energyMult = isEnergyActive ? (STORE_ITEMS.energy_drink ? STORE_ITEMS.energy_drink.value : 2.0) : 1.0;
 
     // Overtime gives 2.5x base salary and 3x XP
-    const salaryMultiplier = energyMult * 2.5;
-    const earnedSalary = Math.floor(job.salary * salaryMultiplier);
-    const earnedXp = Math.ceil(job.xpReward * 3 * xpBonus);
+    const boost = window.serverBoostMultiplier || 1.0;
+    const earnedSalary = Math.floor(job.salary * salaryMultiplier * boost);
+    const earnedXp = Math.ceil(job.xpReward * 3 * xpBonus * boost);
 
     state.bank += earnedSalary;
     state.xp += earnedXp;

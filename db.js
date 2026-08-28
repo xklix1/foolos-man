@@ -2217,6 +2217,26 @@ const AppDB = (() => {
     return true;
   }
 
+  async function adminSaveServerConfig(config) {
+    _requireOnline();
+    await _ensureAdminAuth();
+    await firestoreDb.collection('globals').doc('serverConfig').set({
+      ...config,
+      updatedBy: SECRET_ADMIN_USERNAME,
+      updatedAt: Date.now()
+    });
+    return true;
+  }
+
+  async function getServerConfig() {
+    if (!firebaseReady) return null;
+    const doc = await firestoreDb.collection('globals').doc('serverConfig').get();
+    if (!doc.exists) {
+      return { boostMultiplier: 1.0 };
+    }
+    return doc.data();
+  }
+
   // ─────────────────────────────────────────────
   //  PUBLIC API
   // ─────────────────────────────────────────────
@@ -2279,6 +2299,8 @@ const AppDB = (() => {
     setMaintenanceMode,
     getMaintenanceStatus,
     adminSaveTaxConfig,
+    adminSaveServerConfig,
+    getServerConfig,
 
     // V2: DAILY BACKUPS & RESTORE API
     checkAndCreateDailyBackup,

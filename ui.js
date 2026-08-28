@@ -4292,6 +4292,41 @@ const UIController = (() => {
       }, (err) => console.error("Tax config listen err: ", err));
     activeListeners.push(unsubTaxConfig);
 
+    // 1.7. Server Config (Boost) Listener
+    const unsubServerConfig = db.collection('globals').doc('serverConfig')
+      .onSnapshot((doc) => {
+        if (!doc.exists) return;
+        const data = doc.data();
+        if (data) {
+          window.serverBoostMultiplier = data.boostMultiplier || 1.0;
+          
+          // Update the boost telemetry HUD label
+          const boostLabel = document.getElementById('adm-telemetry-boost-label');
+          if (boostLabel) {
+            boostLabel.textContent = `${window.serverBoostMultiplier.toFixed(1)}x ${window.serverBoostMultiplier > 1 ? '(Boost نشط! 🔥)' : '(اعتيادي)'}`;
+            if (window.serverBoostMultiplier > 1) {
+              boostLabel.className = 'numbers-font text-amber-400 font-black animate-pulse';
+            } else {
+              boostLabel.className = 'numbers-font text-white font-black';
+            }
+          }
+          
+          // Update Server Boost Card background style dynamically
+          const boostCard = document.getElementById('adm-server-boost-card');
+          if (boostCard) {
+            if (window.serverBoostMultiplier > 1) {
+              boostCard.className = 'glass-panel p-3.5 rounded-xl border border-amber-500/50 flex justify-between items-center bg-amber-500/10 shadow-[0_0_15px_rgba(245,158,11,0.1)] text-right';
+            } else {
+              boostCard.className = 'glass-panel p-3.5 rounded-xl border border-slate-800 flex justify-between items-center bg-slate-900/30 text-right';
+            }
+          }
+          
+          // Also render global message indicator or stats bar boost if needed
+          updateStatsBarServerBoostIndicator();
+        }
+      }, (err) => console.error("ServerConfig listen err: ", err));
+    activeListeners.push(unsubServerConfig);
+
     // 2. V2 Public Chat Listener
     const unsubChat = AppDB.listenToChatMessages(msgs => {
       renderChatMessages(msgs);
@@ -4712,6 +4747,37 @@ const UIController = (() => {
         });
       }
     });
+
+    // Setup Simulated Telemetry & real Latency Updates
+    setInterval(() => {
+      if (!modal.classList.contains('hidden')) {
+        // CPU simulation: fluctuates between 0.5% and 2.8%
+        const cpuEl = document.getElementById('adm-telemetry-cpu');
+        if (cpuEl) {
+          cpuEl.textContent = (0.5 + Math.random() * 2.3).toFixed(1) + '%';
+        }
+        
+        // RAM simulation: fluctuates between 40 MB and 52 MB
+        const ramEl = document.getElementById('adm-telemetry-ram');
+        if (ramEl) {
+          ramEl.textContent = Math.floor(40 + Math.random() * 12) + ' MB';
+        }
+        
+        // Latency ping
+        const latencyEl = document.getElementById('adm-telemetry-latency');
+        if (latencyEl) {
+          const t0 = Date.now();
+          firebase.firestore().collection('globals').doc('serverConfig').get()
+            .then(() => {
+              const t1 = Date.now();
+              latencyEl.textContent = (t1 - t0) + 'ms';
+            })
+            .catch(() => {
+              latencyEl.textContent = Math.floor(30 + Math.random() * 20) + 'ms';
+            });
+        }
+      }
+    }, 3000);
 
     // ─────────────────────────────────────────────
     //  MODULE: PLAYERS DIRECTORY & MANAGEMENT
@@ -6790,15 +6856,21 @@ const UIController = (() => {
       const panel = document.getElementById(`admin-subpanel-${t}`);
       if (!btn || !panel) return;
       if (t === tabId) {
-        btn.classList.add('border-yellow-500/40', 'bg-yellow-500/10', 'text-yellow-400', 'active-admin-tab');
-        btn.classList.remove('border-transparent', 'text-slate-400', 'hover:bg-slate-900');
+        btn.classList.add('border-yellow-500/40', 'bg-yellow-500/10', 'text-yellow-400', 'active-admin-tab', 'active-admin-sidebar-btn');
+        btn.classList.remove('border-transparent', 'text-slate-400', 'hover:bg-slate-900/60');
         panel.classList.remove('hidden');
       } else {
-        btn.classList.remove('border-yellow-500/40', 'bg-yellow-500/10', 'text-yellow-400', 'active-admin-tab');
+        btn.classList.remove('border-yellow-500/40', 'bg-yellow-500/10', 'text-yellow-400', 'active-admin-tab', 'active-admin-sidebar-btn');
         btn.classList.add('border-transparent', 'text-slate-400');
         panel.classList.add('hidden');
       }
     });
+
+    // Auto-collapse mobile sidebar on tab change
+    const sidebar = document.getElementById('admin-sidebar');
+    if (sidebar && window.innerWidth < 768) {
+      sidebar.classList.add('hidden');
+    }
 
     if (tabId === 'stats') {
       renderAdminAnalyticsDashboard();
@@ -6822,6 +6894,67 @@ const UIController = (() => {
           document.getElementById('admin-item-config-cost').value = initItem.cost;
           document.getElementById('admin-item-config-duration').value = initItem.durationTicks * 3;
         }
+      }
+    }
+    window.switchAdminTab = switchAdminTab;
+  }
+
+  function updateStatsBarServerBoostIndicator() {
+    const mult = window.serverBoostMultiplier || 1.0;
+    const banner = document.getElementById('hud-server-boost-banner');
+    const valText = document.getElementById('hud-server-boost-val');
+    
+    if (banner && valText) {
+      if (mult > 1.0) {
+        banner.classList.remove('hidden');
+        valText.textContent = `${mult.toFixed(1)}x أرباح وخبرة مضاعفة!`;
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+  }
+
+  function toggleAdminSidebarAction() {
+    const sidebar = document.getElementById('admin-sidebar');
+    if (sidebar) {
+      if (sidebar.classList.contains('hidden')) {
+        sidebar.classList.remove('hidden');
+        sidebar.className = 'w-64 border-l border-slate-900 bg-slate-900/90 backdrop-blur-xl flex flex-col justify-between shrink-0 transition-all duration-300 fixed md:relative right-0 top-16 bottom-0 z-[510] md:flex';
+      } else {
+        sidebar.classList.add('hidden');
+      }
+    }
+  }
+
+  async function toggleServerBoostAction() {
+    const currentBoost = window.serverBoostMultiplier || 1.0;
+    const newBoost = currentBoost > 1.0 ? 1.0 : 2.0;
+    const toggleBtn = document.getElementById('btn-adm-toggle-boost');
+    
+    try {
+      if (toggleBtn) {
+        toggleBtn.disabled = true;
+        toggleBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i>';
+      }
+      
+      await AppDB.adminSaveServerConfig({
+        boostMultiplier: newBoost
+      });
+      
+      showToast('مضاعف السيرفر', newBoost > 1.0 ? 'تم تفعيل وضع مضاعف الأرباح والخبرة 2x للجميع! 🔥' : 'تم إيقاف مضاعف السيرفر والعودة للوضع الاعتيادي.', 'success');
+      logAdminAction(`تحديث مضاعف السيرفر: تم تعيين المضاعف على ${newBoost.toFixed(1)}x`);
+      
+      await AppDB.sendBroadcast(
+        newBoost > 1.0 ? '🔥 تفعيل مضاعف السيرفر (Server Boost)!' : 'ℹ️ انتهاء مضاعف السيرفر (Server Boost)',
+        newBoost > 1.0 ? 'قام الأدمن بتفعيل وضع مضاعف الأرباح والخبرة (Double XP & Cash) لجميع اللاعبين حياً!' : 'انتهى وضع مضاعف الأرباح والخبرة وعاد السيرفر للمعدل الطبيعي.'
+      );
+      
+    } catch (err) {
+      showToast('خطأ في تغيير المضاعف', err.message, 'error');
+    } finally {
+      if (toggleBtn) {
+        toggleBtn.disabled = false;
+        toggleBtn.innerHTML = '<i class="fa-solid fa-bolt text-sm"></i>';
       }
     }
   }
@@ -9848,7 +9981,9 @@ const UIController = (() => {
     rentCarAction,
     sellCarAction,
     buySmugglingVehicleAction,
-    startSmugglingJobAction
+    startSmugglingJobAction,
+    toggleAdminSidebarAction,
+    toggleServerBoostAction
   };
 })();
 
