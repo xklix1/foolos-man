@@ -2096,7 +2096,16 @@ const UIController = (() => {
     btn.style.cursor = 'not-allowed';
 
     const hasCronos = GameEngine.state && GameEngine.state.inventory && GameEngine.state.inventory.cronos_gear > 0;
-    const totalMs = hasCronos ? Math.floor(WORK_COOLDOWN_MS * 0.5) : WORK_COOLDOWN_MS;
+    
+    let cooldownReduction = 0.0;
+    if (hasCronos) cooldownReduction += 0.50;
+    
+    const activeCarId = GameEngine.state && GameEngine.state.activeCar;
+    if (activeCarId === 'lambo') {
+      cooldownReduction += 0.15;
+    }
+    
+    const totalMs = Math.floor(WORK_COOLDOWN_MS * (1.0 - cooldownReduction));
     const tickMs = 50;
     let elapsed = 0;
 
@@ -3077,6 +3086,8 @@ const UIController = (() => {
 
       container.appendChild(card);
     });
+
+    renderCarsTab();
   }
 
   function updateAssetsInDOM() {
@@ -3100,6 +3111,8 @@ const UIController = (() => {
       const sellBtn = document.getElementById(`btn-sell-asset-${key}`);
       if (sellBtn) sellBtn.disabled = (owned === 0);
     });
+
+    renderCarsTab();
   }
 
   // --- Tab 6: Stock Market Panel (Optimized In-Place Updates) ---
@@ -3722,6 +3735,7 @@ const UIController = (() => {
 
     // 5. Setup Black Market static listeners once
     setupBlackMarketListeners();
+    renderSmugglingSection();
   }
 
   function updateBlackMarketCooldownsInDOM() {
@@ -3750,6 +3764,8 @@ const UIController = (() => {
         btn.innerHTML = `<i class="fa-solid fa-handshake"></i><span>توقيع وتنفيذ العملية</span>`;
       }
     });
+
+    updateActiveSmugglingJobsInDOM();
   }
 
   function setupBlackMarketListeners() {
@@ -9461,6 +9477,305 @@ const UIController = (() => {
     }
   }
 
+  }
+
+  // --- Cars UI & Actions ---
+  function renderCarsTab() {
+    const s = GameEngine.state;
+    if (!s) return;
+    const container = document.getElementById('cars-dealership-list');
+    if (!container) return;
+
+    let html = '';
+    Object.keys(GameEngine.CAR_TEMPLATES).forEach(carId => {
+      const car = GameEngine.CAR_TEMPLATES[carId];
+      const ownedRefs = (s.ownedCars || []).filter(c => c.id === carId);
+      const ownedCount = ownedRefs.length;
+      const isActive = s.activeCar === carId;
+
+      let ownedSection = '';
+      if (ownedCount > 0) {
+        ownedSection += `
+          <div class="mt-4 border-t border-slate-900 pt-3 space-y-2 text-right">
+            <div class="text-[10px] text-slate-500 font-bold">المقتنيات المملوكة لك (${ownedCount} سيارة):</div>
+        `;
+        s.ownedCars.forEach((carRef, absIdx) => {
+          if (carRef.id !== carId) return;
+          const isRented = carRef.rentStatus === 'rented';
+          ownedSection += `
+            <div class="flex justify-between items-center bg-slate-950/60 p-2 rounded-lg border border-slate-900 text-[10px]">
+              <div class="flex flex-col text-right">
+                <span class="text-white font-bold">النسخة #${absIdx + 1}</span>
+                <span class="${isRented ? 'text-emerald-400 font-bold' : 'text-slate-400'}">${isRented ? 'مؤجرة وتدر عائداً' : 'مركونة بالمرآب'}</span>
+              </div>
+              <div class="flex gap-1">
+                ${isRented ? `
+                  <button onclick="window.UI.rentCarAction('${carId}', 'idle', ${absIdx})" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold transition">إيقاف الإيجار</button>
+                ` : `
+                  <button onclick="window.UI.rentCarAction('${carId}', 'rented', ${absIdx})" class="px-2 py-1 bg-indigo-600/30 hover:bg-indigo-600 border border-indigo-500/20 text-indigo-300 hover:text-white rounded font-bold transition">تأجير</button>
+                `}
+                
+                ${(car.cooldownReduction || car.interestBonus) && !isRented ? `
+                  ${isActive ? `
+                    <button onclick="window.UI.setActiveCarAction(null)" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded font-bold transition">إيقاف تفعيل</button>
+                  ` : `
+                    <button onclick="window.UI.setActiveCarAction('${carId}')" class="px-2 py-1 bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/20 text-emerald-400 hover:text-white rounded font-bold transition">قيادة 🔑</button>
+                  `}
+                ` : ''}
+                
+                <button onclick="window.UI.sellCarAction('${carId}', ${absIdx})" class="px-1.5 py-1 bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white rounded font-bold transition"><i class="fa-solid fa-trash"></i> بيع</button>
+              </div>
+            </div>
+          `;
+        });
+        ownedSection += `</div>`;
+      }
+
+      html += `
+        <div class="glass-panel p-5 rounded-2xl border ${isActive ? 'border-amber-500/40 bg-amber-950/5' : 'border-slate-800 bg-slate-950/20'} flex flex-col justify-between space-y-4 text-right">
+          <div>
+            <div class="flex justify-between items-start gap-2">
+              <h4 class="text-xs font-black text-white">${car.name}</h4>
+              ${isActive ? '<span class="text-[9px] bg-amber-500/20 border border-amber-500/30 text-amber-400 px-2 py-0.5 rounded-full font-bold">نشطة 🚗🔥</span>' : ''}
+            </div>
+            <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">${car.desc}</p>
+            
+            <div class="grid grid-cols-2 gap-2 mt-4 bg-slate-950/50 p-2.5 rounded-xl border border-slate-900 text-[10px] text-right">
+              <div>
+                <span class="text-slate-500 block">سعر الشراء</span>
+                <span class="text-slate-300 font-bold numbers-font text-xs">${car.cost.toLocaleString()} EGP</span>
+              </div>
+              <div>
+                <span class="text-slate-500 block">دخل الإيجار الصافي</span>
+                <span class="text-emerald-400 font-black numbers-font text-xs">+${(car.rentalIncomePerTick - car.maintenanceCostPerTick).toLocaleString()}/s</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="space-y-2">
+            <button onclick="window.UI.buyCarAction('${carId}')" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">شراء سيارة جديدة</button>
+            ${ownedSection}
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  async function buyCarAction(carId) {
+    try {
+      const car = GameEngine.CAR_TEMPLATES[carId];
+      if (!confirm(`هل أنت متأكد من شراء سيارة ${car.name} بمبلغ ${car.cost.toLocaleString()} EGP؟`)) return;
+      await GameEngine.buyCar(carId);
+      showToast('مبروك السيارة! 🏎️🎉', `تم شراء ${car.name} بنجاح وإضافتها للمرأب.`, 'success');
+      playMenuSound('success');
+      renderAll();
+    } catch (err) {
+      showToast('فشل الشراء', err.message, 'error');
+    }
+  }
+
+  async function setActiveCarAction(carId) {
+    try {
+      await GameEngine.setActiveCar(carId);
+      showToast('السيارة النشطة', carId === null ? 'تم إلغاء تفعيل السيارة النشطة.' : `تم تفعيل السيارة كسيارة شخصية بنجاح!`, 'success');
+      playMenuSound('success');
+      renderAll();
+    } catch (err) {
+      showToast('خطأ التفعيل', err.message, 'error');
+    }
+  }
+
+  async function rentCarAction(carId, rentStatus, index) {
+    try {
+      await GameEngine.rentCar(carId, rentStatus, index);
+      showToast('حالة الإيجار', rentStatus === 'rented' ? 'بدأ تأجير السيارة بنجاح وتدفق الدخل السلبي.' : 'تم إيقاف الإيجار وإعادة السيارة للمرأب.', 'success');
+      playMenuSound('success');
+      renderAll();
+    } catch (err) {
+      showToast('خطأ التأجير', err.message, 'error');
+    }
+  }
+
+  async function sellCarAction(carId, index) {
+    try {
+      const car = GameEngine.CAR_TEMPLATES[carId];
+      const sellPrice = Math.floor(car.cost * 0.75);
+      if (!confirm(`هل أنت متأكد من بيع سيارة ${car.name} واسترداد ${sellPrice.toLocaleString()} EGP؟`)) return;
+      await GameEngine.sellCar(carId, index);
+      showToast('تم البيع 💰', `تم بيع السيارة بنجاح وإيداع ${sellPrice.toLocaleString()} EGP بالبنك.`, 'success');
+      playMenuSound('success');
+      renderAll();
+    } catch (err) {
+      showToast('خطأ البيع', err.message, 'error');
+    }
+  }
+
+  // --- Smuggling UI & Actions ---
+  function renderSmugglingSection() {
+    const s = GameEngine.state;
+    if (!s) return;
+
+    if (!s.smugglingFleet) s.smugglingFleet = { speedboat: 0, plane: 0, ship: 0 };
+    if (!s.activeSmugglingJobs) s.activeSmugglingJobs = [];
+
+    const speedCount = document.getElementById('fleet-count-speedboat');
+    if (speedCount) speedCount.textContent = s.smugglingFleet.speedboat || 0;
+
+    const planeCount = document.getElementById('fleet-count-plane');
+    if (planeCount) planeCount.textContent = s.smugglingFleet.plane || 0;
+
+    const shipCount = document.getElementById('fleet-count-ship');
+    if (shipCount) shipCount.textContent = s.smugglingFleet.ship || 0;
+
+    const routesList = document.getElementById('smuggling-routes-list');
+    if (routesList) {
+      let routesHtml = '';
+      Object.keys(GameEngine.SMUGGLING_ROUTES).forEach(routeId => {
+        const route = GameEngine.SMUGGLING_ROUTES[routeId];
+        const vehicleButtons = route.requiredVehicles.map(vType => {
+          const vDef = GameEngine.SMUGGLING_VEHICLES[vType];
+          const hasV = s.smugglingFleet[vType] > 0;
+          return `
+            <button onclick="window.UI.startSmugglingJobAction('${routeId}', '${vType}')" 
+                    ${!hasV ? 'disabled' : ''} 
+                    class="px-2 py-1 text-[9px] rounded font-bold transition ${hasV ? 'bg-rose-700/30 hover:bg-rose-600 text-rose-300 border border-rose-500/20' : 'bg-slate-900 text-slate-600 cursor-not-allowed border border-slate-800'}">
+              تهريب عبر: ${vDef.name.split(' ')[0]}
+            </button>
+          `;
+        }).join(' ');
+
+        routesHtml += `
+          <div class="p-3.5 bg-slate-950 border border-slate-800 rounded-xl hover:border-slate-700 transition flex flex-col justify-between text-right">
+            <div>
+              <h6 class="text-xs font-black text-white">${route.name}</h6>
+              <p class="text-[10px] text-slate-500 mt-1 leading-relaxed">${route.desc}</p>
+              
+              <div class="grid grid-cols-3 gap-1 mt-3 bg-slate-900 p-2 rounded-lg border border-slate-950 text-[9px] text-right">
+                <div>
+                  <span class="text-slate-600 block">المدة:</span>
+                  <span class="text-white font-bold">${route.durationTicks}ث</span>
+                </div>
+                <div>
+                  <span class="text-slate-600 block">الأرباح:</span>
+                  <span class="text-emerald-400 font-bold numbers-font">${(route.yieldCash / 1000000000).toFixed(1)}B</span>
+                </div>
+                <div>
+                  <span class="text-slate-600 block">الخطر:</span>
+                  <span class="text-rose-400 font-black">${route.riskPct}%</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-3 border-t border-slate-900 pt-2 flex flex-wrap gap-1.5 justify-end">
+              ${vehicleButtons}
+            </div>
+          </div>
+        `;
+      });
+      routesList.innerHTML = routesHtml;
+    }
+
+    updateActiveSmugglingJobsInDOM();
+  }
+
+  function updateActiveSmugglingJobsInDOM() {
+    const s = GameEngine.state;
+    if (!s) return;
+    const activeJobsContainer = document.getElementById('smuggling-active-jobs');
+    if (!activeJobsContainer) return;
+
+    if (!s.activeSmugglingJobs || s.activeSmugglingJobs.length === 0) {
+      activeJobsContainer.innerHTML = `<div class="text-center text-slate-600 text-xs py-4">لا توجد عمليات شحن نشطة حالياً.</div>`;
+      return;
+    }
+
+    let jobsHtml = '';
+    const now = Date.now();
+
+    s.activeSmugglingJobs.forEach(job => {
+      const route = GameEngine.SMUGGLING_ROUTES[job.routeId];
+      const vehicle = GameEngine.SMUGGLING_VEHICLES[job.vehicleType];
+      if (!route || !vehicle) return;
+
+      const remainingMs = Math.max(0, job.endTime - now);
+      const remainingSec = Math.ceil(remainingMs / 1000);
+      const totalSec = route.durationTicks || 1;
+      const progressPct = Math.min(100, ((totalSec - remainingSec) / totalSec) * 100);
+
+      jobsHtml += `
+        <div class="p-3 bg-slate-950 border border-slate-900 rounded-xl space-y-2 text-xs text-right">
+          <div class="flex justify-between items-center text-[10px]">
+            <span class="text-white font-bold flex items-center gap-1">
+              <i class="fa-solid fa-ship text-rose-500 animate-pulse"></i>
+              <span>${route.name}</span>
+            </span>
+            <span class="text-slate-400 font-bold">عبر: ${vehicle.name}</span>
+          </div>
+
+          <div class="flex justify-between items-center text-[10px] text-slate-500">
+            <span>متبقي: <strong class="text-amber-400 numbers-font">${remainingSec}ث</strong></span>
+            <span>التقدم: <strong class="text-white numbers-font">${progressPct.toFixed(0)}%</strong></span>
+          </div>
+
+          <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+            <div class="h-full bg-gradient-to-l from-rose-600 to-rose-400 rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
+          </div>
+        </div>
+      `;
+    });
+
+    activeJobsContainer.innerHTML = jobsHtml;
+  }
+
+  async function buySmugglingVehicleAction(vehicleId) {
+    try {
+      const v = GameEngine.SMUGGLING_VEHICLES[vehicleId];
+      if (!confirm(`هل أنت متأكد من شراء ${v.name} بمبلغ ${v.cost.toLocaleString()} EGP؟`)) return;
+      await GameEngine.buySmugglingVehicle(vehicleId);
+      showToast('مركبة جديدة بالأسطول 🚤✈️', `تم شراء ${v.name} بنجاح وإضافتها لأسطول التهريب.`, 'success');
+      playMenuSound('success');
+      renderAll();
+    } catch (err) {
+      showToast('فشل الشراء', err.message, 'error');
+    }
+  }
+
+  async function startSmugglingJobAction(routeId, vehicleType) {
+    try {
+      const route = GameEngine.SMUGGLING_ROUTES[routeId];
+      if (!confirm(`هل أنت متأكد من بدء عملية شحن "${route.name}" بتكلفة تجميد مركبة شحن؟`)) return;
+      await GameEngine.startSmugglingJob(routeId, vehicleType);
+      showToast('تم انطلاق الشحنة 🚢✈️', 'انطلقت المركبة وتظهر الآن في شريط التقدم النشط.', 'success');
+      playMenuSound('success');
+      renderAll();
+    } catch (err) {
+      showToast('خطأ انطلاق الشحنة', err.message, 'error');
+    }
+  }
+
+  function switchAssetsSubtab(subtabId) {
+    const reBtn = document.getElementById('btn-subtab-realestate');
+    const carsBtn = document.getElementById('btn-subtab-cars');
+    const reContent = document.getElementById('subtab-content-realestate');
+    const carsContent = document.getElementById('subtab-content-cars');
+
+    if (subtabId === 'realestate') {
+      if (reBtn) reBtn.className = 'pb-2 text-sm font-black text-indigo-400 border-b-2 border-indigo-500 focus:outline-none transition';
+      if (carsBtn) carsBtn.className = 'pb-2 text-sm font-black text-slate-400 border-b-2 border-transparent hover:text-white focus:outline-none transition';
+      if (reContent) reContent.classList.remove('hidden');
+      if (carsContent) carsContent.classList.add('hidden');
+    } else {
+      if (carsBtn) carsBtn.className = 'pb-2 text-sm font-black text-indigo-400 border-b-2 border-indigo-500 focus:outline-none transition';
+      if (reBtn) reBtn.className = 'pb-2 text-sm font-black text-slate-400 border-b-2 border-transparent hover:text-white focus:outline-none transition';
+      if (carsContent) carsContent.classList.remove('hidden');
+      if (reContent) reContent.classList.add('hidden');
+      renderCarsTab();
+    }
+  }
+  window.switchAssetsSubtab = switchAssetsSubtab;
+
   async function upgradeCorporationLevelAction(corpId, cost) {
     if (!confirm(`هل أنت متأكد من ترقية مستوى التحالف المشترك بقيمة ${cost.toLocaleString()} EGP من الخزينة؟`)) return;
     try {
@@ -9525,7 +9840,15 @@ const UIController = (() => {
     adminQuickBanAction,
     promoteCorpMemberAction,
     payoutFromCorpTreasuryAction,
-    upgradeCorporationLevelAction
+    upgradeCorporationLevelAction,
+    
+    // New V2: Cars and Smuggling exports
+    buyCarAction,
+    setActiveCarAction,
+    rentCarAction,
+    sellCarAction,
+    buySmugglingVehicleAction,
+    startSmugglingJobAction
   };
 })();
 

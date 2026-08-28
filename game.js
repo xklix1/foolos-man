@@ -169,6 +169,92 @@ const GameEngine = (() => {
     mars_colony: { id: 'mars_colony', name: 'مستعمرة التعدين المريخية المستقلة', cost: 3500000000000, profitPerTick: 15000000000, minMembers: 15 }
   };
 
+  const CAR_TEMPLATES = {
+    lambo: {
+      id: 'lambo',
+      name: 'Lamborghini Aventador 🏎️',
+      cost: 15000000,
+      rentalIncomePerTick: 15000,
+      maintenanceCostPerTick: 5000,
+      prestigeBonus: 5,
+      cooldownReduction: 0.15,
+      desc: 'سيارة رياضية خارقة. تمنحك خصم 15% على فترة انتظار نوبات العمل عند تفعيلها كسيارة شخصية.'
+    },
+    rolls: {
+      id: 'rolls',
+      name: 'Rolls-Royce Phantom 👑',
+      cost: 40000000,
+      rentalIncomePerTick: 50000,
+      maintenanceCostPerTick: 12000,
+      prestigeBonus: 15,
+      interestBonus: 0.05,
+      desc: 'عنوان الفخامة المفرطة. تزيد أرباح فوائد إيداعات البنك بنسبة +5% عند تفعيلها كسيارة شخصية.'
+    },
+    shelby: {
+      id: 'shelby',
+      name: 'Shelby Cobra 1965 🌟',
+      cost: 120000000,
+      rentalIncomePerTick: 180000,
+      maintenanceCostPerTick: 35000,
+      prestigeBonus: 40,
+      desc: 'أسطورة كلاسيكية نادرة. تدر دخلاً خيالياً عند تأجيرها وقيمتها قابلة للزيادة بمرور الوقت.'
+    }
+  };
+
+  const SMUGGLING_VEHICLES = {
+    speedboat: {
+      id: 'speedboat',
+      name: 'قارب سريع مضاد للرادار 🚤',
+      cost: 200000000,
+      capacity: 50,
+      desc: 'قارب تهريب سريع وخفيف الحركة. مثالي للممرات المائية القصيرة والذهب.'
+    },
+    plane: {
+      id: 'plane',
+      name: 'طائرة شحن جوي خفيفة ✈️',
+      cost: 2000000000,
+      capacity: 200,
+      desc: 'طائرة شحن سريعة تتجاوز الحدود البرية لنقل المجوهرات والتحف الثمينة.'
+    },
+    ship: {
+      id: 'ship',
+      name: 'سفينة حاويات عملاقة 🚢',
+      cost: 20000000000,
+      capacity: 1000,
+      desc: 'سفينة شحن تجارية عملاقة قادرة على نقل أطنان من البضائع وغسيل الأموال.'
+    }
+  };
+
+  const SMUGGLING_ROUTES = {
+    dubai: {
+      id: 'dubai',
+      name: 'تهريب مجوهرات وذهب لـ دبي 🇦🇪',
+      requiredVehicles: ['speedboat', 'plane'],
+      durationTicks: 60,
+      yieldCash: 500000000,
+      riskPct: 20,
+      desc: 'طريق مائي وجوي سريع لنقل المعادن النفيسة لخزائن دبي.'
+    },
+    switzerland: {
+      id: 'switzerland',
+      name: 'تهريب تحف وسندات لـ سويسرا 🇨🇭',
+      requiredVehicles: ['plane', 'ship'],
+      durationTicks: 180,
+      yieldCash: 6000000000,
+      riskPct: 12,
+      desc: 'طريق التفافي معقد لنقل السندات المصرفية والأصول الذهبية للبنوك السويسرية.'
+    },
+    cayman: {
+      id: 'cayman',
+      name: 'غسيل ونقل أموال لـ جزر الكايمان 🇰🇾',
+      requiredVehicles: ['ship'],
+      durationTicks: 400,
+      yieldCash: 80000000000,
+      riskPct: 6,
+      desc: 'عملية نقل أموال عملاقة لغسل أرباح الكارتيل عبر البنوك الخارجية المجهولة.'
+    }
+  };
+
   const STORE_ITEMS = {
     gold_pen: {
       id: 'gold_pen',
@@ -596,7 +682,11 @@ const GameEngine = (() => {
     activityLog: [], // Rolling audit log of player actions
     totalTaxesPaid: 0, // Cumulative taxes paid to public treasury
     netWorth: 2000,
-    title: 'عامل مبتدئ'
+    title: 'عامل مبتدئ',
+    ownedCars: [],
+    activeCar: null,
+    smugglingFleet: { speedboat: 0, plane: 0, ship: 0 },
+    activeSmugglingJobs: []
   };
 
   let state = { ...INITIAL_STATE };
@@ -807,6 +897,19 @@ const GameEngine = (() => {
       });
     }
 
+    // 2.5 Cars rental income and maintenance
+    if (state.ownedCars && state.ownedCars.length > 0) {
+      state.ownedCars.forEach(carRef => {
+        const car = CAR_TEMPLATES[carRef.id];
+        if (car && carRef.rentStatus === 'rented') {
+          const netProfit = car.rentalIncomePerTick - car.maintenanceCostPerTick;
+          if (netProfit > 0) {
+            income += netProfit;
+          }
+        }
+      });
+    }
+
     // 3. Bank interest (0.003% per tick = ~3.5% APY)
     if (state.bank && state.bank > 0) {
       income += Math.floor(state.bank * 0.00003);
@@ -909,9 +1012,18 @@ const GameEngine = (() => {
     });
   }
 
+  function safeGetState() {
+    if (!state) return;
+    if (!state.ownedCars) state.ownedCars = [];
+    if (!state.activeCar) state.activeCar = null;
+    if (!state.smugglingFleet) state.smugglingFleet = { speedboat: 0, plane: 0, ship: 0 };
+    if (!state.activeSmugglingJobs) state.activeSmugglingJobs = [];
+  }
+
   // --- Central Simulation Tick ---
   function processTick() {
     if (!activeUsername) return null;
+    safeGetState();
 
     let updates = {
       bankInterestGained: 0,
@@ -1091,6 +1203,20 @@ const GameEngine = (() => {
       }
     });
 
+    // 5.5 Cars rental income and maintenance ticking
+    if (state.ownedCars && state.ownedCars.length > 0) {
+      state.ownedCars.forEach(carRef => {
+        const car = CAR_TEMPLATES[carRef.id];
+        if (car && carRef.rentStatus === 'rented') {
+          const netProfit = car.rentalIncomePerTick - car.maintenanceCostPerTick;
+          if (netProfit > 0) {
+            state.bank += netProfit;
+            updates.rentGained += netProfit;
+          }
+        }
+      });
+    }
+
     // 6. Investments duration counters (Real-time and offline timestamp accurate)
     const nowTimestamp = Date.now();
     const remainingInvestments = [];
@@ -1119,6 +1245,48 @@ const GameEngine = (() => {
       }
     });
     state.investments = remainingInvestments;
+
+    // 6.5 Smuggling jobs counter & completion
+    if (state.activeSmugglingJobs && state.activeSmugglingJobs.length > 0) {
+      const remainingJobs = [];
+      const nowMs = Date.now();
+      state.activeSmugglingJobs.forEach(job => {
+        if (nowMs >= job.endTime) {
+          const route = SMUGGLING_ROUTES[job.routeId];
+          if (route) {
+            const isCaptured = (Math.random() * 100) < route.riskPct;
+            if (isCaptured) {
+              if (state.smugglingFleet && state.smugglingFleet[job.vehicleType] > 0) {
+                state.smugglingFleet[job.vehicleType]--;
+              }
+              state.jailTimer = 600; // 10 minutes
+              recordPlayerActivity('تهريب فشل 🚔', `مداهمة أمنية لشحنة "${route.name}". تم اعتقالك ومصادرة الـ ${SMUGGLING_VEHICLES[job.vehicleType].name}.`, 'dark');
+              if (!updates.tipEvent) {
+                updates.tipEvent = {
+                  title: '🚨 مداهمة أمنية وسجن!',
+                  message: `تم اعتراض شحنتك المهربة إلى "${route.name}". تم اعتقالك وحبسك لمدة 10 دقائق ومصادرة مركبة الشحن!`,
+                  gain: 0
+                };
+              }
+            } else {
+              state.cash += route.yieldCash;
+              state.xp += 800;
+              recordPlayerActivity('تهريب ناجح 🚢✈️', `وصول شحنة "${route.name}" بسلام! عائد: ${route.yieldCash.toLocaleString()} EGP (+800 XP)`, 'dark');
+              if (!updates.tipEvent) {
+                updates.tipEvent = {
+                  title: '🚢 شحنة تهريب ناجحة!',
+                  message: `وصلت شحنتك بسلام إلى وجهتها! تم إيداع الأرباح الكاش: +${route.yieldCash.toLocaleString()} EGP (+800 XP)`,
+                  gain: route.yieldCash
+                };
+              }
+            }
+          }
+        } else {
+          remainingJobs.push(job);
+        }
+      });
+      state.activeSmugglingJobs = remainingJobs;
+    }
 
     // 7. Store Items Durability & Self-Destruction Timers
     if (!state.itemDurations) state.itemDurations = {};
@@ -2357,6 +2525,158 @@ const GameEngine = (() => {
     };
   }
 
+  // --- Cars Actions (New V2) ---
+  function buyCar(carId) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك الشراء حالياً.");
+    const car = CAR_TEMPLATES[carId];
+    if (!car) throw new Error("طراز السيارة المحدد غير متوفر.");
+    if (state.cash < car.cost && state.bank < car.cost) {
+      throw new Error("لا تملك سيولة كافية لشراء هذه السيارة الفاخرة.");
+    }
+
+    if (state.cash >= car.cost) {
+      state.cash -= car.cost;
+    } else {
+      state.bank -= car.cost;
+    }
+
+    if (!state.ownedCars) state.ownedCars = [];
+    state.ownedCars.push({ id: carId, rentStatus: 'idle' });
+
+    recordPlayerActivity('شراء سيارة 🏎️', `شراء سيارة ${car.name} بقيمة ${car.cost.toLocaleString()} ج.م.`, 'assets');
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+  }
+
+  function setActiveCar(carId) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك تغيير السيارة.");
+    if (carId === null) {
+      state.activeCar = null;
+      recordPlayerActivity('تفعيل سيارة', 'تم إلغاء تفعيل السيارة الشخصية النشطة.', 'assets');
+    } else {
+      const idx = state.ownedCars.findIndex(c => c.id === carId);
+      if (idx === -1) throw new Error("لا تملك هذه السيارة لتفعيلها.");
+      
+      if (state.ownedCars[idx].rentStatus === 'rented') {
+        throw new Error("السيارة مؤجرة حالياً! لا يمكنك قيادتها.");
+      }
+
+      state.activeCar = carId;
+      recordPlayerActivity('تفعيل سيارة 🏎️', `تم تفعيل ${CAR_TEMPLATES[carId].name} كسيارة شخصية نشطة.`, 'assets');
+    }
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+  }
+
+  function rentCar(carId, rentStatus, carIndex = -1) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    let idx = carIndex;
+    if (idx === -1) {
+      idx = state.ownedCars.findIndex(c => c.id === carId);
+    }
+    if (idx === -1 || idx >= state.ownedCars.length) throw new Error("لا تملك هذه السيارة لتأجيرها.");
+
+    if (rentStatus === 'rented') {
+      if (state.activeCar === carId) {
+        state.activeCar = null;
+      }
+      state.ownedCars[idx].rentStatus = 'rented';
+      recordPlayerActivity('تأجير سيارة 📈', `بدء تأجير سيارة ${CAR_TEMPLATES[carId].name} لتحقيق دخل سلبي.`, 'assets');
+    } else {
+      state.ownedCars[idx].rentStatus = 'idle';
+      recordPlayerActivity('إلغاء تأجير سيارة 📉', `إيقاف تأجير سيارة ${CAR_TEMPLATES[carId].name} وإرجاعها للمرأب.`, 'assets');
+    }
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+  }
+
+  function sellCar(carId, carIndex = -1) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    let idx = carIndex;
+    if (idx === -1) {
+      idx = state.ownedCars.findIndex(c => c.id === carId);
+    }
+    if (idx === -1 || idx >= state.ownedCars.length) throw new Error("لا تملك هذه السيارة لبيعها.");
+
+    const car = CAR_TEMPLATES[carId];
+    if (state.ownedCars[idx].rentStatus === 'rented') {
+      throw new Error("السيارة مؤجرة! يجب إلغاء تأجيرها أولاً قبل البيع.");
+    }
+
+    if (state.activeCar === carId) {
+      state.activeCar = null;
+    }
+
+    const sellPrice = Math.floor(car.cost * 0.75);
+    state.ownedCars.splice(idx, 1);
+    state.bank += sellPrice;
+
+    recordPlayerActivity('بيع سيارة 💰', `بيع سيارة ${car.name} واسترداد ${sellPrice.toLocaleString()} EGP.`, 'assets');
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+  }
+
+  // --- Smuggling Actions (New V2) ---
+  function buySmugglingVehicle(vehicleId) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    const v = SMUGGLING_VEHICLES[vehicleId];
+    if (!v) throw new Error("مركبة غير صالحة.");
+    
+    if (state.cash < v.cost && state.bank < v.cost) {
+      throw new Error("لا تملك أموالاً كافية لشراء مركبة التهريب هذه.");
+    }
+
+    if (state.cash >= v.cost) {
+      state.cash -= v.cost;
+    } else {
+      state.bank -= v.cost;
+    }
+
+    if (!state.smugglingFleet) state.smugglingFleet = { speedboat: 0, plane: 0, ship: 0 };
+    state.smugglingFleet[vehicleId] = (state.smugglingFleet[vehicleId] || 0) + 1;
+
+    recordPlayerActivity('شراء مركبة تهريب 🚤', `شراء ${v.name} وتضمينها للأسطول بقيمة ${v.cost.toLocaleString()} ج.م.`, 'dark');
+    state.netWorth = calculateNetWorth();
+    AppDB.savePlayerState(activeUsername, state);
+  }
+
+  function startSmugglingJob(routeId, vehicleType) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك تهريب الشحنات.");
+    const route = SMUGGLING_ROUTES[routeId];
+    if (!route) throw new Error("طريق تهريب غير معروف.");
+    if (!route.requiredVehicles.includes(vehicleType)) {
+      throw new Error("هذه المركبة غير صالحة لهذا الطريق الجمركي.");
+    }
+
+    if (!state.smugglingFleet || !state.smugglingFleet[vehicleType] || state.smugglingFleet[vehicleType] <= 0) {
+      throw new Error(`لا تملك أي ${SMUGGLING_VEHICLES[vehicleType].name} جاهزة للاستخدام في أسطولك.`);
+    }
+
+    let busyVehicles = 0;
+    if (state.activeSmugglingJobs) {
+      state.activeSmugglingJobs.forEach(job => {
+        if (job.vehicleType === vehicleType) busyVehicles++;
+      });
+    }
+
+    if (busyVehicles >= state.smugglingFleet[vehicleType]) {
+      throw new Error(`جميع الـ ${SMUGGLING_VEHICLES[vehicleType].name} في أسطولك مشغولة حالياً بشحنات أخرى.`);
+    }
+
+    const job = {
+      id: 'smug_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      routeId: routeId,
+      vehicleType: vehicleType,
+      endTime: Date.now() + (route.durationTicks * 1000)
+    };
+
+    if (!state.activeSmugglingJobs) state.activeSmugglingJobs = [];
+    state.activeSmugglingJobs.push(job);
+
+    recordPlayerActivity('بدء تهريب 🚢', `شحن شحنة تهريب إلى "${route.name}" عبر ${SMUGGLING_VEHICLES[vehicleType].name}.`, 'dark');
+    AppDB.savePlayerState(activeUsername, state);
+  }
+
   // Bank Loan: Take instant liquidity loan (up to 35% of Net Worth)
   function takeBankLoan(amount) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك طلب قروض بنكية.");
@@ -2553,7 +2873,18 @@ const GameEngine = (() => {
     calculatePassiveIncomePerSecond,
     calculateNetWorth,
     renewAfkManager,
-    forceSaveState
+    forceSaveState,
+    
+    // New V2: Cars and Smuggling Exports
+    CAR_TEMPLATES,
+    SMUGGLING_VEHICLES,
+    SMUGGLING_ROUTES,
+    buyCar,
+    setActiveCar,
+    rentCar,
+    sellCar,
+    buySmugglingVehicle,
+    startSmugglingJob
   };
 })();
 

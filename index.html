@@ -1741,13 +1741,37 @@
 
       <!-- TAB 5: ممتلكاتي (REAL ESTATE & ASSETS) -->
       <section id="panel-assets" class="game-panel hidden space-y-6">
-        <div class="bg-slate-900/10 p-4 rounded-xl border border-slate-800/40 mb-4">
-          <h3 class="text-md font-bold text-white">الاستثمارات العقارية والأصول الرأسمالية</h3>
-          <p class="text-xs text-slate-400 mt-0.5">اشترِ العقارات لزيادة صافي ثروتك وجني عوائد إيجار سلبية تصب في حسابك
-            التلقائي بشكل مستمر.</p>
+        <!-- Sub-tabs navigation buttons -->
+        <div class="flex border-b border-slate-800 gap-4 mb-4">
+          <button id="btn-subtab-realestate" onclick="switchAssetsSubtab('realestate')" class="pb-2 text-sm font-black text-indigo-400 border-b-2 border-indigo-500 focus:outline-none transition">
+            <i class="fa-solid fa-hotel ml-1"></i> العقارات الفردية
+          </button>
+          <button id="btn-subtab-cars" onclick="switchAssetsSubtab('cars')" class="pb-2 text-sm font-black text-slate-400 border-b-2 border-transparent hover:text-white focus:outline-none transition">
+            <i class="fa-solid fa-car ml-1"></i> معرض السيارات الفارهة
+          </button>
         </div>
-        <div id="assets-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <!-- Dyn list -->
+
+        <!-- Subtab 1: Real Estate (Default) -->
+        <div id="subtab-content-realestate" class="space-y-6">
+          <div class="bg-slate-900/10 p-4 rounded-xl border border-slate-800/40">
+            <h3 class="text-md font-bold text-white">الاستثمارات العقارية والأصول الرأسمالية</h3>
+            <p class="text-xs text-slate-400 mt-0.5">اشترِ العقارات لزيادة صافي ثروتك وجني عوائد إيجار سلبية تصب في حسابك التلقائي بشكل مستمر.</p>
+          </div>
+          <div id="assets-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Dyn list -->
+          </div>
+        </div>
+
+        <!-- Subtab 2: Luxury Cars -->
+        <div id="subtab-content-cars" class="space-y-6 hidden">
+          <div class="bg-slate-900/10 p-4 rounded-xl border border-slate-800/40">
+            <h3 class="text-md font-bold text-white">معرض واستوديو السيارات الفارهة</h3>
+            <p class="text-xs text-slate-400 mt-0.5">اقتنِ سيارات رياضية لتخفيض وقت انتظار نوبات العمل، أو سيارات فارهة لزيادة فوائد البنك، أو أجرها بعوائد مرتفعة.</p>
+          </div>
+          
+          <div id="cars-dealership-list" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Dyn cars list -->
+          </div>
         </div>
       </section>
 
@@ -2450,6 +2474,84 @@
                   class="btn-invest-start w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-black rounded-xl transition">
                   بدء الاستثمار الماسي
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 5: الشحن والتهريب الدولي (Global Smuggling & Cargo Fleets) -->
+        <div class="glass-panel p-6 rounded-2xl border border-rose-500/20 bg-slate-900/40 space-y-6 mt-6">
+          <div class="pb-3 border-b border-slate-800">
+            <h4 class="text-md font-bold text-rose-400 flex items-center gap-2">
+              <i class="fa-solid fa-ship"></i>
+              <span>موانئ وأسطول التهريب والشحن الدولي</span>
+            </h4>
+            <p class="text-xs text-slate-400 mt-1">تجهيز أسطول مركبات التهريب الخاصة بك لإرسال شحنات عابرة للقارات بنسب أرباح خيالية وجداول زمنية حقيقية.</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 1. Fleet Purchasing Panel -->
+            <div class="space-y-4 lg:col-span-1 bg-slate-950/50 p-4 rounded-xl border border-slate-900">
+              <h5 class="text-xs font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-anchor text-rose-500"></i> شراء مركبات التهريب</h5>
+              
+              <div class="space-y-3 text-xs text-slate-400">
+                <!-- Speedboat -->
+                <div class="p-3 bg-slate-900 border border-slate-800 rounded-lg flex flex-col justify-between">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="text-white font-bold">قارب تهريب سريع 🚤</span>
+                    <span class="numbers-font text-emerald-400">200M EGP</span>
+                  </div>
+                  <p class="text-[10px] text-slate-500 mb-2">سعة: 50 | مثالي للذهب والطرق القصيرة.</p>
+                  <div class="flex justify-between items-center">
+                    <span class="text-[10px]">الأسطول الحالي: <strong id="fleet-count-speedboat" class="text-white font-bold">0</strong></span>
+                    <button onclick="window.UI.buySmugglingVehicleAction('speedboat')" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold transition">شراء</button>
+                  </div>
+                </div>
+
+                <!-- Plane -->
+                <div class="p-3 bg-slate-900 border border-slate-800 rounded-lg flex flex-col justify-between">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="text-white font-bold">طائرة شحن خفيفة ✈️</span>
+                    <span class="numbers-font text-emerald-400">2B EGP</span>
+                  </div>
+                  <p class="text-[10px] text-slate-500 mb-2">سعة: 200 | سريعة وتتجاوز الرادارات الحدودية.</p>
+                  <div class="flex justify-between items-center">
+                    <span class="text-[10px]">الأسطول الحالي: <strong id="fleet-count-plane" class="text-white font-bold">0</strong></span>
+                    <button onclick="window.UI.buySmugglingVehicleAction('plane')" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold transition">شراء</button>
+                  </div>
+                </div>
+
+                <!-- Ship -->
+                <div class="p-3 bg-slate-900 border border-slate-800 rounded-lg flex flex-col justify-between">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="text-white font-bold">سفينة حاويات 🚢</span>
+                    <span class="numbers-font text-emerald-400">20B EGP</span>
+                  </div>
+                  <p class="text-[10px] text-slate-500 mb-2">سعة: 1000 | لغسيل المليارات وشحن الحاويات الكبرى.</p>
+                  <div class="flex justify-between items-center">
+                    <span class="text-[10px]">الأسطول الحالي: <strong id="fleet-count-ship" class="text-white font-bold">0</strong></span>
+                    <button onclick="window.UI.buySmugglingVehicleAction('ship')" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold transition">شراء</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Routes & Active Shipments -->
+            <div class="lg:col-span-2 space-y-4">
+              <!-- Active jobs progress bars -->
+              <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-900 space-y-3">
+                <h5 class="text-xs font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-spinner animate-spin text-rose-500"></i> عمليات الشحن النشطة</h5>
+                <div id="smuggling-active-jobs" class="space-y-3 min-h-[50px]">
+                  <div class="text-center text-slate-600 text-xs py-4">لا توجد عمليات شحن نشطة حالياً.</div>
+                </div>
+              </div>
+
+              <!-- Available Routes -->
+              <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-900 space-y-3">
+                <h5 class="text-xs font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-route text-rose-500"></i> مسارات التهريب المتاحة</h5>
+                <div id="smuggling-routes-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <!-- Dynamic -->
+                </div>
               </div>
             </div>
           </div>
