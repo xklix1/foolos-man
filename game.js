@@ -604,6 +604,23 @@ const GameEngine = (() => {
   let activeUsername = "";
   let lastTipEventTimestamp = 0;
 
+  let taxConfig = {
+    rateMultiplier: 1.0,
+    silverRate: 0.00002,
+    majorRate: 0.00004,
+    whaleRate: 0.00008
+  };
+
+  function setTaxConfig(cfg) {
+    if (cfg) {
+      if (cfg.rateMultiplier !== undefined) taxConfig.rateMultiplier = Number(cfg.rateMultiplier);
+      if (cfg.silverRate !== undefined) taxConfig.silverRate = Number(cfg.silverRate);
+      if (cfg.majorRate !== undefined) taxConfig.majorRate = Number(cfg.majorRate);
+      if (cfg.whaleRate !== undefined) taxConfig.whaleRate = Number(cfg.whaleRate);
+      console.log('[GAME] Tax configuration updated dynamically:', taxConfig);
+    }
+  }
+
   // Record player action in rolling audit log
   function recordPlayerActivity(action, details, category = 'info') {
     if (!state.activityLog) state.activityLog = [];
@@ -736,7 +753,17 @@ const GameEngine = (() => {
             });
           }
 
-          let finalNetProfit = Math.max(0, Math.floor(netProfit * synergyMultiplier * franchiseMultiplier * employeeBoost) - employeePayrollDeduction);
+          // V2: Corporation Level Booster (+5% per level above Level 1)
+          let corpBooster = 1.0;
+          if (typeof window !== 'undefined' && window.activeCorporationState) {
+            const corp = window.activeCorporationState;
+            if (corp.members && corp.members.includes(state.username)) {
+              const corpLevel = corp.level || 1;
+              corpBooster = 1 + (corpLevel - 1) * 0.05;
+            }
+          }
+
+          let finalNetProfit = Math.max(0, Math.floor(netProfit * synergyMultiplier * franchiseMultiplier * employeeBoost * corpBooster) - employeePayrollDeduction);
 
           // V2: Partner Profit Sharing Deductions
           if (bizState.partners) {
@@ -816,18 +843,18 @@ const GameEngine = (() => {
     }
 
     const taxable = netWorth - 3000000;
-    let baseRate = 0.00002;
+    let baseRate = taxConfig.silverRate * taxConfig.rateMultiplier;
     let bracketName = 'الشريحة الفضية (3M - 15M ج.م)';
     let bracketId = 2;
     let bracketColor = 'text-sky-400';
 
     if (netWorth > 50000000) {
-      baseRate = 0.00008;
+      baseRate = taxConfig.whaleRate * taxConfig.rateMultiplier;
       bracketName = 'شريحة حيتان المال والمليارديرات (+50M ج.م)';
       bracketId = 4;
       bracketColor = 'text-rose-400';
     } else if (netWorth > 15000000) {
-      baseRate = 0.00004;
+      baseRate = taxConfig.majorRate * taxConfig.rateMultiplier;
       bracketName = 'شريحة كبار الممولين (15M - 50M ج.م)';
       bracketId = 3;
       bracketColor = 'text-amber-400';
@@ -2519,6 +2546,8 @@ const GameEngine = (() => {
     playDice,
     playRoulette,
     calculateTaxReport,
+    setTaxConfig,
+    getTaxConfig: () => taxConfig,
     fileTaxDeclaration,
     calculatePassiveIncomePerTick,
     calculatePassiveIncomePerSecond,

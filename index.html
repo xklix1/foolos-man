@@ -3400,6 +3400,37 @@
           </button>
         </div>
 
+        <!-- Tax Policy Settings Card (Proposal 5 follow-up) -->
+        <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
+          <h3 class="text-sm font-black text-white flex items-center gap-2">
+            <i class="fa-solid fa-scale-balanced text-indigo-400"></i>
+            <span>لوحة التحكم بالسياسة المالية والضرائب</span>
+          </h3>
+          <p class="text-[10px] text-slate-400 font-bold">تحكم بمضاعف الضرائب ونسب الشرائح المختلفة المطبقة على جميع اللاعبين بشكل مباشر.</p>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <label class="text-[9px] text-slate-400 block mb-1">مضاعف الضريبة العالمي</label>
+              <input id="adm-tax-multiplier" type="number" step="0.1" value="1.0" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white">
+            </div>
+            <div>
+              <label class="text-[9px] text-slate-400 block mb-1">نسبة الفضية (3M - 15M)</label>
+              <input id="adm-tax-silver" type="number" step="0.00001" value="0.00002" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white">
+            </div>
+            <div>
+              <label class="text-[9px] text-slate-400 block mb-1">نسبة كبار الممولين (15M - 50M)</label>
+              <input id="adm-tax-major" type="number" step="0.00001" value="0.00004" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white">
+            </div>
+            <div>
+              <label class="text-[9px] text-slate-400 block mb-1">نسبة المليارديرات (+50M)</label>
+              <input id="adm-tax-whale" type="number" step="0.00001" value="0.00008" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white">
+            </div>
+          </div>
+          <button id="btn-admin-save-tax-policy" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-black transition flex items-center justify-center gap-1">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>تحديث السياسة الضريبية فوراً</span>
+          </button>
+        </div>
+
         <!-- New Analytics Grid (Proposal 5) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- A. Wealth Distribution -->

@@ -4257,6 +4257,25 @@ const UIController = (() => {
       }, (err) => console.error("Broadcast listen err: ", err));
     activeListeners.push(unsubBroadcast);
 
+    // 1.5. Tax Config Listener
+    const unsubTaxConfig = db.collection('globals').doc('taxConfig')
+      .onSnapshot((doc) => {
+        if (!doc.exists) return;
+        const data = doc.data();
+        if (data) {
+          GameEngine.setTaxConfig(data);
+          const mul = document.getElementById('adm-tax-multiplier');
+          const sil = document.getElementById('adm-tax-silver');
+          const maj = document.getElementById('adm-tax-major');
+          const wha = document.getElementById('adm-tax-whale');
+          if (mul) mul.value = data.rateMultiplier !== undefined ? data.rateMultiplier : 1.0;
+          if (sil) sil.value = data.silverRate !== undefined ? data.silverRate : 0.00002;
+          if (maj) maj.value = data.majorRate !== undefined ? data.majorRate : 0.00004;
+          if (wha) wha.value = data.whaleRate !== undefined ? data.whaleRate : 0.00008;
+        }
+      }, (err) => console.error("Tax config listen err: ", err));
+    activeListeners.push(unsubTaxConfig);
+
     // 2. V2 Public Chat Listener
     const unsubChat = AppDB.listenToChatMessages(msgs => {
       renderChatMessages(msgs);
@@ -6287,6 +6306,38 @@ const UIController = (() => {
       });
     }
 
+    // Tax Policy Settings (Admin)
+    const saveTaxPolicyBtn = document.getElementById('btn-admin-save-tax-policy');
+    if (saveTaxPolicyBtn) {
+      saveTaxPolicyBtn.addEventListener('click', async () => {
+        const rateMultiplier = Number(document.getElementById('adm-tax-multiplier').value);
+        const silverRate = Number(document.getElementById('adm-tax-silver').value);
+        const majorRate = Number(document.getElementById('adm-tax-major').value);
+        const whaleRate = Number(document.getElementById('adm-tax-whale').value);
+
+        if (isNaN(rateMultiplier) || rateMultiplier <= 0 || isNaN(silverRate) || silverRate < 0 || isNaN(majorRate) || majorRate < 0 || isNaN(whaleRate) || whaleRate < 0) {
+          showToast('خطأ إدخال', 'يرجى التأكد من إدخال قيم صحيحة للضرائب وموجبة.', 'error');
+          return;
+        }
+
+        try {
+          saveTaxPolicyBtn.disabled = true;
+          saveTaxPolicyBtn.textContent = 'جاري الحفظ والتعميم...';
+
+          const cfg = { rateMultiplier, silverRate, majorRate, whaleRate };
+          await AppDB.adminSaveTaxConfig(cfg);
+
+          showToast('تم الحفظ', 'تم تحديث ونشر السياسة الضريبية الجديدة لجميع اللاعبين بنجاح.', 'success');
+          logAdminAction(`تعديل الضرائب: مضاعف ${rateMultiplier}x | فضية ${silverRate} | كبار ${majorRate} | حيتان ${whaleRate}`);
+        } catch (err) {
+          showToast('فشل حفظ الضرائب', err.message, 'error');
+        } finally {
+          saveTaxPolicyBtn.disabled = false;
+          saveTaxPolicyBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>تحديث السياسة الضريبية فوراً</span>';
+        }
+      });
+    }
+
     // Store Items Configuration Event Listeners (Admin)
     const itemSelect = document.getElementById('admin-item-config-select');
     if (itemSelect) {
@@ -6465,6 +6516,19 @@ const UIController = (() => {
       if (elNW) elNW.textContent = `${(stats.totalNetWorth || 0).toLocaleString()} EGP`;
       if (elJ) elJ.textContent = (stats.jailedCount || 0).toLocaleString();
       if (elBan) elBan.textContent = (stats.bannedCount || 0).toLocaleString();
+
+      // Populate tax inputs from current engine config (if not focused to avoid interrupting admin input)
+      const currentCfg = GameEngine.getTaxConfig ? GameEngine.getTaxConfig() : null;
+      if (currentCfg) {
+        const mul = document.getElementById('adm-tax-multiplier');
+        const sil = document.getElementById('adm-tax-silver');
+        const maj = document.getElementById('adm-tax-major');
+        const wha = document.getElementById('adm-tax-whale');
+        if (mul && document.activeElement !== mul) mul.value = currentCfg.rateMultiplier;
+        if (sil && document.activeElement !== sil) sil.value = currentCfg.silverRate;
+        if (maj && document.activeElement !== maj) maj.value = currentCfg.majorRate;
+        if (wha && document.activeElement !== wha) wha.value = currentCfg.whaleRate;
+      }
 
       // 1. Render Wealth Distribution
       const wealthDistContainer = document.getElementById('adm-wealth-distribution-container');
@@ -8871,17 +8935,36 @@ const UIController = (() => {
         let mShare = totalCont > 0 ? (cAmt / totalCont) : (m === corp.founder ? 1.0 : 0.0);
         const isMe = m === currentUsername;
         const isMemberFounder = m === corp.founder;
+
+        const role = (corp.roles && corp.roles[m]) || (isMemberFounder ? 'founder' : 'member');
+        let roleBadge = '<span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-1">مساهم 👤</span>';
+        if (role === 'founder') {
+          roleBadge = '<span class="text-[9px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">مؤسس 👑</span>';
+        } else if (role === 'cfo') {
+          roleBadge = '<span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded ml-1">مدير مالي 💼</span>';
+        }
+
+        let actions = '';
+        if (isFounder && !isMemberFounder) {
+          if (role === 'member') {
+            actions += `<button onclick="window.UI.promoteCorpMemberAction('${corp.id}', '${m}', 'cfo')" class="text-[9px] bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded transition font-bold mr-1" title="ترقية لمدير مالي"><i class="fa-solid fa-user-tie"></i></button>`;
+          } else if (role === 'cfo') {
+            actions += `<button onclick="window.UI.promoteCorpMemberAction('${corp.id}', '${m}', 'member')" class="text-[9px] bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded transition font-bold mr-1" title="تنزيل لمساهم عادي"><i class="fa-solid fa-user-minus"></i></button>`;
+          }
+          actions += `<button onclick="window.UI.kickCorpMemberAction('${corp.id}','${m}')" class="text-[9px] bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded transition font-bold" title="طرد"><i class='fa-solid fa-user-slash'></i></button>`;
+        }
+
         membersHtml += `
           <tr class="border-b border-slate-900 text-xs">
             <td class="py-2.5 text-slate-300 font-bold">
               ${m} 
-              ${isMemberFounder ? '<span class="text-[9px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">مؤسس 👑</span>' : ''}
+              ${roleBadge}
               ${isMe && !isMemberFounder ? '<span class="text-[9px] bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded ml-1">أنت</span>' : ''}
             </td>
             <td class="py-2.5 text-slate-400 numbers-font">${cAmt.toLocaleString()} EGP</td>
             <td class="py-2.5 text-emerald-400 font-bold numbers-font">${(mShare * 100).toFixed(2)}%</td>
-            <td class="py-2.5">
-              ${isFounder && !isMemberFounder ? `<button onclick="window.UI.kickCorpMemberAction('${corp.id}','${m}')" class="text-[9px] bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 px-2 py-1 rounded-lg transition font-bold"><i class='fa-solid fa-user-slash'></i></button>` : ''}
+            <td class="py-2.5 text-left">
+              ${actions}
             </td>
           </tr>
         `;
@@ -8940,6 +9023,11 @@ const UIController = (() => {
         `;
       });
 
+      const corpLevel = corp.level || 1;
+      const corpBoostPct = (corpLevel - 1) * 5;
+      const isCfo = (corp.roles && corp.roles[currentUsername]) === 'cfo';
+      const hasStaffPower = isFounder || isCfo;
+
       container.innerHTML = `
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div class="lg:col-span-2 glass-panel p-6 rounded-2xl border border-indigo-500/10 bg-slate-950/40 relative overflow-hidden flex flex-col justify-between">
@@ -8949,9 +9037,13 @@ const UIController = (() => {
                   <i class="fa-solid fa-building text-indigo-500"></i>
                   <span>${corp.name}</span>
                 </h3>
-                <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full font-bold">عضو مساهم</span>
+                <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full font-bold">مستوى التحالف: ${corpLevel} 🏆</span>
               </div>
               <p class="text-slate-400 text-xs mt-2">${corp.desc || 'لا يوجد وصف تجاري.'}</p>
+              <div class="mt-2.5 text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>دعم أرباح المشاريع الفردية لأعضاء التحالف: +${corpBoostPct}% (نشط)</span>
+              </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6 bg-slate-950/70 p-4 rounded-xl border border-slate-900">
@@ -8974,19 +9066,50 @@ const UIController = (() => {
             </div>
           </div>
 
-          <div class="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-950/40 space-y-4">
-            <h3 class="text-sm font-black text-white flex items-center gap-1.5">
-              <i class="fa-solid fa-piggy-bank text-indigo-400"></i>
-              <span>ضخ أموال في الخزينة المشتركة</span>
-            </h3>
-            <p class="text-slate-400 text-[11px]">كل مبلغ تضخه يزيد من حجم الخزينة لشراء المشاريع، ويرفع حصتك المئوية من الأرباح تلقائياً مقارنة بالشركاء الآخرين.</p>
-            <div>
-              <label class="text-[10px] text-slate-400 block mb-1">المبلغ المراد ضخه (EGP)</label>
-              <input id="contribute-corp-amount" type="number" placeholder="مثال: 5000000000" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500">
+          <div class="space-y-4">
+            <!-- Card 1: Contribute -->
+            <div class="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-950/40 space-y-3">
+              <h3 class="text-xs font-black text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-piggy-bank text-indigo-400"></i>
+                <span>ضخ أموال في الخزينة المشتركة</span>
+              </h3>
+              <p class="text-slate-400 text-[10px] leading-relaxed">كل مبلغ تضخه يزيد من حجم الخزينة لشراء المشاريع، ويرفع حصتك المئوية من الأرباح تلقائياً مقارنة بالشركاء الآخرين.</p>
+              <div>
+                <label class="text-[9px] text-slate-500 block mb-1">المبلغ المراد ضخه (EGP)</label>
+                <input id="contribute-corp-amount" type="number" placeholder="مثال: 5000000000" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+              </div>
+              <button onclick="window.UI.contributeCorporationAction('${corp.id}')" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black transition">
+                تأكيد ضخ السيولة
+              </button>
             </div>
-            <button onclick="window.UI.contributeCorporationAction('${corp.id}')" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-600/10 transition">
-              تأكيد ضخ السيولة
-            </button>
+
+            <!-- Card 2: Upgrade Corporation -->
+            <div class="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-950/40 space-y-3">
+              <h3 class="text-xs font-black text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-up text-amber-500"></i>
+                <span>ترقية مستوى التحالف المشترك</span>
+              </h3>
+              <p class="text-slate-400 text-[10px] leading-relaxed">كل ترقية ترفع مستوى التحالف وتزيد من دعم أرباح المشاريع الفردية للأعضاء بنسبة +5% إضافية.</p>
+              
+              <div class="bg-slate-950/50 p-2 rounded-lg border border-slate-900 text-[10px] space-y-1">
+                <div class="flex justify-between">
+                  <span class="text-slate-500">المستوى الحالي:</span>
+                  <span class="text-white font-bold">${corpLevel}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-500">المستوى القادم:</span>
+                  <span class="text-amber-400 font-bold">${corpLevel + 1}</span>
+                </div>
+                <div class="flex justify-between border-t border-slate-900 pt-1 mt-1">
+                  <span class="text-slate-500">تكلفة الترقية:</span>
+                  <span class="text-emerald-400 font-black numbers-font">${(corpLevel * 20000000000).toLocaleString()} EGP</span>
+                </div>
+              </div>
+
+              <button onclick="window.UI.upgradeCorporationLevelAction('${corp.id}', ${corpLevel * 20000000000})" class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-black transition">
+                ترقية التحالف الآن
+              </button>
+            </div>
           </div>
         </div>
 
@@ -9013,6 +9136,7 @@ const UIController = (() => {
                     <th class="pb-2">الاسم</th>
                     <th class="pb-2">المساهمة</th>
                     <th class="pb-2">الحصة</th>
+                    <th class="pb-2 text-left">التحكم</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -9023,16 +9147,43 @@ const UIController = (() => {
           </div>
         </div>
 
-        ${isFounder ? `
-        <div class="mt-6 glass-panel p-6 rounded-2xl border border-amber-500/20 bg-amber-950/5 space-y-5">
+        ${hasStaffPower ? `
+        <div class="mt-6 glass-panel p-6 rounded-2xl border border-amber-500/20 bg-slate-900/40 space-y-5">
           <h3 class="text-sm font-black text-amber-400 flex items-center gap-2">
-            <i class="fa-solid fa-crown"></i>
-            <span>لوحة تحكم المؤسس</span>
+            <i class="fa-solid fa-toolbox"></i>
+            <span>لوحة الإشراف المالي وإدارة التحالف</span>
           </h3>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 1. Payout Section (Founder and CFOs) -->
+            <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-4 space-y-3">
+              <h4 class="text-xs font-black text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-money-bill-transfer text-emerald-400"></i>
+                <span>تحويل السيولة من الخزينة للأعضاء</span>
+              </h4>
+              <p class="text-[10px] text-slate-500 font-bold">سحب مبالغ محددة من خزينة التحالف وتحويلها ككاش رصيد لأي عضو.</p>
+              
+              <div class="space-y-2">
+                <div>
+                  <label class="text-[9px] text-slate-400 block mb-1">اختر العضو المستهدف</label>
+                  <select id="payout-corp-target" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    <option value="">-- اختر شريكاً --</option>
+                    ${membersList.map(m => `<option value="${m}">${m} ${(corp.roles && corp.roles[m] === 'cfo') ? '[CFO]' : (m === corp.founder ? '[Founder]' : '')}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="text-[9px] text-slate-400 block mb-1">المبلغ المراد سحبه وتحويله (EGP)</label>
+                  <input id="payout-corp-amount" type="number" placeholder="مثال: 100000000" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+              </div>
 
-            <!-- تعديل الاسم والوصف -->
+              <button onclick="window.UI.payoutFromCorpTreasuryAction('${corp.id}')" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition">
+                تأكيد سحب وتحويل السيولة
+              </button>
+            </div>
+
+            <!-- 2. Founder Only Controls -->
+            ${isFounder ? `
             <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-4 space-y-3">
               <h4 class="text-xs font-black text-white flex items-center gap-1.5"><i class="fa-solid fa-pen text-indigo-400"></i> تعديل بيانات الشركة</h4>
               <div>
@@ -9048,26 +9199,40 @@ const UIController = (() => {
               </button>
             </div>
 
-            <!-- نقل الملكية وحل الشركة -->
-            <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-4 space-y-3">
-              <h4 class="text-xs font-black text-white flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate text-amber-400"></i> نقل الملكية</h4>
-              <p class="text-[10px] text-slate-500">اختر عضواً لنقل لقب المؤسس إليه. لا يمكن التراجع عن هذه الخطوة.</p>
-              <select id="transfer-corp-target" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
-                <option value="">-- اختر عضواً --</option>
-                ${membersList.filter(m => m !== currentUsername).map(m => `<option value="${m}">${m}</option>`).join('')}
-              </select>
-              <button onclick="window.UI.transferCorpOwnershipAction('${corp.id}')" class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-black transition">
-                <i class="fa-solid fa-user-shield ml-1"></i> تأكيد نقل الملكية
-              </button>
+            <!-- 3. Owner Actions -->
+            <div class="col-span-1 md:col-span-2 bg-slate-950/50 border border-slate-800 rounded-xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <h4 class="text-xs font-black text-white flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate text-amber-400"></i> نقل الملكية</h4>
+                <p class="text-[10px] text-slate-500 font-bold">نقل لقب المؤسس لعضو آخر. لا يمكن التراجع.</p>
+                <select id="transfer-corp-target" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                  <option value="">-- اختر عضواً --</option>
+                  ${membersList.filter(m => m !== currentUsername).map(m => `<option value="${m}">${m}</option>`).join('')}
+                </select>
+                <button onclick="window.UI.transferCorpOwnershipAction('${corp.id}')" class="w-full py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-black transition">
+                  نقل الملكية
+                </button>
+              </div>
 
-              <div class="border-t border-slate-800 pt-3 mt-3">
-                <h4 class="text-xs font-black text-rose-400 flex items-center gap-1.5 mb-2"><i class="fa-solid fa-triangle-exclamation"></i> منطقة الخطر</h4>
+              <div class="space-y-2 flex flex-col justify-between">
+                <div>
+                  <h4 class="text-xs font-black text-rose-400 flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> منطقة الخطر</h4>
+                  <p class="text-[10px] text-slate-500 font-bold">حل الشركة المشتركة نهائياً وإعادة الأرصدة للمساهمين.</p>
+                </div>
                 <button onclick="window.UI.dissolveCorpAction('${corp.id}')" class="w-full py-2 bg-rose-700/30 hover:bg-rose-700/50 border border-rose-700/40 text-rose-300 rounded-xl text-xs font-black transition">
-                  <i class="fa-solid fa-bomb ml-1"></i> حل الشركة وإعادة الخزينة للمساهمين
+                  <i class="fa-solid fa-bomb ml-1"></i> حل الشركة المشتركة بالكامل
                 </button>
               </div>
             </div>
-
+            ` : `
+            <!-- CFO Info Box -->
+            <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-4 flex items-center justify-center text-center">
+              <div class="space-y-1">
+                <i class="fa-solid fa-user-shield text-emerald-400 text-2xl"></i>
+                <h4 class="text-xs font-black text-white">أنت تشغل رتبة: مدير مالي للتحالف</h4>
+                <p class="text-[10px] text-slate-500">لديك الصلاحية لسحب وتحويل الأموال من الخزينة للأعضاء وشراء المشاريع وترقية مستوى التحالف.</p>
+              </div>
+            </div>
+            `}
           </div>
         </div>` : ''}
       `;
@@ -9255,6 +9420,59 @@ const UIController = (() => {
     }
   }
 
+  async function promoteCorpMemberAction(corpId, targetUsername, role) {
+    const roleName = role === 'cfo' ? 'مدير مالي (CFO)' : 'مساهم عادي';
+    if (!confirm(`هل أنت متأكد من تغيير رتبة "${targetUsername}" إلى "${roleName}"؟`)) return;
+    try {
+      await AppDB.promoteCorpMember(corpId, targetUsername, role);
+      showToast('تحديث الرتبة', `تم تغيير رتبة اللاعب ${targetUsername} بنجاح.`, 'success');
+      renderCorporationsTab();
+    } catch (e) {
+      showToast('خطأ رتبة', e.message, 'error');
+    }
+  }
+
+  async function payoutFromCorpTreasuryAction(corpId) {
+    const target = document.getElementById('payout-corp-target')?.value;
+    const amount = Math.floor(Number(document.getElementById('payout-corp-amount')?.value));
+
+    if (!target) {
+      showToast('خطأ تحويل', 'يجب اختيار العضو المستهدف للتحويل.', 'error');
+      return;
+    }
+    if (isNaN(amount) || amount <= 0) {
+      showToast('خطأ تحويل', 'يرجى إدخال مبلغ تحويل صحيح وموجب.', 'error');
+      return;
+    }
+
+    if (!confirm(`هل أنت متأكد من سحب ${amount.toLocaleString()} EGP من خزينة التحالف وتحويلها مباشرة ككاش إلى "${target}"؟`)) return;
+
+    try {
+      await AppDB.payoutFromCorpTreasury(corpId, target, amount);
+      showToast('تم التحويل 💸✅', `تم سحب وتحويل ${amount.toLocaleString()} EGP بنجاح إلى حساب ${target}.`, 'success');
+      playMenuSound('success');
+      
+      const amtInput = document.getElementById('payout-corp-amount');
+      if (amtInput) amtInput.value = '';
+      
+      renderCorporationsTab();
+    } catch (e) {
+      showToast('فشل التحويل', e.message, 'error');
+    }
+  }
+
+  async function upgradeCorporationLevelAction(corpId, cost) {
+    if (!confirm(`هل أنت متأكد من ترقية مستوى التحالف المشترك بقيمة ${cost.toLocaleString()} EGP من الخزينة؟`)) return;
+    try {
+      await AppDB.upgradeCorporationLevel(corpId, cost);
+      showToast('تمت الترقية 🏆🎉', 'تم ترقية مستوى التحالف المشترك بنجاح! تم زيادة دعم أرباح الأعضاء بمقدار +5% إضافية.', 'success');
+      playMenuSound('success');
+      renderCorporationsTab();
+    } catch (e) {
+      showToast('فشل الترقية', e.message, 'error');
+    }
+  }
+
   async function adminQuickJailAction(username) {
     if (!username) return;
     if (!confirm(`هل أنت متأكد من إرسال اللاعب المشبوه "${username}" إلى السجن لمدة 5 دقائق؟`)) return;
@@ -9304,7 +9522,10 @@ const UIController = (() => {
     transferCorpOwnershipAction,
     dissolveCorpAction,
     adminQuickJailAction,
-    adminQuickBanAction
+    adminQuickBanAction,
+    promoteCorpMemberAction,
+    payoutFromCorpTreasuryAction,
+    upgradeCorporationLevelAction
   };
 })();
 

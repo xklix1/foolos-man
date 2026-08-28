@@ -1876,7 +1876,11 @@ const AppDB = (() => {
       founder,
       treasury: 0,
       totalContributions: 0,
+      level: 1,
       members: [founder],
+      roles: {
+        [founder]: 'founder'
+      },
       contributions: {
         [founder]: 0
       },
@@ -2106,6 +2110,113 @@ const AppDB = (() => {
     return true;
   }
 
+  async function promoteCorpMember(corpId, targetUsername, role) {
+    _requireOnline();
+    const currentUser = GameEngine.state.username;
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    await firestoreDb.runTransaction(async transaction => {
+      const doc = await transaction.get(docRef);
+      if (!doc.exists) throw new Error('الشركة غير موجودة.');
+      const data = doc.data();
+      if (data.founder !== currentUser) throw new Error('فقط المؤسس يمكنه تعديل رتب الأعضاء.');
+      if (targetUsername === currentUser) throw new Error('لا يمكنك تعديل رتبة نفسك.');
+      if (!(data.members || []).includes(targetUsername)) throw new Error('المستخدم ليس عضواً في هذه الشركة.');
+
+      const roles = { ...(data.roles || {}) };
+      roles[targetUsername] = role; // 'cfo' or 'member' (regular)
+      
+      transaction.update(docRef, { roles });
+    });
+    return true;
+  }
+
+  async function payoutFromCorpTreasury(corpId, targetUsername, amount) {
+    _requireOnline();
+    const currentUser = GameEngine.state.username;
+    if (amount <= 0) throw new Error('يجب تحديد مبلغ صالح للتحويل.');
+    
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    const playerRef = firestoreDb.collection('players').doc(targetUsername);
+
+    await firestoreDb.runTransaction(async transaction => {
+      const doc = await transaction.get(docRef);
+      if (!doc.exists) throw new Error('الشركة غير موجودة.');
+      const data = doc.data();
+
+      // Verify if currentUser is founder or CFO
+      const userRole = (data.roles && data.roles[currentUser]) || (data.founder === currentUser ? 'founder' : 'member');
+      if (userRole !== 'founder' && userRole !== 'cfo') {
+        throw new Error('ليس لديك صلاحية سحب أو تحويل أموال من الخزينة. (متاحة للمؤسس والمدير المالي CFO فقط).');
+      }
+
+      if (!(data.members || []).includes(targetUsername)) {
+        throw new Error('اللاعب المستهدف ليس عضواً في هذه الشركة.');
+      }
+
+      const treasury = Number(data.treasury || 0);
+      if (treasury < amount) {
+        throw new Error(`خزينة الشركة لا تحتوي على سيولة كافية. المتوفر: ${treasury.toLocaleString()} EGP.`);
+      }
+
+      const targetDoc = await transaction.get(playerRef);
+      if (!targetDoc.exists) throw new Error('حساب اللاعب المستهدف غير موجود في قاعدة البيانات.');
+      const targetData = targetDoc.data();
+
+      // Update Treasury
+      transaction.update(docRef, { treasury: treasury - amount });
+
+      // Update target player cash
+      const targetCash = Number(targetData.cash || 0);
+      const targetNetWorth = Number(targetData.netWorth || 0);
+      transaction.update(playerRef, {
+        cash: targetCash + amount,
+        netWorth: targetNetWorth + amount
+      });
+    });
+    return true;
+  }
+
+  async function upgradeCorporationLevel(corpId, cost) {
+    _requireOnline();
+    const currentUser = GameEngine.state.username;
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+
+    await firestoreDb.runTransaction(async transaction => {
+      const doc = await transaction.get(docRef);
+      if (!doc.exists) throw new Error('الشركة غير موجودة.');
+      const data = doc.data();
+
+      // Verify if currentUser is founder or CFO
+      const userRole = (data.roles && data.roles[currentUser]) || (data.founder === currentUser ? 'founder' : 'member');
+      if (userRole !== 'founder' && userRole !== 'cfo') {
+        throw new Error('ليس لديك صلاحية ترقية التحالف. (متاحة للمؤسس والمدير المالي CFO فقط).');
+      }
+
+      const treasury = Number(data.treasury || 0);
+      if (treasury < cost) {
+        throw new Error(`رصيد الخزينة (${treasury.toLocaleString()} EGP) لا يكفي لتكلفة الترقية البالغة ${cost.toLocaleString()} EGP.`);
+      }
+
+      const currentLevel = Number(data.level || 1);
+      transaction.update(docRef, {
+        treasury: treasury - cost,
+        level: currentLevel + 1
+      });
+    });
+    return true;
+  }
+
+  async function adminSaveTaxConfig(config) {
+    _requireOnline();
+    await _ensureAdminAuth();
+    await firestoreDb.collection('globals').doc('taxConfig').set({
+      ...config,
+      updatedBy: SECRET_ADMIN_USERNAME,
+      updatedAt: Date.now()
+    });
+    return true;
+  }
+
   // ─────────────────────────────────────────────
   //  PUBLIC API
   // ─────────────────────────────────────────────
@@ -2167,6 +2278,7 @@ const AppDB = (() => {
     adminGetTransfers,
     setMaintenanceMode,
     getMaintenanceStatus,
+    adminSaveTaxConfig,
 
     // V2: DAILY BACKUPS & RESTORE API
     checkAndCreateDailyBackup,
@@ -2205,6 +2317,9 @@ const AppDB = (() => {
     editCorpInfo,
     transferCorpOwnership,
     dissolveCorporation,
+    promoteCorpMember,
+    payoutFromCorpTreasury,
+    upgradeCorporationLevel,
 
     get dbType() { return firebaseReady ? 'firebase' : 'offline'; },
     mockPlayers: []
