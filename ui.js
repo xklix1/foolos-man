@@ -3362,7 +3362,7 @@ const UIController = (() => {
     if (shieldBadge) {
       if (taxReport.taxShieldActive) {
         shieldBadge.className = 'text-[10px] px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full font-bold animate-pulse';
-        shieldBadge.textContent = 'نشط وفعال 🛡️ (-75%)';
+        shieldBadge.textContent = 'نشط وفعال 🛡️ (-50%)';
       } else {
         shieldBadge.className = 'text-[10px] px-2.5 py-0.5 bg-slate-800 text-slate-400 rounded-full font-bold';
         shieldBadge.textContent = 'غير مفعل ⚠️';

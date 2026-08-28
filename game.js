@@ -816,24 +816,24 @@ const GameEngine = (() => {
     }
 
     const taxable = netWorth - 3000000;
-    let baseRate = 0.000002;
+    let baseRate = 0.00002;
     let bracketName = 'الشريحة الفضية (3M - 15M ج.م)';
     let bracketId = 2;
     let bracketColor = 'text-sky-400';
 
     if (netWorth > 50000000) {
-      baseRate = 0.000005;
+      baseRate = 0.00008;
       bracketName = 'شريحة حيتان المال والمليارديرات (+50M ج.م)';
       bracketId = 4;
       bracketColor = 'text-rose-400';
     } else if (netWorth > 15000000) {
-      baseRate = 0.0000035;
+      baseRate = 0.00004;
       bracketName = 'شريحة كبار الممولين (15M - 50M ج.م)';
       bracketId = 3;
       bracketColor = 'text-amber-400';
     }
 
-    const effectiveRate = taxShieldActive ? (baseRate * 0.25) : baseRate;
+    const effectiveRate = taxShieldActive ? (baseRate * 0.50) : baseRate;
     const taxPerSecond = Math.max(1, Math.floor(taxable * effectiveRate));
 
     return {
