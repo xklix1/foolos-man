@@ -1356,17 +1356,107 @@ const AppDB = (() => {
     let totalCash = 0, totalBank = 0, totalNetWorth = 0;
     let jailedCount = 0, bannedCount = 0, totalPlayers = 0;
 
+    // Wealth Brackets
+    let billionaires = 0; // Net worth >= 50M
+    let millionaires = 0; // Net worth 5M to 50M
+    let middleClass = 0;  // Net worth 500k to 5M
+    let workingClass = 0; // Net worth < 500k
+
+    // Suspicious Accounts List (Cheat Detection)
+    const suspiciousPlayers = [];
+
+    // All players cache to find top 5 richest
+    const allPlayersList = [];
+
     snapshot.forEach(doc => {
       const d = doc.data();
+      const u = d.username || doc.id;
+      const cash = Number(d.cash || 0);
+      const bank = Number(d.bank || 0);
+      const netWorth = Number(d.netWorth || 0);
+      const xp = Number(d.xp || 0);
+      const dirtyCash = Number(d.dirtyCash || 0);
+      const isBanned = Boolean(d.isBanned);
+      const jailTimer = Number(d.jailTimer || 0);
+      const title = d.title || 'عامل مبتدئ';
+
       totalPlayers++;
-      totalCash += Number(d.cash || 0);
-      totalBank += Number(d.bank || 0);
-      totalNetWorth += Number(d.netWorth || 0);
-      if (d.jailTimer > 0) jailedCount++;
-      if (d.isBanned) bannedCount++;
+      totalCash += cash;
+      totalBank += bank;
+      totalNetWorth += netWorth;
+
+      if (jailTimer > 0) jailedCount++;
+      if (isBanned) bannedCount++;
+
+      // Wealth bracket sizing
+      if (netWorth >= 50000000) billionaires++;
+      else if (netWorth >= 5000000) millionaires++;
+      else if (netWorth >= 500000) middleClass++;
+      else workingClass++;
+
+      // Flagging logic
+      let flagged = false;
+      let reasons = [];
+
+      if (netWorth > 1000000000 && xp < 100) {
+        flagged = true;
+        reasons.push("ثروة مليارية مع خبرة شبه معدومة");
+      }
+      if (cash < 0 || bank < 0 || netWorth < 0) {
+        flagged = true;
+        reasons.push("قيم مالية سالبة (استغلال ثغرة)");
+      }
+      if (dirtyCash > 50000000) {
+        flagged = true;
+        reasons.push("أموال متسخة ضخمة جداً في حوزته");
+      }
+      if (cash > 2000000000 || bank > 20000000000) {
+        flagged = true;
+        reasons.push("سيولة نقدية تتجاوز الحدود المنطقية");
+      }
+
+      if (flagged && !isBanned) {
+        suspiciousPlayers.push({
+          username: u,
+          cash,
+          bank,
+          netWorth,
+          xp,
+          dirtyCash,
+          reason: reasons.join(" • ")
+        });
+      }
+
+      allPlayersList.push({
+        username: u,
+        netWorth,
+        title,
+        cash,
+        bank
+      });
     });
 
-    return { totalPlayers, totalCash, totalBank, totalNetWorth, jailedCount, bannedCount, activeVersion: CLIENT_VERSION };
+    // Sort by netWorth descending and slice top 5
+    allPlayersList.sort((a, b) => b.netWorth - a.netWorth);
+    const topRichest = allPlayersList.slice(0, 5);
+
+    return {
+      totalPlayers,
+      totalCash,
+      totalBank,
+      totalNetWorth,
+      jailedCount,
+      bannedCount,
+      activeVersion: CLIENT_VERSION,
+      wealthBrackets: {
+        billionaires,
+        millionaires,
+        middleClass,
+        workingClass
+      },
+      suspiciousPlayers,
+      topRichest
+    };
   }
 
   async function adminGetTransfers() {

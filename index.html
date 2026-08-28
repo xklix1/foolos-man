@@ -3399,6 +3399,62 @@
             <span>تحديث الإحصائيات الحية</span>
           </button>
         </div>
+
+        <!-- New Analytics Grid (Proposal 5) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- A. Wealth Distribution -->
+          <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
+            <h3 class="text-sm font-black text-white flex items-center gap-2">
+              <i class="fa-solid fa-chart-bar text-yellow-500"></i>
+              <span>توزيع الثروة وفئات اللاعبين</span>
+            </h3>
+            <div id="adm-wealth-distribution-container" class="space-y-2.5">
+              <div class="text-[11px] text-slate-400">جاري تحميل توزيع الثروات...</div>
+            </div>
+          </div>
+
+          <!-- B. Top 5 Richest Players Comparer -->
+          <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
+            <h3 class="text-sm font-black text-white flex items-center gap-2">
+              <i class="fa-solid fa-crown text-amber-400"></i>
+              <span>مقارنة ثروات أغنى 5 لاعبين</span>
+            </h3>
+            <div id="adm-top-richest-container" class="space-y-3 pt-1">
+              <div class="text-[11px] text-slate-400">جاري تحميل قائمة الأثرياء...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- C. Suspicious Accounts / Anti-Cheat System -->
+        <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
+          <div class="flex justify-between items-center">
+            <h3 class="text-sm font-black text-rose-400 flex items-center gap-2">
+              <i class="fa-solid fa-shield-halved text-rose-500"></i>
+              <span>نظام مكافحة الغش ورصد الحسابات المشبوهة</span>
+            </h3>
+            <span class="px-2.5 py-0.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-full font-bold text-[10px] uppercase tracking-wider animate-pulse">مراقب تلقائي نشط</span>
+          </div>
+          <div class="border border-slate-800/80 rounded-xl overflow-hidden bg-slate-950/40">
+            <div class="max-h-64 overflow-y-auto">
+              <table class="w-full text-right text-xs">
+                <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th class="p-2">اسم المستخدم</th>
+                    <th class="p-2">إجمالي الثروة</th>
+                    <th class="p-2 text-center">الخبرة XP</th>
+                    <th class="p-2">سبب الاشتباه والتنبيه</th>
+                    <th class="p-2 text-left">إجراءات التحكم السريع</th>
+                  </tr>
+                </thead>
+                <tbody id="adm-suspicious-accounts-tbody">
+                  <tr>
+                    <td colspan="5" class="py-6 text-center text-slate-500">لا توجد حسابات مشبوهة مرصودة حالياً. السيرفر آمن تماماً!</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 2. PANEL PLAYERS -->

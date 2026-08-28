@@ -6466,6 +6466,124 @@ const UIController = (() => {
       if (elJ) elJ.textContent = (stats.jailedCount || 0).toLocaleString();
       if (elBan) elBan.textContent = (stats.bannedCount || 0).toLocaleString();
 
+      // 1. Render Wealth Distribution
+      const wealthDistContainer = document.getElementById('adm-wealth-distribution-container');
+      if (wealthDistContainer && stats.wealthBrackets) {
+        const brackets = stats.wealthBrackets;
+        const total = stats.totalPlayers || 1;
+        const getPct = num => ((num / total) * 100).toFixed(1);
+
+        wealthDistContainer.innerHTML = `
+          <!-- Billionaires -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-[11px] font-bold">
+              <span class="text-amber-400">المليارديرات (+50M)</span>
+              <span class="numbers-font text-white">${brackets.billionaires} (${getPct(brackets.billionaires)}%)</span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-805">
+              <div class="h-full bg-gradient-to-l from-yellow-600 to-yellow-400 rounded-full transition-all duration-500" style="width: ${getPct(brackets.billionaires)}%"></div>
+            </div>
+          </div>
+          <!-- Millionaires -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-[11px] font-bold">
+              <span class="text-sky-400">المليونيرات (5M - 50M)</span>
+              <span class="numbers-font text-white">${brackets.millionaires} (${getPct(brackets.millionaires)}%)</span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-805">
+              <div class="h-full bg-sky-500 rounded-full transition-all duration-500" style="width: ${getPct(brackets.millionaires)}%"></div>
+            </div>
+          </div>
+          <!-- Middle Class -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-[11px] font-bold">
+              <span class="text-emerald-400">الطبقة المتوسطة (500k - 5M)</span>
+              <span class="numbers-font text-white">${brackets.middleClass} (${getPct(brackets.middleClass)}%)</span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-805">
+              <div class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: ${getPct(brackets.middleClass)}%"></div>
+            </div>
+          </div>
+          <!-- Working Class -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-[11px] font-bold">
+              <span class="text-slate-400">الطبقة الكادحة (&lt;500k)</span>
+              <span class="numbers-font text-white">${brackets.workingClass} (${getPct(brackets.workingClass)}%)</span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-805">
+              <div class="h-full bg-slate-500 rounded-full transition-all duration-500" style="width: ${getPct(brackets.workingClass)}%"></div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 2. Render Top 5 Richest comparison
+      const topRichestContainer = document.getElementById('adm-top-richest-container');
+      if (topRichestContainer && stats.topRichest) {
+        const top5 = stats.topRichest;
+        const maxWorth = top5.length > 0 ? (top5[0].netWorth || 1) : 1;
+
+        topRichestContainer.innerHTML = '';
+        if (top5.length === 0) {
+          topRichestContainer.innerHTML = '<div class="text-[11px] text-slate-500 text-center py-4">لا توجد بيانات متاحة حالياً.</div>';
+        } else {
+          top5.forEach((p, idx) => {
+            const widthPct = Math.max(8, Math.min(100, (p.netWorth / maxWorth) * 100));
+            const bar = document.createElement('div');
+            bar.className = 'space-y-1';
+            bar.innerHTML = `
+              <div class="flex justify-between items-center text-[10px]">
+                <span class="font-bold text-slate-200 flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded bg-slate-800 text-slate-300 font-mono text-[9px] flex items-center justify-center font-bold">${idx + 1}</span>
+                  <span class="text-yellow-400">${p.username}</span>
+                  <span class="text-slate-500">(${p.title})</span>
+                </span>
+                <span class="numbers-font font-bold text-slate-300">${(p.netWorth).toLocaleString()} EGP</span>
+              </div>
+              <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-850">
+                <div class="h-full bg-gradient-to-l from-yellow-500 to-amber-500 rounded-full transition-all duration-500" style="width: ${widthPct}%"></div>
+              </div>
+            `;
+            topRichestContainer.appendChild(bar);
+          });
+        }
+      }
+
+      // 3. Render Suspicious Accounts
+      const suspiciousTbody = document.getElementById('adm-suspicious-accounts-tbody');
+      if (suspiciousTbody) {
+        const suspects = stats.suspiciousPlayers || [];
+        suspiciousTbody.innerHTML = '';
+
+        if (suspects.length === 0) {
+          suspiciousTbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="py-6 text-center text-slate-500">لا توجد حسابات مشبوهة مرصودة حالياً. السيرفر آمن تماماً!</td>
+            </tr>
+          `;
+        } else {
+          suspects.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-slate-900 border-b border-slate-800/40 transition duration-150';
+            tr.innerHTML = `
+              <td class="p-2.5 font-bold text-white">${p.username}</td>
+              <td class="p-2.5 font-bold text-yellow-500 numbers-font">${(p.netWorth).toLocaleString()} EGP</td>
+              <td class="p-2.5 text-center font-bold text-sky-400 numbers-font">${(p.xp).toLocaleString()}</td>
+              <td class="p-2.5 text-rose-400 font-bold">${p.reason}</td>
+              <td class="p-2.5 text-left flex gap-1.5 justify-end">
+                <button onclick="UIController.adminQuickJailAction('${p.username}')" class="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 font-bold rounded-lg text-[10px] transition duration-150 flex items-center gap-1">
+                  <i class="fa-solid fa-handcuffs"></i> سجن
+                </button>
+                <button onclick="UIController.adminQuickBanAction('${p.username}')" class="px-2 py-1 bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 font-bold rounded-lg text-[10px] transition duration-150 flex items-center gap-1">
+                  <i class="fa-solid fa-ban"></i> حظر
+                </button>
+              </td>
+            `;
+            suspiciousTbody.appendChild(tr);
+          });
+        }
+      }
+
       logAdminAction(`تحديث الإحصائيات — الحسابات: ${stats.totalPlayers} | الثروة الكلية: ${(stats.totalNetWorth || 0).toLocaleString()} EGP`);
     } catch (e) {
       console.warn('[Admin Dashboard] Failed to load stats:', e);
@@ -9137,6 +9255,32 @@ const UIController = (() => {
     }
   }
 
+  async function adminQuickJailAction(username) {
+    if (!username) return;
+    if (!confirm(`هل أنت متأكد من إرسال اللاعب المشبوه "${username}" إلى السجن لمدة 5 دقائق؟`)) return;
+    try {
+      await AppDB.adminSetPlayerJail(username, 300);
+      showToast('عقوبة السجن السريعة', `تم إيداع اللاعب ${username} في السجن بنجاح.`, 'warning');
+      logAdminAction(`إجراء سريع: سجن اللاعب المشبوه ${username}`);
+      renderAdminAnalyticsDashboard();
+    } catch (err) {
+      showToast('فشل سجن اللاعب', err.message, 'error');
+    }
+  }
+
+  async function adminQuickBanAction(username) {
+    if (!username) return;
+    if (!confirm(`هل أنت متأكد من حظر حساب اللاعب المشبوه "${username}" نهائياً؟`)) return;
+    try {
+      await AppDB.adminBanPlayer(username);
+      showToast('حظر الحساب السريع', `تم حظر حساب اللاعب المشبوه ${username} نهائياً.`, 'success');
+      logAdminAction(`إجراء سريع: حظر حساب اللاعب المشبوه ${username}`);
+      renderAdminAnalyticsDashboard();
+    } catch (err) {
+      showToast('فشل حظر اللاعب', err.message, 'error');
+    }
+  }
+
   return {
     init,
     switchTab,
@@ -9158,7 +9302,9 @@ const UIController = (() => {
     kickCorpMemberAction,
     editCorpInfoAction,
     transferCorpOwnershipAction,
-    dissolveCorpAction
+    dissolveCorpAction,
+    adminQuickJailAction,
+    adminQuickBanAction
   };
 })();
 
