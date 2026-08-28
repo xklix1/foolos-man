@@ -9610,8 +9610,6 @@ const UIController = (() => {
     }
   }
 
-  }
-
   // --- Cars UI & Actions ---
   function renderCarsTab() {
     const s = GameEngine.state;
