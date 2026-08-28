@@ -802,6 +802,8 @@ const GameEngine = (() => {
           const workerFactor = 1 + ((bizState.workers || 0) * (bizConfig.workerMultiplier - 1));
           const demand = Math.floor(bizConfig.baseDemand * upgradeFactor * elasticity * workerFactor * marketingBoost);
           const margin = price - actualCostOfGoods;
+          const hasQuantum = (state.inventory && state.inventory.quantum_cpu > 0);
+          const quantumMultiplier = hasQuantum ? 1.5 : 1.0;
           const boost = window.serverBoostMultiplier || 1.0;
           const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12 * quantumMultiplier * boost));
           const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
@@ -1106,6 +1108,7 @@ const GameEngine = (() => {
 
         // Final profit per tick = gross margin (boosted by Quantum CPU +50%) minus worker wages
         const hasQuantum = (state.inventory && state.inventory.quantum_cpu > 0);
+        const quantumMultiplier = hasQuantum ? 1.5 : 1.0;
         const boost = window.serverBoostMultiplier || 1.0;
         const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12 * quantumMultiplier * boost));
         const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
