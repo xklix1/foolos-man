@@ -5534,6 +5534,12 @@ const UIController = (() => {
           cashInp.value = Math.max(0, current + addAmount);
           cashInp.classList.add('glow-gold');
           setTimeout(() => cashInp.classList.remove('glow-gold'), 600);
+          
+          // Auto-trigger save to make the addition instant in the database
+          const updateMoneyBtn = document.getElementById('btn-admin-update-money');
+          if (updateMoneyBtn && selectedPlayer && selectedPlayerState) {
+            updateMoneyBtn.click();
+          }
         }
       });
     });
@@ -5549,6 +5555,12 @@ const UIController = (() => {
         } else if (targetType === 'bank') {
           const b = document.getElementById('admin-input-bank');
           if (b) b.value = 0;
+        }
+        
+        // Auto-trigger save to make the zeroing instant in the database
+        const updateMoneyBtn = document.getElementById('btn-admin-update-money');
+        if (updateMoneyBtn && selectedPlayer && selectedPlayerState) {
+          updateMoneyBtn.click();
         }
       });
     });

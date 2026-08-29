@@ -8,7 +8,8 @@ service cloud.firestore {
     // إذا كان مختلفاً، يرجى استبدال "xHEssisz9HRXVycoFqlMQTu6nf92" بالمعرّف الصحيح لكي تعمل جميع صلاحيات الأدمن.
     function isAdmin() {
       return request.auth != null && 
-             request.auth.uid == "xHEssisz9HRXVycoFqlMQTu6nf92";
+             (request.auth.uid == "xHEssisz9HRXVycoFqlMQTu6nf92" ||
+              request.auth.token.email == "khalid.newstart@gmail.com");
     }
 
     // ─────────────────────────────────────────────
