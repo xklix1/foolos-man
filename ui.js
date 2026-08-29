@@ -7620,7 +7620,7 @@ const UIController = (() => {
         try {
           adminSendMsgBtn.disabled = true;
           const msg = "⚠️ تنبيه من الإدارة: الإدارة تراقب الشات حالياً. يرجى الالتزام بالقوانين.";
-          await AppDB.sendChatMessage(GameEngine.state.username, "الإدارة", msg);
+          await AppDB.sendChatMessage("الإدارة", "رسمي", msg);
           showToast('تم الإرسال', 'تم إرسال تنبيه مراقبة الشات بنجاح.', 'success');
         } catch (err) {
           showToast('خطأ إرسال', err.message, 'error');
@@ -7990,24 +7990,45 @@ const UIController = (() => {
     msgs.forEach(msg => {
       if (GameEngine.state.blockedUsers && GameEngine.state.blockedUsers.includes(msg.sender)) return;
 
-      const isMe = msg.sender === GameEngine.state.username;
-      const bubbleClass = isMe ? 'chat-bubble-sent' : 'chat-bubble-received';
-      const alignClass = isMe ? 'text-left flex flex-col items-end' : 'text-right flex flex-col items-start';
+      const isSystem = msg.sender === 'الإدارة';
+      const isMe = !isSystem && msg.sender === GameEngine.state.username;
+      
+      let bubbleClass = isMe ? 'chat-bubble-sent' : 'chat-bubble-received';
+      let alignClass = isMe ? 'text-left flex flex-col items-end' : 'text-right flex flex-col items-start';
+      
+      if (isSystem) {
+        bubbleClass = 'bg-red-950/40 border border-red-500/30 text-red-200 w-full text-center py-2 px-3 rounded-xl shadow-lg shadow-red-950/20';
+        alignClass = 'text-center flex flex-col items-center w-full';
+      }
 
       const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
       const msgDiv = document.createElement('div');
       msgDiv.className = `w-full flex flex-col ${alignClass}`;
-      msgDiv.innerHTML = `
-        <div class="flex items-center gap-1.5 mb-0.5">
-          <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
-          <span class="text-[10px] font-bold text-yellow-400 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${msg.sender}')">${msg.sender}</span>
-          <span class="text-[8px] px-1 bg-slate-900 border border-slate-800 rounded-md text-slate-400">${msg.senderTitle}</span>
-        </div>
-        <div class="chat-message-bubble ${bubbleClass}">
-          ${msg.message}
-        </div>
-      `;
+      
+      if (isSystem) {
+        msgDiv.innerHTML = `
+          <div class="flex items-center gap-1 mb-1 justify-center">
+            <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
+            <span class="text-[10px] font-black text-red-400"><i class="fa-solid fa-shield-halved text-[9px] mr-1"></i>${msg.sender}</span>
+            <span class="text-[8px] px-1 bg-red-950 border border-red-800 rounded-md text-red-300 font-bold">${msg.senderTitle}</span>
+          </div>
+          <div class="chat-message-bubble ${bubbleClass}">
+            ${msg.message}
+          </div>
+        `;
+      } else {
+        msgDiv.innerHTML = `
+          <div class="flex items-center gap-1.5 mb-0.5">
+            <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
+            <span class="text-[10px] font-bold text-yellow-400 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${msg.sender}')">${msg.sender}</span>
+            <span class="text-[8px] px-1 bg-slate-900 border border-slate-800 rounded-md text-slate-400">${msg.senderTitle}</span>
+          </div>
+          <div class="chat-message-bubble ${bubbleClass}">
+            ${msg.message}
+          </div>
+        `;
+      }
       container.appendChild(msgDiv);
     });
 
