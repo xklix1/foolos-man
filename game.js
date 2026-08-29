@@ -1037,6 +1037,13 @@ const GameEngine = (() => {
       jailFree: false
     };
 
+    // 0.5. Active Police Raid check (pauses passive income during active raid)
+    if (state.raidActive) {
+      state.netWorth = calculateNetWorth();
+      AppDB.savePlayerState(activeUsername, state);
+      return updates;
+    }
+
     // 1. Jail lockout processing
     if (state.jailTimer > 0) {
       state.jailTimer = Math.max(0, state.jailTimer - 1);
@@ -1047,6 +1054,26 @@ const GameEngine = (() => {
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
       return updates;
+    }
+
+    // 1.5. Police Raid Trigger check (triggered if dirtyCash > 100K)
+    if (!state.raidActive && state.jailTimer <= 0 && (state.dirtyCash || 0) > 100000) {
+      const baseChance = 0.015; // 1.5% base chance per tick
+      const heatFactor = (state.heatLevel || 0) * 0.025; // +2.5% per heat level
+      const cashFactor = Math.min(0.1, (state.dirtyCash || 0) / 20000000); // up to +10% for large dirty cash
+      const finalChance = baseChance + heatFactor + cashFactor;
+
+      if (Math.random() < finalChance) {
+        state.raidActive = true;
+        // Bribe cost: 20% of cash + 10% of dirty cash, minimum 10,000
+        state.raidBribeCost = Math.max(10000, Math.floor((state.cash || 0) * 0.2) + Math.floor((state.dirtyCash || 0) * 0.1));
+        // Escape chance: 40% + Underworld Rep / 5, max 90%
+        state.raidEscapeChance = Math.min(90, 40 + Math.floor((state.underworldRep || 0) / 5));
+        
+        state.netWorth = calculateNetWorth();
+        AppDB.savePlayerState(activeUsername, state);
+        return updates; // Stop further processing to let player resolve raid
+      }
     }
 
     // 2. Bank compound interest accrual (0.003% per tick = ~3.5% APY)
@@ -2304,6 +2331,59 @@ const GameEngine = (() => {
     };
   }
 
+  // Resolve active police raid via bribe
+  function resolveRaidBribe() {
+    if (!state.raidActive) throw new Error("لا توجد مداهمة نشطة حالياً لحلها.");
+    const cost = state.raidBribeCost;
+    const totalAvailable = (state.cash || 0) + (state.dirtyCash || 0);
+    if (totalAvailable < cost) {
+      throw new Error(`تكلفة الرشوة والوساطة ${cost.toLocaleString()} ج.م. رصيدك لا يكفي!`);
+    }
+
+    // Deduct from dirty cash first, then regular cash
+    if ((state.dirtyCash || 0) >= cost) {
+      state.dirtyCash -= cost;
+    } else {
+      const rem = cost - (state.dirtyCash || 0);
+      state.dirtyCash = 0;
+      state.cash -= rem;
+    }
+
+    state.raidActive = false;
+    state.heatLevel = 0;
+    state.netWorth = calculateNetWorth();
+    recordPlayerActivity('دفع رشوة مداهمة', `تم دفع رشوة بقيمة ${cost.toLocaleString()} ج.م لإنهاء المداهمة الأمنية وتصفير الملاحقة.`, 'blackmarket');
+    AppDB.savePlayerState(activeUsername, state);
+    return { bribeCost: cost };
+  }
+
+  // Resolve active police raid via resisting
+  function resolveRaidResist() {
+    if (!state.raidActive) throw new Error("لا توجد مداهمة نشطة حالياً لحلها.");
+    const chance = state.raidEscapeChance / 100;
+    const roll = Math.random();
+    const success = roll < chance;
+
+    state.raidActive = false;
+
+    if (success) {
+      state.heatLevel = Math.max(0, (state.heatLevel || 0) - 1);
+      state.netWorth = calculateNetWorth();
+      recordPlayerActivity('مقاومة المداهمة', 'نجحت في إخفاء الأدلة والإنكار بنجاح وتفادي المداهمة دون خسائر.', 'blackmarket');
+      AppDB.savePlayerState(activeUsername, state);
+      return { success: true };
+    } else {
+      const loss = Math.floor((state.dirtyCash || 0) * 0.5);
+      state.dirtyCash = Math.max(0, state.dirtyCash - loss);
+      state.jailTimer = 600; // 10 minutes
+      state.heatLevel = Math.min(5, (state.heatLevel || 0) + 2);
+      state.netWorth = calculateNetWorth();
+      recordPlayerActivity('فشل المقاومة (سجن ومصادرة)', `فشلت في المقاومة؛ تم مصادرة ${loss.toLocaleString()} ج.م من الكاش القذر وسجنك لمدة 10 دقائق.`, 'blackmarket');
+      AppDB.savePlayerState(activeUsername, state);
+      return { success: false, loss };
+    }
+  }
+
   // Start Locked Term Investment (With offline timestamp support)
   function startInvestment(planId, amount) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إدارة استثمارات بنكية.");
@@ -2866,6 +2946,8 @@ const GameEngine = (() => {
     buyBlackMarketGear,
     bribePolice,
     launderMoney,
+    resolveRaidBribe,
+    resolveRaidResist,
     playCoinFlip,
     playSlots,
     playDice,

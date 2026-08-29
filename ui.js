@@ -536,6 +536,43 @@ const UIController = (() => {
           osc.start(ctx.currentTime + t);
           osc.stop(ctx.currentTime + t + 0.04);
         });
+      } else if (type === 'card') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.08);
+      } else if (type === 'siren') {
+        [0, 0.25, 0.5, 0.75].forEach((t, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          const freq = idx % 2 === 0 ? 880 : 660;
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + t);
+          gain.gain.setValueAtTime(0.12, ctx.currentTime + t);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.22);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + t);
+          osc.stop(ctx.currentTime + t + 0.22);
+        });
+      } else if (type === 'fail') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(180, ctx.currentTime);
+        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.4);
       }
     } catch (e) { }
   }
@@ -1379,6 +1416,23 @@ const UIController = (() => {
         document.getElementById('jail-countdown').textContent = state.jailTimer;
       } else if (jailOverlay) {
         jailOverlay.classList.add('hidden');
+      }
+
+      // Handle Police Raid overlay
+      const raidOverlay = document.getElementById('police-raid-overlay');
+      if (state && state.raidActive) {
+        if (raidOverlay && raidOverlay.classList.contains('hidden')) {
+          raidOverlay.classList.remove('hidden');
+          playCasinoSound('siren');
+        }
+        const dirtyEl = document.getElementById('raid-dirty-cash');
+        const bribeEl = document.getElementById('raid-bribe-cost');
+        const escapeEl = document.getElementById('raid-escape-chance');
+        if (dirtyEl) dirtyEl.textContent = `${(state.dirtyCash || 0).toLocaleString()} EGP`;
+        if (bribeEl) bribeEl.textContent = `${(state.raidBribeCost || 0).toLocaleString()} EGP`;
+        if (escapeEl) escapeEl.textContent = `${state.raidEscapeChance || 0}%`;
+      } else if (raidOverlay) {
+        raidOverlay.classList.add('hidden');
       }
 
       if (updates.jailFree) {
@@ -2960,6 +3014,449 @@ const UIController = (() => {
         }
       });
     }
+
+    // --- Casino Game 7: Royale Neon Blackjack ---
+    let bjDeck = [];
+    let bjPlayerHand = [];
+    let bjDealerHand = [];
+    let bjBet = 0;
+    let bjActive = false;
+
+    function getCardSuitSymbol(suit) {
+      if (suit === 'H') return '♥️';
+      if (suit === 'D') return '♦️';
+      if (suit === 'C') return '♣️';
+      if (suit === 'S') return '♠️';
+      return suit;
+    }
+
+    function createDeck() {
+      const suits = ['H', 'D', 'C', 'S'];
+      const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+      const deck = [];
+      for (let s of suits) {
+        for (let v of values) {
+          deck.push({ value: v, suit: s });
+        }
+      }
+      return deck;
+    }
+
+    function shuffleDeck(deck) {
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      return deck;
+    }
+
+    function getCardValue(card) {
+      if (card.value === 'A') return 11;
+      if (['K', 'Q', 'J'].includes(card.value)) return 10;
+      return parseInt(card.value);
+    }
+
+    function calculateScore(hand) {
+      let score = 0;
+      let aces = 0;
+      for (let card of hand) {
+        score += getCardValue(card);
+        if (card.value === 'A') aces++;
+      }
+      while (score > 21 && aces > 0) {
+        score -= 10;
+        aces--;
+      }
+      return score;
+    }
+
+    function formatCardHtml(card, hidden = false) {
+      if (hidden) {
+        return `<div class="w-10 h-14 rounded-lg bg-gradient-to-br from-indigo-950 to-purple-900 border border-indigo-500/50 flex items-center justify-center text-indigo-400 font-bold shadow shadow-indigo-500/20 animate-fade-in"><i class="fa-solid fa-square text-lg"></i></div>`;
+      }
+      const isRed = ['H', 'D'].includes(card.suit);
+      const colorClass = isRed ? 'text-rose-500 border-rose-500/30' : 'text-slate-200 border-slate-700';
+      return `<div class="w-10 h-14 rounded-lg bg-slate-900 border ${colorClass} flex flex-col justify-between p-1 shadow font-bold text-xs select-none animate-fade-in">
+        <span class="text-[10px] leading-none self-start">${card.value}</span>
+        <span class="text-base leading-none self-center">${getCardSuitSymbol(card.suit)}</span>
+        <span class="text-[10px] leading-none self-end rotate-180">${card.value}</span>
+      </div>`;
+    }
+
+    function updateBlackjackUI(dealerScoreHidden = true) {
+      const pCardsContainer = document.getElementById('bj-player-cards');
+      const dCardsContainer = document.getElementById('bj-dealer-cards');
+      const pScoreDisplay = document.getElementById('bj-player-score');
+      const dScoreDisplay = document.getElementById('bj-dealer-score');
+
+      if (pCardsContainer) {
+        pCardsContainer.innerHTML = bjPlayerHand.map(c => formatCardHtml(c)).join('');
+      }
+      if (dCardsContainer) {
+        if (dealerScoreHidden) {
+          dCardsContainer.innerHTML = formatCardHtml(bjDealerHand[0]) + formatCardHtml(null, true);
+        } else {
+          dCardsContainer.innerHTML = bjDealerHand.map(c => formatCardHtml(c)).join('');
+        }
+      }
+
+      if (pScoreDisplay) pScoreDisplay.textContent = calculateScore(bjPlayerHand);
+      if (dScoreDisplay) {
+        if (dealerScoreHidden) {
+          dScoreDisplay.textContent = getCardValue(bjDealerHand[0]);
+        } else {
+          dScoreDisplay.textContent = calculateScore(bjDealerHand);
+        }
+      }
+    }
+
+    const bjDealBtn = document.getElementById('btn-bj-deal');
+    const bjHitBtn = document.getElementById('btn-bj-hit');
+    const bjStandBtn = document.getElementById('btn-bj-stand');
+    const bjDoubleBtn = document.getElementById('btn-bj-double');
+    const bjActions = document.getElementById('bj-actions');
+    const bjBetArea = document.getElementById('bj-bet-area');
+
+    if (bjDealBtn) {
+      bjDealBtn.addEventListener('click', () => {
+        const betInput = document.getElementById('bj-bet-input');
+        const bet = parseInt(betInput.value);
+
+        try {
+          if (isNaN(bet) || bet < 100) throw new Error("الحد الأدنى للرهان هو 100 EGP.");
+          if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
+
+          // Deduct Bet
+          GameEngine.state.cash -= bet;
+          bjBet = bet;
+          bjActive = true;
+
+          // Generate Deck and Deal
+          bjDeck = shuffleDeck(createDeck());
+          bjPlayerHand = [bjDeck.pop(), bjDeck.pop()];
+          bjDealerHand = [bjDeck.pop(), bjDeck.pop()];
+
+          playCasinoSound('card');
+          updateBlackjackUI(true);
+
+          bjDealBtn.classList.add('hidden');
+          bjBetArea.classList.add('hidden');
+          bjActions.classList.remove('hidden');
+
+          // Check for initial player Blackjack
+          const pScore = calculateScore(bjPlayerHand);
+          if (pScore === 21) {
+            endBlackjackRound('blackjack');
+          } else {
+            renderAll();
+          }
+
+        } catch (e) {
+          showToast('بلاك جاك', e.message, 'error');
+        }
+      });
+    }
+
+    if (bjHitBtn) {
+      bjHitBtn.addEventListener('click', () => {
+        if (!bjActive) return;
+        bjPlayerHand.push(bjDeck.pop());
+        playCasinoSound('card');
+        updateBlackjackUI(true);
+
+        const score = calculateScore(bjPlayerHand);
+        if (score > 21) {
+          endBlackjackRound('bust');
+        } else if (score === 21) {
+          bjStandBtn.click();
+        }
+      });
+    }
+
+    if (bjStandBtn) {
+      bjStandBtn.addEventListener('click', () => {
+        if (!bjActive) return;
+
+        updateBlackjackUI(false);
+        let dScore = calculateScore(bjDealerHand);
+
+        const dealInterval = setInterval(() => {
+          if (dScore < 17) {
+            bjDealerHand.push(bjDeck.pop());
+            playCasinoSound('card');
+            updateBlackjackUI(false);
+            dScore = calculateScore(bjDealerHand);
+          } else {
+            clearInterval(dealInterval);
+            evaluateBlackjackResults();
+          }
+        }, 600);
+      });
+    }
+
+    if (bjDoubleBtn) {
+      bjDoubleBtn.addEventListener('click', () => {
+        if (!bjActive) return;
+        if (GameEngine.state.cash < bjBet) {
+          showToast('مضاعفة الرهان', 'رصيدك لا يكفي لمضاعفة الرهان!', 'error');
+          return;
+        }
+
+        GameEngine.state.cash -= bjBet;
+        bjBet *= 2;
+        bjPlayerHand.push(bjDeck.pop());
+        playCasinoSound('card');
+        updateBlackjackUI(true);
+
+        const score = calculateScore(bjPlayerHand);
+        if (score > 21) {
+          endBlackjackRound('bust');
+        } else {
+          bjStandBtn.click();
+        }
+      });
+    }
+
+    function evaluateBlackjackResults() {
+      const pScore = calculateScore(bjPlayerHand);
+      const dScore = calculateScore(bjDealerHand);
+      const hasVIP = GameEngine.state.inventory && GameEngine.state.inventory.vip_casino_pass > 0;
+
+      if (dScore > 21) {
+        endBlackjackRound('dealer_bust');
+      } else if (pScore > dScore) {
+        endBlackjackRound('win');
+      } else if (pScore < dScore) {
+        endBlackjackRound('lose');
+      } else {
+        if (hasVIP && [17, 18, 19].includes(pScore)) {
+          endBlackjackRound('win_vip_push');
+        } else {
+          endBlackjackRound('push');
+        }
+      }
+    }
+
+    function endBlackjackRound(result) {
+      bjActive = false;
+      let multiplier = 0;
+      let winText = '';
+      let toastType = 'success';
+      let sound = 'win';
+
+      const hasVIP = GameEngine.state.inventory && GameEngine.state.inventory.vip_casino_pass > 0;
+
+      if (result === 'blackjack') {
+        multiplier = hasVIP ? 2.6 : 2.5;
+        winText = `بلاك جاك طبيعي! ربحت +${Math.floor(bjBet * multiplier).toLocaleString()} EGP.`;
+        sound = 'jackpot';
+      } else if (result === 'win' || result === 'dealer_bust' || result === 'win_vip_push') {
+        multiplier = 2.0;
+        winText = result === 'dealer_bust'
+          ? `تجاوز الموزع! ربحت +${Math.floor(bjBet * multiplier).toLocaleString()} EGP.`
+          : (result === 'win_vip_push' ? `تعادل بمجموع ${calculateScore(bjPlayerHand)}! تم احتسابه فوزاً لصالحك (عضوية VIP) +${Math.floor(bjBet * multiplier).toLocaleString()} EGP.` : `تفوقت على الموزع! ربحت +${Math.floor(bjBet * multiplier).toLocaleString()} EGP.`);
+      } else if (result === 'push') {
+        multiplier = 1.0;
+        winText = `تعادل (Push) بمجموع ${calculateScore(bjPlayerHand)}؛ تم استرداد الرهان.`;
+        toastType = 'info';
+        sound = 'tick';
+      } else {
+        multiplier = 0;
+        winText = result === 'bust'
+          ? `تجاوزت الـ 21 (Bust)! خسرت الرهان -${bjBet.toLocaleString()} EGP.`
+          : `تغلّب الموزع عليك! خسرت الرهان -${bjBet.toLocaleString()} EGP.`;
+        toastType = 'error';
+        sound = 'lose';
+      }
+
+      if (multiplier > 0) {
+        GameEngine.state.cash += Math.floor(bjBet * multiplier);
+      }
+
+      playCasinoSound(sound);
+      showToast(
+        result.includes('win') || result === 'blackjack' || result === 'dealer_bust' ? 'فوز بلاك جاك' : (result === 'push' ? 'تعادل' : 'خسارة رهان'),
+        winText,
+        toastType
+      );
+
+      bjDealBtn.classList.remove('hidden');
+      bjBetArea.classList.remove('hidden');
+      bjActions.classList.add('hidden');
+
+      updateBlackjackUI(false);
+      GameEngine.forceSaveState();
+      renderAll();
+    }
+
+    // --- Police Raid overlay button actions ---
+    const raidBribeBtn = document.getElementById('btn-raid-bribe');
+    if (raidBribeBtn) {
+      raidBribeBtn.addEventListener('click', async () => {
+        try {
+          raidBribeBtn.disabled = true;
+          const res = GameEngine.resolveRaidBribe();
+          playCasinoSound('success');
+          showToast('تم دفع الرشوة', `تم تسوية الوضع بنجاح ودفع رشوة بقيمة ${res.bribeCost.toLocaleString()} EGP.`, 'success');
+          const overlay = document.getElementById('police-raid-overlay');
+          if (overlay) overlay.classList.add('hidden');
+          renderAll();
+        } catch (e) {
+          showToast('فشل الدفع', e.message, 'error');
+        } finally {
+          raidBribeBtn.disabled = false;
+        }
+      });
+    }
+
+    const raidResistBtn = document.getElementById('btn-raid-resist');
+    if (raidResistBtn) {
+      raidResistBtn.addEventListener('click', async () => {
+        try {
+          raidResistBtn.disabled = true;
+          const res = GameEngine.resolveRaidResist();
+          const overlay = document.getElementById('police-raid-overlay');
+          if (overlay) overlay.classList.add('hidden');
+
+          if (res.success) {
+            playCasinoSound('success');
+            showToast('نجاح المقاومة!', 'نجحت في الإفلات من المداهمة الأمنية وتخفيض مستوى الملاحقة دون خسارة مليم واحد!', 'success');
+          } else {
+            playCasinoSound('fail');
+            showToast('فشل المقاومة (سجن ومصادرة)', `ألقت الشرطة القبض عليك؛ تم مصادرة ${res.loss.toLocaleString()} EGP من كاشك القذر وسجنك لمدة 10 دقائق!`, 'error');
+          }
+          renderAll();
+        } catch (e) {
+          showToast('خطأ مقاومة', e.message, 'error');
+        } finally {
+          raidResistBtn.disabled = false;
+        }
+      });
+    }
+
+    // --- Unified Panel Help Modal Logic ---
+    const HELP_CONTENT = {
+      'panel-dashboard': {
+        title: 'لوحة التحكم والعمل اليومي',
+        desc: `هذه هي لوحة قيادتك المالية والتحكم اليومي:
+        <br>• <strong>نوبة العمل العادية</strong>: تمنحك الراتب الأساسي لمهنتك الحالية ونقاط خبرة (XP).
+        <br>• <strong>النوبة الإضافية (Overtime 🔥)</strong>: تمنحك <strong>2.5 ضعف الراتب + 3 أضعاف الخبرة (XP)</strong> ولكنها تزيد تعبك.
+        <br>• <strong>رخصة العمل التلقائي (AFK Manager)</strong>: عند تفعيلها، تستمر شركاتك في جني أرباحها وتودعها في حسابك البنكي تلقائياً لمدة تصل إلى 12 ساعة وأنت خارج اللعبة.`
+      },
+      'panel-careers': {
+        title: 'الوظائف والمسار المهني',
+        desc: `سلم الترقية وزيادة الدخل:
+        <br>• تدرج من عامل باليومية إلى إمبراطور المستثمرين عبر 10 مراتب وظيفية.
+        <br>• تحتاج إلى تجميع نقاط الخبرة المطلوبة (XP) والضغط على "ترقية وظيفية".
+        <br>• تُضاف الرواتب تلقائياً إلى <strong>البنك</strong> لحمايتها من ضرائب السيولة.`
+      },
+      'panel-business': {
+        title: 'إمبراطورية التجارة وإدارة الأعمال',
+        desc: `مصدر الأرباح اللحظية كل ثانية:
+        <br>• يمكنك الاستثمار في 10 قطاعات مختلفة (قهوة، برمجيات، طيران، فضاء).
+        <br>• قم بترقية مستوى الشركة لرفع طاقتها الاستيعابية، ووظف عمالة لمضاعفة الإنتاج.
+        <br>• <strong>التسعير المرن</strong>: اضبط السعر المناسب؛ السعر المرتفع يقلل المبيعات، والسعر المنخفض يرفع المبيعات بهامش أقل.
+        <br>• جميع أرباح الشركات تودع مباشرة في <strong>البنك</strong> لحمايتها.`
+      },
+      'panel-bank': {
+        title: 'البنك المركزي والادخار والتحويلات',
+        desc: `حصنك المالي الآمن واستثمارك التلقائي:
+        <br>• <strong>فائدة الادخار</strong>: تنمو ودائعك البنكية تلقائياً بفائدة مركبة بنسبة 0.003% لكل دورة تيك.
+        <br>• <strong>التحويلات المالية</strong>: أرسل الأموال لأي لاعب متواجد بالسيرفر فوراً وبشكل مباشر.
+        <br>• <strong>القروض البنكية</strong>: خذ قرضاً لتمويل مشاريعك وسدده تدريجياً لتفادي عقوبات السجن الاقتصادي.`
+      },
+      'panel-assets': {
+        title: 'الأصول والعقارات والسيارات',
+        desc: `تجميد الأرباح في أصول حقيقية:
+        <br>• <strong>العقارات</strong>: اشترِ الفلل وناطحات السحاب والجزر لجني عوائد إيجار لحظية تضاف لحسابك.
+        <br>• <strong>السيارات</strong>: امتلك السيارات الفارهة لركوبها أو تأجيرها للاعبين الآخرين لجني عائد دوري.
+        <br>• الأصول العقارية والسيارات ترفع من <strong>صافي ثروتك (Net Worth)</strong> بشكل كبير.`
+      },
+      'panel-stocks': {
+        title: 'البورصة والمضاربة المالية',
+        desc: `سوق الأسهم الحية:
+        <br>• تداول في 8 أسهم وأصول مالية (CIB، فوري، بيتكوين، ذهب، إلخ).
+        <br>• <strong>شريط الأخبار 📣</strong>: راقب الأخبار؛ فالحدث الإيجابي يرفع السهم والسلبي يهبط به.
+        <br>• <strong>توزيعات الأرباح</strong>: تحصل على عوائد أرباح دورية تلقائية لمجرد احتفاظك بالأسهم.`
+      },
+      'panel-taxes': {
+        title: 'مصلحة الضرائب والوعاء الضريبي',
+        desc: `النظام المالي والضرائب:
+        <br>• <strong>ضريبة الثروة</strong>: تفرض ضريبة تصاعدية إذا تخطت ثروتك 3 ملايين EGP.
+        <br>• <strong>الدروع الضريبية</strong>: يمكنك شراء درع ضريبي من المتجر لحماية جزء من ثروتك وتقليل المبالغ المستقطعة تلقائياً.
+        <br>• <strong>التهرب الضريبي</strong>: يؤدي لتصنيف حسابك غير ممتثل ويعرضك للغرامات الفورية.`
+      },
+      'panel-store': {
+        title: 'متجر كبار الشخصيات والحقيبة',
+        desc: `المستلزمات ومقويات الكفاءة:
+        <br>• اشترِ أغراض تعزز أدائك (القلم الذهبي لزيادة الـ XP، معالج الكوانتم لرفع أرباح شركاتك +50%، تذكرة VIP الكازينو لرفع الحظ).
+        <br>• استخدم الأغراض مباشرة من الحقيبة لتفعيلها بمؤقت زمني محدد.`
+      },
+      'panel-auctions': {
+        title: 'المزادات والصفقات الحصرية',
+        desc: `الصفقات النادرة:
+        <br>• يعرض مسؤولو النظام صفقات ومقتنيات حصرية محدودة.
+        <br>• تتم المزايدة والتداول عليها مباشرة، وتنقل الملكية تلقائياً لمن يدفع السعر الأعلى.`
+      },
+      'panel-corporations': {
+        title: 'الشركات المشتركة والتحالفات',
+        desc: `العمل الاستثماري الجماعي:
+        <br>• أسس أو انضم لشركة قابضة مشتركة بالتعاون مع لاعبين آخرين.
+        <br>• ساهم بالأموال لتنفيذ مشاريع سيادية عملاقة تدر أرباحاً هائلة بالثانية.
+        <br>• يتم تقسيم الأرباح بنسبة مساهمة كل لاعب في رأس مال الشركة القابضة.`
+      },
+      'panel-blackmarket': {
+        title: 'السوق السوداء وعالم الظلال',
+        desc: `عمليات التهريب الممنوعة وغسيل الأموال:
+        <br>• صفقات غير مشروعة لتهريب الآثار والماس والسلاح تدر أرباحاً خيالية كاش قذر (Dirty Cash).
+        <br>• <strong>المداهمات الأمنية 🚨</strong>: تجميع أكثر من 100K كاش قذر يعرضك للمداهمة الفجائية؛ ويجب دفع الرشوة أو المقاومة للإفلات.
+        <br>• <strong>غسيل الأموال</strong>: شركاتك العادية تغسل أموالك تلقائياً كل ثانية بنسبة ضريبية 25%.`
+      },
+      'panel-casino': {
+        title: 'كازينو التسلية والألعاب الملكية',
+        desc: `ألعاب الحظ والمخاطرة:
+        <br>• 7 ألعاب مميزة: الصاروخ (Crash)، السلوتس، الروليت، النرد، ولعبة <strong>البلاك جاك الجديدة (الـ 21 🃏)</strong>.
+        <br>• راهن بذكاء لتفادي الخسارة، واستخدم تذكرة VIP Pass لرفع احتمالات الحظ ومضاعفة عوائد البلاك جاك وتفادي التعادل.`
+      },
+      'panel-leaderboard': {
+        title: 'توب الأغنياء وقاعة المشاهير',
+        desc: `لوحة الترتيب العام المباشر:
+        <br>• يتم ترتيب كافة لاعبي السيرفر بناءً على <strong>صافي الثروة الكلية (Net Worth)</strong>.
+        <br>• يحصل أصحاب المراكز الثلاثة الأولى على التاج الذهبي 👑 والرموز الملكية الخاصة التي تظهر أمام الجميع في السيرفر.`
+      }
+    };
+
+    // Bind help buttons click events
+    document.addEventListener('click', (e) => {
+      const helpBtn = e.target.closest('.btn-panel-help');
+      if (helpBtn) {
+        e.preventDefault();
+        const helpId = helpBtn.getAttribute('data-help');
+        const content = HELP_CONTENT[helpId];
+        if (content) {
+          playCasinoSound('click');
+          const modal = document.getElementById('panel-help-modal');
+          const title = document.getElementById('panel-help-title');
+          const body = document.getElementById('panel-help-content');
+          
+          if (title) title.innerHTML = `<i class="fa-solid fa-circle-question text-yellow-400"></i> <span>شرح صفحة: ${content.title}</span>`;
+          if (body) body.innerHTML = content.desc;
+          if (modal) modal.classList.remove('hidden');
+        }
+      }
+    });
+
+    const closeHelpBtn = document.getElementById('btn-close-panel-help');
+    const closeHelpFooterBtn = document.getElementById('btn-close-panel-help-footer');
+    const helpModal = document.getElementById('panel-help-modal');
+
+    const hideHelpModal = () => {
+      playCasinoSound('click');
+      if (helpModal) helpModal.classList.add('hidden');
+    };
+
+    if (closeHelpBtn) closeHelpBtn.addEventListener('click', hideHelpModal);
+    if (closeHelpFooterBtn) closeHelpFooterBtn.addEventListener('click', hideHelpModal);
 
     // Leaderboard Manual Refresh Handler
     const lbRefreshBtn = document.getElementById('btn-leaderboard-refresh');
