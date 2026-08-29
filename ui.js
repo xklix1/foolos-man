@@ -4579,6 +4579,24 @@ const UIController = (() => {
         });
       }, (err) => console.error("Transfers listen err: ", err));
     activeListeners.push(unsubIncomingTransfers);
+
+    // Temporary Cleanup for old messages sent under admin username
+    if (username === 'khalid.newstart') {
+      db.collection('chat')
+        .where('sender', '==', 'khalid.newstart')
+        .get()
+        .then(snapshot => {
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.message && (data.message.includes('الإدارة تراقب الشات') || data.message.includes('تنبيه من الإدارة'))) {
+              doc.ref.delete()
+                .then(() => console.log(`[CLEANUP] Deleted old admin warning message: ${doc.id}`))
+                .catch(err => console.error('[CLEANUP] Error deleting message:', err));
+            }
+          });
+        })
+        .catch(err => console.error('[CLEANUP] Error fetching old messages:', err));
+    }
   }
 
   function applyCompleteZeroStateToGameEngine(username) {
