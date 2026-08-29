@@ -3336,6 +3336,13 @@ const UIController = (() => {
 
     // --- Unified Panel Help Modal Logic ---
     const HELP_CONTENT = {
+      'panel-admin': {
+        title: 'لوحة التحكم والرقابة الإدارية',
+        desc: `هذه هي محطة المراقبة والتحكم الشاملة الخاصة بمدير اللعبة (الآدمن):
+        <br>• <strong>إدارة اللاعبين</strong>: ابحث عن اللاعبين واعرض بياناتهم التفصيلية (الأرصدة، الأصول، الشركات، والخبرة).
+        <br>• <strong>فحص الحساب 🔍</strong>: استخدم أداة كشف الاحتيال المدمجة لتحليل المعاملات، الأرصدة، وخبرة اللاعب الحالية للكشف عن عمليات التلاعب أو الحقن غير القانوني.
+        <br>• <strong>إجراءات إدارية</strong>: قم بحقن الأموال، تصفير الكروت، إرسال بث للجميع (Broadcast)، تنظيم وتفعيل المزادات والفعاليات المباشرة.`
+      },
       'panel-dashboard': {
         title: 'لوحة التحكم والعمل اليومي',
         desc: `هذه هي لوحة قيادتك المالية والتحكم اليومي:
@@ -6460,6 +6467,211 @@ const UIController = (() => {
         }
       });
     }
+
+    // --- Account Integrity & Security Audit System ---
+    function performAccountAudit(p) {
+      const findings = [];
+      let score = 100;
+
+      const xp = p.xp || 0;
+      const careerLevel = p.careerLevel || 0;
+      const cash = p.cash || 0;
+      const bank = p.bank || 0;
+      const dirty = p.dirtyCash || 0;
+      const rep = p.underworldRep || 0;
+      const loan = p.bankLoan || 0;
+      const worth = p.netWorth || 0;
+      
+      // 1. Career XP Integrity Check
+      if (careerLevel >= 8 && xp < 5000) {
+        findings.push({
+          type: 'danger',
+          title: 'تلاعب بمرتبة المسار المهني',
+          desc: `اللاعب وصل لمرتبة عالية جداً (${careerLevel}) برصيد خبرة ضئيل جداً (${xp.toLocaleString()} XP). هذا يدل على تعديل مباشر لقاعدة البيانات أو استخدام ثغرة لترقية الرتبة دون عمل.`
+        });
+        score -= 40;
+      } else if (careerLevel >= 5 && xp < 1000) {
+        findings.push({
+          type: 'warning',
+          title: 'شبهة ترقية بدون خبرة كافية',
+          desc: `نقاط خبرة اللاعب (${xp}) منخفضة مقارنة بمرتبته الوظيفية الحالية (${careerLevel}).`
+        });
+        score -= 20;
+      } else {
+        findings.push({
+          type: 'success',
+          title: 'تكامل المسار المهني سليم',
+          desc: `نقاط الخبرة (${xp.toLocaleString()} XP) متناسبة بشكل طبيعي مع الرتبة الحالية.`
+        });
+      }
+
+      // 2. Business Income & Cash Audit
+      let totalBizLevels = 0;
+      if (p.businesses) {
+        Object.keys(p.businesses).forEach(k => {
+          if (p.businesses[k]) totalBizLevels += p.businesses[k].level || 0;
+        });
+      }
+      const totalLiquid = cash + bank;
+      if (totalLiquid > 100000000 && totalBizLevels === 0 && careerLevel < 4) {
+        findings.push({
+          type: 'danger',
+          title: 'تضخم مالي غير مبرر (أرباح وهمية)',
+          desc: `اللاعب يمتلك سيولة نقدية ضخمة (${totalLiquid.toLocaleString()} EGP) بدون امتلاك أي مشاريع تجارية نشطة أو وظيفة ذات دخل مرتفع. شبهة حقن أموال أو ثغرة برمجية.`
+        });
+        score -= 50;
+      } else if (totalLiquid > 20000000 && totalBizLevels === 0) {
+        findings.push({
+          type: 'warning',
+          title: 'سيولة مرتفعة بدون أصول تجارية',
+          desc: `السيولة الكلية تتخطى 20 مليون EGP مع انعدام وجود أي مشاريع تجارية نشطة للإنتاج التلقائي.`
+        });
+        score -= 15;
+      } else {
+        findings.push({
+          type: 'success',
+          title: 'العلاقة بين السيولة والأصول سليمة',
+          desc: `ثروة اللاعب مدعومة بمسار إنتاجي مالي شرعي أو مشاريع نشطة بمستوى إجمالي ${totalBizLevels}.`
+        });
+      }
+
+      // 3. Dirty Cash vs Smuggling Rep Audit
+      if (dirty > 20000000 && rep < 50) {
+        findings.push({
+          type: 'danger',
+          title: 'حقن كاش قذر مباشر',
+          desc: `اللاعب لديه أموال تهريب قذرة تفوق 20 مليون EGP ولكن سمعته بالسوق السوداء (${rep}) منخفضة جداً. هذا يعني أنه تم تعديل الكاش القذر مباشرة دون تنفيذ عمليات تهريب حقيقية.`
+        });
+        score -= 30;
+      } else if (dirty > 5000000 && rep < 10) {
+        findings.push({
+          type: 'warning',
+          title: 'تضخم الكاش القذر مقارنة بالسمعة',
+          desc: `لدى اللاعب كاش قذر بقيمة ${dirty.toLocaleString()} EGP مع مستوى سمعة ضعيف (${rep}) بالسوق السوداء.`
+        });
+        score -= 15;
+      } else {
+        findings.push({
+          type: 'success',
+          title: 'أموال السوق السوداء متطابقة',
+          desc: `قيمة الكاش القذر متناسبة مع نقاط السمعة الإجرامية والنشاط التهريبي.`
+        });
+      }
+
+      // 4. Loan Fraud Check
+      if (loan > 20000000 && totalLiquid > 100000000) {
+        findings.push({
+          type: 'warning',
+          title: 'تهرب من سداد القروض البنكية',
+          desc: `يمتلك اللاعب سيولة تتخطى 100 مليون EGP ولم يقم بسداد قروض بنكية متراكمة تتجاوز ${loan.toLocaleString()} EGP.`
+        });
+        score -= 10;
+      } else {
+        findings.push({
+          type: 'success',
+          title: 'سجل القروض البنكية سليم',
+          desc: `لا توجد شبهات تجميد قروض أو تهرب مالي ملحوظ.`
+        });
+      }
+
+      // 5. Net Worth Consistency
+      if (worth <= 0 && totalLiquid > 1000000) {
+        findings.push({
+          type: 'danger',
+          title: 'خلل في حساب صافي الثروة (Net Worth Overflow)',
+          desc: `صافي الثروة المسجل (${worth.toLocaleString()} EGP) منهار أو سلبي على الرغم من امتلاك سيولة نقدية حقيقية مرتفعة. يشير إلى تلاعب بالبيانات أو مشكلة تلف بالملف.`
+        });
+        score -= 25;
+      }
+
+      // Calculate final security state
+      let status = 'آمن وسليم 🟢';
+      let badgeClass = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+      if (score < 40) {
+        status = 'مخترق / مشبوه بشدة 🔴';
+        badgeClass = 'bg-rose-500/20 text-rose-400 border border-rose-500/30';
+      } else if (score < 80) {
+        status = 'مستدعي للشك 🟡';
+        badgeClass = 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
+      }
+
+      return {
+        score: Math.max(0, score),
+        status,
+        badgeClass,
+        findings
+      };
+    }
+
+    const fraudCheckBtn = document.getElementById('btn-admin-fraud-check');
+    const auditModal = document.getElementById('admin-audit-modal');
+    const closeAuditBtn = document.getElementById('btn-close-admin-audit');
+    const closeAuditFooterBtn = document.getElementById('btn-close-admin-audit-footer');
+
+    if (fraudCheckBtn && auditModal) {
+      fraudCheckBtn.addEventListener('click', async () => {
+        if (!selectedPlayer) {
+          showToast('فحص الأمان', 'يرجى تحديد لاعب أولاً.', 'warning');
+          return;
+        }
+        try {
+          fraudCheckBtn.disabled = true;
+          const pState = await AppDB.adminGetPlayer(selectedPlayer);
+          if (!pState) throw new Error("تعذر جلب بيانات اللاعب.");
+
+          const report = performAccountAudit(pState);
+
+          document.getElementById('audit-target-username').textContent = `@${selectedPlayer}`;
+          
+          const safetyBadge = document.getElementById('audit-safety-badge');
+          if (safetyBadge) {
+            safetyBadge.textContent = `${report.status} (درجة النزاهة: ${report.score}%)`;
+            safetyBadge.className = `px-2.5 py-1 rounded-lg font-bold text-xs ${report.badgeClass}`;
+          }
+
+          const reportBody = document.getElementById('audit-report-body');
+          if (reportBody) {
+            reportBody.innerHTML = report.findings.map(f => {
+              let icon = '🟢';
+              let color = 'text-emerald-400';
+              let bg = 'bg-emerald-950/20 border-emerald-500/20';
+              if (f.type === 'warning') {
+                icon = '🟡';
+                color = 'text-yellow-400';
+                bg = 'bg-yellow-950/20 border-yellow-500/20';
+              } else if (f.type === 'danger') {
+                icon = '🔴';
+                color = 'text-rose-400';
+                bg = 'bg-rose-950/30 border-rose-500/30';
+              }
+              return `<div class="p-3 rounded-xl border ${bg} space-y-1">
+                <div class="flex items-center gap-1.5 font-bold ${color}">
+                  <span>${icon}</span>
+                  <span>${f.title}</span>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-relaxed">${f.desc}</p>
+              </div>`;
+            }).join('');
+          }
+
+          playCasinoSound('win');
+          auditModal.classList.remove('hidden');
+
+        } catch (e) {
+          showToast('خطأ فحص الأمان', e.message, 'error');
+        } finally {
+          fraudCheckBtn.disabled = false;
+        }
+      });
+    }
+
+    const hideAuditModal = () => {
+      playCasinoSound('click');
+      if (auditModal) auditModal.classList.add('hidden');
+    };
+
+    if (closeAuditBtn) closeAuditBtn.addEventListener('click', hideAuditModal);
+    if (closeAuditFooterBtn) closeAuditFooterBtn.addEventListener('click', hideAuditModal);
 
     if (closeLogModalBtn && logModal) {
       closeLogModalBtn.addEventListener('click', () => {
