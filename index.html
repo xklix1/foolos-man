@@ -5100,6 +5100,14 @@
         <span id="chat-char-counter">0 / 200</span>
         <span id="chat-cooldown-timer" class="text-yellow-500 font-bold hidden">الرجاء الانتظار 3 ثوانٍ...</span>
       </div>
+      <!-- زر إرسال تنبيه مراقبة الإدارة (يظهر للمشرفين فقط) -->
+      <div id="admin-chat-controls" class="hidden mt-2 border-t border-slate-800/50 pt-2">
+        <button id="btn-admin-send-monitoring-msg" 
+          class="w-full py-2 bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white rounded-xl text-[10px] font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-red-500/10 active:scale-95">
+          <i class="fa-solid fa-eye text-xs"></i>
+          <span>تنبيه: الإدارة تراقب الشات حالياً ⚠️</span>
+        </button>
+      </div>
     </div>
   </div>
   <!-- Floating Chat Button -->

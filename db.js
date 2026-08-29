@@ -64,6 +64,18 @@ const AppDB = (() => {
       firestoreDb  = firebase.firestore();
       firebaseAuth = firebase.auth();
 
+      // Enable Firestore offline persistence
+      try {
+        await firestoreDb.enablePersistence({ synchronizeTabs: true });
+        console.log('[DB] Firestore offline persistence enabled successfully.');
+      } catch (err) {
+        if (err.code === 'failed-precondition') {
+          console.warn('[DB] Offline persistence failed: Multiple tabs open.');
+        } else if (err.code === 'unimplemented') {
+          console.warn('[DB] Offline persistence not supported by this browser.');
+        }
+      }
+
       // Verify connectivity with a lightweight ping (non-blocking)
       firestoreDb.collection('globals').doc('config').get().catch(err => {
         console.warn('[DB] Initial connectivity ping failed, but proceeding in offline-tolerant mode:', err.message);

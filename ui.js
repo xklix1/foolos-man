@@ -1505,6 +1505,11 @@ const UIController = (() => {
       if (isAdmin) adminBtnFab.classList.remove('hidden');
       else adminBtnFab.classList.add('hidden');
     }
+    const adminChatControls = document.getElementById('admin-chat-controls');
+    if (adminChatControls) {
+      if (isAdmin) adminChatControls.classList.remove('hidden');
+      else adminChatControls.classList.add('hidden');
+    }
   }
 
   // --- General Render Manager ---
@@ -2453,6 +2458,20 @@ const UIController = (() => {
         btnSpinner.classList.remove('hidden');
 
         await AppDB.executeWireTransfer(GameEngine.activeUsername, recipient, amount);
+
+        // Update local state immediately to prevent overwriting during auto-saves
+        if (GameEngine.state) {
+          GameEngine.state.cash = Math.max(0, GameEngine.state.cash - amount);
+          GameEngine.state.netWorth = Math.max(0, GameEngine.state.netWorth - amount);
+        }
+
+        // Fetch latest state to ensure 100% synchronization
+        const updatedState = await AppDB.getPlayerState(GameEngine.activeUsername);
+        if (updatedState) {
+          GameEngine.state.cash = updatedState.cash;
+          GameEngine.state.bank = updatedState.bank;
+          GameEngine.state.netWorth = updatedState.netWorth;
+        }
 
         // Reset fields
         document.getElementById('wire-recipient-input').value = '';
@@ -3998,23 +4017,38 @@ const UIController = (() => {
   }
 
   // --- Tab 10: Leaderboard Panel (Grand Tycoon Leaderboard & Podium) ---
+  let cachedLeaderboard = null;
+  let lastLeaderboardFetchTime = 0;
+
   async function renderLeaderboard() {
     const list = document.getElementById('leaderboard-rows');
     if (!list) return;
 
-    list.innerHTML = `
-      <tr>
-        <td colspan="4" class="text-center py-8 text-slate-400">
-          <div class="flex items-center justify-center gap-2">
-            <span class="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></span>
-            <span class="font-bold text-xs">جاري تحديث عرش الأثرياء المباشر...</span>
-          </div>
-        </td>
-      </tr>
-    `;
+    const now = Date.now();
+    const canUseCache = cachedLeaderboard && (now - lastLeaderboardFetchTime < 15000);
+
+    if (!canUseCache) {
+      list.innerHTML = `
+        <tr>
+          <td colspan="4" class="text-center py-8 text-slate-400">
+            <div class="flex items-center justify-center gap-2">
+              <span class="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></span>
+              <span class="font-bold text-xs">جاري تحديث عرش الأثرياء المباشر...</span>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
 
     try {
-      const players = await AppDB.getLeaderboard();
+      let players;
+      if (canUseCache) {
+        players = cachedLeaderboard;
+      } else {
+        players = await AppDB.getLeaderboard();
+        cachedLeaderboard = players;
+        lastLeaderboardFetchTime = now;
+      }
       list.innerHTML = '';
 
       if (!players || players.length === 0) {
@@ -4516,6 +4550,35 @@ const UIController = (() => {
         }
       }, (err) => console.error("User doc listen err: ", err));
     activeListeners.push(unsubUser);
+
+    // 3.5. Realtime Incoming Transfers Listener
+    const initialTransferTime = Date.now();
+    const processedTransferIds = new Set();
+    const unsubIncomingTransfers = db.collection('transfers')
+      .where('recipient', '==', username)
+      .onSnapshot((snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const data = change.doc.data();
+            const transferId = change.doc.id;
+            if (data.timestamp > initialTransferTime && !processedTransferIds.has(transferId)) {
+              processedTransferIds.add(transferId);
+              const amount = Number(data.amount);
+              if (!isNaN(amount) && amount > 0) {
+                if (GameEngine.state) {
+                  GameEngine.state.cash = (GameEngine.state.cash || 0) + amount;
+                  GameEngine.state.netWorth = (GameEngine.state.netWorth || 0) + amount;
+                  GameEngine.forceSaveState();
+                }
+                showToast('حوالة مالية واردة', `استلمت مبلغ +${amount.toLocaleString()} EGP من اللاعب "${data.sender}".`, 'success');
+                playMenuSound('success');
+                renderAll();
+              }
+            }
+          }
+        });
+      }, (err) => console.error("Transfers listen err: ", err));
+    activeListeners.push(unsubIncomingTransfers);
   }
 
   function applyCompleteZeroStateToGameEngine(username) {
@@ -7551,6 +7614,22 @@ const UIController = (() => {
       });
     }
 
+    const adminSendMsgBtn = document.getElementById('btn-admin-send-monitoring-msg');
+    if (adminSendMsgBtn) {
+      adminSendMsgBtn.addEventListener('click', async () => {
+        try {
+          adminSendMsgBtn.disabled = true;
+          const msg = "⚠️ تنبيه من الإدارة: الإدارة تراقب الشات حالياً. يرجى الالتزام بالقوانين.";
+          await AppDB.sendChatMessage(GameEngine.state.username, "الإدارة", msg);
+          showToast('تم الإرسال', 'تم إرسال تنبيه مراقبة الشات بنجاح.', 'success');
+        } catch (err) {
+          showToast('خطأ إرسال', err.message, 'error');
+        } finally {
+          adminSendMsgBtn.disabled = false;
+        }
+      });
+    }
+
     const btnMailbox = document.getElementById('btn-open-mailbox');
     const btnMailboxMobile = document.getElementById('btn-open-mailbox-mobile');
     const btnCloseMailbox = document.getElementById('btn-close-mailbox-modal');
@@ -8134,10 +8213,23 @@ const UIController = (() => {
     }
   }
 
+  const profileCache = new Map();
+
   async function openPlayerProfileCard(username) {
     if (!username) return;
     try {
-      const pState = await AppDB.adminGetPlayer(username);
+      let pState;
+      const now = Date.now();
+      const cached = profileCache.get(username);
+      if (cached && (now - cached.timestamp < 20000)) {
+        pState = cached.data;
+      } else {
+        pState = await AppDB.adminGetPlayer(username);
+        if (pState) {
+          profileCache.set(username, { data: pState, timestamp: now });
+        }
+      }
+
       if (!pState) {
         showToast('خطأ بروفايل', 'الملف التعريفي للاعب غير موجود.', 'error');
         return;
