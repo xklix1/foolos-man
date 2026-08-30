@@ -44,6 +44,7 @@ const UIController = (() => {
     "الإصدار V1.01": "Version V2",
     "الإصدار V2": "Version V2",
     "خوادم الأونلاين نشطة": "Online Servers Active",
+    "جاهز للإقلاع": "Ready for takeoff",
     "المحفظة النشطة": "Active Profile",
     "سيولة الكاش": "Cash Balance",
     "حساب البنك": "Bank Account",
@@ -92,6 +93,72 @@ const UIController = (() => {
     "💡 يمكنك الرجوع للدليل في أي وقت من القائمة أو شريط اللعبة": "💡 You can open this guide at any time from the main menu or HUD",
     "تغيير اللغة / Change Language": "اللغة: العربية",
     "EN": "العربية",
+    // Toast titles & messages & game status terms
+    "تهانينا": "Congratulations",
+    "تم ترقيتك لوظيفة:": "You have been promoted to: ",
+    "خطأ الترقية": "Promotion Error",
+    "نجاح التأسيس": "Establishment Successful",
+    "تم افتتاح مشروع ": "Successfully opened ",
+    " بنجاح!": "!",
+    "فشل المشروع": "Project Failure",
+    "عقود عقارية": "Real Estate Contracts",
+    "تم شراء عقار ": "Successfully purchased property ",
+    " بنجاح وإضافته لمحفظتك.": " and added it to your portfolio.",
+    "بيع كلي": "Full Liquidation",
+    "تمت بيع وتسييل كامل الأسهم ": "Successfully sold and liquidated all shares ",
+    " سهم) بقيمة ": " shares) for ",
+    "فشل البيع": "Sale Failed",
+    "خطأ رهان": "Bet Error",
+    "ربح ملكي!": "Royal Win!",
+    "صبت التخمين ": "You guessed correctly ",
+    "التاج الملكي": "Royal Crown",
+    "الدرع الدفاعي": "Defense Shield",
+    " كسبت ": " won ",
+    "بونص سلسلة الفوز: ": "Win streak bonus: ",
+    "خسارة الجولة": "Round Lost",
+    "لسوء الحظ، استقرت العملة على ": "Unfortunately, the coin landed on ",
+    "التاج": "Heads",
+    "الدرع": "Tails",
+    " خسرت ": " lost ",
+    "تحطم الصاروخ": "Rocket Crashed",
+    "انفجر الصاروخ عند مضاعف ": "Rocket exploded at multiplier ",
+    "خسرت رهانك ": "You lost your bet ",
+    "عملية سحب ناجحة": "Cashout Successful",
+    "تم سحب أرباحك بقيمة ": "Your profits were cashed out at ",
+    " بمضاعف ": " at multiplier ",
+    "فاتورة متجر": "Store Bill",
+    "تم شراء ": "Successfully purchased ",
+    " ودفع القيمة النقود.": " and paid the cash value.",
+    "رصيد معلق": "Insufficient Balance",
+    "لا تملك أي أسهم في هذه الشركة لبيعها.": "You do not own any shares in this company to sell.",
+    "يرجى تحديد مبلغ رهان صحيح.": "Please enter a valid bet amount.",
+    "جاكبوت كاسح!": "Jackpot!",
+    "🎉 مبروك! حصلت على الجاكبوت الذهبي الأقصى! ربحت ": "🎉 Congrats! You hit the golden jackpot! You won ",
+    "فوز الآلة": "Slots Win",
+    "ربحت ": "You won ",
+    "خسرت ": "You lost ",
+    "حظ أوفر": "Better Luck Next Time",
+    "خطأ الآلة": "Slots Error",
+    "فوز بلاك جاك": "Blackjack Win",
+    "تعادل": "Push",
+    "خسارة رهان": "Loss",
+    "بلاك جاك طبيعي! ربحت ": "Natural Blackjack! You won ",
+    "تجاوز الموزع! ربحت ": "Dealer Bust! You won ",
+    "تفوقت على الموزع! ربحت ": "You beat the dealer! You won ",
+    "تعادل بمجموع ": "Push at score ",
+    "! تم احتسابه فوزاً لصالحك (عضوية VIP) ": "! counted as a win (VIP Benefit) ",
+    "تعادل (Push) بمجموع ": "Push at score ",
+    "؛ تم استرداد الرهان.": "; bet refunded.",
+    "تجاوزت الـ 21 (Bust)! خسرت الرهان ": "You went over 21 (Bust)! You lost the bet ",
+    "تغلّب الموزع عليك! خسرت الرهان ": "Dealer beat you! You lost the bet ",
+    "تم التسجيل بنجاح": "Registered Successfully",
+    "تم تسجيل اسمك للمزايدة الحية بنجاح.": "Your name has been registered for the live auction.",
+    "فشل التسجيل": "Registration Failed",
+    "رصيد غير كافي": "Insufficient Funds",
+    "لا تملك رصيداً كافياً لتقديم هذا العرض.": "You do not have enough funds to place this bid.",
+    "تمت المزايدة": "Bid Placed",
+    "لقد قدمت عرض مزايدة أعلى بنجاح! 🚀": "You placed a higher bid successfully! 🚀",
+    "فشل المزايدة": "Bid Failed",
     "لوحة العمل والاستثمار اليومي": "Daily Work & Investment Board",
     "انقر للعمل، أسس مشاريعك الحرة، ودع الأرباح تصب في محفظتك تلقائياً.": "Click to work, build businesses, and accumulate passive income directly.",
     "العمل بنوبة اعتيادية": "Perform Regular Shift",
@@ -191,6 +258,22 @@ const UIController = (() => {
     "بطاقة حظ الكازينو الذهبية": "Golden Casino VIP Pass",
     "ساعة كورنوس لتسريع الزمن": "Cronos Time Accelerator",
     "ترخيص الإدارة الذاتية والمساعدة": "Auto AFK Manager License",
+    "القلم الذهبي للمدراء": "Golden Pen for Managers",
+    "توكيل محامٍ دولي قدير": "Hire Premium International Lawyer",
+    "مشروب الطاقة والتركيز الفائق": "Super Energy & Focus Drink",
+    "درع الإعفاء والملاذ الضريبي": "Tax Exemption Shield",
+    "ماسح البورصة والتداول الذكي": "Smart Stock Scanner",
+    "بطاقة VIP لكازينو الحظ": "Lucky Casino VIP Pass",
+    "معالج الحوسبة الكمومية (Quantum Core)": "Quantum Computing Core (Quantum Core)",
+    "عضوية النادي الماسي للبنوك الدولية": "International Banks Diamond Club Membership",
+    "يزيد خبرتك الوظيفية XP بنسبة +35% لتسريع الترقيات. ينتهي مفعوله بعد دقيقتين.": "Increases job XP gain by +35% to speed up promotions. Expires in 2 minutes.",
+    "يخفض خطورة القبض في صفقات السوق المحظورة بنسبة -18% لمدة 4 دقائق.": "Decreases capture risk in black market deals by -18% for 4 minutes.",
+    "يمنحك نشاطاً فائقاً ويزيد راتب نوبات العمل بنسبة +60% لمدة 90 ثانية.": "Grants super energy and increases shift salary by +60% for 90 seconds.",
+    "يمنحك خصماً قدره 15% على ترقيات الشركات ويخفض ضريبة الثروة بنسبة 50% لمدة 12 ساعة.": "Grants a 15% discount on franchise upgrades and cuts wealth tax by 50% for 12 hours.",
+    "يخفف أثر الهبوط والتصحيحات العكسية لأسهمك بنسبة 40% لمدة 3 دقائق.": "Reduces stock drops and corrections impact by 40% for 3 minutes.",
+    "ترفع نسبة الفوز في الكازينو وعجلة الحظ بنسبة +15%. تنتهي وتدمر صلاحيتها بعد 300 ثانية.": "Raises casino and fortune wheel win rate by +15%. Expires and self-destructs in 300 seconds.",
+    "يضاعف أرباح وتدفقات كافة مشاريعك وشركاتك بنسبة +50% لمدة 6 دقائق.": "Boosts profits and cashflow of all businesses by +50% for 6 minutes.",
+    "ترفع فوائد الودائع البنكية وتخفض ضرائب الثروة بنسبة 50% لمدة 10 دقائق.": "Raises bank deposit interest and cuts wealth tax by 50% for 10 minutes.",
 
     // General Words
     "رصيد البنك:": "Bank Balance:",
@@ -1699,15 +1782,17 @@ const UIController = (() => {
       const card = document.createElement('div');
       card.className = `glass-panel p-4 rounded-xl flex flex-col justify-between items-start border ${isCurrent ? 'border-yellow-500 bg-yellow-950/20' : 'border-slate-800'}`;
 
+      const translatedJobName = window.currentLang === 'en' ? (translationDict[job.name] || job.name) : job.name;
+
       card.innerHTML = `
         <div class="w-full flex justify-between items-center mb-2">
-          <h4 class="text-lg font-bold text-white">${job.name}</h4>
-          ${isCurrent ? '<span class="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded border border-yellow-500/30">الوظيفة الحالية</span>' : ''}
+          <h4 class="text-lg font-bold text-white">${translatedJobName}</h4>
+          ${isCurrent ? `<span class="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded border border-yellow-500/30">${window.currentLang === 'en' ? 'Current Job' : 'الوظيفة الحالية'}</span>` : ''}
         </div>
           <div class="text-sm text-slate-400 space-y-1 mb-4 w-full">
-          <div class="flex justify-between"><span>الراتب الثابت:</span><span class="numbers-font text-emerald-400 font-semibold">+${job.salary} EGP / دورة</span></div>
-          <div class="flex justify-between"><span>العائد من الخبرة:</span><span class="numbers-font text-blue-400">+${job.xpReward} XP</span></div>
-          <div class="flex justify-between"><span>الخبرة المطلوبة:</span><span class="numbers-font">${job.xpNeeded} XP</span></div>
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Base Salary:' : 'الراتب الثابت:'}</span><span class="numbers-font text-emerald-400 font-semibold">+${job.salary} EGP / ${window.currentLang === 'en' ? 'cycle' : 'دورة'}</span></div>
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'XP Reward:' : 'العائد من الخبرة:'}</span><span class="numbers-font text-blue-400">+${job.xpReward} XP</span></div>
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'XP Required:' : 'الخبرة المطلوبة:'}</span><span class="numbers-font">${job.xpNeeded} XP</span></div>
         </div>
         <button 
           data-job-id="${id}"
@@ -1719,7 +1804,7 @@ const UIController = (() => {
         }"
           ${isCurrent || !isUnlocked ? 'disabled' : ''}
         >
-          ${isCurrent ? 'أنت تمارس هذه المهنة' : isUnlocked ? 'التحاق بهذه الوظيفة' : `مغلق (تحتاج لخبرة)`}
+          ${isCurrent ? (window.currentLang === 'en' ? 'You are in this career' : 'أنت تمارس هذه المهنة') : isUnlocked ? (window.currentLang === 'en' ? 'Apply to this job' : 'التحاق بهذه الوظيفة') : (window.currentLang === 'en' ? 'Locked (XP needed)' : `مغلق (تحتاج لخبرة)`)}
         </button>
       `;
 
@@ -1779,17 +1864,18 @@ const UIController = (() => {
 
       if (!isOwned) {
         // Render Purchase Form
+        const translatedBizName = window.currentLang === 'en' ? (translationDict[biz.name] || biz.name) : biz.name;
         card.innerHTML = `
           <div class="mb-4">
-            <h4 class="text-lg font-bold text-slate-300">${biz.name}</h4>
-            <p class="text-xs text-slate-500 mt-1">شراء مشروع تجاري والبدء بجني الأرباح تلقائياً وتوظيف العمالة.</p>
+            <h4 class="text-lg font-bold text-slate-300">${translatedBizName}</h4>
+            <p class="text-xs text-slate-500 mt-1">${window.currentLang === 'en' ? 'Purchase a business to start generating automatic profits and hire workers.' : 'شراء مشروع تجاري والبدء بجني الأرباح تلقائياً وتوظيف العمالة.'}</p>
           </div>
           <div class="text-sm text-slate-400 space-y-1 mb-6">
-            <div class="flex justify-between"><span>تكلفة التأسيس:</span><span class="numbers-font text-yellow-500 font-semibold">${biz.cost.toLocaleString()} EGP</span></div>
-            <div class="flex justify-between"><span>العائد التقريبي الأساسي:</span><span class="numbers-font text-emerald-400">~${biz.baseDemand * (biz.optimumPrice - biz.costOfGoods)} EGP / دورة</span></div>
+            <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Establish Cost:' : 'تكلفة التأسيس:'}</span><span class="numbers-font text-yellow-500 font-semibold">${biz.cost.toLocaleString()} EGP</span></div>
+            <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Approx. Base Yield:' : 'العائد التقريبي الأساسي:'}</span><span class="numbers-font text-emerald-400">~${biz.baseDemand * (biz.optimumPrice - biz.costOfGoods)} EGP / ${window.currentLang === 'en' ? 'cycle' : 'دورة'}</span></div>
           </div>
           <button class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition duration-300">
-            تأسيس المشروع واستثمار رأس المال
+            ${window.currentLang === 'en' ? 'Establish Business & Invest Capital' : 'تأسيس المشروع واستثمار رأس المال'}
           </button>
         `;
         card.querySelector('button').addEventListener('click', () => {
@@ -1829,26 +1915,27 @@ const UIController = (() => {
         const workerPayroll = (bizState.workers || 0) * (biz.workerWage || 0);
         const profitPerTick = Math.max(0, grossProfit - workerPayroll);
 
+        const translatedBizName = window.currentLang === 'en' ? (translationDict[biz.name] || biz.name) : biz.name;
         card.innerHTML = `
           <div class="flex justify-between items-center mb-3">
-            <h4 class="text-lg font-bold text-white">${biz.name}</h4>
+            <h4 class="text-lg font-bold text-white">${translatedBizName}</h4>
             <span id="biz-level-badge-${key}" class="text-xs px-2.5 py-0.5 ${bizState.isFranchise ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'} rounded border font-bold">
-              ${bizState.isFranchise ? 'علامة تجارية 👑' : `المستوى ${bizState.level}`}
+              ${bizState.isFranchise ? (window.currentLang === 'en' ? 'Franchise Brand 👑' : 'علامة تجارية 👑') : `${window.currentLang === 'en' ? 'Level' : 'المستوى'} ${bizState.level}`}
             </span>
           </div>
           
           <div class="text-xs text-slate-400 space-y-1 mb-4 border-b border-slate-800 pb-3">
-            <div class="flex justify-between"><span>العمالة الحالية:</span><span id="biz-workers-${key}" class="numbers-font text-white font-bold">${bizState.workers || 0} عمال (أجور: -${workerPayroll} EGP/دورة)</span></div>
-            <div class="flex justify-between"><span>تكلفة المواد/التشغيل:</span><span id="biz-cog-${key}" class="numbers-font text-rose-400">${actualCostOfGoods} EGP/وحدة</span></div>
-            <div class="flex justify-between"><span>الطلب الحالي المتوقع:</span><span id="biz-demand-${key}" class="numbers-font text-sky-400 font-bold">${estimatedDemand} وحدة/دورة ${marketingActive ? '<span class="text-yellow-400 font-bold">(+40% ترويج)</span>' : ''}</span></div>
-            <div class="flex justify-between"><span>هامش ربح الوحدة:</span><span id="biz-margin-${key}" class="numbers-font ${profitMargin >= 0 ? 'text-teal-400' : 'text-rose-400'} font-bold">${profitMargin} EGP</span></div>
-            <div class="flex justify-between"><span>العائد الصافي الفعلي:</span><span id="biz-profit-${key}" class="numbers-font text-emerald-400 font-bold">+${profitPerTick.toLocaleString()} EGP / دورة ${bizState.isFranchise ? '<span class="text-amber-400 text-[10px] font-black">(+25% براند)</span>' : ''}</span></div>
+            <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Current Employees:' : 'العمالة الحالية:'}</span><span id="biz-workers-${key}" class="numbers-font text-white font-bold">${bizState.workers || 0} ${window.currentLang === 'en' ? 'workers' : 'عمال'} (${window.currentLang === 'en' ? 'wages' : 'أجور'}: -${workerPayroll} EGP/${window.currentLang === 'en' ? 'cycle' : 'دورة'})</span></div>
+            <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Material/Operation Cost:' : 'تكلفة المواد/التشغيل:'}</span><span id="biz-cog-${key}" class="numbers-font text-rose-400">${actualCostOfGoods} EGP/${window.currentLang === 'en' ? 'unit' : 'وحدة'}</span></div>
+            <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Current Expected Demand:' : 'الطلب الحالي المتوقع:'}</span><span id="biz-demand-${key}" class="numbers-font text-sky-400 font-bold">${estimatedDemand} ${window.currentLang === 'en' ? 'units/cycle' : 'وحدة/دورة'} ${marketingActive ? `<span class="text-yellow-400 font-bold">(${window.currentLang === 'en' ? '+40% Promo' : '+40% ترويج'})</span>` : ''}</span></div>
+            <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Unit Profit Margin:' : 'هامش ربح الوحدة:'}</span><span id="biz-margin-${key}" class="numbers-font ${profitMargin >= 0 ? 'text-teal-400' : 'text-rose-400'} font-bold">${profitMargin} EGP</span></div>
+            <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Actual Net Return:' : 'العائد الصافي الفعلي:'}</span><span id="biz-profit-${key}" class="numbers-font text-emerald-400 font-bold">+${profitPerTick.toLocaleString()} EGP / ${window.currentLang === 'en' ? 'cycle' : 'دورة'} ${bizState.isFranchise ? `<span class="text-amber-400 text-[10px] font-black">(${window.currentLang === 'en' ? '+25% Brand' : '+25% براند'})</span>` : ''}</span></div>
           </div>
 
           <div class="mb-3">
             <div class="flex justify-between text-xs text-slate-400 mb-1">
-              <span>تعديل سعر المنتج:</span>
-              <span class="numbers-font font-bold text-yellow-500"><span id="price-val-${key}">${price}</span> EGP (المثالي: ${biz.optimumPrice} EGP)</span>
+              <span>${window.currentLang === 'en' ? 'Adjust Product Price:' : 'تعديل سعر المنتج:'}</span>
+              <span class="numbers-font font-bold text-yellow-500"><span id="price-val-${key}">${price}</span> EGP (${window.currentLang === 'en' ? 'Optimum' : 'المثالي'}: ${biz.optimumPrice} EGP)</span>
             </div>
             <input 
               type="range" 
@@ -1863,35 +1950,35 @@ const UIController = (() => {
           <!-- Marketing Campaign Trigger -->
           <div class="mb-3">
             <button id="btn-marketing-${key}" class="w-full py-1.5 ${marketingActive ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40' : 'bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-300 border-indigo-500/40'} border rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
-              📢 <span id="biz-mktg-text-${key}">${marketingActive ? `حملة إعلانية نشطة (متبقي ${marketingSecRemaining}ث)` : `إطلاق حملة ترويجية مكثفة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP`}</span>
+              📢 <span id="biz-mktg-text-${key}">${marketingActive ? (window.currentLang === 'en' ? `Active Ad Campaign (${marketingSecRemaining}s remaining)` : `حملة إعلانية نشطة (متبقي ${marketingSecRemaining}ث)`) : (window.currentLang === 'en' ? `Launch promo campaign (+40% demand) — ${campaignCost.toLocaleString()} EGP` : `إطلاق حملة ترويجية مكثفة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP`)}</span>
             </button>
           </div>
 
           <div class="grid grid-cols-2 gap-2 mt-2">
             ${bizState.isFranchise ? `
               <button disabled class="py-2 bg-amber-950/20 text-amber-500/50 border border-amber-500/10 rounded-lg text-xs font-bold cursor-not-allowed">
-                علامة مسجلة 👑
+                ${window.currentLang === 'en' ? 'Registered Brand 👑' : 'علامة مسجلة 👑'}
               </button>
             ` : bizState.level >= 10 ? `
               <button id="btn-upgrade-${key}" class="py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-black transition">
-                ترقية لبراند 👑<br><span id="biz-upgrade-cost-${key}" class="numbers-font text-[9px] opacity-80">${(biz.cost * 15).toLocaleString()} EGP</span>
+                ${window.currentLang === 'en' ? 'Upgrade to Brand 👑' : 'ترقية لبراند 👑'}<br><span id="biz-upgrade-cost-${key}" class="numbers-font text-[9px] opacity-80">${(biz.cost * 15).toLocaleString()} EGP</span>
               </button>
             ` : `
               <button id="btn-upgrade-${key}" class="py-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-lg text-xs font-bold transition">
-                ترقية المستوى<br><span id="biz-upgrade-cost-${key}" class="numbers-font text-[10px] opacity-75">${nextUpgradeCost.toLocaleString()} EGP</span>
+                ${window.currentLang === 'en' ? 'Upgrade Level' : 'ترقية المستوى'}<br><span id="biz-upgrade-cost-${key}" class="numbers-font text-[10px] opacity-75">${nextUpgradeCost.toLocaleString()} EGP</span>
               </button>
             `}
             <button id="btn-hire-${key}" class="py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition">
-              توظيف عمالة<br><span id="biz-hire-cost-${key}" class="numbers-font text-[10px] opacity-75">${workerHireCost.toLocaleString()} EGP</span>
+              ${window.currentLang === 'en' ? 'Hire Worker' : 'توظيف عمالة'}<br><span id="biz-hire-cost-${key}" class="numbers-font text-[10px] opacity-75">${workerHireCost.toLocaleString()} EGP</span>
             </button>
           </div>
           ${bizState.isFranchise ? `
             <button id="btn-sell-franchise-${key}" class="w-full mt-2 py-2 bg-amber-500/15 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-black transition flex items-center justify-center gap-1 shadow-md">
-              <i class="fa-solid fa-sign-out"></i> بيع العلامة التجارية (تصفية واسترداد مالي)
+              <i class="fa-solid fa-right-from-bracket"></i> ${window.currentLang === 'en' ? 'Sell Brand (Liquidate & Refund)' : 'بيع العلامة التجارية (تصفية واسترداد مالي)'}
             </button>
           ` : (bizState.workers && bizState.workers > 0) ? `
             <button id="btn-fire-${key}" class="w-full mt-2 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg text-xs transition">
-              تسريح عامل واحد
+              ${window.currentLang === 'en' ? 'Lay off one employee' : 'تسريح عامل واحد'}
             </button>
           ` : ''}
         `;
@@ -3567,27 +3654,30 @@ const UIController = (() => {
       const card = document.createElement('div');
       card.id = `asset-card-${key}`;
       card.className = `glass-panel p-5 rounded-xl border border-slate-800 flex flex-col justify-between`;
+      
+      const translatedAssetName = window.currentLang === 'en' ? (translationDict[asset.name] || asset.name) : asset.name;
+
       card.innerHTML = `
         <div class="flex justify-between items-start mb-3">
           <div>
-            <h4 class="text-lg font-bold text-white">${asset.name}</h4>
-            <p class="text-xs text-slate-500 mt-1">توليد عائد مالي مستقر، وتقدير لقيمة العقار بمرور الوقت.</p>
+            <h4 class="text-lg font-bold text-white">${translatedAssetName}</h4>
+            <p class="text-xs text-slate-500 mt-1">${window.currentLang === 'en' ? 'Generates stable passive income and property appreciation over time.' : 'توليد عائد مالي مستقر، وتقدير لقيمة العقار بمرور الوقت.'}</p>
           </div>
-          <span class="text-xs px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold">مملوك: <span id="asset-owned-${key}" class="numbers-font">${owned}</span></span>
+          <span class="text-xs px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold">${window.currentLang === 'en' ? 'Owned:' : 'مملوك:'} <span id="asset-owned-${key}" class="numbers-font">${owned}</span></span>
         </div>
 
         <div class="text-sm text-slate-400 space-y-1 mb-5 border-t border-b border-slate-800/80 py-3 my-2">
-          <div class="flex justify-between"><span>القيمة السوقية الحالية:</span><span id="asset-cost-${key}" class="numbers-font text-yellow-500 font-semibold">${asset.cost.toLocaleString()} EGP</span></div>
-          <div class="flex justify-between"><span>عائد الإيجار السلبي:</span><span id="asset-rent-${key}" class="numbers-font text-emerald-400">+${Math.floor(asset.rent * 0.1)} EGP / دورة</span></div>
-          <div class="flex justify-between"><span>قيمة التسييل الفوري (85%):</span><span id="asset-liquid-${key}" class="numbers-font text-amber-500/80">${Math.floor(asset.cost * 0.85).toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Current Market Value:' : 'القيمة السوقية الحالية:'}</span><span id="asset-cost-${key}" class="numbers-font text-yellow-500 font-semibold">${asset.cost.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Passive Rental Yield:' : 'عائد الإيجار السلبي:'}</span><span id="asset-rent-${key}" class="numbers-font text-emerald-400">+${Math.floor(asset.rent * 0.1).toLocaleString()} EGP / ${window.currentLang === 'en' ? 'cycle' : 'دورة'}</span></div>
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Immediate Liquidation (85%):' : 'قيمة التسييل الفوري (85%):'}</span><span id="asset-liquid-${key}" class="numbers-font text-amber-500/80">${Math.floor(asset.cost * 0.85).toLocaleString()} EGP</span></div>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
           <button id="btn-buy-asset-${key}" class="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition">
-            شراء وحدة إضافية
+            ${window.currentLang === 'en' ? 'Buy Additional Unit' : 'شراء وحدة إضافية'}
           </button>
           <button id="btn-sell-asset-${key}" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-xs font-bold transition" ${owned === 0 ? 'disabled' : ''}>
-            تسييل وبيع وحدة
+            ${window.currentLang === 'en' ? 'Liquidate & Sell Unit' : 'تسييل وبيع وحدة'}
           </button>
         </div>
       `;
@@ -3680,10 +3770,12 @@ const UIController = (() => {
 
       const svgPath = generateSparklineSVG(prices);
 
+      const translatedStockName = window.currentLang === 'en' ? (translationDict[stock.name] || stock.name) : stock.name;
+
       card.innerHTML = `
         <div class="flex justify-between items-start mb-3">
           <div>
-            <h4 class="text-md font-bold text-white">${stock.name}</h4>
+            <h4 class="text-md font-bold text-white">${translatedStockName}</h4>
             <span class="numbers-font text-xs text-slate-500 font-bold block mt-1">${stock.symbol}</span>
           </div>
           <div class="text-left">
@@ -3699,10 +3791,10 @@ const UIController = (() => {
         </div>
 
         <div class="text-xs text-slate-400 space-y-1 mb-4 border-t border-slate-800 pt-3 mt-1">
-          <div class="flex justify-between"><span>الأسهم المملوكة:</span><span id="stock-shares-${sym}" class="numbers-font text-white">${ownedData.shares} سهم</span></div>
-          <div class="flex justify-between"><span>متوسط سعر الشراء:</span><span id="stock-avg-${sym}" class="numbers-font">${ownedData.avgPrice} EGP</span></div>
-          <div class="flex justify-between"><span>قيمة الأسهم الكلية:</span><span id="stock-worth-${sym}" class="numbers-font text-yellow-500 font-semibold">${totalWorth.toLocaleString()} EGP</span></div>
-          <div class="flex justify-between"><span>ربح/خسارة المحفظة:</span><span id="stock-profit-${sym}" class="numbers-font font-bold ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Owned Shares:' : 'الأسهم المملوكة:'}</span><span id="stock-shares-${sym}" class="numbers-font text-white">${ownedData.shares} ${window.currentLang === 'en' ? 'shares' : 'سهم'}</span></div>
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Avg Buy Price:' : 'متوسط سعر الشراء:'}</span><span id="stock-avg-${sym}" class="numbers-font">${ownedData.avgPrice} EGP</span></div>
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Total Shares Value:' : 'قيمة الأسهم الكلية:'}</span><span id="stock-worth-${sym}" class="numbers-font text-yellow-500 font-semibold">${totalWorth.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Portfolio Profit/Loss:' : 'ربح/خسارة المحفظة:'}</span><span id="stock-profit-${sym}" class="numbers-font font-bold ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString()} EGP</span></div>
         </div>
 
         <div class="grid grid-cols-2 gap-2 mb-2">
@@ -3712,15 +3804,15 @@ const UIController = (() => {
               <button data-pct="0.50" class="btn-pct-buy flex-1 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded font-semibold">50%</button>
               <button data-pct="1.00" class="btn-pct-buy flex-1 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-yellow-400 rounded font-bold">100%</button>
             </div>
-            <input type="number" id="shares-buy-input-${sym}" placeholder="الكمية" class="glass-input w-full p-2 text-center text-xs rounded-lg mb-1.5" min="1" step="1"/>
-            <button id="btn-buy-shares-${sym}" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition">شراء الأسهم</button>
+            <input type="number" id="shares-buy-input-${sym}" placeholder="${window.currentLang === 'en' ? 'Qty' : 'الكمية'}" class="glass-input w-full p-2 text-center text-xs rounded-lg mb-1.5" min="1" step="1"/>
+            <button id="btn-buy-shares-${sym}" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition">${window.currentLang === 'en' ? 'Buy Shares' : 'شراء الأسهم'}</button>
           </div>
           <div class="flex flex-col">
             <div class="flex gap-1 mb-1">
-              <button id="btn-sell-all-${sym}" class="w-full py-0.5 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/30 text-[10px] text-rose-300 rounded font-bold" ${ownedData.shares === 0 ? 'disabled' : ''}>🔥 بيع كل الأسهم</button>
+              <button id="btn-sell-all-${sym}" class="w-full py-0.5 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/30 text-[10px] text-rose-300 rounded font-bold" ${ownedData.shares === 0 ? 'disabled' : ''}>${window.currentLang === 'en' ? '🔥 Sell All' : '🔥 بيع كل الأسهم'}</button>
             </div>
-            <input type="number" id="shares-sell-input-${sym}" placeholder="الكمية" class="glass-input w-full p-2 text-center text-xs rounded-lg mb-1.5" min="1" step="1"/>
-            <button id="btn-sell-shares-${sym}" class="py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition" ${ownedData.shares === 0 ? 'disabled' : ''}>بيع الأسهم</button>
+            <input type="number" id="shares-sell-input-${sym}" placeholder="${window.currentLang === 'en' ? 'Qty' : 'الكمية'}" class="glass-input w-full p-2 text-center text-xs rounded-lg mb-1.5" min="1" step="1"/>
+            <button id="btn-sell-shares-${sym}" class="py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition" ${ownedData.shares === 0 ? 'disabled' : ''}>${window.currentLang === 'en' ? 'Sell Shares' : 'بيع الأسهم'}</button>
           </div>
         </div>
       `;
@@ -3882,9 +3974,17 @@ const UIController = (() => {
     const taxableEl = document.getElementById('tax-kpi-taxable');
     if (taxableEl) taxableEl.textContent = `${taxReport.taxableNetWorth.toLocaleString()} EGP`;
 
+    let bracketName = taxReport.bracketName;
+    if (window.currentLang === 'en') {
+      if (bracketName.includes('الشريحة الأولى')) bracketName = 'First Bracket (Fully Exempt)';
+      else if (bracketName.includes('الشريحة الفضية')) bracketName = 'Silver Bracket (3M - 15M EGP)';
+      else if (bracketName.includes('شريحة كبار الممولين')) bracketName = 'Major Taxpayer Bracket (15M - 50M EGP)';
+      else if (bracketName.includes('شريحة حيتان المال')) bracketName = 'Whale & Billionaire Bracket (+50M EGP)';
+    }
+
     const bracketEl = document.getElementById('tax-kpi-bracket');
     if (bracketEl) {
-      bracketEl.textContent = taxReport.bracketName;
+      bracketEl.textContent = bracketName;
       bracketEl.className = `text-sm font-black ${taxReport.bracketColor} block mt-1`;
     }
 
@@ -3905,26 +4005,28 @@ const UIController = (() => {
     if (shieldBadge) {
       if (taxReport.taxShieldActive) {
         shieldBadge.className = 'text-[10px] px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full font-bold animate-pulse';
-        shieldBadge.textContent = 'نشط وفعال 🛡️ (-50%)';
+        shieldBadge.textContent = window.currentLang === 'en' ? 'Active 🛡️ (-50%)' : 'نشط وفعال 🛡️ (-50%)';
       } else {
         shieldBadge.className = 'text-[10px] px-2.5 py-0.5 bg-slate-800 text-slate-400 rounded-full font-bold';
-        shieldBadge.textContent = 'غير مفعل ⚠️';
+        shieldBadge.textContent = window.currentLang === 'en' ? 'Inactive ⚠️' : 'غير مفعل ⚠️';
       }
     }
 
     if (shieldTimeLeft) {
       if (taxReport.taxShieldActive) {
         const sec = (taxReport.shieldDurationTicks || 0) * 3;
-        shieldTimeLeft.textContent = `متبقي على الصلاحية: ${sec} ثانية`;
+        shieldTimeLeft.textContent = window.currentLang === 'en' ? `Validity remaining: ${sec} seconds` : `متبقي على الصلاحية: ${sec} ثانية`;
         shieldTimeLeft.className = 'text-[11px] text-emerald-400 font-mono font-bold';
       } else {
-        shieldTimeLeft.textContent = 'المدة: 12 ساعة (43,200 ثانية)';
+        shieldTimeLeft.textContent = window.currentLang === 'en' ? 'Duration: 12 hours (43,200 seconds)' : 'المدة: 12 ساعة (43,200 ثانية)';
         shieldTimeLeft.className = 'text-[11px] text-slate-400 font-mono';
       }
     }
 
     if (buyShieldLabel) {
-      buyShieldLabel.textContent = taxReport.taxShieldActive ? 'تجديد وتمديد الدرع الضريبي (550,000 EGP)' : 'شراء وتفعيل الدرع الضريبي (550,000 EGP)';
+      buyShieldLabel.textContent = taxReport.taxShieldActive 
+        ? (window.currentLang === 'en' ? 'Renew Tax Shield (550,000 EGP)' : 'تجديد وتمديد الدرع الضريبي (550,000 EGP)')
+        : (window.currentLang === 'en' ? 'Purchase Tax Shield (550,000 EGP)' : 'شراء وتفعيل الدرع الضريبي (550,000 EGP)');
     }
 
     // Active row badges in table
@@ -3933,10 +4035,10 @@ const UIController = (() => {
       if (badge) {
         if (taxReport.bracketId === i) {
           badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
-          badge.textContent = 'شريحتك الحالية 👈';
+          badge.textContent = window.currentLang === 'en' ? 'Current Bracket 👈' : 'شريحتك الحالية 👈';
         } else {
           badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-500';
-          badge.textContent = 'غير خاضع';
+          badge.textContent = window.currentLang === 'en' ? 'Exempt' : 'غير خاضع';
         }
       }
     }
@@ -3958,21 +4060,25 @@ const UIController = (() => {
 
       const card = document.createElement('div');
       card.className = 'glass-panel p-4 rounded-xl border border-slate-800 flex flex-col justify-between items-start';
+
+      const translatedName = window.currentLang === 'en' ? (translationDict[item.name] || item.name) : item.name;
+      const translatedDesc = window.currentLang === 'en' ? (translationDict[item.desc] || item.desc) : item.desc;
+
       card.innerHTML = `
         <div class="mb-3 w-full">
           <div class="flex justify-between items-center mb-1">
-            <h4 class="font-bold text-white text-sm">${item.name}</h4>
-            <span class="text-xs px-2 py-0.5 bg-slate-800 text-slate-400 border border-slate-700 rounded-full font-bold">متاح: <span class="numbers-font">${count}</span></span>
+            <h4 class="font-bold text-white text-sm">${translatedName}</h4>
+            <span class="text-xs px-2 py-0.5 bg-slate-800 text-slate-400 border border-slate-700 rounded-full font-bold">${window.currentLang === 'en' ? 'Available:' : 'متاح:'} <span class="numbers-font">${count}</span></span>
           </div>
-          <p class="text-[11px] text-slate-400 leading-relaxed mb-2">${item.desc || 'مفعول خاص ومؤقت ينتهي ويدمر ذاته.'}</p>
+          <p class="text-[11px] text-slate-400 leading-relaxed mb-2">${translatedDesc || (window.currentLang === 'en' ? 'Temporary special effect that will eventually self-destruct.' : 'مفعول خاص ومؤقت ينتهي ويدمر ذاته.')}</p>
         </div>
         <div class="w-full text-xs text-slate-400 space-y-1 mb-4 border-t border-slate-800/60 pt-2.5">
-          <div class="flex justify-between"><span>سعر البيع:</span><span class="numbers-font text-yellow-500 font-bold">${item.cost.toLocaleString()} EGP</span></div>
-          <div class="flex justify-between"><span>مدة الصلاحية:</span><span class="numbers-font text-rose-400 font-semibold">${item.durationTicks * 3} ثانية</span></div>
-          ${count > 0 ? `<div class="flex justify-between"><span>عداد التدمير الذاتي:</span><span class="numbers-font text-yellow-400 font-bold animate-pulse">${secRemaining} ثانية متبقية</span></div>` : ''}
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Selling Price:' : 'سعر البيع:'}</span><span class="numbers-font text-yellow-500 font-bold">${item.cost.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Validity Duration:' : 'مدة الصلاحية:'}</span><span class="numbers-font text-rose-400 font-semibold">${item.durationTicks * 3} ${window.currentLang === 'en' ? 'seconds' : 'ثانية'}</span></div>
+          ${count > 0 ? `<div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Self-Destruct Timer:' : 'عداد التدمير الذاتي:'}</span><span class="numbers-font text-yellow-400 font-bold animate-pulse">${secRemaining} ${window.currentLang === 'en' ? 'seconds remaining' : 'ثانية متبقية'}</span></div>` : ''}
         </div>
         <button id="btn-buy-store-${id}" class="w-full py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-lg text-xs font-bold transition shadow-lg shadow-yellow-500/10">
-          شراء وتفعيل المفعول
+          ${window.currentLang === 'en' ? 'Buy & Activate Effect' : 'شراء وتفعيل المفعول'}
         </button>
       `;
 
@@ -3998,7 +4104,9 @@ const UIController = (() => {
     if (usableItems.length === 0) {
       bag.innerHTML = `
         <div class="col-span-full text-center text-slate-500 text-xs py-4">
-          حقيبة ظهرك فارغة تماماً. قم بزيارة الرف الأعلى لشراء عناصر الدعم والتعزيزات الفائقة.
+          ${window.currentLang === 'en' 
+            ? 'Your backpack is completely empty. Visit the shelf above to buy support items and super boosts.' 
+            : 'حقيبة ظهرك فارغة تماماً. قم بزيارة الرف الأعلى لشراء عناصر الدعم والتعزيزات الفائقة.'}
         </div>
       `;
     } else {
@@ -4010,14 +4118,18 @@ const UIController = (() => {
 
         const card = document.createElement('div');
         card.className = 'glass-panel p-3 rounded-lg border border-slate-800 flex justify-between items-center text-xs';
+        
+        const translatedName = window.currentLang === 'en' ? (translationDict[item.name] || item.name) : item.name;
+        const translatedDesc = window.currentLang === 'en' ? (translationDict[item.desc] || item.desc) : item.desc;
+
         card.innerHTML = `
           <div>
-            <h5 class="font-bold text-white mb-0.5">${item.name}</h5>
-            <p class="text-[10px] text-slate-400 leading-snug">${item.desc}</p>
+            <h5 class="font-bold text-white mb-0.5">${translatedName}</h5>
+            <p class="text-[10px] text-slate-400 leading-snug">${translatedDesc}</p>
           </div>
           <div class="text-left whitespace-nowrap mr-3">
             <span class="text-[10px] text-yellow-400 border border-yellow-500/30 px-2 py-1 rounded bg-yellow-500/10 font-bold block mb-1">
-              ⏳ تدمير ذاتي: <span class="numbers-font">${secRemaining}ث</span>
+              ⏳ ${window.currentLang === 'en' ? 'Self-destruct:' : 'تدمير ذاتي:'} <span class="numbers-font">${secRemaining}${window.currentLang === 'en' ? 's' : 'ث'}</span>
             </span>
           </div>
         `;
@@ -4045,7 +4157,7 @@ const UIController = (() => {
     if (heatEl) {
       const heat = Math.min(5, Math.max(0, s.heatLevel || 0));
       const stars = '⭐'.repeat(heat) + '☆'.repeat(5 - heat);
-      heatEl.textContent = `الملاحقة: ${stars}`;
+      heatEl.textContent = `${window.currentLang === 'en' ? 'Police Heat' : 'الملاحقة'}: ${stars}`;
     }
 
     // 2. Money Laundering Status & Presets
@@ -4055,7 +4167,9 @@ const UIController = (() => {
     const feeBadgeEl = document.getElementById('laundering-fee-badge');
     const hasCryptoCleaner = Boolean(s.inventory && s.inventory.crypto_cleaner > 0);
     if (feeBadgeEl) {
-      feeBadgeEl.textContent = hasCryptoCleaner ? '25% (Zero-Trace نشط)' : '35%';
+      feeBadgeEl.textContent = hasCryptoCleaner 
+        ? (window.currentLang === 'en' ? '25% (Zero-Trace Active)' : '25% (Zero-Trace نشط)')
+        : '35%';
       feeBadgeEl.className = hasCryptoCleaner ? 'numbers-font font-black text-cyan-400' : 'numbers-font font-black text-emerald-400';
     }
 
@@ -4103,26 +4217,40 @@ const UIController = (() => {
         const remSec = Math.ceil(remainingMs / 1000);
         const remMins = Math.floor(remSec / 60);
         const remSecsFormatted = (remSec % 60).toString().padStart(2, '0');
-        const cdFormatted = remMins > 0 ? `${remMins}:${remSecsFormatted}` : `${remSec} ثانية`;
+        const cdFormatted = remMins > 0 ? `${remMins}:${remSecsFormatted}` : `${remSec} ${window.currentLang === 'en' ? 'seconds' : 'ثانية'}`;
 
         const cdSec = deal.cooldownSec || 120;
-        const cdSuccessStr = cdSec >= 3600 ? `${Math.round(cdSec / 3600)} ساعة` : cdSec >= 60 ? `${Math.round(cdSec / 60)} دقيقة` : `${cdSec} ثانية`;
+        const cdSuccessStr = cdSec >= 3600 
+          ? `${Math.round(cdSec / 3600)} ${window.currentLang === 'en' ? 'hours' : 'ساعة'}` 
+          : cdSec >= 60 
+            ? `${Math.round(cdSec / 60)} ${window.currentLang === 'en' ? 'minutes' : 'دقيقة'}` 
+            : `${cdSec} ${window.currentLang === 'en' ? 'seconds' : 'ثانية'}`;
         const failCdSec = Math.floor(cdSec / 2);
-        const cdFailStr = failCdSec >= 3600 ? `${(failCdSec / 3600).toFixed(1)} ساعة` : failCdSec >= 60 ? `${Math.round(failCdSec / 60)} دقيقة` : `${failCdSec} ثانية`;
+        const cdFailStr = failCdSec >= 3600 
+          ? `${(failCdSec / 3600).toFixed(1)} ${window.currentLang === 'en' ? 'hours' : 'ساعة'}` 
+          : failCdSec >= 60 
+            ? `${Math.round(failCdSec / 60)} ${window.currentLang === 'en' ? 'minutes' : 'دقيقة'}` 
+            : `${failCdSec} ${window.currentLang === 'en' ? 'seconds' : 'ثانية'}`;
 
-        const costLabel = deal.requireDirtyCost ? 'الأموال المشبوهة المطلوبة:' : 'رأس المال المطلوب:';
+        const costLabel = deal.requireDirtyCost 
+          ? (window.currentLang === 'en' ? 'Dirty Cash Required:' : 'الأموال المشبوهة المطلوبة:')
+          : (window.currentLang === 'en' ? 'Capital Required:' : 'رأس المال المطلوب:');
         const costValStr = `${deal.cost.toLocaleString()} EGP`;
-        const payoutLabel = deal.cleanPayout ? 'العائد النظيف (الفوز):' : 'العائد المشبوه (الفوز):';
+        const payoutLabel = deal.cleanPayout 
+          ? (window.currentLang === 'en' ? 'Clean Return (Win):' : 'العائد النظيف (الفوز):')
+          : (window.currentLang === 'en' ? 'Dirty Return (Win):' : 'العائد المشبوه (الفوز):');
         const payoutValStr = `+${deal.payout.toLocaleString()} EGP`;
         const payoutColor = deal.cleanPayout ? 'text-emerald-400' : 'text-rose-400';
-        const netProfitLabel = deal.cleanPayout ? 'المال المغسول الصافي:' : 'الربح الصافي غير المشروع:';
+        const netProfitLabel = deal.cleanPayout 
+          ? (window.currentLang === 'en' ? 'Net Cleaned Cash:' : 'المال المغسول الصافي:')
+          : (window.currentLang === 'en' ? 'Net Illicit Profit:' : 'الربح الصافي غير المشروع:');
         const netProfitVal = deal.payout - deal.cost;
         const netProfitSign = netProfitVal >= 0 ? '+' : '';
         const netProfitColor = deal.cleanPayout ? 'text-emerald-400' : (netProfitVal >= 0 ? 'text-teal-400' : 'text-rose-500');
 
         const repLossVal = deal.repLoss || Math.floor((deal.repGain || 20) * 1.2);
-        const repGainStr = deal.repGain > 0 ? `+${deal.repGain} نقطة` : 'لا يوجد';
-        const repLossStr = repLossVal > 0 ? `-${repLossVal} نقطة` : 'لا يوجد';
+        const repGainStr = deal.repGain > 0 ? `+${deal.repGain} ${window.currentLang === 'en' ? 'pts' : 'نقطة'}` : (window.currentLang === 'en' ? 'None' : 'لا يوجد');
+        const repLossStr = repLossVal > 0 ? `-${repLossVal} ${window.currentLang === 'en' ? 'pts' : 'نقطة'}` : (window.currentLang === 'en' ? 'None' : 'لا يوجد');
 
         const card = document.createElement('div');
         card.id = `bm-deal-card-${id}`;
@@ -4136,9 +4264,13 @@ const UIController = (() => {
             <div class="w-11 h-11 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
               <i class="fa-solid fa-lock"></i>
             </div>
-            <span class="text-xs font-bold text-slate-300">مغلق! يتطلب سمعة ${deal.repNeeded} نقطة</span>
+            <span class="text-xs font-bold text-slate-300">${window.currentLang === 'en' ? `Locked! Requires ${deal.repNeeded} Rep` : `مغلق! يتطلب سمعة ${deal.repNeeded} نقطة`}</span>
           </div>
         ` : '';
+
+        const translatedDealName = window.currentLang === 'en' ? (translationDict[deal.name] || deal.name) : deal.name;
+        const translatedDealDesc = window.currentLang === 'en' ? (translationDict[deal.desc] || deal.desc) : deal.desc;
+        const translatedDealTier = window.currentLang === 'en' ? (translationDict[deal.tier] || deal.tier) : deal.tier;
 
         card.innerHTML = `
           ${lockOverlay}
@@ -4149,30 +4281,30 @@ const UIController = (() => {
                   <i class="fa-solid ${deal.icon || 'fa-box-open'} text-sm"></i>
                 </div>
                 <div>
-                  <h4 class="text-sm font-bold text-white">${deal.name}</h4>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full border font-bold ${badgeStyle}">${deal.tier}</span>
+                  <h4 class="text-sm font-bold text-white">${translatedDealName}</h4>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full border font-bold ${badgeStyle}">${translatedDealTier}</span>
                 </div>
               </div>
             </div>
             
-            <p class="text-xs text-slate-400 mt-1 mb-3">${deal.desc}</p>
+            <p class="text-xs text-slate-400 mt-1 mb-3">${translatedDealDesc}</p>
             
             <div class="text-xs text-slate-400 space-y-1.5 border-t border-b border-slate-800/80 py-2.5 my-3">
               <div class="flex justify-between"><span>${costLabel}</span><span class="numbers-font text-white font-bold">${costValStr}</span></div>
               <div class="flex justify-between"><span>${payoutLabel}</span><span class="numbers-font ${payoutColor} font-bold">${payoutValStr}</span></div>
               <div class="flex justify-between"><span>${netProfitLabel}</span><span class="numbers-font ${netProfitColor} font-semibold">${netProfitSign}${netProfitVal.toLocaleString()} EGP</span></div>
-              <div class="flex justify-between"><span>نسبة النجاح المقدرة:</span><span class="numbers-font ${successPct >= 70 ? 'text-emerald-400' : successPct >= 50 ? 'text-yellow-400' : 'text-rose-400'} font-black">${successPct}%</span></div>
-              <div class="flex justify-between"><span>فترة التهدئة (كول داون):</span><span class="numbers-font text-amber-400 font-bold">${cdSuccessStr} (${cdFailStr} عند الفشل)</span></div>
-              <div class="flex justify-between"><span>عقوبة المداهمة:</span><span class="numbers-font text-rose-400">${deal.jailDuration * 3} ثانية (مصادرة المشبوه + 20%)</span></div>
-              <div class="flex justify-between"><span>زيادة السمعة:</span><span class="numbers-font text-rose-300 font-bold">${repGainStr}</span></div>
-              <div class="flex justify-between"><span>عقوبة خسارة السمعة:</span><span class="numbers-font text-rose-500 font-bold">${repLossStr}</span></div>
+              <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Est. Success Rate:' : 'نسبة النجاح المقدرة:'}</span><span class="numbers-font ${successPct >= 70 ? 'text-emerald-400' : successPct >= 50 ? 'text-yellow-400' : 'text-rose-400'} font-black">${successPct}%</span></div>
+              <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Cooldown Period:' : 'فترة التهدئة (كول داون):'}</span><span class="numbers-font text-amber-400 font-bold">${cdSuccessStr} (${cdFailStr} ${window.currentLang === 'en' ? 'on failure' : 'عند الفشل'})</span></div>
+              <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Raid Penalty:' : 'عقوبة المداهمة:'}</span><span class="numbers-font text-rose-400">${deal.jailDuration * 3} ${window.currentLang === 'en' ? 'seconds' : 'ثانية'} (${window.currentLang === 'en' ? 'confiscate dirty + 20%' : 'مصادرة المشبوه + 20%'})</span></div>
+              <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Reputation Gain:' : 'زيادة السمعة:'}</span><span class="numbers-font text-rose-300 font-bold">${repGainStr}</span></div>
+              <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Reputation Penalty:' : 'عقوبة خسارة السمعة:'}</span><span class="numbers-font text-rose-500 font-bold">${repLossStr}</span></div>
             </div>
 
             ${(hasLawyer || hasJammer || hasPassport) ? `
               <div class="flex flex-wrap gap-1 mb-3">
-                ${hasLawyer ? '<span class="text-[10px] px-1.5 py-0.5 bg-sky-500/20 text-sky-300 rounded border border-sky-500/30">محامي (+22% نجاح / براءة 50%)</span>' : ''}
-                ${hasJammer ? '<span class="text-[10px] px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">تشويش (+15% نجاح)</span>' : ''}
-                ${hasPassport ? '<span class="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">جواز مزور (مهرب مؤمن)</span>' : ''}
+                ${hasLawyer ? `<span class="text-[10px] px-1.5 py-0.5 bg-sky-500/20 text-sky-300 rounded border border-sky-500/30">${window.currentLang === 'en' ? 'Lawyer (+22% success / acquittal 50%)' : 'محامي (+22% نجاح / براءة 50%)'}</span>` : ''}
+                ${hasJammer ? `<span class="text-[10px] px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">${window.currentLang === 'en' ? 'Jammer (+15% success)' : 'تشويش (+15% نجاح)'}</span>` : ''}
+                ${hasPassport ? `<span class="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">${window.currentLang === 'en' ? 'Fake Passport (Secured Smuggler)' : 'جواز مزور (مهرب مؤمن)'}</span>` : ''}
               </div>
             ` : ''}
           </div>
@@ -4180,7 +4312,7 @@ const UIController = (() => {
           <div id="bm-deal-btn-wrapper-${id}">
             <button id="btn-run-deal-${id}" ${(isOnCooldown || isLockedByRep) ? 'disabled' : ''} class="w-full py-2.5 ${(isOnCooldown || isLockedByRep) ? 'bg-slate-900 border border-amber-500/30 text-amber-400 cursor-not-allowed opacity-90' : 'bg-gradient-to-r from-rose-900/60 to-rose-800/60 hover:from-rose-800 hover:to-rose-700 border border-rose-500/40 text-rose-100'} rounded-xl text-xs font-black transition shadow-md flex items-center justify-center gap-2">
               <i class="fa-solid ${(isOnCooldown && !isLockedByRep) ? 'fa-hourglass-half text-amber-400 animate-spin' : 'fa-handshake'}"></i>
-              <span>${isLockedByRep ? 'مغلق (سمعة غير كافية)' : (isOnCooldown ? `تهدئة أمنية (${cdFormatted})` : 'توقيع وتنفيذ العملية')}</span>
+              <span>${isLockedByRep ? (window.currentLang === 'en' ? 'Locked (Insufficient Rep)' : 'مغلق (سمعة غير كافية)') : (isOnCooldown ? (window.currentLang === 'en' ? `Police Cooldown (${cdFormatted})` : `تهدئة أمنية (${cdFormatted})`) : (window.currentLang === 'en' ? 'Sign & Execute Operation' : 'توقيع وتنفيذ العملية'))}</span>
             </button>
           </div>
         `;
@@ -4374,10 +4506,10 @@ const UIController = (() => {
     if (vipBadge) {
       const hasVIP = GameEngine.state.inventory && GameEngine.state.inventory.vip_casino_pass > 0;
       if (hasVIP) {
-        vipBadge.innerHTML = '<i class="fa-solid fa-crown text-amber-400"></i><span>عضوية VIP نشطة (+15% حظ)</span>';
+        vipBadge.innerHTML = `<i class="fa-solid fa-crown text-amber-400"></i><span>${window.currentLang === 'en' ? 'Active VIP Pass (+15% Luck)' : 'عضوية VIP نشطة (+15% حظ)'}</span>`;
         vipBadge.className = 'text-xs px-3 py-1 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-300 border border-amber-500/40 rounded-full font-bold shadow-sm flex items-center gap-1.5 glow-gold';
       } else {
-        vipBadge.innerHTML = '<i class="fa-solid fa-gem text-slate-400"></i><span>عضو عادي (شراء تذكرة VIP من المتجر لرفع الحظ)</span>';
+        vipBadge.innerHTML = `<i class="fa-solid fa-gem text-slate-400"></i><span>${window.currentLang === 'en' ? 'Regular Member (Buy VIP Pass in shop for luck boost)' : 'عضو عادي (شراء تذكرة VIP من المتجر لرفع الحظ)'}</span>`;
         vipBadge.className = 'text-xs px-3 py-1 bg-slate-800/80 text-slate-400 border border-slate-700/80 rounded-full font-bold flex items-center gap-1.5';
       }
     }
@@ -4390,8 +4522,8 @@ const UIController = (() => {
 
     try {
       if (crashState === 'running') return;
-      if (isNaN(bet) || bet <= 0) throw new Error("يرجى إدخال مبلغ رهان صحيح.");
-      if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
+      if (isNaN(bet) || bet <= 0) throw new Error(window.currentLang === 'en' ? "Please enter a valid bet amount." : "يرجى إدخال مبلغ رهان صحيح.");
+      if (GameEngine.state.cash < bet) throw new Error(window.currentLang === 'en' ? "Your cash balance is insufficient for this bet." : "رصيدك النقدي لا يكفي لهذا الرهان.");
 
       playCasinoSound('tick');
 
@@ -4420,7 +4552,7 @@ const UIController = (() => {
       document.getElementById('crash-cashout-payout').textContent = bet.toLocaleString();
 
       const statusText = document.getElementById('crash-status-text');
-      statusText.textContent = 'الصاروخ يرتفع...';
+      statusText.textContent = window.currentLang === 'en' ? 'Rocket rising...' : 'الصاروخ يرتفع...';
       statusText.className = 'text-[11px] text-yellow-400 font-bold bg-slate-900 px-2 py-0.5 rounded-lg border border-yellow-500/30 animate-pulse';
 
       // Reset Rocket SVG color
@@ -4483,7 +4615,7 @@ const UIController = (() => {
 
     const statusText = document.getElementById('crash-status-text');
     if (statusText) {
-      statusText.textContent = `انفجر عند ${crashTarget.toFixed(2)}x !`;
+      statusText.textContent = window.currentLang === 'en' ? `Exploded at ${crashTarget.toFixed(2)}x !` : `انفجر عند ${crashTarget.toFixed(2)}x !`;
       statusText.className = 'text-[11px] text-rose-400 font-bold bg-rose-950/80 px-2 py-0.5 rounded-lg border border-rose-500/40 animate-pulse';
     }
 
@@ -4513,7 +4645,7 @@ const UIController = (() => {
 
     const statusText = document.getElementById('crash-status-text');
     if (statusText) {
-      statusText.textContent = `صُرفت الأرباح عند ${crashMultiplier.toFixed(2)}x !`;
+      statusText.textContent = window.currentLang === 'en' ? `Cashed out at ${crashMultiplier.toFixed(2)}x !` : `صُرفت الأرباح عند ${crashMultiplier.toFixed(2)}x !`;
       statusText.className = 'text-[11px] text-emerald-400 font-bold bg-emerald-950/80 px-2 py-0.5 rounded-lg border border-emerald-500/40';
     }
 
@@ -4544,7 +4676,7 @@ const UIController = (() => {
           <td colspan="4" class="text-center py-8 text-slate-400">
             <div class="flex items-center justify-center gap-2">
               <span class="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></span>
-              <span class="font-bold text-xs">جاري تحديث عرش الأثرياء المباشر...</span>
+              <span class="font-bold text-xs">${window.currentLang === 'en' ? 'Updating live leaderboard throne...' : 'جاري تحديث عرش الأثرياء المباشر...'}</span>
             </div>
           </td>
         </tr>
@@ -4566,7 +4698,7 @@ const UIController = (() => {
         list.innerHTML = `
           <tr>
             <td colspan="4" class="text-center py-8 text-slate-500 text-xs">
-              لا توجد حسابات مسجلة حالياً في قائمة المتصدرين.
+              ${window.currentLang === 'en' ? 'No registered accounts in the leaderboard yet.' : 'لا توجد حسابات مسجلة حالياً في قائمة المتصدرين.'}
             </td>
           </tr>
         `;
@@ -4589,7 +4721,7 @@ const UIController = (() => {
           p1Name.classList.add('cursor-pointer', 'hover:underline');
           p1Name.onclick = () => openPlayerProfileCard(top1.username);
         }
-        if (p1Title) p1Title.textContent = top1.title || 'إمبراطور المال';
+        if (p1Title) p1Title.textContent = top1.title || (window.currentLang === 'en' ? 'Money Emperor' : 'إمبراطور المال');
         if (p1Worth) p1Worth.textContent = `${Number(top1.netWorth || 0).toLocaleString()} EGP`;
         if (p1Avatar) p1Avatar.innerHTML = `<span class="text-sm sm:text-base font-black">${(top1.username || 'P').substring(0, 2).toUpperCase()}</span>`;
       }
@@ -4605,7 +4737,7 @@ const UIController = (() => {
           p2Name.classList.add('cursor-pointer', 'hover:underline');
           p2Name.onclick = () => openPlayerProfileCard(top2.username);
         }
-        if (p2Title) p2Title.textContent = top2.title || 'بارون التجارة';
+        if (p2Title) p2Title.textContent = top2.title || (window.currentLang === 'en' ? 'Business Baron' : 'بارون التجارة');
         if (p2Worth) p2Worth.textContent = `${Number(top2.netWorth || 0).toLocaleString()} EGP`;
         if (p2Avatar) p2Avatar.innerHTML = `<span class="text-xs sm:text-sm font-black">${(top2.username || 'P').substring(0, 2).toUpperCase()}</span>`;
       }
@@ -4621,7 +4753,7 @@ const UIController = (() => {
           p3Name.classList.add('cursor-pointer', 'hover:underline');
           p3Name.onclick = () => openPlayerProfileCard(top3.username);
         }
-        if (p3Title) p3Title.textContent = top3.title || 'رجل أعمال كبار';
+        if (p3Title) p3Title.textContent = top3.title || (window.currentLang === 'en' ? 'Senior Businessman' : 'رجل أعمال كبار');
         if (p3Worth) p3Worth.textContent = `${Number(top3.netWorth || 0).toLocaleString()} EGP`;
         if (p3Avatar) p3Avatar.innerHTML = `<span class="text-xs sm:text-sm font-black">${(top3.username || 'P').substring(0, 2).toUpperCase()}</span>`;
       }
@@ -4631,7 +4763,9 @@ const UIController = (() => {
       const selfIndex = players.findIndex(p => p.username === activeUser);
       const selfRankEl = document.getElementById('self-rank-num');
       if (selfRankEl) {
-        selfRankEl.textContent = selfIndex !== -1 ? `#${selfIndex + 1} من ${players.length}` : 'خارج قائمة الـ 25';
+        selfRankEl.textContent = selfIndex !== -1 
+          ? (window.currentLang === 'en' ? `#${selfIndex + 1} of ${players.length}` : `#${selfIndex + 1} من ${players.length}`)
+          : (window.currentLang === 'en' ? 'Outside Top 25' : 'خارج قائمة الـ 25');
       }
 
       // Render Table Rows
@@ -4675,13 +4809,13 @@ const UIController = (() => {
                 <span class="font-black ${isSelf ? 'text-yellow-400 glow-gold' : rank === 1 ? 'text-yellow-300' : 'text-white'} text-xs sm:text-sm block truncate cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${player.username}')">
                   ${player.username}
                 </span>
-                ${isSelf ? '<span class="text-[8.5px] px-1.5 py-0.2 bg-yellow-500/20 text-yellow-400 rounded font-black inline-block border border-yellow-500/30">أنت (حسابك)</span>' : ''}
+                ${isSelf ? (window.currentLang === 'en' ? '<span class="text-[8.5px] px-1.5 py-0.2 bg-yellow-500/20 text-yellow-400 rounded font-black inline-block border border-yellow-500/30">You (Your Account)</span>' : '<span class="text-[8.5px] px-1.5 py-0.2 bg-yellow-500/20 text-yellow-400 rounded font-black inline-block border border-yellow-500/30">أنت (حسابك)</span>') : ''}
               </div>
             </div>
           </td>
           <td class="py-3 px-3 text-slate-400">
             <span class="px-2 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-[9.5px] sm:text-[10.5px] font-bold text-slate-300 inline-block truncate max-w-[120px] sm:max-w-none">
-              ${player.title || 'مستثمر'}
+              ${player.title || (window.currentLang === 'en' ? 'Investor' : 'مستثمر')}
             </span>
           </td>
           <td class="py-3 pl-4 pr-3 text-left">
@@ -4705,16 +4839,30 @@ const UIController = (() => {
     }
   }
 
-  // --- Helper Elements: Toast Notifications ---
   function showToast(title, message, type = 'success') {
     const container = document.getElementById('toast-container');
     if (!container) return;
 
+    // Dynamically translate title and message if English is active
+    if (window.currentLang === 'en') {
+      if (translationDict[title]) title = translationDict[title];
+      if (translationDict[message]) {
+        message = translationDict[message];
+      } else if (message) {
+        // Dynamic translation replacements
+        for (const [arKey, enVal] of Object.entries(translationDict)) {
+          if (message.includes(arKey)) {
+            message = message.replaceAll(arKey, enVal);
+          }
+        }
+      }
+    }
+
     const icons = {
-      success: `<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`,
-      error: `<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>`,
-      info: `<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
-      warning: `<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>`,
+      success: `<i class="fa-solid fa-circle-check text-sm shrink-0"></i>`,
+      error: `<i class="fa-solid fa-circle-xmark text-sm shrink-0"></i>`,
+      info: `<i class="fa-solid fa-circle-info text-sm shrink-0"></i>`,
+      warning: `<i class="fa-solid fa-triangle-exclamation text-sm shrink-0"></i>`,
     };
 
     const colors = {
@@ -9327,7 +9475,7 @@ const UIController = (() => {
     const active = list.filter(auc => auc.status !== 'ended');
 
     if (active.length === 0) {
-      shelf.innerHTML = '<div class="col-span-full text-center text-slate-500 text-xs py-8">لا توجد مزادات حية متاحة حالياً. يرجى الانتظار لطرح مزاد جديد من قبل الإدارة.</div>';
+      shelf.innerHTML = `<div class="col-span-full text-center text-slate-500 text-xs py-8">${window.currentLang === 'en' ? 'No live auctions currently available. Please wait for the admin to launch one.' : 'لا توجد مزادات حية متاحة حالياً. يرجى الانتظار لطرح مزاد جديد من قبل الإدارة.'}</div>`;
       return;
     }
 
@@ -9341,24 +9489,30 @@ const UIController = (() => {
       let actionBtnHtml = '';
       let timerHtml = '';
 
+      const translatedItemName = window.currentLang === 'en' ? (translationDict[auc.itemName] || auc.itemName) : auc.itemName;
+
       if (auc.status === 'pending') {
-        badgeHtml = '<span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[10px] text-slate-400">مرحلة التسجيل</span>';
+        badgeHtml = `<span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[10px] text-slate-400">${window.currentLang === 'en' ? 'Registration Phase' : 'مرحلة التسجيل'}</span>`;
 
         let condText = '';
         if (auc.startConditionType === 'players') {
-          condText = `يبدأ المزاد بمجرد تسجيل <strong>${auc.startConditionValue} لاعبين</strong> (المسجلون الآن: ${auc.registeredPlayers ? auc.registeredPlayers.length : 0})`;
+          condText = window.currentLang === 'en'
+            ? `Auction starts once <strong>${auc.startConditionValue} players</strong> register (Registered: ${auc.registeredPlayers ? auc.registeredPlayers.length : 0})`
+            : `يبدأ المزاد بمجرد تسجيل <strong>${auc.startConditionValue} لاعبين</strong> (المسجلون الآن: ${auc.registeredPlayers ? auc.registeredPlayers.length : 0})`;
         } else {
           const diff = Math.max(0, Math.ceil((auc.startConditionValue - Date.now()) / 60000));
-          condText = `يبدأ المزاد تلقائياً بعد مرور <strong>${diff} دقيقة</strong>`;
+          condText = window.currentLang === 'en'
+            ? `Auction starts automatically in <strong>${diff} minutes</strong>`
+            : `يبدأ المزاد تلقائياً بعد مرور <strong>${diff} دقيقة</strong>`;
         }
 
         actionBtnHtml = isRegistered
-          ? `<button class="w-full py-2 bg-slate-800 border border-slate-700 text-slate-400 rounded-xl text-xs font-bold" disabled>أنت مسجل في المزاد بالفعل ✅</button>`
-          : `<button onclick="window.UI.registerForAuction('${auc.id}')" class="w-full py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition">تسجيل للمشاركة في المزاد</button>`;
+          ? `<button class="w-full py-2 bg-slate-800 border border-slate-700 text-slate-400 rounded-xl text-xs font-bold" disabled>${window.currentLang === 'en' ? 'You are registered ✅' : 'أنت مسجل في المزاد بالفعل ✅'}</button>`
+          : `<button onclick="window.UI.registerForAuction('${auc.id}')" class="w-full py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition">${window.currentLang === 'en' ? 'Register for Auction' : 'تسجيل للمشاركة في المزاد'}</button>`;
 
         timerHtml = `<div class="text-[10px] text-slate-400 text-center">${condText}</div>`;
       } else if (auc.status === 'active') {
-        badgeHtml = '<span class="px-2 py-0.5 rounded bg-yellow-500/10 border border-yellow-500/20 text-[10px] text-yellow-400 font-bold animate-pulse">مزايدة نشطة حية 🔥</span>';
+        badgeHtml = `<span class="px-2 py-0.5 rounded bg-yellow-500/10 border border-yellow-500/20 text-[10px] text-yellow-400 font-bold animate-pulse">${window.currentLang === 'en' ? 'Active Live Bidding 🔥' : 'مزايدة نشطة حية 🔥'}</span>`;
 
         const remSecs = Math.max(0, Math.ceil((auc.timerResetTimestamp - Date.now()) / 1000));
 
@@ -9368,13 +9522,13 @@ const UIController = (() => {
 
         timerHtml = `
           <div class="flex justify-between items-center bg-slate-950/80 p-2.5 rounded-xl border border-slate-900">
-            <span class="text-[10px] text-slate-400">الوقت المتبقي للمزايدة:</span>
-            <span class="numbers-font font-black text-rose-500 text-base animate-pulse">${remSecs} ثانية</span>
+            <span class="text-[10px] text-slate-400">${window.currentLang === 'en' ? 'Time Remaining:' : 'الوقت المتبقي للمزايدة:'}</span>
+            <span class="numbers-font font-black text-rose-500 text-base animate-pulse">${remSecs} ${window.currentLang === 'en' ? 'seconds' : 'ثانية'}</span>
           </div>
         `;
 
         if (!isRegistered) {
-          actionBtnHtml = `<button class="w-full py-2 bg-slate-900 border border-slate-800 text-slate-500 rounded-xl text-xs font-bold" disabled>لم تقم بالتسجيل المسبق</button>`;
+          actionBtnHtml = `<button class="w-full py-2 bg-slate-900 border border-slate-800 text-slate-500 rounded-xl text-xs font-bold" disabled>${window.currentLang === 'en' ? 'Not pre-registered' : 'لم تقم بالتسجيل المسبق'}</button>`;
         } else {
           const nextMinBid = Math.floor(auc.currentBid * 1.05);
           const savedVal = savedInputs[auc.id];
@@ -9382,7 +9536,7 @@ const UIController = (() => {
           actionBtnHtml = `
             <div class="flex gap-2">
               <input type="number" id="bid-input-${auc.id}" min="${nextMinBid}" value="${valToUse}" class="w-2/3 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-black text-white text-center">
-              <button onclick="window.UI.placeAuctionBid('${auc.id}')" class="flex-1 py-1.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition">زايد</button>
+              <button onclick="window.UI.placeAuctionBid('${auc.id}')" class="flex-1 py-1.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition">${window.currentLang === 'en' ? 'Bid' : 'زايد'}</button>
             </div>
           `;
         }
@@ -9391,23 +9545,23 @@ const UIController = (() => {
       card.innerHTML = `
         <div class="flex justify-between items-start border-b border-slate-800 pb-3">
           <div>
-            <h4 class="font-black text-white text-sm">${auc.itemName}</h4>
-            <span class="text-[10px] text-slate-400">${auc.itemType === 'property' ? 'عقار مالي' : auc.itemType === 'business' ? 'مشروع تجاري' : 'غرض مقتنيات'}</span>
+            <h4 class="font-black text-white text-sm">${translatedItemName}</h4>
+            <span class="text-[10px] text-slate-400">${auc.itemType === 'property' ? (window.currentLang === 'en' ? 'Financial Property' : 'عقار مالي') : auc.itemType === 'business' ? (window.currentLang === 'en' ? 'Commercial Business' : 'مشروع تجاري') : (window.currentLang === 'en' ? 'Collectible Item' : 'غرض مقتنيات')}</span>
           </div>
           ${badgeHtml}
         </div>
         <div class="grid grid-cols-2 gap-3 py-2 text-xs">
           <div class="p-2 bg-slate-950/40 rounded-xl border border-slate-900">
-            <span class="text-[9px] text-slate-400 block mb-0.5">السعر الابتدائي:</span>
+            <span class="text-[9px] text-slate-400 block mb-0.5">${window.currentLang === 'en' ? 'Base Price:' : 'السعر الابتدائي:'}</span>
             <span class="numbers-font font-bold text-slate-300">${auc.basePrice.toLocaleString()} EGP</span>
           </div>
           <div class="p-2 bg-slate-950/40 rounded-xl border border-slate-900">
-            <span class="text-[9px] text-slate-400 block mb-0.5">أعلى عرض حالي:</span>
+            <span class="text-[9px] text-slate-400 block mb-0.5">${window.currentLang === 'en' ? 'Highest Bid:' : 'أعلى عرض حالي:'}</span>
             <span class="numbers-font font-black text-yellow-500">${auc.currentBid.toLocaleString()} EGP</span>
           </div>
         </div>
         <div class="text-[10px] text-slate-400">
-          <span>أعلى مزايد الآن: <strong class="text-white">${auc.highestBidder || 'لا يوجد'}</strong></span>
+          <span>${window.currentLang === 'en' ? 'Current Highest Bidder:' : 'أعلى مزايد الآن:'} <strong class="text-white">${auc.highestBidder || (window.currentLang === 'en' ? 'None' : 'لا يوجد')}</strong></span>
         </div>
         ${timerHtml}
         ${actionBtnHtml}
@@ -9478,11 +9632,11 @@ const UIController = (() => {
     const shelf = document.getElementById('acquisition-market-shelf');
     if (!shelf) return;
 
-    shelf.innerHTML = '<div class="col-span-full text-center text-slate-400 text-xs py-8">جاري جلب قائمة الشركات المتعثرة...</div>';
+    shelf.innerHTML = `<div class="col-span-full text-center text-slate-400 text-xs py-8">${window.currentLang === 'en' ? 'Fetching distressed business list...' : 'جاري جلب قائمة الشركات المتعثرة...'}</div>`;
 
     try {
       if (typeof firebase === 'undefined' || !AppDB.isFirebaseReady) {
-        shelf.innerHTML = '<div class="col-span-full text-center text-slate-500 text-xs py-8">سوق الاستحواذ متاح فقط في وضع الأونلاين.</div>';
+        shelf.innerHTML = `<div class="col-span-full text-center text-slate-500 text-xs py-8">${window.currentLang === 'en' ? 'Acquisition market is only available in online mode.' : 'سوق الاستحواذ متاح فقط في وضع الأونلاين.'}</div>`;
         return;
       }
 
@@ -9510,7 +9664,7 @@ const UIController = (() => {
       });
 
       if (distressed.length === 0) {
-        shelf.innerHTML = '<div class="col-span-full text-center text-slate-500 text-xs py-8">لا توجد شركات متعثرة معروضة للاستحواذ حالياً.</div>';
+        shelf.innerHTML = `<div class="col-span-full text-center text-slate-500 text-xs py-8">${window.currentLang === 'en' ? 'No distressed businesses available for acquisition at the moment.' : 'لا توجد شركات متعثرة معروضة للاستحواذ حالياً.'}</div>`;
         return;
       }
 
@@ -9526,36 +9680,38 @@ const UIController = (() => {
         const card = document.createElement('div');
         card.className = 'p-5 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-4 flex flex-col justify-between';
         
+        const translatedBizName = window.currentLang === 'en' ? (translationDict[item.bizConfig.name] || item.bizConfig.name) : item.bizConfig.name;
+
         card.innerHTML = `
           <div class="flex justify-between items-start border-b border-slate-800 pb-3">
             <div>
-              <h4 class="font-black text-white text-sm">${item.bizConfig.name || item.bizId}</h4>
-              <span class="text-[10px] text-slate-400">المالك المتعثر: <strong class="text-rose-400 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${item.player}')">${item.player}</strong></span>
+              <h4 class="font-black text-white text-sm">${translatedBizName || item.bizId}</h4>
+              <span class="text-[10px] text-slate-400">${window.currentLang === 'en' ? 'Distressed Owner:' : 'المالك المتعثر:'} <strong class="text-rose-400 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${item.player}')">${item.player}</strong></span>
             </div>
-            <span class="px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-[10px] text-rose-400 font-bold">فرصة استحواذ 📉</span>
+            <span class="px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-[10px] text-rose-400 font-bold">${window.currentLang === 'en' ? 'Acquisition Opportunity 📉' : 'فرصة استحواذ 📉'}</span>
           </div>
           <div class="grid grid-cols-2 gap-3 py-2 text-xs">
             <div class="p-2 bg-slate-950/40 rounded-xl border border-slate-900">
-              <span class="text-[9px] text-slate-400 block mb-0.5">المستوى الحالي:</span>
-              <span class="font-bold text-slate-300">مستوى ${item.level}</span>
+              <span class="text-[9px] text-slate-400 block mb-0.5">${window.currentLang === 'en' ? 'Current Level:' : 'المستوى الحالي:'}</span>
+              <span class="font-bold text-slate-300">${window.currentLang === 'en' ? `Level ${item.level}` : `مستوى ${item.level}`}</span>
             </div>
             <div class="p-2 bg-slate-950/40 rounded-xl border border-slate-900">
-              <span class="text-[9px] text-slate-400 block mb-0.5">القيمة المقدرة:</span>
+              <span class="text-[9px] text-slate-400 block mb-0.5">${window.currentLang === 'en' ? 'Estimated Value:' : 'القيمة المقدرة:'}</span>
               <span class="numbers-font font-bold text-slate-400 line-through">${totalInvestment.toLocaleString()} EGP</span>
             </div>
           </div>
           <div class="flex justify-between items-center bg-slate-950/80 p-2.5 rounded-xl border border-slate-900">
-            <span class="text-[10px] text-emerald-400 font-bold">سعر الاستحواذ والإنقاذ (خصم 45%):</span>
+            <span class="text-[10px] text-emerald-400 font-bold">${window.currentLang === 'en' ? 'Acquisition & Rescue Price (45% off):' : 'سعر الاستحواذ والإنقاذ (خصم 45%):'}</span>
             <span class="numbers-font font-black text-emerald-400 text-sm">${discountedPrice.toLocaleString()} EGP</span>
           </div>
-          <button onclick="window.UI.acquireDistressedBusiness('${item.player}', '${item.bizId}', ${discountedPrice})" class="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black transition">استحواذ وإنقاذ الشركة</button>
+          <button onclick="window.UI.acquireDistressedBusiness('${item.player}', '${item.bizId}', ${discountedPrice})" class="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black transition">${window.currentLang === 'en' ? 'Acquire & Rescue Business' : 'استحواذ وإنقاذ الشركة'}</button>
         `;
         
         shelf.appendChild(card);
       });
 
     } catch (err) {
-      shelf.innerHTML = `<div class="col-span-full text-center text-rose-500 text-xs py-8">فشل تحميل سوق الاستحواذ: ${err.message}</div>`;
+      shelf.innerHTML = `<div class="col-span-full text-center text-rose-500 text-xs py-8">${window.currentLang === 'en' ? `Failed to load acquisition market: ${err.message}` : `فشل تحميل سوق الاستحواذ: ${err.message}`}</div>`;
     }
   }
 
@@ -9822,7 +9978,7 @@ const UIController = (() => {
     if (typeof firebase === 'undefined' || !AppDB.isFirebaseReady) {
       container.innerHTML = `
         <div class="glass-panel p-6 text-center rounded-2xl border border-slate-800 bg-slate-950/40">
-          <p class="text-slate-400 text-xs py-8">الشركات المشتركة متاحة فقط في وضع الأونلاين (مع اتصال سحابة Firebase).</p>
+          <p class="text-slate-400 text-xs py-8">${window.currentLang === 'en' ? 'Joint Corporations are only available in online mode (with Firebase cloud connection).' : 'الشركات المشتركة متاحة فقط في وضع الأونلاين (مع اتصال سحابة Firebase).'}</p>
         </div>
       `;
       return;
@@ -9841,7 +9997,7 @@ const UIController = (() => {
       if (list.length === 0) {
         corpCardsHtml = `
           <div class="col-span-full text-center text-slate-500 text-xs py-12">
-            لا توجد أي شركات مشتركة مسجلة في السيرفر حالياً. كن أول من يؤسس شركة!
+            ${window.currentLang === 'en' ? 'No joint corporations registered on the server yet. Be the first to establish one!' : 'لا توجد أي شركات مشتركة مسجلة في السيرفر حالياً. كن أول من يؤسس شركة!'}
           </div>
         `;
       } else {
@@ -9855,23 +10011,23 @@ const UIController = (() => {
                   <i class="fa-solid fa-building text-indigo-400"></i>
                   <span>${c.name}</span>
                 </h4>
-                <p class="text-slate-400 text-xs mt-1 min-h-[32px]">${c.desc || 'لا يوجد وصف.'}</p>
+                <p class="text-slate-400 text-xs mt-1 min-h-[32px]">${c.desc || (window.currentLang === 'en' ? 'No description.' : 'لا يوجد وصف.')}</p>
                 <div class="grid grid-cols-2 gap-2 mt-4 bg-slate-950/50 p-2.5 rounded-xl border border-slate-900/60 text-[10px]">
                   <div>
-                    <span class="text-slate-500 block">المؤسس</span>
+                    <span class="text-slate-500 block">${window.currentLang === 'en' ? 'Founder' : 'المؤسس'}</span>
                     <span class="text-slate-300 font-bold">${c.founder}</span>
                   </div>
                   <div>
-                    <span class="text-slate-500 block">عدد الأعضاء</span>
-                    <span class="text-slate-300 font-bold">${membersCount} لاعب</span>
+                    <span class="text-slate-500 block">${window.currentLang === 'en' ? 'Members' : 'عدد الأعضاء'}</span>
+                    <span class="text-slate-300 font-bold">${membersCount} ${window.currentLang === 'en' ? 'players' : 'لاعب'}</span>
                   </div>
                   <div class="col-span-2 border-t border-slate-900/40 pt-2 mt-1">
-                    <span class="text-slate-500 block">خزينة الشركة</span>
+                    <span class="text-slate-500 block">${window.currentLang === 'en' ? 'Corp Treasury' : 'خزينة الشركة'}</span>
                     <span class="text-emerald-400 font-black numbers-font text-xs">${treasuryVal.toLocaleString()} EGP</span>
                   </div>
                 </div>
               </div>
-              <button onclick="window.UI.joinCorporationAction('${c.id}')" class="w-full mt-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">تقديم طلب انضمام</button>
+              <button onclick="window.UI.joinCorporationAction('${c.id}')" class="w-full mt-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">${window.currentLang === 'en' ? 'Apply to Join' : 'تقديم طلب انضمام'}</button>
             </div>
           `;
         });
@@ -9882,30 +10038,30 @@ const UIController = (() => {
           <div class="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-950/40 space-y-4">
             <h3 class="text-sm font-black text-white flex items-center gap-1.5">
               <i class="fa-solid fa-plus text-indigo-500"></i>
-              <span>تأسيس شركة مشتركة جديدة</span>
+              <span>${window.currentLang === 'en' ? 'Establish New Joint Corp' : 'تأسيس شركة مشتركة جديدة'}</span>
             </h3>
-            <p class="text-slate-400 text-[11px]">يتطلب تأسيس شركة دفع رسوم تنظيمية باهظة للبلدية تبلغ 100 مليار جنيه. ستبدأ الخزينة من الصفر وسينبغي ضخ مساهمات لشراء المشاريع.</p>
+            <p class="text-slate-400 text-[11px]">${window.currentLang === 'en' ? 'Establishing a corporation requires paying a heavy regulatory fee of 100 Billion EGP. The treasury will start from zero, and members must contribute capital to purchase projects.' : 'يتطلب تأسيس شركة دفع رسوم تنظيمية باهظة للبلدية تبلغ 100 مليار جنيه. ستبدأ الخزينة من الصفر وسينبغي ضخ مساهمات لشراء المشاريع.'}</p>
             
             <div class="space-y-3">
               <div>
-                <label class="text-[10px] text-slate-400 block mb-1">اسم الشركة</label>
-                <input id="create-corp-name" type="text" placeholder="مثال: تحالف المقاولون العرب" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500">
+                <label class="text-[10px] text-slate-400 block mb-1">${window.currentLang === 'en' ? 'Corporation Name' : 'اسم الشركة'}</label>
+                <input id="create-corp-name" type="text" placeholder="${window.currentLang === 'en' ? 'e.g. Arab Contractors Alliance' : 'مثال: تحالف المقاولون العرب'}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500">
               </div>
               <div>
-                <label class="text-[10px] text-slate-400 block mb-1">وصف نشاط الشركة (اختياري)</label>
-                <textarea id="create-corp-desc" rows="3" placeholder="اكتب نبذة عن رؤية وتوجه التحالف المالي..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+                <label class="text-[10px] text-slate-400 block mb-1">${window.currentLang === 'en' ? 'Activity Description (Optional)' : 'وصف نشاط الشركة (اختياري)'}</label>
+                <textarea id="create-corp-desc" rows="3" placeholder="${window.currentLang === 'en' ? 'Write a brief description of the financial alliance vision...' : 'اكتب نبذة عن رؤية وتوجه التحالف المالي...'}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 resize-none"></textarea>
               </div>
             </div>
 
             <button onclick="window.UI.createCorporationAction()" class="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-600/10 transition">
-              تأسيس الشركة (خصم 100 مليار ج.م)
+              ${window.currentLang === 'en' ? 'Establish Corporation (Pay 100B EGP)' : 'تأسيس الشركة (خصم 100 مليار ج.م)'}
             </button>
           </div>
 
           <div class="lg:col-span-2 space-y-4">
             <h3 class="text-sm font-black text-white flex items-center gap-1.5">
               <i class="fa-solid fa-list text-slate-400"></i>
-              <span>قائمة الشركات المسجلة على السيرفر</span>
+              <span>${window.currentLang === 'en' ? 'Registered Server Corporations List' : 'قائمة الشركات المسجلة على السيرفر'}</span>
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               ${corpCardsHtml}
@@ -9945,21 +10101,21 @@ const UIController = (() => {
         const isMemberFounder = m === corp.founder;
 
         const role = (corp.roles && corp.roles[m]) || (isMemberFounder ? 'founder' : 'member');
-        let roleBadge = '<span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-1">مساهم 👤</span>';
+        let roleBadge = `<span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-1">${window.currentLang === 'en' ? 'Shareholder 👤' : 'مساهم 👤'}</span>`;
         if (role === 'founder') {
-          roleBadge = '<span class="text-[9px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">مؤسس 👑</span>';
+          roleBadge = `<span class="text-[9px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">${window.currentLang === 'en' ? 'Founder 👑' : 'مؤسس 👑'}</span>`;
         } else if (role === 'cfo') {
-          roleBadge = '<span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded ml-1">مدير مالي 💼</span>';
+          roleBadge = `<span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded ml-1">${window.currentLang === 'en' ? 'CFO 💼' : 'مدير مالي 💼'}</span>`;
         }
 
         let actions = '';
         if (isFounder && !isMemberFounder) {
           if (role === 'member') {
-            actions += `<button onclick="window.UI.promoteCorpMemberAction('${corp.id}', '${m}', 'cfo')" class="text-[9px] bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded transition font-bold mr-1" title="ترقية لمدير مالي"><i class="fa-solid fa-user-tie"></i></button>`;
+            actions += `<button onclick="window.UI.promoteCorpMemberAction('${corp.id}', '${m}', 'cfo')" class="text-[9px] bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded transition font-bold mr-1" title="${window.currentLang === 'en' ? 'Promote to CFO' : 'ترقية لمدير مالي'}"><i class="fa-solid fa-user-tie"></i></button>`;
           } else if (role === 'cfo') {
-            actions += `<button onclick="window.UI.promoteCorpMemberAction('${corp.id}', '${m}', 'member')" class="text-[9px] bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded transition font-bold mr-1" title="تنزيل لمساهم عادي"><i class="fa-solid fa-user-minus"></i></button>`;
+            actions += `<button onclick="window.UI.promoteCorpMemberAction('${corp.id}', '${m}', 'member')" class="text-[9px] bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded transition font-bold mr-1" title="${window.currentLang === 'en' ? 'Demote to Shareholder' : 'تنزيل لمساهم عادي'}"><i class="fa-solid fa-user-minus"></i></button>`;
           }
-          actions += `<button onclick="window.UI.kickCorpMemberAction('${corp.id}','${m}')" class="text-[9px] bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded transition font-bold" title="طرد"><i class='fa-solid fa-user-slash'></i></button>`;
+          actions += `<button onclick="window.UI.kickCorpMemberAction('${corp.id}','${m}')" class="text-[9px] bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded transition font-bold" title="${window.currentLang === 'en' ? 'Kick' : 'طرد'}"><i class='fa-solid fa-user-slash'></i></button>`;
         }
 
         membersHtml += `
@@ -9967,7 +10123,7 @@ const UIController = (() => {
             <td class="py-2.5 text-slate-300 font-bold">
               ${m} 
               ${roleBadge}
-              ${isMe && !isMemberFounder ? '<span class="text-[9px] bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded ml-1">أنت</span>' : ''}
+              ${isMe && !isMemberFounder ? `<span class="text-[9px] bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded ml-1">${window.currentLang === 'en' ? 'You' : 'أنت'}</span>` : ''}
             </td>
             <td class="py-2.5 text-slate-400 numbers-font">${cAmt.toLocaleString()} EGP</td>
             <td class="py-2.5 text-emerald-400 font-bold numbers-font">${(mShare * 100).toFixed(2)}%</td>
@@ -9988,19 +10144,21 @@ const UIController = (() => {
         let statusBadge = '';
         let projectActionBtn = '';
         
+        const translatedProjName = window.currentLang === 'en' ? (translationDict[p.name] || p.name) : p.name;
+
         if (owned) {
-          statusBadge = '<span class="text-[10px] bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-full font-bold">مملوك للشركة ✅</span>';
-          projectActionBtn = `<button class="w-full py-2 bg-slate-900 border border-slate-800 text-slate-500 rounded-xl text-xs font-bold" disabled>يولد أرباحاً للمساهمين</button>`;
+          statusBadge = `<span class="text-[10px] bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-full font-bold">${window.currentLang === 'en' ? 'Owned by Corp ✅' : 'مملوك للشركة ✅'}</span>`;
+          projectActionBtn = `<button class="w-full py-2 bg-slate-900 border border-slate-800 text-slate-500 rounded-xl text-xs font-bold" disabled>${window.currentLang === 'en' ? 'Generates yield for shareholders' : 'يولد أرباحاً للمساهمين'}</button>`;
         } else {
-          statusBadge = '<span class="text-[10px] bg-slate-800 border border-slate-700 text-slate-400 px-2 py-0.5 rounded-full font-bold">غير مملوك</span>';
+          statusBadge = `<span class="text-[10px] bg-slate-800 border border-slate-700 text-slate-400 px-2 py-0.5 rounded-full font-bold">${window.currentLang === 'en' ? 'Not Owned' : 'غير مملوك'}</span>`;
           if (isFounder) {
             if (meetsCondition) {
-              projectActionBtn = `<button onclick="window.UI.buyCorporationProjectAction('${corp.id}', '${p.id}', ${p.cost})" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">شراء المشروع من الخزينة</button>`;
+              projectActionBtn = `<button onclick="window.UI.buyCorporationProjectAction('${corp.id}', '${p.id}', ${p.cost})" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">${window.currentLang === 'en' ? 'Buy Project from Treasury' : 'شراء المشروع من الخزينة'}</button>`;
             } else {
-              projectActionBtn = `<button class="w-full py-2 bg-slate-900 border border-slate-800 text-rose-500/70 rounded-xl text-xs font-bold cursor-not-allowed" disabled>الشرط غير مستوفٍ ❌</button>`;
+              projectActionBtn = `<button class="w-full py-2 bg-slate-900 border border-slate-800 text-rose-500/70 rounded-xl text-xs font-bold cursor-not-allowed" disabled>${window.currentLang === 'en' ? 'Condition not met ❌' : 'الشرط غير مستوفٍ ❌'}</button>`;
             }
           } else {
-            projectActionBtn = `<button class="w-full py-2 bg-slate-900 border border-slate-800 text-slate-600 rounded-xl text-xs font-bold" disabled>متاح للمؤسس فقط</button>`;
+            projectActionBtn = `<button class="w-full py-2 bg-slate-900 border border-slate-800 text-slate-600 rounded-xl text-xs font-bold" disabled>${window.currentLang === 'en' ? 'Available to founder only' : 'متاح للمؤسس فقط'}</button>`;
           }
         }
 
@@ -10008,22 +10166,22 @@ const UIController = (() => {
           <div class="glass-panel p-5 rounded-2xl border ${owned ? 'border-emerald-500/20 bg-emerald-950/5' : 'border-slate-800 bg-slate-950/20'} flex flex-col justify-between space-y-4">
             <div>
               <div class="flex justify-between items-start gap-2">
-                <h4 class="text-xs font-black text-white">${p.name}</h4>
+                <h4 class="text-xs font-black text-white">${translatedProjName}</h4>
                 ${statusBadge}
               </div>
               <div class="grid grid-cols-2 gap-2 mt-4 bg-slate-950/50 p-2.5 rounded-xl border border-slate-900/60 text-[10px]">
                 <div>
-                  <span class="text-slate-500 block">تكلفة الاستثمار</span>
+                  <span class="text-slate-500 block">${window.currentLang === 'en' ? 'Investment Cost' : 'تكلفة الاستثمار'}</span>
                   <span class="text-slate-300 font-bold numbers-font text-xs">${p.cost.toLocaleString()} EGP</span>
                 </div>
                 <div>
-                  <span class="text-slate-500 block">العائد الإجمالي</span>
+                  <span class="text-slate-500 block">${window.currentLang === 'en' ? 'Total Yield' : 'العائد الإجمالي'}</span>
                   <span class="text-emerald-400 font-black numbers-font text-xs">+${p.profitPerTick.toLocaleString()}/tick</span>
                 </div>
               </div>
               <div class="mt-3 text-[9.5px] ${meetsCondition ? 'text-emerald-400/90' : 'text-rose-400'} font-bold flex items-center gap-1">
                 <i class="fa-solid fa-users text-[10px]"></i>
-                <span>شرط المساهمين: لا يقل عن ${p.minMembers} لاعبين (المتوفر: ${membersCount})</span>
+                <span>${window.currentLang === 'en' ? `Shareholder Condition: Min ${p.minMembers} players (Current: ${membersCount})` : `شرط المساهمين: لا يقل عن ${p.minMembers} لاعبين (المتوفر: ${membersCount})`}</span>
               </div>
             </div>
             ${projectActionBtn}
@@ -10045,30 +10203,30 @@ const UIController = (() => {
                   <i class="fa-solid fa-building text-indigo-500"></i>
                   <span>${corp.name}</span>
                 </h3>
-                <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full font-bold">مستوى التحالف: ${corpLevel} 🏆</span>
+                <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full font-bold">${window.currentLang === 'en' ? 'Alliance Level:' : 'مستوى التحالف:'} ${corpLevel} 🏆</span>
               </div>
-              <p class="text-slate-400 text-xs mt-2">${corp.desc || 'لا يوجد وصف تجاري.'}</p>
+              <p class="text-slate-400 text-xs mt-2">${corp.desc || (window.currentLang === 'en' ? 'No description.' : 'لا يوجد وصف تجاري.')}</p>
               <div class="mt-2.5 text-[10px] text-emerald-400 font-bold flex items-center gap-1">
                 <i class="fa-solid fa-chart-line"></i>
-                <span>دعم أرباح المشاريع الفردية لأعضاء التحالف: +${corpBoostPct}% (نشط)</span>
+                <span>${window.currentLang === 'en' ? `Member individual business profit boost: +${corpBoostPct}% (Active)` : `دعم أرباح المشاريع الفردية لأعضاء التحالف: +${corpBoostPct}% (نشط)`}</span>
               </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6 bg-slate-950/70 p-4 rounded-xl border border-slate-900">
               <div>
-                <span class="text-[10px] text-slate-500 block">الخزينة المتوفرة</span>
+                <span class="text-[10px] text-slate-500 block">${window.currentLang === 'en' ? 'Available Treasury' : 'الخزينة المتوفرة'}</span>
                 <span class="text-emerald-400 font-black text-sm numbers-font">${(corp.treasury || 0).toLocaleString()} EGP</span>
               </div>
               <div>
-                <span class="text-[10px] text-slate-500 block">مساهماتك الشخصية</span>
+                <span class="text-[10px] text-slate-500 block">${window.currentLang === 'en' ? 'Personal Contributions' : 'مساهماتك الشخصية'}</span>
                 <span class="text-slate-300 font-bold text-sm numbers-font">${myCont.toLocaleString()} EGP</span>
               </div>
               <div>
-                <span class="text-[10px] text-slate-500 block">حصتك من الأرباح</span>
+                <span class="text-[10px] text-slate-500 block">${window.currentLang === 'en' ? 'Profit Share' : 'حصتك من الأرباح'}</span>
                 <span class="text-indigo-400 font-black text-sm numbers-font">${(sharePct * 100).toFixed(2)}%</span>
               </div>
               <div>
-                <span class="text-[10px] text-slate-500 block">أرباحك / tick</span>
+                <span class="text-[10px] text-slate-500 block">${window.currentLang === 'en' ? 'Your Profit / tick' : 'أرباحك / tick'}</span>
                 <span class="text-emerald-400 font-black text-sm numbers-font">+${myShareTickProfit.toLocaleString()} EGP</span>
               </div>
             </div>
@@ -10079,15 +10237,15 @@ const UIController = (() => {
             <div class="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-950/40 space-y-3">
               <h3 class="text-xs font-black text-white flex items-center gap-1.5">
                 <i class="fa-solid fa-piggy-bank text-indigo-400"></i>
-                <span>ضخ أموال في الخزينة المشتركة</span>
+                <span>${window.currentLang === 'en' ? 'Contribute Capital to Treasury' : 'ضخ أموال في الخزينة المشتركة'}</span>
               </h3>
-              <p class="text-slate-400 text-[10px] leading-relaxed">كل مبلغ تضخه يزيد من حجم الخزينة لشراء المشاريع، ويرفع حصتك المئوية من الأرباح تلقائياً مقارنة بالشركاء الآخرين.</p>
+              <p class="text-slate-400 text-[10px] leading-relaxed">${window.currentLang === 'en' ? 'Every amount you contribute increases the treasury size to purchase projects, and automatically increases your profit percentage share compared to other partners.' : 'كل مبلغ تضخه يزيد من حجم الخزينة لشراء المشاريع، ويرفع حصتك المئوية من الأرباح تلقائياً مقارنة بالشركاء الآخرين.'}</p>
               <div>
-                <label class="text-[9px] text-slate-500 block mb-1">المبلغ المراد ضخه (EGP)</label>
-                <input id="contribute-corp-amount" type="number" placeholder="مثال: 5000000000" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                <label class="text-[9px] text-slate-500 block mb-1">${window.currentLang === 'en' ? 'Amount to Contribute (EGP)' : 'المبلغ المراد ضخه (EGP)'}</label>
+                <input id="contribute-corp-amount" type="number" placeholder="${window.currentLang === 'en' ? 'e.g. 5000000000' : 'مثال: 5000000000'}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
               </div>
               <button onclick="window.UI.contributeCorporationAction('${corp.id}')" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black transition">
-                تأكيد ضخ السيولة
+                ${window.currentLang === 'en' ? 'Confirm Capital Contribution' : 'تأكيد ضخ السيولة'}
               </button>
             </div>
 
@@ -10095,27 +10253,27 @@ const UIController = (() => {
             <div class="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-950/40 space-y-3">
               <h3 class="text-xs font-black text-white flex items-center gap-1.5">
                 <i class="fa-solid fa-circle-up text-amber-500"></i>
-                <span>ترقية مستوى التحالف المشترك</span>
+                <span>${window.currentLang === 'en' ? 'Upgrade Joint Alliance Level' : 'ترقية مستوى التحالف المشترك'}</span>
               </h3>
-              <p class="text-slate-400 text-[10px] leading-relaxed">كل ترقية ترفع مستوى التحالف وتزيد من دعم أرباح المشاريع الفردية للأعضاء بنسبة +5% إضافية.</p>
+              <p class="text-slate-400 text-[10px] leading-relaxed">${window.currentLang === 'en' ? 'Every upgrade increases the alliance level and raises the member business profit boost by an additional +5%.' : 'كل ترقية ترفع مستوى التحالف وتزيد من دعم أرباح المشاريع الفردية للأعضاء بنسبة +5% إضافية.'}</p>
               
               <div class="bg-slate-950/50 p-2 rounded-lg border border-slate-900 text-[10px] space-y-1">
                 <div class="flex justify-between">
-                  <span class="text-slate-500">المستوى الحالي:</span>
+                  <span class="text-slate-500">${window.currentLang === 'en' ? 'Current Level:' : 'المستوى الحالي:'}</span>
                   <span class="text-white font-bold">${corpLevel}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-slate-500">المستوى القادم:</span>
+                  <span class="text-slate-500">${window.currentLang === 'en' ? 'Next Level:' : 'المستوى القادم:'}</span>
                   <span class="text-amber-400 font-bold">${corpLevel + 1}</span>
                 </div>
                 <div class="flex justify-between border-t border-slate-900 pt-1 mt-1">
-                  <span class="text-slate-500">تكلفة الترقية:</span>
+                  <span class="text-slate-500">${window.currentLang === 'en' ? 'Upgrade Cost:' : 'تكلفة الترقية:'}</span>
                   <span class="text-emerald-400 font-black numbers-font">${(corpLevel * 20000000000).toLocaleString()} EGP</span>
                 </div>
               </div>
 
               <button onclick="window.UI.upgradeCorporationLevelAction('${corp.id}', ${corpLevel * 20000000000})" class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-black transition">
-                ترقية التحالف الآن
+                ${window.currentLang === 'en' ? 'Upgrade Alliance Now' : 'ترقية التحالف الآن'}
               </button>
             </div>
           </div>
@@ -10125,7 +10283,7 @@ const UIController = (() => {
           <div class="lg:col-span-2 space-y-4">
             <h3 class="text-sm font-black text-white flex items-center gap-1.5">
               <i class="fa-solid fa-industry text-slate-400"></i>
-              <span>مشاريع الشركة العملاقة (Megaprojects)</span>
+              <span>${window.currentLang === 'en' ? 'Megaprojects' : 'مشاريع الشركة العملاقة (Megaprojects)'}</span>
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               ${projectsHtml}
@@ -10135,16 +10293,16 @@ const UIController = (() => {
           <div class="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-950/40 space-y-4 h-fit">
             <h3 class="text-sm font-black text-white flex items-center gap-1.5">
               <i class="fa-solid fa-users text-slate-400"></i>
-              <span>الشركاء والمساهمين (${membersList.length})</span>
+              <span>${window.currentLang === 'en' ? 'Partners & Shareholders' : 'الشركاء والمساهمين'} (${membersList.length})</span>
             </h3>
             <div class="overflow-x-auto">
               <table class="w-full text-right">
                 <thead>
                   <tr class="border-b border-slate-800 text-[10px] text-slate-500">
-                    <th class="pb-2">الاسم</th>
-                    <th class="pb-2">المساهمة</th>
-                    <th class="pb-2">الحصة</th>
-                    <th class="pb-2 text-left">التحكم</th>
+                    <th class="pb-2">${window.currentLang === 'en' ? 'Name' : 'الاسم'}</th>
+                    <th class="pb-2">${window.currentLang === 'en' ? 'Contribution' : 'المساهمة'}</th>
+                    <th class="pb-2">${window.currentLang === 'en' ? 'Share' : 'الحصة'}</th>
+                    <th class="pb-2 text-left">${window.currentLang === 'en' ? 'Control' : 'التحكم'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -10159,7 +10317,7 @@ const UIController = (() => {
         <div class="mt-6 glass-panel p-6 rounded-2xl border border-amber-500/20 bg-slate-900/40 space-y-5">
           <h3 class="text-sm font-black text-amber-400 flex items-center gap-2">
             <i class="fa-solid fa-toolbox"></i>
-            <span>لوحة الإشراف المالي وإدارة التحالف</span>
+            <span>${window.currentLang === 'en' ? 'Financial Supervision & Alliance Management' : 'لوحة الإشراف المالي وإدارة التحالف'}</span>
           </h3>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -10167,67 +10325,67 @@ const UIController = (() => {
             <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-4 space-y-3">
               <h4 class="text-xs font-black text-white flex items-center gap-1.5">
                 <i class="fa-solid fa-money-bill-transfer text-emerald-400"></i>
-                <span>تحويل السيولة من الخزينة للأعضاء</span>
+                <span>${window.currentLang === 'en' ? 'Transfer Funds from Treasury to Members' : 'تحويل السيولة من الخزينة للأعضاء'}</span>
               </h4>
-              <p class="text-[10px] text-slate-500 font-bold">سحب مبالغ محددة من خزينة التحالف وتحويلها ككاش رصيد لأي عضو.</p>
+              <p class="text-[10px] text-slate-500 font-bold">${window.currentLang === 'en' ? 'Withdraw specific amounts from the alliance treasury and transfer it as cash balance to any member.' : 'سحب مبالغ محددة من خزينة التحالف وتحويلها ككاش رصيد لأي عضو.'}</p>
               
               <div class="space-y-2">
                 <div>
-                  <label class="text-[9px] text-slate-400 block mb-1">اختر العضو المستهدف</label>
+                  <label class="text-[9px] text-slate-400 block mb-1">${window.currentLang === 'en' ? 'Select Target Member' : 'اختر العضو المستهدف'}</label>
                   <select id="payout-corp-target" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-                    <option value="">-- اختر شريكاً --</option>
+                    <option value="">${window.currentLang === 'en' ? '-- Select a partner --' : '-- اختر شريكاً --'}</option>
                     ${membersList.map(m => `<option value="${m}">${m} ${(corp.roles && corp.roles[m] === 'cfo') ? '[CFO]' : (m === corp.founder ? '[Founder]' : '')}</option>`).join('')}
                   </select>
                 </div>
                 <div>
-                  <label class="text-[9px] text-slate-400 block mb-1">المبلغ المراد سحبه وتحويله (EGP)</label>
-                  <input id="payout-corp-amount" type="number" placeholder="مثال: 100000000" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                  <label class="text-[9px] text-slate-400 block mb-1">${window.currentLang === 'en' ? 'Amount to Withdraw (EGP)' : 'المبلغ المراد سحبه وتحويله (EGP)'}</label>
+                  <input id="payout-corp-amount" type="number" placeholder="${window.currentLang === 'en' ? 'e.g. 100000000' : 'مثال: 100000000'}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
                 </div>
               </div>
 
               <button onclick="window.UI.payoutFromCorpTreasuryAction('${corp.id}')" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition">
-                تأكيد سحب وتحويل السيولة
+                ${window.currentLang === 'en' ? 'Confirm Fund Withdrawal' : 'تأكيد سحب وتحويل السيولة'}
               </button>
             </div>
 
             <!-- 2. Founder Only Controls -->
             ${isFounder ? `
             <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-4 space-y-3">
-              <h4 class="text-xs font-black text-white flex items-center gap-1.5"><i class="fa-solid fa-pen text-indigo-400"></i> تعديل بيانات الشركة</h4>
+              <h4 class="text-xs font-black text-white flex items-center gap-1.5"><i class="fa-solid fa-pen text-indigo-400"></i> ${window.currentLang === 'en' ? 'Edit Corp Details' : 'تعديل بيانات الشركة'}</h4>
               <div>
-                <label class="text-[10px] text-slate-400 block mb-1">اسم جديد للشركة</label>
+                <label class="text-[10px] text-slate-400 block mb-1">${window.currentLang === 'en' ? 'New Corp Name' : 'اسم جديد للشركة'}</label>
                 <input id="edit-corp-name" type="text" value="${corp.name}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
               </div>
               <div>
-                <label class="text-[10px] text-slate-400 block mb-1">وصف جديد للشركة</label>
+                <label class="text-[10px] text-slate-400 block mb-1">${window.currentLang === 'en' ? 'New Corp Description' : 'وصف جديد للشركة'}</label>
                 <textarea id="edit-corp-desc" rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 resize-none">${corp.desc || ''}</textarea>
               </div>
               <button onclick="window.UI.editCorpInfoAction('${corp.id}')" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black transition">
-                <i class="fa-solid fa-floppy-disk ml-1"></i> حفظ التعديلات
+                <i class="fa-solid fa-floppy-disk ml-1"></i> ${window.currentLang === 'en' ? 'Save Changes' : 'حفظ التعديلات'}
               </button>
             </div>
 
             <!-- 3. Owner Actions -->
             <div class="col-span-1 md:col-span-2 bg-slate-950/50 border border-slate-800 rounded-xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="space-y-2">
-                <h4 class="text-xs font-black text-white flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate text-amber-400"></i> نقل الملكية</h4>
-                <p class="text-[10px] text-slate-500 font-bold">نقل لقب المؤسس لعضو آخر. لا يمكن التراجع.</p>
+                <h4 class="text-xs font-black text-white flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate text-amber-400"></i> ${window.currentLang === 'en' ? 'Transfer Ownership' : 'نقل الملكية'}</h4>
+                <p class="text-[10px] text-slate-500 font-bold">${window.currentLang === 'en' ? 'Transfer the founder title to another member. This action is irreversible.' : 'نقل لقب المؤسس لعضو آخر. لا يمكن التراجع.'}</p>
                 <select id="transfer-corp-target" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-                  <option value="">-- اختر عضواً --</option>
+                  <option value="">${window.currentLang === 'en' ? '-- Select a member --' : '-- اختر عضواً --'}</option>
                   ${membersList.filter(m => m !== currentUsername).map(m => `<option value="${m}">${m}</option>`).join('')}
                 </select>
                 <button onclick="window.UI.transferCorpOwnershipAction('${corp.id}')" class="w-full py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-black transition">
-                  نقل الملكية
+                  ${window.currentLang === 'en' ? 'Transfer Ownership' : 'نقل الملكية'}
                 </button>
               </div>
 
               <div class="space-y-2 flex flex-col justify-between">
                 <div>
-                  <h4 class="text-xs font-black text-rose-400 flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> منطقة الخطر</h4>
-                  <p class="text-[10px] text-slate-500 font-bold">حل الشركة المشتركة نهائياً وإعادة الأرصدة للمساهمين.</p>
+                  <h4 class="text-xs font-black text-rose-400 flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> ${window.currentLang === 'en' ? 'Danger Zone' : 'منطقة الخطر'}</h4>
+                  <p class="text-[10px] text-slate-500 font-bold">${window.currentLang === 'en' ? 'Permanently dissolve the joint corporation and refund balances to shareholders.' : 'حل الشركة المشتركة نهائياً وإعادة الأرصدة للمساهمين.'}</p>
                 </div>
                 <button onclick="window.UI.dissolveCorpAction('${corp.id}')" class="w-full py-2 bg-rose-700/30 hover:bg-rose-700/50 border border-rose-700/40 text-rose-300 rounded-xl text-xs font-black transition">
-                  <i class="fa-solid fa-bomb ml-1"></i> حل الشركة المشتركة بالكامل
+                  <i class="fa-solid fa-bomb ml-1"></i> ${window.currentLang === 'en' ? 'Dissolve Joint Corp Completely' : 'حل الشركة المشتركة بالكامل'}
                 </button>
               </div>
             </div>
@@ -10236,8 +10394,8 @@ const UIController = (() => {
             <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-4 flex items-center justify-center text-center">
               <div class="space-y-1">
                 <i class="fa-solid fa-user-shield text-emerald-400 text-2xl"></i>
-                <h4 class="text-xs font-black text-white">أنت تشغل رتبة: مدير مالي للتحالف</h4>
-                <p class="text-[10px] text-slate-500">لديك الصلاحية لسحب وتحويل الأموال من الخزينة للأعضاء وشراء المشاريع وترقية مستوى التحالف.</p>
+                <h4 class="text-xs font-black text-white">${window.currentLang === 'en' ? 'Your Role: Alliance CFO' : 'أنت تشغل رتبة: مدير مالي للتحالف'}</h4>
+                <p class="text-[10px] text-slate-500">${window.currentLang === 'en' ? 'You have the authority to withdraw/transfer funds from the treasury to members, buy projects, and upgrade alliance level.' : 'لديك الصلاحية لسحب وتحويل الأموال من الخزينة للأعضاء وشراء المشاريع وترقية مستوى التحالف.'}</p>
               </div>
             </div>
             `}
