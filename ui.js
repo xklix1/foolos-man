@@ -88,6 +88,8 @@ const UIController = (() => {
     "الإصدار الشامل ⭐": "Imperial Edition ⭐",
     "إنشاء محفظة جديدة وبدء اللعب": "Create Profile & Play",
     "الرجوع للقائمة الرئيسية": "Return to Menu",
+    "فهمت القواعد! انطلق الآن": "Got the Rules! Start Playing",
+    "💡 يمكنك الرجوع للدليل في أي وقت من القائمة أو شريط اللعبة": "💡 You can open this guide at any time from the main menu or HUD",
     "تغيير اللغة / Change Language": "اللغة: العربية",
     "EN": "العربية",
     "لوحة العمل والاستثمار اليومي": "Daily Work & Investment Board",
@@ -630,6 +632,11 @@ const UIController = (() => {
 
     if (window.currentLang === 'en') {
       translateDOM(document.body);
+      document.querySelectorAll('.lang-ar-guide').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.lang-en-guide').forEach(el => el.classList.remove('hidden'));
+    } else {
+      document.querySelectorAll('.lang-ar-guide').forEach(el => el.classList.remove('hidden'));
+      document.querySelectorAll('.lang-en-guide').forEach(el => el.classList.add('hidden'));
     }
 
     const isMaint = await checkMaintenanceMode();
