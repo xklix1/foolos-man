@@ -1112,7 +1112,7 @@ const UIController = (() => {
       // Check maintenance mode on session launch
       const maintStatus = await AppDB.getMaintenanceStatus();
       if (maintStatus && maintStatus.enabled) {
-        const isAdmin = Boolean(s && s.isAdmin);
+        const isAdmin = Boolean(GameEngine.state && GameEngine.state.isAdmin);
         if (!isAdmin) {
           const checkUser = await AppDB.getPlayerState(username);
           if (!checkUser || !checkUser.isAdmin) {
@@ -1328,7 +1328,7 @@ const UIController = (() => {
           // Enforce Maintenance Gatekeeper (Admin only)
           const maintStatus = await AppDB.getMaintenanceStatus();
           if (maintStatus && maintStatus.enabled) {
-            const isAdminUser = Boolean(playerData && playerData.isAdmin);
+            const isAdminUser = false; // سيتم التحقق الحقيقي عبر getPlayerState أدناه
             if (mode === 'register' && !isAdminUser) {
               showMaintenancePopup(maintStatus.message || 'الخادم قيد الصيانة الفنية حالياً. تسجيل الحسابات الجديدة معطل.');
               return;
