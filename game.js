@@ -4,8 +4,7 @@
  * Manages game state, ticks, algorithms, and business logic
  */
 
-var activeAdminUsername = 'khalid.newstart';
-if (typeof window !== 'undefined') window.activeAdminUsername = 'khalid.newstart';
+// Admin identity is determined at runtime from Firestore (isAdmin flag) — no hardcoded credentials.
 
 const GameEngine = (() => {
   console.log('[GAME] Simulation Engine Loaded (v=107)');

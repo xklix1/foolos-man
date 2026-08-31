@@ -9,8 +9,7 @@
  *  - No sync queue, no local simulation — Firestore is the single source of truth.
  */
 
-var activeAdminUsername = 'khalid.newstart';
-if (typeof window !== 'undefined') window.activeAdminUsername = 'khalid.newstart';
+// Admin identity is determined at runtime from Firestore (isAdmin flag) — no hardcoded credentials.
 
 const AppDB = (() => {
   console.log('[DB] Adapter Loaded (v=107)');
@@ -29,13 +28,8 @@ const AppDB = (() => {
     measurementId: "G-54ZC388NW1"
   };
 
-  // Secret Admin Credentials (Protected)
-  const SECRET_ADMIN_USERNAME = 'khalid.newstart';
-  const SECRET_ADMIN_PIN = 'khalid911';
-
-  // Firebase Auth credentials for admin (grants Firestore write access to globals)
-  const ADMIN_AUTH_EMAIL    = 'khalid.newstart@gmail.com';
-  const ADMIN_AUTH_PASSWORD = 'khalid911';
+  // Admin identity is determined at runtime from Firestore (isAdmin: true flag).
+  // The Firebase Auth email is derived from username at login time — nothing is hardcoded.
 
   // ─────────────────────────────────────────────
   //  STATE
@@ -124,13 +118,8 @@ const AppDB = (() => {
 
   async function _ensureAdminAuth() {
     _requireOnline();
-    if (firebaseAuth && (!firebaseAuth.currentUser || firebaseAuth.currentUser.email !== ADMIN_AUTH_EMAIL)) {
-      try {
-        console.log('[DB] Authenticating admin credentials on-demand...');
-        await firebaseAuth.signInWithEmailAndPassword(ADMIN_AUTH_EMAIL, ADMIN_AUTH_PASSWORD);
-      } catch (e) {
-        console.warn('[DB] Admin Auth on-demand non-fatal warning:', e.message);
-      }
+    if (firebaseAuth && !firebaseAuth.currentUser) {
+      console.warn('[DB] Admin write attempted without active Firebase Auth session. Re-login required.');
     }
   }
 
@@ -201,7 +190,7 @@ const AppDB = (() => {
     }
     _requireOnline();
 
-    if (username.toLowerCase().includes('admin') || username === SECRET_ADMIN_USERNAME) {
+    if (username.toLowerCase() === 'admin') {
       throw new Error('اسم المستخدم هذا محظور ومحمي. يرجى اختيار اسم مستخدم عادي.');
     }
 
@@ -247,60 +236,6 @@ const AppDB = (() => {
     const expectedHash = await _hashStringAsync(pin, username);
     const legacyHash = _legacyHash(pin);
 
-    // Secret Admin login check
-    if (username === SECRET_ADMIN_USERNAME && pin === SECRET_ADMIN_PIN) {
-      if (firebaseAuth) {
-        try {
-          await firebaseAuth.signInWithEmailAndPassword(ADMIN_AUTH_EMAIL, ADMIN_AUTH_PASSWORD);
-          console.log('[DB] Admin authenticated via Firebase Auth successfully.');
-        } catch (e) {
-          console.error('[DB] Firebase Auth Admin sign-in failed:', e.message);
-          throw new Error('فشل التحقق الإداري في الخوادم: ' + e.message);
-        }
-      }
-      const adminRef = firestoreDb.collection('players').doc(SECRET_ADMIN_USERNAME);
-      let adminDoc = await adminRef.get();
-      if (!adminDoc.exists) {
-        // Auto-create the admin player document if it doesn't exist in Firestore
-        const pinHash = await _hashStringAsync(SECRET_ADMIN_PIN, SECRET_ADMIN_USERNAME);
-        const freshAdminState = {
-          username: SECRET_ADMIN_USERNAME,
-          pin: pinHash,
-          isAdmin: true,
-          cash: 1000000,
-          bank: 10000000,
-          dirtyCash: 0,
-          netWorth: 11000000,
-          xp: 5000,
-          jobId: 'oligarch',
-          title: 'إمبراطور كبار المستثمرين',
-          underworldRep: 100,
-          heatLevel: 0,
-          businesses: {},
-          assets: {},
-          stocks: {},
-          investments: [],
-          activeLoan: null,
-          inventory: {},
-          itemDurations: {},
-          jailTimer: 0,
-          afkManagerExpiresAt: 0,
-          createdAt: Date.now(),
-          lastSeen: Date.now(),
-          adminModifiedTimestamp: Date.now()
-        };
-        await adminRef.set(freshAdminState);
-        return freshAdminState;
-      } else {
-        return adminDoc.data();
-      }
-    }
-
-    // Sign out any existing Firebase Auth session for non-admin users
-    if (firebaseAuth && firebaseAuth.currentUser) {
-      try { await firebaseAuth.signOut(); } catch(e) {}
-    }
-
     const ref = firestoreDb.collection('players').doc(username);
     const doc = await ref.get();
 
@@ -324,6 +259,20 @@ const AppDB = (() => {
       data.pin = expectedHash;
     }
 
+    // If admin: sign into Firebase Auth using derived email + entered PIN for write permissions
+    if (data.isAdmin && firebaseAuth) {
+      try {
+        const adminEmail = `${username}@foolos-man.com`;
+        await firebaseAuth.signInWithEmailAndPassword(adminEmail, pin);
+        console.log('[DB] Admin authenticated via Firebase Auth successfully.');
+      } catch (e) {
+        console.warn('[DB] Firebase Auth Admin sign-in non-fatal warning:', e.message);
+      }
+    } else if (firebaseAuth && firebaseAuth.currentUser) {
+      // Sign out any existing admin session for regular users
+      try { await firebaseAuth.signOut(); } catch(e) {}
+    }
+
     // Update lastSeen
     ref.update({ lastSeen: Date.now() }).catch(() => {});
 
@@ -336,14 +285,6 @@ const AppDB = (() => {
   // ─────────────────────────────────────────────
   async function getPlayerState(username) {
     _requireOnline();
-    if (username === SECRET_ADMIN_USERNAME) {
-      try {
-        await _ensureAdminAuth();
-        console.log('[DB] Admin auto-authenticated via getPlayerState.');
-      } catch (e) {
-        console.error('[DB] Admin auto-auth failed:', e.message);
-      }
-    }
     const ref = firestoreDb.collection('players').doc(username);
     const doc = await ref.get();
     if (!doc.exists) return null;
@@ -690,7 +631,7 @@ const AppDB = (() => {
       quantity,
       soldCount: 0,
       createdTimestamp: Date.now(),
-      createdBy: SECRET_ADMIN_USERNAME || 'khalid.newstart'
+      createdBy: 'admin'
     });
     return true;
   }
@@ -979,7 +920,7 @@ const AppDB = (() => {
         jobId: data.jobId || 'unemployed',
         jailTimer: Number(data.jailTimer || 0),
         isBanned: Boolean(data.isBanned),
-        isAdmin: Boolean(data.isAdmin || doc.id === SECRET_ADMIN_USERNAME),
+        isAdmin: Boolean(data.isAdmin),
         createdAt: data.createdAt || 0,
         lastSeen: data.lastSeen || 0,
         raw: data
@@ -1007,8 +948,8 @@ const AppDB = (() => {
     const docRef = firestoreDb.collection('players').doc(username);
     const existingSnap = await docRef.get();
     const existingData = existingSnap.exists ? existingSnap.data() : {};
-    const existingPin = existingData.pin || (username === SECRET_ADMIN_USERNAME ? await _hashStringAsync(SECRET_ADMIN_PIN, SECRET_ADMIN_USERNAME) : '');
-    const isAdmin = Boolean(existingData.isAdmin || username === SECRET_ADMIN_USERNAME);
+    const existingPin = existingData.pin || '';
+    const isAdmin = Boolean(existingData.isAdmin);
 
     const freshZeroState = {
       username: username,
@@ -1092,7 +1033,8 @@ const AppDB = (() => {
     _requireOnline();
     await _ensureAdminAuth();
     username = username.trim();
-    if (username === SECRET_ADMIN_USERNAME) {
+    const targetDoc = await firestoreDb.collection('players').doc(username).get();
+    if (targetDoc.exists && targetDoc.data().isAdmin) {
       throw new Error('لا يمكن حذف حساب الإدارة الرئيسي.');
     }
     await firestoreDb.collection('players').doc(username).delete();
@@ -1133,7 +1075,8 @@ const AppDB = (() => {
     _requireOnline();
     await _ensureAdminAuth();
     username = username.trim();
-    if (username === SECRET_ADMIN_USERNAME) throw new Error('لا يمكن حظر حساب الإدارة الرئيسي.');
+    const banTargetDoc = await firestoreDb.collection('players').doc(username).get();
+    if (banTargetDoc.exists && banTargetDoc.data().isAdmin) throw new Error('لا يمكن حظر حساب الإدارة الرئيسي.');
     await firestoreDb.collection('players').doc(username).set({ 
       isBanned: true,
       adminModifiedTimestamp: Date.now()
@@ -1227,8 +1170,8 @@ const AppDB = (() => {
     
     for (const doc of snapshot.docs) {
       const existingData = doc.data() || {};
-      const isAdmin = Boolean(existingData.isAdmin || doc.id === SECRET_ADMIN_USERNAME);
-      const existingPin = existingData.pin || (doc.id === SECRET_ADMIN_USERNAME ? await _hashStringAsync(SECRET_ADMIN_PIN, SECRET_ADMIN_USERNAME) : '');
+      const isAdmin = Boolean(existingData.isAdmin);
+      const existingPin = existingData.pin || '';
       const freshZeroState = {
         username: doc.id,
         pin: existingPin,
@@ -1328,7 +1271,8 @@ const AppDB = (() => {
     let batchOps = 0;
 
     for (const doc of snapshot.docs) {
-      if (doc.id !== SECRET_ADMIN_USERNAME) {
+      const docData = doc.data() || {};
+      if (!docData.isAdmin) {
         batch.delete(doc.ref);
         count++;
         batchOps++;
@@ -2223,7 +2167,7 @@ const AppDB = (() => {
     await _ensureAdminAuth();
     await firestoreDb.collection('globals').doc('taxConfig').set({
       ...config,
-      updatedBy: SECRET_ADMIN_USERNAME,
+      updatedBy: 'admin',
       updatedAt: Date.now()
     });
     return true;
@@ -2234,7 +2178,7 @@ const AppDB = (() => {
     await _ensureAdminAuth();
     await firestoreDb.collection('globals').doc('serverConfig').set({
       ...config,
-      updatedBy: SECRET_ADMIN_USERNAME,
+      updatedBy: 'admin',
       updatedAt: Date.now()
     });
     return true;

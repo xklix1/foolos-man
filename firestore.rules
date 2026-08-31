@@ -2,14 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // دالة التحقق من حساب الإدارة الموثق في Firebase Auth
-    // هام جداً: يجب التأكد من أن الـ UID أدناه يطابق تماماً الـ UID لحساب khalid.newstart@gmail.com
-    // في لوحة تحكم Firebase Console -> Authentication -> Users.
-    // إذا كان مختلفاً، يرجى استبدال "xHEssisz9HRXVycoFqlMQTu6nf92" بالمعرّف الصحيح لكي تعمل جميع صلاحيات الأدمن.
+    // هام: قم بتحديث UID بالمعرّف الصحيح لحساب adminkhalid911@foolos-man.com
+    // من Firebase Console → Authentication → Users بعد ما تنشئ الحساب.
     function isAdmin() {
       return request.auth != null && 
-             (request.auth.uid == "xHEssisz9HRXVycoFqlMQTu6nf92" ||
-              request.auth.token.email == "khalid.newstart@gmail.com");
+             (request.auth.uid == "PLACEHOLDER_UPDATE_WITH_NEW_UID" ||
+              request.auth.token.email == "adminkhalid911@foolos-man.com");
     }
 
     // ─────────────────────────────────────────────
@@ -85,19 +83,19 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
     match /auctions/{id} {
       allow read: if true;
-      allow create: if true;
-      allow update: if true;
-      allow delete: if isAdmin() || true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     // ─────────────────────────────────────────────
     // 6. أكواد الهدايا والمكافآت (Gift Codes)
     // ─────────────────────────────────────────────
     match /giftCodes/{code} {
-      allow read: if true;
-      allow create: if true;
-      allow update: if true;
-      allow delete: if isAdmin() || true;
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     // ─────────────────────────────────────────────

@@ -4,8 +4,7 @@
  * Manages rendering, tab views, SVG charts, and interactive casino controls
  */
 
-var activeAdminUsername = 'khalid.newstart';
-if (typeof window !== 'undefined') window.activeAdminUsername = 'khalid.newstart';
+// Admin identity is determined at runtime from Firestore (isAdmin flag) — no hardcoded credentials.
 
 const UIController = (() => {
   console.log('[UI] Controller Loaded (v=107)');
@@ -1113,7 +1112,7 @@ const UIController = (() => {
       // Check maintenance mode on session launch
       const maintStatus = await AppDB.getMaintenanceStatus();
       if (maintStatus && maintStatus.enabled) {
-        const isAdmin = Boolean(username === 'khalid.newstart');
+        const isAdmin = Boolean(s && s.isAdmin);
         if (!isAdmin) {
           const checkUser = await AppDB.getPlayerState(username);
           if (!checkUser || !checkUser.isAdmin) {
@@ -1329,7 +1328,7 @@ const UIController = (() => {
           // Enforce Maintenance Gatekeeper (Admin only)
           const maintStatus = await AppDB.getMaintenanceStatus();
           if (maintStatus && maintStatus.enabled) {
-            const isAdminUser = Boolean(usernameInput === 'khalid.newstart');
+            const isAdminUser = Boolean(playerData && playerData.isAdmin);
             if (mode === 'register' && !isAdminUser) {
               showMaintenancePopup(maintStatus.message || 'الخادم قيد الصيانة الفنية حالياً. تسجيل الحسابات الجديدة معطل.');
               return;
@@ -1597,7 +1596,7 @@ const UIController = (() => {
     if (!GameEngine.activeUsername || !s) return;
 
     const username = GameEngine.activeUsername;
-    const isAdmin = (username === 'khalid.newstart' || s.isAdmin);
+    const isAdmin = Boolean(s.isAdmin);
 
     // Desktop stats
     const uEl = document.getElementById('stat-username');
@@ -4939,7 +4938,7 @@ const UIController = (() => {
     // Show/Hide Admin Trigger Button
     const adminTrigger = document.getElementById('btn-admin-panel-trigger');
     if (adminTrigger) {
-      const isAdmin = (username === 'khalid.newstart' || (GameEngine.state && GameEngine.state.isAdmin));
+      const isAdmin = Boolean(GameEngine.state && GameEngine.state.isAdmin);
       if (isAdmin) {
         adminTrigger.classList.remove('hidden');
       } else {
@@ -5066,7 +5065,8 @@ const UIController = (() => {
         showAuthModal('login');
         const uInput = document.getElementById('auth-username');
         if (uInput) {
-          uInput.value = 'khalid.newstart';
+          uInput.value = '';
+          uInput.placeholder = 'اسم مستخدم الإدارة';
           const pInput = document.getElementById('auth-pin');
           if (pInput) pInput.focus();
         }
@@ -5080,7 +5080,7 @@ const UIController = (() => {
         const data = doc.data();
         if (data.enabled) {
           const username = GameEngine.activeUsername;
-          const isAdmin = (username === 'khalid.newstart' || (GameEngine.state && GameEngine.state.isAdmin));
+          const isAdmin = Boolean((GameEngine.state && GameEngine.state.isAdmin));
           if (!isAdmin) {
             handleMaintenanceMode(data.message);
           }
@@ -5239,28 +5239,12 @@ const UIController = (() => {
       }, (err) => console.error("Transfers listen err: ", err));
     activeListeners.push(unsubIncomingTransfers);
 
-    // Temporary Cleanup for old messages sent under admin username
-    if (username === 'khalid.newstart') {
-      db.collection('chat')
-        .where('sender', '==', 'khalid.newstart')
-        .get()
-        .then(snapshot => {
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            if (data.message && (data.message.includes('الإدارة تراقب الشات') || data.message.includes('تنبيه من الإدارة'))) {
-              doc.ref.delete()
-                .then(() => console.log(`[CLEANUP] Deleted old admin warning message: ${doc.id}`))
-                .catch(err => console.error('[CLEANUP] Error deleting message:', err));
-            }
-          });
-        })
-        .catch(err => console.error('[CLEANUP] Error fetching old messages:', err));
-    }
+    // Old admin chat cleanup block removed — no hardcoded usernames in client code.
   }
 
   function applyCompleteZeroStateToGameEngine(username) {
     if (!GameEngine.state) return;
-    const isAdmin = Boolean(username === 'khalid.newstart' || GameEngine.state.isAdmin);
+    const isAdmin = Boolean(GameEngine.state && GameEngine.state.isAdmin);
     GameEngine.state.isAdmin = isAdmin;
     GameEngine.state.cash = 0;
     GameEngine.state.bank = 0;
@@ -5337,7 +5321,7 @@ const UIController = (() => {
       const status = await AppDB.getMaintenanceStatus();
       if (status && status.enabled) {
         const username = localStorage.getItem('foolos_active_session_user') || GameEngine.activeUsername;
-        const isAdmin = Boolean(username === 'khalid.newstart' || (GameEngine.state && GameEngine.state.isAdmin));
+        const isAdmin = Boolean(GameEngine.state && GameEngine.state.isAdmin);
         if (!isAdmin) {
           const mainLayout = document.getElementById('main-game-layout');
           if (mainLayout && !mainLayout.classList.contains('hidden')) {
