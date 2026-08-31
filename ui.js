@@ -6513,6 +6513,15 @@ const UIController = (() => {
           showToast('خطأ تعديل الصلاحية', err.message, 'error');
         } finally {
           toggleAdminRoleBtn.disabled = false;
+          if (selectedPlayerState) {
+            if (selectedPlayerState.isAdmin) {
+              toggleAdminRoleBtn.innerHTML = '<i class="fa-solid fa-user-shield text-xs"></i> <span>سحب صلاحية الإدارة (إلغاء أدمن) ⚠️</span>';
+              toggleAdminRoleBtn.className = 'w-full py-2 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/40 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5';
+            } else {
+              toggleAdminRoleBtn.innerHTML = '<i class="fa-solid fa-crown text-xs"></i> <span>نقل صلاحية الإدارة لهذا الحساب (Make Admin) 👑</span>';
+              toggleAdminRoleBtn.className = 'w-full py-2 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 rounded-lg text-[11px] font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20';
+            }
+          }
         }
       });
     }
