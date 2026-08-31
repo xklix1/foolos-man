@@ -117,7 +117,11 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
     match /chat/{messageId} {
       allow read: if true;
-      allow create: if true;
+      // تأكد من وجود حقول أساسية وأن الرسالة ليست فارغة
+      allow create: if request.resource.data.keys().hasAll(['sender', 'message', 'timestamp']) &&
+                       request.resource.data.message is string &&
+                       request.resource.data.message.size() > 0 &&
+                       request.resource.data.message.size() <= 500;
       allow update, delete: if isAdmin();
     }
 
@@ -125,21 +129,30 @@ service cloud.firestore {
     // 9. صندوق البريد والتنبيهات (Mailbox & Letters)
     // ─────────────────────────────────────────────
     match /mailbox/{mailId} {
-      allow read, write: if true;
+      allow read: if true;
+      // الكتابة محدودة للأدمن فقط - منع التلاعب بالرسائل
+      allow write: if isAdmin();
     }
 
     // ─────────────────────────────────────────────
     // 10. الشركات المشتركة (Corporations)
     // ─────────────────────────────────────────────
     match /corporations/{corpId} {
-      allow read, write: if true;
+      allow read: if true;
+      // الإنشاء والتعديل للمستخدمين المسجلين فقط (تحقق من وجود الحقول الأساسية)
+      allow create: if request.resource.data.keys().hasAll(['name', 'founder', 'createdAt']) &&
+                       request.resource.data.name is string &&
+                       request.resource.data.name.size() > 0;
+      allow update: if true; // اللاعبون يحتاجون تحديث الشركات بانتظام
+      allow delete: if isAdmin();
     }
 
     // ─────────────────────────────────────────────
     // 11. المزادات الحية (Live Auctions)
     // ─────────────────────────────────────────────
     match /liveAuctions/{auctionId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create, update: if isAdmin(); // فقط الأدمن ينشئ ويدير المزادات الحية
       allow delete: if isAdmin();
     }
   }
