@@ -2163,13 +2163,39 @@
     window._adminRenderStockPrices = renderAdminStockPrices;
   }
 
+  // Quick Action Handlers for Anti-Cheat Suspicious List
+  window.UIController = window.UIController || {};
+  window.UIController.adminQuickJailAction = async function(username) {
+    if (!confirm(`هل أنت متأكد من فرض عقوبة السجن على اللاعب ${username}؟`)) return;
+    try {
+      await AppDB.adminSetPlayerJail(username, 900);
+      showToast('تم السجن', `تم سجن اللاعب ${username} لمدة 15 دقيقة بنجاح.`, 'success');
+      if (window._adminReloadPlayers) window._adminReloadPlayers(false);
+      renderAdminAnalyticsDashboard();
+    } catch (e) {
+      showToast('خطأ', e.message, 'error');
+    }
+  };
+
+  window.UIController.adminQuickBanAction = async function(username) {
+    if (!confirm(`هل أنت متأكد من حظر حساب اللاعب ${username} نهائياً؟`)) return;
+    try {
+      await AppDB.adminBanPlayer(username);
+      showToast('تم الحظر', `تم حظر حساب اللاعب ${username} بنجاح.`, 'success');
+      if (window._adminReloadPlayers) window._adminReloadPlayers(false);
+      renderAdminAnalyticsDashboard();
+    } catch (e) {
+      showToast('خطأ', e.message, 'error');
+    }
+  };
+
   async function renderAdminAnalyticsDashboard() {
     try {
       const stats = await AppDB.getSystemStats();
       const elP = document.getElementById('adm-stat-players');
       const elC = document.getElementById('adm-stat-cash');
       const elB = document.getElementById('adm-stat-bank');
-      const elNW = document.getElementById('adm-stat-networth');
+      const elNW = document.getElementById('adm-stat-networth') || document.getElementById('adm-stat-worth');
       const elJ = document.getElementById('adm-stat-jailed');
       const elBan = document.getElementById('adm-stat-banned');
 
@@ -2179,6 +2205,15 @@
       if (elNW) elNW.textContent = `${(stats.totalNetWorth || 0).toLocaleString()} EGP`;
       if (elJ) elJ.textContent = (stats.jailedCount || 0).toLocaleString();
       if (elBan) elBan.textContent = (stats.bannedCount || 0).toLocaleString();
+
+      const refreshBtn = document.getElementById('btn-admin-refresh-stats');
+      if (refreshBtn && !refreshBtn._bound) {
+        refreshBtn._bound = true;
+        refreshBtn.onclick = () => {
+          showToast('تحديث', 'جاري إعادة حساب وفحص إحصائيات السيرفر...', 'info');
+          renderAdminAnalyticsDashboard();
+        };
+      }
 
       // Populate tax inputs from current engine config (if not focused to avoid interrupting admin input)
       const currentCfg = GameEngine.getTaxConfig ? GameEngine.getTaxConfig() : null;
