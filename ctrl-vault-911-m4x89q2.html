@@ -41,7 +41,7 @@
   <style>
     body {
       font-family: 'Cairo', sans-serif;
-      background-color: #020617;
+      background-color: #030712;
       color: #f8fafc;
       overflow-x: hidden;
       min-height: 100vh;
@@ -50,18 +50,53 @@
       font-family: 'Inter', sans-serif;
     }
     .glass-panel {
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(51, 65, 85, 0.6);
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(51, 65, 85, 0.7);
+    }
+    .glass-panel-gold {
+      background: linear-gradient(135deg, rgba(234, 179, 8, 0.08) 0%, rgba(15, 23, 42, 0.95) 100%);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(234, 179, 8, 0.3);
     }
     .glass-input {
-      background: rgba(2, 6, 23, 0.8);
+      background: rgba(2, 6, 23, 0.85);
       border: 1px solid rgba(51, 65, 85, 0.8);
       color: #fff;
+      transition: all 0.2s ease;
     }
     .glass-input:focus {
       border-color: #eab308;
+      box-shadow: 0 0 15px rgba(234, 179, 8, 0.2);
       outline: none;
+    }
+    .active-admin-tab {
+      background: linear-gradient(90deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.03)) !important;
+      border-color: rgba(234, 179, 8, 0.6) !important;
+      color: #facc15 !important;
+      box-shadow: inset 3px 0 0 #eab308, 0 4px 12px rgba(234, 179, 8, 0.1) !important;
+    }
+    /* Custom Modern Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(2, 6, 23, 0.5);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.8);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(234, 179, 8, 0.6);
+    }
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.02); }
+    }
+    .glow-gold {
+      text-shadow: 0 0 12px rgba(234, 179, 8, 0.5);
     }
   </style>
 </head>
