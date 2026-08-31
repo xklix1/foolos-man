@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // دالة التحقق من أن المستخدم مسجل وموثق في Firebase Auth
+    // التحقق من صلاحية الأدمن عبر توثيق Firebase Auth
     function isAdmin() {
       return request.auth != null;
     }
@@ -11,12 +11,11 @@ service cloud.firestore {
     // 1. حسابات وبيانات اللاعبين (Players Collection)
     // ─────────────────────────────────────────────
     match /players/{username} {
-      // القراءة متاحة لتوب الأغنياء والتحقق من تسجيل الدخول
       allow read: if true;
 
       // إنشاء حساب جديد:
       // - الأدمن بدون قيود
-      // - اللاعب العادي: لا يمكنه جعل نفسه أدمن، والثروة الأولية لا تتجاوز 10,000 ج.م
+      // - اللاعب العادي: لا يمكنه جعل نفسه أدمن، وبداية الثروة لا تتجاوز 10,000 ج.م
       allow create: if isAdmin() || (
         request.resource.data.username == username &&
         request.resource.data.isAdmin == false &&
@@ -25,12 +24,9 @@ service cloud.firestore {
         request.resource.data.keys().hasAll(['username', 'pin', 'netWorth', 'cash', 'bank'])
       );
 
-      // تعديل الحساب (حماية قصوى ضد الغش وسرقة الحسابات):
+      // تعديل الحساب (حماية ضد الغش):
       // - الأدمن بدون قيود
-      // - اللاعب العادي:
-      //   1. لا يمكنه تحويل نفسه لأدمن (isAdmin تبقى false).
-      //   2. لا يمكنه تغيير الـ PIN في عمليات الحفظ العادية إلا إذا كان مطابقاً للـ PIN الأصلي.
-      //   3. لا يمكنه تغيير اسم المستخدم (username ثابت ومطابق لاسم المستند).
+      // - اللاعب العادي: لا يمكنه تعديل isAdmin أو اسم المستخدم أو الـ PIN
       allow update: if isAdmin() || (
         request.resource.data.isAdmin == false &&
         resource.data.isAdmin == false &&
@@ -50,15 +46,15 @@ service cloud.firestore {
       allow create: if request.resource.data.amount > 0 &&
                        request.resource.data.sender != request.resource.data.recipient &&
                        request.resource.data.keys().hasAll(['sender', 'recipient', 'amount', 'timestamp']);
-      allow update, delete: if false; // السجلات غير قابلة للتعديل أو التلاعب
+      allow update, delete: if isAdmin();
     }
 
     // ─────────────────────────────────────────────
-    // 3. إعدادات اللعبة، البورصة، والأخبار (Globals)
+    // 3. إعدادات اللعبة، البورصة، الضرائب والصيانة (Globals)
     // ─────────────────────────────────────────────
     match /globals/{id} {
       allow read: if true;
-      allow write: if isAdmin(); // الأدمن الموثق فقط من يملك صلاحية تعديل الإعدادات والبورصة
+      allow write: if isAdmin();
     }
 
     // ─────────────────────────────────────────────
@@ -76,23 +72,22 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────
-    // 5. مزادات الأدوات والصفقات (Auctions)
+    // 5. مزادات الأدوات والصفقات (Auctions Shelf)
     // ─────────────────────────────────────────────
     match /auctions/{id} {
       allow read: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow write: if isAdmin();
     }
 
     // ─────────────────────────────────────────────
     // 6. أكواد الهدايا والمكافآت (Gift Codes)
     // ─────────────────────────────────────────────
     match /giftCodes/{code} {
-      allow read: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        request.resource.data.usedCount == resource.data.usedCount + 1
+      );
     }
 
     // ─────────────────────────────────────────────
@@ -100,12 +95,7 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
     match /players/{username}/backups/{dateString} {
       allow read: if true;
-      allow create, update: if isAdmin() || (
-        request.resource.data.cash == get(/databases/$(database)/documents/players/$(username)).data.cash &&
-        request.resource.data.bank == get(/databases/$(database)/documents/players/$(username)).data.bank &&
-        request.resource.data.netWorth == get(/databases/$(database)/documents/players/$(username)).data.netWorth &&
-        request.resource.data.pin == get(/databases/$(database)/documents/players/$(username)).data.pin
-      );
+      allow create, update: if true;
       allow delete: if isAdmin();
     }
 
@@ -114,7 +104,6 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
     match /chat/{messageId} {
       allow read: if true;
-      // تأكد من وجود حقول أساسية وأن الرسالة ليست فارغة
       allow create: if request.resource.data.keys().hasAll(['sender', 'message', 'timestamp']) &&
                        request.resource.data.message is string &&
                        request.resource.data.message.size() > 0 &&
@@ -123,24 +112,24 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────
-    // 9. صندوق البريد والتنبيهات (Mailbox & Letters)
+    // 9. صندوق البريد والرسائل الخاصة (Mailbox & DMs)
     // ─────────────────────────────────────────────
     match /mailbox/{mailId} {
       allow read: if true;
-      // الكتابة محدودة للأدمن فقط - منع التلاعب بالرسائل
-      allow write: if isAdmin();
+      allow create: if request.resource.data.keys().hasAll(['sender', 'recipient', 'type', 'timestamp']);
+      allow update: if true;
+      allow delete: if true;
     }
 
     // ─────────────────────────────────────────────
-    // 10. الشركات المشتركة (Corporations)
+    // 10. الشركات والتحالفات المشتركة (Corporations)
     // ─────────────────────────────────────────────
     match /corporations/{corpId} {
       allow read: if true;
-      // الإنشاء والتعديل للمستخدمين المسجلين فقط (تحقق من وجود الحقول الأساسية)
       allow create: if request.resource.data.keys().hasAll(['name', 'founder', 'createdAt']) &&
                        request.resource.data.name is string &&
                        request.resource.data.name.size() > 0;
-      allow update: if true; // اللاعبون يحتاجون تحديث الشركات بانتظام
+      allow update: if true;
       allow delete: if isAdmin();
     }
 
@@ -149,7 +138,8 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
     match /liveAuctions/{auctionId} {
       allow read: if true;
-      allow create, update: if isAdmin(); // فقط الأدمن ينشئ ويدير المزادات الحية
+      allow create: if isAdmin();
+      allow update: if true;
       allow delete: if isAdmin();
     }
   }
