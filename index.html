@@ -68,7 +68,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=112">
+  <link rel="stylesheet" href="app.css?v=120">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -3973,118 +3973,9 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-
-  <!-- ==================== POLICE RAID OVERLAY MODAL ==================== -->
-  <div id="police-raid-overlay" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 overflow-y-auto">
-    <div class="glass-panel w-full max-w-md rounded-3xl border-2 border-red-500/50 p-6 shadow-2xl bg-slate-950/98 text-center space-y-6 relative overflow-hidden">
-      <!-- Animated Emergency Lights background effect -->
-      <div class="absolute inset-0 bg-gradient-to-r from-red-600/10 via-transparent to-blue-600/10 animate-pulse pointer-events-none"></div>
-      
-      <div class="w-20 h-20 mx-auto rounded-full bg-red-500/10 border-2 border-red-500 flex items-center justify-center text-red-500 animate-bounce relative z-10">
-        <i class="fa-solid fa-handcuffs text-4xl"></i>
-      </div>
-      
-      <div class="space-y-2 relative z-10">
-        <h2 class="text-2xl font-black text-red-500 animate-pulse tracking-wide">🚨 كبسة أمنية! (Police Raid)</h2>
-        <p class="text-xs text-slate-400">لقد داهمت قوات الشرطة مقرك المالي بسبب تضخم ثروتك المشبوهة!</p>
-      </div>
-
-      <!-- Financial Info Box -->
-      <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs relative z-10">
-        <div class="flex justify-between">
-          <span class="text-slate-400">الأموال المشبوهة المهددة:</span>
-          <span id="raid-dirty-cash" class="font-bold text-rose-400 numbers-font">0 EGP</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-slate-400">تكلفة الرشوة والوساطة:</span>
-          <span id="raid-bribe-cost" class="font-bold text-yellow-400 numbers-font">0 EGP</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-slate-400">احتمالية الإفلات والمقاومة:</span>
-          <span id="raid-escape-chance" class="font-bold text-sky-400 numbers-font">0%</span>
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="space-y-2 relative z-10">
-        <button id="btn-raid-bribe" type="button" class="w-full py-3 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-yellow-500/20 flex items-center justify-center gap-2">
-          <i class="fa-solid fa-hand-holding-dollar"></i>
-          <span>دفع الرشوة والوساطة فوراً (تنظيف السجل)</span>
-        </button>
-        <button id="btn-raid-resist" type="button" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 font-bold rounded-xl text-xs transition flex items-center justify-center gap-2">
-          <i class="fa-solid fa-running"></i>
-          <span>محاولة المقاومة أو الإنكار (مخاطرة بالسجن!)</span>
-        </button>
-      </div>
-
-      <div class="text-[10px] text-slate-500 relative z-10">
-        * المقاومة قد تجنبك دفع الرشوة، ولكن في حال الفشل سيتم مصادرة نصف كاشك القذر وسجنك لمدة 10 دقائق!
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== UNIFIED PANEL HELP MODAL ==================== -->
-  <div id="panel-help-modal" class="hidden fixed inset-0 z-[120] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 overflow-y-auto">
-    <div class="glass-panel w-full max-w-md rounded-3xl border border-yellow-500/30 p-5 shadow-2xl bg-slate-950/95 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-        <h3 id="panel-help-title" class="text-sm font-black text-white flex items-center gap-2">
-          <i class="fa-solid fa-circle-question text-yellow-400"></i>
-          <span>شرح الصفحة</span>
-        </h3>
-        <button id="btn-close-panel-help" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div id="panel-help-content" class="text-xs text-slate-300 space-y-2 leading-relaxed max-h-[60vh] overflow-y-auto pr-1">
-        <!-- Content injected dynamically -->
-      </div>
-      <button id="btn-close-panel-help-footer" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold rounded-xl text-xs transition border border-slate-800">
-        حسناً، فهمت القواعد
-      </button>
-    </div>
-  </div>
-
-  <!-- ==================== ADMIN ACCOUNT AUDIT MODAL ==================== -->
-  <div id="admin-audit-modal" class="hidden fixed inset-0 z-[120] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 overflow-y-auto">
-    <div class="glass-panel w-full max-w-lg rounded-3xl border border-rose-500/30 p-5 shadow-2xl bg-slate-950/95 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-        <h3 class="text-sm font-black text-rose-400 flex items-center gap-2">
-          <i class="fa-solid fa-user-shield"></i>
-          <span>تقرير فحص نزاهة وأمان الحساب</span>
-        </h3>
-        <button id="btn-close-admin-audit" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="text-xs space-y-3">
-        <!-- Target Player Info -->
-        <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex justify-between items-center">
-          <div>اللاعب المستهدف: <strong id="audit-target-username" class="text-white">--</strong></div>
-          <div id="audit-safety-badge" class="px-2.5 py-1 rounded-lg font-bold text-xs">--</div>
-        </div>
-        <!-- Audit Checklist -->
-        <div id="audit-report-body" class="space-y-2 leading-relaxed max-h-[50vh] overflow-y-auto pr-1">
-          <!-- Content injected dynamically -->
-        </div>
-      </div>
-      <button id="btn-close-admin-audit-footer" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold rounded-xl text-xs transition border border-slate-800">
-        إغلاق التقرير
-      </button>
-    </div>
-  </div>
-
-  <!-- FLOATING NOTIFICATIONS CONTAINER — top center -->
-  <div id="toast-container"
-    class="fixed top-4 left-1/2 -translate-x-1/2 z-[500] flex flex-col items-center gap-2 pointer-events-none w-full px-4"
-    style="max-width:420px">
-    <!-- Dyn toasts -->
-  </div>
-
-  <!-- Script Initializers -->
-  <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=112"></script>
-  <script src="game.js?v=112"></script>
-  <script src="ui.js?v=112"></script>
+  <script src="db.js?v=120"></script>
+  <script src="game.js?v=120"></script>
+  <script src="ui.js?v=120"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
