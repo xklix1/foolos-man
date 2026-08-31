@@ -1168,7 +1168,11 @@ const UIController = (() => {
     document.getElementById('auth-screen').classList.add('hidden');
   }
 
+  let currentAuthMode = 'login'; // Shared state across auth triggers
+  let isAuthSubmitting = false;
+
   function showAuthModal(mode = 'login') {
+    currentAuthMode = mode;
     const authScreen = document.getElementById('auth-screen');
     const authRegBtn = document.getElementById('auth-switch-reg');
     const authLoginBtn = document.getElementById('auth-switch-login');
@@ -1176,15 +1180,15 @@ const UIController = (() => {
     const authActionBtn = document.getElementById('auth-action-text');
 
     if (mode === 'register') {
-      authModeTitle.textContent = 'تسجيل حساب جديد';
-      authActionBtn.textContent = 'إنشاء حساب وبدء اللعب';
-      authRegBtn.classList.add('border-yellow-500', 'text-yellow-500');
-      authLoginBtn.classList.remove('border-yellow-500', 'text-yellow-500');
+      if (authModeTitle) authModeTitle.textContent = 'تسجيل حساب جديد';
+      if (authActionBtn) authActionBtn.textContent = 'إنشاء حساب وبدء اللعب';
+      if (authRegBtn) authRegBtn.classList.add('border-yellow-500', 'text-yellow-500');
+      if (authLoginBtn) authLoginBtn.classList.remove('border-yellow-500', 'text-yellow-500');
     } else {
-      authModeTitle.textContent = 'تسجيل الدخول للمحفظة';
-      authActionBtn.textContent = 'دخول وتزامن الحساب';
-      authLoginBtn.classList.add('border-yellow-500', 'text-yellow-500');
-      authRegBtn.classList.remove('border-yellow-500', 'text-yellow-500');
+      if (authModeTitle) authModeTitle.textContent = 'تسجيل الدخول للمحفظة';
+      if (authActionBtn) authActionBtn.textContent = 'دخول وتزامن الحساب';
+      if (authLoginBtn) authLoginBtn.classList.add('border-yellow-500', 'text-yellow-500');
+      if (authRegBtn) authRegBtn.classList.remove('border-yellow-500', 'text-yellow-500');
     }
 
     if (authScreen) {
@@ -1287,14 +1291,12 @@ const UIController = (() => {
     const authModeTitle = document.getElementById('auth-mode-title');
     const authActionBtn = document.getElementById('auth-action-text');
 
-    let mode = 'login'; // 'login' or 'register'
-
     if (authRegBtn) {
       authRegBtn.addEventListener('click', () => {
         playMenuSound('click');
-        mode = 'register';
-        authModeTitle.textContent = 'تسجيل حساب جديد';
-        authActionBtn.textContent = 'إنشاء حساب وبدء اللعب';
+        currentAuthMode = 'register';
+        if (authModeTitle) authModeTitle.textContent = 'تسجيل حساب جديد';
+        if (authActionBtn) authActionBtn.textContent = 'إنشاء حساب وبدء اللعب';
         authRegBtn.classList.add('border-yellow-500', 'text-yellow-500');
         authLoginBtn.classList.remove('border-yellow-500', 'text-yellow-500');
       });
@@ -1303,9 +1305,9 @@ const UIController = (() => {
     if (authLoginBtn) {
       authLoginBtn.addEventListener('click', () => {
         playMenuSound('click');
-        mode = 'login';
-        authModeTitle.textContent = 'تسجيل الدخول للمحفظة';
-        authActionBtn.textContent = 'دخول وتزامن الحساب';
+        currentAuthMode = 'login';
+        if (authModeTitle) authModeTitle.textContent = 'تسجيل الدخول للمحفظة';
+        if (authActionBtn) authActionBtn.textContent = 'دخول وتزامن الحساب';
         authLoginBtn.classList.add('border-yellow-500', 'text-yellow-500');
         authRegBtn.classList.remove('border-yellow-500', 'text-yellow-500');
       });
@@ -1313,6 +1315,8 @@ const UIController = (() => {
 
     if (authSubmitBtn) {
       authSubmitBtn.addEventListener('click', async () => {
+        if (isAuthSubmitting) return; // Prevent concurrent duplicate submissions
+
         const usernameInput = document.getElementById('auth-username').value.trim();
         const pinInput = document.getElementById('auth-pin').value.trim();
 
@@ -1323,17 +1327,18 @@ const UIController = (() => {
         }
 
         try {
+          isAuthSubmitting = true;
           setAuthLoading(true);
 
           // Enforce Maintenance Gatekeeper (Admin only)
           const maintStatus = await AppDB.getMaintenanceStatus();
           if (maintStatus && maintStatus.enabled) {
-            const isAdminUser = false; // سيتم التحقق الحقيقي عبر getPlayerState أدناه
-            if (mode === 'register' && !isAdminUser) {
+            const isAdminUser = false;
+            if (currentAuthMode === 'register' && !isAdminUser) {
               showMaintenancePopup(maintStatus.message || 'الخادم قيد الصيانة الفنية حالياً. تسجيل الحسابات الجديدة معطل.');
               return;
             }
-            if (mode === 'login' && !isAdminUser) {
+            if (currentAuthMode === 'login' && !isAdminUser) {
               const checkPlayer = await AppDB.getPlayerState(usernameInput);
               if (!checkPlayer || !checkPlayer.isAdmin) {
                 showMaintenancePopup(maintStatus.message || 'الخادم تحت وضع الصيانة الفنية حالياً. تسجيل الدخول مقتصر على حسابات الإدارة فقط.');
@@ -1344,7 +1349,7 @@ const UIController = (() => {
 
           let playerState;
 
-          if (mode === 'register') {
+          if (currentAuthMode === 'register') {
             await AppDB.registerPlayer(usernameInput, pinInput);
             playerState = await GameEngine.loadUserSession(usernameInput);
             localStorage.setItem('foolos_active_session_user', usernameInput);
@@ -1390,6 +1395,7 @@ const UIController = (() => {
           showToast('فشل التحقق', err.message, 'error');
           playMenuSound('back');
         } finally {
+          isAuthSubmitting = false;
           setAuthLoading(false);
         }
       });
