@@ -1816,6 +1816,19 @@
 
   <!-- Standalone Admin Controller Script -->
   <script>
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyC7KRj3-t_03HLMzJ10miVhdKWCpabPQB4",
+      authDomain: "foolos-man.firebaseapp.com",
+      projectId: "foolos-man",
+      storageBucket: "foolos-man.firebasestorage.app",
+      messagingSenderId: "426833341092",
+      appId: "1:426833341092:web:141a51c22d8b1afc621431"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(FIREBASE_CONFIG);
+    }
+
     // Audio mock
     function playMenuSound() {}
 
