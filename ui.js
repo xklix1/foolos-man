@@ -5679,6 +5679,18 @@ const UIController = (() => {
             : 'text-[10px] px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-300';
         }
 
+        const toggleRoleBtn = document.getElementById('btn-admin-toggle-role');
+        const toggleRoleText = document.getElementById('admin-toggle-role-text');
+        if (toggleRoleBtn && toggleRoleText) {
+          if (state.isAdmin) {
+            toggleRoleText.textContent = 'سحب صلاحية الإدارة (إلغاء أدمن) ⚠️';
+            toggleRoleBtn.className = 'w-full py-2 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/40 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5';
+          } else {
+            toggleRoleText.textContent = 'نقل صلاحية الإدارة / تعيين كمسؤول (Make Admin) 👑';
+            toggleRoleBtn.className = 'w-full py-2 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 rounded-lg text-[11px] font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20';
+          }
+        }
+
         const statusBadge = document.getElementById('admin-p-badge-status');
         if (statusBadge) {
           const onlineThreshold = 2 * 60 * 1000; // 2 minutes
@@ -6455,6 +6467,52 @@ const UIController = (() => {
           logAdminAction(`تغيير الرقم السري لحساب اللاعب: ${selectedPlayer}`);
         } catch (err) {
           showToast('خطأ تغيير PIN', err.message, 'error');
+        }
+      });
+    }
+
+    // Toggle / Transfer Admin Role Action
+    const toggleAdminRoleBtn = document.getElementById('btn-admin-toggle-role');
+    if (toggleAdminRoleBtn) {
+      toggleAdminRoleBtn.addEventListener('click', async () => {
+        if (!selectedPlayer || !selectedPlayerState) {
+          showToast('إدارة الصلاحيات', 'يرجى اختيار لاعب أولاً من القائمة.', 'error');
+          return;
+        }
+
+        const isCurrentlyAdmin = Boolean(selectedPlayerState.isAdmin);
+        const targetUser = selectedPlayer;
+
+        let confirmMsg = '';
+        if (isCurrentlyAdmin) {
+          confirmMsg = `⚠️ تحذير: هل أنت متأكد من سحب صلاحيات الإدارة من اللاعب "${targetUser}" وتحويل حسابه إلى حساب لاعب عادي؟`;
+        } else {
+          confirmMsg = `👑 تأكيد ترقية مسؤول:\nهل أنت متأكد من منح صلاحيات الإدارة الكاملة (Admin) للاعب "${targetUser}"؟\nسيتمكن هذا الحساب من الدخول للوحة التحكم وإدارة كافة مفاصل اللعبة واللاعبين.`;
+        }
+
+        if (!confirm(confirmMsg)) return;
+
+        try {
+          toggleAdminRoleBtn.disabled = true;
+          toggleAdminRoleBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري تحديث الصلاحية...';
+
+          const newAdminStatus = !isCurrentlyAdmin;
+          await AppDB.adminSetPlayerAdminStatus(targetUser, newAdminStatus);
+
+          selectedPlayerState.isAdmin = newAdminStatus;
+          if (targetUser === GameEngine.activeUsername && GameEngine.state) {
+            GameEngine.state.isAdmin = newAdminStatus;
+          }
+
+          showToast('صلاحيات الإدارة', newAdminStatus ? `تم تعيين اللاعب ${targetUser} كمسؤول (Admin) بنجاح! 👑` : `تم سحب صلاحيات الإدارة من اللاعب ${targetUser}.`, 'success');
+          logAdminAction(`${newAdminStatus ? 'ترقية وتعيين مسؤول جديد (Admin)' : 'سحب صلاحية الإدارة من'}: ${targetUser}`);
+
+          selectPlayerForModeration(targetUser);
+          loadAdminPlayersDirectory(false);
+        } catch (err) {
+          showToast('خطأ تعديل الصلاحية', err.message, 'error');
+        } finally {
+          toggleAdminRoleBtn.disabled = false;
         }
       });
     }

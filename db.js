@@ -1093,6 +1093,17 @@ const AppDB = (() => {
     }, { merge: true });
   }
 
+  async function adminSetPlayerAdminStatus(username, isAdmin) {
+    _requireOnline();
+    await _ensureAdminAuth();
+    username = username.trim();
+    await firestoreDb.collection('players').doc(username).set({ 
+      isAdmin: Boolean(isAdmin),
+      adminModifiedTimestamp: Date.now()
+    }, { merge: true });
+    return true;
+  }
+
   // ─────────────────────────────────────────────
   //  ADMIN BROADCAST & AIRDROP
   // ─────────────────────────────────────────────
@@ -2247,6 +2258,7 @@ const AppDB = (() => {
     adminSetPlayerJail,
     adminBanPlayer,
     adminUnbanPlayer,
+    adminSetPlayerAdminStatus,
     adminResetAllPlayers,
     adminWipeLeaderboard,
     adminClearTransfers,
