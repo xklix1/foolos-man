@@ -2,12 +2,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // هام: قم بتحديث UID بالمعرّف الصحيح لحساب adminkhalid911@foolos-man.com
-    // من Firebase Console → Authentication → Users بعد ما تنشئ الحساب.
+    // دالة التحقق من أن المستخدم مسجل وموثق في Firebase Auth
     function isAdmin() {
-      return request.auth != null && 
-             (request.auth.uid == "PLACEHOLDER_UPDATE_WITH_NEW_UID" ||
-              request.auth.token.email == "adminkhalid911@foolos-man.com");
+      return request.auth != null;
     }
 
     // ─────────────────────────────────────────────
