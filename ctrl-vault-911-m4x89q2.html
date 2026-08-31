@@ -16,7 +16,27 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="app.css?v=120">
+
+  <!-- Firebase 10.8.0 SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
+  <script>
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyC7KRj3-t_03HLMzJ10miVhdKWCpabPQB4",
+      authDomain: "foolos-man.firebaseapp.com",
+      projectId: "foolos-man",
+      storageBucket: "foolos-man.firebasestorage.app",
+      messagingSenderId: "426833341092",
+      appId: "1:426833341092:web:141a51c22d8b1afc621431"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(FIREBASE_CONFIG);
+    }
+  </script>
 
   <style>
     body {
@@ -1804,30 +1824,13 @@
   <!-- Toast Notification Container -->
   <div id="toast-container" class="fixed top-4 left-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- Firebase App & Services (Compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-
   <!-- Core Modules -->
-  <script src="game.js"></script>
-  <script src="db.js"></script>
-  <script src="admin-panel.js"></script>
+  <script src="game.js?v=120"></script>
+  <script src="db.js?v=120"></script>
+  <script src="admin-panel.js?v=120"></script>
 
   <!-- Standalone Admin Controller Script -->
   <script>
-    const FIREBASE_CONFIG = {
-      apiKey: "AIzaSyC7KRj3-t_03HLMzJ10miVhdKWCpabPQB4",
-      authDomain: "foolos-man.firebaseapp.com",
-      projectId: "foolos-man",
-      storageBucket: "foolos-man.firebasestorage.app",
-      messagingSenderId: "426833341092",
-      appId: "1:426833341092:web:141a51c22d8b1afc621431"
-    };
-
-    if (!firebase.apps.length) {
-      firebase.initializeApp(FIREBASE_CONFIG);
-    }
 
     // Audio mock
     function playMenuSound() {}
