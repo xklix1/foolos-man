@@ -1445,6 +1445,20 @@ const UIController = (() => {
       renderCorporationsTab();
     }
 
+    // Immediate toggle of jail-overlay based on selected tab
+    const jailOverlay = document.getElementById('jail-overlay');
+    if (jailOverlay) {
+      const state = GameEngine.state;
+      const isBlackMarketTab = (tabId === 'blackmarket' || tabId === 'smuggling');
+      if (state && state.jailTimer > 0 && isBlackMarketTab) {
+        jailOverlay.classList.remove('hidden');
+        const countdownEl = document.getElementById('jail-countdown');
+        if (countdownEl) countdownEl.textContent = state.jailTimer;
+      } else {
+        jailOverlay.classList.add('hidden');
+      }
+    }
+
     // Update active class styles in buttons
     const navButtons = document.querySelectorAll('.nav-tab-btn');
     navButtons.forEach(btn => {
@@ -1502,14 +1516,26 @@ const UIController = (() => {
       const updates = GameEngine.processTick();
       if (!updates) return;
 
-      // Handle Jail lockouts overlay
+      // Handle Jail lockouts overlay (Strictly isolated to Black Market & Smuggling tabs)
       const state = GameEngine.state;
       const jailOverlay = document.getElementById('jail-overlay');
-      if (state && state.jailTimer > 0) {
+      const isBlackMarketTab = (activeTab === 'blackmarket' || activeTab === 'smuggling');
+      if (state && state.jailTimer > 0 && isBlackMarketTab) {
         jailOverlay.classList.remove('hidden');
-        document.getElementById('jail-countdown').textContent = state.jailTimer;
+        const countdownEl = document.getElementById('jail-countdown');
+        if (countdownEl) countdownEl.textContent = state.jailTimer;
       } else if (jailOverlay) {
         jailOverlay.classList.add('hidden');
+      }
+
+      // Bind legal exit button from jail overlay
+      const jailExitBtn = document.getElementById('btn-jail-exit-to-legal');
+      if (jailExitBtn && !jailExitBtn._bound) {
+        jailExitBtn._bound = true;
+        jailExitBtn.addEventListener('click', () => {
+          if (jailOverlay) jailOverlay.classList.add('hidden');
+          switchTab('dashboard');
+        });
       }
 
       // Handle Police Raid overlay

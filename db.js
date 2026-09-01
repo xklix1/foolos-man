@@ -303,24 +303,48 @@ const AppDB = (() => {
   async function getPlayerState(username) {
     _requireOnline();
     const ref = firestoreDb.collection('players').doc(username);
+    let serverDoc = null;
     try {
       const getPromise = ref.get();
-      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 2500));
-      const doc = await Promise.race([getPromise, timeoutPromise]);
-      if (doc && doc.exists) return doc.data();
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3000));
+      serverDoc = await Promise.race([getPromise, timeoutPromise]);
     } catch (e) {
-      console.warn('[DB] getPlayerState error, checking local cache:', e.message);
+      console.warn('[DB] getPlayerState server fetch error:', e.message);
     }
-    // Fallback: check localStorage cache
+
+    let localState = null;
     try {
       const cached = localStorage.getItem(`foolos_state_${username}`);
-      if (cached) return JSON.parse(cached);
+      if (cached) localState = JSON.parse(cached);
     } catch (e) {}
+
+    // Strict Cross-Device Sync Resolution
+    if (serverDoc && serverDoc.exists) {
+      const serverData = serverDoc.data();
+      const serverTime = serverData.lastActiveTimestamp || serverData.lastSeen || 0;
+      const localTime = localState ? (localState.lastActiveTimestamp || localState.lastSeen || 0) : 0;
+
+      // If server is newer or equal (e.g. player advanced on tablet, then opened phone)
+      if (serverTime >= localTime || !localState) {
+        try {
+          localStorage.setItem(`foolos_state_${username}`, JSON.stringify(serverData));
+        } catch (e) {}
+        return serverData;
+      } else {
+        // Local state has newer un-flushed progress, update server immediately
+        savePlayerState(username, localState, true);
+        return localState;
+      }
+    }
+
+    // Fallback: return local state if server couldn't be reached
+    if (localState) return localState;
+    if (serverDoc && serverDoc.exists) return serverDoc.data();
     return null;
   }
 
   // ─────────────────────────────────────────────
-  //  SAVE PLAYER STATE (High Performance Debounced Sync & Smart Caching)
+  //  SAVE PLAYER STATE (Cross-Device Fast Sync & Smart Caching)
   // ─────────────────────────────────────────────
   let _saveTimeout = null;
   let _pendingSaveState = null;
@@ -334,11 +358,15 @@ const AppDB = (() => {
     if (_pendingSaveUser && _pendingSaveState && firebaseReady && firestoreDb) {
       try {
         const ref = firestoreDb.collection('players').doc(_pendingSaveUser);
-        const stateToSave = { ..._pendingSaveState, lastSeen: Date.now() };
+        const stateToSave = { 
+          ..._pendingSaveState, 
+          lastSeen: Date.now(),
+          lastActiveTimestamp: _pendingSaveState.lastActiveTimestamp || Date.now()
+        };
         _pendingSaveUser = null;
         _pendingSaveState = null;
         await ref.set(stateToSave, { merge: true });
-        console.log('[DB] Flushed pending state successfully');
+        console.log('[DB] Flushed pending state successfully to Cloud');
       } catch (err) {
         console.warn('[DB] Flush sync warning:', err.message);
       }
@@ -364,6 +392,7 @@ const AppDB = (() => {
     if (!username) return;
     state.username = username;
     state.lastSeen = Date.now();
+    if (!state.lastActiveTimestamp) state.lastActiveTimestamp = Date.now();
 
     // Cache locally instantly in LocalStorage
     try {
@@ -380,18 +409,8 @@ const AppDB = (() => {
     if (!_saveTimeout) {
       _saveTimeout = setTimeout(async () => {
         _saveTimeout = null;
-        if (_pendingSaveUser && _pendingSaveState && firebaseReady && firestoreDb) {
-          try {
-            const ref = firestoreDb.collection('players').doc(_pendingSaveUser);
-            const stateToSave = { ..._pendingSaveState };
-            _pendingSaveUser = null;
-            _pendingSaveState = null;
-            await ref.set(stateToSave, { merge: true });
-          } catch (err) {
-            console.warn('[DB] Debounced sync warning:', err.message);
-          }
-        }
-      }, 25000); // 25s debounced sync (reduces Firestore writes by 95%)
+        await flushPendingSave();
+      }, 6000); // 6s fast debounced sync for seamless cross-device handover
     }
   }
 

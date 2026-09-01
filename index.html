@@ -1234,18 +1234,24 @@
         class="w-20 h-20 bg-rose-500/10 border border-rose-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
         <i class="fa-solid fa-user-lock text-rose-500 text-3xl animate-pulse"></i>
       </div>
-      <h2 class="text-2xl font-black text-rose-500 mb-2">أنت رهن الاعتقال القانوني!</h2>
-      <p class="text-xs text-slate-400 mb-6">تم إلقاء القبض عليك متلبساً في تجارة السوق السوداء. الخدمات البنكية
-        والاستثمارات معطلة حالياً.</p>
+      <h2 class="text-2xl font-black text-rose-500 mb-2">توقيف قيد التحقيق (السوق السوداء)!</h2>
+      <p class="text-xs text-slate-300 mb-6 leading-relaxed">
+        تم تعليق وصولك لعمليات السوق السوداء والتهريب مؤقتاً بسبب بلاغ أمني.
+        <br><span class="text-emerald-400 font-semibold">بقية أنشطتك القانونية (الشركات، البورصة، البنوك، العقارات) تعمل بكامل حريتها!</span>
+      </p>
 
       <div class="p-4 bg-slate-950/80 rounded-xl border border-slate-800/80 mb-6 inline-block">
-        <span class="text-xs text-slate-400 block mb-1">الوقت المتبقي للإفراج</span>
+        <span class="text-xs text-slate-400 block mb-1">الوقت المتبقي لانتهاء التحقيق</span>
         <span id="jail-countdown" class="numbers-font text-3xl font-black text-white glow-gold">0</span>
         <span class="text-xs text-slate-400 mr-1">ثانية</span>
       </div>
 
-      <p class="text-[10px] text-slate-500">ملاحظة: محامي الدفاع يبذل قصارى جهده، انتظر انتهاء الوقت التلقائي للخروج
-        وممارسة أعمالك الحرة.</p>
+      <div class="flex flex-col gap-2">
+        <button id="btn-jail-exit-to-legal" type="button" class="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all cursor-pointer">
+          <i class="fa-solid fa-building-columns"></i>
+          <span>العودة لأعمالك وشركاتك القانونية 🏢</span>
+        </button>
+      </div>
     </div>
   </div>
 

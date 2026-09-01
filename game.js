@@ -454,13 +454,13 @@ const GameEngine = (() => {
       name: 'اختراق منصات رقمية وغسيل عملات مشفرة',
       desc: 'هجوم سيبراني معقد على محافظ العملات المشفرة مع تحويل الأصول لخوادم خارجية.',
       cost: 380000,
-      payout: 1250000,
-      successChance: 0.46,
+      payout: 1100000,
+      successChance: 0.45,
       jailDuration: 90,
       repGain: 50,
       repLoss: 100,
-      repNeeded: 0,
-      cooldownSec: 600,
+      repNeeded: 120,
+      cooldownSec: 720, // 12 mins
       icon: 'fa-network-wired',
       tier: 'محترف'
     },
@@ -469,13 +469,13 @@ const GameEngine = (() => {
       name: 'تهريب آثار ومخطوطات نادرة لمزادات سرية',
       desc: 'صفقة كبرى لبيع قطع أثرية نادرة لكبار هواة الجمع في السوق السوداء الدولية.',
       cost: 1200000,
-      payout: 4600000,
+      payout: 3800000,
       successChance: 0.36,
       jailDuration: 130,
       repGain: 100,
       repLoss: 200,
-      repNeeded: 300,
-      cooldownSec: 1200,
+      repNeeded: 500,
+      cooldownSec: 1500, // 25 mins
       icon: 'fa-gem',
       tier: 'خطر جداً'
     },
@@ -484,13 +484,13 @@ const GameEngine = (() => {
       name: 'عملية السطو الكبرى على خزائن الماس الدولية',
       desc: 'أضخم عملية سرقة منظمة في التاريخ لخزينة الماس والسبائك البنكية.',
       cost: 4000000,
-      payout: 20000000,
+      payout: 16000000,
       successChance: 0.24,
       jailDuration: 180,
       repGain: 250,
       repLoss: 500,
-      repNeeded: 800,
-      cooldownSec: 2400,
+      repNeeded: 1500,
+      cooldownSec: 2700, // 45 mins
       icon: 'fa-shield-halved',
       tier: 'أسطوري'
     },
@@ -499,13 +499,13 @@ const GameEngine = (() => {
       name: 'تهريب اليورانيوم المخصب الدولي',
       desc: 'صفقة تهريب وتوريد شحنة يورانيوم مخصب لتشغيل مفاعلات طاقة خاصة تابعة لمنظمات دولية سرية.',
       cost: 30000000,
-      payout: 180000000,
-      successChance: 0.25,
-      jailDuration: 100,
-      repGain: 1000,
+      payout: 120000000,
+      successChance: 0.22,
+      jailDuration: 200,
+      repGain: 800,
       repLoss: 2000,
-      repNeeded: 1500,
-      cooldownSec: 2700, // 45 min
+      repNeeded: 3200,
+      cooldownSec: 3600, // 60 mins
       icon: 'fa-radiation',
       tier: 'عملية خاصة'
     },
@@ -514,13 +514,13 @@ const GameEngine = (() => {
       name: 'صفقة تكنولوجيا دفاعية وشفرات رادار مسربة',
       desc: 'بيع شفرات منظومات دفاع جوي فائقة التطور لجهات أجنبية خاصة.',
       cost: 15000000,
-      payout: 75000000,
+      payout: 60000000,
       successChance: 0.20,
       jailDuration: 240,
       repGain: 500,
       repLoss: 1000,
-      repNeeded: 2000,
-      cooldownSec: 3600,
+      repNeeded: 4500,
+      cooldownSec: 4200, // 70 mins
       icon: 'fa-jet-fighter',
       tier: 'أسطوري'
     },
@@ -529,12 +529,12 @@ const GameEngine = (() => {
       name: 'قرصنة واختراق البنوك المركزية',
       desc: 'فرض السيطرة والقرصنة السيبرانية على خوادم بنوك مركزية كبرى وسحب احتياطيات رقمية.',
       cost: 120000000,
-      payout: 850000000,
-      successChance: 0.18,
-      jailDuration: 140,
-      repGain: 3000,
+      payout: 650000000,
+      successChance: 0.16,
+      jailDuration: 300,
+      repGain: 2000,
       repLoss: 6000,
-      repNeeded: 5000,
+      repNeeded: 6500,
       cooldownSec: 7200, // 2 hours
       icon: 'fa-terminal',
       tier: 'عملية خاصة'
@@ -690,14 +690,17 @@ const GameEngine = (() => {
 
   let state = { ...INITIAL_STATE };
   let stockPrices = {}; // Stores { SYMBOL: [priceHistory...] }
+  let stockRegimes = {}; // Stores { SYMBOL: { direction: 'bullish'|'bearish'|'sideways', duration: 15, floatingBase: price } }
+  let stockTickCounter = 0;
+  const STOCK_PULSE_INTERVAL = 6; // Update stock prices every 6 seconds instead of every 1 second
   let activeUsername = "";
   let lastTipEventTimestamp = 0;
 
   let taxConfig = {
     rateMultiplier: 1.0,
-    silverRate: 0.00002,
-    majorRate: 0.00004,
-    whaleRate: 0.00008
+    silverRate: 0.000005,
+    majorRate: 0.000010,
+    whaleRate: 0.000018
   };
 
   function setTaxConfig(cfg) {
@@ -724,19 +727,27 @@ const GameEngine = (() => {
     }
   }
 
-  // Initialize Stock Price Histories
+  // Initialize Stock Price Histories & Regimes
   function initStocks() {
+    const directions = ['bullish', 'bearish', 'sideways'];
     Object.keys(STOCKS).forEach(sym => {
       const stock = STOCKS[sym];
-      // Generate 25 points of initial history to make charts look great right away
+      // Generate 25 points of initial history with smooth momentum
       const history = [];
       let current = stock.basePrice;
       for (let i = 0; i < 25; i++) {
-        const change = (Math.random() - 0.5) * 2 * stock.volatility;
+        const change = (Math.random() - 0.5) * 1.5 * stock.volatility;
         current = Math.max(stock.floor, Math.floor(current * (1 + change)));
         history.push(current);
       }
       stockPrices[sym] = history;
+
+      // Assign initial market trend regime
+      stockRegimes[sym] = {
+        direction: directions[Math.floor(Math.random() * directions.length)],
+        duration: Math.floor(10 + Math.random() * 18),
+        floatingBase: stock.basePrice
+      };
     });
   }
 
@@ -767,14 +778,16 @@ const GameEngine = (() => {
 
   // Update Player Title based on Net Worth and XP
   function getAppropriateTitle(worth, xp) {
-    if (worth >= 50000000 && xp >= 10000) return 'إمبراطور المال والفلوس';
-    if (worth >= 25000000 && xp >= 5000) return 'ملياردير عصامي';
-    if (worth >= 5000000 && xp >= 2000) return 'مليونير فخم';
-    if (worth >= 1500000 && xp >= 800) return 'سيد الأعمال';
-    if (worth >= 400000 && xp >= 350) return 'مستثمر طموح';
-    if (worth >= 100000 && xp >= 120) return 'تاجر صاعد';
-    if (xp >= 60) return 'موظف متميز';
-    if (xp >= 20) return 'عامل ماهر';
+    if (worth >= 1000000000 && xp >= 50000) return 'سلطان الاقتصاد العالمي 👑';
+    if (worth >= 500000000 && xp >= 30000) return 'إمبراطور المال والفلوس 🏆';
+    if (worth >= 150000000 && xp >= 15000) return 'حوت المال الدولي 🐋';
+    if (worth >= 50000000 && xp >= 7500) return 'ملياردير عصامي 💎';
+    if (worth >= 15000000 && xp >= 3500) return 'مليونير فخم 🎩';
+    if (worth >= 4000000 && xp >= 1500) return 'سيد الأعمال 🏢';
+    if (worth >= 1000000 && xp >= 600) return 'مستثمر طموح 📈';
+    if (worth >= 200000 && xp >= 200) return 'تاجر صاعد 💼';
+    if (xp >= 80) return 'موظف متميز 👔';
+    if (xp >= 25) return 'عامل ماهر 🛠️';
     return 'عامل مبتدئ';
   }
 
@@ -808,9 +821,10 @@ const GameEngine = (() => {
           const hasQuantum = (state.inventory && state.inventory.quantum_cpu > 0);
           const quantumMultiplier = hasQuantum ? 1.5 : 1.0;
           const boost = window.serverBoostMultiplier || 1.0;
-          const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12 * quantumMultiplier * boost));
+          const grossProfit = Math.max(0, Math.floor(demand * margin * 0.85 * quantumMultiplier * boost));
           const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
-          const netProfit = Math.max(0, grossProfit - workerPayroll);
+          const cappedPayroll = Math.min(workerPayroll, Math.floor(grossProfit * 0.40));
+          const netProfit = Math.max(0, grossProfit - cappedPayroll);
 
           // V2: Supply Chain Synergies Multiplier
           let synergyMultiplier = 1.0;
@@ -919,8 +933,8 @@ const GameEngine = (() => {
       income += Math.floor(state.bank * 0.00003);
     }
 
-    // 4. Wealth Tax deduction for ultra-high net worth
-    if (state.netWorth > 3000000 && !excludeTax) {
+    // 4. Wealth Tax deduction for ultra-high net worth (5M+ EGP)
+    if (state.netWorth > 5000000 && !excludeTax) {
       const taxReport = calculateTaxReport();
       income = Math.max(0, income - taxReport.taxPerSecond);
     }
@@ -928,16 +942,17 @@ const GameEngine = (() => {
     return income;
   }
 
-  // Tax Report & Bracket Engine
+  // Tax Report & Bracket Engine (Rebalanced to prevent cash-drain while rewarding tax planning)
   function calculateTaxReport() {
     const netWorth = calculateNetWorth();
     const taxShieldActive = Boolean(state.inventory && state.inventory.tax_shield > 0);
     const shieldDurationTicks = (state.itemDurations && state.itemDurations.tax_shield) || 0;
+    const EXEMPTION_THRESHOLD = 5000000; // Raised from 3M to 5M EGP
 
-    if (netWorth <= 3000000) {
+    if (netWorth <= EXEMPTION_THRESHOLD) {
       return {
         taxableNetWorth: 0,
-        bracketName: 'الشريحة الأولى (معفى تماماً)',
+        bracketName: 'الشريحة الأولى (معفى تماماً حتى 5 مليون ج.م)',
         bracketId: 1,
         bracketColor: 'text-emerald-400',
         baseRatePct: '0.0000%',
@@ -949,26 +964,28 @@ const GameEngine = (() => {
       };
     }
 
-    const taxable = netWorth - 3000000;
-    let baseRate = taxConfig.silverRate * taxConfig.rateMultiplier;
-    let bracketName = 'الشريحة الفضية (3M - 15M ج.م)';
+    const taxable = netWorth - EXEMPTION_THRESHOLD;
+    let baseRate = (taxConfig.silverRate || 0.000003) * (taxConfig.rateMultiplier || 1.0);
+    let bracketName = 'الشريحة الفضية (5M - 20M ج.م)';
     let bracketId = 2;
     let bracketColor = 'text-sky-400';
 
-    if (netWorth > 50000000) {
-      baseRate = taxConfig.whaleRate * taxConfig.rateMultiplier;
-      bracketName = 'شريحة حيتان المال والمليارديرات (+50M ج.م)';
+    if (netWorth > 60000000) {
+      baseRate = (taxConfig.whaleRate || 0.000010) * (taxConfig.rateMultiplier || 1.0);
+      bracketName = 'شريحة كبار المستثمرين والمليارديرات (+60M ج.م)';
       bracketId = 4;
       bracketColor = 'text-rose-400';
-    } else if (netWorth > 15000000) {
-      baseRate = taxConfig.majorRate * taxConfig.rateMultiplier;
-      bracketName = 'شريحة كبار الممولين (15M - 50M ج.م)';
+    } else if (netWorth > 20000000) {
+      baseRate = (taxConfig.majorRate || 0.000006) * (taxConfig.rateMultiplier || 1.0);
+      bracketName = 'شريحة الممولين المتقدمين (20M - 60M ج.م)';
       bracketId = 3;
       bracketColor = 'text-amber-400';
     }
 
-    const effectiveRate = taxShieldActive ? (baseRate * 0.50) : baseRate;
-    const taxPerSecond = Math.max(1, Math.floor(taxable * effectiveRate));
+    const effectiveRate = taxShieldActive ? (baseRate * 0.40) : baseRate; // Tax shield gives 60% discount
+    // Max cap: Never drain more than 450 EGP/sec even for extreme billionaires
+    const calculatedTax = Math.floor(taxable * effectiveRate);
+    const taxPerSecond = Math.min(450, Math.max(0, calculatedTax));
 
     return {
       taxableNetWorth: taxable,
@@ -1140,9 +1157,11 @@ const GameEngine = (() => {
         const hasQuantum = (state.inventory && state.inventory.quantum_cpu > 0);
         const quantumMultiplier = hasQuantum ? 1.5 : 1.0;
         const boost = window.serverBoostMultiplier || 1.0;
-        const grossProfit = Math.max(0, Math.floor(demand * margin * 0.12 * quantumMultiplier * boost));
+        const grossProfit = Math.max(0, Math.floor(demand * margin * 0.85 * quantumMultiplier * boost));
         const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
-        const profit = Math.max(0, grossProfit - workerPayroll);
+        // Payroll safety: workers never eat more than 40% of gross profit
+        const cappedPayroll = Math.min(workerPayroll, Math.floor(grossProfit * 0.40));
+        const profit = Math.max(0, grossProfit - cappedPayroll);
 
         if (profit > 0) {
           state.bank += profit;
@@ -1200,28 +1219,32 @@ const GameEngine = (() => {
       }
     }
 
-    // Progressive Wealth Tax on Ultra-High Net Worth (Taxes are deducted from bank first, fallback to cash with safety buffer)
-    if (state.netWorth > 3000000) {
-      const taxReport = calculateTaxReport();
-      const tax = taxReport.taxPerSecond;
-      if (tax > 0) {
-        let remainingTax = tax;
-        
-        // 1. Try to deduct from bank first
-        if (state.bank > 0) {
-          const bankDeducted = Math.min(state.bank, remainingTax);
-          state.bank -= bankDeducted;
-          remainingTax -= bankDeducted;
-          state.totalTaxesPaid = (state.totalTaxesPaid || 0) + bankDeducted;
-        }
-        
-        // 2. If there's still tax remaining, deduct from cash (keeping a 50k safety buffer)
-        if (remainingTax > 0) {
-          const safetyBuffer = 50000; // Keep at least 50,000 EGP cash for gameplay usability
-          const taxableCash = Math.max(0, (state.cash || 0) - safetyBuffer);
-          const cashDeducted = Math.min(taxableCash, remainingTax);
-          state.cash -= cashDeducted;
-          state.totalTaxesPaid = (state.totalTaxesPaid || 0) + cashDeducted;
+    // Progressive Wealth Tax on Ultra-High Net Worth (5M+ EGP, with strong liquidity protection)
+    if (state.netWorth > 5000000) {
+      const liquidFunds = (state.bank || 0) + (state.cash || 0);
+      const safetyBuffer = 100000; // Never deduct taxes if liquid funds are under 100,000 EGP
+
+      if (liquidFunds > safetyBuffer) {
+        const taxReport = calculateTaxReport();
+        const tax = taxReport.taxPerSecond;
+        if (tax > 0) {
+          let remainingTax = tax;
+          
+          // 1. Try to deduct from bank first
+          if (state.bank > 0) {
+            const bankDeducted = Math.min(state.bank, remainingTax);
+            state.bank -= bankDeducted;
+            remainingTax -= bankDeducted;
+            state.totalTaxesPaid = (state.totalTaxesPaid || 0) + bankDeducted;
+          }
+          
+          // 2. If there's still tax remaining, deduct from cash (keeping a 100k safety buffer)
+          if (remainingTax > 0) {
+            const taxableCash = Math.max(0, (state.cash || 0) - safetyBuffer);
+            const cashDeducted = Math.min(taxableCash, remainingTax);
+            state.cash -= cashDeducted;
+            state.totalTaxesPaid = (state.totalTaxesPaid || 0) + cashDeducted;
+          }
         }
       }
     }
@@ -1343,25 +1366,61 @@ const GameEngine = (() => {
       }
     });
 
-    // 7. Stock Market fluctuations (Gaussian random walk with mean reversion)
-    Object.keys(STOCKS).forEach(sym => {
-      const stock = STOCKS[sym];
-      const history = stockPrices[sym];
-      const lastPrice = history[history.length - 1];
+    // 7. Stock Market fluctuations (Controlled 6-second pulse with Trend Regimes)
+    stockTickCounter++;
+    if (stockTickCounter >= STOCK_PULSE_INTERVAL) {
+      stockTickCounter = 0;
+      const directions = ['bullish', 'bearish', 'sideways'];
 
-      // Mean reversion pull: force price towards basePrice
-      const pull = (stock.basePrice - lastPrice) * stock.reversion;
+      Object.keys(STOCKS).forEach(sym => {
+        const stock = STOCKS[sym];
+        const history = stockPrices[sym];
+        if (!history || history.length === 0) return;
+        const lastPrice = history[history.length - 1];
 
-      // Random shock
-      const shock = (Math.random() - 0.5) * 2 * stock.volatility * lastPrice;
+        // Ensure regime exists
+        if (!stockRegimes[sym]) {
+          stockRegimes[sym] = {
+            direction: directions[Math.floor(Math.random() * directions.length)],
+            duration: Math.floor(10 + Math.random() * 15),
+            floatingBase: stock.basePrice
+          };
+        }
 
-      let newPrice = Math.floor(lastPrice + pull + shock);
-      newPrice = Math.max(stock.floor, newPrice); // Price floor protection
+        const regime = stockRegimes[sym];
+        regime.duration--;
 
-      history.push(newPrice);
-      if (history.length > 30) history.shift(); // Cap history length for rendering
-      updates.stockMovement = true;
-    });
+        // If trend expired, rotate to new regime and slightly float fair value
+        if (regime.duration <= 0) {
+          regime.direction = directions[Math.floor(Math.random() * directions.length)];
+          regime.duration = Math.floor(12 + Math.random() * 18);
+          // Floating fair value drifts +/- 8%
+          const drift = (Math.random() - 0.5) * 0.16;
+          regime.floatingBase = Math.max(stock.floor + 5, Math.floor(stock.basePrice * (1 + drift)));
+        }
+
+        // 1. Soft pull towards floating fair value (gentler than before)
+        const pull = (regime.floatingBase - lastPrice) * (stock.reversion * 0.35);
+
+        // 2. Trend momentum drift
+        let trendDrift = 0;
+        if (regime.direction === 'bullish') {
+          trendDrift = lastPrice * (stock.volatility * (0.4 + Math.random() * 0.5));
+        } else if (regime.direction === 'bearish') {
+          trendDrift = -lastPrice * (stock.volatility * (0.4 + Math.random() * 0.5));
+        }
+
+        // 3. Realistic stochastic shock
+        const shock = (Math.random() - 0.5) * 1.6 * stock.volatility * lastPrice;
+
+        let newPrice = Math.floor(lastPrice + pull + trendDrift + shock);
+        newPrice = Math.max(stock.floor, newPrice); // Floor protection
+
+        history.push(newPrice);
+        if (history.length > 30) history.shift();
+        updates.stockMovement = true;
+      });
+    }
 
     // 8. Dynamic Market Events (All 8 Assets: COMI, EAST, ETEL, FWRY, CASH, BITC, GOLD, AIX)
     if (!updates.tipEvent && Math.random() < 0.12) { // 12% chance per tick (~every 20-30s)
@@ -1719,7 +1778,6 @@ const GameEngine = (() => {
 
   // Shift Work click
   function performJobShift() {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك العمل.");
     const job = JOBS[state.jobId] || JOBS.worker;
     if (!job) throw new Error("الوظيفة غير صالحة.");
 
@@ -1753,7 +1811,6 @@ const GameEngine = (() => {
 
   // Unlock Career Promotions
   function promoteJob(jobId) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك طلب ترقية.");
     const targetJob = JOBS[jobId];
     if (!targetJob) throw new Error("هذه الوظيفة غير موجودة.");
 
@@ -1768,7 +1825,6 @@ const GameEngine = (() => {
 
   // Buy Startup Business
   function purchaseBusiness(key) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إدارة الاستثمارات.");
     const biz = BUSINESSES[key];
     if (!biz) throw new Error("المشروع غير متوفر.");
 
@@ -1791,13 +1847,12 @@ const GameEngine = (() => {
 
     recordPlayerActivity('شراء مشروع', `شراء مشروع "${biz.name}" بسعر ${biz.cost.toLocaleString()} ج.م`, 'business');
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return biz;
   }
 
   // Upgrade Business Tier Level
   function upgradeBusiness(key) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إجراء ترقيات.");
     const biz = BUSINESSES[key];
     const bizState = state.businesses[key];
     if (bizState.level >= 10) {
@@ -1817,7 +1872,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('ترقية مشروع', `ترقية مشروع "${biz.name}" إلى المستوى ${bizState.level}`, 'business');
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return {
       level: bizState.level,
       cost: upgradeCost,
@@ -1826,7 +1881,6 @@ const GameEngine = (() => {
   }
 
   function convertToFranchise(key) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك تعديل الشركات.");
     const biz = BUSINESSES[key];
     const bizState = state.businesses[key];
     if (!bizState || bizState.level < 10) throw new Error("يجب ترقية المشروع للمستوى 10 أولاً.");
@@ -1842,12 +1896,11 @@ const GameEngine = (() => {
 
     recordPlayerActivity('تسجيل علامة تجارية', `تحويل مشروع "${biz.name}" إلى علامة تجارية مسجلة (Franchise)`, 'business');
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return true;
   }
 
   function sellFranchise(key) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
     const biz = BUSINESSES[key];
     const bizState = state.businesses[key];
     if (!bizState || !bizState.isFranchise) throw new Error("المشروع ليس علامة تجارية مسجلة للبيع.");
@@ -1862,13 +1915,12 @@ const GameEngine = (() => {
 
     recordPlayerActivity('بيع علامة تجارية', `بيع العلامة التجارية "${biz.name}" (استراتيجية خروج) بمبلغ ${sellPayout.toLocaleString()} EGP`, 'business');
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return { payout: sellPayout };
   }
 
   // Hire Workers for Business
   function hireWorker(key) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك توظيف عمالة.");
     const biz = BUSINESSES[key];
     const bizState = state.businesses[key];
     if (!bizState || bizState.level === 0) throw new Error("يجب شراء المشروع أولاً.");
@@ -1883,7 +1935,7 @@ const GameEngine = (() => {
     bizState.workers++;
 
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return {
       workers: bizState.workers,
       cost: hireCost
@@ -1920,7 +1972,6 @@ const GameEngine = (() => {
 
   // Launch Marketing Campaign (+40% demand boost for 30 ticks = 90 seconds)
   function launchMarketingCampaign(key) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إطلاق حملات تسويقية.");
     const biz = BUSINESSES[key];
     const bizState = state.businesses[key];
     if (!bizState || bizState.level === 0) throw new Error("المشروع مغلق حالياً.");
@@ -1934,7 +1985,7 @@ const GameEngine = (() => {
     bizState.marketingTicks = (bizState.marketingTicks || 0) + 30; // 30 ticks = 90 seconds
 
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return {
       cost: campaignCost,
       durationSec: 90
@@ -1943,31 +1994,28 @@ const GameEngine = (() => {
 
   // Deposit Cash to Bank
   function depositToBank(amount) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! الخدمات البنكية معطلة مؤقتاً.");
     if (amount <= 0) throw new Error("مبلغ الإيداع يجب أن يكون أكبر من صفر.");
     if (state.cash < amount) throw new Error("رصيدك النقدي (الكاش) لا يكفي لإتمام هذا الإيداع.");
 
     state.cash -= amount;
     state.bank += amount;
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
   }
 
   // Withdraw Cash from Bank
   function withdrawFromBank(amount) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! الخدمات البنكية معطلة مؤقتاً.");
     if (amount <= 0) throw new Error("مبلغ السحب يجب أن يكون أكبر من صفر.");
     if (state.bank < amount) throw new Error("رصيدك في حساب البنك لا يكفي لإتمام هذا السحب.");
 
     state.bank -= amount;
     state.cash += amount;
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
   }
 
   // Purchase Real Estate/Asset
   function buyAsset(key) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك توقيع عقود عقارية.");
     const asset = ASSETS[key];
     if (!asset) throw new Error("العقار غير متوفر.");
 
@@ -1979,13 +2027,12 @@ const GameEngine = (() => {
     state.assets[key] = (state.assets[key] || 0) + 1;
 
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return asset;
   }
 
   // Sell Real Estate/Asset (Liquidation at 85% of market value)
   function sellAsset(key) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك تسييل العقارات.");
     const count = state.assets[key] || 0;
     if (count <= 0) throw new Error("لا تمتلك أي عقار من هذا النوع للبيع.");
 
@@ -1996,13 +2043,12 @@ const GameEngine = (() => {
     state.cash += sellValue;
 
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return sellValue;
   }
 
-  // Buy Stocks
+  // Buy Stocks (with 1.5% Brokerage Commission)
   function buyStock(sym, shares) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! سوق الأسهم معطل لك.");
     const stock = STOCKS[sym];
     if (!stock) throw new Error("رمز الشركة غير صالح.");
     if (shares <= 0 || !Number.isInteger(shares)) throw new Error("عدد الأسهم يجب أن يكون عدداً صحيحاً موجباً.");
@@ -2010,37 +2056,37 @@ const GameEngine = (() => {
     const history = stockPrices[sym];
     if (!history || history.length === 0) throw new Error("بيانات السوق غير متوفرة بعد. حاول مجدداً.");
     const currentPrice = history[history.length - 1];
-    const totalCost = currentPrice * shares;
+    const grossCost = currentPrice * shares;
+    const fee = Math.max(5, Math.floor(grossCost * 0.015)); // 1.5% عمولة سمسرة
+    const totalCost = grossCost + fee;
 
     if (state.cash < totalCost) {
-      throw new Error(`رصيدك غير كافٍ. تحتاج: ${totalCost.toLocaleString()} EGP — لديك: ${state.cash.toLocaleString()} EGP`);
+      throw new Error(`رصيدك غير كافٍ. تحتاج: ${totalCost.toLocaleString()} EGP (شامل عمولة السمسرة ${fee.toLocaleString()} EGP) — لديك: ${state.cash.toLocaleString()} EGP`);
     }
 
     state.cash -= totalCost;
 
-    // Guard: initialize stock slot if missing (forward-compatibility)
+    // Guard: initialize stock slot if missing
     if (!state.stocks[sym]) {
       state.stocks[sym] = { shares: 0, avgPrice: 0 };
     }
 
-    // Calculate new average purchase price
+    // Calculate new average purchase price based on gross purchase
     const currentShares = state.stocks[sym].shares || 0;
     const currentAvg = state.stocks[sym].avgPrice || 0;
     const newShares = currentShares + shares;
-    const newAvg = Math.floor(((currentShares * currentAvg) + totalCost) / newShares);
+    const newAvg = Math.floor(((currentShares * currentAvg) + grossCost) / newShares);
 
     state.stocks[sym].shares = newShares;
     state.stocks[sym].avgPrice = newAvg;
 
-    recordPlayerActivity('شراء أسهم', `شراء ${shares} سهم (${sym}) بإجمالي ${totalCost.toLocaleString()} ج.م`, 'stock');
-    state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
-    return { shares, price: currentPrice, totalCost };
+    recordPlayerActivity('شراء أسهم', `شراء ${shares} سهم (${sym}) بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`, 'stock');
+    forceSaveState(true);
+    return { shares, price: currentPrice, grossCost, fee, totalCost };
   }
 
-  // Sell Stocks
+  // Sell Stocks (with 1.5% Brokerage Commission)
   function sellStock(sym, shares) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك بيع الأسهم.");
     const stock = STOCKS[sym];
     if (!stock) throw new Error("الشركة غير موجودة.");
     if (shares <= 0 || !Number.isInteger(shares)) throw new Error("عدد الأسهم غير صالح.");
@@ -2058,18 +2104,19 @@ const GameEngine = (() => {
     const history = stockPrices[sym];
     if (!history || history.length === 0) throw new Error("بيانات السوق غير متوفرة.");
     const currentPrice = history[history.length - 1];
-    const totalReturn = currentPrice * shares;
+    const grossReturn = currentPrice * shares;
+    const fee = Math.max(5, Math.floor(grossReturn * 0.015)); // 1.5% عمولة سمسرة
+    const netReturn = Math.max(0, grossReturn - fee);
 
     state.stocks[sym].shares -= shares;
     if (state.stocks[sym].shares === 0) {
       state.stocks[sym].avgPrice = 0;
     }
-    state.cash += totalReturn;
+    state.cash += netReturn;
 
-    recordPlayerActivity('بيع أسهم', `بيع ${shares} سهم (${sym}) بعائد ${totalReturn.toLocaleString()} ج.م`, 'stock');
-    state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
-    return { shares, price: currentPrice, totalReturn };
+    recordPlayerActivity('بيع أسهم', `بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (بعد خصم عمولة ${fee.toLocaleString()} ج.م)`, 'stock');
+    forceSaveState(true);
+    return { shares, price: currentPrice, grossReturn, fee, totalReturn: netReturn };
   }
 
   // Store: Buy Item (Refreshes duration, prevents exploit stacking)
@@ -2395,7 +2442,6 @@ const GameEngine = (() => {
 
   // Start Locked Term Investment (With offline timestamp support)
   function startInvestment(planId, amount) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إدارة استثمارات بنكية.");
     const plan = INVESTMENTS[planId];
     if (!plan) throw new Error("خطة الاستثمار غير موجودة.");
     if (!amount || isNaN(amount) || amount < plan.minAmount) {
@@ -2424,14 +2470,15 @@ const GameEngine = (() => {
 
     recordPlayerActivity('استثمار مالي', `إيداع ${amount.toLocaleString()} ج.م في "${plan.name}"`, 'investment');
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return { plan, amount };
   }
 
   // Casino Flip Game with Streak Bonus
   function playCoinFlip(betAmount, choice, currentStreak = 0) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يسمح لك بالدخول للكازينو.");
+    const MAX_CASINO_BET = 2500000;
     if (betAmount <= 0) throw new Error("مبلغ الرهان يجب أن يكون أكبر من صفر جنيه.");
+    if (betAmount > MAX_CASINO_BET) throw new Error(`الحد الأقصى المسموح به للرهان الواحد هو ${MAX_CASINO_BET.toLocaleString()} ج.م.`);
     if (state.cash < betAmount) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
 
     state.cash -= betAmount;
@@ -2458,20 +2505,21 @@ const GameEngine = (() => {
       state.cash += payout;
       recordPlayerActivity('رمي العملة', `فوز برهان الكازينو +${payout.toLocaleString()} ج.م (مضاعف x${mult.toFixed(2)})`, 'casino');
       state.netWorth = calculateNetWorth();
-      AppDB.savePlayerState(activeUsername, state);
+      forceSaveState(true);
       return { won: true, side: outcomeSide, multiplier: mult, payout: payout, profit: payout - betAmount };
     } else {
       recordPlayerActivity('رمي العملة', `خسارة رهان الكازينو ${betAmount.toLocaleString()} ج.م`, 'casino');
       state.netWorth = calculateNetWorth();
-      AppDB.savePlayerState(activeUsername, state);
+      forceSaveState(true);
       return { won: false, side: outcomeSide, loss: betAmount };
     }
   }
 
   // Casino Slots Game with 5 Premium Tier Symbols
   function playSlots(betAmount) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك اللعب.");
+    const MAX_CASINO_BET = 2500000;
     if (betAmount <= 0) throw new Error("مبلغ الرهان غير صالح.");
+    if (betAmount > MAX_CASINO_BET) throw new Error(`الحد الأقصى المسموح به للرهان هو ${MAX_CASINO_BET.toLocaleString()} ج.م.`);
     if (state.cash < betAmount) throw new Error("رصيدك الكاش لا يكفي لتشغيل آلة الحظ.");
 
     state.cash -= betAmount;
@@ -2526,7 +2574,7 @@ const GameEngine = (() => {
     state.cash += payout;
 
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
 
     return {
       reels: [r1, r2, r3],
@@ -2541,8 +2589,9 @@ const GameEngine = (() => {
 
   // NEW Casino Game: Lucky Royale Dice (رمي النرد الملكي)
   function playDice(betAmount, choice) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك اللعب.");
+    const MAX_CASINO_BET = 2500000;
     if (betAmount <= 0) throw new Error("مبلغ الرهان غير صالح.");
+    if (betAmount > MAX_CASINO_BET) throw new Error(`الحد الأقصى المسموح به لرهان النرد هو ${MAX_CASINO_BET.toLocaleString()} ج.م.`);
     if (state.cash < betAmount) throw new Error("رصيدك الكاش لا يكفي لرهان النرد.");
 
     state.cash -= betAmount;
@@ -2574,7 +2623,7 @@ const GameEngine = (() => {
     state.cash += payout;
 
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
 
     return {
       d1,
@@ -2590,7 +2639,6 @@ const GameEngine = (() => {
 
   // Perform Overtime Double Shift
   function performOvertimeShift() {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك العمل.");
     const job = JOBS[state.jobId] || JOBS.worker;
     const isEnergyActive = (state.inventory && state.inventory.energy_drink > 0);
     const isPenActive = (state.inventory && state.inventory.gold_pen > 0);
@@ -2600,14 +2648,14 @@ const GameEngine = (() => {
 
     // Overtime gives 2.5x base salary and 3x XP
     const boost = window.serverBoostMultiplier || 1.0;
-    const earnedSalary = Math.floor(job.salary * salaryMultiplier * boost);
+    const earnedSalary = Math.floor(job.salary * 2.5 * energyMult * boost);
     const earnedXp = Math.ceil(job.xpReward * 3 * xpBonus * boost);
 
     state.bank += earnedSalary;
     state.xp += earnedXp;
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
 
     return {
       earnedSalary,
@@ -2621,7 +2669,6 @@ const GameEngine = (() => {
 
   // --- Cars Actions (New V2) ---
   function buyCar(carId) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك الشراء حالياً.");
     const car = CAR_TEMPLATES[carId];
     if (!car) throw new Error("طراز السيارة المحدد غير متوفر.");
     if (state.cash < car.cost && state.bank < car.cost) {
@@ -2639,11 +2686,10 @@ const GameEngine = (() => {
 
     recordPlayerActivity('شراء سيارة 🏎️', `شراء سيارة ${car.name} بقيمة ${car.cost.toLocaleString()} ج.م.`, 'assets');
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
   }
 
   function setActiveCar(carId) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك تغيير السيارة.");
     if (carId === null) {
       state.activeCar = null;
       recordPlayerActivity('تفعيل سيارة', 'تم إلغاء تفعيل السيارة الشخصية النشطة.', 'assets');
@@ -2659,11 +2705,10 @@ const GameEngine = (() => {
       recordPlayerActivity('تفعيل سيارة 🏎️', `تم تفعيل ${CAR_TEMPLATES[carId].name} كسيارة شخصية نشطة.`, 'assets');
     }
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
   }
 
   function rentCar(carId, rentStatus, carIndex = -1) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
     let idx = carIndex;
     if (idx === -1) {
       idx = state.ownedCars.findIndex(c => c.id === carId);
@@ -2681,11 +2726,10 @@ const GameEngine = (() => {
       recordPlayerActivity('إلغاء تأجير سيارة 📉', `إيقاف تأجير سيارة ${CAR_TEMPLATES[carId].name} وإرجاعها للمرأب.`, 'assets');
     }
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
   }
 
   function sellCar(carId, carIndex = -1) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
     let idx = carIndex;
     if (idx === -1) {
       idx = state.ownedCars.findIndex(c => c.id === carId);
@@ -2818,8 +2862,9 @@ const GameEngine = (() => {
 
   // European Roulette Wheel Game
   function playRoulette(betAmount, betType, betValue) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يسمح لك بالدخول للكازينو.");
+    const MAX_ROULETTE_BET = 2500000;
     if (betAmount <= 0) throw new Error("مبلغ الرهان يجب أن يكون أكبر من صفر.");
+    if (betAmount > MAX_ROULETTE_BET) throw new Error(`الحد الأقصى المسموح به للرهان في الروليت هو ${MAX_ROULETTE_BET.toLocaleString()} ج.م.`);
     if (state.cash < betAmount) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
 
     state.cash -= betAmount;
@@ -2877,7 +2922,7 @@ const GameEngine = (() => {
     state.cash += payout;
     sanitizeGameState();
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
 
     return {
       rolledNumber,
@@ -2902,11 +2947,12 @@ const GameEngine = (() => {
     });
   }
 
-  function forceSaveState() {
+  function forceSaveState(immediate = true) {
     sanitizeGameState();
+    state.lastActiveTimestamp = Date.now();
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
-    AppDB.savePlayerState(activeUsername, state);
+    return AppDB.savePlayerState(activeUsername, state, immediate);
   }
 
   return {
