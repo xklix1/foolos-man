@@ -400,6 +400,19 @@
         </button>
       </div>
 
+      <!-- Hourly Official Snapshot Notice Banner -->
+      <div class="my-2.5 px-3.5 py-2 bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-slate-900/40 border border-amber-500/30 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-2 text-amber-300 font-bold">
+          <i class="fa-solid fa-clock-rotate-left text-amber-400"></i>
+          <span>يتم فرز واعتماد عرش الأثرياء رسمياً كل 60 دقيقة</span>
+        </div>
+        <div class="flex items-center gap-3 text-[11px] text-slate-300">
+          <span>التحديث القادم بعد: <strong id="start-lb-timer" class="text-yellow-400 font-black numbers-font">--:--</strong></span>
+          <span class="text-slate-600">|</span>
+          <span class="text-slate-400">آخر اعتماد: <span id="start-lb-last-updated" class="text-slate-300 font-medium">--</span></span>
+        </div>
+      </div>
+
       <!-- Top 3 Podium Preview in Start Menu -->
       <div class="grid grid-cols-3 gap-2 sm:gap-4 my-4">
         <!-- Rank 2 (Silver) -->
@@ -3433,6 +3446,20 @@
           <i class="fa-solid fa-arrows-rotate"></i>
           <span>تحديث</span>
         </button>
+      </div>
+    </div>
+
+    <!-- Hourly Official Snapshot Notice Banner -->
+    <div class="px-4 py-2.5 bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-slate-950/80 border border-amber-500/40 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs shadow-md">
+      <div class="flex items-center gap-2.5 text-amber-300 font-bold">
+        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+        <i class="fa-solid fa-clock-rotate-left text-amber-400 text-sm"></i>
+        <span>نظام الاعتماد الساعي: يتم فرز وتثبيت عرش الأثرياء رسمياً كل 60 دقيقة</span>
+      </div>
+      <div class="flex items-center gap-4 text-xs">
+        <span class="text-slate-300">التحديث القادم بعد: <strong id="ingame-lb-timer" class="text-yellow-400 font-black numbers-font text-sm">--:--</strong></span>
+        <span class="text-slate-600">|</span>
+        <span class="text-slate-400 text-[11px]">آخر اعتماد رسمي: <span id="ingame-lb-last-updated" class="text-slate-200 font-medium numbers-font">--</span></span>
       </div>
     </div>
 

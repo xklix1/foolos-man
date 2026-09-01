@@ -1217,6 +1217,7 @@ const UIController = (() => {
     try {
       const players = await AppDB.getLeaderboard(forceRefresh);
       tbody.innerHTML = '';
+      if (typeof updateHourlyLeaderboardTimerUI === 'function') updateHourlyLeaderboardTimerUI();
 
       if (!players || players.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-500">لا يوجد متصدرين مسجلين حالياً.</td></tr>`;
@@ -4725,6 +4726,49 @@ const UIController = (() => {
   let cachedLeaderboard = null;
   let lastLeaderboardFetchTime = 0;
 
+  function updateHourlyLeaderboardTimerUI() {
+    const meta = AppDB.getLeaderboardMeta ? AppDB.getLeaderboardMeta() : null;
+    if (!meta) return;
+
+    const now = Date.now();
+    const remainingMs = Math.max(0, (meta.nextUpdateAt || (now + 3600000)) - now);
+    const totalSecs = Math.floor(remainingMs / 1000);
+    const minutes = Math.floor(totalSecs / 60);
+    const seconds = totalSecs % 60;
+    const timeFormatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+    const lastUpdatedDate = new Date(meta.updatedAt || now);
+    const lastUpdatedFormatted = lastUpdatedDate.toLocaleTimeString(window.currentLang === 'en' ? 'en-US' : 'ar-EG', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    ['ingame-lb-timer', 'start-lb-timer'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = timeFormatted;
+    });
+
+    ['ingame-lb-last-updated', 'start-lb-last-updated'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = lastUpdatedFormatted;
+    });
+
+    // If countdown reached 0 and leaderboard is currently visible, refresh
+    if (remainingMs === 0 && (now - (window._lastAutoHourlyLdRefresh || 0) > 60000)) {
+      window._lastAutoHourlyLdRefresh = now;
+      const lbTab = document.getElementById('panel-leaderboard');
+      const startModal = document.getElementById('start-menu-leaderboard-modal');
+      if (lbTab && !lbTab.classList.contains('hidden')) {
+        renderLeaderboard(true);
+      } else if (startModal && !startModal.classList.contains('hidden')) {
+        renderStartMenuLeaderboard(true);
+      }
+    }
+  }
+
+  // Ticker for leaderboard hourly countdown
+  setInterval(updateHourlyLeaderboardTimerUI, 1000);
+
   async function renderLeaderboard(forceRefresh = false) {
     const list = document.getElementById('leaderboard-rows');
     if (!list) return;
@@ -4738,7 +4782,7 @@ const UIController = (() => {
           <td colspan="4" class="text-center py-8 text-slate-400">
             <div class="flex items-center justify-center gap-2">
               <span class="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></span>
-              <span class="font-bold text-xs">${window.currentLang === 'en' ? 'Updating live leaderboard throne...' : 'جاري تحديث عرش الأثرياء الموحد سحابياً...'}</span>
+              <span class="font-bold text-xs">${window.currentLang === 'en' ? 'Loading official hourly snapshot...' : 'جاري جلب الاعتماد الساعي الرسمي لعرش الأثرياء...'}</span>
             </div>
           </td>
         </tr>
@@ -4754,6 +4798,7 @@ const UIController = (() => {
         cachedLeaderboard = players;
         lastLeaderboardFetchTime = now;
       }
+      updateHourlyLeaderboardTimerUI();
       list.innerHTML = '';
 
       if (!players || players.length === 0) {
