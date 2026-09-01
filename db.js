@@ -238,6 +238,17 @@ const AppDB = (() => {
       localStorage.setItem(`foolos_state_${username}`, JSON.stringify(data));
     } catch (e) {}
 
+    // Update global system accounts counter asynchronously
+    try {
+      if (firestoreDb && typeof firebase !== 'undefined' && firebase.firestore) {
+        firestoreDb.collection('globals').doc('stats').set({
+          totalPlayersRegistered: firebase.firestore.FieldValue.increment(1),
+          lastRegisteredUser: username,
+          lastRegisteredAt: Date.now()
+        }, { merge: true }).catch(() => {});
+      }
+    } catch (e) {}
+
     console.log('[DB] Player registered securely:', username);
     return data;
   }
@@ -991,29 +1002,104 @@ const AppDB = (() => {
     return doc.data();
   }
 
-  async function adminGetAllPlayers() {
+  let _cachedAdminPlayers = null;
+  let _cachedAdminPlayersTime = 0;
+
+  async function adminGetAllPlayers(forceRefresh = false) {
     _requireOnline();
-    const snapshot = await firestoreDb.collection('players').get();
+    const now = Date.now();
+    if (!forceRefresh && _cachedAdminPlayers && (now - _cachedAdminPlayersTime < 90000)) {
+      return _cachedAdminPlayers;
+    }
+
+    let snapshot = null;
+    let fromCache = false;
+    let quotaExceeded = false;
+
+    try {
+      snapshot = await firestoreDb.collection('players').get();
+      if (snapshot && snapshot.metadata && snapshot.metadata.fromCache) {
+        fromCache = true;
+      }
+    } catch (err) {
+      console.warn('[DB] adminGetAllPlayers remote fetch error (trying cache):', err.message);
+      if (err.message && (err.message.includes('Quota') || err.message.includes('RESOURCE_EXHAUSTED') || err.code === 'resource-exhausted')) {
+        quotaExceeded = true;
+      }
+      try {
+        snapshot = await firestoreDb.collection('players').get({ source: 'cache' });
+        fromCache = true;
+      } catch (cacheErr) {
+        snapshot = { forEach: () => {} };
+      }
+    }
+
     const players = [];
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      players.push({
-        username: data.username || doc.id,
-        netWorth: Number(data.netWorth || 0),
-        cash: Number(data.cash || 0),
-        bank: Number(data.bank || 0),
-        title: data.title || 'عامل مبتدئ',
-        jobId: data.jobId || 'unemployed',
-        jailTimer: Number(data.jailTimer || 0),
-        isBanned: Boolean(data.isBanned),
-        isAdmin: Boolean(data.isAdmin),
-        createdAt: data.createdAt || 0,
-        lastSeen: data.lastSeen || 0,
-        raw: data
+    const playerUsernames = new Set();
+
+    if (snapshot && snapshot.forEach) {
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const uname = data.username || doc.id;
+        playerUsernames.add(uname.toLowerCase());
+        players.push({
+          username: uname,
+          netWorth: Number(data.netWorth || 0),
+          cash: Number(data.cash || 0),
+          bank: Number(data.bank || 0),
+          title: data.title || 'عامل مبتدئ',
+          jobId: data.jobId || 'unemployed',
+          jailTimer: Number(data.jailTimer || 0),
+          isBanned: Boolean(data.isBanned),
+          isAdmin: Boolean(data.isAdmin),
+          createdAt: data.createdAt || 0,
+          lastSeen: data.lastSeen || 0,
+          lastActiveTimestamp: data.lastActiveTimestamp || data.lastSeen || 0,
+          fromCache: fromCache,
+          quotaExceeded: quotaExceeded,
+          raw: data
+        });
       });
-    });
+    }
+
+    // Also scan localStorage for any players created or cached on this client that might not be synced yet
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('foolos_state_')) {
+          const u = k.replace('foolos_state_', '');
+          if (u && !playerUsernames.has(u.toLowerCase())) {
+            const rawCached = localStorage.getItem(k);
+            if (rawCached) {
+              const data = JSON.parse(rawCached);
+              playerUsernames.add(u.toLowerCase());
+              players.push({
+                username: u,
+                netWorth: Number(data.netWorth || 0),
+                cash: Number(data.cash || 0),
+                bank: Number(data.bank || 0),
+                title: data.title || 'عامل مبتدئ',
+                jobId: data.jobId || 'unemployed',
+                jailTimer: Number(data.jailTimer || 0),
+                isBanned: Boolean(data.isBanned),
+                isAdmin: Boolean(data.isAdmin),
+                createdAt: data.createdAt || 0,
+                lastSeen: data.lastSeen || 0,
+                lastActiveTimestamp: data.lastActiveTimestamp || data.lastSeen || 0,
+                fromCache: true,
+                quotaExceeded: quotaExceeded,
+                raw: data
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {}
+
     // Sort by NetWorth descending
     players.sort((a, b) => b.netWorth - a.netWorth);
+    _cachedAdminPlayers = players;
+    _cachedAdminPlayersTime = now;
     return players;
   }
 
@@ -1240,8 +1326,8 @@ const AppDB = (() => {
         await batch.commit();
       }
 
-      // Also publish to global broadcast
       await sendBroadcast(`🎁 تم توزيع مكافأة ومنحة مالية إدارية قدرها +${amount.toLocaleString()} EGP لجميع اللاعبين!`, '🎉 مكافأة مالية عامة');
+      _cachedAdminPlayers = null;
       return { count, amount, target: 'ALL' };
     } else {
       const docRef = firestoreDb.collection('players').doc(target);
@@ -1252,6 +1338,7 @@ const AppDB = (() => {
         cash: currentCash + amount,
         lastAirdrop: { amount, timestamp: Date.now() }
       });
+      _cachedAdminPlayers = null;
       return { count: 1, amount, target };
     }
   }
@@ -1404,90 +1491,166 @@ const AppDB = (() => {
 
   async function getSystemStats() {
     _requireOnline();
-    const snapshot = await firestoreDb.collection('players').get();
+
+    let accurateServerCount = null;
+    let quotaExceeded = false;
+    let isFromCache = false;
+
+    // 1. Try ultra-lightweight count aggregation (consumes only 1 read for the entire collection)
+    try {
+      if (typeof firestoreDb.collection('players').count === 'function') {
+        const countSnap = await firestoreDb.collection('players').count().get();
+        if (countSnap && countSnap.data) {
+          accurateServerCount = countSnap.data().count;
+        }
+      }
+    } catch (countErr) {
+      if (countErr.message && (countErr.message.includes('Quota') || countErr.message.includes('RESOURCE_EXHAUSTED') || countErr.code === 'resource-exhausted')) {
+        quotaExceeded = true;
+      }
+    }
+
+    // 2. Try global counter document
+    let registeredCounter = 0;
+    try {
+      const statsDoc = await firestoreDb.collection('globals').doc('stats').get();
+      if (statsDoc && statsDoc.exists) {
+        const sd = statsDoc.data();
+        if (sd && sd.totalPlayersRegistered) {
+          registeredCounter = Number(sd.totalPlayersRegistered || 0);
+        }
+      }
+    } catch (e) {
+      if (e.message && (e.message.includes('Quota') || e.message.includes('RESOURCE_EXHAUSTED'))) {
+        quotaExceeded = true;
+      }
+    }
+
+    // 3. Document scan (server or cache fallback)
+    let snapshot = null;
+    try {
+      snapshot = await firestoreDb.collection('players').get();
+      if (snapshot && snapshot.metadata && snapshot.metadata.fromCache) {
+        isFromCache = true;
+      }
+    } catch (fetchErr) {
+      console.warn('[DB] getSystemStats full scan error (falling back to cache):', fetchErr.message);
+      if (fetchErr.message && (fetchErr.message.includes('Quota') || fetchErr.message.includes('RESOURCE_EXHAUSTED') || fetchErr.code === 'resource-exhausted')) {
+        quotaExceeded = true;
+      }
+      try {
+        snapshot = await firestoreDb.collection('players').get({ source: 'cache' });
+        isFromCache = true;
+      } catch (cacheErr) {
+        snapshot = { forEach: () => {} };
+        isFromCache = true;
+      }
+    }
 
     let totalCash = 0, totalBank = 0, totalNetWorth = 0;
-    let jailedCount = 0, bannedCount = 0, totalPlayers = 0;
+    let jailedCount = 0, bannedCount = 0, scannedPlayers = 0;
+    const playerIds = new Set();
 
-    // Wealth Brackets
-    let billionaires = 0; // Net worth >= 50M
-    let millionaires = 0; // Net worth 5M to 50M
-    let middleClass = 0;  // Net worth 500k to 5M
-    let workingClass = 0; // Net worth < 500k
+    let billionaires = 0;
+    let millionaires = 0;
+    let middleClass = 0;
+    let workingClass = 0;
 
-    // Suspicious Accounts List (Cheat Detection)
     const suspiciousPlayers = [];
-
-    // All players cache to find top 5 richest
     const allPlayersList = [];
 
-    snapshot.forEach(doc => {
-      const d = doc.data();
-      const u = d.username || doc.id;
-      const cash = Number(d.cash || 0);
-      const bank = Number(d.bank || 0);
-      const netWorth = Number(d.netWorth || 0);
-      const xp = Number(d.xp || 0);
-      const dirtyCash = Number(d.dirtyCash || 0);
-      const isBanned = Boolean(d.isBanned);
-      const jailTimer = Number(d.jailTimer || 0);
-      const title = d.title || 'عامل مبتدئ';
+    if (snapshot && snapshot.forEach) {
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        const u = d.username || doc.id;
+        playerIds.add(u.toLowerCase());
+        const cash = Number(d.cash || 0);
+        const bank = Number(d.bank || 0);
+        const netWorth = Number(d.netWorth || 0);
+        const xp = Number(d.xp || 0);
+        const dirtyCash = Number(d.dirtyCash || 0);
+        const isBanned = Boolean(d.isBanned);
+        const jailTimer = Number(d.jailTimer || 0);
+        const title = d.title || 'عامل مبتدئ';
 
-      totalPlayers++;
-      totalCash += cash;
-      totalBank += bank;
-      totalNetWorth += netWorth;
+        scannedPlayers++;
+        totalCash += cash;
+        totalBank += bank;
+        totalNetWorth += netWorth;
 
-      if (jailTimer > 0) jailedCount++;
-      if (isBanned) bannedCount++;
+        if (jailTimer > 0) jailedCount++;
+        if (isBanned) bannedCount++;
 
-      // Wealth bracket sizing
-      if (netWorth >= 50000000) billionaires++;
-      else if (netWorth >= 5000000) millionaires++;
-      else if (netWorth >= 500000) middleClass++;
-      else workingClass++;
+        if (netWorth >= 50000000) billionaires++;
+        else if (netWorth >= 5000000) millionaires++;
+        else if (netWorth >= 500000) middleClass++;
+        else workingClass++;
 
-      // Flagging logic
-      let flagged = false;
-      let reasons = [];
+        let flagged = false;
+        let reasons = [];
+        if (netWorth > 1000000000 && xp < 100) {
+          flagged = true;
+          reasons.push("ثروة مليارية مع خبرة شبه معدومة");
+        }
+        if (cash < 0 || bank < 0 || netWorth < 0) {
+          flagged = true;
+          reasons.push("قيم مالية سالبة (استغلال ثغرة)");
+        }
+        if (dirtyCash > 50000000) {
+          flagged = true;
+          reasons.push("أموال متسخة ضخمة جداً في حوزته");
+        }
+        if (cash > 2000000000 || bank > 20000000000) {
+          flagged = true;
+          reasons.push("سيولة نقدية تتجاوز الحدود المنطقية");
+        }
 
-      if (netWorth > 1000000000 && xp < 100) {
-        flagged = true;
-        reasons.push("ثروة مليارية مع خبرة شبه معدومة");
-      }
-      if (cash < 0 || bank < 0 || netWorth < 0) {
-        flagged = true;
-        reasons.push("قيم مالية سالبة (استغلال ثغرة)");
-      }
-      if (dirtyCash > 50000000) {
-        flagged = true;
-        reasons.push("أموال متسخة ضخمة جداً في حوزته");
-      }
-      if (cash > 2000000000 || bank > 20000000000) {
-        flagged = true;
-        reasons.push("سيولة نقدية تتجاوز الحدود المنطقية");
-      }
+        if (flagged && !isBanned) {
+          suspiciousPlayers.push({
+            username: u,
+            cash,
+            bank,
+            netWorth,
+            xp,
+            dirtyCash,
+            reason: reasons.join(" • ")
+          });
+        }
 
-      if (flagged && !isBanned) {
-        suspiciousPlayers.push({
+        allPlayersList.push({
           username: u,
-          cash,
-          bank,
           netWorth,
-          xp,
-          dirtyCash,
-          reason: reasons.join(" • ")
+          title,
+          cash,
+          bank
         });
-      }
-
-      allPlayersList.push({
-        username: u,
-        netWorth,
-        title,
-        cash,
-        bank
       });
-    });
+    }
+
+    // Include any locally known accounts from localStorage if not already counted in snapshot
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('foolos_state_')) {
+          const u = k.replace('foolos_state_', '');
+          if (u && !playerIds.has(u.toLowerCase())) {
+            playerIds.add(u.toLowerCase());
+            scannedPlayers++;
+            try {
+              const d = JSON.parse(localStorage.getItem(k));
+              if (d) {
+                totalCash += Number(d.cash || 0);
+                totalBank += Number(d.bank || 0);
+                totalNetWorth += Number(d.netWorth || 0);
+              }
+            } catch (e) {}
+          }
+        }
+      }
+    } catch (e) {}
+
+    // Determine definitive total players count
+    const totalPlayers = Math.max(scannedPlayers, accurateServerCount || 0, registeredCounter || 0);
 
     // Sort by netWorth descending and slice top 5
     allPlayersList.sort((a, b) => b.netWorth - a.netWorth);
@@ -1495,6 +1658,10 @@ const AppDB = (() => {
 
     return {
       totalPlayers,
+      scannedPlayers,
+      isFromCache,
+      quotaExceeded,
+      accurateServerCount,
       totalCash,
       totalBank,
       totalNetWorth,

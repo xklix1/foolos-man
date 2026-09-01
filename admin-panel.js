@@ -90,15 +90,17 @@
     const playersTableBody = document.getElementById('admin-players-table-body');
     const resultCard = document.getElementById('admin-player-result');
 
-    async function loadAdminPlayersDirectory(showToastNotice = false) {
+    async function loadAdminPlayersDirectory(showToastNotice = false, forceRefresh = false) {
       if (!playersTableBody) return;
       playersTableBody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-slate-400">جاري فحص وتحديث بيانات اللاعبين...</td></tr>';
       try {
-        cachedPlayers = await AppDB.adminGetAllPlayers();
+        cachedPlayers = await AppDB.adminGetAllPlayers(forceRefresh);
         renderPlayersTable();
         updateFilterCounts();
         if (showToastNotice) {
-          showToast('قائمة اللاعبين', `تم جلب بيانات ${cachedPlayers.length} لاعب بنجاح.`, 'success');
+          const isCache = cachedPlayers.some(p => p.fromCache);
+          const cacheMsg = isCache ? ' (بيانات الكاش المحلي)' : ' (مباشر من السيرفر 🟢)';
+          showToast('قائمة اللاعبين', `تم جلب بيانات ${cachedPlayers.length} لاعب بنجاح${cacheMsg}.`, 'success');
         }
       } catch (err) {
         playersTableBody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-400">تعذر تحميل القائمة: ${err.message}</td></tr>`;
@@ -118,12 +120,21 @@
       if (elAll) elAll.textContent = countAll;
       if (elJailed) elJailed.textContent = countJailed;
       if (elBanned) elBanned.textContent = countBanned;
-      if (elTotal) elTotal.textContent = `${countAll} لاعب مسجل`;
+      
+      const serverTotal = window._adminLastTotalPlayers;
+      if (elTotal) {
+        if (serverTotal && serverTotal > countAll) {
+          elTotal.textContent = `${serverTotal} لاعب مسجل (${countAll} مفهرس)`;
+        } else {
+          elTotal.textContent = `${countAll} لاعب مسجل`;
+        }
+      }
     }
 
     function renderPlayersTable() {
       if (!playersTableBody) return;
-      const query = (searchInput ? searchInput.value.trim().toLowerCase() : '');
+      const rawQuery = (searchInput ? searchInput.value.trim() : '');
+      const query = rawQuery.toLowerCase();
 
       let filtered = cachedPlayers.filter(p => {
         const matchesQuery = !query || p.username.toLowerCase().includes(query) || (p.title && p.title.toLowerCase().includes(query));
@@ -135,7 +146,67 @@
       });
 
       if (filtered.length === 0) {
-        playersTableBody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-500">لا يوجد حسابات مطابقة لمعايير البحث الحالية.</td></tr>';
+        if (rawQuery) {
+          playersTableBody.innerHTML = `
+            <tr>
+              <td colspan="5" class="py-6 text-center space-y-2">
+                <div class="text-slate-400 text-xs">لم يتم العثور على اللاعب "${rawQuery}" في القائمة المفهرسة محلياً.</div>
+                <button id="btn-admin-direct-cloud-lookup" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-lg text-xs transition inline-flex items-center gap-2 shadow-lg shadow-yellow-500/20">
+                  <i class="fa-solid fa-cloud-arrow-down"></i>
+                  <span>فحص وبحث مباشر بالاسم في السيرفر السحابي</span>
+                </button>
+              </td>
+            </tr>
+          `;
+          const lookupBtn = document.getElementById('btn-admin-direct-cloud-lookup');
+          if (lookupBtn) {
+            lookupBtn.onclick = async () => {
+              lookupBtn.disabled = true;
+              lookupBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الاستعلام السحابي...';
+              try {
+                const fetchedDoc = await AppDB.adminGetPlayer(rawQuery);
+                if (fetchedDoc) {
+                  // Add to cached players if not present
+                  const existingIdx = cachedPlayers.findIndex(p => p.username.toLowerCase() === rawQuery.toLowerCase());
+                  const playerObj = {
+                    username: fetchedDoc.username || rawQuery,
+                    netWorth: Number(fetchedDoc.netWorth || 0),
+                    cash: Number(fetchedDoc.cash || 0),
+                    bank: Number(fetchedDoc.bank || 0),
+                    title: fetchedDoc.title || 'عامل مبتدئ',
+                    jobId: fetchedDoc.jobId || 'unemployed',
+                    jailTimer: Number(fetchedDoc.jailTimer || 0),
+                    isBanned: Boolean(fetchedDoc.isBanned),
+                    isAdmin: Boolean(fetchedDoc.isAdmin),
+                    createdAt: fetchedDoc.createdAt || 0,
+                    lastSeen: fetchedDoc.lastSeen || 0,
+                    lastActiveTimestamp: fetchedDoc.lastActiveTimestamp || 0,
+                    raw: fetchedDoc
+                  };
+                  if (existingIdx >= 0) {
+                    cachedPlayers[existingIdx] = playerObj;
+                  } else {
+                    cachedPlayers.unshift(playerObj);
+                  }
+                  renderPlayersTable();
+                  updateFilterCounts();
+                  selectPlayerForModeration(playerObj.username);
+                  showToast('تم العثور على الحساب', `تم جلب ملف اللاعب ${playerObj.username} مباشرة من السيرفر!`, 'success');
+                } else {
+                  showToast('غير موجود', `اسم المستخدم "${rawQuery}" غير مسجل في خوادم اللعبة.`, 'warning');
+                  lookupBtn.disabled = false;
+                  lookupBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> غير مسجل بالسيرفر';
+                }
+              } catch (err) {
+                showToast('خطأ استعلام', err.message, 'error');
+                lookupBtn.disabled = false;
+                lookupBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> إعادة المحاولة';
+              }
+            };
+          }
+        } else {
+          playersTableBody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-500">لا يوجد حسابات مطابقة لمعايير الفلترة الحالية.</td></tr>';
+        }
         return;
       }
 
@@ -2627,6 +2698,8 @@
   async function renderAdminAnalyticsDashboard() {
     try {
       const stats = await AppDB.getSystemStats();
+      window._adminLastTotalPlayers = stats.totalPlayers || 0;
+      
       const elP = document.getElementById('adm-stat-players');
       const elC = document.getElementById('adm-stat-cash');
       const elB = document.getElementById('adm-stat-bank');
@@ -2634,12 +2707,43 @@
       const elJ = document.getElementById('adm-stat-jailed');
       const elBan = document.getElementById('adm-stat-banned');
 
-      if (elP) elP.textContent = (stats.totalPlayers || 0).toLocaleString();
+      if (elP) {
+        let badgeHtml = '';
+        if (stats.isFromCache || stats.quotaExceeded) {
+          badgeHtml = ` <span class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30" title="تم قراءة بعض البيانات من الكاش المحلي نظراً لبلوغ سقف كوتة Firebase المجانية">كاش 🟡</span>`;
+        } else {
+          badgeHtml = ` <span class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" title="بيانات حية مباشرة من السيرفر السحابي">حي 🟢</span>`;
+        }
+        elP.innerHTML = `${(stats.totalPlayers || 0).toLocaleString()}${badgeHtml}`;
+      }
       if (elC) elC.textContent = `${(stats.totalCash || 0).toLocaleString()} EGP`;
       if (elB) elB.textContent = `${(stats.totalBank || 0).toLocaleString()} EGP`;
       if (elNW) elNW.textContent = `${(stats.totalNetWorth || 0).toLocaleString()} EGP`;
       if (elJ) elJ.textContent = (stats.jailedCount || 0).toLocaleString();
       if (elBan) elBan.textContent = (stats.bannedCount || 0).toLocaleString();
+
+      // Show Quota Notice Banner if quota is exceeded
+      let quotaBanner = document.getElementById('adm-quota-notice-banner');
+      const statsContainer = document.getElementById('admin-subpanel-stats');
+      if (stats.quotaExceeded) {
+        if (!quotaBanner && statsContainer) {
+          quotaBanner = document.createElement('div');
+          quotaBanner.id = 'adm-quota-notice-banner';
+          quotaBanner.className = 'p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs flex items-start gap-2.5 shadow-lg';
+          quotaBanner.innerHTML = `
+            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm mt-0.5 shrink-0"></i>
+            <div>
+              <strong class="block font-bold text-amber-300 mb-0.5">تنبيه سقف كوتة القراءات السحابية (Firebase Quota 429)</strong>
+              <span class="text-[11px] text-amber-300/80 leading-relaxed">
+                مشروع Firebase استنفد الحد الأقصى اليومي للقراءات المجانية (Resource Exhausted). الإحصائيات معروضة استناداً إلى العدادات التراكمية والكاش المحلي، وستعود المزامنة السحابية الكاملة للعمل تلقائياً فور تجدد الكوتة اليومية من Google.
+              </span>
+            </div>
+          `;
+          statsContainer.insertBefore(quotaBanner, statsContainer.firstChild);
+        }
+      } else if (quotaBanner) {
+        quotaBanner.remove();
+      }
 
       const refreshBtn = document.getElementById('btn-admin-refresh-stats');
       if (refreshBtn && !refreshBtn._bound) {
