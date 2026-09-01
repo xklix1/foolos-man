@@ -220,7 +220,24 @@ const AppDB = (() => {
       lastSeen: Date.now()
     };
 
-    await ref.set(data);
+    // Save with server-acknowledgement race:
+    // With offline persistence enabled, ref.set commits to local IndexedDB immediately.
+    // However, if the server quota is exceeded or network backoff is triggered, the promise
+    // waits for server ack indefinitely (hanging). We race against a 2s timer so the user
+    // can proceed instantly without getting stuck on an infinite loading spinner.
+    try {
+      const setPromise = ref.set(data);
+      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2000));
+      await Promise.race([setPromise, timeoutPromise]);
+    } catch (setErr) {
+      console.warn('[DB] ref.set server ack warning (persisted locally):', setErr.message);
+    }
+
+    // Cache state locally immediately
+    try {
+      localStorage.setItem(`foolos_state_${username}`, JSON.stringify(data));
+    } catch (e) {}
+
     console.log('[DB] Player registered securely:', username);
     return data;
   }
@@ -286,9 +303,20 @@ const AppDB = (() => {
   async function getPlayerState(username) {
     _requireOnline();
     const ref = firestoreDb.collection('players').doc(username);
-    const doc = await ref.get();
-    if (!doc.exists) return null;
-    return doc.data();
+    try {
+      const getPromise = ref.get();
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 2500));
+      const doc = await Promise.race([getPromise, timeoutPromise]);
+      if (doc && doc.exists) return doc.data();
+    } catch (e) {
+      console.warn('[DB] getPlayerState error, checking local cache:', e.message);
+    }
+    // Fallback: check localStorage cache
+    try {
+      const cached = localStorage.getItem(`foolos_state_${username}`);
+      if (cached) return JSON.parse(cached);
+    } catch (e) {}
+    return null;
   }
 
   // ─────────────────────────────────────────────

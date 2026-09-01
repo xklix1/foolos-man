@@ -1681,6 +1681,9 @@ const GameEngine = (() => {
           };
         }
       }
+      if (!state.afkManagerExpiresAt || state.afkManagerExpiresAt <= 0) {
+        state.afkManagerExpiresAt = Date.now() + (12 * 60 * 60 * 1000);
+      }
       state.lastActiveTimestamp = Date.now();
       state.netWorth = calculateNetWorth();
       await AppDB.savePlayerState(username, state);
