@@ -7730,36 +7730,89 @@ const UIController = (() => {
       });
     }
 
-    // Tax Policy Settings (Admin)
+    // Tax Policy Settings (Admin) - Synchronized across Stats and Market Tabs
+    function getTaxInputs() {
+      const mul = document.getElementById('adm-tax-multiplier-mkt') || document.getElementById('adm-tax-multiplier');
+      const sil = document.getElementById('adm-tax-silver-mkt') || document.getElementById('adm-tax-silver');
+      const maj = document.getElementById('adm-tax-major-mkt') || document.getElementById('adm-tax-major');
+      const wha = document.getElementById('adm-tax-whale-mkt') || document.getElementById('adm-tax-whale');
+      return {
+        rateMultiplier: mul ? Number(mul.value) : 1.0,
+        silverRate: sil ? Number(sil.value) : 0.000003,
+        majorRate: maj ? Number(maj.value) : 0.000006,
+        whaleRate: wha ? Number(wha.value) : 0.000010
+      };
+    }
+
+    function syncTaxInputs(cfg) {
+      if (!cfg) return;
+      ['adm-tax-multiplier', 'adm-tax-multiplier-mkt'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && document.activeElement !== el) el.value = cfg.rateMultiplier;
+      });
+      ['adm-tax-silver', 'adm-tax-silver-mkt'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && document.activeElement !== el) el.value = cfg.silverRate;
+      });
+      ['adm-tax-major', 'adm-tax-major-mkt'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && document.activeElement !== el) el.value = cfg.majorRate;
+      });
+      ['adm-tax-whale', 'adm-tax-whale-mkt'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && document.activeElement !== el) el.value = cfg.whaleRate;
+      });
+    }
+    window._adminSyncTaxInputs = syncTaxInputs;
+
+    async function handleSaveTaxPolicy(btnEl, isMarketTab = false) {
+      let rateMultiplier, silverRate, majorRate, whaleRate;
+      if (isMarketTab) {
+        rateMultiplier = Number(document.getElementById('adm-tax-multiplier-mkt').value);
+        silverRate = Number(document.getElementById('adm-tax-silver-mkt').value);
+        majorRate = Number(document.getElementById('adm-tax-major-mkt').value);
+        whaleRate = Number(document.getElementById('adm-tax-whale-mkt').value);
+      } else {
+        rateMultiplier = Number(document.getElementById('adm-tax-multiplier').value);
+        silverRate = Number(document.getElementById('adm-tax-silver').value);
+        majorRate = Number(document.getElementById('adm-tax-major').value);
+        whaleRate = Number(document.getElementById('adm-tax-whale').value);
+      }
+
+      if (isNaN(rateMultiplier) || rateMultiplier <= 0 || isNaN(silverRate) || silverRate < 0 || isNaN(majorRate) || majorRate < 0 || isNaN(whaleRate) || whaleRate < 0) {
+        showToast('خطأ إدخال', 'يرجى التأكد من إدخال قيم صحيحة للضرائب وموجبة.', 'error');
+        return;
+      }
+
+      try {
+        if (btnEl) {
+          btnEl.disabled = true;
+          btnEl.textContent = 'جاري الحفظ والتعميم...';
+        }
+
+        const cfg = { rateMultiplier, silverRate, majorRate, whaleRate };
+        await AppDB.adminSaveTaxConfig(cfg);
+        syncTaxInputs(cfg);
+
+        showToast('تم الحفظ', 'تم تحديث ونشر السياسة الضريبية الجديدة لجميع اللاعبين بنجاح.', 'success');
+        logAdminAction(`تعديل الضرائب: مضاعف ${rateMultiplier}x | فضية ${silverRate} | كبار ${majorRate} | حيتان ${whaleRate}`);
+      } catch (err) {
+        showToast('فشل حفظ الضرائب', err.message, 'error');
+      } finally {
+        if (btnEl) {
+          btnEl.disabled = false;
+          btnEl.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>تحديث السياسة الضريبية فوراً</span>';
+        }
+      }
+    }
+
     const saveTaxPolicyBtn = document.getElementById('btn-admin-save-tax-policy');
     if (saveTaxPolicyBtn) {
-      saveTaxPolicyBtn.addEventListener('click', async () => {
-        const rateMultiplier = Number(document.getElementById('adm-tax-multiplier').value);
-        const silverRate = Number(document.getElementById('adm-tax-silver').value);
-        const majorRate = Number(document.getElementById('adm-tax-major').value);
-        const whaleRate = Number(document.getElementById('adm-tax-whale').value);
-
-        if (isNaN(rateMultiplier) || rateMultiplier <= 0 || isNaN(silverRate) || silverRate < 0 || isNaN(majorRate) || majorRate < 0 || isNaN(whaleRate) || whaleRate < 0) {
-          showToast('خطأ إدخال', 'يرجى التأكد من إدخال قيم صحيحة للضرائب وموجبة.', 'error');
-          return;
-        }
-
-        try {
-          saveTaxPolicyBtn.disabled = true;
-          saveTaxPolicyBtn.textContent = 'جاري الحفظ والتعميم...';
-
-          const cfg = { rateMultiplier, silverRate, majorRate, whaleRate };
-          await AppDB.adminSaveTaxConfig(cfg);
-
-          showToast('تم الحفظ', 'تم تحديث ونشر السياسة الضريبية الجديدة لجميع اللاعبين بنجاح.', 'success');
-          logAdminAction(`تعديل الضرائب: مضاعف ${rateMultiplier}x | فضية ${silverRate} | كبار ${majorRate} | حيتان ${whaleRate}`);
-        } catch (err) {
-          showToast('فشل حفظ الضرائب', err.message, 'error');
-        } finally {
-          saveTaxPolicyBtn.disabled = false;
-          saveTaxPolicyBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>تحديث السياسة الضريبية فوراً</span>';
-        }
-      });
+      saveTaxPolicyBtn.addEventListener('click', () => handleSaveTaxPolicy(saveTaxPolicyBtn, false));
+    }
+    const saveTaxPolicyBtnMkt = document.getElementById('btn-admin-save-tax-policy-mkt');
+    if (saveTaxPolicyBtnMkt) {
+      saveTaxPolicyBtnMkt.addEventListener('click', () => handleSaveTaxPolicy(saveTaxPolicyBtnMkt, true));
     }
 
     // Store Items Configuration Event Listeners (Admin)
