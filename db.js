@@ -1614,13 +1614,14 @@ const AppDB = (() => {
   //  V2: CHAT SYSTEM API
   // ─────────────────────────────────────────────
   async function sendChatMessage(sender, title, message) {
-    if (!message) return;
-    if (message.length > 200) throw new Error('الرسالة طويلة جداً (الحد الأقصى 200 حرف)');
+    if (!message || !message.trim()) return;
+    const cleanMsg = message.trim();
+    if (cleanMsg.length > 200) throw new Error('الرسالة طويلة جداً (الحد الأقصى 200 حرف)');
     
     const msgData = {
-      sender,
-      senderTitle: title || 'عامل مبتدئ',
-      message: message.trim(),
+      sender: String(sender || 'لاعب'),
+      senderTitle: String(title || 'عامل مبتدئ'),
+      message: cleanMsg,
       timestamp: Date.now()
     };
 
@@ -1629,7 +1630,7 @@ const AppDB = (() => {
         await firestoreDb.collection('chat').add(msgData);
       } catch (err) {
         console.error('[DB] Chat send failed:', err);
-        throw new Error('فشل إرسال الرسالة إلى الخادم: ' + err.message);
+        throw new Error('فشل إرسال الرسالة إلى الخادم: ' + (err.message || err));
       }
     } else {
       const localChat = JSON.parse(localStorage.getItem('foolos_local_chat') || '[]');
@@ -1642,20 +1643,41 @@ const AppDB = (() => {
 
   function listenToChatMessages(callback) {
     if (firebaseReady) {
-      return firestoreDb.collection('chat')
-        .orderBy('timestamp', 'desc')
-        .limit(100)
-        .onSnapshot(snapshot => {
-          const msgs = [];
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            data.id = doc.id;
-            msgs.push(data);
+      try {
+        return firestoreDb.collection('chat')
+          .orderBy('timestamp', 'desc')
+          .limit(100)
+          .onSnapshot(snapshot => {
+            const msgs = [];
+            snapshot.forEach(doc => {
+              const data = doc.data();
+              data.id = doc.id;
+              msgs.push(data);
+            });
+            callback(msgs.reverse());
+          }, err => {
+            console.warn('[DB] Failed to listen to chat with orderBy, falling back:', err);
+            try {
+              firestoreDb.collection('chat')
+                .limit(100)
+                .onSnapshot(snap => {
+                  const msgs = [];
+                  snap.forEach(doc => {
+                    const data = doc.data();
+                    data.id = doc.id;
+                    msgs.push(data);
+                  });
+                  msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                  callback(msgs);
+                });
+            } catch (fallbackErr) {
+              console.error('[DB] Chat fallback failed:', fallbackErr);
+            }
           });
-          callback(msgs.reverse());
-        }, err => {
-          console.warn('[DB] Failed to listen to chat:', err);
-        });
+      } catch (e) {
+        console.error('[DB] Chat listen exception:', e);
+        return () => {};
+      }
     } else {
       const checkLocal = () => {
         const msgs = JSON.parse(localStorage.getItem('foolos_local_chat') || '[]');

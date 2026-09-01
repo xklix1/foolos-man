@@ -8533,16 +8533,23 @@ const UIController = (() => {
     if (chatTrigger && chatDrawer) {
       chatTrigger.addEventListener('click', () => {
         chatDrawer.classList.toggle('chat-drawer-open');
+        chatDrawer.classList.toggle('translate-x-full');
         const unreadDot = document.getElementById('chat-unread-dot');
         if (unreadDot) {
           unreadDot.classList.add('hidden');
           unreadDot.textContent = '0';
+        }
+        if (chatDrawer.classList.contains('chat-drawer-open')) {
+          setTimeout(() => {
+            if (chatInput) chatInput.focus();
+          }, 100);
         }
       });
     }
     if (closeChatDrawer && chatDrawer) {
       closeChatDrawer.addEventListener('click', () => {
         chatDrawer.classList.remove('chat-drawer-open');
+        chatDrawer.classList.add('translate-x-full');
       });
     }
 
@@ -8553,19 +8560,12 @@ const UIController = (() => {
     }
 
     if (chatSendBtn && chatInput) {
-      chatSendBtn.addEventListener('click', async () => {
+      const doSendChat = async () => {
         const text = chatInput.value.trim();
         if (!text) return;
 
         const timeSinceLast = Date.now() - lastChatSent;
-        if (timeSinceLast < 3000) {
-          const remainingSec = Math.ceil((3000 - timeSinceLast) / 1000);
-          const warnEl = document.getElementById('chat-cooldown-timer');
-          if (warnEl) {
-            warnEl.textContent = `الرجاء الانتظار ${remainingSec} ثوانٍ...`;
-            warnEl.classList.remove('hidden');
-            setTimeout(() => warnEl.classList.add('hidden'), 2000);
-          }
+        if (timeSinceLast < 800) {
           return;
         }
 
@@ -8574,24 +8574,27 @@ const UIController = (() => {
 
         try {
           chatSendBtn.disabled = true;
-          await AppDB.sendChatMessage(username, userTitle, text);
           chatInput.value = '';
           if (charCounter) charCounter.textContent = '0 / 200';
           lastChatSent = Date.now();
-          setTimeout(() => {
-            if (chatInput) chatInput.focus();
-          }, 30);
+          await AppDB.sendChatMessage(username, userTitle, text);
         } catch (err) {
           showToast('خطأ إرسال', err.message, 'error');
+          chatInput.value = text;
         } finally {
           chatSendBtn.disabled = false;
+          setTimeout(() => {
+            if (chatInput) chatInput.focus();
+          }, 50);
         }
-      });
+      };
+
+      chatSendBtn.addEventListener('click', doSendChat);
 
       chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          chatSendBtn.click();
+          doSendChat();
         }
       });
     }
@@ -8969,11 +8972,19 @@ const UIController = (() => {
 
     container.innerHTML = '';
 
+    if (!msgs || msgs.length === 0) {
+      container.innerHTML = '<div class="text-center text-slate-500 text-xs py-8">لا توجد رسائل سابقة. كن أول من يكتب! 💬</div>';
+      return;
+    }
+
+    const curUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
+    const blocked = (GameEngine.state && GameEngine.state.blockedUsers) || [];
+
     msgs.forEach(msg => {
-      if (GameEngine.state.blockedUsers && GameEngine.state.blockedUsers.includes(msg.sender)) return;
+      if (blocked.includes(msg.sender)) return;
 
       const isSystem = msg.sender === 'الإدارة';
-      const isMe = !isSystem && msg.sender === GameEngine.state.username;
+      const isMe = !isSystem && curUser && msg.sender === curUser;
       
       let bubbleClass = isMe ? 'chat-bubble-sent' : 'chat-bubble-received';
       let alignClass = isMe ? 'text-left flex flex-col items-end' : 'text-right flex flex-col items-start';
@@ -8983,31 +8994,35 @@ const UIController = (() => {
         alignClass = 'text-center flex flex-col items-center w-full';
       }
 
-      const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
       const msgDiv = document.createElement('div');
       msgDiv.className = `w-full flex flex-col ${alignClass}`;
       
+      const safeSender = String(msg.sender || 'لاعب').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+      const safeTitle = String(msg.senderTitle || 'مبتدئ').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+      const safeMsg = String(msg.message || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
       if (isSystem) {
         msgDiv.innerHTML = `
           <div class="flex items-center gap-1 mb-1 justify-center">
             <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
-            <span class="text-[10px] font-black text-red-400"><i class="fa-solid fa-shield-halved text-[9px] mr-1"></i>${msg.sender}</span>
-            <span class="text-[8px] px-1 bg-red-950 border border-red-800 rounded-md text-red-300 font-bold">${msg.senderTitle}</span>
+            <span class="text-[10px] font-black text-red-400"><i class="fa-solid fa-shield-halved text-[9px] mr-1"></i>${safeSender}</span>
+            <span class="text-[8px] px-1 bg-red-950 border border-red-800 rounded-md text-red-300 font-bold">${safeTitle}</span>
           </div>
           <div class="chat-message-bubble ${bubbleClass}">
-            ${msg.message}
+            ${safeMsg}
           </div>
         `;
       } else {
         msgDiv.innerHTML = `
           <div class="flex items-center gap-1.5 mb-0.5">
             <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
-            <span class="text-[10px] font-bold text-yellow-400 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${msg.sender}')">${msg.sender}</span>
-            <span class="text-[8px] px-1 bg-slate-900 border border-slate-800 rounded-md text-slate-400">${msg.senderTitle}</span>
+            <span class="text-[10px] font-bold text-yellow-400 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${safeSender}')">${safeSender}</span>
+            <span class="text-[8px] px-1 bg-slate-900 border border-slate-800 rounded-md text-slate-400">${safeTitle}</span>
           </div>
           <div class="chat-message-bubble ${bubbleClass}">
-            ${msg.message}
+            ${safeMsg}
           </div>
         `;
       }

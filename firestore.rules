@@ -103,12 +103,7 @@ service cloud.firestore {
     // 8. الدردشة العامة (Public Chat)
     // ─────────────────────────────────────────────
     match /chat/{messageId} {
-      allow read: if true;
-      allow create: if request.resource.data.keys().hasAll(['sender', 'message', 'timestamp']) &&
-                       request.resource.data.message is string &&
-                       request.resource.data.message.size() > 0 &&
-                       request.resource.data.message.size() <= 500;
-      allow update, delete: if isAdmin();
+      allow read, create, update, delete: if true;
     }
 
     // ─────────────────────────────────────────────
