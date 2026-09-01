@@ -2041,35 +2041,101 @@
 
   </div>
 
-  <!-- ==================== ADMIN ACCOUNT AUDIT MODAL ==================== -->
+  <!-- ==================== COMPREHENSIVE FORENSIC & SECURITY AUDIT MODAL ==================== -->
   <div id="admin-audit-modal"
-    class="hidden fixed inset-0 z-[650] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 overflow-y-auto text-right">
-    <div class="glass-panel w-full max-w-lg rounded-2xl border border-rose-500/30 p-5 shadow-2xl bg-slate-900/98 space-y-4">
+    class="hidden fixed inset-0 z-[650] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-3 sm:p-6 overflow-y-auto text-right">
+    <div class="glass-panel w-full max-w-4xl max-h-[92vh] rounded-2xl border border-rose-500/30 p-5 shadow-2xl bg-slate-900/98 space-y-4 flex flex-col overflow-hidden">
+      <!-- Header -->
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="text-sm font-black text-rose-400 flex items-center gap-2">
-          <i class="fa-solid fa-user-shield"></i>
-          <span>تقرير فحص نزاهة وأمان الحساب (Fraud & Integrity Audit)</span>
-        </h3>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+            <i class="fa-solid fa-shield-halved text-lg"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm sm:text-base font-black text-white">منظومة الفحص الجنائي والتحليل المالي المتعدد (Forensic Anti-Cheat Engine)</h3>
+              <span id="audit-safety-badge" class="px-2 py-0.5 rounded text-[10px] font-bold">--</span>
+            </div>
+            <p class="text-[10px] text-slate-400">تدقيق رياضي لـ 8 قطاعات: الثروة المحسوبة، المشاريع، البورصة، الخبرة، الكازينو، والتهريب.</p>
+          </div>
+        </div>
         <button id="btn-close-admin-audit"
           class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <div class="text-xs space-y-3">
-        <!-- Target Player Info -->
-        <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl flex justify-between items-center">
-          <div>اللاعب المستهدف: <strong id="audit-target-username" class="text-white font-mono">--</strong></div>
-          <div id="audit-safety-badge" class="px-2.5 py-1 rounded-lg font-bold text-xs">--</div>
+
+      <!-- Quick Forensic KPI Cards Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+        <!-- 1. Integrity Score -->
+        <div class="p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl space-y-1">
+          <span class="text-[10px] text-slate-400 block font-bold">مؤشر النزاهة العام</span>
+          <div class="flex items-center justify-center gap-1.5">
+            <span id="audit-kpi-score" class="numbers-font font-black text-emerald-400 text-sm">100%</span>
+          </div>
+          <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
+            <div id="audit-kpi-score-bar" class="bg-emerald-500 h-full transition-all duration-500" style="width: 100%"></div>
+          </div>
         </div>
-        <!-- Audit Checklist -->
-        <div id="audit-report-body" class="space-y-2 leading-relaxed max-h-[50vh] overflow-y-auto pr-1">
-          <!-- Content injected dynamically -->
+
+        <!-- 2. Net Worth Verification -->
+        <div class="p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl space-y-1">
+          <span class="text-[10px] text-slate-400 block font-bold">مطابقة صافي الثروة</span>
+          <div id="audit-kpi-worth-diff" class="numbers-font font-black text-yellow-400 text-xs">مطابق تماماً ⚖️</div>
+          <span id="audit-kpi-worth-sub" class="text-[9px] text-slate-500 block truncate">مسجل: -- | فعلي: --</span>
+        </div>
+
+        <!-- 3. Estimated Cashflow -->
+        <div class="p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl space-y-1">
+          <span class="text-[10px] text-slate-400 block font-bold">الدخل التلقائي الفعلي</span>
+          <div id="audit-kpi-income" class="numbers-font font-black text-cyan-400 text-xs">0 EGP / د</div>
+          <span id="audit-kpi-biz-count" class="text-[9px] text-slate-500 block">0 مشاريع نشطة</span>
+        </div>
+
+        <!-- 4. Underworld & Risk -->
+        <div class="p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl space-y-1">
+          <span class="text-[10px] text-slate-400 block font-bold">التهريب والسوق السوداء</span>
+          <div id="audit-kpi-dirty" class="numbers-font font-black text-rose-400 text-xs">0 EGP</div>
+          <span id="audit-kpi-heat" class="text-[9px] text-slate-500 block">Heat: 0/5</span>
         </div>
       </div>
-      <button id="btn-close-admin-audit-footer"
-        class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition border border-slate-700">
-        إغلاق التقرير
-      </button>
+
+      <!-- Sector Filter Tabs -->
+      <div class="flex items-center gap-1 overflow-x-auto pb-1 border-b border-slate-800 text-[11px]">
+        <button class="audit-filter-btn px-2.5 py-1 rounded-lg font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40" data-filter="all">كافة الفحوصات (الكل)</button>
+        <button class="audit-filter-btn px-2.5 py-1 rounded-lg font-bold bg-slate-900 text-slate-400 hover:text-white" data-filter="wealth">⚖️ مطابقة الثروة</button>
+        <button class="audit-filter-btn px-2.5 py-1 rounded-lg font-bold bg-slate-900 text-slate-400 hover:text-white" data-filter="businesses">🏭 المشاريع والإنتاج</button>
+        <button class="audit-filter-btn px-2.5 py-1 rounded-lg font-bold bg-slate-900 text-slate-400 hover:text-white" data-filter="stocks">📈 محفظة البورصة</button>
+        <button class="audit-filter-btn px-2.5 py-1 rounded-lg font-bold bg-slate-900 text-slate-400 hover:text-white" data-filter="career">👔 المسار والخبرة</button>
+        <button class="audit-filter-btn px-2.5 py-1 rounded-lg font-bold bg-slate-900 text-slate-400 hover:text-white" data-filter="underworld">🕶️ السوق والتهريب</button>
+        <button class="audit-filter-btn px-2.5 py-1 rounded-lg font-bold bg-slate-900 text-slate-400 hover:text-white" data-filter="casino">🎰 الكازينو والرهانات</button>
+        <button class="audit-filter-btn px-2.5 py-1 rounded-lg font-bold bg-slate-900 text-slate-400 hover:text-white" data-filter="loans">🏦 القروض والديون</button>
+      </div>
+
+      <!-- Scrollable Detailed Findings Cards -->
+      <div id="audit-report-body" class="flex-1 overflow-y-auto space-y-2.5 pr-1 text-xs max-h-[50vh]">
+        <!-- Dynamically populated findings -->
+      </div>
+
+      <!-- Footer Quick Administrative Corrective Actions -->
+      <div class="pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <button id="btn-adm-audit-recalibrate-worth"
+            class="flex-1 sm:flex-initial py-2 px-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold rounded-lg text-xs transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-scale-balanced"></i>
+            <span>إعادة معايرة وضبط صافي الثروة تلقائياً</span>
+          </button>
+          <button id="btn-adm-audit-clear-dirty"
+            class="flex-1 sm:flex-initial py-2 px-3 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/30 font-bold rounded-lg text-xs transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-soap"></i>
+            <span>تصفير الكاش القذر والـ Heat</span>
+          </button>
+        </div>
+        <button id="btn-close-admin-audit-footer"
+          class="w-full sm:w-auto py-2 px-6 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg text-xs transition border border-slate-700">
+          إغلاق التقرير
+        </button>
+      </div>
     </div>
   </div>
 
