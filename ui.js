@@ -736,6 +736,8 @@ const UIController = (() => {
     const continueBtn = document.getElementById('btn-menu-continue');
     if (continueBtn) {
       continueBtn.addEventListener('click', async () => {
+        const isMaint = await checkMaintenanceMode();
+        if (isMaint) return;
         const savedUser = localStorage.getItem('foolos_active_session_user');
         if (savedUser) {
           playMenuSound('start');
@@ -749,7 +751,9 @@ const UIController = (() => {
     // 2. New Game Button
     const newGameBtn = document.getElementById('btn-menu-newgame');
     if (newGameBtn) {
-      newGameBtn.addEventListener('click', () => {
+      newGameBtn.addEventListener('click', async () => {
+        const isMaint = await checkMaintenanceMode();
+        if (isMaint) return;
         playMenuSound('click');
         showAuthModal('register');
       });
@@ -758,7 +762,9 @@ const UIController = (() => {
     // 3. Login / Switch Button
     const loginBtn = document.getElementById('btn-menu-login');
     if (loginBtn) {
-      loginBtn.addEventListener('click', () => {
+      loginBtn.addEventListener('click', async () => {
+        const isMaint = await checkMaintenanceMode();
+        if (isMaint) return;
         playMenuSound('click');
         showAuthModal('login');
       });
@@ -766,8 +772,10 @@ const UIController = (() => {
 
     const switchCardBtn = document.getElementById('btn-start-card-switch');
     if (switchCardBtn) {
-      switchCardBtn.addEventListener('click', (e) => {
+      switchCardBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
+        const isMaint = await checkMaintenanceMode();
+        if (isMaint) return;
         playMenuSound('click');
         showAuthModal('login');
       });
@@ -1110,17 +1118,8 @@ const UIController = (() => {
   async function launchGameSession(username) {
     try {
       // Check maintenance mode on session launch
-      const maintStatus = await AppDB.getMaintenanceStatus();
-      if (maintStatus && maintStatus.enabled) {
-        const isAdmin = Boolean(GameEngine.state && GameEngine.state.isAdmin);
-        if (!isAdmin) {
-          const checkUser = await AppDB.getPlayerState(username);
-          if (!checkUser || !checkUser.isAdmin) {
-            showMaintenancePopup(maintStatus.message);
-            return;
-          }
-        }
-      }
+      const isMaint = await checkMaintenanceMode();
+      if (isMaint) return;
 
       const playerState = await GameEngine.loadUserSession(username);
       const mainLayout = document.getElementById('main-game-layout');
@@ -5079,21 +5078,17 @@ const UIController = (() => {
       });
     }
 
-    // 2. Maintenance Listener
+    // 2. Maintenance Realtime Listener
     const unsubMaintenance = db.collection('globals').doc('maintenance')
       .onSnapshot((doc) => {
         if (!doc.exists) return;
         const data = doc.data();
-        if (data.enabled) {
-          const username = GameEngine.activeUsername;
-          const isAdmin = Boolean((GameEngine.state && GameEngine.state.isAdmin));
-          if (!isAdmin) {
-            handleMaintenanceMode(data.message);
-          }
+        if (data && data.enabled) {
+          handleMaintenanceMode(data.message || 'الخادم قيد الصيانة الفنية حالياً.');
         } else {
           hideMaintenanceOverlay();
         }
-      }, (err) => console.error("Maintenance listen err: ", err));
+      }, (err) => console.warn("Maintenance listen err: ", err));
     activeListeners.push(unsubMaintenance);
 
     // 3. Airdrop Listener
@@ -5244,8 +5239,6 @@ const UIController = (() => {
         });
       }, (err) => console.error("Transfers listen err: ", err));
     activeListeners.push(unsubIncomingTransfers);
-
-    // Old admin chat cleanup block removed — no hardcoded usernames in client code.
   }
 
   function applyCompleteZeroStateToGameEngine(username) {
@@ -5326,23 +5319,16 @@ const UIController = (() => {
     try {
       const status = await AppDB.getMaintenanceStatus();
       if (status && status.enabled) {
-        const username = localStorage.getItem('foolos_active_session_user') || GameEngine.activeUsername;
-        const isAdmin = Boolean(GameEngine.state && GameEngine.state.isAdmin);
-        if (!isAdmin) {
-          const mainLayout = document.getElementById('main-game-layout');
-          if (mainLayout && !mainLayout.classList.contains('hidden')) {
-            handleMaintenanceMode(status.message);
-            return true;
-          }
-        } else {
-          hideMaintenanceOverlay();
-          return false;
-        }
+        handleMaintenanceMode(status.message || 'الخادم قيد الصيانة الفنية حالياً لترقية وتأمين الأنظمة.');
+        return true;
       } else {
         hideMaintenanceOverlay();
+        return false;
       }
-    } catch (e) { console.warn('Maintenance check err:', e); }
-    return false;
+    } catch (e) {
+      console.warn('Maintenance check err:', e);
+      return false;
+    }
   }
 
   function showMaintenancePopup(msg) {
