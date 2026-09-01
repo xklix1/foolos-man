@@ -11,151 +11,151 @@ const GameEngine = (() => {
   // --- Game Configurations & Data Tables ---
 
   const JOBS = {
-    worker: { id: 'worker', name: 'عامل باليومية', salary: 12, xpReward: 4, xpNeeded: 0 },
-    cashier: { id: 'cashier', name: 'محاسب صندوق', salary: 32, xpReward: 7, xpNeeded: 80 },
-    accountant: { id: 'accountant', name: 'محاسب مالي قانوني', salary: 85, xpReward: 12, xpNeeded: 280 },
-    manager: { id: 'manager', name: 'مدير فرع', salary: 210, xpReward: 18, xpNeeded: 850 },
-    director: { id: 'director', name: 'مدير تنفيذي للمجموعة', salary: 540, xpReward: 26, xpNeeded: 2400 },
-    ceo: { id: 'ceo', name: 'رئيس مجلس الإدارة', salary: 1400, xpReward: 40, xpNeeded: 6500 },
-    consultant: { id: 'consultant', name: 'مستشار اقتصادي ووزير سابق', salary: 3800, xpReward: 65, xpNeeded: 16000 },
-    bank_governor: { id: 'bank_governor', name: 'محافظ البنك المركزي', salary: 9500, xpReward: 100, xpNeeded: 40000 },
-    sovereign_head: { id: 'sovereign_head', name: 'رئيس صندوق الاستثمار السيادي', salary: 24000, xpReward: 160, xpNeeded: 95000 },
-    oligarch: { id: 'oligarch', name: 'إمبراطور كبار المستثمرين', salary: 65000, xpReward: 280, xpNeeded: 220000 }
+    worker: { id: 'worker', name: 'عامل باليومية', salary: 15, xpReward: 4, xpNeeded: 0 },
+    cashier: { id: 'cashier', name: 'محاسب صندوق', salary: 40, xpReward: 8, xpNeeded: 90 },
+    accountant: { id: 'accountant', name: 'محاسب مالي قانوني', salary: 120, xpReward: 16, xpNeeded: 320 },
+    manager: { id: 'manager', name: 'مدير فرع وتطوير', salary: 320, xpReward: 26, xpNeeded: 1100 },
+    director: { id: 'director', name: 'مدير تنفيذي للمجموعة', salary: 850, xpReward: 42, xpNeeded: 3400 },
+    ceo: { id: 'ceo', name: 'رئيس مجلس الإدارة', salary: 2200, xpReward: 65, xpNeeded: 9500 },
+    consultant: { id: 'consultant', name: 'مستشار اقتصادي ووزير سابق', salary: 5800, xpReward: 95, xpNeeded: 24000 },
+    bank_governor: { id: 'bank_governor', name: 'محافظ البنك المركزي', salary: 15000, xpReward: 150, xpNeeded: 60000 },
+    sovereign_head: { id: 'sovereign_head', name: 'رئيس صندوق الاستثمار السيادي', salary: 38000, xpReward: 240, xpNeeded: 140000 },
+    oligarch: { id: 'oligarch', name: 'إمبراطور كبار المستثمرين', salary: 95000, xpReward: 380, xpNeeded: 320000 }
   };
 
   const BUSINESSES = {
     coffee: {
       id: 'coffee',
-      name: 'عربة قهوة مختصة',
-      cost: 15000,
-      baseDemand: 22,
-      optimumPrice: 22,
-      costOfGoods: 9,
-      upgradeMultiplier: 1.45,
+      name: 'عربة قهوة ومأكولات خفيفة',
+      cost: 3500,
+      baseDemand: 18,
+      optimumPrice: 24,
+      costOfGoods: 10,
+      upgradeMultiplier: 1.40,
       workerMultiplier: 1.15,
       workerWage: 6
     },
     tech: {
       id: 'tech',
       name: 'شركة برمجيات وتطبيقات',
-      cost: 110000,
-      baseDemand: 8,
-      optimumPrice: 160,
-      costOfGoods: 55,
-      upgradeMultiplier: 1.55,
+      cost: 65000,
+      baseDemand: 10,
+      optimumPrice: 180,
+      costOfGoods: 60,
+      upgradeMultiplier: 1.50,
       workerMultiplier: 1.20,
-      workerWage: 25
+      workerWage: 28
     },
     logistics: {
       id: 'logistics',
       name: 'مجمع خدمات لوجستية وشحن',
-      cost: 650000,
-      baseDemand: 5,
-      optimumPrice: 1100,
-      costOfGoods: 360,
-      upgradeMultiplier: 1.65,
+      cost: 380000,
+      baseDemand: 8,
+      optimumPrice: 850,
+      costOfGoods: 280,
+      upgradeMultiplier: 1.60,
       workerMultiplier: 1.25,
-      workerWage: 110
+      workerWage: 120
     },
     supermarket: {
       id: 'supermarket',
       name: 'سلسلة سوبرماركت وتجزئة',
-      cost: 2400000,
-      baseDemand: 16,
-      optimumPrice: 450,
-      costOfGoods: 180,
-      upgradeMultiplier: 1.70,
+      cost: 1600000,
+      baseDemand: 14,
+      optimumPrice: 1200,
+      costOfGoods: 420,
+      upgradeMultiplier: 1.68,
       workerMultiplier: 1.28,
-      workerWage: 320
+      workerWage: 350
     },
     solar_factory: {
       id: 'solar_factory',
       name: 'مصنع ألواح الطاقة الشمسية',
-      cost: 8500000,
-      baseDemand: 7,
-      optimumPrice: 3200,
-      costOfGoods: 1250,
-      upgradeMultiplier: 1.75,
+      cost: 6200000,
+      baseDemand: 9,
+      optimumPrice: 3500,
+      costOfGoods: 1200,
+      upgradeMultiplier: 1.72,
       workerMultiplier: 1.30,
-      workerWage: 950
+      workerWage: 980
     },
     private_hospital: {
       id: 'private_hospital',
       name: 'مستشفى ومجمع طبي تخصصي',
-      cost: 32000000,
-      baseDemand: 4,
-      optimumPrice: 11500,
-      costOfGoods: 3800,
-      upgradeMultiplier: 1.80,
+      cost: 24000000,
+      baseDemand: 7,
+      optimumPrice: 11000,
+      costOfGoods: 3600,
+      upgradeMultiplier: 1.78,
       workerMultiplier: 1.35,
-      workerWage: 2800
+      workerWage: 2900
     },
     media_studio: {
       id: 'media_studio',
       name: 'مؤسسة إنتاج إعلامي وسينمائي',
-      cost: 85000000,
-      baseDemand: 5,
-      optimumPrice: 28000,
-      costOfGoods: 8500,
+      cost: 68000000,
+      baseDemand: 8,
+      optimumPrice: 26000,
+      costOfGoods: 8200,
       upgradeMultiplier: 1.82,
       workerMultiplier: 1.38,
-      workerWage: 6500
+      workerWage: 6800
     },
     private_bank: {
       id: 'private_bank',
       name: 'بنك استثماري وشركة وساطة مالية',
-      cost: 250000000,
-      baseDemand: 3,
-      optimumPrice: 95000,
-      costOfGoods: 26000,
+      cost: 210000000,
+      baseDemand: 7,
+      optimumPrice: 78000,
+      costOfGoods: 22000,
       upgradeMultiplier: 1.85,
       workerMultiplier: 1.40,
-      workerWage: 18000
+      workerWage: 19000
     },
     oil_refinery: {
       id: 'oil_refinery',
       name: 'مجمع مصافي البترول والطاقة',
-      cost: 750000000,
-      baseDemand: 4,
-      optimumPrice: 310000,
-      costOfGoods: 80000,
+      cost: 620000000,
+      baseDemand: 6,
+      optimumPrice: 220000,
+      costOfGoods: 58000,
       upgradeMultiplier: 1.88,
       workerMultiplier: 1.45,
-      workerWage: 52000
+      workerWage: 55000
     },
     space_tech: {
       id: 'space_tech',
       name: 'مؤسسة استكشاف الفضاء والأقمار الصناعية',
-      cost: 2500000000,
-      baseDemand: 2,
-      optimumPrice: 1250000,
-      costOfGoods: 320000,
+      cost: 1800000000,
+      baseDemand: 4,
+      optimumPrice: 680000,
+      costOfGoods: 160000,
       upgradeMultiplier: 1.92,
       workerMultiplier: 1.50,
-      workerWage: 180000
+      workerWage: 185000
     }
   };
 
   const ASSETS = {
-    apartment: { id: 'apartment', name: 'شقة سكنية مؤجرة', cost: 180000, rent: 140, appreciation: 0.0008 },
-    office: { id: 'office', name: 'مبنى مكاتب تجارية', cost: 1200000, rent: 1100, appreciation: 0.0012 },
-    mansion: { id: 'mansion', name: 'قصر ريفي فاخر', cost: 5500000, rent: 5800, appreciation: 0.0015 },
-    skyline_tower: { id: 'skyline_tower', name: 'برج ناطحة سحاب تجاري', cost: 25000000, rent: 28000, appreciation: 0.0018 },
-    luxury_resort: { id: 'luxury_resort', name: 'منتجع وفندق سياحي 5 نجوم', cost: 120000000, rent: 145000, appreciation: 0.0020 },
-    mega_yacht: { id: 'mega_yacht', name: 'يخت ملكي فاخر خاص', cost: 450000000, rent: 560000, appreciation: 0.0022 },
-    private_island: { id: 'private_island', name: 'جزيرة استوائية خاصة', cost: 1800000000, rent: 2400000, appreciation: 0.0025 },
-    orbital_station: { id: 'orbital_station', name: 'محطة مدارية فضائية خاصة', cost: 8000000000, rent: 12000000, appreciation: 0.0030 }
+    apartment: { id: 'apartment', name: 'شقة سكنية مؤجرة', cost: 140000, rent: 260, appreciation: 0.0008 },
+    office: { id: 'office', name: 'مبنى مكاتب تجارية', cost: 850000, rent: 1800, appreciation: 0.0012 },
+    mansion: { id: 'mansion', name: 'قصر ريفي فاخر', cost: 3800000, rent: 8200, appreciation: 0.0015 },
+    skyline_tower: { id: 'skyline_tower', name: 'برج ناطحة سحاب تجاري', cost: 16000000, rent: 36000, appreciation: 0.0018 },
+    luxury_resort: { id: 'luxury_resort', name: 'منتجع وفندق سياحي 5 نجوم', cost: 78000000, rent: 185000, appreciation: 0.0020 },
+    mega_yacht: { id: 'mega_yacht', name: 'يخت ملكي فاخر خاص', cost: 290000000, rent: 680000, appreciation: 0.0022 },
+    private_island: { id: 'private_island', name: 'جزيرة استوائية خاصة', cost: 1100000000, rent: 2600000, appreciation: 0.0025 },
+    orbital_station: { id: 'orbital_station', name: 'محطة مدارية فضائية خاصة', cost: 4500000000, rent: 11500000, appreciation: 0.0030 }
   };
 
   const STOCKS = {
-    COMI: { name: 'البنك التجاري الدولي', symbol: 'COMI', basePrice: 32, volatility: 0.015, reversion: 0.01, floor: 15, dividend: 0.0001 },
-    EAST: { name: 'الشرقية للدخان', symbol: 'EAST', basePrice: 78, volatility: 0.02, reversion: 0.015, floor: 30, dividend: 0.0002 },
-    ETEL: { name: 'المصرية للاتصالات', symbol: 'ETEL', basePrice: 42, volatility: 0.018, reversion: 0.012, floor: 20, dividend: 0.00015 },
-    FWRY: { name: 'فوري للمدفوعات الإلكترونية', symbol: 'FWRY', basePrice: 85, volatility: 0.025, reversion: 0.02, floor: 40, dividend: 0.0001 },
-    CASH: { name: 'صندوق الاستثمار التقني البديل', symbol: 'CASH', basePrice: 110, volatility: 0.03, reversion: 0.025, floor: 25, dividend: 0.0003 },
-    BITC: { name: 'مؤشر البيتكوين والأصول الرقمية', symbol: 'BITC', basePrice: 280, volatility: 0.05, reversion: 0.03, floor: 50, dividend: 0 },
-    GOLD: { name: 'صندوق سبائك الذهب الخالص', symbol: 'GOLD', basePrice: 190, volatility: 0.01, reversion: 0.008, floor: 90, dividend: 0.00025 },
-    AIX: { name: 'صندوق الذكاء الاصطناعي العالمي', symbol: 'AIX', basePrice: 340, volatility: 0.035, reversion: 0.022, floor: 80, dividend: 0.0002 }
+    COMI: { name: 'البنك التجاري الدولي', symbol: 'COMI', basePrice: 38, volatility: 0.015, reversion: 0.01, floor: 18, dividend: 0.00015 },
+    EAST: { name: 'الشرقية للدخان', symbol: 'EAST', basePrice: 85, volatility: 0.02, reversion: 0.015, floor: 35, dividend: 0.00025 },
+    ETEL: { name: 'المصرية للاتصالات', symbol: 'ETEL', basePrice: 48, volatility: 0.018, reversion: 0.012, floor: 22, dividend: 0.00018 },
+    FWRY: { name: 'فوري للمدفوعات الإلكترونية', symbol: 'FWRY', basePrice: 92, volatility: 0.025, reversion: 0.02, floor: 42, dividend: 0.00015 },
+    CASH: { name: 'صندوق الاستثمار التقني البديل', symbol: 'CASH', basePrice: 125, volatility: 0.03, reversion: 0.025, floor: 30, dividend: 0.00035 },
+    BITC: { name: 'مؤشر البيتكوين والأصول الرقمية', symbol: 'BITC', basePrice: 310, volatility: 0.05, reversion: 0.03, floor: 60, dividend: 0 },
+    GOLD: { name: 'صندوق سبائك الذهب الخالص', symbol: 'GOLD', basePrice: 220, volatility: 0.01, reversion: 0.008, floor: 110, dividend: 0.0003 },
+    AIX: { name: 'صندوق الذكاء الاصطناعي العالمي', symbol: 'AIX', basePrice: 380, volatility: 0.035, reversion: 0.022, floor: 90, dividend: 0.00025 }
   };
 
   const CORP_PROJECTS = {

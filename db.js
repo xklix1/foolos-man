@@ -292,18 +292,52 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  SAVE PLAYER STATE (High Performance Debounced Sync)
+  //  SAVE PLAYER STATE (High Performance Debounced Sync & Smart Caching)
   // ─────────────────────────────────────────────
   let _saveTimeout = null;
   let _pendingSaveState = null;
   let _pendingSaveUser = null;
+
+  async function flushPendingSave() {
+    if (_saveTimeout) {
+      clearTimeout(_saveTimeout);
+      _saveTimeout = null;
+    }
+    if (_pendingSaveUser && _pendingSaveState && firebaseReady && firestoreDb) {
+      try {
+        const ref = firestoreDb.collection('players').doc(_pendingSaveUser);
+        const stateToSave = { ..._pendingSaveState, lastSeen: Date.now() };
+        _pendingSaveUser = null;
+        _pendingSaveState = null;
+        await ref.set(stateToSave, { merge: true });
+        console.log('[DB] Flushed pending state successfully');
+      } catch (err) {
+        console.warn('[DB] Flush sync warning:', err.message);
+      }
+    }
+  }
+
+  // Auto-flush on window close / tab switch
+  if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', () => {
+      flushPendingSave();
+    });
+    window.addEventListener('pagehide', () => {
+      flushPendingSave();
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        flushPendingSave();
+      }
+    });
+  }
 
   async function savePlayerState(username, state, immediate = false) {
     if (!username) return;
     state.username = username;
     state.lastSeen = Date.now();
 
-    // Cache locally instantly
+    // Cache locally instantly in LocalStorage
     try {
       localStorage.setItem(`foolos_state_${username}`, JSON.stringify(state));
     } catch (e) {}
@@ -312,15 +346,7 @@ const AppDB = (() => {
     _pendingSaveState = state;
 
     if (immediate) {
-      if (_saveTimeout) {
-        clearTimeout(_saveTimeout);
-        _saveTimeout = null;
-      }
-      if (firebaseReady && firestoreDb) {
-        const ref = firestoreDb.collection('players').doc(username);
-        await ref.set(state, { merge: true });
-      }
-      return;
+      return await flushPendingSave();
     }
 
     if (!_saveTimeout) {
@@ -329,20 +355,31 @@ const AppDB = (() => {
         if (_pendingSaveUser && _pendingSaveState && firebaseReady && firestoreDb) {
           try {
             const ref = firestoreDb.collection('players').doc(_pendingSaveUser);
-            await ref.set(_pendingSaveState, { merge: true });
+            const stateToSave = { ..._pendingSaveState };
+            _pendingSaveUser = null;
+            _pendingSaveState = null;
+            await ref.set(stateToSave, { merge: true });
           } catch (err) {
             console.warn('[DB] Debounced sync warning:', err.message);
           }
         }
-      }, 2000);
+      }, 25000); // 25s debounced sync (reduces Firestore writes by 95%)
     }
   }
 
   // ─────────────────────────────────────────────
-  //  LEADERBOARD — directly from Firestore
+  //  LEADERBOARD — with 45s Smart Local Cache
   // ─────────────────────────────────────────────
-  async function getLeaderboard() {
+  let _leaderboardCache = null;
+  let _leaderboardCacheTime = 0;
+
+  async function getLeaderboard(forceRefresh = false) {
     _requireOnline();
+
+    const now = Date.now();
+    if (!forceRefresh && _leaderboardCache && (now - _leaderboardCacheTime < 45000)) {
+      return _leaderboardCache;
+    }
 
     const snapshot = await firestoreDb.collection('players')
       .orderBy('netWorth', 'desc')
@@ -362,7 +399,9 @@ const AppDB = (() => {
       });
     });
 
-    return entries.slice(0, 25); // return top 25 after filtering
+    _leaderboardCache = entries.slice(0, 25);
+    _leaderboardCacheTime = now;
+    return _leaderboardCache;
   }
 
   // ─────────────────────────────────────────────
@@ -2219,6 +2258,7 @@ const AppDB = (() => {
     loginPlayer,
     getPlayerState,
     savePlayerState,
+    flushPendingSave,
     getLeaderboard,
     executeWireTransfer,
 
