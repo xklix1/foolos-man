@@ -2394,6 +2394,23 @@
           showToast('خطأ مسح الحسابات', err.message, 'error');
         }
       });
+    // REBUILD CENTRALIZED LEADERBOARD (UNIFY TOP 25 WORLDWIDE)
+    const rebuildLeaderboardBtn = document.getElementById('btn-admin-rebuild-leaderboard');
+    if (rebuildLeaderboardBtn) {
+      rebuildLeaderboardBtn.addEventListener('click', async () => {
+        try {
+          rebuildLeaderboardBtn.disabled = true;
+          rebuildLeaderboardBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الفرز والمزامنة...';
+          const topList = await AppDB.adminRebuildLeaderboard();
+          showToast('توحيد المتصدرين', `تم فرز وتوحيد ليدربورد الأثرياء بنجاح (${topList.length} لاعب في القمة). سيظهر نفس الترتيب لجميع اللاعبين فوراً!`, 'success');
+          logAdminAction(`إعادة فرز وتوحيد ليدربورد المتصدرين سحابياً (${topList.length} لاعب)`);
+        } catch (err) {
+          showToast('خطأ المزامنة', err.message, 'error');
+        } finally {
+          rebuildLeaderboardBtn.disabled = false;
+          rebuildLeaderboardBtn.innerHTML = '<i class="fa-solid fa-crown"></i> <span>فرز وتوحيد عرش الأثرياء الآن</span>';
+        }
+      });
     }
 
     // Clear Wire Transfers logs

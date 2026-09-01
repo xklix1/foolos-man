@@ -805,7 +805,7 @@ const UIController = (() => {
     if (refreshStartLdBtn) {
       refreshStartLdBtn.addEventListener('click', () => {
         playMenuSound('click');
-        renderStartMenuLeaderboard();
+        renderStartMenuLeaderboard(true);
       });
     }
 
@@ -1202,7 +1202,7 @@ const UIController = (() => {
     document.getElementById('start-menu-screen').classList.remove('hidden');
   }
 
-  async function renderStartMenuLeaderboard() {
+  async function renderStartMenuLeaderboard(forceRefresh = false) {
     const tbody = document.getElementById('start-menu-leaderboard-rows');
     if (!tbody) return;
     tbody.innerHTML = `
@@ -1215,7 +1215,7 @@ const UIController = (() => {
     `;
 
     try {
-      const players = await AppDB.getLeaderboard();
+      const players = await AppDB.getLeaderboard(forceRefresh);
       tbody.innerHTML = '';
 
       if (!players || players.length === 0) {
@@ -3601,7 +3601,7 @@ const UIController = (() => {
       lbRefreshBtn.addEventListener('click', async () => {
         playCasinoSound('tick');
         showToast('تحديث الترتيب', 'جاري جلب أحدث بيانات المتصدرين...', 'info');
-        await renderLeaderboard();
+        await renderLeaderboard(true);
       });
     }
     setupV2UIHandlers();
@@ -4725,12 +4725,12 @@ const UIController = (() => {
   let cachedLeaderboard = null;
   let lastLeaderboardFetchTime = 0;
 
-  async function renderLeaderboard() {
+  async function renderLeaderboard(forceRefresh = false) {
     const list = document.getElementById('leaderboard-rows');
     if (!list) return;
 
     const now = Date.now();
-    const canUseCache = cachedLeaderboard && (now - lastLeaderboardFetchTime < 15000);
+    const canUseCache = !forceRefresh && cachedLeaderboard && (now - lastLeaderboardFetchTime < 60000);
 
     if (!canUseCache) {
       list.innerHTML = `
@@ -4738,7 +4738,7 @@ const UIController = (() => {
           <td colspan="4" class="text-center py-8 text-slate-400">
             <div class="flex items-center justify-center gap-2">
               <span class="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></span>
-              <span class="font-bold text-xs">${window.currentLang === 'en' ? 'Updating live leaderboard throne...' : 'جاري تحديث عرش الأثرياء المباشر...'}</span>
+              <span class="font-bold text-xs">${window.currentLang === 'en' ? 'Updating live leaderboard throne...' : 'جاري تحديث عرش الأثرياء الموحد سحابياً...'}</span>
             </div>
           </td>
         </tr>
@@ -4750,7 +4750,7 @@ const UIController = (() => {
       if (canUseCache) {
         players = cachedLeaderboard;
       } else {
-        players = await AppDB.getLeaderboard();
+        players = await AppDB.getLeaderboard(forceRefresh);
         cachedLeaderboard = players;
         lastLeaderboardFetchTime = now;
       }
@@ -7692,6 +7692,23 @@ const UIController = (() => {
           renderAll();
         } catch (err) {
           showToast('خطأ مسح الحسابات', err.message, 'error');
+        }
+      });
+    // REBUILD CENTRALIZED LEADERBOARD (UNIFY TOP 25 WORLDWIDE)
+    const rebuildLeaderboardBtn = document.getElementById('btn-admin-rebuild-leaderboard');
+    if (rebuildLeaderboardBtn) {
+      rebuildLeaderboardBtn.addEventListener('click', async () => {
+        try {
+          rebuildLeaderboardBtn.disabled = true;
+          rebuildLeaderboardBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الفرز والمزامنة...';
+          const topList = await AppDB.adminRebuildLeaderboard();
+          showToast('توحيد المتصدرين', `تم فرز وتوحيد ليدربورد الأثرياء بنجاح (${topList.length} لاعب في القمة). سيظهر نفس الترتيب لجميع اللاعبين فوراً!`, 'success');
+          logAdminAction(`إعادة فرز وتوحيد ليدربورد المتصدرين سحابياً (${topList.length} لاعب)`);
+        } catch (err) {
+          showToast('خطأ المزامنة', err.message, 'error');
+        } finally {
+          rebuildLeaderboardBtn.disabled = false;
+          rebuildLeaderboardBtn.innerHTML = '<i class="fa-solid fa-crown"></i> <span>فرز وتوحيد عرش الأثرياء الآن</span>';
         }
       });
     }

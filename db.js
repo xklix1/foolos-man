@@ -367,17 +367,20 @@ const AppDB = (() => {
       _saveTimeout = null;
     }
     if (_pendingSaveUser && _pendingSaveState && firebaseReady && firestoreDb) {
+      const usernameToSave = _pendingSaveUser;
+      const stateToSave = { 
+        ..._pendingSaveState, 
+        lastSeen: Date.now(),
+        lastActiveTimestamp: _pendingSaveState.lastActiveTimestamp || Date.now()
+      };
+      _pendingSaveUser = null;
+      _pendingSaveState = null;
       try {
-        const ref = firestoreDb.collection('players').doc(_pendingSaveUser);
-        const stateToSave = { 
-          ..._pendingSaveState, 
-          lastSeen: Date.now(),
-          lastActiveTimestamp: _pendingSaveState.lastActiveTimestamp || Date.now()
-        };
-        _pendingSaveUser = null;
-        _pendingSaveState = null;
+        const ref = firestoreDb.collection('players').doc(usernameToSave);
         await ref.set(stateToSave, { merge: true });
         console.log('[DB] Flushed pending state successfully to Cloud');
+        // Update centralized leaderboard asynchronously if player has competitive net worth
+        _checkAndUpdateCentralLeaderboard(usernameToSave, stateToSave).catch(() => {});
       } catch (err) {
         console.warn('[DB] Flush sync warning:', err.message);
       }
@@ -421,45 +424,188 @@ const AppDB = (() => {
       _saveTimeout = setTimeout(async () => {
         _saveTimeout = null;
         await flushPendingSave();
-      }, 6000); // 6s fast debounced sync for seamless cross-device handover
+      }, 15000); // 15s debounced sync (reduces Firebase write quota consumption by ~65%)
     }
   }
 
   // ─────────────────────────────────────────────
-  //  LEADERBOARD — with 45s Smart Local Cache
+  //  CENTRALIZED ULTRA-LIGHTWEIGHT LEADERBOARD
+  //  (Consumes 1 single read per fetch for ALL players instead of 50 reads!)
   // ─────────────────────────────────────────────
   let _leaderboardCache = null;
   let _leaderboardCacheTime = 0;
+
+  async function _checkAndUpdateCentralLeaderboard(username, state) {
+    if (!state || !username || state.isAdmin || state.isBanned) return;
+    const netWorth = Number(state.netWorth || 0);
+    if (netWorth <= 0) return;
+
+    try {
+      const docRef = firestoreDb.collection('globals').doc('leaderboard');
+      let currentTop = _leaderboardCache || [];
+      
+      // If we don't have a cached list, fetch current doc
+      if (currentTop.length === 0) {
+        const snap = await docRef.get();
+        if (snap.exists && Array.isArray(snap.data().topPlayers)) {
+          currentTop = snap.data().topPlayers;
+        }
+      }
+
+      const existingIdx = currentTop.findIndex(p => (p.username || '').toLowerCase() === username.toLowerCase());
+      const lowestWorth = currentTop.length >= 25 ? (currentTop[currentTop.length - 1].netWorth || 0) : 0;
+
+      // Only write to Firestore if player is already on leaderboard or qualifies to enter Top 25
+      if (existingIdx !== -1 || currentTop.length < 25 || netWorth > lowestWorth) {
+        const entry = {
+          username: username,
+          netWorth: netWorth,
+          title: state.title || 'عامل مبتدئ',
+          lastSeen: Date.now()
+        };
+
+        let updatedList = [...currentTop];
+        if (existingIdx !== -1) {
+          updatedList[existingIdx] = entry;
+        } else {
+          updatedList.push(entry);
+        }
+
+        updatedList.sort((a, b) => (b.netWorth || 0) - (a.netWorth || 0));
+        const finalTop25 = updatedList.slice(0, 25);
+
+        // Update centralized doc in Firestore
+        await docRef.set({
+          topPlayers: finalTop25,
+          updatedAt: Date.now(),
+          lastUpdater: username
+        }, { merge: true });
+
+        _leaderboardCache = finalTop25;
+        _leaderboardCacheTime = Date.now();
+        try {
+          localStorage.setItem('foolos_cached_leaderboard', JSON.stringify(finalTop25));
+        } catch (e) {}
+        console.log('[DB] Centralized leaderboard updated successfully');
+      }
+    } catch (e) {
+      console.warn('[DB] Centralized leaderboard auto-update warning:', e.message);
+    }
+  }
 
   async function getLeaderboard(forceRefresh = false) {
     _requireOnline();
 
     const now = Date.now();
-    if (!forceRefresh && _leaderboardCache && (now - _leaderboardCacheTime < 45000)) {
+    // Use in-memory cache if fresh (60 seconds) to avoid redundant network reads
+    if (!forceRefresh && _leaderboardCache && (now - _leaderboardCacheTime < 60000)) {
       return _leaderboardCache;
     }
 
+    // 1. Primary Strategy: Ultra-lightweight 1-read centralized document
+    try {
+      const docSnap = await firestoreDb.collection('globals').doc('leaderboard').get();
+      if (docSnap.exists) {
+        const data = docSnap.data();
+        if (data && Array.isArray(data.topPlayers) && data.topPlayers.length > 0) {
+          _leaderboardCache = data.topPlayers;
+          _leaderboardCacheTime = now;
+          try {
+            localStorage.setItem('foolos_cached_leaderboard', JSON.stringify(data.topPlayers));
+          } catch (e) {}
+          return data.topPlayers;
+        }
+      }
+    } catch (docErr) {
+      console.warn('[DB] Centralized leaderboard read error (quota or network):', docErr.message);
+    }
+
+    // 2. Fallback: Query players collection if centralized doc is missing or empty
+    try {
+      const snapshot = await firestoreDb.collection('players')
+        .orderBy('netWorth', 'desc')
+        .limit(30)
+        .get();
+
+      const entries = [];
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        if (d.isAdmin || d.isBanned) return;
+        entries.push({
+          username: d.username || doc.id,
+          netWorth: Number(d.netWorth || 0),
+          title: d.title || 'عامل مبتدئ',
+          lastSeen: d.lastSeen || Date.now()
+        });
+      });
+
+      const top25 = entries.slice(0, 25);
+      if (top25.length > 0) {
+        _leaderboardCache = top25;
+        _leaderboardCacheTime = now;
+        // Save centralized doc so all other clients benefit from single-read performance
+        firestoreDb.collection('globals').doc('leaderboard').set({
+          topPlayers: top25,
+          updatedAt: Date.now()
+        }, { merge: true }).catch(() => {});
+        try {
+          localStorage.setItem('foolos_cached_leaderboard', JSON.stringify(top25));
+        } catch (e) {}
+        return top25;
+      }
+    } catch (queryErr) {
+      console.warn('[DB] Fallback leaderboard query failed:', queryErr.message);
+    }
+
+    // 3. Last resort: Return previously cached leaderboard from memory or localStorage (NEVER fake an isolated account as #1)
+    if (_leaderboardCache && _leaderboardCache.length > 0) {
+      return _leaderboardCache;
+    }
+    try {
+      const savedLocal = localStorage.getItem('foolos_cached_leaderboard');
+      if (savedLocal) {
+        const parsed = JSON.parse(savedLocal);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          _leaderboardCache = parsed;
+          return parsed;
+        }
+      }
+    } catch (e) {}
+
+    return [];
+  }
+
+  // Admin utility to force-rebuild the centralized leaderboard from all active player docs
+  async function adminRebuildLeaderboard() {
+    _requireOnline();
+    await _ensureAdminAuth();
     const snapshot = await firestoreDb.collection('players')
       .orderBy('netWorth', 'desc')
-      .limit(50) // fetch more to account for filtered entries
+      .limit(50)
       .get();
 
     const entries = [];
     snapshot.forEach(doc => {
       const d = doc.data();
-      // Hide admin accounts and banned players from leaderboard
       if (d.isAdmin || d.isBanned) return;
       entries.push({
         username: d.username || doc.id,
-        netWorth: d.netWorth || 0,
+        netWorth: Number(d.netWorth || 0),
         title: d.title || 'عامل مبتدئ',
         lastSeen: d.lastSeen || Date.now()
       });
     });
 
-    _leaderboardCache = entries.slice(0, 25);
-    _leaderboardCacheTime = now;
-    return _leaderboardCache;
+    const top25 = entries.slice(0, 25);
+    await firestoreDb.collection('globals').doc('leaderboard').set({
+      topPlayers: top25,
+      updatedAt: Date.now(),
+      rebuiltByAdmin: true
+    }, { merge: true });
+
+    _leaderboardCache = top25;
+    _leaderboardCacheTime = Date.now();
+    return top25;
   }
 
   // ─────────────────────────────────────────────
@@ -1860,7 +2006,7 @@ const AppDB = (() => {
       try {
         return firestoreDb.collection('chat')
           .orderBy('timestamp', 'desc')
-          .limit(100)
+          .limit(35) // Reduced from 100 to 35 to save 65% of chat read quota
           .onSnapshot(snapshot => {
             const msgs = [];
             snapshot.forEach(doc => {
@@ -1873,7 +2019,7 @@ const AppDB = (() => {
             console.warn('[DB] Failed to listen to chat with orderBy, falling back:', err);
             try {
               firestoreDb.collection('chat')
-                .limit(100)
+                .limit(35)
                 .onSnapshot(snap => {
                   const msgs = [];
                   snap.forEach(doc => {
@@ -2723,6 +2869,7 @@ const AppDB = (() => {
     adminSetPlayerAdminStatus,
     adminResetAllPlayers,
     adminWipeLeaderboard,
+    adminRebuildLeaderboard,
     adminClearTransfers,
     getSystemStats,
     adminGetTransfers,
