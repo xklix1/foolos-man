@@ -2394,6 +2394,8 @@
           showToast('خطأ مسح الحسابات', err.message, 'error');
         }
       });
+    }
+
     // REBUILD CENTRALIZED LEADERBOARD (UNIFY TOP 25 WORLDWIDE)
     const rebuildLeaderboardBtn = document.getElementById('btn-admin-rebuild-leaderboard');
     if (rebuildLeaderboardBtn) {
