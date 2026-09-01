@@ -6841,18 +6841,19 @@ const UIController = (() => {
 
     if (fraudCheckBtn && auditModal) {
       fraudCheckBtn.addEventListener('click', async () => {
-        if (!selectedPlayer) {
-          showToast('فحص الأمان', 'يرجى تحديد لاعب أولاً.', 'warning');
+        const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
+        if (!targetUser || targetUser === '...' || targetUser === '') {
+          showToast('فحص الأمان', 'يرجى تحديد واختيار لاعب أولاً.', 'warning');
           return;
         }
         try {
           fraudCheckBtn.disabled = true;
-          const pState = await AppDB.adminGetPlayer(selectedPlayer);
+          const pState = await AppDB.adminGetPlayer(targetUser);
           if (!pState) throw new Error("تعذر جلب بيانات اللاعب.");
 
           const report = performAccountAudit(pState);
 
-          document.getElementById('audit-target-username').textContent = `@${selectedPlayer}`;
+          document.getElementById('audit-target-username').textContent = `@${targetUser}`;
           
           const safetyBadge = document.getElementById('audit-safety-badge');
           if (safetyBadge) {

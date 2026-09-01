@@ -1228,11 +1228,16 @@
 
     if (inspectLogsBtn && logModal) {
       inspectLogsBtn.addEventListener('click', async () => {
-        if (!selectedPlayer) return;
+        const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
+        if (!targetUser || targetUser === '...' || targetUser === '') {
+          showToast('سجل النشاط', 'يرجى تحديد واختيار لاعب أولاً من قائمة اللاعبين.', 'warning');
+          return;
+        }
         try {
-          const pState = await AppDB.adminGetPlayer(selectedPlayer);
+          const pState = await AppDB.adminGetPlayer(targetUser);
+          if (!pState) throw new Error("تعذر جلب بيانات اللاعب.");
           selectedPlayerState = pState;
-          document.getElementById('adm-log-modal-username').textContent = `@${selectedPlayer}`;
+          document.getElementById('adm-log-modal-username').textContent = `@${targetUser}`;
           document.getElementById('adm-log-stat-worth').textContent = `${(pState.netWorth || 0).toLocaleString()} EGP`;
           document.getElementById('adm-log-stat-cash').textContent = `${((pState.cash || 0) + (pState.bank || 0)).toLocaleString()} EGP`;
           document.getElementById('adm-log-stat-heat').textContent = `${pState.heatLevel || 0} / 5`;
@@ -1389,18 +1394,19 @@
 
     if (fraudCheckBtn && auditModal) {
       fraudCheckBtn.addEventListener('click', async () => {
-        if (!selectedPlayer) {
-          showToast('فحص الأمان', 'يرجى تحديد لاعب أولاً.', 'warning');
+        const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
+        if (!targetUser || targetUser === '...' || targetUser === '') {
+          showToast('فحص الأمان', 'يرجى تحديد واختيار لاعب أولاً من قائمة اللاعبين.', 'warning');
           return;
         }
         try {
           fraudCheckBtn.disabled = true;
-          const pState = await AppDB.adminGetPlayer(selectedPlayer);
+          const pState = await AppDB.adminGetPlayer(targetUser);
           if (!pState) throw new Error("تعذر جلب بيانات اللاعب.");
 
           const report = performAccountAudit(pState);
 
-          document.getElementById('audit-target-username').textContent = `@${selectedPlayer}`;
+          document.getElementById('audit-target-username').textContent = `@${targetUser}`;
           
           const safetyBadge = document.getElementById('audit-safety-badge');
           if (safetyBadge) {
@@ -1433,7 +1439,7 @@
             }).join('');
           }
 
-          playCasinoSound('win');
+          if (typeof playCasinoSound === 'function') playCasinoSound('win');
           auditModal.classList.remove('hidden');
 
         } catch (e) {
@@ -1445,7 +1451,7 @@
     }
 
     const hideAuditModal = () => {
-      playCasinoSound('click');
+      if (typeof playCasinoSound === 'function') playCasinoSound('click');
       if (auditModal) auditModal.classList.add('hidden');
     };
 
