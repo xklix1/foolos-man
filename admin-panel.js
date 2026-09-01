@@ -1856,6 +1856,46 @@
       });
     }
 
+    function updateMaintenanceUIState(isMaint) {
+      const badge = document.getElementById('admin-maintenance-badge');
+      const toggleBtn = document.getElementById('btn-admin-toggle-maintenance');
+      if (badge) {
+        if (isMaint) {
+          badge.textContent = 'وضع الصيانة نشط 🚨';
+          badge.className = 'text-[10px] px-2 py-0.5 bg-rose-500/20 text-rose-400 rounded border border-rose-500/30 font-bold animate-pulse';
+        } else {
+          badge.textContent = 'النظام يعمل بشكل طبيعي';
+          badge.className = 'text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold';
+        }
+      }
+      if (toggleBtn) {
+        if (isMaint) {
+          toggleBtn.textContent = '✅ إنهاء وضع الصيانة والعودة للتشغيل الطبيعي للجميع';
+          toggleBtn.className = 'w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-emerald-600/20';
+        } else {
+          toggleBtn.textContent = '🚨 إغلاق اللعبة وتفعيل وضع الصيانة الشامل للجميع';
+          toggleBtn.className = 'w-full py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-600/10';
+        }
+      }
+    }
+
+    function applyCompleteZeroStateToGameEngine(username) {
+      if (!GameEngine.state) return;
+      GameEngine.state.cash = 1500;
+      GameEngine.state.bank = 500;
+      GameEngine.state.netWorth = 2000;
+      GameEngine.state.dirtyCash = 0;
+      GameEngine.state.xp = 0;
+      GameEngine.state.underworldRep = 0;
+      GameEngine.state.heatLevel = 0;
+      GameEngine.state.businesses = {};
+      GameEngine.state.assets = {};
+      GameEngine.state.stocks = {};
+      GameEngine.state.inventory = {};
+      GameEngine.state.investments = [];
+      GameEngine.state.customItems = [];
+    }
+
     // ─────────────────────────────────────────────
     //  MODULE: SYSTEM & DANGER ZONE
     // ─────────────────────────────────────────────
