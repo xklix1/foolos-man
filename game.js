@@ -789,14 +789,18 @@ const GameEngine = (() => {
         const bizState = state.businesses[key];
         const bizConfig = BUSINESSES[key];
         if (bizState && bizState.level > 0 && bizConfig) {
-          const price = bizState.price || bizConfig.optimumPrice;
-          const opt = bizConfig.optimumPrice;
+          const levelMultiplier = Math.pow(1.12, Math.max(0, (bizState.level || 1) - 1));
+          const franchiseOptMultiplier = bizState.isFranchise ? 1.30 : 1.0;
+          const opt = Math.round(bizConfig.optimumPrice * levelMultiplier * franchiseOptMultiplier);
+          const price = bizState.price || opt;
+          
           let elasticity = 1.0;
           if (price > opt) elasticity = Math.max(0, 1 - (price - opt) / opt);
           else if (price < opt) elasticity = 1 + (opt - price) / opt * 0.3;
 
           const marketingBoost = (bizState.marketingTicks && bizState.marketingTicks > 0) ? 1.4 : 1.0;
-          const actualCostOfGoods = Math.floor(bizConfig.costOfGoods * 1.05);
+          const costOfGoodsLevelMultiplier = Math.pow(1.06, Math.max(0, (bizState.level || 1) - 1));
+          const actualCostOfGoods = Math.floor(bizConfig.costOfGoods * costOfGoodsLevelMultiplier * 1.05);
           const upgradeFactor = Math.pow(bizConfig.upgradeMultiplier, bizState.level - 1);
           const workerFactor = 1 + ((bizState.workers || 0) * (bizConfig.workerMultiplier - 1));
           const demand = Math.floor(bizConfig.baseDemand * upgradeFactor * elasticity * workerFactor * marketingBoost);
@@ -1900,9 +1904,12 @@ const GameEngine = (() => {
     if (!bizState || bizState.level === 0) throw new Error("المشروع مغلق حالياً.");
     if (price <= 0) throw new Error("سعر البيع يجب أن يكون أعلى من صفر جنيه.");
 
-    // Price capping: Max 10x optimum price to keep numbers sensible
-    const maxPrice = BUSINESSES[key].optimumPrice * 10;
-    if (price > maxPrice) throw new Error(`الحد الأقصى المسموح به للسعر هو ${maxPrice} جنيه.`);
+    // Price capping: Max 10x effective optimum price to keep numbers sensible
+    const levelMultiplier = Math.pow(1.12, Math.max(0, (bizState.level || 1) - 1));
+    const franchiseOptMultiplier = bizState.isFranchise ? 1.30 : 1.0;
+    const effectiveOpt = Math.round(BUSINESSES[key].optimumPrice * levelMultiplier * franchiseOptMultiplier);
+    const maxPrice = effectiveOpt * 10;
+    if (price > maxPrice) throw new Error(`الحد الأقصى المسموح به للسعر هو ${maxPrice.toLocaleString()} جنيه.`);
 
     bizState.price = price;
     AppDB.savePlayerState(activeUsername, state);

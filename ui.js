@@ -1899,8 +1899,10 @@ const UIController = (() => {
         const marketingActive = (bizState.marketingTicks && bizState.marketingTicks > 0);
         const marketingSecRemaining = marketingActive ? bizState.marketingTicks * 3 : 0;
 
-        const price = bizState.price || biz.optimumPrice;
-        const opt = biz.optimumPrice;
+        const levelMultiplier = Math.pow(1.12, Math.max(0, (bizState.level || 1) - 1));
+        const franchiseOptMultiplier = bizState.isFranchise ? 1.30 : 1.0;
+        const opt = Math.round(biz.optimumPrice * levelMultiplier * franchiseOptMultiplier);
+        const price = bizState.price || opt;
         let elasticityFactor = 1.0;
         if (price > opt) {
           elasticityFactor = Math.max(0, 1 - (price - opt) / opt);
@@ -1909,7 +1911,8 @@ const UIController = (() => {
         }
 
         const costFactor = 1.0 + ((Math.sin(Date.now() / 20000) * 0.1) + 0.05);
-        const actualCostOfGoods = Math.floor(biz.costOfGoods * costFactor);
+        const costOfGoodsLevelMultiplier = Math.pow(1.06, Math.max(0, (bizState.level || 1) - 1));
+        const actualCostOfGoods = Math.floor(biz.costOfGoods * costOfGoodsLevelMultiplier * costFactor);
         const upgradeFactor = Math.pow(biz.upgradeMultiplier, bizState.level - 1);
         const workerFactor = 1 + ((bizState.workers || 0) * ((biz.workerMultiplier || 1.2) - 1));
         const marketingBoost = marketingActive ? 1.4 : 1.0;
@@ -1939,12 +1942,12 @@ const UIController = (() => {
           <div class="mb-3">
             <div class="flex justify-between text-xs text-slate-400 mb-1">
               <span>${window.currentLang === 'en' ? 'Adjust Product Price:' : 'تعديل سعر المنتج:'}</span>
-              <span class="numbers-font font-bold text-yellow-500"><span id="price-val-${key}">${price}</span> EGP (${window.currentLang === 'en' ? 'Optimum' : 'المثالي'}: ${biz.optimumPrice} EGP)</span>
+              <span class="numbers-font font-bold text-yellow-500"><span id="price-val-${key}">${price}</span> EGP (${window.currentLang === 'en' ? 'Optimum' : 'المثالي'}: ${opt} EGP)</span>
             </div>
             <input 
               type="range" 
-              min="${Math.floor(actualCostOfGoods)}" 
-              max="${Math.floor(biz.optimumPrice * 3)}" 
+              min="${Math.max(1, Math.floor(actualCostOfGoods))}" 
+              max="${Math.floor(opt * 3)}" 
               value="${price}" 
               id="slider-${key}"
               class="w-full accent-yellow-500"
@@ -2090,8 +2093,10 @@ const UIController = (() => {
       const bizState = s.businesses[key];
       if (!bizState || bizState.level <= 0) return;
 
-      const price = bizState.price || biz.optimumPrice;
-      const opt = biz.optimumPrice;
+      const levelMultiplier = Math.pow(1.12, Math.max(0, (bizState.level || 1) - 1));
+      const franchiseOptMultiplier = bizState.isFranchise ? 1.30 : 1.0;
+      const opt = Math.round(biz.optimumPrice * levelMultiplier * franchiseOptMultiplier);
+      const price = bizState.price || opt;
       let elasticityFactor = 1.0;
       if (price > opt) {
         elasticityFactor = Math.max(0, 1 - (price - opt) / opt);
@@ -2100,7 +2105,8 @@ const UIController = (() => {
       }
 
       const costFactor = 1.0 + ((Math.sin(Date.now() / 20000) * 0.1) + 0.05);
-      const actualCostOfGoods = Math.floor(biz.costOfGoods * costFactor);
+      const costOfGoodsLevelMultiplier = Math.pow(1.06, Math.max(0, (bizState.level || 1) - 1));
+      const actualCostOfGoods = Math.floor(biz.costOfGoods * costOfGoodsLevelMultiplier * costFactor);
       const upgradeFactor = Math.pow(biz.upgradeMultiplier, bizState.level - 1);
       const workerFactor = 1 + ((bizState.workers || 0) * ((biz.workerMultiplier || 1.2) - 1));
       const marketingActive = (bizState.marketingTicks && bizState.marketingTicks > 0);
@@ -3839,10 +3845,23 @@ const UIController = (() => {
       if (sellAllBtn) {
         sellAllBtn.addEventListener('click', () => {
           try {
-            const owned = GameEngine.state.stocks[sym] || { shares: 0 };
+            const owned = GameEngine.state.stocks[sym] || { shares: 0, avgPrice: 0 };
             if (owned.shares <= 0) throw new Error("لا تملك أي أسهم في هذه الشركة لبيعها.");
-            const res = GameEngine.sellStock(sym, owned.shares);
-            showToast('بيع كلي', `تمت بيع وتسييل كامل الأسهم (${res.shares} سهم) بقيمة +${res.totalPayout.toLocaleString()} EGP.`, 'success');
+            const prevAvgPrice = owned.avgPrice || 0;
+            const sharesToSell = owned.shares;
+            const res = GameEngine.sellStock(sym, sharesToSell);
+            const totalPayout = res.totalReturn || (res.price * res.shares);
+            const costBasis = prevAvgPrice * sharesToSell;
+            const profitOrLoss = totalPayout - costBasis;
+            const pnlText = profitOrLoss >= 0
+              ? `(صافي ربح: +${profitOrLoss.toLocaleString()} EGP 🟢)`
+              : `(صافي خسارة: -${Math.abs(profitOrLoss).toLocaleString()} EGP 🔴)`;
+            
+            showToast(
+              profitOrLoss >= 0 ? 'بيع كلي رابح! 📈' : 'بيع وتسييل كلي 📉',
+              `تم بيع كامل الأسهم (${res.shares} سهم) بقيمة +${totalPayout.toLocaleString()} EGP ${prevAvgPrice > 0 ? pnlText : ''}`,
+              profitOrLoss >= 0 ? 'success' : 'info'
+            );
             renderStocks(true);
             renderStatsBar();
           } catch (err) {
@@ -3873,9 +3892,22 @@ const UIController = (() => {
         const count = parseInt(input.value);
         try {
           if (!count || count <= 0) throw new Error("يرجى إدخال عدد أسهم صحيح.");
+          const owned = GameEngine.state.stocks[sym] || { shares: 0, avgPrice: 0 };
+          const prevAvgPrice = owned.avgPrice || 0;
           const res = GameEngine.sellStock(sym, count);
+          const totalPayout = res.totalReturn || (res.price * res.shares);
+          const costBasis = prevAvgPrice * res.shares;
+          const profitOrLoss = totalPayout - costBasis;
+          const pnlText = profitOrLoss >= 0
+            ? `(صافي ربح: +${profitOrLoss.toLocaleString()} EGP 🟢)`
+            : `(صافي خسارة: -${Math.abs(profitOrLoss).toLocaleString()} EGP 🔴)`;
+
           input.value = '';
-          showToast('بيع أسهم', `تمت تسييل عدد ${res.shares} سهم من سهم "${stock.name}" للسيولة.`, 'success');
+          showToast(
+            profitOrLoss >= 0 ? 'بيع أسهم رابح! 📈' : 'بيع أسهم 📉',
+            `تم بيع عدد ${res.shares} سهم بقيمة +${totalPayout.toLocaleString()} EGP ${prevAvgPrice > 0 ? pnlText : ''}`,
+            profitOrLoss >= 0 ? 'success' : 'info'
+          );
           renderStocks(true);
           renderStatsBar();
         } catch (err) {
@@ -5047,8 +5079,9 @@ const UIController = (() => {
       window.lastCorporationsCache = list;
       
       // Update the player's active corporation cache
-      if (GameEngine.state && GameEngine.state.username) {
-        const myCorp = list.find(c => c.members && c.members.includes(GameEngine.state.username));
+      const curUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
+      if (curUser) {
+        const myCorp = list.find(c => c.members && c.members.includes(curUser));
         window.activeCorporationState = myCorp || null;
       } else {
         window.activeCorporationState = null;
@@ -8524,21 +8557,30 @@ const UIController = (() => {
         const text = chatInput.value.trim();
         if (!text) return;
 
-        if (Date.now() - lastChatSent < 3000) {
+        const timeSinceLast = Date.now() - lastChatSent;
+        if (timeSinceLast < 3000) {
+          const remainingSec = Math.ceil((3000 - timeSinceLast) / 1000);
           const warnEl = document.getElementById('chat-cooldown-timer');
           if (warnEl) {
+            warnEl.textContent = `الرجاء الانتظار ${remainingSec} ثوانٍ...`;
             warnEl.classList.remove('hidden');
             setTimeout(() => warnEl.classList.add('hidden'), 2000);
           }
           return;
         }
 
+        const username = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username) || 'لاعب';
+        const userTitle = (GameEngine.state && GameEngine.state.title) || 'عامل مبتدئ';
+
         try {
           chatSendBtn.disabled = true;
-          await AppDB.sendChatMessage(GameEngine.state.username, GameEngine.state.title, text);
+          await AppDB.sendChatMessage(username, userTitle, text);
           chatInput.value = '';
-          charCounter.textContent = '0 / 200';
+          if (charCounter) charCounter.textContent = '0 / 200';
           lastChatSent = Date.now();
+          setTimeout(() => {
+            if (chatInput) chatInput.focus();
+          }, 30);
         } catch (err) {
           showToast('خطأ إرسال', err.message, 'error');
         } finally {
@@ -8547,7 +8589,10 @@ const UIController = (() => {
       });
 
       chatInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') chatSendBtn.click();
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          chatSendBtn.click();
+        }
       });
     }
 
@@ -9468,13 +9513,14 @@ const UIController = (() => {
   async function checkAndStartAuction(auc) {
     if (auc.status !== 'pending') return;
     let shouldStart = false;
+    const condVal = Number(auc.startConditionValue) || 0;
     if (auc.startConditionType === 'players') {
       const regCount = auc.registeredPlayers ? auc.registeredPlayers.length : 0;
-      if (regCount >= auc.startConditionValue) {
+      if (regCount >= condVal && condVal > 0) {
         shouldStart = true;
       }
     } else if (auc.startConditionType === 'time') {
-      if (Date.now() >= auc.startConditionValue) {
+      if (Date.now() >= condVal && condVal > 0) {
         shouldStart = true;
       }
     }
@@ -10027,7 +10073,7 @@ const UIController = (() => {
       return;
     }
 
-    const currentUsername = GameEngine.state.username;
+    const currentUsername = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
     const corp = window.activeCorporationState;
 
     if (!corp) {
@@ -10495,7 +10541,9 @@ const UIController = (() => {
 
   async function joinCorporationAction(corpId) {
     try {
-      await AppDB.joinCorporation(corpId, GameEngine.state.username);
+      const username = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
+      if (!username) throw new Error('يرجى تسجيل الدخول أولاً.');
+      await AppDB.joinCorporation(corpId, username);
       showToast('تم الانضمام! 🤝', 'لقد انضممت بنجاح لعضوية الشركة المشتركة. يمكنك الآن ضخ المساهمات ومتابعة الأرباح.', 'success');
       playMenuSound('success');
     } catch (err) {
@@ -10513,33 +10561,55 @@ const UIController = (() => {
       return;
     }
 
-    const currentCash = GameEngine.state.cash;
-    const currentBank = GameEngine.state.bank;
+    const username = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
+    if (!username) {
+      showToast('غير مسجل', 'يرجى تسجيل الدخول أولاً للمساهمة في الشركة.', 'error');
+      return;
+    }
 
-    if (currentCash < amount && currentBank < amount) {
-      showToast('رصيد غير كافي', 'لا تملك سيولة كافية لضخ هذا المبلغ.', 'error');
+    const currentCash = GameEngine.state.cash || 0;
+    const currentBank = GameEngine.state.bank || 0;
+    const totalLiquidity = currentCash + currentBank;
+
+    if (totalLiquidity < amount) {
+      showToast('رصيد غير كافي', `لا تملك سيولة كافية. المبلغ المطلوب: ${amount.toLocaleString()} EGP (إجمالي الكاش والبنك لديك: ${totalLiquidity.toLocaleString()} EGP)`, 'error');
       return;
     }
 
     if (!confirm(`هل أنت متأكد من رغبتك في ضخ ${amount.toLocaleString()} EGP من رصيدك في خزينة الشركة المشتركة؟`)) return;
 
+    let cashDeduction = 0;
+    let bankDeduction = 0;
+    if (currentCash >= amount) {
+      cashDeduction = amount;
+    } else {
+      cashDeduction = currentCash;
+      bankDeduction = amount - currentCash;
+    }
+
     try {
-      if (GameEngine.state.cash >= amount) {
-        GameEngine.state.cash -= amount;
-      } else {
-        GameEngine.state.bank -= amount;
-      }
+      // 1. Transaction to cloud first to guarantee money is not lost if error occurs
+      await AppDB.contributeToCorporation(corpId, username, amount);
 
+      // 2. Deduct local funds and save state
+      GameEngine.state.cash -= cashDeduction;
+      GameEngine.state.bank -= bankDeduction;
       GameEngine.state.netWorth = GameEngine.calculateNetWorth();
-      await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+      await AppDB.savePlayerState(username, GameEngine.state);
 
-      await AppDB.contributeToCorporation(corpId, GameEngine.state.username, amount);
+      if (window.activeCorporationState && window.activeCorporationState.id === corpId) {
+        window.activeCorporationState.treasury = (window.activeCorporationState.treasury || 0) + amount;
+        window.activeCorporationState.totalContributions = (window.activeCorporationState.totalContributions || 0) + amount;
+        if (!window.activeCorporationState.contributions) window.activeCorporationState.contributions = {};
+        window.activeCorporationState.contributions[username] = (window.activeCorporationState.contributions[username] || 0) + amount;
+      }
       
-      showToast('تم ضخ السيولة! 💸', `لقد ساهمت بـ ${amount.toLocaleString()} EGP في خزينة الشركة بنجاح وتم زيادة حصتك من الأرباح.`, 'success');
+      showToast('تم ضخ السيولة! 💸', `لقد ساهمت بـ ${amount.toLocaleString()} EGP في خزينة الشركة بنجاح وتمت زيادة رصيد الخزينة وحصتك من الأرباح.`, 'success');
       playMenuSound('success');
       
       amountInput.value = '';
       renderAll();
+      renderCorporationsTab();
 
     } catch (err) {
       showToast('فشل المساهمة', err.message, 'error');
@@ -10609,7 +10679,7 @@ const UIController = (() => {
     if (!target) { showToast('خطأ', 'يجب اختيار عضو لنقل الملكية إليه.', 'error'); return; }
     if (!confirm(`هل أنت متأكد من نقل ملكية الشركة إلى "${target}"؟ لن تتمكن من التراجع!`)) return;
     try {
-      await DB.transferCorpOwnership(corpId, target);
+      await AppDB.transferCorpOwnership(corpId, target);
       showToast('تم النقل 👑', `انتقلت ملكية الشركة إلى ${target}.`, 'success');
       renderCorporationsTab();
     } catch (e) {
@@ -10621,8 +10691,9 @@ const UIController = (() => {
     if (!confirm('⚠️ تحذير: سيتم حل الشركة نهائياً وإعادة توزيع الخزينة على المساهمين بحسب حصصهم. هل تريد المتابعة؟')) return;
     if (!confirm('تأكيد أخير: هذا الإجراء لا رجعة فيه. هل أنت متأكد 100%؟')) return;
     try {
-      await DB.dissolveCorporation(corpId);
-      showToast('تم الحل 💥', 'تم حل الشركة وإعادة توزيع الخزينة على المساهمين.', 'success');
+      await AppDB.dissolveCorporation(corpId);
+      window.activeCorporationState = null;
+      showToast('تم الحل 💥', 'تم حل الشركة وإعادة توزيع الخزينة على المساهمين بنجاح.', 'success');
       renderCorporationsTab();
     } catch (e) {
       showToast('خطأ', e.message || 'فشل حل الشركة.', 'error');

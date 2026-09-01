@@ -1584,6 +1584,35 @@
           </button>
         </div>
 
+        <!-- Live Auctions Active & Pending List -->
+        <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
+          <h4 class="text-xs font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-gavel text-amber-500"></i>
+            <span>المزادات الحية المتزامنة في السيرفر (Live Auctions)</span>
+          </h4>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400">
+                  <th class="pb-2">اسم المزاد / الغرض</th>
+                  <th class="pb-2">نوع الغرض</th>
+                  <th class="pb-2 text-center">السعر الابتدائي / الحالي</th>
+                  <th class="pb-2 text-center">شرط البدء والمسجلين</th>
+                  <th class="pb-2 text-center">الحالة</th>
+                  <th class="pb-2 text-center">أعلى مزايد</th>
+                  <th class="pb-2 text-left">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="admin-live-auctions-list" class="divide-y divide-slate-800/40">
+                <tr>
+                  <td colspan="7" class="py-4 text-center text-slate-500">جاري تحميل المزادات الحية...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- Current Auction Items List -->
         <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
           <h4 class="text-xs font-bold text-white flex items-center gap-2">

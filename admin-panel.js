@@ -2126,6 +2126,51 @@
       });
     }
 
+    // Admin Create Live Auction Click Listener
+    const btnCreateLiveAuction = document.getElementById('btn-admin-create-live-auction');
+    if (btnCreateLiveAuction) {
+      btnCreateLiveAuction.addEventListener('click', async () => {
+        const nameInput = document.getElementById('admin-live-auction-name');
+        const typeSelect = document.getElementById('admin-live-auction-type');
+        const priceInput = document.getElementById('admin-live-auction-baseprice');
+        const condTypeSelect = document.getElementById('admin-live-auction-cond-type');
+        const condValInput = document.getElementById('admin-live-auction-cond-value');
+
+        const name = nameInput.value.trim();
+        const type = typeSelect.value;
+        const basePrice = parseInt(priceInput.value || '0');
+        const condType = condTypeSelect.value;
+        const condVal = parseInt(condValInput.value || '0');
+
+        if (!name || basePrice <= 0 || condVal <= 0) {
+          showToast('خطأ إدخال', 'يرجى ملء جميع تفاصيل المزاد الحي الجديد بقيم صحيحة.', 'error');
+          return;
+        }
+
+        try {
+          btnCreateLiveAuction.disabled = true;
+          let startVal = condVal;
+          if (condType === 'time') {
+            startVal = Date.now() + (condVal * 60 * 1000);
+          }
+
+          await AppDB.adminCreateLiveAuction(type, 'live_' + Math.random().toString(36).substr(2, 9), name, basePrice, condType, startVal);
+          showToast('تم إطلاق المزاد الحي', `تم إدراج المزاد الحي (${name}) بنجاح وهو بانتظار المسجلين.`, 'success');
+          logAdminAction(`إطلاق مزاد حي: ${name} (سعر ابتدائي ${basePrice.toLocaleString()} ج.م، شرط ${condType}: ${condVal})`);
+
+          nameInput.value = '';
+          priceInput.value = '';
+          condValInput.value = '';
+
+          fetchAndRenderAdminLiveAuctions();
+        } catch (err) {
+          showToast('فشل المزاد', err.message, 'error');
+        } finally {
+          btnCreateLiveAuction.disabled = false;
+        }
+      });
+    }
+
     // Admin Gift Codes Select Change Listener
     const giftRewardTypeSelect = document.getElementById('admin-gift-reward-type');
     if (giftRewardTypeSelect) {
@@ -2538,6 +2583,7 @@
       if (window._adminRenderStockPrices) window._adminRenderStockPrices();
     } else if (tabId === 'auctions') {
       fetchAndRenderAdminAuctions();
+      fetchAndRenderAdminLiveAuctions();
     } else if (tabId === 'giftcodes') {
       fetchAndRenderAdminGiftCodes();
     } else if (tabId === 'corporations') {
@@ -3045,6 +3091,96 @@
     } catch (e) {
       tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-400">فشل تحميل قائمة المزادات الإدارية: ${e.message}</td></tr>`;
     }
+  }
+
+  let adminLiveAuctionsUnsubscribe = null;
+
+  function fetchAndRenderAdminLiveAuctions() {
+    const tbody = document.getElementById('admin-live-auctions-list');
+    if (!tbody) return;
+
+    if (adminLiveAuctionsUnsubscribe) {
+      adminLiveAuctionsUnsubscribe();
+      adminLiveAuctionsUnsubscribe = null;
+    }
+
+    tbody.innerHTML = '<tr><td colspan="7" class="py-4 text-center text-slate-500">جاري تحميل المزادات الحية...</td></tr>';
+
+    adminLiveAuctionsUnsubscribe = AppDB.listenToLiveAuctions(list => {
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-500">لا توجد مزادات حية متزامنة حالياً في السيرفر.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = '';
+      list.forEach(auc => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-slate-800/60 hover:bg-slate-900/30 text-xs';
+
+        const regPlayers = auc.registeredPlayers || [];
+        const regCount = regPlayers.length;
+        const targetVal = auc.startConditionValue;
+        const condTypeStr = auc.startConditionType === 'players' ? `${regCount} / ${targetVal} لاعبين` : `مؤقت زمني (${targetVal} د)`;
+
+        let statusBadge = '<span class="px-2 py-0.5 bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 rounded font-bold text-[10px]">بانتظار المسجلين ⏳</span>';
+        if (auc.status === 'active') {
+          statusBadge = '<span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-bold text-[10px] animate-pulse">نشط جاري المزايدة 🔥</span>';
+        } else if (auc.status === 'ended') {
+          statusBadge = '<span class="px-2 py-0.5 bg-slate-800 text-slate-400 rounded font-bold text-[10px]">منتهي ✅</span>';
+        }
+
+        const typeLabels = { item: 'غرض فريد', business: 'شركة تجارية', property: 'عقار استثماري' };
+
+        tr.innerHTML = `
+          <td class="py-2.5 font-bold text-white">
+            <div>${auc.itemName}</div>
+            <div class="text-[10px] text-slate-500 font-mono">${auc.id || '-'}</div>
+          </td>
+          <td class="py-2.5 text-slate-300">${typeLabels[auc.itemType] || auc.itemType}</td>
+          <td class="py-2.5 text-center font-bold text-yellow-500 font-mono">${(auc.currentBid || auc.basePrice || 0).toLocaleString()} ج.م</td>
+          <td class="py-2.5 text-center font-bold text-sky-400 font-mono">${condTypeStr}</td>
+          <td class="py-2.5 text-center">${statusBadge}</td>
+          <td class="py-2.5 text-center font-bold text-emerald-400">${auc.highestBidder || 'لا يوجد'}</td>
+          <td class="py-2.5 text-left space-x-1 space-x-reverse">
+            ${auc.status === 'pending' ? `<button data-id="${auc.id}" class="btn-admin-start-live-auc py-1 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold transition text-[10px]">بدء فوري ⚡</button>` : ''}
+            <button data-id="${auc.id}" data-name="${auc.itemName}" class="btn-admin-delete-live-auc py-1 px-2.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/20 rounded font-bold transition text-[10px]">حذف المزاد</button>
+          </td>
+        `;
+
+        const startBtn = tr.querySelector('.btn-admin-start-live-auc');
+        if (startBtn) {
+          startBtn.addEventListener('click', async () => {
+            try {
+              startBtn.disabled = true;
+              await AppDB.adminStartLiveAuction(auc.id);
+              showToast('بدء المزاد', `تم بدء المزاد الحي (${auc.itemName}) بنجاح!`, 'success');
+              logAdminAction(`بدء المزاد الحي يدوياً: ${auc.itemName}`);
+            } catch (err) {
+              showToast('خطأ بدء المزاد', err.message, 'error');
+              startBtn.disabled = false;
+            }
+          });
+        }
+
+        const deleteBtn = tr.querySelector('.btn-admin-delete-live-auc');
+        if (deleteBtn) {
+          deleteBtn.addEventListener('click', async () => {
+            if (!confirm(`هل أنت متأكد من حذف المزاد الحي "${auc.itemName}" نهائياً من السيرفر؟`)) return;
+            try {
+              deleteBtn.disabled = true;
+              await AppDB.adminDeleteLiveAuction(auc.id);
+              showToast('تم الحذف', 'تم حذف المزاد الحي بنجاح.', 'info');
+              logAdminAction(`حذف المزاد الحي: ${auc.itemName}`);
+            } catch (err) {
+              showToast('خطأ حذف المزاد', err.message, 'error');
+              deleteBtn.disabled = false;
+            }
+          });
+        }
+
+        tbody.appendChild(tr);
+      });
+    });
   }
 
   async function fetchAndRenderAdminGiftCodes() {

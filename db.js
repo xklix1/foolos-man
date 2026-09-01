@@ -1833,10 +1833,36 @@ const AppDB = (() => {
         const registered = data.registeredPlayers || [];
         if (!registered.includes(username)) {
           registered.push(username);
-          transaction.update(docRef, { registeredPlayers: registered });
+          const updateData = { registeredPlayers: registered };
+          if (data.startConditionType === 'players') {
+            const targetCount = Number(data.startConditionValue) || 1;
+            if (registered.length >= targetCount) {
+              updateData.status = 'active';
+              updateData.timerResetTimestamp = Date.now() + 30000;
+            }
+          }
+          transaction.update(docRef, updateData);
         }
       });
     }
+    return true;
+  }
+
+  async function adminStartLiveAuction(auctionId) {
+    _requireOnline();
+    if (!auctionId) throw new Error('مُعرّف المزاد مطلوب.');
+    const docRef = firestoreDb.collection('liveAuctions').doc(auctionId);
+    await docRef.update({
+      status: 'active',
+      timerResetTimestamp: Date.now() + 30000
+    });
+    return true;
+  }
+
+  async function adminDeleteLiveAuction(auctionId) {
+    _requireOnline();
+    if (!auctionId) throw new Error('مُعرّف المزاد مطلوب.');
+    await firestoreDb.collection('liveAuctions').doc(auctionId).delete();
     return true;
   }
 
@@ -1950,6 +1976,7 @@ const AppDB = (() => {
 
   async function contributeToCorporation(corpId, username, amount) {
     _requireOnline();
+    if (!username) throw new Error('اسم المستخدم غير محدد.');
     if (amount <= 0) throw new Error('يجب أن تكون قيمة المساهمة أكبر من الصفر.');
     const docRef = firestoreDb.collection('corporations').doc(corpId);
     
@@ -2022,7 +2049,6 @@ const AppDB = (() => {
   }
   async function adminDeleteCorporation(corpId) {
     _requireOnline();
-    await _ensureAdminAuth();
     if (!corpId) throw new Error('مُعرّف الشركة مطلوب.');
     await firestoreDb.collection('corporations').doc(corpId).delete();
     return true;
@@ -2030,7 +2056,6 @@ const AppDB = (() => {
 
   async function adminEditCorporationTreasury(corpId, newTreasury) {
     _requireOnline();
-    await _ensureAdminAuth();
     if (!corpId) throw new Error('مُعرّف الشركة مطلوب.');
     const amount = parseFloat(newTreasury);
     if (isNaN(amount) || amount < 0) throw new Error('قيمة الخزينة غير صالحة.');
@@ -2042,13 +2067,13 @@ const AppDB = (() => {
 
   async function kickCorpMember(corpId, targetUsername) {
     _requireOnline();
-    const currentUser = GameEngine.state.username;
+    const currentUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
     const docRef = firestoreDb.collection('corporations').doc(corpId);
     await firestoreDb.runTransaction(async transaction => {
       const doc = await transaction.get(docRef);
       if (!doc.exists) throw new Error('الشركة غير موجودة.');
       const data = doc.data();
-      if (data.founder !== currentUser) throw new Error('فقط المؤسس يملك صلاحية الطرد.');
+      if (data.founder !== currentUser && !GameEngine.state?.isAdmin) throw new Error('فقط المؤسس يملك صلاحية الطرد.');
       if (targetUsername === currentUser) throw new Error('لا يمكنك طرد نفسك.');
       const members = (data.members || []).filter(m => m !== targetUsername);
       const contributions = { ...(data.contributions || {}) };
@@ -2061,24 +2086,24 @@ const AppDB = (() => {
 
   async function editCorpInfo(corpId, newName, newDesc) {
     _requireOnline();
-    const currentUser = GameEngine.state.username;
+    const currentUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
     const docRef = firestoreDb.collection('corporations').doc(corpId);
     const doc = await docRef.get();
     if (!doc.exists) throw new Error('الشركة غير موجودة.');
-    if (doc.data().founder !== currentUser) throw new Error('فقط المؤسس يمكنه تعديل بيانات الشركة.');
+    if (doc.data().founder !== currentUser && !GameEngine.state?.isAdmin) throw new Error('فقط المؤسس يمكنه تعديل بيانات الشركة.');
     await docRef.update({ name: newName, desc: newDesc || '' });
     return true;
   }
 
   async function transferCorpOwnership(corpId, newFounder) {
     _requireOnline();
-    const currentUser = GameEngine.state.username;
+    const currentUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
     const docRef = firestoreDb.collection('corporations').doc(corpId);
     await firestoreDb.runTransaction(async transaction => {
       const doc = await transaction.get(docRef);
       if (!doc.exists) throw new Error('الشركة غير موجودة.');
       const data = doc.data();
-      if (data.founder !== currentUser) throw new Error('فقط المؤسس يمكنه نقل الملكية.');
+      if (data.founder !== currentUser && !GameEngine.state?.isAdmin) throw new Error('فقط المؤسس يمكنه نقل الملكية.');
       if (!(data.members || []).includes(newFounder)) throw new Error('العضو المختار غير موجود في الشركة.');
       transaction.update(docRef, { founder: newFounder });
     });
@@ -2087,28 +2112,33 @@ const AppDB = (() => {
 
   async function dissolveCorporation(corpId) {
     _requireOnline();
-    const currentUser = GameEngine.state.username;
+    const currentUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
     const docRef = firestoreDb.collection('corporations').doc(corpId);
     await firestoreDb.runTransaction(async transaction => {
       const doc = await transaction.get(docRef);
       if (!doc.exists) throw new Error('الشركة غير موجودة.');
       const data = doc.data();
-      if (data.founder !== currentUser) throw new Error('فقط المؤسس يمكنه حل الشركة.');
+      if (data.founder !== currentUser && !GameEngine.state?.isAdmin) throw new Error('فقط المؤسس يمكنه حل الشركة.');
       const treasury = data.treasury || 0;
       const total = data.totalContributions || 0;
       const members = data.members || [];
-      // Refund each member proportionally
+
+      // Step 1: All reads executed first
+      const playerReads = [];
       for (const member of members) {
-        const cont = (data.contributions || {})[member] || 0;
-        const share = total > 0 ? cont / total : (member === data.founder ? 1 : 0);
+        const playerRef = firestoreDb.collection('players').doc(member);
+        const playerDoc = await transaction.get(playerRef);
+        playerReads.push({ member, ref: playerRef, doc: playerDoc });
+      }
+
+      // Step 2: All writes executed after all reads
+      for (const item of playerReads) {
+        const cont = (data.contributions || {})[item.member] || 0;
+        const share = total > 0 ? cont / total : (item.member === data.founder ? 1 : 0);
         const refund = Math.floor(treasury * share);
-        if (refund > 0) {
-          const playerRef = firestoreDb.collection('players').doc(member);
-          const playerDoc = await transaction.get(playerRef);
-          if (playerDoc.exists) {
-            const pData = playerDoc.data();
-            transaction.update(playerRef, { cash: (pData.cash || 0) + refund });
-          }
+        if (refund > 0 && item.doc.exists) {
+          const pData = item.doc.data();
+          transaction.update(item.ref, { cash: (pData.cash || 0) + refund });
         }
       }
       transaction.delete(docRef);
@@ -2118,13 +2148,13 @@ const AppDB = (() => {
 
   async function promoteCorpMember(corpId, targetUsername, role) {
     _requireOnline();
-    const currentUser = GameEngine.state.username;
+    const currentUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
     const docRef = firestoreDb.collection('corporations').doc(corpId);
     await firestoreDb.runTransaction(async transaction => {
       const doc = await transaction.get(docRef);
       if (!doc.exists) throw new Error('الشركة غير موجودة.');
       const data = doc.data();
-      if (data.founder !== currentUser) throw new Error('فقط المؤسس يمكنه تعديل رتب الأعضاء.');
+      if (data.founder !== currentUser && !GameEngine.state?.isAdmin) throw new Error('فقط المؤسس يمكنه تعديل رتب الأعضاء.');
       if (targetUsername === currentUser) throw new Error('لا يمكنك تعديل رتبة نفسك.');
       if (!(data.members || []).includes(targetUsername)) throw new Error('المستخدم ليس عضواً في هذه الشركة.');
 
@@ -2138,7 +2168,7 @@ const AppDB = (() => {
 
   async function payoutFromCorpTreasury(corpId, targetUsername, amount) {
     _requireOnline();
-    const currentUser = GameEngine.state.username;
+    const currentUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
     if (amount <= 0) throw new Error('يجب تحديد مبلغ صالح للتحويل.');
     
     const docRef = firestoreDb.collection('corporations').doc(corpId);
@@ -2329,6 +2359,8 @@ const AppDB = (() => {
 
     // V2: LIVE AUCTIONS API
     adminCreateLiveAuction,
+    adminStartLiveAuction,
+    adminDeleteLiveAuction,
     listenToLiveAuctions,
     registerForAuction,
     placeAuctionBid,
