@@ -2469,9 +2469,20 @@
   }
 
   let adminCorpsUnsubscribe = null;
+  let activeInspectedCorp = null;
+
+  const ADMIN_CORP_MEGA_PROJECTS = {
+    data_center: { name: 'مركز بيانات استراتيجي', icon: 'fa-server', color: 'text-sky-400', cost: 50000000, desc: 'بنية تحتية سحابية وتأمين بيانات التحالف' },
+    ai_supercluster: { name: 'عنقود الذكاء الاصطناعي الفائق', icon: 'fa-brain', color: 'text-purple-400', cost: 150000000, desc: 'خوارزميات تنبؤ بالأسواق وتوليد سيولة' },
+    submarine_cables: { name: 'شبكة الألياف البحرية العالمية', icon: 'fa-network-wired', color: 'text-cyan-400', cost: 400000000, desc: 'ربط قاري فائق السرعة وخفض عمولات التداول' },
+    medical_city: { name: 'المدينة الطبية العالمية المتكاملة', icon: 'fa-hospital', color: 'text-emerald-400', cost: 900000000, desc: 'أبحاث جينات وصيدلة وتأمين صحي شامل' },
+    nuclear_reactor: { name: 'المفاعل النووي القومي لإنتاج الطاقة', icon: 'fa-atom', color: 'text-amber-400', cost: 2500000000, desc: 'توليد طاقة نظيفة وخفض تكاليف التشغيل' },
+    mars_colony: { name: 'مستعمرة التعدين المريخية المستقلة', icon: 'fa-shuttle-space', color: 'text-rose-400', cost: 10000000000, desc: 'استخراج معادن فلكية نادرة ومضاعفة الأرباح' }
+  };
 
   function renderAdminCorporationsPanel() {
     const tbody = document.getElementById('admin-corporations-list');
+    const totalCountBadge = document.getElementById('admin-corp-total-count-badge');
     if (!tbody) return;
 
     tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-slate-500">جاري تحميل الشركات...</td></tr>';
@@ -2483,9 +2494,20 @@
 
     adminCorpsUnsubscribe = AppDB.listenToCorporations(corps => {
       tbody.innerHTML = '';
+      if (totalCountBadge) totalCountBadge.textContent = `${(corps || []).length} شركة`;
+
       if (!corps || corps.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-slate-500">لا توجد شركات مشتركة مسجلة حالياً.</td></tr>';
         return;
+      }
+
+      // If inspect modal is open, keep live inspected corp synced
+      if (activeInspectedCorp) {
+        const fresh = corps.find(c => c.id === activeInspectedCorp.id);
+        if (fresh) {
+          activeInspectedCorp = fresh;
+          updateInspectModalContent(fresh);
+        }
       }
 
       corps.forEach(corp => {
@@ -2493,53 +2515,55 @@
         tr.className = 'hover:bg-slate-850 transition border-b border-slate-800/40';
 
         const projKeys = Object.keys(corp.projects || {}).filter(k => corp.projects[k] === true);
-        const projNames = projKeys.map(k => {
-          const p = GameEngine.CORP_PROJECTS[k];
-          return p ? p.name : k;
-        }).join('، ') || 'لا توجد مشاريع';
+        const projCount = projKeys.length;
 
         tr.innerHTML = `
           <td class="p-2.5 font-bold text-white">
-            <div>${corp.name}</div>
-            <div class="text-[10px] text-slate-500 font-normal">${corp.desc || 'لا يوجد وصف'}</div>
+            <div class="flex items-center gap-2">
+              <span>${corp.name}</span>
+              <span class="px-1.5 py-0.2 bg-violet-500/20 text-violet-300 border border-violet-500/30 text-[9px] font-bold rounded">Lvl ${corp.level || 1}</span>
+            </div>
+            <div class="text-[10px] text-slate-500 font-normal truncate max-w-xs">${corp.desc || 'لا يوجد وصف'}</div>
           </td>
-          <td class="p-2.5 font-bold text-slate-300">${corp.founder}</td>
+          <td class="p-2.5 font-bold text-yellow-400 font-mono text-xs">${corp.founder}</td>
           <td class="p-2.5 text-center font-mono text-emerald-400 font-bold">${(corp.treasury || 0).toLocaleString()} EGP</td>
           <td class="p-2.5 text-center font-mono text-slate-300 font-bold">${(corp.members || []).length} عضو</td>
-          <td class="p-2.5 text-center text-slate-400 max-w-[200px] truncate" title="${projNames}">${projNames}</td>
+          <td class="p-2.5 text-center">
+            <span class="px-2 py-0.5 bg-slate-950 border border-slate-800 rounded font-mono text-cyan-400 font-bold text-[10px]">${projCount} / 6 مشاريع</span>
+          </td>
           <td class="p-2.5 text-left space-x-1 space-x-reverse">
-            <button data-id="${corp.id}" data-name="${corp.name}" class="btn-admin-edit-corp-treasury py-1 px-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/20 rounded font-bold transition text-[10px]">تعديل الخزينة</button>
-            <button data-id="${corp.id}" data-name="${corp.name}" class="btn-admin-delete-corp py-1 px-2.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/20 rounded font-bold transition text-[10px]">تفكيك</button>
+            <button class="btn-admin-inspect-corp py-1 px-2.5 bg-violet-600/20 hover:bg-violet-600/40 text-violet-300 border border-violet-500/30 rounded font-bold transition text-[10px]"><i class="fa-solid fa-sliders ml-1"></i>فحص وتحكم</button>
+            <button class="btn-admin-edit-corp-treasury py-1 px-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/20 rounded font-bold transition text-[10px]">خزينة</button>
+            <button class="btn-admin-delete-corp py-1 px-2.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/20 rounded font-bold transition text-[10px]">تفكيك</button>
           </td>
         `;
 
-        // Bind Edit Treasury Button
-        const btnEdit = tr.querySelector('.btn-admin-edit-corp-treasury');
-        btnEdit.addEventListener('click', async () => {
-          const corpId = btnEdit.dataset.id;
-          const corpName = btnEdit.dataset.name;
+        // Inspect Button
+        tr.querySelector('.btn-admin-inspect-corp').addEventListener('click', () => {
+          openAdminCorpInspectModal(corp);
+        });
+
+        // Edit Treasury Button
+        tr.querySelector('.btn-admin-edit-corp-treasury').addEventListener('click', async () => {
           const currentTreasury = corp.treasury || 0;
-          const val = prompt(`أدخل الرصيد الجديد لخزينة شركة "${corpName}":`, currentTreasury);
+          const val = prompt(`أدخل الرصيد الجديد لخزينة شركة "${corp.name}":`, currentTreasury);
           if (val === null || val.trim() === '') return;
           try {
-            await AppDB.adminEditCorporationTreasury(corpId, val);
-            showToast('تعديل الخزينة', `تم تعديل رصيد خزينة شركة ${corpName} بنجاح.`, 'success');
-            logAdminAction(`تعديل خزينة الشركة المشتركة: ${corpName}`);
+            await AppDB.adminEditCorporationTreasury(corp.id, val);
+            showToast('تعديل الخزينة', `تم تعديل رصيد خزينة شركة ${corp.name} بنجاح.`, 'success');
+            logAdminAction(`تعديل خزينة الشركة المشتركة: ${corp.name}`);
           } catch (e) {
             showToast('خطأ تعديل الخزينة', e.message, 'error');
           }
         });
 
-        // Bind Delete Button
-        const btnDel = tr.querySelector('.btn-admin-delete-corp');
-        btnDel.addEventListener('click', async () => {
-          const corpId = btnDel.dataset.id;
-          const corpName = btnDel.dataset.name;
-          if (!confirm(`هل أنت متأكد تماماً من تفكيك وحذف شركة "${corpName}" نهائياً من قاعدة البيانات؟\nلا يمكن استرجاع هذا الإجراء.`)) return;
+        // Delete Button
+        tr.querySelector('.btn-admin-delete-corp').addEventListener('click', async () => {
+          if (!confirm(`هل أنت متأكد تماماً من تفكيك وحذف شركة "${corp.name}" نهائياً من قاعدة البيانات؟\nلا يمكن استرجاع هذا الإجراء.`)) return;
           try {
-            await AppDB.adminDeleteCorporation(corpId);
-            showToast('تفكيك شركة', `تم تفكيك وحذف شركة ${corpName} بنجاح.`, 'success');
-            logAdminAction(`تفكيك وحذف الشركة المشتركة: ${corpName}`);
+            await AppDB.adminDeleteCorporation(corp.id);
+            showToast('تفكيك شركة', `تم تفكيك وحذف شركة ${corp.name} بنجاح.`, 'success');
+            logAdminAction(`تفكيك وحذف الشركة المشتركة: ${corp.name}`);
           } catch (e) {
             showToast('خطأ تفكيك شركة', e.message, 'error');
           }
@@ -2548,6 +2572,160 @@
         tbody.appendChild(tr);
       });
     });
+  }
+
+  function openAdminCorpInspectModal(corp) {
+    activeInspectedCorp = corp;
+    const modal = document.getElementById('admin-corp-inspect-modal');
+    if (!modal) return;
+    updateInspectModalContent(corp);
+    modal.classList.remove('hidden');
+  }
+
+  function updateInspectModalContent(corp) {
+    // Header & Meta
+    const titleEl = document.getElementById('adm-corp-modal-title');
+    const lvlEl = document.getElementById('adm-corp-modal-level-badge');
+    const idEl = document.getElementById('adm-corp-modal-id-badge');
+    if (titleEl) titleEl.textContent = corp.name;
+    if (lvlEl) lvlEl.textContent = `Lvl ${corp.level || 1}`;
+    if (idEl) idEl.textContent = `ID: ${corp.id}`;
+
+    // Basic Inputs
+    const nameInput = document.getElementById('adm-corp-edit-name');
+    const lvlInput = document.getElementById('adm-corp-edit-level');
+    const descInput = document.getElementById('adm-corp-edit-desc');
+    if (nameInput) nameInput.value = corp.name || '';
+    if (lvlInput) lvlInput.value = corp.level || 1;
+    if (descInput) descInput.value = corp.desc || '';
+
+    // Treasury Display & Input
+    const treasuryValEl = document.getElementById('adm-corp-modal-treasury-val');
+    const treasuryInput = document.getElementById('adm-corp-edit-treasury-input');
+    if (treasuryValEl) treasuryValEl.textContent = `${(corp.treasury || 0).toLocaleString()} EGP`;
+    if (treasuryInput) treasuryInput.value = corp.treasury || 0;
+
+    // Render Projects Grid
+    const projGrid = document.getElementById('adm-corp-projects-grid');
+    if (projGrid) {
+      projGrid.innerHTML = '';
+      Object.keys(ADMIN_CORP_MEGA_PROJECTS).forEach(pKey => {
+        const pDef = ADMIN_CORP_MEGA_PROJECTS[pKey];
+        const isActive = !!(corp.projects && corp.projects[pKey]);
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-xl border transition flex flex-col justify-between ${isActive ? 'bg-slate-900 border-violet-500/40 shadow-lg shadow-violet-950/20' : 'bg-slate-950/80 border-slate-800/80 opacity-75'}`;
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid ${pDef.icon} ${pDef.color}"></i>
+                <span class="font-bold text-white text-xs">${pDef.name}</span>
+              </div>
+              <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${isActive ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-500'}">
+                ${isActive ? 'مفعل ⚡' : 'معطل'}
+              </span>
+            </div>
+            <p class="text-[10px] text-slate-400 mb-2">${pDef.desc}</p>
+          </div>
+          <button class="w-full py-1.5 rounded-lg font-bold text-[10px] transition flex items-center justify-center gap-1 ${isActive ? 'bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-500/30' : 'bg-violet-600 hover:bg-violet-500 text-white shadow'}">
+            <i class="fa-solid ${isActive ? 'fa-toggle-off' : 'fa-toggle-on'}"></i>
+            <span>${isActive ? 'إلغاء التفعيل' : 'تفعيل المشروع مجاناً'}</span>
+          </button>
+        `;
+
+        card.querySelector('button').addEventListener('click', async () => {
+          try {
+            await AppDB.adminToggleCorpProject(corp.id, pKey, !isActive);
+            showToast('تحديث مشاريع الشركة', `تم ${isActive ? 'إلغاء تفعيل' : 'تفعيل'} مشروع (${pDef.name}) بنجاح.`, 'success');
+            logAdminAction(`تغيير حالة مشروع ${pDef.name} لشركة ${corp.name} إلى ${!isActive ? 'مفعل' : 'معطل'}`);
+          } catch (e) {
+            showToast('خطأ تفعيل المشروع', e.message, 'error');
+          }
+        });
+
+        projGrid.appendChild(card);
+      });
+    }
+
+    // Render Members Table
+    const membersTbody = document.getElementById('adm-corp-members-table-body');
+    if (membersTbody) {
+      membersTbody.innerHTML = '';
+      const members = corp.members || [];
+      const totalContrib = corp.totalContributions || 0;
+
+      if (members.length === 0) {
+        membersTbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-slate-500">لا يوجد أعضاء في هذه الشركة.</td></tr>';
+      } else {
+        members.forEach(member => {
+          const role = (corp.roles && corp.roles[member]) || (member === corp.founder ? 'founder' : 'member');
+          const isFounder = role === 'founder' || member === corp.founder;
+          const isCfo = role === 'cfo';
+          const contrib = (corp.contributions && corp.contributions[member]) || 0;
+          const sharePct = totalContrib > 0 ? ((contrib / totalContrib) * 100).toFixed(1) : (100 / members.length).toFixed(1);
+
+          let roleBadge = '<span class="px-1.5 py-0.5 bg-slate-800 text-slate-400 rounded text-[9px]">مساهم</span>';
+          if (isFounder) roleBadge = '<span class="px-2 py-0.5 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-bold rounded text-[9px]"><i class="fa-solid fa-crown ml-1"></i>المؤسس</span>';
+          else if (isCfo) roleBadge = '<span class="px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-bold rounded text-[9px]"><i class="fa-solid fa-star ml-1"></i>CFO مدير مالي</span>';
+
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-850 transition border-b border-slate-800/40';
+          tr.innerHTML = `
+            <td class="p-2 font-bold text-white font-mono">${member}</td>
+            <td class="p-2 text-center">${roleBadge}</td>
+            <td class="p-2 text-center font-mono text-emerald-400 font-bold">${contrib.toLocaleString()} EGP</td>
+            <td class="p-2 text-center font-mono text-sky-400 font-bold">${sharePct}%</td>
+            <td class="p-2 text-left space-x-1 space-x-reverse">
+              ${!isFounder ? `
+                <button class="btn-adm-member-role py-0.5 px-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/20 rounded text-[9px] font-bold" title="تغيير الرتبة">${isCfo ? 'تنزيل لمساهم' : 'ترقية CFO'}</button>
+                <button class="btn-adm-make-founder py-0.5 px-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded text-[9px] font-bold" title="نقل الملكية">تعيين مؤسس 👑</button>
+                <button class="btn-adm-kick-member py-0.5 px-2 bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-500/30 rounded text-[9px] font-bold" title="طرد العضو">طرد ❌</button>
+              ` : '<span class="text-[10px] text-slate-500">مالك التحالف</span>'}
+            </td>
+          `;
+
+          if (!isFounder) {
+            // Role change button
+            tr.querySelector('.btn-adm-member-role').addEventListener('click', async () => {
+              const newRole = isCfo ? 'member' : 'cfo';
+              try {
+                await AppDB.adminSetCorpMemberRole(corp.id, member, newRole);
+                showToast('تغيير الرتبة', `تم تغيير رتبة اللاعب ${member} إلى ${newRole === 'cfo' ? 'مدير مالي CFO' : 'مساهم عادي'}.`, 'success');
+                logAdminAction(`تغيير رتبة ${member} في شركة ${corp.name} إلى ${newRole}`);
+              } catch (e) {
+                showToast('خطأ تغيير الرتبة', e.message, 'error');
+              }
+            });
+
+            // Make founder button
+            tr.querySelector('.btn-adm-make-founder').addEventListener('click', async () => {
+              if (!confirm(`هل أنت متأكد من نقل ملكية وتأسيس شركة "${corp.name}" إلى اللاعب ${member}؟`)) return;
+              try {
+                await AppDB.adminTransferCorpFounder(corp.id, member);
+                showToast('نقل الملكية', `تم تعيين اللاعب ${member} كمؤسس ومالك جديد لشركة ${corp.name}.`, 'success');
+                logAdminAction(`نقل ملكية وتأسيس شركة ${corp.name} إلى ${member}`);
+              } catch (e) {
+                showToast('خطأ نقل الملكية', e.message, 'error');
+              }
+            });
+
+            // Kick member button
+            tr.querySelector('.btn-adm-kick-member').addEventListener('click', async () => {
+              if (!confirm(`هل أنت متأكد من طرد اللاعب ${member} من شركة "${corp.name}"؟`)) return;
+              try {
+                await AppDB.adminKickCorpMember(corp.id, member);
+                showToast('طرد عضو', `تم طرد اللاعب ${member} من شركة ${corp.name} بنجاح.`, 'success');
+                logAdminAction(`طرد اللاعب ${member} من شركة ${corp.name}`);
+              } catch (e) {
+                showToast('خطأ طرد العضو', e.message, 'error');
+              }
+            });
+          }
+
+          membersTbody.appendChild(tr);
+        });
+      }
+    }
   }
 
   function switchAdminTab(tabId) {
@@ -3706,6 +3884,126 @@
         } finally {
           adminCreateLiveAuctionBtn.disabled = false;
         }
+      });
+    }
+
+    // ==================== ADVANCED CORPORATIONS EVENT HANDLERS ====================
+    // 1. Create Official Corporation
+    const btnCreateCorp = document.getElementById('btn-admin-create-corp');
+    if (btnCreateCorp) {
+      btnCreateCorp.addEventListener('click', async () => {
+        const nameInput = document.getElementById('admin-create-corp-name');
+        const founderInput = document.getElementById('admin-create-corp-founder');
+        const treasuryInput = document.getElementById('admin-create-corp-treasury');
+        const descInput = document.getElementById('admin-create-corp-desc');
+
+        const name = (nameInput?.value || '').trim();
+        const founder = (founderInput?.value || '').trim();
+        const treasury = parseFloat(treasuryInput?.value || '0');
+        const desc = (descInput?.value || '').trim();
+
+        if (!name || !founder) {
+          showToast('بيانات غير مكتملة', 'يرجى إدخال اسم الشركة واسم المؤسس.', 'error');
+          return;
+        }
+
+        try {
+          btnCreateCorp.disabled = true;
+          await AppDB.adminCreateCorporation(name, founder, desc, treasury);
+          showToast('تأسيس ناجح 🏢', `تم إنشاء وإدراج شركة "${name}" وتعيين ${founder} كمؤسس.`, 'success');
+          logAdminAction(`تأسيس شركة جديدة من لوحة الأدمن: ${name} (المؤسس: ${founder})`);
+
+          if (nameInput) nameInput.value = '';
+          if (founderInput) founderInput.value = '';
+          if (treasuryInput) treasuryInput.value = '0';
+          if (descInput) descInput.value = '';
+        } catch (e) {
+          showToast('فشل إنشاء الشركة', e.message, 'error');
+        } finally {
+          btnCreateCorp.disabled = false;
+        }
+      });
+    }
+
+    // 2. Save Basic Corp Info
+    const btnSaveBasic = document.getElementById('btn-adm-corp-save-basic');
+    if (btnSaveBasic) {
+      btnSaveBasic.addEventListener('click', async () => {
+        if (!activeInspectedCorp) return;
+        const name = (document.getElementById('adm-corp-edit-name')?.value || '').trim();
+        const level = parseInt(document.getElementById('adm-corp-edit-level')?.value || '1');
+        const desc = (document.getElementById('adm-corp-edit-desc')?.value || '').trim();
+
+        if (!name) {
+          showToast('خطأ إدخال', 'اسم الشركة لا يمكن أن يكون فارغاً.', 'error');
+          return;
+        }
+
+        try {
+          btnSaveBasic.disabled = true;
+          await AppDB.adminUpdateCorp(activeInspectedCorp.id, {
+            name,
+            level: Math.max(1, Math.min(10, level || 1)),
+            desc
+          });
+          showToast('تم الحفظ', `تم تحديث بيانات ومستوى شركة "${name}" بنجاح.`, 'success');
+          logAdminAction(`تحديث بيانات شركة ${activeInspectedCorp.id}: اسم=${name}, مستوى=${level}`);
+        } catch (e) {
+          showToast('فشل حفظ البيانات', e.message, 'error');
+        } finally {
+          btnSaveBasic.disabled = false;
+        }
+      });
+    }
+
+    // 3. Save Treasury
+    const btnSaveTreasury = document.getElementById('btn-adm-corp-save-treasury');
+    if (btnSaveTreasury) {
+      btnSaveTreasury.addEventListener('click', async () => {
+        if (!activeInspectedCorp) return;
+        const amount = document.getElementById('adm-corp-edit-treasury-input')?.value;
+        try {
+          btnSaveTreasury.disabled = true;
+          await AppDB.adminEditCorporationTreasury(activeInspectedCorp.id, amount);
+          showToast('تم تحديث الخزينة', `تم ضبط رصيد خزينة شركة ${activeInspectedCorp.name} إلى ${parseFloat(amount || 0).toLocaleString()} EGP.`, 'success');
+          logAdminAction(`تعديل خزينة شركة ${activeInspectedCorp.name} إلى ${amount}`);
+        } catch (e) {
+          showToast('فشل تعديل الخزينة', e.message, 'error');
+        } finally {
+          btnSaveTreasury.disabled = false;
+        }
+      });
+    }
+
+    // 4. Distribute Dividends
+    const btnDistributeDividends = document.getElementById('btn-adm-corp-distribute-dividends');
+    if (btnDistributeDividends) {
+      btnDistributeDividends.addEventListener('click', async () => {
+        if (!activeInspectedCorp) return;
+        const pctInput = document.getElementById('adm-corp-dividends-pct');
+        const pct = parseFloat(pctInput?.value || '25');
+
+        if (!confirm(`هل أنت متأكد من صرف وتوزيع ${pct}% من خزينة شركة "${activeInspectedCorp.name}" مباشرة على كاش جميع المساهمين؟`)) return;
+
+        try {
+          btnDistributeDividends.disabled = true;
+          await AppDB.adminDistributeCorpDividends(activeInspectedCorp.id, pct);
+          showToast('توزيع الأرباح 🎉', `تم بنجاح توزيع ${pct}% من خزينة الشركة على جميع المساهمين بالتناسب وإيداعها في كاش حساباتهم.`, 'success');
+          logAdminAction(`صرف وتوزيع أرباح بنسبة ${pct}% من خزينة شركة ${activeInspectedCorp.name}`);
+        } catch (e) {
+          showToast('فشل توزيع الأرباح', e.message, 'error');
+        } finally {
+          btnDistributeDividends.disabled = false;
+        }
+      });
+    }
+
+    // 5. Close Inspect Modal
+    const btnCloseInspect = document.getElementById('btn-close-corp-inspect');
+    if (btnCloseInspect) {
+      btnCloseInspect.addEventListener('click', () => {
+        activeInspectedCorp = null;
+        document.getElementById('admin-corp-inspect-modal')?.classList.add('hidden');
       });
     }
   }

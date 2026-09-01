@@ -2069,6 +2069,162 @@ const AppDB = (() => {
     });
     return true;
   }
+  async function adminCreateCorporation(name, founder, desc, initialTreasury) {
+    _requireOnline();
+    if (!name || !name.trim()) throw new Error('اسم الشركة مطلوب.');
+    if (!founder || !founder.trim()) throw new Error('اسم المؤسس مطلوب.');
+    
+    const founderName = founder.trim();
+    const treasury = Math.max(0, parseFloat(initialTreasury) || 0);
+
+    const corpData = {
+      name: name.trim(),
+      founder: founderName,
+      desc: (desc || '').trim(),
+      level: 1,
+      treasury: treasury,
+      totalContributions: treasury,
+      members: [founderName],
+      contributions: { [founderName]: treasury },
+      roles: { [founderName]: 'founder' },
+      projects: {},
+      createdAt: Date.now()
+    };
+
+    const docRef = await firestoreDb.collection('corporations').add(corpData);
+    return docRef.id;
+  }
+
+  async function adminUpdateCorp(corpId, updates) {
+    _requireOnline();
+    if (!corpId) throw new Error('مُعرّف الشركة مطلوب.');
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    await docRef.update(updates);
+    return true;
+  }
+
+  async function adminToggleCorpProject(corpId, projectId, status) {
+    _requireOnline();
+    if (!corpId || !projectId) throw new Error('مُعرّف الشركة والمشروع مطلوبان.');
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    await firestoreDb.runTransaction(async transaction => {
+      const doc = await transaction.get(docRef);
+      if (!doc.exists) throw new Error('الشركة غير موجودة.');
+      const data = doc.data();
+      const projects = { ...(data.projects || {}) };
+      if (status) {
+        projects[projectId] = true;
+      } else {
+        delete projects[projectId];
+      }
+      transaction.update(docRef, { projects });
+    });
+    return true;
+  }
+
+  async function adminKickCorpMember(corpId, targetUsername) {
+    _requireOnline();
+    if (!corpId || !targetUsername) throw new Error('مُعرّف الشركة والعضو مطلوبان.');
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    await firestoreDb.runTransaction(async transaction => {
+      const doc = await transaction.get(docRef);
+      if (!doc.exists) throw new Error('الشركة غير موجودة.');
+      const data = doc.data();
+      if (data.founder === targetUsername) throw new Error('لا يمكن طرد مؤسس الشركة مباشرة. قم بنقل الملكية أولاً.');
+      const members = (data.members || []).filter(m => m !== targetUsername);
+      const contributions = { ...(data.contributions || {}) };
+      delete contributions[targetUsername];
+      const roles = { ...(data.roles || {}) };
+      delete roles[targetUsername];
+      const total = Object.values(contributions).reduce((s, v) => s + v, 0);
+      transaction.update(docRef, { members, contributions, roles, totalContributions: total });
+    });
+    return true;
+  }
+
+  async function adminSetCorpMemberRole(corpId, targetUsername, role) {
+    _requireOnline();
+    if (!corpId || !targetUsername) throw new Error('مُعرّف الشركة والعضو مطلوبان.');
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    await firestoreDb.runTransaction(async transaction => {
+      const doc = await transaction.get(docRef);
+      if (!doc.exists) throw new Error('الشركة غير موجودة.');
+      const data = doc.data();
+      if (!(data.members || []).includes(targetUsername)) throw new Error('المستخدم ليس عضواً في هذه الشركة.');
+      if (data.founder === targetUsername && role !== 'founder') throw new Error('لا يمكن تغيير رتبة المؤسس بهذه الطريقة.');
+
+      const roles = { ...(data.roles || {}) };
+      roles[targetUsername] = role; // 'cfo' or 'member'
+      transaction.update(docRef, { roles });
+    });
+    return true;
+  }
+
+  async function adminTransferCorpFounder(corpId, newFounder) {
+    _requireOnline();
+    if (!corpId || !newFounder) throw new Error('مُعرّف الشركة والمؤسس الجديد مطلوبان.');
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    await firestoreDb.runTransaction(async transaction => {
+      const doc = await transaction.get(docRef);
+      if (!doc.exists) throw new Error('الشركة غير موجودة.');
+      const data = doc.data();
+      if (!(data.members || []).includes(newFounder)) throw new Error('العضو المختار غير موجود في الشركة.');
+      
+      const roles = { ...(data.roles || {}) };
+      const oldFounder = data.founder;
+      if (oldFounder) roles[oldFounder] = 'cfo';
+      roles[newFounder] = 'founder';
+
+      transaction.update(docRef, { founder: newFounder, roles });
+    });
+    return true;
+  }
+
+  async function adminDistributeCorpDividends(corpId, percent) {
+    _requireOnline();
+    const pct = parseFloat(percent);
+    if (isNaN(pct) || pct <= 0 || pct > 100) throw new Error('يرجى تحديد نسبة أرباح صالحة (1-100%).');
+    
+    const docRef = firestoreDb.collection('corporations').doc(corpId);
+    await firestoreDb.runTransaction(async transaction => {
+      const doc = await transaction.get(docRef);
+      if (!doc.exists) throw new Error('الشركة غير موجودة.');
+      const data = doc.data();
+      const treasury = Number(data.treasury || 0);
+      if (treasury <= 0) throw new Error('خزينة الشركة فارغة.');
+
+      const distributeAmount = Math.floor(treasury * (pct / 100));
+      if (distributeAmount <= 0) throw new Error('مبلغ التوزيع صغير جداً.');
+
+      const totalContrib = Number(data.totalContributions || 0);
+      const members = data.members || [];
+      
+      // Step 1: All reads
+      const playerReads = [];
+      for (const member of members) {
+        const playerRef = firestoreDb.collection('players').doc(member);
+        const pDoc = await transaction.get(playerRef);
+        playerReads.push({ member, ref: playerRef, doc: pDoc });
+      }
+
+      // Step 2: All writes
+      for (const item of playerReads) {
+        const cont = (data.contributions || {})[item.member] || 0;
+        const share = totalContrib > 0 ? (cont / totalContrib) : (1 / members.length);
+        const payout = Math.floor(distributeAmount * share);
+        if (payout > 0 && item.doc.exists) {
+          const pData = item.doc.data();
+          transaction.update(item.ref, { cash: (pData.cash || 0) + payout });
+        }
+      }
+
+      transaction.update(docRef, {
+        treasury: treasury - distributeAmount
+      });
+    });
+    return true;
+  }
+
   async function adminDeleteCorporation(corpId) {
     _requireOnline();
     if (!corpId) throw new Error('مُعرّف الشركة مطلوب.');
@@ -2393,6 +2549,13 @@ const AppDB = (() => {
     joinCorporation,
     contributeToCorporation,
     buyCorporationProject,
+    adminCreateCorporation,
+    adminUpdateCorp,
+    adminToggleCorpProject,
+    adminKickCorpMember,
+    adminSetCorpMemberRole,
+    adminTransferCorpFounder,
+    adminDistributeCorpDividends,
     adminDeleteCorporation,
     adminEditCorporationTreasury,
 
