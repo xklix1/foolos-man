@@ -46,8 +46,9 @@ const AppDB = (() => {
    * Throws if Firebase SDK is not loaded or connection fails.
    * The UI should show a loading overlay until this resolves.
    */
+  let persistenceAttempted = false;
+
   async function init() {
-    // Enable 100% Native Offline Mode when running inside Capacitor or offline native app
     if (window.Capacitor && window.Capacitor.isNativePlatform()) {
       console.log('[DB] Running inside Capacitor Native Engine (100% Offline Native Mode).');
       firebaseReady = false;
@@ -55,9 +56,12 @@ const AppDB = (() => {
     }
 
     if (!window.firebase) {
-      // Fallback for native offline builds without external script loads
       console.warn('[DB] Offline mode active — loading from local storage.');
       firebaseReady = false;
+      return true;
+    }
+
+    if (firestoreDb && firebaseReady) {
       return true;
     }
 
@@ -68,35 +72,27 @@ const AppDB = (() => {
       firestoreDb  = firebase.firestore();
       firebaseAuth = firebase.auth();
 
-      // Enable Firestore offline persistence
-      try {
-        await firestoreDb.enablePersistence({ synchronizeTabs: true });
-        console.log('[DB] Firestore offline persistence enabled successfully.');
-      } catch (err) {
-        if (err.code === 'failed-precondition') {
-          console.warn('[DB] Offline persistence failed: Multiple tabs open.');
-        } else if (err.code === 'unimplemented') {
-          console.warn('[DB] Offline persistence not supported by this browser.');
+      if (!persistenceAttempted) {
+        persistenceAttempted = true;
+        try {
+          await firestoreDb.enablePersistence({ synchronizeTabs: true });
+          console.log('[DB] Firestore offline persistence enabled successfully.');
+        } catch (err) {
+          console.warn('[DB] Offline persistence notice:', err.code || err.message);
         }
       }
-
-      // Non-blocking version verification (Write only if version is missing or changed)
-      firestoreDb.collection('globals').doc('config').get().then(doc => {
-        if (!doc.exists || doc.data().version !== 'V2.5') {
-          firestoreDb.collection('globals').doc('config').set({ version: 'V2.5' }, { merge: true }).catch(() => {});
-        }
-      }).catch(err => {
-        console.warn('[DB] Config version ping notice:', err.message);
-      });
 
       firebaseReady = true;
       console.log('[DB] Firebase Firestore initialized successfully (V2.5).');
 
-      // Attach online/offline listeners for UI feedback
       _attachConnectivityListeners();
 
       return true;
     } catch (err) {
+      if (firestoreDb) {
+        firebaseReady = true;
+        return true;
+      }
       firebaseReady = false;
       console.error('[DB] Firebase initialization failed:', err.message);
       throw new Error('تعذّر تهيئة خوادم اللعبة: ' + err.message);
@@ -104,7 +100,7 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  CONNECTIVITY LISTENERS
+  //  CONNECTIVITY LISTENERS & DB READY HELPERS
   // ─────────────────────────────────────────────
   async function _ensureDbReady() {
     if (!firebaseReady || !firestoreDb) {
@@ -114,30 +110,33 @@ const AppDB = (() => {
         } catch (e) {}
       }
     }
+    if (firestoreDb) firebaseReady = true;
   }
 
   function _requireOnline() {
     if (window.Capacitor && window.Capacitor.isNativePlatform()) {
       return; // Native offline mode
     }
-    if (!firebaseReady || !firestoreDb) {
-      const activeUser = localStorage.getItem('rasalmal_active_session_user');
-      if (activeUser && localStorage.getItem(`rasalmal_state_${activeUser}`)) {
-        return; // Allow local offline session
-      }
-      throw new Error('لا يوجد اتصال بالخوادم. تحقق من اتصالك بالإنترنت.');
+    if (firestoreDb) {
+      firebaseReady = true;
+      return;
     }
+    const activeUser = localStorage.getItem('rasalmal_active_session_user');
+    if (activeUser && localStorage.getItem(`rasalmal_state_${activeUser}`)) {
+      return; // Allow local offline session
+    }
+    throw new Error('لا يوجد اتصال بالخوادم. تحقق من اتصالك بالإنترنت.');
   }
 
   function _attachConnectivityListeners() {
     window.addEventListener('online', () => {
       console.log('[DB] Network restored.');
+      if (firestoreDb) firebaseReady = true;
       window.dispatchEvent(new CustomEvent('rasalmal:online'));
     });
 
     window.addEventListener('offline', () => {
-      console.log('[DB] Network lost.');
-      firebaseReady = false;
+      console.log('[DB] Network temporarily lost.');
       window.dispatchEvent(new CustomEvent('rasalmal:offline'));
     });
   }
