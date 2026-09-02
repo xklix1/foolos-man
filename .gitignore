@@ -1,3 +1,6 @@
 node_modules/
 .DS_Store
 *.log
+foolos-man-android/
+www/
+capacitor.config.json
