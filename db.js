@@ -236,6 +236,17 @@ const AppDB = (() => {
     return payload;
   }
 
+  async function getItemsConfig() {
+    _requireOnline();
+    try {
+      const doc = await firestoreDb.collection('globals').doc('items').get();
+      if (doc.exists) return doc.data();
+      return {};
+    } catch (e) {
+      return {};
+    }
+  }
+
   // ─────────────────────────────────────────────
   //  AUTH — REGISTER
   // ─────────────────────────────────────────────
@@ -322,7 +333,18 @@ const AppDB = (() => {
     const legacyHash = _legacyHash(pin);
 
     const ref = firestoreDb.collection('players').doc(username);
-    const doc = await ref.get();
+    let doc = null;
+    try {
+      const getPromise = ref.get();
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('تأخر استجابة الخادم. تحقق من اتصالك وحاول مجدداً.')), 4500));
+      doc = await Promise.race([getPromise, timeoutPromise]);
+    } catch(err) {
+      // Fallback check from local cache if network is slow
+      try {
+        doc = await ref.get({ source: 'cache' });
+      } catch(ce) {}
+      if (!doc || !doc.exists) throw err;
+    }
 
     if (!doc.exists) {
       throw new Error('اسم المستخدم غير مسجل. يرجى إنشاء حساب جديد أولاً.');
@@ -3072,6 +3094,7 @@ const AppDB = (() => {
     setRemoteVersion,
     getMaintenanceStatus,
     setMaintenanceMode,
+    getItemsConfig,
     registerPlayer,
     loginPlayer,
     getPlayerState,

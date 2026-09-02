@@ -1610,10 +1610,10 @@ const GameEngine = (() => {
     }
   }
 
-  async function loadUserSession(username) {
+  async function loadUserSession(username, preloadedData = null) {
     activeUsername = username;
-    await syncItemsConfig();
-    const dbState = await AppDB.getPlayerState(username);
+    syncItemsConfig().catch(() => {}); // Non-blocking background sync
+    const dbState = preloadedData || (await AppDB.getPlayerState(username));
     if (dbState) {
       // Deep-merge with defaults so new keys added later are always present
       const mergedBusinesses = {};

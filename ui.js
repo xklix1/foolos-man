@@ -1429,8 +1429,8 @@ const UIController = (() => {
             localStorage.setItem('foolos_active_session_user', usernameInput);
             showToast('نجاح', 'تم تسجيل حسابك الجديد بنجاح! مرحباً بك.', 'success');
           } else {
-            await AppDB.loginPlayer(usernameInput, pinInput);
-            playerState = await GameEngine.loadUserSession(usernameInput);
+            const loggedUser = await AppDB.loginPlayer(usernameInput, pinInput);
+            playerState = await GameEngine.loadUserSession(usernameInput, loggedUser);
             localStorage.setItem('foolos_active_session_user', usernameInput);
             showToast('أهلاً بك', `تم تحميل بيانات الحساب: ${usernameInput}`, 'success');
           }
