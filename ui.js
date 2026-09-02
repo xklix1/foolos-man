@@ -747,29 +747,6 @@ const UIController = (() => {
       document.querySelectorAll('.lang-en-guide').forEach(el => el.classList.add('hidden'));
     }
 
-    // Global Maintenance Realtime Listener for all visitors & start menu
-    if (window.db) {
-      db.collection('globals').doc('maintenance').onSnapshot((doc) => {
-        if (!doc.exists) {
-          hideMaintenanceOverlay();
-          return;
-        }
-        const data = doc.data();
-        if (data && data.enabled) {
-          if (!GameEngine.state || !GameEngine.state.isAdmin) {
-            handleMaintenanceMode(data.message || 'الخادم قيد الصيانة الفنية حالياً.');
-          } else {
-            hideMaintenanceOverlay();
-          }
-        } else {
-          hideMaintenanceOverlay();
-        }
-      }, (err) => console.warn("Global maintenance listen err: ", err));
-    }
-
-    const isMaint = await checkMaintenanceMode();
-    if (isMaint) return;
-
     // Refresh Start Menu player prestige card
     await refreshStartMenuCard();
   }
@@ -1442,22 +1419,7 @@ const UIController = (() => {
           isAuthSubmitting = true;
           setAuthLoading(true);
 
-          // Enforce Maintenance Gatekeeper (Admin only)
-          const maintStatus = await AppDB.getMaintenanceStatus();
-          if (maintStatus && maintStatus.enabled) {
-            const isAdminUser = false;
-            if (currentAuthMode === 'register' && !isAdminUser) {
-              showMaintenancePopup(maintStatus.message || 'الخادم قيد الصيانة الفنية حالياً. تسجيل الحسابات الجديدة معطل.');
-              return;
-            }
-            if (currentAuthMode === 'login' && !isAdminUser) {
-              const checkPlayer = await AppDB.getPlayerState(usernameInput);
-              if (!checkPlayer || !checkPlayer.isAdmin) {
-                showMaintenancePopup(maintStatus.message || 'الخادم تحت وضع الصيانة الفنية حالياً. تسجيل الدخول مقتصر على حسابات الإدارة فقط.');
-                return;
-              }
-            }
-          }
+
 
           let playerState;
 
@@ -5221,25 +5183,7 @@ const UIController = (() => {
 
 
 
-    // 2. Maintenance Realtime Listener
-    const unsubMaintenance = db.collection('globals').doc('maintenance')
-      .onSnapshot((doc) => {
-        if (!doc.exists) {
-          hideMaintenanceOverlay();
-          return;
-        }
-        const data = doc.data();
-        if (data && data.enabled) {
-          if (!GameEngine.state || !GameEngine.state.isAdmin) {
-            handleMaintenanceMode(data.message || 'الخادم قيد الصيانة الفنية حالياً.');
-          } else {
-            hideMaintenanceOverlay();
-          }
-        } else {
-          hideMaintenanceOverlay();
-        }
-      }, (err) => console.warn("Maintenance listen err: ", err));
-    activeListeners.push(unsubMaintenance);
+
 
     // 3. Airdrop Listener
     let lastAirdropTime = Date.now();
@@ -5466,90 +5410,24 @@ const UIController = (() => {
   }
 
   async function checkMaintenanceMode() {
-    if (GameEngine.state && GameEngine.state.isAdmin) {
-      hideMaintenanceOverlay();
-      return false;
-    }
-    try {
-      const status = await AppDB.getMaintenanceStatus();
-      if (status && status.enabled) {
-        if (!GameEngine.state || !GameEngine.state.isAdmin) {
-          handleMaintenanceMode(status.message || 'الخادم قيد الصيانة الفنية حالياً لترقية وتأمين الأنظمة.');
-          return true;
-        }
-      }
-      hideMaintenanceOverlay();
-      return false;
-    } catch (e) {
-      console.warn('Maintenance check err:', e);
-      hideMaintenanceOverlay();
-      return false;
-    }
+    hideMaintenanceOverlay();
+    return false;
   }
 
-  function showMaintenancePopup(msg) {
-    const popup = document.getElementById('maintenance-popup-modal');
-    const msgEl = document.getElementById('maintenance-popup-msg');
-    if (msgEl && msg) {
-      msgEl.textContent = msg;
-    }
-    if (popup) {
-      popup.classList.remove('hidden');
-    }
-    setAuthLoading(false);
-  }
+  function showMaintenancePopup(msg) {}
 
   function handleMaintenanceMode(customMsg) {
-    if (GameEngine.state && GameEngine.state.isAdmin) {
-      hideMaintenanceOverlay();
-      return;
-    }
-    const maintOverlay = document.getElementById('maintenance-overlay');
-    const mainGameLayout = document.getElementById('main-game-layout');
-    const authScreen = document.getElementById('auth-screen');
-    const startMenu = document.getElementById('start-menu-screen');
-    const msgText = document.getElementById('maintenance-msg-text');
-    if (maintOverlay) maintOverlay.classList.remove('hidden');
-    if (mainGameLayout) mainGameLayout.classList.add('hidden');
-    if (authScreen) authScreen.classList.add('hidden');
-    if (startMenu) startMenu.classList.add('hidden');
-    if (msgText && customMsg) msgText.textContent = customMsg;
+    hideMaintenanceOverlay();
   }
 
   function hideMaintenanceOverlay() {
     const maintOverlay = document.getElementById('maintenance-overlay');
     if (maintOverlay) maintOverlay.classList.add('hidden');
+    const maintPopup = document.getElementById('maintenance-popup-modal');
+    if (maintPopup) maintPopup.classList.add('hidden');
   }
 
-  function updateMaintenanceUIState(isMaint) {
-    const badge = document.getElementById('admin-maintenance-badge');
-    const toggleBtn = document.getElementById('btn-admin-toggle-maintenance');
-    const btnText = document.getElementById('admin-maintenance-btn-text');
-    if (badge) {
-      if (isMaint) {
-        badge.textContent = 'وضع الصيانة نشط 🚨';
-        badge.className = 'text-[10px] px-2 py-0.5 bg-rose-500/20 text-rose-400 rounded border border-rose-500/30 font-bold animate-pulse';
-      } else {
-        badge.textContent = 'النظام يعمل بشكل طبيعي';
-        badge.className = 'text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold';
-      }
-    }
-    if (toggleBtn) {
-      const text = isMaint
-        ? '✅ إنهاء وضع الصيانة والعودة للتشغيل الطبيعي للجميع'
-        : '🚨 إغلاق اللعبة وتفعيل وضع الصيانة الشامل للجميع';
-      if (btnText) {
-        btnText.textContent = text;
-      } else {
-        toggleBtn.textContent = text;
-      }
-      if (isMaint) {
-        toggleBtn.className = 'w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2';
-      } else {
-        toggleBtn.className = 'w-full py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-600/10 flex items-center justify-center gap-2';
-      }
-    }
-  }
+  function updateMaintenanceUIState(isMaint) {}
 
   function handleBannedUser() {
     const banOverlay = document.getElementById('ban-overlay');

@@ -2327,38 +2327,7 @@
     // ─────────────────────────────────────────────
     //  MODULE: SYSTEM & DANGER ZONE
     // ─────────────────────────────────────────────
-    const maintToggleBtn = document.getElementById('btn-admin-toggle-maintenance');
-    if (maintToggleBtn && !maintToggleBtn.dataset.bound) {
-      maintToggleBtn.dataset.bound = 'true';
-      AppDB.getMaintenanceStatus().then(st => {
-        updateMaintenanceUIState(st && st.enabled);
-      });
 
-      maintToggleBtn.addEventListener('click', async () => {
-        const currentSt = await AppDB.getMaintenanceStatus();
-        const nextState = !Boolean(currentSt && currentSt.enabled);
-
-        const confirmMsg = nextState
-          ? "هل أنت متأكد من رغبتك في إغلاق اللعبة وتفعيل وضع الصيانة لجميع اللاعبين؟"
-          : "هل تريد إنهاء وضع الصيانة وإتاحة اللعبة للجميع مجدداً؟";
-
-        if (!confirm(confirmMsg)) return;
-
-        try {
-          await AppDB.setMaintenanceMode(nextState);
-          updateMaintenanceUIState(nextState);
-          if (nextState) {
-            showToast('وضع الصيانة نشط', 'تم إغلاق الخوادم وتفعيل وضع الصيانة.', 'warning');
-            logAdminAction('تفعيل وضع الصيانة الشامل وإغلاق الخوادم');
-          } else {
-            showToast('إنهاء الصيانة', 'تم إنهاء وضع الصيانة وفتح الخوادم للجميع.', 'success');
-            logAdminAction('إلغاء وضع الصيانة وإعادة فتح الخوادم');
-          }
-        } catch (err) {
-          showToast('فشل وضع الصيانة', err.message, 'error');
-        }
-      });
-    }
 
     // RESET ALL PLAYERS' ECONOMY
     const resetAllEconomyBtn = document.getElementById('btn-admin-reset-all-economy');
