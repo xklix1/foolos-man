@@ -4029,9 +4029,9 @@
       class="glass-panel w-full max-w-md rounded-3xl border border-yellow-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
       <!-- Profile Header -->
       <div class="flex items-center gap-4 border-b border-slate-800 pb-4">
-        <div
-          class="w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400">
-          <i class="fa-solid fa-user text-2xl"></i>
+        <div id="profile-card-avatar-box"
+          class="w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shrink-0">
+          <i id="profile-card-avatar-icon" class="fa-solid fa-user text-2xl"></i>
         </div>
         <div class="flex-1">
           <div class="flex items-center gap-2">
@@ -4046,6 +4046,20 @@
           class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
           <i class="fa-solid fa-xmark"></i>
         </button>
+      </div>
+
+      <!-- Season Honors & Badges Section -->
+      <div id="profile-card-honors-section" class="my-3 p-3 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border border-yellow-500/30 shadow-lg space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-black text-yellow-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-medal text-xs"></i>
+            <span>أوسمة وإنجازات المواسم</span>
+          </span>
+          <span class="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-300 text-[9px] font-bold border border-yellow-500/20">سجل الشرف S1</span>
+        </div>
+        <div id="profile-card-badges-list" class="flex items-center gap-2 flex-wrap pt-0.5">
+          <!-- Dynamic Honors Badges Injected Here -->
+        </div>
       </div>
 
       <!-- Stats Grid -->

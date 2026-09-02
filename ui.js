@@ -1698,7 +1698,12 @@ const UIController = (() => {
 
     // Desktop stats
     const uEl = document.getElementById('stat-username');
-    if (uEl) uEl.textContent = username;
+    if (uEl) {
+      uEl.textContent = username;
+      uEl.classList.add('cursor-pointer', 'hover:underline');
+      uEl.title = 'اضغط لعرض ملفك الشخصي وأوسمتك';
+      uEl.onclick = () => openPlayerProfileCard(username);
+    }
     const tEl = document.getElementById('stat-title');
     if (tEl) tEl.textContent = s.title;
 
@@ -1716,7 +1721,12 @@ const UIController = (() => {
 
     // Mobile stats
     const umEl = document.getElementById('stat-username-mobile');
-    if (umEl) umEl.textContent = username;
+    if (umEl) {
+      umEl.textContent = username;
+      umEl.classList.add('cursor-pointer', 'hover:underline');
+      umEl.title = 'اضغط لعرض ملفك الشخصي وأوسمتك';
+      umEl.onclick = () => openPlayerProfileCard(username);
+    }
     const tmEl = document.getElementById('stat-title-mobile');
     if (tmEl) tmEl.textContent = s.title;
 
@@ -9787,6 +9797,77 @@ const UIController = (() => {
       const jobConfig = GameEngine.JOBS && GameEngine.JOBS[pState.jobId];
       const jobName = jobConfig ? jobConfig.name : (pState.jobId || 'عامل باليومية');
       document.getElementById('profile-card-job').textContent = jobName;
+
+      // Populate Season Honors & Badges
+      const badgesListEl = document.getElementById('profile-card-badges-list');
+      if (badgesListEl) {
+        badgesListEl.innerHTML = '';
+        const titleStr = pState.title || '';
+        const hasDiamond = pState.s1Badge === 'diamond' || titleStr.includes('مستثمر ألماسي') || titleStr.includes('ألماسي');
+        const hasGold = pState.s1Badge === 'gold' || titleStr.includes('مستثمر ذهبي') || titleStr.includes('ذهبي');
+        const hasBronze = pState.s1Badge === 'bronze' || titleStr.includes('مستثمر برونزي') || titleStr.includes('برونزي');
+        const hasVeteran = pState.s1Veteran || pState.s1Badge === 'veteran' || titleStr.includes('مستثمر مخضرم') || titleStr.includes('مخضرم');
+
+        let badgeCount = 0;
+
+        if (hasDiamond) {
+          badgeCount++;
+          const dBadge = document.createElement('div');
+          dBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cyan-950/80 border-2 border-cyan-400 text-cyan-300 text-xs font-black shadow-md shadow-cyan-950/60';
+          dBadge.innerHTML = '<i class="fa-solid fa-gem text-cyan-300 text-sm"></i><span>وسام مستثمر ألماسي (بطل S1 #1)</span>';
+          badgesListEl.appendChild(dBadge);
+        }
+
+        if (hasGold) {
+          badgeCount++;
+          const gBadge = document.createElement('div');
+          gBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-950/80 border-2 border-yellow-400 text-yellow-300 text-xs font-black shadow-md shadow-amber-950/60';
+          gBadge.innerHTML = '<i class="fa-solid fa-crown text-yellow-300 text-sm"></i><span>وسام مستثمر ذهبي (وصيف S1 #2)</span>';
+          badgesListEl.appendChild(gBadge);
+        }
+
+        if (hasBronze) {
+          badgeCount++;
+          const bBadge = document.createElement('div');
+          bBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-950/80 border-2 border-orange-500 text-amber-300 text-xs font-black shadow-md shadow-orange-950/60';
+          bBadge.innerHTML = '<i class="fa-solid fa-award text-amber-300 text-sm"></i><span>وسام مستثمر برونزي (برونزية S1 #3)</span>';
+          badgesListEl.appendChild(bBadge);
+        }
+
+        if (hasVeteran) {
+          badgeCount++;
+          const vBadge = document.createElement('div');
+          vBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-950/80 border-2 border-purple-400 text-purple-300 text-xs font-black shadow-md shadow-purple-950/60';
+          vBadge.innerHTML = '<i class="fa-solid fa-certificate text-purple-300 text-sm"></i><span>وسام مستثمر مخضرم S1 (نخبة التوب 25)</span>';
+          badgesListEl.appendChild(vBadge);
+        }
+
+        if (badgeCount === 0) {
+          badgesListEl.innerHTML = '<div class="text-[11px] text-slate-500 py-1 flex items-center gap-1.5"><i class="fa-solid fa-circle-info text-[10px]"></i><span>لم يحصل هذا الحساب على أوسمة مواسم حتى الآن. شارك في الموسم الثاني للمنافسة!</span></div>';
+        }
+
+        // Dynamic Avatar styling according to honors
+        const avatarBox = document.getElementById('profile-card-avatar-box');
+        const avatarIcon = document.getElementById('profile-card-avatar-icon');
+        if (avatarBox && avatarIcon) {
+          if (hasDiamond) {
+            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 border-2 border-cyan-200 flex items-center justify-center text-slate-950 shadow-lg shadow-cyan-500/40 shrink-0';
+            avatarIcon.className = 'fa-solid fa-gem text-2xl';
+          } else if (hasGold) {
+            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600 border-2 border-yellow-200 flex items-center justify-center text-slate-950 shadow-lg shadow-yellow-500/40 shrink-0';
+            avatarIcon.className = 'fa-solid fa-crown text-2xl';
+          } else if (hasBronze) {
+            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-600 via-orange-600 to-amber-800 border-2 border-amber-400 flex items-center justify-center text-amber-100 shadow-lg shadow-orange-900/40 shrink-0';
+            avatarIcon.className = 'fa-solid fa-award text-2xl';
+          } else if (hasVeteran) {
+            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-800 border-2 border-purple-400 flex items-center justify-center text-purple-100 shadow-lg shadow-purple-900/40 shrink-0';
+            avatarIcon.className = 'fa-solid fa-certificate text-2xl';
+          } else {
+            avatarBox.className = 'w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shrink-0';
+            avatarIcon.className = 'fa-solid fa-user text-2xl';
+          }
+        }
+      }
 
       const summaryContainer = document.getElementById('profile-card-assets-summary');
       summaryContainer.innerHTML = '';
