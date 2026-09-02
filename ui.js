@@ -5427,6 +5427,28 @@ const UIController = (() => {
       });
     }
 
+    // Manual Refresh Button in Admin Header
+    const manualRefreshBtn = document.getElementById('btn-admin-manual-refresh');
+    if (manualRefreshBtn) {
+      manualRefreshBtn.addEventListener('click', async () => {
+        manualRefreshBtn.disabled = true;
+        manualRefreshBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري التحديث...</span>';
+        try {
+          if (typeof loadAdminPlayersDirectory === 'function') {
+            await loadAdminPlayersDirectory(true, true);
+          }
+          if (typeof showToast === 'function') {
+            showToast('تحديث الإدارة', 'تم تحديث كافة بيانات لوحة التحكم بنجاح! 🔄', 'success');
+          }
+        } catch (e) {
+          console.error('[Admin] Manual refresh error:', e);
+        } finally {
+          manualRefreshBtn.disabled = false;
+          manualRefreshBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> <span>تحديث البيانات</span>';
+        }
+      });
+    }
+
     // Tabs logic - bind all 9 subtabs
     const tabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'auctions', 'giftcodes', 'system', 'corporations'];
     tabs.forEach(t => {
@@ -5491,7 +5513,7 @@ const UIController = (() => {
         renderPlayersTable();
         updateFilterCounts();
         if (showToastNotice) {
-          const isCache = cachedPlayers.some(p => p.fromCache);
+          const isCache = cachedPlayers.length > 0 && cachedPlayers.every(p => p.fromCache);
           const cacheMsg = isCache ? ' (بيانات الكاش المحلي)' : ' (مباشر من السيرفر 🟢)';
           showToast('قائمة اللاعبين', `تم جلب بيانات ${cachedPlayers.length} لاعب بنجاح${cacheMsg}.`, 'success');
         }
@@ -6210,7 +6232,7 @@ const UIController = (() => {
 
     if (refreshListBtn) {
       refreshListBtn.addEventListener('click', () => {
-        loadAdminPlayersDirectory(true);
+        loadAdminPlayersDirectory(true, true);
       });
     }
 

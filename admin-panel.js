@@ -832,7 +832,7 @@
 
     if (refreshListBtn) {
       refreshListBtn.addEventListener('click', () => {
-        loadAdminPlayersDirectory(true);
+        loadAdminPlayersDirectory(true, true);
       });
     }
 
