@@ -750,11 +750,16 @@ const UIController = (() => {
     // Global Maintenance Realtime Listener for all visitors & start menu
     if (window.db) {
       db.collection('globals').doc('maintenance').onSnapshot((doc) => {
-        if (!doc.exists) return;
+        if (!doc.exists) {
+          hideMaintenanceOverlay();
+          return;
+        }
         const data = doc.data();
         if (data && data.enabled) {
           if (!GameEngine.state || !GameEngine.state.isAdmin) {
             handleMaintenanceMode(data.message || 'الخادم قيد الصيانة الفنية حالياً.');
+          } else {
+            hideMaintenanceOverlay();
           }
         } else {
           hideMaintenanceOverlay();
@@ -5219,11 +5224,16 @@ const UIController = (() => {
     // 2. Maintenance Realtime Listener
     const unsubMaintenance = db.collection('globals').doc('maintenance')
       .onSnapshot((doc) => {
-        if (!doc.exists) return;
+        if (!doc.exists) {
+          hideMaintenanceOverlay();
+          return;
+        }
         const data = doc.data();
         if (data && data.enabled) {
           if (!GameEngine.state || !GameEngine.state.isAdmin) {
             handleMaintenanceMode(data.message || 'الخادم قيد الصيانة الفنية حالياً.');
+          } else {
+            hideMaintenanceOverlay();
           }
         } else {
           hideMaintenanceOverlay();
@@ -5463,14 +5473,16 @@ const UIController = (() => {
     try {
       const status = await AppDB.getMaintenanceStatus();
       if (status && status.enabled) {
-        handleMaintenanceMode(status.message || 'الخادم قيد الصيانة الفنية حالياً لترقية وتأمين الأنظمة.');
-        return true;
-      } else {
-        hideMaintenanceOverlay();
-        return false;
+        if (!GameEngine.state || !GameEngine.state.isAdmin) {
+          handleMaintenanceMode(status.message || 'الخادم قيد الصيانة الفنية حالياً لترقية وتأمين الأنظمة.');
+          return true;
+        }
       }
+      hideMaintenanceOverlay();
+      return false;
     } catch (e) {
       console.warn('Maintenance check err:', e);
+      hideMaintenanceOverlay();
       return false;
     }
   }

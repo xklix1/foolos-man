@@ -204,6 +204,39 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
+  //  MAINTENANCE SYSTEM (Direct Cloud Sync)
+  // ─────────────────────────────────────────────
+  async function getMaintenanceStatus() {
+    _requireOnline();
+    try {
+      const doc = await firestoreDb.collection('globals').doc('maintenance').get({ source: 'server' });
+      if (doc.exists) {
+        return doc.data();
+      }
+      return { enabled: false, message: '' };
+    } catch (err) {
+      try {
+        const docCache = await firestoreDb.collection('globals').doc('maintenance').get();
+        if (docCache.exists) return docCache.data();
+      } catch(e) {}
+      return { enabled: false, message: '' };
+    }
+  }
+
+  async function setMaintenanceMode(enabled, message = 'الخادم قيد الصيانة الفنية حالياً لترقية وتأمين الأنظمة.') {
+    _requireOnline();
+    await _ensureAdminAuth();
+    const payload = {
+      enabled: Boolean(enabled),
+      message: String(message),
+      updatedAt: Date.now()
+    };
+    await firestoreDb.collection('globals').doc('maintenance').set(payload, { merge: true });
+    console.log('[DB] Maintenance mode updated on Cloud:', payload);
+    return payload;
+  }
+
+  // ─────────────────────────────────────────────
   //  AUTH — REGISTER
   // ─────────────────────────────────────────────
   async function registerPlayer(username, pin) {
@@ -3037,6 +3070,8 @@ const AppDB = (() => {
     init,
     checkVersion,
     setRemoteVersion,
+    getMaintenanceStatus,
+    setMaintenanceMode,
     registerPlayer,
     loginPlayer,
     getPlayerState,
