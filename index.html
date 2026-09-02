@@ -124,38 +124,7 @@
     </div>
   </div>
 
-  <!-- ==================== FORCE UPDATE OVERLAY ==================== -->
-  <!-- Hidden by default; shown by JS when version is outdated -->
-  <div id="force-update-overlay"
-    class="fixed inset-0 z-[200] hidden items-center justify-center bg-black/90 backdrop-blur-lg p-4">
-    <div
-      class="w-full max-w-sm bg-slate-950 border border-yellow-500/40 rounded-2xl p-8 text-center shadow-2xl shadow-yellow-500/10">
-      <!-- Icon -->
-      <div
-        class="w-16 h-16 mx-auto mb-5 rounded-full bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center">
-        <i class="fa-solid fa-cloud-arrow-down text-yellow-400 text-3xl"></i>
-      </div>
-      <!-- Title -->
-      <h2 class="text-xl font-black text-white mb-1">تحديث إجباري مطلوب</h2>
-      <p class="text-xs text-yellow-500 font-bold tracking-widest mb-4 numbers-font">FORCE UPDATE REQUIRED</p>
-      <p class="text-sm text-slate-400 mb-2 leading-relaxed">
-        إصدار جديد من اللعبة متاح الآن. يجب تحديث التطبيق للاستمرار في اللعب والحفاظ على بياناتك.
-      </p>
-      <!-- Version info -->
-      <div
-        class="flex justify-between text-[11px] text-slate-500 bg-slate-900 rounded-lg px-4 py-2 mb-6 numbers-font border border-slate-800">
-        <span>إصدارك الحالي: <span id="fu-client-ver" class="text-rose-400 font-bold">—</span></span>
-        <span>الإصدار الجديد: <span id="fu-remote-ver" class="text-emerald-400 font-bold">—</span></span>
-      </div>
-      <!-- Update Button -->
-      <button id="btn-force-update"
-        class="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-xl transition-all duration-300 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
-        <i class="fa-solid fa-download text-sm"></i>
-        تحديث الآن
-      </button>
-      <p class="text-[10px] text-slate-600 mt-3">سيتم إعادة تحميل اللعبة تلقائياً لجلب أحدث إصدار</p>
-    </div>
-  </div>
+
 
   <!-- ==================== CONNECTIVITY STATUS BADGE ==================== -->
   <!-- Small floating badge showing online/offline + sync state -->
