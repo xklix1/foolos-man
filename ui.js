@@ -721,6 +721,21 @@ const UIController = (() => {
       document.querySelectorAll('.lang-en-guide').forEach(el => el.classList.add('hidden'));
     }
 
+    // Global Maintenance Realtime Listener for all visitors & start menu
+    if (window.db) {
+      db.collection('globals').doc('maintenance').onSnapshot((doc) => {
+        if (!doc.exists) return;
+        const data = doc.data();
+        if (data && data.enabled) {
+          if (!GameEngine.state || !GameEngine.state.isAdmin) {
+            handleMaintenanceMode(data.message || 'الخادم قيد الصيانة الفنية حالياً.');
+          }
+        } else {
+          hideMaintenanceOverlay();
+        }
+      }, (err) => console.warn("Global maintenance listen err: ", err));
+    }
+
     const isMaint = await checkMaintenanceMode();
     if (isMaint) return;
 
@@ -5264,7 +5279,9 @@ const UIController = (() => {
         if (!doc.exists) return;
         const data = doc.data();
         if (data && data.enabled) {
-          handleMaintenanceMode(data.message || 'الخادم قيد الصيانة الفنية حالياً.');
+          if (!GameEngine.state || !GameEngine.state.isAdmin) {
+            handleMaintenanceMode(data.message || 'الخادم قيد الصيانة الفنية حالياً.');
+          }
         } else {
           hideMaintenanceOverlay();
         }
@@ -5496,6 +5513,10 @@ const UIController = (() => {
   }
 
   async function checkMaintenanceMode() {
+    if (GameEngine.state && GameEngine.state.isAdmin) {
+      hideMaintenanceOverlay();
+      return false;
+    }
     try {
       const status = await AppDB.getMaintenanceStatus();
       if (status && status.enabled) {
@@ -5524,6 +5545,10 @@ const UIController = (() => {
   }
 
   function handleMaintenanceMode(customMsg) {
+    if (GameEngine.state && GameEngine.state.isAdmin) {
+      hideMaintenanceOverlay();
+      return;
+    }
     const maintOverlay = document.getElementById('maintenance-overlay');
     const mainGameLayout = document.getElementById('main-game-layout');
     const authScreen = document.getElementById('auth-screen');
@@ -5544,6 +5569,7 @@ const UIController = (() => {
   function updateMaintenanceUIState(isMaint) {
     const badge = document.getElementById('admin-maintenance-badge');
     const toggleBtn = document.getElementById('btn-admin-toggle-maintenance');
+    const btnText = document.getElementById('admin-maintenance-btn-text');
     if (badge) {
       if (isMaint) {
         badge.textContent = 'وضع الصيانة نشط 🚨';
@@ -5554,12 +5580,18 @@ const UIController = (() => {
       }
     }
     if (toggleBtn) {
-      if (isMaint) {
-        toggleBtn.textContent = '✅ إنهاء وضع الصيانة والعودة للتشغيل الطبيعي للجميع';
-        toggleBtn.className = 'w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-emerald-600/20';
+      const text = isMaint
+        ? '✅ إنهاء وضع الصيانة والعودة للتشغيل الطبيعي للجميع'
+        : '🚨 إغلاق اللعبة وتفعيل وضع الصيانة الشامل للجميع';
+      if (btnText) {
+        btnText.textContent = text;
       } else {
-        toggleBtn.textContent = '🚨 إغلاق اللعبة وتفعيل وضع الصيانة الشامل للجميع';
-        toggleBtn.className = 'w-full py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-600/10';
+        toggleBtn.textContent = text;
+      }
+      if (isMaint) {
+        toggleBtn.className = 'w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2';
+      } else {
+        toggleBtn.className = 'w-full py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-600/10 flex items-center justify-center gap-2';
       }
     }
   }
@@ -7742,7 +7774,8 @@ const UIController = (() => {
     //  MODULE: SYSTEM & DANGER ZONE
     // ─────────────────────────────────────────────
     const maintToggleBtn = document.getElementById('btn-admin-toggle-maintenance');
-    if (maintToggleBtn) {
+    if (maintToggleBtn && !maintToggleBtn.dataset.bound) {
+      maintToggleBtn.dataset.bound = 'true';
       AppDB.getMaintenanceStatus().then(st => {
         updateMaintenanceUIState(st && st.enabled);
       });

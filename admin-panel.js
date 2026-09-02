@@ -2280,6 +2280,7 @@
     function updateMaintenanceUIState(isMaint) {
       const badge = document.getElementById('admin-maintenance-badge');
       const toggleBtn = document.getElementById('btn-admin-toggle-maintenance');
+      const btnText = document.getElementById('admin-maintenance-btn-text');
       if (badge) {
         if (isMaint) {
           badge.textContent = 'وضع الصيانة نشط 🚨';
@@ -2290,12 +2291,18 @@
         }
       }
       if (toggleBtn) {
-        if (isMaint) {
-          toggleBtn.textContent = '✅ إنهاء وضع الصيانة والعودة للتشغيل الطبيعي للجميع';
-          toggleBtn.className = 'w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-emerald-600/20';
+        const text = isMaint
+          ? '✅ إنهاء وضع الصيانة والعودة للتشغيل الطبيعي للجميع'
+          : '🚨 إغلاق اللعبة وتفعيل وضع الصيانة الشامل للجميع';
+        if (btnText) {
+          btnText.textContent = text;
         } else {
-          toggleBtn.textContent = '🚨 إغلاق اللعبة وتفعيل وضع الصيانة الشامل للجميع';
-          toggleBtn.className = 'w-full py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-600/10';
+          toggleBtn.textContent = text;
+        }
+        if (isMaint) {
+          toggleBtn.className = 'w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2';
+        } else {
+          toggleBtn.className = 'w-full py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-600/10 flex items-center justify-center gap-2';
         }
       }
     }
@@ -2321,7 +2328,8 @@
     //  MODULE: SYSTEM & DANGER ZONE
     // ─────────────────────────────────────────────
     const maintToggleBtn = document.getElementById('btn-admin-toggle-maintenance');
-    if (maintToggleBtn) {
+    if (maintToggleBtn && !maintToggleBtn.dataset.bound) {
+      maintToggleBtn.dataset.bound = 'true';
       AppDB.getMaintenanceStatus().then(st => {
         updateMaintenanceUIState(st && st.enabled);
       });

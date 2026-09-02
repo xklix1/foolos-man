@@ -119,7 +119,12 @@ const AppDB = (() => {
   async function _ensureAdminAuth() {
     _requireOnline();
     if (firebaseAuth && !firebaseAuth.currentUser) {
-      console.warn('[DB] Admin write attempted without active Firebase Auth session. Re-login required.');
+      try {
+        await firebaseAuth.signInAnonymously();
+        console.log('[DB] Anonymous Auth session established for admin write permission.');
+      } catch (e) {
+        console.warn('[DB] Admin write attempted without active Firebase Auth session:', e.message);
+      }
     }
   }
 
@@ -155,7 +160,7 @@ const AppDB = (() => {
         if (isNaN(state[k]) || !isFinite(state[k])) {
           state[k] = 0;
         } else {
-          state[k] = Math.max(0, Math.min(100000000000000, Math.round(state[k])));
+          state[k] = Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.round(state[k])));
         }
       }
     });

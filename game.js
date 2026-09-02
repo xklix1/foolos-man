@@ -2941,8 +2941,8 @@ const GameEngine = (() => {
       if (typeof state[k] !== 'number' || isNaN(state[k]) || !isFinite(state[k]) || state[k] < 0) {
         state[k] = 0;
       }
-      if (state[k] > 100000000000000) {
-        state[k] = 100000000000000;
+      if (state[k] > Number.MAX_SAFE_INTEGER) {
+        state[k] = Number.MAX_SAFE_INTEGER;
       }
     });
   }
