@@ -16,7 +16,7 @@ const AppDB = (() => {
   // ─────────────────────────────────────────────
   //  CONSTANTS
   // ─────────────────────────────────────────────
-  const CLIENT_VERSION = '2.5.0';
+  const CLIENT_VERSION = 'V2.5';
 
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyC7KRj3-t_03HLMzJ10miVhdKWCpabPQB4",
@@ -72,15 +72,15 @@ const AppDB = (() => {
 
       // Non-blocking version verification (Write only if version is missing or changed)
       firestoreDb.collection('globals').doc('config').get().then(doc => {
-        if (!doc.exists || doc.data().version !== '2.5.0') {
-          firestoreDb.collection('globals').doc('config').set({ version: '2.5.0' }, { merge: true }).catch(() => {});
+        if (!doc.exists || doc.data().version !== 'V2.5') {
+          firestoreDb.collection('globals').doc('config').set({ version: 'V2.5' }, { merge: true }).catch(() => {});
         }
       }).catch(err => {
         console.warn('[DB] Config version ping notice:', err.message);
       });
 
       firebaseReady = true;
-      console.log('[DB] Firebase Firestore initialized successfully (v2.5.0).');
+      console.log('[DB] Firebase Firestore initialized successfully (V2.5).');
 
       // Attach online/offline listeners for UI feedback
       _attachConnectivityListeners();
@@ -553,16 +553,16 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  CENTRALIZED HOURLY LEADERBOARD (OFFICIAL HOURLY SNAPSHOT)
-  //  (Unifies top rankings across all devices with official 1-hour cycle)
+  //  CENTRALIZED 6-HOURLY LEADERBOARD (OFFICIAL 6-HOUR SNAPSHOT)
+  //  (Unifies top rankings across all devices with official 6-hour cycle)
   // ─────────────────────────────────────────────
-  const LEADERBOARD_CYCLE_MS = 60 * 60 * 1000; // 1 hour = 3,600,000 ms
+  const LEADERBOARD_CYCLE_MS = 6 * 60 * 60 * 1000; // 6 hours = 21,600,000 ms
   let _leaderboardCache = null;
   let _leaderboardCacheTime = 0;
   let _leaderboardMeta = {
     updatedAt: Date.now(),
     nextUpdateAt: Date.now() + LEADERBOARD_CYCLE_MS,
-    cycleMinutes: 60
+    cycleMinutes: 360
   };
 
   function getLeaderboardMeta() {
@@ -596,7 +596,7 @@ const AppDB = (() => {
         topPlayers: top25,
         updatedAt: now,
         nextUpdateAt: nextUpdateAt,
-        cycleMinutes: 60,
+        cycleMinutes: 360,
         updateReason: reason
       };
 
@@ -607,7 +607,7 @@ const AppDB = (() => {
       _leaderboardMeta = {
         updatedAt: now,
         nextUpdateAt: nextUpdateAt,
-        cycleMinutes: 60
+        cycleMinutes: 360
       };
 
       try {

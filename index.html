@@ -1461,9 +1461,9 @@
         تم إطلاق تحديث جديد للعبة يتضمن إصلاحات ومزامنة مباشرة مع خوادم اللعبة. يرجى التحديث لمواصلة اللعب.
       </p>
       <div class="flex items-center justify-center gap-4 py-2.5 bg-slate-900/80 rounded-xl border border-slate-800 text-xs numbers-font">
-        <div><span class="text-slate-400 block text-[10px]">نسختك الحالية</span><strong id="fu-client-ver" class="text-rose-400">v2.0</strong></div>
+        <div><span class="text-slate-400 block text-[10px]">نسختك الحالية</span><strong id="fu-client-ver" class="text-rose-400">V2.0</strong></div>
         <i class="fa-solid fa-arrow-left text-slate-500"></i>
-        <div><span class="text-slate-400 block text-[10px]">إصدار الخادم</span><strong id="fu-remote-ver" class="text-emerald-400">v2.5.0</strong></div>
+        <div><span class="text-slate-400 block text-[10px]">إصدار الخادم</span><strong id="fu-remote-ver" class="text-emerald-400">V2.5</strong></div>
       </div>
       <button id="btn-force-update"
         class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black rounded-xl transition duration-300 shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 text-sm">
@@ -4215,9 +4215,9 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=150"></script>
-  <script src="game.js?v=150"></script>
-  <script src="ui.js?v=150"></script>
+  <script src="db.js?v=2.5"></script>
+  <script src="game.js?v=2.5"></script>
+  <script src="ui.js?v=2.5"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -4260,17 +4260,32 @@
         const vcheck = await AppDB.checkVersion();
         if (!vcheck.upToDate) {
           const overlay = document.getElementById('force-update-overlay');
-          document.getElementById('fu-client-ver').textContent = vcheck.clientVersion;
-          document.getElementById('fu-remote-ver').textContent = vcheck.remoteVersion;
-          overlay.classList.remove('hidden');
-          overlay.classList.add('flex');
+          if (overlay) {
+            const clientVerEl = document.getElementById('fu-client-ver');
+            const remoteVerEl = document.getElementById('fu-remote-ver');
+            if (clientVerEl) clientVerEl.textContent = vcheck.clientVersion;
+            if (remoteVerEl) remoteVerEl.textContent = vcheck.remoteVersion;
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
 
-          document.getElementById('btn-force-update').addEventListener('click', () => {
-            const url = new URL(window.location.href);
-            url.searchParams.set('v', vcheck.remoteVersion + '_' + Date.now());
-            window.location.href = url.toString();
-          });
-          return;
+            const btnFU = document.getElementById('btn-force-update');
+            if (btnFU) {
+              btnFU.onclick = async () => {
+                btnFU.disabled = true;
+                btnFU.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري تنظيف الكاش والتحديث...';
+                try {
+                  if ('caches' in window) {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(k => caches.delete(k)));
+                  }
+                } catch(e) {}
+                const url = new URL(window.location.href);
+                url.searchParams.set('v', (vcheck.remoteVersion || 'V2.5') + '_' + Date.now());
+                window.location.replace(url.toString());
+              };
+            }
+            return;
+          }
         }
       } catch (e) {
         console.warn('[Boot] Version check skipped:', e.message);
