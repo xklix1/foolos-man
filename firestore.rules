@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // التحقق من صلاحية الأدمن عبر توثيق Firebase Auth
+    // التحقق من توثيق حساب الأدمن عبر Firebase Auth
     function isAdmin() {
       return request.auth != null;
     }
@@ -13,9 +13,7 @@ service cloud.firestore {
     match /players/{username} {
       allow read: if true;
 
-      // إنشاء حساب جديد:
-      // - الأدمن بدون قيود
-      // - اللاعب العادي: لا يمكنه جعل نفسه أدمن، وبداية الثروة لا تتجاوز 10,000 ج.م
+      // إنشاء حساب جديد (منع منح رتبة أدمن تلقائياً ومحاربة الثروات المزيفة عند التسجيل)
       allow create: if isAdmin() || (
         request.resource.data.username == username &&
         request.resource.data.isAdmin == false &&
@@ -24,9 +22,7 @@ service cloud.firestore {
         request.resource.data.keys().hasAll(['username', 'pin', 'netWorth', 'cash', 'bank'])
       );
 
-      // تعديل الحساب (حماية ضد الغش):
-      // - الأدمن بدون قيود
-      // - اللاعب العادي: لا يمكنه تعديل isAdmin أو اسم المستخدم أو الـ PIN
+      // تعديل الحساب (منع أي لاعب من جعل نفسه أدمن أو تغيير الـ PIN أو اسم المستخدم بحيلة برمجية)
       allow update: if isAdmin() || (
         request.resource.data.isAdmin == false &&
         resource.data.isAdmin == false &&
@@ -34,7 +30,7 @@ service cloud.firestore {
         (!('pin' in request.resource.data) || request.resource.data.pin == resource.data.pin || resource.data.pin == null || resource.data.pin == '')
       );
 
-      // حذف الحساب: محصور بالأدمن فقط
+      // حذف الحساب محصور بالأدمن فقط
       allow delete: if isAdmin();
     }
 
@@ -50,11 +46,12 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────
-    // 3. إعدادات اللعبة، البورصة، الضرائب والصيانة (Globals)
+    // 3. إعدادات اللعبة، البورصة، الضرائب وقائمة التوب اليومية (Globals)
     // ─────────────────────────────────────────────
     match /globals/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      // السماح بتعديل الإعدادات للأدمن + السماح بتحديث سناب شات قائمة التوب اليومية
+      allow write: if isAdmin() || id == 'leaderboard';
     }
 
     // ─────────────────────────────────────────────
@@ -100,10 +97,10 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────
-    // 8. الدردشة العامة (Public Chat)
+    // 8. الشات العام (تم إيقافه لتوفير الكوتا)
     // ─────────────────────────────────────────────
     match /chat/{messageId} {
-      allow read, create, update, delete: if true;
+      allow read, create, update, delete: if isAdmin();
     }
 
     // ─────────────────────────────────────────────
@@ -125,7 +122,7 @@ service cloud.firestore {
                        request.resource.data.name is string &&
                        request.resource.data.name.size() > 0;
       allow update: if true;
-      allow delete: if true;
+      allow delete: if isAdmin();
     }
 
     // ─────────────────────────────────────────────
@@ -133,9 +130,9 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
     match /liveAuctions/{auctionId} {
       allow read: if true;
-      allow create: if true;
+      allow create: if isAdmin();
       allow update: if true;
-      allow delete: if true;
+      allow delete: if isAdmin();
     }
   }
 }
