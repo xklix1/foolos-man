@@ -106,6 +106,29 @@ const AppDB = (() => {
   // ─────────────────────────────────────────────
   //  CONNECTIVITY LISTENERS
   // ─────────────────────────────────────────────
+  async function _ensureDbReady() {
+    if (!firebaseReady || !firestoreDb) {
+      if (typeof init === 'function') {
+        try {
+          await init();
+        } catch (e) {}
+      }
+    }
+  }
+
+  function _requireOnline() {
+    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+      return; // Native offline mode
+    }
+    if (!firebaseReady || !firestoreDb) {
+      const activeUser = localStorage.getItem('rasalmal_active_session_user');
+      if (activeUser && localStorage.getItem(`rasalmal_state_${activeUser}`)) {
+        return; // Allow local offline session
+      }
+      throw new Error('لا يوجد اتصال بالخوادم. تحقق من اتصالك بالإنترنت.');
+    }
+  }
+
   function _attachConnectivityListeners() {
     window.addEventListener('online', () => {
       console.log('[DB] Network restored.');
@@ -123,19 +146,6 @@ const AppDB = (() => {
   //  HELPERS & CRYPTOGRAPHIC HASHING (SHA-256 + Salt)
   // ─────────────────────────────────────────────
   const PIN_SALT = 'RasALmal_SecureSalt_#2026';
-
-  function _requireOnline() {
-    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-      return; // Native offline mode
-    }
-    if (!firebaseReady || !firestoreDb) {
-      const activeUser = localStorage.getItem('rasalmal_active_session_user');
-      if (activeUser && localStorage.getItem(`rasalmal_state_${activeUser}`)) {
-        return; // Allow local offline session
-      }
-      throw new Error('لا يوجد اتصال بالخوادم. تحقق من اتصالك بالإنترنت.');
-    }
-  }
 
   async function _ensureAdminAuth() {
     _requireOnline();
@@ -277,10 +287,14 @@ const AppDB = (() => {
     if (username.length < 2 || username.length > 30) {
       throw new Error('اسم المستخدم يجب أن يكون بين 2 و 30 حرفاً.');
     }
-    _requireOnline();
+    await _ensureDbReady();
 
     if (username.toLowerCase() === 'admin') {
       throw new Error('اسم المستخدم هذا محظور ومحمي. يرجى اختيار اسم مستخدم عادي.');
+    }
+
+    if (!firestoreDb) {
+      throw new Error('تعذر الاتصال بخوادم اللعبة. يرجى التأكد من اتصال الإنترنت ثم المحاولة مجدداً.');
     }
 
     const ref = firestoreDb.collection('players').doc(username);
@@ -289,10 +303,7 @@ const AppDB = (() => {
       existing = await ref.get();
     } catch (getErr) {
       console.warn('[DB] registerPlayer check failed:', getErr.message);
-      if (getErr.message && (getErr.message.includes('offline') || getErr.message.includes('client is offline'))) {
-        throw new Error('تعذر الاتصال بالخادم لإنشاء الحساب. يرجى التأكد من اتصال الإنترنت ثم المحاولة مجدداً.');
-      }
-      throw new Error('فشل التحقق من اسم المستخدم. يرجى التأكد من اتصالك بالإنترنت والمحاولة مجدداً.');
+      throw new Error('تعذر الاتصال بالخادم لإنشاء الحساب. يرجى التأكد من اتصال الإنترنت ثم المحاولة مجدداً.');
     }
 
     if (existing && existing.exists) {
@@ -322,7 +333,7 @@ const AppDB = (() => {
     // Save with server-acknowledgement race:
     try {
       const setPromise = ref.set(data);
-      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2000));
+      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
       await Promise.race([setPromise, timeoutPromise]);
     } catch (setErr) {
       console.warn('[DB] ref.set server ack warning (persisted locally):', setErr.message);
@@ -352,16 +363,28 @@ const AppDB = (() => {
   async function loginPlayer(username, pin) {
     if (!username || !pin) throw new Error('يرجى إدخال اسم المستخدم والرقم السري.');
     username = username.trim();
-    _requireOnline();
+    await _ensureDbReady();
 
     const expectedHash = await _hashStringAsync(pin, username);
     const legacyHash = _legacyHash(pin);
+
+    if (!firestoreDb) {
+      const localSaved = getDecryptedLocalState(`rasalmal_state_${username}`);
+      if (localSaved && localSaved.pin) {
+        if (localSaved.pin === expectedHash || localSaved.pin === legacyHash || localSaved.pin === pin) {
+          return localSaved;
+        } else {
+          throw new Error('الرقم السري غير صحيح. يرجى المحاولة مرة أخرى.');
+        }
+      }
+      throw new Error('تعذر الاتصال بخوادم اللعبة. يرجى التأكد من اتصال الإنترنت ثم المحاولة مجدداً.');
+    }
 
     const ref = firestoreDb.collection('players').doc(username);
     let doc = null;
     try {
       const getPromise = ref.get();
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('تأخر استجابة الخادم. تحقق من اتصالك وحاول مجدداً.')), 4500));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('تأخر استجابة الخادم. تحقق من اتصالك وحاول مجدداً.')), 15000));
       doc = await Promise.race([getPromise, timeoutPromise]);
     } catch(err) {
       // Fallback check from local cache if network is slow or offline
