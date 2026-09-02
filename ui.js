@@ -11502,15 +11502,22 @@ const UIController = (() => {
   }
 
   async function manualSaveProgressAction() {
-    const btn = document.getElementById('btn-save-progress-cloud');
+    const btns = [
+      document.getElementById('btn-save-progress-cloud'),
+      document.getElementById('btn-save-progress-cloud-ingame'),
+      document.getElementById('btn-save-progress-cloud-mobile')
+    ].filter(Boolean);
+
     if (!GameEngine.activeUsername) {
       showToast('تنبيه', 'يرجى تسجيل الدخول أولاً لحفظ التقدم.', 'warning');
       return;
     }
-    if (btn) {
+
+    btns.forEach(btn => {
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i><span>جاري الحفظ...</span>';
-    }
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i><span>جاري الحفظ...</span>';
+    });
+
     try {
       const res = await AppDB.syncProgressToCloud(GameEngine.activeUsername);
       if (res.success) {
@@ -11522,12 +11529,20 @@ const UIController = (() => {
     } catch (e) {
       showToast('خطأ في الحفظ', e.message || 'تعذر الاتصال بالسيرفر.', 'error');
     } finally {
-      if (btn) {
+      btns.forEach(btn => {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up text-sm"></i><span>حفظ التقدم</span>';
-      }
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up text-xs"></i><span>حفظ السحابة</span>';
+      });
     }
   }
+
+  // Attach global click event delegation for save buttons
+  document.addEventListener('click', (e) => {
+    const target = e.target.closest('#btn-save-progress-cloud, #btn-save-progress-cloud-ingame, #btn-save-progress-cloud-mobile');
+    if (target) {
+      manualSaveProgressAction();
+    }
+  });
 
   return {
     init,
