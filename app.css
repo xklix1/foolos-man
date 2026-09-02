@@ -607,7 +607,8 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.3); }
 
   /* ── Toast above nav ── */
   #toast-container {
-    top: 10px !important;
+    top: 6px !important;
+    max-width: 340px !important;
   }
 
   /* ── Connectivity badge ── */

@@ -361,7 +361,10 @@ const UIController = (() => {
   // ─────────────────────────────────────────────
   //  TOP NOTIFICATIONS (TOAST ENGINE)
   // ─────────────────────────────────────────────
-  function showToast(title, message, type = 'info', duration = 3800) {
+  // ─────────────────────────────────────────────
+  //  TOP NOTIFICATIONS (TOAST ENGINE)
+  // ─────────────────────────────────────────────
+  function showToast(title, message, type = 'info', duration = 2400) {
     const container = document.getElementById('toast-container');
     if (!container) return;
 
@@ -373,56 +376,79 @@ const UIController = (() => {
       else playMenuSound('click');
     }
 
-    const toast = document.createElement('div');
-    toast.className = 'pointer-events-auto w-full flex items-start gap-3 p-3.5 rounded-2xl border shadow-2xl backdrop-blur-xl transition-all duration-300 transform -translate-y-4 opacity-0 cursor-pointer select-none';
+    // Dynamic translation for English mode
+    if (window.currentLang === 'en') {
+      if (translationDict[title]) title = translationDict[title];
+      if (translationDict[message]) {
+        message = translationDict[message];
+      } else if (message) {
+        for (const [arKey, enVal] of Object.entries(translationDict)) {
+          if (message.includes(arKey)) {
+            message = message.replaceAll(arKey, enVal);
+          }
+        }
+      }
+    }
 
-    let borderColor = 'border-sky-500/40';
+    // Cap maximum visible toasts to 2 to prevent screen clutter on mobile
+    while (container.children.length >= 2) {
+      container.lastElementChild?.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = 'pointer-events-auto w-full flex items-center gap-2.5 p-2 sm:p-2.5 px-3 rounded-xl border shadow-xl backdrop-blur-xl transition-all duration-300 transform -translate-y-3 opacity-0 cursor-pointer select-none';
+
+    let borderColor = 'border-sky-500/50 shadow-sky-500/10';
     let bgColor = 'bg-slate-950/95';
-    let iconHtml = '<i class="fa-solid fa-circle-info text-sky-400 text-base"></i>';
+    let iconHtml = '<i class="fa-solid fa-circle-info text-sky-400 text-sm"></i>';
     let titleColor = 'text-sky-400';
 
     if (type === 'success') {
       borderColor = 'border-emerald-500/50 shadow-emerald-500/10';
-      iconHtml = '<i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>';
+      iconHtml = '<i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>';
       titleColor = 'text-emerald-400';
     } else if (type === 'error') {
       borderColor = 'border-rose-500/50 shadow-rose-500/10';
-      iconHtml = '<i class="fa-solid fa-circle-xmark text-rose-400 text-base"></i>';
+      iconHtml = '<i class="fa-solid fa-circle-xmark text-rose-400 text-sm"></i>';
       titleColor = 'text-rose-400';
     } else if (type === 'warning') {
       borderColor = 'border-amber-500/50 shadow-amber-500/10';
-      iconHtml = '<i class="fa-solid fa-triangle-exclamation text-amber-400 text-base"></i>';
+      iconHtml = '<i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm"></i>';
       titleColor = 'text-amber-400';
     }
 
     toast.classList.add(...borderColor.split(' '), ...bgColor.split(' '));
 
     toast.innerHTML = `
-      <div class="mt-0.5 shrink-0">${iconHtml}</div>
+      <div class="shrink-0">${iconHtml}</div>
       <div class="flex-1 min-w-0">
-        <h4 class="text-xs font-black ${titleColor} leading-tight mb-0.5">${title || 'إشعار المنظومة'}</h4>
-        <p class="text-[11px] text-slate-300 leading-snug break-words">${message || ''}</p>
+        <h4 class="text-[11px] sm:text-xs font-black ${titleColor} leading-tight">${title || 'إشعار المنظومة'}</h4>
+        ${message ? `<p class="text-[10px] sm:text-[11px] text-slate-300 leading-tight mt-0.5 break-words">${message}</p>` : ''}
       </div>
-      <button class="text-slate-500 hover:text-white transition text-xs shrink-0 px-1">
+      <button class="text-slate-500 hover:text-white transition text-xs shrink-0 px-1 py-0.5">
         <i class="fa-solid fa-xmark"></i>
       </button>
     `;
 
+    let isDismissed = false;
     const dismiss = () => {
-      toast.classList.add('-translate-y-4', 'opacity-0', 'scale-95');
+      if (isDismissed) return;
+      isDismissed = true;
+      toast.style.transform = 'translateY(-10px) scale(0.96)';
+      toast.style.opacity = '0';
       setTimeout(() => {
         if (toast.parentElement) toast.parentElement.removeChild(toast);
-      }, 250);
+      }, 200);
     };
 
     toast.addEventListener('click', dismiss);
     setTimeout(dismiss, duration);
 
-    container.appendChild(toast);
+    container.prepend(toast);
 
     requestAnimationFrame(() => {
-      toast.classList.remove('-translate-y-4', 'opacity-0');
-      toast.classList.add('translate-y-0', 'opacity-100');
+      toast.style.transform = 'translateY(0)';
+      toast.style.opacity = '1';
     });
   }
 
@@ -5037,75 +5063,7 @@ const UIController = (() => {
     }
   }
 
-  function showToast(title, message, type = 'success') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
 
-    // Dynamically translate title and message if English is active
-    if (window.currentLang === 'en') {
-      if (translationDict[title]) title = translationDict[title];
-      if (translationDict[message]) {
-        message = translationDict[message];
-      } else if (message) {
-        // Dynamic translation replacements
-        for (const [arKey, enVal] of Object.entries(translationDict)) {
-          if (message.includes(arKey)) {
-            message = message.replaceAll(arKey, enVal);
-          }
-        }
-      }
-    }
-
-    const icons = {
-      success: `<i class="fa-solid fa-circle-check text-sm shrink-0"></i>`,
-      error: `<i class="fa-solid fa-circle-xmark text-sm shrink-0"></i>`,
-      info: `<i class="fa-solid fa-circle-info text-sm shrink-0"></i>`,
-      warning: `<i class="fa-solid fa-triangle-exclamation text-sm shrink-0"></i>`,
-    };
-
-    const colors = {
-      success: { border: 'border-emerald-500/60', bg: 'bg-emerald-500/10', icon: 'text-emerald-400', dot: 'bg-emerald-400' },
-      error: { border: 'border-rose-500/60', bg: 'bg-rose-500/10', icon: 'text-rose-400', dot: 'bg-rose-400' },
-      info: { border: 'border-sky-500/60', bg: 'bg-sky-500/10', icon: 'text-sky-400', dot: 'bg-sky-400' },
-      warning: { border: 'border-yellow-500/60', bg: 'bg-yellow-500/10', icon: 'text-yellow-400', dot: 'bg-yellow-400' },
-    };
-
-    const c = colors[type] || colors.info;
-    const icon = icons[type] || icons.info;
-
-    const toast = document.createElement('div');
-    toast.className = `w-full pointer-events-auto`;
-    toast.style.cssText = 'transform: translateY(-16px); opacity: 0; transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease;';
-
-    toast.innerHTML = `
-      <div class="flex items-start gap-3 rounded-2xl px-4 py-3 shadow-2xl border backdrop-blur-xl ${c.border} ${c.bg}"
-           style="background: rgba(5,7,15,0.88); box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.04);">
-        <span class="mt-0.5 ${c.icon}">${icon}</span>
-        <div class="flex-1 min-w-0">
-          <div class="font-bold text-white text-sm leading-tight">${title}</div>
-          ${message ? `<div class="text-xs text-slate-300 leading-relaxed mt-0.5 break-words">${message}</div>` : ''}
-        </div>
-        <span class="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${c.dot}"></span>
-      </div>
-    `;
-
-    container.prepend(toast);
-
-    // Animate in from top
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        toast.style.transform = 'translateY(0)';
-        toast.style.opacity = '1';
-      });
-    });
-
-    // Auto dismiss after 3.5 seconds
-    setTimeout(() => {
-      toast.style.transform = 'translateY(-12px)';
-      toast.style.opacity = '0';
-      setTimeout(() => toast.remove(), 350);
-    }, 3500);
-  }
 
   // Floating Passive indicators
   function showPassiveGainFloat(text) {
