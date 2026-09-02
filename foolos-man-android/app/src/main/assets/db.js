@@ -47,8 +47,18 @@ const AppDB = (() => {
    * The UI should show a loading overlay until this resolves.
    */
   async function init() {
+    // Enable 100% Native Offline Mode when running inside Capacitor or offline native app
+    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+      console.log('[DB] Running inside Capacitor Native Engine (100% Offline Native Mode).');
+      firebaseReady = false;
+      return true;
+    }
+
     if (!window.firebase) {
-      throw new Error('Firebase SDK غير محمّل. تحقق من اتصالك بالإنترنت وأعد تحميل الصفحة.');
+      // Fallback for native offline builds without external script loads
+      console.warn('[DB] Offline mode active — loading from local storage.');
+      firebaseReady = false;
+      return true;
     }
 
     try {
@@ -115,7 +125,14 @@ const AppDB = (() => {
   const PIN_SALT = 'RasALmal_SecureSalt_#2026';
 
   function _requireOnline() {
+    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+      return; // Native offline mode
+    }
     if (!firebaseReady || !firestoreDb) {
+      const activeUser = localStorage.getItem('foolos_active_session_user');
+      if (activeUser && localStorage.getItem(`foolos_state_${activeUser}`)) {
+        return; // Allow local offline session
+      }
       throw new Error('لا يوجد اتصال بالخوادم. تحقق من اتصالك بالإنترنت.');
     }
   }
