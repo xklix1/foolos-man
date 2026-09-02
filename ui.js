@@ -9207,6 +9207,15 @@ const UIController = (() => {
       });
     }
 
+    const playerProfileModal = document.getElementById('player-profile-modal');
+    if (playerProfileModal) {
+      playerProfileModal.addEventListener('click', (e) => {
+        if (e.target === playerProfileModal) {
+          playerProfileModal.classList.add('hidden');
+        }
+      });
+    }
+
     const btnAddFriend = document.getElementById('btn-profile-add-friend');
     const btnProfileDM = document.getElementById('btn-profile-dm');
     const btnProfileJob = document.getElementById('btn-profile-job-offer');

@@ -4023,106 +4023,116 @@
   </div>
 
   <!-- ==================== V2: PLAYER PROFILE CARD MODAL ==================== -->
-  <div id="player-profile-modal"
-    class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+  <div id="player-profile-modal" dir="rtl"
+    class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in">
     <div
-      class="glass-panel w-full max-w-md rounded-3xl border border-yellow-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
-      <!-- Profile Header -->
-      <div class="flex items-center gap-4 border-b border-slate-800 pb-4">
-        <div id="profile-card-avatar-box"
-          class="w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shrink-0">
-          <i id="profile-card-avatar-icon" class="fa-solid fa-user text-2xl"></i>
-        </div>
-        <div class="flex-1">
-          <div class="flex items-center gap-2">
-            <h3 id="profile-card-username" class="text-lg font-black text-white">---</h3>
-            <span id="profile-card-online-badge"
-              class="px-2 py-0.5 rounded-full bg-slate-900 text-slate-400 text-[9px] border border-slate-800">غير
-              متصل</span>
+      class="glass-panel w-full max-w-md max-h-[85vh] sm:max-h-[88vh] flex flex-col rounded-3xl border-2 border-yellow-500/50 bg-slate-950/98 shadow-2xl text-right relative overflow-hidden">
+      
+      <!-- Sticky/Fixed Profile Header -->
+      <div class="flex items-center justify-between gap-3 p-4 sm:p-5 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur shrink-0 relative z-10">
+        <div class="flex items-center gap-3 min-w-0">
+          <div id="profile-card-avatar-box"
+            class="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shrink-0 shadow-md">
+            <i id="profile-card-avatar-icon" class="fa-solid fa-user text-xl"></i>
           </div>
-          <p id="profile-card-title" class="text-xs text-yellow-400 font-bold">عامل مبتدئ</p>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h3 id="profile-card-username" class="text-base sm:text-lg font-black text-white truncate">---</h3>
+              <span id="profile-card-online-badge"
+                class="px-2 py-0.5 rounded-full bg-slate-900 text-slate-400 text-[9px] border border-slate-800 shrink-0">غير متصل</span>
+            </div>
+            <p id="profile-card-title" class="text-xs text-yellow-400 font-bold truncate">عامل مبتدئ</p>
+          </div>
         </div>
         <button id="btn-close-profile-modal"
-          class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
-          <i class="fa-solid fa-xmark"></i>
+          class="w-9 h-9 rounded-xl bg-slate-900/90 border border-slate-700 text-slate-300 hover:text-white hover:bg-rose-600 hover:border-rose-500 flex items-center justify-center transition shadow shrink-0" title="إغلاق الملف">
+          <i class="fa-solid fa-xmark text-sm"></i>
         </button>
       </div>
 
-      <!-- Season Honors & Badges Section -->
-      <div id="profile-card-honors-section" class="my-3 p-3 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border border-yellow-500/30 shadow-lg space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-[11px] font-black text-yellow-400 flex items-center gap-1.5">
-            <i class="fa-solid fa-medal text-xs"></i>
-            <span>أوسمة وإنجازات المواسم</span>
-          </span>
-          <span class="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-300 text-[9px] font-bold border border-yellow-500/20">سجل الشرف S1</span>
+      <!-- Scrollable Body with smooth scrollbar -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 text-xs">
+
+        <!-- Season Honors & Badges Section -->
+        <div id="profile-card-honors-section" class="p-3 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border border-yellow-500/30 shadow-md space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-black text-yellow-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-medal text-xs"></i>
+              <span>أوسمة وإنجازات المواسم</span>
+            </span>
+            <span class="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-300 text-[9px] font-bold border border-yellow-500/20">سجل الشرف S1</span>
+          </div>
+          <div id="profile-card-badges-list" class="flex items-center gap-2 flex-wrap pt-0.5">
+            <!-- Dynamic Honors Badges Injected Here -->
+          </div>
         </div>
-        <div id="profile-card-badges-list" class="flex items-center gap-2 flex-wrap pt-0.5">
-          <!-- Dynamic Honors Badges Injected Here -->
+
+        <!-- Stats Grid (Compact 2x2) -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="p-2.5 bg-slate-900/70 rounded-xl border border-slate-800/80">
+            <span class="text-slate-400 block text-[10px] mb-0.5">إجمالي الثروة (Net Worth)</span>
+            <span id="profile-card-networth" class="numbers-font font-black text-yellow-400 text-xs sm:text-sm">0 EGP</span>
+          </div>
+          <div class="p-2.5 bg-slate-900/70 rounded-xl border border-slate-800/80">
+            <span class="text-slate-400 block text-[10px] mb-0.5">السمعة بالعالم السفلي</span>
+            <span id="profile-card-reputation" class="numbers-font font-black text-rose-400 text-xs sm:text-sm">0 ⭐</span>
+          </div>
+          <div class="p-2.5 bg-slate-900/70 rounded-xl border border-slate-800/80">
+            <span class="text-slate-400 block text-[10px] mb-0.5">تاريخ انضمامه</span>
+            <span id="profile-card-createdat" class="numbers-font font-bold text-slate-200 text-[11px]">---</span>
+          </div>
+          <div class="p-2.5 bg-slate-900/70 rounded-xl border border-slate-800/80">
+            <span class="text-slate-400 block text-[10px] mb-0.5">الوظيفة والمهنة</span>
+            <span id="profile-card-job" class="font-bold text-sky-400 text-[11px] truncate block">عامل مبتدئ</span>
+          </div>
         </div>
+
+        <!-- Assets Summary -->
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80 text-xs text-slate-300">
+          <h4 class="font-bold text-white mb-1.5 flex items-center gap-1.5 text-[11px]">
+            <i class="fa-solid fa-briefcase text-yellow-500"></i>
+            <span>ممتلكات وأعمال اللاعب</span>
+          </h4>
+          <div id="profile-card-assets-summary" class="space-y-1 text-[11px]">
+            <!-- Dyn text summary of assets -->
+          </div>
+        </div>
+
       </div>
 
-      <!-- Stats Grid -->
-      <div class="grid grid-cols-2 gap-3.5 my-4 text-xs">
-        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
-          <span class="text-slate-400 block text-[10px] mb-0.5">إجمالي الثروة (Net Worth)</span>
-          <span id="profile-card-networth" class="numbers-font font-black text-yellow-500 text-sm">0 EGP</span>
-        </div>
-        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
-          <span class="text-slate-400 block text-[10px] mb-0.5">السمعة بالعالم السفلي</span>
-          <span id="profile-card-reputation" class="numbers-font font-black text-rose-500 text-sm">0 ⭐</span>
-        </div>
-        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
-          <span class="text-slate-400 block text-[10px] mb-0.5">تاريخ انضمامه</span>
-          <span id="profile-card-createdat" class="numbers-font font-bold text-white text-xs">---</span>
-        </div>
-        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
-          <span class="text-slate-400 block text-[10px] mb-0.5">الوظيفة والمهنة الحالية</span>
-          <span id="profile-card-job" class="font-bold text-white text-xs">عامل مبتدئ</span>
-        </div>
-      </div>
-
-      <!-- Assets Summary -->
-      <div class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-300 mb-4">
-        <h4 class="font-bold text-white mb-2 flex items-center gap-1.5"><i
-            class="fa-solid fa-briefcase text-yellow-500"></i> ممتلكات وأعمال اللاعب</h4>
-        <div id="profile-card-assets-summary" class="space-y-1">
-          <!-- Dyn text summary of assets -->
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="space-y-2 border-t border-slate-800 pt-4">
+      <!-- Sticky Action Buttons Footer -->
+      <div class="shrink-0 p-3 sm:p-4 border-t border-slate-800/80 bg-slate-950/95 space-y-2">
         <div class="grid grid-cols-2 gap-2">
           <button id="btn-profile-add-friend"
-            class="py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-user-plus"></i>
+            class="py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow">
+            <i class="fa-solid fa-user-plus text-[11px]"></i>
             <span>إضافة صديق</span>
           </button>
           <button id="btn-profile-dm"
-            class="py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold border border-slate-800 transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-comments"></i>
+            class="py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-comments text-[11px]"></i>
             <span>مراسلة خاصة</span>
           </button>
         </div>
         <div class="grid grid-cols-2 gap-2">
           <button id="btn-profile-job-offer"
-            class="py-2.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-briefcase"></i>
-            <span>تقديم عرض عمل</span>
+            class="py-2 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-briefcase text-[11px]"></i>
+            <span>عرض عمل</span>
           </button>
           <button id="btn-profile-partnership"
-            class="py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-handshake"></i>
+            class="py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-handshake text-[11px]"></i>
             <span>دعوة شراكة</span>
           </button>
         </div>
         <button id="btn-profile-block-player"
-          class="w-full py-2 bg-rose-950/20 hover:bg-rose-950/40 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
-          <i class="fa-solid fa-ban"></i>
+          class="w-full py-1.5 bg-rose-950/20 hover:bg-rose-950/40 text-rose-400 border border-rose-500/20 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-ban text-[10px]"></i>
           <span>حظر اللاعب</span>
         </button>
       </div>
+
     </div>
   </div>
 
