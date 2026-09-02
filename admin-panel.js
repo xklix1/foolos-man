@@ -2447,18 +2447,48 @@
       autoFillS1Btn.addEventListener('click', async () => {
         try {
           autoFillS1Btn.disabled = true;
-          autoFillS1Btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الجلب...';
-          const topPlayers = await AppDB.getLeaderboard();
+          autoFillS1Btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري السحب...';
+
+          let topPlayers = [];
+
+          // 1. High-speed Priority: Use already cached players in admin panel (0 delay, instant)
+          if (Array.isArray(cachedPlayers) && cachedPlayers.length > 0) {
+            const valid = cachedPlayers.filter(p => !p.isAdmin && !p.isBanned);
+            valid.sort((a, b) => (Number(b.netWorth) || 0) - (Number(a.netWorth) || 0));
+            topPlayers = valid.slice(0, 3);
+          }
+
+          // 2. Fallback: Fetch leaderboard with a 3.5s race timeout so it never hangs
+          if (topPlayers.length === 0) {
+            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve([]), 3500));
+            const fetchPromise = AppDB.getLeaderboard();
+            topPlayers = await Promise.race([fetchPromise, timeoutPromise]);
+          }
+
+          // 3. Fallback: Try adminGetAllPlayers if still empty
+          if (!topPlayers || topPlayers.length === 0) {
+            try {
+              const timeoutPromise = new Promise(resolve => setTimeout(() => resolve([]), 3500));
+              const allPromise = AppDB.adminGetAllPlayers();
+              const all = await Promise.race([allPromise, timeoutPromise]);
+              if (Array.isArray(all) && all.length > 0) {
+                const valid = all.filter(p => !p.isAdmin && !p.isBanned);
+                valid.sort((a, b) => (Number(b.netWorth) || 0) - (Number(a.netWorth) || 0));
+                topPlayers = valid.slice(0, 3);
+              }
+            } catch (e) {}
+          }
+
           if (topPlayers && topPlayers.length > 0) {
             if (topPlayers[0]) document.getElementById('adm-s1-top1-input').value = topPlayers[0].username || '';
             if (topPlayers[1]) document.getElementById('adm-s1-top2-input').value = topPlayers[1].username || '';
             if (topPlayers[2]) document.getElementById('adm-s1-top3-input').value = topPlayers[2].username || '';
-            showToast('سحب المتصدرين', 'تم سحب أسماء التوب 3 الحاليين تلقائياً بنجاح.', 'success');
+            showToast('سحب المتصدرين', `تم سحب أسماء المتصدرين بنجاح (${topPlayers.map(p => p.username).join(' • ')})`, 'success');
           } else {
-            showToast('لا توجد بيانات', 'لم يتم العثور على متصدرين مسجلين في الليدربورد.', 'info');
+            showToast('لا توجد بيانات', 'لم يتم العثور على لاعبين في قاعدة البيانات. يمكنك إدخال الأسماء يدوياً.', 'info');
           }
         } catch (err) {
-          showToast('خطأ', err.message, 'error');
+          showToast('خطأ في السحب', err.message, 'error');
         } finally {
           autoFillS1Btn.disabled = false;
           autoFillS1Btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>سحب التوب 3 الحاليين تلقائياً</span>';
