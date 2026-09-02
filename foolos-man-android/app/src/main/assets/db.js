@@ -47,19 +47,10 @@ const AppDB = (() => {
    * The UI should show a loading overlay until this resolves.
    */
   async function init() {
-    // Enable 100% Native Offline Mode when running inside Capacitor or offline native app
-    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-      console.log('[DB] Running inside Capacitor Native Engine (100% Offline Native Mode).');
-      firebaseReady = false;
-      return true;
-    }
-
-    if (!window.firebase) {
-      // Fallback for native offline builds without external script loads
-      console.warn('[DB] Offline mode active — loading from local storage.');
-      firebaseReady = false;
-      return true;
-    }
+    console.log('[Android Standalone DB] Standalone Native Offline Android Engine Active.');
+    firebaseReady = false;
+    return true;
+  }
 
     try {
       if (!firebase.apps.length) {
@@ -125,16 +116,7 @@ const AppDB = (() => {
   const PIN_SALT = 'RasALmal_SecureSalt_#2026';
 
   function _requireOnline() {
-    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-      return; // Native offline mode
-    }
-    if (!firebaseReady || !firestoreDb) {
-      const activeUser = localStorage.getItem('foolos_active_session_user');
-      if (activeUser && localStorage.getItem(`foolos_state_${activeUser}`)) {
-        return; // Allow local offline session
-      }
-      throw new Error('لا يوجد اتصال بالخوادم. تحقق من اتصالك بالإنترنت.');
-    }
+    return; // 100% Standalone Offline Game
   }
 
   async function _ensureAdminAuth() {
@@ -277,16 +259,10 @@ const AppDB = (() => {
     if (username.length < 2 || username.length > 30) {
       throw new Error('اسم المستخدم يجب أن يكون بين 2 و 30 حرفاً.');
     }
-    _requireOnline();
 
-    if (username.toLowerCase() === 'admin') {
-      throw new Error('اسم المستخدم هذا محظور ومحمي. يرجى اختيار اسم مستخدم عادي.');
-    }
-
-    const ref = firestoreDb.collection('players').doc(username);
-    const existing = await ref.get();
-    if (existing.exists) {
-      throw new Error('اسم المستخدم هذا مسجل بالفعل. يرجى اختيار اسم آخر أو تسجيل الدخول.');
+    const existingLocal = localStorage.getItem(`foolos_state_${username}`);
+    if (existingLocal) {
+      throw new Error('اسم المستخدم هذا مسجل بالفعل على هذا الجهاز. يرجى تسجيل الدخول أو اختيار اسم آخر.');
     }
 
     const pinHash = await _hashStringAsync(pin, username);
@@ -309,77 +285,33 @@ const AppDB = (() => {
       lastSeen: Date.now()
     };
 
-    // Save with server-acknowledgement race:
-    // With offline persistence enabled, ref.set commits to local IndexedDB immediately.
-    // However, if the server quota is exceeded or network backoff is triggered, the promise
-    // waits for server ack indefinitely (hanging). We race against a 2s timer so the user
-    // can proceed instantly without getting stuck on an infinite loading spinner.
-    try {
-      const setPromise = ref.set(data);
-      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2000));
-      await Promise.race([setPromise, timeoutPromise]);
-    } catch (setErr) {
-      console.warn('[DB] ref.set server ack warning (persisted locally):', setErr.message);
-    }
-
-    // Cache state locally immediately
-    try {
-      localStorage.setItem(`foolos_state_${username}`, JSON.stringify(data));
-    } catch (e) {}
-
-    // Update global system accounts counter asynchronously
-    try {
-      if (firestoreDb && typeof firebase !== 'undefined' && firebase.firestore) {
-        firestoreDb.collection('globals').doc('stats').set({
-          totalPlayersRegistered: firebase.firestore.FieldValue.increment(1),
-          lastRegisteredUser: username,
-          lastRegisteredAt: Date.now()
-        }, { merge: true }).catch(() => {});
-      }
-    } catch (e) {}
-
-    console.log('[DB] Player registered securely:', username);
+    localStorage.setItem(`foolos_state_${username}`, JSON.stringify(data));
+    console.log('[Android Standalone DB] Player registered locally:', username);
     return data;
   }
 
-  // ─────────────────────────────────────────────
-  //  AUTH — LOGIN
-  // ─────────────────────────────────────────────
   async function loginPlayer(username, pin) {
     if (!username || !pin) throw new Error('يرجى إدخال اسم المستخدم والرقم السري.');
     username = username.trim();
-    _requireOnline();
 
     const expectedHash = await _hashStringAsync(pin, username);
     const legacyHash = _legacyHash(pin);
 
-    const ref = firestoreDb.collection('players').doc(username);
-    let doc = null;
-    try {
-      const getPromise = ref.get();
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('تأخر استجابة الخادم. تحقق من اتصالك وحاول مجدداً.')), 4500));
-      doc = await Promise.race([getPromise, timeoutPromise]);
-    } catch(err) {
-      // Fallback check from local cache if network is slow
-      try {
-        doc = await ref.get({ source: 'cache' });
-      } catch(ce) {}
-      if (!doc || !doc.exists) throw err;
+    const cachedStr = localStorage.getItem(`foolos_state_${username}`);
+    if (!cachedStr) {
+      throw new Error('اسم المستخدم غير مسجل على هذا الجهاز. يرجى إنشاء حساب جديد أولاً.');
     }
 
-    if (!doc.exists) {
-      throw new Error('اسم المستخدم غير مسجل. يرجى إنشاء حساب جديد أولاً.');
-    }
-
-    const data = doc.data();
-
-    if (data.isBanned) {
-      throw new Error('هذا الحساب محظور وموقوف من قبل إدارة المنظومة.');
-    }
+    let data;
+    try { data = JSON.parse(cachedStr); } catch(e) { throw new Error('بيانات الحساب تالفة.'); }
 
     if (data.pin !== expectedHash && data.pin !== legacyHash && data.pin !== pin) {
       throw new Error('الرقم السري غير صحيح. يرجى المحاولة مرة أخرى.');
     }
+
+    console.log('[Android Standalone DB] Player authenticated locally:', username);
+    return data;
+  }
 
     // Auto-upgrade legacy hash to salted SHA-256
     if (data.pin !== expectedHash) {
