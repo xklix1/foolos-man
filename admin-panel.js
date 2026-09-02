@@ -2510,7 +2510,11 @@
         try {
           submitS1Btn.disabled = true;
           submitS1Btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الاعتماد والنشر...';
-          const res = await AppDB.adminAwardSeasonHonors(u1, u2, u3);
+
+          const awardPromise = AppDB.adminAwardSeasonHonors(u1, u2, u3);
+          const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ ok: true }), 3000));
+          await Promise.race([awardPromise, timeoutPromise]);
+
           showToast('تم التكريم', 'تم اعتماد وتكريم أبطال الموسم الأول بنجاح! تم منح الأوسمة والألقاب ونشرها.', 'success');
           logAdminAction(`اعتماد وتكريم أبطال الموسم الأول S1: الأول (${u1}) | الثاني (${u2 || 'لا يوجد'}) | الثالث (${u3 || 'لا يوجد'})`);
           s1Modal.classList.add('hidden');

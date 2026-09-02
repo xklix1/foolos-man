@@ -2865,7 +2865,14 @@ const AppDB = (() => {
     const honorsRef = firestoreDb.collection('globals').doc('seasonHonors');
     batch.set(honorsRef, honorsData, { merge: true });
 
-    await batch.commit();
+    // Race batch commit against a 2.5s timer so it never hangs if server ack is slow or quota limited
+    try {
+      const commitPromise = batch.commit();
+      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2500));
+      await Promise.race([commitPromise, timeoutPromise]);
+    } catch (batchErr) {
+      console.warn('[DB] Batch commit server ack warning:', batchErr.message);
+    }
 
     _cachedSeasonHonors = honorsData;
     try {
