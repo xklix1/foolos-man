@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Ras ALmal Tycoon (رأس المال)
  * Simulation Engine (game.js)
  * Manages game state, ticks, algorithms, and business logic
@@ -11,140 +11,140 @@ const GameEngine = (() => {
   // --- Game Configurations & Data Tables ---
 
   const JOBS = {
-    worker: { id: 'worker', name: 'عامل باليومية', salary: 15, xpReward: 4, xpNeeded: 0 },
-    cashier: { id: 'cashier', name: 'محاسب صندوق', salary: 40, xpReward: 8, xpNeeded: 90 },
-    accountant: { id: 'accountant', name: 'محاسب مالي قانوني', salary: 120, xpReward: 16, xpNeeded: 320 },
-    manager: { id: 'manager', name: 'مدير فرع وتطوير', salary: 320, xpReward: 26, xpNeeded: 1100 },
-    director: { id: 'director', name: 'مدير تنفيذي للمجموعة', salary: 850, xpReward: 42, xpNeeded: 3400 },
-    ceo: { id: 'ceo', name: 'رئيس مجلس الإدارة', salary: 2200, xpReward: 65, xpNeeded: 9500 },
-    consultant: { id: 'consultant', name: 'مستشار اقتصادي ووزير سابق', salary: 5800, xpReward: 95, xpNeeded: 24000 },
-    bank_governor: { id: 'bank_governor', name: 'محافظ البنك المركزي', salary: 15000, xpReward: 150, xpNeeded: 60000 },
-    sovereign_head: { id: 'sovereign_head', name: 'رئيس صندوق الاستثمار السيادي', salary: 38000, xpReward: 240, xpNeeded: 140000 },
-    oligarch: { id: 'oligarch', name: 'إمبراطور كبار المستثمرين', salary: 95000, xpReward: 380, xpNeeded: 320000 }
+    worker: { id: 'worker', name: 'عامل باليومية', salary: 6, xpReward: 2, xpNeeded: 0 },
+    cashier: { id: 'cashier', name: 'محاسب صندوق', salary: 14, xpReward: 4, xpNeeded: 180 },
+    accountant: { id: 'accountant', name: 'محاسب مالي قانوني', salary: 45, xpReward: 8, xpNeeded: 600 },
+    manager: { id: 'manager', name: 'مدير فرع وتطوير', salary: 130, xpReward: 14, xpNeeded: 2200 },
+    director: { id: 'director', name: 'مدير تنفيذي للمجموعة', salary: 350, xpReward: 24, xpNeeded: 6500 },
+    ceo: { id: 'ceo', name: 'رئيس مجلس الإدارة', salary: 980, xpReward: 38, xpNeeded: 18000 },
+    consultant: { id: 'consultant', name: 'مستشار اقتصادي ووزير سابق', salary: 2600, xpReward: 60, xpNeeded: 45000 },
+    bank_governor: { id: 'bank_governor', name: 'محافظ البنك المركزي', salary: 6800, xpReward: 95, xpNeeded: 120000 },
+    sovereign_head: { id: 'sovereign_head', name: 'رئيس صندوق الاستثمار السيادي', salary: 16500, xpReward: 140, xpNeeded: 280000 },
+    oligarch: { id: 'oligarch', name: 'إمبراطور كبار المستثمرين', salary: 42000, xpReward: 220, xpNeeded: 650000 }
   };
 
   const BUSINESSES = {
     coffee: {
       id: 'coffee',
       name: 'عربة قهوة ومأكولات خفيفة',
-      cost: 3500,
-      baseDemand: 18,
+      cost: 6800,
+      baseDemand: 8,
       optimumPrice: 24,
-      costOfGoods: 10,
-      upgradeMultiplier: 1.40,
-      workerMultiplier: 1.15,
-      workerWage: 6
+      costOfGoods: 14,
+      upgradeMultiplier: 1.45,
+      workerMultiplier: 1.10,
+      workerWage: 12
     },
     tech: {
       id: 'tech',
       name: 'شركة برمجيات وتطبيقات',
-      cost: 65000,
-      baseDemand: 10,
+      cost: 140000,
+      baseDemand: 5,
       optimumPrice: 180,
-      costOfGoods: 60,
-      upgradeMultiplier: 1.50,
-      workerMultiplier: 1.20,
-      workerWage: 28
+      costOfGoods: 95,
+      upgradeMultiplier: 1.55,
+      workerMultiplier: 1.15,
+      workerWage: 65
     },
     logistics: {
       id: 'logistics',
       name: 'مجمع خدمات لوجستية وشحن',
-      cost: 380000,
-      baseDemand: 8,
+      cost: 780000,
+      baseDemand: 5,
       optimumPrice: 850,
-      costOfGoods: 280,
-      upgradeMultiplier: 1.60,
-      workerMultiplier: 1.25,
-      workerWage: 120
+      costOfGoods: 450,
+      upgradeMultiplier: 1.65,
+      workerMultiplier: 1.18,
+      workerWage: 280
     },
     supermarket: {
       id: 'supermarket',
       name: 'سلسلة سوبرماركت وتجزئة',
-      cost: 1600000,
-      baseDemand: 14,
+      cost: 3200000,
+      baseDemand: 8,
       optimumPrice: 1200,
-      costOfGoods: 420,
-      upgradeMultiplier: 1.68,
-      workerMultiplier: 1.28,
-      workerWage: 350
+      costOfGoods: 680,
+      upgradeMultiplier: 1.72,
+      workerMultiplier: 1.20,
+      workerWage: 850
     },
     solar_factory: {
       id: 'solar_factory',
       name: 'مصنع ألواح الطاقة الشمسية',
-      cost: 6200000,
-      baseDemand: 9,
+      cost: 14000000,
+      baseDemand: 5,
       optimumPrice: 3500,
-      costOfGoods: 1200,
-      upgradeMultiplier: 1.72,
-      workerMultiplier: 1.30,
-      workerWage: 980
+      costOfGoods: 2100,
+      upgradeMultiplier: 1.78,
+      workerMultiplier: 1.22,
+      workerWage: 2400
     },
     private_hospital: {
       id: 'private_hospital',
       name: 'مستشفى ومجمع طبي تخصصي',
-      cost: 24000000,
-      baseDemand: 7,
+      cost: 55000000,
+      baseDemand: 4,
       optimumPrice: 11000,
-      costOfGoods: 3600,
-      upgradeMultiplier: 1.78,
-      workerMultiplier: 1.35,
-      workerWage: 2900
+      costOfGoods: 6800,
+      upgradeMultiplier: 1.82,
+      workerMultiplier: 1.25,
+      workerWage: 6500
     },
     media_studio: {
       id: 'media_studio',
       name: 'مؤسسة إنتاج إعلامي وسينمائي',
-      cost: 68000000,
-      baseDemand: 8,
+      cost: 160000000,
+      baseDemand: 5,
       optimumPrice: 26000,
-      costOfGoods: 8200,
-      upgradeMultiplier: 1.82,
-      workerMultiplier: 1.38,
-      workerWage: 6800
+      costOfGoods: 15500,
+      upgradeMultiplier: 1.85,
+      workerMultiplier: 1.28,
+      workerWage: 16000
     },
     private_bank: {
       id: 'private_bank',
       name: 'بنك استثماري وشركة وساطة مالية',
-      cost: 210000000,
-      baseDemand: 7,
+      cost: 520000000,
+      baseDemand: 4,
       optimumPrice: 78000,
-      costOfGoods: 22000,
-      upgradeMultiplier: 1.85,
-      workerMultiplier: 1.40,
-      workerWage: 19000
+      costOfGoods: 46000,
+      upgradeMultiplier: 1.88,
+      workerMultiplier: 1.30,
+      workerWage: 45000
     },
     oil_refinery: {
       id: 'oil_refinery',
       name: 'مجمع مصافي البترول والطاقة',
-      cost: 620000000,
-      baseDemand: 6,
+      cost: 1600000000,
+      baseDemand: 3,
       optimumPrice: 220000,
-      costOfGoods: 58000,
-      upgradeMultiplier: 1.88,
-      workerMultiplier: 1.45,
-      workerWage: 55000
+      costOfGoods: 135000,
+      upgradeMultiplier: 1.92,
+      workerMultiplier: 1.32,
+      workerWage: 130000
     },
     space_tech: {
       id: 'space_tech',
       name: 'مؤسسة استكشاف الفضاء والأقمار الصناعية',
-      cost: 1800000000,
-      baseDemand: 4,
+      cost: 4800000000,
+      baseDemand: 2,
       optimumPrice: 680000,
-      costOfGoods: 160000,
-      upgradeMultiplier: 1.92,
-      workerMultiplier: 1.50,
-      workerWage: 185000
+      costOfGoods: 420000,
+      upgradeMultiplier: 1.95,
+      workerMultiplier: 1.35,
+      workerWage: 420000
     }
   };
 
   const ASSETS = {
-    apartment: { id: 'apartment', name: 'شقة سكنية مؤجرة', cost: 140000, rent: 260, appreciation: 0.0008 },
-    office: { id: 'office', name: 'مبنى مكاتب تجارية', cost: 850000, rent: 1800, appreciation: 0.0012 },
-    mansion: { id: 'mansion', name: 'قصر ريفي فاخر', cost: 3800000, rent: 8200, appreciation: 0.0015 },
-    skyline_tower: { id: 'skyline_tower', name: 'برج ناطحة سحاب تجاري', cost: 16000000, rent: 36000, appreciation: 0.0018 },
-    luxury_resort: { id: 'luxury_resort', name: 'منتجع وفندق سياحي 5 نجوم', cost: 78000000, rent: 185000, appreciation: 0.0020 },
-    mega_yacht: { id: 'mega_yacht', name: 'يخت ملكي فاخر خاص', cost: 290000000, rent: 680000, appreciation: 0.0022 },
-    private_island: { id: 'private_island', name: 'جزيرة استوائية خاصة', cost: 1100000000, rent: 2600000, appreciation: 0.0025 },
-    orbital_station: { id: 'orbital_station', name: 'محطة مدارية فضائية خاصة', cost: 4500000000, rent: 11500000, appreciation: 0.0030 }
+    apartment: { id: 'apartment', name: 'شقة سكنية مؤجرة', cost: 250000, rent: 85, appreciation: 0.0004 },
+    office: { id: 'office', name: 'مبنى مكاتب تجارية', cost: 1600000, rent: 520, appreciation: 0.0006 },
+    mansion: { id: 'mansion', name: 'قصر ريفي فاخر', cost: 7200000, rent: 2400, appreciation: 0.0008 },
+    skyline_tower: { id: 'skyline_tower', name: 'برج ناطحة سحاب تجاري', cost: 35000000, rent: 11500, appreciation: 0.0010 },
+    luxury_resort: { id: 'luxury_resort', name: 'منتجع وفندق سياحي 5 نجوم', cost: 160000000, rent: 52000, appreciation: 0.0012 },
+    mega_yacht: { id: 'mega_yacht', name: 'يخت ملكي فاخر خاص', cost: 650000000, rent: 210000, appreciation: 0.0014 },
+    private_island: { id: 'private_island', name: 'جزيرة استوائية خاصة', cost: 2400000000, rent: 750000, appreciation: 0.0016 },
+    orbital_station: { id: 'orbital_station', name: 'محطة مدارية فضائية خاصة', cost: 9200000000, rent: 3000000, appreciation: 0.0020 }
   };
 
   const STOCKS = {
@@ -616,8 +616,8 @@ const GameEngine = (() => {
 
   // --- Initial Default Player State ---
   const INITIAL_STATE = {
-    cash: 1500,
-    bank: 500,
+    cash: 300,
+    bank: 100,
     dirtyCash: 0,
     xp: 0,
     underworldRep: 0,
@@ -680,7 +680,7 @@ const GameEngine = (() => {
     afkManagerExpiresAt: 0, // 12-hour active manager timestamp
     activityLog: [], // Rolling audit log of player actions
     totalTaxesPaid: 0, // Cumulative taxes paid to public treasury
-    netWorth: 2000,
+    netWorth: 400,
     title: 'عامل مبتدئ',
     ownedCars: [],
     activeCar: null,
@@ -1096,9 +1096,9 @@ const GameEngine = (() => {
       }
     }
 
-    // 2. Bank compound interest accrual (0.003% per tick = ~3.5% APY)
+    // 2. Bank compound interest accrual (0.0005% per tick = ~1.2% APY)
     if (state.bank > 0) {
-      const rate = 0.00003;
+      const rate = 0.000005;
       const interest = Math.floor(state.bank * rate);
       if (interest > 0) {
         state.bank += interest;
@@ -1106,10 +1106,10 @@ const GameEngine = (() => {
       }
     }
 
-    // 3. Careers Auto Salary (earned automatically every 4 ticks)
+    // 3. Careers Auto Salary (earned automatically every 10 ticks = ~30 seconds)
     // To represent work contracts, the player receives a baseline salary passively
     const currentJob = JOBS[state.jobId];
-    if (currentJob && Math.random() < 0.25) {
+    if (currentJob && Math.random() < 0.10) {
       const boost = window.serverBoostMultiplier || 1.0;
       const salaryEarned = Math.floor(currentJob.salary * boost);
       state.bank += salaryEarned;

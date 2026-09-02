@@ -315,9 +315,9 @@ const AppDB = (() => {
     const data = {
       username,
       pin: pinHash,
-      netWorth: 2000,
-      cash: 1500,
-      bank: 500,
+      netWorth: 400,
+      cash: 300,
+      bank: 100,
       dirtyCash: 0,
       xp: 0,
       underworldRep: 0,
