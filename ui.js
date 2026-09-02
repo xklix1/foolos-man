@@ -809,6 +809,59 @@ const UIController = (() => {
       });
     }
 
+    // 4.1 Season 2 Launch Announcement Modal
+    const season2Btn = document.getElementById('btn-menu-season2-announce');
+    const season2Modal = document.getElementById('season2-launch-modal');
+    const closeSeason2Btn = document.getElementById('btn-close-season2-modal');
+    const confirmSeason2Btn = document.getElementById('btn-confirm-season2-action');
+    const copyS2CodeBtn = document.getElementById('btn-copy-s2-code');
+
+    const openSeason2Modal = () => {
+      playMenuSound('modal_open');
+      if (season2Modal) season2Modal.classList.remove('hidden');
+    };
+
+    const hideSeason2Modal = () => {
+      playMenuSound('modal_close');
+      if (season2Modal) season2Modal.classList.add('hidden');
+      try { localStorage.setItem('foolos_s2_modal_seen', 'true'); } catch (e) {}
+    };
+
+    if (season2Btn) season2Btn.addEventListener('click', openSeason2Modal);
+    const inGameSeason2Btn = document.getElementById('btn-ingame-season2');
+    const inGameSeason2MobileBtn = document.getElementById('btn-ingame-season2-mobile');
+    if (inGameSeason2Btn) inGameSeason2Btn.addEventListener('click', openSeason2Modal);
+    if (inGameSeason2MobileBtn) inGameSeason2MobileBtn.addEventListener('click', openSeason2Modal);
+    if (closeSeason2Btn) closeSeason2Btn.addEventListener('click', hideSeason2Modal);
+    if (confirmSeason2Btn) confirmSeason2Btn.addEventListener('click', hideSeason2Modal);
+
+    if (copyS2CodeBtn) {
+      copyS2CodeBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText('S2WIN').then(() => {
+            showToast('نسخ الكود', 'تم نسخ كود الهدية S2WIN إلى الحافظة بنجاح! يمكنك استرداده من قسم الهدايا.', 'success');
+          }).catch(() => {
+            showToast('كود الهدية', 'كود الهدية هو: S2WIN', 'info');
+          });
+        } else {
+          showToast('كود الهدية', 'كود الهدية هو: S2WIN', 'info');
+        }
+      });
+    }
+
+    // Auto show Season 2 announcement on first visit
+    try {
+      if (!localStorage.getItem('foolos_s2_modal_seen')) {
+        setTimeout(() => {
+          if (season2Modal && !sessionStorage.getItem('s2_modal_popup_shown')) {
+            sessionStorage.setItem('s2_modal_popup_shown', 'true');
+            openSeason2Modal();
+          }
+        }, 900);
+      }
+    } catch (e) {}
+
     // 5. Tycoon Guide Modal (Dual-Mode: Detailed Master Guide & Compact Quick Guide)
     const menuGuideBtn = document.getElementById('btn-menu-guide');
     const inGameGuideBtn = document.getElementById('btn-ingame-guide');

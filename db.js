@@ -1471,65 +1471,25 @@ const AppDB = (() => {
         username: doc.id,
         pin: existingPin,
         isAdmin: isAdmin,
-        cash: 0,
-        bank: 0,
+        cash: 1500,
+        bank: 500,
         dirtyCash: 0,
-        netWorth: 0,
+        netWorth: 2000,
         xp: 0,
         jobId: 'worker',
         title: 'عامل مبتدئ',
         underworldRep: 0,
         heatLevel: 0,
-        businesses: {
-          coffee: { level: 0, price: 22, workers: 0 },
-          tech: { level: 0, price: 160, workers: 0 },
-          logistics: { level: 0, price: 1100, workers: 0 },
-          supermarket: { level: 0, price: 450, workers: 0 },
-          solar_factory: { level: 0, price: 3200, workers: 0 },
-          private_hospital: { level: 0, price: 11500, workers: 0 },
-          media_studio: { level: 0, price: 28000, workers: 0 },
-          private_bank: { level: 0, price: 95000, workers: 0 },
-          oil_refinery: { level: 0, price: 310000, workers: 0 },
-          space_tech: { level: 0, price: 1250000, workers: 0 }
-        },
-        assets: {
-          apartment: 0,
-          office: 0,
-          mansion: 0,
-          skyline_tower: 0,
-          luxury_resort: 0,
-          mega_yacht: 0,
-          private_island: 0,
-          orbital_station: 0
-        },
-        stocks: {
-          COMI: { shares: 0, avgPrice: 0 },
-          EAST: { shares: 0, avgPrice: 0 },
-          ETEL: { shares: 0, avgPrice: 0 },
-          FWRY: { shares: 0, avgPrice: 0 },
-          CASH: { shares: 0, avgPrice: 0 },
-          BITC: { shares: 0, avgPrice: 0 },
-          GOLD: { shares: 0, avgPrice: 0 },
-          AIX:  { shares: 0, avgPrice: 0 }
-        },
+        businesses: {},
+        assets: {},
+        stocks: {},
+        vehicles: {},
+        activeCarId: null,
+        smugglingVehicles: {},
+        activeSmugglingVehicleId: null,
         investments: [],
         activeLoan: null,
-        inventory: {
-          gold_pen: 0,
-          premium_lawyer: 0,
-          energy_drink: 0,
-          tax_shield: 0,
-          market_scanner: 0,
-          vip_casino_pass: 0,
-          radar_jammer: 0,
-          fake_passport: 0,
-          crypto_cleaner: 0,
-          diplomatic_bag: 0,
-          commissioner_wire: 0,
-          quantum_cpu: 0,
-          diamond_card: 0,
-          cronos_gear: 0
-        },
+        inventory: {},
         itemDurations: {},
         jailTimer: 0,
         afkManagerExpiresAt: 0,
@@ -1554,6 +1514,25 @@ const AppDB = (() => {
     if (batchOps > 0) {
       await batch.commit();
     }
+
+    // Reset Centralized Leaderboard to empty state
+    await firestoreDb.collection('globals').doc('leaderboard').set({
+      topPlayers: [],
+      updatedAt: Date.now(),
+      nextUpdateAt: Date.now() + (60 * 60 * 1000),
+      cycleMinutes: 60,
+      resetAt: Date.now(),
+      resetReason: 'admin_economy_reset'
+    }, { merge: false });
+
+    _leaderboardCache = [];
+    _leaderboardCacheTime = Date.now();
+    _cachedAdminPlayers = null;
+    try {
+      localStorage.removeItem('foolos_cached_leaderboard');
+    } catch (e) {}
+
+    console.log(`[DB] Economy reset completed for ${count} players. Central leaderboard cleared.`);
     return count;
   }
 
@@ -1581,6 +1560,31 @@ const AppDB = (() => {
     if (batchOps > 0) {
       await batch.commit();
     }
+
+    // Reset Centralized Leaderboard completely
+    await firestoreDb.collection('globals').doc('leaderboard').set({
+      topPlayers: [],
+      updatedAt: Date.now(),
+      nextUpdateAt: Date.now() + (60 * 60 * 1000),
+      cycleMinutes: 60,
+      resetAt: Date.now(),
+      resetReason: 'admin_full_wipe'
+    }, { merge: false });
+
+    // Reset total registered players count to 1 (the admin)
+    await firestoreDb.collection('globals').doc('stats').set({
+      totalPlayersRegistered: 1,
+      lastWipeTimestamp: Date.now()
+    }, { merge: true }).catch(() => {});
+
+    _leaderboardCache = [];
+    _leaderboardCacheTime = Date.now();
+    _cachedAdminPlayers = null;
+    try {
+      localStorage.removeItem('foolos_cached_leaderboard');
+    } catch (e) {}
+
+    console.log(`[DB] Full wipe completed. Deleted ${count} players. Leaderboard and counters cleared.`);
     return count;
   }
 
