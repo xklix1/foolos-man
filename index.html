@@ -1505,54 +1505,65 @@
 
         <!-- Player Quick Stats Profile -->
         <div class="space-y-4">
-          <div class="p-3 bg-slate-950/40 rounded-xl border border-slate-800/50">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-[10px] text-slate-400 block">المحفظة النشطة</span>
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <!-- Cloud Save / Sync Button In-game -->
-                <button id="btn-save-progress-cloud-ingame" title="حفظ التقدم في السحابة"
-                  class="text-[10px] text-yellow-400 hover:text-yellow-300 font-bold border border-yellow-500/40 px-2 py-0.5 rounded bg-yellow-500/20 hover:bg-yellow-500/30 transition flex items-center gap-1 cursor-pointer">
-                  <i class="fa-solid fa-cloud-arrow-up text-[10px]"></i>
-                  <span>حفظ السحابة</span>
-                </button>
-                <button id="btn-ingame-season2" title="إعلان انطلاق الموسم الثاني"
-                  class="text-[10px] text-amber-400 hover:text-amber-300 font-black border border-amber-500/40 px-2 py-0.5 rounded bg-amber-500/10 hover:bg-amber-500/20 transition flex items-center gap-1 shadow-sm">
-                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
-                  <span>الموسم الثاني</span>
-                </button>
-                <button id="btn-ingame-guide" title="دليل الملياردير"
-                  class="text-[10px] text-sky-400 hover:text-sky-300 font-bold border border-sky-500/30 px-2 py-0.5 rounded bg-sky-500/10 hover:bg-sky-500/20 transition flex items-center gap-1">
-                  <i class="fa-solid fa-book-open text-[10px]"></i>
-                  الدليل
-                </button>
-                <button id="btn-open-mailbox" title="صندوق البريد والرسائل"
-                  class="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold border border-emerald-500/30 px-2 py-0.5 rounded bg-emerald-500/10 hover:bg-emerald-500/20 transition flex items-center gap-1 relative">
-                  <i class="fa-solid fa-envelope text-[10px]"></i>
-                  <span>البريد</span>
-                  <span id="mailbox-unread-badge"
-                    class="hidden absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-rose-500 text-white rounded-full text-[8px] font-black flex items-center justify-center animate-bounce">0</span>
-                </button>
-                <!-- Return to Start Menu Button -->
-                <button id="btn-open-start-menu" title="الرجوع للقائمة الرئيسية"
-                  class="text-[10px] text-yellow-400 hover:text-yellow-300 font-bold border border-yellow-500/30 px-2 py-0.5 rounded bg-yellow-500/10 hover:bg-yellow-500/20 transition flex items-center gap-1">
-                  <i class="fa-solid fa-house text-[10px]"></i>
-                  القائمة
-                </button>
-                <button id="btn-user-logout" title="تسجيل الخروج"
-                  class="text-[10px] text-rose-400 hover:text-rose-300 font-bold border border-rose-500/30 px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 transition flex items-center gap-1">
-                  <i class="fa-solid fa-right-from-bracket text-[10px]"></i>
-                  <span>خروج</span>
-                </button>
-              </div>
-            </div>
-            <div class="flex items-center justify-between mb-2">
-              <span id="stat-username" class="text-sm font-bold text-white">تحميل...</span>
-              <span id="stat-title" class="text-xs font-bold text-yellow-400">تحميل...</span>
-            </div>
+          <div class="p-3.5 bg-slate-950/60 rounded-2xl border border-slate-800/80 shadow-xl space-y-3">
             
-            <!-- Language Switcher In-game Button -->
+            <!-- User Info Header -->
+            <div class="flex items-center justify-between pb-2.5 border-b border-slate-800/60">
+              <div class="flex items-center gap-2 min-w-0">
+                <div class="w-8 h-8 rounded-xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-400 shrink-0">
+                  <i class="fa-solid fa-user-tie text-sm"></i>
+                </div>
+                <div class="min-w-0">
+                  <span id="stat-username" class="text-sm font-black text-white block leading-tight truncate">تحميل...</span>
+                  <span id="stat-title" class="text-[11px] font-bold text-yellow-400 block truncate">تحميل...</span>
+                </div>
+              </div>
+              <button id="btn-ingame-season2" title="إعلان انطلاق الموسم الثاني"
+                class="text-[10px] text-amber-400 font-black border border-amber-500/40 px-2 py-0.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 transition flex items-center gap-1 shadow-sm shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                <span>الموسم 2</span>
+              </button>
+            </div>
+
+            <!-- Primary Cloud Save Button -->
+            <button id="btn-save-progress-cloud-ingame" title="حفظ التقدم في السحابة"
+              class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-yellow-500/25 to-amber-500/20 border border-yellow-500/40 hover:border-yellow-400 text-yellow-400 hover:text-yellow-300 transition-all font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/5 cursor-pointer active:scale-95">
+              <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+              <span>مزامنة وحفظ السحابة</span>
+            </button>
+
+            <!-- Quick Action Buttons 2-Column Grid -->
+            <div class="grid grid-cols-2 gap-1.5">
+              <button id="btn-open-mailbox" title="صندوق البريد والرسائل"
+                class="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-emerald-400 hover:text-emerald-300 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5 relative cursor-pointer">
+                <i class="fa-solid fa-envelope text-xs"></i>
+                <span>البريد</span>
+                <span id="mailbox-unread-badge"
+                  class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[9px] font-black flex items-center justify-center animate-bounce">0</span>
+              </button>
+              
+              <button id="btn-ingame-guide" title="دليل الملياردير"
+                class="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-sky-400 hover:text-sky-300 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-book-open text-xs"></i>
+                <span>الدليل</span>
+              </button>
+
+              <button id="btn-open-start-menu" title="الرجوع للقائمة الرئيسية"
+                class="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-amber-400 hover:text-amber-300 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-house text-xs"></i>
+                <span>القائمة</span>
+              </button>
+
+              <button id="btn-user-logout" title="تسجيل الخروج"
+                class="py-1.5 px-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                <span>خروج</span>
+              </button>
+            </div>
+
+            <!-- Language Switcher -->
             <button id="btn-lang-toggle-ingame" type="button"
-              class="w-full mt-1.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-[10px] font-bold text-slate-300 transition flex items-center justify-center gap-1.5">
+              class="w-full py-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 rounded-xl text-[11px] font-bold text-slate-300 transition flex items-center justify-center gap-1.5 cursor-pointer">
               <i class="fa-solid fa-language text-xs"></i>
               <span>Language: English</span>
             </button>
@@ -1688,43 +1699,42 @@
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-1.5 flex-wrap">
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 max-w-[65%] shrink-0">
             <!-- Cloud Save / Sync Button Mobile -->
             <button id="btn-save-progress-cloud-mobile" title="حفظ التقدم في السحابة"
-              class="px-2 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/40 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer">
+              class="px-2.5 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/40 rounded-lg text-[10px] font-black transition flex items-center gap-1 shrink-0 cursor-pointer">
               <i class="fa-solid fa-cloud-arrow-up text-[10px]"></i>
               <span>حفظ السحابة</span>
             </button>
             <button id="btn-ingame-season2-mobile" title="إعلان انطلاق الموسم الثاني"
-              class="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded-lg text-[10px] font-black transition flex items-center gap-1 shadow-sm">
+              class="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded-lg text-[10px] font-black transition flex items-center gap-1 shadow-sm shrink-0">
               <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
               <span>الموسم 2</span>
             </button>
-            <button id="btn-ingame-guide-mobile" title="دليل الملياردير"
-              class="px-2 py-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1">
-              <i class="fa-solid fa-book-open text-[10px]"></i>
-              <span>الدليل</span>
-            </button>
             <button id="btn-open-mailbox-mobile" title="صندوق البريد والرسائل"
-              class="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 relative">
+              class="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 relative shrink-0">
               <i class="fa-solid fa-envelope text-[10px]"></i>
               <span>البريد</span>
               <span id="mailbox-unread-badge-mobile"
                 class="hidden absolute -top-1 -right-1 w-3.5 h-3.5 bg-rose-500 text-white rounded-full text-[8px] font-black flex items-center justify-center animate-bounce">0</span>
             </button>
+            <button id="btn-ingame-guide-mobile" title="دليل الملياردير"
+              class="px-2 py-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0">
+              <i class="fa-solid fa-book-open text-[10px]"></i>
+              <span>الدليل</span>
+            </button>
             <button id="btn-open-start-menu-mobile" title="الرجوع للقائمة الرئيسية"
-              class="px-2 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1">
+              class="px-2 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0">
               <i class="fa-solid fa-house text-[10px]"></i>
               <span>القائمة</span>
             </button>
-            
             <button id="btn-lang-toggle-mobile" type="button"
-              class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-[10px] font-bold transition flex items-center gap-1">
+              class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0">
               <i class="fa-solid fa-language text-[10px]"></i>
               <span>EN</span>
             </button>
             <button id="btn-user-logout-mobile" title="تسجيل الخروج"
-              class="text-[10px] text-rose-400 hover:text-rose-300 font-bold border border-rose-500/30 px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition flex items-center gap-1">
+              class="text-[10px] text-rose-400 hover:text-rose-300 font-bold border border-rose-500/30 px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition flex items-center gap-1 shrink-0">
               <i class="fa-solid fa-right-from-bracket text-[10px]"></i>
               <span>خروج</span>
             </button>
