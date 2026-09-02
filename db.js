@@ -70,8 +70,12 @@ const AppDB = (() => {
         }
       }
 
-      // Ensure cloud remote version is set to 2.5.0 so outdated clients are forced to sync
-      firestoreDb.collection('globals').doc('config').set({ version: '2.5.0' }, { merge: true }).catch(err => {
+      // Non-blocking version verification (Write only if version is missing or changed)
+      firestoreDb.collection('globals').doc('config').get().then(doc => {
+        if (!doc.exists || doc.data().version !== '2.5.0') {
+          firestoreDb.collection('globals').doc('config').set({ version: '2.5.0' }, { merge: true }).catch(() => {});
+        }
+      }).catch(err => {
         console.warn('[DB] Config version ping notice:', err.message);
       });
 
@@ -439,6 +443,13 @@ const AppDB = (() => {
   let _saveTimeout = null;
   let _pendingSaveState = null;
   let _pendingSaveUser = null;
+  let _lastSavedStateHashes = {};
+  let _lastSaveTimestamps = {};
+
+  function _calcStateHash(s) {
+    if (!s) return '';
+    return `${s.cash}_${s.bank}_${s.dirtyCash}_${s.xp}_${s.netWorth}_${s.jailTimer}_${s.jobId}_${s.title}_${JSON.stringify(s.assets || {})}_${JSON.stringify(s.stocks || {})}`;
+  }
 
   async function flushPendingSave() {
     if (_saveTimeout) {
@@ -447,6 +458,18 @@ const AppDB = (() => {
     }
     if (_pendingSaveUser && _pendingSaveState && firebaseReady && firestoreDb) {
       const usernameToSave = _pendingSaveUser;
+
+      // Smart Delta Check: If state has not changed since last flush, skip redundant cloud write to conserve write quota
+      const currentHash = _calcStateHash(_pendingSaveState);
+      const lastHash = _lastSavedStateHashes[usernameToSave] || '';
+      const lastSaveTime = _lastSaveTimestamps[usernameToSave] || 0;
+      const now = Date.now();
+
+      if (currentHash === lastHash && (now - lastSaveTime < 120000)) {
+        _pendingSaveUser = null;
+        _pendingSaveState = null;
+        return;
+      }
 
       // Preserve PIN if missing from pending state so Firestore update rules succeed
       if (!_pendingSaveState.pin) {
@@ -478,6 +501,8 @@ const AppDB = (() => {
       try {
         const ref = firestoreDb.collection('players').doc(usernameToSave);
         await ref.set(stateToSave, { merge: true });
+        _lastSavedStateHashes[usernameToSave] = currentHash;
+        _lastSaveTimestamps[usernameToSave] = now;
         console.log('[DB] Flushed pending state successfully to Cloud');
         _checkAndUpdateCentralLeaderboard(usernameToSave, stateToSave).catch(() => {});
       } catch (err) {
@@ -523,7 +548,7 @@ const AppDB = (() => {
       _saveTimeout = setTimeout(async () => {
         _saveTimeout = null;
         await flushPendingSave();
-      }, 3000); // Fast 3s sync to ensure admin panel and cloud data are real-time
+      }, 12000); // 12s debounced sync to conserve Firebase Write Quota
     }
   }
 
@@ -602,8 +627,8 @@ const AppDB = (() => {
     _requireOnline();
 
     const now = Date.now();
-    // In-memory cache for 60 seconds to avoid unnecessary consecutive Firestore requests
-    if (!forceRefresh && _leaderboardCache && (now - _leaderboardCacheTime < 60000)) {
+    // In-memory cache for 300 seconds (5 minutes) to conserve Firestore read quota
+    if (!forceRefresh && _leaderboardCache && (now - _leaderboardCacheTime < 300000)) {
       return _leaderboardCache;
     }
 
