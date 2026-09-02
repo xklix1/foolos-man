@@ -112,7 +112,7 @@
         renderPlayersTable();
         updateFilterCounts();
         if (showToastNotice) {
-          const isCache = cachedPlayers.some(p => p.fromCache);
+          const isCache = cachedPlayers.length > 0 && cachedPlayers.every(p => p.fromCache);
           const cacheMsg = isCache ? ' (بيانات الكاش المحلي)' : ' (مباشر من السيرفر 🟢)';
           showToast('قائمة اللاعبين', `تم جلب بيانات ${cachedPlayers.length} لاعب بنجاح${cacheMsg}.`, 'success');
         }

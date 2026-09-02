@@ -1429,9 +1429,21 @@ const AppDB = (() => {
     let quotaExceeded = false;
 
     try {
-      snapshot = await firestoreDb.collection('players').get();
+      if (forceRefresh) {
+        // Force LIVE server query directly from Firestore Cloud Server
+        snapshot = await firestoreDb.collection('players').get({ source: 'server' });
+      } else {
+        try {
+          snapshot = await firestoreDb.collection('players').get({ source: 'server' });
+        } catch (srvErr) {
+          snapshot = await firestoreDb.collection('players').get();
+        }
+      }
+
       if (snapshot && snapshot.metadata && snapshot.metadata.fromCache) {
         fromCache = true;
+      } else {
+        fromCache = false;
       }
     } catch (err) {
       console.warn('[DB] adminGetAllPlayers remote fetch error (trying cache):', err.message);
@@ -1480,45 +1492,47 @@ const AppDB = (() => {
       });
     }
 
-    // Also scan localStorage for any players created or cached on this client that might not be synced yet
-    try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith('rasalmal_state_')) {
-          const u = k.replace('rasalmal_state_', '');
-          if (u && !playerUsernames.has(u.toLowerCase())) {
-            const rawCached = localStorage.getItem(k);
-            if (rawCached) {
-              const data = JSON.parse(rawCached);
-              playerUsernames.add(u.toLowerCase());
+    // Only scan localStorage fallback if server fetch failed or returned empty
+    if (fromCache || players.length === 0) {
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith('rasalmal_state_')) {
+            const u = k.replace('rasalmal_state_', '');
+            if (u && !playerUsernames.has(u.toLowerCase())) {
+              const rawCached = localStorage.getItem(k);
+              if (rawCached) {
+                const data = JSON.parse(rawCached);
+                playerUsernames.add(u.toLowerCase());
 
-              const cCash = Number(data.cash || 0);
-              const cBank = Number(data.bank || 0);
-              const cDirty = Number(data.dirtyCash || 0);
-              const cWorth = Math.max(Number(data.netWorth || 0), cCash + cBank + cDirty);
+                const cCash = Number(data.cash || 0);
+                const cBank = Number(data.bank || 0);
+                const cDirty = Number(data.dirtyCash || 0);
+                const cWorth = Math.max(Number(data.netWorth || 0), cCash + cBank + cDirty);
 
-              players.push({
-                username: u,
-                netWorth: cWorth,
-                cash: cCash,
-                bank: cBank,
-                title: data.title || 'عامل مبتدئ',
-                jobId: data.jobId || 'unemployed',
-                jailTimer: Number(data.jailTimer || 0),
-                isBanned: Boolean(data.isBanned),
-                isAdmin: Boolean(data.isAdmin),
-                createdAt: data.createdAt || 0,
-                lastSeen: data.lastSeen || 0,
-                lastActiveTimestamp: data.lastActiveTimestamp || data.lastSeen || 0,
-                fromCache: true,
-                quotaExceeded: quotaExceeded,
-                raw: data
-              });
+                players.push({
+                  username: u,
+                  netWorth: cWorth,
+                  cash: cCash,
+                  bank: cBank,
+                  title: data.title || 'عامل مبتدئ',
+                  jobId: data.jobId || 'unemployed',
+                  jailTimer: Number(data.jailTimer || 0),
+                  isBanned: Boolean(data.isBanned),
+                  isAdmin: Boolean(data.isAdmin),
+                  createdAt: data.createdAt || 0,
+                  lastSeen: data.lastSeen || 0,
+                  lastActiveTimestamp: data.lastActiveTimestamp || data.lastSeen || 0,
+                  fromCache: true,
+                  quotaExceeded: quotaExceeded,
+                  raw: data
+                });
+              }
             }
           }
         }
-      }
-    } catch (e) {}
+      } catch (e) {}
+    }
 
     // Sort by NetWorth descending
     players.sort((a, b) => b.netWorth - a.netWorth);
