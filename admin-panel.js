@@ -2415,6 +2415,84 @@
       });
     }
 
+    // AWARD S1 HONORS MODAL HANDLERS
+    const awardS1Btn = document.getElementById('btn-admin-award-s1-honors');
+    const s1Modal = document.getElementById('modal-admin-s1-honors');
+    const closeS1ModalBtn = document.getElementById('btn-close-s1-honors-modal');
+    const autoFillS1Btn = document.getElementById('btn-adm-s1-autofill');
+    const submitS1Btn = document.getElementById('btn-adm-s1-submit');
+
+    if (awardS1Btn && s1Modal) {
+      awardS1Btn.addEventListener('click', async () => {
+        s1Modal.classList.remove('hidden');
+        // Pre-fill existing honors if already stored
+        try {
+          const current = await AppDB.getSeasonHonors();
+          if (current) {
+            if (current.top1 && current.top1.username) document.getElementById('adm-s1-top1-input').value = current.top1.username;
+            if (current.top2 && current.top2.username) document.getElementById('adm-s1-top2-input').value = current.top2.username;
+            if (current.top3 && current.top3.username) document.getElementById('adm-s1-top3-input').value = current.top3.username;
+          }
+        } catch (e) {}
+      });
+    }
+
+    if (closeS1ModalBtn && s1Modal) {
+      closeS1ModalBtn.addEventListener('click', () => {
+        s1Modal.classList.add('hidden');
+      });
+    }
+
+    if (autoFillS1Btn) {
+      autoFillS1Btn.addEventListener('click', async () => {
+        try {
+          autoFillS1Btn.disabled = true;
+          autoFillS1Btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الجلب...';
+          const topPlayers = await AppDB.getLeaderboard();
+          if (topPlayers && topPlayers.length > 0) {
+            if (topPlayers[0]) document.getElementById('adm-s1-top1-input').value = topPlayers[0].username || '';
+            if (topPlayers[1]) document.getElementById('adm-s1-top2-input').value = topPlayers[1].username || '';
+            if (topPlayers[2]) document.getElementById('adm-s1-top3-input').value = topPlayers[2].username || '';
+            showToast('سحب المتصدرين', 'تم سحب أسماء التوب 3 الحاليين تلقائياً بنجاح.', 'success');
+          } else {
+            showToast('لا توجد بيانات', 'لم يتم العثور على متصدرين مسجلين في الليدربورد.', 'info');
+          }
+        } catch (err) {
+          showToast('خطأ', err.message, 'error');
+        } finally {
+          autoFillS1Btn.disabled = false;
+          autoFillS1Btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>سحب التوب 3 الحاليين تلقائياً</span>';
+        }
+      });
+    }
+
+    if (submitS1Btn) {
+      submitS1Btn.addEventListener('click', async () => {
+        const u1 = document.getElementById('adm-s1-top1-input').value.trim();
+        const u2 = document.getElementById('adm-s1-top2-input').value.trim();
+        const u3 = document.getElementById('adm-s1-top3-input').value.trim();
+
+        if (!u1) {
+          showToast('بيانات ناقصة', 'يرجى إدخال اسم لاعب المركز الأول (Top 1) على الأقل.', 'error');
+          return;
+        }
+
+        try {
+          submitS1Btn.disabled = true;
+          submitS1Btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الاعتماد والنشر...';
+          const res = await AppDB.adminAwardSeasonHonors(u1, u2, u3);
+          showToast('تم التكريم', 'تم اعتماد وتكريم أبطال الموسم الأول بنجاح! تم منح الأوسمة والألقاب ونشرها.', 'success');
+          logAdminAction(`اعتماد وتكريم أبطال الموسم الأول S1: الأول (${u1}) | الثاني (${u2 || 'لا يوجد'}) | الثالث (${u3 || 'لا يوجد'})`);
+          s1Modal.classList.add('hidden');
+        } catch (err) {
+          showToast('خطأ التكريم', err.message, 'error');
+        } finally {
+          submitS1Btn.disabled = false;
+          submitS1Btn.innerHTML = '<i class="fa-solid fa-check"></i> <span>اعتماد التكريم ونشره</span>';
+        }
+      });
+    }
+
     // Clear Wire Transfers logs
     const clearTransfersBtn = document.getElementById('btn-admin-clear-transfers-log');
     if (clearTransfersBtn) {

@@ -1509,6 +1509,22 @@
               </button>
             </div>
 
+<!-- Award Season 1 Honors -->
+            <div class="p-2.5 bg-slate-950 border border-cyan-500/40 rounded-lg flex flex-col justify-between space-y-2">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-cyan-300 block">🎖️ تكريم أبطال الموسم الأول S1</span>
+                  <span class="px-1.5 py-0.2 bg-cyan-500/15 text-cyan-400 rounded text-[9px] font-black border border-cyan-500/30">أوسمة S1</span>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1">يمنح التوب 1 إلى 3 أوسمة الموسم (ألماسي، ذهبي، برونزي) ولقب مستثمر S1، ويعمم أسماءهم على نافذة السيزون لجميع اللاعبين.</p>
+              </div>
+              <button id="btn-admin-award-s1-honors"
+                class="w-full py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded font-bold text-[10px] transition flex items-center justify-center gap-1.5 shadow-md shadow-cyan-900/20">
+                <i class="fa-solid fa-medal"></i>
+                <span>تفعيل وتكريم أبطال S1 تلقائياً</span>
+              </button>
+            </div>
+
             <!-- Clear Transfers -->
             <div class="p-2.5 bg-slate-950 border border-slate-800 rounded-lg flex flex-col justify-between space-y-2">
               <div>
@@ -2307,5 +2323,67 @@
       }
     });
   </script>
+  <!-- ==================== ADMIN S1 HONORS MODAL ==================== -->
+  <div id="modal-admin-s1-honors"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in text-right">
+    <div class="glass-panel w-full max-w-md rounded-2xl border-2 border-cyan-500/50 bg-slate-950 p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2 text-cyan-400 font-black text-sm">
+          <i class="fa-solid fa-medal text-lg"></i>
+          <span>اعتماد وتكريم أبطال الموسم الأول (S1)</span>
+        </div>
+        <button id="btn-close-s1-honors-modal" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-300">
+        حدد أسماء اللاعبين الفائزين بالترتيب لمنحهم الأوسمة والألقاب الشرفية تلقائياً في حساباتهم وإبرازهم في نافذة الموسم الثاني:
+      </p>
+
+      <div class="space-y-3 text-xs">
+        <!-- Top 1 -->
+        <div class="p-3 bg-cyan-950/30 border border-cyan-500/30 rounded-xl space-y-1">
+          <label class="font-black text-cyan-300 flex items-center gap-1.5">
+            <span>💎 المركز الأول (وسام مستثمر ألماسي):</span>
+          </label>
+          <input type="text" id="adm-s1-top1-input" placeholder="اسم لاعب التوب 1"
+            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white font-bold text-xs focus:border-cyan-400 outline-none" />
+        </div>
+
+        <!-- Top 2 -->
+        <div class="p-3 bg-amber-950/30 border border-yellow-500/30 rounded-xl space-y-1">
+          <label class="font-black text-yellow-300 flex items-center gap-1.5">
+            <span>🥇 المركز الثاني (وسام مستثمر ذهبي):</span>
+          </label>
+          <input type="text" id="adm-s1-top2-input" placeholder="اسم لاعب التوب 2"
+            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white font-bold text-xs focus:border-yellow-400 outline-none" />
+        </div>
+
+        <!-- Top 3 -->
+        <div class="p-3 bg-orange-950/30 border border-orange-500/30 rounded-xl space-y-1">
+          <label class="font-black text-amber-400 flex items-center gap-1.5">
+            <span>🥉 المركز الثالث (وسام مستثمر برونزي):</span>
+          </label>
+          <input type="text" id="adm-s1-top3-input" placeholder="اسم لاعب التوب 3"
+            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white font-bold text-xs focus:border-orange-400 outline-none" />
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 pt-2">
+        <button id="btn-adm-s1-autofill"
+          class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>سحب التوب 3 الحاليين تلقائياً</span>
+        </button>
+        <button id="btn-adm-s1-submit"
+          class="flex-1 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl font-black text-xs transition flex items-center justify-center gap-1 shadow-lg shadow-cyan-900/30">
+          <i class="fa-solid fa-check"></i>
+          <span>اعتماد التكريم ونشره</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

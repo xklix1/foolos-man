@@ -2781,6 +2781,102 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
+  //  SEASON HONORS & S1 CHAMPIONS AWARDS
+  // ─────────────────────────────────────────────
+  let _cachedSeasonHonors = null;
+
+  async function getSeasonHonors() {
+    if (_cachedSeasonHonors) return _cachedSeasonHonors;
+    try {
+      const local = localStorage.getItem('foolos_cached_s1_honors');
+      if (local) _cachedSeasonHonors = JSON.parse(local);
+    } catch (e) {}
+
+    if (firebaseReady && firestoreDb) {
+      try {
+        const doc = await firestoreDb.collection('globals').doc('seasonHonors').get();
+        if (doc.exists) {
+          _cachedSeasonHonors = doc.data();
+          try {
+            localStorage.setItem('foolos_cached_s1_honors', JSON.stringify(_cachedSeasonHonors));
+          } catch (e) {}
+          return _cachedSeasonHonors;
+        }
+      } catch (err) {
+        console.warn('[DB] Failed to fetch season honors:', err.message);
+      }
+    }
+    return _cachedSeasonHonors;
+  }
+
+  async function adminAwardSeasonHonors(top1Username, top2Username, top3Username) {
+    _requireOnline();
+    await _ensureAdminAuth();
+
+    const u1 = (top1Username || '').trim();
+    const u2 = (top2Username || '').trim();
+    const u3 = (top3Username || '').trim();
+
+    if (!u1) throw new Error('يرجى تحديد اسم اللاعب صاحب المركز الأول (Top 1) على الأقل.');
+
+    const batch = firestoreDb.batch();
+    const honorsData = {
+      season: 1,
+      awardedAt: Date.now(),
+      top1: { username: u1, title: '💎 مستثمر ألماسي | S1', badge: 'diamond' },
+      top2: { username: u2 || null, title: u2 ? '🥇 مستثمر ذهبي | S1' : null, badge: u2 ? 'gold' : null },
+      top3: { username: u3 || null, title: u3 ? '🥉 مستثمر برونزي | S1' : null, badge: u3 ? 'bronze' : null }
+    };
+
+    // Update Top 1 user doc
+    if (u1) {
+      const p1Ref = firestoreDb.collection('players').doc(u1);
+      batch.set(p1Ref, {
+        title: '💎 مستثمر ألماسي | S1',
+        s1Badge: 'diamond',
+        s1Honor: true,
+        lastModified: Date.now()
+      }, { merge: true });
+    }
+
+    // Update Top 2 user doc
+    if (u2) {
+      const p2Ref = firestoreDb.collection('players').doc(u2);
+      batch.set(p2Ref, {
+        title: '🥇 مستثمر ذهبي | S1',
+        s1Badge: 'gold',
+        s1Honor: true,
+        lastModified: Date.now()
+      }, { merge: true });
+    }
+
+    // Update Top 3 user doc
+    if (u3) {
+      const p3Ref = firestoreDb.collection('players').doc(u3);
+      batch.set(p3Ref, {
+        title: '🥉 مستثمر برونزي | S1',
+        s1Badge: 'bronze',
+        s1Honor: true,
+        lastModified: Date.now()
+      }, { merge: true });
+    }
+
+    // Save global season honors document
+    const honorsRef = firestoreDb.collection('globals').doc('seasonHonors');
+    batch.set(honorsRef, honorsData, { merge: true });
+
+    await batch.commit();
+
+    _cachedSeasonHonors = honorsData;
+    try {
+      localStorage.setItem('foolos_cached_s1_honors', JSON.stringify(honorsData));
+    } catch (e) {}
+
+    console.log('[DB] Season 1 honors successfully committed to players and global document');
+    return honorsData;
+  }
+
+  // ─────────────────────────────────────────────
   //  PUBLIC API
   // ─────────────────────────────────────────────
   return {
@@ -2798,6 +2894,8 @@ const AppDB = (() => {
     flushPendingSave,
     getLeaderboard,
     getLeaderboardMeta,
+    getSeasonHonors,
+    adminAwardSeasonHonors,
     executeWireTransfer,
 
     // Transfer Requests API

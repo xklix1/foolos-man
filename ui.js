@@ -816,9 +816,22 @@ const UIController = (() => {
     const confirmSeason2Btn = document.getElementById('btn-confirm-season2-action');
     const copyS2CodeBtn = document.getElementById('btn-copy-s2-code');
 
-    const openSeason2Modal = () => {
+    const openSeason2Modal = async () => {
       playMenuSound('modal_open');
-      if (season2Modal) season2Modal.classList.remove('hidden');
+      if (season2Modal) {
+        season2Modal.classList.remove('hidden');
+        try {
+          const honors = await AppDB.getSeasonHonors();
+          if (honors) {
+            const t1 = document.getElementById('s1-honors-name-top1');
+            const t2 = document.getElementById('s1-honors-name-top2');
+            const t3 = document.getElementById('s1-honors-name-top3');
+            if (t1 && honors.top1 && honors.top1.username) t1.textContent = honors.top1.username;
+            if (t2 && honors.top2 && honors.top2.username) t2.textContent = honors.top2.username;
+            if (t3 && honors.top3 && honors.top3.username) t3.textContent = honors.top3.username;
+          }
+        } catch (e) {}
+      }
     };
 
     const hideSeason2Modal = () => {
