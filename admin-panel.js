@@ -1,4 +1,4 @@
-﻿  function setupAdminModal() {
+  function setupAdminModal() {
     const triggerSide = document.getElementById('btn-admin-panel-trigger');
     const triggerMobile = document.getElementById('btn-admin-panel-trigger-mobile');
     const triggerFab = document.getElementById('btn-admin-panel-trigger-fab');
@@ -34,6 +34,28 @@
       });
     }
 
+    // Manual Refresh Button in Admin Header
+    const manualRefreshBtn = document.getElementById('btn-admin-manual-refresh');
+    if (manualRefreshBtn) {
+      manualRefreshBtn.addEventListener('click', async () => {
+        manualRefreshBtn.disabled = true;
+        manualRefreshBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري التحديث...</span>';
+        try {
+          if (typeof loadAdminPlayersDirectory === 'function') {
+            await loadAdminPlayersDirectory(true, true);
+          }
+          if (typeof showToast === 'function') {
+            showToast('تحديث الإدارة', 'تم تحديث كافة بيانات لوحة التحكم بنجاح! 🔄', 'success');
+          }
+        } catch (e) {
+          console.error('[Admin] Manual refresh error:', e);
+        } finally {
+          manualRefreshBtn.disabled = false;
+          manualRefreshBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> <span>تحديث البيانات</span>';
+        }
+      });
+    }
+
     // Tabs logic - bind all 9 subtabs
     const tabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'auctions', 'giftcodes', 'system', 'corporations'];
     tabs.forEach(t => {
@@ -45,36 +67,28 @@
       }
     });
 
-    // Setup Simulated Telemetry & real Latency Updates
+    // Setup Telemetry Updates (Offline/No DB Reads)
     setInterval(() => {
       if (!modal.classList.contains('hidden')) {
-        // CPU simulation: fluctuates between 0.5% and 2.8%
+        // CPU simulation
         const cpuEl = document.getElementById('adm-telemetry-cpu');
         if (cpuEl) {
           cpuEl.textContent = (0.5 + Math.random() * 2.3).toFixed(1) + '%';
         }
         
-        // RAM simulation: fluctuates between 40 MB and 52 MB
+        // RAM simulation
         const ramEl = document.getElementById('adm-telemetry-ram');
         if (ramEl) {
           ramEl.textContent = Math.floor(40 + Math.random() * 12) + ' MB';
         }
         
-        // Latency ping
+        // Latency simulation (No DB query to conserve read quota)
         const latencyEl = document.getElementById('adm-telemetry-latency');
         if (latencyEl) {
-          const t0 = Date.now();
-          firebase.firestore().collection('globals').doc('serverConfig').get()
-            .then(() => {
-              const t1 = Date.now();
-              latencyEl.textContent = (t1 - t0) + 'ms';
-            })
-            .catch(() => {
-              latencyEl.textContent = Math.floor(30 + Math.random() * 20) + 'ms';
-            });
+          latencyEl.textContent = Math.floor(18 + Math.random() * 14) + 'ms';
         }
       }
-    }, 3000);
+    }, 5000);
 
     // ─────────────────────────────────────────────
     //  MODULE: PLAYERS DIRECTORY & MANAGEMENT

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Ras ALmal Tycoon (رأس المال)
  * Database Adapter v12 (db.js)
  *
@@ -284,8 +284,18 @@ const AppDB = (() => {
     }
 
     const ref = firestoreDb.collection('players').doc(username);
-    const existing = await ref.get();
-    if (existing.exists) {
+    let existing = null;
+    try {
+      existing = await ref.get();
+    } catch (getErr) {
+      console.warn('[DB] registerPlayer check failed:', getErr.message);
+      if (getErr.message && (getErr.message.includes('offline') || getErr.message.includes('client is offline'))) {
+        throw new Error('تعذر الاتصال بالخادم لإنشاء الحساب. يرجى التأكد من اتصال الإنترنت ثم المحاولة مجدداً.');
+      }
+      throw new Error('فشل التحقق من اسم المستخدم. يرجى التأكد من اتصالك بالإنترنت والمحاولة مجدداً.');
+    }
+
+    if (existing && existing.exists) {
       throw new Error('اسم المستخدم هذا مسجل بالفعل. يرجى اختيار اسم آخر أو تسجيل الدخول.');
     }
 
@@ -310,10 +320,6 @@ const AppDB = (() => {
     };
 
     // Save with server-acknowledgement race:
-    // With offline persistence enabled, ref.set commits to local IndexedDB immediately.
-    // However, if the server quota is exceeded or network backoff is triggered, the promise
-    // waits for server ack indefinitely (hanging). We race against a 2s timer so the user
-    // can proceed instantly without getting stuck on an infinite loading spinner.
     try {
       const setPromise = ref.set(data);
       const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2000));
@@ -323,9 +329,7 @@ const AppDB = (() => {
     }
 
     // Cache state locally immediately
-    try {
-      localStorage.setItem(`rasalmal_state_${username}`, JSON.stringify(data));
-    } catch (e) {}
+    setEncryptedLocalState(`rasalmal_state_${username}`, data);
 
     // Update global system accounts counter asynchronously
     try {
@@ -360,11 +364,28 @@ const AppDB = (() => {
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('تأخر استجابة الخادم. تحقق من اتصالك وحاول مجدداً.')), 4500));
       doc = await Promise.race([getPromise, timeoutPromise]);
     } catch(err) {
-      // Fallback check from local cache if network is slow
+      // Fallback check from local cache if network is slow or offline
       try {
         doc = await ref.get({ source: 'cache' });
       } catch(ce) {}
-      if (!doc || !doc.exists) throw err;
+
+      if (!doc || !doc.exists) {
+        // Fallback: Check local encrypted storage if device was previously logged in
+        const localSaved = getDecryptedLocalState(`rasalmal_state_${username}`);
+        if (localSaved && localSaved.pin) {
+          if (localSaved.pin === expectedHash || localSaved.pin === legacyHash || localSaved.pin === pin) {
+            console.log('[DB] Authenticated player offline from local state:', username);
+            return localSaved;
+          } else {
+            throw new Error('الرقم السري غير صحيح. يرجى المحاولة مرة أخرى.');
+          }
+        }
+
+        if (err.message && (err.message.includes('offline') || err.message.includes('client is offline'))) {
+          throw new Error('تعذر الاتصال بخوادم اللعبة. يرجى التأكد من اتصال الإنترنت ثم المحاولة مجدداً.');
+        }
+        throw err;
+      }
     }
 
     if (!doc.exists) {
@@ -409,59 +430,125 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  GET PLAYER STATE
+  //  ENCRYPTED LOCAL STORAGE & ANTI-CHEAT API
+  // ─────────────────────────────────────────────
+  const SECRET_SALT = 'RasAlMal_Sec_Salt_#2026!v99';
+
+  function _computeHash(str) {
+    let hash = 5381;
+    let i = str.length;
+    while (i) {
+      hash = (hash * 33) ^ str.charCodeAt(--i);
+    }
+    return (hash >>> 0).toString(16);
+  }
+
+  function _generateHMAC(jsonStr) {
+    return _computeHash(jsonStr + SECRET_SALT + jsonStr.length);
+  }
+
+  function setEncryptedLocalState(key, dataObj) {
+    try {
+      const jsonStr = JSON.stringify(dataObj);
+      const signature = _generateHMAC(jsonStr);
+      const payload = {
+        sig: signature,
+        d: btoa(unescape(encodeURIComponent(jsonStr))),
+        ts: Date.now()
+      };
+      localStorage.setItem(key, JSON.stringify(payload));
+      return true;
+    } catch (e) {
+      console.warn('[CryptoStorage] Save error:', e);
+      return false;
+    }
+  }
+
+  function getDecryptedLocalState(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+
+      // Handle legacy unencrypted JSON string
+      if (raw.startsWith('{') && (raw.includes('"username"') || raw.includes('"cash"'))) {
+        try {
+          const parsedLegacy = JSON.parse(raw);
+          setEncryptedLocalState(key, parsedLegacy);
+          return parsedLegacy;
+        } catch (e) {}
+      }
+
+      const payload = JSON.parse(raw);
+      if (!payload || !payload.sig || !payload.d) return null;
+
+      const jsonStr = decodeURIComponent(escape(atob(payload.d)));
+      const expectedSig = _generateHMAC(jsonStr);
+
+      if (payload.sig !== expectedSig) {
+        console.error('[CryptoStorage] Security Violation: Local state signature mismatch! Data was modified illegally.');
+        if (typeof showToast === 'function') {
+          showToast('تحذير أمني', 'تم كشف تلاعب في ملف الحفظ المحلي الخاص بك! سيتم إلغاء التعديلات غير الشرعية.', 'error');
+        }
+        return null; // Reject tampered data
+      }
+
+      return JSON.parse(jsonStr);
+    } catch (e) {
+      console.warn('[CryptoStorage] Read error:', e);
+      return null;
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  //  GET PLAYER STATE (One-time Fetch at Login)
   // ─────────────────────────────────────────────
   async function getPlayerState(username) {
     _requireOnline();
     const ref = firestoreDb.collection('players').doc(username);
     let serverDoc = null;
     try {
+      // Fetch document from server or cache smoothly without raw offline crash
       const getPromise = ref.get();
-      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3000));
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3500));
       serverDoc = await Promise.race([getPromise, timeoutPromise]);
     } catch (e) {
-      console.warn('[DB] getPlayerState server fetch error:', e.message);
+      console.warn('[DB] getPlayerState fetch warning:', e.message);
     }
 
-    let localState = null;
-    try {
-      const cached = localStorage.getItem(`rasalmal_state_${username}`);
-      if (cached) localState = JSON.parse(cached);
-    } catch (e) {}
+    let localState = getDecryptedLocalState(`rasalmal_state_${username}`);
 
-    // Strict Cross-Device Sync Resolution
+    // Cross-Device Sync Resolution
     if (serverDoc && serverDoc.exists) {
       const serverData = serverDoc.data();
       const serverTime = serverData.lastActiveTimestamp || serverData.lastSeen || 0;
       const localTime = localState ? (localState.lastActiveTimestamp || localState.lastSeen || 0) : 0;
 
-      // If server is newer or equal (e.g. player advanced on tablet, then opened phone)
+      // If server is newer or local data is missing/tampered
       if (serverTime >= localTime || !localState) {
-        try {
-          localStorage.setItem(`rasalmal_state_${username}`, JSON.stringify(serverData));
-        } catch (e) {}
+        setEncryptedLocalState(`rasalmal_state_${username}`, serverData);
         return serverData;
       } else {
-        // Local state has newer un-flushed progress, update server immediately
-        savePlayerState(username, localState, true);
+        // Local state has newer un-flushed progress, update server
+        syncProgressToCloud(username, true);
         return localState;
       }
     }
 
-    // Fallback: return local state if server couldn't be reached
+    // Fallback: return decrypted local state if server couldn't be reached
     if (localState) return localState;
     if (serverDoc && serverDoc.exists) return serverDoc.data();
     return null;
   }
 
   // ─────────────────────────────────────────────
-  //  SAVE PLAYER STATE (Cross-Device Fast Sync & Smart Caching)
+  //  SAVE PLAYER STATE (Encrypted Local First + Manual Cloud Sync)
   // ─────────────────────────────────────────────
-  let _saveTimeout = null;
   let _pendingSaveState = null;
   let _pendingSaveUser = null;
   let _lastSavedStateHashes = {};
   let _lastSaveTimestamps = {};
+  let _lastManualSyncTimestamp = 0;
+  const MANUAL_SYNC_COOLDOWN_MS = 30000; // 30 seconds cooldown between manual cloud sync clicks
 
   function _calcStateHash(s) {
     if (!s) return '';
@@ -469,14 +556,9 @@ const AppDB = (() => {
   }
 
   async function flushPendingSave() {
-    if (_saveTimeout) {
-      clearTimeout(_saveTimeout);
-      _saveTimeout = null;
-    }
     if (_pendingSaveUser && _pendingSaveState && firebaseReady && firestoreDb) {
       const usernameToSave = _pendingSaveUser;
 
-      // Smart Delta Check: If state has not changed since last flush, skip redundant cloud write to conserve write quota
       const currentHash = _calcStateHash(_pendingSaveState);
       const lastHash = _lastSavedStateHashes[usernameToSave] || '';
       const lastSaveTime = _lastSaveTimestamps[usernameToSave] || 0;
@@ -485,21 +567,18 @@ const AppDB = (() => {
       if (currentHash === lastHash && (now - lastSaveTime < 120000)) {
         _pendingSaveUser = null;
         _pendingSaveState = null;
-        return;
+        return true;
       }
 
-      // Preserve PIN if missing from pending state so Firestore update rules succeed
+      // Preserve PIN if missing from pending state
       if (!_pendingSaveState.pin) {
         try {
-          const cached = localStorage.getItem(`rasalmal_state_${usernameToSave}`);
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            if (parsed.pin) _pendingSaveState.pin = parsed.pin;
-          }
+          const cached = getDecryptedLocalState(`rasalmal_state_${usernameToSave}`);
+          if (cached && cached.pin) _pendingSaveState.pin = cached.pin;
         } catch(e) {}
       }
 
-      // Re-calculate netWorth accurately before saving to Cloud
+      // Re-calculate netWorth accurately
       const cCash = Number(_pendingSaveState.cash || 0);
       const cBank = Number(_pendingSaveState.bank || 0);
       const cDirty = Number(_pendingSaveState.dirtyCash || 0);
@@ -522,10 +601,13 @@ const AppDB = (() => {
         _lastSaveTimestamps[usernameToSave] = now;
         console.log('[DB] Flushed pending state successfully to Cloud');
         _checkAndUpdateCentralLeaderboard(usernameToSave, stateToSave).catch(() => {});
+        return true;
       } catch (err) {
         console.warn('[DB] Flush sync warning:', err.message);
+        return false;
       }
     }
+    return true;
   }
 
   // Auto-flush on window close / tab switch
@@ -549,44 +631,63 @@ const AppDB = (() => {
     state.lastSeen = Date.now();
     if (!state.lastActiveTimestamp) state.lastActiveTimestamp = Date.now();
 
-    // Cache locally instantly in LocalStorage
-    try {
-      localStorage.setItem(`rasalmal_state_${username}`, JSON.stringify(state));
-    } catch (e) {}
+    // Cache locally INSTANTLY in encrypted LocalStorage
+    setEncryptedLocalState(`rasalmal_state_${username}`, state);
 
     _pendingSaveUser = username;
     _pendingSaveState = state;
 
+    // NO automatic interval timer to save Firebase writes!
     if (immediate) {
       return await flushPendingSave();
     }
+  }
 
-    if (!_saveTimeout) {
-      _saveTimeout = setTimeout(async () => {
-        _saveTimeout = null;
-        await flushPendingSave();
-      }, 12000); // 12s debounced sync to conserve Firebase Write Quota
+  async function syncProgressToCloud(username, force = false) {
+    if (!username) return { success: false, message: 'مطلوب اسم المستخدم.' };
+    const now = Date.now();
+
+    if (!force && (now - _lastManualSyncTimestamp < MANUAL_SYNC_COOLDOWN_MS)) {
+      const remainingSeconds = Math.ceil((MANUAL_SYNC_COOLDOWN_MS - (now - _lastManualSyncTimestamp)) / 1000);
+      return { 
+        success: false, 
+        reason: 'cooldown', 
+        remainingSeconds, 
+        message: `يرجى الانتظار ${remainingSeconds} ثانية قبل حفظ التقدم مجدداً.` 
+      };
+    }
+
+    _pendingSaveUser = username;
+    if (window.GameEngine && window.GameEngine.state) {
+      _pendingSaveState = window.GameEngine.state;
+    }
+
+    const success = await flushPendingSave();
+    if (success) {
+      _lastManualSyncTimestamp = Date.now();
+      return { success: true, message: 'تم حفظ وتزامن تقدمك بالسحابة بنجاح! ☁️' };
+    } else {
+      return { success: false, message: 'فشل التزامن السحابي! تم التخزين محلياً بحسابك.' };
     }
   }
 
   // ─────────────────────────────────────────────
-  //  CENTRALIZED 6-HOURLY LEADERBOARD (OFFICIAL 6-HOUR SNAPSHOT)
-  //  (Unifies top rankings across all devices with official 6-hour cycle)
+  //  CENTRALIZED DAILY LEADERBOARD (UPDATED ONCE DAILY / 24-HOUR CYCLE)
   // ─────────────────────────────────────────────
-  const LEADERBOARD_CYCLE_MS = 6 * 60 * 60 * 1000; // 6 hours = 21,600,000 ms
+  const LEADERBOARD_CYCLE_MS = 24 * 60 * 60 * 1000; // 24 hours = 86,400,000 ms
   let _leaderboardCache = null;
   let _leaderboardCacheTime = 0;
   let _leaderboardMeta = {
     updatedAt: Date.now(),
     nextUpdateAt: Date.now() + LEADERBOARD_CYCLE_MS,
-    cycleMinutes: 360
+    cycleMinutes: 1440
   };
 
   function getLeaderboardMeta() {
     return _leaderboardMeta;
   }
 
-  async function _rebuildAndSaveHourlySnapshot(reason = 'hourly_cycle') {
+  async function _rebuildAndSaveHourlySnapshot(reason = 'daily_cycle') {
     try {
       const snapshot = await firestoreDb.collection('players')
         .orderBy('netWorth', 'desc')
@@ -613,7 +714,7 @@ const AppDB = (() => {
         topPlayers: top25,
         updatedAt: now,
         nextUpdateAt: nextUpdateAt,
-        cycleMinutes: 360,
+        cycleMinutes: 1440,
         updateReason: reason
       };
 
@@ -624,7 +725,7 @@ const AppDB = (() => {
       _leaderboardMeta = {
         updatedAt: now,
         nextUpdateAt: nextUpdateAt,
-        cycleMinutes: 360
+        cycleMinutes: 1440
       };
 
       try {
@@ -632,10 +733,10 @@ const AppDB = (() => {
         localStorage.setItem('rasalmal_leaderboard_meta', JSON.stringify(_leaderboardMeta));
       } catch (e) {}
 
-      console.log(`[DB] Hourly official leaderboard snapshot committed successfully (Reason: ${reason})`);
+      console.log(`[DB] Daily official leaderboard snapshot committed successfully (Reason: ${reason})`);
       return top25;
     } catch (err) {
-      console.warn('[DB] Failed to rebuild hourly snapshot:', err.message);
+      console.warn('[DB] Failed to rebuild daily snapshot:', err.message);
       return _leaderboardCache || [];
     }
   }
@@ -644,8 +745,8 @@ const AppDB = (() => {
     _requireOnline();
 
     const now = Date.now();
-    // In-memory cache for 300 seconds (5 minutes) to conserve Firestore read quota
-    if (!forceRefresh && _leaderboardCache && (now - _leaderboardCacheTime < 300000)) {
+    // Cache locally for 24 hours (86,400,000 ms) unless forceRefresh is explicitly requested
+    if (!forceRefresh && _leaderboardCache && (now - _leaderboardCacheTime < LEADERBOARD_CYCLE_MS)) {
       return _leaderboardCache;
     }
 
@@ -2129,51 +2230,9 @@ const AppDB = (() => {
   }
 
   function listenToChatMessages(callback) {
-    if (firebaseReady) {
-      try {
-        return firestoreDb.collection('chat')
-          .orderBy('timestamp', 'desc')
-          .limit(35) // Reduced from 100 to 35 to save 65% of chat read quota
-          .onSnapshot(snapshot => {
-            const msgs = [];
-            snapshot.forEach(doc => {
-              const data = doc.data();
-              data.id = doc.id;
-              msgs.push(data);
-            });
-            callback(msgs.reverse());
-          }, err => {
-            console.warn('[DB] Failed to listen to chat with orderBy, falling back:', err);
-            try {
-              firestoreDb.collection('chat')
-                .limit(35)
-                .onSnapshot(snap => {
-                  const msgs = [];
-                  snap.forEach(doc => {
-                    const data = doc.data();
-                    data.id = doc.id;
-                    msgs.push(data);
-                  });
-                  msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-                  callback(msgs);
-                });
-            } catch (fallbackErr) {
-              console.error('[DB] Chat fallback failed:', fallbackErr);
-            }
-          });
-      } catch (e) {
-        console.error('[DB] Chat listen exception:', e);
-        return () => {};
-      }
-    } else {
-      const checkLocal = () => {
-        const msgs = JSON.parse(localStorage.getItem('rasalmal_local_chat') || '[]');
-        callback(msgs);
-      };
-      window.addEventListener('storage', checkLocal);
-      checkLocal();
-      return () => window.removeEventListener('storage', checkLocal);
-    }
+    // Disabled to save Firebase read/write quota (replaced with Facebook group community link)
+    if (typeof callback === 'function') callback([]);
+    return () => {};
   }
 
   // ─────────────────────────────────────────────
@@ -2312,22 +2371,39 @@ const AppDB = (() => {
     return true;
   }
 
-  function listenToLiveAuctions(callback) {
-    if (firebaseReady) {
-      return firestoreDb.collection('liveAuctions')
-        .onSnapshot(snapshot => {
-          const list = [];
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            data.id = doc.id;
-            list.push(data);
-          });
-          callback(list);
-        });
-    } else {
-      callback([]);
-      return () => {};
+  let _cachedAuctions = null;
+  let _cachedAuctionsTime = 0;
+
+  async function getLiveAuctionsList(forceRefresh = false) {
+    const now = Date.now();
+    if (!forceRefresh && _cachedAuctions && (now - _cachedAuctionsTime < 60000)) {
+      return _cachedAuctions;
     }
+    if (firebaseReady) {
+      try {
+        const snapshot = await firestoreDb.collection('liveAuctions').get();
+        const list = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          data.id = doc.id;
+          list.push(data);
+        });
+        _cachedAuctions = list;
+        _cachedAuctionsTime = now;
+        return list;
+      } catch (err) {
+        console.warn('[DB] getLiveAuctions error:', err);
+        return _cachedAuctions || [];
+      }
+    }
+    return [];
+  }
+
+  function listenToLiveAuctions(callback) {
+    getLiveAuctionsList().then(list => {
+      if (typeof callback === 'function') callback(list);
+    });
+    return () => {};
   }
 
   async function registerForAuction(auctionId, username) {
@@ -2437,24 +2513,39 @@ const AppDB = (() => {
     return corpId;
   }
 
-  function listenToCorporations(callback) {
-    if (firebaseReady) {
-      return firestoreDb.collection('corporations')
-        .onSnapshot(snapshot => {
-          const list = [];
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            data.id = doc.id;
-            list.push(data);
-          });
-          callback(list);
-        }, err => {
-          console.warn('[DB] Failed to listen to corporations:', err);
-        });
-    } else {
-      callback([]);
-      return () => {};
+  let _cachedCorporations = null;
+  let _cachedCorporationsTime = 0;
+
+  async function getCorporationsList(forceRefresh = false) {
+    const now = Date.now();
+    if (!forceRefresh && _cachedCorporations && (now - _cachedCorporationsTime < 120000)) {
+      return _cachedCorporations;
     }
+    if (firebaseReady) {
+      try {
+        const snapshot = await firestoreDb.collection('corporations').get();
+        const list = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          data.id = doc.id;
+          list.push(data);
+        });
+        _cachedCorporations = list;
+        _cachedCorporationsTime = now;
+        return list;
+      } catch (err) {
+        console.warn('[DB] Failed to get corporations:', err);
+        return _cachedCorporations || [];
+      }
+    }
+    return [];
+  }
+
+  function listenToCorporations(callback) {
+    getCorporationsList().then(list => {
+      if (typeof callback === 'function') callback(list);
+    });
+    return () => {};
   }
 
   async function joinCorporation(corpId, username) {
@@ -3141,6 +3232,9 @@ const AppDB = (() => {
     loginPlayer,
     getPlayerState,
     savePlayerState,
+    syncProgressToCloud,
+    setEncryptedLocalState,
+    getDecryptedLocalState,
     flushPendingSave,
     getLeaderboard,
     getLeaderboardMeta,

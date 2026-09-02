@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Ras ALmal Tycoon (رأس المال)
  * UI Controller (ui.js)
  * Manages rendering, tab views, SVG charts, and interactive casino controls
@@ -5144,11 +5144,7 @@ const UIController = (() => {
       }, (err) => console.error("ServerConfig listen err: ", err));
     activeListeners.push(unsubServerConfig);
 
-    // 2. V2 Public Chat Listener
-    const unsubChat = AppDB.listenToChatMessages(msgs => {
-      renderChatMessages(msgs);
-    });
-    if (typeof unsubChat === 'function') activeListeners.push(unsubChat);
+    // Public Chat listener removed to conserve Firebase read/write quota (replaced with Facebook Community)
 
     // 3. V2 Mailbox Listener
     const unsubMail = AppDB.listenToMailbox(username, mails => {
@@ -5203,61 +5199,35 @@ const UIController = (() => {
       }, (err) => console.error("Airdrop listen err: ", err));
     activeListeners.push(unsubAirdrop);
 
-    // 5. Market Event Realtime Listener
-    let lastMarketEventTime = Date.now();
-    const unsubMarket = db.collection('globals').doc('market_event')
-      .onSnapshot((doc) => {
-        if (!doc.exists) return;
-        const data = doc.data();
-        if (!data || !data.timestamp) return;
-        if (data.timestamp > lastMarketEventTime) {
-          lastMarketEventTime = data.timestamp;
+    // 5. Market Event (Single Fetch on load to conserve read quota)
+    db.collection('globals').doc('market_event').get().then((doc) => {
+      if (!doc.exists) return;
+      const data = doc.data();
+      if (!data || !data.timestamp) return;
 
-          if (data.resetBaseline) {
-            Object.keys(GameEngine.STOCKS).forEach(sym => {
-              const base = GameEngine.STOCKS[sym].basePrice;
-              GameEngine.stockPrices[sym] = [base];
-            });
-          } else if (data.directPrice && data.targetSymbol) {
-            const sym = data.targetSymbol;
-            if (GameEngine.stockPrices[sym]) {
-              GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1] = data.directPrice;
-            }
-          } else if (data.targets) {
-            Object.keys(data.targets).forEach(sym => {
-              if (GameEngine.stockPrices[sym]) {
-                const mult = data.targets[sym];
-                const history = GameEngine.stockPrices[sym];
-                const lastP = history[history.length - 1];
-                const floor = GameEngine.STOCKS[sym]?.floor || 15;
-                const newP = Math.max(floor, Math.floor(lastP * mult));
-                history[history.length - 1] = newP;
-              }
-            });
-          }
-
-          const isUp = !data.title.includes('📉') && !data.title.includes('هبوط') && !data.title.includes('خسارة') && !data.title.includes('تصحيح') && !data.title.includes('انهيار') && !data.title.includes('أزمة') && !data.title.includes('تراجع');
-          const toastType = isUp ? 'success' : 'error';
-          showToast(isUp ? '📈 تحديث البورصة' : '📉 تقلب البورصة', data.desc || data.title, toastType);
-
-          const ticker = document.getElementById('stock-market-news-ticker');
-          if (ticker) {
-            ticker.textContent = data.title;
-            ticker.className = `font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`;
-          }
-
-          renderAdminStockPrices();
-          renderAll();
+      if (data.resetBaseline) {
+        Object.keys(GameEngine.STOCKS).forEach(sym => {
+          const base = GameEngine.STOCKS[sym].basePrice;
+          GameEngine.stockPrices[sym] = [base];
+        });
+      } else if (data.directPrice && data.targetSymbol) {
+        const sym = data.targetSymbol;
+        if (GameEngine.stockPrices[sym]) {
+          GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1] = data.directPrice;
         }
-      }, (err) => console.error("Market event listen err: ", err));
-    activeListeners.push(unsubMarket);
+      }
+
+      const ticker = document.getElementById('stock-market-news-ticker');
+      if (ticker && data.title) {
+        ticker.textContent = data.title;
+      }
+    }).catch(err => console.warn('[UI] Market event fetch warning:', err));
 
     // 3. User document listener for ban & external edits
     let lastAdminActionTimestamp = Date.now();
     const unsubUser = db.collection('players').doc(username)
       .onSnapshot((doc) => {
         if (!doc.exists) return;
-        // Ignore local pending writes to prevent circular sync loops
         if (doc.metadata && doc.metadata.hasPendingWrites) return;
 
         const data = doc.data();
@@ -5273,7 +5243,6 @@ const UIController = (() => {
         if (data.adminModifiedTimestamp && data.adminModifiedTimestamp > lastAdminActionTimestamp) {
           lastAdminActionTimestamp = data.adminModifiedTimestamp;
 
-          // Comprehensive state synchronization from admin action
           GameEngine.state.cash = typeof data.cash === 'number' ? data.cash : 0;
           GameEngine.state.bank = typeof data.bank === 'number' ? data.bank : 0;
           GameEngine.state.dirtyCash = typeof data.dirtyCash === 'number' ? data.dirtyCash : 0;
@@ -5281,19 +5250,7 @@ const UIController = (() => {
           GameEngine.state.xp = typeof data.xp === 'number' ? data.xp : 0;
           GameEngine.state.jobId = data.jobId || 'worker';
           GameEngine.state.title = data.title || 'عامل مبتدئ';
-          GameEngine.state.underworldRep = typeof data.underworldRep === 'number' ? data.underworldRep : 0;
-          GameEngine.state.heatLevel = typeof data.heatLevel === 'number' ? data.heatLevel : 0;
-          GameEngine.state.jailTimer = typeof data.jailTimer === 'number' ? data.jailTimer : 0;
-          GameEngine.state.afkManagerExpiresAt = typeof data.afkManagerExpiresAt === 'number' ? data.afkManagerExpiresAt : 0;
-          GameEngine.state.activeLoan = data.activeLoan || null;
-          GameEngine.state.investments = Array.isArray(data.investments) ? JSON.parse(JSON.stringify(data.investments)) : [];
-          GameEngine.state.businesses = data.businesses ? JSON.parse(JSON.stringify(data.businesses)) : {};
-          GameEngine.state.assets = data.assets ? JSON.parse(JSON.stringify(data.assets)) : {};
-          GameEngine.state.stocks = data.stocks ? JSON.parse(JSON.stringify(data.stocks)) : {};
-          GameEngine.state.inventory = data.inventory ? JSON.parse(JSON.stringify(data.inventory)) : {};
-          GameEngine.state.itemDurations = data.itemDurations ? JSON.parse(JSON.stringify(data.itemDurations)) : {};
 
-          // Recalculate net worth based on new clean state
           GameEngine.calculateTotalNetWorth();
 
           try {
@@ -5305,35 +5262,6 @@ const UIController = (() => {
         }
       }, (err) => console.error("User doc listen err: ", err));
     activeListeners.push(unsubUser);
-
-    // 3.5. Realtime Incoming Transfers Listener
-    const initialTransferTime = Date.now();
-    const processedTransferIds = new Set();
-    const unsubIncomingTransfers = db.collection('transfers')
-      .where('recipient', '==', username)
-      .onSnapshot((snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === 'added') {
-            const data = change.doc.data();
-            const transferId = change.doc.id;
-            if (data.timestamp > initialTransferTime && !processedTransferIds.has(transferId)) {
-              processedTransferIds.add(transferId);
-              const amount = Number(data.amount);
-              if (!isNaN(amount) && amount > 0) {
-                if (GameEngine.state) {
-                  GameEngine.state.cash = (GameEngine.state.cash || 0) + amount;
-                  GameEngine.state.netWorth = (GameEngine.state.netWorth || 0) + amount;
-                  GameEngine.forceSaveState();
-                }
-                showToast('حوالة مالية واردة', `استلمت مبلغ +${amount.toLocaleString()} EGP من اللاعب "${data.sender}".`, 'success');
-                playMenuSound('success');
-                renderAll();
-              }
-            }
-          }
-        });
-      }, (err) => console.error("Transfers listen err: ", err));
-    activeListeners.push(unsubIncomingTransfers);
   }
 
   function applyCompleteZeroStateToGameEngine(username) {
@@ -11573,6 +11501,34 @@ const UIController = (() => {
     }
   }
 
+  async function manualSaveProgressAction() {
+    const btn = document.getElementById('btn-save-progress-cloud');
+    if (!GameEngine.activeUsername) {
+      showToast('تنبيه', 'يرجى تسجيل الدخول أولاً لحفظ التقدم.', 'warning');
+      return;
+    }
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i><span>جاري الحفظ...</span>';
+    }
+    try {
+      const res = await AppDB.syncProgressToCloud(GameEngine.activeUsername);
+      if (res.success) {
+        showToast('تم التزامن السحابي ☁️', res.message, 'success');
+        playMenuSound('success');
+      } else {
+        showToast('تنبيه الحفظ ⏳', res.message, 'warning');
+      }
+    } catch (e) {
+      showToast('خطأ في الحفظ', e.message || 'تعذر الاتصال بالسيرفر.', 'error');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up text-sm"></i><span>حفظ التقدم</span>';
+      }
+    }
+  }
+
   return {
     init,
     switchTab,
@@ -11609,9 +11565,20 @@ const UIController = (() => {
     buySmugglingVehicleAction,
     startSmugglingJobAction,
     toggleAdminSidebarAction,
-    toggleServerBoostAction
+    toggleServerBoostAction,
+    manualSaveProgressAction
   };
 })();
+
+// Manual Cloud Sync button listener
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const saveBtn = document.getElementById('btn-save-progress-cloud');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', () => window.UIController && window.UIController.manualSaveProgressAction());
+    }
+  });
+}
 
 // Export globally
 window.UIController = UIController;
