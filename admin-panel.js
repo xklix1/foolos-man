@@ -1,4 +1,4 @@
-  function setupAdminModal() {
+﻿  function setupAdminModal() {
     const triggerSide = document.getElementById('btn-admin-panel-trigger');
     const triggerMobile = document.getElementById('btn-admin-panel-trigger-mobile');
     const triggerFab = document.getElementById('btn-admin-panel-trigger-fab');
@@ -614,7 +614,7 @@
           GameEngine.state.stocks = JSON.parse(JSON.stringify(selectedPlayerState.stocks || {}));
           GameEngine.state.netWorth = worth;
           try {
-            localStorage.setItem(`foolos_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+            localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
           } catch (e) { }
           renderAll();
         }
@@ -771,7 +771,7 @@
           const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(selectedPlayerState, null, 2));
           const downloadAnchor = document.createElement('a');
           downloadAnchor.setAttribute("href", dataStr);
-          downloadAnchor.setAttribute("download", `foolos_player_${selectedPlayer}_backup.json`);
+          downloadAnchor.setAttribute("download", `rasalmal_player_${selectedPlayer}_backup.json`);
           document.body.appendChild(downloadAnchor);
           downloadAnchor.click();
           downloadAnchor.remove();
@@ -913,7 +913,7 @@
             GameEngine.state.bank = newBank;
             GameEngine.state.netWorth = worth;
             try {
-              localStorage.setItem(`foolos_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+              localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
             } catch (e) { }
             renderAll();
           }
@@ -1004,7 +1004,7 @@
             GameEngine.state.businesses[bizKey] = { level, workers, price };
             GameEngine.state.netWorth = worth;
             try {
-              localStorage.setItem(`foolos_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+              localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
             } catch (e) { }
             renderAll();
           }

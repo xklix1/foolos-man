@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Ras ALmal Tycoon (رأس المال)
  * Database Adapter v12 (db.js)
  *
@@ -20,9 +20,9 @@ const AppDB = (() => {
 
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyC7KRj3-t_03HLMzJ10miVhdKWCpabPQB4",
-    authDomain: "foolos-man.firebaseapp.com",
-    projectId: "foolos-man",
-    storageBucket: "foolos-man.firebasestorage.app",
+    authDomain: "ras-almal.firebaseapp.com",
+    projectId: "ras-almal",
+    storageBucket: "ras-almal.firebasestorage.app",
     messagingSenderId: "426833341092",
     appId: "1:426833341092:web:141a51c22d8b1afc621431",
     measurementId: "G-54ZC388NW1"
@@ -109,13 +109,13 @@ const AppDB = (() => {
   function _attachConnectivityListeners() {
     window.addEventListener('online', () => {
       console.log('[DB] Network restored.');
-      window.dispatchEvent(new CustomEvent('foolos:online'));
+      window.dispatchEvent(new CustomEvent('rasalmal:online'));
     });
 
     window.addEventListener('offline', () => {
       console.log('[DB] Network lost.');
       firebaseReady = false;
-      window.dispatchEvent(new CustomEvent('foolos:offline'));
+      window.dispatchEvent(new CustomEvent('rasalmal:offline'));
     });
   }
 
@@ -129,8 +129,8 @@ const AppDB = (() => {
       return; // Native offline mode
     }
     if (!firebaseReady || !firestoreDb) {
-      const activeUser = localStorage.getItem('foolos_active_session_user');
-      if (activeUser && localStorage.getItem(`foolos_state_${activeUser}`)) {
+      const activeUser = localStorage.getItem('rasalmal_active_session_user');
+      if (activeUser && localStorage.getItem(`rasalmal_state_${activeUser}`)) {
         return; // Allow local offline session
       }
       throw new Error('لا يوجد اتصال بالخوادم. تحقق من اتصالك بالإنترنت.');
@@ -324,7 +324,7 @@ const AppDB = (() => {
 
     // Cache state locally immediately
     try {
-      localStorage.setItem(`foolos_state_${username}`, JSON.stringify(data));
+      localStorage.setItem(`rasalmal_state_${username}`, JSON.stringify(data));
     } catch (e) {}
 
     // Update global system accounts counter asynchronously
@@ -390,7 +390,7 @@ const AppDB = (() => {
     // If admin: sign into Firebase Auth using derived email + entered PIN for write permissions
     if (data.isAdmin && firebaseAuth) {
       try {
-        const adminEmail = `${username}@foolos-man.com`;
+        const adminEmail = `${username}@ras-almal.com`;
         await firebaseAuth.signInWithEmailAndPassword(adminEmail, pin);
         console.log('[DB] Admin authenticated via Firebase Auth successfully.');
       } catch (e) {
@@ -425,7 +425,7 @@ const AppDB = (() => {
 
     let localState = null;
     try {
-      const cached = localStorage.getItem(`foolos_state_${username}`);
+      const cached = localStorage.getItem(`rasalmal_state_${username}`);
       if (cached) localState = JSON.parse(cached);
     } catch (e) {}
 
@@ -438,7 +438,7 @@ const AppDB = (() => {
       // If server is newer or equal (e.g. player advanced on tablet, then opened phone)
       if (serverTime >= localTime || !localState) {
         try {
-          localStorage.setItem(`foolos_state_${username}`, JSON.stringify(serverData));
+          localStorage.setItem(`rasalmal_state_${username}`, JSON.stringify(serverData));
         } catch (e) {}
         return serverData;
       } else {
@@ -491,7 +491,7 @@ const AppDB = (() => {
       // Preserve PIN if missing from pending state so Firestore update rules succeed
       if (!_pendingSaveState.pin) {
         try {
-          const cached = localStorage.getItem(`foolos_state_${usernameToSave}`);
+          const cached = localStorage.getItem(`rasalmal_state_${usernameToSave}`);
           if (cached) {
             const parsed = JSON.parse(cached);
             if (parsed.pin) _pendingSaveState.pin = parsed.pin;
@@ -551,7 +551,7 @@ const AppDB = (() => {
 
     // Cache locally instantly in LocalStorage
     try {
-      localStorage.setItem(`foolos_state_${username}`, JSON.stringify(state));
+      localStorage.setItem(`rasalmal_state_${username}`, JSON.stringify(state));
     } catch (e) {}
 
     _pendingSaveUser = username;
@@ -628,8 +628,8 @@ const AppDB = (() => {
       };
 
       try {
-        localStorage.setItem('foolos_cached_leaderboard', JSON.stringify(top25));
-        localStorage.setItem('foolos_leaderboard_meta', JSON.stringify(_leaderboardMeta));
+        localStorage.setItem('rasalmal_cached_leaderboard', JSON.stringify(top25));
+        localStorage.setItem('rasalmal_leaderboard_meta', JSON.stringify(_leaderboardMeta));
       } catch (e) {}
 
       console.log(`[DB] Hourly official leaderboard snapshot committed successfully (Reason: ${reason})`);
@@ -673,8 +673,8 @@ const AppDB = (() => {
           _leaderboardCache = data.topPlayers;
           _leaderboardCacheTime = now;
           try {
-            localStorage.setItem('foolos_cached_leaderboard', JSON.stringify(data.topPlayers));
-            localStorage.setItem('foolos_leaderboard_meta', JSON.stringify(_leaderboardMeta));
+            localStorage.setItem('rasalmal_cached_leaderboard', JSON.stringify(data.topPlayers));
+            localStorage.setItem('rasalmal_leaderboard_meta', JSON.stringify(_leaderboardMeta));
           } catch (e) {}
           return data.topPlayers;
         }
@@ -694,7 +694,7 @@ const AppDB = (() => {
       return _leaderboardCache;
     }
     try {
-      const savedLocal = localStorage.getItem('foolos_cached_leaderboard');
+      const savedLocal = localStorage.getItem('rasalmal_cached_leaderboard');
       if (savedLocal) {
         const parsed = JSON.parse(savedLocal);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -1329,8 +1329,8 @@ const AppDB = (() => {
     try {
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && k.startsWith('foolos_state_')) {
-          const u = k.replace('foolos_state_', '');
+        if (k && k.startsWith('rasalmal_state_')) {
+          const u = k.replace('rasalmal_state_', '');
           if (u && !playerUsernames.has(u.toLowerCase())) {
             const rawCached = localStorage.getItem(k);
             if (rawCached) {
@@ -1687,7 +1687,7 @@ const AppDB = (() => {
     _leaderboardCacheTime = Date.now();
     _cachedAdminPlayers = null;
     try {
-      localStorage.removeItem('foolos_cached_leaderboard');
+      localStorage.removeItem('rasalmal_cached_leaderboard');
     } catch (e) {}
 
     console.log(`[DB] Economy reset completed for ${count} players. Central leaderboard cleared.`);
@@ -1739,7 +1739,7 @@ const AppDB = (() => {
     _leaderboardCacheTime = Date.now();
     _cachedAdminPlayers = null;
     try {
-      localStorage.removeItem('foolos_cached_leaderboard');
+      localStorage.removeItem('rasalmal_cached_leaderboard');
     } catch (e) {}
 
     console.log(`[DB] Full wipe completed. Deleted ${count} players. Leaderboard and counters cleared.`);
@@ -1904,8 +1904,8 @@ const AppDB = (() => {
     try {
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && k.startsWith('foolos_state_')) {
-          const u = k.replace('foolos_state_', '');
+        if (k && k.startsWith('rasalmal_state_')) {
+          const u = k.replace('rasalmal_state_', '');
           if (u && !playerIds.has(u.toLowerCase())) {
             playerIds.add(u.toLowerCase());
             scannedPlayers++;
@@ -2017,7 +2017,7 @@ const AppDB = (() => {
         console.error('[DB] Failed to create daily backup in Firebase:', err);
       }
     } else {
-      const key = `foolos_backup_${username}_${dateStr}`;
+      const key = `rasalmal_backup_${username}_${dateStr}`;
       if (!localStorage.getItem(key)) {
         const backupData = JSON.parse(JSON.stringify(state));
         backupData.backupDate = dateStr;
@@ -2044,7 +2044,7 @@ const AppDB = (() => {
       }
     } else {
       const dates = [];
-      const prefix = `foolos_backup_${username}_`;
+      const prefix = `rasalmal_backup_${username}_`;
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith(prefix)) {
@@ -2066,7 +2066,7 @@ const AppDB = (() => {
         return null;
       }
     } else {
-      const key = `foolos_backup_${username}_${dateStr}`;
+      const key = `rasalmal_backup_${username}_${dateStr}`;
       const data = localStorage.getItem(key);
       return data ? JSON.parse(data) : null;
     }
@@ -2084,7 +2084,7 @@ const AppDB = (() => {
       await firestoreDb.collection('players').doc(username).set(cleanState);
       console.log(`[DB] Restored ${username} from backup state.`);
     } else {
-      localStorage.setItem(`foolos_state_${username}`, JSON.stringify(cleanState));
+      localStorage.setItem(`rasalmal_state_${username}`, JSON.stringify(cleanState));
     }
     return true;
   }
@@ -2120,10 +2120,10 @@ const AppDB = (() => {
         throw new Error('فشل إرسال الرسالة إلى الخادم: ' + (err.message || err));
       }
     } else {
-      const localChat = JSON.parse(localStorage.getItem('foolos_local_chat') || '[]');
+      const localChat = JSON.parse(localStorage.getItem('rasalmal_local_chat') || '[]');
       localChat.push(msgData);
       if (localChat.length > 100) localChat.shift();
-      localStorage.setItem('foolos_local_chat', JSON.stringify(localChat));
+      localStorage.setItem('rasalmal_local_chat', JSON.stringify(localChat));
       window.dispatchEvent(new Event('storage'));
     }
   }
@@ -2167,7 +2167,7 @@ const AppDB = (() => {
       }
     } else {
       const checkLocal = () => {
-        const msgs = JSON.parse(localStorage.getItem('foolos_local_chat') || '[]');
+        const msgs = JSON.parse(localStorage.getItem('rasalmal_local_chat') || '[]');
         callback(msgs);
       };
       window.addEventListener('storage', checkLocal);
@@ -2193,10 +2193,10 @@ const AppDB = (() => {
     if (firebaseReady) {
       await firestoreDb.collection('mailbox').add(mailData);
     } else {
-      const localMail = JSON.parse(localStorage.getItem('foolos_local_mail') || '[]');
+      const localMail = JSON.parse(localStorage.getItem('rasalmal_local_mail') || '[]');
       mailData.id = 'mail_' + Math.random().toString(36).substr(2, 9);
       localMail.push(mailData);
-      localStorage.setItem('foolos_local_mail', JSON.stringify(localMail));
+      localStorage.setItem('rasalmal_local_mail', JSON.stringify(localMail));
       window.dispatchEvent(new Event('storage'));
     }
     return true;
@@ -2219,7 +2219,7 @@ const AppDB = (() => {
         });
     } else {
       const checkLocal = () => {
-        const localMail = JSON.parse(localStorage.getItem('foolos_local_mail') || '[]');
+        const localMail = JSON.parse(localStorage.getItem('rasalmal_local_mail') || '[]');
         const userMail = localMail.filter(m => m.recipient === username);
         userMail.sort((a, b) => b.timestamp - a.timestamp);
         callback(userMail);
@@ -2249,7 +2249,7 @@ const AppDB = (() => {
         });
     } else {
       const checkLocal = () => {
-        const localMail = JSON.parse(localStorage.getItem('foolos_local_mail') || '[]');
+        const localMail = JSON.parse(localStorage.getItem('rasalmal_local_mail') || '[]');
         const dms = localMail.filter(m => m.type === 'dm' && 
           ((m.sender === userA && m.recipient === userB) || (m.sender === userB && m.recipient === userA))
         );
@@ -2266,11 +2266,11 @@ const AppDB = (() => {
     if (firebaseReady) {
       await firestoreDb.collection('mailbox').doc(mailId).update({ status });
     } else {
-      const localMail = JSON.parse(localStorage.getItem('foolos_local_mail') || '[]');
+      const localMail = JSON.parse(localStorage.getItem('rasalmal_local_mail') || '[]');
       const mail = localMail.find(m => m.id === mailId);
       if (mail) {
         mail.status = status;
-        localStorage.setItem('foolos_local_mail', JSON.stringify(localMail));
+        localStorage.setItem('rasalmal_local_mail', JSON.stringify(localMail));
         window.dispatchEvent(new Event('storage'));
       }
     }
@@ -2280,9 +2280,9 @@ const AppDB = (() => {
     if (firebaseReady) {
       await firestoreDb.collection('mailbox').doc(mailId).delete();
     } else {
-      let localMail = JSON.parse(localStorage.getItem('foolos_local_mail') || '[]');
+      let localMail = JSON.parse(localStorage.getItem('rasalmal_local_mail') || '[]');
       localMail = localMail.filter(m => m.id !== mailId);
-      localStorage.setItem('foolos_local_mail', JSON.stringify(localMail));
+      localStorage.setItem('rasalmal_local_mail', JSON.stringify(localMail));
       window.dispatchEvent(new Event('storage'));
     }
   }
@@ -2946,7 +2946,7 @@ const AppDB = (() => {
   async function getSeasonHonors() {
     if (_cachedSeasonHonors) return _cachedSeasonHonors;
     try {
-      const local = localStorage.getItem('foolos_cached_s1_honors');
+      const local = localStorage.getItem('rasalmal_cached_s1_honors');
       if (local) _cachedSeasonHonors = JSON.parse(local);
     } catch (e) {}
 
@@ -2956,7 +2956,7 @@ const AppDB = (() => {
         if (doc.exists) {
           _cachedSeasonHonors = doc.data();
           try {
-            localStorage.setItem('foolos_cached_s1_honors', JSON.stringify(_cachedSeasonHonors));
+            localStorage.setItem('rasalmal_cached_s1_honors', JSON.stringify(_cachedSeasonHonors));
           } catch (e) {}
           return _cachedSeasonHonors;
         }
@@ -3034,7 +3034,7 @@ const AppDB = (() => {
 
     _cachedSeasonHonors = honorsData;
     try {
-      localStorage.setItem('foolos_cached_s1_honors', JSON.stringify(honorsData));
+      localStorage.setItem('rasalmal_cached_s1_honors', JSON.stringify(honorsData));
     } catch (e) {}
 
     console.log('[DB] Season 1 honors successfully committed to players and global document');

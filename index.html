@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
 
 <head>
@@ -4306,12 +4306,12 @@
       }
 
       // 5. Offline listener — show overlay if connection drops mid-game
-      window.addEventListener('foolos:offline', () => {
+      window.addEventListener('rasalmal:offline', () => {
         offlineOverlay.classList.remove('hidden');
         offlineOverlay.classList.add('flex');
         document.getElementById('btn-retry-connect').onclick = () => window.location.reload();
       });
-      window.addEventListener('foolos:online', () => {
+      window.addEventListener('rasalmal:online', () => {
         offlineOverlay.classList.add('hidden');
         offlineOverlay.classList.remove('flex');
       });
@@ -4342,8 +4342,8 @@
 
       update();
       setInterval(update, 3000);
-      window.addEventListener('foolos:online', update);
-      window.addEventListener('foolos:offline', update);
+      window.addEventListener('rasalmal:online', update);
+      window.addEventListener('rasalmal:offline', update);
     }
 
     // Ready

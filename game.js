@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Ras ALmal Tycoon (رأس المال)
  * Simulation Engine (game.js)
  * Manages game state, ticks, algorithms, and business logic

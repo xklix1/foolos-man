@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Ras ALmal Tycoon (رأس المال)
  * UI Controller (ui.js)
  * Manages rendering, tab views, SVG charts, and interactive casino controls
@@ -330,9 +330,9 @@ const UIController = (() => {
 
   // Sound FX & Audio System State
   let audioCtx = null;
-  let sfxEnabled = localStorage.getItem('foolos_sfx_enabled') !== 'false';
-  let musicEnabled = localStorage.getItem('foolos_music_enabled') === 'true';
-  let glowEnabled = localStorage.getItem('foolos_glow_enabled') !== 'false';
+  let sfxEnabled = localStorage.getItem('rasalmal_sfx_enabled') !== 'false';
+  let musicEnabled = localStorage.getItem('rasalmal_music_enabled') === 'true';
+  let glowEnabled = localStorage.getItem('rasalmal_glow_enabled') !== 'false';
   let coinFlipStreak = 0;
   let ambientOscillator = null;
   let ambientGainNode = null;
@@ -690,7 +690,7 @@ const UIController = (() => {
 
   function setAmbientMusicState(enabled) {
     musicEnabled = enabled;
-    localStorage.setItem('foolos_music_enabled', enabled ? 'true' : 'false');
+    localStorage.setItem('rasalmal_music_enabled', enabled ? 'true' : 'false');
     try {
       if (!enabled) {
         if (ambientOscillator) {
@@ -762,7 +762,7 @@ const UIController = (() => {
       continueBtn.addEventListener('click', async () => {
         const isMaint = await checkMaintenanceMode();
         if (isMaint) return;
-        const savedUser = localStorage.getItem('foolos_active_session_user');
+        const savedUser = localStorage.getItem('rasalmal_active_session_user');
         if (savedUser) {
           playMenuSound('start');
           await launchGameSession(savedUser);
@@ -861,7 +861,7 @@ const UIController = (() => {
     const hideSeason2Modal = () => {
       playMenuSound('modal_close');
       if (season2Modal) season2Modal.classList.add('hidden');
-      try { localStorage.setItem('foolos_s2_modal_seen', 'true'); } catch (e) {}
+      try { localStorage.setItem('rasalmal_s2_modal_seen', 'true'); } catch (e) {}
     };
 
     if (season2Btn) season2Btn.addEventListener('click', openSeason2Modal);
@@ -889,7 +889,7 @@ const UIController = (() => {
 
     // Auto show Season 2 announcement on first visit
     try {
-      if (!localStorage.getItem('foolos_s2_modal_seen')) {
+      if (!localStorage.getItem('rasalmal_s2_modal_seen')) {
         setTimeout(() => {
           if (season2Modal && !sessionStorage.getItem('s2_modal_popup_shown')) {
             sessionStorage.setItem('s2_modal_popup_shown', 'true');
@@ -950,7 +950,7 @@ const UIController = (() => {
       guidePlayBtn.addEventListener('click', () => {
         playMenuSound('click');
         startGuideModal.classList.add('hidden');
-        const savedUser = localStorage.getItem('foolos_active_session_user');
+        const savedUser = localStorage.getItem('rasalmal_active_session_user');
         if (savedUser) {
           launchGameSession(savedUser);
         } else {
@@ -995,10 +995,10 @@ const UIController = (() => {
       saveSettingsBtn.addEventListener('click', () => {
         playMenuSound('click');
         sfxEnabled = sfxToggle.checked;
-        localStorage.setItem('foolos_sfx_enabled', sfxEnabled ? 'true' : 'false');
+        localStorage.setItem('rasalmal_sfx_enabled', sfxEnabled ? 'true' : 'false');
         setAmbientMusicState(musicToggle.checked);
         glowEnabled = glowToggle.checked;
-        localStorage.setItem('foolos_glow_enabled', glowEnabled ? 'true' : 'false');
+        localStorage.setItem('rasalmal_glow_enabled', glowEnabled ? 'true' : 'false');
         updateSoundIconState();
         startSettingsModal.classList.add('hidden');
         showToast('تم حفظ الإعدادات', 'تم تحديث تفضيلات الصوت والمؤثرات بنجاح.', 'success');
@@ -1014,7 +1014,7 @@ const UIController = (() => {
     if (menuSoundBtn) {
       menuSoundBtn.addEventListener('click', () => {
         sfxEnabled = !sfxEnabled;
-        localStorage.setItem('foolos_sfx_enabled', sfxEnabled ? 'true' : 'false');
+        localStorage.setItem('rasalmal_sfx_enabled', sfxEnabled ? 'true' : 'false');
         if (sfxToggle) sfxToggle.checked = sfxEnabled;
         updateSoundIconState();
         if (sfxEnabled) playMenuSound('click');
@@ -1124,7 +1124,7 @@ const UIController = (() => {
           if (mainLayout && !mainLayout.classList.contains('hidden')) {
             returnToStartMenu();
           } else if (startMenu && !startMenu.classList.contains('hidden')) {
-            const savedUser = localStorage.getItem('foolos_active_session_user');
+            const savedUser = localStorage.getItem('rasalmal_active_session_user');
             if (savedUser && GameEngine.state) {
               launchGameSession(savedUser);
             }
@@ -1171,7 +1171,7 @@ const UIController = (() => {
   }
 
   async function refreshStartMenuCard() {
-    const savedUser = localStorage.getItem('foolos_active_session_user');
+    const savedUser = localStorage.getItem('rasalmal_active_session_user');
     const playerCard = document.getElementById('start-menu-player-card');
     const continueBtn = document.getElementById('btn-menu-continue');
 
@@ -1241,7 +1241,7 @@ const UIController = (() => {
       }
     } catch (err) {
       showToast('خطأ في التحميل', err.message, 'error');
-      localStorage.removeItem('foolos_active_session_user');
+      localStorage.removeItem('rasalmal_active_session_user');
       refreshStartMenuCard();
     }
   }
@@ -1427,12 +1427,12 @@ const UIController = (() => {
           if (currentAuthMode === 'register') {
             await AppDB.registerPlayer(usernameInput, pinInput);
             playerState = await GameEngine.loadUserSession(usernameInput);
-            localStorage.setItem('foolos_active_session_user', usernameInput);
+            localStorage.setItem('rasalmal_active_session_user', usernameInput);
             showToast('نجاح', 'تم تسجيل حسابك الجديد بنجاح! مرحباً بك.', 'success');
           } else {
             const loggedUser = await AppDB.loginPlayer(usernameInput, pinInput);
             playerState = await GameEngine.loadUserSession(usernameInput, loggedUser);
-            localStorage.setItem('foolos_active_session_user', usernameInput);
+            localStorage.setItem('rasalmal_active_session_user', usernameInput);
             showToast('أهلاً بك', `تم تحميل بيانات الحساب: ${usernameInput}`, 'success');
           }
 
@@ -2867,7 +2867,7 @@ const UIController = (() => {
     if (soundToggleBtn) {
       soundToggleBtn.addEventListener('click', () => {
         casinoSoundEnabled = !casinoSoundEnabled;
-        localStorage.setItem('foolos_casino_sound', casinoSoundEnabled);
+        localStorage.setItem('rasalmal_casino_sound', casinoSoundEnabled);
         soundToggleBtn.innerHTML = casinoSoundEnabled
           ? '<i class="fa-solid fa-volume-high"></i><span>المؤثرات الصوتية: مفعلة</span>'
           : '<i class="fa-solid fa-volume-xmark text-slate-500"></i><span class="text-slate-500">المؤثرات الصوتية: مكتومة</span>';
@@ -5297,7 +5297,7 @@ const UIController = (() => {
           GameEngine.calculateTotalNetWorth();
 
           try {
-            localStorage.setItem(`foolos_state_${GameEngine.activeUsername}`, JSON.stringify(GameEngine.state));
+            localStorage.setItem(`rasalmal_state_${GameEngine.activeUsername}`, JSON.stringify(GameEngine.state));
           } catch (e) { }
 
           showToast('إشعار النظام', 'تم تحديث أو تصفير بيانات حسابك من قبل الإدارة.', 'info');
@@ -5405,7 +5405,7 @@ const UIController = (() => {
 
     if (username) {
       try {
-        localStorage.setItem(`foolos_state_${username}`, JSON.stringify(GameEngine.state));
+        localStorage.setItem(`rasalmal_state_${username}`, JSON.stringify(GameEngine.state));
       } catch (e) { }
     }
   }
@@ -5448,7 +5448,7 @@ const UIController = (() => {
   function performLogout(showToastMsg = true) {
     activeListeners.forEach(unsub => unsub());
     activeListeners = [];
-    localStorage.removeItem('foolos_active_session_user');
+    localStorage.removeItem('rasalmal_active_session_user');
     GameEngine.logoutUser();
     document.getElementById('auth-screen').classList.add('hidden');
     const mainLayout = document.getElementById('main-game-layout');
@@ -6078,7 +6078,7 @@ const UIController = (() => {
           GameEngine.state.stocks = JSON.parse(JSON.stringify(selectedPlayerState.stocks || {}));
           GameEngine.state.netWorth = worth;
           try {
-            localStorage.setItem(`foolos_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+            localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
           } catch (e) { }
           renderAll();
         }
@@ -6235,7 +6235,7 @@ const UIController = (() => {
           const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(selectedPlayerState, null, 2));
           const downloadAnchor = document.createElement('a');
           downloadAnchor.setAttribute("href", dataStr);
-          downloadAnchor.setAttribute("download", `foolos_player_${selectedPlayer}_backup.json`);
+          downloadAnchor.setAttribute("download", `rasalmal_player_${selectedPlayer}_backup.json`);
           document.body.appendChild(downloadAnchor);
           downloadAnchor.click();
           downloadAnchor.remove();
@@ -6377,7 +6377,7 @@ const UIController = (() => {
             GameEngine.state.bank = newBank;
             GameEngine.state.netWorth = worth;
             try {
-              localStorage.setItem(`foolos_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+              localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
             } catch (e) { }
             renderAll();
           }
@@ -6468,7 +6468,7 @@ const UIController = (() => {
             GameEngine.state.businesses[bizKey] = { level, workers, price };
             GameEngine.state.netWorth = worth;
             try {
-              localStorage.setItem(`foolos_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+              localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
             } catch (e) { }
             renderAll();
           }
