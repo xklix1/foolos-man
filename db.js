@@ -16,7 +16,7 @@ const AppDB = (() => {
   // ─────────────────────────────────────────────
   //  CONSTANTS
   // ─────────────────────────────────────────────
-  const CLIENT_VERSION = 'V2';
+  const CLIENT_VERSION = '2.5.0';
 
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyC7KRj3-t_03HLMzJ10miVhdKWCpabPQB4",
@@ -70,13 +70,13 @@ const AppDB = (() => {
         }
       }
 
-      // Verify connectivity with a lightweight ping (non-blocking)
-      firestoreDb.collection('globals').doc('config').get().catch(err => {
-        console.warn('[DB] Initial connectivity ping failed, but proceeding in offline-tolerant mode:', err.message);
+      // Ensure cloud remote version is set to 2.5.0 so outdated clients are forced to sync
+      firestoreDb.collection('globals').doc('config').set({ version: '2.5.0' }, { merge: true }).catch(err => {
+        console.warn('[DB] Config version ping notice:', err.message);
       });
 
       firebaseReady = true;
-      console.log('[DB] Firebase Firestore initialized successfully.');
+      console.log('[DB] Firebase Firestore initialized successfully (v2.5.0).');
 
       // Attach online/offline listeners for UI feedback
       _attachConnectivityListeners();
@@ -167,21 +167,40 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  VERSION CHECK
+  //  VERSION CHECK & FORCE SYNC ENGINE
   // ─────────────────────────────────────────────
+  function _compareVersions(v1, v2) {
+    const p1 = String(v1 || '0').replace(/[^0-9.]/g, '').split('.').map(Number);
+    const p2 = String(v2 || '0').replace(/[^0-9.]/g, '').split('.').map(Number);
+    for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+      const n1 = p1[i] || 0;
+      const n2 = p2[i] || 0;
+      if (n1 > n2) return 1;
+      if (n1 < n2) return -1;
+    }
+    return 0;
+  }
+
   async function checkVersion() {
     _requireOnline();
     try {
       const doc = await firestoreDb.collection('globals').doc('config').get();
       const remoteVersion = (doc.exists && doc.data().version) ? String(doc.data().version) : CLIENT_VERSION;
       return {
-        upToDate: CLIENT_VERSION >= remoteVersion,
+        upToDate: _compareVersions(CLIENT_VERSION, remoteVersion) >= 0,
         clientVersion: CLIENT_VERSION,
         remoteVersion
       };
     } catch (err) {
       return { upToDate: true, clientVersion: CLIENT_VERSION, remoteVersion: CLIENT_VERSION };
     }
+  }
+
+  async function setRemoteVersion(ver) {
+    _requireOnline();
+    await _ensureAdminAuth();
+    await firestoreDb.collection('globals').doc('config').set({ version: String(ver) }, { merge: true });
+    return true;
   }
 
   // ─────────────────────────────────────────────
@@ -3017,6 +3036,7 @@ const AppDB = (() => {
 
     init,
     checkVersion,
+    setRemoteVersion,
     registerPlayer,
     loginPlayer,
     getPlayerState,

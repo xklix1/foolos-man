@@ -4,6 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>رأس المال | Ras ALmal</title>
   <!-- Google Fonts (Cairo & Outfit) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1492,6 +1495,32 @@
       <button id="btn-confirm-maintenance-popup" type="button"
         class="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-xl transition shadow-lg">
         حسناً
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== FORCE UPDATE OVERLAY ==================== -->
+  <div id="force-update-overlay"
+    class="hidden fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
+    <div
+      class="glass-panel w-full max-w-md p-8 rounded-2xl border border-cyan-500/40 text-center shadow-2xl shadow-cyan-500/10 space-y-5">
+      <div
+        class="w-20 h-20 bg-cyan-500/10 border border-cyan-500/30 rounded-full flex items-center justify-center mx-auto animate-bounce">
+        <i class="fa-solid fa-cloud-arrow-down text-cyan-400 text-3xl"></i>
+      </div>
+      <h2 class="text-2xl font-black text-cyan-400">تحديث جديد متاح! 🎉</h2>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        تم إطلاق تحديث جديد للعبة يتضمن إصلاحات ومزامنة مباشرة مع خوادم اللعبة. يرجى التحديث لمواصلة اللعب.
+      </p>
+      <div class="flex items-center justify-center gap-4 py-2.5 bg-slate-900/80 rounded-xl border border-slate-800 text-xs numbers-font">
+        <div><span class="text-slate-400 block text-[10px]">نسختك الحالية</span><strong id="fu-client-ver" class="text-rose-400">v2.0</strong></div>
+        <i class="fa-solid fa-arrow-left text-slate-500"></i>
+        <div><span class="text-slate-400 block text-[10px]">إصدار الخادم</span><strong id="fu-remote-ver" class="text-emerald-400">v2.5.0</strong></div>
+      </div>
+      <button id="btn-force-update"
+        class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black rounded-xl transition duration-300 shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 text-sm">
+        <i class="fa-solid fa-rotate-right"></i>
+        <span>تحديث اللعبة ومزامنة الكاش فوراً</span>
       </button>
     </div>
   </div>
