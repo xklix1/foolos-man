@@ -299,10 +299,12 @@ const AppDB = (() => {
     const ref = firestoreDb.collection('players').doc(username);
     let existing = null;
     try {
-      existing = await ref.get();
+      const getPromise = ref.get();
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 2500));
+      existing = await Promise.race([getPromise, timeoutPromise]);
     } catch (getErr) {
-      console.warn('[DB] registerPlayer check failed:', getErr.message);
-      throw new Error('تعذر الاتصال بالخادم لإنشاء الحساب. يرجى التأكد من اتصال الإنترنت ثم المحاولة مجدداً.');
+      console.warn('[DB] registerPlayer check warning:', getErr.message);
+      try { existing = await ref.get({ source: 'cache' }); } catch(ce) {}
     }
 
     if (existing && existing.exists) {
@@ -383,31 +385,28 @@ const AppDB = (() => {
     let doc = null;
     try {
       const getPromise = ref.get();
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('تأخر استجابة الخادم. تحقق من اتصالك وحاول مجدداً.')), 15000));
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3500));
       doc = await Promise.race([getPromise, timeoutPromise]);
     } catch(err) {
-      // Fallback check from local cache if network is slow or offline
-      try {
-        doc = await ref.get({ source: 'cache' });
-      } catch(ce) {}
+      console.warn('[DB] loginPlayer server fetch warning:', err.message);
+    }
 
-      if (!doc || !doc.exists) {
-        // Fallback: Check local encrypted storage if device was previously logged in
-        const localSaved = getDecryptedLocalState(`rasalmal_state_${username}`);
-        if (localSaved && localSaved.pin) {
-          if (localSaved.pin === expectedHash || localSaved.pin === legacyHash || localSaved.pin === pin) {
-            console.log('[DB] Authenticated player offline from local state:', username);
-            return localSaved;
-          } else {
-            throw new Error('الرقم السري غير صحيح. يرجى المحاولة مرة أخرى.');
-          }
-        }
+    if (!doc || !doc.exists) {
+      try { doc = await ref.get({ source: 'cache' }); } catch(ce) {}
+    }
 
-        if (err.message && (err.message.includes('offline') || err.message.includes('client is offline'))) {
-          throw new Error('تعذر الاتصال بخوادم اللعبة. يرجى التأكد من اتصال الإنترنت ثم المحاولة مجدداً.');
+    if (!doc || !doc.exists) {
+      const localSaved = getDecryptedLocalState(`rasalmal_state_${username}`);
+      if (localSaved && localSaved.pin) {
+        if (localSaved.pin === expectedHash || localSaved.pin === legacyHash || localSaved.pin === pin) {
+          console.log('[DB] Authenticated player offline from local state:', username);
+          return localSaved;
+        } else {
+          throw new Error('الرقم السري غير صحيح. يرجى المحاولة مرة أخرى.');
         }
-        throw err;
       }
+
+      throw new Error('اسم المستخدم غير مسجل، أو تعذر الاتصال بالخادم. يرجى التأكد من اتصال الإنترنت أو إنشاء حساب جديد.');
     }
 
     if (!doc.exists) {
