@@ -5214,22 +5214,7 @@ const UIController = (() => {
     });
     if (typeof unsubCorporations === 'function') activeListeners.push(unsubCorporations);
 
-    // Maintenance Screen Admin Login Button
-    const maintAdminLoginBtn = document.getElementById('btn-maintenance-admin-login');
-    if (maintAdminLoginBtn) {
-      maintAdminLoginBtn.addEventListener('click', () => {
-        playMenuSound('click');
-        hideMaintenanceOverlay();
-        showAuthModal('login');
-        const uInput = document.getElementById('auth-username');
-        if (uInput) {
-          uInput.value = '';
-          uInput.placeholder = 'اسم مستخدم الإدارة';
-          const pInput = document.getElementById('auth-pin');
-          if (pInput) pInput.focus();
-        }
-      });
-    }
+
 
     // 2. Maintenance Realtime Listener
     const unsubMaintenance = db.collection('globals').doc('maintenance')
