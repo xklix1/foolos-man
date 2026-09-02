@@ -678,17 +678,50 @@ const AppDB = (() => {
       };
     }
 
-    _pendingSaveUser = username;
+    // Grab latest game state
+    let stateToSave = null;
     if (window.GameEngine && window.GameEngine.state) {
-      _pendingSaveState = window.GameEngine.state;
+      stateToSave = window.GameEngine.state;
+    } else {
+      stateToSave = getDecryptedLocalState(`rasalmal_state_${username}`);
     }
 
-    const success = await flushPendingSave();
-    if (success) {
+    if (!stateToSave) {
+      return { success: false, message: 'تعذر العثور على بيانات المحفظة لحفظها.' };
+    }
+
+    stateToSave.username = username;
+    stateToSave.lastSeen = Date.now();
+    stateToSave.lastActiveTimestamp = Date.now();
+
+    // 1. Instant Encrypted Local Cache Save
+    setEncryptedLocalState(`rasalmal_state_${username}`, stateToSave);
+
+    // 2. Direct Firestore Cloud Write
+    try {
+      _requireOnline();
+      if (!firestoreDb) {
+        throw new Error('خادم اللعبة غير متاح حالياً. تم حفظ التقدم محلياً على جهازك.');
+      }
+      const ref = firestoreDb.collection('players').doc(username);
+      await ref.set(stateToSave, { merge: true });
+      
       _lastManualSyncTimestamp = Date.now();
+      _lastSavedStateHashes[username] = _calcStateHash(stateToSave);
+      _lastSaveTimestamps[username] = Date.now();
+
+      // Non-blocking leaderboard snapshot update
+      _checkAndUpdateCentralLeaderboard(username, stateToSave).catch(() => {});
+
       return { success: true, message: 'تم حفظ وتزامن تقدمك بالسحابة بنجاح! ☁️' };
-    } else {
-      return { success: false, message: 'فشل التزامن السحابي! تم التخزين محلياً بحسابك.' };
+    } catch (err) {
+      console.warn('[DB] Manual sync cloud warning:', err.message);
+      return { 
+        success: false, 
+        message: err.message.includes('offline') || err.message.includes('خادم')
+          ? 'تم حفظ التقدم محلياً بكتالوج حسابك (جهازك غير متصل بخادم السحابة).'
+          : `تم الحفظ محلياً: ${err.message}` 
+      };
     }
   }
 
