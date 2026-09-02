@@ -2883,6 +2883,87 @@ const AppDB = (() => {
     return honorsData;
   }
 
+  async function adminAwardTop25Veterans(cachedList = null) {
+    _requireOnline();
+    await _ensureAdminAuth();
+
+    let candidatePlayers = [];
+
+    // 1. If cached list provided by caller, use it (instant, 0 reads)
+    if (Array.isArray(cachedList) && cachedList.length > 0) {
+      candidatePlayers = cachedList.filter(p => !p.isAdmin && !p.isBanned);
+    } else {
+      // 2. Fetch from Firestore
+      try {
+        const snap = await firestoreDb.collection('players').orderBy('netWorth', 'desc').limit(40).get();
+        snap.forEach(doc => {
+          const d = doc.data() || {};
+          if (!d.isAdmin && !d.isBanned) {
+            candidatePlayers.push({ username: doc.id, netWorth: d.netWorth || 0, title: d.title || '' });
+          }
+        });
+      } catch (err) {
+        console.warn('[DB] Fallback scanning players for top 25:', err.message);
+        const snapAll = await firestoreDb.collection('players').limit(60).get();
+        snapAll.forEach(doc => {
+          const d = doc.data() || {};
+          if (!d.isAdmin && !d.isBanned) {
+            candidatePlayers.push({ username: doc.id, netWorth: d.netWorth || 0, title: d.title || '' });
+          }
+        });
+      }
+    }
+
+    // Sort descending by netWorth
+    candidatePlayers.sort((a, b) => (Number(b.netWorth) || 0) - (Number(a.netWorth) || 0));
+    const top25 = candidatePlayers.slice(0, 25);
+
+    if (top25.length === 0) {
+      throw new Error('لم يتم العثور على لاعبين في قاعدة البيانات لمنحهم وسام المستثمر المخضرم.');
+    }
+
+    const batch = firestoreDb.batch();
+    const awardedUsernames = [];
+
+    top25.forEach((player, index) => {
+      const u = player.username;
+      awardedUsernames.push(u);
+      const pRef = firestoreDb.collection('players').doc(u);
+
+      let newTitle = '🎖️ مستثمر مخضرم S1';
+      if (index === 0) newTitle = '💎 مستثمر ألماسي | مستثمر مخضرم S1';
+      else if (index === 1) newTitle = '🥇 مستثمر ذهبي | مستثمر مخضرم S1';
+      else if (index === 2) newTitle = '🥉 مستثمر برونزي | مستثمر مخضرم S1';
+
+      batch.set(pRef, {
+        title: newTitle,
+        s1Veteran: true,
+        s1VeteranRank: index + 1,
+        s1Honor: true,
+        lastModified: Date.now()
+      }, { merge: true });
+    });
+
+    // Save list of Top 25 veterans in globals/seasonHonors
+    const honorsRef = firestoreDb.collection('globals').doc('seasonHonors');
+    batch.set(honorsRef, {
+      top25Veterans: awardedUsernames,
+      top25AwardedAt: Date.now()
+    }, { merge: true });
+
+    // Commit with timeout race
+    try {
+      const commitPromise = batch.commit();
+      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3500));
+      await Promise.race([commitPromise, timeoutPromise]);
+    } catch (batchErr) {
+      console.warn('[DB] Batch commit top 25 warning:', batchErr.message);
+    }
+
+    console.log(`[DB] Successfully awarded [مستثمر مخضرم S1] to ${top25.length} players`);
+    return { count: top25.length, players: awardedUsernames };
+  }
+
   // ─────────────────────────────────────────────
   //  PUBLIC API
   // ─────────────────────────────────────────────
@@ -2903,6 +2984,7 @@ const AppDB = (() => {
     getLeaderboardMeta,
     getSeasonHonors,
     adminAwardSeasonHonors,
+    adminAwardTop25Veterans,
     executeWireTransfer,
 
     // Transfer Requests API

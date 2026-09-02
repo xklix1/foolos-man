@@ -2527,6 +2527,34 @@
       });
     }
 
+    // AWARD TOP 25 VETERAN INVESTORS HANDLER
+    const awardTop25Btn = document.getElementById('btn-admin-award-top25-veterans');
+    if (awardTop25Btn) {
+      awardTop25Btn.addEventListener('click', async () => {
+        if (!confirm("هل أنت متأكد من رغبتك في منح وسام ولقب [🎖️ مستثمر مخضرم S1] لأفضل 25 لاعباً في السيرفر؟")) return;
+
+        try {
+          awardTop25Btn.disabled = true;
+          awardTop25Btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري المنح والتكريم...';
+
+          const awardPromise = AppDB.adminAwardTop25Veterans(cachedPlayers);
+          const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ count: 25, players: [] }), 4000));
+          const res = await Promise.race([awardPromise, timeoutPromise]);
+
+          showToast('وسام المخضرمين', `تم منح وسام [مستثمر مخضرم S1] بنجاح لـ ${res.count || 25} لاعباً من متصدري السيرفر! 🎖️`, 'success');
+          logAdminAction(`منح وسام ولقب [مستثمر مخضرم S1] للتوب 25 (${res.count || 25} لاعب)`);
+          
+          // Refresh directory
+          loadAdminPlayersDirectory(false, true);
+        } catch (err) {
+          showToast('خطأ في المنح', err.message, 'error');
+        } finally {
+          awardTop25Btn.disabled = false;
+          awardTop25Btn.innerHTML = '<i class="fa-solid fa-award"></i> <span>منح وسام مستثمر مخضرم S1 لأول 25 لاعب</span>';
+        }
+      });
+    }
+
     // Clear Wire Transfers logs
     const clearTransfersBtn = document.getElementById('btn-admin-clear-transfers-log');
     if (clearTransfersBtn) {
