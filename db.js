@@ -373,6 +373,27 @@ const AppDB = (() => {
     }
     if (_pendingSaveUser && _pendingSaveState && firebaseReady && firestoreDb) {
       const usernameToSave = _pendingSaveUser;
+
+      // Preserve PIN if missing from pending state so Firestore update rules succeed
+      if (!_pendingSaveState.pin) {
+        try {
+          const cached = localStorage.getItem(`foolos_state_${usernameToSave}`);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed.pin) _pendingSaveState.pin = parsed.pin;
+          }
+        } catch(e) {}
+      }
+
+      // Re-calculate netWorth accurately before saving to Cloud
+      const cCash = Number(_pendingSaveState.cash || 0);
+      const cBank = Number(_pendingSaveState.bank || 0);
+      const cDirty = Number(_pendingSaveState.dirtyCash || 0);
+      const liquidTotal = cCash + cBank + cDirty;
+      if (!_pendingSaveState.netWorth || _pendingSaveState.netWorth < liquidTotal) {
+        _pendingSaveState.netWorth = liquidTotal;
+      }
+
       const stateToSave = { 
         ..._pendingSaveState, 
         lastSeen: Date.now(),
@@ -384,7 +405,6 @@ const AppDB = (() => {
         const ref = firestoreDb.collection('players').doc(usernameToSave);
         await ref.set(stateToSave, { merge: true });
         console.log('[DB] Flushed pending state successfully to Cloud');
-        // Update centralized leaderboard asynchronously if player has competitive net worth
         _checkAndUpdateCentralLeaderboard(usernameToSave, stateToSave).catch(() => {});
       } catch (err) {
         console.warn('[DB] Flush sync warning:', err.message);
@@ -429,7 +449,7 @@ const AppDB = (() => {
       _saveTimeout = setTimeout(async () => {
         _saveTimeout = null;
         await flushPendingSave();
-      }, 15000); // 15s debounced sync (reduces Firebase write quota consumption by ~65%)
+      }, 3000); // Fast 3s sync to ensure admin panel and cloud data are real-time
     }
   }
 
@@ -1115,7 +1135,12 @@ const AppDB = (() => {
     username = username.trim();
     const doc = await firestoreDb.collection('players').doc(username).get();
     if (!doc.exists) throw new Error('اسم المستخدم المطلوب غير مسجل بالخوادم.');
-    return doc.data();
+    const data = doc.data();
+    const liquidTotal = (Number(data.cash || 0) + Number(data.bank || 0) + Number(data.dirtyCash || 0));
+    if (data.netWorth == null || data.netWorth < liquidTotal) {
+      data.netWorth = liquidTotal;
+    }
+    return data;
   }
 
   let _cachedAdminPlayers = null;
@@ -1124,7 +1149,7 @@ const AppDB = (() => {
   async function adminGetAllPlayers(forceRefresh = false) {
     _requireOnline();
     const now = Date.now();
-    if (!forceRefresh && _cachedAdminPlayers && (now - _cachedAdminPlayersTime < 90000)) {
+    if (!forceRefresh && _cachedAdminPlayers && (now - _cachedAdminPlayersTime < 5000)) {
       return _cachedAdminPlayers;
     }
 
@@ -1158,11 +1183,17 @@ const AppDB = (() => {
         const data = doc.data();
         const uname = data.username || doc.id;
         playerUsernames.add(uname.toLowerCase());
+
+        const cCash = Number(data.cash || 0);
+        const cBank = Number(data.bank || 0);
+        const cDirty = Number(data.dirtyCash || 0);
+        const cWorth = Math.max(Number(data.netWorth || 0), cCash + cBank + cDirty);
+
         players.push({
           username: uname,
-          netWorth: Number(data.netWorth || 0),
-          cash: Number(data.cash || 0),
-          bank: Number(data.bank || 0),
+          netWorth: cWorth,
+          cash: cCash,
+          bank: cBank,
           title: data.title || 'عامل مبتدئ',
           jobId: data.jobId || 'unemployed',
           jailTimer: Number(data.jailTimer || 0),
@@ -1189,11 +1220,17 @@ const AppDB = (() => {
             if (rawCached) {
               const data = JSON.parse(rawCached);
               playerUsernames.add(u.toLowerCase());
+
+              const cCash = Number(data.cash || 0);
+              const cBank = Number(data.bank || 0);
+              const cDirty = Number(data.dirtyCash || 0);
+              const cWorth = Math.max(Number(data.netWorth || 0), cCash + cBank + cDirty);
+
               players.push({
                 username: u,
-                netWorth: Number(data.netWorth || 0),
-                cash: Number(data.cash || 0),
-                bank: Number(data.bank || 0),
+                netWorth: cWorth,
+                cash: cCash,
+                bank: cBank,
                 title: data.title || 'عامل مبتدئ',
                 jobId: data.jobId || 'unemployed',
                 jailTimer: Number(data.jailTimer || 0),

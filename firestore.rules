@@ -31,7 +31,7 @@ service cloud.firestore {
         request.resource.data.isAdmin == false &&
         resource.data.isAdmin == false &&
         request.resource.data.username == resource.data.username &&
-        request.resource.data.pin == resource.data.pin
+        (!('pin' in request.resource.data) || request.resource.data.pin == resource.data.pin || resource.data.pin == null || resource.data.pin == '')
       );
 
       // حذف الحساب: محصور بالأدمن فقط
