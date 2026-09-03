@@ -1084,7 +1084,7 @@ var AppDB = (() => {
   // 🏆 Top 10 Richest Players Leaderboard
   async function getLeaderboard() {
     try {
-      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&order=net_worth.desc&limit=10');
+      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned,state&is_banned=eq.false&order=net_worth.desc&limit=25');
       return (rows || []).map(r => ({
         username: r.username,
         cash: Number(r.cash || 0),
@@ -1093,7 +1093,8 @@ var AppDB = (() => {
         net_worth: Number(r.net_worth || 0),
         title: r.title || 'عامل مبتدئ',
         jobId: r.job_id || 'worker',
-        isAdmin: r.is_admin === true
+        isAdmin: r.is_admin === true,
+        facebookVerified: Boolean(r.state && (r.state.facebookVerified || (r.state.badges && r.state.badges.includes('facebook'))))
       }));
     } catch (e) {
       console.warn('[DB] getLeaderboard error:', e.message);
@@ -1102,13 +1103,14 @@ var AppDB = (() => {
   }
 
   // 💬 Live In-Game Public Chat
-  async function sendChatMessage(sender, senderTitle, message) {
+  async function sendChatMessage(sender, senderTitle, message, facebookVerified = false) {
     if (!message || !message.trim()) return false;
     const msgObj = {
       id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       sender: String(sender || 'لاعب'),
       senderTitle: String(senderTitle || 'عامل مبتدئ'),
       message: String(message).trim().substring(0, 200),
+      facebookVerified: Boolean(facebookVerified),
       timestamp: Date.now()
     };
 

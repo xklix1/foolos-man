@@ -1727,10 +1727,13 @@ const UIController = (() => {
     const username = GameEngine.activeUsername;
     const isAdmin = Boolean(s.isAdmin);
 
+    const isFb = Boolean(s.facebookVerified || (s.badges && s.badges.includes('facebook')));
+    const fbIcon = isFb ? ' <i class="fa-brands fa-facebook text-blue-400 text-xs mr-1 inline-block drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة اللعبة على فيسبوك 👍"></i>' : '';
+
     // Desktop stats
     const uEl = document.getElementById('stat-username');
     if (uEl) {
-      uEl.textContent = username;
+      uEl.innerHTML = username + fbIcon;
       uEl.classList.add('cursor-pointer', 'hover:underline');
       uEl.title = 'اضغط لعرض ملفك الشخصي وأوسمتك';
       uEl.onclick = () => openPlayerProfileCard(username);
@@ -1753,7 +1756,7 @@ const UIController = (() => {
     // Mobile stats
     const umEl = document.getElementById('stat-username-mobile');
     if (umEl) {
-      umEl.textContent = username;
+      umEl.innerHTML = username + fbIcon;
       umEl.classList.add('cursor-pointer', 'hover:underline');
       umEl.title = 'اضغط لعرض ملفك الشخصي وأوسمتك';
       umEl.onclick = () => openPlayerProfileCard(username);
@@ -1770,6 +1773,9 @@ const UIController = (() => {
 
     const cfmEl = document.getElementById('stat-cashflow-mobile');
     if (cfmEl) cfmEl.textContent = `+${cashflow.toLocaleString()}`;
+
+    // Update Facebook Reward Button State
+    updateFacebookButtonUI();
 
     // Show/Hide Admin Buttons
     const adminBtn = document.getElementById('btn-admin-panel-trigger');
@@ -4946,7 +4952,8 @@ const UIController = (() => {
         const p1Worth = document.getElementById('podium-worth-1');
         const p1Avatar = document.getElementById('podium-avatar-1');
         if (p1Name) {
-          p1Name.textContent = top1.username;
+          const fbBadge = top1.facebookVerified ? ' <i class="fa-brands fa-facebook text-blue-400 text-xs mr-1 inline-block drop-shadow-[0_0_6px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة فيسبوك 👍"></i>' : '';
+          p1Name.innerHTML = top1.username + fbBadge;
           p1Name.classList.add('cursor-pointer', 'hover:underline');
           p1Name.onclick = () => openPlayerProfileCard(top1.username);
         }
@@ -4962,7 +4969,8 @@ const UIController = (() => {
         const p2Worth = document.getElementById('podium-worth-2');
         const p2Avatar = document.getElementById('podium-avatar-2');
         if (p2Name) {
-          p2Name.textContent = top2.username;
+          const fbBadge = top2.facebookVerified ? ' <i class="fa-brands fa-facebook text-blue-400 text-xs mr-1 inline-block drop-shadow-[0_0_6px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة فيسبوك 👍"></i>' : '';
+          p2Name.innerHTML = top2.username + fbBadge;
           p2Name.classList.add('cursor-pointer', 'hover:underline');
           p2Name.onclick = () => openPlayerProfileCard(top2.username);
         }
@@ -4978,7 +4986,8 @@ const UIController = (() => {
         const p3Worth = document.getElementById('podium-worth-3');
         const p3Avatar = document.getElementById('podium-avatar-3');
         if (p3Name) {
-          p3Name.textContent = top3.username;
+          const fbBadge = top3.facebookVerified ? ' <i class="fa-brands fa-facebook text-blue-400 text-xs mr-1 inline-block drop-shadow-[0_0_6px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة فيسبوك 👍"></i>' : '';
+          p3Name.innerHTML = top3.username + fbBadge;
           p3Name.classList.add('cursor-pointer', 'hover:underline');
           p3Name.onclick = () => openPlayerProfileCard(top3.username);
         }
@@ -5035,8 +5044,9 @@ const UIController = (() => {
                 ${initials}
               </div>
               <div class="min-w-0">
-                <span class="font-black ${isSelf ? 'text-yellow-400 glow-gold' : rank === 1 ? 'text-yellow-300' : 'text-white'} text-xs sm:text-sm block truncate cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${player.username}')">
-                  ${player.username}
+                <span class="font-black ${isSelf ? 'text-yellow-400 glow-gold' : rank === 1 ? 'text-yellow-300' : 'text-white'} text-xs sm:text-sm inline-flex items-center gap-1 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${player.username}')">
+                  <span>${player.username}</span>
+                  ${player.facebookVerified ? '<i class="fa-brands fa-facebook text-blue-400 text-xs mr-1 inline-block drop-shadow-[0_0_6px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة فيسبوك 👍"></i>' : ''}
                 </span>
                 ${isSelf ? (window.currentLang === 'en' ? '<span class="text-[8.5px] px-1.5 py-0.2 bg-yellow-500/20 text-yellow-400 rounded font-black inline-block border border-yellow-500/30">You (Your Account)</span>' : '<span class="text-[8.5px] px-1.5 py-0.2 bg-yellow-500/20 text-yellow-400 rounded font-black inline-block border border-yellow-500/30">أنت (حسابك)</span>') : ''}
               </div>
@@ -8985,7 +8995,8 @@ const UIController = (() => {
           chatInput.value = '';
           if (charCounter) charCounter.textContent = '0 / 200';
           lastChatSent = Date.now();
-          await AppDB.sendChatMessage(username, userTitle, text);
+          const isFb = Boolean(GameEngine.state && (GameEngine.state.facebookVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('facebook'))));
+          await AppDB.sendChatMessage(username, userTitle, text, isFb);
         } catch (err) {
           showToast('خطأ إرسال', err.message, 'error');
           chatInput.value = text;
@@ -9381,6 +9392,102 @@ const UIController = (() => {
         }
       });
     }
+
+    // ──────── Facebook Community Verification & Badge Claim ────────
+    const fbMenuBtn = document.getElementById('btn-menu-facebook');
+    const fbSidebarBtn = document.getElementById('btn-sidebar-facebook');
+    const fbMobileBtn = document.getElementById('btn-mobile-facebook');
+
+    [fbMenuBtn, fbSidebarBtn, fbMobileBtn].forEach(btn => {
+      if (btn) {
+        btn.addEventListener('click', (e) => {
+          claimFacebookReward(e);
+        });
+      }
+    });
+  }
+
+  // ── Facebook Official Verification & Reward Engine ──
+  async function claimFacebookReward(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const fbUrl = 'https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr';
+    window.open(fbUrl, '_blank', 'noopener,noreferrer');
+
+    const s = GameEngine.state;
+    if (!s) return;
+
+    if (s.facebookVerified) {
+      showToast(
+        'حسابك موثق بالفعل 👍',
+        'أهلاً بك مجدداً! حسابك موثق رسمياً ويحمل شارة فيسبوك الزرقاء في الشات وقائمة المتصدرين.',
+        'info'
+      );
+      return;
+    }
+
+    // Grant Verified Status & Badge
+    s.facebookVerified = true;
+    if (!Array.isArray(s.badges)) s.badges = [];
+    if (!s.badges.includes('facebook')) s.badges.push('facebook');
+
+    // Welcome Cash Bonus (100,000 EGP)
+    const bonusReward = 100000;
+    s.cash = (Number(s.cash) || 0) + bonusReward;
+    s.netWorth = (Number(s.netWorth) || 0) + bonusReward;
+
+    // Cloud Save immediately
+    if (GameEngine.activeUsername && AppDB.savePlayerState) {
+      await AppDB.savePlayerState(GameEngine.activeUsername, s, true);
+    }
+
+    if (typeof playMenuSound === 'function') playMenuSound('start');
+
+    updateFacebookButtonUI();
+    renderStatsBar();
+
+    showToast(
+      '🎉 تهانينا! تم توثيق حسابك بنجاح!',
+      `أصبحت عضواً رسمياً في مجتمع اللعبة! حصلت على شارة فيسبوك الزرقاء بجانب اسمك في الشات والمتصدرين + مكافأة ${bonusReward.toLocaleString()} EGP!`,
+      'success',
+      8000
+    );
+  }
+
+  function updateFacebookButtonUI() {
+    const s = GameEngine.state;
+    const isVerified = Boolean(s && (s.facebookVerified || (s.badges && s.badges.includes('facebook'))));
+
+    const menuBadge = document.getElementById('badge-menu-facebook');
+    if (menuBadge) {
+      if (isVerified) {
+        menuBadge.className = 'text-[9px] px-1.5 py-0.5 rounded-full bg-blue-900/80 text-blue-300 font-bold border border-blue-500/40 shadow-sm';
+        menuBadge.innerHTML = '<i class="fa-brands fa-facebook mr-0.5"></i> موثق ✓';
+      } else {
+        menuBadge.className = 'text-[9px] px-1.5 py-0.5 rounded-full bg-blue-600/90 text-white font-black animate-pulse shadow-sm';
+        menuBadge.textContent = 'وثّق حسابك 💎';
+      }
+    }
+
+    const sidebarBadge = document.getElementById('badge-sidebar-facebook');
+    if (sidebarBadge) {
+      if (isVerified) {
+        sidebarBadge.className = 'text-[9px] px-1.5 py-0.5 rounded-full bg-blue-900/80 text-blue-300 font-bold border border-blue-500/40 shadow-sm';
+        sidebarBadge.innerHTML = '<i class="fa-brands fa-facebook mr-0.5"></i> موثق ✓';
+      } else {
+        sidebarBadge.className = 'text-[9px] px-1.5 py-0.5 rounded-full bg-blue-600 text-white font-black animate-pulse shadow-sm';
+        sidebarBadge.textContent = 'وثّق 💎';
+      }
+    }
+
+    const mobileBadge = document.getElementById('badge-mobile-facebook');
+    if (mobileBadge) {
+      if (isVerified) {
+        mobileBadge.className = 'w-2 h-2 rounded-full bg-blue-400';
+      } else {
+        mobileBadge.className = 'w-2 h-2 rounded-full bg-blue-500 animate-ping';
+      }
+    }
   }
 
   function renderChatMessages(msgs) {
@@ -9432,10 +9539,15 @@ const UIController = (() => {
           </div>
         `;
       } else {
+        const hasFb = Boolean(msg.facebookVerified || msg.isFbVerified);
+        const fbIconHtml = hasFb ? '<i class="fa-brands fa-facebook text-blue-400 text-[11px] mr-1 inline-block drop-shadow-[0_0_6px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة فيسبوك 👍"></i>' : '';
         msgDiv.innerHTML = `
           <div class="flex items-center gap-1.5 mb-0.5">
             <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
-            <span class="text-[10px] font-bold text-yellow-400 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${safeSender}')">${safeSender}</span>
+            <span class="text-[10px] font-bold text-yellow-400 cursor-pointer hover:underline inline-flex items-center gap-1" onclick="window.UI.openPlayerProfileCard('${safeSender}')">
+              <span>${safeSender}</span>
+              ${fbIconHtml}
+            </span>
             <span class="text-[8px] px-1 bg-slate-900 border border-slate-800 rounded-md text-slate-400">${safeTitle}</span>
           </div>
           <div class="chat-message-bubble ${bubbleClass}">
@@ -9610,7 +9722,12 @@ const UIController = (() => {
         return;
       }
 
-      document.getElementById('profile-card-username').textContent = pState.username;
+      const hasFbVerified = Boolean(pState.facebookVerified === true || (pState.state && pState.state.facebookVerified) || (pState.badges && pState.badges.includes('facebook')));
+      const uCardEl = document.getElementById('profile-card-username');
+      if (uCardEl) {
+        const fbIconHtml = hasFbVerified ? ' <i class="fa-brands fa-facebook text-blue-400 text-sm mr-1.5 inline-block drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة اللعبة على فيسبوك 👍"></i>' : '';
+        uCardEl.innerHTML = (pState.username || '---') + fbIconHtml;
+      }
       document.getElementById('profile-card-title').textContent = pState.title || 'عامل مبتدئ';
       document.getElementById('profile-card-networth').textContent = `${(pState.netWorth || 0).toLocaleString()} EGP`;
       document.getElementById('profile-card-reputation').textContent = `${(pState.underworldRep || 0).toLocaleString()} ⭐`;
@@ -9624,13 +9741,22 @@ const UIController = (() => {
       const badgesListEl = document.getElementById('profile-card-badges-list');
       if (badgesListEl) {
         badgesListEl.innerHTML = '';
+
+        let badgeCount = 0;
+
+        if (hasFbVerified) {
+          badgeCount++;
+          const fbBadge = document.createElement('div');
+          fbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-950/80 border-2 border-blue-500 text-blue-300 text-xs font-black shadow-md shadow-blue-950/60';
+          fbBadge.innerHTML = '<i class="fa-brands fa-facebook text-blue-400 text-base"></i><span>متابع رسمي لصفحة اللعبة على فيسبوك 👍</span>';
+          badgesListEl.appendChild(fbBadge);
+        }
+
         const titleStr = pState.title || '';
         const hasDiamond = pState.s1Badge === 'diamond' || titleStr.includes('مستثمر ألماسي') || titleStr.includes('ألماسي');
         const hasGold = pState.s1Badge === 'gold' || titleStr.includes('مستثمر ذهبي') || titleStr.includes('ذهبي');
         const hasBronze = pState.s1Badge === 'bronze' || titleStr.includes('مستثمر برونزي') || titleStr.includes('برونزي');
         const hasVeteran = pState.s1Veteran || pState.s1Badge === 'veteran' || titleStr.includes('مستثمر مخضرم') || titleStr.includes('مخضرم');
-
-        let badgeCount = 0;
 
         if (hasDiamond) {
           badgeCount++;
@@ -11659,7 +11785,9 @@ const UIController = (() => {
     startSmugglingJobAction,
     toggleAdminSidebarAction,
     toggleServerBoostAction,
-    manualSaveProgressAction
+    manualSaveProgressAction,
+    claimFacebookReward,
+    updateFacebookButtonUI
   };
 })();
 
