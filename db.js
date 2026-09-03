@@ -1094,18 +1094,46 @@ var AppDB = (() => {
 
   async function adminGetGiftCodes() {
     try {
-      return await _api('gift_codes?order=created_at.desc');
+      const rows = await _api('gift_codes?order=created_at.desc');
+      return (rows || []).map(r => {
+        const usedBy = Array.isArray(r.used_by) ? r.used_by : [];
+        const maxU = Number(r.max_uses || 0);
+        return {
+          id: r.code,
+          code: r.code,
+          rewardType: 'cash',
+          rewardDetails: { amount: Number(r.reward_cash || 0) },
+          maxUses: maxU,
+          usedCount: usedBy.length,
+          usedBy: usedBy,
+          createdAt: Number(r.created_at || 0)
+        };
+      });
     } catch (e) { return []; }
   }
 
-  async function adminCreateGiftCode(code, rewardCash, maxUses = 100) {
+  async function adminCreateGiftCode(code, type, details, maxUses = 100) {
+    let rewardCash = 0;
+    if (typeof type === 'number') {
+      rewardCash = type;
+      if (details !== undefined && typeof details === 'number') {
+        maxUses = details;
+      }
+    } else if (details && details.amount) {
+      rewardCash = Number(details.amount);
+    } else if (typeof details === 'number') {
+      rewardCash = details;
+    }
+
+    const maxU = Number(maxUses || 0);
+
     await _api('gift_codes', {
       method: 'POST',
       headers: { 'Prefer': 'resolution=merge-duplicates' },
       body: JSON.stringify({
         code: code.trim().toUpperCase(),
-        reward_cash: Number(rewardCash),
-        max_uses: Number(maxUses),
+        reward_cash: rewardCash,
+        max_uses: maxU,
         used_by: [],
         created_at: Date.now()
       })
