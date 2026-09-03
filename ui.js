@@ -9734,12 +9734,12 @@ const UIController = (() => {
       document.getElementById('player-profile-modal').classList.remove('hidden');
 
       if (!isMe && typeof firebase !== 'undefined' && AppDB.isFirebaseReady) {
-        firebase.firestore().collection('players').doc(username)
-          .onSnapshot(doc => {
+        firebase.firestore().collection('players').doc(username).get()
+          .then(doc => {
             if (doc.exists) {
               window.employeesCache[username] = doc.data();
             }
-          });
+          }).catch(() => {});
       }
     } catch (err) {
       showToast('خطأ بروفايل', err.message, 'error');
