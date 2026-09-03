@@ -1145,14 +1145,60 @@ var AppDB = (() => {
         update: async (data) => true,
         delete: async () => true,
         onSnapshot: (cb) => {
-          if (typeof cb === 'function') {
-            // Immediate one-time mock trigger
-            if (collName === 'globals') {
-              _api(`globals?id=eq.${encodeURIComponent(docId)}`).then(rows => {
-                cb({ exists: rows && rows.length > 0, data: () => (rows[0] && rows[0].data) || {} });
-              }).catch(() => {});
-            }
+          if (typeof cb !== 'function') return () => {};
+
+          if (collName === 'players') {
+            let isSubscribed = true;
+            const checkPlayer = async () => {
+              if (!isSubscribed) return;
+              try {
+                const rows = await _api(`players?username=eq.${encodeURIComponent(docId)}&select=*`);
+                if (rows && rows.length > 0 && isSubscribed) {
+                  const r = rows[0];
+                  const d = (typeof r.state === 'object' && r.state) ? { ...r.state } : {};
+                  d.username = r.username;
+                  d.cash = Number(r.cash || 0);
+                  d.bank = Number(r.bank || 0);
+                  d.dirtyCash = Number(r.dirty_cash || 0);
+                  d.netWorth = Number(r.net_worth || 0);
+                  d.xp = Number(r.xp || 0);
+                  d.title = r.title || 'عامل مبتدئ';
+                  d.jobId = r.job_id || 'worker';
+                  d.isAdmin = r.is_admin === true;
+                  d.isBanned = r.is_banned === true;
+                  d.jailTimer = Number(r.jail_timer || 0);
+                  d.adminModifiedTimestamp = Number(r.admin_modified_timestamp || 0);
+                  cb({ exists: true, data: () => d });
+                }
+              } catch (e) {}
+            };
+            checkPlayer();
+            const pollId = setInterval(checkPlayer, 2000); // 2-second real-time check for instant admin sync
+            return () => {
+              isSubscribed = false;
+              clearInterval(pollId);
+            };
           }
+
+          if (collName === 'globals') {
+            let isSubscribed = true;
+            const checkGlobal = async () => {
+              if (!isSubscribed) return;
+              try {
+                const rows = await _api(`globals?id=eq.${encodeURIComponent(docId)}`).catch(() => []);
+                if (rows && rows.length > 0 && isSubscribed) {
+                  cb({ exists: true, data: () => (rows[0] && rows[0].data) || {} });
+                }
+              } catch (e) {}
+            };
+            checkGlobal();
+            const pollId = setInterval(checkGlobal, 5000);
+            return () => {
+              isSubscribed = false;
+              clearInterval(pollId);
+            };
+          }
+
           return () => {};
         }
       }),

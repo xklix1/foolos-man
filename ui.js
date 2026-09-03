@@ -5257,20 +5257,36 @@ const UIController = (() => {
       }
     }).catch(err => console.warn('[UI] Market event fetch warning:', err));
 
-    // 3. User document listener for ban & external edits
-    let lastAdminActionTimestamp = Date.now();
+    // 3. User document listener for ban & external edits (Live Real-Time Sync)
+    let lastAdminActionTimestamp = null;
     const unsubUser = db.collection('players').doc(username)
       .onSnapshot((doc) => {
         if (!doc.exists) return;
-        if (doc.metadata && doc.metadata.hasPendingWrites) return;
-
         const data = doc.data();
+
+        // Initial snapshot: record the current timestamp
+        if (lastAdminActionTimestamp === null) {
+          lastAdminActionTimestamp = Number(data.adminModifiedTimestamp || 0);
+          if (data.isBanned) {
+            unsubUser();
+            handleBannedUser();
+          }
+          return;
+        }
 
         // Ban check
         if (data.isBanned) {
           unsubUser();
           handleBannedUser();
           return;
+        }
+
+        // Jail check from admin
+        if (typeof data.jailTimer === 'number' && data.jailTimer !== GameEngine.state.jailTimer) {
+          GameEngine.state.jailTimer = data.jailTimer;
+          if (data.jailTimer > 0 && typeof handleJailedUser === 'function') {
+            handleJailedUser(data.jailTimer);
+          }
         }
 
         // Only process external admin modifications if explicitly timestamped
@@ -5285,13 +5301,19 @@ const UIController = (() => {
           GameEngine.state.jobId = data.jobId || 'worker';
           GameEngine.state.title = data.title || 'عامل مبتدئ';
 
-          GameEngine.calculateTotalNetWorth();
+          if (typeof GameEngine.calculateTotalNetWorth === 'function') {
+            GameEngine.calculateTotalNetWorth();
+          }
 
           try {
+            if (typeof AppDB.setEncryptedLocalState === 'function') {
+              AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, GameEngine.state);
+            }
             localStorage.setItem(`rasalmal_state_${GameEngine.activeUsername}`, JSON.stringify(GameEngine.state));
           } catch (e) { }
 
-          showToast('إشعار النظام', 'تم تحديث أو تصفير بيانات حسابك من قبل الإدارة.', 'info');
+          showToast('إشعار إداري ⚡', 'تم تعديل وتحديث بيانات حسابك من قبل الإدارة فورياً.', 'info');
+          if (typeof playMenuSound === 'function') playMenuSound('success');
           renderAll();
         }
       }, (err) => console.error("User doc listen err: ", err));
