@@ -1661,7 +1661,16 @@ const AppDB = (() => {
     if (username.toLowerCase() === 'admin') {
       throw new Error('لا يمكن حذف حساب الإدارة الرئيسي.');
     }
-    await firestoreDb.collection('players').doc(username).delete();
+    const docRef = firestoreDb.collection('players').doc(username);
+    try {
+      const backupsSnap = await docRef.collection('backups').get();
+      if (!backupsSnap.empty) {
+        const bBatch = firestoreDb.batch();
+        backupsSnap.docs.forEach(bDoc => bBatch.delete(bDoc.ref));
+        await bBatch.commit();
+      }
+    } catch(e) {}
+    await docRef.delete();
     try {
       localStorage.removeItem(`rasalmal_state_${username}`);
     } catch(e) {}
@@ -1874,8 +1883,6 @@ const AppDB = (() => {
     _requireOnline();
     const snapshot = await firestoreDb.collection('players').get();
     let count = 0;
-    let batch = firestoreDb.batch();
-    let batchOps = 0;
 
     for (const doc of snapshot.docs) {
       const docIdLower = (doc.id || '').toLowerCase().trim();
