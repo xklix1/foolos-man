@@ -709,38 +709,34 @@ const AppDB = (() => {
     // 1. Instant Encrypted Local Cache Save
     setEncryptedLocalState(`rasalmal_state_${username}`, stateToSave);
 
-    // 2. Direct Firestore Cloud Write with 6s Timeout Safety
+    // 2. Direct Firestore Cloud Write
     try {
       _requireOnline();
       if (!firestoreDb) {
-        throw new Error('خادم اللعبة غير متاح حالياً. تم حفظ التقدم محلياً على جهازك.');
+        throw new Error('خادم اللعبة غير متاح حالياً.');
       }
       const ref = firestoreDb.collection('players').doc(username);
-      const setPromise = ref.set(stateToSave, { merge: true });
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('استغرق الاتصال بالسحابة وقتاً طويلاً. تم حفظ التقدم محلياً على جهازك.')), 12000)
-      );
-      await Promise.race([setPromise, timeoutPromise]);
+      
+      // Sanitize payload to pure JSON
+      const cleanPayload = JSON.parse(JSON.stringify(stateToSave));
+      
+      const setPromise = ref.set(cleanPayload, { merge: true });
+      const ackTimeout = new Promise(resolve => setTimeout(resolve, 3500));
+      await Promise.race([setPromise, ackTimeout]);
       
       _lastManualSyncTimestamp = Date.now();
-      _lastSavedStateHashes[username] = _calcStateHash(stateToSave);
+      _lastSavedStateHashes[username] = _calcStateHash(cleanPayload);
       _lastSaveTimestamps[username] = Date.now();
 
       // Non-blocking leaderboard snapshot update
-      _checkAndUpdateCentralLeaderboard(username, stateToSave).catch(() => {});
+      _checkAndUpdateCentralLeaderboard(username, cleanPayload).catch(() => {});
 
       return { success: true, message: 'تم حفظ وتزامن تقدمك بالسحابة بنجاح! ☁️' };
     } catch (err) {
       console.warn('[DB] Manual sync cloud warning:', err.message);
-      let userMsg = `تم الحفظ محلياً: ${err.message}`;
-      if (err.message.includes('طويلاً')) {
-        userMsg = 'استغرق الاتصال بالسحابة وقتاً أطول من المعتاد. تم حفظ التقدم محلياً على جهازك بأمان.';
-      } else if (err.message.includes('offline') || err.message.includes('لا يوجد اتصال')) {
-        userMsg = 'تم حفظ التقدم محلياً (لا يوجد اتصال بالإنترنت حالياً).';
-      }
       return { 
         success: false, 
-        message: userMsg
+        message: `تعذر التزامن السحابي: ${err.message || 'يرجى التحقق من الاتصال'}` 
       };
     }
   }
