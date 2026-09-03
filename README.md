@@ -40,16 +40,16 @@ http-server -p 8000
 
 لإدراج اللعبة في شبكة الإنترنت وتفعيل التنافس على قائمة "توب الأغنياء" وتطبيق التحويلات المالية الحقيقية بين اللاعبين:
 
-1. اذهب إلى [Firebase Console](https://console.firebase.google.com) وأنشئ مشروعاً جديداً باسم `foolos-man`.
+1. اذهب إلى [Firebase Console](https://console.firebase.google.com) وافتح مشروع `ras-almal`.
 2. داخل لوحة تحكم المشروع، أضف تطبيق ويب (Web App `</>`) واحصل على كود التكوين (Firebase Configuration JSON). سيبدو على هذا النحو:
    ```json
    {
-     "apiKey": "AIzaSyA1...",
-     "authDomain": "foolos-man.firebaseapp.com",
-     "projectId": "foolos-man",
-     "storageBucket": "foolos-man.appspot.com",
-     "messagingSenderId": "123456789",
-     "appId": "1:1234:web:abcd"
+     "apiKey": "AIzaSyC34_3asZIiVxm4vARBBmRIC6FeUbAcrT0",
+     "authDomain": "ras-almal.firebaseapp.com",
+     "projectId": "ras-almal",
+     "storageBucket": "ras-almal.firebasestorage.app",
+     "messagingSenderId": "1062903984803",
+     "appId": "1:1062903984803:web:5bf2eaea27cb593d238516"
    }
    ```
 3. من القائمة الجانبية في Firebase، اختر **Firestore Database** واضغط على **Create Database** (أنشئ قاعدة البيانات).
