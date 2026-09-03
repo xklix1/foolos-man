@@ -2,137 +2,75 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // التحقق من توثيق حساب الأدمن عبر Firebase Auth
-    function isAdmin() {
-      return request.auth != null;
-    }
-
     // ─────────────────────────────────────────────
     // 1. حسابات وبيانات اللاعبين (Players Collection)
     // ─────────────────────────────────────────────
     match /players/{username} {
       allow read: if true;
 
-      // إنشاء حساب جديد (منع منح رتبة أدمن تلقائياً ومحاربة الثروات المزيفة عند التسجيل)
-      allow create: if isAdmin() || (
-        request.resource.data.username == username &&
-        request.resource.data.isAdmin == false &&
-        request.resource.data.netWorth <= 10000 &&
-        request.resource.data.cash <= 10000 &&
-        request.resource.data.keys().hasAll(['username', 'pin', 'netWorth', 'cash', 'bank'])
-      );
+      // إنشاء حساب جديد: يمنع الثروات المزيفة ويمنع منح رتبة أدمن
+      allow create: if request.resource.data.username == username &&
+                       request.resource.data.isAdmin == false &&
+                       request.resource.data.netWorth <= 10000 &&
+                       request.resource.data.cash <= 10000;
 
-      // تعديل الحساب (منع أي لاعب من جعل نفسه أدمن أو تغيير الـ PIN أو اسم المستخدم بحيلة برمجية)
-      allow update: if isAdmin() || (
-        request.resource.data.isAdmin == false &&
-        resource.data.isAdmin == false &&
-        request.resource.data.username == resource.data.username &&
-        (!('pin' in request.resource.data) || request.resource.data.pin == resource.data.pin || resource.data.pin == null || resource.data.pin == '')
-      );
+      // تعديل بيانات الحساب: يمنع تغيير اسم المستخدم أو جعل الحساب أدمن
+      allow update: if request.resource.data.username == resource.data.username &&
+                       request.resource.data.isAdmin == false;
 
-      // حذف الحساب محصور بالأدمن فقط
-      allow delete: if isAdmin();
+      // السماح بالحذف للوحة التحكم الإدارية
+      allow delete: if true;
     }
 
     // ─────────────────────────────────────────────
-    // 2. سجلات التحويلات المالية (Wire Transfers)
+    // 2. سجلات التحويلات المالية (Transfers)
     // ─────────────────────────────────────────────
     match /transfers/{id} {
       allow read: if true;
       allow create: if request.resource.data.amount > 0 &&
-                       request.resource.data.sender != request.resource.data.recipient &&
-                       request.resource.data.keys().hasAll(['sender', 'recipient', 'amount', 'timestamp']);
-      allow update, delete: if isAdmin();
+                       request.resource.data.sender != request.resource.data.recipient;
+      allow update, delete: if true;
     }
 
     // ─────────────────────────────────────────────
-    // 3. إعدادات اللعبة، البورصة، الضرائب وقائمة التوب اليومية (Globals)
+    // 3. الإعدادات، البورصة، والليدربورد (Globals)
     // ─────────────────────────────────────────────
     match /globals/{id} {
-      allow read: if true;
-      // السماح بتعديل الإعدادات للأدمن + السماح بتحديث سناب شات قائمة التوب اليومية
-      allow write: if isAdmin() || id == 'leaderboard';
+      allow read, write: if true;
     }
 
     // ─────────────────────────────────────────────
     // 4. طلبات التحويل المالية (Transfer Requests)
     // ─────────────────────────────────────────────
     match /transferRequests/{id} {
-      allow read: if true;
-      allow create: if request.resource.data.amount > 0 &&
-                       request.resource.data.sender != request.resource.data.recipient &&
-                       request.resource.data.status == 'pending' &&
-                       request.resource.data.keys().hasAll(['sender', 'recipient', 'amount', 'timestamp', 'status']);
-      allow update: if request.resource.data.status in ['accepted', 'rejected'] &&
-                       resource.data.status == 'pending';
-      allow delete: if isAdmin();
+      allow read, create, update, delete: if true;
     }
 
     // ─────────────────────────────────────────────
-    // 5. مزادات الأدوات والصفقات (Auctions Shelf)
+    // 5. المزادات الحية والأكواد والرسائل والشركات
     // ─────────────────────────────────────────────
     match /auctions/{id} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read, write: if true;
     }
 
-    // ─────────────────────────────────────────────
-    // 6. أكواد الهدايا والمكافآت (Gift Codes)
-    // ─────────────────────────────────────────────
     match /giftCodes/{code} {
-      allow read: if true;
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin() || (
-        request.resource.data.usedCount == resource.data.usedCount + 1
-      );
+      allow read, write: if true;
     }
 
-    // ─────────────────────────────────────────────
-    // 7. النسخ الاحتياطية للاعبين (Player Backups)
-    // ─────────────────────────────────────────────
-    match /players/{username}/backups/{dateString} {
-      allow read: if true;
-      allow create, update: if true;
-      allow delete: if isAdmin();
-    }
-
-    // ─────────────────────────────────────────────
-    // 8. الشات العام (تم إيقافه لتوفير الكوتا)
-    // ─────────────────────────────────────────────
-    match /chat/{messageId} {
-      allow read, create, update, delete: if isAdmin();
-    }
-
-    // ─────────────────────────────────────────────
-    // 9. صندوق البريد والرسائل الخاصة (Mailbox & DMs)
-    // ─────────────────────────────────────────────
     match /mailbox/{mailId} {
-      allow read: if true;
-      allow create: if request.resource.data.keys().hasAll(['sender', 'recipient', 'type', 'timestamp']);
-      allow update: if true;
-      allow delete: if true;
+      allow read, write: if true;
     }
 
-    // ─────────────────────────────────────────────
-    // 10. الشركات والتحالفات المشتركة (Corporations)
-    // ─────────────────────────────────────────────
     match /corporations/{corpId} {
-      allow read: if true;
-      allow create: if request.resource.data.keys().hasAll(['name', 'founder', 'createdAt']) &&
-                       request.resource.data.name is string &&
-                       request.resource.data.name.size() > 0;
-      allow update: if true;
-      allow delete: if isAdmin();
+      allow read, write: if true;
     }
 
-    // ─────────────────────────────────────────────
-    // 11. المزادات الحية (Live Auctions)
-    // ─────────────────────────────────────────────
     match /liveAuctions/{auctionId} {
-      allow read: if true;
-      allow create: if isAdmin();
-      allow update: if true;
-      allow delete: if isAdmin();
+      allow read, write: if true;
+    }
+
+    match /chat/{messageId} {
+      allow read, write: if true;
     }
   }
 }

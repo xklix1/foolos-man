@@ -11607,15 +11607,6 @@ const UIController = (() => {
   };
 })();
 
-// Manual Cloud Sync button listener
-if (typeof document !== 'undefined') {
-  document.addEventListener('DOMContentLoaded', () => {
-    const saveBtn = document.getElementById('btn-save-progress-cloud');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => window.UIController && window.UIController.manualSaveProgressAction());
-    }
-  });
-}
 
 // Export globally
 window.UIController = UIController;

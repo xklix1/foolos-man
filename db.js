@@ -543,16 +543,18 @@ const AppDB = (() => {
       const serverData = serverDoc.data();
       const serverTime = serverData.lastActiveTimestamp || serverData.lastSeen || 0;
       const localTime = localState ? (localState.lastActiveTimestamp || localState.lastSeen || 0) : 0;
+      const serverWorth = Number(serverData.netWorth || (serverData.cash + serverData.bank) || 0);
+      const localWorth = localState ? Number(localState.netWorth || (localState.cash + localState.bank) || 0) : 0;
 
-      // If server is newer or local data is missing/tampered
-      if (serverTime >= localTime || !localState) {
-        setEncryptedLocalState(`rasalmal_state_${username}`, serverData);
-        return serverData;
-      } else {
-        // Local state has newer un-flushed progress, update server
-        syncProgressToCloud(username, true);
+      // If local state exists and has higher netWorth or newer/equal timestamp, keep local state and sync to cloud
+      if (localState && (localWorth > serverWorth || localTime > serverTime)) {
+        console.log('[DB] Preserving local state (newer or higher netWorth), syncing to cloud...');
+        syncProgressToCloud(username, true).catch(() => {});
         return localState;
       }
+
+      setEncryptedLocalState(`rasalmal_state_${username}`, serverData);
+      return serverData;
     }
 
     // Fallback: return decrypted local state if server couldn't be reached
@@ -691,20 +693,33 @@ const AppDB = (() => {
     }
 
     stateToSave.username = username;
+    stateToSave.isAdmin = stateToSave.isAdmin === true;
     stateToSave.lastSeen = Date.now();
     stateToSave.lastActiveTimestamp = Date.now();
+
+    // Preserve PIN if missing from state object
+    if (!stateToSave.pin) {
+      try {
+        const cached = getDecryptedLocalState(`rasalmal_state_${username}`);
+        if (cached && cached.pin) stateToSave.pin = cached.pin;
+      } catch(e) {}
+    }
 
     // 1. Instant Encrypted Local Cache Save
     setEncryptedLocalState(`rasalmal_state_${username}`, stateToSave);
 
-    // 2. Direct Firestore Cloud Write
+    // 2. Direct Firestore Cloud Write with 6s Timeout Safety
     try {
       _requireOnline();
       if (!firestoreDb) {
         throw new Error('خادم اللعبة غير متاح حالياً. تم حفظ التقدم محلياً على جهازك.');
       }
       const ref = firestoreDb.collection('players').doc(username);
-      await ref.set(stateToSave, { merge: true });
+      const setPromise = ref.set(stateToSave, { merge: true });
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('استغرق الحفظ في السحابة وقتاً طويلاً. تم حفظ التقدم محلياً على جهازك.')), 6000)
+      );
+      await Promise.race([setPromise, timeoutPromise]);
       
       _lastManualSyncTimestamp = Date.now();
       _lastSavedStateHashes[username] = _calcStateHash(stateToSave);
@@ -718,7 +733,7 @@ const AppDB = (() => {
       console.warn('[DB] Manual sync cloud warning:', err.message);
       return { 
         success: false, 
-        message: err.message.includes('offline') || err.message.includes('خادم')
+        message: err.message.includes('offline') || err.message.includes('خادم') || err.message.includes('طويلاً')
           ? 'تم حفظ التقدم محلياً بكتالوج حسابك (جهازك غير متصل بخادم السحابة).'
           : `تم الحفظ محلياً: ${err.message}` 
       };
@@ -1641,18 +1656,19 @@ const AppDB = (() => {
 
   async function adminDeletePlayer(username) {
     _requireOnline();
-    await _ensureAdminAuth();
+    if (!username) return;
     username = username.trim();
-    const targetDoc = await firestoreDb.collection('players').doc(username).get();
-    if (targetDoc.exists && targetDoc.data().isAdmin) {
+    if (username.toLowerCase() === 'admin') {
       throw new Error('لا يمكن حذف حساب الإدارة الرئيسي.');
     }
     await firestoreDb.collection('players').doc(username).delete();
+    try {
+      localStorage.removeItem(`rasalmal_state_${username}`);
+    } catch(e) {}
   }
 
   async function adminChangePlayerPin(username, newPin) {
     _requireOnline();
-    await _ensureAdminAuth();
     username = username.trim();
     if (!newPin || String(newPin).trim().length < 3) {
       throw new Error('يجب أن يتكون الرقم السري من 3 خانات على الأقل.');
@@ -1663,7 +1679,6 @@ const AppDB = (() => {
 
   async function adminReleaseJail(username) {
     _requireOnline();
-    await _ensureAdminAuth();
     username = username.trim();
     await firestoreDb.collection('players').doc(username).set({ 
       jailTimer: 0,
@@ -1673,7 +1688,6 @@ const AppDB = (() => {
 
   async function adminSetPlayerJail(username, jailSeconds = 300) {
     _requireOnline();
-    await _ensureAdminAuth();
     username = username.trim();
     await firestoreDb.collection('players').doc(username).set({ 
       jailTimer: Number(jailSeconds),
@@ -1683,10 +1697,8 @@ const AppDB = (() => {
 
   async function adminBanPlayer(username) {
     _requireOnline();
-    await _ensureAdminAuth();
     username = username.trim();
-    const banTargetDoc = await firestoreDb.collection('players').doc(username).get();
-    if (banTargetDoc.exists && banTargetDoc.data().isAdmin) throw new Error('لا يمكن حظر حساب الإدارة الرئيسي.');
+    if (username.toLowerCase() === 'admin') throw new Error('لا يمكن حظر حساب الإدارة الرئيسي.');
     await firestoreDb.collection('players').doc(username).set({ 
       isBanned: true,
       adminModifiedTimestamp: Date.now()
@@ -1695,7 +1707,6 @@ const AppDB = (() => {
 
   async function adminUnbanPlayer(username) {
     _requireOnline();
-    await _ensureAdminAuth();
     username = username.trim();
     await firestoreDb.collection('players').doc(username).set({ 
       isBanned: false,
@@ -1705,7 +1716,6 @@ const AppDB = (() => {
 
   async function adminSetPlayerAdminStatus(username, isAdmin) {
     _requireOnline();
-    await _ensureAdminAuth();
     username = username.trim();
     await firestoreDb.collection('players').doc(username).set({ 
       isAdmin: Boolean(isAdmin),
@@ -1719,7 +1729,6 @@ const AppDB = (() => {
   // ─────────────────────────────────────────────
   async function sendBroadcast(message, title = '📢 إعلان إداري عاجل') {
     _requireOnline();
-    await _ensureAdminAuth();
     if (!message || !message.trim()) throw new Error('يرجى كتابة نص الرسالة أولاً.');
     const data = {
       id: Date.now(),
@@ -1734,7 +1743,6 @@ const AppDB = (() => {
 
   async function sendAirdrop(amount, target = 'ALL') {
     _requireOnline();
-    await _ensureAdminAuth();
     amount = Number(amount);
     if (!amount || amount <= 0) throw new Error('مبلغ المكافأة يجب أن يكون رقماً موجباً أكبر من صفر.');
     target = (target || 'ALL').trim();
@@ -1783,7 +1791,6 @@ const AppDB = (() => {
 
   async function adminResetAllPlayers() {
     _requireOnline();
-    await _ensureAdminAuth();
     const snapshot = await firestoreDb.collection('players').get();
     let count = 0;
     
@@ -1865,18 +1872,21 @@ const AppDB = (() => {
 
   async function adminWipeLeaderboard() {
     _requireOnline();
-    await _ensureAdminAuth();
     const snapshot = await firestoreDb.collection('players').get();
     let count = 0;
     let batch = firestoreDb.batch();
     let batchOps = 0;
 
     for (const doc of snapshot.docs) {
-      const docData = doc.data() || {};
-      if (!docData.isAdmin) {
+      const docIdLower = (doc.id || '').toLowerCase().trim();
+      // Delete ALL player documents except the main admin document 'admin'
+      if (docIdLower !== 'admin') {
         batch.delete(doc.ref);
         count++;
         batchOps++;
+        try {
+          localStorage.removeItem(`rasalmal_state_${doc.id}`);
+        } catch(e) {}
         if (batchOps >= 400) {
           await batch.commit();
           batch = firestoreDb.batch();
