@@ -1884,18 +1884,30 @@ const AppDB = (() => {
     _requireOnline();
     const snapshot = await firestoreDb.collection('players').get();
     let count = 0;
+    let batch = firestoreDb.batch();
+    let batchOps = 0;
 
     for (const doc of snapshot.docs) {
       const docIdLower = (doc.id || '').toLowerCase().trim();
       // Delete ALL player documents except the main admin document 'admin'
       if (docIdLower !== 'admin') {
+        try {
+          const backupsSnap = await doc.ref.collection('backups').get();
+          if (!backupsSnap.empty) {
+            backupsSnap.docs.forEach(bDoc => {
+              batch.delete(bDoc.ref);
+              batchOps++;
+            });
+          }
+        } catch(e) {}
+
         batch.delete(doc.ref);
         count++;
         batchOps++;
         try {
           localStorage.removeItem(`rasalmal_state_${doc.id}`);
         } catch(e) {}
-        if (batchOps >= 400) {
+        if (batchOps >= 350) {
           await batch.commit();
           batch = firestoreDb.batch();
           batchOps = 0;
