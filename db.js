@@ -585,19 +585,42 @@ const AppDB = (() => {
     return `${s.cash}_${s.bank}_${s.dirtyCash}_${s.xp}_${s.netWorth}_${s.jailTimer}_${s.jobId}_${s.title}_${JSON.stringify(s.assets || {})}_${JSON.stringify(s.stocks || {})}`;
   }
 
-  async function flushPendingSave() {
+  let _pendingSaveTimer = null;
+  const CLOUD_SAVE_THROTTLE_MS = 90000; // 90 seconds between automatic Firestore writes per player
+
+  async function flushPendingSave(force = false) {
     if (_pendingSaveUser && _pendingSaveState && firebaseReady && firestoreDb) {
       const usernameToSave = _pendingSaveUser;
-
+      const now = Date.now();
+      const lastSaveTime = _lastSaveTimestamps[usernameToSave] || 0;
       const currentHash = _calcStateHash(_pendingSaveState);
       const lastHash = _lastSavedStateHashes[usernameToSave] || '';
-      const lastSaveTime = _lastSaveTimestamps[usernameToSave] || 0;
-      const now = Date.now();
 
-      if (currentHash === lastHash && (now - lastSaveTime < 120000)) {
+      // If state hasn't changed at all, skip writing
+      if (currentHash === lastHash) {
         _pendingSaveUser = null;
         _pendingSaveState = null;
         return true;
+      }
+
+      // STRICT THROTTLE: Unless forced (tab close, app switch, manual sync),
+      // only write to Cloud once every 90 seconds per player!
+      if (!force && (now - lastSaveTime < CLOUD_SAVE_THROTTLE_MS)) {
+        // Schedule a timer to write when the 90-second cooldown expires
+        if (!_pendingSaveTimer) {
+          const delay = Math.max(1000, CLOUD_SAVE_THROTTLE_MS - (now - lastSaveTime));
+          _pendingSaveTimer = setTimeout(() => {
+            _pendingSaveTimer = null;
+            flushPendingSave(true);
+          }, delay);
+        }
+        return true;
+      }
+
+      // If flushing now, cancel any scheduled timer
+      if (_pendingSaveTimer) {
+        clearTimeout(_pendingSaveTimer);
+        _pendingSaveTimer = null;
       }
 
       // Preserve PIN if missing from pending state
@@ -639,17 +662,17 @@ const AppDB = (() => {
     return true;
   }
 
-  // Auto-flush on window close / tab switch
+  // Auto-flush with force=true on window close / tab switch
   if (typeof window !== 'undefined') {
     window.addEventListener('beforeunload', () => {
-      flushPendingSave();
+      flushPendingSave(true);
     });
     window.addEventListener('pagehide', () => {
-      flushPendingSave();
+      flushPendingSave(true);
     });
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
-        flushPendingSave();
+        flushPendingSave(true);
       }
     });
   }
@@ -660,16 +683,14 @@ const AppDB = (() => {
     state.lastSeen = Date.now();
     if (!state.lastActiveTimestamp) state.lastActiveTimestamp = Date.now();
 
-    // Cache locally INSTANTLY in encrypted LocalStorage
+    // Cache locally INSTANTLY in encrypted LocalStorage (100% free, 0 Firestore writes)
     setEncryptedLocalState(`rasalmal_state_${username}`, state);
 
     _pendingSaveUser = username;
     _pendingSaveState = state;
 
-    // NO automatic interval timer to save Firebase writes!
-    if (immediate) {
-      return await flushPendingSave();
-    }
+    // Flush to cloud adhering to the 90s throttle window
+    return await flushPendingSave(false);
   }
 
   async function syncProgressToCloud(username, force = false) {

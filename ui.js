@@ -5117,9 +5117,9 @@ const UIController = (() => {
       }, (err) => console.error("Broadcast listen err: ", err));
     activeListeners.push(unsubBroadcast);
 
-    // 1.5. Tax Config Listener
-    const unsubTaxConfig = db.collection('globals').doc('taxConfig')
-      .onSnapshot((doc) => {
+    // 1.5. Tax Config (Single fetch on load to conserve read quota)
+    db.collection('globals').doc('taxConfig').get()
+      .then((doc) => {
         if (!doc.exists) return;
         const data = doc.data();
         if (data) {
@@ -5133,12 +5133,11 @@ const UIController = (() => {
           if (maj) maj.value = data.majorRate !== undefined ? data.majorRate : 0.00004;
           if (wha) wha.value = data.whaleRate !== undefined ? data.whaleRate : 0.00008;
         }
-      }, (err) => console.error("Tax config listen err: ", err));
-    activeListeners.push(unsubTaxConfig);
+      }).catch((err) => console.warn("Tax config fetch err: ", err));
 
-    // 1.7. Server Config (Boost) Listener
-    const unsubServerConfig = db.collection('globals').doc('serverConfig')
-      .onSnapshot((doc) => {
+    // 1.7. Server Config (Boost) (Single fetch on load to conserve read quota)
+    db.collection('globals').doc('serverConfig').get()
+      .then((doc) => {
         if (!doc.exists) return;
         const data = doc.data();
         if (data) {
@@ -5165,11 +5164,9 @@ const UIController = (() => {
             }
           }
           
-          // Also render global message indicator or stats bar boost if needed
           updateStatsBarServerBoostIndicator();
         }
-      }, (err) => console.error("ServerConfig listen err: ", err));
-    activeListeners.push(unsubServerConfig);
+      }).catch((err) => console.warn("ServerConfig fetch err: ", err));
 
     // Public Chat listener removed to conserve Firebase read/write quota (replaced with Facebook Community)
 
