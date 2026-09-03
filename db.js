@@ -484,7 +484,7 @@ var AppDB = (() => {
     };
 
     fetchMails();
-    const interval = setInterval(fetchMails, 15000); // 15-second polling (Zero quota in Supabase!)
+    const interval = setInterval(fetchMails, 4000); // 4-second polling for instant wire transfer and mail delivery
     return () => clearInterval(interval);
   }
 

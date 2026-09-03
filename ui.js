@@ -10347,6 +10347,27 @@ const UIController = (() => {
   async function processInboxSystemMessages(mails) {
     if (!mails || mails.length === 0) return;
 
+    // Process incoming bank transfers
+    const transfers = mails.filter(m => m.type === 'transfer_received' && (m.status === 'unread' || m.status === 'pending'));
+    for (const tr of transfers) {
+      try {
+        const amount = Number(tr.payload && tr.payload.amount ? tr.payload.amount : 0);
+        if (amount > 0) {
+          GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + amount;
+          GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
+
+          showToast('حوالة بنكية واردة 💸', `وصلتك حوالة مالية بقيمة ${amount.toLocaleString()} EGP من اللاعب "${tr.sender}".`, 'success');
+          playMenuSound('success');
+
+          await AppDB.updateMailStatus(tr.id, 'read');
+          await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
+          renderAll();
+        }
+      } catch (err) {
+        console.error('[Mailbox System] Failed to process transfer_received:', err);
+      }
+    }
+
     const wins = mails.filter(m => m.type === 'auction_win' && m.status === 'pending');
     for (const win of wins) {
       try {
