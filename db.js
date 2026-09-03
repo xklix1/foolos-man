@@ -696,6 +696,7 @@ const AppDB = (() => {
     stateToSave.isAdmin = stateToSave.isAdmin === true;
     stateToSave.lastSeen = Date.now();
     stateToSave.lastActiveTimestamp = Date.now();
+    stateToSave.cloudSavedAt = Date.now();
 
     // Preserve PIN if missing from state object
     if (!stateToSave.pin) {
