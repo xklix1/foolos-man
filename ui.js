@@ -4961,7 +4961,7 @@ const UIController = (() => {
         const p1Worth = document.getElementById('podium-worth-1');
         const p1Avatar = document.getElementById('podium-avatar-1');
         if (p1Name) {
-          const fbBadge = top1.facebookVerified ? ' <i class="fa-brands fa-facebook text-blue-400 text-xs mr-1 inline-block drop-shadow-[0_0_6px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة فيسبوك 👍"></i>' : '';
+          const fbBadge = top1.facebookVerified ? ' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك 👍">f</span>' : '';
           p1Name.innerHTML = top1.username + fbBadge;
           p1Name.classList.add('cursor-pointer', 'hover:underline');
           p1Name.onclick = () => openPlayerProfileCard(top1.username);
@@ -4978,7 +4978,7 @@ const UIController = (() => {
         const p2Worth = document.getElementById('podium-worth-2');
         const p2Avatar = document.getElementById('podium-avatar-2');
         if (p2Name) {
-          const fbBadge = top2.facebookVerified ? ' <i class="fa-brands fa-facebook text-blue-400 text-xs mr-1 inline-block drop-shadow-[0_0_6px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة فيسبوك 👍"></i>' : '';
+          const fbBadge = top2.facebookVerified ? ' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك 👍">f</span>' : '';
           p2Name.innerHTML = top2.username + fbBadge;
           p2Name.classList.add('cursor-pointer', 'hover:underline');
           p2Name.onclick = () => openPlayerProfileCard(top2.username);
@@ -4995,7 +4995,7 @@ const UIController = (() => {
         const p3Worth = document.getElementById('podium-worth-3');
         const p3Avatar = document.getElementById('podium-avatar-3');
         if (p3Name) {
-          const fbBadge = top3.facebookVerified ? ' <i class="fa-brands fa-facebook text-blue-400 text-xs mr-1 inline-block drop-shadow-[0_0_6px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة فيسبوك 👍"></i>' : '';
+          const fbBadge = top3.facebookVerified ? ' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك 👍">f</span>' : '';
           p3Name.innerHTML = top3.username + fbBadge;
           p3Name.classList.add('cursor-pointer', 'hover:underline');
           p3Name.onclick = () => openPlayerProfileCard(top3.username);
@@ -5055,7 +5055,7 @@ const UIController = (() => {
               <div class="min-w-0">
                 <span class="font-black ${isSelf ? 'text-yellow-400 glow-gold' : rank === 1 ? 'text-yellow-300' : 'text-white'} text-xs sm:text-sm inline-flex items-center gap-1 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${player.username}')">
                   <span>${player.username}</span>
-                  ${player.facebookVerified ? '<i class="fa-brands fa-facebook text-blue-400 text-xs mr-1 inline-block drop-shadow-[0_0_6px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة فيسبوك 👍"></i>' : ''}
+                  ${player.facebookVerified ? '<span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك 👍">f</span>' : ''}
                 </span>
                 ${isSelf ? (window.currentLang === 'en' ? '<span class="text-[8.5px] px-1.5 py-0.2 bg-yellow-500/20 text-yellow-400 rounded font-black inline-block border border-yellow-500/30">You (Your Account)</span>' : '<span class="text-[8.5px] px-1.5 py-0.2 bg-yellow-500/20 text-yellow-400 rounded font-black inline-block border border-yellow-500/30">أنت (حسابك)</span>') : ''}
               </div>
@@ -9553,7 +9553,7 @@ const UIController = (() => {
       } else {
         const isMyMsg = curUser && msg.sender === curUser;
         const hasFb = Boolean(msg.facebookVerified || msg.isFbVerified || (isMyMsg && GameEngine.state && (GameEngine.state.facebookVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('facebook')))));
-        const fbIconHtml = hasFb ? '<i class="fa-brands fa-facebook text-blue-400 text-xs mr-0.5 inline-block drop-shadow-[0_0_8px_rgba(59,130,246,0.9)]" title="متابع رسمي لصفحة فيسبوك 👍"></i>' : '';
+        const fbIconHtml = hasFb ? '<span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك 👍">f</span>' : '';
         msgDiv.innerHTML = `
           <div class="flex items-center gap-1.5 mb-0.5">
             <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
@@ -9738,7 +9738,7 @@ const UIController = (() => {
       const hasFbVerified = Boolean(pState.facebookVerified === true || (pState.state && pState.state.facebookVerified) || (pState.badges && pState.badges.includes('facebook')));
       const uCardEl = document.getElementById('profile-card-username');
       if (uCardEl) {
-        const fbIconHtml = hasFbVerified ? ' <i class="fa-brands fa-facebook text-blue-400 text-sm mr-1.5 inline-block drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة اللعبة على فيسبوك 👍"></i>' : '';
+        const fbIconHtml = hasFbVerified ? ' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك 👍">f</span>' : '';
         uCardEl.innerHTML = (pState.username || '---') + fbIconHtml;
       }
       document.getElementById('profile-card-title').textContent = pState.title || 'عامل مبتدئ';
@@ -9761,7 +9761,7 @@ const UIController = (() => {
           badgeCount++;
           const fbBadge = document.createElement('div');
           fbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-950/80 border-2 border-blue-500 text-blue-300 text-xs font-black shadow-md shadow-blue-950/60';
-          fbBadge.innerHTML = '<i class="fa-brands fa-facebook text-blue-400 text-base"></i><span>متابع رسمي لصفحة اللعبة على فيسبوك 👍</span>';
+          fbBadge.innerHTML = '<span class="fb-vip-badge">f</span><span>متابع رسمي لصفحة اللعبة على فيسبوك 👍</span>';
           badgesListEl.appendChild(fbBadge);
         }
 
