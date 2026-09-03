@@ -729,28 +729,54 @@ const GameEngine = (() => {
     }
   }
 
-  // Initialize Stock Price Histories & Regimes
+  // Initialize Stock Price Histories & Regimes (with LocalStorage persistence to prevent refresh price drops)
   function initStocks() {
     const directions = ['bullish', 'bearish', 'sideways'];
+    let savedPrices = null;
+    let savedRegimes = null;
+    try {
+      savedPrices = JSON.parse(localStorage.getItem('rasalmal_stock_prices'));
+      savedRegimes = JSON.parse(localStorage.getItem('rasalmal_stock_regimes'));
+    } catch (e) {}
+
     Object.keys(STOCKS).forEach(sym => {
       const stock = STOCKS[sym];
-      // Generate 25 points of initial history with smooth momentum
-      const history = [];
-      let current = stock.basePrice;
-      for (let i = 0; i < 25; i++) {
-        const change = (Math.random() - 0.5) * 1.5 * stock.volatility;
-        current = Math.max(stock.floor, Math.floor(current * (1 + change)));
-        history.push(current);
-      }
-      stockPrices[sym] = history;
+      if (savedPrices && Array.isArray(savedPrices[sym]) && savedPrices[sym].length >= 5) {
+        // Restore persistent price curve — NEVER reset to basePrice on page refresh!
+        stockPrices[sym] = savedPrices[sym];
+        if (savedRegimes && savedRegimes[sym]) {
+          stockRegimes[sym] = savedRegimes[sym];
+        } else {
+          const lastP = stockPrices[sym][stockPrices[sym].length - 1];
+          stockRegimes[sym] = {
+            direction: directions[Math.floor(Math.random() * directions.length)],
+            duration: Math.floor(10 + Math.random() * 18),
+            floatingBase: lastP
+          };
+        }
+      } else {
+        // Generate initial history only on very first launch
+        const history = [];
+        let current = stock.basePrice;
+        for (let i = 0; i < 25; i++) {
+          const change = (Math.random() - 0.5) * 1.5 * stock.volatility;
+          current = Math.max(stock.floor, Math.floor(current * (1 + change)));
+          history.push(current);
+        }
+        stockPrices[sym] = history;
 
-      // Assign initial market trend regime
-      stockRegimes[sym] = {
-        direction: directions[Math.floor(Math.random() * directions.length)],
-        duration: Math.floor(10 + Math.random() * 18),
-        floatingBase: stock.basePrice
-      };
+        stockRegimes[sym] = {
+          direction: directions[Math.floor(Math.random() * directions.length)],
+          duration: Math.floor(10 + Math.random() * 18),
+          floatingBase: stock.basePrice
+        };
+      }
     });
+
+    try {
+      localStorage.setItem('rasalmal_stock_prices', JSON.stringify(stockPrices));
+      localStorage.setItem('rasalmal_stock_regimes', JSON.stringify(stockRegimes));
+    } catch (e) {}
   }
 
   // Calculate Net Worth: Cash + Bank + DirtyCash + (Real Estate * Cost) + (Stocks * currentPrice) + Locked Investments
@@ -1422,6 +1448,12 @@ const GameEngine = (() => {
         if (history.length > 30) history.shift();
         updates.stockMovement = true;
       });
+
+      // Persist latest price evolution to LocalStorage so refresh never loses or resets price!
+      try {
+        localStorage.setItem('rasalmal_stock_prices', JSON.stringify(stockPrices));
+        localStorage.setItem('rasalmal_stock_regimes', JSON.stringify(stockRegimes));
+      } catch (e) {}
     }
 
     // 8. Dynamic Market Events (Balanced & Cooled: Every 90s min, 3% chance)
