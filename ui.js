@@ -5281,17 +5281,17 @@ const UIController = (() => {
           return;
         }
 
-        // Jail check from admin
-        if (typeof data.jailTimer === 'number' && data.jailTimer !== GameEngine.state.jailTimer) {
-          GameEngine.state.jailTimer = data.jailTimer;
-          if (data.jailTimer > 0 && typeof handleJailedUser === 'function') {
-            handleJailedUser(data.jailTimer);
-          }
-        }
-
         // Only process external admin modifications if explicitly timestamped
         if (data.adminModifiedTimestamp && data.adminModifiedTimestamp > lastAdminActionTimestamp) {
           lastAdminActionTimestamp = data.adminModifiedTimestamp;
+
+          // Jail check strictly from explicit admin modification
+          if (typeof data.jailTimer === 'number' && data.jailTimer !== GameEngine.state.jailTimer) {
+            GameEngine.state.jailTimer = data.jailTimer;
+            if (data.jailTimer > 0 && typeof handleJailedUser === 'function') {
+              handleJailedUser(data.jailTimer);
+            }
+          }
 
           GameEngine.state.cash = typeof data.cash === 'number' ? data.cash : 0;
           GameEngine.state.bank = typeof data.bank === 'number' ? data.bank : 0;
