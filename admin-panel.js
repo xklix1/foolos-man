@@ -427,6 +427,12 @@
           resultCard.classList.remove('hidden');
           resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
+        const fbText = document.getElementById('admin-toggle-fb-text');
+        if (fbText) {
+          const isFb = Boolean(state.facebookVerified || (state.badges && state.badges.includes('facebook')));
+          fbText.textContent = isFb ? 'سحب شارة فيسبوك (إلغاء التوثيق) ❌' : 'منح شارة فيسبوك الزرقاء (توثيق الحساب) 💎';
+        }
+
         renderPlayersTable();
         renderPlayerPossessions(state);
         loadAdminPlayerWorkspace(state);
@@ -1247,6 +1253,35 @@
               toggleAdminRoleBtn.className = 'w-full py-2 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 rounded-lg text-[11px] font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20';
             }
           }
+        }
+      });
+    }
+
+    // Toggle Facebook VIP Badge Action
+    const toggleFbBtn = document.getElementById('btn-admin-toggle-facebook');
+    if (toggleFbBtn) {
+      toggleFbBtn.addEventListener('click', async () => {
+        if (!selectedPlayer || !selectedPlayerState) {
+          showToast('تنبيه', 'يرجى اختيار لاعب أولاً من القائمة.', 'warning');
+          return;
+        }
+        const currentFb = Boolean(selectedPlayerState.facebookVerified || (selectedPlayerState.badges && selectedPlayerState.badges.includes('facebook')));
+        const newFb = !currentFb;
+        selectedPlayerState.facebookVerified = newFb;
+        if (!Array.isArray(selectedPlayerState.badges)) selectedPlayerState.badges = [];
+        if (newFb && !selectedPlayerState.badges.includes('facebook')) selectedPlayerState.badges.push('facebook');
+        if (!newFb) selectedPlayerState.badges = selectedPlayerState.badges.filter(b => b !== 'facebook');
+
+        try {
+          toggleFbBtn.disabled = true;
+          await AppDB.savePlayerState(selectedPlayer, selectedPlayerState, true);
+          showToast('شارة فيسبوك', newFb ? `تم منح شارة فيسبوك الزرقاء للاعب ${selectedPlayer} بنجاح! 💎` : `تم سحب الشارة من اللاعب ${selectedPlayer}.`, 'success');
+          logAdminAction(`${newFb ? 'منح' : 'سحب'} شارة فيسبوك للاعب: ${selectedPlayer}`);
+          selectPlayerForModeration(selectedPlayer);
+        } catch (err) {
+          showToast('خطأ شارة', err.message, 'error');
+        } finally {
+          toggleFbBtn.disabled = false;
         }
       });
     }

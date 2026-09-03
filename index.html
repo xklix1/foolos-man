@@ -330,7 +330,7 @@
           </button>
 
           <!-- Facebook Official Page Button -->
-          <a id="btn-menu-facebook" href="https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
+          <a id="btn-menu-facebook" href="https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" onclick="window.UI.claimFacebookReward(event)"
             class="menu-btn-sub p-3 rounded-xl glass-panel border border-slate-800 hover:border-blue-500/50 flex flex-col items-center justify-center gap-1.5 transition duration-200 group relative">
             <div
               class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:scale-110 transition relative">
@@ -1411,7 +1411,10 @@
                   <i class="fa-solid fa-user-tie text-sm"></i>
                 </div>
                 <div class="min-w-0">
-                  <span id="stat-username" class="text-sm font-black text-white block leading-tight truncate">تحميل...</span>
+                  <div class="flex items-center gap-1.5">
+                    <span id="stat-username" class="text-sm font-black text-white block leading-tight truncate">تحميل...</span>
+                    <span id="stat-fb-badge" class="hidden text-blue-400 text-xs shrink-0 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة اللعبة على فيسبوك 👍"><i class="fa-brands fa-facebook"></i></span>
+                  </div>
                   <span id="stat-title" class="text-[11px] font-bold text-yellow-400 block truncate">تحميل...</span>
                 </div>
               </div>
@@ -1585,7 +1588,7 @@
           </button>
           
           <!-- Facebook Community Sidebar Link -->
-          <a id="btn-sidebar-facebook" href="https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
+          <a id="btn-sidebar-facebook" href="https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" onclick="window.UI.claimFacebookReward(event)"
             class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 text-xs font-bold transition duration-200 group mt-2">
             <div class="flex items-center gap-2.5">
               <i class="fa-brands fa-facebook w-4 text-center text-blue-400 text-base group-hover:scale-110 transition drop-shadow-[0_0_6px_rgba(59,130,246,0.8)]"></i>
@@ -1615,6 +1618,7 @@
             <div>
               <div class="flex items-center gap-1.5">
                 <span id="stat-username-mobile" class="text-xs font-bold text-white">تحميل...</span>
+                <span id="stat-fb-badge-mobile" class="hidden text-blue-400 text-xs shrink-0 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة اللعبة على فيسبوك 👍"><i class="fa-brands fa-facebook"></i></span>
                 <span id="stat-title-mobile" class="text-[10px] font-bold text-yellow-400">...</span>
               </div>
             </div>
@@ -1636,7 +1640,7 @@
               <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
               <span>تنويه ⚠️</span>
             </button>
-            <a id="btn-mobile-facebook" href="https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" title="صفحة الفيسبوك الرسمية - وثّق حسابك"
+            <a id="btn-mobile-facebook" href="https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" title="صفحة الفيسبوك الرسمية - وثّق حسابك" onclick="window.UI.claimFacebookReward(event)"
               class="px-2 py-1 bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 border border-blue-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0 relative">
               <i class="fa-brands fa-facebook text-[11px] text-blue-400"></i>
               <span>فيسبوك</span>
@@ -4079,9 +4083,9 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=6.5"></script>
-  <script src="game.js?v=6.5"></script>
-  <script src="ui.js?v=6.5"></script>
+  <script src="db.js?v=6.6"></script>
+  <script src="game.js?v=6.6"></script>
+  <script src="ui.js?v=6.6"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

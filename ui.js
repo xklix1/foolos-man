@@ -1728,15 +1728,19 @@ const UIController = (() => {
     const isAdmin = Boolean(s.isAdmin);
 
     const isFb = Boolean(s.facebookVerified || (s.badges && s.badges.includes('facebook')));
-    const fbIcon = isFb ? ' <i class="fa-brands fa-facebook text-blue-400 text-xs mr-1 inline-block drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة اللعبة على فيسبوك 👍"></i>' : '';
 
     // Desktop stats
     const uEl = document.getElementById('stat-username');
     if (uEl) {
-      uEl.innerHTML = username + fbIcon;
+      uEl.textContent = username;
       uEl.classList.add('cursor-pointer', 'hover:underline');
       uEl.title = 'اضغط لعرض ملفك الشخصي وأوسمتك';
       uEl.onclick = () => openPlayerProfileCard(username);
+    }
+    const fbEl = document.getElementById('stat-fb-badge');
+    if (fbEl) {
+      if (isFb) fbEl.classList.remove('hidden');
+      else fbEl.classList.add('hidden');
     }
     const tEl = document.getElementById('stat-title');
     if (tEl) tEl.textContent = s.title;
@@ -1756,10 +1760,15 @@ const UIController = (() => {
     // Mobile stats
     const umEl = document.getElementById('stat-username-mobile');
     if (umEl) {
-      umEl.innerHTML = username + fbIcon;
+      umEl.textContent = username;
       umEl.classList.add('cursor-pointer', 'hover:underline');
       umEl.title = 'اضغط لعرض ملفك الشخصي وأوسمتك';
       umEl.onclick = () => openPlayerProfileCard(username);
+    }
+    const fbmEl = document.getElementById('stat-fb-badge-mobile');
+    if (fbmEl) {
+      if (isFb) fbmEl.classList.remove('hidden');
+      else fbmEl.classList.add('hidden');
     }
     const tmEl = document.getElementById('stat-title-mobile');
     if (tmEl) tmEl.textContent = s.title;
@@ -9409,13 +9418,16 @@ const UIController = (() => {
 
   // ── Facebook Official Verification & Reward Engine ──
   async function claimFacebookReward(e) {
-    if (e && e.preventDefault) e.preventDefault();
-
-    const fbUrl = 'https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr';
-    window.open(fbUrl, '_blank', 'noopener,noreferrer');
-
     const s = GameEngine.state;
-    if (!s) return;
+    if (!s) {
+      showToast(
+        'يرجى بدء اللعب أولاً ⚠️',
+        'اضغط على (متابعة اللعب) أو سجل دخولك لحسابك أولاً، ثم اضغط زر فيسبوك لتوثيق حسابك واستلام الهدية والشارة!',
+        'warning',
+        5000
+      );
+      return;
+    }
 
     if (s.facebookVerified) {
       showToast(
