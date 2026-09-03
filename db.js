@@ -638,18 +638,84 @@ var AppDB = (() => {
   }
 
   async function adminGetAllPlayers() {
-    return await _api('players?select=*&order=net_worth.desc');
+    const rows = await _api('players?select=*&order=net_worth.desc');
+    return (rows || []).map(r => {
+      const p = (typeof r.state === 'object' && r.state) ? { ...r.state } : {};
+      p.username = r.username;
+      p.pin = r.pin;
+      p.cash = Number(r.cash || 0);
+      p.bank = Number(r.bank || 0);
+      p.dirtyCash = Number(r.dirty_cash || 0);
+      p.netWorth = Number(r.net_worth || 0);
+      p.xp = Number(r.xp || 0);
+      p.title = r.title || 'عامل مبتدئ';
+      p.jobId = r.job_id || 'worker';
+      p.isAdmin = r.is_admin === true;
+      p.isBanned = r.is_banned === true;
+      p.jailTimer = Number(r.jail_timer || 0);
+      p.totalTaxesPaid = Number(r.total_taxes_paid || 0);
+      p.afkManagerExpiresAt = Number(r.afk_manager_expires_at || 0);
+      p.lastSeen = Number(r.last_seen || 0);
+      p.createdAt = Number(r.created_at || 0);
+
+      // Keep snake_case mirrors as well
+      p.is_admin = p.isAdmin;
+      p.is_banned = p.isBanned;
+      p.jail_timer = p.jailTimer;
+      p.net_worth = p.netWorth;
+      p.dirty_cash = p.dirtyCash;
+      return p;
+    });
   }
 
   async function adminGetPlayer(username) {
     const rows = await _api(`players?username=eq.${encodeURIComponent(username)}&select=*`);
-    return rows && rows.length > 0 ? rows[0] : null;
+    if (!rows || rows.length === 0) return null;
+    const r = rows[0];
+    const p = (typeof r.state === 'object' && r.state) ? { ...r.state } : {};
+    p.username = r.username;
+    p.pin = r.pin;
+    p.cash = Number(r.cash || 0);
+    p.bank = Number(r.bank || 0);
+    p.dirtyCash = Number(r.dirty_cash || 0);
+    p.netWorth = Number(r.net_worth || 0);
+    p.xp = Number(r.xp || 0);
+    p.title = r.title || 'عامل مبتدئ';
+    p.jobId = r.job_id || 'worker';
+    p.isAdmin = r.is_admin === true;
+    p.isBanned = r.is_banned === true;
+    p.jailTimer = Number(r.jail_timer || 0);
+    p.totalTaxesPaid = Number(r.total_taxes_paid || 0);
+    p.afkManagerExpiresAt = Number(r.afk_manager_expires_at || 0);
+    p.lastSeen = Number(r.last_seen || 0);
+    p.createdAt = Number(r.created_at || 0);
+    p.is_admin = p.isAdmin;
+    p.is_banned = p.isBanned;
+    p.jail_timer = p.jailTimer;
+    p.net_worth = p.netWorth;
+    p.dirty_cash = p.dirtyCash;
+    return p;
   }
 
   async function adminSavePlayer(username, updates) {
+    const payload = {};
+    if (updates.cash !== undefined) payload.cash = Number(updates.cash);
+    if (updates.bank !== undefined) payload.bank = Number(updates.bank);
+    if (updates.dirtyCash !== undefined) payload.dirty_cash = Number(updates.dirtyCash);
+    if (updates.netWorth !== undefined) payload.net_worth = Number(updates.netWorth);
+    if (updates.xp !== undefined) payload.xp = Number(updates.xp);
+    if (updates.title !== undefined) payload.title = updates.title;
+    if (updates.jobId !== undefined) payload.job_id = updates.jobId;
+    if (updates.isAdmin !== undefined) payload.is_admin = Boolean(updates.isAdmin);
+    if (updates.isBanned !== undefined) payload.is_banned = Boolean(updates.isBanned);
+    if (updates.jailTimer !== undefined) payload.jail_timer = Number(updates.jailTimer);
+    if (updates.pin !== undefined) payload.pin = updates.pin;
+    if (updates.state !== undefined) payload.state = updates.state;
+    payload.admin_modified_timestamp = Date.now();
+
     await _api(`players?username=eq.${encodeURIComponent(username)}`, {
       method: 'PATCH',
-      body: JSON.stringify(updates)
+      body: JSON.stringify(payload)
     });
     return true;
   }
