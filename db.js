@@ -8,12 +8,12 @@
  */
 
 var AppDB = (() => {
-  console.log('[DB] Supabase Engine Loaded (v=200)');
+  console.log('[DB] Cloud Engine Loaded (v=200)');
 
   // ─────────────────────────────────────────────
   //  CONFIG & CREDENTIALS
   // ─────────────────────────────────────────────
-  const CLIENT_VERSION = 'V4.0-SUPABASE';
+  const CLIENT_VERSION = 'V5.2';
   const SUPABASE_URL = 'https://rhuiaxrodnbjohowdlpo.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_O2L34RTDz6k2UQvrkrNA_Q_t5Nty9t7';
 
@@ -95,10 +95,10 @@ var AppDB = (() => {
     // Initialize Supabase JS client if loaded via CDN
     if (window.supabase && typeof window.supabase.createClient === 'function') {
       try {
-        _supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log('[DB] Supabase JS Client initialized successfully.');
+        _supabaseClient = window.supabase.createClient( SUPABASE_ANON_KEY);
+        console.log('[DB] Cloud Engine initialized successfully.');
       } catch (e) {
-        console.warn('[DB] Supabase JS Client fallback to direct REST:', e.message);
+        console.warn('[DB] Cloud fallback:', e.message);
       }
     }
 
@@ -273,7 +273,7 @@ var AppDB = (() => {
           body: JSON.stringify(payload)
         });
       } catch (err) {
-        console.warn('[DB] Supabase save warning:', err.message);
+        console.warn('[DB] Cloud save warning:', err.message);
       }
     };
 
@@ -299,7 +299,7 @@ var AppDB = (() => {
     const s = (window.GameEngine && window.GameEngine.state) || getDecryptedLocalState(`rasalmal_state_${username}`);
     if (!s) return { success: false, message: 'لا توجد بيانات لحفظها.' };
     await savePlayerState(username, s, true);
-    return { success: true, message: 'تم حفظ ومزامنة التقدم مع سحابة Supabase بنجاح! ☁️✅' };
+    return { success: true, message: 'تم حفظ ومزامنة التقدم مع السحابة بنجاح! ☁️✅' };
   }
 
   // ─────────────────────────────────────────────
