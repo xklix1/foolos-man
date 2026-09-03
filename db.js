@@ -19,13 +19,13 @@ const AppDB = (() => {
   const CLIENT_VERSION = 'V2.5';
 
   const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyC7KRj3-t_03HLMzJ10miVhdKWCpabPQB4",
-    authDomain: "foolos-man.firebaseapp.com",
-    projectId: "foolos-man",
-    storageBucket: "foolos-man.firebasestorage.app",
-    messagingSenderId: "426833341092",
-    appId: "1:426833341092:web:141a51c22d8b1afc621431",
-    measurementId: "G-54ZC388NW1"
+    apiKey: "AIzaSyC34_3asZIiVxm4vARBBmRIC6FeUbAcrT0",
+    authDomain: "ras-almal.firebaseapp.com",
+    projectId: "ras-almal",
+    storageBucket: "ras-almal.firebasestorage.app",
+    messagingSenderId: "1062903984803",
+    appId: "1:1062903984803:web:5bf2eaea27cb593d238516",
+    measurementId: "G-L1FL28JKLD"
   };
 
   // Admin identity is determined at runtime from Firestore (isAdmin: true flag).
