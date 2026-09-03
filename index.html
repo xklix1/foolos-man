@@ -1421,6 +1421,13 @@
               </button>
             </div>
 
+            <!-- Quick Hall of Fame / Leaderboard Ingame Button -->
+            <button id="btn-ingame-leaderboard-sidebar" onclick="window.UI.switchTab('leaderboard')" title="عرش الأثرياء (توب 10)"
+              class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-yellow-500/20 via-amber-500/30 to-yellow-500/20 border border-yellow-500/50 hover:border-yellow-400 text-yellow-400 hover:text-yellow-300 transition-all font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/10 cursor-pointer active:scale-95 mb-2">
+              <i class="fa-solid fa-trophy text-sm text-yellow-400"></i>
+              <span>عرش الأثرياء (توب 10) 👑</span>
+            </button>
+
             <!-- Primary Cloud Save Button -->
             <button id="btn-save-progress-cloud-ingame" title="حفظ التقدم في السحابة"
               class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-yellow-500/25 to-amber-500/20 border border-yellow-500/40 hover:border-yellow-400 text-yellow-400 hover:text-yellow-300 transition-all font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/5 cursor-pointer active:scale-95">
@@ -1610,6 +1617,11 @@
           </div>
           <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 max-w-[65%] shrink-0">
             <!-- Cloud Save / Sync Button Mobile -->
+            <button id="btn-ingame-leaderboard-mobile" title="عرش الأثرياء (توب 10)" onclick="window.UI.switchTab('leaderboard')"
+              class="px-2.5 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/50 rounded-lg text-[10px] font-black transition flex items-center gap-1 shrink-0 cursor-pointer shadow-sm">
+              <i class="fa-solid fa-trophy text-[10px] text-yellow-400"></i>
+              <span>توب 10 🏆</span>
+            </button>
             <button id="btn-save-progress-cloud-mobile" title="حفظ التقدم في السحابة"
               class="px-2.5 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/40 rounded-lg text-[10px] font-black transition flex items-center gap-1 shrink-0 cursor-pointer">
               <i class="fa-solid fa-cloud-arrow-up text-[10px]"></i>
@@ -3714,6 +3726,11 @@
       <i class="fa-solid fa-gauge-high text-base text-yellow-400"></i>
       <span>حسابي</span>
     </button>
+    <button data-tab="leaderboard"
+      class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
+      <i class="fa-solid fa-trophy text-base text-yellow-400"></i>
+      <span>توب 10</span>
+    </button>
     <button data-tab="careers"
       class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
       <i class="fa-solid fa-briefcase text-base text-blue-400"></i>
@@ -4057,9 +4074,9 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=5.7"></script>
-  <script src="game.js?v=5.7"></script>
-  <script src="ui.js?v=5.7"></script>
+  <script src="db.js?v=5.8"></script>
+  <script src="game.js?v=5.8"></script>
+  <script src="ui.js?v=5.8"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
