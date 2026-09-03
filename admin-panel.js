@@ -159,6 +159,49 @@
         return true;
       });
 
+      // Dynamic sorting logic (Alphabetical, Wealth, Date, Cash)
+      const sortSelect = document.getElementById('adm-players-sort-select');
+      const sortVal = sortSelect ? sortSelect.value : 'netWorth_desc';
+
+      if (sortSelect && !sortSelect._hasSortListener) {
+        sortSelect._hasSortListener = true;
+        sortSelect.addEventListener('change', () => {
+          renderPlayersTable();
+        });
+      }
+
+      filtered.sort((a, b) => {
+        const nwA = Number(a.netWorth !== undefined && a.netWorth !== null ? a.netWorth : (a.net_worth || 0));
+        const nwB = Number(b.netWorth !== undefined && b.netWorth !== null ? b.netWorth : (b.net_worth || 0));
+        const cashA = Number(a.cash || 0);
+        const cashB = Number(b.cash || 0);
+        const timeA = Number(a.createdAt || a.created_at || a.lastSeen || a.last_seen || 0);
+        const timeB = Number(b.createdAt || b.created_at || b.lastSeen || b.last_seen || 0);
+        const nameA = String(a.username || '').toLowerCase();
+        const nameB = String(b.username || '').toLowerCase();
+
+        switch (sortVal) {
+          case 'netWorth_desc':
+            return nwB - nwA;
+          case 'netWorth_asc':
+            return nwA - nwB;
+          case 'cash_desc':
+            return cashB - cashA;
+          case 'cash_asc':
+            return cashA - cashB;
+          case 'alpha_asc':
+            return nameA.localeCompare(nameB, 'ar', { sensitivity: 'base' });
+          case 'alpha_desc':
+            return nameB.localeCompare(nameA, 'ar', { sensitivity: 'base' });
+          case 'created_desc':
+            return timeB - timeA;
+          case 'created_asc':
+            return timeA - timeB;
+          default:
+            return nwB - nwA;
+        }
+      });
+
       if (filtered.length === 0) {
         if (rawQuery) {
           playersTableBody.innerHTML = `
@@ -252,8 +295,8 @@
               <div class="text-[10px] text-slate-400 font-sans">${p.title || 'عامل مبتدئ'}</div>
             </div>
           </td>
-          <td class="p-2.5 text-center numbers-font font-bold text-yellow-400">${(p.netWorth || 0).toLocaleString()} EGP</td>
-          <td class="p-2.5 text-center numbers-font font-bold text-emerald-400">${(p.cash || 0).toLocaleString()} EGP</td>
+          <td class="p-2.5 text-center numbers-font font-bold text-yellow-400">${Number(p.netWorth !== undefined && p.netWorth !== null ? p.netWorth : (p.net_worth || 0)).toLocaleString()} EGP</td>
+          <td class="p-2.5 text-center numbers-font font-bold text-emerald-400">${Number(p.cash || 0).toLocaleString()} EGP</td>
           <td class="p-2.5 text-center">${statusBadge}</td>
           <td class="p-2.5 text-left">
             <button data-user="${p.username}" class="btn-select-player px-2.5 py-1 bg-yellow-500/20 hover:bg-yellow-500 text-yellow-400 hover:text-slate-950 rounded text-[10px] font-bold transition">إدارة ⚡</button>

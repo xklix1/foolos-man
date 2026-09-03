@@ -503,8 +503,8 @@
             </div>
           </div>
 
-          <!-- Filter tabs -->
-          <div class="flex justify-between items-center pt-1 border-t border-slate-800/80 text-[11px]">
+          <!-- Filter tabs & Sorting options -->
+          <div class="flex flex-wrap justify-between items-center gap-2 pt-1.5 border-t border-slate-800/80 text-[11px]">
             <div class="flex gap-1">
               <button data-filter="all"
                 class="btn-admin-filter-players px-2.5 py-1 rounded bg-yellow-500/20 text-yellow-400 font-bold border border-yellow-500/30">الكل
@@ -516,6 +516,25 @@
                 class="btn-admin-filter-players px-2.5 py-1 rounded bg-slate-900 text-slate-400 hover:bg-slate-800 transition">المحظورين
                 (<span id="adm-filter-count-banned">0</span>)</button>
             </div>
+
+            <!-- Sorting Select Dropdown -->
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                <i class="fa-solid fa-arrow-down-short-wide text-yellow-400"></i>
+                <span>ترتيب حسب:</span>
+              </span>
+              <select id="adm-players-sort-select" class="bg-slate-900 text-slate-200 border border-slate-700 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-yellow-400 cursor-pointer">
+                <option value="netWorth_desc">💎 من الأغنى للأقل (افتراضي)</option>
+                <option value="netWorth_asc">🪙 من الأقل ثروة للأعلى</option>
+                <option value="cash_desc">💵 الأكثر كاش</option>
+                <option value="cash_asc">💸 الأقل كاش</option>
+                <option value="alpha_asc">🔤 أبجدي (أ - ي / A - Z)</option>
+                <option value="alpha_desc">🔤 أبجدي عكسي (ي - أ / Z - A)</option>
+                <option value="created_desc">🆕 من الأحدث تسجيلاً للأقدم</option>
+                <option value="created_asc">⏳ من الأقدم تسجيلاً للأحدث</option>
+              </select>
+            </div>
+
             <span id="admin-players-total-label" class="text-slate-400">0 لاعب مسجل</span>
           </div>
         </div>
@@ -2232,9 +2251,9 @@
   <div id="toast-container" class="fixed top-4 left-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Core Modules -->
-  <script src="game.js?v=5.4"></script>
-  <script src="db.js?v=5.4"></script>
-  <script src="admin-panel.js?v=5.4"></script>
+  <script src="game.js?v=5.5"></script>
+  <script src="db.js?v=5.5"></script>
+  <script src="admin-panel.js?v=5.5"></script>
 
   <!-- Standalone Admin Controller Script -->
   <script>
