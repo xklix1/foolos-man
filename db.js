@@ -917,6 +917,61 @@ var AppDB = (() => {
     return true;
   }
 
+  async function leaveCorporation(corpId, username) {
+    if (!corpId || !username) throw new Error('بيانات المغادرة غير صالحة.');
+    const u = username.trim();
+    const rows = await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`);
+    if (!rows || rows.length === 0) throw new Error('الشركة غير موجودة.');
+    const corp = rows[0];
+    let members = Array.isArray(corp.members) ? corp.members : [];
+    if (!members.includes(u)) throw new Error('أنت لست عضواً في هذه الشركة.');
+
+    members = members.filter(m => m !== u);
+
+    // If the leaving player is the founder
+    if (corp.founder === u) {
+      if (members.length > 0) {
+        // Transfer founder to next member
+        const newFounder = members[0];
+        await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            founder: newFounder,
+            members: members
+          })
+        });
+      } else {
+        // No members left, delete the corporation
+        await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
+          method: 'DELETE'
+        });
+      }
+      return true;
+    }
+
+    // Normal member leaving
+    await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ members })
+    });
+    return true;
+  }
+
+  async function kickCorpMember(corpId, targetUsername) {
+    if (!corpId || !targetUsername) throw new Error('بيانات الطرد غير صالحة.');
+    const u = targetUsername.trim();
+    const rows = await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`);
+    if (!rows || rows.length === 0) throw new Error('الشركة غير موجودة.');
+    const corp = rows[0];
+    let members = Array.isArray(corp.members) ? corp.members : [];
+    members = members.filter(m => m !== u);
+    await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ members })
+    });
+    return true;
+  }
+
   async function contributeToCorporation(corpId, username, amount) {
     const amt = Number(amount);
     if (amt <= 0) throw new Error('المبلغ غير صالح.');
@@ -1402,7 +1457,8 @@ var AppDB = (() => {
     adminDistributeCorpDividends: async () => true,
     adminDeleteCorporation: async () => true,
     adminEditCorporationTreasury: async () => true,
-    kickCorpMember: async () => true,
+    leaveCorporation,
+    kickCorpMember,
     editCorpInfo: async () => true,
     transferCorpOwnership: async () => true,
 

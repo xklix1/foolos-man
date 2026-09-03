@@ -10664,6 +10664,9 @@ const UIController = (() => {
           }
           actions += `<button onclick="window.UI.kickCorpMemberAction('${corp.id}','${m}')" class="text-[9px] bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded transition font-bold" title="${window.currentLang === 'en' ? 'Kick' : 'طرد'}"><i class='fa-solid fa-user-slash'></i></button>`;
         }
+        if (isMe) {
+          actions += `<button onclick="window.UI.leaveCorporationAction('${corp.id}')" class="text-[9px] bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 px-2 py-0.5 rounded transition font-bold ml-1" title="${window.currentLang === 'en' ? 'Leave Corp' : 'مغادرة الشركة'}"><i class="fa-solid fa-arrow-right-from-bracket mr-0.5"></i> ${window.currentLang === 'en' ? 'Leave' : 'مغادرة'}</button>`;
+        }
 
         membersHtml += `
           <tr class="border-b border-slate-900 text-xs">
@@ -10745,14 +10748,22 @@ const UIController = (() => {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div class="lg:col-span-2 glass-panel p-6 rounded-2xl border border-indigo-500/10 bg-slate-950/40 relative overflow-hidden flex flex-col justify-between">
             <div>
-              <div class="flex justify-between items-start">
-                <h3 class="text-lg font-black text-white flex items-center gap-2">
-                  <i class="fa-solid fa-building text-indigo-500"></i>
-                  <span>${corp.name}</span>
-                </h3>
-                <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full font-bold">${window.currentLang === 'en' ? 'Alliance Level:' : 'مستوى التحالف:'} ${corpLevel} 🏆</span>
+              <div class="flex justify-between items-start flex-wrap gap-2">
+                <div>
+                  <h3 class="text-lg font-black text-white flex items-center gap-2">
+                    <i class="fa-solid fa-building text-indigo-500"></i>
+                    <span>${corp.name}</span>
+                  </h3>
+                  <p class="text-slate-400 text-xs mt-1">${corp.desc || (window.currentLang === 'en' ? 'No description.' : 'لا يوجد وصف تجاري.')}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded-full font-bold">${window.currentLang === 'en' ? 'Alliance Level:' : 'مستوى التحالف:'} ${corpLevel} 🏆</span>
+                  <button onclick="window.UI.leaveCorporationAction('${corp.id}')" class="px-3 py-1 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 hover:border-rose-500/50 text-rose-400 hover:text-rose-300 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm" title="${window.currentLang === 'en' ? 'Leave Corporation' : 'مغادرة الشركة'}">
+                    <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+                    <span>${window.currentLang === 'en' ? 'Leave Corp' : 'مغادرة الشركة'}</span>
+                  </button>
+                </div>
               </div>
-              <p class="text-slate-400 text-xs mt-2">${corp.desc || (window.currentLang === 'en' ? 'No description.' : 'لا يوجد وصف تجاري.')}</p>
               <div class="mt-2.5 text-[10px] text-emerald-400 font-bold flex items-center gap-1">
                 <i class="fa-solid fa-chart-line"></i>
                 <span>${window.currentLang === 'en' ? `Member individual business profit boost: +${corpBoostPct}% (Active)` : `دعم أرباح المشاريع الفردية لأعضاء التحالف: +${corpBoostPct}% (نشط)`}</span>
@@ -11105,6 +11116,39 @@ const UIController = (() => {
       }
     } catch (err) {
       listSelect.innerHTML = '<option value="">فشل جلب النسخ الاحتياطية</option>';
+    }
+  }
+
+  async function leaveCorporationAction(corpId) {
+    const corp = window.activeCorporationState;
+    const corpName = corp ? corp.name : 'الشركة';
+    const currentUsername = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
+    const isFounder = corp && corp.founder === currentUsername;
+
+    let confirmMsg = `هل أنت متأكد من رغبتك في مغادرة شركة "${corpName}"؟`;
+    if (isFounder) {
+      const remainingCount = (corp.members || []).filter(m => m !== currentUsername).length;
+      if (remainingCount > 0) {
+        confirmMsg = `تنبيه: أنت مؤسس شركة "${corpName}". مغادرتك ستؤدي إلى نقل ملكية الشركة تلقائياً إلى العضو التالي. هل ترغب في المتابعة؟`;
+      } else {
+        confirmMsg = `تنبيه: أنت العضو الوحيد ومؤسس شركة "${corpName}". مغادرتك ستؤدي إلى حل وحذف الشركة نهائياً. هل ترغب في المتابعة؟`;
+      }
+    }
+
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      showToast('جاري المغادرة...', 'جاري معالجة الخروج من الشركة...', 'info');
+      await AppDB.leaveCorporation(corpId, currentUsername);
+      window.activeCorporationState = null;
+      showToast('تمت المغادرة 👋', `لقد غادرت شركة "${corpName}" بنجاح.`, 'success');
+      if (typeof playMenuSound === 'function') playMenuSound('cash');
+
+      const list = await AppDB.getCorporationsList();
+      window.lastCorporationsCache = list;
+      renderCorporationsTab();
+    } catch (e) {
+      showToast('خطأ في المغادرة', e.message || 'فشل الخروج من الشركة.', 'error');
     }
   }
 
@@ -11595,6 +11639,7 @@ const UIController = (() => {
     joinCorporationAction,
     contributeCorporationAction,
     buyCorporationProjectAction,
+    leaveCorporationAction,
     kickCorpMemberAction,
     editCorpInfoAction,
     transferCorpOwnershipAction,
