@@ -148,14 +148,14 @@ const GameEngine = (() => {
   };
 
   const STOCKS = {
-    COMI: { name: 'البنك التجاري الدولي', symbol: 'COMI', basePrice: 38, volatility: 0.015, reversion: 0.01, floor: 18, dividend: 0.00015 },
-    EAST: { name: 'الشرقية للدخان', symbol: 'EAST', basePrice: 85, volatility: 0.02, reversion: 0.015, floor: 35, dividend: 0.00025 },
-    ETEL: { name: 'المصرية للاتصالات', symbol: 'ETEL', basePrice: 48, volatility: 0.018, reversion: 0.012, floor: 22, dividend: 0.00018 },
-    FWRY: { name: 'فوري للمدفوعات الإلكترونية', symbol: 'FWRY', basePrice: 92, volatility: 0.025, reversion: 0.02, floor: 42, dividend: 0.00015 },
-    CASH: { name: 'صندوق الاستثمار التقني البديل', symbol: 'CASH', basePrice: 125, volatility: 0.03, reversion: 0.025, floor: 30, dividend: 0.00035 },
-    BITC: { name: 'مؤشر البيتكوين والأصول الرقمية', symbol: 'BITC', basePrice: 310, volatility: 0.05, reversion: 0.03, floor: 60, dividend: 0 },
-    GOLD: { name: 'صندوق سبائك الذهب الخالص', symbol: 'GOLD', basePrice: 220, volatility: 0.01, reversion: 0.008, floor: 110, dividend: 0.0003 },
-    AIX: { name: 'صندوق الذكاء الاصطناعي العالمي', symbol: 'AIX', basePrice: 380, volatility: 0.035, reversion: 0.022, floor: 90, dividend: 0.00025 }
+    COMI: { name: 'البنك التجاري الدولي', symbol: 'COMI', basePrice: 38, volatility: 0.015, reversion: 0.01, floor: 18, dividend: 0.00015, maxShares: 50000 },
+    EAST: { name: 'الشرقية للدخان', symbol: 'EAST', basePrice: 85, volatility: 0.02, reversion: 0.015, floor: 35, dividend: 0.00025, maxShares: 30000 },
+    ETEL: { name: 'المصرية للاتصالات', symbol: 'ETEL', basePrice: 48, volatility: 0.018, reversion: 0.012, floor: 22, dividend: 0.00018, maxShares: 40000 },
+    FWRY: { name: 'فوري للمدفوعات الإلكترونية', symbol: 'FWRY', basePrice: 92, volatility: 0.025, reversion: 0.02, floor: 42, dividend: 0.00015, maxShares: 25000 },
+    CASH: { name: 'صندوق الاستثمار التقني البديل', symbol: 'CASH', basePrice: 125, volatility: 0.03, reversion: 0.025, floor: 30, dividend: 0.00035, maxShares: 20000 },
+    BITC: { name: 'مؤشر البيتكوين والأصول الرقمية', symbol: 'BITC', basePrice: 310, volatility: 0.05, reversion: 0.03, floor: 60, dividend: 0, maxShares: 5000 },
+    GOLD: { name: 'صندوق سبائك الذهب الخالص', symbol: 'GOLD', basePrice: 220, volatility: 0.01, reversion: 0.008, floor: 110, dividend: 0.0003, maxShares: 10000 },
+    AIX: { name: 'صندوق الذكاء الاصطناعي العالمي', symbol: 'AIX', basePrice: 380, volatility: 0.035, reversion: 0.022, floor: 90, dividend: 0.00025, maxShares: 8000 }
   };
 
   const CORP_PROJECTS = {
@@ -685,7 +685,8 @@ const GameEngine = (() => {
     ownedCars: [],
     activeCar: null,
     smugglingFleet: { speedboat: 0, plane: 0, ship: 0 },
-    activeSmugglingJobs: []
+    activeSmugglingJobs: [],
+    stockCooldowns: {} // Stores { SYMBOL: lockUntilTimestamp }
   };
 
   let state = { ...INITIAL_STATE };
@@ -695,6 +696,7 @@ const GameEngine = (() => {
   const STOCK_PULSE_INTERVAL = 6; // Update stock prices every 6 seconds instead of every 1 second
   let activeUsername = "";
   let lastTipEventTimestamp = 0;
+  let lastMarketEventTimestamp = 0;
 
   let taxConfig = {
     rateMultiplier: 1.0,
@@ -1422,81 +1424,83 @@ const GameEngine = (() => {
       });
     }
 
-    // 8. Dynamic Market Events (All 8 Assets: COMI, EAST, ETEL, FWRY, CASH, BITC, GOLD, AIX)
-    if (!updates.tipEvent && Math.random() < 0.12) { // 12% chance per tick (~every 20-30s)
+    // 8. Dynamic Market Events (Balanced & Cooled: Every 90s min, 3% chance)
+    const nowTick = Date.now();
+    if (!updates.tipEvent && (nowTick - lastMarketEventTimestamp > 90000) && Math.random() < 0.03) {
+      lastMarketEventTimestamp = nowTick;
       const eventTypes = [
         {
           type: 'crypto_bull_run',
-          title: '🚀 انفجار سعر البيتكوين والأصول الرقمية',
-          desc: 'موجة سيولة دولية قياسية تقفز بسهم BITC وصندوق الذكاء الاصطناعي AIX لقمم جديدة!',
+          title: '🚀 صعود في سوق العملات الرقمية',
+          desc: 'موجة طلب تقفز بسهم BITC وصندوق الذكاء الاصطناعي AIX بنسبة ممتازة!',
           targetStocks: ['BITC', 'AIX'],
-          multiplier: 1.32,
+          multiplier: 1.10,
           toastType: 'success'
         },
         {
           type: 'gold_surge',
-          title: '👑 ارتفاع تاريخي لسبائك الذهب 24k',
-          desc: 'إقبال هائل من البنوك المركزية على شراء الذهب كملاذ آمن يرفع سهم GOLD بقوة!',
+          title: '👑 صعود سبائك الذهب 24k',
+          desc: 'إقبال على الذهب كملاذ آمن يرفع سهم GOLD وصندوق CASH بصورة متزنة.',
           targetStocks: ['GOLD', 'CASH'],
-          multiplier: 1.28,
+          multiplier: 1.08,
           toastType: 'success'
         },
         {
           type: 'ai_breakthrough',
-          title: '🤖 طفرة تكنولوجية في أبحاث الذكاء الاصطناعي',
-          desc: 'إطلاق نماذج ذكاء اصطناعي فائقة يرفع أسهم AIX وفوري FWRY إلى مستويات غير مسبوقة!',
+          title: '🤖 طفرة جديدة في أبحاث الذكاء الاصطناعي',
+          desc: 'إطلاق نماذج ذكاء اصطناعي واعدة يدعم أسهم AIX وفوري FWRY في جلسة اليوم.',
           targetStocks: ['AIX', 'FWRY'],
-          multiplier: 1.30,
+          multiplier: 1.09,
           toastType: 'success'
         },
         {
           type: 'cbe_rate_hike',
-          title: '🏛️ قرار المركزي: رفع الفائدة المصرفية',
-          desc: 'البنك المركزي يرفع الفائدة! ارتفاع قوي لسهم CIB وانتكاسة تصحيحية لأسهم التجزئة.',
+          title: '🏛️ قرار المركزي: تحريك الفائدة المصرفية',
+          desc: 'البنك المركزي يحرك الفائدة: تحسن لسهم CIB وتصحيح طفيف لأسهم التجزئة.',
           targetStocks: ['COMI', 'CASH'],
-          multiplier: 1.25,
+          multiplier: 1.07,
           negativeTargets: ['EAST', 'FWRY'],
-          negativeMultiplier: 0.88,
+          negativeMultiplier: 0.95,
           toastType: 'warning'
         },
         {
           type: '5g_telecom_license',
-          title: '📡 المصرية للاتصالات تطلق خدمات 5G رسمياً',
-          desc: 'توسعات كبرى في شبكات الاتصالات والألياف تطلق موجة شراء قياسية على سهم ETEL!',
+          title: '📡 المصرية للاتصالات توسع شبكات 5G',
+          desc: 'توسعات في شبكات الألياف تدعم سهم ETEL بنسبة جيدة في تداولات اليوم.',
           targetStocks: ['ETEL'],
-          multiplier: 1.35,
+          multiplier: 1.10,
           toastType: 'success'
         },
         {
           type: 'fintech_boom',
-          title: '💳 طفرة المدفوعات الرقمية والشمول المالي',
-          desc: 'حوافز حكومية وتوسع هائل في المعاملات الإلكترونية يقفز بسهم فوري FWRY للأعلى!',
+          title: '💳 نمو معاملات المدفوعات الرقمية',
+          desc: 'زيادة الطلب على الدفع الإلكتروني تدعم صعود سهم فوري FWRY بحركة إيجابية.',
           targetStocks: ['FWRY'],
-          multiplier: 1.28,
+          multiplier: 1.08,
           toastType: 'success'
         },
         {
           type: 'supply_chain_relief',
-          title: '🚢 انفراج سلاسل التوريد والشحن الدولي',
-          desc: 'وصول شحنات التبغ والمواد الخام للموانئ يؤدي لقفزة في أرباح الشرقية للدخان EAST!',
+          title: '🚢 انتظام سلاسل التوريد والشحن الدولي',
+          desc: 'وصول شحنات المواد الخام للموانئ يدعم أرباح الشرقية للدخان EAST.',
           targetStocks: ['EAST'],
-          multiplier: 1.26,
+          multiplier: 1.07,
           toastType: 'success'
         },
         {
           type: 'crypto_flash_correction',
-          title: '📉 تصحيح هابط مفاجئ في أسواق العملات المشفرة',
-          desc: 'جني أرباح سريع يضغط على البيتكوين BITC مؤقتاً قبل استعادة مسار الصعود!',
+          title: '📉 جني أرباح طفيف في العملات الرقمية',
+          desc: 'عمليات جني أرباح تضغط على البيتكوين BITC مؤقتاً بحركة تصحيحية متزنة.',
           targetStocks: ['BITC'],
-          multiplier: 0.82,
+          multiplier: 0.92,
           toastType: 'error'
         },
         {
           type: 'global_market_correction',
-          title: '⚡ تصحيح هابط عام في أسواق الأسهم',
-          desc: 'موجة بيع لجني الأرباح تهبط بأسهم البورصة بنسب طفيفة تتيح فرص شراء ذهبية في القاع!',
+          title: '⚡ حركة تصحيح متزنة في أسواق الأسهم',
+          desc: 'موجة جني أرباح هادئة تهبط بأسهم البورصة بنسب طفيفة تتيح فرص دخول جيدة.',
           targetStocks: ['COMI', 'FWRY', 'EAST', 'ETEL', 'AIX'],
-          multiplier: 0.88,
+          multiplier: 0.93,
           toastType: 'warning'
         }
       ];
@@ -2047,17 +2051,30 @@ const GameEngine = (() => {
     return sellValue;
   }
 
-  // Buy Stocks (with 1.5% Brokerage Commission)
+  // Buy Stocks (with 3.0% Brokerage Commission, 45s Holding Period, & Max Shares Cap)
   function buyStock(sym, shares) {
     const stock = STOCKS[sym];
     if (!stock) throw new Error("رمز الشركة غير صالح.");
     if (shares <= 0 || !Number.isInteger(shares)) throw new Error("عدد الأسهم يجب أن يكون عدداً صحيحاً موجباً.");
 
+    // Guard: initialize stock slot if missing
+    if (!state.stocks[sym]) {
+      state.stocks[sym] = { shares: 0, avgPrice: 0 };
+    }
+
+    // 1. Max Shares Cap Check
+    const currentShares = state.stocks[sym].shares || 0;
+    const maxShares = stock.maxShares || 50000;
+    if (currentShares + shares > maxShares) {
+      const remainingCanBuy = Math.max(0, maxShares - currentShares);
+      throw new Error(`تجاوزت الحد الأقصى للملكية في ${stock.name} (${maxShares.toLocaleString()} سهم). المتاح لك شراؤه: ${remainingCanBuy.toLocaleString()} سهم.`);
+    }
+
     const history = stockPrices[sym];
     if (!history || history.length === 0) throw new Error("بيانات السوق غير متوفرة بعد. حاول مجدداً.");
     const currentPrice = history[history.length - 1];
     const grossCost = currentPrice * shares;
-    const fee = Math.max(5, Math.floor(grossCost * 0.015)); // 1.5% عمولة سمسرة
+    const fee = Math.max(10, Math.floor(grossCost * 0.03)); // 3.0% عمولة سمسرة
     const totalCost = grossCost + fee;
 
     if (state.cash < totalCost) {
@@ -2066,13 +2083,7 @@ const GameEngine = (() => {
 
     state.cash -= totalCost;
 
-    // Guard: initialize stock slot if missing
-    if (!state.stocks[sym]) {
-      state.stocks[sym] = { shares: 0, avgPrice: 0 };
-    }
-
     // Calculate new average purchase price based on gross purchase
-    const currentShares = state.stocks[sym].shares || 0;
     const currentAvg = state.stocks[sym].avgPrice || 0;
     const newShares = currentShares + shares;
     const newAvg = Math.floor(((currentShares * currentAvg) + grossCost) / newShares);
@@ -2080,12 +2091,16 @@ const GameEngine = (() => {
     state.stocks[sym].shares = newShares;
     state.stocks[sym].avgPrice = newAvg;
 
+    // 2. Set 45-second holding cooldown on this stock
+    state.stockCooldowns = state.stockCooldowns || {};
+    state.stockCooldowns[sym] = Date.now() + 45000;
+
     recordPlayerActivity('شراء أسهم', `شراء ${shares} سهم (${sym}) بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`, 'stock');
     forceSaveState(true);
     return { shares, price: currentPrice, grossCost, fee, totalCost };
   }
 
-  // Sell Stocks (with 1.5% Brokerage Commission)
+  // Sell Stocks (with 3.0% Brokerage Commission, 10% Capital Gains Tax, & 45s Cooldown Check)
   function sellStock(sym, shares) {
     const stock = STOCKS[sym];
     if (!stock) throw new Error("الشركة غير موجودة.");
@@ -2101,12 +2116,29 @@ const GameEngine = (() => {
       throw new Error(`لا تمتلك عدد أسهم كافٍ في محفظتك. المتاح: ${ownedShares} سهم.`);
     }
 
+    // 1. Enforce 45s holding cooldown
+    if (state.stockCooldowns && state.stockCooldowns[sym] && Date.now() < state.stockCooldowns[sym]) {
+      const remainingSec = Math.ceil((state.stockCooldowns[sym] - Date.now()) / 1000);
+      throw new Error(`لوائح البورصة: يجب الاحتفاظ بالسهم لمدة 45 ثانية بعد الشراء قبل بيعه. متبقي: ${remainingSec} ثانية.`);
+    }
+
     const history = stockPrices[sym];
     if (!history || history.length === 0) throw new Error("بيانات السوق غير متوفرة.");
     const currentPrice = history[history.length - 1];
     const grossReturn = currentPrice * shares;
-    const fee = Math.max(5, Math.floor(grossReturn * 0.015)); // 1.5% عمولة سمسرة
-    const netReturn = Math.max(0, grossReturn - fee);
+    const fee = Math.max(10, Math.floor(grossReturn * 0.03)); // 3.0% عمولة سمسرة
+
+    // 2. 10% Capital Gains Tax on net profit
+    const avgPrice = state.stocks[sym].avgPrice || 0;
+    const costBasis = avgPrice * shares;
+    let capitalGainsTax = 0;
+    if (grossReturn > costBasis) {
+      const profit = grossReturn - costBasis;
+      capitalGainsTax = Math.floor(profit * 0.10); // 10% ضريبة أرباح رأسمالية
+      state.totalTaxesPaid = (state.totalTaxesPaid || 0) + capitalGainsTax;
+    }
+
+    const netReturn = Math.max(0, grossReturn - fee - capitalGainsTax);
 
     state.stocks[sym].shares -= shares;
     if (state.stocks[sym].shares === 0) {
@@ -2114,9 +2146,13 @@ const GameEngine = (() => {
     }
     state.cash += netReturn;
 
-    recordPlayerActivity('بيع أسهم', `بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (بعد خصم عمولة ${fee.toLocaleString()} ج.م)`, 'stock');
+    const logDetails = capitalGainsTax > 0
+      ? `بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} + ضريبة أرباح: ${capitalGainsTax.toLocaleString()} ج.م)`
+      : `بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} ج.م)`;
+
+    recordPlayerActivity('بيع أسهم', logDetails, 'stock');
     forceSaveState(true);
-    return { shares, price: currentPrice, grossReturn, fee, totalReturn: netReturn };
+    return { shares, price: currentPrice, grossReturn, fee, capitalGainsTax, totalReturn: netReturn };
   }
 
   // Store: Buy Item (Refreshes duration, prevents exploit stacking)

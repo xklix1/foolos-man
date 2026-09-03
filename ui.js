@@ -3934,11 +3934,16 @@ const UIController = (() => {
           </svg>
         </div>
 
-        <div class="text-xs text-slate-400 space-y-1 mb-4 border-t border-slate-800 pt-3 mt-1">
+        <div class="text-xs text-slate-400 space-y-1 mb-3 border-t border-slate-800 pt-3 mt-1">
           <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Owned Shares:' : 'الأسهم المملوكة:'}</span><span id="stock-shares-${sym}" class="numbers-font text-white">${ownedData.shares} ${window.currentLang === 'en' ? 'shares' : 'سهم'}</span></div>
           <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Avg Buy Price:' : 'متوسط سعر الشراء:'}</span><span id="stock-avg-${sym}" class="numbers-font">${ownedData.avgPrice} EGP</span></div>
           <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Total Shares Value:' : 'قيمة الأسهم الكلية:'}</span><span id="stock-worth-${sym}" class="numbers-font text-yellow-500 font-semibold">${totalWorth.toLocaleString()} EGP</span></div>
           <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Portfolio Profit/Loss:' : 'ربح/خسارة المحفظة:'}</span><span id="stock-profit-${sym}" class="numbers-font font-bold ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between text-[11px] text-slate-500 border-t border-slate-800/60 pt-1.5 mt-1"><span>${window.currentLang === 'en' ? 'Max Holding Limit:' : 'سقف تملك السهم:'}</span><span class="numbers-font text-slate-300 font-semibold">${(stock.maxShares || 50000).toLocaleString()} ${window.currentLang === 'en' ? 'shares' : 'سهم'}</span></div>
+        </div>
+        <div class="mb-3 px-2 py-1 bg-slate-900/60 border border-slate-800 rounded-lg text-[10px] text-slate-400 flex items-center justify-between">
+          <span><i class="fa-solid fa-scale-balanced text-yellow-500/80 mr-1"></i> عمولة سمسرة 3%</span>
+          <span><i class="fa-solid fa-clock text-blue-400/80 mr-1"></i> حظر بيع 45ث</span>
         </div>
 
         <div class="grid grid-cols-2 gap-2 mb-2">
