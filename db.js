@@ -1843,6 +1843,9 @@ const AppDB = (() => {
       batch.set(doc.ref, freshZeroState);
       count++;
       batchOps++;
+      try {
+        localStorage.removeItem(`rasalmal_state_${doc.id}`);
+      } catch(e) {}
       
       if (batchOps >= 400) {
         await batch.commit();
