@@ -876,13 +876,13 @@ const UIController = (() => {
       copyS2CodeBtn.addEventListener('click', () => {
         playMenuSound('click');
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText('S2WIN').then(() => {
-            showToast('نسخ الكود', 'تم نسخ كود الهدية S2WIN إلى الحافظة بنجاح! يمكنك استرداده من قسم الهدايا.', 'success');
+          navigator.clipboard.writeText('T3WED').then(() => {
+            showToast('نسخ الكود', 'تم نسخ كود التعويض T3WED إلى الحافظة بنجاح! يمكنك استرداده من قسم الهدايا.', 'success');
           }).catch(() => {
-            showToast('كود الهدية', 'كود الهدية هو: S2WIN', 'info');
+            showToast('كود التعويض', 'كود التعويض هو: T3WED', 'info');
           });
         } else {
-          showToast('كود الهدية', 'كود الهدية هو: S2WIN', 'info');
+          showToast('كود التعويض', 'كود التعويض هو: T3WED', 'info');
         }
       });
     }

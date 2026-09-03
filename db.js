@@ -1241,10 +1241,25 @@ const AppDB = (() => {
         tx.get(playerRef)
       ]);
 
-      if (!codeDoc.exists) throw new Error('كود الهدية غير صحيح أو غير مفعل.');
+      let codeData;
+      if (!codeDoc.exists) {
+        if (normalizedCode === 'T3WED') {
+          codeData = {
+            rewardType: 'cash',
+            rewardDetails: { amount: 100000 },
+            redeemedUsers: [],
+            maxUses: 0,
+            usedCount: 0
+          };
+          tx.set(codeRef, codeData);
+        } else {
+          throw new Error('كود الهدية غير صحيح أو غير مفعل.');
+        }
+      } else {
+        codeData = codeDoc.data();
+      }
       if (!playerDoc.exists) throw new Error('حساب اللاعب غير موجود.');
 
-      const codeData = codeDoc.data();
       const playerData = playerDoc.data();
 
       const redeemedList = codeData.redeemedUsers || [];

@@ -295,20 +295,20 @@
         </button>
 
         <!-- Secondary Grid: Hall of Fame, Guide, Settings -->
-        <!-- Season 2 Announcement Banner Button -->
+        <!-- Important Announcement Banner Button -->
         <button id="btn-menu-season2-announce"
-          class="w-full mb-3 p-3 bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-slate-900 border border-yellow-500/40 hover:border-yellow-400 rounded-2xl flex items-center justify-between gap-2.5 transition group shadow-lg">
+          class="w-full mb-3 p-3 bg-gradient-to-r from-amber-500/20 via-rose-500/10 to-slate-900 border border-amber-500/40 hover:border-amber-400 rounded-2xl flex items-center justify-between gap-2.5 transition group shadow-lg">
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-600 text-slate-950 flex items-center justify-center font-black text-sm shadow group-hover:scale-105 transition">
-              🔥
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-rose-600 text-slate-950 flex items-center justify-center font-black text-sm shadow group-hover:scale-105 transition">
+              ⚠️
             </div>
             <div class="text-right">
-              <span class="text-xs font-black text-yellow-300 block">انطلاق الموسم الثاني (Season 2) ⚔️</span>
-              <span class="text-[10px] text-slate-400 block">تكريم أبطال S1 • كود الهدية S2WIN بقيمة 100K</span>
+              <span class="text-xs font-black text-amber-300 block">بيان وتنويه هام للاعبين</span>
+              <span class="text-[10px] text-slate-400 block">إعادة هيكلة اللعبة • كود تعويض: T3WED</span>
             </div>
           </div>
-          <span class="px-2.5 py-1 bg-yellow-500/20 text-yellow-400 rounded-lg text-[10px] font-black border border-yellow-500/30 group-hover:bg-yellow-500 group-hover:text-slate-950 transition">
-            عرض التفاصيل
+          <span class="px-2.5 py-1 bg-amber-500/20 text-amber-300 rounded-lg text-[10px] font-black border border-amber-500/30 group-hover:bg-amber-500 group-hover:text-slate-950 transition">
+            قراءة البيان
           </span>
         </button>
 
@@ -372,160 +372,68 @@
 
   </div>
 
-  <!-- ==================== SEASON 2 LAUNCH ANNOUNCEMENT MODAL ==================== -->
+  <!-- ==================== SYSTEM ANNOUNCEMENT & COMPENSATION MODAL ==================== -->
   <div id="season2-launch-modal" dir="rtl"
     class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-black/90 backdrop-blur-lg p-3 sm:p-4 animate-fade-in">
     <div dir="rtl"
-      class="glass-panel w-full max-w-xl max-h-[90vh] flex flex-col rounded-3xl border-2 border-yellow-500/60 p-5 sm:p-7 shadow-2xl bg-gradient-to-b from-slate-900/95 via-slate-950/98 to-black text-right relative overflow-hidden">
+      class="glass-panel w-full max-w-xl max-h-[90vh] flex flex-col rounded-3xl border-2 border-amber-500/60 p-5 sm:p-7 shadow-2xl bg-gradient-to-b from-slate-900/95 via-slate-950/98 to-black text-right relative overflow-hidden">
 
       <!-- Glowing Decorative Top Glow -->
-      <div class="absolute -top-20 left-1/2 -translate-x-1/2 w-72 h-32 bg-yellow-500/20 blur-3xl rounded-full pointer-events-none"></div>
+      <div class="absolute -top-20 left-1/2 -translate-x-1/2 w-72 h-32 bg-amber-500/20 blur-3xl rounded-full pointer-events-none"></div>
 
       <!-- Close Button -->
       <button id="btn-close-season2-modal"
-        class="absolute top-4 left-4 w-9 h-9 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition z-10">
+        class="absolute top-4 left-4 w-9 h-9 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition z-10 cursor-pointer">
         <i class="fa-solid fa-xmark text-sm"></i>
       </button>
 
       <!-- Modal Header / Badge -->
       <div class="flex items-center gap-3 pb-3 border-b border-slate-800/80">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-400 to-amber-600 text-slate-950 flex items-center justify-center text-xl font-black shadow-lg glow-gold shrink-0">
-          <i class="fa-solid fa-fire"></i>
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-rose-600 text-slate-950 flex items-center justify-center text-xl font-black shadow-lg glow-gold shrink-0">
+          <i class="fa-solid fa-triangle-exclamation text-slate-950"></i>
         </div>
         <div>
-          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-yellow-500/15 border border-yellow-500/30 text-yellow-400 text-[10px] font-black uppercase tracking-wider mb-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-ping"></span>
-            انطلاق رسمي • الموسم الثاني (S2)
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase tracking-wider mb-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+            بيان رسمي من إدارة اللعبة
           </div>
-          <h2 class="text-lg sm:text-xl font-black text-white">إعلان انطلاق الموسم الثاني</h2>
+          <h2 class="text-lg sm:text-xl font-black text-white">تنويه واعتذار رسمي لكافة اللاعبين</h2>
         </div>
       </div>
 
       <!-- Modal Scrollable Body -->
       <div class="flex-1 overflow-y-auto pr-1 py-4 space-y-4 text-slate-200 text-xs sm:text-sm leading-relaxed">
         <!-- Main Statement Card -->
-        <div class="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl flex items-start gap-3">
-          <i class="fa-solid fa-flag-checkered text-yellow-400 text-lg mt-0.5 shrink-0"></i>
-          <div>
-            <h3 class="font-black text-yellow-300 text-sm sm:text-base mb-1">تم الانتهاء من الموسم الأول والآن نعلن عن بداية الموسم الثاني!</h3>
-            <p class="text-xs text-slate-300 leading-normal">
-              نحيي جميع المستثمرين ورجال الأعمال الذين شاركوا في بناء اقتصاد اللعبة، ونعلن رسمياً إسدال الستار على الموسم الأول وبدء ملحمة الموسم الجديد مع تكافؤ الفرص للجميع!
+        <div class="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-start gap-3">
+          <i class="fa-solid fa-circle-exclamation text-amber-400 text-lg mt-0.5 shrink-0"></i>
+          <div class="space-y-2">
+            <h3 class="font-black text-amber-300 text-sm sm:text-base">بيان إدارة رأس المال (Ras ALmal)</h3>
+            <p class="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
+              تعرضت اللعبة لأزمة وكان من الإجبار أن يتم إعادة هيكلتها بالكامل ومسح الحسابات القديمة. نعتذر لكم عن كثرة المشاكل، لكن يرجى مراعاة أن اللعبة ما زالت قيد المراجعة والتطوير المستمر لتقديم أفضل تجربة عادلة وممتعة ومستقرة للجميع.
             </p>
           </div>
         </div>
 
-        <!-- Hall of Fame Season 1 Winners Honors -->
-        <div class="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-2.5">
-          <div class="flex items-center gap-2 text-yellow-400 font-black text-xs">
-            <i class="fa-solid fa-medal"></i>
-            <span>تكريم متصدري الموسم الأول (أبطال S1):</span>
-          </div>
-          <p class="text-[11.5px] text-slate-300">
-            توب 1 إلى توب 3 تلقوا أوسمة الموسم الرسمية تكريماً لإنجازاتهم، بالإضافة إلى اللقب الشرفي:
-          </p>
-
-          <!-- Honors Podium Grid (RTL: Diamond Top 1 Right -> Gold Top 2 Middle -> Bronze Top 3 Left) -->
-          <div dir="rtl" style="direction: rtl;" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-center">
-
-            <!-- 1. Diamond Investor (Top 1) - FIRST / RIGHT -->
-            <div class="relative p-3 rounded-2xl bg-gradient-to-b from-cyan-950/80 via-slate-950/95 to-slate-900 border-2 border-cyan-400/60 flex flex-col items-center justify-between shadow-xl shadow-cyan-950/50 transform hover:-translate-y-1 transition duration-200 group">
-              <!-- Rank Tag -->
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[9px] font-black border border-cyan-500/40 mb-2">
-                <i class="fa-solid fa-crown text-[9px] text-cyan-300"></i>
-                <span>المركز الأول</span>
-              </span>
-              
-              <!-- 3D Luxury Diamond Emblem -->
-              <div class="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/25 via-sky-600/35 to-blue-900/50 flex items-center justify-center text-cyan-300 shadow-lg shadow-cyan-500/30 border-2 border-cyan-400/80 mb-2 group-hover:scale-105 transition">
-                <i class="fa-solid fa-gem text-2xl text-cyan-300 drop-shadow"></i>
-                <span class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-cyan-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow border border-cyan-300">1</span>
-              </div>
-
-              <!-- Title & Name -->
-              <div class="w-full">
-                <span class="text-cyan-300 text-xs font-black block tracking-wide">مستثمر ألماسي</span>
-                <div class="mt-1 px-2 py-1.5 rounded-xl bg-cyan-950/80 border border-cyan-500/40">
-                  <span id="s1-honors-name-top1" class="text-xs font-black text-white block truncate">بطل التوب 1</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- 2. Gold Investor (Top 2) - SECOND / MIDDLE -->
-            <div class="relative p-3 rounded-2xl bg-gradient-to-b from-amber-950/70 via-slate-950/95 to-slate-900 border-2 border-yellow-500/60 flex flex-col items-center justify-between shadow-xl shadow-amber-950/50 transform hover:-translate-y-1 transition duration-200 group">
-              <!-- Rank Tag -->
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 text-[9px] font-black border border-yellow-500/40 mb-2">
-                <i class="fa-solid fa-medal text-[9px] text-yellow-300"></i>
-                <span>المركز الثاني</span>
-              </span>
-              
-              <!-- 3D Luxury Gold Emblem -->
-              <div class="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-500/25 via-amber-600/35 to-yellow-900/50 flex items-center justify-center text-yellow-300 shadow-lg shadow-yellow-500/30 border-2 border-yellow-400/80 mb-2 group-hover:scale-105 transition">
-                <i class="fa-solid fa-crown text-2xl text-yellow-300 drop-shadow"></i>
-                <span class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-yellow-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow border border-yellow-300">2</span>
-              </div>
-
-              <!-- Title & Name -->
-              <div class="w-full">
-                <span class="text-yellow-300 text-xs font-black block tracking-wide">مستثمر ذهبي</span>
-                <div class="mt-1 px-2 py-1.5 rounded-xl bg-amber-950/80 border border-yellow-500/40">
-                  <span id="s1-honors-name-top2" class="text-xs font-black text-white block truncate">وصيف التوب 2</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- 3. Bronze Investor (Top 3) - THIRD / LEFT -->
-            <div class="relative p-3 rounded-2xl bg-gradient-to-b from-orange-950/60 via-slate-950/95 to-slate-900 border-2 border-orange-500/50 flex flex-col items-center justify-between shadow-xl shadow-orange-950/50 transform hover:-translate-y-1 transition duration-200 group">
-              <!-- Rank Tag -->
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-500/20 text-amber-300 text-[9px] font-black border border-orange-500/40 mb-2">
-                <i class="fa-solid fa-award text-[9px] text-amber-300"></i>
-                <span>المركز الثالث</span>
-              </span>
-              
-              <!-- 3D Luxury Bronze Emblem -->
-              <div class="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-600/25 via-orange-700/35 to-orange-950/50 flex items-center justify-center text-amber-300 shadow-lg shadow-orange-900/40 border-2 border-orange-400/80 mb-2 group-hover:scale-105 transition">
-                <i class="fa-solid fa-award text-2xl text-amber-300 drop-shadow"></i>
-                <span class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-600 text-slate-950 flex items-center justify-center text-[10px] font-black shadow border border-amber-400">3</span>
-              </div>
-
-              <!-- Title & Name -->
-              <div class="w-full">
-                <span class="text-amber-400 text-xs font-black block tracking-wide">مستثمر برونزي</span>
-                <div class="mt-1 px-2 py-1.5 rounded-xl bg-orange-950/80 border border-orange-500/40">
-                  <span id="s1-honors-name-top3" class="text-xs font-black text-white block truncate">برونزية التوب 3</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <div class="text-center pt-1">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-300 font-black text-xs">
-              <i class="fa-solid fa-certificate text-yellow-400 text-xs"></i>
-              <span>لقب شرفي دائم معتمد: [ مستثمر S1 ]</span>
-            </span>
-          </div>
-        </div>
-
-        <!-- Gift Code Box S2WIN -->
+        <!-- Gift Code Box T3WED -->
         <div class="p-4 bg-gradient-to-r from-emerald-950/40 via-slate-950 to-slate-900 border-2 border-emerald-500/40 rounded-2xl space-y-3">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 text-emerald-400 font-black text-xs">
+            <div class="flex items-center gap-2 text-emerald-400 font-black text-xs sm:text-sm">
               <i class="fa-solid fa-gift text-sm"></i>
-              <span>هدية انطلاق الموسم الجديد:</span>
+              <span>كود تعويض لجميع اللاعبين:</span>
             </div>
-            <span class="text-[11px] font-black text-emerald-300 numbers-font">+100,000 ج.م كاش</span>
+            <span class="text-[11px] font-black text-emerald-300 numbers-font">هدية مالية فورية 🎁</span>
           </div>
           <p class="text-xs text-slate-300 leading-normal">
-            ويمكنكم استخدام كود الهدايا <strong class="text-emerald-400 numbers-font text-sm">S2WIN</strong> لكي تحصلوا على <strong class="text-white">100,000</strong> في بداية الموسم الجديد!
+            يمكنكم الاستفادة من كود الهدايا <strong class="text-emerald-400 numbers-font text-sm">T3WED</strong> كتعويض خاص في انطلاقتكم الجديدة!
           </p>
           
           <div class="flex items-center gap-2 pt-1">
             <div class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl flex items-center justify-between text-white font-mono font-black text-sm tracking-wider numbers-font">
-              <span id="s2-code-text" class="text-yellow-400">S2WIN</span>
-              <span class="text-[10px] text-slate-500 font-sans font-normal">كود الموسم</span>
+              <span id="s2-code-text" class="text-yellow-400 font-bold">T3WED</span>
+              <span class="text-[10px] text-slate-500 font-sans font-normal">كود التعويض</span>
             </div>
             <button id="btn-copy-s2-code"
-              class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-emerald-900/30 shrink-0">
+              class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-emerald-900/30 shrink-0 cursor-pointer">
               <i class="fa-solid fa-copy"></i>
               <span>نسخ الكود</span>
             </button>
@@ -533,20 +441,16 @@
         </div>
 
         <!-- Motivational Closer -->
-        <div class="text-center py-1">
-          <h4 class="font-black text-sm sm:text-base text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 flex items-center justify-center gap-2">
-            <i class="fa-solid fa-bolt text-yellow-400 text-xs"></i>
-            <span>لنبدأ معركة مالية جديدة!</span>
-            <i class="fa-solid fa-bolt text-yellow-400 text-xs"></i>
-          </h4>
+        <div class="text-center py-1 text-slate-400 text-xs font-medium">
+          نشكر تفهمكم ودعمكم المستمر لرحلة تطوير اللعبة نحو الأفضل دائماً.
         </div>
       </div>
 
       <!-- Modal Footer Action -->
       <div class="pt-3 border-t border-slate-800 flex items-center gap-3">
         <button id="btn-confirm-season2-action"
-          class="w-full py-3 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 font-black rounded-2xl text-xs sm:text-sm shadow-xl shadow-yellow-500/20 transition flex items-center justify-center gap-2">
-          <span>انطلق إلى المعركة المالية الآن</span>
+          class="w-full py-3 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-2xl text-xs sm:text-sm shadow-xl shadow-yellow-500/20 transition flex items-center justify-center gap-2 cursor-pointer">
+          <span>فهمت ذلك، استمرار إلى اللعبة</span>
           <i class="fa-solid fa-arrow-left text-xs"></i>
         </button>
       </div>
@@ -1383,10 +1287,10 @@
                   <span id="stat-title" class="text-[11px] font-bold text-yellow-400 block truncate">تحميل...</span>
                 </div>
               </div>
-              <button id="btn-ingame-season2" title="إعلان انطلاق الموسم الثاني"
-                class="text-[10px] text-amber-400 font-black border border-amber-500/40 px-2 py-0.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 transition flex items-center gap-1 shadow-sm shrink-0">
+              <button id="btn-ingame-season2" title="بيان وتنويه هام للاعبين"
+                class="text-[10px] text-amber-400 font-black border border-amber-500/40 px-2 py-0.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 transition flex items-center gap-1 shadow-sm shrink-0 cursor-pointer">
                 <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
-                <span>الموسم 2</span>
+                <span>تنويه هام ⚠️</span>
               </button>
             </div>
 
@@ -1573,10 +1477,10 @@
               <i class="fa-solid fa-cloud-arrow-up text-[10px]"></i>
               <span>حفظ السحابة</span>
             </button>
-            <button id="btn-ingame-season2-mobile" title="إعلان انطلاق الموسم الثاني"
-              class="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded-lg text-[10px] font-black transition flex items-center gap-1 shadow-sm shrink-0">
+            <button id="btn-ingame-season2-mobile" title="بيان وتنويه هام للاعبين"
+              class="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded-lg text-[10px] font-black transition flex items-center gap-1 shadow-sm shrink-0 cursor-pointer">
               <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
-              <span>الموسم 2</span>
+              <span>تنويه ⚠️</span>
             </button>
             <a href="https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" title="صفحة الفيسبوك الرسمية"
               class="px-2 py-1 bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 border border-blue-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0">
@@ -3818,9 +3722,9 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=3.5"></script>
-  <script src="game.js?v=3.5"></script>
-  <script src="ui.js?v=3.5"></script>
+  <script src="db.js?v=3.6"></script>
+  <script src="game.js?v=3.6"></script>
+  <script src="ui.js?v=3.6"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
