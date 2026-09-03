@@ -1080,7 +1080,7 @@ var AppDB = (() => {
     promoteCorpMember: async () => true,
     payoutFromCorpTreasury: async () => true,
     upgradeCorporationLevel: async () => true,
-    checkVersion: async () => ({ clientVersion: '5.0', forceUpdate: false }),
+    checkVersion: async () => ({ upToDate: true, clientVersion: '5.1', remoteVersion: '5.1' }),
     pendingSyncs: 0,
 
     // Auth & Player
