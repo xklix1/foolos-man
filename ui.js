@@ -9551,8 +9551,9 @@ const UIController = (() => {
           </div>
         `;
       } else {
-        const hasFb = Boolean(msg.facebookVerified || msg.isFbVerified);
-        const fbIconHtml = hasFb ? '<i class="fa-brands fa-facebook text-blue-400 text-[11px] mr-1 inline-block drop-shadow-[0_0_6px_rgba(59,130,246,0.8)]" title="متابع رسمي لصفحة فيسبوك 👍"></i>' : '';
+        const isMyMsg = curUser && msg.sender === curUser;
+        const hasFb = Boolean(msg.facebookVerified || msg.isFbVerified || (isMyMsg && GameEngine.state && (GameEngine.state.facebookVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('facebook')))));
+        const fbIconHtml = hasFb ? '<i class="fa-brands fa-facebook text-blue-400 text-xs mr-0.5 inline-block drop-shadow-[0_0_8px_rgba(59,130,246,0.9)]" title="متابع رسمي لصفحة فيسبوك 👍"></i>' : '';
         msgDiv.innerHTML = `
           <div class="flex items-center gap-1.5 mb-0.5">
             <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
