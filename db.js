@@ -1170,6 +1170,23 @@ var AppDB = (() => {
     };
   }
 
+  async function clearChatMessages() {
+    try {
+      await _api('globals', {
+        method: 'POST',
+        headers: { 'Prefer': 'resolution=merge-duplicates' },
+        body: JSON.stringify({
+          id: 'chat_feed',
+          data: { messages: [] },
+          updated_at: Date.now()
+        })
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   // ─────────────────────────────────────────────
   //  COMPATIBILITY LAYER (MOCKS FIREBASE FOR ANY DIRECT UI CALLS)
   // ─────────────────────────────────────────────
@@ -1475,6 +1492,7 @@ var AppDB = (() => {
     sendChatMessage,
     getChatMessages,
     listenToChatMessages,
+    clearChatMessages,
     listenToPrivateChat: () => (() => {})
   };
 })();

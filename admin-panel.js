@@ -56,8 +56,8 @@
       });
     }
 
-    // Tabs logic - bind all 9 subtabs
-    const tabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'auctions', 'giftcodes', 'system', 'corporations'];
+    // Tabs logic - bind all 10 subtabs
+    const tabs = ['stats', 'players', 'transfers', 'chat', 'market', 'broadcast', 'auctions', 'giftcodes', 'system', 'corporations'];
     tabs.forEach(t => {
       const tabEl = document.getElementById(`tab-admin-${t}`);
       if (tabEl) {
@@ -3192,6 +3192,159 @@
     }
   }
 
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  let _adminChatUnsub = null;
+  let _adminChatBound = false;
+  async function renderAdminChatMonitor() {
+    const container = document.getElementById('admin-chat-messages-container');
+    const refreshBtn = document.getElementById('btn-admin-refresh-chat');
+    const clearBtn = document.getElementById('btn-admin-clear-chat');
+    const sendBtn = document.getElementById('btn-admin-send-chat');
+    const inputEl = document.getElementById('admin-chat-broadcast-input');
+
+    if (!container) return;
+
+    const refreshChatUI = (messages) => {
+      const msgs = Array.isArray(messages) ? messages : [];
+
+      if (msgs.length === 0) {
+        container.innerHTML = `
+          <div class="text-center text-slate-500 text-xs py-16 flex flex-col items-center gap-2">
+            <i class="fa-regular fa-comment-dots text-3xl text-slate-600"></i>
+            <span>لا توجد رسائل حالياً في الشات العام.</span>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      msgs.forEach(m => {
+        const timeStr = m.timestamp ? new Date(m.timestamp).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
+        const isAdminMsg = m.sender && (m.sender.includes('الإدارة') || m.sender.includes('Admin') || m.senderTitle === 'مدير النظام 👑');
+
+        html += `
+          <div class="p-3 rounded-xl border ${isAdminMsg ? 'bg-amber-950/25 border-amber-500/40 text-amber-200' : 'bg-slate-900/60 border-slate-800/80 text-slate-200'} flex items-start justify-between gap-3 text-xs transition hover:bg-slate-850">
+            <div class="space-y-1 overflow-hidden">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-black ${isAdminMsg ? 'text-amber-400 font-sans' : 'text-cyan-400 font-sans'}">${escapeHtml(m.sender)}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-md ${isAdminMsg ? 'bg-amber-500/20 text-amber-300 font-bold' : 'bg-slate-800 text-slate-400'}">${escapeHtml(m.senderTitle || 'لاعب')}</span>
+                <span class="text-[10px] text-slate-500 numbers-font">${timeStr}</span>
+              </div>
+              <p class="text-xs break-words font-sans text-slate-200 leading-relaxed">${escapeHtml(m.message)}</p>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button onclick="window.quickInspectPlayer('${escapeHtml(m.sender)}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] rounded-lg font-bold transition flex items-center gap-1 cursor-pointer" title="فحص وفتح ملف هذا اللاعب">
+                <i class="fa-solid fa-user-gear"></i>
+                <span>فحص</span>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+      container.scrollTop = container.scrollHeight;
+    };
+
+    // Bind action buttons once
+    if (!_adminChatBound) {
+      _adminChatBound = true;
+
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+          refreshBtn.disabled = true;
+          try {
+            const msgs = await AppDB.getChatMessages();
+            refreshChatUI(msgs);
+            if (typeof showToast === 'function') showToast('الشات العام', 'تم تحديث سجل الرسائل بنجاح 🔄', 'info');
+          } catch (e) {
+            if (typeof showToast === 'function') showToast('خطأ', 'فشل جلب رسائل الشات.', 'error');
+          } finally {
+            refreshBtn.disabled = false;
+          }
+        });
+      }
+
+      if (clearBtn) {
+        clearBtn.addEventListener('click', async () => {
+          if (!confirm('⚠️ تحذير إداري: هل أنت متأكد من مسح جميع رسائل الشات العام نهائياً؟')) return;
+          try {
+            clearBtn.disabled = true;
+            await AppDB.clearChatMessages();
+            refreshChatUI([]);
+            if (typeof showToast === 'function') showToast('مسح الشات', 'تم مسح سجل الشات العام بالكامل بنجاح 🗑️', 'success');
+          } catch (e) {
+            if (typeof showToast === 'function') showToast('خطأ', 'فشل مسح الشات.', 'error');
+          } finally {
+            clearBtn.disabled = false;
+          }
+        });
+      }
+
+      const handleSend = async () => {
+        const text = inputEl ? inputEl.value.trim() : '';
+        if (!text) return;
+
+        try {
+          if (sendBtn) sendBtn.disabled = true;
+          await AppDB.sendChatMessage('الإدارة 👑', 'مدير النظام 👑', text);
+          if (inputEl) inputEl.value = '';
+          const msgs = await AppDB.getChatMessages();
+          refreshChatUI(msgs);
+          if (typeof showToast === 'function') showToast('تم الإرسال 📢', 'تم بث رسالتك الإدارية في الشات العام بنجاح!', 'success');
+        } catch (e) {
+          if (typeof showToast === 'function') showToast('خطأ', 'فشل إرسال الرسالة.', 'error');
+        } finally {
+          if (sendBtn) sendBtn.disabled = false;
+        }
+      };
+
+      if (sendBtn) sendBtn.addEventListener('click', handleSend);
+      if (inputEl) {
+        inputEl.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') handleSend();
+        });
+      }
+    }
+
+    // Initial load
+    try {
+      const initialMsgs = await AppDB.getChatMessages();
+      refreshChatUI(initialMsgs);
+    } catch (e) {
+      container.innerHTML = `<div class="text-center text-rose-400 text-xs py-8">فشل جلب رسائل الشات: ${e.message}</div>`;
+    }
+
+    // Subscribe to live chat updates
+    if (_adminChatUnsub) _adminChatUnsub();
+    _adminChatUnsub = AppDB.listenToChatMessages((liveMsgs) => {
+      const subpanel = document.getElementById('admin-subpanel-chat');
+      if (subpanel && !subpanel.classList.contains('hidden')) {
+        refreshChatUI(liveMsgs);
+      }
+    });
+  }
+
+  window.quickInspectPlayer = (username) => {
+    switchAdminTab('players');
+    const searchInput = document.getElementById('admin-player-search-input');
+    if (searchInput) {
+      searchInput.value = username;
+      if (typeof renderAdminPlayersTable === 'function') {
+        renderAdminPlayersTable();
+      }
+    }
+  };
+
   let adminCorpsUnsubscribe = null;
   let activeInspectedCorp = null;
 
@@ -3453,7 +3606,7 @@
   }
 
   function switchAdminTab(tabId) {
-    const subtabs = ['stats', 'players', 'transfers', 'market', 'broadcast', 'auctions', 'giftcodes', 'system', 'corporations'];
+    const subtabs = ['stats', 'players', 'transfers', 'chat', 'market', 'broadcast', 'auctions', 'giftcodes', 'system', 'corporations'];
     subtabs.forEach(t => {
       const btn = document.getElementById(`tab-admin-${t}`);
       const panel = document.getElementById(`admin-subpanel-${t}`);
@@ -3481,6 +3634,8 @@
       if (window._adminReloadPlayers) window._adminReloadPlayers(false);
     } else if (tabId === 'transfers') {
       renderAdminTransfersMonitor();
+    } else if (tabId === 'chat') {
+      renderAdminChatMonitor();
     } else if (tabId === 'market') {
       if (window._adminRenderStockPrices) window._adminRenderStockPrices();
       const currentCfg = GameEngine.getTaxConfig ? GameEngine.getTaxConfig() : null;

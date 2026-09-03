@@ -234,6 +234,11 @@
               class="admin-tab-btn w-full px-4 py-2.5 rounded-xl border border-transparent hover:bg-slate-900/60 text-slate-400 hover:text-white font-bold transition flex items-center gap-3">
               <i class="fa-solid fa-money-bill-transfer text-sm"></i><span>مراقبة التحويلات</span>
             </button>
+            <button id="tab-admin-chat" onclick="window.switchAdminTab('chat')"
+              class="admin-tab-btn w-full px-4 py-2.5 rounded-xl border border-transparent hover:bg-slate-900/60 text-slate-400 hover:text-white font-bold transition flex items-center gap-3">
+              <i class="fa-solid fa-comments text-sm text-cyan-400"></i>
+              <span>مراقبة الشات العام 💬</span>
+            </button>
           </div>
 
           <div class="space-y-1">
@@ -943,8 +948,54 @@
         </div>
       </div>
 
+      <!-- 3.5. PANEL CHAT MONITOR -->
+      <div id="admin-subpanel-chat" class="hidden space-y-4">
+        <div class="p-4 bg-slate-900/70 border border-cyan-500/30 rounded-xl space-y-3 shadow-xl">
+          <div class="flex justify-between items-center flex-wrap gap-2">
+            <div>
+              <h4 class="text-xs font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-comments text-cyan-400"></i>
+                <span>مراقبة الشات العام والرسائل الحية (Live Public Chat Monitor)</span>
+              </h4>
+              <p class="text-[10px] text-slate-400">متابعة فورية لجميع المحادثات والرسائل التي يتبادلها اللاعبون داخل اللعبة مع إمكانية التدخل الإداري الفوري.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="admin-chat-live-indicator" class="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-400 text-[10px] font-bold">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>بث مباشر نشط</span>
+              </span>
+              <button id="btn-admin-clear-chat" class="px-3 py-1.5 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 hover:text-rose-300 text-xs font-bold rounded-lg transition flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>مسح الشات بالكامل</span>
+              </button>
+              <button id="btn-admin-refresh-chat" class="px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-xs font-bold rounded-lg transition flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-rotate"></i>
+                <span>تحديث يدوي</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Admin Chat Broadcast Input -->
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl flex items-center gap-2">
+            <span class="px-2.5 py-1.5 bg-amber-500/15 border border-amber-500/30 text-amber-400 rounded-lg text-xs font-black shrink-0 flex items-center gap-1">
+              <i class="fa-solid fa-shield-halved text-xs"></i>
+              <span>رسالة إدارية:</span>
+            </span>
+            <input id="admin-chat-broadcast-input" type="text" placeholder="اكتب رسالة لتظهر في الشات العام لجميع اللاعبين بصوت الإدارة..." class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400">
+            <button id="btn-admin-send-chat" class="px-4 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs rounded-lg transition flex items-center gap-1.5 shrink-0 cursor-pointer shadow-md">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>إرسال للشات</span>
+            </button>
+          </div>
+
+          <!-- Chat Messages Container -->
+          <div id="admin-chat-messages-container" class="h-96 overflow-y-auto border border-slate-800/80 rounded-xl bg-slate-950/90 p-3 space-y-2 font-mono">
+            <div class="text-center text-slate-500 text-xs py-8">جاري تحميل رسائل الشات...</div>
+          </div>
+        </div>
+      </div>
+
       <!-- 4. PANEL MARKET -->
-            <!-- 4. PANEL MARKET -->
       <div id="admin-subpanel-market" class="hidden space-y-4">
         <!-- Tax Policy Settings Card (Direct in Market & Taxes Panel) -->
         <div class="p-4 bg-slate-900/80 border border-indigo-500/40 rounded-xl space-y-3 shadow-xl">
@@ -2251,9 +2302,9 @@
   <div id="toast-container" class="fixed top-4 left-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Core Modules -->
-  <script src="game.js?v=6.3"></script>
-  <script src="db.js?v=6.3"></script>
-  <script src="admin-panel.js?v=6.3"></script>
+  <script src="game.js?v=6.4"></script>
+  <script src="db.js?v=6.4"></script>
+  <script src="admin-panel.js?v=6.4"></script>
 
   <!-- Standalone Admin Controller Script -->
   <script>
