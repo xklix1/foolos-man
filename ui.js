@@ -8975,6 +8975,25 @@ const UIController = (() => {
       });
     }
 
+    // Live Chat automatic subscription
+    if (typeof AppDB.listenToChatMessages === 'function' && !window._chatListenerInitialized) {
+      window._chatListenerInitialized = true;
+      let lastMsgCount = 0;
+      AppDB.listenToChatMessages((msgs) => {
+        renderChatMessages(msgs);
+        if (msgs && msgs.length > lastMsgCount && lastMsgCount > 0) {
+          const chatDrawer = document.getElementById('chat-drawer');
+          const unreadDot = document.getElementById('chat-unread-dot');
+          if (chatDrawer && !chatDrawer.classList.contains('chat-drawer-open') && unreadDot) {
+            unreadDot.classList.remove('hidden');
+            const diff = msgs.length - lastMsgCount;
+            unreadDot.textContent = diff > 9 ? '+9' : String(diff);
+          }
+        }
+        lastMsgCount = msgs ? msgs.length : 0;
+      });
+    }
+
     const adminSendMsgBtn = document.getElementById('btn-admin-send-monitoring-msg');
     if (adminSendMsgBtn) {
       adminSendMsgBtn.addEventListener('click', async () => {

@@ -1009,9 +1009,93 @@ var AppDB = (() => {
     return true;
   }
 
-  // Leaderboard stub (per user request earlier)
+  // 🏆 Top 10 Richest Players Leaderboard
   async function getLeaderboard() {
-    return [];
+    try {
+      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&order=net_worth.desc&limit=10');
+      return (rows || []).map(r => ({
+        username: r.username,
+        cash: Number(r.cash || 0),
+        bank: Number(r.bank || 0),
+        netWorth: Number(r.net_worth || 0),
+        net_worth: Number(r.net_worth || 0),
+        title: r.title || 'عامل مبتدئ',
+        jobId: r.job_id || 'worker',
+        isAdmin: r.is_admin === true
+      }));
+    } catch (e) {
+      console.warn('[DB] getLeaderboard error:', e.message);
+      return [];
+    }
+  }
+
+  // 💬 Live In-Game Public Chat
+  async function sendChatMessage(sender, senderTitle, message) {
+    if (!message || !message.trim()) return false;
+    const msgObj = {
+      id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      sender: String(sender || 'لاعب'),
+      senderTitle: String(senderTitle || 'عامل مبتدئ'),
+      message: String(message).trim().substring(0, 200),
+      timestamp: Date.now()
+    };
+
+    try {
+      const rows = await _api("globals?id=eq.chat_feed&select=*");
+      let currentFeed = [];
+      if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.messages)) {
+        currentFeed = rows[0].data.messages;
+      }
+      currentFeed.push(msgObj);
+      if (currentFeed.length > 50) {
+        currentFeed = currentFeed.slice(currentFeed.length - 50);
+      }
+
+      await _api('globals', {
+        method: 'POST',
+        headers: { 'Prefer': 'resolution=merge-duplicates' },
+        body: JSON.stringify({
+          id: 'chat_feed',
+          data: { messages: currentFeed },
+          updated_at: Date.now()
+        })
+      });
+      return true;
+    } catch (err) {
+      console.warn('[DB] sendChatMessage error:', err.message);
+      return false;
+    }
+  }
+
+  async function getChatMessages() {
+    try {
+      const rows = await _api("globals?id=eq.chat_feed&select=*");
+      if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.messages)) {
+        return rows[0].data.messages;
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  let _chatPollInterval = null;
+  function listenToChatMessages(callback) {
+    getChatMessages().then(msgs => {
+      if (typeof callback === 'function') callback(msgs);
+    });
+
+    if (_chatPollInterval) clearInterval(_chatPollInterval);
+    _chatPollInterval = setInterval(async () => {
+      try {
+        const msgs = await getChatMessages();
+        if (typeof callback === 'function') callback(msgs);
+      } catch (e) {}
+    }, 2500);
+
+    return () => {
+      if (_chatPollInterval) clearInterval(_chatPollInterval);
+    };
   }
 
   // ─────────────────────────────────────────────
@@ -1268,9 +1352,10 @@ var AppDB = (() => {
     registerForAuction,
     placeAuctionBid,
 
-    // Chat stub
-    sendChatMessage: async () => true,
-    listenToChatMessages: () => (() => {}),
+    // Chat methods
+    sendChatMessage,
+    getChatMessages,
+    listenToChatMessages,
     listenToPrivateChat: () => (() => {})
   };
 })();
