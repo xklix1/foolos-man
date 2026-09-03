@@ -312,17 +312,7 @@
           </span>
         </button>
 
-        <div class="grid grid-cols-3 gap-2.5 pt-1">
-
-          <!-- Hall of Fame / Leaderboard Button -->
-          <button id="btn-menu-leaderboard"
-            class="menu-btn-sub p-3 rounded-xl glass-panel border border-slate-800 hover:border-yellow-500/50 flex flex-col items-center justify-center gap-1.5 transition duration-200 group">
-            <div
-              class="w-9 h-9 rounded-xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center group-hover:scale-110 transition">
-              <i class="fa-solid fa-trophy text-sm"></i>
-            </div>
-            <span class="text-xs font-bold text-slate-200 group-hover:text-yellow-400 transition">عرش الأثرياء</span>
-          </button>
+        <div class="grid grid-cols-2 gap-2.5 pt-1">
 
           <!-- How to Play & Guide Button -->
           <button id="btn-menu-guide"
@@ -370,110 +360,6 @@
       </div>
     </footer>
 
-  </div>
-
-  <!-- ==================== START MENU: HALL OF FAME (LEADERBOARD) MODAL ==================== -->
-  <div id="start-menu-leaderboard-modal"
-    class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
-    <div
-      class="glass-panel w-full max-w-2xl max-h-[85vh] flex flex-col rounded-3xl border border-yellow-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
-      <!-- Modal Header -->
-      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-        <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-400">
-            <i class="fa-solid fa-crown text-lg"></i>
-          </div>
-          <div>
-            <h2 class="text-lg font-black text-white">قاعة الشرف وعرش الأثرياء</h2>
-            <p class="text-xs text-slate-400">أعلى أصحاب الثروات في سيرفر رأس المال (Ras ALmal) المباشر</p>
-          </div>
-        </div>
-        <button id="btn-close-menu-leaderboard"
-          class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <!-- Hourly Official Snapshot Notice Banner -->
-      <div class="my-2.5 px-3.5 py-2 bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-slate-900/40 border border-amber-500/30 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div class="flex items-center gap-2 text-amber-300 font-bold">
-          <i class="fa-solid fa-clock-rotate-left text-amber-400"></i>
-          <span>يتم فرز واعتماد عرش الأثرياء رسمياً كل 60 دقيقة</span>
-        </div>
-        <div class="flex items-center gap-3 text-[11px] text-slate-300">
-          <span>التحديث القادم بعد: <strong id="start-lb-timer" class="text-yellow-400 font-black numbers-font">--:--</strong></span>
-          <span class="text-slate-600">|</span>
-          <span class="text-slate-400">آخر اعتماد: <span id="start-lb-last-updated" class="text-slate-300 font-medium">--</span></span>
-        </div>
-      </div>
-
-      <!-- Top 3 Podium Preview in Start Menu -->
-      <div class="grid grid-cols-3 gap-2 sm:gap-4 my-4">
-        <!-- Rank 2 (Silver) -->
-        <div
-          class="p-3 bg-slate-900/60 rounded-2xl border border-slate-700/50 text-center flex flex-col items-center justify-between">
-          <div
-            class="w-8 h-8 rounded-full bg-slate-700 text-slate-200 font-black text-xs flex items-center justify-center border border-slate-500 mb-1">
-            2
-          </div>
-          <span id="start-podium-name-2" class="text-xs font-bold text-white truncate max-w-full">تحميل...</span>
-          <span id="start-podium-worth-2" class="text-[11px] font-black text-slate-300 numbers-font mt-1">0 EGP</span>
-        </div>
-        <!-- Rank 1 (Gold - Elevated) -->
-        <div
-          class="p-3 bg-yellow-500/10 rounded-2xl border border-yellow-500/50 text-center flex flex-col items-center justify-between shadow-lg shadow-yellow-500/10 -translate-y-2">
-          <div
-            class="w-9 h-9 rounded-full bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shadow mb-1">
-            👑 1
-          </div>
-          <span id="start-podium-name-1" class="text-xs font-black text-yellow-400 truncate max-w-full">تحميل...</span>
-          <span id="start-podium-worth-1" class="text-xs font-black text-yellow-300 numbers-font mt-1">0 EGP</span>
-        </div>
-        <!-- Rank 3 (Bronze) -->
-        <div
-          class="p-3 bg-amber-950/40 rounded-2xl border border-amber-800/40 text-center flex flex-col items-center justify-between">
-          <div
-            class="w-8 h-8 rounded-full bg-amber-900 text-amber-300 font-black text-xs flex items-center justify-center border border-amber-700 mb-1">
-            3
-          </div>
-          <span id="start-podium-name-3" class="text-xs font-bold text-amber-200 truncate max-w-full">تحميل...</span>
-          <span id="start-podium-worth-3" class="text-[11px] font-black text-amber-400 numbers-font mt-1">0 EGP</span>
-        </div>
-      </div>
-
-      <!-- Leaderboard Rows Scrollable Container -->
-      <div class="flex-1 overflow-y-auto pr-1">
-        <table class="w-full text-right text-xs">
-          <thead class="text-[11px] text-slate-400 border-b border-slate-800 pb-2">
-            <tr>
-              <th class="py-2 pr-2">الترتيب</th>
-              <th class="py-2">اللاعب</th>
-              <th class="py-2">اللقب</th>
-              <th class="py-2 pl-2 text-left">الثروة الإجمالية</th>
-            </tr>
-          </thead>
-          <tbody id="start-menu-leaderboard-rows" class="divide-y divide-slate-900/60">
-            <tr>
-              <td colspan="4" class="py-6 text-center text-slate-400">
-                <i class="fa-solid fa-spinner animate-spin ml-2"></i>
-                جاري جلب قائمة المتصدرين...
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="pt-4 border-t border-slate-800 mt-2 flex justify-between items-center text-xs">
-        <span class="text-slate-400">تحديث مباشر من خوادم السيرفر</span>
-        <button id="btn-refresh-start-leaderboard"
-          class="px-3 py-1.5 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold transition flex items-center gap-1.5">
-          <i class="fa-solid fa-rotate text-xs"></i>
-          <span>تحديث القائمة</span>
-        </button>
-      </div>
-    </div>
   </div>
 
   <!-- ==================== SEASON 2 LAUNCH ANNOUNCEMENT MODAL ==================== -->
@@ -1637,11 +1523,7 @@
             <i class="fa-solid fa-dice w-4 text-center text-fuchsia-400"></i>
             <span>كازينو التسلية</span>
           </button>
-          <button data-tab="leaderboard"
-            class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-trophy w-4 text-center text-yellow-500"></i>
-            <span>توب الأغنياء</span>
-          </button>
+          
         </nav>
       </div>
 
@@ -3560,197 +3442,7 @@
       </div>
     </section>
 
-  <!-- TAB 10: توب الاغنياء (GLOBAL LEADERBOARD & TYCOON PODIUM) -->
-  <section id="panel-leaderboard" class="game-panel hidden space-y-4">
-
-    <!-- Header & Live Status Banner -->
-    <div
-      class="glass-panel p-4 sm:p-5 rounded-2xl border border-yellow-500/30 bg-gradient-to-r from-slate-950/90 via-slate-900/80 to-slate-950/90 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden shadow-2xl">
-      <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-yellow-500/10 rounded-full blur-3xl pointer-events-none">
-      </div>
-      <div>
-        <div class="flex items-center gap-2 mb-1">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span class="text-[11px] text-emerald-400 font-bold">التصنيف المالي الحي والمباشر (Global Live Sync)</span>
-        </div>
-        <h3 class="text-lg sm:text-xl font-black text-white flex items-center gap-2">
-          <i class="fa-solid fa-crown text-yellow-400 text-lg sm:text-xl"></i>
-          <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-400 to-yellow-500">عرش
-            أثرياء رأس المال (Top Tycoons)</span>
-          <button class="btn-panel-help text-slate-400 hover:text-yellow-400 transition ml-2" data-help="panel-leaderboard" title="شرح الصفحة">
-            <i class="fa-solid fa-circle-question text-sm"></i>
-          </button>
-        </h3>
-        <p class="text-[11px] sm:text-xs text-slate-400 mt-0.5">ترتيب حيتان المال ورجال الأعمال استناداً إلى مجموع
-          السيولة النقدية، الودائع البنكية، وقيمة الأصول الكلية.</p>
-      </div>
-
-      <div class="flex items-center gap-2.5 w-full md:w-auto">
-        <div id="leaderboard-self-rank-badge"
-          class="flex-1 md:flex-initial px-3 py-2 bg-slate-950/90 rounded-xl border border-yellow-500/40 flex items-center justify-between md:justify-start gap-2.5 shadow-lg">
-          <div class="flex items-center gap-2">
-            <div
-              class="w-7 h-7 rounded-lg bg-yellow-500/20 text-yellow-400 font-black text-xs flex items-center justify-center border border-yellow-500/30">
-              <i class="fa-solid fa-user-tie text-xs"></i>
-            </div>
-            <div class="text-right">
-              <span class="text-[9px] text-slate-400 block leading-tight">مركزك في السيرفر</span>
-              <strong id="self-rank-num" class="text-yellow-400 font-black numbers-font text-xs">#--</strong>
-            </div>
-          </div>
-        </div>
-        <button id="btn-leaderboard-refresh"
-          class="px-3.5 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 rounded-xl text-xs font-black transition shadow-lg shadow-yellow-500/20 flex items-center gap-1.5 flex-shrink-0">
-          <i class="fa-solid fa-arrows-rotate"></i>
-          <span>تحديث</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Hourly Official Snapshot Notice Banner -->
-    <div class="px-4 py-2.5 bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-slate-950/80 border border-amber-500/40 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs shadow-md">
-      <div class="flex items-center gap-2.5 text-amber-300 font-bold">
-        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
-        <i class="fa-solid fa-clock-rotate-left text-amber-400 text-sm"></i>
-        <span>نظام الاعتماد الساعي: يتم فرز وتثبيت عرش الأثرياء رسمياً كل 60 دقيقة</span>
-      </div>
-      <div class="flex items-center gap-4 text-xs">
-        <span class="text-slate-300">التحديث القادم بعد: <strong id="ingame-lb-timer" class="text-yellow-400 font-black numbers-font text-sm">--:--</strong></span>
-        <span class="text-slate-600">|</span>
-        <span class="text-slate-400 text-[11px]">آخر اعتماد رسمي: <span id="ingame-lb-last-updated" class="text-slate-200 font-medium numbers-font">--</span></span>
-      </div>
-    </div>
-
-    <!-- TOP 3 PODIUM DISPLAY (Ultra Luxury Champions Bar) -->
-    <div id="leaderboard-podium" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 items-stretch">
-
-      <!-- PODIUM 2: Silver (Rank 2) -->
-      <div id="podium-card-2"
-        class="glass-panel p-3.5 rounded-2xl border border-slate-600/60 bg-gradient-to-b from-slate-800/40 via-slate-900/70 to-slate-950/90 flex items-center sm:flex-col sm:justify-between sm:text-center gap-3 shadow-lg order-2 sm:order-1 relative overflow-hidden group hover:border-slate-400 transition duration-300 min-w-0">
-        <div class="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-slate-400 to-slate-600"></div>
-        <div class="flex items-center sm:flex-col gap-2.5 sm:gap-1.5 min-w-0 w-full">
-          <div class="relative flex-shrink-0">
-            <div
-              class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-slate-700 to-slate-500 flex items-center justify-center text-white text-base sm:text-lg font-black shadow-inner border border-slate-400/50 numbers-font"
-              id="podium-avatar-2">
-              🥈
-            </div>
-            <span
-              class="absolute -bottom-1.5 -right-1.5 text-[10px] px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-200 border border-slate-400/50 font-black">#2</span>
-          </div>
-          <div class="text-right sm:text-center min-w-0 flex-1">
-            <span class="text-[9px] font-black text-slate-400 uppercase block tracking-wider">المركز الثاني</span>
-            <h4 id="podium-name-2" class="text-xs sm:text-sm font-black text-white truncate max-w-full">تحميل...</h4>
-            <span id="podium-title-2" class="text-[10px] text-slate-400 block truncate">--</span>
-          </div>
-        </div>
-        <div
-          class="mr-auto sm:mr-0 sm:w-full sm:pt-2 sm:border-t sm:border-slate-800/80 text-left sm:text-center flex-shrink-0">
-          <span class="text-[9px] text-slate-500 font-bold block sm:hidden">الثروة</span>
-          <span id="podium-worth-2" class="numbers-font text-xs sm:text-sm font-black text-slate-200 block">--
-            EGP</span>
-        </div>
-      </div>
-
-      <!-- PODIUM 1: Gold (Rank 1 - Champion Emperor) -->
-      <div id="podium-card-1"
-        class="glass-panel p-4 rounded-2xl border-2 border-yellow-400/90 bg-gradient-to-b from-yellow-500/20 via-amber-950/40 to-slate-950/95 flex items-center sm:flex-col sm:justify-between sm:text-center gap-3 shadow-2xl order-1 sm:order-2 glow-gold relative overflow-hidden group hover:border-yellow-300 transition duration-300 sm:-translate-y-1 min-w-0">
-        <div
-          class="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 animate-pulse">
-        </div>
-        <div class="flex items-center sm:flex-col gap-2.5 sm:gap-1.5 min-w-0 w-full">
-          <div class="relative flex-shrink-0">
-            <div
-              class="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-yellow-500 via-amber-400 to-yellow-200 flex items-center justify-center text-slate-950 text-lg sm:text-2xl font-black shadow-xl border-2 border-yellow-300 numbers-font glow-gold"
-              id="podium-avatar-1">
-              👑
-            </div>
-            <span
-              class="absolute -bottom-1.5 -right-1.5 text-[10px] px-2 py-0.2 rounded-full bg-yellow-500 text-slate-950 border border-yellow-300 font-black glow-gold">#1</span>
-          </div>
-          <div class="text-right sm:text-center min-w-0 flex-1">
-            <span
-              class="text-[9px] font-black text-yellow-400 uppercase block tracking-wider flex items-center justify-start sm:justify-center gap-1">
-              <i class="fa-solid fa-crown text-[9px]"></i> إمبراطور اللعبة
-            </span>
-            <h4 id="podium-name-1"
-              class="text-sm sm:text-base font-black text-yellow-300 truncate max-w-full glow-gold">تحميل...</h4>
-            <span id="podium-title-1"
-              class="text-[10px] sm:text-xs text-yellow-400/80 font-bold block truncate">--</span>
-          </div>
-        </div>
-        <div
-          class="mr-auto sm:mr-0 sm:w-full sm:pt-2 sm:border-t sm:border-yellow-500/30 text-left sm:text-center flex-shrink-0">
-          <span class="text-[9px] text-yellow-500/70 font-bold block sm:hidden">الثروة الإجمالية</span>
-          <span id="podium-worth-1"
-            class="numbers-font text-sm sm:text-base font-black text-yellow-400 glow-gold block">-- EGP</span>
-        </div>
-      </div>
-
-      <!-- PODIUM 3: Bronze (Rank 3) -->
-      <div id="podium-card-3"
-        class="glass-panel p-3.5 rounded-2xl border border-amber-700/60 bg-gradient-to-b from-amber-950/30 via-slate-900/70 to-slate-950/90 flex items-center sm:flex-col sm:justify-between sm:text-center gap-3 shadow-lg order-3 sm:order-3 relative overflow-hidden group hover:border-amber-500 transition duration-300 min-w-0">
-        <div class="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-amber-600 to-amber-800"></div>
-        <div class="flex items-center sm:flex-col gap-2.5 sm:gap-1.5 min-w-0 w-full">
-          <div class="relative flex-shrink-0">
-            <div
-              class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-800 to-amber-600 flex items-center justify-center text-amber-200 text-base sm:text-lg font-black shadow-inner border border-amber-600/50 numbers-font"
-              id="podium-avatar-3">
-              🥉
-            </div>
-            <span
-              class="absolute -bottom-1.5 -right-1.5 text-[10px] px-1.5 py-0.2 rounded-full bg-amber-900 text-amber-300 border border-amber-600/50 font-black">#3</span>
-          </div>
-          <div class="text-right sm:text-center min-w-0 flex-1">
-            <span class="text-[9px] font-black text-amber-400 uppercase block tracking-wider">المركز الثالث</span>
-            <h4 id="podium-name-3" class="text-xs sm:text-sm font-black text-white truncate max-w-full">تحميل...</h4>
-            <span id="podium-title-3" class="text-[10px] text-slate-400 block truncate">--</span>
-          </div>
-        </div>
-        <div
-          class="mr-auto sm:mr-0 sm:w-full sm:pt-2 sm:border-t sm:border-slate-800/80 text-left sm:text-center flex-shrink-0">
-          <span class="text-[9px] text-slate-500 font-bold block sm:hidden">الثروة</span>
-          <span id="podium-worth-3" class="numbers-font text-xs sm:text-sm font-black text-amber-400 block">--
-            EGP</span>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- FULL LEADERBOARD TABLE -->
-    <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
-      <div
-        class="p-4 sm:p-5 border-b border-slate-800/80 flex flex-wrap justify-between items-center gap-2 bg-slate-950/60">
-        <h3 class="text-xs sm:text-sm font-black text-white flex items-center gap-2">
-          <i class="fa-solid fa-list-ol text-yellow-400"></i>
-          <span>جدول الترتيب العام للمتصدرين (أفضل 25 مستثمر)</span>
-        </h3>
-        <span
-          class="text-[10px] sm:text-[11px] text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-          مباشر من السيرفر
-        </span>
-      </div>
-
-      <div class="overflow-x-auto w-full">
-        <table class="w-full text-right border-collapse">
-          <thead>
-            <tr
-              class="bg-slate-950/90 text-[10px] sm:text-[11px] text-slate-400 font-bold border-b border-slate-800/80">
-              <th class="py-3 pr-4 pl-2 text-right">المرتبة</th>
-              <th class="py-3 px-3">اللاعب</th>
-              <th class="py-3 px-3">اللقب الوظيفي</th>
-              <th class="py-3 pl-4 pr-3 text-left">صافي الثروة</th>
-            </tr>
-          </thead>
-          <tbody id="leaderboard-rows" class="divide-y divide-slate-800/40">
-            <!-- Dyn table rows -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </section>
+  
 
   </main>
 
@@ -3811,11 +3503,7 @@
       <i class="fa-solid fa-dice text-base text-fuchsia-400"></i>
       <span>كازينو</span>
     </button>
-    <button data-tab="leaderboard"
-      class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-      <i class="fa-solid fa-trophy text-base text-yellow-500"></i>
-      <span>الأغنياء</span>
-    </button>
+    
   </nav>
   </div>
 
@@ -4115,9 +3803,9 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=3.3"></script>
-  <script src="game.js?v=3.3"></script>
-  <script src="ui.js?v=3.3"></script>
+  <script src="db.js?v=3.4"></script>
+  <script src="game.js?v=3.4"></script>
+  <script src="ui.js?v=3.4"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

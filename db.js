@@ -814,70 +814,7 @@ const AppDB = (() => {
     }
   }
 
-  async function getLeaderboard(forceRefresh = false) {
-    _requireOnline();
-
-    const now = Date.now();
-    // Cache locally for 24 hours (86,400,000 ms) unless forceRefresh is explicitly requested
-    if (!forceRefresh && _leaderboardCache && (now - _leaderboardCacheTime < LEADERBOARD_CYCLE_MS)) {
-      return _leaderboardCache;
-    }
-
-    // 1. Primary Strategy: Ultra-lightweight 1-read centralized hourly snapshot
-    try {
-      const docSnap = await firestoreDb.collection('globals').doc('leaderboard').get();
-      if (docSnap.exists) {
-        const data = docSnap.data();
-        if (data && Array.isArray(data.topPlayers) && data.topPlayers.length > 0) {
-          const updatedAt = data.updatedAt || now;
-          const nextUpdateAt = data.nextUpdateAt || (updatedAt + LEADERBOARD_CYCLE_MS);
-
-          _leaderboardMeta = {
-            updatedAt: updatedAt,
-            nextUpdateAt: nextUpdateAt,
-            cycleMinutes: data.cycleMinutes || 60
-          };
-
-          // Check if the 1-hour cycle has elapsed -> automatically trigger official snapshot rebuild
-          if (now >= nextUpdateAt) {
-            console.log('[DB] Leaderboard 1-hour cycle expired. Triggering automated hourly snapshot refresh...');
-            return await _rebuildAndSaveHourlySnapshot('hourly_cycle_elapsed');
-          }
-
-          _leaderboardCache = data.topPlayers;
-          _leaderboardCacheTime = now;
-          try {
-            localStorage.setItem('rasalmal_cached_leaderboard', JSON.stringify(data.topPlayers));
-            localStorage.setItem('rasalmal_leaderboard_meta', JSON.stringify(_leaderboardMeta));
-          } catch (e) {}
-          return data.topPlayers;
-        }
-      }
-    } catch (docErr) {
-      console.warn('[DB] Centralized leaderboard read error (quota or network):', docErr.message);
-    }
-
-    // 2. Fallback: If centralized doc is missing or empty, perform first-time official snapshot
-    const freshlyBuilt = await _rebuildAndSaveHourlySnapshot('initial_seed');
-    if (freshlyBuilt && freshlyBuilt.length > 0) {
-      return freshlyBuilt;
-    }
-
-    // 3. Last resort: Return previously cached leaderboard from memory or localStorage
-    if (_leaderboardCache && _leaderboardCache.length > 0) {
-      return _leaderboardCache;
-    }
-    try {
-      const savedLocal = localStorage.getItem('rasalmal_cached_leaderboard');
-      if (savedLocal) {
-        const parsed = JSON.parse(savedLocal);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          _leaderboardCache = parsed;
-          return parsed;
-        }
-      }
-    } catch (e) {}
-
+  async function getLeaderboard() {
     return [];
   }
 
