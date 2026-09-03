@@ -718,7 +718,7 @@ const AppDB = (() => {
       const ref = firestoreDb.collection('players').doc(username);
       const setPromise = ref.set(stateToSave, { merge: true });
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('استغرق الحفظ في السحابة وقتاً طويلاً. تم حفظ التقدم محلياً على جهازك.')), 6000)
+        setTimeout(() => reject(new Error('استغرق الاتصال بالسحابة وقتاً طويلاً. تم حفظ التقدم محلياً على جهازك.')), 12000)
       );
       await Promise.race([setPromise, timeoutPromise]);
       
@@ -732,11 +732,15 @@ const AppDB = (() => {
       return { success: true, message: 'تم حفظ وتزامن تقدمك بالسحابة بنجاح! ☁️' };
     } catch (err) {
       console.warn('[DB] Manual sync cloud warning:', err.message);
+      let userMsg = `تم الحفظ محلياً: ${err.message}`;
+      if (err.message.includes('طويلاً')) {
+        userMsg = 'استغرق الاتصال بالسحابة وقتاً أطول من المعتاد. تم حفظ التقدم محلياً على جهازك بأمان.';
+      } else if (err.message.includes('offline') || err.message.includes('لا يوجد اتصال')) {
+        userMsg = 'تم حفظ التقدم محلياً (لا يوجد اتصال بالإنترنت حالياً).';
+      }
       return { 
         success: false, 
-        message: err.message.includes('offline') || err.message.includes('خادم') || err.message.includes('طويلاً')
-          ? 'تم حفظ التقدم محلياً بكتالوج حسابك (جهازك غير متصل بخادم السحابة).'
-          : `تم الحفظ محلياً: ${err.message}` 
+        message: userMsg
       };
     }
   }
