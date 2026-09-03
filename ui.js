@@ -333,6 +333,7 @@ const UIController = (() => {
   let sfxEnabled = localStorage.getItem('rasalmal_sfx_enabled') !== 'false';
   let musicEnabled = localStorage.getItem('rasalmal_music_enabled') === 'true';
   let glowEnabled = localStorage.getItem('rasalmal_glow_enabled') !== 'false';
+  let notificationsEnabled = localStorage.getItem('rasalmal_notifications_enabled') !== 'false';
   let coinFlipStreak = 0;
   let ambientOscillator = null;
   let ambientGainNode = null;
@@ -366,6 +367,7 @@ const UIController = (() => {
   //  TOP NOTIFICATIONS (TOAST ENGINE)
   // ─────────────────────────────────────────────
   function showToast(title, message, type = 'info', duration = 2400) {
+    if (!notificationsEnabled && type !== 'error') return;
     const container = document.getElementById('toast-container');
     if (!container) return;
 
@@ -968,6 +970,9 @@ const UIController = (() => {
     const sfxToggle = document.getElementById('setting-sfx-toggle');
     const musicToggle = document.getElementById('setting-music-toggle');
     const glowToggle = document.getElementById('setting-glow-toggle');
+    const notificationsToggle = document.getElementById('setting-notifications-toggle');
+    const inGameSettingsBtn = document.getElementById('btn-ingame-settings');
+    const inGameSettingsMobileBtn = document.getElementById('btn-ingame-settings-mobile');
     const menuSoundBtn = document.getElementById('btn-menu-sound-toggle');
     const menuSoundIcon = document.getElementById('menu-sound-icon');
     const fullscreenBtn = document.getElementById('btn-menu-fullscreen');
@@ -975,13 +980,26 @@ const UIController = (() => {
     if (sfxToggle) sfxToggle.checked = sfxEnabled;
     if (musicToggle) musicToggle.checked = musicEnabled;
     if (glowToggle) glowToggle.checked = glowEnabled;
+    if (notificationsToggle) notificationsToggle.checked = notificationsEnabled;
     updateSoundIconState();
 
+    const openSettingsModal = () => {
+      playMenuSound('modal_open');
+      if (sfxToggle) sfxToggle.checked = sfxEnabled;
+      if (musicToggle) musicToggle.checked = musicEnabled;
+      if (glowToggle) glowToggle.checked = glowEnabled;
+      if (notificationsToggle) notificationsToggle.checked = notificationsEnabled;
+      startSettingsModal.classList.remove('hidden');
+    };
+
     if (menuSettingsBtn && startSettingsModal) {
-      menuSettingsBtn.addEventListener('click', () => {
-        playMenuSound('modal_open');
-        startSettingsModal.classList.remove('hidden');
-      });
+      menuSettingsBtn.addEventListener('click', openSettingsModal);
+    }
+    if (inGameSettingsBtn && startSettingsModal) {
+      inGameSettingsBtn.addEventListener('click', openSettingsModal);
+    }
+    if (inGameSettingsMobileBtn && startSettingsModal) {
+      inGameSettingsMobileBtn.addEventListener('click', openSettingsModal);
     }
 
     if (closeSettingsBtn && startSettingsModal) {
@@ -999,9 +1017,13 @@ const UIController = (() => {
         setAmbientMusicState(musicToggle.checked);
         glowEnabled = glowToggle.checked;
         localStorage.setItem('rasalmal_glow_enabled', glowEnabled ? 'true' : 'false');
+        if (notificationsToggle) {
+          notificationsEnabled = notificationsToggle.checked;
+          localStorage.setItem('rasalmal_notifications_enabled', notificationsEnabled ? 'true' : 'false');
+        }
         updateSoundIconState();
         startSettingsModal.classList.add('hidden');
-        showToast('تم حفظ الإعدادات', 'تم تحديث تفضيلات الصوت والمؤثرات بنجاح.', 'success');
+        showToast('تم حفظ الإعدادات', 'تم تحديث تفضيلات الصوت والإشعارات بنجاح.', 'success');
       });
     }
 

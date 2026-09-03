@@ -1110,6 +1110,23 @@
           </label>
         </div>
 
+        <!-- In-game Notifications Toggle -->
+        <div class="flex items-center justify-between p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-bell text-amber-400 text-base"></i>
+            <div>
+              <span class="font-bold text-white block">إشعارات وتنبيهات اللعبة (Notifications)</span>
+              <span class="text-[10px] text-slate-400">كتم أو تشغيل التنبيهات المنبثقة للربح والأحداث</span>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="setting-notifications-toggle" class="sr-only peer" checked>
+            <div
+              class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500">
+            </div>
+          </label>
+        </div>
+
       </div>
 
       <!-- Modal Footer -->
@@ -1318,6 +1335,12 @@
                 <span>القائمة</span>
               </button>
 
+              <button id="btn-ingame-settings" title="إعدادات الصوت والإشعارات"
+                class="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-purple-400 hover:text-purple-300 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-sliders text-xs"></i>
+                <span>الإعدادات</span>
+              </button>
+
               <button id="btn-user-logout" title="تسجيل الخروج"
                 class="py-1.5 px-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
                 <i class="fa-solid fa-right-from-bracket text-xs"></i>
@@ -1498,6 +1521,11 @@
               class="px-2 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0">
               <i class="fa-solid fa-house text-[10px]"></i>
               <span>القائمة</span>
+            </button>
+            <button id="btn-ingame-settings-mobile" title="إعدادات الصوت والإشعارات"
+              class="px-2 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0 cursor-pointer">
+              <i class="fa-solid fa-sliders text-[10px]"></i>
+              <span>الإعدادات</span>
             </button>
             <button id="btn-lang-toggle-mobile" type="button"
               class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0">
@@ -3717,9 +3745,9 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=3.7"></script>
-  <script src="game.js?v=3.7"></script>
-  <script src="ui.js?v=3.7"></script>
+  <script src="db.js?v=3.8"></script>
+  <script src="game.js?v=3.8"></script>
+  <script src="ui.js?v=3.8"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
