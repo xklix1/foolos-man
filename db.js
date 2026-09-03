@@ -7,7 +7,7 @@
  * Fast, Atomic, Banking-Grade SQL Backend.
  */
 
-const AppDB = (() => {
+var AppDB = (() => {
   console.log('[DB] Supabase Engine Loaded (v=200)');
 
   // ─────────────────────────────────────────────
@@ -1011,6 +1011,49 @@ const AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
+  
+  async function loginPlayer(username, pin) {
+    if (!username || !pin) throw new Error('يرجى إدخال اسم المستخدم والرقم السري.');
+    const u = username.trim();
+    const ok = await verifyPin(u, pin);
+    if (!ok) {
+      throw new Error('الرقم السري غير صحيح. يرجى المحاولة مرة أخرى.');
+    }
+    const state = await getPlayerState(u);
+    if (!state) {
+      throw new Error('اسم المستخدم غير مسجل، يرجى إنشاء حساب جديد.');
+    }
+    return state;
+  }
+
+  async function adminGetGiftCodes() {
+    try {
+      return await _api('gift_codes?order=created_at.desc');
+    } catch (e) { return []; }
+  }
+
+  async function adminCreateGiftCode(code, rewardCash, maxUses = 100) {
+    await _api('gift_codes', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        code: code.trim().toUpperCase(),
+        reward_cash: Number(rewardCash),
+        max_uses: Number(maxUses),
+        used_by: [],
+        created_at: Date.now()
+      })
+    });
+    return true;
+  }
+
+  async function adminDeleteGiftCode(code) {
+    await _api('gift_codes?code=eq.' + encodeURIComponent(code.trim().toUpperCase()), {
+      method: 'DELETE'
+    });
+    return true;
+  }
+
   //  PUBLIC API EXPORT
   // ─────────────────────────────────────────────
   return {
@@ -1020,6 +1063,25 @@ const AppDB = (() => {
     SUPABASE_URL,
     setEncryptedLocalState,
     getDecryptedLocalState,
+
+    
+    loginPlayer,
+    adminGetGiftCodes,
+    adminCreateGiftCode,
+    adminDeleteGiftCode,
+    getSeasonHonors: async () => [],
+    getLeaderboardMeta: async () => ({ season: 1, endsAt: Date.now() + 86400000 }),
+    adminSaveItemConfig: async () => true,
+    adminCreateAuctionItem: async () => true,
+    getAuctionItems: async () => [],
+    purchaseAuctionItem: async () => true,
+    adminDeleteAuctionItem: async () => true,
+    dissolveCorporation: async () => true,
+    promoteCorpMember: async () => true,
+    payoutFromCorpTreasury: async () => true,
+    upgradeCorporationLevel: async () => true,
+    checkVersion: async () => ({ clientVersion: '5.0', forceUpdate: false }),
+    pendingSyncs: 0,
 
     // Auth & Player
     registerPlayer,
@@ -1060,6 +1122,9 @@ const AppDB = (() => {
     adminGetAllPlayers,
     adminGetPlayer,
     adminSavePlayer,
+    adminSetPlayerState: async (u, s) => adminSavePlayer(u, { state: s }),
+    adminAwardSeasonHonors: async () => true,
+    adminAwardTop25Veterans: async () => true,
     adminDeletePlayer,
     adminResetPlayer,
     adminBanPlayer,
@@ -1118,4 +1183,8 @@ const AppDB = (() => {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = AppDB;
+}
+
+if (typeof window !== "undefined") {
+  window.AppDB = AppDB;
 }
