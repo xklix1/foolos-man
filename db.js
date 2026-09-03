@@ -543,12 +543,19 @@ const AppDB = (() => {
       const serverData = serverDoc.data();
       const serverTime = serverData.lastActiveTimestamp || serverData.lastSeen || 0;
       const localTime = localState ? (localState.lastActiveTimestamp || localState.lastSeen || 0) : 0;
-      const serverWorth = Number(serverData.netWorth || (serverData.cash + serverData.bank) || 0);
-      const localWorth = localState ? Number(localState.netWorth || (localState.cash + localState.bank) || 0) : 0;
+      const adminResetTime = serverData.adminResetTimestamp || serverData.adminModifiedTimestamp || 0;
 
-      // If local state exists and has higher netWorth or newer/equal timestamp, keep local state and sync to cloud
-      if (localState && (localWorth > serverWorth || localTime > serverTime)) {
-        console.log('[DB] Preserving local state (newer or higher netWorth), syncing to cloud...');
+      // 1. If admin reset or modified player on server, server ALWAYS overrides local cache
+      if (adminResetTime && (!localState || (adminResetTime > (localState.lastResetAcknowledged || 0)))) {
+        console.log('[DB] Admin reset detected on server! Overwriting local cache with server zero state.');
+        serverData.lastResetAcknowledged = adminResetTime;
+        setEncryptedLocalState(`rasalmal_state_${username}`, serverData);
+        return serverData;
+      }
+
+      // 2. Normal sync: if local state is strictly newer than server, sync to cloud
+      if (localState && (localTime > serverTime + 5000) && (!adminResetTime || localTime > adminResetTime)) {
+        console.log('[DB] Local state is strictly newer than server, syncing to cloud...');
         syncProgressToCloud(username, true).catch(() => {});
         return localState;
       }
@@ -1811,10 +1818,10 @@ const AppDB = (() => {
         username: doc.id,
         pin: existingPin,
         isAdmin: isAdmin,
-        cash: 1500,
-        bank: 500,
+        cash: 0,
+        bank: 0,
         dirtyCash: 0,
-        netWorth: 2000,
+        netWorth: 0,
         xp: 0,
         jobId: 'worker',
         title: 'عامل مبتدئ',
@@ -1837,7 +1844,9 @@ const AppDB = (() => {
         isBanned: false,
         createdAt: existingData.createdAt || Date.now(),
         lastSeen: Date.now(),
-        adminModifiedTimestamp: Date.now()
+        adminModifiedTimestamp: Date.now(),
+        adminResetTimestamp: Date.now(),
+        lastResetAcknowledged: Date.now()
       };
       
       batch.set(doc.ref, freshZeroState);
