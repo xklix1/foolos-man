@@ -413,17 +413,25 @@ var AppDB = (() => {
     }
 
     // Award player
-    const pRows = await _api(`players?username=eq.${encodeURIComponent(u)}&select=cash,net_worth`);
+    const pRows = await _api(`players?username=eq.${encodeURIComponent(u)}&select=*`);
     if (!pRows || pRows.length === 0) throw new Error('حساب اللاعب غير موجود.');
-    const curCash = Number(pRows[0].cash || 0);
-    const curWorth = Number(pRows[0].net_worth || 0);
+    const p = pRows[0];
+    const curCash = Number(p.cash || 0);
+    const curWorth = Number(p.net_worth || 0);
     const reward = Number(gift.reward_cash || 100000);
+    const newCash = curCash + reward;
+    const newWorth = curWorth + reward;
+
+    const pState = (typeof p.state === 'object' && p.state) ? { ...p.state } : {};
+    pState.cash = newCash;
+    pState.netWorth = newWorth;
 
     await _api(`players?username=eq.${encodeURIComponent(u)}`, {
       method: 'PATCH',
       body: JSON.stringify({
-        cash: curCash + reward,
-        net_worth: curWorth + reward
+        cash: newCash,
+        net_worth: newWorth,
+        state: pState
       })
     });
 
@@ -434,7 +442,16 @@ var AppDB = (() => {
       body: JSON.stringify({ used_by: usedBy })
     });
 
-    return reward;
+    return {
+      success: true,
+      rewardType: 'cash',
+      rewardText: `${reward.toLocaleString()} EGP كاش مالي`,
+      amount: reward,
+      playerUpdates: {
+        cash: newCash,
+        netWorth: newWorth
+      }
+    };
   }
 
   // ─────────────────────────────────────────────

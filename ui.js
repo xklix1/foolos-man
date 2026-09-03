@@ -2483,18 +2483,28 @@ const UIController = (() => {
 
           const result = await AppDB.redeemGiftCode(code, GameEngine.activeUsername);
 
-          showToast('تم استرداد الهدية! 🎉', `تهانينا! حصلت على: ${result.rewardText}`, 'success');
+          const rText = (result && result.rewardText) ? result.rewardText : (result && result.amount ? `${Number(result.amount).toLocaleString()} EGP كاش` : (typeof result === 'number' ? `${result.toLocaleString()} EGP كاش` : 'مكافأة نقدية'));
+          showToast('تم استرداد الهدية! 🎉', `تهانينا! حصلت على: ${rText}`, 'success');
           playMenuSound('success');
 
-          // Apply changes to local GameEngine.state
-          if (result.rewardType === 'cash') {
-            GameEngine.state.cash = result.playerUpdates.cash;
-            GameEngine.state.netWorth = result.playerUpdates.netWorth;
-          } else if (result.rewardType === 'business') {
-            GameEngine.state.businesses = result.playerUpdates.businesses;
-          } else if (result.rewardType === 'item') {
-            GameEngine.state.inventory = result.playerUpdates.inventory;
-            GameEngine.state.itemDurations = result.playerUpdates.itemDurations;
+          // Apply changes to local GameEngine.state immediately
+          if (result && result.playerUpdates && result.playerUpdates.cash !== undefined) {
+            GameEngine.state.cash = Number(result.playerUpdates.cash);
+            GameEngine.state.netWorth = Number(result.playerUpdates.netWorth);
+          } else if (result && result.amount) {
+            GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + Number(result.amount);
+            GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + Number(result.amount);
+          } else if (typeof result === 'number') {
+            GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + result;
+            GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + result;
+          }
+
+          // Persist immediately to local storage and queue cloud save
+          if (typeof AppDB.setEncryptedLocalState === 'function') {
+            AppDB.setEncryptedLocalState(GameEngine.activeUsername, GameEngine.state);
+          }
+          if (typeof AppDB.savePlayerState === 'function') {
+            AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
           }
 
           codeInput.value = '';
