@@ -623,7 +623,6 @@ const AppDB = (() => {
         _lastSavedStateHashes[usernameToSave] = currentHash;
         _lastSaveTimestamps[usernameToSave] = now;
         console.log('[DB] Flushed pending state successfully to Cloud');
-        _checkAndUpdateCentralLeaderboard(usernameToSave, stateToSave).catch(() => {});
         return true;
       } catch (err) {
         console.warn('[DB] Flush sync warning:', err.message);
@@ -727,9 +726,6 @@ const AppDB = (() => {
       _lastManualSyncTimestamp = Date.now();
       _lastSavedStateHashes[username] = _calcStateHash(cleanPayload);
       _lastSaveTimestamps[username] = Date.now();
-
-      // Non-blocking leaderboard snapshot update
-      _checkAndUpdateCentralLeaderboard(username, cleanPayload).catch(() => {});
 
       return { success: true, message: 'تم حفظ وتزامن تقدمك بالسحابة بنجاح! ☁️' };
     } catch (err) {
