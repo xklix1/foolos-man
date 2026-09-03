@@ -8991,29 +8991,10 @@ const UIController = (() => {
     }
 
     const btnMailTabInbox = document.getElementById('btn-mail-tab-inbox');
-    const btnMailTabDMs = document.getElementById('btn-mail-tab-dms');
     if (btnMailTabInbox) {
-      btnMailTabInbox.addEventListener('click', () => switchMailboxTab('inbox'));
-    }
-    if (btnMailTabDMs) {
-      btnMailTabDMs.addEventListener('click', () => switchMailboxTab('dms'));
-    }
-
-    const btnSendDM = document.getElementById('btn-send-dm-message');
-    const dmInput = document.getElementById('dm-message-input');
-    if (btnSendDM && dmInput) {
-      btnSendDM.addEventListener('click', async () => {
-        const text = dmInput.value.trim();
-        if (!text || !currentActiveDMUser) return;
-        try {
-          await AppDB.sendMail(GameEngine.state.username, currentActiveDMUser, 'dm', { message: text });
-          dmInput.value = '';
-        } catch (err) {
-          showToast('خطأ إرسال خاصة', err.message, 'error');
-        }
-      });
-      dmInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') btnSendDM.click();
+      btnMailTabInbox.addEventListener('click', () => {
+        const inboxPanel = document.getElementById('mailbox-inbox-panel');
+        if (inboxPanel) inboxPanel.classList.remove('hidden');
       });
     }
 
@@ -9529,68 +9510,8 @@ const UIController = (() => {
     }
   }
 
-  function openPrivateChat(partner) {
-    currentActiveDMUser = partner;
-    document.getElementById('dm-active-username').textContent = partner;
-    document.getElementById('dm-active-status').textContent = 'دردشة نشطة 🟢';
-    document.getElementById('dm-message-input').disabled = false;
-    document.getElementById('btn-send-dm-message').disabled = false;
-
-    const inbox = document.getElementById('mailbox-modal');
-    if (inbox && !inbox.classList.contains('hidden')) {
-      renderDMsConversationList(window.lastMailsCache || []);
-    }
-
-    if (window.unsubActivePrivateChat) window.unsubActivePrivateChat();
-    window.unsubActivePrivateChat = AppDB.listenToPrivateChat(GameEngine.state.username, partner, dms => {
-      const messagesContainer = document.getElementById('dm-messages-container');
-      if (!messagesContainer) return;
-      messagesContainer.innerHTML = '';
-
-      if (dms.length === 0) {
-        messagesContainer.innerHTML = '<div class="text-center text-slate-500 text-xs py-12">لا توجد رسائل سابقة. ابدأ المحادثة الآن!</div>';
-      } else {
-        dms.forEach(dm => {
-          const isMe = dm.sender === GameEngine.state.username;
-          const bubbleClass = isMe ? 'chat-bubble-sent' : 'chat-bubble-received';
-          const alignClass = isMe ? 'items-end' : 'items-start';
-
-          const timeStr = new Date(dm.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-          const msgDiv = document.createElement('div');
-          msgDiv.className = `w-full flex flex-col ${alignClass}`;
-          msgDiv.innerHTML = `
-            <span class="text-[8px] text-slate-500 mb-0.5 px-1">${timeStr}</span>
-            <div class="chat-message-bubble ${bubbleClass}">
-              ${dm.payload.message}
-            </div>
-          `;
-          messagesContainer.appendChild(msgDiv);
-        });
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      }
-    });
-  }
-
-  function switchMailboxTab(tab) {
-    mailboxActiveTab = tab;
-    const inboxPanel = document.getElementById('mailbox-inbox-panel');
-    const dmsPanel = document.getElementById('mailbox-dms-panel');
-    const btnInbox = document.getElementById('btn-mail-tab-inbox');
-    const btnDMs = document.getElementById('btn-mail-tab-dms');
-
-    if (tab === 'inbox') {
-      inboxPanel.classList.remove('hidden');
-      dmsPanel.classList.add('hidden');
-      btnInbox.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 shadow-md';
-      btnDMs.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800';
-    } else {
-      inboxPanel.classList.add('hidden');
-      dmsPanel.classList.remove('hidden');
-      btnInbox.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800';
-      btnDMs.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 shadow-md';
-    }
-  }
+  function openPrivateChat() {}
+  function switchMailboxTab() {}
 
   const profileCache = new Map();
 
@@ -9734,14 +9655,12 @@ const UIController = (() => {
       const isMe = pState.username === GameEngine.state.username;
 
       const btnAddFriend = document.getElementById('btn-profile-add-friend');
-      const btnProfileDM = document.getElementById('btn-profile-dm');
       const btnProfileJob = document.getElementById('btn-profile-job-offer');
       const btnProfilePartnership = document.getElementById('btn-profile-partnership');
       const btnProfileBlock = document.getElementById('btn-profile-block-player');
 
       if (isMe) {
         if (btnAddFriend) btnAddFriend.classList.add('hidden');
-        if (btnProfileDM) btnProfileDM.classList.add('hidden');
         if (btnProfileJob) btnProfileJob.classList.add('hidden');
         if (btnProfilePartnership) btnProfilePartnership.classList.add('hidden');
         if (btnProfileBlock) btnProfileBlock.classList.add('hidden');
@@ -9756,10 +9675,6 @@ const UIController = (() => {
             btnAddFriend.disabled = false;
             btnAddFriend.innerHTML = '<i class="fa-solid fa-user-plus"></i> <span>إضافة صديق</span>';
           }
-        }
-        if (btnProfileDM) {
-          btnProfileDM.classList.remove('hidden');
-          btnProfileDM.dataset.username = username;
         }
         if (btnProfileJob) {
           btnProfileJob.classList.remove('hidden');

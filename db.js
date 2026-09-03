@@ -2383,36 +2383,8 @@ const AppDB = (() => {
     }
   }
 
-  function listenToPrivateChat(userA, userB, callback) {
-    if (!userA || !userB) return () => {};
-    if (firebaseReady) {
-      return firestoreDb.collection('mailbox')
-        .where('type', '==', 'dm')
-        .onSnapshot(snapshot => {
-          const dms = [];
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            data.id = doc.id;
-            if ((data.sender === userA && data.recipient === userB) || (data.sender === userB && data.recipient === userA)) {
-              dms.push(data);
-            }
-          });
-          dms.sort((a, b) => a.timestamp - b.timestamp);
-          callback(dms);
-        });
-    } else {
-      const checkLocal = () => {
-        const localMail = JSON.parse(localStorage.getItem('rasalmal_local_mail') || '[]');
-        const dms = localMail.filter(m => m.type === 'dm' && 
-          ((m.sender === userA && m.recipient === userB) || (m.sender === userB && m.recipient === userA))
-        );
-        dms.sort((a, b) => a.timestamp - b.timestamp);
-        callback(dms);
-      };
-      window.addEventListener('storage', checkLocal);
-      checkLocal();
-      return () => window.removeEventListener('storage', checkLocal);
-    }
+  function listenToPrivateChat() {
+    return () => {};
   }
 
   async function updateMailStatus(mailId, status) {
