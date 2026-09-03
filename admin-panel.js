@@ -393,6 +393,30 @@
       }
     }
 
+    async function loadAdminPlayerWorkspace(playerState) {
+      const listSelect = document.getElementById('admin-player-backups-select');
+      if (!listSelect) return;
+
+      listSelect.innerHTML = '<option value="">جاري جلب النسخ الاحتياطية...</option>';
+
+      try {
+        const dates = await AppDB.getPlayerBackupDates(playerState.username);
+        listSelect.innerHTML = '';
+        if (!dates || dates.length === 0) {
+          listSelect.innerHTML = '<option value="">لا توجد نسخ احتياطية متوفرة...</option>';
+        } else {
+          dates.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d;
+            opt.textContent = `نسخة يوم ${d}`;
+            listSelect.appendChild(opt);
+          });
+        }
+      } catch (err) {
+        listSelect.innerHTML = '<option value="">فشل جلب النسخ الاحتياطية</option>';
+      }
+    }
+
     // ==================== PLAYER POSSESSIONS & BACKUP EXPORT & GRANT ACTIONS ====================
 
     // RENDER PLAYER POSSESSIONS DIRECTORY

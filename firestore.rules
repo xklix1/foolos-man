@@ -18,6 +18,11 @@ service cloud.firestore {
 
       // السماح بالحذف لوظائف لوحة التحكم وإعادة التهيئة
       allow delete: if true;
+
+      // النسخ الاحتياطية لحسابات اللاعبين
+      match /backups/{backupId} {
+        allow read, write, delete: if true;
+      }
     }
 
     // ─────────────────────────────────────────────
