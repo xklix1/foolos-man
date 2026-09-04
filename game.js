@@ -2135,6 +2135,12 @@ const GameEngine = (() => {
     const bizState = state.businesses[key];
     if (!bizState || bizState.level === 0) throw new Error("يجب شراء المشروع أولاً.");
 
+    // Max workers = 5 per business level
+    const maxWorkers = bizState.level * 5;
+    if (bizState.workers >= maxWorkers) {
+      throw new Error(`الحد الأقصى للعمال هو ${maxWorkers} عامل (5 لكل مستوى). رقّ المشروع لزيادة العدد.`);
+    }
+
     // Worker hiring fee scales with number of existing workers
     const hireCost = Math.floor(biz.cost * 0.15 * (1 + bizState.workers));
     if (state.cash < hireCost) {
