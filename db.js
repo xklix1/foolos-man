@@ -960,6 +960,24 @@ var AppDB = (() => {
   }
 
   async function adminResetPlayer(username) {
+    if (!username) return false;
+    const now = Date.now();
+    const cleanBusinesses = {
+      kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
+      coffee: { level: 0, price: 22, workers: 0, suppliesTicks: 0 },
+      tech: { level: 0, price: 160, workers: 0, suppliesTicks: 0 },
+      logistics: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
+      supermarket: { level: 0, price: 450, workers: 0, suppliesTicks: 0 },
+      solar_factory: { level: 0, price: 3200, workers: 0, suppliesTicks: 0 },
+      private_hospital: { level: 0, price: 11500, workers: 0, suppliesTicks: 0 },
+      media_studio: { level: 0, price: 28000, workers: 0, suppliesTicks: 0 },
+      private_bank: { level: 0, price: 95000, workers: 0, suppliesTicks: 0 },
+      oil_refinery: { level: 0, price: 310000, workers: 0, suppliesTicks: 0 },
+      space_tech: { level: 0, price: 1250000, workers: 0, suppliesTicks: 0 }
+    };
+    const cleanAssets = { apartment: 0, office: 0, mansion: 0, skyline_tower: 0, luxury_resort: 0, mega_yacht: 0, private_island: 0, orbital_station: 0 };
+    const cleanStocks = { COMI: { shares: 0, avgPrice: 0 }, EAST: { shares: 0, avgPrice: 0 }, ETEL: { shares: 0, avgPrice: 0 }, FWRY: { shares: 0, avgPrice: 0 }, CASH: { shares: 0, avgPrice: 0 }, BITC: { shares: 0, avgPrice: 0 }, GOLD: { shares: 0, avgPrice: 0 }, AIX: { shares: 0, avgPrice: 0 } };
+
     const row = {
       cash: 300,
       bank: 0,
@@ -971,6 +989,7 @@ var AppDB = (() => {
       is_banned: false,
       jail_timer: 0,
       total_taxes_paid: 0,
+      afk_manager_expires_at: now + (12 * 60 * 60 * 1000),
       state: {
         username,
         cash: 300,
@@ -980,20 +999,31 @@ var AppDB = (() => {
         xp: 0,
         title: 'عامل مبتدئ',
         jobId: 'worker',
-        assets: {},
-        businesses: {},
-        stocks: {},
+        underworldRep: 0,
+        heatLevel: 0,
+        jailTimer: 0,
+        totalTaxesPaid: 0,
+        afkManagerExpiresAt: now + (12 * 60 * 60 * 1000),
+        activeLoan: null,
+        investments: [],
+        customItems: [],
+        itemDurations: {},
+        assets: cleanAssets,
+        businesses: cleanBusinesses,
+        stocks: cleanStocks,
         inventory: {},
         ownedCars: [],
         activeCar: null,
-        smugglingFleet: {},
+        smugglingFleet: { speedboat: 0, plane: 0, ship: 0 },
         activeSmugglingJobs: [],
-        lastSeen: Date.now()
+        activityLog: [],
+        lastSeen: now,
+        cloudSavedAt: now
       },
-      last_seen: Date.now(),
-      admin_modified_timestamp: Date.now()
+      last_seen: now,
+      admin_modified_timestamp: now
     };
-    await _api(`players?username=eq.${encodeURIComponent(username)}`, {
+    await _api(`players?username=ilike.${encodeURIComponent(username.trim())}`, {
       method: 'PATCH',
       body: JSON.stringify(row)
     });
@@ -1049,18 +1079,171 @@ var AppDB = (() => {
     return true;
   }
 
+  // ─────────────────────────────────────────────
+  //  TOTAL SYSTEM RESET & WIPE (EXCEPT GIFT CODES)
+  // ─────────────────────────────────────────────
   async function adminResetAllPlayers() {
-    const players = await adminGetAllPlayers();
-    for (const p of players) {
-      if (!p.is_admin) {
-        await adminResetPlayer(p.username);
-      }
-    }
+    const now = Date.now();
+    const cleanBusinesses = {
+      kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
+      coffee: { level: 0, price: 22, workers: 0, suppliesTicks: 0 },
+      tech: { level: 0, price: 160, workers: 0, suppliesTicks: 0 },
+      logistics: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
+      supermarket: { level: 0, price: 450, workers: 0, suppliesTicks: 0 },
+      solar_factory: { level: 0, price: 3200, workers: 0, suppliesTicks: 0 },
+      private_hospital: { level: 0, price: 11500, workers: 0, suppliesTicks: 0 },
+      media_studio: { level: 0, price: 28000, workers: 0, suppliesTicks: 0 },
+      private_bank: { level: 0, price: 95000, workers: 0, suppliesTicks: 0 },
+      oil_refinery: { level: 0, price: 310000, workers: 0, suppliesTicks: 0 },
+      space_tech: { level: 0, price: 1250000, workers: 0, suppliesTicks: 0 }
+    };
+    const cleanAssets = { apartment: 0, office: 0, mansion: 0, skyline_tower: 0, luxury_resort: 0, mega_yacht: 0, private_island: 0, orbital_station: 0 };
+    const cleanStocks = { COMI: { shares: 0, avgPrice: 0 }, EAST: { shares: 0, avgPrice: 0 }, ETEL: { shares: 0, avgPrice: 0 }, FWRY: { shares: 0, avgPrice: 0 }, CASH: { shares: 0, avgPrice: 0 }, BITC: { shares: 0, avgPrice: 0 }, GOLD: { shares: 0, avgPrice: 0 }, AIX: { shares: 0, avgPrice: 0 } };
+
+    const resetRow = {
+      cash: 300,
+      bank: 0,
+      dirty_cash: 0,
+      net_worth: 400,
+      xp: 0,
+      title: 'عامل مبتدئ',
+      job_id: 'worker',
+      jail_timer: 0,
+      total_taxes_paid: 0,
+      afk_manager_expires_at: now + (12 * 60 * 60 * 1000),
+      state: {
+        cash: 300,
+        bank: 0,
+        dirtyCash: 0,
+        netWorth: 400,
+        xp: 0,
+        title: 'عامل مبتدئ',
+        jobId: 'worker',
+        underworldRep: 0,
+        heatLevel: 0,
+        jailTimer: 0,
+        totalTaxesPaid: 0,
+        afkManagerExpiresAt: now + (12 * 60 * 60 * 1000),
+        activeLoan: null,
+        investments: [],
+        customItems: [],
+        itemDurations: {},
+        assets: cleanAssets,
+        businesses: cleanBusinesses,
+        stocks: cleanStocks,
+        inventory: {},
+        ownedCars: [],
+        activeCar: null,
+        smugglingFleet: { speedboat: 0, plane: 0, ship: 0 },
+        activeSmugglingJobs: [],
+        activityLog: [],
+        lastSeen: now,
+        cloudSavedAt: now
+      },
+      last_seen: now,
+      admin_modified_timestamp: now
+    };
+
+    // 1. Reset ALL players to baseline (cash 300, bank 0, net worth 400, etc.)
+    await _api('players?created_at=gt.0', {
+      method: 'PATCH',
+      body: JSON.stringify(resetRow)
+    });
+
+    // 2. Wipe ALL corporations/alliances
+    try {
+      await _api('corporations?created_at=gt.0', { method: 'DELETE' });
+    } catch (e) {}
+
+    // 3. Wipe ALL wire transfers history
+    try {
+      await _api('transfers?created_at=gt.0', { method: 'DELETE' });
+    } catch (e) {}
+
+    // 4. Wipe ALL mailbox messages
+    try {
+      await _api('mailbox?created_at=gt.0', { method: 'DELETE' });
+    } catch (e) {}
+
+    // 5. Reset all leaderboard caches
+    try {
+      await _api('globals?id=eq.hourly_leaderboard', {
+        method: 'PATCH',
+        body: JSON.stringify({ data: { timestamp: now, topPlayers: [] } })
+      });
+    } catch (e) {}
+    try {
+      await _api('globals?id=eq.season_leaderboard', {
+        method: 'PATCH',
+        body: JSON.stringify({ data: { timestamp: now, topPlayers: [] } })
+      });
+    } catch (e) {}
+
+    // 6. Broadcast reload notification to all online players
+    try {
+      await sendForceReload('تم تصفير وإعادة ضبط اقتصاد ومشاريع اللعبة بالكامل لبدء موسم جديد عادل للجميع! انطلق الآن من الصفر 🚀');
+    } catch (e) {}
+
+    // NOTE: gift_codes table is strictly PRESERVED and untouched!
     return true;
   }
 
+  async function adminWipeLeaderboard() {
+    const now = Date.now();
+
+    // 1. Delete ALL player accounts completely from Supabase
+    await _api('players?created_at=gt.0', {
+      method: 'DELETE'
+    });
+
+    // 2. Wipe ALL corporations
+    try {
+      await _api('corporations?created_at=gt.0', { method: 'DELETE' });
+    } catch (e) {}
+
+    // 3. Wipe ALL wire transfers
+    try {
+      await _api('transfers?created_at=gt.0', { method: 'DELETE' });
+    } catch (e) {}
+
+    // 4. Wipe ALL mailbox messages
+    try {
+      await _api('mailbox?created_at=gt.0', { method: 'DELETE' });
+    } catch (e) {}
+
+    // 5. Reset leaderboard caches
+    try {
+      await _api('globals?id=eq.hourly_leaderboard', {
+        method: 'PATCH',
+        body: JSON.stringify({ data: { timestamp: now, topPlayers: [] } })
+      });
+    } catch (e) {}
+
+    // 6. Broadcast reload
+    try {
+      await sendForceReload('تم مسح وإعادة ضبط اللعبة بالكامل لبدء موسم جديد. يرجى إنشاء حساب جديد أو تسجيل الدخول.');
+    } catch (e) {}
+
+    // NOTE: gift_codes table is strictly PRESERVED and untouched!
+    return true;
+  }
+
+  async function adminRebuildLeaderboard() {
+    const rows = await _api('players?order=net_worth.desc&limit=25&select=username,net_worth,title');
+    const list = (rows || []).map(r => ({
+      username: r.username,
+      netWorth: Number(r.net_worth || 0),
+      title: r.title || 'عامل مبتدئ'
+    }));
+    await _api('globals?id=eq.hourly_leaderboard', {
+      method: 'PATCH',
+      body: JSON.stringify({ data: { timestamp: Date.now(), topPlayers: list } })
+    });
+    return list;
+  }
+
   async function adminClearTransfers() {
-    await _api('transfers?amount=gt.0', { method: 'DELETE' });
+    await _api('transfers?created_at=gt.0', { method: 'DELETE' });
     return true;
   }
 
@@ -2165,8 +2348,8 @@ var AppDB = (() => {
     adminResetAllPlayers,
     adminClearTransfers,
     adminGetTransfers,
-    adminWipeLeaderboard: async () => true,
-    adminRebuildLeaderboard: async () => true,
+    adminWipeLeaderboard,
+    adminRebuildLeaderboard,
 
     // Backups
     checkAndCreateDailyBackup,

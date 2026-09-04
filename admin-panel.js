@@ -2836,19 +2836,82 @@
 
     function applyCompleteZeroStateToGameEngine(username) {
       if (!GameEngine.state) return;
-      GameEngine.state.cash = 1500;
-      GameEngine.state.bank = 500;
-      GameEngine.state.netWorth = 2000;
+      const isAdmin = Boolean(GameEngine.state && GameEngine.state.isAdmin);
+      GameEngine.state.isAdmin = isAdmin;
+      GameEngine.state.cash = 300;
+      GameEngine.state.bank = 0;
       GameEngine.state.dirtyCash = 0;
+      GameEngine.state.netWorth = 400;
       GameEngine.state.xp = 0;
+      GameEngine.state.jobId = 'worker';
+      GameEngine.state.title = 'عامل مبتدئ';
       GameEngine.state.underworldRep = 0;
       GameEngine.state.heatLevel = 0;
-      GameEngine.state.businesses = {};
-      GameEngine.state.assets = {};
-      GameEngine.state.stocks = {};
-      GameEngine.state.inventory = {};
+      GameEngine.state.jailTimer = 0;
+      GameEngine.state.afkManagerExpiresAt = 0;
+      GameEngine.state.activeLoan = null;
       GameEngine.state.investments = [];
-      GameEngine.state.customItems = [];
+      GameEngine.state.businesses = {
+        kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
+        coffee: { level: 0, price: 22, workers: 0, suppliesTicks: 0 },
+        tech: { level: 0, price: 160, workers: 0, suppliesTicks: 0 },
+        logistics: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
+        supermarket: { level: 0, price: 450, workers: 0, suppliesTicks: 0 },
+        solar_factory: { level: 0, price: 3200, workers: 0, suppliesTicks: 0 },
+        private_hospital: { level: 0, price: 11500, workers: 0, suppliesTicks: 0 },
+        media_studio: { level: 0, price: 28000, workers: 0, suppliesTicks: 0 },
+        private_bank: { level: 0, price: 95000, workers: 0, suppliesTicks: 0 },
+        oil_refinery: { level: 0, price: 310000, workers: 0, suppliesTicks: 0 },
+        space_tech: { level: 0, price: 1250000, workers: 0, suppliesTicks: 0 }
+      };
+      GameEngine.state.assets = {
+        apartment: 0,
+        office: 0,
+        mansion: 0,
+        skyline_tower: 0,
+        luxury_resort: 0,
+        mega_yacht: 0,
+        private_island: 0,
+        orbital_station: 0
+      };
+      GameEngine.state.stocks = {
+        COMI: { shares: 0, avgPrice: 0 },
+        EAST: { shares: 0, avgPrice: 0 },
+        ETEL: { shares: 0, avgPrice: 0 },
+        FWRY: { shares: 0, avgPrice: 0 },
+        CASH: { shares: 0, avgPrice: 0 },
+        BITC: { shares: 0, avgPrice: 0 },
+        GOLD: { shares: 0, avgPrice: 0 },
+        AIX: { shares: 0, avgPrice: 0 }
+      };
+      GameEngine.state.inventory = {
+        gold_pen: 0,
+        premium_lawyer: 0,
+        energy_drink: 0,
+        tax_shield: 0,
+        market_scanner: 0,
+        vip_casino_pass: 0,
+        radar_jammer: 0,
+        fake_passport: 0,
+        crypto_cleaner: 0,
+        diplomatic_bag: 0,
+        commissioner_wire: 0,
+        quantum_cpu: 0,
+        diamond_card: 0
+      };
+      GameEngine.state.ownedCars = [];
+      GameEngine.state.activeCar = null;
+      GameEngine.state.smugglingFleet = { speedboat: 0, plane: 0, ship: 0 };
+      GameEngine.state.activeSmugglingJobs = [];
+      GameEngine.state.itemDurations = {};
+      GameEngine.state.offlineReport = null;
+      GameEngine.state.activityLog = [];
+
+      if (username) {
+        try {
+          localStorage.setItem(`rasalmal_state_${username}`, JSON.stringify(GameEngine.state));
+        } catch (e) { }
+      }
     }
 
     // ─────────────────────────────────────────────
@@ -2860,7 +2923,7 @@
     const resetAllEconomyBtn = document.getElementById('btn-admin-reset-all-economy');
     if (resetAllEconomyBtn) {
       resetAllEconomyBtn.addEventListener('click', async () => {
-        const confirmMsg = "⚠️ تحذير خطير: هل أنت متأكد من تصفير أرصدة وممتلكات المنظومة لكافة اللاعبين المسجلين؟\nسيتم تصفير كاش وبنك وأصول وأسهم وشركات ومخزون كافة الحسابات بالكامل مع الإبقاء على الحسابات وأرقامها السرية.";
+        const confirmMsg = "⚠️ تحذير خطير: هل أنت متأكد من تصفير وتطهير شامل لكافة أرصدة، ومشاريع، وأصول، وأسهم، وأساطيل، وتحويلات، وتحالفات، ورسائل كافة اللاعبين بالكامل؟\n\n✅ ملاحظة هامة: أكواد الهدايا لن تُمس وستبقى مفعلة كما هي.";
         if (!confirm(confirmMsg)) return;
 
         try {
@@ -2871,8 +2934,8 @@
             renderAll();
           }
 
-          showToast('تصفير أرصدة المنظومة', `تم تصفير حسابات وأرصدة ${count} لاعب في المنظومة بالكامل بنجاح.`, 'success');
-          logAdminAction(`تصفير شامل لأرصدة المنظومة — تم تصفير ${count} حساب لاعب بالكامل`);
+          showToast('تصفير أرصدة المنظومة', `تم تصفير اقتصاد اللعبة بالكامل لجميع اللاعبين ومسح الشركات والتحويلات والرسائل بنجاح مع الحفاظ على أكواد الهدايا.`, 'success');
+          logAdminAction(`تصفير شامل لاقتصاد اللعبة بالكامل (حفظ أكواد الهدايا)`);
           loadAdminPlayersDirectory(false);
           renderAdminAnalyticsDashboard();
         } catch (err) {
@@ -2885,13 +2948,13 @@
     const wipeLeaderboardBtn = document.getElementById('btn-admin-wipe-leaderboard');
     if (wipeLeaderboardBtn) {
       wipeLeaderboardBtn.addEventListener('click', async () => {
-        const confirmMsg = "⚠️ تحذير نهائي وقاطع: هل أنت متأكد من حذف كافة حسابات اللاعبين نهائياً من قاعدة البيانات عدا حساب الأدمن الرئيسي؟\nهذا الإجراء لا يمكن التراجع عنه!";
+        const confirmMsg = "⚠️ تحذير نهائي وقاطع: هل أنت متأكد من مسح وحذف كافة وثائق وحسابات اللاعبين نهائياً، ومسح التحالفات والرسائل والتحويلات والليدربورد بالكامل للبدء من الصفر تماماً؟\n\n✅ ملاحظة هامة: أكواد الهدايا لن تُمس نهائياً وستبقى صالحة للاستخدام.";
         if (!confirm(confirmMsg)) return;
 
         try {
           const count = await AppDB.adminWipeLeaderboard();
-          showToast('مسح الحسابات', `تم حذف ${count} حساب لاعب نهائياً ومسح قائمة المتصدرين.`, 'success');
-          logAdminAction(`مسح وتطهير شامل لقاعدة البيانات — تم حذف ${count} حساب`);
+          showToast('مسح الحسابات والمنظومة', `تم مسح حسابات اللاعبين وقوائم الليدربورد والتحالفات بالكامل مع الحفاظ على أكواد الهدايا.`, 'success');
+          logAdminAction(`مسح شامل لقاعدة البيانات وتصفير الليدربورد (حفظ أكواد الهدايا)`);
           loadAdminPlayersDirectory(false);
           renderAll();
         } catch (err) {

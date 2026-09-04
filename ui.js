@@ -5576,16 +5576,17 @@ const UIController = (() => {
     GameEngine.state.activeLoan = null;
     GameEngine.state.investments = [];
     GameEngine.state.businesses = {
-      coffee: { level: 0, price: 22, workers: 0 },
-      tech: { level: 0, price: 160, workers: 0 },
-      logistics: { level: 0, price: 1100, workers: 0 },
-      supermarket: { level: 0, price: 450, workers: 0 },
-      solar_factory: { level: 0, price: 3200, workers: 0 },
-      private_hospital: { level: 0, price: 11500, workers: 0 },
-      media_studio: { level: 0, price: 28000, workers: 0 },
-      private_bank: { level: 0, price: 95000, workers: 0 },
-      oil_refinery: { level: 0, price: 310000, workers: 0 },
-      space_tech: { level: 0, price: 1250000, workers: 0 }
+      kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
+      coffee: { level: 0, price: 22, workers: 0, suppliesTicks: 0 },
+      tech: { level: 0, price: 160, workers: 0, suppliesTicks: 0 },
+      logistics: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
+      supermarket: { level: 0, price: 450, workers: 0, suppliesTicks: 0 },
+      solar_factory: { level: 0, price: 3200, workers: 0, suppliesTicks: 0 },
+      private_hospital: { level: 0, price: 11500, workers: 0, suppliesTicks: 0 },
+      media_studio: { level: 0, price: 28000, workers: 0, suppliesTicks: 0 },
+      private_bank: { level: 0, price: 95000, workers: 0, suppliesTicks: 0 },
+      oil_refinery: { level: 0, price: 310000, workers: 0, suppliesTicks: 0 },
+      space_tech: { level: 0, price: 1250000, workers: 0, suppliesTicks: 0 }
     };
     GameEngine.state.assets = {
       apartment: 0,
@@ -5622,6 +5623,10 @@ const UIController = (() => {
       quantum_cpu: 0,
       diamond_card: 0
     };
+    GameEngine.state.ownedCars = [];
+    GameEngine.state.activeCar = null;
+    GameEngine.state.smugglingFleet = { speedboat: 0, plane: 0, ship: 0 };
+    GameEngine.state.activeSmugglingJobs = [];
     GameEngine.state.itemDurations = {};
     GameEngine.state.offlineReport = null;
 
