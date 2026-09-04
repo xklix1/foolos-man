@@ -838,9 +838,6 @@ const GameEngine = (() => {
       if (q.progress >= q.target) {
         q.completed = true;
       }
-      if (activeUsername) {
-        AppDB.savePlayerState(activeUsername, state);
-      }
     }
   }
 
