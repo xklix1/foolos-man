@@ -1029,16 +1029,21 @@ var AppDB = (() => {
   function listenToCorporations(callback) {
     if (typeof callback !== 'function') return () => {};
     let isSubscribed = true;
+    let lastJson = null;
 
     const fetchCorps = async () => {
       try {
         const list = await getCorporationsList();
-        if (isSubscribed) callback(list);
+        const currentJson = JSON.stringify(list);
+        if (isSubscribed && currentJson !== lastJson) {
+          lastJson = currentJson;
+          callback(list);
+        }
       } catch (e) {}
     };
 
     fetchCorps();
-    const interval = setInterval(fetchCorps, 5000);
+    const interval = setInterval(fetchCorps, 6000);
     return () => {
       isSubscribed = false;
       clearInterval(interval);

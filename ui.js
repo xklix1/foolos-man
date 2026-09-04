@@ -5336,9 +5336,16 @@ const UIController = (() => {
         window.activeCorporationState = null;
       }
       
-      // If currently on corporations tab, redraw it
+      // If currently on corporations tab, redraw it only if user is not actively typing
       if (activeTab === 'corporations') {
-        renderCorporationsTab();
+        const container = document.getElementById('corporations-main-container');
+        const activeEl = document.activeElement;
+        const isUserTyping = activeEl && container && container.contains(activeEl) && 
+          (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
+        
+        if (!isUserTyping) {
+          renderCorporationsTab();
+        }
       }
     });
     if (typeof unsubCorporations === 'function') activeListeners.push(unsubCorporations);
@@ -11311,9 +11318,39 @@ const UIController = (() => {
   // ─────────────────────────────────────────────
   //  V2: CORPORATIONS UI & ACTIONS
   // ─────────────────────────────────────────────
-  async function renderCorporationsTab() {
+  async function renderCorporationsTab(force = false) {
     const container = document.getElementById('corporations-main-container');
     if (!container) return;
+
+    // Detect if the user is currently typing in an input inside this container
+    const activeEl = document.activeElement;
+    const isUserTyping = activeEl && container.contains(activeEl) && 
+      (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
+
+    // If user is currently typing and this is a background reload, skip to avoid wiping input!
+    if (isUserTyping && !force) {
+      return;
+    }
+
+    // Preserve any inputs currently typed
+    const preservedInputs = {};
+    let focusedId = null;
+    let selStart = null;
+    let selEnd = null;
+
+    if (activeEl && container.contains(activeEl)) {
+      focusedId = activeEl.id || null;
+      try {
+        selStart = activeEl.selectionStart;
+        selEnd = activeEl.selectionEnd;
+      } catch (e) {}
+    }
+
+    container.querySelectorAll('input, textarea').forEach(inp => {
+      if (inp.id && inp.value) {
+        preservedInputs[inp.id] = inp.value;
+      }
+    });
 
     if (typeof firebase === 'undefined' || !AppDB.isFirebaseReady) {
       container.innerHTML = `
@@ -11761,6 +11798,24 @@ const UIController = (() => {
           </div>
         </div>` : ''}
       `;
+    }
+
+    // Restore preserved inputs if any
+    Object.keys(preservedInputs).forEach(id => {
+      const el = document.getElementById(id);
+      if (el && preservedInputs[id]) {
+        el.value = preservedInputs[id];
+      }
+    });
+
+    if (focusedId) {
+      const el = document.getElementById(focusedId);
+      if (el) {
+        el.focus();
+        if (selStart !== null && selEnd !== null && el.setSelectionRange) {
+          try { el.setSelectionRange(selStart, selEnd); } catch (e) {}
+        }
+      }
     }
   }
 
