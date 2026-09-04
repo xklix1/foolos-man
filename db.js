@@ -228,19 +228,6 @@ var AppDB = (() => {
       stateObj.pin = row.pin || stateObj.pin;
       stateObj.lastSeen = Number(row.last_seen || Date.now());
 
-      // Sanitize business worker caps (Max 5 workers per level)
-      if (stateObj.businesses && typeof stateObj.businesses === 'object') {
-        Object.keys(stateObj.businesses).forEach(k => {
-          const b = stateObj.businesses[k];
-          if (b && typeof b === 'object' && b.level != null) {
-            const maxW = Math.max(1, Number(b.level || 1)) * 5;
-            if (Number(b.workers || 0) > maxW) {
-              b.workers = maxW;
-            }
-          }
-        });
-      }
-
       setEncryptedLocalState(`rasalmal_state_${u}`, stateObj);
       return stateObj;
     } catch (err) {
@@ -255,19 +242,6 @@ var AppDB = (() => {
     const u = username.trim();
     state.username = u;
     state.lastSeen = Date.now();
-
-    // Sanitize business worker caps (Max 5 workers per level)
-    if (state.businesses && typeof state.businesses === 'object') {
-      Object.keys(state.businesses).forEach(k => {
-        const b = state.businesses[k];
-        if (b && typeof b === 'object' && b.level != null) {
-          const maxWorkers = Math.max(1, Number(b.level || 1)) * 5;
-          if (Number(b.workers || 0) > maxWorkers) {
-            b.workers = maxWorkers;
-          }
-        }
-      });
-    }
 
     // Cache locally INSTANTLY (0 lag, 100% responsive)
     setEncryptedLocalState(`rasalmal_state_${u}`, state);
@@ -794,20 +768,6 @@ var AppDB = (() => {
     p.afkManagerExpiresAt = Number(r.afk_manager_expires_at || 0);
     p.lastSeen = Number(r.last_seen || 0);
     p.createdAt = Number(r.created_at || 0);
-
-    // Sanitize business worker caps (Max 5 workers per level)
-    if (p.businesses && typeof p.businesses === 'object') {
-      Object.keys(p.businesses).forEach(k => {
-        const b = p.businesses[k];
-        if (b && typeof b === 'object' && b.level != null) {
-          const maxW = Math.max(1, Number(b.level || 1)) * 5;
-          if (Number(b.workers || 0) > maxW) {
-            b.workers = maxW;
-          }
-        }
-      });
-    }
-
     p.is_admin = p.isAdmin;
     p.is_banned = p.isBanned;
     p.jail_timer = p.jailTimer;
@@ -829,20 +789,7 @@ var AppDB = (() => {
     if (updates.isBanned !== undefined) payload.is_banned = Boolean(updates.isBanned);
     if (updates.jailTimer !== undefined) payload.jail_timer = Number(updates.jailTimer);
     if (updates.pin !== undefined) payload.pin = updates.pin;
-    if (updates.state !== undefined) {
-      if (updates.state.businesses && typeof updates.state.businesses === 'object') {
-        Object.keys(updates.state.businesses).forEach(k => {
-          const b = updates.state.businesses[k];
-          if (b && typeof b === 'object' && b.level != null) {
-            const maxW = Math.max(1, Number(b.level || 1)) * 5;
-            if (Number(b.workers || 0) > maxW) {
-              b.workers = maxW;
-            }
-          }
-        });
-      }
-      payload.state = updates.state;
-    }
+    if (updates.state !== undefined) payload.state = updates.state;
     payload.admin_modified_timestamp = Date.now();
 
     await _api(`players?username=eq.${encodeURIComponent(username)}`, {
