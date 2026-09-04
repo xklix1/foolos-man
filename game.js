@@ -1821,6 +1821,21 @@ const GameEngine = (() => {
         };
       });
 
+      // ── Fix: clamp workers to 5 × level for any player with excess workers ──
+      let workersClamped = false;
+      Object.keys(mergedBusinesses).forEach(k => {
+        const biz = mergedBusinesses[k];
+        const maxAllowed = (biz.level || 0) * 5;
+        if ((biz.workers || 0) > maxAllowed) {
+          biz.workers = maxAllowed;
+          workersClamped = true;
+        }
+      });
+      if (workersClamped) {
+        console.log('[GameEngine] Worker counts clamped to 5×level limit for player:', username);
+      }
+
+
       const mergedStocks = {};
       Object.keys(INITIAL_STATE.stocks).forEach(sym => {
         const saved = dbState.stocks && dbState.stocks[sym];
