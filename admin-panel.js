@@ -31,6 +31,7 @@
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
         modal.classList.add('hidden');
+        cleanupAdminListeners();
       });
     }
 
@@ -89,6 +90,30 @@
         }
       }
     }, 5000);
+
+    // Centralized Admin Listeners Management (Egress Zero-Leak)
+    let _adminChatUnsub = null;
+    let adminCorpsUnsubscribe = null;
+    let adminLiveAuctionsUnsubscribe = null;
+
+    function cleanupAdminListeners() {
+      if (typeof _adminChatUnsub === 'function') {
+        try { _adminChatUnsub(); } catch (e) {}
+        _adminChatUnsub = null;
+      }
+      if (typeof adminCorpsUnsubscribe === 'function') {
+        try { adminCorpsUnsubscribe(); } catch (e) {}
+        adminCorpsUnsubscribe = null;
+      }
+      if (typeof adminLiveAuctionsUnsubscribe === 'function') {
+        try { adminLiveAuctionsUnsubscribe(); } catch (e) {}
+        adminLiveAuctionsUnsubscribe = null;
+      }
+    }
+    window.cleanupAdminListeners = cleanupAdminListeners;
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', cleanupAdminListeners);
+    }
 
     // ─────────────────────────────────────────────
     //  MODULE: PLAYERS DIRECTORY & MANAGEMENT
@@ -3766,7 +3791,6 @@
     }
   };
 
-  let adminCorpsUnsubscribe = null;
   let activeInspectedCorp = null;
 
   const ADMIN_CORP_MEGA_PROJECTS = {
@@ -4027,6 +4051,7 @@
   }
 
   function switchAdminTab(tabId) {
+    cleanupAdminListeners();
     const subtabs = ['stats', 'players', 'transfers', 'chat', 'market', 'broadcast', 'auctions', 'giftcodes', 'system', 'corporations'];
     subtabs.forEach(t => {
       const btn = document.getElementById(`tab-admin-${t}`);
@@ -4572,8 +4597,6 @@
       tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-400">فشل تحميل قائمة المزادات الإدارية: ${e.message}</td></tr>`;
     }
   }
-
-  let adminLiveAuctionsUnsubscribe = null;
 
   function fetchAndRenderAdminLiveAuctions() {
     const tbody = document.getElementById('admin-live-auctions-list');

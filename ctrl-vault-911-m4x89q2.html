@@ -2514,6 +2514,10 @@
       if (closeBtn) {
         closeBtn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i><span>تسجيل الخروج</span>';
         closeBtn.onclick = () => {
+          if (typeof window.cleanupAdminListeners === 'function') window.cleanupAdminListeners();
+          if (typeof AppDB !== 'undefined' && typeof AppDB.cleanupAllNetworkPolling === 'function') {
+            AppDB.cleanupAllNetworkPolling();
+          }
           firebase.auth().signOut().then(() => {
             document.getElementById('admin-auth-screen').classList.remove('hidden');
             document.getElementById('admin-main-interface').classList.add('hidden');

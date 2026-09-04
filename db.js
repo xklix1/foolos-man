@@ -95,21 +95,95 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
+  //  IDLE & VISIBILITY NETWORK CONTROLLER (EGRESS ZERO-LEAK)
+  // ─────────────────────────────────────────────
+  const IDLE_TIMEOUT_MS = 90000; // 90 seconds of no interaction = IDLE
+  let _isUserIdle = false;
+  let _idleTimer = null;
+  const _activeResumeListeners = new Set();
+  const _registeredPollingIntervals = new Set();
+
+  function isNetworkActive() {
+    if (typeof document !== 'undefined' && document.hidden) return false;
+    return !_isUserIdle;
+  }
+
+  function _resetIdleTimer() {
+    const wasIdle = _isUserIdle;
+    _isUserIdle = false;
+    if (_idleTimer) clearTimeout(_idleTimer);
+
+    _idleTimer = setTimeout(() => {
+      _isUserIdle = true;
+      console.log('[IdleManager] User is now IDLE. Pausing background network polling.');
+    }, IDLE_TIMEOUT_MS);
+
+    if (wasIdle && isNetworkActive()) {
+      console.log('[IdleManager] User returned from IDLE. Resuming background network polling.');
+      _notifyResumeListeners();
+    }
+  }
+
+  function _notifyResumeListeners() {
+    _activeResumeListeners.forEach(cb => {
+      try { cb(); } catch (e) {}
+    });
+  }
+
+  function onActiveResume(callback) {
+    if (typeof callback === 'function') {
+      _activeResumeListeners.add(callback);
+      return () => _activeResumeListeners.delete(callback);
+    }
+    return () => {};
+  }
+
+  function registerPollingInterval(intervalId) {
+    if (intervalId) _registeredPollingIntervals.add(intervalId);
+    return intervalId;
+  }
+
+  function unregisterPollingInterval(intervalId) {
+    if (intervalId) {
+      clearInterval(intervalId);
+      _registeredPollingIntervals.delete(intervalId);
+    }
+  }
+
+  function cleanupAllNetworkPolling() {
+    _registeredPollingIntervals.forEach(id => clearInterval(id));
+    _registeredPollingIntervals.clear();
+    stopListeningToChat();
+  }
+
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'pointerdown'];
+    activityEvents.forEach(evt => {
+      window.addEventListener(evt, _resetIdleTimer, { passive: true });
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        // Tab hidden, polling naturally paused by isNetworkActive()
+      } else {
+        _resetIdleTimer();
+        _notifyResumeListeners();
+      }
+    });
+
+    window.addEventListener('beforeunload', cleanupAllNetworkPolling);
+    window.addEventListener('unload', cleanupAllNetworkPolling);
+
+    // Initialize timer
+    _resetIdleTimer();
+  }
+
+  // ─────────────────────────────────────────────
   //  INITIALIZATION
   // ─────────────────────────────────────────────
   async function init() {
     if (window.Capacitor && window.Capacitor.isNativePlatform()) {
       console.log('[DB] Running inside Capacitor Native Engine.');
-    }
-
-    // Initialize Supabase JS client if loaded via CDN
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
-      try {
-        _supabaseClient = window.supabase.createClient( SUPABASE_ANON_KEY);
-        console.log('[DB] Cloud Engine initialized successfully.');
-      } catch (e) {
-        console.warn('[DB] Cloud fallback:', e.message);
-      }
     }
 
     firebaseReady = true;
@@ -544,9 +618,9 @@ var AppDB = (() => {
     const u = username.trim();
 
     const fetchMails = async () => {
-      if (typeof document !== 'undefined' && document.hidden) return;
+      if (!isNetworkActive()) return;
       try {
-        const rows = await _api(`mailbox?recipient=eq.${encodeURIComponent(u)}&order=created_at.desc&limit=30`);
+        const rows = await _api(`mailbox?recipient=eq.${encodeURIComponent(u)}&select=id,recipient,sender,subject,message,amount,item,type,status,created_at&order=created_at.desc&limit=25`);
         const normalized = (rows || []).map(r => ({
           ...r,
           timestamp: Number(r.created_at || r.timestamp || Date.now()),
@@ -557,12 +631,11 @@ var AppDB = (() => {
     };
 
     fetchMails();
-    const interval = setInterval(fetchMails, 30000); // 30-second polling (Egress-optimized)
-    const onMailVis = () => { if (typeof document !== 'undefined' && !document.hidden) fetchMails(); };
-    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onMailVis);
+    const interval = registerPollingInterval(setInterval(fetchMails, 45000));
+    const unsubResume = onActiveResume(() => fetchMails());
     return () => {
-      clearInterval(interval);
-      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onMailVis);
+      unregisterPollingInterval(interval);
+      unsubResume();
     };
   }
 
@@ -1076,7 +1149,8 @@ var AppDB = (() => {
     let lastJson = null;
 
     const fetchCorps = async () => {
-      if (typeof document !== 'undefined' && document.hidden) return;
+      if (!isSubscribed) return;
+      if (!isNetworkActive()) return;
       try {
         const list = await getCorporationsList();
         const currentJson = JSON.stringify(list);
@@ -1088,10 +1162,14 @@ var AppDB = (() => {
     };
 
     fetchCorps();
-    const interval = setInterval(fetchCorps, 45000); // 45-second polling (Egress-optimized)
+    const interval = registerPollingInterval(setInterval(fetchCorps, 60000));
+    const unsubResume = onActiveResume(() => {
+      if (isSubscribed) fetchCorps();
+    });
     return () => {
       isSubscribed = false;
-      clearInterval(interval);
+      unregisterPollingInterval(interval);
+      unsubResume();
     };
   }
 
@@ -1563,7 +1641,13 @@ var AppDB = (() => {
     }
   }
 
-  // 💬 Live In-Game Public Chat
+  // 💬 Live In-Game Public Chat (Egress-Optimized with Metadata Polling)
+  let _lastChatUpdatedAt = 0;
+  let _cachedChatMessages = [];
+  let _chatPollInterval = null;
+  let _lastChatPollTime = 0;
+  const _chatCallbacks = new Set();
+
   async function sendChatMessage(sender, senderTitle, message, facebookVerified = false) {
     if (!message || !message.trim()) return false;
     const msgObj = {
@@ -1576,7 +1660,7 @@ var AppDB = (() => {
     };
 
     try {
-      const rows = await _api("globals?id=eq.chat_feed&select=*");
+      const rows = await _api("globals?id=eq.chat_feed&select=data,updated_at");
       let currentFeed = [];
       if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.messages)) {
         currentFeed = rows[0].data.messages;
@@ -1586,15 +1670,25 @@ var AppDB = (() => {
         currentFeed = currentFeed.slice(currentFeed.length - 50);
       }
 
+      const nowTs = Date.now();
+      _cachedChatMessages = currentFeed;
+      _lastChatUpdatedAt = nowTs;
+
       await _api('globals', {
         method: 'POST',
         headers: { 'Prefer': 'resolution=merge-duplicates' },
         body: JSON.stringify({
           id: 'chat_feed',
           data: { messages: currentFeed },
-          updated_at: Date.now()
+          updated_at: nowTs
         })
       });
+
+      // Notify local listeners immediately without extra network fetch
+      _chatCallbacks.forEach(cb => {
+        try { cb(_cachedChatMessages); } catch (e) {}
+      });
+
       return true;
     } catch (err) {
       console.warn('[DB] sendChatMessage error:', err.message);
@@ -1602,47 +1696,123 @@ var AppDB = (() => {
     }
   }
 
-  async function getChatMessages() {
+  async function getChatMessages(force = false) {
     try {
-      const rows = await _api("globals?id=eq.chat_feed&select=*");
-      if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.messages)) {
-        return rows[0].data.messages;
+      // 1. If we already have cached messages and force is false, query ONLY updated_at (~35 bytes instead of 20KB!)
+      if (!force && _cachedChatMessages.length > 0 && _lastChatUpdatedAt > 0) {
+        const metaRows = await _api("globals?id=eq.chat_feed&select=updated_at");
+        if (metaRows && metaRows.length > 0) {
+          const remoteTs = Number(metaRows[0].updated_at || 0);
+          if (remoteTs <= _lastChatUpdatedAt) {
+            return _cachedChatMessages; // No new messages! Saved 20KB egress!
+          }
+          _lastChatUpdatedAt = remoteTs;
+        }
       }
-      return [];
+
+      // 2. Fetch messages data only when changed or on initial load
+      const rows = await _api("globals?id=eq.chat_feed&select=data,updated_at");
+      if (rows && rows.length > 0) {
+        _lastChatUpdatedAt = Number(rows[0].updated_at || Date.now());
+        if (rows[0].data && Array.isArray(rows[0].data.messages)) {
+          _cachedChatMessages = rows[0].data.messages;
+          return _cachedChatMessages;
+        }
+      }
+      return _cachedChatMessages;
     } catch (e) {
-      return [];
+      return _cachedChatMessages;
     }
   }
 
-  let _chatPollInterval = null;
-  function listenToChatMessages(callback) {
-    getChatMessages().then(msgs => {
-      if (typeof callback === 'function') callback(msgs);
-    });
+  function _isChatDrawerOpen() {
+    if (typeof document === 'undefined') return false;
+    const drawer = document.getElementById('chat-drawer');
+    const adminChatSubpanel = document.getElementById('admin-subpanel-chat');
+    const isMainDrawerOpen = drawer && drawer.classList.contains('chat-drawer-open');
+    const isAdminChatOpen = adminChatSubpanel && !adminChatSubpanel.classList.contains('hidden');
+    return Boolean(isMainDrawerOpen || isAdminChatOpen);
+  }
 
-    if (_chatPollInterval) clearInterval(_chatPollInterval);
-    _chatPollInterval = setInterval(async () => {
-      try {
-        const msgs = await getChatMessages();
-        if (typeof callback === 'function') callback(msgs);
-      } catch (e) {}
-    }, 2500);
+  async function _pollChatTick() {
+    if (!isNetworkActive()) return; // 100% pause when idle or tab hidden
+    if (_chatCallbacks.size === 0) return;
+
+    const isDrawerOpen = _isChatDrawerOpen();
+    const now = Date.now();
+
+    // When drawer is closed, only poll updated_at once every 60s for unread badge!
+    if (!isDrawerOpen && (now - _lastChatPollTime < 60000)) {
+      return;
+    }
+
+    _lastChatPollTime = now;
+    try {
+      const prevTs = _lastChatUpdatedAt;
+      const msgs = await getChatMessages();
+      if (_lastChatUpdatedAt !== prevTs || prevTs === 0) {
+        _chatCallbacks.forEach(cb => {
+          try { cb(msgs); } catch (e) {}
+        });
+      }
+    } catch (e) {}
+  }
+
+  function triggerImmediateChatSync() {
+    if (isNetworkActive()) {
+      _lastChatPollTime = 0;
+      _pollChatTick();
+    }
+  }
+
+  function listenToChatMessages(callback) {
+    if (typeof callback !== 'function') return () => {};
+    _chatCallbacks.add(callback);
+
+    // Initial deliver from cache or fresh fetch
+    if (_cachedChatMessages.length > 0) {
+      callback(_cachedChatMessages);
+    } else {
+      getChatMessages(true).then(msgs => callback(msgs));
+    }
+
+    // Start polling tick (5 seconds when drawer open, 60s when closed, 0 when idle/hidden)
+    if (!_chatPollInterval) {
+      _chatPollInterval = registerPollingInterval(setInterval(_pollChatTick, 5000));
+    }
 
     return () => {
-      if (_chatPollInterval) clearInterval(_chatPollInterval);
+      _chatCallbacks.delete(callback);
+      if (_chatCallbacks.size === 0 && _chatPollInterval) {
+        unregisterPollingInterval(_chatPollInterval);
+        _chatPollInterval = null;
+      }
     };
+  }
+
+  function stopListeningToChat() {
+    _chatCallbacks.clear();
+    if (_chatPollInterval) {
+      unregisterPollingInterval(_chatPollInterval);
+      _chatPollInterval = null;
+    }
   }
 
   async function clearChatMessages() {
     try {
+      _cachedChatMessages = [];
+      _lastChatUpdatedAt = Date.now();
       await _api('globals', {
         method: 'POST',
         headers: { 'Prefer': 'resolution=merge-duplicates' },
         body: JSON.stringify({
           id: 'chat_feed',
           data: { messages: [] },
-          updated_at: Date.now()
+          updated_at: _lastChatUpdatedAt
         })
+      });
+      _chatCallbacks.forEach(cb => {
+        try { cb([]); } catch (e) {}
       });
       return true;
     } catch (e) {
@@ -1716,7 +1886,7 @@ var AppDB = (() => {
             let isSubscribed = true;
             const checkPlayer = async () => {
               if (!isSubscribed) return;
-              if (typeof document !== 'undefined' && document.hidden) return;
+              if (!isNetworkActive()) return; // Gated by IdleManager
               try {
                 const rows = await _api(`players?username=eq.${encodeURIComponent(docId)}&select=username,cash,bank,dirty_cash,net_worth,xp,title,job_id,is_admin,is_banned,jail_timer,admin_modified_timestamp`);
                 if (rows && rows.length > 0 && isSubscribed) {
@@ -1739,21 +1909,14 @@ var AppDB = (() => {
               } catch (e) {}
             };
             checkPlayer();
-            const pollId = setInterval(checkPlayer, 15000); // 15-second real-time check (Egress-optimized)
-            const onVisChange = () => {
-              if (typeof document !== 'undefined' && !document.hidden && isSubscribed) {
-                checkPlayer();
-              }
-            };
-            if (typeof document !== 'undefined') {
-              document.addEventListener('visibilitychange', onVisChange);
-            }
+            const pollId = registerPollingInterval(setInterval(checkPlayer, 25000));
+            const unsubResume = onActiveResume(() => {
+              if (isSubscribed) checkPlayer();
+            });
             return () => {
               isSubscribed = false;
-              clearInterval(pollId);
-              if (typeof document !== 'undefined') {
-                document.removeEventListener('visibilitychange', onVisChange);
-              }
+              unregisterPollingInterval(pollId);
+              unsubResume();
             };
           }
 
@@ -1761,30 +1924,23 @@ var AppDB = (() => {
             let isSubscribed = true;
             const checkGlobal = async () => {
               if (!isSubscribed) return;
-              if (typeof document !== 'undefined' && document.hidden) return;
+              if (!isNetworkActive()) return; // Gated by IdleManager
               try {
-                const rows = await _api(`globals?id=eq.${encodeURIComponent(docId)}`).catch(() => []);
+                const rows = await _api(`globals?id=eq.${encodeURIComponent(docId)}&select=data,updated_at`).catch(() => []);
                 if (rows && rows.length > 0 && isSubscribed) {
                   cb({ exists: true, data: () => (rows[0] && rows[0].data) || {} });
                 }
               } catch (e) {}
             };
             checkGlobal();
-            const pollId = setInterval(checkGlobal, 35000); // 35-second check (Egress-optimized)
-            const onGlobalVis = () => {
-              if (typeof document !== 'undefined' && !document.hidden && isSubscribed) {
-                checkGlobal();
-              }
-            };
-            if (typeof document !== 'undefined') {
-              document.addEventListener('visibilitychange', onGlobalVis);
-            }
+            const pollId = registerPollingInterval(setInterval(checkGlobal, 60000));
+            const unsubResume = onActiveResume(() => {
+              if (isSubscribed) checkGlobal();
+            });
             return () => {
               isSubscribed = false;
-              clearInterval(pollId);
-              if (typeof document !== 'undefined') {
-                document.removeEventListener('visibilitychange', onGlobalVis);
-              }
+              unregisterPollingInterval(pollId);
+              unsubResume();
             };
           }
 
@@ -2013,7 +2169,14 @@ var AppDB = (() => {
     getChatMessages,
     listenToChatMessages,
     clearChatMessages,
+    triggerImmediateChatSync,
+    stopListeningToChat,
     listenToPrivateChat: () => (() => {}),
+
+    // Idle & Egress Control
+    isNetworkActive,
+    onActiveResume,
+    cleanupAllNetworkPolling,
 
     // Unified Stock Market
     getGlobalMarketEvent,

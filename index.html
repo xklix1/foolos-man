@@ -4676,6 +4676,7 @@
       let isOverlayActive = false;
 
       async function checkForceReloadDirectly() {
+        if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.isNetworkActive === 'function' && !window.AppDB.isNetworkActive()) return;
         if (typeof document !== 'undefined' && document.hidden) return;
         try {
           const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.force_reload', {
@@ -4721,8 +4722,8 @@
       }
 
       checkForceReloadDirectly();
-      // Egress optimization: check every 45s when tab is active (reduces traffic by 97%)
-      setInterval(checkForceReloadDirectly, 45000);
+      // Egress optimization: check every 90s when tab is active and not idle
+      setInterval(checkForceReloadDirectly, 90000);
       if (typeof document !== 'undefined') {
         document.addEventListener('visibilitychange', function() {
           if (!document.hidden) checkForceReloadDirectly();

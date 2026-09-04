@@ -5461,8 +5461,9 @@ const UIController = (() => {
       }, (err) => console.error("Airdrop listen err: ", err));
     activeListeners.push(unsubAirdrop);
 
-    // 5. Global Unified Market Event synchronization (Egress-optimized: 60s interval, pauses when hidden)
+    // 5. Global Unified Market Event synchronization (Egress-optimized: 60s interval, pauses when hidden or idle)
     const syncMarketEvent = async () => {
+      if (typeof AppDB !== 'undefined' && typeof AppDB.isNetworkActive === 'function' && !AppDB.isNetworkActive()) return;
       if (typeof document !== 'undefined' && document.hidden) return;
       try {
         if (typeof AppDB.getGlobalMarketEvent === 'function') {
@@ -5481,7 +5482,13 @@ const UIController = (() => {
     };
     syncMarketEvent();
     const marketEventPoll = setInterval(syncMarketEvent, 60000);
-    activeListeners.push(() => clearInterval(marketEventPoll));
+    const unsubMarketResume = (typeof AppDB !== 'undefined' && typeof AppDB.onActiveResume === 'function') 
+      ? AppDB.onActiveResume(() => syncMarketEvent()) 
+      : () => {};
+    activeListeners.push(() => {
+      clearInterval(marketEventPoll);
+      unsubMarketResume();
+    });
 
     // 3. User document listener for ban & external edits (Live Real-Time Sync)
     let lastAdminActionTimestamp = null;
@@ -5797,6 +5804,11 @@ const UIController = (() => {
   function performLogout(showToastMsg = true) {
     activeListeners.forEach(unsub => unsub());
     activeListeners = [];
+    if (typeof AppDB !== 'undefined') {
+      if (typeof AppDB.stopListeningToChat === 'function') AppDB.stopListeningToChat();
+      if (typeof AppDB.cleanupAllNetworkPolling === 'function') AppDB.cleanupAllNetworkPolling();
+    }
+    window._chatListenerInitialized = false;
     localStorage.removeItem('rasalmal_active_session_user');
     GameEngine.logoutUser();
     document.getElementById('auth-screen').classList.add('hidden');
@@ -5896,18 +5908,10 @@ const UIController = (() => {
           ramEl.textContent = Math.floor(40 + Math.random() * 12) + ' MB';
         }
         
-        // Latency ping
+        // Latency simulation (No DB query to conserve read quota)
         const latencyEl = document.getElementById('adm-telemetry-latency');
         if (latencyEl) {
-          const t0 = Date.now();
-          firebase.firestore().collection('globals').doc('serverConfig').get()
-            .then(() => {
-              const t1 = Date.now();
-              latencyEl.textContent = (t1 - t0) + 'ms';
-            })
-            .catch(() => {
-              latencyEl.textContent = Math.floor(30 + Math.random() * 20) + 'ms';
-            });
+          latencyEl.textContent = Math.floor(18 + Math.random() * 14) + 'ms';
         }
       }
     }, 3000);
@@ -9498,6 +9502,9 @@ const UIController = (() => {
           unreadDot.textContent = '0';
         }
         if (chatDrawer.classList.contains('chat-drawer-open')) {
+          if (typeof AppDB !== 'undefined' && typeof AppDB.triggerImmediateChatSync === 'function') {
+            AppDB.triggerImmediateChatSync();
+          }
           setTimeout(() => {
             if (chatInput) chatInput.focus();
           }, 100);
@@ -13053,9 +13060,10 @@ const UIController = (() => {
 window.UIController = UIController;
 window.UI = UIController;
 
-// Global watchdog for mandatory reload (Egress-optimized: checks every 60s when active)
+// Global watchdog for mandatory reload (Egress-optimized: checks every 90s when active and not idle)
 if (typeof window !== 'undefined' && !window.location.pathname.includes('ctrl-vault')) {
   setInterval(async () => {
+    if (typeof AppDB !== 'undefined' && typeof AppDB.isNetworkActive === 'function' && !AppDB.isNetworkActive()) return;
     if (typeof document !== 'undefined' && document.hidden) return;
     try {
       if (typeof AppDB !== 'undefined' && typeof AppDB.getForceReloadStatus === 'function') {
@@ -13067,5 +13075,5 @@ if (typeof window !== 'undefined' && !window.location.pathname.includes('ctrl-va
         }
       }
     } catch (e) {}
-  }, 60000);
+  }, 90000);
 }
