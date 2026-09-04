@@ -258,83 +258,92 @@ const GameEngine = (() => {
     gold_pen: {
       id: 'gold_pen',
       name: 'القلم الذهبي للمدراء',
-      cost: 25000,
-      desc: 'يزيد خبرتك الوظيفية XP بنسبة +35% لتسريع الترقيات. ينتهي مفعوله بعد دقيقتين.',
+      cost: 20000,
+      desc: 'يزيد خبرتك الوظيفية XP بنسبة +15% لتسريع الترقيات. ينتهي مفعوله بعد 3 دقائق.',
       effect: 'xp_boost',
-      value: 0.35,
-      durationTicks: 120 // 2 minutes
+      value: 0.15,
+      durationTicks: 180, // 3 minutes
+      cooldownSec: 600    // 10 minutes cooldown
     },
     premium_lawyer: {
       id: 'premium_lawyer',
       name: 'توكيل محامٍ دولي قدير',
-      cost: 150000,
-      desc: 'يخفض خطورة القبض في صفقات السوق المحظورة بنسبة -18% لمدة 4 دقائق.',
+      cost: 100000,
+      desc: 'يخفض خطورة القبض في صفقات السوق المحظورة بنسبة -12% لمدة 5 دقائق.',
       effect: 'legal_protection',
-      value: 0.18,
-      durationTicks: 240
+      value: 0.12,
+      durationTicks: 300,  // 5 minutes
+      cooldownSec: 900     // 15 minutes cooldown
     },
     energy_drink: {
       id: 'energy_drink',
       name: 'مشروب الطاقة والتركيز الفائق',
-      cost: 18000,
-      desc: 'يمنحك نشاطاً فائقاً ويزيد راتب نوبات العمل بنسبة +60% لمدة 90 ثانية.',
+      cost: 25000,
+      desc: 'يمنحك نشاطاً ويزيد راتب نوبات العمل بنسبة +25% لمدة 90 ثانية.',
       effect: 'salary_multiplier',
-      value: 1.60,
-      durationTicks: 90
+      value: 1.25,
+      durationTicks: 90,  // 90 seconds
+      cooldownSec: 480    // 8 minutes cooldown
     },
     tax_shield: {
       id: 'tax_shield',
       name: 'درع الإعفاء والملاذ الضريبي',
-      cost: 180000,
-      desc: 'يمنحك خصماً قدره 15% على ترقيات الشركات ويخفض ضريبة الثروة بنسبة 50% لمدة 12 ساعة.',
+      cost: 600000,
+      desc: 'يمنحك خصماً قدره 8% على ترقيات الشركات ويخفض ضريبة الثروة بنسبة 25% لمدة 6 ساعات.',
       effect: 'upgrade_discount',
-      value: 0.15,
-      durationTicks: 14400
+      value: 0.08,
+      durationTicks: 7200,  // 6 hours (in ticks)
+      cooldownSec: 86400    // 24 hours cooldown
     },
     market_scanner: {
       id: 'market_scanner',
       name: 'ماسح البورصة والتداول الذكي',
-      cost: 250000,
-      desc: 'يخفف أثر الهبوط والتصحيحات العكسية لأسهمك بنسبة 40% لمدة 3 دقائق.',
+      cost: 200000,
+      desc: 'يخفف أثر الهبوط والتصحيحات العكسية لأسهمك بنسبة 20% لمدة 4 دقائق.',
       effect: 'stock_shield',
-      value: 0.40,
-      durationTicks: 180
+      value: 0.20,
+      durationTicks: 240,  // 4 minutes
+      cooldownSec: 1200    // 20 minutes cooldown
     },
     vip_casino_pass: {
       id: 'vip_casino_pass',
       name: 'بطاقة VIP لكازينو الحظ',
-      cost: 250000,
-      desc: 'ترفع نسبة الفوز في الكازينو وعجلة الحظ بنسبة +15%. تنتهي وتدمر صلاحيتها بعد 300 ثانية.',
+      cost: 80000,
+      desc: 'ترفع نسبة الفوز في الكازينو وعجلة الحظ بنسبة +8%. تنتهي صلاحيتها بعد 5 دقائق.',
       effect: 'casino_luck_boost',
-      value: 0.15,
-      durationTicks: 100 // 100 ticks = 300 seconds (5 minutes)
+      value: 0.08,
+      durationTicks: 100,  // ~5 minutes
+      cooldownSec: 900     // 15 minutes cooldown
     },
     quantum_cpu: {
       id: 'quantum_cpu',
       name: 'معالج الحوسبة الكمومية (Quantum Core)',
-      cost: 650000,
-      desc: 'يضاعف أرباح وتدفقات كافة مشاريعك وشركاتك بنسبة +50% لمدة 6 دقائق.',
+      cost: 500000,
+      desc: 'يرفع أرباح وتدفقات كافة مشاريعك بنسبة +25% لمدة 4 دقائق.',
       effect: 'biz_multiplier',
-      value: 1.5,
-      durationTicks: 120
+      value: 1.25,
+      durationTicks: 240,  // 4 minutes
+      cooldownSec: 1800    // 30 minutes cooldown
     },
     diamond_card: {
       id: 'diamond_card',
       name: 'عضوية النادي الماسي للبنوك الدولية',
-      cost: 2000000,
-      desc: 'ترفع فوائد الودائع البنكية وتخفض ضرائب الثروة بنسبة 50% لمدة 10 دقائق.',
+      cost: 1200000,
+      desc: 'ترفع فوائد الودائع البنكية بنسبة 20% وتخفض ضرائب الثروة بنسبة 25% لمدة 8 دقائق.',
       effect: 'bank_perk',
-      value: 0.5,
-      durationTicks: 200
+      value: 0.20,
+      durationTicks: 480,  // 8 minutes
+      cooldownSec: 7200    // 2 hours cooldown
     },
     cronos_gear: {
       id: 'cronos_gear',
       name: 'ساعة الكرونوس لتسريع العمليات',
-      cost: 400000,
-      desc: 'تقلل وقت التبريد (Cooldown) للعمليات المشبوهة وفترات نوبات العمل بنسبة 50% لمدة 5 دقائق.',
+      cost: 350000,
+      desc: 'تقلل وقت التبريد (Cooldown) للعمليات المشبوهة وفترات نوبات العمل بنسبة 30% لمدة 5 دقائق.',
       effect: 'cooldown_reduction',
-      value: 0.50,
-      durationTicks: 300
+      value: 0.30,
+      durationTicks: 300,  // 5 minutes
+      cooldownSec: 1200    // 20 minutes cooldown
     }
   };
 
@@ -454,7 +463,7 @@ const GameEngine = (() => {
       name: 'اختراق منصات رقمية وغسيل عملات مشفرة',
       desc: 'هجوم سيبراني معقد على محافظ العملات المشفرة مع تحويل الأصول لخوادم خارجية.',
       cost: 380000,
-      payout: 1100000,
+      payout: 1500000,
       successChance: 0.45,
       jailDuration: 90,
       repGain: 50,
@@ -469,7 +478,7 @@ const GameEngine = (() => {
       name: 'تهريب آثار ومخطوطات نادرة لمزادات سرية',
       desc: 'صفقة كبرى لبيع قطع أثرية نادرة لكبار هواة الجمع في السوق السوداء الدولية.',
       cost: 1200000,
-      payout: 3800000,
+      payout: 5000000,
       successChance: 0.36,
       jailDuration: 130,
       repGain: 100,
@@ -484,7 +493,7 @@ const GameEngine = (() => {
       name: 'عملية السطو الكبرى على خزائن الماس الدولية',
       desc: 'أضخم عملية سرقة منظمة في التاريخ لخزينة الماس والسبائك البنكية.',
       cost: 4000000,
-      payout: 16000000,
+      payout: 25000000,
       successChance: 0.24,
       jailDuration: 180,
       repGain: 250,
@@ -499,7 +508,7 @@ const GameEngine = (() => {
       name: 'تهريب اليورانيوم المخصب الدولي',
       desc: 'صفقة تهريب وتوريد شحنة يورانيوم مخصب لتشغيل مفاعلات طاقة خاصة تابعة لمنظمات دولية سرية.',
       cost: 30000000,
-      payout: 120000000,
+      payout: 180000000,
       successChance: 0.22,
       jailDuration: 200,
       repGain: 800,
@@ -514,7 +523,7 @@ const GameEngine = (() => {
       name: 'صفقة تكنولوجيا دفاعية وشفرات رادار مسربة',
       desc: 'بيع شفرات منظومات دفاع جوي فائقة التطور لجهات أجنبية خاصة.',
       cost: 15000000,
-      payout: 60000000,
+      payout: 100000000,
       successChance: 0.20,
       jailDuration: 240,
       repGain: 500,
@@ -529,7 +538,7 @@ const GameEngine = (() => {
       name: 'قرصنة واختراق البنوك المركزية',
       desc: 'فرض السيطرة والقرصنة السيبرانية على خوادم بنوك مركزية كبرى وسحب احتياطيات رقمية.',
       cost: 120000000,
-      payout: 650000000,
+      payout: 1000000000,
       successChance: 0.16,
       jailDuration: 300,
       repGain: 2000,
@@ -544,7 +553,7 @@ const GameEngine = (() => {
       name: 'السيطرة على شبكة أقمار صناعية وتشفيرها',
       desc: 'اختراق منظومة البث الفضائي العالمية وطلب فدية بمليارات الدولارات.',
       cost: 60000000,
-      payout: 320000000,
+      payout: 500000000,
       successChance: 0.16,
       jailDuration: 300,
       repGain: 1000,
@@ -559,7 +568,7 @@ const GameEngine = (() => {
       name: 'عملية العراب: السيطرة على كارتيل التجارة العالمي',
       desc: 'الانقلاب الشامل والسيطرة على مقاليد إمبراطورية السوق السوداء العالمية.',
       cost: 250000000,
-      payout: 1500000000,
+      payout: 3000000000,
       successChance: 0.12,
       jailDuration: 400,
       repGain: 3000,
@@ -576,7 +585,7 @@ const GameEngine = (() => {
       id: 'radar_jammer',
       name: 'جهاز تشويش رادارات الشرطة',
       desc: 'يقلل احتمالية المداهمة الأمنية في صفقات السوق السوداء بنسبة 12% لمدة 4 دقائق.',
-      cost: 150000,
+      cost: 80000,
       icon: 'fa-satellite-dish',
       durationTicks: 240
     },
@@ -592,7 +601,7 @@ const GameEngine = (() => {
       id: 'crypto_cleaner',
       name: 'بروتوكول تشفير مالي (Zero-Trace)',
       desc: 'يخفض ضريبة غسيل وتبييض الأموال إلى الحد الأدنى القانوني 25% بدلاً من 35%.',
-      cost: 450000,
+      cost: 200000,
       icon: 'fa-shield-virus',
       durationTicks: 200
     },
@@ -608,7 +617,7 @@ const GameEngine = (() => {
       id: 'commissioner_wire',
       name: 'شريحة اتصال كبار المسؤولين (VIP Wire)',
       desc: 'تخفض تكلفة الرشوة وإسقاط الملاحقات الأمنية بنسبة 35%.',
-      cost: 1800000,
+      cost: 1000000,
       icon: 'fa-mobile-retro',
       durationTicks: 300
     }
@@ -674,6 +683,7 @@ const GameEngine = (() => {
       cronos_gear: 0
     },
     itemDurations: {}, // Stores { itemId: ticksRemaining } for self-destruction timer
+    itemCooldowns: {}, // Stores { itemId: expiresAtTimestamp } — prevents re-purchase during cooldown
     customItems: [], // Array of { auctionId, name, description, price, timestamp }
     blackMarketCooldowns: {}, // Stores { dealId: expiresAtTimestamp } for operation cooldowns
     jailTimer: 0,
@@ -2382,10 +2392,21 @@ const GameEngine = (() => {
     return { shares, price: currentPrice, grossReturn, fee, capitalGainsTax, totalReturn: netReturn };
   }
 
-  // Store: Buy Item (Refreshes duration, prevents exploit stacking)
+  // Store: Buy Item (Refreshes duration, prevents exploit stacking, enforces cooldown)
   function buyStoreItem(itemId) {
     const item = STORE_ITEMS[itemId];
     if (!item) throw new Error("المنتج المطلوب غير متوفر بالمتجر.");
+
+    // Check item cooldown
+    if (!state.itemCooldowns) state.itemCooldowns = {};
+    const cooldownExpiry = state.itemCooldowns[itemId] || 0;
+    if (Date.now() < cooldownExpiry) {
+      const remainingSec = Math.ceil((cooldownExpiry - Date.now()) / 1000);
+      const mins = Math.floor(remainingSec / 60);
+      const secs = remainingSec % 60;
+      const timeStr = mins > 0 ? `${mins} دقيقة و${secs} ثانية` : `${secs} ثانية`;
+      throw new Error(`هذه الأداة في فترة التبريد. يمكنك استخدامها مجدداً بعد ${timeStr}.`);
+    }
 
     if (state.cash < item.cost) {
       throw new Error(`سعر المنتج ${item.cost.toLocaleString()} جنيه. رصيدك لا يكفي.`);
@@ -2398,6 +2419,11 @@ const GameEngine = (() => {
     // Initialize/Reset item self-destruction timer
     if (!state.itemDurations) state.itemDurations = {};
     state.itemDurations[itemId] = item.durationTicks;
+
+    // Set cooldown so player cannot immediately re-purchase after effect expires
+    if (item.cooldownSec) {
+      state.itemCooldowns[itemId] = Date.now() + (item.cooldownSec * 1000);
+    }
 
     recordPlayerActivity('شراء متجر', `شراء أداة "${item.name}" من المتجر`, 'store');
     state.netWorth = calculateNetWorth();
