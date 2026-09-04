@@ -324,6 +324,23 @@ var AppDB = (() => {
     return true;
   }
 
+  async function getPlayerTransfers(username, limit = 30) {
+    if (!username) return [];
+    const u = username.trim();
+    try {
+      const rows = await _api(`transfers?or=(sender.eq.${encodeURIComponent(u)},recipient.eq.${encodeURIComponent(u)})&order=created_at.desc&limit=${limit}`);
+      return (rows || []).map(r => ({
+        ...r,
+        amount: Number(r.amount || 0),
+        created_at: Number(r.created_at || r.timestamp || Date.now()),
+        timestamp: Number(r.created_at || r.timestamp || Date.now())
+      }));
+    } catch (err) {
+      console.warn('[DB] getPlayerTransfers error:', err.message);
+      return [];
+    }
+  }
+
   async function createTransferRequest(senderUsername, recipientUsername, amount) {
     if (!senderUsername || !recipientUsername) throw new Error('بيانات الطلب غير مكتملة.');
     if (senderUsername === recipientUsername) throw new Error('لا يمكنك إرسال طلب تحويل لنفسك!');
@@ -479,7 +496,12 @@ var AppDB = (() => {
     const fetchMails = async () => {
       try {
         const rows = await _api(`mailbox?recipient=eq.${encodeURIComponent(u)}&order=created_at.desc&limit=50`);
-        callback(rows || []);
+        const normalized = (rows || []).map(r => ({
+          ...r,
+          timestamp: Number(r.created_at || r.timestamp || Date.now()),
+          created_at: Number(r.created_at || r.timestamp || Date.now())
+        }));
+        callback(normalized);
       } catch (e) {}
     };
 
@@ -1438,6 +1460,7 @@ var AppDB = (() => {
 
     // Transfers
     executeWireTransfer,
+    getPlayerTransfers,
     createTransferRequest,
     getIncomingTransferRequests,
     getSentTransferRequests,

@@ -1234,6 +1234,8 @@ const UIController = (() => {
       if (isMaint) return;
 
       const playerState = await GameEngine.loadUserSession(username);
+      window._sessionInitTimestamp = Date.now();
+      window._processedTransferMailIds = new Set();
       const mainLayout = document.getElementById('main-game-layout');
       document.getElementById('start-menu-screen').classList.add('hidden');
       document.getElementById('auth-screen').classList.add('hidden');
@@ -1532,6 +1534,7 @@ const UIController = (() => {
     activeTab = tabId;
     if (tabId === 'bank') {
       fetchAndRenderTransferRequests(true);
+      loadTransferHistory(true);
     } else if (tabId === 'store') {
       GameEngine.syncItemsConfig().then(() => {
         renderStore();
@@ -2338,8 +2341,9 @@ const UIController = (() => {
         invContainer.appendChild(row);
       });
     }
-    // Fetch and render transfer requests
+    // Fetch and render transfer requests & bank history
     fetchAndRenderTransferRequests();
+    loadTransferHistory();
   }
 
   function updateBankInDOM() {
@@ -2805,6 +2809,15 @@ const UIController = (() => {
         btnSpinner.classList.add('hidden');
       }
     });
+
+    // Wire History Refresh Button
+    const refreshWireBtn = document.getElementById('btn-refresh-wire-history');
+    if (refreshWireBtn) {
+      refreshWireBtn.addEventListener('click', () => {
+        loadTransferHistory(true);
+        showToast('تحديث السجل', 'تم تحديث سجل الحوالات البنكية.', 'info');
+      });
+    }
 
     // Transfer Request Submission
     const btnRequestSubmit = document.getElementById('btn-request-submit');
@@ -3772,18 +3785,99 @@ const UIController = (() => {
     return map[sym] || sym;
   }
 
-  function addTransferHistoryRow(recipient, amount) {
-    const list = document.getElementById('wire-history-list');
-    const emptyMsg = list.querySelector('.empty-wire-msg');
-    if (emptyMsg) emptyMsg.remove();
+  let lastTransfersFetchTime = 0;
+  let cachedTransfersList = [];
 
-    const row = document.createElement('div');
-    row.className = 'flex justify-between items-center text-xs text-slate-400 py-1.5 border-b border-slate-800/50';
-    row.innerHTML = `
-      <span>حوالة صادرة إلى <strong class="text-white">${recipient}</strong></span>
-      <span class="numbers-font text-rose-400">-${amount.toLocaleString()} EGP</span>
-    `;
-    list.prepend(row);
+  async function loadTransferHistory(force = false) {
+    const list = document.getElementById('wire-history-list');
+    if (!list) return;
+
+    const username = GameEngine.activeUsername;
+    if (!username) return;
+
+    const now = Date.now();
+    if (force || now - lastTransfersFetchTime > 8000 || cachedTransfersList.length === 0) {
+      lastTransfersFetchTime = now;
+      try {
+        if (cachedTransfersList.length === 0 && list.querySelector('.empty-wire-msg')) {
+          list.innerHTML = `
+            <div class="text-center text-slate-500 text-xs py-8 animate-pulse">
+              <i class="fa-solid fa-spinner fa-spin text-emerald-400 text-lg mb-2 block"></i>
+              جاري تحميل سجل التحويلات البنكية...
+            </div>
+          `;
+        }
+        const data = await AppDB.getPlayerTransfers(username, 30);
+        cachedTransfersList = data || [];
+      } catch (err) {
+        console.warn('[UI] Failed to load transfers history:', err);
+      }
+    }
+
+    renderTransferHistoryDOM();
+  }
+
+  function renderTransferHistoryDOM() {
+    const list = document.getElementById('wire-history-list');
+    if (!list) return;
+
+    const username = GameEngine.activeUsername;
+    if (!cachedTransfersList || cachedTransfersList.length === 0) {
+      list.innerHTML = `
+        <div class="empty-wire-msg text-center text-slate-500 text-xs py-8">
+          <i class="fa-solid fa-receipt text-slate-600 text-2xl mb-2 block"></i>
+          لا توجد حوالات بنكية مسجلة حتى الآن.
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = '';
+    cachedTransfersList.forEach(t => {
+      const isSent = (t.sender === username);
+      const counterpart = isSent ? t.recipient : t.sender;
+      const amtStr = isSent ? `-${Number(t.amount || 0).toLocaleString()} EGP` : `+${Number(t.amount || 0).toLocaleString()} EGP`;
+      const amtClass = isSent ? 'text-rose-400' : 'text-emerald-400';
+      const bgBadge = isSent ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
+      const icon = isSent ? 'fa-arrow-up-right-from-square' : 'fa-arrow-down-left-and-up-to-bracket';
+      const label = isSent ? 'صادرة إلى' : 'واردة من';
+
+      const timeVal = Number(t.created_at || t.timestamp || Date.now());
+      const dateStr = new Date(timeVal).toLocaleString('ar-EG', {
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      const row = document.createElement('div');
+      row.className = 'flex justify-between items-center text-xs text-slate-300 p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/80 hover:border-slate-700/60 transition';
+      row.innerHTML = `
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded-lg flex items-center justify-center border ${bgBadge} shrink-0">
+            <i class="fa-solid ${icon} text-[11px]"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] text-slate-400">${label}</span>
+              <strong class="text-white hover:text-emerald-400 cursor-pointer font-bold transition" onclick="window.UI.openPlayerProfileCard('${counterpart}')">${counterpart}</strong>
+            </div>
+            <div class="text-[9px] text-slate-500 numbers-font">${dateStr}</div>
+          </div>
+        </div>
+        <div class="text-left">
+          <span class="numbers-font font-black text-xs ${amtClass} block">${amtStr}</span>
+          <span class="text-[9px] text-slate-500 font-bold">مكتملة ✔️</span>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  function addTransferHistoryRow(recipient, amount) {
+    if (typeof loadTransferHistory === 'function') {
+      loadTransferHistory(true);
+    }
   }
 
   // --- Tab 5: Real Estate & Assets Panel (High-Performance In-Place Updates) ---
@@ -9621,10 +9715,10 @@ const UIController = (() => {
       inboxPanel.innerHTML = '<div class="text-center text-slate-500 text-xs py-12">لا توجد رسائل أو طلبات جديدة في صندوقك.</div>';
     } else {
       requests.forEach(mail => {
-        if (mail.status === 'pending') pendingCount++;
+        if (mail.status === 'pending' || mail.status === 'unread') pendingCount++;
 
         const mailDiv = document.createElement('div');
-        mailDiv.className = `p-4 rounded-xl border ${mail.status === 'pending' ? 'bg-slate-900/60 border-emerald-500/20' : 'bg-slate-900/20 border-slate-800'} text-xs text-slate-300 space-y-3`;
+        mailDiv.className = `p-4 rounded-xl border ${mail.status === 'pending' || mail.status === 'unread' ? 'bg-slate-900/60 border-emerald-500/20' : 'bg-slate-900/20 border-slate-800'} text-xs text-slate-300 space-y-3`;
 
         let contentHtml = '';
         let actionsHtml = '';
@@ -9666,12 +9760,42 @@ const UIController = (() => {
           } else {
             actionsHtml = `<span class="text-[10px] text-slate-500 font-bold">${mail.status === 'accepted' ? 'تم قبول الشراكة ✅' : 'تم الرفض ❌'}</span>`;
           }
+        } else if (mail.type === 'transfer_received') {
+          const amt = Number(mail.payload && mail.payload.amount ? mail.payload.amount : 0);
+          contentHtml = `
+            <div class="space-y-1">
+              <div class="text-slate-200">
+                وصلتك حوالة مالية بقيمة <strong class="text-emerald-400 font-black numbers-font text-sm">+${amt.toLocaleString()} EGP</strong> من اللاعب <strong class="text-white hover:underline cursor-pointer" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong>.
+              </div>
+              <div class="text-[11px] text-emerald-400/90 flex items-center gap-1.5 font-medium pt-0.5">
+                <i class="fa-solid fa-circle-check text-xs"></i> تم إيداع المبلغ بنجاح في كاشك.
+              </div>
+            </div>
+          `;
+          actionsHtml = `
+            <button onclick="window.switchTab('bank')" class="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-bold transition flex items-center gap-1">
+              <i class="fa-solid fa-building-columns"></i> فتح البنك
+            </button>
+          `;
         }
+
+        const mailTime = Number(mail.timestamp || mail.created_at || Date.now());
+        const timeStr = new Date(mailTime).toLocaleString('ar-EG', {
+          month: 'numeric',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        const badgeText = mail.type === 'friend_request' ? 'طلب صداقة' :
+                          mail.type === 'job_offer' ? 'عقد عمل' :
+                          mail.type === 'partnership_invite' ? 'دعوة شراكة' :
+                          mail.type === 'transfer_received' ? 'حوالة بنكية 💸' : 'رسالة';
 
         mailDiv.innerHTML = `
           <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
-            <span class="text-[10px] text-slate-500 font-bold">${new Date(mail.timestamp).toLocaleString()}</span>
-            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[9px] text-slate-400">${mail.type === 'friend_request' ? 'طلب صداقة' : mail.type === 'job_offer' ? 'عقد عمل' : 'دعوة شراكة'}</span>
+            <span class="text-[10px] text-slate-500 font-bold numbers-font">${timeStr}</span>
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[9px] text-slate-400 font-bold">${badgeText}</span>
           </div>
           <div>${contentHtml}</div>
           <div class="flex justify-between items-center pt-1">
@@ -10751,17 +10875,32 @@ const UIController = (() => {
     // Process incoming bank transfers
     const transfers = mails.filter(m => m.type === 'transfer_received' && (m.status === 'unread' || m.status === 'pending'));
     for (const tr of transfers) {
+      if (window._processedTransferMailIds && window._processedTransferMailIds.has(tr.id)) continue;
+      if (!window._processedTransferMailIds) window._processedTransferMailIds = new Set();
+      window._processedTransferMailIds.add(tr.id);
+
       try {
         const amount = Number(tr.payload && tr.payload.amount ? tr.payload.amount : 0);
+        const mailTime = Number(tr.created_at || tr.timestamp || 0);
+        const sessionStart = window._sessionInitTimestamp || 0;
+
         if (amount > 0) {
-          GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + amount;
-          GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
+          // Only add to in-memory cash if this transfer occurred during the active session.
+          // If it was sent while offline before this session, getPlayerState already loaded the updated balance on login.
+          if (mailTime >= sessionStart) {
+            GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + amount;
+            GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
+            await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
+          }
 
           showToast('حوالة بنكية واردة 💸', `وصلتك حوالة مالية بقيمة ${amount.toLocaleString()} EGP من اللاعب "${tr.sender}".`, 'success');
           playMenuSound('success');
 
           await AppDB.updateMailStatus(tr.id, 'read');
-          await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
+
+          if (typeof loadTransferHistory === 'function') {
+            loadTransferHistory(true);
+          }
           renderAll();
         }
       } catch (err) {

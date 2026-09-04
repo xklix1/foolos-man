@@ -2099,10 +2099,18 @@
         </div>
 
         <div class="glass-panel p-6 rounded-2xl border border-slate-800 mt-6">
-          <h3 class="text-sm font-bold text-white mb-4">سجل العمليات والتحويلات الأخيرة</h3>
-          <div id="wire-history-list" class="space-y-2 h-36 overflow-y-auto pr-1">
+          <div class="flex justify-between items-center mb-4">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-clock-rotate-left text-emerald-400 text-sm"></i>
+              <h3 class="text-sm font-bold text-white">سجل العمليات والتحويلات الأخيرة</h3>
+            </div>
+            <button id="btn-refresh-wire-history" type="button" class="text-xs text-slate-400 hover:text-emerald-400 transition flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30">
+              <i class="fa-solid fa-arrows-rotate text-[10px]"></i> تحديث
+            </button>
+          </div>
+          <div id="wire-history-list" class="space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
             <div class="empty-wire-msg text-center text-slate-500 text-xs py-10">
-              لا يوجد حوالات صادرة مسجلة في الجلسة الحالية.
+              جاري تحميل سجل التحويلات البنكية...
             </div>
           </div>
         </div>
