@@ -24,6 +24,17 @@ const GameEngine = (() => {
   };
 
   const BUSINESSES = {
+    kiosk: {
+      id: 'kiosk',
+      name: 'كشك حلوى وجرائد ومشروبات 🍬',
+      cost: 1500,
+      baseDemand: 6,
+      optimumPrice: 15,
+      costOfGoods: 8,
+      upgradeMultiplier: 1.35,
+      workerMultiplier: 1.08,
+      workerWage: 6
+    },
     coffee: {
       id: 'coffee',
       name: 'عربة قهوة ومأكولات خفيفة',
@@ -600,7 +611,7 @@ const GameEngine = (() => {
     crypto_cleaner: {
       id: 'crypto_cleaner',
       name: 'بروتوكول تشفير مالي (Zero-Trace)',
-      desc: 'يخفض ضريبة غسيل وتبييض الأموال إلى الحد الأدنى القانوني 25% بدلاً من 35%.',
+      desc: 'يخفض ضريبة غسيل وتبييض الأموال إلى الحد الأدنى 35% بدلاً من 45%.',
       cost: 200000,
       icon: 'fa-shield-virus',
       durationTicks: 200
@@ -633,19 +644,20 @@ const GameEngine = (() => {
     heatLevel: 0,
     jobId: 'worker',
     businesses: {
-      coffee: { level: 0, price: 22, workers: 0 },
-      tech: { level: 0, price: 160, workers: 0 },
-      logistics: { level: 0, price: 1100, workers: 0 },
-      supermarket: { level: 0, price: 450, workers: 0 },
-      solar_factory: { level: 0, price: 3200, workers: 0 },
-      private_hospital: { level: 0, price: 11500, workers: 0 },
-      media_studio: { level: 0, price: 28000, workers: 0 },
-      private_bank: { level: 0, price: 95000, workers: 0 },
-      oil_refinery: { level: 0, price: 310000, workers: 0 },
-      space_tech: { level: 0, price: 1250000, workers: 0 }
+      kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
+      coffee: { level: 0, price: 22, workers: 0, suppliesTicks: 0 },
+      tech: { level: 0, price: 160, workers: 0, suppliesTicks: 0 },
+      logistics: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
+      supermarket: { level: 0, price: 450, workers: 0, suppliesTicks: 0 },
+      solar_factory: { level: 0, price: 3200, workers: 0, suppliesTicks: 0 },
+      private_hospital: { level: 0, price: 11500, workers: 0, suppliesTicks: 0 },
+      media_studio: { level: 0, price: 28000, workers: 0, suppliesTicks: 0 },
+      private_bank: { level: 0, price: 95000, workers: 0, suppliesTicks: 0 },
+      oil_refinery: { level: 0, price: 310000, workers: 0, suppliesTicks: 0 },
+      space_tech: { level: 0, price: 1250000, workers: 0, suppliesTicks: 0 }
     },
     investments: [], // Array of { id, investedAmount, ticksRemaining, rate, name }
-    activeLoan: null, // Stores { amount, totalDue, ticksRemaining }
+    activeLoan: null, // Stores { amount, totalDue, ticksRemaining, initialTicks, isDefaulted, latePenaltyTicks, latePenaltyCount }
     assets: {
       apartment: 0,
       office: 0,
@@ -1140,10 +1152,9 @@ const GameEngine = (() => {
     const demand = Math.floor(bizConfig.baseDemand * upgradeFactor * elasticity * workerFactor * marketingBoost);
     const margin = price - actualCostOfGoods;
 
-    const hasQuantum = Boolean(s && s.inventory && s.inventory.quantum_cpu > 0);
-    const quantumMultiplier = hasQuantum ? 1.5 : 1.0;
-    const boost = (typeof window !== 'undefined' && window.serverBoostMultiplier) || 1.0;
-    const grossProfit = Math.max(0, Math.floor(demand * margin * 0.85 * quantumMultiplier * boost));
+    const hasSupplies = Boolean(bizState.suppliesTicks && bizState.suppliesTicks > 0);
+    const suppliesMultiplier = hasSupplies ? 1.25 : 0.75;
+    const grossProfit = Math.max(0, Math.floor(demand * margin * 0.85 * quantumMultiplier * boost * suppliesMultiplier));
 
     const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
     const cappedPayroll = Math.min(workerPayroll, Math.floor(grossProfit * 0.40));
@@ -1236,7 +1247,9 @@ const GameEngine = (() => {
       employeePayrollDeduction,
       finalNetProfit,
       ownerProfit,
-      partnerDividends
+      partnerDividends,
+      hasSupplies,
+      suppliesTicks: bizState.suppliesTicks || 0
     };
   }
 
@@ -1877,6 +1890,42 @@ const GameEngine = (() => {
       state.activeSmugglingJobs = remainingJobs;
     }
 
+    // 6.6 Decrement operating supplies ticks for owned businesses
+    if (state.businesses) {
+      Object.keys(state.businesses).forEach(bk => {
+        const b = state.businesses[bk];
+        if (b && b.suppliesTicks && b.suppliesTicks > 0) {
+          b.suppliesTicks--;
+        }
+      });
+    }
+
+    // 6.7 Active Bank Loan countdown, default status & late penalty enforcement
+    if (state.activeLoan && state.activeLoan.amount > 0) {
+      if (typeof state.activeLoan.ticksRemaining !== 'number') {
+        state.activeLoan.ticksRemaining = 300;
+      }
+      if (state.activeLoan.ticksRemaining > 0) {
+        state.activeLoan.ticksRemaining--;
+        if (state.activeLoan.ticksRemaining <= 0) {
+          state.activeLoan.isDefaulted = true;
+          updates.loanDefaulted = true;
+          recordPlayerActivity('تعثر سداد قرض ⚠️', `انتهت مهلة سداد القرض البنكي (${(state.activeLoan.totalDue || 0).toLocaleString()} EGP). تم تجميد حسابك البنكي وتطبيق غرامة تأخير دورية 3%!`, 'banking');
+        }
+      } else if (state.activeLoan.isDefaulted) {
+        // Late penalty: 3% compound fee every 60 ticks (60 seconds)
+        state.activeLoan.latePenaltyTicks = (state.activeLoan.latePenaltyTicks || 0) + 1;
+        if (state.activeLoan.latePenaltyTicks >= 60) {
+          state.activeLoan.latePenaltyTicks = 0;
+          state.activeLoan.latePenaltyCount = (state.activeLoan.latePenaltyCount || 0) + 1;
+          const penalty = Math.max(500, Math.floor(state.activeLoan.totalDue * 0.03));
+          state.activeLoan.totalDue += penalty;
+          updates.loanPenaltyApplied = { penalty, totalDue: state.activeLoan.totalDue };
+          recordPlayerActivity('غرامة تأخير قرض ⚠️', `تطبيق غرامة تأخير +${penalty.toLocaleString()} EGP على القرض المتعثر. إجمالي المستحق: ${state.activeLoan.totalDue.toLocaleString()} EGP`, 'banking');
+        }
+      }
+    }
+
     // 7. Store Items Durability & Self-Destruction Timers
     if (!state.itemDurations) state.itemDurations = {};
     updates.expiredItems = [];
@@ -2419,7 +2468,23 @@ const GameEngine = (() => {
     if (state.cash < amount) throw new Error("رصيدك النقدي (الكاش) لا يكفي لإتمام هذا الإيداع.");
 
     state.cash -= amount;
-    state.bank += amount;
+
+    // Automatic debt recovery if loan is defaulted
+    if (state.activeLoan && state.activeLoan.isDefaulted) {
+      if (amount >= state.activeLoan.totalDue) {
+        const excess = amount - state.activeLoan.totalDue;
+        const paid = state.activeLoan.totalDue;
+        state.activeLoan = null;
+        state.bank += excess;
+        recordPlayerActivity('سداد كامل لقرض متعثر 🏛️', `تم استقطاع كامل الدين (${paid.toLocaleString()} ج.م) من الإيداع وفك تجميد الحساب البنكي بنجاح!`, 'banking');
+      } else {
+        state.activeLoan.totalDue -= amount;
+        recordPlayerActivity('سداد جزئي لقرض متعثر 🏛️', `تم توجيه مبلغ ${amount.toLocaleString()} ج.م من الإيداع لسداد جزء من القرض المتعثر. المتبقي: ${state.activeLoan.totalDue.toLocaleString()} ج.م`, 'banking');
+      }
+    } else {
+      state.bank += amount;
+    }
+
     state.netWorth = calculateNetWorth();
     trackDailyQuestProgress('bank_deposit', 1);
     forceSaveState(true);
@@ -2428,6 +2493,9 @@ const GameEngine = (() => {
   // Withdraw Cash from Bank
   function withdrawFromBank(amount) {
     if (amount <= 0) throw new Error("مبلغ السحب يجب أن يكون أكبر من صفر.");
+    if (state.activeLoan && state.activeLoan.isDefaulted) {
+      throw new Error(`حسابك البنكي مجمد بموجب أمر قضائي مصرفي لتعثرك في سداد القرض المستحق (${state.activeLoan.totalDue.toLocaleString()} EGP). يرجى سداد القرض أولاً لفك تجميد حسابك!`);
+    }
     if (state.bank < amount) throw new Error("رصيدك في حساب البنك لا يكفي لإتمام هذا السحب.");
 
     state.bank -= amount;
@@ -2839,9 +2907,9 @@ const GameEngine = (() => {
       throw new Error(`المبلغ المطلوب (${amount.toLocaleString()} ج.م) أكبر من رصيد الأموال غير المشروعة المتاحة (${availableDirty.toLocaleString()} ج.م).`);
     }
 
-    // Money laundering tax rate: base 35%, drops to 25% with crypto_cleaner (Never less than 25%)
+    // Money laundering tax rate: base 45%, drops to 35% with crypto_cleaner (Never less than 35%)
     const hasCryptoCleaner = Boolean(state.inventory && state.inventory.crypto_cleaner > 0);
-    const feeRate = hasCryptoCleaner ? 0.25 : 0.35;
+    const feeRate = hasCryptoCleaner ? 0.35 : 0.45;
     const fee = Math.floor(amount * feeRate);
     const cleanedAmount = amount - fee;
 
@@ -2850,7 +2918,7 @@ const GameEngine = (() => {
     state.totalTaxesPaid = (state.totalTaxesPaid || 0) + fee;
     recordPlayerActivity('غسيل أموال', `غسيل ${amount.toLocaleString()} ج.م (ضريبة/عمولة ${Math.round(feeRate * 100)}% = ${fee.toLocaleString()} ج.م) وتحويل صافي ${cleanedAmount.toLocaleString()} ج.م إلى رصيد البنك النظيف`, 'blackmarket');
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return {
       amount,
       fee,
@@ -3305,12 +3373,17 @@ const GameEngine = (() => {
     state.activeLoan = {
       amount,
       totalDue,
-      ticksRemaining: 150 // 450 seconds (7.5 minutes) to repay
+      ticksRemaining: 300, // 300 seconds (5 minutes) to repay before penalty
+      initialTicks: 300,
+      isDefaulted: false,
+      latePenaltyTicks: 0,
+      latePenaltyCount: 0
     };
     state.cash += amount;
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
-    return { amount, totalDue, ticksRemaining: 150 };
+    recordPlayerActivity('طلب قرض بنكي 🏛️', `اقتراض ${amount.toLocaleString()} ج.م من البنك (مطلوب سداد ${totalDue.toLocaleString()} ج.م خلال 5 دقائق)`, 'banking');
+    forceSaveState(true);
+    return { amount, totalDue, ticksRemaining: 300 };
   }
 
   // Bank Loan: Repay
@@ -3330,10 +3403,36 @@ const GameEngine = (() => {
       state.cash = 0;
       state.bank -= rem;
     }
+    recordPlayerActivity('سداد قرض بنكي 🏛️', `تم سداد القرض البنكي بالكامل بقيمة ${due.toLocaleString()} ج.م وفك أي حظر مصرفي`, 'banking');
     state.activeLoan = null;
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return { repaid: due };
+  }
+
+  // Business: Supply stock and inventory materials (gives 20 mins of peak 125% productivity)
+  function supplyBusiness(key) {
+    const biz = BUSINESSES[key];
+    if (!biz) throw new Error("المشروع غير متوفر.");
+    if (!state.businesses[key] || state.businesses[key].level <= 0) {
+      throw new Error("يجب تأسيس وشراء المشروع أولاً لتوريد البضاعة له.");
+    }
+    const bizState = state.businesses[key];
+    const supplyCost = Math.max(80, Math.floor(biz.cost * 0.04 * Math.pow(1.15, (bizState.level || 1) - 1)));
+    if (state.cash < supplyCost) {
+      throw new Error(`رصيدك الكاش لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP — لديك: ${state.cash.toLocaleString()} EGP`);
+    }
+
+    state.cash -= supplyCost;
+    bizState.suppliesTicks = Math.min(3600, (bizState.suppliesTicks || 0) + 1200);
+
+    recordPlayerActivity('توريد بضاعة ومستلزمات 📦', `توريد شحنة بضاعة لمشروع "${biz.name}" بتكلفة ${supplyCost.toLocaleString()} ج.م (+20 دقيقة كفاءة إنتاجية قصوى 125%)`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(true);
+    return {
+      cost: supplyCost,
+      suppliesTicks: bizState.suppliesTicks
+    };
   }
 
   // European Roulette Wheel Game
@@ -3522,7 +3621,10 @@ const GameEngine = (() => {
     getDailyResetRemainingSeconds,
     trackDailyQuestProgress,
     claimDailyQuestReward,
-    claimGrandDailyBonus
+    claimGrandDailyBonus,
+
+    // Business Supply Method
+    supplyBusiness
   };
 })();
 

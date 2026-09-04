@@ -1699,6 +1699,16 @@ const UIController = (() => {
         });
       }
 
+      // Toast alert for loan default
+      if (updates.loanDefaulted) {
+        showToast('تعثر مصرفي ⚠️', 'انتهت مهلة سداد القرض! تم تجميد حسابك البنكي وتطبيق غرامة تأخير دورية 3%.', 'error');
+      }
+
+      // Toast alert for loan penalty
+      if (updates.loanPenaltyApplied) {
+        showToast('غرامة تأخير مصرفية ⚠️', `تم تطبيق غرامة تأخير +${updates.loanPenaltyApplied.penalty.toLocaleString()} EGP على القرض لعدم السداد!`, 'error');
+      }
+
       // Handle random Tip Events
       if (updates.tipEvent) {
         showToast(updates.tipEvent.title, updates.tipEvent.message, updates.tipEvent.gain > 0 ? 'success' : 'error');
@@ -2103,6 +2113,11 @@ const UIController = (() => {
         const profitPerTick = bizCalc.ownerProfit;
         const workerPayroll = bizCalc.workerPayroll;
 
+        const hasSupplies = Boolean(bizCalc.hasSupplies);
+        const suppliesTicks = bizCalc.suppliesTicks || 0;
+        const suppliesMins = Math.floor(suppliesTicks / 60);
+        const supplyCost = Math.max(80, Math.floor(biz.cost * 0.04 * Math.pow(1.15, (bizState.level || 1) - 1)));
+
         const translatedBizName = window.currentLang === 'en' ? (translationDict[biz.name] || biz.name) : biz.name;
         card.innerHTML = `
           <div class="flex justify-between items-center mb-3">
@@ -2133,6 +2148,25 @@ const UIController = (() => {
               id="slider-${key}"
               class="w-full accent-yellow-500"
             />
+          </div>
+
+          <!-- Operating Supplies Status & Shipment Trigger -->
+          <div class="mb-3 p-2 bg-slate-950/60 rounded-xl border ${hasSupplies ? 'border-emerald-500/30' : 'border-amber-500/30'} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-sm">${hasSupplies ? '🟢' : '🟡'}</span>
+              <div>
+                <div class="text-[11px] font-bold text-white">
+                  ${hasSupplies ? 'بضاعة وخامات متوفرة (كفاءة 125%)' : 'المخزون نفد (كفاءة 75%)'}
+                </div>
+                <div class="text-[10px] text-slate-400">
+                  ${hasSupplies ? `متبقي: ${suppliesMins} دقيقة طاقة قصوى` : 'ورّد بضاعة لتشغيل المشروع بكامل طاقته'}
+                </div>
+              </div>
+            </div>
+            <button id="btn-supply-${key}" class="w-full sm:w-auto px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-black transition flex items-center justify-center gap-1 shadow shrink-0 cursor-pointer">
+              <i class="fa-solid fa-box-open"></i>
+              <span>توريد بضاعة (${supplyCost.toLocaleString()} EGP)</span>
+            </button>
           </div>
 
           <!-- Marketing Campaign Trigger -->
@@ -2192,6 +2226,21 @@ const UIController = (() => {
             showToast('فشل الحملة', err.message, 'error');
           }
         });
+
+        // Operating Supplies Listener
+        const btnSupply = card.querySelector(`#btn-supply-${key}`);
+        if (btnSupply) {
+          btnSupply.addEventListener('click', () => {
+            try {
+              const res = GameEngine.supplyBusiness(key);
+              showToast('توريد ناجح 📦', `تم توريد خامات وبضاعة لمشروع "${biz.name}" بتكلفة ${res.cost.toLocaleString()} EGP (+20 دقيقة كفاءة 125%)!`, 'success');
+              renderBusinesses(true);
+              renderStatsBar();
+            } catch (err) {
+              showToast('تنبيه', err.message, 'error');
+            }
+          });
+        }
 
         // Upgrade action
         const btnUpgrade = card.querySelector(`#btn-upgrade-${key}`);
@@ -2388,16 +2437,36 @@ const UIController = (() => {
 
     if (s.activeLoan && s.activeLoan.amount > 0) {
       if (activeLoanEl) activeLoanEl.textContent = `${s.activeLoan.amount.toLocaleString()} EGP`;
-      if (dueLoanEl) dueLoanEl.textContent = `${s.activeLoan.totalDue.toLocaleString()} EGP`;
-      if (loanTimeEl) loanTimeEl.textContent = `${s.activeLoan.ticksRemaining * 3} ثانية`;
-      if (loanBadgeEl) {
-        loanBadgeEl.textContent = 'قرض نشط (يلزم السداد)';
-        loanBadgeEl.className = 'text-[10px] px-2.5 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-full font-bold';
+      if (dueLoanEl) dueLoanEl.textContent = `${(s.activeLoan.totalDue || 0).toLocaleString()} EGP`;
+      if (s.activeLoan.isDefaulted) {
+        if (loanTimeEl) {
+          loanTimeEl.textContent = 'منتهي! (+3% غرامة تأخير دورية)';
+          loanTimeEl.className = 'numbers-font font-black text-rose-500 animate-pulse';
+        }
+        if (loanBadgeEl) {
+          loanBadgeEl.textContent = '⚠️ متعثر (الحساب مجمد)';
+          loanBadgeEl.className = 'text-[10px] px-2.5 py-0.5 bg-red-600/30 text-red-300 border border-red-500 rounded-full font-black animate-pulse';
+        }
+      } else {
+        const remainingSec = Math.max(0, s.activeLoan.ticksRemaining || 0);
+        const mins = Math.floor(remainingSec / 60);
+        const secs = remainingSec % 60;
+        if (loanTimeEl) {
+          loanTimeEl.textContent = `${mins}:${secs.toString().padStart(2, '0')} دقيقة`;
+          loanTimeEl.className = 'numbers-font font-bold text-sky-400';
+        }
+        if (loanBadgeEl) {
+          loanBadgeEl.textContent = 'قرض نشط (يلزم السداد)';
+          loanBadgeEl.className = 'text-[10px] px-2.5 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-full font-bold';
+        }
       }
     } else {
       if (activeLoanEl) activeLoanEl.textContent = 'لا يوجد قرض';
       if (dueLoanEl) dueLoanEl.textContent = '0 EGP';
-      if (loanTimeEl) loanTimeEl.textContent = '--';
+      if (loanTimeEl) {
+        loanTimeEl.textContent = '--';
+        loanTimeEl.className = 'numbers-font font-bold text-sky-400';
+      }
       if (loanBadgeEl) {
         loanBadgeEl.textContent = 'مؤهل للاقتراض';
         loanBadgeEl.className = 'text-[10px] px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full font-bold';
