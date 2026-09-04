@@ -2443,7 +2443,8 @@ const GameEngine = (() => {
         stocks: mergedStocks,
         inventory: mergedInventory,
         investments: Array.isArray(dbState.investments) ? dbState.investments : [],
-        customItems: Array.isArray(dbState.customItems) ? dbState.customItems : []
+        customItems: Array.isArray(dbState.customItems) ? dbState.customItems : [],
+        _loadedFromCloud: true
       };
 
       // Calculate offline idle earnings if returning after being away (Requires active 12-hour AFK Manager)

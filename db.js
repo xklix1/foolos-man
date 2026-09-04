@@ -337,6 +337,7 @@ var AppDB = (() => {
       stateObj.totalTaxesPaid = Number(row.total_taxes_paid || 0);
       stateObj.pin = row.pin || stateObj.pin;
       stateObj.lastSeen = Number(row.last_seen || Date.now());
+      stateObj._loadedFromCloud = true;
 
       if (!stateObj.businesses || Object.keys(stateObj.businesses).length === 0) {
         if (row.state && row.state.businesses) {
@@ -404,7 +405,7 @@ var AppDB = (() => {
     const handleExitFlush = () => {
       const activeUser = (window.GameEngine && window.GameEngine.activeUsername);
       const activeState = (window.GameEngine && window.GameEngine.state);
-      if (activeUser && activeState) {
+      if (activeUser && activeState && activeState.username === activeUser && (activeState._loadedFromCloud || activeState.cash > 300 || activeState.netWorth > 400 || activeState.xp > 0)) {
         flushStateToCloudOnExit(activeUser, activeState);
       }
     };
