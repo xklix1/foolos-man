@@ -2403,12 +2403,65 @@
   <div id="toast-container" class="fixed top-4 left-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Core Modules -->
-  <script src="game.js?v=6.6"></script>
-  <script src="db.js?v=6.6"></script>
-  <script src="admin-panel.js?v=6.6"></script>
+  <script src="game.js?v=7.2"></script>
+  <script src="db.js?v=7.2"></script>
+  <script src="admin-panel.js?v=7.2"></script>
 
   <!-- Standalone Admin Controller Script -->
   <script>
+
+    // Direct Force Reload Hook
+    document.addEventListener('DOMContentLoaded', () => {
+      const forceReloadBtn = document.getElementById('btn-admin-force-reload');
+      if (forceReloadBtn) {
+        forceReloadBtn.onclick = async () => {
+          const msgInput = document.getElementById('admin-force-reload-msg');
+          const customMsg = (msgInput ? msgInput.value : '').trim();
+          const finalMsg = customMsg || 'تم إطلاق تحديث وتحسينات هامة للعبة بواسطة الإدارة. يجب إعادة تحميل الصفحة الآن لتطبيق التغييرات وضمان استقرار حسابك.';
+
+          const confirmed = confirm(
+            "⚠️ تنبيه إداري عاجل:\n\nهل أنت متأكد من إجبار جميع اللاعبين المتصلين حالياً على إعادة تحميل الصفحة فوراً؟\n\nستظهر شاشة منبثقة إجبارية بملء الشاشة تمنع اللعب ولا تختفي إلا بعد أن يقوم اللاعب بإعادة تحميل الصفحة."
+          );
+          if (!confirmed) return;
+
+          try {
+            forceReloadBtn.disabled = true;
+            forceReloadBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري إرسال الأمر لكافة المتصلين...</span>';
+
+            if (typeof AppDB !== 'undefined' && typeof AppDB.sendForceReload === 'function') {
+              await AppDB.sendForceReload(finalMsg);
+            } else {
+              await fetch('https://rhuiaxrodnbjohowdlpo.supabase.co/rest/v1/globals', {
+                method: 'POST',
+                headers: {
+                  'apikey': 'sb_publishable_O2L34RTDz6k2UQvrkrNA_Q_t5Nty9t7',
+                  'Authorization': 'Bearer sb_publishable_O2L34RTDz6k2UQvrkrNA_Q_t5Nty9t7',
+                  'Content-Type': 'application/json',
+                  'Prefer': 'resolution=merge-duplicates'
+                },
+                body: JSON.stringify({
+                  id: 'force_reload',
+                  data: {
+                    timestamp: Date.now(),
+                    message: finalMsg,
+                    forcedBy: 'admin'
+                  },
+                  updated_at: Date.now()
+                })
+              });
+            }
+
+            showToast('إعادة التحميل الإجبارية', 'تم إرسال شاشة إعادة التحميل الإجبارية لجميع اللاعبين المتصلين بنجاح! 🔄', 'success');
+            if (msgInput) msgInput.value = '';
+          } catch (err) {
+            showToast('خطأ', 'فشل الإرسال: ' + err.message, 'error');
+          } finally {
+            forceReloadBtn.disabled = false;
+            forceReloadBtn.innerHTML = '<i class="fa-solid fa-rotate-right text-sm"></i><span>إرسال شاشة إعادة التحميل الإجبارية لجميع اللاعبين المتصلين الآن 🔄</span>';
+          }
+        };
+      }
+    });
 
     // Audio mock
     function playMenuSound() {}

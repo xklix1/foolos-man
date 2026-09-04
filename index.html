@@ -4242,9 +4242,9 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=6.8"></script>
-  <script src="game.js?v=6.8"></script>
-  <script src="ui.js?v=6.8"></script>
+  <script src="db.js?v=7.2"></script>
+  <script src="game.js?v=7.2"></script>
+  <script src="ui.js?v=7.2"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -4548,6 +4548,62 @@
     <i class="fa-solid fa-comments text-lg"></i>
     <span id="chat-unread-dot" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center shadow">1</span>
   </button>
+
+  <!-- Standalone Direct Force Reload Engine (Guarantees immediate reload modal without cache issues) -->
+  <script>
+    (function() {
+      const SUPABASE_URL = 'https://rhuiaxrodnbjohowdlpo.supabase.co';
+      const SUPABASE_ANON_KEY = 'sb_publishable_O2L34RTDz6k2UQvrkrNA_Q_t5Nty9t7';
+      let isOverlayActive = false;
+
+      async function checkForceReloadDirectly() {
+        try {
+          const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.force_reload', {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+            }
+          });
+          if (!res.ok) return;
+          const rows = await res.json();
+          if (!rows || rows.length === 0 || !rows[0].data || !rows[0].data.timestamp) return;
+
+          const data = rows[0].data;
+          const reloadTs = Number(data.timestamp);
+          const storedAck = Number(sessionStorage.getItem('rasalmal_acknowledged_reload') || 0);
+
+          if (!sessionStorage.getItem('rasalmal_acknowledged_reload')) {
+            sessionStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
+            return;
+          }
+
+          if (reloadTs > storedAck && !isOverlayActive) {
+            isOverlayActive = true;
+            if (window.UIController && typeof window.UIController.triggerMandatoryReloadModal === 'function') {
+              window.UIController.triggerMandatoryReloadModal(data.message, reloadTs);
+            } else {
+              const overlay = document.getElementById('mandatory-reload-overlay');
+              if (overlay) {
+                const reason = document.getElementById('mandatory-reload-reason');
+                if (reason && data.message) reason.textContent = data.message;
+                overlay.classList.remove('hidden');
+                const btn = document.getElementById('btn-mandatory-reload-action');
+                if (btn) {
+                  btn.onclick = function() {
+                    sessionStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
+                    window.location.reload(true);
+                  };
+                }
+              }
+            }
+          }
+        } catch (err) {}
+      }
+
+      checkForceReloadDirectly();
+      setInterval(checkForceReloadDirectly, 1500);
+    })();
+  </script>
 
 </body>
 

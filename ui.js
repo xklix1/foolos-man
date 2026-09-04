@@ -5265,9 +5265,8 @@ const UIController = (() => {
       .onSnapshot((doc) => {
         if (!doc.exists) return;
         const data = doc.data();
-        if (!data || !data.timestamp) return;
-        if (data.timestamp > CLIENT_PAGE_START_TIME) {
-          triggerMandatoryReloadModal(data.message);
+        if (data) {
+          handleIncomingForceReload(data);
         }
       }, (err) => console.error("Force reload listen err: ", err));
     activeListeners.push(unsubForceReload);
@@ -5566,7 +5565,27 @@ const UIController = (() => {
   // ==================== MANDATORY FORCE PAGE RELOAD MODAL ====================
   let isMandatoryReloadActive = false;
 
-  function triggerMandatoryReloadModal(customMessage) {
+  function handleIncomingForceReload(data) {
+    if (!data || !data.timestamp) return;
+
+    const reloadTs = Number(data.timestamp);
+    const storedAck = Number(sessionStorage.getItem('rasalmal_acknowledged_reload') || 0);
+
+    // Initial session baseline: record existing timestamp so fresh loads aren't blocked
+    if (!sessionStorage.getItem('rasalmal_acknowledged_reload')) {
+      sessionStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
+      console.log('[RELOAD SYNC] Initial session baseline set to:', reloadTs);
+      return;
+    }
+
+    // If admin issued a newer reload command after our baseline:
+    if (reloadTs > storedAck) {
+      console.warn('[RELOAD SYNC] New force reload detected! Broadcast TS:', reloadTs, 'Stored Baseline:', storedAck);
+      triggerMandatoryReloadModal(data.message, reloadTs);
+    }
+  }
+
+  function triggerMandatoryReloadModal(customMessage, reloadTs) {
     if (isMandatoryReloadActive) return;
     isMandatoryReloadActive = true;
 
@@ -5625,6 +5644,9 @@ const UIController = (() => {
 
     // 4. Force Reload Action
     const doReload = () => {
+      if (reloadTs) {
+        sessionStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
+      }
       try {
         window.location.reload(true);
       } catch (err) {
@@ -5641,6 +5663,13 @@ const UIController = (() => {
       };
     }
 
+    // If user refreshes using browser refresh
+    window.addEventListener('beforeunload', () => {
+      if (reloadTs) {
+        sessionStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
+      }
+    });
+
     // 5. Intercept all clicks and keyboard events so it cannot be dismissed
     overlay.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -5649,6 +5678,7 @@ const UIController = (() => {
     window.addEventListener('keydown', (e) => {
       if (!isMandatoryReloadActive) return;
       if (e.key === 'F5' || (e.ctrlKey && e.key.toLowerCase() === 'r')) {
+        if (reloadTs) sessionStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
         return; // Allow standard browser reload
       }
       e.preventDefault();
@@ -12672,7 +12702,8 @@ const UIController = (() => {
     openCashflowBreakdownModal,
     closeCashflowBreakdownModal,
     renderCashflowBreakdown,
-    triggerMandatoryReloadModal
+    triggerMandatoryReloadModal,
+    handleIncomingForceReload
   };
 })();
 
@@ -12688,15 +12719,11 @@ if (typeof window !== 'undefined' && !window.location.pathname.includes('ctrl-va
       if (typeof AppDB !== 'undefined' && typeof AppDB.getForceReloadStatus === 'function') {
         const reloadData = await AppDB.getForceReloadStatus();
         if (reloadData && reloadData.timestamp) {
-          // Compare with UIController page start time or window start time
-          const pageStart = window.CLIENT_PAGE_LOAD_TS || Date.now();
-          if (reloadData.timestamp > pageStart) {
-            if (window.UIController && typeof window.UIController.triggerMandatoryReloadModal === 'function') {
-              window.UIController.triggerMandatoryReloadModal(reloadData.message);
-            }
+          if (window.UIController && typeof window.UIController.handleIncomingForceReload === 'function') {
+            window.UIController.handleIncomingForceReload(reloadData);
           }
         }
       }
     } catch (e) {}
-  }, 4000);
+  }, 1500);
 }
