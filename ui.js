@@ -1714,6 +1714,13 @@ const UIController = (() => {
         showToast('غرامة تأخير مصرفية ⚠️', `تم تطبيق غرامة تأخير +${updates.loanPenaltyApplied.penalty.toLocaleString()} EGP على القرض لعدم السداد!`, 'error');
       }
 
+      // Toast alert for supplies exhaustion
+      if (updates.suppliesExhausted && updates.suppliesExhausted.length > 0) {
+        updates.suppliesExhausted.forEach(bName => {
+          showToast('نفاد البضاعة 📦', `نفدت بضاعة ومستلزمات مشروع "${bName}" وتوقف الإنتاج بالكامل! قم بتوريد شحنة جديدة لإعادة التشغيل.`, 'warning');
+        });
+      }
+
       // Handle random Tip Events
       if (updates.tipEvent) {
         showToast(updates.tipEvent.title, updates.tipEvent.message, updates.tipEvent.gain > 0 ? 'success' : 'error');
@@ -2156,21 +2163,21 @@ const UIController = (() => {
           </div>
 
           <!-- Operating Supplies Status & Shipment Trigger -->
-          <div class="mb-3 p-2 bg-slate-950/60 rounded-xl border ${hasSupplies ? 'border-emerald-500/30' : 'border-amber-500/30'} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div id="biz-supply-box-${key}" class="mb-3 p-2 bg-slate-950/60 rounded-xl border ${hasSupplies ? 'border-emerald-500/30' : 'border-rose-500/50 bg-rose-950/20 animate-pulse'} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 transition-all">
             <div class="flex items-center gap-2">
-              <span class="text-sm">${hasSupplies ? '🟢' : '🟡'}</span>
+              <span id="biz-supply-icon-${key}" class="text-sm">${hasSupplies ? '🟢' : '🔴'}</span>
               <div>
-                <div class="text-[11px] font-bold text-white">
-                  ${hasSupplies ? 'بضاعة وخامات متوفرة (كفاءة 125%)' : 'المخزون نفد (كفاءة 75%)'}
+                <div id="biz-supply-title-${key}" class="text-[11px] font-bold ${hasSupplies ? 'text-white' : 'text-rose-400 font-black'}">
+                  ${hasSupplies ? 'بضاعة وخامات متوفرة (كفاءة إنتاجية 125%)' : 'المخزون نفد بالكامل! المشروع متوقف ⚠️'}
                 </div>
-                <div class="text-[10px] text-slate-400">
-                  ${hasSupplies ? `متبقي: ${suppliesMins} دقيقة طاقة قصوى` : 'ورّد بضاعة لتشغيل المشروع بكامل طاقته'}
+                <div id="biz-supply-time-${key}" class="text-[10px] ${hasSupplies ? 'text-slate-400' : 'text-rose-300 font-bold'}">
+                  ${hasSupplies ? `متبقي: ${suppliesMins} دقيقة طاقة قصوى` : 'الأرباح: 0 ج.م — يجب توريد بضاعة لإعادة تشغيل المشروع'}
                 </div>
               </div>
             </div>
-            <button id="btn-supply-${key}" class="w-full sm:w-auto px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-black transition flex items-center justify-center gap-1 shadow shrink-0 cursor-pointer">
+            <button id="btn-supply-${key}" class="w-full sm:w-auto px-3 py-1.5 ${hasSupplies ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white' : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-lg shadow-emerald-500/30 animate-bounce'} rounded-lg text-xs font-black transition flex items-center justify-center gap-1 shadow shrink-0 cursor-pointer">
               <i class="fa-solid fa-box-open"></i>
-              <span>توريد بضاعة (${supplyCost.toLocaleString()} EGP)</span>
+              <span id="biz-supply-btn-text-${key}">توريد بضاعة (${supplyCost.toLocaleString()} EGP)</span>
             </button>
           </div>
 
@@ -2355,8 +2362,44 @@ const UIController = (() => {
         marginEl.className = `numbers-font ${profitMargin >= 0 ? 'text-teal-400' : 'text-rose-400'} font-bold`;
       }
 
+      const hasSupplies = Boolean(bizState.suppliesTicks && bizState.suppliesTicks > 0);
       const profitEl = document.getElementById(`biz-profit-${key}`);
-      if (profitEl) profitEl.textContent = `+${profitPerTick.toLocaleString()} EGP / دورة`;
+      if (profitEl) {
+        if (hasSupplies && profitPerTick > 0) {
+          profitEl.textContent = `+${profitPerTick.toLocaleString()} EGP / دورة`;
+          profitEl.className = "numbers-font text-xs font-black text-teal-400";
+        } else {
+          profitEl.innerHTML = '<span class="text-rose-400 font-black animate-pulse">متوقف (0 EGP) ⚠️</span>';
+        }
+      }
+
+      // Live Operating Supplies Countdown & UI update
+      const supplyBox = document.getElementById(`biz-supply-box-${key}`);
+      const supplyIcon = document.getElementById(`biz-supply-icon-${key}`);
+      const supplyTitle = document.getElementById(`biz-supply-title-${key}`);
+      const supplyTime = document.getElementById(`biz-supply-time-${key}`);
+
+      if (supplyBox && supplyIcon && supplyTitle && supplyTime) {
+        if (hasSupplies) {
+          const ticks = bizState.suppliesTicks || 0;
+          const mins = Math.floor(ticks / 60);
+          const secs = ticks % 60;
+          const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
+          supplyBox.className = "mb-3 p-2 bg-slate-950/60 rounded-xl border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 transition-all";
+          supplyIcon.textContent = '🟢';
+          supplyTitle.className = "text-[11px] font-bold text-white";
+          supplyTitle.textContent = "بضاعة وخامات متوفرة (كفاءة إنتاجية 125%)";
+          supplyTime.className = "text-[10px] text-slate-400";
+          supplyTime.textContent = `متبقي: ${timeStr} دقيقة حتى نفاد المخزون`;
+        } else {
+          supplyBox.className = "mb-3 p-2 bg-rose-950/30 rounded-xl border border-rose-500/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 transition-all animate-pulse";
+          supplyIcon.textContent = '🔴';
+          supplyTitle.className = "text-[11px] font-bold text-rose-400";
+          supplyTitle.textContent = "المخزون نفد بالكامل! المشروع متوقف ⚠️";
+          supplyTime.className = "text-[10px] text-rose-300 font-bold";
+          supplyTime.textContent = "الأرباح: 0 ج.م — يجب توريد بضاعة لإعادة تشغيل المشروع";
+        }
+      }
 
       const mktgTextEl = document.getElementById(`biz-mktg-text-${key}`);
       if (mktgTextEl) {

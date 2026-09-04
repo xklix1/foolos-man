@@ -1151,14 +1151,15 @@ const GameEngine = (() => {
     const workerFactor = 1 + ((bizState.workers || 0) * ((bizConfig.workerMultiplier || 1.2) - 1));
     const demand = Math.floor(bizConfig.baseDemand * upgradeFactor * elasticity * workerFactor * marketingBoost);
     const margin = price - actualCostOfGoods;
-
     const hasSupplies = Boolean(bizState.suppliesTicks && bizState.suppliesTicks > 0);
-    const suppliesMultiplier = hasSupplies ? 1.25 : 0.75;
+    // When supplies are available: 125% peak capacity bonus.
+    // When supplies run out: 0% production (project halts completely until goods are re-stocked).
+    const suppliesMultiplier = hasSupplies ? 1.25 : 0.0;
     const quantumMultiplier = (s && s.itemDurations && s.itemDurations.quantum_processor > 0) ? 1.5 : 1.0;
     const boost = 1.0;
-    const grossProfit = Math.max(0, Math.floor(demand * margin * 0.85 * quantumMultiplier * boost * suppliesMultiplier));
+    const grossProfit = hasSupplies ? Math.max(0, Math.floor(demand * margin * 0.85 * quantumMultiplier * boost * suppliesMultiplier)) : 0;
 
-    const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
+    const workerPayroll = hasSupplies ? ((bizState.workers || 0) * (bizConfig.workerWage || 0)) : 0;
     const cappedPayroll = Math.min(workerPayroll, Math.floor(grossProfit * 0.40));
     const netProfit = Math.max(0, grossProfit - cappedPayroll);
 
@@ -1896,8 +1897,15 @@ const GameEngine = (() => {
     if (state.businesses) {
       Object.keys(state.businesses).forEach(bk => {
         const b = state.businesses[bk];
-        if (b && b.suppliesTicks && b.suppliesTicks > 0) {
+        if (b && b.level > 0 && typeof b.suppliesTicks === 'number' && b.suppliesTicks > 0) {
           b.suppliesTicks--;
+          if (b.suppliesTicks <= 0) {
+            b.suppliesTicks = 0;
+            if (!updates.suppliesExhausted) updates.suppliesExhausted = [];
+            const bizCfg = BUSINESSES[bk];
+            updates.suppliesExhausted.push(bizCfg ? bizCfg.name : bk);
+            recordPlayerActivity('نفاد بضاعة ⚠️', `نفدت بضاعة ومستلزمات تشغيل مشروع "${bizCfg ? bizCfg.name : bk}" وتوقف الإنتاج تماماً! يلزم توريد شحنة جديدة فوراً.`, 'business');
+          }
         }
       });
     }
@@ -2172,18 +2180,67 @@ const GameEngine = (() => {
         if (elapsedSinceLastActive >= 10) {
           // Cap at 12 hours (43,200 seconds)
           const cappedSeconds = Math.min(43200, elapsedSinceLastActive);
-          const incomePerSec = calculatePassiveIncomePerSecond();
-          const offlineEarnings = Math.floor(incomePerSec * cappedSeconds);
-          if (offlineEarnings > 0 || offlineCorpEarnings > 0) {
-            state.bank += offlineEarnings;
+
+          // 1. Calculate business offline profits based strictly on supplies remaining
+          let offlineBizEarnings = 0;
+          if (state.businesses) {
+            Object.keys(state.businesses).forEach(bk => {
+              const b = state.businesses[bk];
+              if (b && b.level > 0 && typeof b.suppliesTicks === 'number' && b.suppliesTicks > 0) {
+                // Business produced profit ONLY while supplies lasted!
+                const activeSuppliesSec = Math.min(b.suppliesTicks, cappedSeconds);
+                const tempState = { ...b, suppliesTicks: activeSuppliesSec };
+                const bCalc = calculateSingleBusinessProfit(bk, tempState, state);
+                const bizSecProfit = (bCalc.ownerProfit || 0) / 3600;
+                offlineBizEarnings += Math.floor(bizSecProfit * activeSuppliesSec);
+
+                // Deplete supplies by elapsed offline time
+                b.suppliesTicks = Math.max(0, b.suppliesTicks - elapsedSinceLastActive);
+              }
+            });
+          }
+
+          // 2. Non-business passive income (Real estate, cars, bank interest, job) for full capped time
+          let nonBizHourly = 0;
+          if (state.assets) {
+            Object.keys(state.assets).forEach(ak => {
+              const owned = state.assets[ak] || 0;
+              if (owned > 0 && ASSETS[ak]) nonBizHourly += owned * Math.floor(ASSETS[ak].rent * 0.1);
+            });
+          }
+          if (state.ownedCars && state.ownedCars.length > 0) {
+            state.ownedCars.forEach(carRef => {
+              const car = CAR_TEMPLATES[carRef.id];
+              if (car && carRef.rentStatus === 'rented') {
+                const netP = car.rentalIncomePerTick - car.maintenanceCostPerTick;
+                if (netP > 0) nonBizHourly += netP;
+              }
+            });
+          }
+          nonBizHourly += calculateBankInterestPerTick(state);
+          if (state.hiredJob && state.lastPuzzleSolved && (Date.now() - state.lastPuzzleSolved < 86400000)) {
+            nonBizHourly += (state.hiredJob.salary || 0);
+          }
+          const nonBizOfflineEarnings = Math.floor((nonBizHourly / 3600) * cappedSeconds);
+
+          const totalOffline = offlineBizEarnings + nonBizOfflineEarnings;
+          if (totalOffline > 0 || offlineCorpEarnings > 0) {
+            state.bank += totalOffline;
             state.offlineReport = {
               seconds: cappedSeconds,
-              earnings: (offlineEarnings || 0) + (offlineCorpEarnings || 0),
+              earnings: (totalOffline || 0) + (offlineCorpEarnings || 0),
               corpEarnings: offlineCorpEarnings,
               wasManagerActive: true,
               expiredDuringAbsence: now > managerExpiry
             };
           }
+        } else if (elapsedSinceLastActive > 0 && state.businesses) {
+          Object.keys(state.businesses).forEach(bk => {
+            const b = state.businesses[bk];
+            if (b && b.level > 0 && typeof b.suppliesTicks === 'number' && b.suppliesTicks > 0) {
+              b.suppliesTicks = Math.max(0, b.suppliesTicks - elapsedSinceLastActive);
+            }
+          });
         } else if (offlineCorpEarnings > 0) {
           state.offlineReport = {
             seconds: 0,
@@ -2308,8 +2365,9 @@ const GameEngine = (() => {
 
     state.cash -= biz.cost;
     bizState.level = 1;
+    bizState.suppliesTicks = 600; // 10 minutes initial operating supplies included with purchase
 
-    recordPlayerActivity('شراء مشروع', `شراء مشروع "${biz.name}" بسعر ${biz.cost.toLocaleString()} ج.م`, 'business');
+    recordPlayerActivity('شراء مشروع', `شراء وتأسيس مشروع "${biz.name}" بسعر ${biz.cost.toLocaleString()} ج.م (يشمل مخزون تشغيل أولي لـ 10 دقائق)`, 'business');
     state.netWorth = calculateNetWorth();
     trackDailyQuestProgress('biz_upgrade', 1);
     forceSaveState(true);
