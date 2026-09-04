@@ -1731,6 +1731,12 @@ const UIController = (() => {
         renderCashflowBreakdown();
       }
 
+      // Real-time live update for daily quests modal if open
+      const dqModal = document.getElementById('daily-quests-modal');
+      if (dqModal && !dqModal.classList.contains('hidden')) {
+        renderDailyQuests();
+      }
+
       checkAndClaimDividends();
 
       // V2: Check and auto-activate pending live auctions from cache
@@ -1949,6 +1955,8 @@ const UIController = (() => {
         btnTextEl.textContent = 'تفعيل وردية الإدارة (12 ساعة)';
       }
     }
+
+    renderDailyQuests();
   }
 
   // --- Tab 2: Careers Panel ---
@@ -9589,6 +9597,43 @@ const UIController = (() => {
       });
     }
 
+    // Daily Quests Modal Listeners
+    const btnOpenDq = document.getElementById('btn-open-daily-quests');
+    if (btnOpenDq) {
+      btnOpenDq.addEventListener('click', openDailyQuestsModal);
+    }
+    const btnCloseDq = document.getElementById('btn-close-daily-quests-modal');
+    if (btnCloseDq) {
+      btnCloseDq.addEventListener('click', closeDailyQuestsModal);
+    }
+    const btnCloseDqFooter = document.getElementById('btn-close-daily-quests-modal-footer');
+    if (btnCloseDqFooter) {
+      btnCloseDqFooter.addEventListener('click', closeDailyQuestsModal);
+    }
+    const dqModalEl = document.getElementById('daily-quests-modal');
+    if (dqModalEl) {
+      dqModalEl.addEventListener('click', (e) => {
+        if (e.target === dqModalEl) {
+          closeDailyQuestsModal();
+        }
+      });
+    }
+    const btnClaimGrandBonus = document.getElementById('btn-claim-grand-daily-bonus');
+    if (btnClaimGrandBonus) {
+      btnClaimGrandBonus.addEventListener('click', () => {
+        try {
+          const res = GameEngine.claimGrandDailyBonus();
+          if (typeof playMenuSound === 'function') playMenuSound('jackpot');
+          showToast('مبروك! صندوق المكافأة الكبرى 🎁', `فتحت الصندوق الأكبر وحصلت على +${res.cash.toLocaleString('ar-EG')} EGP و +${res.xp} XP!`, 'success');
+          renderDailyQuests();
+          renderStatsBar();
+          renderDashboard();
+        } catch (err) {
+          showToast('تنبيه', err.message, 'error');
+        }
+      });
+    }
+
     const btnAddFriend = document.getElementById('btn-profile-add-friend');
     const btnProfileDM = document.getElementById('btn-profile-dm');
     const btnProfileJob = document.getElementById('btn-profile-job-offer');
@@ -10469,6 +10514,209 @@ const UIController = (() => {
     const modal = document.getElementById('cashflow-breakdown-modal');
     if (modal) {
       modal.classList.add('hidden');
+    }
+  }
+
+  // --- Daily Quests System Rendering & Handlers ---
+  function openDailyQuestsModal() {
+    renderDailyQuests();
+    const modal = document.getElementById('daily-quests-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      if (typeof playMenuSound === 'function') playMenuSound('click');
+    }
+  }
+
+  function closeDailyQuestsModal() {
+    const modal = document.getElementById('daily-quests-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  }
+
+  function formatCountdownHMS(totalSec) {
+    const hours = Math.floor(totalSec / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  function renderDailyQuests() {
+    if (!GameEngine || !GameEngine.state) return;
+    if (typeof GameEngine.ensureDailyQuests === 'function') {
+      GameEngine.ensureDailyQuests();
+    }
+    const dq = GameEngine.state.dailyQuests;
+    if (!dq || !Array.isArray(dq.quests)) return;
+
+    const remainingSec = typeof GameEngine.getDailyResetRemainingSeconds === 'function'
+      ? GameEngine.getDailyResetRemainingSeconds()
+      : 0;
+    const formattedTimer = formatCountdownHMS(remainingSec);
+
+    const completedCount = dq.quests.filter(q => q.completed).length;
+    const claimedCount = dq.quests.filter(q => q.claimed).length;
+    const totalCount = dq.quests.length;
+    const allClaimed = claimedCount === totalCount;
+    const grandBonusClaimed = Boolean(dq.grandBonusClaimed);
+
+    // 1. Update Dashboard Banner
+    const badgeTextEl = document.getElementById('daily-quests-badge-text');
+    const badgeEl = document.getElementById('daily-quests-badge');
+    const bannerProgressBar = document.getElementById('daily-quests-progress-bar');
+    const bannerCountdown = document.getElementById('daily-quests-countdown');
+
+    if (badgeTextEl) {
+      if (grandBonusClaimed) {
+        badgeTextEl.textContent = 'تم إكمال كافة المهام والصندوق! 🎉';
+      } else if (allClaimed) {
+        badgeTextEl.textContent = 'الصندوق جاهز للفتح! 🎁';
+      } else {
+        badgeTextEl.textContent = `${claimedCount} / ${totalCount} مستلمة (${completedCount} جاهزة)`;
+      }
+    }
+
+    if (badgeEl) {
+      if (grandBonusClaimed) {
+        badgeEl.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-black border bg-emerald-500/20 text-emerald-300 border-emerald-500/30 flex items-center gap-1';
+      } else if (allClaimed) {
+        badgeEl.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-black border bg-yellow-500/20 text-yellow-300 border-yellow-500/30 flex items-center gap-1 animate-pulse';
+      } else {
+        badgeEl.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-black border bg-amber-500/20 text-amber-300 border-amber-500/30 flex items-center gap-1';
+      }
+    }
+
+    if (bannerProgressBar) {
+      const pct = Math.round((claimedCount / totalCount) * 100);
+      bannerProgressBar.style.width = `${pct}%`;
+      if (grandBonusClaimed) {
+        bannerProgressBar.className = 'bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-500';
+      } else {
+        bannerProgressBar.className = 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 h-full transition-all duration-500';
+      }
+    }
+
+    if (bannerCountdown) {
+      bannerCountdown.textContent = `تتجدد خلال ${formattedTimer}`;
+    }
+
+    // 2. Update Modal Elements (if modal is open or present)
+    const modalTimer = document.getElementById('daily-modal-timer');
+    if (modalTimer) modalTimer.textContent = formattedTimer;
+
+    const modalProgressCount = document.getElementById('daily-modal-progress-count');
+    if (modalProgressCount) {
+      modalProgressCount.textContent = `${claimedCount} / ${totalCount}`;
+    }
+
+    // 3. Render Quest Items in Modal
+    const questsListEl = document.getElementById('daily-quests-list');
+    if (questsListEl) {
+      questsListEl.innerHTML = dq.quests.map(q => {
+        const pct = Math.min(100, Math.round(((q.progress || 0) / (q.target || 1)) * 100));
+        let actionButtonHtml = '';
+
+        if (q.claimed) {
+          actionButtonHtml = `
+            <div class="px-3 py-1.5 rounded-xl bg-slate-900 border border-emerald-500/30 text-emerald-400 font-bold text-[11px] flex items-center gap-1.5 shrink-0">
+              <i class="fa-solid fa-circle-check text-emerald-400"></i>
+              <span>مستلمة ✓</span>
+            </div>
+          `;
+        } else if (q.completed) {
+          actionButtonHtml = `
+            <button type="button" data-quest-id="${q.id}" class="btn-claim-daily-quest px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black rounded-xl text-[11px] shadow-lg shadow-amber-500/20 transition transform hover:scale-105 active:scale-95 flex items-center gap-1.5 shrink-0 cursor-pointer animate-pulse">
+              <i class="fa-solid fa-gift"></i>
+              <span>استلام الجائزة</span>
+            </button>
+          `;
+        } else {
+          actionButtonHtml = `
+            <div class="px-3 py-1.5 rounded-xl bg-slate-900/60 border border-slate-800 text-slate-400 font-medium text-[11px] flex items-center gap-1 shrink-0">
+              <span class="numbers-font">${q.progress || 0} / ${q.target}</span>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="p-3 bg-slate-900/70 border ${q.completed && !q.claimed ? 'border-amber-500/50 bg-amber-950/20' : 'border-slate-800'} rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div class="w-10 h-10 rounded-xl ${q.claimed ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : (q.completed ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' : 'bg-slate-800 text-slate-400')} flex items-center justify-center shrink-0">
+                <i class="fa-solid ${q.icon || 'fa-star'} text-sm"></i>
+              </div>
+              <div class="min-w-0 flex-1 space-y-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h5 class="text-xs font-bold text-white truncate">${q.title}</h5>
+                  <span class="text-[10px] text-amber-400 font-black numbers-font bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                    +${(q.cashReward || 0).toLocaleString()} EGP
+                  </span>
+                  <span class="text-[10px] text-sky-400 font-black numbers-font bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20">
+                    +${q.xpReward || 0} XP
+                  </span>
+                </div>
+                <p class="text-[11px] text-slate-400 leading-tight">${q.desc}</p>
+                <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800/80 mt-1">
+                  <div class="${q.completed ? 'bg-emerald-400' : 'bg-amber-400'} h-full transition-all duration-300" style="width: ${pct}%"></div>
+                </div>
+              </div>
+            </div>
+            <div class="w-full sm:w-auto flex justify-end">
+              ${actionButtonHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Attach claim listeners to buttons
+      questsListEl.querySelectorAll('.btn-claim-daily-quest').forEach(btn => {
+        btn.onclick = () => {
+          const qId = btn.dataset.questId;
+          try {
+            const res = GameEngine.claimDailyQuestReward(qId);
+            if (typeof playMenuSound === 'function') playMenuSound('cash');
+            showToast('تم استلام المكافأة!', `حصلت على +${res.cash.toLocaleString('ar-EG')} EGP و +${res.xp} XP بنجاح!`, 'success');
+            renderDailyQuests();
+            renderStatsBar();
+            renderDashboard();
+          } catch (err) {
+            showToast('تنبيه', err.message, 'error');
+          }
+        };
+      });
+    }
+
+    // 4. Update Grand Chest Card
+    const sampleQ = dq.quests[0];
+    const grandCash = (sampleQ ? sampleQ.cashReward : 1000) * 3;
+    const grandXP = (sampleQ ? sampleQ.xpReward : 25) * 3;
+
+    const grandCashEl = document.getElementById('daily-grand-cash-preview');
+    if (grandCashEl) grandCashEl.textContent = `💰 +${grandCash.toLocaleString()} EGP`;
+
+    const grandXpEl = document.getElementById('daily-grand-xp-preview');
+    if (grandXpEl) grandXpEl.textContent = `⭐ +${grandXP} XP`;
+
+    const btnGrandEl = document.getElementById('btn-claim-grand-daily-bonus');
+    const btnGrandText = document.getElementById('btn-claim-grand-text');
+    const grandChestCard = document.getElementById('daily-grand-chest-card');
+
+    if (btnGrandEl) {
+      if (grandBonusClaimed) {
+        btnGrandEl.disabled = true;
+        btnGrandEl.className = 'w-full py-2.5 px-4 bg-slate-800 text-slate-400 font-bold rounded-xl text-xs flex items-center justify-center gap-2 cursor-not-allowed';
+        if (btnGrandText) btnGrandText.textContent = 'تم استلام صندوق المكافأة الكبرى لليوم ✓';
+        if (grandChestCard) grandChestCard.className = 'p-4 rounded-2xl border border-emerald-500/30 bg-slate-900/60 text-center space-y-2.5 relative overflow-hidden';
+      } else if (allClaimed) {
+        btnGrandEl.disabled = false;
+        btnGrandEl.className = 'w-full py-3 px-4 bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-400 hover:from-yellow-300 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs transition duration-200 shadow-xl shadow-yellow-500/30 flex items-center justify-center gap-2 cursor-pointer transform hover:scale-[1.02] active:scale-[0.98] animate-bounce';
+        if (btnGrandText) btnGrandText.textContent = 'افتح الصندوق الأكبر الآن واستلم الجائزة! 🎁';
+        if (grandChestCard) grandChestCard.className = 'p-4 rounded-2xl border-2 border-amber-400 bg-gradient-to-b from-amber-950/40 via-yellow-950/20 to-slate-950 text-center space-y-2.5 relative overflow-hidden shadow-xl shadow-amber-500/10';
+      } else {
+        btnGrandEl.disabled = true;
+        btnGrandEl.className = 'w-full py-2.5 px-4 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black rounded-xl text-xs opacity-40 cursor-not-allowed flex items-center justify-center gap-2';
+        if (btnGrandText) btnGrandText.textContent = `افتح الصندوق الأكبر (المتبقي: ${totalCount - claimedCount} مهام)`;
+        if (grandChestCard) grandChestCard.className = 'p-4 rounded-2xl border-2 border-dashed border-amber-500/40 bg-gradient-to-b from-amber-950/30 via-slate-900 to-slate-950 text-center space-y-2.5 relative overflow-hidden';
+      }
     }
   }
 

@@ -1796,6 +1796,46 @@
           </div>
         </div>
 
+        <!-- DAILY QUESTS SUMMARY BANNER -->
+        <div id="daily-quests-banner"
+          class="glass-panel p-6 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-slate-950/90 via-amber-950/20 to-slate-950/90 relative overflow-hidden shadow-xl group hover:border-amber-500/50 transition duration-300">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="space-y-1 max-w-xl">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span
+                  class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <i class="fa-solid fa-list-check text-sm"></i>
+                </span>
+                <h4 class="text-base font-bold text-white">المهام اليومية والمكافآت المتجددة</h4>
+                <span id="daily-quests-badge"
+                  class="text-[10px] px-2.5 py-0.5 rounded-full font-black border bg-amber-500/20 text-amber-300 border-amber-500/30 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                  <span id="daily-quests-badge-text">0 / 5 مكتملة</span>
+                </span>
+              </div>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                أنجز أهدافك اليومية الخمسة لجني سيولة نقدية ضخمة ونقاط خبرة متضاعفة، وافتح صندوق المكافأة الكبرى عند إتمامها بالكامل!
+              </p>
+              <div class="pt-2 flex items-center gap-3">
+                <div class="w-48 bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-800">
+                  <div id="daily-quests-progress-bar"
+                    class="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 h-full w-0 transition-all duration-500">
+                  </div>
+                </div>
+                <span id="daily-quests-countdown" class="numbers-font text-xs font-bold text-amber-400">
+                  تتجدد خلال --:--:--
+                </span>
+              </div>
+            </div>
+
+            <button id="btn-open-daily-quests" type="button"
+              class="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs transition duration-200 shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer transform hover:scale-[1.02] active:scale-[0.98]">
+              <i class="fa-solid fa-gift text-sm"></i>
+              <span>عرض المهام واستلام المكافآت</span>
+            </button>
+          </div>
+        </div>
+
         <!-- 12-HOUR AFK AUTO-MANAGER CARD -->
         <div
           class="glass-panel p-6 rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-950/80 via-emerald-950/20 to-slate-950/80 relative overflow-hidden shadow-xl">
@@ -3856,6 +3896,85 @@
       <div id="mailbox-inbox-panel" class="flex-1 overflow-y-auto py-4 space-y-3">
         <!-- Dynamic Inbox Items -->
         <div class="text-center text-slate-500 text-xs py-12">لا توجد رسائل أو طلبات جديدة في صندوقك.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== DAILY QUESTS MODAL ==================== -->
+  <div id="daily-quests-modal" dir="rtl"
+    class="hidden fixed inset-0 z-[140] flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in">
+    <div
+      class="glass-panel w-full max-w-xl max-h-[90vh] flex flex-col rounded-3xl border-2 border-amber-500/50 bg-slate-950/98 shadow-2xl text-right relative overflow-hidden">
+      
+      <!-- Sticky Header -->
+      <div class="flex items-center justify-between gap-3 p-4 sm:p-5 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur shrink-0 relative z-10">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-11 h-11 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0 shadow-md">
+            <i class="fa-solid fa-calendar-check text-lg"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 class="text-base sm:text-lg font-black text-white truncate flex items-center gap-2">
+              <span>المهام اليومية وصندوق المكافآت</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold">24 ساعة ⏳</span>
+            </h3>
+            <p class="text-[11px] text-slate-400 truncate">تتجدد المهام تلقائياً كل منتصف ليل مع جوائز فورية</p>
+          </div>
+        </div>
+        <button id="btn-close-daily-quests-modal" type="button"
+          class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:bg-rose-600 hover:border-rose-500 flex items-center justify-center transition shadow shrink-0 cursor-pointer" title="إغلاق">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Scrollable Body -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-xs">
+        
+        <!-- Timer & Overall Progress Banner -->
+        <div class="p-3.5 bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-slate-900 border border-amber-500/30 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2 text-amber-300 font-bold">
+            <i class="fa-solid fa-hourglass-half text-amber-400"></i>
+            <span>إعادة التعيين القادمة بعد: <strong id="daily-modal-timer" class="text-white numbers-font">--:--:--</strong></span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-300 text-[11px]">
+            <span>الإنجاز الإجمالي:</span>
+            <span id="daily-modal-progress-count" class="font-black text-amber-400 numbers-font text-xs">0 / 5</span>
+          </div>
+        </div>
+
+        <!-- 5 Daily Quests List -->
+        <div id="daily-quests-list" class="space-y-2.5">
+          <!-- Dynamic quests injected here -->
+        </div>
+
+        <!-- Grand Bonus Chest Card -->
+        <div id="daily-grand-chest-card" class="p-4 rounded-2xl border-2 border-dashed border-amber-500/40 bg-gradient-to-b from-amber-950/30 via-slate-900 to-slate-950 text-center space-y-2.5 relative overflow-hidden">
+          <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 text-2xl shadow-lg">
+            <i class="fa-solid fa-box-open"></i>
+          </div>
+          <div>
+            <h4 class="text-sm font-black text-white">صندوق المكافأة الكبرى الأسطوري 🎁</h4>
+            <p class="text-[11px] text-slate-400 mt-0.5">يُفتح فقط بعد إكمال واستلام مكافآت جميع المهام الخمس!</p>
+          </div>
+          <div class="flex items-center justify-center gap-4 text-xs font-black numbers-font text-amber-400">
+            <span id="daily-grand-cash-preview">💰 +0 EGP</span>
+            <span class="text-slate-600">|</span>
+            <span id="daily-grand-xp-preview" class="text-sky-400">⭐ +0 XP</span>
+          </div>
+          <button id="btn-claim-grand-daily-bonus" type="button" disabled
+            class="w-full py-2.5 px-4 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black rounded-xl text-xs transition duration-200 shadow-lg shadow-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-key text-xs"></i>
+            <span id="btn-claim-grand-text">افتح الصندوق الأكبر (أكمل 5/5)</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Sticky Footer -->
+      <div class="p-4 border-t border-slate-800 bg-slate-950/95 flex justify-end shrink-0">
+        <button id="btn-close-daily-quests-modal-footer" type="button"
+          class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs transition cursor-pointer">
+          إغلاق
+        </button>
       </div>
     </div>
   </div>

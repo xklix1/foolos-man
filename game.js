@@ -696,7 +696,8 @@ const GameEngine = (() => {
     activeCar: null,
     smugglingFleet: { speedboat: 0, plane: 0, ship: 0 },
     activeSmugglingJobs: [],
-    stockCooldowns: {} // Stores { SYMBOL: lockUntilTimestamp }
+    stockCooldowns: {}, // Stores { SYMBOL: lockUntilTimestamp }
+    dailyQuests: null // Stores { date: 'YYYY-MM-DD', quests: [...], grandBonusClaimed: boolean }
   };
 
   let state = { ...INITIAL_STATE };
@@ -737,6 +738,173 @@ const GameEngine = (() => {
     if (state.activityLog.length > 40) {
       state.activityLog.length = 40; // Keep last 40 entries
     }
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // 🎯 DAILY QUESTS SYSTEM (نظام المهام اليومية المتجددة)
+  // ─────────────────────────────────────────────────────────
+  const DAILY_QUEST_TEMPLATES = [
+    {
+      id: 'work_shifts',
+      title: 'العمل الجاد والمثابرة',
+      desc: 'أكمل 5 ورديات عمل (دوام عادي أو دوام إضافي)',
+      target: 5,
+      icon: 'fa-briefcase',
+      category: 'work'
+    },
+    {
+      id: 'bank_deposit',
+      title: 'تأمين رأس المال',
+      desc: 'قم بإيداع أي مبلغ مالي في حسابك البنكي لتأمينه',
+      target: 1,
+      icon: 'fa-building-columns',
+      category: 'banking'
+    },
+    {
+      id: 'stock_trade',
+      title: 'مضارب البورصة',
+      desc: 'نفذ عملية تداول واحدة (شراء أو بيع أي سهم)',
+      target: 1,
+      icon: 'fa-chart-line',
+      category: 'stock'
+    },
+    {
+      id: 'biz_upgrade',
+      title: 'التوسع الاستثماري',
+      desc: 'طوّر مشروعاً قائماً، اشترِ مشروعاً جديداً، أو عيّن موظفاً',
+      target: 1,
+      icon: 'fa-arrow-up-right-dots',
+      category: 'business'
+    },
+    {
+      id: 'casino_play',
+      title: 'المغامر الذكي',
+      desc: 'جرّب حظك في جولة واحدة داخل ألعاب الكازينو',
+      target: 1,
+      icon: 'fa-dice',
+      category: 'casino'
+    }
+  ];
+
+  function getTodayDateString() {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function getDailyResetRemainingSeconds() {
+    const now = new Date();
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    return Math.max(0, Math.floor((tomorrow.getTime() - now.getTime()) / 1000));
+  }
+
+  function ensureDailyQuests() {
+    if (!state) return;
+    const today = getTodayDateString();
+    if (!state.dailyQuests || state.dailyQuests.date !== today || !Array.isArray(state.dailyQuests.quests)) {
+      const netWorth = (typeof calculateNetWorth === 'function') ? calculateNetWorth() : (state.netWorth || 400);
+      const baseCash = Math.max(500, Math.round(Math.min(50000000, netWorth * 0.02 + 500)));
+      const baseXP = Math.max(25, Math.round(Math.min(500, 20 + Math.log10(Math.max(10, netWorth)) * 15)));
+
+      state.dailyQuests = {
+        date: today,
+        grandBonusClaimed: false,
+        quests: DAILY_QUEST_TEMPLATES.map(t => ({
+          id: t.id,
+          title: t.title,
+          desc: t.desc,
+          target: t.target,
+          progress: 0,
+          completed: false,
+          claimed: false,
+          cashReward: baseCash,
+          xpReward: baseXP,
+          icon: t.icon,
+          category: t.category
+        }))
+      };
+    }
+  }
+
+  function trackDailyQuestProgress(questId, amount = 1) {
+    if (!state) return;
+    ensureDailyQuests();
+    if (!state.dailyQuests || !Array.isArray(state.dailyQuests.quests)) return;
+    const q = state.dailyQuests.quests.find(item => item.id === questId);
+    if (q && !q.completed) {
+      q.progress = Math.min(q.target, (q.progress || 0) + amount);
+      if (q.progress >= q.target) {
+        q.completed = true;
+      }
+      if (activeUsername) {
+        AppDB.savePlayerState(activeUsername, state);
+      }
+    }
+  }
+
+  function claimDailyQuestReward(questId) {
+    ensureDailyQuests();
+    if (!state.dailyQuests || !Array.isArray(state.dailyQuests.quests)) {
+      throw new Error("بيانات المهام اليومية غير متوفرة.");
+    }
+    const q = state.dailyQuests.quests.find(item => item.id === questId);
+    if (!q) throw new Error("المهمة المطلوبة غير موجودة.");
+    if (!q.completed) throw new Error("لم تكتمل أهداف هذه المهمة بعد.");
+    if (q.claimed) throw new Error("تم استلام مكافأة هذه المهمة بالفعل لهذا اليوم.");
+
+    q.claimed = true;
+    state.cash = (state.cash || 0) + q.cashReward;
+    state.xp = (state.xp || 0) + q.xpReward;
+
+    recordPlayerActivity('استلام مكافأة مهمة يومية', `استلام مكافأة: "${q.title}" (+${q.cashReward.toLocaleString('ar-EG')} EGP, +${q.xpReward} XP)`, 'reward');
+    state.netWorth = calculateNetWorth();
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
+    if (activeUsername) {
+      forceSaveState(true);
+    }
+
+    return {
+      cash: q.cashReward,
+      xp: q.xpReward,
+      quest: q
+    };
+  }
+
+  function claimGrandDailyBonus() {
+    ensureDailyQuests();
+    if (!state.dailyQuests || !Array.isArray(state.dailyQuests.quests)) {
+      throw new Error("بيانات المهام اليومية غير متوفرة.");
+    }
+    if (state.dailyQuests.grandBonusClaimed) {
+      throw new Error("تم فتح واستلام صندوق المكافأة الكبرى لهذا اليوم بالفعل.");
+    }
+
+    const allClaimed = state.dailyQuests.quests.every(q => q.claimed);
+    if (!allClaimed) {
+      throw new Error("يجب إكمال واستلام مكافآت جميع المهام الخمس أولاً لفتح الصندوق الأكبر!");
+    }
+
+    const sampleQ = state.dailyQuests.quests[0];
+    const grandCash = (sampleQ ? sampleQ.cashReward : 1000) * 3;
+    const grandXP = (sampleQ ? sampleQ.xpReward : 25) * 3;
+
+    state.dailyQuests.grandBonusClaimed = true;
+    state.cash = (state.cash || 0) + grandCash;
+    state.xp = (state.xp || 0) + grandXP;
+
+    recordPlayerActivity('فتح صندوق المكافأة الكبرى اليومي', `فتح صندوق المكافأة الكبرى! (+${grandCash.toLocaleString('ar-EG')} EGP, +${grandXP} XP)`, 'reward');
+    state.netWorth = calculateNetWorth();
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
+    if (activeUsername) {
+      forceSaveState(true);
+    }
+
+    return {
+      cash: grandCash,
+      xp: grandXP
+    };
   }
 
   // ─────────────────────────────────────────────────────────
@@ -1998,6 +2166,7 @@ const GameEngine = (() => {
       state.lastActiveTimestamp = Date.now();
       await AppDB.savePlayerState(username, state);
     }
+    ensureDailyQuests();
     initStocks();
     return state;
   }
@@ -2044,6 +2213,7 @@ const GameEngine = (() => {
     // Recalculate and Save
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
+    trackDailyQuestProgress('work_shifts', 1);
     AppDB.savePlayerState(activeUsername, state);
 
     return {
@@ -2092,6 +2262,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('شراء مشروع', `شراء مشروع "${biz.name}" بسعر ${biz.cost.toLocaleString()} ج.م`, 'business');
     state.netWorth = calculateNetWorth();
+    trackDailyQuestProgress('biz_upgrade', 1);
     forceSaveState(true);
     return biz;
   }
@@ -2117,6 +2288,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('ترقية مشروع', `ترقية مشروع "${biz.name}" إلى المستوى ${bizState.level}`, 'business');
     state.netWorth = calculateNetWorth();
+    trackDailyQuestProgress('biz_upgrade', 1);
     forceSaveState(true);
     return {
       level: bizState.level,
@@ -2186,6 +2358,7 @@ const GameEngine = (() => {
     bizState.workers++;
 
     state.netWorth = calculateNetWorth();
+    trackDailyQuestProgress('biz_upgrade', 1);
     forceSaveState(true);
     return {
       workers: bizState.workers,
@@ -2251,6 +2424,7 @@ const GameEngine = (() => {
     state.cash -= amount;
     state.bank += amount;
     state.netWorth = calculateNetWorth();
+    trackDailyQuestProgress('bank_deposit', 1);
     forceSaveState(true);
   }
 
@@ -2343,6 +2517,7 @@ const GameEngine = (() => {
     state.stockCooldowns[sym] = Date.now() + 45000;
 
     recordPlayerActivity('شراء أسهم', `شراء ${shares} سهم (${sym}) بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`, 'stock');
+    trackDailyQuestProgress('stock_trade', 1);
     forceSaveState(true);
     return { shares, price: currentPrice, grossCost, fee, totalCost };
   }
@@ -2398,6 +2573,7 @@ const GameEngine = (() => {
       : `بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} ج.م)`;
 
     recordPlayerActivity('بيع أسهم', logDetails, 'stock');
+    trackDailyQuestProgress('stock_trade', 1);
     forceSaveState(true);
     return { shares, price: currentPrice, grossReturn, fee, capitalGainsTax, totalReturn: netReturn };
   }
@@ -2804,11 +2980,13 @@ const GameEngine = (() => {
       state.cash += payout;
       recordPlayerActivity('رمي العملة', `فوز برهان الكازينو +${payout.toLocaleString()} ج.م (مضاعف x${mult.toFixed(2)})`, 'casino');
       state.netWorth = calculateNetWorth();
+      trackDailyQuestProgress('casino_play', 1);
       forceSaveState(true);
       return { won: true, side: outcomeSide, multiplier: mult, payout: payout, profit: payout - betAmount };
     } else {
       recordPlayerActivity('رمي العملة', `خسارة رهان الكازينو ${betAmount.toLocaleString()} ج.م`, 'casino');
       state.netWorth = calculateNetWorth();
+      trackDailyQuestProgress('casino_play', 1);
       forceSaveState(true);
       return { won: false, side: outcomeSide, loss: betAmount };
     }
@@ -2873,6 +3051,7 @@ const GameEngine = (() => {
     state.cash += payout;
 
     state.netWorth = calculateNetWorth();
+    trackDailyQuestProgress('casino_play', 1);
     forceSaveState(true);
 
     return {
@@ -2922,6 +3101,7 @@ const GameEngine = (() => {
     state.cash += payout;
 
     state.netWorth = calculateNetWorth();
+    trackDailyQuestProgress('casino_play', 1);
     forceSaveState(true);
 
     return {
@@ -2954,6 +3134,7 @@ const GameEngine = (() => {
     state.xp += earnedXp;
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
+    trackDailyQuestProgress('work_shifts', 1);
     forceSaveState(true);
 
     return {
@@ -3220,6 +3401,7 @@ const GameEngine = (() => {
     state.cash += payout;
     sanitizeGameState();
     state.netWorth = calculateNetWorth();
+    trackDailyQuestProgress('casino_play', 1);
     forceSaveState(true);
 
     return {
@@ -3335,7 +3517,15 @@ const GameEngine = (() => {
     setGlobalMarketEvent,
     getCurrentMarketTicker,
     getCurrentMarketEvent,
-    syncUnifiedStocks
+    syncUnifiedStocks,
+
+    // Daily Quests Exports
+    DAILY_QUEST_TEMPLATES,
+    ensureDailyQuests,
+    getDailyResetRemainingSeconds,
+    trackDailyQuestProgress,
+    claimDailyQuestReward,
+    claimGrandDailyBonus
   };
 })();
 
