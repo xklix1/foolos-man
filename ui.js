@@ -6051,12 +6051,20 @@ const UIController = (() => {
         let netIncomePerSecond = 0;
         try {
           GameEngine.state = state;
-          const tickIncome = GameEngine.calculatePassiveIncomePerTick(true); // Exclude wealth tax for true gross
-          const taxReport = GameEngine.calculateTaxReport();
-
-          grossIncomePerSecond = Math.max(0, tickIncome / 3);
-          taxPerSecond = (state.netWorth || 0) > 3000000 ? (taxReport.taxPerSecond / 3) : 0;
-          netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
+          if (typeof GameEngine.getDetailedCashflowBreakdown === 'function') {
+            const breakdown = GameEngine.getDetailedCashflowBreakdown(state);
+            if (breakdown) {
+              grossIncomePerSecond = breakdown.totalGrossPerSec || 0;
+              taxPerSecond = (breakdown.tax && breakdown.tax.taxPerSec) || 0;
+              netIncomePerSecond = breakdown.totalNetPerSec || 0;
+            }
+          } else {
+            const tickIncome = GameEngine.calculatePassiveIncomePerTick ? GameEngine.calculatePassiveIncomePerTick(true) : 0;
+            const taxReport = GameEngine.calculateTaxReport ? GameEngine.calculateTaxReport() : { taxPerSecond: 0 };
+            grossIncomePerSecond = Math.max(0, tickIncome);
+            taxPerSecond = ((state.netWorth || 0) > 5000000 && (((state.bank || 0) + (state.cash || 0)) > 100000)) ? (taxReport.taxPerSecond || 0) : 0;
+            netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
+          }
         } catch (err) {
           console.warn("Failed to simulate player flows:", err);
         } finally {
@@ -6383,12 +6391,20 @@ const UIController = (() => {
         let netIncomePerSecond = 0;
         try {
           GameEngine.state = selectedPlayerState;
-          const tickIncome = GameEngine.calculatePassiveIncomePerTick(true); // Exclude wealth tax for true gross
-          const taxReport = GameEngine.calculateTaxReport();
-
-          grossIncomePerSecond = Math.max(0, tickIncome / 3);
-          taxPerSecond = (selectedPlayerState.netWorth || 0) > 3000000 ? (taxReport.taxPerSecond / 3) : 0;
-          netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
+          if (typeof GameEngine.getDetailedCashflowBreakdown === 'function') {
+            const breakdown = GameEngine.getDetailedCashflowBreakdown(selectedPlayerState);
+            if (breakdown) {
+              grossIncomePerSecond = breakdown.totalGrossPerSec || 0;
+              taxPerSecond = (breakdown.tax && breakdown.tax.taxPerSec) || 0;
+              netIncomePerSecond = breakdown.totalNetPerSec || 0;
+            }
+          } else {
+            const tickIncome = GameEngine.calculatePassiveIncomePerTick ? GameEngine.calculatePassiveIncomePerTick(true) : 0;
+            const taxReport = GameEngine.calculateTaxReport ? GameEngine.calculateTaxReport() : { taxPerSecond: 0 };
+            grossIncomePerSecond = Math.max(0, tickIncome);
+            taxPerSecond = ((selectedPlayerState.netWorth || 0) > 5000000 && (((selectedPlayerState.bank || 0) + (selectedPlayerState.cash || 0)) > 100000)) ? (taxReport.taxPerSecond || 0) : 0;
+            netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
+          }
         } catch (err) {
           console.warn("Failed to simulate player flows:", err);
         } finally {

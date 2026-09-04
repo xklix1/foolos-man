@@ -351,12 +351,20 @@
         let netIncomePerSecond = 0;
         try {
           GameEngine.state = state;
-          const tickIncome = GameEngine.calculatePassiveIncomePerTick(true); // Exclude wealth tax for true gross
-          const taxReport = GameEngine.calculateTaxReport();
-
-          grossIncomePerSecond = Math.max(0, tickIncome / 3);
-          taxPerSecond = (state.netWorth || 0) > 3000000 ? (taxReport.taxPerSecond / 3) : 0;
-          netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
+          if (typeof GameEngine.getDetailedCashflowBreakdown === 'function') {
+            const breakdown = GameEngine.getDetailedCashflowBreakdown(state);
+            if (breakdown) {
+              grossIncomePerSecond = breakdown.totalGrossPerSec || 0;
+              taxPerSecond = (breakdown.tax && breakdown.tax.taxPerSec) || 0;
+              netIncomePerSecond = breakdown.totalNetPerSec || 0;
+            }
+          } else {
+            const tickIncome = GameEngine.calculatePassiveIncomePerTick ? GameEngine.calculatePassiveIncomePerTick(true) : 0;
+            const taxReport = GameEngine.calculateTaxReport ? GameEngine.calculateTaxReport() : { taxPerSecond: 0 };
+            grossIncomePerSecond = Math.max(0, tickIncome);
+            taxPerSecond = ((state.netWorth || 0) > 5000000 && (((state.bank || 0) + (state.cash || 0)) > 100000)) ? (taxReport.taxPerSecond || 0) : 0;
+            netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
+          }
         } catch (err) {
           console.warn("Failed to simulate player flows:", err);
         } finally {
@@ -713,12 +721,20 @@
         let netIncomePerSecond = 0;
         try {
           GameEngine.state = selectedPlayerState;
-          const tickIncome = GameEngine.calculatePassiveIncomePerTick(true); // Exclude wealth tax for true gross
-          const taxReport = GameEngine.calculateTaxReport();
-
-          grossIncomePerSecond = Math.max(0, tickIncome / 3);
-          taxPerSecond = (selectedPlayerState.netWorth || 0) > 3000000 ? (taxReport.taxPerSecond / 3) : 0;
-          netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
+          if (typeof GameEngine.getDetailedCashflowBreakdown === 'function') {
+            const breakdown = GameEngine.getDetailedCashflowBreakdown(selectedPlayerState);
+            if (breakdown) {
+              grossIncomePerSecond = breakdown.totalGrossPerSec || 0;
+              taxPerSecond = (breakdown.tax && breakdown.tax.taxPerSec) || 0;
+              netIncomePerSecond = breakdown.totalNetPerSec || 0;
+            }
+          } else {
+            const tickIncome = GameEngine.calculatePassiveIncomePerTick ? GameEngine.calculatePassiveIncomePerTick(true) : 0;
+            const taxReport = GameEngine.calculateTaxReport ? GameEngine.calculateTaxReport() : { taxPerSecond: 0 };
+            grossIncomePerSecond = Math.max(0, tickIncome);
+            taxPerSecond = ((selectedPlayerState.netWorth || 0) > 5000000 && (((selectedPlayerState.bank || 0) + (selectedPlayerState.cash || 0)) > 100000)) ? (taxReport.taxPerSecond || 0) : 0;
+            netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
+          }
         } catch (err) {
           console.warn("Failed to simulate player flows:", err);
         } finally {
@@ -1470,101 +1486,108 @@
           let grossPerSec = 0;
           let taxPerSec = 0;
           let netPerSec = 0;
-          let taxTierName = 'معفى من الضرائب (أقل من 3M)';
+          let taxTierName = 'معفى من الضرائب (أقل من 5M EGP)';
           let breakdownItems = [];
 
           try {
             GameEngine.state = pState;
 
-            // 1. Job Salary
-            let jobIncome = 0;
-            if (pState.jobId && GameEngine.JOBS && GameEngine.JOBS[pState.jobId]) {
-              const job = GameEngine.JOBS[pState.jobId];
-              jobIncome = job.salaryPerTick || 0;
-              if (jobIncome > 0) {
-                breakdownItems.push({
-                  icon: '💼',
-                  title: `وظيفة: ${job.name || pState.title || pState.jobId}`,
-                  grossPerSec: jobIncome / 3,
-                  detail: `راتب أساسي: ${jobIncome.toLocaleString()} EGP / تكة`
+            let breakdown = null;
+            if (typeof GameEngine.getDetailedCashflowBreakdown === 'function') {
+              breakdown = GameEngine.getDetailedCashflowBreakdown(pState);
+            }
+
+            if (breakdown) {
+              grossPerSec = breakdown.totalGrossPerSec || 0;
+              taxPerSec = (breakdown.tax && breakdown.tax.taxPerSec) || 0;
+              netPerSec = breakdown.totalNetPerSec || 0;
+
+              // 1. Businesses
+              if (breakdown.businesses && breakdown.businesses.length > 0) {
+                breakdown.businesses.forEach(b => {
+                  breakdownItems.push({
+                    icon: '🏢',
+                    title: `مشروع: ${b.name}`,
+                    grossPerSec: b.profitPerSec,
+                    detail: `مستوى ${b.level} | ${b.workers || 0} عمال | تسعير: ${(b.price || b.optPrice || 0).toLocaleString()} EGP ${b.isFranchise ? '| 🌟 فرانشايز' : ''}`
+                  });
                 });
               }
-            }
 
-            // 2. Businesses
-            if (pState.businesses) {
-              Object.keys(pState.businesses).forEach(bk => {
-                const b = pState.businesses[bk];
-                if (b && b.level > 0 && GameEngine.BUSINESSES && GameEngine.BUSINESSES[bk]) {
-                  const cfg = GameEngine.BUSINESSES[bk];
-                  const bizIncome = (b.level * cfg.baseIncomePerTick) + ((b.workers || 0) * (cfg.workerMultiplier || 10));
-                  if (bizIncome > 0) {
-                    breakdownItems.push({
-                      icon: '🏢',
-                      title: `مشروع: ${cfg.name}`,
-                      grossPerSec: bizIncome / 3,
-                      detail: `مستوى ${b.level} | ${b.workers || 0} عمال | ${bizIncome.toLocaleString()} EGP/تكة`
-                    });
-                  }
-                }
-              });
-            }
-
-            // 3. Cars
-            if (pState.cars && Array.isArray(pState.cars)) {
-              pState.cars.forEach(carId => {
-                if (GameEngine.CARS && GameEngine.CARS[carId]) {
-                  const carCfg = GameEngine.CARS[carId];
-                  const carNet = (carCfg.rentalIncomePerTick || 0) - (carCfg.maintenanceCostPerTick || 0);
-                  breakdownItems.push({
-                    icon: '🏎️',
-                    title: `تأجير سيارة: ${carCfg.name}`,
-                    grossPerSec: (carCfg.rentalIncomePerTick || 0) / 3,
-                    netPerSec: carNet / 3,
-                    detail: `إيجار: +${(carCfg.rentalIncomePerTick || 0).toLocaleString()} | صيانة: -${(carCfg.maintenanceCostPerTick || 0).toLocaleString()} EGP/تكة`
-                  });
-                }
-              });
-            }
-
-            // 4. Luxury Real Estate Rent
-            if (pState.realEstate && Array.isArray(pState.realEstate)) {
-              const ASSETS = {
-                apartment: { name: 'شقة سكنية مؤجرة', rent: 85 },
-                office: { name: 'مبنى مكاتب تجارية', rent: 520 },
-                mansion: { name: 'قصر ريفي فاخر', rent: 2400 },
-                skyline_tower: { name: 'برج ناطحة سحاب', rent: 11500 },
-                luxury_resort: { name: 'منتجع وفندق 5 نجوم', rent: 52000 },
-                mega_yacht: { name: 'يخت ملكي فاخر', rent: 210000 },
-                private_island: { name: 'جزيرة استوائية خاصة', rent: 750000 },
-                orbital_station: { name: 'محطة مدارية فضائية', rent: 3000000 }
-              };
-              pState.realEstate.forEach(propId => {
-                if (ASSETS[propId]) {
+              // 2. Real estate / Assets
+              if (breakdown.assets && breakdown.assets.length > 0) {
+                breakdown.assets.forEach(a => {
                   breakdownItems.push({
                     icon: '🏛️',
-                    title: `عقار: ${ASSETS[propId].name}`,
-                    grossPerSec: ASSETS[propId].rent,
-                    detail: `عائد إيجار عقاري تلقائي: +${ASSETS[propId].rent.toLocaleString()} EGP/ث`
+                    title: `عقار: ${a.name} (عدد ${a.count})`,
+                    grossPerSec: a.rentPerSec,
+                    detail: `عائد إيجار عقاري: +${a.rentPerUnit.toLocaleString()} EGP/ث لكل وحدة`
                   });
+                });
+              }
+
+              // 3. Cars
+              if (breakdown.cars && breakdown.cars.length > 0) {
+                breakdown.cars.forEach(c => {
+                  breakdownItems.push({
+                    icon: '🏎️',
+                    title: `تأجير سيارة: ${c.name}`,
+                    grossPerSec: c.grossRent,
+                    netPerSec: c.netProfitPerSec,
+                    detail: `إيجار: +${c.grossRent.toLocaleString()} | صيانة: -${c.maintenance.toLocaleString()} EGP/ث`
+                  });
+                });
+              }
+
+              // 4. Bank Interest
+              if (breakdown.bank && breakdown.bank.profitPerSec > 0) {
+                breakdownItems.push({
+                  icon: '🏦',
+                  title: 'عوائد بنكية (فوائد الإيداع)',
+                  grossPerSec: breakdown.bank.profitPerSec,
+                  detail: `رصيد البنك: ${(breakdown.bank.balance || 0).toLocaleString()} EGP ${breakdown.bank.hasRollsBonus ? '| 🌟 بونص رولز رويس (+5%)' : ''}`
+                });
+              }
+
+              // 5. Joint Corporation
+              if (breakdown.corp && breakdown.corp.active && breakdown.corp.profitPerSec > 0) {
+                breakdownItems.push({
+                  icon: '🤝',
+                  title: `أرباح التحالف: ${breakdown.corp.name}`,
+                  grossPerSec: breakdown.corp.profitPerSec,
+                  detail: `مستوى الشركة ${breakdown.corp.level} | حصة اللاعب: ${breakdown.corp.sharePct}%`
+                });
+              }
+
+              // 6. Hired Job
+              if (breakdown.hiredJob && breakdown.hiredJob.active && breakdown.hiredJob.salaryPerSec > 0) {
+                breakdownItems.push({
+                  icon: '💼',
+                  title: `عقد عمل خارجي: ${breakdown.hiredJob.name}`,
+                  grossPerSec: breakdown.hiredJob.salaryPerSec,
+                  detail: `راتب تعاقدي ساري (تم حل اللغز اليومي بنجاح)`
+                });
+              }
+
+              // Tax Tier / Exemption
+              const taxReport = GameEngine.calculateTaxReport ? GameEngine.calculateTaxReport() : null;
+              if (breakdown.tax && breakdown.tax.active) {
+                taxTierName = (taxReport && taxReport.bracketName) ? taxReport.bracketName : 'شريحة ضريبية مفعلة';
+                if (taxReport && taxReport.taxShieldActive) {
+                  taxTierName += ' (🛡️ درع ضريبي مفعل)';
                 }
-              });
-            }
-
-            // Global Passive Income & Tax
-            const tickIncome = GameEngine.calculatePassiveIncomePerTick(true);
-            const taxReport = GameEngine.calculateTaxReport();
-
-            grossPerSec = Math.max(0, tickIncome / 3);
-            taxPerSec = (pState.netWorth || 0) > 3000000 ? (taxReport.taxPerSecond / 3) : 0;
-            netPerSec = Math.max(0, grossPerSec - taxPerSec);
-
-            if ((pState.netWorth || 0) >= 100000000) {
-              taxTierName = 'شريحة الحيتان وكبار المستثمرين (0.008%/ث)';
-            } else if ((pState.netWorth || 0) >= 20000000) {
-              taxTierName = 'شريحة كبار الملاك (0.004%/ث)';
-            } else if ((pState.netWorth || 0) >= 3000000) {
-              taxTierName = 'شريحة رجال الأعمال الفضية (0.002%/ث)';
+              } else {
+                taxTierName = (breakdown.tax && breakdown.tax.exemptReason) || 'معفى من الضرائب (أقل من 5M EGP أو محمي بحاجز السيولة)';
+              }
+            } else {
+              const tickIncome = GameEngine.calculatePassiveIncomePerTick ? GameEngine.calculatePassiveIncomePerTick(true) : 0;
+              const taxReport = GameEngine.calculateTaxReport ? GameEngine.calculateTaxReport() : { taxPerSecond: 0 };
+              grossPerSec = Math.max(0, tickIncome);
+              taxPerSec = ((pState.netWorth || 0) > 5000000 && (((pState.bank || 0) + (pState.cash || 0)) > 100000)) ? (taxReport.taxPerSecond || 0) : 0;
+              netPerSec = Math.max(0, grossPerSec - taxPerSec);
+              if (taxPerSec > 0 && taxReport.bracketName) {
+                taxTierName = taxReport.bracketName;
+              }
             }
           } finally {
             GameEngine.state = originalState;
