@@ -243,6 +243,19 @@ var AppDB = (() => {
     state.username = u;
     state.lastSeen = Date.now();
 
+    // Sanitize business worker caps (Max 5 workers per level)
+    if (state.businesses && typeof state.businesses === 'object') {
+      Object.keys(state.businesses).forEach(k => {
+        const b = state.businesses[k];
+        if (b && typeof b === 'object' && b.level != null) {
+          const maxWorkers = Math.max(1, Number(b.level || 1)) * 5;
+          if (Number(b.workers || 0) > maxWorkers) {
+            b.workers = maxWorkers;
+          }
+        }
+      });
+    }
+
     // Cache locally INSTANTLY (0 lag, 100% responsive)
     setEncryptedLocalState(`rasalmal_state_${u}`, state);
 

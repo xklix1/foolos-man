@@ -2103,7 +2103,7 @@ const UIController = (() => {
           </div>
           
           <div class="text-xs text-slate-400 space-y-1 mb-4 border-b border-slate-800 pb-3">
-            <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Current Employees:' : 'العمالة الحالية:'}</span><span id="biz-workers-${key}" class="numbers-font text-white font-bold">${bizState.workers || 0} ${window.currentLang === 'en' ? 'workers' : 'عمال'} (${window.currentLang === 'en' ? 'wages' : 'أجور'}: -${workerPayroll} EGP/${window.currentLang === 'en' ? 'cycle' : 'دورة'})</span></div>
+            <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Current Employees:' : 'العمالة الحالية:'}</span><span id="biz-workers-${key}" class="numbers-font text-white font-bold">${bizState.workers || 0} / ${Math.max(1, bizState.level || 1) * 5} ${window.currentLang === 'en' ? 'workers' : 'عمال'} (${window.currentLang === 'en' ? 'wages' : 'أجور'}: -${workerPayroll} EGP/${window.currentLang === 'en' ? 'cycle' : 'دورة'})</span></div>
             <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Material/Operation Cost:' : 'تكلفة المواد/التشغيل:'}</span><span id="biz-cog-${key}" class="numbers-font text-rose-400">${actualCostOfGoods} EGP/${window.currentLang === 'en' ? 'unit' : 'وحدة'}</span></div>
             <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Current Expected Demand:' : 'الطلب الحالي المتوقع:'}</span><span id="biz-demand-${key}" class="numbers-font text-sky-400 font-bold">${estimatedDemand} ${window.currentLang === 'en' ? 'units/cycle' : 'وحدة/دورة'} ${marketingActive ? `<span class="text-yellow-400 font-bold">(${window.currentLang === 'en' ? '+40% Promo' : '+40% ترويج'})</span>` : ''}</span></div>
             <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Unit Profit Margin:' : 'هامش ربح الوحدة:'}</span><span id="biz-margin-${key}" class="numbers-font ${profitMargin >= 0 ? 'text-teal-400' : 'text-rose-400'} font-bold">${profitMargin} EGP</span></div>
@@ -2146,9 +2146,15 @@ const UIController = (() => {
                 ${window.currentLang === 'en' ? 'Upgrade Level' : 'ترقية المستوى'}<br><span id="biz-upgrade-cost-${key}" class="numbers-font text-[10px] opacity-75">${nextUpgradeCost.toLocaleString()} EGP</span>
               </button>
             `}
-            <button id="btn-hire-${key}" class="py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition">
-              ${window.currentLang === 'en' ? 'Hire Worker' : 'توظيف عمالة'}<br><span id="biz-hire-cost-${key}" class="numbers-font text-[10px] opacity-75">${workerHireCost.toLocaleString()} EGP</span>
-            </button>
+            ${(bizState.workers || 0) >= (Math.max(1, bizState.level || 1) * 5) ? `
+              <button disabled class="py-2 bg-slate-800/40 text-slate-500 border border-slate-700/30 rounded-lg text-xs font-bold cursor-not-allowed">
+                ${window.currentLang === 'en' ? 'Max Workers' : 'سقف العمالة'}<br><span class="numbers-font text-[9px] opacity-75">${bizState.workers || 0} / ${Math.max(1, bizState.level || 1) * 5} عامل</span>
+              </button>
+            ` : `
+              <button id="btn-hire-${key}" class="py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition">
+                ${window.currentLang === 'en' ? 'Hire Worker' : 'توظيف عمالة'}<br><span id="biz-hire-cost-${key}" class="numbers-font text-[10px] opacity-75">${workerHireCost.toLocaleString()} EGP</span>
+              </button>
+            `}
           </div>
           ${bizState.isFranchise ? `
             <button id="btn-sell-franchise-${key}" class="w-full mt-2 py-2 bg-amber-500/15 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-black transition flex items-center justify-center gap-1 shadow-md">

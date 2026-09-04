@@ -960,8 +960,9 @@ const GameEngine = (() => {
     const marketingBoost = marketingActive ? 1.4 : 1.0;
     const costOfGoodsLevelMultiplier = Math.pow(1.06, Math.max(0, (bizState.level || 1) - 1));
     const actualCostOfGoods = Math.floor(bizConfig.costOfGoods * costOfGoodsLevelMultiplier * 1.05);
-    const upgradeFactor = Math.pow(bizConfig.upgradeMultiplier, bizState.level - 1);
-    const workerFactor = 1 + ((bizState.workers || 0) * ((bizConfig.workerMultiplier || 1.2) - 1));
+    const maxAllowedWorkers = Math.max(1, bizState.level || 1) * 5;
+    const effectiveWorkers = Math.min(bizState.workers || 0, maxAllowedWorkers);
+    const workerFactor = 1 + (effectiveWorkers * ((bizConfig.workerMultiplier || 1.2) - 1));
     const demand = Math.floor(bizConfig.baseDemand * upgradeFactor * elasticity * workerFactor * marketingBoost);
     const margin = price - actualCostOfGoods;
 
@@ -970,7 +971,7 @@ const GameEngine = (() => {
     const boost = (typeof window !== 'undefined' && window.serverBoostMultiplier) || 1.0;
     const grossProfit = Math.max(0, Math.floor(demand * margin * 0.85 * quantumMultiplier * boost));
 
-    const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
+    const workerPayroll = effectiveWorkers * (bizConfig.workerWage || 0);
     const cappedPayroll = Math.min(workerPayroll, Math.floor(grossProfit * 0.40));
     const netProfit = Math.max(0, grossProfit - cappedPayroll);
 
@@ -1815,9 +1816,14 @@ const GameEngine = (() => {
       // Deep-merge with defaults so new keys added later are always present
       const mergedBusinesses = {};
       Object.keys(INITIAL_STATE.businesses).forEach(k => {
+        const rawBiz = (dbState.businesses && dbState.businesses[k]) ? dbState.businesses[k] : {};
+        const bLevel = rawBiz.level != null ? rawBiz.level : INITIAL_STATE.businesses[k].level;
+        const maxWorkers = Math.max(1, bLevel || 1) * 5;
+        const rawWorkers = rawBiz.workers != null ? rawBiz.workers : INITIAL_STATE.businesses[k].workers;
         mergedBusinesses[k] = {
           ...INITIAL_STATE.businesses[k],
-          ...(dbState.businesses && dbState.businesses[k] ? dbState.businesses[k] : {})
+          ...rawBiz,
+          workers: Math.min(rawWorkers, maxWorkers)
         };
       });
 
@@ -2129,25 +2135,31 @@ const GameEngine = (() => {
     return { payout: sellPayout };
   }
 
-  // Hire Workers for Business
+  // Hire Workers for Business (Max 5 workers per business level)
   function hireWorker(key) {
     const biz = BUSINESSES[key];
     const bizState = state.businesses[key];
     if (!bizState || bizState.level === 0) throw new Error("يجب شراء المشروع أولاً.");
 
+    const maxWorkers = Math.max(1, bizState.level || 1) * 5;
+    if ((bizState.workers || 0) >= maxWorkers) {
+      throw new Error(`بلغت الحد الأقصى لسعة العمالة لهذا المستوى (${maxWorkers} عمال بمعدل 5 عمال لكل مستوى). قم بترقية المشروع لزيادة سعة العمالة.`);
+    }
+
     // Worker hiring fee scales with number of existing workers
-    const hireCost = Math.floor(biz.cost * 0.15 * (1 + bizState.workers));
+    const hireCost = Math.floor(biz.cost * 0.15 * (1 + (bizState.workers || 0)));
     if (state.cash < hireCost) {
       throw new Error(`تكلفة توظيف عامل إضافي هي ${hireCost.toLocaleString()} جنيه. الرصيد غير كافٍ.`);
     }
 
     state.cash -= hireCost;
-    bizState.workers++;
+    bizState.workers = (bizState.workers || 0) + 1;
 
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
     return {
       workers: bizState.workers,
+      maxWorkers,
       cost: hireCost
     };
   }
