@@ -14,8 +14,8 @@ var AppDB = (() => {
   //  CONFIG & CREDENTIALS
   // ─────────────────────────────────────────────
   const CLIENT_VERSION = 'V5.2';
-  const SUPABASE_URL = 'https://rhuiaxrodnbjohowdlpo.supabase.co';
-  const SUPABASE_ANON_KEY = 'sb_publishable_O2L34RTDz6k2UQvrkrNA_Q_t5Nty9t7';
+  const SUPABASE_URL = 'https://rasalmal.online';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08';
 
   let firebaseReady = true; // Kept for backward compatibility checks across UI
   let _supabaseClient = null;
@@ -355,14 +355,13 @@ var AppDB = (() => {
     }
   }
 
-  let _saveDebounceTimers = {};
-  async function savePlayerState(username, state, immediate = false) {
+  function flushStateToCloudOnExit(username, state) {
     if (!username || !state) return;
     const u = username.trim();
     state.username = u;
     state.lastSeen = Date.now();
 
-    // Cache locally INSTANTLY (0 lag, 100% responsive)
+    // Cache locally instantly
     setEncryptedLocalState(`rasalmal_state_${u}`, state);
 
     const payload = {
@@ -384,7 +383,65 @@ var AppDB = (() => {
     };
     if (state.pin) payload.pin = state.pin;
 
-    const doCloudSave = async () => {
+    try {
+      const url = `${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}`;
+      fetch(url, {
+        method: 'PATCH',
+        keepalive: true,
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      }).catch(() => {});
+    } catch (e) {}
+  }
+
+  // Attach exit listeners immediately
+  if (typeof window !== 'undefined') {
+    const handleExitFlush = () => {
+      const activeUser = (window.GameEngine && window.GameEngine.activeUsername);
+      const activeState = (window.GameEngine && window.GameEngine.state);
+      if (activeUser && activeState) {
+        flushStateToCloudOnExit(activeUser, activeState);
+      }
+    };
+    window.addEventListener('beforeunload', handleExitFlush);
+    window.addEventListener('pagehide', handleExitFlush);
+  }
+
+  async function savePlayerState(username, state, forceCloud = false) {
+    if (!username || !state) return;
+    const u = username.trim();
+    state.username = u;
+    state.lastSeen = Date.now();
+
+    // Cache locally INSTANTLY (0 lag, 100% responsive, ZERO network egress)
+    setEncryptedLocalState(`rasalmal_state_${u}`, state);
+
+    // Only push to Supabase if forceCloud is true (30m periodic interval, reload/exit, or explicit sync)
+    if (forceCloud) {
+      const payload = {
+        username: u,
+        cash: Number(state.cash || 0),
+        bank: Number(state.bank || 0),
+        dirty_cash: Number(state.dirtyCash || 0),
+        net_worth: Number(state.netWorth || 0),
+        xp: Number(state.xp || 0),
+        title: state.title || 'عامل مبتدئ',
+        job_id: state.jobId || 'worker',
+        is_admin: state.isAdmin === true,
+        is_banned: state.isBanned === true,
+        jail_timer: Number(state.jailTimer || 0),
+        afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
+        total_taxes_paid: Number(state.totalTaxesPaid || 0),
+        state: state,
+        last_seen: Date.now()
+      };
+      if (state.pin) payload.pin = state.pin;
+
       try {
         await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
           method: 'PATCH',
@@ -394,22 +451,6 @@ var AppDB = (() => {
       } catch (err) {
         console.warn('[DB] Cloud save warning:', err.message);
       }
-    };
-
-    if (immediate) {
-      if (_saveDebounceTimers[u]) {
-        clearTimeout(_saveDebounceTimers[u]);
-        delete _saveDebounceTimers[u];
-      }
-      return await doCloudSave();
-    }
-
-    // Debounce saves smoothly (Supabase has no write quota, but 5-second debounce keeps network light)
-    if (!_saveDebounceTimers[u]) {
-      _saveDebounceTimers[u] = setTimeout(() => {
-        delete _saveDebounceTimers[u];
-        doCloudSave();
-      }, 5000);
     }
   }
 
@@ -649,29 +690,8 @@ var AppDB = (() => {
   }
 
   function listenToMailbox(username, callback) {
-    if (!username || typeof callback !== 'function') return () => {};
-    const u = username.trim();
-
-    const fetchMails = async () => {
-      if (!isNetworkActive()) return;
-      try {
-        const rows = await _api(`mailbox?recipient=eq.${encodeURIComponent(u)}&select=id,recipient,sender,subject,message,amount,item,type,status,created_at&order=created_at.desc&limit=25`);
-        const normalized = (rows || []).map(r => ({
-          ...r,
-          timestamp: Number(r.created_at || r.timestamp || Date.now()),
-          created_at: Number(r.created_at || r.timestamp || Date.now())
-        }));
-        callback(normalized);
-      } catch (e) {}
-    };
-
-    fetchMails();
-    const interval = registerPollingInterval(setInterval(fetchMails, 45000));
-    const unsubResume = onActiveResume(() => fetchMails());
-    return () => {
-      unregisterPollingInterval(interval);
-      unsubResume();
-    };
+    // Egress Zero-Traffic: Mailbox background polling disabled permanently
+    return () => {};
   }
 
   async function updateMailStatus(mailId, status) {
@@ -1388,33 +1408,8 @@ var AppDB = (() => {
   }
 
   function listenToCorporations(callback) {
-    if (typeof callback !== 'function') return () => {};
-    let isSubscribed = true;
-    let lastJson = null;
-
-    const fetchCorps = async () => {
-      if (!isSubscribed) return;
-      if (!isNetworkActive()) return;
-      try {
-        const list = await getCorporationsList();
-        const currentJson = JSON.stringify(list);
-        if (isSubscribed && currentJson !== lastJson) {
-          lastJson = currentJson;
-          callback(list);
-        }
-      } catch (e) {}
-    };
-
-    fetchCorps();
-    const interval = registerPollingInterval(setInterval(fetchCorps, 60000));
-    const unsubResume = onActiveResume(() => {
-      if (isSubscribed) fetchCorps();
-    });
-    return () => {
-      isSubscribed = false;
-      unregisterPollingInterval(interval);
-      unsubResume();
-    };
+    // Egress Zero-Traffic: Corporations polling replaced with local supply chain engine
+    return () => {};
   }
 
   async function joinCorporation(corpId, username) {
@@ -1810,27 +1805,10 @@ var AppDB = (() => {
   }
 
   async function getLiveAuctionsList() {
-    try {
-      const rows = await _api('live_auctions?status=eq.active&order=ends_at.asc');
-      return (rows || []).map(r => ({
-        id: r.id,
-        title: r.title,
-        description: r.description,
-        seller: r.seller,
-        startingPrice: Number(r.starting_price),
-        currentBid: Number(r.current_bid),
-        highestBidder: r.highest_bidder,
-        bidCount: Number(r.bid_count || 0),
-        status: r.status,
-        endsAt: Number(r.ends_at)
-      }));
-    } catch (e) {
-      return [];
-    }
+    return [];
   }
 
   function listenToLiveAuctions(callback) {
-    getLiveAuctionsList().then(callback);
     return () => {};
   }
 
@@ -2324,6 +2302,7 @@ var AppDB = (() => {
     getPlayerState,
     savePlayerState,
     syncProgressToCloud,
+    flushStateToCloudOnExit,
     getLeaderboard,
 
     // Transfers

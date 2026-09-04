@@ -1448,12 +1448,10 @@
 
             <!-- Quick Action Buttons 2-Column Grid -->
             <div class="grid grid-cols-2 gap-1.5">
-              <button id="btn-open-mailbox" title="صندوق البريد والرسائل"
+              <button id="btn-open-industry-quick" onclick="window.UI.switchTab('industry')" title="مجمع الصناعات وسلاسل الإمداد"
                 class="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-emerald-400 hover:text-emerald-300 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5 relative cursor-pointer">
-                <i class="fa-solid fa-envelope text-xs"></i>
-                <span>البريد</span>
-                <span id="mailbox-unread-badge"
-                  class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[9px] font-black flex items-center justify-center animate-bounce">0</span>
+                <i class="fa-solid fa-industry text-xs"></i>
+                <span>الصناعات</span>
               </button>
               
               <button id="btn-ingame-guide" title="دليل الملياردير"
@@ -1580,15 +1578,11 @@
             <span>الاستيراد والتصدير</span>
             <span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold ml-auto">جديد 🚢</span>
           </button>
-          <button data-tab="auctions"
+          <button data-tab="industry"
             class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-gavel w-4 text-center text-amber-500"></i>
-            <span>المزادات والصفقات الخاصة</span>
-          </button>
-          <button data-tab="corporations"
-            class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-building w-4 text-center text-indigo-500"></i>
-            <span>الشركات المشتركة</span>
+            <i class="fa-solid fa-industry w-4 text-center text-emerald-400"></i>
+            <span>مجمع الصناعات وسلاسل الإمداد</span>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold ml-auto">إمبراطورية 🏭</span>
           </button>
           <button data-tab="blackmarket"
             class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
@@ -1660,12 +1654,10 @@
               <span>فيسبوك</span>
               <span id="badge-mobile-facebook" class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
             </a>
-            <button id="btn-open-mailbox-mobile" title="صندوق البريد والرسائل"
-              class="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 relative shrink-0">
-              <i class="fa-solid fa-envelope text-[10px]"></i>
-              <span>البريد</span>
-              <span id="mailbox-unread-badge-mobile"
-                class="hidden absolute -top-1 -right-1 w-3.5 h-3.5 bg-rose-500 text-white rounded-full text-[8px] font-black flex items-center justify-center animate-bounce">0</span>
+            <button id="btn-open-industry-mobile" onclick="window.UI.switchTab('industry')" title="مجمع الصناعات وسلاسل الإمداد"
+              class="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0 cursor-pointer">
+              <i class="fa-solid fa-industry text-[10px]"></i>
+              <span>الصناعات</span>
             </button>
             <button id="btn-ingame-guide-mobile" title="دليل الملياردير"
               class="px-2 py-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0">
@@ -2665,104 +2657,61 @@
         </div>
       </section>
 
-      <!-- TAB 12: المزادات والصفقات الخاصة (AUCTIONS) -->
-      <section id="panel-auctions" class="game-panel hidden space-y-6">
-        <!-- Auctions Header -->
-        <div
-          class="glass-panel p-6 rounded-2xl border border-amber-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl"
-          style="background: radial-gradient(ellipse at 80% 0%, rgba(245,158,11,0.12), rgba(15,23,42,0.95)) !important;">
-          <div>
-            <div class="flex items-center gap-2 mb-1.5">
-              <i class="fa-solid fa-gavel text-amber-500 text-xl animate-pulse"></i>
-              <h2 class="text-lg font-black text-white">المزادات والصفقات الخاصة المفتوحة</h2>
-              <button class="btn-panel-help text-slate-400 hover:text-yellow-400 transition ml-2" data-help="panel-auctions" title="شرح الصفحة">
-                <i class="fa-solid fa-circle-question text-sm"></i>
-              </button>
+      <!-- TAB: مجمع الصناعات وسلاسل الإمداد (INDUSTRIAL CONGLOMERATE) -->
+      <section id="panel-industry" class="game-panel hidden space-y-6">
+        
+        <!-- Clean Header -->
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl">
+              <i class="fa-solid fa-industry"></i>
             </div>
-            <p class="text-xs text-slate-400">هنا يعرض المسؤولون والمدراء صفقات ومقتنيات حصرية محدودة. سارع بالشراء قبل
-              نفاد الكمية!</p>
-          </div>
-          <div class="px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl flex items-center gap-3">
             <div>
-              <span class="text-[10px] text-slate-500 block">رصيد الكاش الحالي</span>
-              <span id="auction-player-cash" class="numbers-font text-yellow-500 font-extrabold text-sm">0 EGP</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Auction Items Grid -->
-        <div class="glass-panel p-6 rounded-2xl border border-slate-800">
-          <h3 class="text-md font-bold text-white mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-fire text-amber-500 text-sm"></i>
-            <span>أحدث الصفقات النادرة المطروحة</span>
-          </h3>
-          <div id="auctions-shelf" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <!-- Dyn Shelf for Auctions -->
-            <div class="col-span-full text-center text-slate-500 text-xs py-12">لا توجد مزادات أو صفقات نشطة حالياً.
-            </div>
-          </div>
-        </div>
-
-        <!-- Live Sync Auctions Section -->
-        <div class="glass-panel p-6 rounded-2xl border border-yellow-500/20 bg-slate-950/40">
-          <h3 class="text-md font-bold text-white mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-gavel text-yellow-500 text-sm animate-pulse"></i>
-            <span>المزادات الحية والمباشرة (Live Sync Auctions)</span>
-          </h3>
-          <div id="live-auctions-shelf" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="col-span-full text-center text-slate-500 text-xs py-8">لا توجد مزادات حية متاحة حالياً. يرجى
-              الانتظار لطرح مزاد جديد من قبل الإدارة.</div>
-          </div>
-        </div>
-
-        <!-- V2: Acquisition & Bankruptcy Market Section -->
-        <div class="glass-panel p-6 rounded-2xl border border-rose-500/20 bg-slate-950/40">
-          <h3 class="text-md font-bold text-white mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-hand-holding-dollar text-rose-500 text-sm animate-pulse"></i>
-            <span>سوق الاستحواذ وإنقاذ الشركات المتعثرة (Acquisitions)</span>
-          </h3>
-          <div id="acquisition-market-shelf" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="col-span-full text-center text-slate-500 text-xs py-8">لا توجد شركات متعثرة معروضة للاستحواذ حالياً.</div>
-          </div>
-        </div>
-
-        <!-- Custom Collectibles Inventory -->
-        <div class="glass-panel p-6 rounded-2xl border border-slate-800">
-          <h3 class="text-md font-bold text-white mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-gem text-yellow-500 text-sm"></i>
-            <span>مقتنياتك وممتلكاتك النادرة الخاصة (Collectibles)</span>
-          </h3>
-          <div id="player-collectibles" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <!-- Dyn list of collectibles bought by the player -->
-            <div class="col-span-full text-center text-slate-500 text-xs py-8">لم تقم بشراء أي مقتنيات نادرة من المزادات
-              حتى الآن.</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- V2: TAB 12: الشركات المشتركة (CORPORATIONS) -->
-      <section id="panel-corporations" class="game-panel hidden space-y-6">
-        <!-- Header -->
-        <div class="glass-panel p-6 rounded-2xl border border-indigo-500/20 bg-slate-950/40 relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl"></div>
-          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
-            <div>
-              <h2 class="text-xl font-black text-white flex items-center gap-2">
-                <i class="fa-solid fa-building text-indigo-500 animate-pulse"></i>
-                <span>الشركات المشتركة والتحالفات القابضة (Corporations)</span>
-                <button class="btn-panel-help text-slate-400 hover:text-yellow-400 transition ml-2" data-help="panel-corporations" title="شرح الصفحة">
+              <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <span>مجمع الصناعات وسلاسل الإمداد</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">إنتاج محلي</span>
+                <button class="btn-panel-help text-slate-400 hover:text-yellow-400 transition ml-2 cursor-pointer" data-help="panel-industry" title="شرح الصفحة">
                   <i class="fa-solid fa-circle-question text-sm"></i>
                 </button>
               </h2>
-              <p class="text-slate-400 text-xs mt-1">تأسيس تحالفات مالية بالمليارات، شراء مشاريع سيادية عملاقة وتوزيع الأرباح على المساهمين.</p>
+              <p class="text-xs text-slate-400 mt-0.5">امتلك سلاسل تصنيع متكاملة من المواد الخام حتى المنتج النهائي والتصدير الدولي</p>
             </div>
-            <div id="corp-header-badge" class="px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 text-xs font-bold">تأسيس بتكلفة 100 مليار</div>
+          </div>
+          <div class="flex items-center gap-3 w-full md:w-auto">
+            <div class="px-3.5 py-2 bg-slate-950/60 border border-slate-800 rounded-xl text-right flex-1 md:flex-initial">
+              <span class="text-[10px] text-slate-400 block font-bold">عوائد الإنتاج الجاهزة للبيع</span>
+              <span id="industry-total-pending-cash" class="numbers-font text-yellow-400 font-extrabold text-sm sm:text-base">0 EGP</span>
+            </div>
           </div>
         </div>
 
-        <!-- Main Content Area (Dynamic) -->
-        <div id="corporations-main-container" class="space-y-6">
-          <div class="col-span-full text-center text-slate-500 text-xs py-8">جاري تحميل الشركات المشتركة...</div>
+        <!-- Sector Tabs (Clean Horizontal Bar) -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-800" id="industry-sector-tabs">
+          <button data-sector="food" class="industry-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+            <i class="fa-solid fa-wheat-awn text-emerald-400"></i>
+            <span>الصناعات الغذائية</span>
+          </button>
+          <button data-sector="auto" class="industry-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800">
+            <i class="fa-solid fa-car text-blue-400"></i>
+            <span>صناعة السيارات</span>
+          </button>
+          <button data-sector="semiconductor" class="industry-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800">
+            <i class="fa-solid fa-microchip text-purple-400"></i>
+            <span>أشباه الموصلات</span>
+          </button>
+          <button data-sector="petrochemical" class="industry-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800">
+            <i class="fa-solid fa-oil-well text-amber-400"></i>
+            <span>البتروكيماويات</span>
+          </button>
+          <button data-sector="aerospace" class="industry-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800">
+            <i class="fa-solid fa-shuttle-space text-rose-400"></i>
+            <span>صناعات الفضاء</span>
+          </button>
+        </div>
+
+        <!-- Dynamic Active Sector Content Area -->
+        <div id="industry-sector-container" class="space-y-6">
+          <!-- Populated cleanly by ui.js -->
         </div>
       </section>
 
@@ -3976,15 +3925,10 @@
       <i class="fa-solid fa-ship text-base text-cyan-400"></i>
       <span>استيراد وتصدير</span>
     </button>
-    <button data-tab="auctions"
+    <button data-tab="industry"
       class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-      <i class="fa-solid fa-gavel text-base text-amber-500"></i>
-      <span>المزادات</span>
-    </button>
-    <button data-tab="corporations"
-      class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-      <i class="fa-solid fa-building text-base text-indigo-500"></i>
-      <span>الشركات</span>
+      <i class="fa-solid fa-industry text-base text-emerald-400"></i>
+      <span>المصانع</span>
     </button>
     <button data-tab="blackmarket"
       class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
@@ -4014,40 +3958,6 @@
         class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-lg transition">
         إعادة التحميل
       </button>
-    </div>
-  </div>
-
-  
-  <!-- Facebook floating button replaced with non-obstructive header and sidebar navigation -->
-
-  <!-- ==================== V2: MAILBOX & DIRECT MESSAGES MODAL ==================== -->
-  <div id="mailbox-modal"
-    class="hidden fixed inset-0 z-[120] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
-    <div
-      class="glass-panel w-full max-w-2xl max-h-[85vh] flex flex-col rounded-3xl border border-emerald-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
-      <!-- Header -->
-      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-        <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-            <i class="fa-solid fa-envelope text-lg"></i>
-          </div>
-          <div>
-            <h2 class="text-lg font-black text-white">صندوق البريد والإشعارات</h2>
-            <p class="text-xs text-slate-400">تابع الإشعارات الرسمية، عروض العمل ودعوات الشراكة الاستثمارية</p>
-          </div>
-        </div>
-        <button id="btn-close-mailbox-modal"
-          class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <!-- Inbox Panel -->
-      <div id="mailbox-inbox-panel" class="flex-1 overflow-y-auto py-4 space-y-3">
-        <!-- Dynamic Inbox Items -->
-        <div class="text-center text-slate-500 text-xs py-12">لا توجد رسائل أو طلبات جديدة في صندوقك.</div>
-      </div>
     </div>
   </div>
 
@@ -4822,8 +4732,8 @@
   <!-- Standalone Direct Force Reload Engine (Guarantees immediate reload modal without cache issues) -->
   <script>
     (function() {
-      const SUPABASE_URL = 'https://rhuiaxrodnbjohowdlpo.supabase.co';
-      const SUPABASE_ANON_KEY = 'sb_publishable_O2L34RTDz6k2UQvrkrNA_Q_t5Nty9t7';
+      const SUPABASE_URL = 'https://rasalmal.online';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08';
       let isOverlayActive = false;
 
       async function checkForceReloadDirectly() {

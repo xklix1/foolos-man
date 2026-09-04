@@ -1558,6 +1558,8 @@ const UIController = (() => {
       renderCorporationsTab();
     } else if (tabId === 'trade') {
       renderTradePanel();
+    } else if (tabId === 'industry') {
+      renderIndustryPanel();
     }
 
     // Immediate toggle of jail-overlay based on selected tab
@@ -1769,6 +1771,7 @@ const UIController = (() => {
       else if (activeTab === 'taxes') renderTaxesTab();
       else if (activeTab === 'blackmarket') updateBlackMarketCooldownsInDOM();
       else if (activeTab === 'trade') updateTradeShipmentsInDOM();
+      else if (activeTab === 'industry') updateIndustryStockInDOM();
 
       // Real-time live update for cashflow breakdown modal if open
       const cfModal = document.getElementById('cashflow-breakdown-modal');
@@ -1932,6 +1935,9 @@ const UIController = (() => {
         break;
       case 'trade':
         renderTradePanel();
+        break;
+      case 'industry':
+        renderIndustryPanel();
         break;
     }
     if (window.currentLang === 'en') {
@@ -3914,18 +3920,13 @@ const UIController = (() => {
         <br>• <strong>مجلس المشترين والأسواق</strong>: اختر أفضل مشترٍ دولي يقدم أعلى هامش ربح (+35% إلى +313%) ووقع عقد التصدير.
         <br>• <strong>الشحن وتحصيل الأرباح</strong>: تتبع شحنة التصدير حتى تصل للمشتري، ثم حصّل أرباح الصفقة ومكاسب التجارة الدولية.`
       },
-      'panel-auctions': {
-        title: 'المزادات والصفقات الحصرية',
-        desc: `الصفقات النادرة:
-        <br>• يعرض مسؤولو النظام صفقات ومقتنيات حصرية محدودة.
-        <br>• تتم المزايدة والتداول عليها مباشرة، وتنقل الملكية تلقائياً لمن يدفع السعر الأعلى.`
-      },
-      'panel-corporations': {
-        title: 'الشركات المشتركة والتحالفات',
-        desc: `العمل الاستثماري الجماعي:
-        <br>• أسس أو انضم لشركة قابضة مشتركة بالتعاون مع لاعبين آخرين.
-        <br>• ساهم بالأموال لتنفيذ مشاريع سيادية عملاقة تدر أرباحاً هائلة بالثانية.
-        <br>• يتم تقسيم الأرباح بنسبة مساهمة كل لاعب في رأس مال الشركة القابضة.`
+      'panel-industry': {
+        title: 'مجمع الصناعات وسلاسل الإمداد',
+        desc: `سلاسل الإمداد والتصنيع المحلي:
+        <br>• <strong>5 قطاعات صناعية كبرى</strong>: الصناعات الغذائية، صناعة السيارات، أشباه الموصلات والذكاء الاصطناعي، البتروكيماويات، وصناعات الفضاء.
+        <br>• <strong>4 مراحل متكاملة</strong>: المواد الخام ➔ المعالجة والتصنيع ➔ التجميع والتقنية ➔ الأسطول اللوجستي والنقل.
+        <br>• <strong>عنق الزجاجة (Bottleneck)</strong>: إنتاجك مقيد بأضعف مرحلة؛ قم بترقية المراحل بتوازن لتعظيم التدفق الإنتاجي.
+        <br>• <strong>البيع أو التصدير</strong>: يمكنك بيع المنتجات الجاهزة فوراً للكاش، أو تحويلها لمستودعك الجمركي لتصديرها بأعلى هامش ربح.`
       },
       'panel-blackmarket': {
         title: 'السوق السوداء وعالم الظلال',
@@ -3997,6 +3998,15 @@ const UIController = (() => {
           switchTradeSubtab(tab);
         });
       }
+    });
+
+    // Industrial Conglomerate Sector Tabs Binding
+    const industryTabButtons = document.querySelectorAll('#industry-sector-tabs .industry-tab-btn');
+    industryTabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sec = btn.getAttribute('data-sector');
+        switchIndustrySector(sec);
+      });
     });
 
     setupV2UIHandlers();
@@ -5561,44 +5571,19 @@ const UIController = (() => {
 
     // Public Chat listener removed to conserve Firebase read/write quota (replaced with Facebook Community)
 
-    // 3. V2 Mailbox Listener
-    const unsubMail = AppDB.listenToMailbox(username, mails => {
-      renderMailbox(mails);
-    });
-    if (typeof unsubMail === 'function') activeListeners.push(unsubMail);
-
-    // 4. V2 Live Auctions Listener
-    const unsubAuctions = AppDB.listenToLiveAuctions(list => {
-      renderLiveAuctions(list);
-    });
-    if (typeof unsubAuctions === 'function') activeListeners.push(unsubAuctions);
-
-    // 5. V2 Corporations Listener
-    const unsubCorporations = AppDB.listenToCorporations(list => {
-      window.lastCorporationsCache = list;
-      
-      // Update the player's active corporation cache
-      const curUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
-      if (curUser) {
-        const myCorp = list.find(c => c.members && c.members.includes(curUser));
-        window.activeCorporationState = myCorp || null;
-      } else {
-        window.activeCorporationState = null;
-      }
-      
-      // If currently on corporations tab, redraw it only if user is not actively typing
-      if (activeTab === 'corporations') {
-        const container = document.getElementById('corporations-main-container');
-        const activeEl = document.activeElement;
-        const isUserTyping = activeEl && container && container.contains(activeEl) && 
-          (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
-        
-        if (!isUserTyping) {
-          renderCorporationsTab();
+    // Zero-Egress Local-First Strategy:
+    // Cloud sync occurs ONLY:
+    // 1) On page close/reload via keepalive beacon.
+    // 2) Every 30 minutes of continuous gameplay.
+    // 3) On explicit logout or manual save button.
+    if (!window._cloudBackupInterval) {
+      window._cloudBackupInterval = setInterval(() => {
+        if (GameEngine.activeUsername && GameEngine.state) {
+          console.log('[AutoSync] 30-minute periodic cloud backup checkpoint');
+          AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
         }
-      }
-    });
-    if (typeof unsubCorporations === 'function') activeListeners.push(unsubCorporations);
+      }, 30 * 60 * 1000);
+    }
 
 
 
@@ -9765,35 +9750,13 @@ const UIController = (() => {
       });
     }
 
-    const btnMailbox = document.getElementById('btn-open-mailbox');
-    const btnMailboxMobile = document.getElementById('btn-open-mailbox-mobile');
-    const btnCloseMailbox = document.getElementById('btn-close-mailbox-modal');
-    const mailboxModal = document.getElementById('mailbox-modal');
-
-    if (btnMailbox && mailboxModal) {
-      btnMailbox.addEventListener('click', () => {
-        mailboxModal.classList.remove('hidden');
-        switchMailboxTab('inbox');
-      });
+    const btnIndustryQuick = document.getElementById('btn-open-industry-quick');
+    const btnIndustryMobile = document.getElementById('btn-open-industry-mobile');
+    if (btnIndustryQuick) {
+      btnIndustryQuick.addEventListener('click', () => switchTab('industry'));
     }
-    if (btnMailboxMobile && mailboxModal) {
-      btnMailboxMobile.addEventListener('click', () => {
-        mailboxModal.classList.remove('hidden');
-        switchMailboxTab('inbox');
-      });
-    }
-    if (btnCloseMailbox && mailboxModal) {
-      btnCloseMailbox.addEventListener('click', () => {
-        mailboxModal.classList.add('hidden');
-      });
-    }
-
-    const btnMailTabInbox = document.getElementById('btn-mail-tab-inbox');
-    if (btnMailTabInbox) {
-      btnMailTabInbox.addEventListener('click', () => {
-        const inboxPanel = document.getElementById('mailbox-inbox-panel');
-        if (inboxPanel) inboxPanel.classList.remove('hidden');
-      });
+    if (btnIndustryMobile) {
+      btnIndustryMobile.addEventListener('click', () => switchTab('industry'));
     }
 
     const btnCloseProfile = document.getElementById('btn-close-profile-modal');
@@ -13335,8 +13298,12 @@ const UIController = (() => {
 
           <div class="bg-slate-950/60 rounded-xl p-2.5 border border-slate-800/60 space-y-1.5 text-xs">
             <div class="flex justify-between items-center text-slate-400">
-              <span>تكلفة استيراد الوحدة:</span>
+              <span>سعر استيراد الوحدة:</span>
               <span class="font-black text-white numbers-font">${c.unitCost.toLocaleString()} EGP</span>
+            </div>
+            <div class="flex justify-between items-center text-slate-400 text-[10px]">
+              <span>شحن جمركي وميناء (5%):</span>
+              <span class="font-bold text-amber-300 numbers-font">+${Math.floor(c.unitCost * 0.05).toLocaleString()} EGP</span>
             </div>
             <div class="flex justify-between items-center text-slate-400">
               <span>سعر البيع المتوقع:</span>
@@ -13358,8 +13325,8 @@ const UIController = (() => {
             </div>
           </div>
           <div class="flex justify-between text-[11px] text-slate-400 pb-1">
-            <span>التكلفة الإجمالية:</span>
-            <span id="trade-total-cost-${key}" class="font-black text-cyan-300 numbers-font">${c.unitCost.toLocaleString()} EGP</span>
+            <span>التكلفة الكلية (شامل 5% شحن وجمارك):</span>
+            <span id="trade-total-cost-${key}" class="font-black text-cyan-300 numbers-font">${(c.unitCost + Math.floor(c.unitCost * 0.05)).toLocaleString()} EGP</span>
           </div>
           <button id="btn-import-order-${key}" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 cursor-pointer">
             <i class="fa-solid fa-plane-departure"></i>
@@ -13378,7 +13345,9 @@ const UIController = (() => {
         qtyInput.addEventListener('input', () => {
           let val = parseInt(qtyInput.value) || 1;
           if (val < 1) val = 1;
-          costPreview.textContent = `${(val * c.unitCost).toLocaleString()} EGP`;
+          const bCost = val * c.unitCost;
+          const fee = Math.floor(bCost * 0.05);
+          costPreview.textContent = `${(bCost + fee).toLocaleString()} EGP`;
         });
       }
 
@@ -13489,6 +13458,8 @@ const UIController = (() => {
 
     buyers.forEach(buyer => {
       const bonusPct = Math.round((buyer.priceMult - 1.0) * 100);
+      const buyerActiveOrders = (tradeInfo.activeExports || []).filter(e => e.buyerId === buyer.id && !e.claimed).length;
+      const isBuyerFull = buyerActiveOrders >= 2;
 
       const card = document.createElement('div');
       card.className = 'glass-panel p-5 rounded-2xl border border-slate-800 hover:border-amber-500/30 transition-all flex flex-col justify-between space-y-4 shadow-lg';
@@ -13507,7 +13478,7 @@ const UIController = (() => {
         const inStock = warehouse[k] || 0;
         const isDemanded = buyer.demands.includes(k);
         const selected = (preselectedExportCommodity === k) || (inStock > 0 && !preselectedExportCommodity);
-        const demandMark = isDemanded ? ` (+${bonusPct}% علاوة طلب)` : '';
+        const demandMark = isDemanded ? ` (+${bonusPct}% علاوة طلب)` : ' (-20% خصم عدم توفر طلب)';
         optionsHtml += `<option value="${k}" ${selected ? 'selected' : ''}>${item.name} [متوفر: ${inStock}]${demandMark}</option>`;
       });
 
@@ -13515,15 +13486,20 @@ const UIController = (() => {
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <span class="text-2xl">${buyer.flag}</span>
+              ${buyer.flag ? `<span class="text-2xl">${buyer.flag}</span>` : ''}
               <div>
                 <h4 class="font-black text-white text-sm">${buyer.name}</h4>
                 <span class="text-[10px] text-slate-400">${buyer.region}</span>
               </div>
             </div>
-            <span class="px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-black text-[10px] numbers-font">
-              +${bonusPct}% علاوة سعرية
-            </span>
+            <div class="flex flex-col items-end gap-1">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-black text-[10px] numbers-font">
+                +${bonusPct}% علاوة سعرية
+              </span>
+              <span class="text-[9px] px-2 py-0.5 rounded border ${isBuyerFull ? 'bg-rose-500/20 text-rose-300 border-rose-500/30 font-bold' : 'bg-slate-900 text-slate-400 border-slate-800'} numbers-font">
+                عقود جارية: ${buyerActiveOrders}/2
+              </span>
+            </div>
           </div>
 
           <div class="space-y-1 text-xs">
@@ -13566,9 +13542,9 @@ const UIController = (() => {
           </div>
         </div>
 
-        <button id="btn-sign-export-${buyer.id}" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer">
+        <button id="btn-sign-export-${buyer.id}" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer ${isBuyerFull ? 'opacity-50 cursor-not-allowed' : ''}" ${isBuyerFull ? 'disabled' : ''}>
           <i class="fa-solid fa-file-contract"></i>
-          <span>توقيع عقد التصدير والشحن ✈️</span>
+          <span>${isBuyerFull ? 'الحد الأقصى للعقود الجارية (2/2) ⚠️' : 'توقيع عقد التصدير والشحن ✈️'}</span>
         </button>
       `;
 
@@ -13587,14 +13563,14 @@ const UIController = (() => {
         if (!comm) return;
         const qty = parseInt(qtyEl.value) || 1;
         const isDemanded = buyer.demands.includes(commKey);
-        const mult = isDemanded ? buyer.priceMult : 1.0;
+        const mult = isDemanded ? buyer.priceMult : 0.80;
         const avgSellPrice = Math.floor(((comm.baseSellMin + comm.baseSellMax) / 2) * mult);
         const totalRev = avgSellPrice * qty;
         const totalProfit = totalRev - (comm.unitCost * qty);
 
         durationEl.textContent = formatTradeDuration(comm.exportDurationSec);
-        payoutEl.textContent = `~ ${totalRev.toLocaleString()} EGP`;
-        profitEl.textContent = `+${totalProfit.toLocaleString()} EGP (${Math.round((totalProfit / (comm.unitCost * qty)) * 100)}%)`;
+        payoutEl.textContent = `~ ${totalRev.toLocaleString()} EGP ${isDemanded ? '' : '(-20% خصم)'}`;
+        profitEl.textContent = `${totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString()} EGP (${Math.round((totalProfit / (comm.unitCost * qty)) * 100)}%)`;
       }
 
       selEl.addEventListener('change', updateCalculator);
@@ -13803,6 +13779,568 @@ const UIController = (() => {
     }
   }
 
+  // ==========================================
+  // ==========================================
+  // INDUSTRIAL CONGLOMERATE CONTROLLER (PREMIUM & STREAMLINED UI/UX)
+  // ==========================================
+  let currentIndustrySector = 'food';
+  let currentIndustryUpgradeMultiplier = '1';
+
+  function formatFaIcon(icon) {
+    if (!icon) return 'fa-solid fa-industry';
+    icon = icon.trim();
+    if (icon.startsWith('fa-solid') || icon.startsWith('fa-brands') || icon.startsWith('fa-regular')) {
+      return icon;
+    }
+    return 'fa-solid ' + icon;
+  }
+
+  function switchIndustrySector(sectorId) {
+    if (GameEngine && GameEngine.INDUSTRIAL_SECTORS && GameEngine.INDUSTRIAL_SECTORS[sectorId]) {
+      currentIndustrySector = sectorId;
+      playMenuSound('click');
+      renderIndustryPanel();
+    }
+  }
+
+  function setIndustryUpgradeMultiplier(mult) {
+    currentIndustryUpgradeMultiplier = mult;
+    playMenuSound('click');
+    renderIndustryPanel();
+  }
+
+  function updateIndustryStockInDOM() {
+    if (!GameEngine || typeof GameEngine.getIndustrySectorState !== 'function') return;
+    if (activeTab !== 'industry') return;
+
+    const sectors = GameEngine.INDUSTRIAL_SECTORS;
+    if (!sectors) return;
+
+    let totalPendingCash = 0;
+    Object.keys(sectors).forEach(sKey => {
+      try {
+        const info = GameEngine.getIndustrySectorState(sKey);
+        if (info && info.state && info.state.unlocked) {
+          const ready = Math.floor(info.state.readyStock || 0);
+          const val = (ready * (info.definition.product.baseValue || 0));
+          totalPendingCash += val;
+
+          // Update tab stock badges
+          const tabBadge = document.getElementById(`industry-tab-badge-${sKey}`);
+          if (tabBadge) {
+            if (ready > 0) {
+              tabBadge.textContent = `${ready.toLocaleString()}`;
+              tabBadge.className = 'text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 numbers-font';
+            } else {
+              tabBadge.textContent = '';
+              tabBadge.className = 'hidden';
+            }
+          }
+        }
+      } catch (e) {}
+    });
+
+    const pendingCashEl = document.getElementById('industry-total-pending-cash');
+    if (pendingCashEl) pendingCashEl.textContent = `${totalPendingCash.toLocaleString()} EGP`;
+
+    // Active Sector In-Place Live Updates
+    const activeInfo = GameEngine.getIndustrySectorState(currentIndustrySector);
+    if (!activeInfo || !activeInfo.state || !activeInfo.state.unlocked) return;
+
+    const readyUnits = Math.floor(activeInfo.state.readyStock || 0);
+    const pendingRev = readyUnits * (activeInfo.definition.product.baseValue || 0);
+
+    const unitsEl = document.getElementById('industry-active-stock-units');
+    if (unitsEl) unitsEl.textContent = readyUnits.toLocaleString();
+
+    const capEl = document.getElementById('industry-active-stock-cap');
+    if (capEl) capEl.textContent = `${activeInfo.siloCapacity.toLocaleString()} وحدة`;
+
+    const fullBadge = document.getElementById('industry-stock-full-badge');
+    if (fullBadge) {
+      if (activeInfo.isStorageFull) {
+        fullBadge.classList.remove('hidden');
+      } else {
+        fullBadge.classList.add('hidden');
+      }
+    }
+
+    const revEl = document.getElementById('industry-active-stock-rev');
+    if (revEl) revEl.textContent = `${pendingRev.toLocaleString()} EGP`;
+
+    const sellBtn = document.getElementById('btn-industry-sell-cash');
+    if (sellBtn) {
+      const label = sellBtn.querySelector('.btn-label');
+      if (label) {
+        label.textContent = readyUnits > 0 
+          ? `بيع فوري نقداً (+${pendingRev.toLocaleString()} EGP)` 
+          : 'بيع فوري نقداً';
+      }
+      if (readyUnits <= 0) {
+        sellBtn.setAttribute('disabled', 'true');
+        sellBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        sellBtn.removeAttribute('disabled');
+        sellBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    const exportBtn = document.getElementById('btn-industry-transfer-export');
+    if (exportBtn) {
+      const unitsPerCont = activeInfo.unitsPerContainer || 10;
+      const possibleContainers = Math.floor(readyUnits / unitsPerCont);
+      const labelEl = exportBtn.querySelector('.btn-export-label');
+      if (labelEl) {
+        labelEl.textContent = `(${unitsPerCont} وحدة/حاوية | متاح: ${possibleContainers})`;
+      }
+      if (possibleContainers <= 0) {
+        exportBtn.setAttribute('disabled', 'true');
+        exportBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        exportBtn.removeAttribute('disabled');
+        exportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+  }
+
+  function renderIndustryPanel(targetSectorId) {
+    if (!GameEngine || typeof GameEngine.getIndustrySectorState !== 'function') return;
+    if (targetSectorId && GameEngine.INDUSTRIAL_SECTORS && GameEngine.INDUSTRIAL_SECTORS[targetSectorId]) {
+      currentIndustrySector = targetSectorId;
+    }
+
+    const sectors = GameEngine.INDUSTRIAL_SECTORS;
+    if (!sectors) return;
+
+    // 1. Render Enhanced Sector Tabs
+    const tabsContainer = document.getElementById('industry-sector-tabs');
+    if (tabsContainer) {
+      let tabsHtml = '';
+      Object.keys(sectors).forEach(sKey => {
+        const sec = sectors[sKey];
+        const info = GameEngine.getIndustrySectorState(sKey);
+        const isUnlocked = info && info.state && info.state.unlocked;
+        const ready = isUnlocked ? Math.floor(info.state.readyStock || 0) : 0;
+        const isActive = (sKey === currentIndustrySector);
+
+        let badgeHtml = '';
+        if (!isUnlocked) {
+          badgeHtml = '<span class="text-[9px] text-slate-500"><i class="fa-solid fa-lock text-[8px]"></i></span>';
+        } else if (ready > 0) {
+          badgeHtml = `<span id="industry-tab-badge-${sKey}" class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 numbers-font">${ready.toLocaleString()}</span>`;
+        } else {
+          badgeHtml = `<span id="industry-tab-badge-${sKey}" class="hidden"></span>`;
+        }
+
+        const activeClasses = isActive 
+          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm shadow-emerald-500/10' 
+          : 'bg-slate-900/60 text-slate-400 hover:text-white border-slate-800 hover:border-slate-700';
+
+        const displayName = sec.shortName || sec.name.split(' ')[0];
+
+        tabsHtml += `
+          <button data-sector="${sKey}" class="industry-tab-btn px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 border whitespace-nowrap cursor-pointer ${activeClasses}">
+            <i class="${formatFaIcon(sec.icon)} text-sm"></i>
+            <span>${displayName}</span>
+            ${badgeHtml}
+          </button>
+        `;
+      });
+      tabsContainer.innerHTML = tabsHtml;
+
+      // Rebind click events
+      tabsContainer.querySelectorAll('.industry-tab-btn').forEach(btn => {
+        btn.onclick = () => {
+          const s = btn.getAttribute('data-sector');
+          switchIndustrySector(s);
+        };
+      });
+    }
+
+    // 2. Global Total Pending Cash
+    let totalPendingCash = 0;
+    Object.keys(sectors).forEach(sKey => {
+      try {
+        const info = GameEngine.getIndustrySectorState(sKey);
+        if (info && info.state && info.state.unlocked) {
+          const ready = Math.floor(info.state.readyStock || 0);
+          totalPendingCash += (ready * (info.definition.product.baseValue || 0));
+        }
+      } catch (e) {}
+    });
+
+    const pendingCashEl = document.getElementById('industry-total-pending-cash');
+    if (pendingCashEl) pendingCashEl.textContent = `${totalPendingCash.toLocaleString()} EGP`;
+
+    // 3. Render Active Sector View
+    const container = document.getElementById('industry-sector-container');
+    if (!container) return;
+
+    const activeInfo = GameEngine.getIndustrySectorState(currentIndustrySector);
+    if (!activeInfo) return;
+
+    const secDef = activeInfo.definition;
+    const secState = activeInfo.state;
+
+    // View A: Locked Sector Setup
+    if (!secState.unlocked) {
+      const canUnlock = activeInfo.canUnlock;
+      const curCash = (GameEngine.state && GameEngine.state.cash) || 0;
+      const curBank = (GameEngine.state && GameEngine.state.bank) || 0;
+      const curNetWorth = (GameEngine.state && GameEngine.state.netWorth) || 0;
+      const totalFunds = curCash + curBank;
+
+      container.innerHTML = `
+        <div class="glass-panel p-8 rounded-2xl border border-slate-800 bg-slate-900/40 text-center max-w-2xl mx-auto space-y-6">
+          <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-3xl mx-auto">
+            <i class="${formatFaIcon(secDef.icon)}"></i>
+          </div>
+          <div>
+            <h3 class="text-xl font-black text-white mb-2">${secDef.name}</h3>
+            <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">${secDef.desc}</p>
+          </div>
+          
+          <div class="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-5 max-w-md mx-auto text-right space-y-2.5 text-xs">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">المنتج المصنّع:</span>
+              <span class="font-bold text-white flex items-center gap-1.5"><i class="${formatFaIcon(secDef.product.icon)} text-emerald-400"></i> ${secDef.product.name}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">سعر بيع الوحدة:</span>
+              <span class="font-bold text-yellow-400 numbers-font">${secDef.product.baseValue.toLocaleString()} EGP</span>
+            </div>
+            <div class="flex justify-between items-center border-t border-slate-800 pt-2.5">
+              <span class="text-slate-400">صافي الثروة المطلوب:</span>
+              <span class="font-bold ${curNetWorth >= secDef.unlockNetWorth ? 'text-emerald-400' : 'text-rose-400'} numbers-font">
+                ${secDef.unlockNetWorth.toLocaleString()} EGP
+                ${curNetWorth >= secDef.unlockNetWorth ? ' ✓' : ' ✗'}
+              </span>
+            </div>
+            <div class="flex justify-between items-center border-t border-slate-800 pt-2.5">
+              <span class="text-slate-300 font-bold">تكلفة الترخيص الصناعي:</span>
+              <span class="font-black ${totalFunds >= secDef.unlockCost ? 'text-emerald-400' : 'text-rose-400'} numbers-font">
+                ${secDef.unlockCost.toLocaleString()} EGP
+                ${totalFunds >= secDef.unlockCost ? ' ✓' : ' ✗'}
+              </span>
+            </div>
+          </div>
+
+          <button id="btn-unlock-industry-sector" class="px-8 py-3.5 rounded-xl font-bold transition text-xs flex items-center gap-2 mx-auto ${canUnlock ? 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer shadow-lg shadow-emerald-600/20' : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'}" ${canUnlock ? '' : 'disabled'}>
+            <i class="fa-solid fa-file-signature"></i>
+            <span>${canUnlock ? `تأسيس وترخيص القطاع (${secDef.unlockCost.toLocaleString()} EGP)` : 'المتطلبات المالية غير مكتملة بعد'}</span>
+          </button>
+        </div>
+      `;
+
+      const unlockBtn = document.getElementById('btn-unlock-industry-sector');
+      if (unlockBtn && canUnlock) {
+        unlockBtn.onclick = () => {
+          try {
+            playMenuSound('click');
+            GameEngine.unlockIndustrySector(currentIndustrySector);
+            showToast('ترخيص صناعي', `تم تأسيس مجمع "${secDef.name}" بنجاح وبدء خطوط الإنتاج.`, 'success');
+            renderIndustryPanel();
+          } catch (err) {
+            showToast('تعذر الترخيص', err.message, 'error');
+          }
+        };
+      }
+      return;
+    }
+
+    // View B: Unlocked Sector (High Polish UI/UX)
+    const flowRatePerMin = (activeInfo.outputRatePerSec * 60).toFixed(0);
+    const flowRatePerSec = (activeInfo.outputRatePerSec || 0).toFixed(2);
+    const readyUnits = Math.floor(secState.readyStock || 0);
+    const pendingRevenue = readyUnits * secDef.product.baseValue;
+
+    // Check trade warehouse capacity
+    let warehouseFree = 30;
+    try {
+      const tradeState = GameEngine.getTradeCompanyState();
+      const cap = tradeState.warehouseCapacity || 30;
+      let used = 0;
+      Object.values(tradeState.warehouse || {}).forEach(v => used += (v || 0));
+      warehouseFree = Math.max(0, cap - used);
+    } catch (e) {}
+
+    const unitsPerCont = activeInfo.unitsPerContainer || 10;
+    const possibleContainers = Math.floor(readyUnits / unitsPerCont);
+
+    const stageLevels = {
+      stage1: Number(secState.stage1 || 1),
+      stage2: Number(secState.stage2 || 1),
+      stage3: Number(secState.stage3 || 1),
+      logistics: Number(secState.logistics || 1)
+    };
+    const bottleneckStageKey = activeInfo.bottleneckStage;
+
+    // Flow Stepper Pills
+    const stepKeys = ['stage1', 'stage2', 'stage3', 'logistics'];
+    let stepperHtml = '';
+    stepKeys.forEach((stKey, idx) => {
+      const stDef = secDef.stages[stKey];
+      const lvl = stageLevels[stKey];
+      const isBn = (stKey === bottleneckStageKey && lvl < 50);
+
+      stepperHtml += `
+        <div class="flex items-center gap-2 p-2.5 rounded-xl border ${isBn ? 'bg-amber-500/10 border-amber-500/30' : 'bg-slate-950/60 border-slate-800'} text-right">
+          <div class="w-7 h-7 rounded-lg ${isBn ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-800 text-slate-300'} flex items-center justify-center text-xs shrink-0">
+            <i class="${formatFaIcon(stDef.icon)}"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <span class="text-[10px] text-slate-400 block truncate font-medium">${idx + 1}. ${stDef.name}</span>
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-xs font-bold ${isBn ? 'text-amber-300' : 'text-white'} numbers-font">Lvl ${lvl}</span>
+              ${isBn ? '<span class="text-[8px] text-amber-400 font-black">عنق الزجاجة</span>' : '<span class="text-[9px] text-emerald-400 font-bold numbers-font">OK</span>'}
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    // 4 Stages Cards
+    let stagesHtml = '';
+    stepKeys.forEach((stKey) => {
+      const stDef = secDef.stages[stKey];
+      const curLvl = stageLevels[stKey];
+      const isBottleneck = (stKey === bottleneckStageKey && curLvl < 50);
+      const pct = Math.min(100, Math.round((curLvl / 50) * 100));
+
+      const multi = GameEngine.calculateStageMultiUpgrade(currentIndustrySector, stKey, currentIndustryUpgradeMultiplier);
+      const isMaxed = curLvl >= 50;
+
+      let btnText = '';
+      if (isMaxed) {
+        btnText = 'مكتمل (الحد الأقصى 50)';
+      } else {
+        btnText = `ترقية +${multi.count} مستويات (${multi.cost.toLocaleString()} EGP)`;
+      }
+
+      const btnClasses = isMaxed
+        ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+        : multi.canAfford
+          ? (isBottleneck 
+              ? 'bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-black shadow-md shadow-amber-500/10 cursor-pointer' 
+              : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 cursor-pointer')
+          : 'bg-slate-800/80 text-slate-400 border border-slate-800 cursor-not-allowed opacity-60';
+
+      stagesHtml += `
+        <div class="glass-panel p-5 rounded-2xl border ${isBottleneck ? 'border-amber-500/40 bg-amber-500/5' : 'border-slate-800 bg-slate-900/40'} flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-2.5">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl ${isBottleneck ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-slate-800/80 text-slate-300 border border-slate-700/60'} flex items-center justify-center text-sm">
+                  <i class="${formatFaIcon(stDef.icon)}"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-white">${stDef.name}</h4>
+                  <span class="text-[10px] text-slate-400">المستوى: <strong class="${isBottleneck ? 'text-amber-300' : 'text-emerald-400'} numbers-font">${curLvl}</strong>/50</span>
+                </div>
+              </div>
+              ${isBottleneck ? '<span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">عنق الزجاجة ⚠️</span>' : ''}
+            </div>
+            <p class="text-[11px] text-slate-400 leading-relaxed min-h-[32px]">${stDef.desc}</p>
+          </div>
+
+          <div class="space-y-2.5 pt-2 border-t border-slate-800/60">
+            <div class="space-y-1">
+              <div class="flex justify-between text-[10px] text-slate-400">
+                <span>الكفاءة</span>
+                <span class="numbers-font font-bold text-slate-300">${pct}%</span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                <div class="h-full ${isBottleneck ? 'bg-amber-500' : 'bg-emerald-500'} rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+              </div>
+            </div>
+
+            <button class="btn-upgrade-industry-stage w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${btnClasses}" data-stage="${stKey}" ${isMaxed || !multi.canAfford ? 'disabled' : ''}>
+              <i class="fa-solid fa-arrow-up text-[10px]"></i>
+              <span>${btnText}</span>
+            </button>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = `
+      <!-- Product & Live Stock Hero Panel -->
+      <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-slate-800 bg-slate-900/50 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
+        
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center text-emerald-400 text-3xl shrink-0">
+            <i class="${formatFaIcon(secDef.product.icon)}"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <h3 class="text-base sm:text-lg font-black text-white">${secDef.product.name}</h3>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">جاهز للتسويق والتصدير</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+              <span>وتيرة الإنتاج: <strong class="text-cyan-400 numbers-font font-bold">${flowRatePerMin}</strong> وحدة/دقيقة (${flowRatePerSec}/ثانية)</span>
+              <span>سعر الوحدة: <strong class="text-yellow-400 numbers-font font-bold">${secDef.product.baseValue.toLocaleString()} EGP</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+          <div class="bg-slate-950/70 border border-slate-800/80 px-4 py-3 rounded-xl text-right sm:min-w-[210px]">
+            <span class="text-[10px] text-slate-400 block font-medium">سعة صوامع التخزين والمخزون</span>
+            <div class="numbers-font text-white font-black text-lg sm:text-xl my-0.5 flex items-baseline gap-1">
+              <span id="industry-active-stock-units">${readyUnits.toLocaleString()}</span>
+              <span class="text-xs text-slate-400 font-normal">/ <span id="industry-active-stock-cap">${activeInfo.siloCapacity.toLocaleString()}</span> وحدة</span>
+            </div>
+            <div id="industry-stock-full-badge" class="${activeInfo.isStorageFull ? '' : 'hidden'} mb-1">
+              <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">الصوامع ممتلئة ⚠️ توقف الإنتاج</span>
+            </div>
+            <span class="text-[10px] text-yellow-400 block numbers-font">القيمة: <strong id="industry-active-stock-rev">${pendingRevenue.toLocaleString()} EGP</strong></span>
+          </div>
+
+          <div class="flex flex-col gap-2 flex-1 sm:flex-initial">
+            <button id="btn-industry-sell-cash" class="px-4 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-md shadow-yellow-500/10 flex items-center justify-center gap-2 cursor-pointer ${readyUnits <= 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${readyUnits <= 0 ? 'disabled' : ''}>
+              <i class="fa-solid fa-sack-dollar text-xs"></i>
+              <span class="btn-label">${readyUnits > 0 ? `بيع فوري نقداً (+${pendingRevenue.toLocaleString()} EGP)` : 'بيع فوري نقداً'}</span>
+            </button>
+
+            <button id="btn-industry-transfer-export" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${possibleContainers <= 0 || warehouseFree <= 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${possibleContainers <= 0 || warehouseFree <= 0 ? 'disabled' : ''}>
+              <i class="fa-solid fa-ship text-xs"></i>
+              <span>تحويل للتصدير الدولي</span>
+              <span class="btn-export-label text-[10px] text-slate-400 font-normal">(${unitsPerCont} وحدة/حاوية | متاح: ${possibleContainers})</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Supply Chain Flow Stepper -->
+      <div class="glass-panel p-4 rounded-2xl border border-slate-800 bg-slate-900/40 space-y-3">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-timeline text-emerald-400 text-sm"></i>
+            <span class="text-xs font-bold text-white">سلسلة تدفق خطوط الإنتاج (Supply Flow)</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-lg border ${activeInfo.efficiencyPct >= 95 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'} font-bold numbers-font">كفاءة التدفق: ${activeInfo.efficiencyPct}%</span>
+          </div>
+          ${bottleneckStageKey && stageLevels[bottleneckStageKey] < 50 ? `
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1.5">
+                <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
+                <span>عنق الزجاجة: ${secDef.stages[bottleneckStageKey].name}</span>
+              </span>
+              <button id="btn-industry-fix-bottleneck" class="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-bolt text-[10px]"></i>
+                <span>حل عنق الزجاجة ⚡</span>
+              </button>
+            </div>
+          ` : `
+            <span class="text-[11px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1.5">
+              <i class="fa-solid fa-check text-[10px]"></i>
+              <span>كافة المراحل متوازنة وبتدفق مستقر</span>
+            </span>
+          `}
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+          ${stepperHtml}
+        </div>
+      </div>
+
+      <!-- 4 Stages Grid & Multiplier Selector -->
+      <div class="space-y-3">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-black text-white flex items-center gap-2">
+              <i class="fa-solid fa-sitemap text-emerald-400"></i>
+              <span>مراحل وخطوط الإنتاج الأربعة</span>
+            </h3>
+            <span class="text-[11px] text-slate-400">التطوير المتوازن يمنع اختناق المصنع ويعظّم وتيرة إنتاج السلع</span>
+          </div>
+
+          <!-- Clean Multiplier Pills -->
+          <div class="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800">
+            <span class="text-[10px] text-slate-400 px-2 font-bold">مضاعف الترقية:</span>
+            <button data-mult="1" class="industry-mult-btn px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${currentIndustryUpgradeMultiplier === '1' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}">x1</button>
+            <button data-mult="5" class="industry-mult-btn px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${currentIndustryUpgradeMultiplier === '5' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}">x5</button>
+            <button data-mult="10" class="industry-mult-btn px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${currentIndustryUpgradeMultiplier === '10' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}">x10</button>
+            <button data-mult="max" class="industry-mult-btn px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${currentIndustryUpgradeMultiplier === 'max' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}">Max</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          ${stagesHtml}
+        </div>
+      </div>
+    `;
+
+    // Bind Multiplier Selector Buttons
+    container.querySelectorAll('.industry-mult-btn').forEach(btn => {
+      btn.onclick = () => {
+        const mult = btn.getAttribute('data-mult');
+        setIndustryUpgradeMultiplier(mult);
+      };
+    });
+
+    // Bind Quick Fix Bottleneck Button
+    const fixBottleneckBtn = document.getElementById('btn-industry-fix-bottleneck');
+    if (fixBottleneckBtn && bottleneckStageKey) {
+      fixBottleneckBtn.onclick = () => {
+        try {
+          playMenuSound('click');
+          const res = GameEngine.upgradeIndustryStage(currentIndustrySector, bottleneckStageKey, 1);
+          showToast('حل عنق الزجاجة ⚡', `تمت ترقية "${secDef.stages[bottleneckStageKey].name}" إلى المستوى ${res.newLevel} وانطلق تدفق الإنتاج!`, 'success');
+          renderIndustryPanel();
+        } catch (err) {
+          showToast('تعذر الترقية', err.message, 'error');
+        }
+      };
+    }
+
+    // Bind Stage Upgrade Buttons
+    container.querySelectorAll('.btn-upgrade-industry-stage').forEach(btn => {
+      btn.onclick = () => {
+        const stKey = btn.getAttribute('data-stage');
+        try {
+          playMenuSound('click');
+          const res = GameEngine.upgradeIndustryStage(currentIndustrySector, stKey, currentIndustryUpgradeMultiplier);
+          showToast('ترقية خط الإنتاج ⚙️', `تمت ترقية المرحلة بمقدار +${res.upgradedLevels} (المستوى ${res.newLevel})`, 'success');
+          renderIndustryPanel();
+        } catch (err) {
+          showToast('تعذر الترقية', err.message, 'error');
+        }
+      };
+    });
+
+    // Bind Sell Cash Button
+    const sellCashBtn = document.getElementById('btn-industry-sell-cash');
+    if (sellCashBtn) {
+      sellCashBtn.onclick = () => {
+        try {
+          playCasinoSound('win');
+          const res = GameEngine.collectIndustryRevenue(currentIndustrySector);
+          showToast('تم البيع نقداً 💰', `تم بيع ${res.units.toLocaleString()} وحدة وإضافة +${res.totalPayout.toLocaleString()} EGP إلى رصيدك.`, 'success');
+          renderIndustryPanel();
+          renderDashboard();
+        } catch (err) {
+          showToast('تعذر البيع', err.message, 'error');
+        }
+      };
+    }
+
+    // Bind Transfer to Export Button
+    const transferExportBtn = document.getElementById('btn-industry-transfer-export');
+    if (transferExportBtn) {
+      transferExportBtn.onclick = () => {
+        try {
+          playMenuSound('click');
+          const res = GameEngine.transferIndustryGoodsToTradeExport(currentIndustrySector);
+          showToast('تم التحويل للتصدير 🚢📦', `تم تحويل ${res.transferred} حاوية بنجاح إلى مستودع التصدير كبضاعة "${res.commodityName}".`, 'success');
+          renderIndustryPanel();
+        } catch (err) {
+          showToast('تعذر التحويل', err.message, 'error');
+        }
+      };
+    }
+  }
+
   return {
     init,
     switchTab,
@@ -13853,7 +14391,11 @@ const UIController = (() => {
     // Trade & Export Company Exports
     renderTradePanel,
     switchTradeSubtab,
-    updateTradeShipmentsInDOM
+    updateTradeShipmentsInDOM,
+
+    // Industrial Conglomerate Exports
+    renderIndustryPanel,
+    switchIndustrySector
   };
 })();
 

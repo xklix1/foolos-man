@@ -743,14 +743,103 @@ const GameEngine = (() => {
   };
 
   const TRADE_BUYERS = [
-    { id: 'dubai_retail_group', name: 'مجموعة تجزئة دبي القابضة 🇦🇪', region: 'الخليج العربي', demands: ['fashion_brands', 'espresso_coffee'], priceMult: 1.05 },
-    { id: 'berlin_energy_consortium', name: 'كونسورتيوم برلين للطاقة المتجددة 🇩🇪', region: 'الاتحاد الأوروبي', demands: ['solar_panels', 'industrial_turbines'], priceMult: 1.10 },
-    { id: 'tokyo_tech_giants', name: 'تكتل شركات التكنولوجيا بطوكيو 🇯🇵', region: 'شرق آسيا', demands: ['ai_quantum_chips', 'auto_spare_parts'], priceMult: 1.15 },
-    { id: 'london_bullion_vault', name: 'خزائن وبنك لندن للمعادن 🇬🇧', region: 'المملكة المتحدة', demands: ['gold_bullion_bars', 'luxury_cars'], priceMult: 1.12 },
-    { id: 'singapore_logistics_hub', name: 'مؤسسة التجارة الحرة بسنغافورة 🇸🇬', region: 'جنوب شرق آسيا', demands: ['auto_spare_parts', 'fashion_brands', 'espresso_coffee'], priceMult: 1.08 },
-    { id: 'cairo_sovereign_procurement', name: 'الهيئة العامة للتوريدات والمشروعات 🇪🇬', region: 'شمال أفريقيا', demands: ['solar_panels', 'luxury_cars', 'industrial_turbines'], priceMult: 1.06 },
-    { id: 'zurich_private_clients', name: 'نخبة عملاء المصارف الخاصة بزيورخ 🇨🇭', region: 'سويسرا', demands: ['gold_bullion_bars', 'ai_quantum_chips'], priceMult: 1.18 }
+    { id: 'dubai_retail_group', name: 'مجموعة تجزئة دبي القابضة', flag: '🇦🇪', region: 'الخليج العربي', demands: ['fashion_brands', 'espresso_coffee'], priceMult: 1.05 },
+    { id: 'berlin_energy_consortium', name: 'كونسورتيوم برلين للطاقة المتجددة', flag: '🇩🇪', region: 'الاتحاد الأوروبي', demands: ['solar_panels', 'industrial_turbines'], priceMult: 1.10 },
+    { id: 'tokyo_tech_giants', name: 'تكتل شركات التكنولوجيا بطوكيو', flag: '🇯🇵', region: 'شرق آسيا', demands: ['ai_quantum_chips', 'auto_spare_parts'], priceMult: 1.15 },
+    { id: 'london_bullion_vault', name: 'خزائن وبنك لندن للمعادن', flag: '🇬🇧', region: 'المملكة المتحدة', demands: ['gold_bullion_bars', 'luxury_cars'], priceMult: 1.12 },
+    { id: 'singapore_logistics_hub', name: 'مؤسسة التجارة الحرة بسنغافورة', flag: '🇸🇬', region: 'جنوب شرق آسيا', demands: ['auto_spare_parts', 'fashion_brands', 'espresso_coffee'], priceMult: 1.08 },
+    { id: 'cairo_sovereign_procurement', name: 'الهيئة العامة للتوريدات والمشروعات', flag: '🇪🇬', region: 'شمال أفريقيا', demands: ['solar_panels', 'luxury_cars', 'industrial_turbines'], priceMult: 1.06 },
+    { id: 'zurich_private_clients', name: 'نخبة عملاء المصارف الخاصة بزيورخ', flag: '🇨🇭', region: 'سويسرا', demands: ['gold_bullion_bars', 'ai_quantum_chips'], priceMult: 1.18 }
   ];
+
+  // --- مجمع الصناعات وسلاسل الإمداد (Industrial Supply Chain Empire) ---
+  const INDUSTRIAL_SECTORS = {
+    food: {
+      id: 'food',
+      shortName: 'الصناعات الغذائية',
+      name: 'الصناعات الغذائية وسلاسل الإمداد الزراعي 🌾',
+      desc: 'سلسلة تبدأ من استصلاح المزارع والبساتين ثم وحدات المعالجة والمطاحن وصولاً للتعبئة وأسطول النقل المبرد.',
+      icon: 'fa-solid fa-wheat-awn',
+      color: 'emerald',
+      unlockCost: 1500000,
+      unlockNetWorth: 3000000,
+      stages: {
+        stage1: { id: 'stage1', name: 'المزارع والبساتين (المادة الخام)', baseCost: 120000, icon: 'fa-solid fa-wheat-awn', desc: 'إنتاج القمح والفاكهة والبن الخام' },
+        stage2: { id: 'stage2', name: 'المطاحن ووحدات التجفيف والمعالجة', baseCost: 350000, icon: 'fa-solid fa-mortar-pestle', desc: 'طحن ومعالجة وتنقية المحاصيل' },
+        stage3: { id: 'stage3', name: 'مجمع التعبئة والصناعات الغذائية', baseCost: 950000, icon: 'fa-solid fa-boxes-packing', desc: 'خطوط إنتاج وتعليب السلع الجاهزة' },
+        logistics: { id: 'logistics', name: 'أسطول شاحنات التوزيع المبردة', baseCost: 450000, icon: 'fa-solid fa-truck-fast', desc: 'تسريع دورة التوزيع وتوسيع صوامع التخزين' }
+      },
+      product: { name: 'سلع تموينية وغذائية فاخرة', baseValue: 450, icon: 'fa-solid fa-box', tradeCommodityId: 'espresso_coffee', unitsPerContainer: 20 }
+    },
+    auto: {
+      id: 'auto',
+      shortName: 'صناعة السيارات',
+      name: 'تجميع وتصنيع السيارات والمركبات 🚗',
+      desc: 'سلسلة تعدين الحديد واستخراج المطاط الطبيعي وصولاً لمصانع المحركات والتجميع الآلي وناقلات السيارات.',
+      icon: 'fa-solid fa-car-side',
+      color: 'amber',
+      unlockCost: 15000000,
+      unlockNetWorth: 30000000,
+      stages: {
+        stage1: { id: 'stage1', name: 'مناجم الحديد ومزارع المطاط الطبيعي', baseCost: 1200000, icon: 'fa-solid fa-cubes', desc: 'توفير خامات الصلب والبوليمرات' },
+        stage2: { id: 'stage2', name: 'مسابك المحركات ومكابس الهياكل', baseCost: 3500000, icon: 'fa-solid fa-gears', desc: 'سباكة الشاسيهات وتصنيع المحركات' },
+        stage3: { id: 'stage3', name: 'خط التجميع الروبوتي الذكي للسيارات', baseCost: 9500000, icon: 'fa-solid fa-robot', desc: 'تركيب الأنظمة الإلكترونية والتشطيب' },
+        logistics: { id: 'logistics', name: 'أسطول ناقلات السيارات العملاقة', baseCost: 4200000, icon: 'fa-solid fa-truck-moving', desc: 'شحن أساطيل السيارات وتوسيع ساحات التخزين' }
+      },
+      product: { name: 'سيارات سيدان وتجارية حديثة', baseValue: 5200, icon: 'fa-solid fa-car', tradeCommodityId: 'auto_spare_parts', unitsPerContainer: 8 }
+    },
+    semiconductor: {
+      id: 'semiconductor',
+      shortName: 'أشباه الموصلات',
+      name: 'الرقائق وأشباه الموصلات وسيرفرات AI 💻',
+      desc: 'استخلاص رمال السيليكون فائق النقاوة وتصنيع الدوائر الليزرية وطباعة معالجات ومسارعات الذكاء الاصطناعي.',
+      icon: 'fa-solid fa-microchip',
+      color: 'cyan',
+      unlockCost: 80000000,
+      unlockNetWorth: 150000000,
+      stages: {
+        stage1: { id: 'stage1', name: 'مناجم السيليكون النقي والمعادن النادرة', baseCost: 8500000, icon: 'fa-solid fa-gem', desc: 'تنقية رمال السيليكون إلى نقاوة 99.999%' },
+        stage2: { id: 'stage2', name: 'غرف الطباعة الليزرية الفائقة (Cleanrooms)', baseCost: 24000000, icon: 'fa-solid fa-atom', desc: 'طباعة الدوائر والنانوميتر بدقة فائقة' },
+        stage3: { id: 'stage3', name: 'مجمع تصنيع معالجات وسيرفرات AI', baseCost: 65000000, icon: 'fa-solid fa-server', desc: 'تجميع وتغليف وحدات المعالجة الفائقة' },
+        logistics: { id: 'logistics', name: 'طيران الشحن الدبلوماسي فائق الأمان', baseCost: 28000000, icon: 'fa-solid fa-plane-departure', desc: 'نقل سريع ومؤمن وتوسيع مستودعات الكوانتم' }
+      },
+      product: { name: 'معالجات كوانتم وسيرفرات ذكاء اصطناعي', baseValue: 42000, icon: 'fa-solid fa-microchip', tradeCommodityId: 'ai_quantum_chips', unitsPerContainer: 18 }
+    },
+    petrochemical: {
+      id: 'petrochemical',
+      shortName: 'البتروكيماويات',
+      name: 'الطاقة ومجمعات البتروكيماويات والبلمرة 🛢️',
+      desc: 'حفر آبار النفط والغاز، التكرير المتطور، مجمعات البلمرة لإنتاج البوليمرات الاستراتيجية ووقود الطائرات النفاثة.',
+      icon: 'fa-solid fa-oil-well',
+      color: 'orange',
+      unlockCost: 350000000,
+      unlockNetWorth: 600000000,
+      stages: {
+        stage1: { id: 'stage1', name: 'منصات الحفر وحقول استخراج الخام', baseCost: 45000000, icon: 'fa-solid fa-oil-well', desc: 'ضخ النفط والغاز الطبيعي من الأعماق' },
+        stage2: { id: 'stage2', name: 'مصافي التقطير والتكسير الحراري', baseCost: 120000000, icon: 'fa-solid fa-fire-burner', desc: 'فصل المشتقات البترولية عالية الجودة' },
+        stage3: { id: 'stage3', name: 'مجمع صناعات البلمرة والبوليمرات', baseCost: 320000000, icon: 'fa-solid fa-flask-vial', desc: 'تحويل المشتقات إلى بوليمرات ووقود نفاث' },
+        logistics: { id: 'logistics', name: 'خطوط الأنابيب وشبكات الناقلات البترولية', baseCost: 140000000, icon: 'fa-solid fa-ship', desc: 'ضخ المنتجات وتوسيع صهاريج التخزين الاستراتيجي' }
+      },
+      product: { name: 'بوليمرات ووقود طائرات عالي النقاوة', baseValue: 260000, icon: 'fa-solid fa-gas-pump', tradeCommodityId: 'industrial_turbines', unitsPerContainer: 3 }
+    },
+    aerospace: {
+      id: 'aerospace',
+      shortName: 'صناعات الفضاء',
+      name: 'الصناعات الفضائية والملاحة الجوية 🚀',
+      desc: 'سبائك التيتانيوم والكربون، مصانع المحركات النفاثة والهيدروجينية، أحواض تجميع الصواريخ والمكوك والأقمار.',
+      icon: 'fa-solid fa-rocket',
+      color: 'purple',
+      unlockCost: 1500000000,
+      unlockNetWorth: 3000000000,
+      stages: {
+        stage1: { id: 'stage1', name: 'معامل سبائك التيتانيوم وألياف الكربون', baseCost: 200000000, icon: 'fa-solid fa-shield-halved', desc: 'تجهيز مواد متقدمة تتحمل الضغط والحرارة' },
+        stage2: { id: 'stage2', name: 'مصانع محركات الدفع النفاث والهيدروجين', baseCost: 550000000, icon: 'fa-solid fa-jet-fighter', desc: 'تصنيع توربينات الاحتراق والدفع الصاروخي' },
+        stage3: { id: 'stage3', name: 'حوض تجميع الصواريخ والمكوك والأقمار', baseCost: 1400000000, icon: 'fa-solid fa-satellite', desc: 'تجميع المركبات الفضائية وأنظمة التوجيه' },
+        logistics: { id: 'logistics', name: 'منصات الإطلاق وشبكة التوجيه المداري', baseCost: 650000000, icon: 'fa-solid fa-satellite-dish', desc: 'إطلاق وتوجيه وتوسيع هناجر الصواريخ' }
+      },
+      product: { name: 'مركبات فضائية ومحطات مدارية سيادية', baseValue: 1950000, icon: 'fa-solid fa-rocket', tradeCommodityId: 'gold_bullion_bars', unitsPerContainer: 1 }
+    }
+  };
 
   // --- Initial Default Player State ---
   const INITIAL_STATE = {
@@ -835,6 +924,13 @@ const GameEngine = (() => {
       activeExports: [],
       totalProfitEarned: 0,
       totalShipmentsCompleted: 0
+    },
+    industry: {
+      food: { unlocked: false, stage1: 0, stage2: 0, stage3: 0, logistics: 0, readyStock: 0, totalEarned: 0, totalExported: 0 },
+      auto: { unlocked: false, stage1: 0, stage2: 0, stage3: 0, logistics: 0, readyStock: 0, totalEarned: 0, totalExported: 0 },
+      semiconductor: { unlocked: false, stage1: 0, stage2: 0, stage3: 0, logistics: 0, readyStock: 0, totalEarned: 0, totalExported: 0 },
+      petrochemical: { unlocked: false, stage1: 0, stage2: 0, stage3: 0, logistics: 0, readyStock: 0, totalEarned: 0, totalExported: 0 },
+      aerospace: { unlocked: false, stage1: 0, stage2: 0, stage3: 0, logistics: 0, readyStock: 0, totalEarned: 0, totalExported: 0 }
     },
     workCooldownUntil: 0,
     overtimeCooldownUntil: 0,
@@ -1099,8 +1195,8 @@ const GameEngine = (() => {
     if (globalMarketEvent && (!globalMarketEvent.expiresAt || Date.now() < globalMarketEvent.expiresAt)) {
       return globalMarketEvent;
     }
-    // Synchronized 15-minute global cycle (900,000 ms)
-    const cycleIndex = Math.floor(Date.now() / (15 * 60 * 1000)) % UNIFIED_SCHEDULED_EVENTS.length;
+    // Synchronized 30-minute global cycle (1,800,000 ms)
+    const cycleIndex = Math.floor(Date.now() / (30 * 60 * 1000)) % UNIFIED_SCHEDULED_EVENTS.length;
     return UNIFIED_SCHEDULED_EVENTS[cycleIndex];
   }
 
@@ -1213,6 +1309,26 @@ const GameEngine = (() => {
     state.investments.forEach(inv => {
       worth += inv.investedAmount;
     });
+
+    // Add industrial supply chain infrastructure & inventory value
+    if (state.industry && typeof INDUSTRIAL_SECTORS !== 'undefined') {
+      Object.keys(INDUSTRIAL_SECTORS).forEach(secKey => {
+        const secDef = INDUSTRIAL_SECTORS[secKey];
+        const sec = state.industry[secKey];
+        if (sec && sec.unlocked) {
+          worth += secDef.unlockCost;
+          ['stage1', 'stage2', 'stage3', 'logistics'].forEach(stKey => {
+            const lvl = Number(sec[stKey] || 0);
+            if (lvl > 0 && secDef.stages[stKey]) {
+              worth += Math.floor(secDef.stages[stKey].baseCost * lvl * 1.15);
+            }
+          });
+          if (sec.readyStock > 0) {
+            worth += Math.floor(sec.readyStock * secDef.product.baseValue);
+          }
+        }
+      });
+    }
 
     return worth;
   }
@@ -2126,6 +2242,53 @@ const GameEngine = (() => {
       }
     });
 
+    // 6.9 Industrial Supply Chain Empire (مجمع الصناعات وسلاسل الإمداد): Balanced manufacturing & storage
+    if (state.industry && typeof INDUSTRIAL_SECTORS !== 'undefined') {
+      Object.keys(INDUSTRIAL_SECTORS).forEach(secKey => {
+        const secDef = INDUSTRIAL_SECTORS[secKey];
+        const sec = state.industry[secKey];
+        if (sec && sec.unlocked) {
+          const s1 = Number(sec.stage1 || 0);
+          const s2 = Number(sec.stage2 || 0);
+          const s3 = Number(sec.stage3 || 0);
+          const log = Number(sec.logistics || 0);
+
+          if (s1 > 0 && s2 > 0 && s3 > 0) {
+            const bottleneck = Math.min(s1, s2, s3);
+            const maxStage = Math.max(s1, s2, s3);
+            // Imbalance penalty: if stages are far apart, efficiency drops by up to 35%
+            const balanceFactor = maxStage > 0 ? Math.max(0.65, bottleneck / maxStage) : 1;
+            const logisticsBonus = 1 + (log * 0.15);
+
+            // Silo capacity scales with logistics stage level
+            const siloCapacity = 400 + (log * 80);
+            const currentStock = Number(sec.readyStock || 0);
+
+            if (currentStock < siloCapacity) {
+              const producedPerTick = Math.max(0.02, bottleneck * 0.04 * logisticsBonus * balanceFactor);
+              
+              // Operational & raw materials maintenance cost (6% of manufactured value)
+              const opCost = Math.floor(producedPerTick * secDef.product.baseValue * 0.06);
+              let funded = true;
+              if (opCost > 0) {
+                if ((state.cash || 0) >= opCost) {
+                  state.cash -= opCost;
+                } else if ((state.bank || 0) >= opCost) {
+                  state.bank -= opCost;
+                } else {
+                  funded = false; // Production pauses if working capital is empty
+                }
+              }
+
+              if (funded) {
+                sec.readyStock = Math.min(siloCapacity, currentStock + producedPerTick);
+              }
+            }
+          }
+        }
+      });
+    }
+
     // 7. Unified Stock Market Synchronization (Deterministic & Global for all players)
     if (syncUnifiedStocks()) {
       updates.stockMovement = true;
@@ -2452,6 +2615,14 @@ const GameEngine = (() => {
       state.tradeCompany.activeExports.forEach(exp => {
         if (!exp.delivered && nowSessionMs >= exp.deliveryTime) {
           exp.delivered = true;
+        }
+      });
+
+      // Ensure industry state integrity
+      if (!state.industry) state.industry = {};
+      ['food', 'auto', 'semiconductor', 'petrochemical', 'aerospace'].forEach(sec => {
+        if (!state.industry[sec]) {
+          state.industry[sec] = { unlocked: false, stage1: 0, stage2: 0, stage3: 0, logistics: 0, readyStock: 0, totalEarned: 0, totalExported: 0 };
         }
       });
 
@@ -3911,10 +4082,13 @@ const GameEngine = (() => {
       throw new Error(`سعة المستودع لا تكفي! المتاح للاستيراد: ${tradeInfo.availableSlots} وحدة (تشمل البضاعة المخزنة والشحنات في الطريق).`);
     }
 
-    const totalCost = item.unitCost * quantity;
+    const baseCost = item.unitCost * quantity;
+    const customsAndFreightFee = Math.floor(baseCost * 0.05); // 5% Port customs & freight handling fee
+    const totalCost = baseCost + customsAndFreightFee;
+
     const totalLiquid = (state.cash || 0) + (state.bank || 0);
     if (totalLiquid < totalCost) {
-      throw new Error(`سيولتك غير كافية لتمويل استيراد هذه الشحنة. التكلفة: ${totalCost.toLocaleString()} EGP — المتاح لديك: ${totalLiquid.toLocaleString()} EGP.`);
+      throw new Error(`سيولتك غير كافية لتمويل استيراد هذه الشحنة ورسوم الشحن والجمارك (5%). التكلفة الكلية: ${totalCost.toLocaleString()} EGP — المتاح لديك: ${totalLiquid.toLocaleString()} EGP.`);
     }
 
     // Deduct cost: try cash first, then bank
@@ -3932,6 +4106,8 @@ const GameEngine = (() => {
       commodityId,
       quantity,
       unitCost: item.unitCost,
+      baseCost,
+      customsAndFreightFee,
       totalCost,
       startTime: Date.now(),
       arrivalTime: Date.now() + (item.importDurationSec * 1000),
@@ -3940,7 +4116,7 @@ const GameEngine = (() => {
     };
 
     state.tradeCompany.activeImports.push(importOrder);
-    recordPlayerActivity('استيراد بضاعة 🚢', `بدء استيراد ${quantity} وحدة من "${item.name}" بتكلفة ${totalCost.toLocaleString()} ج.م (تصل خلال ${Math.round(item.importDurationSec / 60)} دقيقة).`, 'trade');
+    recordPlayerActivity('استيراد بضاعة 🚢', `بدء استيراد ${quantity} وحدة من "${item.name}" بتكلفة ${baseCost.toLocaleString()} EGP + ${customsAndFreightFee.toLocaleString()} EGP رسوم جمركية وشحن دولي (تصل خلال ${Math.round(item.importDurationSec / 60)} دقيقة).`, 'trade');
     forceSaveState(true);
 
     return importOrder;
@@ -3955,6 +4131,11 @@ const GameEngine = (() => {
     quantity = parseInt(quantity, 10);
     if (!quantity || quantity <= 0) throw new Error("يرجى تحديد كمية صالحة للتصدير.");
 
+    const activeWithBuyer = (state.tradeCompany.activeExports || []).filter(e => e.buyerId === buyer.id && !e.claimed).length;
+    if (activeWithBuyer >= 2) {
+      throw new Error(`العميل الدولي "${buyer.name}" لديه بالفعل شحنتان جاري تسليمهما (${activeWithBuyer}/2)! انتظر تسليم إحداهما أو تعاقد مع مشتري دولي آخر.`);
+    }
+
     const currentStock = (state.tradeCompany && state.tradeCompany.warehouse && state.tradeCompany.warehouse[commodityId]) || 0;
     if (currentStock < quantity) {
       throw new Error(`المخزون المتوفر في مستودعك (${currentStock} وحدة) أقل من الكمية المطلوبة للتعاقد (${quantity} وحدة).`);
@@ -3965,6 +4146,9 @@ const GameEngine = (() => {
     let basePrice = item.baseSellMin + Math.floor(Math.random() * (item.baseSellMax - item.baseSellMin));
     if (isDemanded) {
       basePrice = Math.floor(basePrice * buyer.priceMult);
+    } else {
+      // Non-demanded goods sold at wholesale discount (-20%)
+      basePrice = Math.floor(item.baseSellMin * 0.80);
     }
     const totalPayout = basePrice * quantity;
     const estProfit = totalPayout - (item.unitCost * quantity);
@@ -4064,6 +4248,295 @@ const GameEngine = (() => {
     };
   }
 
+  // ─────────────────────────────────────────────────────────
+  // 🏭 مجمع الصناعات وسلاسل الإمداد (INDUSTRIAL SUPPLY CHAIN EMPIRE)
+  // ─────────────────────────────────────────────────────────
+  function ensureIndustryState() {
+    if (!state.industry) state.industry = {};
+    Object.keys(INDUSTRIAL_SECTORS).forEach(secKey => {
+      if (!state.industry[secKey]) {
+        state.industry[secKey] = {
+          unlocked: false,
+          stage1: 0,
+          stage2: 0,
+          stage3: 0,
+          logistics: 0,
+          readyStock: 0,
+          totalEarned: 0,
+          totalExported: 0
+        };
+      }
+    });
+  }
+
+  function getIndustrySectorState(sectorId) {
+    ensureIndustryState();
+    const secDef = INDUSTRIAL_SECTORS[sectorId];
+    if (!secDef) throw new Error("القطاع الصناعي المحدد غير صالح.");
+    const secState = state.industry[sectorId];
+
+    const s1 = Number(secState.stage1 || 0);
+    const s2 = Number(secState.stage2 || 0);
+    const s3 = Number(secState.stage3 || 0);
+    const log = Number(secState.logistics || 0);
+
+    const bottleneck = (s1 > 0 && s2 > 0 && s3 > 0) ? Math.min(s1, s2, s3) : 0;
+    const maxStage = Math.max(s1, s2, s3);
+    const balanceFactor = maxStage > 0 ? Math.max(0.65, bottleneck / maxStage) : 1;
+    const logisticsMult = 1 + (log * 0.15);
+    const siloCapacity = 400 + (log * 80);
+    const currentStock = Number(secState.readyStock || 0);
+    const isStorageFull = currentStock >= siloCapacity;
+    const efficiencyPct = Math.round(balanceFactor * 100);
+
+    const outputRatePerSec = bottleneck > 0 ? (bottleneck * 0.04 * logisticsMult * balanceFactor) : 0;
+    const revenueRatePerHour = Math.floor(outputRatePerSec * secDef.product.baseValue * 3600);
+
+    const stageCosts = {};
+    Object.keys(secDef.stages).forEach(stKey => {
+      const curLvl = Number(secState[stKey] || 0);
+      stageCosts[stKey] = Math.floor(secDef.stages[stKey].baseCost * Math.pow(1.65, curLvl));
+    });
+
+    let bottleneckStage = null;
+    if (secState.unlocked && (s1 > 0 || s2 > 0 || s3 > 0)) {
+      if (s1 === 0) bottleneckStage = 'stage1';
+      else if (s2 === 0 || s2 < s1) bottleneckStage = 'stage2';
+      else if (s3 === 0 || s3 < s2) bottleneckStage = 'stage3';
+      else if (log === 0 || log < s3) bottleneckStage = 'logistics';
+    }
+
+    return {
+      id: sectorId,
+      definition: secDef,
+      state: secState,
+      bottleneck,
+      bottleneckStage,
+      outputRatePerSec,
+      revenueRatePerHour,
+      stageCosts,
+      siloCapacity,
+      isStorageFull,
+      efficiencyPct,
+      unitsPerContainer: secDef.product.unitsPerContainer || 10,
+      canUnlock: (state.netWorth >= secDef.unlockNetWorth) && (((state.cash || 0) + (state.bank || 0)) >= secDef.unlockCost)
+    };
+  }
+
+  function unlockIndustrySector(sectorId) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إدارة التراخيص الصناعية.");
+    const info = getIndustrySectorState(sectorId);
+    if (info.state.unlocked) throw new Error("هذا القطاع الصناعي مرخص ومفعل بالفعل.");
+
+    if (state.netWorth < info.definition.unlockNetWorth) {
+      throw new Error(`يتطلب ترخيص هذا القطاع صافي ثروة لا يقل عن ${info.definition.unlockNetWorth.toLocaleString()} EGP.`);
+    }
+
+    const cost = info.definition.unlockCost;
+    const totalFunds = (state.cash || 0) + (state.bank || 0);
+    if (totalFunds < cost) {
+      throw new Error(`تكلفة ترخيص هذا القطاع هي ${cost.toLocaleString()} EGP. رصيدك غير كافٍ.`);
+    }
+
+    if ((state.cash || 0) >= cost) {
+      state.cash -= cost;
+    } else {
+      const rem = cost - (state.cash || 0);
+      state.cash = 0;
+      state.bank -= rem;
+    }
+
+    info.state.unlocked = true;
+    info.state.stage1 = 1;
+    info.state.stage2 = 1;
+    info.state.stage3 = 1;
+    info.state.logistics = 1;
+
+    recordPlayerActivity('ترخيص قطاع صناعي 🏭', `الحصول على رخصة وتأسيس "${info.definition.name}" بتكلفة ${cost.toLocaleString()} EGP`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+
+    return {
+      sectorId,
+      name: info.definition.name,
+      cost
+    };
+  }
+
+  function calculateStageMultiUpgrade(sectorId, stageKey, multiplier = 1) {
+    const info = getIndustrySectorState(sectorId);
+    if (!info || !info.state || !info.state.unlocked) return { count: 0, cost: 0, targetLevel: 0, canAfford: false };
+
+    const stDef = info.definition.stages[stageKey];
+    if (!stDef) return { count: 0, cost: 0, targetLevel: 0, canAfford: false };
+
+    const curLvl = Number(info.state[stageKey] || 0);
+    if (curLvl >= 50) return { count: 0, cost: 0, targetLevel: 50, canAfford: false };
+
+    const totalFunds = (state.cash || 0) + (state.bank || 0);
+    const maxPossible = 50 - curLvl;
+
+    let targetCount = 1;
+    if (multiplier === 'max') {
+      targetCount = maxPossible;
+    } else {
+      targetCount = Math.min(parseInt(multiplier) || 1, maxPossible);
+    }
+
+    let totalCost = 0;
+    let actualCount = 0;
+
+    for (let i = 0; i < targetCount; i++) {
+      const lvlToBuy = curLvl + i;
+      const stepCost = Math.floor(stDef.baseCost * Math.pow(1.65, lvlToBuy));
+      if (multiplier === 'max') {
+        if (actualCount > 0 && (totalCost + stepCost > totalFunds)) {
+          break;
+        }
+      }
+      totalCost += stepCost;
+      actualCount++;
+      if (multiplier === 'max' && totalCost > totalFunds) {
+        break;
+      }
+    }
+
+    if (actualCount === 0) {
+      actualCount = 1;
+      totalCost = Math.floor(stDef.baseCost * Math.pow(1.65, curLvl));
+    }
+
+    return {
+      count: actualCount,
+      cost: totalCost,
+      targetLevel: curLvl + actualCount,
+      canAfford: totalFunds >= totalCost
+    };
+  }
+
+  function upgradeIndustryStage(sectorId, stageKey, multiplier = 1) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك ترقية خطوط الإنتاج.");
+    const info = getIndustrySectorState(sectorId);
+    if (!info.state.unlocked) throw new Error("يجب ترخيص هذا القطاع الصناعي أولاً قبل ترقية خطوطه.");
+
+    const stDef = info.definition.stages[stageKey];
+    if (!stDef) throw new Error("المرحلة الصناعية المحددة غير صالحة.");
+
+    const curLvl = Number(info.state[stageKey] || 0);
+    if (curLvl >= 50) throw new Error("وصلت هذه المرحلة إلى الحد الأقصى من التوسعة (المستوى 50).");
+
+    const multi = calculateStageMultiUpgrade(sectorId, stageKey, multiplier);
+    if (multi.count <= 0) throw new Error("وصلت المرحلة للحد الأقصى أو لا يمكن الترقية.");
+
+    const cost = multi.cost;
+    const totalFunds = (state.cash || 0) + (state.bank || 0);
+    if (totalFunds < cost) {
+      throw new Error(`تكلفة ترقية "${stDef.name}" (+${multi.count} مستويات) هي ${cost.toLocaleString()} EGP. رصيدك لا يكفي.`);
+    }
+
+    if ((state.cash || 0) >= cost) {
+      state.cash -= cost;
+    } else {
+      const rem = cost - (state.cash || 0);
+      state.cash = 0;
+      state.bank -= rem;
+    }
+
+    info.state[stageKey] = curLvl + multi.count;
+    recordPlayerActivity('تطوير خط إنتاج صناعي ⚙️', `ترقية "${stDef.name}" في ${info.definition.name} بمقدار +${multi.count} (إلى المستوى ${info.state[stageKey]}) بتكلفة ${cost.toLocaleString()} EGP`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+
+    return {
+      sectorId,
+      stageKey,
+      upgradedLevels: multi.count,
+      newLevel: info.state[stageKey],
+      cost
+    };
+  }
+
+  function collectIndustryRevenue(sectorId) {
+    const info = getIndustrySectorState(sectorId);
+    if (!info.state.unlocked) throw new Error("هذا القطاع غير مرخص.");
+
+    const units = Math.floor(info.state.readyStock || 0);
+    if (units <= 0) throw new Error("لا يوجد إنتاج جاهز للبيع في مستودع هذا المصنع حالياً.");
+
+    const unitPrice = info.definition.product.baseValue;
+    const totalPayout = units * unitPrice;
+
+    info.state.readyStock -= units;
+    state.cash = (state.cash || 0) + totalPayout;
+    info.state.totalEarned = (info.state.totalEarned || 0) + totalPayout;
+
+    recordPlayerActivity('بيع إنتاج صناعي 💰', `بيع ${units.toLocaleString()} وحدة من "${info.definition.product.name}" نقداً بمبلغ +${totalPayout.toLocaleString()} EGP`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+
+    return {
+      units,
+      unitPrice,
+      totalPayout
+    };
+  }
+
+  function transferIndustryGoodsToTradeExport(sectorId) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إدارة شحنات التصدير.");
+    const info = getIndustrySectorState(sectorId);
+    if (!info.state.unlocked) throw new Error("هذا القطاع غير مرخص.");
+
+    const units = Math.floor(info.state.readyStock || 0);
+    if (units <= 0) throw new Error("لا يوجد مخزون جاهز للتحويل إلى مستودع التصدير الجمركي.");
+
+    const unitsPerContainer = info.unitsPerContainer || 10;
+    const maxContainers = Math.floor(units / unitsPerContainer);
+    if (maxContainers <= 0) {
+      throw new Error(`المخزون المتوفر (${units} وحدة) لا يكفي لتجهيز حاوية تصدير كاملة! يلزم ${unitsPerContainer} وحدة لكل حاوية.`);
+    }
+
+    if (!state.tradeCompany) {
+      state.tradeCompany = { warehouseCapacity: 10, warehouse: {}, activeImports: [], activeExports: [], totalProfitEarned: 0, totalShipmentsCompleted: 0 };
+    }
+    if (!state.tradeCompany.warehouse) state.tradeCompany.warehouse = {};
+
+    let currentWarehouseTotal = 0;
+    Object.keys(state.tradeCompany.warehouse).forEach(k => {
+      currentWarehouseTotal += Number(state.tradeCompany.warehouse[k] || 0);
+    });
+
+    const cap = state.tradeCompany.warehouseCapacity || 10;
+    const availableSpace = Math.max(0, cap - currentWarehouseTotal);
+
+    if (availableSpace <= 0) {
+      throw new Error(`مستودع شركة الاستيراد والتصدير ممتلئ بالكامل (${currentWarehouseTotal}/${cap} حاوية)! قم بتوسيعه أولاً أو بيع البضائع المخزنة.`);
+    }
+
+    const containersToTransfer = Math.min(maxContainers, availableSpace);
+    const unitsDeducted = containersToTransfer * unitsPerContainer;
+    const tradeCommId = info.definition.product.tradeCommodityId || 'espresso_coffee';
+
+    info.state.readyStock -= unitsDeducted;
+    state.tradeCompany.warehouse[tradeCommId] = (state.tradeCompany.warehouse[tradeCommId] || 0) + containersToTransfer;
+    info.state.totalExported = (info.state.totalExported || 0) + containersToTransfer;
+
+    const commDef = TRADE_COMMODITIES[tradeCommId];
+    const commName = commDef ? commDef.name : tradeCommId;
+
+    recordPlayerActivity('شحن لمستودع التصدير 🚢', `تعبئة وشحن ${containersToTransfer} حاوية من "${info.definition.product.name}" (${unitsDeducted} وحدة منتجة) إلى مستودع التصدير كبضاعة "${commName}"!`, 'trade');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+
+    return {
+      transferred: containersToTransfer,
+      unitsDeducted,
+      unitsPerContainer,
+      tradeCommodityId: tradeCommId,
+      commodityName: commName,
+      remainingFactoryStock: info.state.readyStock
+    };
+  }
+
   function sanitizeGameState() {
     if (!state) return;
     const numFields = ['cash', 'bank', 'dirtyCash', 'netWorth', 'xp'];
@@ -4077,7 +4550,7 @@ const GameEngine = (() => {
     });
   }
 
-  function forceSaveState(immediate = true) {
+  function forceSaveState(immediate = false) {
     sanitizeGameState();
     state.lastActiveTimestamp = Date.now();
     state.netWorth = calculateNetWorth();
@@ -4187,9 +4660,24 @@ const GameEngine = (() => {
     buyImportCargo,
     sellExportCargo,
     claimExportProfit,
-    upgradeWarehouse
+    upgradeWarehouse,
+
+    // Industrial Supply Chain Empire Exports
+    INDUSTRIAL_SECTORS,
+    ensureIndustryState,
+    getIndustrySectorState,
+    unlockIndustrySector,
+    calculateStageMultiUpgrade,
+    upgradeIndustryStage,
+    collectIndustryRevenue,
+    transferIndustryGoodsToTradeExport
   };
 })();
 
 // Export globally
-window.GameEngine = GameEngine;
+if (typeof window !== "undefined") {
+  window.GameEngine = GameEngine;
+}
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = GameEngine;
+}
