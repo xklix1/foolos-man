@@ -1083,11 +1083,19 @@ const GameEngine = (() => {
     }
 
     let totalCorpTickProfit = 0;
-    Object.keys(corp.projects).forEach(projId => {
-      if (corp.projects[projId] && CORP_PROJECTS[projId]) {
-        totalCorpTickProfit += CORP_PROJECTS[projId].profitPerTick;
-      }
-    });
+    if (Array.isArray(corp.projects)) {
+      corp.projects.forEach(projId => {
+        if (CORP_PROJECTS[projId]) {
+          totalCorpTickProfit += CORP_PROJECTS[projId].profitPerTick;
+        }
+      });
+    } else if (corp.projects && typeof corp.projects === 'object') {
+      Object.keys(corp.projects).forEach(projId => {
+        if (corp.projects[projId] && CORP_PROJECTS[projId]) {
+          totalCorpTickProfit += CORP_PROJECTS[projId].profitPerTick;
+        }
+      });
+    }
 
     return Math.floor(totalCorpTickProfit * sharePct);
   }
@@ -1875,11 +1883,19 @@ const GameEngine = (() => {
               
               let totalCorpTickProfit = 0;
               if (corp.projects) {
-                Object.keys(corp.projects).forEach(projId => {
-                  if (corp.projects[projId] && CORP_PROJECTS[projId]) {
-                    totalCorpTickProfit += CORP_PROJECTS[projId].profitPerTick;
-                  }
-                });
+                if (Array.isArray(corp.projects)) {
+                  corp.projects.forEach(projId => {
+                    if (CORP_PROJECTS[projId]) {
+                      totalCorpTickProfit += CORP_PROJECTS[projId].profitPerTick;
+                    }
+                  });
+                } else if (typeof corp.projects === 'object') {
+                  Object.keys(corp.projects).forEach(projId => {
+                    if (corp.projects[projId] && CORP_PROJECTS[projId]) {
+                      totalCorpTickProfit += CORP_PROJECTS[projId].profitPerTick;
+                    }
+                  });
+                }
               }
               
               const corpProfitPerSecond = totalCorpTickProfit / 3;

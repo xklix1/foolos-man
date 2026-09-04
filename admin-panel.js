@@ -3573,7 +3573,7 @@
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-850 transition border-b border-slate-800/40';
 
-        const projKeys = Object.keys(corp.projects || {}).filter(k => corp.projects[k] === true);
+        const projKeys = Array.isArray(corp.projects) ? corp.projects : Object.keys(corp.projects || {}).filter(k => corp.projects[k] === true);
         const projCount = projKeys.length;
 
         tr.innerHTML = `
@@ -3670,7 +3670,7 @@
       projGrid.innerHTML = '';
       Object.keys(ADMIN_CORP_MEGA_PROJECTS).forEach(pKey => {
         const pDef = ADMIN_CORP_MEGA_PROJECTS[pKey];
-        const isActive = !!(corp.projects && corp.projects[pKey]);
+        const isActive = Array.isArray(corp.projects) ? corp.projects.includes(pKey) : !!(corp.projects && corp.projects[pKey]);
         const card = document.createElement('div');
         card.className = `p-3 rounded-xl border transition flex flex-col justify-between ${isActive ? 'bg-slate-900 border-violet-500/40 shadow-lg shadow-violet-950/20' : 'bg-slate-950/80 border-slate-800/80 opacity-75'}`;
         card.innerHTML = `

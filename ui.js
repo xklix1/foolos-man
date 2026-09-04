@@ -8512,7 +8512,7 @@ const UIController = (() => {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-850 transition border-b border-slate-800/40';
 
-        const projKeys = Object.keys(corp.projects || {}).filter(k => corp.projects[k] === true);
+        const projKeys = Array.isArray(corp.projects) ? corp.projects : Object.keys(corp.projects || {}).filter(k => corp.projects[k] === true);
         const projNames = projKeys.map(k => {
           const p = GameEngine.CORP_PROJECTS[k];
           return p ? p.name : k;
@@ -11781,8 +11781,9 @@ const UIController = (() => {
     const currentCash = Number(GameEngine.state.cash || 0);
     const currentBank = Number(GameEngine.state.bank || 0);
 
-    if (currentCash < cost && currentBank < cost) {
-      showToast('رصيد غير كافي', 'تأسيس الشركة يتطلب دفع 100 مليار جنيه، ورصيدك الحالي لا يكفي.', 'error');
+    const totalLiquidity = currentCash + currentBank;
+    if (totalLiquidity < cost) {
+      showToast('رصيد غير كافي', 'تأسيس الشركة يتطلب دفع 100 مليار جنيه، ورصيدك الحالي (كاش + بنك) لا يكفي.', 'error');
       return;
     }
 
@@ -11799,7 +11800,8 @@ const UIController = (() => {
     if (currentCash >= cost) {
       cashDeduction = cost;
     } else {
-      bankDeduction = cost;
+      cashDeduction = currentCash;
+      bankDeduction = cost - currentCash;
     }
 
     try {
@@ -11983,7 +11985,7 @@ const UIController = (() => {
   async function kickCorpMemberAction(corpId, targetUsername) {
     if (!confirm(`هل أنت متأكد من طرد "${targetUsername}" من الشركة؟ سيتم احتساب حصته كأموال معلقة في الخزينة.`)) return;
     try {
-      await DB.kickCorpMember(corpId, targetUsername);
+      await AppDB.kickCorpMember(corpId, targetUsername);
       showToast('تم الطرد', `تم طرد ${targetUsername} من الشركة بنجاح.`, 'success');
       renderCorporationsTab();
     } catch (e) {
@@ -11996,7 +11998,7 @@ const UIController = (() => {
     const newDesc = document.getElementById('edit-corp-desc')?.value?.trim();
     if (!newName) { showToast('خطأ', 'يجب إدخال اسم صالح للشركة.', 'error'); return; }
     try {
-      await DB.editCorpInfo(corpId, newName, newDesc);
+      await AppDB.editCorpInfo(corpId, newName, newDesc);
       showToast('تم الحفظ ✅', 'تم تحديث بيانات الشركة بنجاح.', 'success');
       renderCorporationsTab();
     } catch (e) {

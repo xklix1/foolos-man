@@ -967,6 +967,9 @@ var AppDB = (() => {
     if (!name) throw new Error('اسم الشركة مطلوب.');
     if (!founder) throw new Error('اسم المؤسس مطلوب.');
 
+    contributions._level = 1;
+    contributions._roles = { [founder]: 'founder' };
+
     // Embed description in contributions if provided so schema constraint is respected
     if (description) {
       contributions._desc = description;
@@ -997,14 +1000,23 @@ var AppDB = (() => {
       const rows = await _api('corporations?order=treasury.desc');
       return (rows || []).map(r => {
         const contribs = (typeof r.contributions === 'object' && r.contributions) ? r.contributions : {};
+        let totalContributions = 0;
+        Object.keys(contribs).forEach(k => {
+          if (!k.startsWith('_') && typeof contribs[k] === 'number') {
+            totalContributions += contribs[k];
+          }
+        });
         return {
           id: r.id,
           name: r.name,
           founder: r.founder,
           treasury: Number(r.treasury || 0),
+          level: Number(contribs._level || 1),
+          roles: (contribs._roles && typeof contribs._roles === 'object') ? contribs._roles : { [r.founder]: 'founder' },
           members: Array.isArray(r.members) ? r.members : [],
           contributions: contribs,
-          projects: Array.isArray(r.projects) ? r.projects : [],
+          totalContributions,
+          projects: Array.isArray(r.projects) ? r.projects : (r.projects && typeof r.projects === 'object' ? Object.keys(r.projects).filter(k => r.projects[k] === true) : []),
           isAdminCorp: r.is_admin_corp === true,
           desc: contribs._desc || ''
         };
@@ -1152,6 +1164,274 @@ var AppDB = (() => {
       body: JSON.stringify({
         treasury: Number(corp.treasury) - Number(projectCost),
         projects
+      })
+    });
+    return true;
+  }
+
+  async function editCorpInfo(corpId, newName, newDesc) {
+    if (!corpId) throw new Error('معرف الشركة غير صالح.');
+    const rows = await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`);
+    if (!rows || rows.length === 0) throw new Error('الشركة غير موجودة.');
+    const corp = rows[0];
+    const contribs = (typeof corp.contributions === 'object' && corp.contributions) ? { ...corp.contributions } : {};
+    contribs._desc = newDesc || '';
+    await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        name: newName || corp.name,
+        contributions: contribs
+      })
+    });
+    return true;
+  }
+
+  async function transferCorpOwnership(corpId, newFounder) {
+    if (!corpId || !newFounder) throw new Error('بيانات نقل الملكية غير صالحة.');
+    const rows = await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`);
+    if (!rows || rows.length === 0) throw new Error('الشركة غير موجودة.');
+    const corp = rows[0];
+    const members = Array.isArray(corp.members) ? corp.members : [];
+    if (!members.includes(newFounder)) throw new Error('العضو المحدد غير موجود في الشركة.');
+    const contribs = (typeof corp.contributions === 'object' && corp.contributions) ? { ...corp.contributions } : {};
+    contribs._roles = contribs._roles || {};
+    contribs._roles[corp.founder] = 'member';
+    contribs._roles[newFounder] = 'founder';
+    await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        founder: newFounder,
+        contributions: contribs
+      })
+    });
+    return true;
+  }
+
+  async function promoteCorpMember(corpId, targetUsername, role) {
+    if (!corpId || !targetUsername) throw new Error('بيانات الترقية غير صالحة.');
+    const rows = await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`);
+    if (!rows || rows.length === 0) throw new Error('الشركة غير موجودة.');
+    const corp = rows[0];
+    const members = Array.isArray(corp.members) ? corp.members : [];
+    if (!members.includes(targetUsername)) throw new Error('اللاعب ليس عضواً في الشركة.');
+    const contribs = (typeof corp.contributions === 'object' && corp.contributions) ? { ...corp.contributions } : {};
+    contribs._roles = contribs._roles || {};
+    contribs._roles[targetUsername] = role; // 'cfo' or 'member'
+    await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        contributions: contribs
+      })
+    });
+    return true;
+  }
+
+  async function payoutFromCorpTreasury(corpId, targetUsername, amount) {
+    const amt = Math.floor(Number(amount));
+    if (!corpId || !targetUsername || isNaN(amt) || amt <= 0) throw new Error('بيانات التحويل غير صالحة.');
+    const cRows = await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`);
+    if (!cRows || cRows.length === 0) throw new Error('الشركة غير موجودة.');
+    const corp = cRows[0];
+    const members = Array.isArray(corp.members) ? corp.members : [];
+    if (!members.includes(targetUsername)) throw new Error('اللاعب المستهدف ليس عضواً في هذه الشركة.');
+    const treasury = Number(corp.treasury || 0);
+    if (treasury < amt) throw new Error(`خزينة الشركة لا تحتوي على سيولة كافية. المتوفر: ${treasury.toLocaleString()} EGP.`);
+
+    const pRows = await _api(`players?username=eq.${encodeURIComponent(targetUsername)}&select=cash,net_worth`);
+    if (!pRows || pRows.length === 0) throw new Error('حساب اللاعب المستهدف غير موجود في قاعدة البيانات.');
+    const p = pRows[0];
+
+    // Deduct from corp treasury
+    await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        treasury: treasury - amt
+      })
+    });
+
+    // Add to player cash
+    await _api(`players?username=eq.${encodeURIComponent(targetUsername)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        cash: Number(p.cash || 0) + amt,
+        net_worth: Number(p.net_worth || 0) + amt
+      })
+    });
+    return true;
+  }
+
+  async function upgradeCorporationLevel(corpId, cost) {
+    const c = Math.floor(Number(cost));
+    if (!corpId || isNaN(c) || c <= 0) throw new Error('بيانات الترقية غير صالحة.');
+    const rows = await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`);
+    if (!rows || rows.length === 0) throw new Error('الشركة غير موجودة.');
+    const corp = rows[0];
+    const treasury = Number(corp.treasury || 0);
+    if (treasury < c) throw new Error(`رصيد الخزينة (${treasury.toLocaleString()} EGP) لا يكفي لتكلفة الترقية (${c.toLocaleString()} EGP).`);
+
+    const contribs = (typeof corp.contributions === 'object' && corp.contributions) ? { ...corp.contributions } : {};
+    const curLevel = Number(contribs._level || 1);
+    contribs._level = curLevel + 1;
+
+    await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        treasury: treasury - c,
+        contributions: contribs
+      })
+    });
+    return true;
+  }
+
+  async function dissolveCorporation(corpId) {
+    if (!corpId) throw new Error('معرف الشركة غير صالح.');
+    const rows = await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`);
+    if (!rows || rows.length === 0) throw new Error('الشركة غير موجودة.');
+    const corp = rows[0];
+    const treasury = Number(corp.treasury || 0);
+    const contribs = (typeof corp.contributions === 'object' && corp.contributions) ? corp.contributions : {};
+    const members = Array.isArray(corp.members) ? corp.members : [];
+
+    let totalCont = 0;
+    Object.keys(contribs).forEach(k => {
+      if (!k.startsWith('_') && typeof contribs[k] === 'number') totalCont += contribs[k];
+    });
+
+    // Refund treasury to members proportionally
+    if (treasury > 0 && members.length > 0) {
+      for (const m of members) {
+        const myCont = contribs[m] || 0;
+        const share = totalCont > 0 ? (myCont / totalCont) : (m === corp.founder ? 1 : 0);
+        const refund = Math.floor(treasury * share);
+        if (refund > 0) {
+          try {
+            const pRows = await _api(`players?username=eq.${encodeURIComponent(m)}&select=cash,net_worth`);
+            if (pRows && pRows.length > 0) {
+              await _api(`players?username=eq.${encodeURIComponent(m)}`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                  cash: Number(pRows[0].cash || 0) + refund,
+                  net_worth: Number(pRows[0].net_worth || 0) + refund
+                })
+              });
+            }
+          } catch (e) {
+            console.warn('[DB] Failed refund to ' + m, e);
+          }
+        }
+      }
+    }
+
+    await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
+      method: 'DELETE'
+    });
+    return true;
+  }
+
+  async function adminUpdateCorp(corpId, updates = {}) {
+    if (!corpId) throw new Error('معرف الشركة مطلوب.');
+    const rows = await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`);
+    if (!rows || rows.length === 0) throw new Error('الشركة غير موجودة.');
+    const corp = rows[0];
+    const contribs = (typeof corp.contributions === 'object' && corp.contributions) ? { ...corp.contributions } : {};
+    if (updates.level !== undefined) contribs._level = Number(updates.level || 1);
+    if (updates.desc !== undefined) contribs._desc = String(updates.desc || '');
+
+    const patchPayload = { contributions: contribs };
+    if (updates.name) patchPayload.name = String(updates.name).trim();
+
+    await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patchPayload)
+    });
+    return true;
+  }
+
+  async function adminToggleCorpProject(corpId, projectId, forceState) {
+    if (!corpId || !projectId) throw new Error('بيانات المشروع غير صالحة.');
+    const rows = await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`);
+    if (!rows || rows.length === 0) throw new Error('الشركة غير موجودة.');
+    const corp = rows[0];
+    let projects = Array.isArray(corp.projects) ? [...corp.projects] : [];
+    const hasProj = projects.includes(projectId);
+    const enable = (forceState !== undefined) ? Boolean(forceState) : !hasProj;
+
+    if (enable && !hasProj) {
+      projects.push(projectId);
+    } else if (!enable && hasProj) {
+      projects = projects.filter(p => p !== projectId);
+    }
+
+    await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ projects })
+    });
+    return true;
+  }
+
+  async function adminEditCorporationTreasury(corpId, newTreasury) {
+    const val = Number(newTreasury);
+    if (isNaN(val) || val < 0) throw new Error('قيمة الخزينة غير صالحة.');
+    await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ treasury: val })
+    });
+    return true;
+  }
+
+  async function adminDeleteCorporation(corpId) {
+    if (!corpId) throw new Error('معرف الشركة مطلوب.');
+    await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
+      method: 'DELETE'
+    });
+    return true;
+  }
+
+  async function adminDistributeCorpDividends(corpId, pct = 25) {
+    const p = Number(pct);
+    if (isNaN(p) || p <= 0 || p > 100) throw new Error('نسبة التوزيع يجب أن تكون بين 1% و 100%.');
+    const rows = await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`);
+    if (!rows || rows.length === 0) throw new Error('الشركة غير موجودة.');
+    const corp = rows[0];
+    const treasury = Number(corp.treasury || 0);
+    if (treasury <= 0) throw new Error('خزينة الشركة فارغة لا يمكن توزيع أرباح منها.');
+
+    const totalDividends = Math.floor(treasury * (p / 100));
+    const members = Array.isArray(corp.members) ? corp.members : [];
+    if (members.length === 0) throw new Error('لا يوجد أعضاء في هذه الشركة.');
+
+    const contribs = (typeof corp.contributions === 'object' && corp.contributions) ? corp.contributions : {};
+    let totalCont = 0;
+    Object.keys(contribs).forEach(k => {
+      if (!k.startsWith('_') && typeof contribs[k] === 'number') totalCont += contribs[k];
+    });
+
+    for (const m of members) {
+      const myCont = contribs[m] || 0;
+      const share = totalCont > 0 ? (myCont / totalCont) : (1 / members.length);
+      const payout = Math.floor(totalDividends * share);
+      if (payout > 0) {
+        try {
+          const pRows = await _api(`players?username=eq.${encodeURIComponent(m)}&select=cash,net_worth`);
+          if (pRows && pRows.length > 0) {
+            await _api(`players?username=eq.${encodeURIComponent(m)}`, {
+              method: 'PATCH',
+              body: JSON.stringify({
+                cash: Number(pRows[0].cash || 0) + payout,
+                net_worth: Number(pRows[0].net_worth || 0) + payout
+              })
+            });
+          }
+        } catch (e) {
+          console.warn('[DB] Failed dividend to ' + m, e);
+        }
+      }
+    }
+
+    await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        treasury: treasury - totalDividends
       })
     });
     return true;
@@ -1552,10 +1832,6 @@ var AppDB = (() => {
     getAuctionItems: async () => [],
     purchaseAuctionItem: async () => true,
     adminDeleteAuctionItem: async () => true,
-    dissolveCorporation: async () => true,
-    promoteCorpMember: async () => true,
-    payoutFromCorpTreasury: async () => true,
-    upgradeCorporationLevel: async () => true,
     checkVersion: async () => ({ upToDate: true, clientVersion: '5.1', remoteVersion: '5.1' }),
     pendingSyncs: 0,
 
@@ -1630,18 +1906,22 @@ var AppDB = (() => {
     contributeToCorporation,
     buyCorporationProject,
     adminCreateCorporation: createCorporation,
-    adminUpdateCorp: async () => true,
-    adminToggleCorpProject: async () => true,
-    adminKickCorpMember: async () => true,
-    adminSetCorpMemberRole: async () => true,
-    adminTransferCorpFounder: async () => true,
-    adminDistributeCorpDividends: async () => true,
-    adminDeleteCorporation: async () => true,
-    adminEditCorporationTreasury: async () => true,
+    adminUpdateCorp,
+    adminToggleCorpProject,
+    adminKickCorpMember: kickCorpMember,
+    adminSetCorpMemberRole: promoteCorpMember,
+    adminTransferCorpFounder: transferCorpOwnership,
+    adminDistributeCorpDividends,
+    adminDeleteCorporation,
+    adminEditCorporationTreasury,
     leaveCorporation,
     kickCorpMember,
-    editCorpInfo: async () => true,
-    transferCorpOwnership: async () => true,
+    editCorpInfo,
+    transferCorpOwnership,
+    promoteCorpMember,
+    payoutFromCorpTreasury,
+    upgradeCorporationLevel,
+    dissolveCorporation,
 
     // Auctions
     adminCreateLiveAuction: async () => true,
