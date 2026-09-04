@@ -1584,6 +1584,19 @@ const UIController = (() => {
       }
     });
 
+    // Reset scroll position to top for the new tab
+    const mainEl = document.querySelector('.desktop-content');
+    if (mainEl) {
+      mainEl.scrollTop = 0;
+    }
+    window.scrollTo(0, 0);
+
+    // Auto-scroll active tab into view inside mobile bottom nav
+    const activeMobileNavBtn = document.querySelector(`.mobile-bottom-nav .nav-tab-btn[data-tab="${tabId}"]`);
+    if (activeMobileNavBtn) {
+      activeMobileNavBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+
     if (tabId === 'careers') {
       checkAndOpenRiddleVerification();
     }
