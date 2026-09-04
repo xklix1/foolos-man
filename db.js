@@ -923,45 +923,114 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   //  CORPORATIONS & AUCTIONS
   // ─────────────────────────────────────────────
-  async function createCorporation(corpData) {
+  async function createCorporation(arg1, arg2, arg3, arg4) {
+    let corpId = '';
+    let name = '';
+    let founder = '';
+    let description = '';
+    let treasury = 0;
+    let members = [];
+    let contributions = {};
+    let projects = [];
+    let isAdminCorp = false;
+
+    if (typeof arg1 === 'object' && arg1 !== null) {
+      corpId = arg1.id || String(Date.now());
+      name = String(arg1.name || '').trim();
+      founder = String(arg1.founder || '').trim();
+      description = String(arg1.desc || arg1.description || '').trim();
+      treasury = Number(arg1.treasury || 0);
+      members = Array.isArray(arg1.members) && arg1.members.length > 0 ? arg1.members : [founder];
+      contributions = (typeof arg1.contributions === 'object' && arg1.contributions) ? arg1.contributions : {};
+      projects = Array.isArray(arg1.projects) ? arg1.projects : [];
+      isAdminCorp = arg1.isAdminCorp === true || arg1.is_admin_corp === true;
+    } else {
+      // Called with parameters:
+      // ui.js calls: AppDB.createCorporation(name, desc, founder)
+      // or admin: AppDB.createCorporation(name, founder, desc, treasury)
+      name = String(arg1 || '').trim();
+      if (typeof arg3 === 'string' && arg3.trim().length > 0 && (!arg4 || isNaN(Number(arg4)))) {
+        // (name, desc, founder)
+        description = String(arg2 || '').trim();
+        founder = String(arg3 || '').trim();
+      } else if (arg2 && typeof arg2 === 'string') {
+        // (name, founder, desc, treasury)
+        founder = String(arg2 || '').trim();
+        description = String(arg3 || '').trim();
+        treasury = Number(arg4 || 0);
+      }
+      corpId = String(Date.now());
+      members = [founder];
+      contributions = { [founder]: 0 };
+    }
+
+    if (!name) throw new Error('اسم الشركة مطلوب.');
+    if (!founder) throw new Error('اسم المؤسس مطلوب.');
+
+    // Embed description in contributions if provided so schema constraint is respected
+    if (description) {
+      contributions._desc = description;
+    }
+
+    const payload = {
+      id: corpId,
+      name,
+      founder,
+      treasury: Number(treasury || 0),
+      members: members.filter(Boolean),
+      contributions,
+      projects,
+      is_admin_corp: isAdminCorp,
+      created_at: Date.now()
+    };
+
     await _api('corporations', {
       method: 'POST',
-      body: JSON.stringify({
-        id: corpData.id || String(Date.now()),
-        name: corpData.name,
-        founder: corpData.founder,
-        treasury: Number(corpData.treasury || 0),
-        members: corpData.members || [corpData.founder],
-        contributions: corpData.contributions || {},
-        projects: corpData.projects || [],
-        is_admin_corp: corpData.isAdminCorp === true,
-        created_at: Date.now()
-      })
+      body: JSON.stringify(payload)
     });
-    return true;
+
+    return corpId;
   }
 
   async function getCorporationsList() {
     try {
       const rows = await _api('corporations?order=treasury.desc');
-      return (rows || []).map(r => ({
-        id: r.id,
-        name: r.name,
-        founder: r.founder,
-        treasury: Number(r.treasury || 0),
-        members: r.members || [],
-        contributions: r.contributions || {},
-        projects: r.projects || [],
-        isAdminCorp: r.is_admin_corp
-      }));
+      return (rows || []).map(r => {
+        const contribs = (typeof r.contributions === 'object' && r.contributions) ? r.contributions : {};
+        return {
+          id: r.id,
+          name: r.name,
+          founder: r.founder,
+          treasury: Number(r.treasury || 0),
+          members: Array.isArray(r.members) ? r.members : [],
+          contributions: contribs,
+          projects: Array.isArray(r.projects) ? r.projects : [],
+          isAdminCorp: r.is_admin_corp === true,
+          desc: contribs._desc || ''
+        };
+      });
     } catch (e) {
       return [];
     }
   }
 
   function listenToCorporations(callback) {
-    getCorporationsList().then(callback);
-    return () => {};
+    if (typeof callback !== 'function') return () => {};
+    let isSubscribed = true;
+
+    const fetchCorps = async () => {
+      try {
+        const list = await getCorporationsList();
+        if (isSubscribed) callback(list);
+      } catch (e) {}
+    };
+
+    fetchCorps();
+    const interval = setInterval(fetchCorps, 5000);
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
+    };
   }
 
   async function joinCorporation(corpId, username) {

@@ -11259,11 +11259,19 @@ const UIController = (() => {
 
       let totalCorpTickProfit = 0;
       if (corp.projects) {
-        Object.keys(corp.projects).forEach(projId => {
-          if (corp.projects[projId] && GameEngine.CORP_PROJECTS[projId]) {
-            totalCorpTickProfit += GameEngine.CORP_PROJECTS[projId].profitPerTick;
-          }
-        });
+        if (Array.isArray(corp.projects)) {
+          corp.projects.forEach(projId => {
+            if (GameEngine.CORP_PROJECTS[projId]) {
+              totalCorpTickProfit += GameEngine.CORP_PROJECTS[projId].profitPerTick;
+            }
+          });
+        } else {
+          Object.keys(corp.projects).forEach(projId => {
+            if (corp.projects[projId] && GameEngine.CORP_PROJECTS[projId]) {
+              totalCorpTickProfit += GameEngine.CORP_PROJECTS[projId].profitPerTick;
+            }
+          });
+        }
       }
 
       const myShareTickProfit = Math.floor(totalCorpTickProfit * sharePct);
@@ -11315,7 +11323,7 @@ const UIController = (() => {
       let projectsHtml = '';
       Object.keys(GameEngine.CORP_PROJECTS).forEach(projId => {
         const p = GameEngine.CORP_PROJECTS[projId];
-        const owned = corp.projects && corp.projects[projId];
+        const owned = corp.projects && (Array.isArray(corp.projects) ? corp.projects.includes(projId) : Boolean(corp.projects[projId]));
         const membersCount = corp.members ? corp.members.length : 0;
         const meetsCondition = membersCount >= (p.minMembers || 1);
         
@@ -11605,34 +11613,61 @@ const UIController = (() => {
     }
 
     const cost = 100000000000;
-    const currentCash = GameEngine.state.cash;
-    const currentBank = GameEngine.state.bank;
+    const currentCash = Number(GameEngine.state.cash || 0);
+    const currentBank = Number(GameEngine.state.bank || 0);
 
     if (currentCash < cost && currentBank < cost) {
       showToast('رصيد غير كافي', 'تأسيس الشركة يتطلب دفع 100 مليار جنيه، ورصيدك الحالي لا يكفي.', 'error');
       return;
     }
 
+    const username = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
+    if (!username) {
+      showToast('خطأ', 'يرجى تسجيل الدخول أولاً لتأسيس شركة.', 'error');
+      return;
+    }
+
     if (!confirm(`هل أنت متأكد من رغبتك في تأسيس شركة "${name}" مقابل دفع رسوم باهظة تبلغ 100,000,000,000 EGP من رصيدك؟`)) return;
 
+    let cashDeduction = 0;
+    let bankDeduction = 0;
+    if (currentCash >= cost) {
+      cashDeduction = cost;
+    } else {
+      bankDeduction = cost;
+    }
+
     try {
-      if (GameEngine.state.cash >= cost) {
-        GameEngine.state.cash -= cost;
-      } else {
-        GameEngine.state.bank -= cost;
-      }
+      // 1. Create corporation in cloud DB FIRST to guarantee no funds are deducted if an error occurs
+      const corpId = await AppDB.createCorporation(name, desc, username);
 
+      // 2. Only deduct fee and save state AFTER successful cloud insertion
+      GameEngine.state.cash = Math.max(0, currentCash - cashDeduction);
+      GameEngine.state.bank = Math.max(0, currentBank - bankDeduction);
       GameEngine.state.netWorth = GameEngine.calculateNetWorth();
-      await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+      await AppDB.savePlayerState(username, GameEngine.state);
 
-      const corpId = await AppDB.createCorporation(name, desc, GameEngine.state.username);
+      // 3. Update local state immediately so user sees their company
+      window.activeCorporationState = {
+        id: corpId,
+        name: name,
+        founder: username,
+        treasury: 0,
+        members: [username],
+        contributions: { [username]: 0, ...(desc ? { _desc: desc } : {}) },
+        projects: [],
+        isAdminCorp: false,
+        desc: desc
+      };
 
       showToast('مبروك التأسيس! 🏢🎉', `تم تأسيس شركة مشتركة باسم "${name}" بنجاح وخصم 100 مليار جنيه رسوم تأسيس.`, 'success');
       playMenuSound('success');
       renderAll();
+      renderCorporationsTab();
 
     } catch (err) {
-      showToast('فشل التأسيس', err.message, 'error');
+      console.error('[Corp Creation Error]', err);
+      showToast('فشل التأسيس', err.message || 'حدث خطأ أثناء تأسيس الشركة، لم يتم خصم أي أموال.', 'error');
     }
   }
 
