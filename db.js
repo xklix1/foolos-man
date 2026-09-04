@@ -211,8 +211,8 @@ var AppDB = (() => {
     const u = username.trim();
     const p = String(pin).trim();
 
-    // Check if exists
-    const existing = await _api(`players?username=eq.${encodeURIComponent(u)}&select=username`);
+    // Check if exists (case-insensitive)
+    const existing = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username`);
     if (existing && existing.length > 0) {
       throw new Error('اسم المستخدم مسجل بالفعل. يرجى اختيار اسم آخر.');
     }
@@ -245,7 +245,19 @@ var AppDB = (() => {
         title: 'عامل مبتدئ',
         jobId: 'worker',
         assets: { apartment: 0, office: 0, mansion: 0, skyline_tower: 0, luxury_resort: 0, mega_yacht: 0, private_island: 0, orbital_station: 0 },
-        businesses: { coffee_cart: { level: 0, workers: 0 }, burger_truck: { level: 0, workers: 0 }, grocery: { level: 0, workers: 0 }, laundry: { level: 0, workers: 0 }, bakery: { level: 0, workers: 0 }, car_wash: { level: 0, workers: 0 }, gym: { level: 0, workers: 0 }, electronics: { level: 0, workers: 0 }, restaurant: { level: 0, workers: 0 }, real_estate_agency: { level: 0, workers: 0 }, auto_dealership: { level: 0, workers: 0 }, private_hospital: { level: 0, workers: 0 }, commercial_bank: { level: 0, workers: 0 } },
+        businesses: {
+          kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
+          coffee: { level: 0, price: 22, workers: 0, suppliesTicks: 0 },
+          tech: { level: 0, price: 160, workers: 0, suppliesTicks: 0 },
+          logistics: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
+          supermarket: { level: 0, price: 450, workers: 0, suppliesTicks: 0 },
+          solar_factory: { level: 0, price: 3200, workers: 0, suppliesTicks: 0 },
+          private_hospital: { level: 0, price: 11500, workers: 0, suppliesTicks: 0 },
+          media_studio: { level: 0, price: 28000, workers: 0, suppliesTicks: 0 },
+          private_bank: { level: 0, price: 95000, workers: 0, suppliesTicks: 0 },
+          oil_refinery: { level: 0, price: 310000, workers: 0, suppliesTicks: 0 },
+          space_tech: { level: 0, price: 1250000, workers: 0, suppliesTicks: 0 }
+        },
         stocks: { COMI: { shares: 0, avgPrice: 0 }, EAST: { shares: 0, avgPrice: 0 }, ETEL: { shares: 0, avgPrice: 0 }, FWRY: { shares: 0, avgPrice: 0 }, CASH: { shares: 0, avgPrice: 0 }, BITC: { shares: 0, avgPrice: 0 }, GOLD: { shares: 0, avgPrice: 0 }, AIX: { shares: 0, avgPrice: 0 } },
         inventory: {},
         ownedCars: [],
@@ -273,13 +285,26 @@ var AppDB = (() => {
     const u = username.trim();
     const p = String(inputPin).trim();
 
-    const rows = await _api(`players?username=eq.${encodeURIComponent(u)}&select=pin`);
+    // Query case-insensitively and sort by net_worth descending to prioritize main account over duplicates
+    const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&order=net_worth.desc&select=username,pin,net_worth`);
     if (!rows || rows.length === 0) return false;
 
-    const stored = rows[0].pin;
-    if (stored === p) return true;
     const hashed = await hashPin(p);
-    return stored === hashed;
+    for (const r of rows) {
+      const stored = String(r.pin || '').trim();
+      if (!stored) continue;
+
+      if (
+        stored === p ||
+        stored === hashed ||
+        stored === 's256_' + hashed ||
+        stored.replace(/^s256_/, '') === hashed ||
+        stored === 's256_' + p
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   async function getPlayerState(username) {
@@ -287,7 +312,8 @@ var AppDB = (() => {
     const u = username.trim();
 
     try {
-      const rows = await _api(`players?username=eq.${encodeURIComponent(u)}&select=*`);
+      // Use case-insensitive query and order by net_worth desc to guarantee the richest main account is loaded
+      const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&order=net_worth.desc&select=*`);
       if (!rows || rows.length === 0) {
         return getDecryptedLocalState(`rasalmal_state_${u}`);
       }
@@ -295,7 +321,7 @@ var AppDB = (() => {
       const row = rows[0];
       const stateObj = (typeof row.state === 'object' && row.state) ? { ...row.state } : {};
 
-      // Overwrite critical authoritative server fields
+      // Overwrite critical authoritative server fields using canonical database username
       stateObj.username = row.username;
       stateObj.cash = Number(row.cash || 0);
       stateObj.bank = Number(row.bank || 0);
@@ -312,7 +338,16 @@ var AppDB = (() => {
       stateObj.pin = row.pin || stateObj.pin;
       stateObj.lastSeen = Number(row.last_seen || Date.now());
 
-      setEncryptedLocalState(`rasalmal_state_${u}`, stateObj);
+      if (!stateObj.businesses || Object.keys(stateObj.businesses).length === 0) {
+        if (row.state && row.state.businesses) {
+          stateObj.businesses = row.state.businesses;
+        }
+      }
+
+      setEncryptedLocalState(`rasalmal_state_${row.username}`, stateObj);
+      if (row.username.toLowerCase() !== u.toLowerCase()) {
+        setEncryptedLocalState(`rasalmal_state_${u}`, stateObj);
+      }
       return stateObj;
     } catch (err) {
       console.warn('[DB] getPlayerState fallback to local:', err.message);
@@ -351,7 +386,7 @@ var AppDB = (() => {
 
     const doCloudSave = async () => {
       try {
-        await _api(`players?username=eq.${encodeURIComponent(u)}`, {
+        await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
           method: 'PATCH',
           headers: { 'Prefer': 'return=minimal' },
           body: JSON.stringify(payload)
@@ -1975,11 +2010,19 @@ var AppDB = (() => {
     const u = username.trim();
     const ok = await verifyPin(u, pin);
     if (!ok) {
-      throw new Error('الرقم السري غير صحيح. يرجى المحاولة مرة أخرى.');
+      try {
+        const exists = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username`);
+        if (!exists || exists.length === 0) {
+          throw new Error('اسم المستخدم غير مسجل، يرجى إنشاء حساب جديد.');
+        }
+      } catch (checkErr) {
+        if (checkErr.message && checkErr.message.includes('غير مسجل')) throw checkErr;
+      }
+      throw new Error('الرقم السري غير صحيح. يرجى التأكد من الرمز والمحاولة مرة أخرى.');
     }
     const state = await getPlayerState(u);
     if (!state) {
-      throw new Error('اسم المستخدم غير مسجل، يرجى إنشاء حساب جديد.');
+      throw new Error('تعذر تحميل بيانات الحساب من السحابة، يرجى المحاولة مرة أخرى.');
     }
     return state;
   }
@@ -2052,6 +2095,7 @@ var AppDB = (() => {
 
     
     loginPlayer,
+    getItemsConfig: async () => ({}),
     adminGetGiftCodes,
     adminCreateGiftCode,
     adminDeleteGiftCode,

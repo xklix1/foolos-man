@@ -1154,6 +1154,8 @@ const GameEngine = (() => {
 
     const hasSupplies = Boolean(bizState.suppliesTicks && bizState.suppliesTicks > 0);
     const suppliesMultiplier = hasSupplies ? 1.25 : 0.75;
+    const quantumMultiplier = (s && s.itemDurations && s.itemDurations.quantum_processor > 0) ? 1.5 : 1.0;
+    const boost = 1.0;
     const grossProfit = Math.max(0, Math.floor(demand * margin * 0.85 * quantumMultiplier * boost * suppliesMultiplier));
 
     const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
@@ -2206,11 +2208,12 @@ const GameEngine = (() => {
       state.netWorth = calculateNetWorth();
       await AppDB.savePlayerState(username, state);
     } else {
-      // Create new clean state — give new players their initial 12-hour manager permit
+      // Local fallback only if no dbState is found; DO NOT overwrite cloud state!
+      console.warn('[GameEngine] No cloud dbState found for user:', username);
       state = JSON.parse(JSON.stringify(INITIAL_STATE));
+      state.username = username;
       state.afkManagerExpiresAt = Date.now() + (12 * 60 * 60 * 1000);
       state.lastActiveTimestamp = Date.now();
-      await AppDB.savePlayerState(username, state);
     }
     ensureDailyQuests();
     initStocks();

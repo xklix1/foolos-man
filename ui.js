@@ -1236,6 +1236,9 @@ const UIController = (() => {
       if (isMaint) return;
 
       const playerState = await GameEngine.loadUserSession(username);
+      const canonicalUser = (playerState && playerState.username) ? playerState.username : username;
+      localStorage.setItem('rasalmal_active_session_user', canonicalUser);
+
       window._sessionInitTimestamp = Date.now();
       window._processedTransferMailIds = new Set();
       const mainLayout = document.getElementById('main-game-layout');
@@ -1246,11 +1249,11 @@ const UIController = (() => {
         mainLayout.classList.remove('hidden');
         mainLayout.classList.add('flex');
       }
-      setupRealTimeListeners(username);
-      AppDB.checkAndCreateDailyBackup(username, GameEngine.state);
+      setupRealTimeListeners(canonicalUser);
+      AppDB.checkAndCreateDailyBackup(canonicalUser, GameEngine.state);
       startGameLoop();
       renderAll();
-      showToast('أهلاً بعودتك', `تم استئناف جلسة الإمبراطور: ${username}`, 'success');
+      showToast('أهلاً بعودتك', `تم استئناف جلسة الإمبراطور: ${canonicalUser}`, 'success');
 
       // Check and display offline idle earnings with 12-Hour Manager context
       if (playerState && playerState.offlineReport) {
@@ -1450,6 +1453,7 @@ const UIController = (() => {
 
           let playerState;
 
+          let canonicalUser = usernameInput;
           if (currentAuthMode === 'register') {
             await AppDB.registerPlayer(usernameInput, pinInput);
             playerState = await GameEngine.loadUserSession(usernameInput);
@@ -1457,9 +1461,10 @@ const UIController = (() => {
             showToast('نجاح', 'تم تسجيل حسابك الجديد بنجاح! مرحباً بك.', 'success');
           } else {
             const loggedUser = await AppDB.loginPlayer(usernameInput, pinInput);
-            playerState = await GameEngine.loadUserSession(usernameInput, loggedUser);
-            localStorage.setItem('rasalmal_active_session_user', usernameInput);
-            showToast('أهلاً بك', `تم تحميل بيانات الحساب: ${usernameInput}`, 'success');
+            canonicalUser = (loggedUser && loggedUser.username) ? loggedUser.username : usernameInput;
+            playerState = await GameEngine.loadUserSession(canonicalUser, loggedUser);
+            localStorage.setItem('rasalmal_active_session_user', canonicalUser);
+            showToast('أهلاً بك', `تم تحميل بيانات الحساب: ${canonicalUser}`, 'success');
           }
 
           playMenuSound('start');
@@ -1474,7 +1479,7 @@ const UIController = (() => {
             mainLayout.classList.add('flex');
           }
 
-          setupRealTimeListeners(usernameInput);
+          setupRealTimeListeners(canonicalUser);
 
           startGameLoop();
           renderAll();
