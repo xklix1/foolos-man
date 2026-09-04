@@ -1439,6 +1439,189 @@
       });
     }
 
+    // ==================== PLAYER CASH FLOW DETAILED INSPECTOR ====================
+    const inspectFlowBtn = document.getElementById('btn-admin-inspect-flow');
+    const flowModal = document.getElementById('admin-player-flow-modal');
+    const closeFlowModalBtn = document.getElementById('btn-admin-close-flow-modal');
+    const closeFlowModalFooterBtn = document.getElementById('btn-admin-close-flow-modal-footer');
+
+    if (closeFlowModalBtn && flowModal) {
+      closeFlowModalBtn.addEventListener('click', () => flowModal.classList.add('hidden'));
+    }
+    if (closeFlowModalFooterBtn && flowModal) {
+      closeFlowModalFooterBtn.addEventListener('click', () => flowModal.classList.add('hidden'));
+    }
+
+    if (inspectFlowBtn && flowModal) {
+      inspectFlowBtn.addEventListener('click', async () => {
+        const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
+        if (!targetUser || targetUser === '...' || targetUser === '') {
+          showToast('فحص التدفق', 'يرجى تحديد واختيار لاعب أولاً من قائمة اللاعبين.', 'warning');
+          return;
+        }
+
+        try {
+          const pState = await AppDB.adminGetPlayer(targetUser);
+          if (!pState) throw new Error("تعذر جلب بيانات اللاعب.");
+
+          document.getElementById('adm-flow-modal-username').textContent = `@${targetUser}`;
+
+          const originalState = GameEngine.state;
+          let grossPerSec = 0;
+          let taxPerSec = 0;
+          let netPerSec = 0;
+          let taxTierName = 'معفى من الضرائب (أقل من 3M)';
+          let breakdownItems = [];
+
+          try {
+            GameEngine.state = pState;
+
+            // 1. Job Salary
+            let jobIncome = 0;
+            if (pState.jobId && GameEngine.JOBS && GameEngine.JOBS[pState.jobId]) {
+              const job = GameEngine.JOBS[pState.jobId];
+              jobIncome = job.salaryPerTick || 0;
+              if (jobIncome > 0) {
+                breakdownItems.push({
+                  icon: '💼',
+                  title: `وظيفة: ${job.name || pState.title || pState.jobId}`,
+                  grossPerSec: jobIncome / 3,
+                  detail: `راتب أساسي: ${jobIncome.toLocaleString()} EGP / تكة`
+                });
+              }
+            }
+
+            // 2. Businesses
+            if (pState.businesses) {
+              Object.keys(pState.businesses).forEach(bk => {
+                const b = pState.businesses[bk];
+                if (b && b.level > 0 && GameEngine.BUSINESSES && GameEngine.BUSINESSES[bk]) {
+                  const cfg = GameEngine.BUSINESSES[bk];
+                  const bizIncome = (b.level * cfg.baseIncomePerTick) + ((b.workers || 0) * (cfg.workerMultiplier || 10));
+                  if (bizIncome > 0) {
+                    breakdownItems.push({
+                      icon: '🏢',
+                      title: `مشروع: ${cfg.name}`,
+                      grossPerSec: bizIncome / 3,
+                      detail: `مستوى ${b.level} | ${b.workers || 0} عمال | ${bizIncome.toLocaleString()} EGP/تكة`
+                    });
+                  }
+                }
+              });
+            }
+
+            // 3. Cars
+            if (pState.cars && Array.isArray(pState.cars)) {
+              pState.cars.forEach(carId => {
+                if (GameEngine.CARS && GameEngine.CARS[carId]) {
+                  const carCfg = GameEngine.CARS[carId];
+                  const carNet = (carCfg.rentalIncomePerTick || 0) - (carCfg.maintenanceCostPerTick || 0);
+                  breakdownItems.push({
+                    icon: '🏎️',
+                    title: `تأجير سيارة: ${carCfg.name}`,
+                    grossPerSec: (carCfg.rentalIncomePerTick || 0) / 3,
+                    netPerSec: carNet / 3,
+                    detail: `إيجار: +${(carCfg.rentalIncomePerTick || 0).toLocaleString()} | صيانة: -${(carCfg.maintenanceCostPerTick || 0).toLocaleString()} EGP/تكة`
+                  });
+                }
+              });
+            }
+
+            // 4. Luxury Real Estate Rent
+            if (pState.realEstate && Array.isArray(pState.realEstate)) {
+              const ASSETS = {
+                apartment: { name: 'شقة سكنية مؤجرة', rent: 85 },
+                office: { name: 'مبنى مكاتب تجارية', rent: 520 },
+                mansion: { name: 'قصر ريفي فاخر', rent: 2400 },
+                skyline_tower: { name: 'برج ناطحة سحاب', rent: 11500 },
+                luxury_resort: { name: 'منتجع وفندق 5 نجوم', rent: 52000 },
+                mega_yacht: { name: 'يخت ملكي فاخر', rent: 210000 },
+                private_island: { name: 'جزيرة استوائية خاصة', rent: 750000 },
+                orbital_station: { name: 'محطة مدارية فضائية', rent: 3000000 }
+              };
+              pState.realEstate.forEach(propId => {
+                if (ASSETS[propId]) {
+                  breakdownItems.push({
+                    icon: '🏛️',
+                    title: `عقار: ${ASSETS[propId].name}`,
+                    grossPerSec: ASSETS[propId].rent,
+                    detail: `عائد إيجار عقاري تلقائي: +${ASSETS[propId].rent.toLocaleString()} EGP/ث`
+                  });
+                }
+              });
+            }
+
+            // Global Passive Income & Tax
+            const tickIncome = GameEngine.calculatePassiveIncomePerTick(true);
+            const taxReport = GameEngine.calculateTaxReport();
+
+            grossPerSec = Math.max(0, tickIncome / 3);
+            taxPerSec = (pState.netWorth || 0) > 3000000 ? (taxReport.taxPerSecond / 3) : 0;
+            netPerSec = Math.max(0, grossPerSec - taxPerSec);
+
+            if ((pState.netWorth || 0) >= 100000000) {
+              taxTierName = 'شريحة الحيتان وكبار المستثمرين (0.008%/ث)';
+            } else if ((pState.netWorth || 0) >= 20000000) {
+              taxTierName = 'شريحة كبار الملاك (0.004%/ث)';
+            } else if ((pState.netWorth || 0) >= 3000000) {
+              taxTierName = 'شريحة رجال الأعمال الفضية (0.002%/ث)';
+            }
+          } finally {
+            GameEngine.state = originalState;
+          }
+
+          // Populate Summary Cards
+          document.getElementById('adm-flow-summary-gross').textContent = `${grossPerSec.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث`;
+          document.getElementById('adm-flow-summary-gross-hour').textContent = `${(grossPerSec * 3600).toLocaleString(undefined, { maximumFractionDigits: 0 })} EGP / ساعة`;
+
+          document.getElementById('adm-flow-summary-tax').textContent = `${taxPerSec.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث`;
+          document.getElementById('adm-flow-summary-tax-rate').textContent = taxTierName;
+
+          document.getElementById('adm-flow-summary-net').textContent = `${netPerSec.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث`;
+          document.getElementById('adm-flow-summary-net-hour').textContent = `${(netPerSec * 3600).toLocaleString(undefined, { maximumFractionDigits: 0 })} EGP / ساعة`;
+
+          // Populate Breakdown Items List
+          const container = document.getElementById('adm-flow-breakdown-container');
+          if (container) {
+            container.innerHTML = '';
+            if (breakdownItems.length === 0) {
+              container.innerHTML = `
+                <div class="p-6 text-center text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">
+                  <i class="fa-solid fa-hourglass-empty text-2xl mb-2 text-slate-600 block"></i>
+                  <span>اللاعب لا يمتلك أي مشاريع أو وظائف أو أصول مدرة للدخل حالياً.</span>
+                </div>
+              `;
+            } else {
+              breakdownItems.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'p-3 bg-slate-900/70 border border-slate-800/80 rounded-xl flex items-center justify-between gap-2 hover:border-cyan-500/30 transition';
+                row.innerHTML = `
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center text-sm border border-slate-800">
+                      ${item.icon}
+                    </div>
+                    <div>
+                      <div class="font-bold text-white">${item.title}</div>
+                      <div class="text-[11px] text-slate-400 mt-0.5">${item.detail}</div>
+                    </div>
+                  </div>
+                  <div class="text-left font-mono shrink-0">
+                    <span class="text-xs font-bold text-emerald-400 block">+${(item.grossPerSec || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث</span>
+                    <span class="text-[10px] text-slate-400">${((item.grossPerSec || 0) * 60).toLocaleString(undefined, { maximumFractionDigits: 0 })} / د</span>
+                  </div>
+                `;
+                container.appendChild(row);
+              });
+            }
+          }
+
+          flowModal.classList.remove('hidden');
+        } catch (err) {
+          showToast('فحص التدفق', err.message, 'error');
+        }
+      });
+    }
+
     // --- Comprehensive Forensic & Security Audit Engine ---
     let lastAuditResult = null;
     let lastAuditTargetUser = null;
@@ -2536,6 +2719,39 @@
           logAdminAction(`توزيع مكافأة مالية: +${amount.toLocaleString()} EGP -> ${target}`);
         } catch (err) {
           showToast('فشل التوزيع', err.message, 'error');
+        }
+      });
+    }
+
+    // ==================== MANDATORY FORCE PAGE RELOAD FOR ALL PLAYERS ====================
+    const forceReloadBtn = document.getElementById('btn-admin-force-reload');
+    if (forceReloadBtn) {
+      forceReloadBtn.addEventListener('click', async () => {
+        const customMsg = (document.getElementById('admin-force-reload-msg')?.value || '').trim();
+        const defaultMsg = 'تم إطلاق تحديث وتحسينات هامة للعبة. يجب إعادة تحميل الصفحة الآن لتطبيق التغييرات وضمان استقرار حسابك.';
+        const finalMsg = customMsg || defaultMsg;
+
+        const confirmed = confirm(
+          "⚠️ تنبيه إداري هام:\n\nهل أنت متأكد من إجبار جميع اللاعبين المتصلين حالياً على إعادة تحميل الصفحة فوراً؟\n\nستظهر شاشة منبثقة إجبارية بملء الشاشة تمنع اللعب ولا تختفي إلا بعد أن يقوم اللاعب بإعادة تحميل الصفحة."
+        );
+        if (!confirmed) return;
+
+        try {
+          forceReloadBtn.disabled = true;
+          forceReloadBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري إرسال الأمر لكافة المتصلين...</span>';
+
+          await AppDB.sendForceReload(finalMsg);
+
+          showToast('إعادة التحميل الإجبارية', 'تم إرسال شاشة إعادة التحميل الإجبارية لجميع اللاعبين المتصلين بنجاح! 🔄', 'success');
+          logAdminAction(`إرسال أمر إعادة تحميل إجباري لجميع اللاعبين: "${finalMsg}"`);
+          if (document.getElementById('admin-force-reload-msg')) {
+            document.getElementById('admin-force-reload-msg').value = '';
+          }
+        } catch (err) {
+          showToast('خطأ', 'فشل إرسال أمر إعادة التحميل: ' + err.message, 'error');
+        } finally {
+          forceReloadBtn.disabled = false;
+          forceReloadBtn.innerHTML = '<i class="fa-solid fa-rotate-right text-sm"></i><span>إرسال شاشة إعادة التحميل الإجبارية لجميع اللاعبين المتصلين الآن 🔄</span>';
         }
       });
     }

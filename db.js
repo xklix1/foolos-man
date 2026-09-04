@@ -617,6 +617,34 @@ var AppDB = (() => {
     return { active: false, message: '' };
   }
 
+  async function sendForceReload(message = '') {
+    const ts = Date.now();
+    await _api('globals', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        id: 'force_reload',
+        data: {
+          timestamp: ts,
+          message: message || 'تم إطلاق تحديث جديد للعبة بواسطة الإدارة. يجب إعادة تحميل الصفحة الآن لتطبيق التغييرات وضمان استقرار حسابك.',
+          forcedBy: 'admin'
+        },
+        updated_at: ts
+      })
+    });
+    return true;
+  }
+
+  async function getForceReloadStatus() {
+    try {
+      const rows = await _api(`globals?id=eq.force_reload`);
+      if (rows && rows.length > 0 && rows[0].data) {
+        return rows[0].data;
+      }
+    } catch (e) {}
+    return null;
+  }
+
   async function adminSaveTaxConfig(config) {
     await _api('globals', {
       method: 'POST',
@@ -1871,6 +1899,8 @@ var AppDB = (() => {
     sendAirdrop,
     setMaintenanceMode,
     getMaintenanceStatus,
+    sendForceReload,
+    getForceReloadStatus,
     adminSaveTaxConfig,
     adminSaveServerConfig,
     getServerConfig,

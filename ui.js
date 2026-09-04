@@ -8,6 +8,8 @@
 
 const UIController = (() => {
   console.log('[UI] Controller Loaded (v=107)');
+  const CLIENT_PAGE_START_TIME = Date.now();
+  window.CLIENT_PAGE_LOAD_TS = CLIENT_PAGE_START_TIME;
   let activeTab = 'dashboard';
   let tickIntervalId = null;
 
@@ -5258,6 +5260,18 @@ const UIController = (() => {
       }, (err) => console.error("Broadcast listen err: ", err));
     activeListeners.push(unsubBroadcast);
 
+    // 1.2 Mandatory Force Page Reload Listener
+    const unsubForceReload = db.collection('globals').doc('force_reload')
+      .onSnapshot((doc) => {
+        if (!doc.exists) return;
+        const data = doc.data();
+        if (!data || !data.timestamp) return;
+        if (data.timestamp > CLIENT_PAGE_START_TIME) {
+          triggerMandatoryReloadModal(data.message);
+        }
+      }, (err) => console.error("Force reload listen err: ", err));
+    activeListeners.push(unsubForceReload);
+
     // 1.5. Tax Config (Single fetch on load to conserve read quota)
     db.collection('globals').doc('taxConfig').get()
       .then((doc) => {
@@ -5548,6 +5562,114 @@ const UIController = (() => {
   }
 
   function updateMaintenanceUIState(isMaint) {}
+
+  // ==================== MANDATORY FORCE PAGE RELOAD MODAL ====================
+  let isMandatoryReloadActive = false;
+
+  function triggerMandatoryReloadModal(customMessage) {
+    if (isMandatoryReloadActive) return;
+    isMandatoryReloadActive = true;
+
+    console.warn('[SYSTEM] Mandatory Page Reload requested by Administrator.');
+
+    // 1. Halt game loop and prevent saving corrupted state during transition
+    if (tickIntervalId) {
+      clearInterval(tickIntervalId);
+      tickIntervalId = null;
+    }
+    if (typeof GameEngine !== 'undefined' && typeof GameEngine.pauseEngine === 'function') {
+      try { GameEngine.pauseEngine(); } catch (e) {}
+    }
+
+    // 2. Play warning sound if available
+    try {
+      if (typeof playMenuSound === 'function') playMenuSound('danger');
+    } catch (e) {}
+
+    // 3. Find or dynamically inject overlay
+    let overlay = document.getElementById('mandatory-reload-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'mandatory-reload-overlay';
+      overlay.className = 'fixed inset-0 z-[9999999] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4 select-none';
+      overlay.style.pointerEvents = 'auto';
+      overlay.innerHTML = `
+        <div class="relative w-full max-w-md bg-slate-900 border-2 border-amber-500/80 rounded-2xl p-6 text-center shadow-2xl shadow-amber-500/20">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-3xl">
+            <i class="fa-solid fa-arrows-rotate animate-spin" style="animation-duration: 3s;"></i>
+          </div>
+          <h3 class="text-xl font-black text-white mb-1.5">⚠️ مطلوب إعادة تحميل الصفحة فوراً</h3>
+          <div class="inline-block px-3 py-1 bg-amber-500/20 text-amber-300 text-xs font-bold rounded-full border border-amber-500/30 mb-3">
+            تحديث إداري إجباري
+          </div>
+          <p id="mandatory-reload-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6 font-medium">
+            ${customMessage || 'تم إطلاق تحديث جديد للعبة بواسطة الإدارة. يجب إعادة تحميل الصفحة الآن لتطبيق التغييرات وضمان استقرار ومزامنة حسابك.'}
+          </p>
+          <button id="btn-mandatory-reload-action" class="w-full py-3.5 px-6 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-sm sm:text-base rounded-xl shadow-lg shadow-amber-500/30 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-rotate-right text-lg"></i>
+            <span>إعادة تحميل الصفحة الآن (Reload)</span>
+          </button>
+          <p class="text-[11px] text-slate-400 mt-4">
+            🔒 لا يمكن متابعة اللعب أو إغلاق هذه النافذة إلا بعد إعادة تحميل الصفحة.
+          </p>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    } else {
+      overlay.classList.remove('hidden');
+      const reasonEl = document.getElementById('mandatory-reload-reason');
+      if (reasonEl && customMessage) {
+        reasonEl.textContent = customMessage;
+      }
+    }
+
+    // 4. Force Reload Action
+    const doReload = () => {
+      try {
+        window.location.reload(true);
+      } catch (err) {
+        window.location.href = window.location.href;
+      }
+    };
+
+    const actionBtn = document.getElementById('btn-mandatory-reload-action');
+    if (actionBtn) {
+      actionBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        doReload();
+      };
+    }
+
+    // 5. Intercept all clicks and keyboard events so it cannot be dismissed
+    overlay.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (!isMandatoryReloadActive) return;
+      if (e.key === 'F5' || (e.ctrlKey && e.key.toLowerCase() === 'r')) {
+        return; // Allow standard browser reload
+      }
+      e.preventDefault();
+      e.stopPropagation();
+    }, true);
+
+    // 6. Anti-tamper Observer: If anyone attempts to remove or hide the overlay, re-apply immediately
+    try {
+      const observer = new MutationObserver(() => {
+        if (!isMandatoryReloadActive) return;
+        if (overlay.classList.contains('hidden')) {
+          overlay.classList.remove('hidden');
+        }
+        if (!document.body.contains(overlay)) {
+          document.body.appendChild(overlay);
+        }
+      });
+      observer.observe(overlay, { attributes: true, childList: true });
+      observer.observe(document.body, { childList: true });
+    } catch (e) {}
+  }
 
   function handleBannedUser() {
     const banOverlay = document.getElementById('ban-overlay');
@@ -12549,7 +12671,8 @@ const UIController = (() => {
     updateFacebookButtonUI,
     openCashflowBreakdownModal,
     closeCashflowBreakdownModal,
-    renderCashflowBreakdown
+    renderCashflowBreakdown,
+    triggerMandatoryReloadModal
   };
 })();
 
@@ -12557,3 +12680,23 @@ const UIController = (() => {
 // Export globally
 window.UIController = UIController;
 window.UI = UIController;
+
+// Global watchdog for mandatory reload (runs periodically even before login)
+if (typeof window !== 'undefined' && !window.location.pathname.includes('ctrl-vault')) {
+  setInterval(async () => {
+    try {
+      if (typeof AppDB !== 'undefined' && typeof AppDB.getForceReloadStatus === 'function') {
+        const reloadData = await AppDB.getForceReloadStatus();
+        if (reloadData && reloadData.timestamp) {
+          // Compare with UIController page start time or window start time
+          const pageStart = window.CLIENT_PAGE_LOAD_TS || Date.now();
+          if (reloadData.timestamp > pageStart) {
+            if (window.UIController && typeof window.UIController.triggerMandatoryReloadModal === 'function') {
+              window.UIController.triggerMandatoryReloadModal(reloadData.message);
+            }
+          }
+        }
+      }
+    } catch (e) {}
+  }, 4000);
+}
