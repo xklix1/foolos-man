@@ -1588,6 +1588,12 @@ const UIController = (() => {
       checkAndOpenRiddleVerification();
     }
 
+    // Scroll main content to top on tab switch
+    const mainEl = document.querySelector('.desktop-content');
+    if (mainEl) {
+      mainEl.scrollTop = 0;
+    }
+
     // Render tab-specific elements
     renderAll();
   }
