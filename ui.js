@@ -1626,14 +1626,20 @@ const UIController = (() => {
         jailOverlay.classList.add('hidden');
       }
 
-      // Bind legal exit button from jail overlay
+      // Bind legal exit and close buttons from jail overlay
       const jailExitBtn = document.getElementById('btn-jail-exit-to-legal');
+      const jailCloseXBtn = document.getElementById('btn-jail-close-x');
+      const doExitJailOverlay = () => {
+        if (jailOverlay) jailOverlay.classList.add('hidden');
+        switchTab('dashboard');
+      };
       if (jailExitBtn && !jailExitBtn._bound) {
         jailExitBtn._bound = true;
-        jailExitBtn.addEventListener('click', () => {
-          if (jailOverlay) jailOverlay.classList.add('hidden');
-          switchTab('dashboard');
-        });
+        jailExitBtn.addEventListener('click', doExitJailOverlay);
+      }
+      if (jailCloseXBtn && !jailCloseXBtn._bound) {
+        jailCloseXBtn._bound = true;
+        jailCloseXBtn.addEventListener('click', doExitJailOverlay);
       }
 
       // Handle Police Raid overlay
@@ -2048,28 +2054,22 @@ const UIController = (() => {
         const marketingActive = (bizState.marketingTicks && bizState.marketingTicks > 0);
         const marketingSecRemaining = marketingActive ? bizState.marketingTicks * 3 : 0;
 
-        const levelMultiplier = Math.pow(1.12, Math.max(0, (bizState.level || 1) - 1));
-        const franchiseOptMultiplier = bizState.isFranchise ? 1.30 : 1.0;
-        const opt = Math.round(biz.optimumPrice * levelMultiplier * franchiseOptMultiplier);
-        const price = bizState.price || opt;
-        let elasticityFactor = 1.0;
-        if (price > opt) {
-          elasticityFactor = Math.max(0, 1 - (price - opt) / opt);
-        } else if (price < opt) {
-          elasticityFactor = 1 + (opt - price) / opt * 0.3;
-        }
-
-        const costFactor = 1.0 + ((Math.sin(Date.now() / 20000) * 0.1) + 0.05);
-        const costOfGoodsLevelMultiplier = Math.pow(1.06, Math.max(0, (bizState.level || 1) - 1));
-        const actualCostOfGoods = Math.floor(biz.costOfGoods * costOfGoodsLevelMultiplier * costFactor);
-        const upgradeFactor = Math.pow(biz.upgradeMultiplier, bizState.level - 1);
-        const workerFactor = 1 + ((bizState.workers || 0) * ((biz.workerMultiplier || 1.2) - 1));
-        const marketingBoost = marketingActive ? 1.4 : 1.0;
-        const estimatedDemand = Math.floor(biz.baseDemand * upgradeFactor * elasticityFactor * workerFactor * marketingBoost);
-        const profitMargin = price - actualCostOfGoods;
-        const grossProfit = Math.max(0, Math.floor(estimatedDemand * profitMargin * 0.12));
-        const workerPayroll = (bizState.workers || 0) * (biz.workerWage || 0);
-        const profitPerTick = Math.max(0, grossProfit - workerPayroll);
+        const bizCalc = GameEngine.calculateSingleBusinessProfit ? GameEngine.calculateSingleBusinessProfit(key, bizState) : {
+          opt: biz.optimumPrice,
+          price: bizState.price || biz.optimumPrice,
+          actualCostOfGoods: biz.costOfGoods,
+          demand: biz.baseDemand,
+          margin: (bizState.price || biz.optimumPrice) - biz.costOfGoods,
+          ownerProfit: 0,
+          workerPayroll: 0
+        };
+        const opt = bizCalc.opt;
+        const price = bizCalc.price;
+        const actualCostOfGoods = bizCalc.actualCostOfGoods;
+        const estimatedDemand = bizCalc.demand;
+        const profitMargin = bizCalc.margin;
+        const profitPerTick = bizCalc.ownerProfit;
+        const workerPayroll = bizCalc.workerPayroll;
 
         const translatedBizName = window.currentLang === 'en' ? (translationDict[biz.name] || biz.name) : biz.name;
         card.innerHTML = `
@@ -2242,29 +2242,20 @@ const UIController = (() => {
       const bizState = s.businesses[key];
       if (!bizState || bizState.level <= 0) return;
 
-      const levelMultiplier = Math.pow(1.12, Math.max(0, (bizState.level || 1) - 1));
-      const franchiseOptMultiplier = bizState.isFranchise ? 1.30 : 1.0;
-      const opt = Math.round(biz.optimumPrice * levelMultiplier * franchiseOptMultiplier);
-      const price = bizState.price || opt;
-      let elasticityFactor = 1.0;
-      if (price > opt) {
-        elasticityFactor = Math.max(0, 1 - (price - opt) / opt);
-      } else if (price < opt) {
-        elasticityFactor = 1 + (opt - price) / opt * 0.3;
-      }
-
-      const costFactor = 1.0 + ((Math.sin(Date.now() / 20000) * 0.1) + 0.05);
-      const costOfGoodsLevelMultiplier = Math.pow(1.06, Math.max(0, (bizState.level || 1) - 1));
-      const actualCostOfGoods = Math.floor(biz.costOfGoods * costOfGoodsLevelMultiplier * costFactor);
-      const upgradeFactor = Math.pow(biz.upgradeMultiplier, bizState.level - 1);
-      const workerFactor = 1 + ((bizState.workers || 0) * ((biz.workerMultiplier || 1.2) - 1));
-      const marketingActive = (bizState.marketingTicks && bizState.marketingTicks > 0);
-      const marketingBoost = marketingActive ? 1.4 : 1.0;
-      const estimatedDemand = Math.floor(biz.baseDemand * upgradeFactor * elasticityFactor * workerFactor * marketingBoost);
-      const profitMargin = price - actualCostOfGoods;
-      const grossProfit = Math.max(0, Math.floor(estimatedDemand * profitMargin * 0.12));
-      const workerPayroll = (bizState.workers || 0) * (biz.workerWage || 0);
-      const profitPerTick = Math.max(0, grossProfit - workerPayroll);
+      const bizCalc = GameEngine.calculateSingleBusinessProfit ? GameEngine.calculateSingleBusinessProfit(key, bizState) : {
+        opt: biz.optimumPrice,
+        price: bizState.price || biz.optimumPrice,
+        actualCostOfGoods: biz.costOfGoods,
+        demand: biz.baseDemand,
+        margin: (bizState.price || biz.optimumPrice) - biz.costOfGoods,
+        ownerProfit: 0,
+        marketingActive: false
+      };
+      const actualCostOfGoods = bizCalc.actualCostOfGoods;
+      const estimatedDemand = bizCalc.demand;
+      const profitMargin = bizCalc.margin;
+      const profitPerTick = bizCalc.ownerProfit;
+      const marketingActive = bizCalc.marketingActive;
 
       const cogEl = document.getElementById(`biz-cog-${key}`);
       if (cogEl) cogEl.textContent = `${actualCostOfGoods} EGP/وحدة`;
@@ -3631,7 +3622,7 @@ const UIController = (() => {
       'panel-bank': {
         title: 'البنك المركزي والادخار والتحويلات',
         desc: `حصنك المالي الآمن واستثمارك التلقائي:
-        <br>• <strong>فائدة الادخار</strong>: تنمو ودائعك البنكية تلقائياً بفائدة مركبة بنسبة 0.003% لكل دورة تيك.
+        <br>• <strong>فائدة الادخار</strong>: تنمو ودائعك البنكية تلقائياً بفائدة مركبة بنسبة 0.0005% لكل ثانية (+5% إضافية عند قيادة رولز رويس Phantom).
         <br>• <strong>التحويلات المالية</strong>: أرسل الأموال لأي لاعب متواجد بالسيرفر فوراً وبشكل مباشر.
         <br>• <strong>القروض البنكية</strong>: خذ قرضاً لتمويل مشاريعك وسدده تدريجياً لتفادي عقوبات السجن الاقتصادي.`
       },
@@ -4136,6 +4127,14 @@ const UIController = (() => {
       const sellBtn = document.getElementById(`btn-sell-shares-${sym}`);
       if (sellBtn) sellBtn.disabled = (ownedData.shares === 0);
     });
+
+    const tickerEl = document.getElementById('stock-market-news-ticker');
+    if (tickerEl && typeof GameEngine.getCurrentMarketTicker === 'function') {
+      const tickerText = GameEngine.getCurrentMarketTicker();
+      if (tickerText && tickerEl.textContent !== tickerText) {
+        tickerEl.textContent = tickerText;
+      }
+    }
   }
 
   // Draw Line Charts inside SVG
@@ -5252,29 +5251,26 @@ const UIController = (() => {
       }, (err) => console.error("Airdrop listen err: ", err));
     activeListeners.push(unsubAirdrop);
 
-    // 5. Market Event (Single Fetch on load to conserve read quota)
-    db.collection('globals').doc('market_event').get().then((doc) => {
-      if (!doc.exists) return;
-      const data = doc.data();
-      if (!data || !data.timestamp) return;
-
-      if (data.resetBaseline) {
-        Object.keys(GameEngine.STOCKS).forEach(sym => {
-          const base = GameEngine.STOCKS[sym].basePrice;
-          GameEngine.stockPrices[sym] = [base];
-        });
-      } else if (data.directPrice && data.targetSymbol) {
-        const sym = data.targetSymbol;
-        if (GameEngine.stockPrices[sym]) {
-          GameEngine.stockPrices[sym][GameEngine.stockPrices[sym].length - 1] = data.directPrice;
+    // 5. Global Unified Market Event synchronization
+    const syncMarketEvent = async () => {
+      try {
+        if (typeof AppDB.getGlobalMarketEvent === 'function') {
+          const ev = await AppDB.getGlobalMarketEvent();
+          if (ev && ev.timestamp) {
+            if (typeof GameEngine.setGlobalMarketEvent === 'function') {
+              GameEngine.setGlobalMarketEvent(ev);
+            }
+            const ticker = document.getElementById('stock-market-news-ticker');
+            if (ticker && ev.title) {
+              ticker.textContent = ev.title;
+            }
+          }
         }
-      }
-
-      const ticker = document.getElementById('stock-market-news-ticker');
-      if (ticker && data.title) {
-        ticker.textContent = data.title;
-      }
-    }).catch(err => console.warn('[UI] Market event fetch warning:', err));
+      } catch (e) {}
+    };
+    syncMarketEvent();
+    const marketEventPoll = setInterval(syncMarketEvent, 15000);
+    activeListeners.push(() => clearInterval(marketEventPoll));
 
     // 3. User document listener for ban & external edits (Live Real-Time Sync)
     let lastAdminActionTimestamp = null;
@@ -9552,7 +9548,8 @@ const UIController = (() => {
         `;
       } else {
         const isMyMsg = curUser && msg.sender === curUser;
-        const hasFb = Boolean(msg.facebookVerified || msg.isFbVerified || (isMyMsg && GameEngine.state && (GameEngine.state.facebookVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('facebook')))));
+        const isSenderVerifiedInLeaderboard = Boolean((cachedLeaderboard || window.cachedLeaderboard) && Array.isArray(cachedLeaderboard || window.cachedLeaderboard) && (cachedLeaderboard || window.cachedLeaderboard).some(p => p.username === msg.sender && p.facebookVerified));
+        const hasFb = Boolean(msg.facebookVerified || msg.isFbVerified || isSenderVerifiedInLeaderboard || (isMyMsg && GameEngine.state && (GameEngine.state.facebookVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('facebook')))));
         const fbIconHtml = hasFb ? '<span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك 👍">f</span>' : '';
         msgDiv.innerHTML = `
           <div class="flex items-center gap-1.5 mb-0.5">

@@ -1321,28 +1321,35 @@
 
   <!-- ==================== JAIL SYSTEM OVERLAY ==================== -->
   <div id="jail-overlay"
-    class="hidden fixed inset-0 z-40 bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-panel w-full max-w-md p-8 rounded-2xl border border-rose-500/30 text-center animate-flash-red">
+    class="hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-md p-8 rounded-2xl border border-rose-500/40 text-center animate-flash-red relative shadow-2xl">
+      <!-- Close (X) button to exit to legal play -->
+      <button id="btn-jail-close-x" type="button"
+        class="absolute top-4 left-4 w-8 h-8 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer border border-slate-700/60"
+        title="العودة للعب وباقي الصفحات">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
       <div
-        class="w-20 h-20 bg-rose-500/10 border border-rose-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
-        <i class="fa-solid fa-user-lock text-rose-500 text-3xl animate-pulse"></i>
+        class="w-16 h-16 bg-rose-500/10 border border-rose-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fa-solid fa-user-lock text-rose-500 text-2xl animate-pulse"></i>
       </div>
-      <h2 class="text-2xl font-black text-rose-500 mb-2">توقيف قيد التحقيق (السوق السوداء)!</h2>
-      <p class="text-xs text-slate-300 mb-6 leading-relaxed">
-        تم تعليق وصولك لعمليات السوق السوداء والتهريب مؤقتاً بسبب بلاغ أمني.
-        <br><span class="text-emerald-400 font-semibold">بقية أنشطتك القانونية (الشركات، البورصة، البنوك، العقارات) تعمل بكامل حريتها!</span>
+      <h2 class="text-xl font-black text-rose-400 mb-1.5">موقوف عن السوق السوداء والتهريب!</h2>
+      <p class="text-xs text-slate-300 mb-5 leading-relaxed">
+        تم تعليق وصولك للأنشطة غير المشروعة مؤقتاً بسبب ملاحقة أمنية.
+        <br><span class="text-emerald-400 font-bold block mt-1">✨ كافة أرباح شركاتك ومشاريعك مستمرة، ويمكنك التنقل واللعب بحرية في باقي أقسام اللعبة!</span>
       </p>
 
-      <div class="p-4 bg-slate-950/80 rounded-xl border border-slate-800/80 mb-6 inline-block">
-        <span class="text-xs text-slate-400 block mb-1">الوقت المتبقي لانتهاء التحقيق</span>
+      <div class="p-3 bg-slate-950/80 rounded-xl border border-slate-800/80 mb-5 inline-block">
+        <span class="text-[11px] text-slate-400 block mb-0.5">الوقت المتبقي لفك الحظر عن السوق السوداء</span>
         <span id="jail-countdown" class="numbers-font text-3xl font-black text-white glow-gold">0</span>
         <span class="text-xs text-slate-400 mr-1">ثانية</span>
       </div>
 
       <div class="flex flex-col gap-2">
         <button id="btn-jail-exit-to-legal" type="button" class="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all cursor-pointer">
-          <i class="fa-solid fa-building-columns"></i>
-          <span>العودة لأعمالك وشركاتك القانونية 🏢</span>
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span>متابعة اللعب وباقي صفحات اللعبة 🎮</span>
         </button>
       </div>
     </div>

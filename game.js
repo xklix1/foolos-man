@@ -148,14 +148,14 @@ const GameEngine = (() => {
   };
 
   const STOCKS = {
-    COMI: { name: 'البنك التجاري الدولي', symbol: 'COMI', basePrice: 38, volatility: 0.015, reversion: 0.01, floor: 18, dividend: 0.00015, maxShares: 50000 },
-    EAST: { name: 'الشرقية للدخان', symbol: 'EAST', basePrice: 85, volatility: 0.02, reversion: 0.015, floor: 35, dividend: 0.00025, maxShares: 30000 },
-    ETEL: { name: 'المصرية للاتصالات', symbol: 'ETEL', basePrice: 48, volatility: 0.018, reversion: 0.012, floor: 22, dividend: 0.00018, maxShares: 40000 },
-    FWRY: { name: 'فوري للمدفوعات الإلكترونية', symbol: 'FWRY', basePrice: 92, volatility: 0.025, reversion: 0.02, floor: 42, dividend: 0.00015, maxShares: 25000 },
-    CASH: { name: 'صندوق الاستثمار التقني البديل', symbol: 'CASH', basePrice: 125, volatility: 0.03, reversion: 0.025, floor: 30, dividend: 0.00035, maxShares: 20000 },
-    BITC: { name: 'مؤشر البيتكوين والأصول الرقمية', symbol: 'BITC', basePrice: 310, volatility: 0.05, reversion: 0.03, floor: 60, dividend: 0, maxShares: 5000 },
-    GOLD: { name: 'صندوق سبائك الذهب الخالص', symbol: 'GOLD', basePrice: 220, volatility: 0.01, reversion: 0.008, floor: 110, dividend: 0.0003, maxShares: 10000 },
-    AIX: { name: 'صندوق الذكاء الاصطناعي العالمي', symbol: 'AIX', basePrice: 380, volatility: 0.035, reversion: 0.022, floor: 90, dividend: 0.00025, maxShares: 8000 }
+    COMI: { name: 'البنك التجاري الدولي', symbol: 'COMI', basePrice: 38, volatility: 0.015, reversion: 0.01, floor: 18, ceiling: 85, dividend: 0.00015, maxShares: 50000, seed: 101 },
+    EAST: { name: 'الشرقية للدخان', symbol: 'EAST', basePrice: 85, volatility: 0.02, reversion: 0.015, floor: 35, ceiling: 190, dividend: 0.00025, maxShares: 30000, seed: 202 },
+    ETEL: { name: 'المصرية للاتصالات', symbol: 'ETEL', basePrice: 48, volatility: 0.018, reversion: 0.012, floor: 22, ceiling: 110, dividend: 0.00018, maxShares: 40000, seed: 303 },
+    FWRY: { name: 'فوري للمدفوعات الإلكترونية', symbol: 'FWRY', basePrice: 92, volatility: 0.025, reversion: 0.02, floor: 42, ceiling: 215, dividend: 0.00015, maxShares: 25000, seed: 404 },
+    CASH: { name: 'صندوق الاستثمار التقني البديل', symbol: 'CASH', basePrice: 125, volatility: 0.03, reversion: 0.025, floor: 45, ceiling: 290, dividend: 0.00035, maxShares: 20000, seed: 505 },
+    BITC: { name: 'مؤشر البيتكوين والأصول الرقمية', symbol: 'BITC', basePrice: 310, volatility: 0.05, reversion: 0.03, floor: 90, ceiling: 780, dividend: 0, maxShares: 5000, seed: 606 },
+    GOLD: { name: 'صندوق سبائك الذهب الخالص', symbol: 'GOLD', basePrice: 220, volatility: 0.01, reversion: 0.008, floor: 130, ceiling: 480, dividend: 0.0003, maxShares: 10000, seed: 707 },
+    AIX: { name: 'صندوق الذكاء الاصطناعي العالمي', symbol: 'AIX', basePrice: 380, volatility: 0.035, reversion: 0.022, floor: 120, ceiling: 890, dividend: 0.00025, maxShares: 8000, seed: 808 }
   };
 
   const CORP_PROJECTS = {
@@ -729,54 +729,149 @@ const GameEngine = (() => {
     }
   }
 
-  // Initialize Stock Price Histories & Regimes (with LocalStorage persistence to prevent refresh price drops)
+  // ─────────────────────────────────────────────────────────
+  // 🏛️ UNIFIED GLOBAL STOCK MARKET (بورصة مركزية موحدة لجميع اللاعبين)
+  // ─────────────────────────────────────────────────────────
+  let globalMarketEvent = null; // { targets: { BITC: 1.1 }, title: "...", expiresAt: 123456 }
+
+  const UNIFIED_SCHEDULED_EVENTS = [
+    {
+      title: 'السوق مستقر وتداولات اعتيادية متزنة بين المتعاملين في البورصة المصرية...',
+      targets: {}
+    },
+    {
+      title: '🚀 موجة شراء مؤسسية تقفز بسهم فوري FWRY وصندوق الذكاء الاصطناعي AIX!',
+      targets: { FWRY: 1.12, AIX: 1.10 }
+    },
+    {
+      title: '👑 إقبال قياسي على الذهب كملاذ آمن: صعود ملحوظ لسهم GOLD وصندوق CASH!',
+      targets: { GOLD: 1.12, CASH: 1.08 }
+    },
+    {
+      title: '🏛️ البنك المركزي يحرك الفائدة: انتعاش سهم البنك التجاري COMI وتصحيح طفيف!',
+      targets: { COMI: 1.12, CASH: 1.06, EAST: 0.95 }
+    },
+    {
+      title: '📡 المصرية للاتصالات ETEL تفوز بتراخيص الجيل الخامس: نشاط إيجابي للسهم!',
+      targets: { ETEL: 1.12 }
+    },
+    {
+      title: '⚡ جني أرباح وتصحيح فني هادئ في سوق العملات الرقمية والبيتكوين BITC!',
+      targets: { BITC: 0.90, AIX: 0.95 }
+    },
+    {
+      title: '🚢 انتظام سلاسل التوريد ووصول شحنات المواد الخام يدعم الشرقية للدخان EAST!',
+      targets: { EAST: 1.10 }
+    },
+    {
+      title: '🌐 تفاؤل استثماري وصعود جماعي لمؤشرات الأسهم بقيادة CIB والمدفوعات!',
+      targets: { COMI: 1.08, FWRY: 1.08, ETEL: 1.06, EAST: 1.06, AIX: 1.07 }
+    },
+    {
+      title: '📉 ضغوط بيعية مؤقتة في قطاع التكنولوجيا تتيح فرص دخول جاذبة للمستثمرين!',
+      targets: { FWRY: 0.92, CASH: 0.93 }
+    }
+  ];
+
+  function setGlobalMarketEvent(event) {
+    globalMarketEvent = event;
+  }
+
+  function getCurrentMarketEvent() {
+    if (globalMarketEvent && (!globalMarketEvent.expiresAt || Date.now() < globalMarketEvent.expiresAt)) {
+      return globalMarketEvent;
+    }
+    // Synchronized 15-minute global cycle (900,000 ms)
+    const cycleIndex = Math.floor(Date.now() / (15 * 60 * 1000)) % UNIFIED_SCHEDULED_EVENTS.length;
+    return UNIFIED_SCHEDULED_EVENTS[cycleIndex];
+  }
+
+  function getCurrentMarketTicker() {
+    const ev = getCurrentMarketEvent();
+    return (ev && ev.title) ? ev.title : 'السوق مستقر وتداولات اعتيادية بين المتعاملين...';
+  }
+
+  // Deterministic 32-bit integer PRNG noise in [-1, 1]
+  function getDeterministicNoise(seed, tick) {
+    let x = (Math.imul((tick ^ (seed * 37)), 0x5deece66d) + 0xb) | 0;
+    x = (Math.imul(x ^ (x >>> 15), 0x27d4eb2d)) | 0;
+    x = (x ^ (x >>> 16)) | 0;
+    return ((x >>> 0) / 4294967296) * 2 - 1;
+  }
+
+  // Calculate the EXACT identical price of stock `sym` at any given tick number
+  function calculateUnifiedPriceAtTick(sym, tick) {
+    const stock = STOCKS[sym];
+    if (!stock) return 10;
+    const seed = stock.seed || 101;
+
+    // 1. Long-term Macro Cycle (~45 mins = 337.5 ticks at 8s per tick)
+    const wave1 = Math.sin((tick + seed * 13) * (2 * Math.PI / 337.5));
+    // 2. Medium-term Sector Momentum (~12 mins = 90 ticks)
+    const wave2 = Math.sin((tick + seed * 29) * (2 * Math.PI / 91.3));
+    // 3. Short-term Intraday Swing (~2.5 mins = 19 ticks)
+    const wave3 = Math.sin((tick + seed * 47) * (2 * Math.PI / 19.1));
+    // 4. Intraday Brownian Noise
+    const noise = getDeterministicNoise(seed, tick);
+
+    // Weighted Cycle Factor
+    const cycleFactor = 1 + (wave1 * 0.22) + (wave2 * 0.12) + (wave3 * 0.06) + (noise * stock.volatility * 1.8);
+    let price = Math.round(stock.basePrice * cycleFactor);
+
+    // Apply Active Market Event Multiplier (Admin or Synchronized Cycle)
+    const activeEv = getCurrentMarketEvent();
+    if (activeEv && activeEv.targets && activeEv.targets[sym]) {
+      price = Math.round(price * activeEv.targets[sym]);
+    }
+
+    // Safety Bounds (Floor & Ceiling prevent runaway pricing or infinite pumps)
+    const ceiling = stock.ceiling || Math.round(stock.basePrice * 3.5);
+    price = Math.max(stock.floor, Math.min(ceiling, price));
+
+    return price;
+  }
+
+  function getUnifiedStockTick() {
+    // 8-second global synchronized pulse
+    return Math.floor(Date.now() / 8000);
+  }
+
+  // Initialize Stock Price Histories (100% Unified across all players)
   function initStocks() {
-    const directions = ['bullish', 'bearish', 'sideways'];
-    let savedPrices = null;
-    let savedRegimes = null;
-    try {
-      savedPrices = JSON.parse(localStorage.getItem('rasalmal_stock_prices'));
-      savedRegimes = JSON.parse(localStorage.getItem('rasalmal_stock_regimes'));
-    } catch (e) {}
-
+    const currentTick = getUnifiedStockTick();
     Object.keys(STOCKS).forEach(sym => {
-      const stock = STOCKS[sym];
-      if (savedPrices && Array.isArray(savedPrices[sym]) && savedPrices[sym].length >= 5) {
-        // Restore persistent price curve — NEVER reset to basePrice on page refresh!
-        stockPrices[sym] = savedPrices[sym];
-        if (savedRegimes && savedRegimes[sym]) {
-          stockRegimes[sym] = savedRegimes[sym];
-        } else {
-          const lastP = stockPrices[sym][stockPrices[sym].length - 1];
-          stockRegimes[sym] = {
-            direction: directions[Math.floor(Math.random() * directions.length)],
-            duration: Math.floor(10 + Math.random() * 18),
-            floatingBase: lastP
-          };
-        }
-      } else {
-        // Generate initial history only on very first launch
-        const history = [];
-        let current = stock.basePrice;
-        for (let i = 0; i < 25; i++) {
-          const change = (Math.random() - 0.5) * 1.5 * stock.volatility;
-          current = Math.max(stock.floor, Math.floor(current * (1 + change)));
-          history.push(current);
-        }
-        stockPrices[sym] = history;
+      const history = [];
+      // Generate past 25 synchronized points
+      for (let i = 24; i >= 0; i--) {
+        history.push(calculateUnifiedPriceAtTick(sym, currentTick - i));
+      }
+      stockPrices[sym] = history;
+    });
+    try {
+      localStorage.removeItem('rasalmal_stock_prices');
+      localStorage.removeItem('rasalmal_stock_regimes');
+    } catch (e) {}
+  }
 
-        stockRegimes[sym] = {
-          direction: directions[Math.floor(Math.random() * directions.length)],
-          duration: Math.floor(10 + Math.random() * 18),
-          floatingBase: stock.basePrice
-        };
+  // Immediately initialize unified stocks so prices are available on boot
+  initStocks();
+
+  function syncUnifiedStocks() {
+    const currentTick = getUnifiedStockTick();
+    let changed = false;
+    Object.keys(STOCKS).forEach(sym => {
+      if (!stockPrices[sym] || stockPrices[sym].length === 0) {
+        stockPrices[sym] = [STOCKS[sym].basePrice];
+      }
+      const newPrice = calculateUnifiedPriceAtTick(sym, currentTick);
+      const lastPrice = stockPrices[sym][stockPrices[sym].length - 1];
+      if (newPrice !== lastPrice) {
+        stockPrices[sym].push(newPrice);
+        if (stockPrices[sym].length > 30) stockPrices[sym].shift();
+        changed = true;
       }
     });
-
-    try {
-      localStorage.setItem('rasalmal_stock_prices', JSON.stringify(stockPrices));
-      localStorage.setItem('rasalmal_stock_regimes', JSON.stringify(stockRegimes));
-    } catch (e) {}
+    return changed;
   }
 
   // Calculate Net Worth: Cash + Bank + DirtyCash + (Real Estate * Cost) + (Stocks * currentPrice) + Locked Investments
@@ -819,121 +914,220 @@ const GameEngine = (() => {
     return 'عامل مبتدئ';
   }
 
-  // Calculate total passive cashflow per tick from all businesses, real estate, and bank interest
-  function calculatePassiveIncomePerTick(excludeTax = false) {
-    let income = 0;
-    if (!state) return 0;
+  // --- Unified Engine Mathematical Helpers for Instant & Continuous Cashflow ---
 
-    // 1. Businesses income (Gross Revenue minus Worker Wages Payroll)
-    if (state.businesses) {
-      Object.keys(state.businesses).forEach(key => {
-        const bizState = state.businesses[key];
-        const bizConfig = BUSINESSES[key];
-        if (bizState && bizState.level > 0 && bizConfig) {
-          const levelMultiplier = Math.pow(1.12, Math.max(0, (bizState.level || 1) - 1));
-          const franchiseOptMultiplier = bizState.isFranchise ? 1.30 : 1.0;
-          const opt = Math.round(bizConfig.optimumPrice * levelMultiplier * franchiseOptMultiplier);
-          const price = bizState.price || opt;
-          
-          let elasticity = 1.0;
-          if (price > opt) elasticity = Math.max(0, 1 - (price - opt) / opt);
-          else if (price < opt) elasticity = 1 + (opt - price) / opt * 0.3;
+  // Calculate detailed financial breakdown and owner profit for a single business
+  function calculateSingleBusinessProfit(key, bizState, playerState = state) {
+    const bizConfig = BUSINESSES[key];
+    if (!bizConfig || !bizState || bizState.level <= 0) {
+      return {
+        opt: 0,
+        price: 0,
+        elasticity: 1,
+        marketingActive: false,
+        actualCostOfGoods: 0,
+        demand: 0,
+        margin: 0,
+        grossProfit: 0,
+        workerPayroll: 0,
+        cappedPayroll: 0,
+        netProfit: 0,
+        synergyMultiplier: 1,
+        franchiseMultiplier: 1,
+        employeeBoost: 1,
+        corpBooster: 1,
+        employeePayrollDeduction: 0,
+        finalNetProfit: 0,
+        ownerProfit: 0,
+        partnerDividends: {}
+      };
+    }
 
-          const marketingBoost = (bizState.marketingTicks && bizState.marketingTicks > 0) ? 1.4 : 1.0;
-          const costOfGoodsLevelMultiplier = Math.pow(1.06, Math.max(0, (bizState.level || 1) - 1));
-          const actualCostOfGoods = Math.floor(bizConfig.costOfGoods * costOfGoodsLevelMultiplier * 1.05);
-          const upgradeFactor = Math.pow(bizConfig.upgradeMultiplier, bizState.level - 1);
-          const workerFactor = 1 + ((bizState.workers || 0) * (bizConfig.workerMultiplier - 1));
-          const demand = Math.floor(bizConfig.baseDemand * upgradeFactor * elasticity * workerFactor * marketingBoost);
-          const margin = price - actualCostOfGoods;
-          const hasQuantum = (state.inventory && state.inventory.quantum_cpu > 0);
-          const quantumMultiplier = hasQuantum ? 1.5 : 1.0;
-          const boost = window.serverBoostMultiplier || 1.0;
-          const grossProfit = Math.max(0, Math.floor(demand * margin * 0.85 * quantumMultiplier * boost));
-          const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
-          const cappedPayroll = Math.min(workerPayroll, Math.floor(grossProfit * 0.40));
-          const netProfit = Math.max(0, grossProfit - cappedPayroll);
+    const s = playerState || state;
+    const levelMultiplier = Math.pow(1.12, Math.max(0, (bizState.level || 1) - 1));
+    const franchiseOptMultiplier = bizState.isFranchise ? 1.30 : 1.0;
+    const opt = Math.round(bizConfig.optimumPrice * levelMultiplier * franchiseOptMultiplier);
+    const price = bizState.price || opt;
 
-          // V2: Supply Chain Synergies Multiplier
-          let synergyMultiplier = 1.0;
-          if (key === 'logistics' && (state.assets.mega_yacht > 0 || state.assets.private_island > 0)) {
-            synergyMultiplier = 1.15;
-          } else if (key === 'coffee' && (state.businesses.supermarket && state.businesses.supermarket.level > 0)) {
-            synergyMultiplier = 1.10;
-          } else if (key === 'tech' && (state.businesses.private_bank && state.businesses.private_bank.level > 0)) {
-            synergyMultiplier = 1.20;
-          } else if (key === 'space_tech' && (state.assets.orbital_station > 0)) {
-            synergyMultiplier = 1.30;
+    let elasticity = 1.0;
+    if (price > opt) {
+      elasticity = Math.max(0, 1 - (price - opt) / opt);
+    } else if (price < opt) {
+      elasticity = 1 + (opt - price) / opt * 0.3;
+    }
+
+    const marketingActive = Boolean(bizState.marketingTicks && bizState.marketingTicks > 0);
+    const marketingBoost = marketingActive ? 1.4 : 1.0;
+    const costOfGoodsLevelMultiplier = Math.pow(1.06, Math.max(0, (bizState.level || 1) - 1));
+    const actualCostOfGoods = Math.floor(bizConfig.costOfGoods * costOfGoodsLevelMultiplier * 1.05);
+    const upgradeFactor = Math.pow(bizConfig.upgradeMultiplier, bizState.level - 1);
+    const workerFactor = 1 + ((bizState.workers || 0) * ((bizConfig.workerMultiplier || 1.2) - 1));
+    const demand = Math.floor(bizConfig.baseDemand * upgradeFactor * elasticity * workerFactor * marketingBoost);
+    const margin = price - actualCostOfGoods;
+
+    const hasQuantum = Boolean(s && s.inventory && s.inventory.quantum_cpu > 0);
+    const quantumMultiplier = hasQuantum ? 1.5 : 1.0;
+    const boost = (typeof window !== 'undefined' && window.serverBoostMultiplier) || 1.0;
+    const grossProfit = Math.max(0, Math.floor(demand * margin * 0.85 * quantumMultiplier * boost));
+
+    const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
+    const cappedPayroll = Math.min(workerPayroll, Math.floor(grossProfit * 0.40));
+    const netProfit = Math.max(0, grossProfit - cappedPayroll);
+
+    // V2: Supply Chain Synergies Multiplier
+    let synergyMultiplier = 1.0;
+    if (s && s.assets && s.businesses) {
+      if (key === 'logistics' && ((s.assets.mega_yacht || 0) > 0 || (s.assets.private_island || 0) > 0)) {
+        synergyMultiplier = 1.15;
+      } else if (key === 'coffee' && (s.businesses.supermarket && s.businesses.supermarket.level > 0)) {
+        synergyMultiplier = 1.10;
+      } else if (key === 'tech' && (s.businesses.private_bank && s.businesses.private_bank.level > 0)) {
+        synergyMultiplier = 1.20;
+      } else if (key === 'space_tech' && ((s.assets.orbital_station || 0) > 0)) {
+        synergyMultiplier = 1.30;
+      }
+    }
+
+    // V2: Franchise Multiplier
+    const franchiseMultiplier = bizState.isFranchise ? 1.25 : 1.0;
+
+    // V2: Employee Boost & Salary Deductions
+    let employeeBoost = 1.0;
+    let employeePayrollDeduction = 0;
+    if (bizState.employees) {
+      Object.keys(bizState.employees).forEach(empUser => {
+        const empData = bizState.employees[empUser];
+        let solved = false;
+        if (typeof window !== 'undefined' && window.employeesCache && window.employeesCache[empUser]) {
+          const empState = window.employeesCache[empUser];
+          if (empState.lastPuzzleSolved && (Date.now() - empState.lastPuzzleSolved < 86400000)) {
+            solved = true;
           }
-
-          // V2: Franchise Multiplier
-          const franchiseMultiplier = bizState.isFranchise ? 1.25 : 1.0;
-
-          // V2: Employee Boost & Salary Deductions
-          let employeeBoost = 1.0;
-          let employeePayrollDeduction = 0;
-          if (bizState.employees) {
-            Object.keys(bizState.employees).forEach(empUser => {
-              const empData = bizState.employees[empUser];
-              let solved = false;
-              if (typeof window !== 'undefined' && window.employeesCache && window.employeesCache[empUser]) {
-                const empState = window.employeesCache[empUser];
-                if (empState.lastPuzzleSolved && (Date.now() - empState.lastPuzzleSolved < 86400000)) {
-                  solved = true;
-                }
-              }
-              if (solved) {
-                employeeBoost += 0.30;
-                employeePayrollDeduction += (empData.salary || 0);
-              }
-            });
-          }
-
-          // V2: Corporation Level Booster (+5% per level above Level 1)
-          let corpBooster = 1.0;
-          if (typeof window !== 'undefined' && window.activeCorporationState) {
-            const corp = window.activeCorporationState;
-            if (corp.members && corp.members.includes(state.username)) {
-              const corpLevel = corp.level || 1;
-              corpBooster = 1 + (corpLevel - 1) * 0.05;
-            }
-          }
-
-          let finalNetProfit = Math.max(0, Math.floor(netProfit * synergyMultiplier * franchiseMultiplier * employeeBoost * corpBooster) - employeePayrollDeduction);
-
-          // V2: Partner Profit Sharing Deductions
-          if (bizState.partners) {
-            const ownerShare = bizState.partners[state.username] !== undefined ? bizState.partners[state.username] : 1.0;
-            const ownerNetProfit = Math.floor(finalNetProfit * ownerShare);
-
-            if (typeof window !== 'undefined') {
-              if (!window.pendingDividends) window.pendingDividends = {};
-              if (!window.pendingDividends[key]) window.pendingDividends[key] = {};
-
-              Object.keys(bizState.partners).forEach(partner => {
-                if (partner !== state.username) {
-                  const partnerShare = bizState.partners[partner] || 0;
-                  const partnerAmt = Math.floor(finalNetProfit * partnerShare);
-                  if (partnerAmt > 0) {
-                    window.pendingDividends[key][partner] = (window.pendingDividends[key][partner] || 0) + partnerAmt;
-                  }
-                }
-              });
-            }
-            finalNetProfit = ownerNetProfit;
-          }
-
-          income += finalNetProfit;
+        }
+        if (solved) {
+          employeeBoost += 0.30;
+          employeePayrollDeduction += (empData.salary || 0);
         }
       });
     }
 
-    // V2: Add Hired Job Salary
+    // V2: Corporation Level Booster (+5% per level above Level 1)
+    let corpBooster = 1.0;
+    if (typeof window !== 'undefined' && window.activeCorporationState && s) {
+      const corp = window.activeCorporationState;
+      if (corp.members && corp.members.includes(s.username)) {
+        const corpLevel = corp.level || 1;
+        corpBooster = 1 + (corpLevel - 1) * 0.05;
+      }
+    }
+
+    const finalNetProfit = Math.max(0, Math.floor(netProfit * synergyMultiplier * franchiseMultiplier * employeeBoost * corpBooster) - employeePayrollDeduction);
+
+    let ownerProfit = finalNetProfit;
+    const partnerDividends = {};
+
+    // V2: Partner Profit Sharing Deductions
+    if (bizState.partners && s) {
+      const ownerShare = bizState.partners[s.username] !== undefined ? bizState.partners[s.username] : 1.0;
+      ownerProfit = Math.floor(finalNetProfit * ownerShare);
+
+      Object.keys(bizState.partners).forEach(partner => {
+        if (partner !== s.username) {
+          const partnerShare = bizState.partners[partner] || 0;
+          const partnerAmt = Math.floor(finalNetProfit * partnerShare);
+          if (partnerAmt > 0) {
+            partnerDividends[partner] = partnerAmt;
+          }
+        }
+      });
+    }
+
+    return {
+      opt,
+      price,
+      elasticity,
+      marketingActive,
+      actualCostOfGoods,
+      demand,
+      margin,
+      grossProfit,
+      workerPayroll,
+      cappedPayroll,
+      netProfit,
+      synergyMultiplier,
+      franchiseMultiplier,
+      employeeBoost,
+      corpBooster,
+      employeePayrollDeduction,
+      finalNetProfit,
+      ownerProfit,
+      partnerDividends
+    };
+  }
+
+  // Calculate live tick profit from joint corporation projects
+  function calculateCorpTickProfit(playerState = state) {
+    const s = playerState || state;
+    if (!s || typeof window === 'undefined' || !window.activeCorporationState) return 0;
+    const corp = window.activeCorporationState;
+    const username = s.username;
+    if (!corp.members || !corp.members.includes(username) || !corp.projects) return 0;
+
+    let totalCont = corp.totalContributions || 0;
+    let myCont = corp.contributions ? (corp.contributions[username] || 0) : 0;
+    let sharePct = 0;
+    if (totalCont > 0) {
+      sharePct = myCont / totalCont;
+    } else if (username === corp.founder) {
+      sharePct = 1.0;
+    }
+
+    let totalCorpTickProfit = 0;
+    Object.keys(corp.projects).forEach(projId => {
+      if (corp.projects[projId] && CORP_PROJECTS[projId]) {
+        totalCorpTickProfit += CORP_PROJECTS[projId].profitPerTick;
+      }
+    });
+
+    return Math.floor(totalCorpTickProfit * sharePct);
+  }
+
+  // Calculate compound bank interest per tick (0.0005% per second, boosted +5% if Rolls-Royce active)
+  function calculateBankInterestPerTick(playerState = state) {
+    const s = playerState || state;
+    if (!s || !s.bank || s.bank <= 0) return 0;
+    let rate = 0.000005;
+    if (s.activeCar === 'rolls') {
+      rate *= 1.05; // Rolls-Royce Phantom +5% bank interest boost
+    }
+    return Math.floor(s.bank * rate);
+  }
+
+  // Calculate total passive cashflow per tick from all businesses, real estate, bank interest, corp, and peer employment
+  function calculatePassiveIncomePerTick(excludeTax = false) {
+    let income = 0;
+    if (!state) return 0;
+
+    // 1. Businesses income (Net owner profit after workers, synergies, franchises, employees, and partner splits)
+    if (state.businesses) {
+      Object.keys(state.businesses).forEach(key => {
+        const bizState = state.businesses[key];
+        if (bizState && bizState.level > 0) {
+          const breakdown = calculateSingleBusinessProfit(key, bizState, state);
+          income += breakdown.ownerProfit;
+        }
+      });
+    }
+
+    // 2. Joint Corporation Projects Profit Share
+    income += calculateCorpTickProfit(state);
+
+    // 3. Hired Peer Job Salary (active verified daily contract)
     if (state.hiredJob && state.lastPuzzleSolved && (Date.now() - state.lastPuzzleSolved < 86400000)) {
       income += (state.hiredJob.salary || 0);
     }
 
-    // 2. Real estate rental income
+    // 4. Real estate rental income
     if (state.assets) {
       Object.keys(state.assets).forEach(key => {
         const owned = state.assets[key] || 0;
@@ -943,7 +1137,7 @@ const GameEngine = (() => {
       });
     }
 
-    // 2.5 Cars rental income and maintenance
+    // 5. Cars rental income and maintenance
     if (state.ownedCars && state.ownedCars.length > 0) {
       state.ownedCars.forEach(carRef => {
         const car = CAR_TEMPLATES[carRef.id];
@@ -956,15 +1150,16 @@ const GameEngine = (() => {
       });
     }
 
-    // 3. Bank interest (0.003% per tick = ~3.5% APY)
-    if (state.bank && state.bank > 0) {
-      income += Math.floor(state.bank * 0.00003);
-    }
+    // 6. Bank interest (0.0005% per tick + Rolls-Royce bonus)
+    income += calculateBankInterestPerTick(state);
 
-    // 4. Wealth Tax deduction for ultra-high net worth (5M+ EGP)
+    // 7. Wealth Tax deduction for ultra-high net worth (5M+ EGP, with liquid safety buffer > 100k)
     if (state.netWorth > 5000000 && !excludeTax) {
-      const taxReport = calculateTaxReport();
-      income = Math.max(0, income - taxReport.taxPerSecond);
+      const liquidFunds = (state.bank || 0) + (state.cash || 0);
+      if (liquidFunds > 100000) {
+        const taxReport = calculateTaxReport();
+        income = Math.max(0, income - taxReport.taxPerSecond);
+      }
     }
 
     return income;
@@ -1092,16 +1287,12 @@ const GameEngine = (() => {
       return updates;
     }
 
-    // 1. Jail lockout processing
+    // 1. Jail timer decrement (Player is isolated ONLY from Black Market activities; all legitimate businesses, rents, car revenues, investments, and passive income continue normally!)
     if (state.jailTimer > 0) {
       state.jailTimer = Math.max(0, state.jailTimer - 1);
       if (state.jailTimer === 0) {
         updates.jailFree = true;
       }
-      // Save state and skip income updates while jailed
-      state.netWorth = calculateNetWorth();
-      AppDB.savePlayerState(activeUsername, state);
-      return updates;
     }
 
     // 1.5. Police Raid Trigger check (triggered if dirtyCash > 100K)
@@ -1124,107 +1315,56 @@ const GameEngine = (() => {
       }
     }
 
-    // 2. Bank compound interest accrual (0.0005% per tick = ~1.2% APY)
-    if (state.bank > 0) {
-      const rate = 0.000005;
-      const interest = Math.floor(state.bank * rate);
-      if (interest > 0) {
-        state.bank += interest;
-        updates.bankInterestGained = interest;
+    // 2. Bank compound interest accrual (0.0005% per tick + Rolls-Royce bonus)
+    const interestGained = calculateBankInterestPerTick(state);
+    if (interestGained > 0) {
+      state.bank += interestGained;
+      updates.bankInterestGained = interestGained;
+    }
+
+    // 3. Peer-to-Peer Hired Job Salary (earned when hired by another player's business)
+    if (state.hiredJob && state.lastPuzzleSolved && (Date.now() - state.lastPuzzleSolved < 86400000)) {
+      const hiredSalary = state.hiredJob.salary || 0;
+      if (hiredSalary > 0) {
+        state.bank += hiredSalary;
+        updates.businessProfitGained += hiredSalary;
       }
     }
 
-    // 3. Careers Auto Salary (earned automatically every 10 ticks = ~30 seconds)
-    // To represent work contracts, the player receives a baseline salary passively
-    const currentJob = JOBS[state.jobId];
-    if (currentJob && Math.random() < 0.10) {
-      const boost = window.serverBoostMultiplier || 1.0;
-      const salaryEarned = Math.floor(currentJob.salary * boost);
-      state.bank += salaryEarned;
-      updates.businessProfitGained += salaryEarned;
-    }
-
-    // 4. Businesses passive income ticking (Gross revenue minus Worker Wages Payroll)
+    // 4. Businesses passive income ticking (uses unified calculateSingleBusinessProfit engine)
     Object.keys(state.businesses).forEach(key => {
       const bizState = state.businesses[key];
-      const bizConfig = BUSINESSES[key];
-      if (!bizState) return;
+      if (!bizState || bizState.level <= 0) return;
 
-      if (bizState.level > 0) {
-        // Price elasticity calculation: Demand falls if price is higher than optimum
-        const price = bizState.price || bizConfig.optimumPrice;
-        const opt = bizConfig.optimumPrice;
-        let elasticityFactor = 1.0;
+      const breakdown = calculateSingleBusinessProfit(key, bizState, state);
 
-        if (price > opt) {
-          elasticityFactor = Math.max(0, 1 - (price - opt) / opt);
-        } else if (price < opt) {
-          // Selling cheaper increases demand, up to +30%
-          elasticityFactor = 1 + (opt - price) / opt * 0.3;
-        }
+      // Decrement marketing campaign timer if active
+      if (bizState.marketingTicks && bizState.marketingTicks > 0) {
+        bizState.marketingTicks--;
+      }
 
-        // Active Marketing Campaign boost (+40% demand boost if active)
-        const marketingBoost = (bizState.marketingTicks && bizState.marketingTicks > 0) ? 1.4 : 1.0;
-        if (bizState.marketingTicks && bizState.marketingTicks > 0) {
-          bizState.marketingTicks--;
-        }
+      if (breakdown.ownerProfit > 0) {
+        state.bank += breakdown.ownerProfit;
+        updates.businessProfitGained += breakdown.ownerProfit;
+      }
 
-        // Dynamic inflation / raw material cost fluctuation factor (0.9 to 1.15)
-        const costFactor = 1.0 + ((Math.sin(Date.now() / 20000) * 0.1) + 0.05);
-        const actualCostOfGoods = Math.floor(bizConfig.costOfGoods * costFactor);
-
-        // Scale demand based on upgrades (level) and workers hired
-        const upgradeFactor = Math.pow(bizConfig.upgradeMultiplier, bizState.level - 1);
-        const workerFactor = 1 + ((bizState.workers || 0) * (bizConfig.workerMultiplier - 1));
-        const demand = Math.floor(bizConfig.baseDemand * upgradeFactor * elasticityFactor * workerFactor * marketingBoost);
-
-        // Margin per unit = Price - Dynamic Cost of Goods
-        const margin = price - actualCostOfGoods;
-
-        // Final profit per tick = gross margin (boosted by Quantum CPU +50%) minus worker wages
-        const hasQuantum = (state.inventory && state.inventory.quantum_cpu > 0);
-        const quantumMultiplier = hasQuantum ? 1.5 : 1.0;
-        const boost = window.serverBoostMultiplier || 1.0;
-        const grossProfit = Math.max(0, Math.floor(demand * margin * 0.85 * quantumMultiplier * boost));
-        const workerPayroll = (bizState.workers || 0) * (bizConfig.workerWage || 0);
-        // Payroll safety: workers never eat more than 40% of gross profit
-        const cappedPayroll = Math.min(workerPayroll, Math.floor(grossProfit * 0.40));
-        const profit = Math.max(0, grossProfit - cappedPayroll);
-
-        if (profit > 0) {
-          state.bank += profit;
-          updates.businessProfitGained += profit;
-        }
+      // Record partner dividends for claim distribution
+      if (typeof window !== 'undefined' && breakdown.partnerDividends) {
+        if (!window.pendingDividends) window.pendingDividends = {};
+        if (!window.pendingDividends[key]) window.pendingDividends[key] = {};
+        Object.entries(breakdown.partnerDividends).forEach(([partner, amt]) => {
+          if (amt > 0) {
+            window.pendingDividends[key][partner] = (window.pendingDividends[key][partner] || 0) + amt;
+          }
+        });
       }
     });
 
-    // V2: Joint Corporation Passive Profit Ticks
-    if (typeof window !== 'undefined' && window.activeCorporationState) {
-      const corp = window.activeCorporationState;
-      const username = state.username;
-      if (corp.members && corp.members.includes(username) && corp.projects) {
-        let totalCont = corp.totalContributions || 0;
-        let myCont = corp.contributions ? (corp.contributions[username] || 0) : 0;
-        let sharePct = 0;
-        if (totalCont > 0) {
-          sharePct = myCont / totalCont;
-        } else if (username === corp.founder) {
-          sharePct = 1.0;
-        }
-        
-        let totalCorpTickProfit = 0;
-        Object.keys(corp.projects).forEach(projId => {
-          if (corp.projects[projId] && CORP_PROJECTS[projId]) {
-            totalCorpTickProfit += CORP_PROJECTS[projId].profitPerTick;
-          }
-        });
-        
-        const corpProfitGained = Math.floor(totalCorpTickProfit * sharePct);
-        if (corpProfitGained > 0) {
-          state.bank += corpProfitGained;
-          updates.businessProfitGained += corpProfitGained;
-        }
-      }
+    // V2: Joint Corporation Passive Profit Ticks (uses unified calculateCorpTickProfit engine)
+    const corpProfitGained = calculateCorpTickProfit(state);
+    if (corpProfitGained > 0) {
+      state.bank += corpProfitGained;
+      updates.businessProfitGained += corpProfitGained;
     }
 
     // 4.5 Passive Business Front Laundering (واجهات الشركات لغسيل الأموال بضريبة 25% كحد أدنى)
@@ -1394,171 +1534,13 @@ const GameEngine = (() => {
       }
     });
 
-    // 7. Stock Market fluctuations (Controlled 6-second pulse with Trend Regimes)
-    stockTickCounter++;
-    if (stockTickCounter >= STOCK_PULSE_INTERVAL) {
-      stockTickCounter = 0;
-      const directions = ['bullish', 'bearish', 'sideways'];
-
-      Object.keys(STOCKS).forEach(sym => {
-        const stock = STOCKS[sym];
-        const history = stockPrices[sym];
-        if (!history || history.length === 0) return;
-        const lastPrice = history[history.length - 1];
-
-        // Ensure regime exists
-        if (!stockRegimes[sym]) {
-          stockRegimes[sym] = {
-            direction: directions[Math.floor(Math.random() * directions.length)],
-            duration: Math.floor(10 + Math.random() * 15),
-            floatingBase: stock.basePrice
-          };
-        }
-
-        const regime = stockRegimes[sym];
-        regime.duration--;
-
-        // If trend expired, rotate to new regime and slightly float fair value
-        if (regime.duration <= 0) {
-          regime.direction = directions[Math.floor(Math.random() * directions.length)];
-          regime.duration = Math.floor(12 + Math.random() * 18);
-          // Floating fair value drifts +/- 8%
-          const drift = (Math.random() - 0.5) * 0.16;
-          regime.floatingBase = Math.max(stock.floor + 5, Math.floor(stock.basePrice * (1 + drift)));
-        }
-
-        // 1. Soft pull towards floating fair value (gentler than before)
-        const pull = (regime.floatingBase - lastPrice) * (stock.reversion * 0.35);
-
-        // 2. Trend momentum drift
-        let trendDrift = 0;
-        if (regime.direction === 'bullish') {
-          trendDrift = lastPrice * (stock.volatility * (0.4 + Math.random() * 0.5));
-        } else if (regime.direction === 'bearish') {
-          trendDrift = -lastPrice * (stock.volatility * (0.4 + Math.random() * 0.5));
-        }
-
-        // 3. Realistic stochastic shock
-        const shock = (Math.random() - 0.5) * 1.6 * stock.volatility * lastPrice;
-
-        let newPrice = Math.floor(lastPrice + pull + trendDrift + shock);
-        newPrice = Math.max(stock.floor, newPrice); // Floor protection
-
-        history.push(newPrice);
-        if (history.length > 30) history.shift();
-        updates.stockMovement = true;
-      });
-
-      // Persist latest price evolution to LocalStorage so refresh never loses or resets price!
-      try {
-        localStorage.setItem('rasalmal_stock_prices', JSON.stringify(stockPrices));
-        localStorage.setItem('rasalmal_stock_regimes', JSON.stringify(stockRegimes));
-      } catch (e) {}
-    }
-
-    // 8. Dynamic Market Events (Balanced & Cooled: Every 90s min, 3% chance)
-    const nowTick = Date.now();
-    if (!updates.tipEvent && (nowTick - lastMarketEventTimestamp > 90000) && Math.random() < 0.03) {
-      lastMarketEventTimestamp = nowTick;
-      const eventTypes = [
-        {
-          type: 'crypto_bull_run',
-          title: '🚀 صعود في سوق العملات الرقمية',
-          desc: 'موجة طلب تقفز بسهم BITC وصندوق الذكاء الاصطناعي AIX بنسبة ممتازة!',
-          targetStocks: ['BITC', 'AIX'],
-          multiplier: 1.10,
-          toastType: 'success'
-        },
-        {
-          type: 'gold_surge',
-          title: '👑 صعود سبائك الذهب 24k',
-          desc: 'إقبال على الذهب كملاذ آمن يرفع سهم GOLD وصندوق CASH بصورة متزنة.',
-          targetStocks: ['GOLD', 'CASH'],
-          multiplier: 1.08,
-          toastType: 'success'
-        },
-        {
-          type: 'ai_breakthrough',
-          title: '🤖 طفرة جديدة في أبحاث الذكاء الاصطناعي',
-          desc: 'إطلاق نماذج ذكاء اصطناعي واعدة يدعم أسهم AIX وفوري FWRY في جلسة اليوم.',
-          targetStocks: ['AIX', 'FWRY'],
-          multiplier: 1.09,
-          toastType: 'success'
-        },
-        {
-          type: 'cbe_rate_hike',
-          title: '🏛️ قرار المركزي: تحريك الفائدة المصرفية',
-          desc: 'البنك المركزي يحرك الفائدة: تحسن لسهم CIB وتصحيح طفيف لأسهم التجزئة.',
-          targetStocks: ['COMI', 'CASH'],
-          multiplier: 1.07,
-          negativeTargets: ['EAST', 'FWRY'],
-          negativeMultiplier: 0.95,
-          toastType: 'warning'
-        },
-        {
-          type: '5g_telecom_license',
-          title: '📡 المصرية للاتصالات توسع شبكات 5G',
-          desc: 'توسعات في شبكات الألياف تدعم سهم ETEL بنسبة جيدة في تداولات اليوم.',
-          targetStocks: ['ETEL'],
-          multiplier: 1.10,
-          toastType: 'success'
-        },
-        {
-          type: 'fintech_boom',
-          title: '💳 نمو معاملات المدفوعات الرقمية',
-          desc: 'زيادة الطلب على الدفع الإلكتروني تدعم صعود سهم فوري FWRY بحركة إيجابية.',
-          targetStocks: ['FWRY'],
-          multiplier: 1.08,
-          toastType: 'success'
-        },
-        {
-          type: 'supply_chain_relief',
-          title: '🚢 انتظام سلاسل التوريد والشحن الدولي',
-          desc: 'وصول شحنات المواد الخام للموانئ يدعم أرباح الشرقية للدخان EAST.',
-          targetStocks: ['EAST'],
-          multiplier: 1.07,
-          toastType: 'success'
-        },
-        {
-          type: 'crypto_flash_correction',
-          title: '📉 جني أرباح طفيف في العملات الرقمية',
-          desc: 'عمليات جني أرباح تضغط على البيتكوين BITC مؤقتاً بحركة تصحيحية متزنة.',
-          targetStocks: ['BITC'],
-          multiplier: 0.92,
-          toastType: 'error'
-        },
-        {
-          type: 'global_market_correction',
-          title: '⚡ حركة تصحيح متزنة في أسواق الأسهم',
-          desc: 'موجة جني أرباح هادئة تهبط بأسهم البورصة بنسب طفيفة تتيح فرص دخول جيدة.',
-          targetStocks: ['COMI', 'FWRY', 'EAST', 'ETEL', 'AIX'],
-          multiplier: 0.93,
-          toastType: 'warning'
-        }
-      ];
-
-      const selectedEvent = eventTypes[Math.floor(Math.random() * eventTypes.length)];
-
-      // Apply market shock to target stocks
-      selectedEvent.targetStocks.forEach(sym => {
-        if (stockPrices[sym]) {
-          const lastP = stockPrices[sym][stockPrices[sym].length - 1];
-          const newP = Math.max(STOCKS[sym].floor, Math.floor(lastP * selectedEvent.multiplier));
-          stockPrices[sym][stockPrices[sym].length - 1] = newP;
-        }
-      });
-
-      if (selectedEvent.negativeTargets) {
-        selectedEvent.negativeTargets.forEach(sym => {
-          if (stockPrices[sym]) {
-            const lastP = stockPrices[sym][stockPrices[sym].length - 1];
-            const newP = Math.max(STOCKS[sym].floor, Math.floor(lastP * selectedEvent.negativeMultiplier));
-            stockPrices[sym][stockPrices[sym].length - 1] = newP;
-          }
-        });
+    // 7. Unified Stock Market Synchronization (Deterministic & Global for all players)
+    if (syncUnifiedStocks()) {
+      updates.stockMovement = true;
+      const currentEv = getCurrentMarketEvent();
+      if (currentEv && currentEv.title) {
+        updates.marketTicker = currentEv.title;
       }
-
-      updates.marketEvent = selectedEvent;
     }
 
     // 9. Random Life & Career Opportunities (Cooldown: 45 seconds)
@@ -1744,7 +1726,12 @@ const GameEngine = (() => {
           }
         }
 
-        if (elapsedSinceLastActive >= 10 && (state.jailTimer || 0) <= 0) {
+        // Decrement jail timer while player was offline
+        if (state.jailTimer && state.jailTimer > 0) {
+          state.jailTimer = Math.max(0, state.jailTimer - elapsedSinceLastActive);
+        }
+
+        if (elapsedSinceLastActive >= 10) {
           // Cap at 12 hours (43,200 seconds)
           const cappedSeconds = Math.min(43200, elapsedSinceLastActive);
           const incomePerSec = calculatePassiveIncomePerSecond();
@@ -2885,7 +2872,6 @@ const GameEngine = (() => {
 
   // Bank Loan: Take instant liquidity loan (up to 35% of Net Worth)
   function takeBankLoan(amount) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك طلب قروض بنكية.");
     if (state.activeLoan && state.activeLoan.amount > 0) {
       throw new Error(`لديك قرض قائم بالفعل بقيمة ${state.activeLoan.totalDue.toLocaleString()} EGP يجب سداده أولاً!`);
     }
@@ -3081,6 +3067,9 @@ const GameEngine = (() => {
     fileTaxDeclaration,
     calculatePassiveIncomePerTick,
     calculatePassiveIncomePerSecond,
+    calculateSingleBusinessProfit,
+    calculateCorpTickProfit,
+    calculateBankInterestPerTick,
     calculateNetWorth,
     renewAfkManager,
     forceSaveState,
@@ -3094,7 +3083,13 @@ const GameEngine = (() => {
     rentCar,
     sellCar,
     buySmugglingVehicle,
-    startSmugglingJob
+    startSmugglingJob,
+
+    // Unified Stock Market Methods
+    setGlobalMarketEvent,
+    getCurrentMarketTicker,
+    getCurrentMarketEvent,
+    syncUnifiedStocks
   };
 })();
 

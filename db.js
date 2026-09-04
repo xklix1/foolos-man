@@ -1189,6 +1189,36 @@ var AppDB = (() => {
     }
   }
 
+  // ── Unified Stock Market Global Events ──
+  async function getGlobalMarketEvent() {
+    try {
+      const rows = await _api("globals?id=eq.market_event&select=*");
+      if (rows && rows.length > 0 && rows[0].data) {
+        return rows[0].data;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function saveGlobalMarketEvent(eventData) {
+    try {
+      await _api('globals', {
+        method: 'POST',
+        headers: { 'Prefer': 'resolution=merge-duplicates' },
+        body: JSON.stringify({
+          id: 'market_event',
+          data: eventData,
+          updated_at: Date.now()
+        })
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   // ─────────────────────────────────────────────
   //  COMPATIBILITY LAYER (MOCKS FIREBASE FOR ANY DIRECT UI CALLS)
   // ─────────────────────────────────────────────
@@ -1495,7 +1525,11 @@ var AppDB = (() => {
     getChatMessages,
     listenToChatMessages,
     clearChatMessages,
-    listenToPrivateChat: () => (() => {})
+    listenToPrivateChat: () => (() => {}),
+
+    // Unified Stock Market
+    getGlobalMarketEvent,
+    saveGlobalMarketEvent
   };
 })();
 

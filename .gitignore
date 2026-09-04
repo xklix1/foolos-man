@@ -4,3 +4,4 @@ node_modules/
 foolos-man-android/
 www/
 capacitor.config.json
+*.backup.js
