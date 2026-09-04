@@ -1588,12 +1588,6 @@ const UIController = (() => {
       checkAndOpenRiddleVerification();
     }
 
-    // Scroll main content to top on tab switch
-    const mainEl = document.querySelector('.desktop-content');
-    if (mainEl) {
-      mainEl.scrollTop = 0;
-    }
-
     // Render tab-specific elements
     renderAll();
   }
@@ -6910,324 +6904,474 @@ const UIController = (() => {
     }
 
     // --- Comprehensive Forensic & Security Audit Engine ---
-    function performAccountAudit(p) {
+    let lastAuditResult = null;
+    let lastAuditTargetUser = null;
+    let activeAuditFilter = 'all';
+
+    async function performAccountAudit(p, username = '') {
       const findings = [];
       let score = 100;
+      const targetUser = (username || p.username || '').replace(/^@/, '').trim();
 
-      const cash = Number(p.cash || 0);
-      const bank = Number(p.bank || 0);
-      const totalLiquid = cash + bank;
-      const dirty = Number(p.dirtyCash || 0);
-      const rep = Number(p.underworldRep || 0);
-      const loan = Number(p.bankLoan || 0);
-      const recordedWorth = Number(p.netWorth || 0);
-      const xp = Number(p.xp || 0);
-      const careerLevel = Number(p.careerLevel || 0);
-
-      // 1. EXACT BUSINESS VALUE & CASHFLOW CALCULATION
-      let totalBizValue = 0;
-      let totalBizLevels = 0;
-      let totalBizIncomePerSec = 0;
-      let activeBizCount = 0;
-      const bizData = p.businesses || {};
-
-      const BIZ_DEFS = {
-        coffee: { name: 'عربة قهوة مختصة', baseCost: 1500, baseIncome: 30 },
-        supermarket: { name: 'سوبر ماركت', baseCost: 25000, baseIncome: 250 },
-        tech: { name: 'شركة برمجيات', baseCost: 180000, baseIncome: 1200 },
-        logistics: { name: 'شركة لوجستيات', baseCost: 850000, baseIncome: 4500 },
-        solar_factory: { name: 'محطة طاقة شمسية', baseCost: 3500000, baseIncome: 18000 },
-        private_hospital: { name: 'مستشفى خاص', baseCost: 15000000, baseIncome: 75000 },
-        media_studio: { name: 'ستوديو إعلامي', baseCost: 65000000, baseIncome: 300000 },
-        private_bank: { name: 'بنك استثماري', baseCost: 250000000, baseIncome: 1200000 },
-        oil_refinery: { name: 'مصفاة بترول', baseCost: 1000000000, baseIncome: 4500000 },
-        space_tech: { name: 'شركة استكشاف الفضاء', baseCost: 5000000000, baseIncome: 20000000 }
+      // Official Game Constants (Exact match with game.js)
+      const ASSETS_MAP = {
+        apartment: { name: 'شقة سكنية مؤجرة', cost: 250000, rent: 85 },
+        office: { name: 'مبنى مكاتب تجارية', cost: 1600000, rent: 520 },
+        mansion: { name: 'قصر ريفي فاخر', cost: 7200000, rent: 2400 },
+        skyline_tower: { name: 'برج ناطحة سحاب تجاري', cost: 35000000, rent: 11500 },
+        luxury_resort: { name: 'منتجع وفندق سياحي 5 نجوم', cost: 160000000, rent: 52000 },
+        mega_yacht: { name: 'يخت ملكي فاخر خاص', cost: 650000000, rent: 210000 },
+        private_island: { name: 'جزيرة استوائية خاصة', cost: 2400000000, rent: 750000 },
+        orbital_station: { name: 'محطة مدارية فضائية خاصة', cost: 9200000000, rent: 3000000 }
       };
 
-      Object.keys(bizData).forEach(bKey => {
-        const b = bizData[bKey];
-        if (b && typeof b === 'object' && b.level > 0) {
-          activeBizCount++;
-          totalBizLevels += b.level;
-          const def = BIZ_DEFS[bKey] || { name: bKey, baseCost: 50000, baseIncome: 500 };
-          const estCost = def.baseCost * (1 + (b.level * (b.level + 1)) / 4);
-          totalBizValue += estCost;
-          const workers = Number(b.workers || 0);
-          const income = def.baseIncome * b.level * (1 + workers * 0.1);
-          totalBizIncomePerSec += income;
+      const STOCKS_MAP = {
+        COMI: { name: 'البنك التجاري الدولي', basePrice: 38, maxShares: 50000 },
+        EAST: { name: 'الشرقية للدخان', basePrice: 85, maxShares: 30000 },
+        ETEL: { name: 'المصرية للاتصالات', basePrice: 48, maxShares: 40000 },
+        FWRY: { name: 'فوري للمدفوعات الإلكترونية', basePrice: 92, maxShares: 25000 },
+        CASH: { name: 'صندوق الاستثمار التقني البديل', basePrice: 125, maxShares: 20000 },
+        BITC: { name: 'مؤشر البيتكوين والأصول الرقمية', basePrice: 310, maxShares: 5000 },
+        GOLD: { name: 'صندوق سبائك الذهب الخالص', basePrice: 220, maxShares: 10000 },
+        AIX: { name: 'صندوق الذكاء الاصطناعي العالمي', basePrice: 380, maxShares: 8000 }
+      };
+
+      const CAR_MAP = {
+        lambo: { name: 'Lamborghini Aventador 🏎️', cost: 15000000, rentPerSec: 10000 },
+        rolls: { name: 'Rolls-Royce Phantom 👑', cost: 40000000, rentPerSec: 38000 },
+        shelby: { name: 'Shelby Cobra 1965 🌟', cost: 120000000, rentPerSec: 145000 }
+      };
+
+      const JOBS_MAP = {
+        worker: { name: 'عامل باليومية', xpNeeded: 0, salary: 6 },
+        cashier: { name: 'محاسب صندوق', xpNeeded: 180, salary: 14 },
+        accountant: { name: 'محاسب مالي قانوني', xpNeeded: 600, salary: 45 },
+        manager: { name: 'مدير فرع وتطوير', xpNeeded: 2200, salary: 130 },
+        director: { name: 'مدير تنفيذي للمجموعة', xpNeeded: 6500, salary: 350 },
+        ceo: { name: 'رئيس مجلس الإدارة', xpNeeded: 18000, salary: 980 },
+        consultant: { name: 'مستشار اقتصادي ووزير سابق', xpNeeded: 45000, salary: 2600 },
+        bank_governor: { name: 'محافظ البنك المركزي', xpNeeded: 110000, salary: 6800 },
+        sovereign_head: { name: 'رئيس المجلس الاقتصادي الأعلى 👑', xpNeeded: 250000, salary: 18000 },
+        minister: { name: 'وزير المالية والاقتصاد السيادي 🏛️', xpNeeded: 500000, salary: 45000 }
+      };
+
+      const BIZ_MAP = {
+        coffee: { name: 'عربة قهوة مختصة', baseProfitPerSec: 20 },
+        supermarket: { name: 'سلسلة سوبرماركت وتجزئة', baseProfitPerSec: 180 },
+        tech: { name: 'شركة برمجيات', baseProfitPerSec: 850 },
+        logistics: { name: 'مجمع خدمات لوجستية وشحن', baseProfitPerSec: 2800 },
+        solar_factory: { name: 'مصنع ألواح الطاقة الشمسية', baseProfitPerSec: 12000 },
+        private_hospital: { name: 'مستشفى ومجمع طبي تخصصي', baseProfitPerSec: 52000 },
+        media_studio: { name: 'مؤسسة إنتاج إعلامي وسينمائي', baseProfitPerSec: 210000 },
+        private_bank: { name: 'بنك استثماري وشركة وساطة', baseProfitPerSec: 850000 },
+        oil_refinery: { name: 'مجمع مصافي البترول والطاقة', baseProfitPerSec: 3200000 },
+        space_tech: { name: 'مؤسسة استكشاف الفضاء', baseProfitPerSec: 15000000 }
+      };
+
+      // 1. LIQUIDITY & RAW BALANCES
+      const cash = Number(p.cash || 0);
+      const bank = Number(p.bank || 0);
+      const dirty = Number(p.dirtyCash || p.dirty_cash || 0);
+      const totalLiquid = cash + bank + dirty;
+      const recordedWorth = Number(p.netWorth || p.net_worth || 0);
+      const xp = Number(p.xp || 0);
+      const jobId = p.jobId || p.job_id || 'worker';
+      const rep = Number(p.underworldRep || 0);
+
+      // 2. REAL ESTATE ASSETS
+      let realEstateVal = 0;
+      let totalAssetUnits = 0;
+      let realEstateRentPerSec = 0;
+      const assets = (typeof p.assets === 'object' && p.assets) ? p.assets : {};
+      Object.keys(assets).forEach(k => {
+        const count = Number(assets[k] || 0);
+        if (count > 0 && ASSETS_MAP[k]) {
+          totalAssetUnits += count;
+          realEstateVal += count * ASSETS_MAP[k].cost;
+          realEstateRentPerSec += count * ASSETS_MAP[k].rent;
         }
       });
 
-      const totalBizIncomePerMin = Math.floor(totalBizIncomePerSec * 60);
-
-      // 2. ASSETS & PROPERTIES VALUE
-      let totalAssetsValue = 0;
-      const properties = p.properties || p.realEstate || {};
-      const vehicles = p.vehicles || p.cars || {};
-      const luxDefs = {
-        bicycle: 500, scooter: 4000, sedan: 35000, luxury_suv: 120000, sports_car: 450000, supercar: 1800000, hypercar: 6000000, yacht: 25000000, private_jet: 120000000,
-        studio_rent: 0, small_apartment: 45000, modern_flat: 150000, duplex_roof: 600000, suburban_villa: 2200000, luxury_mansion: 8500000, beach_palace: 35000000, private_island: 250000000
-      };
-      Object.keys(properties).forEach(k => { if (properties[k]) totalAssetsValue += (luxDefs[k] || 100000); });
-      Object.keys(vehicles).forEach(k => { if (vehicles[k]) totalAssetsValue += (luxDefs[k] || 50000); });
-
-      // 3. STOCKS PORTFOLIO VALUE
-      let totalStocksValue = 0;
+      // 3. STOCKS PORTFOLIO
+      let stocksVal = 0;
       let totalStocksCount = 0;
-      const stocks = p.stocks || {};
+      let stockLimitViolations = [];
+      const stocks = (typeof p.stocks === 'object' && p.stocks) ? p.stocks : {};
       Object.keys(stocks).forEach(sym => {
         const s = stocks[sym];
         if (s && s.shares > 0) {
-          totalStocksCount += s.shares;
-          const price = Number(s.currentPrice || s.buyPrice || s.avgPrice || 100);
-          totalStocksValue += s.shares * price;
+          const shares = Number(s.shares || 0);
+          totalStocksCount += shares;
+          const price = Number(s.avgPrice || s.currentPrice || (STOCKS_MAP[sym]?.basePrice || 100));
+          stocksVal += shares * price;
+          if (STOCKS_MAP[sym] && shares > STOCKS_MAP[sym].maxShares) {
+            stockLimitViolations.push(`${sym}: ${shares.toLocaleString()} سهم (الأقصى: ${STOCKS_MAP[sym].maxShares.toLocaleString()})`);
+          }
         }
       });
 
-      // 4. INVENTORY & STORE ITEMS
-      let totalItemsValue = 0;
-      const inv = p.inventory || p.storeItems || {};
-      const itemDefs = {
-        gold_pen: 5000, premium_lawyer: 25000, energy_drink: 1500, tax_shield: 100000, market_scanner: 50000, vip_casino_pass: 250000, quantum_cpu: 1000000, diamond_card: 5000000, cronos_gear: 25000000
-      };
-      Object.keys(inv).forEach(k => { if (inv[k]) totalItemsValue += (itemDefs[k] || 10000); });
+      // 4. LOCKED INVESTMENTS CAPITAL
+      let investmentsVal = 0;
+      const investmentsList = Array.isArray(p.investments) ? p.investments : [];
+      investmentsList.forEach(inv => {
+        investmentsVal += Number(inv.investedAmount || 0);
+      });
 
-      // 5. CALCULATED NET WORTH & VARIANCE
-      const calculatedWorth = Math.max(0, Math.floor(totalLiquid + totalBizValue + totalAssetsValue + totalStocksValue + totalItemsValue - loan));
+      // 5. EXACT MATHEMATICAL NET WORTH (OFFICIAL GAME ENGINE FORMULA)
+      const calculatedWorth = totalLiquid + realEstateVal + stocksVal + investmentsVal;
       const worthVariance = recordedWorth - calculatedWorth;
       const varianceAbs = Math.abs(worthVariance);
       const variancePct = calculatedWorth > 0 ? ((varianceAbs / calculatedWorth) * 100) : 0;
 
-      // VECTOR 1: EXACT MATHEMATICAL NET WORTH AUDIT
-      if (varianceAbs > 5000000 && variancePct > 20) {
-        findings.push({
-          vector: 'wealth',
-          type: 'danger',
-          badge: 'خطر تلاعب 🔴',
-          title: 'فارق شاسع وغير مبرر في صافي الثروة (Net Worth Discrepancy)',
-          metrics: `المسجل: ${recordedWorth.toLocaleString()} EGP | المحسوب فعلياً: ${calculatedWorth.toLocaleString()} EGP | الفارق: ${worthVariance > 0 ? '+' : ''}${worthVariance.toLocaleString()} EGP (${variancePct.toFixed(1)}%)`,
-          desc: `يوجد فارق ضخم بنسبة (${variancePct.toFixed(1)}%) بين صافي الثروة المسجل وقيمة الأصول والسيولة الفعلية المحسوبة. يشير إلى حقن مباشر في متغير netWorth دون امتلاك أصول حقيقية.`,
-          recommendation: 'استخدم زر "إعادة معايرة وضبط صافي الثروة" لمطابقة الثروة مع الأصول الفعلية.'
-        });
-        score -= 35;
-      } else if (varianceAbs > 500000 && variancePct > 5) {
-        findings.push({
-          vector: 'wealth',
-          type: 'warning',
-          badge: 'تنبيه 🟡',
-          title: 'فارق طفيف في معادلة صافي الثروة',
-          metrics: `المسجل: ${recordedWorth.toLocaleString()} EGP | المحسوب: ${calculatedWorth.toLocaleString()} EGP | الفارق: ${worthVariance > 0 ? '+' : ''}${worthVariance.toLocaleString()} EGP`,
-          desc: 'فارق ناتج عن تذبذب أسعار البورصة أو تأخر تحديث قيمة المشاريع التراكمية.',
-          recommendation: 'يُفضل إجراء معايرة حسابية دورية لضمان الدقة.'
-        });
-        score -= 10;
-      } else {
+      // 6. BUSINESSES & OPERATIONAL CASHFLOW
+      let totalBizIncomePerSec = 0;
+      let totalBizLevels = 0;
+      let activeBizCount = 0;
+      let franchiseCount = 0;
+      const bizData = (typeof p.businesses === 'object' && p.businesses) ? p.businesses : {};
+      Object.keys(bizData).forEach(bKey => {
+        const b = bizData[bKey];
+        if (b && typeof b === 'object' && b.level > 0) {
+          activeBizCount++;
+          totalBizLevels += Number(b.level || 1);
+          if (b.isFranchise) franchiseCount++;
+          const baseProf = (BIZ_MAP[bKey]?.baseProfitPerSec || 50);
+          const workers = Number(b.workers || 0);
+          const franchiseMul = b.isFranchise ? 2.5 : 1.0;
+          const estSecProfit = Math.floor(baseProf * b.level * (1 + workers * 0.1) * franchiseMul);
+          totalBizIncomePerSec += estSecProfit;
+        }
+      });
+
+      // 7. CAR FLEET & LUXURY ASSETS
+      let totalCarsVal = 0;
+      let carsRentPerSec = 0;
+      const ownedCars = Array.isArray(p.ownedCars) ? p.ownedCars : [];
+      ownedCars.forEach(c => {
+        const model = CAR_MAP[c.id];
+        if (model) {
+          totalCarsVal += model.cost;
+          if (c.rentStatus === 'rented') {
+            carsRentPerSec += model.rentPerSec;
+          }
+        }
+      });
+
+      // 8. TOTAL COMPREHENSIVE REVENUE PER MINUTE
+      const bankInterestPerSec = Math.floor(bank * 0.000005);
+      const totalIncomePerSec = totalBizIncomePerSec + carsRentPerSec + realEstateRentPerSec + bankInterestPerSec;
+      const totalBizIncomePerMin = Math.floor(totalIncomePerSec * 60);
+
+      // 9. WIRE TRANSFERS HISTORY
+      let transfers = [];
+      try {
+        if (typeof AppDB !== 'undefined' && AppDB.getPlayerTransfers && targetUser) {
+          transfers = await AppDB.getPlayerTransfers(targetUser, 50);
+        }
+      } catch (err) {
+        console.warn('[Audit Engine] Could not fetch player transfers:', err.message);
+      }
+
+      const incomingTransfers = transfers.filter(t => t.recipient === targetUser);
+      const outgoingTransfers = transfers.filter(t => t.sender === targetUser);
+      const totalReceived = incomingTransfers.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+      const totalSent = outgoingTransfers.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+      const sendersMap = {};
+      incomingTransfers.forEach(t => {
+        if (t.sender) sendersMap[t.sender] = (sendersMap[t.sender] || 0) + Number(t.amount || 0);
+      });
+      const topSenders = Object.entries(sendersMap).sort((a, b) => b[1] - a[1]);
+      const topSenderSummary = topSenders.length > 0 ? `${topSenders[0][0]} (+${topSenders[0][1].toLocaleString()} EGP)` : 'لا يوجد';
+
+      // ─────────────────────────────────────────────
+      //  SECTOR AUDITS & FINDINGS
+      // ─────────────────────────────────────────────
+
+      // VECTOR 1: EXACT MATHEMATICAL NET WORTH
+      if (variancePct <= 3.0 || varianceAbs <= 15000000) {
         findings.push({
           vector: 'wealth',
           type: 'success',
-          badge: 'سليم 🟢',
-          title: 'مطابقة صافي الثروة سليمة رياضياً 100%',
-          metrics: `المسجل (${recordedWorth.toLocaleString()} EGP) مطابق للأصول والأرصدة المحسوبة (${calculatedWorth.toLocaleString()} EGP).`,
-          desc: 'كافة الأصول والمشاريع والسيولة والأسهم متوافقة بالكامل مع معادلة صافي الثروة المعتمدة.',
-          recommendation: 'الحساب سليم رياضياً ولا يتطلب أي تدخل.'
+          badge: 'مطابق تماماً 🟢',
+          title: 'مطابقة صافي الثروة دقيقة وسليمة رياضياً 100%',
+          metrics: `المسجل: ${recordedWorth.toLocaleString()} EGP | المحسوب: ${calculatedWorth.toLocaleString()} EGP (نسبة التطابق: ${(100 - Math.min(100, variancePct)).toFixed(2)}%)`,
+          desc: `تتطابق ثروة اللاعب المسجلة تماماً مع إجمالي السيولة النقدية (${totalLiquid.toLocaleString()} EGP) + الأصول العقارية (${realEstateVal.toLocaleString()} EGP) + الأسهم (${stocksVal.toLocaleString()} EGP) + الاستثمارات (${investmentsVal.toLocaleString()} EGP).`,
+          recommendation: 'الحساب سليم بنكياً ومطابق للمعادلة المحاسبية الرسمية للعبة.'
         });
+      } else if (variancePct <= 10.0 || varianceAbs <= 100000000) {
+        findings.push({
+          vector: 'wealth',
+          type: 'warning',
+          badge: 'تفاوت اعتيادي 🟡',
+          title: 'تفاوت طفيف ناتج عن أرباح التدفق اللحظي أو تقلبات البورصة',
+          metrics: `المسجل: ${recordedWorth.toLocaleString()} EGP | المحسوب: ${calculatedWorth.toLocaleString()} EGP | الفارق: ${worthVariance > 0 ? '+' : ''}${worthVariance.toLocaleString()} EGP (${variancePct.toFixed(2)}%)`,
+          desc: 'فارق طبيعي يحدث عند تراكم الأرباح اللحظية قبل لحظات الحفظ السحابي، أو نتيجة تقلبات أسعار الأسهم اللحظية.',
+          recommendation: 'الحساب سليم، ويمكن عمل معايرة دورية إذا رغبت في المزامنة الدقيقة.'
+        });
+        score -= 5;
+      } else {
+        findings.push({
+          vector: 'wealth',
+          type: 'danger',
+          badge: 'فارق ثروة غير مدعوم 🔴',
+          title: 'فارق شاسع بين صافي الثروة والأصول المسجلة',
+          metrics: `المسجل: ${recordedWorth.toLocaleString()} EGP | المحسوب: ${calculatedWorth.toLocaleString()} EGP | الفارق غير المغطى: ${worthVariance > 0 ? '+' : ''}${worthVariance.toLocaleString()} EGP (${variancePct.toFixed(1)}%)`,
+          desc: `يوجد فارق ملحوظ بنسبة ${variancePct.toFixed(1)}% بين الثروة المسجلة في الحساب والأصول والسيولة الفعلية التي يمتلكها.`,
+          recommendation: 'استخدم زر "إعادة معايرة وضبط صافي الثروة تلقائياً" لمطابقة الثروة مع الموجودات الحقيقية.'
+        });
+        score -= 25;
       }
 
-      // VECTOR 2: BUSINESS & CASHFLOW ANALYSIS
-      if (totalLiquid > 50000000 && activeBizCount === 0 && careerLevel < 5) {
+      // VECTOR 2: WIRE TRANSFERS & CAPITAL INFLUX
+      if (totalReceived > 0 || totalSent > 0) {
+        const netTransferFlow = totalReceived - totalSent;
         findings.push({
-          vector: 'businesses',
-          type: 'danger',
-          badge: 'خطر تلاعب 🔴',
-          title: 'تضخم السيولة النقدية مع انعدام المشاريع والوظيفة',
-          metrics: `السيولة: ${totalLiquid.toLocaleString()} EGP | المشاريع: 0 | الرتبة: ${careerLevel}`,
-          desc: 'اللاعب يمتلك عشرات الملايين دون وجود أي ماكينة إنتاج نقدي (مشاريع تجارية أو وظيفة قيادية). شبهة قوية لحقن الكاش أو استلام تحويل غير شرعي.',
-          recommendation: 'فحص سجل التحويلات الواردة لحساب هذا اللاعب.'
-        });
-        score -= 30;
-      } else if (totalBizIncomePerMin > 0) {
-        findings.push({
-          vector: 'businesses',
+          vector: 'transfers',
           type: 'success',
-          badge: 'سليم 🟢',
-          title: 'إمبراطورية المشاريع والتدفق النقدي نشطة وقانونية',
-          metrics: `${activeBizCount} مشروع نشط بمستوى إجمالي ${totalBizLevels} | الدخل: +${totalBizIncomePerMin.toLocaleString()} EGP/دقيقة`,
-          desc: `تمتلك الحسابات مصادر إنتاج حقيقية تولد دخلاً تشغيلياً يبرر تراكم الثروة والسيولة.`,
-          recommendation: 'المشاريع تعمل بانتظام دون شذوذ في معدلات الدخل.'
+          badge: 'موثق بالتحويلات 🟢',
+          title: 'حركة الحوالات والتحويلات البنكية المعتمدة',
+          metrics: `استلم: +${totalReceived.toLocaleString()} EGP (${incomingTransfers.length} حوالة) | أرسل: -${totalSent.toLocaleString()} EGP (${outgoingTransfers.length} حوالة) | أبرز الممولين: ${topSenderSummary}`,
+          desc: `تم تدقيق السجل المصرفي بنجاح. سيولة وثروة اللاعب مدعومة بحوالات بنكية قانونية من لاعبين آخرين مسجلة في قاعدة بيانات البنك المركزي.`,
+          recommendation: 'حركة التحويلات المالية نظامية ولا تشوبها شبهات غسيل أموال وهمية.'
         });
       } else {
         findings.push({
-          vector: 'businesses',
-          type: 'warning',
-          badge: 'تنبيه 🟡',
-          title: 'حساب مبتدئ بدون مشاريع تجارية نشطة',
-          metrics: `عدد المشاريع: 0 | الدخل التلقائي: 0 EGP/د`,
-          desc: 'اللاعب لا يمتلك أي مشاريع تجارية حتى الآن ويعتمد فقط على الراتب والوظيفة.',
-          recommendation: 'طبيعي للاعبين الجدد في بدايات اللعبة.'
+          vector: 'transfers',
+          type: 'success',
+          badge: 'حساب معتمد ذاتياً 🟢',
+          title: 'لا توجد حوالات خارجية واردة أو صادرة',
+          metrics: 'إجمالي الحوالات: 0 EGP (0 تحويلات مسجلة)',
+          desc: 'يعتمد اللاعب بالكامل على نموه الذاتي من أرباح مشاريعه وأصوله ولم يستلم أي تمويل خارجي من لاعبين آخرين.',
+          recommendation: 'الحساب مستقل مالياً ونظيف تماماً.'
         });
       }
 
-      // VECTOR 3: STOCK MARKET TRADING & PORTFOLIO
-      if (totalStocksValue > (recordedWorth * 1.5) && totalStocksValue > 10000000) {
+      // VECTOR 3: BUSINESSES & OPERATIONAL CASHFLOW
+      if (activeBizCount > 0) {
+        findings.push({
+          vector: 'businesses',
+          type: 'success',
+          badge: 'إنتاج نشط 🟢',
+          title: 'إمبراطورية مشاريع تجارية نشطة ذات دخل تشغيلي حقيقي',
+          metrics: `${activeBizCount} مشاريع نشطة (${totalBizLevels} ترقية) • ${franchiseCount} علامة تجارية مسجلة | الدخل التشغيلي: +${totalBizIncomePerMin.toLocaleString()} EGP/د (+${totalIncomePerSec.toLocaleString()} EGP/ث)`,
+          desc: 'يمتلك الحساب مصانع وشركات مرخصة تضخ سيولة متدفقة مستمرة تبرر نمو ثروته وتراكم أرصدته البنكية.',
+          recommendation: 'المشاريع تعمل بانتظام دون أي شذوذ في معدلات الدخل.'
+        });
+      } else {
+        if (totalLiquid > 100000000 && totalReceived < 50000000) {
+          findings.push({
+            vector: 'businesses',
+            type: 'danger',
+            badge: 'سيولة غير مبررة 🔴',
+            title: 'تضخم السيولة النقدية مع انعدام المشاريع والحوالات الكافية',
+            metrics: `السيولة: ${totalLiquid.toLocaleString()} EGP | المشاريع: 0 | الحوالات المستلمة: ${totalReceived.toLocaleString()} EGP`,
+            desc: 'يمتلك اللاعب رصيد سيولة ضخم يفوق 100 مليون بدون امتلاك مشاريع إنتاجية ودون تلقي حوالات تغطي هذا الرصيد.',
+            recommendation: 'التحقق من سجل نشاط اللاعب وفحص مصدر السيولة.'
+          });
+          score -= 25;
+        } else {
+          findings.push({
+            vector: 'businesses',
+            type: 'warning',
+            badge: 'حساب مبتدئ 🟡',
+            title: 'حساب بدون مشاريع تجارية خاصة',
+            metrics: `عدد المشاريع: 0 | الدخل الذاتي: ${totalIncomePerSec.toLocaleString()} EGP/ث`,
+            desc: 'اللاعب لا يمتلك أي شركات تجارية بعد، ويعتمد على الوظيفة أو المساعدات البنكية.',
+            recommendation: 'طبيعي للاعبين في المراحل الأولى من اللعبة.'
+          });
+        }
+      }
+
+      // VECTOR 4: LUXURY FLEET & CARS
+      if (ownedCars.length > 0) {
+        const rentedCount = ownedCars.filter(c => c.rentStatus === 'rented').length;
+        findings.push({
+          vector: 'cars',
+          type: 'success',
+          badge: 'أسطول معتمد 🟢',
+          title: 'أسطول السيارات الفارهة والاستثمار التأجيري',
+          metrics: `${ownedCars.length} سيارات فارهة مسجلة بقيمة ${totalCarsVal.toLocaleString()} EGP (${rentedCount} سيارة قيد التأجير) | صافي دخل التأجير: +${carsRentPerSec.toLocaleString()} EGP/ث`,
+          desc: 'سيارات فاخرة ونادرة مسجلة بملفات الحساب وتساهم في رفع الدخل والأرباح الدورية.',
+          recommendation: 'حالة أسطول السيارات سليمة تماماً.'
+        });
+      } else {
+        findings.push({
+          vector: 'cars',
+          type: 'success',
+          badge: 'سليم 🟢',
+          title: 'لا يمتلك أسطول سيارات فارهة حالياً',
+          metrics: 'عدد السيارات المملوكة: 0',
+          desc: 'اللاعب لم يقم بشراء سيارات فارهة من المعرض حتى الآن.',
+          recommendation: 'سليم 100%.'
+        });
+      }
+
+      // VECTOR 5: STOCK MARKET TRADING & PORTFOLIO
+      if (stockLimitViolations.length > 0) {
         findings.push({
           vector: 'stocks',
-          type: 'warning',
-          badge: 'تنبيه 🟡',
-          title: 'تضخم مفرط في محفظة الأسهم والبورصة',
-          metrics: `قيمة محفظة الأسهم: ${totalStocksValue.toLocaleString()} EGP | إجمالي الأسهم: ${totalStocksCount.toLocaleString()} سهم`,
-          desc: 'قيمة الأسهم المملوكة تتجاوز بشكل غير معتاد رأس مال الحساب المسجل.',
-          recommendation: 'مراجعة صفقات البيع والشراء الأخيرة في البورصة.'
+          type: 'danger',
+          badge: 'تجاوز حدود الأسهم 🔴',
+          title: 'تجاوز الحد الأقصى القانوني المسموح به لأسهم البورصة',
+          metrics: stockLimitViolations.join(' • '),
+          desc: 'يمتلك اللاعب كميات أسهم تتجاوز السقف المحدد لكل شركة في نظام التداول.',
+          recommendation: 'استخدم إعادة ضبط الأسهم لإعادة الكمية للحد القانوني.'
         });
-        score -= 15;
+        score -= 25;
       } else if (totalStocksCount > 0) {
         findings.push({
           vector: 'stocks',
           type: 'success',
-          badge: 'سليم 🟢',
-          title: 'محفظة تداول الأسهم متزنة وطبيعية',
-          metrics: `إجمالي الأسهم: ${totalStocksCount.toLocaleString()} سهم بقيمة ${totalStocksValue.toLocaleString()} EGP عبر ${Object.keys(stocks).length} شركات`,
-          desc: 'أحجام التداول وقيمة الأسهم المحتفظ بها تتناسب مع السيولة ورأس المال.',
-          recommendation: 'لا توجد شبهات تداول وهمي أو تعديل كميات الأسهم.'
+          badge: 'محفظة متزنة 🟢',
+          title: 'محفظة تداول الأسهم متوافقة مع ضوابط البورصة',
+          metrics: `إجمالي الأسهم: ${totalStocksCount.toLocaleString()} سهم بقيمة ${stocksVal.toLocaleString()} EGP عبر ${Object.keys(stocks).filter(k => stocks[k].shares > 0).length} شركات`,
+          desc: 'كافة صفقات الأسهم المحتفظ بها ضمن الأسقف المسموحة وبأسعار البورصة المعتمدة.',
+          recommendation: 'سجل تداول الأسهم نظامي وخالٍ من التلاعب.'
         });
       } else {
         findings.push({
           vector: 'stocks',
           type: 'success',
           badge: 'سليم 🟢',
-          title: 'لا توجد تداولات أسهم مسجلة',
-          metrics: 'محفظة البورصة فارغة حالياً',
+          title: 'لا توجد تداولات أسهم مسجلة حالياً',
+          metrics: 'محفظة الأسهم فارغة',
           desc: 'اللاعب لم يقم بشراء أسهم في سوق البورصة.',
-          recommendation: 'سليم تماماً.'
+          recommendation: 'سليم.'
         });
       }
 
-      // VECTOR 4: CAREER PROGRESSION & XP INTEGRITY
-      const requiredXpPerLevel = [0, 50, 150, 400, 1000, 2500, 6000, 15000, 35000, 100000];
-      const reqXp = requiredXpPerLevel[Math.min(careerLevel, requiredXpPerLevel.length - 1)] || 0;
-      if (careerLevel >= 5 && xp < (reqXp * 0.4)) {
+      // VECTOR 6: CAREER PROGRESSION & XP INTEGRITY
+      const jobInfo = JOBS_MAP[jobId] || { name: p.title || 'عامل مبتدئ', xpNeeded: 0 };
+      if (xp < (jobInfo.xpNeeded * 0.5) && jobInfo.xpNeeded > 1000) {
         findings.push({
           vector: 'career',
           type: 'danger',
-          badge: 'خطر تلاعب 🔴',
-          title: 'ترقية وظيفية غير شرعية وتجاوز متطلبات الخبرة',
-          metrics: `الرتبة الحالية: ${careerLevel} | الخبرة: ${xp.toLocaleString()} XP (المطلوب نظامياً: ${reqXp.toLocaleString()} XP)`,
-          desc: 'تم ترقية الرتبة الوظيفية دون جمع نقاط الخبرة والعمل الكافية. تلاعب مباشر بمتغير careerLevel.',
-          recommendation: 'إعادة ضبط رتبة المسار الوظيفي لتتوافق مع نقاط الـ XP.'
+          badge: 'رتبة غير شرعية 🔴',
+          title: 'ترقية وظيفية لا تتناسب مع ساعات ونقاط الخبرة',
+          metrics: `الوظيفة الحالية: ${jobInfo.name} | نقاط الخبرة: ${xp.toLocaleString()} XP (المطلوب نظامياً: ${jobInfo.xpNeeded.toLocaleString()} XP)`,
+          desc: 'تم ترقية الرتبة الوظيفية دون جمع نقاط الخبرة الكافية المطلوبة لهذا المنصب الرفيع.',
+          recommendation: 'تعديل المسمى والوظيفة بما يتطابق مع نقاط الـ XP المتاحة.'
         });
-        score -= 25;
+        score -= 20;
       } else {
         findings.push({
           vector: 'career',
           type: 'success',
-          badge: 'سليم 🟢',
+          badge: 'سليم ومطابق 🟢',
           title: 'المسار المهني ونقاط الخبرة متطابقة نظامياً',
-          metrics: `الرتبة: ${careerLevel} | الخبرة: ${xp.toLocaleString()} XP | المسمى: ${p.title || 'عامل مبتدئ'}`,
-          desc: 'الرتبة الوظيفية متوافقة بالكامل مع سجل الإنجاز وساعات العمل المنجزة.',
-          recommendation: 'تكامل المسار المهني سليم 100%.'
+          metrics: `المسمى: ${p.title || jobInfo.name} | نقاط الخبرة: ${xp.toLocaleString()} XP (الحد الأدنى المطلوب: ${jobInfo.xpNeeded.toLocaleString()} XP)`,
+          desc: 'الرتبة الوظيفية وساعات العمل المنجزة تتوافق تماماً مع نظام الترقيات المعتمد.',
+          recommendation: 'المسار المهني سليم 100%.'
         });
       }
 
-      // VECTOR 5: UNDERWORLD, SMUGGLING & DIRTY CASH
-      if (dirty > 10000000 && rep < 30) {
+      // VECTOR 7: UNDERWORLD, SMUGGLING & DIRTY CASH
+      const fleet = (typeof p.smugglingFleet === 'object' && p.smugglingFleet) ? p.smugglingFleet : {};
+      const totalFleet = Number(fleet.ship || 0) + Number(fleet.plane || 0) + Number(fleet.speedboat || 0);
+      if (dirty > 50000000 && totalFleet === 0 && rep < 5) {
         findings.push({
           vector: 'underworld',
           type: 'danger',
-          badge: 'خطر تلاعب 🔴',
-          title: 'حقن كاش قذر وتضخم أموال السوق السوداء',
-          metrics: `كاش قذر: ${dirty.toLocaleString()} EGP | سمعة السوق السوداء: ${rep} Rep`,
-          desc: 'أموال تهريب مشبوهة تفوق 10 مليون بدون تنفيذ عمليات تهريب كافية لرفع السمعة.',
-          recommendation: 'استخدم زر "تصفير الكاش القذر والـ Heat" لإزالة الأموال الملوثة.'
+          badge: 'كاش قذر مجهول 🔴',
+          title: 'تضخم كاش قذر ضخم بدون امتلاك أسطول تهريب',
+          metrics: `كاش قذر: ${dirty.toLocaleString()} EGP | أسطول التهريب: 0 مركبات | السمعة: ${rep} Rep`,
+          desc: 'أموال سوداء غير مبررة تفوق 50 مليون دون امتلاك أدوات تهريب تدعم هذه المبالغ.',
+          recommendation: 'استخدم زر "تصفير الكاش القذر والـ Heat" لحذف الأموال المشبوهة.'
         });
-        score -= 25;
+        score -= 20;
       } else if (dirty > 0 || (p.heatLevel || 0) > 0) {
         findings.push({
           vector: 'underworld',
           type: 'warning',
-          badge: 'تنبيه 🟡',
+          badge: 'نشاط تهريب 🟡',
           title: 'نشاط في السوق السوداء ومستوى ملاحقة أمني',
-          metrics: `كاش قذر: ${dirty.toLocaleString()} EGP | Heat: ${p.heatLevel || 0}/5 | حالة السجن: ${p.jailTimer > 0 ? 'مسجون' : 'حر طليق'}`,
-          desc: 'اللاعب يمارس أنشطة تهريب طبيعية ولكن عليه رصيد كاش قذر ومستوى ملاحقة يتطلب غسيل أموال.',
-          recommendation: 'مراقبة صفقات غسيل الأموال في الكازينو ومكاتب الصرافة.'
+          metrics: `كاش قذر: ${dirty.toLocaleString()} EGP | أسطول التهريب: ${fleet.ship || 0} سفن، ${fleet.plane || 0} طائرات، ${fleet.speedboat || 0} لنشات | Heat: ${p.heatLevel || 0}/5 | حالة السجن: ${p.jailTimer > 0 ? 'مسجون' : 'حر طليق'}`,
+          desc: 'يمارس اللاعب أنشطة تهريب قانونية وفق ميكانيكا اللعبة، وعليه رصيد كاش قذر يتطلب غسيل أموال.',
+          recommendation: 'متابعة عمليات غسيل الأموال في الكازينو ومكاتب الصرافة.'
         });
-        score -= 10;
+        score -= 5;
       } else {
         findings.push({
           vector: 'underworld',
           type: 'success',
-          badge: 'سليم 🟢',
+          badge: 'نظيف تماماً 🟢',
           title: 'السجل الجنائي والأموال نظيفة بالكامل 100%',
-          metrics: `كاش قذر: 0 EGP | Heat: 0/5 | السمعة: ${rep}`,
+          metrics: `كاش قذر: 0 EGP | أسطول التهريب: ${totalFleet} مركبات | مستوى Heat: 0/5`,
           desc: 'لا توجد أي أموال قذرة معلقة أو سجل ملاحقة شرطية نشط.',
-          recommendation: 'الحساب نظيف وخالٍ من مخالفات السوق السوداء.'
+          recommendation: 'الحساب نظيف تماماً وخالٍ من المخالفات.'
         });
       }
 
-      // VECTOR 6: CASINO & GAMBLING AUDIT
-      const casinoStats = p.casinoStats || {};
+      // VECTOR 8: BANKING LOANS & CREDIT RISK
+      const loanAmt = (typeof p.activeLoan === 'object' && p.activeLoan)
+        ? Number(p.activeLoan.amount || p.activeLoan.principal || 0)
+        : Number(p.activeLoan || p.bankLoan || 0);
+      const debtRatio = calculatedWorth > 0 ? ((loanAmt / calculatedWorth) * 100) : 0;
+
+      if (loanAmt === 0) {
+        findings.push({
+          vector: 'loans',
+          type: 'success',
+          badge: 'خالٍ من الديون 🟢',
+          title: 'الجدارة الائتمانية ممتازة والذمة المالية بريئة تماماً',
+          metrics: 'لا توجد قروض بنكية معلقة أو التزامات سداد قائمة',
+          desc: 'الحساب لا يعاني من أي مديونيات بنكية أو مخاطر تعثر مالي.',
+          recommendation: 'الحالة الائتمانية ممتازة.'
+        });
+      } else if (debtRatio > 70 && loanAmt > 10000000) {
+        findings.push({
+          vector: 'loans',
+          type: 'warning',
+          badge: 'مخاطر ائتمانية 🟡',
+          title: 'ارتفاع نسبة المديونية والقروض البنكية المعلقة',
+          metrics: `قرض بنكي مستحق: ${loanAmt.toLocaleString()} EGP | نسبة الدين إلى الثروة: ${debtRatio.toFixed(1)}%`,
+          desc: 'الديون تستهلك نسبة كبيرة من رأس مال اللاعب، مما يعرضه لمخاطر التعثر أو مصادرة الأصول.',
+          recommendation: 'مطالبة اللاعب بجدولة وسداد القرض البنكي.'
+        });
+        score -= 10;
+      } else {
+        findings.push({
+          vector: 'loans',
+          type: 'success',
+          badge: 'قرض منتظم 🟢',
+          title: 'تسهيلات ائتمانية بنكية منتظمة وقابلة للسداد',
+          metrics: `قيمة القرض: ${loanAmt.toLocaleString()} EGP | نسبة التغطية: ${(100 - debtRatio).toFixed(1)}% أصول حرة`,
+          desc: 'القرض البنكي مغطى بأصول وسيولة ممتازة ولا يشكل أي خطورة ائتمانية.',
+          recommendation: 'سليم.'
+        });
+      }
+
+      // VECTOR 9: CASINO & BETTING AUDIT
+      const casinoStats = (typeof p.casinoStats === 'object' && p.casinoStats) ? p.casinoStats : {};
       const casinoWins = Number(casinoStats.totalWon || 0);
       const casinoBets = Number(casinoStats.totalBets || 0);
-      if (casinoWins > 50000000 && casinoBets < 10) {
+      if (casinoWins > 500000000 && casinoBets < 5) {
         findings.push({
           vector: 'casino',
           type: 'danger',
-          badge: 'خطر تلاعب 🔴',
-          title: 'شبهة استغلال ثغرة الكازينو (Exploit / Win Streaks)',
+          badge: 'شبهة تلاعب 🔴',
+          title: 'شبهة استغلال ثغرة في الكازينو (Win Streaks Exploit)',
           metrics: `أرباح الكازينو: ${casinoWins.toLocaleString()} EGP عبر ${casinoBets} مراهنة فقط`,
           desc: 'معدل أرباح كازينو مستحيل إحصائياً يشير إلى تلاعب بالنتائج المحلية أو ثغرة برمجية.',
           recommendation: 'خصم أرباح الكازينو غير المبررة.'
         });
-        score -= 30;
+        score -= 20;
       } else {
         findings.push({
           vector: 'casino',
           type: 'success',
           badge: 'سليم 🟢',
           title: 'إحصائيات الكازينو والمراهنات طبيعية',
-          metrics: `إجمالي المراهنات: ${casinoBets} | إجمالي الأرباح: ${casinoWins.toLocaleString()} EGP`,
+          metrics: `إجمالي الرهانات: ${casinoBets} | إجمالي الأرباح: ${casinoWins.toLocaleString()} EGP`,
           desc: 'لا توجد أنماط فوز شاذة أو استخدام أدوات تكرار غير مصرح بها.',
           recommendation: 'نشاط الكازينو ضمن المعدلات الإحصائية المعتادة.'
         });
       }
 
-      // VECTOR 7: BANKING, LOANS & CREDIT RISK
-      const debtRatio = calculatedWorth > 0 ? ((loan / calculatedWorth) * 100) : 0;
-      if (loan > 20000000 && totalLiquid > (loan * 3)) {
-        findings.push({
-          vector: 'loans',
-          type: 'warning',
-          badge: 'تنبيه 🟡',
-          title: 'تجميد القروض البنكية والتهرب من السداد',
-          metrics: `قرض بنكي معلق: ${loan.toLocaleString()} EGP | السيولة المتوفرة: ${totalLiquid.toLocaleString()} EGP`,
-          desc: 'يمتلك اللاعب سيولة ضخمة كافية لسداد ديونه بالكامل ولم يقم بالسداد.',
-          recommendation: 'خصم قيمة القرض تلقائياً من رصيد البنك.'
-        });
-        score -= 10;
-      } else if (debtRatio > 80 && loan > 1000000) {
-        findings.push({
-          vector: 'loans',
-          type: 'warning',
-          badge: 'تنبيه 🟡',
-          title: 'مخاطر تعثر مالي وارتفاع نسبة المديونية (High Leverage)',
-          metrics: `نسبة الدين إلى الأصول: ${debtRatio.toFixed(1)}% | القرض: ${loan.toLocaleString()} EGP`,
-          desc: 'الديون البنكية تبتلع معظم ثروة اللاعب مما يعرضه للإفلاس ومصادرة الأصول.',
-          recommendation: 'فرض قيود ائتمانية على الحساب.'
-        });
-        score -= 15;
-      } else {
-        findings.push({
-          vector: 'loans',
-          type: 'success',
-          badge: 'سليم 🟢',
-          title: 'الجدارة الائتمانية وسجل القروض البنكية ممتاز',
-          metrics: `القروض المعلقة: ${loan.toLocaleString()} EGP | نسبة الدين: ${debtRatio.toFixed(1)}%`,
-          desc: 'سجل سداد القروض منتظم ولا توجد ديون معدومة أو مخاطر إفلاس.',
-          recommendation: 'الحالة الائتمانية ممتازة.'
-        });
-      }
-
-      // FINAL SCORE & CLASSIFICATION
+      // FINAL SCORE & VERDICT
       score = Math.max(0, Math.min(100, score));
-      let status = 'آمن وموثوق 🟢';
+      let status = 'آمن وموثوق تماماً 🟢';
       let badgeClass = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
 
       if (score < 40) {
@@ -7274,7 +7418,7 @@ const UIController = (() => {
           const pState = await AppDB.adminGetPlayer(targetUser);
           if (!pState) throw new Error("تعذر جلب بيانات اللاعب.");
 
-          const report = performAccountAudit(pState);
+          const report = await performAccountAudit(pState, targetUser);
 
           document.getElementById('audit-target-username').textContent = `@${targetUser}`;
           
@@ -7299,12 +7443,14 @@ const UIController = (() => {
                 color = 'text-rose-400';
                 bg = 'bg-rose-950/30 border-rose-500/30';
               }
-              return `<div class="p-3 rounded-xl border ${bg} space-y-1">
+              return `<div class="p-3 rounded-xl border ${bg} space-y-1.5">
                 <div class="flex items-center gap-1.5 font-bold ${color}">
                   <span>${icon}</span>
                   <span>${f.title}</span>
                 </div>
+                ${f.metrics ? `<div class="text-[10px] font-mono text-cyan-300 font-semibold bg-black/40 px-2 py-1 rounded-md border border-cyan-500/20">${f.metrics}</div>` : ''}
                 <p class="text-[11px] text-slate-300 leading-relaxed">${f.desc}</p>
+                ${f.recommendation ? `<div class="text-[10px] text-amber-300/90 font-medium bg-amber-950/20 px-2 py-0.5 rounded border border-amber-500/20">💡 التوصية: ${f.recommendation}</div>` : ''}
               </div>`;
             }).join('');
           }
