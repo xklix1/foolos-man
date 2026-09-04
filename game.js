@@ -1121,12 +1121,12 @@ const GameEngine = (() => {
     return Math.floor(s.bank * rate);
   }
 
-  // Calculate total passive cashflow per tick from all businesses, real estate, bank interest, corp, and peer employment
-  function calculatePassiveIncomePerTick(excludeTax = false) {
+  // Calculate total passive cashflow per hour from all businesses, real estate, bank interest, corp, and peer employment
+  function calculatePassiveIncomePerHour(excludeTax = false) {
     let income = 0;
     if (!state) return 0;
 
-    // 1. Businesses income (Net owner profit after workers, synergies, franchises, employees, and partner splits)
+    // 1. Businesses income (Net owner profit per hour)
     if (state.businesses) {
       Object.keys(state.businesses).forEach(key => {
         const bizState = state.businesses[key];
@@ -1137,15 +1137,15 @@ const GameEngine = (() => {
       });
     }
 
-    // 2. Joint Corporation Projects Profit Share
+    // 2. Joint Corporation Projects Profit Share (Hourly)
     income += calculateCorpTickProfit(state);
 
-    // 3. Hired Peer Job Salary (active verified daily contract)
+    // 3. Hired Peer Job Salary (Hourly)
     if (state.hiredJob && state.lastPuzzleSolved && (Date.now() - state.lastPuzzleSolved < 86400000)) {
       income += (state.hiredJob.salary || 0);
     }
 
-    // 4. Real estate rental income
+    // 4. Real estate rental income (Hourly)
     if (state.assets) {
       Object.keys(state.assets).forEach(key => {
         const owned = state.assets[key] || 0;
@@ -1155,7 +1155,7 @@ const GameEngine = (() => {
       });
     }
 
-    // 5. Cars rental income and maintenance
+    // 5. Cars rental income and maintenance (Hourly)
     if (state.ownedCars && state.ownedCars.length > 0) {
       state.ownedCars.forEach(carRef => {
         const car = CAR_TEMPLATES[carRef.id];
@@ -1168,7 +1168,7 @@ const GameEngine = (() => {
       });
     }
 
-    // 6. Bank interest (0.0005% per tick + Rolls-Royce bonus)
+    // 6. Bank interest (Hourly)
     income += calculateBankInterestPerTick(state);
 
     // 7. Wealth Tax deduction for ultra-high net worth (5M+ EGP, with liquid safety buffer > 100k)
@@ -1180,7 +1180,15 @@ const GameEngine = (() => {
       }
     }
 
-    return income;
+    return Math.max(0, income);
+  }
+
+  function calculatePassiveIncomePerTick(excludeTax = false) {
+    return calculatePassiveIncomePerHour(excludeTax) / 3600;
+  }
+
+  function calculatePassiveIncomePerSecond(excludeTax = false) {
+    return calculatePassiveIncomePerTick(excludeTax);
   }
 
   // Comprehensive Financial Audit: Returns exact breakdown of all cashflow streams
@@ -1345,11 +1353,12 @@ const GameEngine = (() => {
 
     const netIncome = Math.max(0, grossIncome - taxDeduction);
 
-    breakdown.totalGrossPerSec = grossIncome;
-    breakdown.totalNetPerSec = netIncome;
-    breakdown.totalNetPerMinute = netIncome * 60;
-    breakdown.totalNetPerHour = netIncome * 3600;
-    breakdown.totalNetPerDay = netIncome * 86400;
+    breakdown.totalGrossPerHour = grossIncome;
+    breakdown.totalNetPerHour = netIncome;
+    breakdown.totalGrossPerSec = grossIncome / 3600;
+    breakdown.totalNetPerSec = netIncome / 3600;
+    breakdown.totalNetPerMinute = Math.round(netIncome / 60);
+    breakdown.totalNetPerDay = netIncome * 24;
 
     return breakdown;
   }
@@ -1504,23 +1513,23 @@ const GameEngine = (() => {
       }
     }
 
-    // 2. Bank compound interest accrual (0.0005% per tick + Rolls-Royce bonus)
+    // 2. Bank compound interest accrual (Hourly rate distributed per tick)
     const interestGained = calculateBankInterestPerTick(state);
     if (interestGained > 0) {
       state.bank += interestGained;
       updates.bankInterestGained = interestGained;
     }
 
-    // 3. Peer-to-Peer Hired Job Salary (earned when hired by another player's business)
+    // 3. Peer-to-Peer Hired Job Salary (Hourly salary distributed per tick)
     if (state.hiredJob && state.lastPuzzleSolved && (Date.now() - state.lastPuzzleSolved < 86400000)) {
-      const hiredSalary = state.hiredJob.salary || 0;
+      const hiredSalary = (state.hiredJob.salary || 0) / 3600;
       if (hiredSalary > 0) {
         state.bank += hiredSalary;
         updates.businessProfitGained += hiredSalary;
       }
     }
 
-    // 4. Businesses passive income ticking (uses unified calculateSingleBusinessProfit engine)
+    // 4. Businesses passive income ticking (Hourly owner profit distributed per tick)
     Object.keys(state.businesses).forEach(key => {
       const bizState = state.businesses[key];
       if (!bizState || bizState.level <= 0) return;
@@ -1532,9 +1541,10 @@ const GameEngine = (() => {
         bizState.marketingTicks--;
       }
 
-      if (breakdown.ownerProfit > 0) {
-        state.bank += breakdown.ownerProfit;
-        updates.businessProfitGained += breakdown.ownerProfit;
+      const tickProfit = (breakdown.ownerProfit || 0) / 3600;
+      if (tickProfit > 0) {
+        state.bank += tickProfit;
+        updates.businessProfitGained += tickProfit;
       }
 
       // Record partner dividends for claim distribution
@@ -1543,14 +1553,14 @@ const GameEngine = (() => {
         if (!window.pendingDividends[key]) window.pendingDividends[key] = {};
         Object.entries(breakdown.partnerDividends).forEach(([partner, amt]) => {
           if (amt > 0) {
-            window.pendingDividends[key][partner] = (window.pendingDividends[key][partner] || 0) + amt;
+            window.pendingDividends[key][partner] = (window.pendingDividends[key][partner] || 0) + (amt / 3600);
           }
         });
       }
     });
 
-    // V2: Joint Corporation Passive Profit Ticks (uses unified calculateCorpTickProfit engine)
-    const corpProfitGained = calculateCorpTickProfit(state);
+    // V2: Joint Corporation Passive Profit Ticks (Hourly profit distributed per tick)
+    const corpProfitGained = calculateCorpTickProfit(state) / 3600;
     if (corpProfitGained > 0) {
       state.bank += corpProfitGained;
       updates.businessProfitGained += corpProfitGained;
@@ -1562,7 +1572,7 @@ const GameEngine = (() => {
       Object.keys(state.businesses).forEach(k => {
         const b = state.businesses[k];
         if (b && b.level > 0) {
-          bizFrontCapacity += b.level * 250; // Each business level provides laundering capacity per tick
+          bizFrontCapacity += (b.level * 250) / 3600; // Scaled per tick
         }
       });
       if (bizFrontCapacity > 0) {
@@ -1576,14 +1586,14 @@ const GameEngine = (() => {
       }
     }
 
-    // Progressive Wealth Tax on Ultra-High Net Worth (5M+ EGP, with strong liquidity protection)
+    // Progressive Wealth Tax on Ultra-High Net Worth (Hourly tax distributed per tick)
     if (state.netWorth > 5000000) {
       const liquidFunds = (state.bank || 0) + (state.cash || 0);
       const safetyBuffer = 100000; // Never deduct taxes if liquid funds are under 100,000 EGP
 
       if (liquidFunds > safetyBuffer) {
         const taxReport = calculateTaxReport();
-        const tax = taxReport.taxPerSecond;
+        const tax = (taxReport.taxPerSecond || 0) / 3600;
         if (tax > 0) {
           let remainingTax = tax;
           
@@ -1606,23 +1616,23 @@ const GameEngine = (() => {
       }
     }
 
-    // 5. Assets / Real Estate passive rental income ticking
+    // 5. Assets / Real Estate passive rental income ticking (Hourly rent distributed per tick)
     Object.keys(state.assets).forEach(key => {
       const ownedCount = state.assets[key] || 0;
       if (ownedCount > 0) {
         const asset = ASSETS[key];
-        const rent = ownedCount * Math.floor(asset.rent * 0.1); // Rent scaling per tick
+        const rent = (ownedCount * Math.floor(asset.rent * 0.1)) / 3600; // Rent distributed per tick
         state.bank += rent;
         updates.rentGained += rent;
       }
     });
 
-    // 5.5 Cars rental income and maintenance ticking
+    // 5.5 Cars rental income and maintenance ticking (Hourly net profit distributed per tick)
     if (state.ownedCars && state.ownedCars.length > 0) {
       state.ownedCars.forEach(carRef => {
         const car = CAR_TEMPLATES[carRef.id];
         if (car && carRef.rentStatus === 'rented') {
-          const netProfit = car.rentalIncomePerTick - car.maintenanceCostPerTick;
+          const netProfit = (car.rentalIncomePerTick - car.maintenanceCostPerTick) / 3600;
           if (netProfit > 0) {
             state.bank += netProfit;
             updates.rentGained += netProfit;
@@ -3299,6 +3309,7 @@ const GameEngine = (() => {
     setTaxConfig,
     getTaxConfig: () => taxConfig,
     fileTaxDeclaration,
+    calculatePassiveIncomePerHour,
     calculatePassiveIncomePerTick,
     calculatePassiveIncomePerSecond,
     calculateSingleBusinessProfit,

@@ -1778,14 +1778,14 @@ const UIController = (() => {
     const cEl = document.getElementById('stat-cash');
     if (cEl) cEl.textContent = s.cash.toLocaleString();
     const bEl = document.getElementById('stat-bank');
-    if (bEl) bEl.textContent = s.bank.toLocaleString();
+    if (bEl) bEl.textContent = Math.floor(s.bank || 0).toLocaleString();
     const nEl = document.getElementById('stat-networth');
-    if (nEl) nEl.textContent = s.netWorth.toLocaleString();
+    if (nEl) nEl.textContent = Math.floor(s.netWorth || 0).toLocaleString();
 
-    // Live Cashflow Rate
-    const cashflow = GameEngine.calculatePassiveIncomePerSecond ? GameEngine.calculatePassiveIncomePerSecond() : 0;
+    // Hourly Cashflow Rate (Smooth live distribution)
+    const cashflow = GameEngine.calculatePassiveIncomePerHour ? GameEngine.calculatePassiveIncomePerHour() : (GameEngine.calculatePassiveIncomePerSecond ? (GameEngine.calculatePassiveIncomePerSecond() * 3600) : 0);
     const cfEl = document.getElementById('stat-cashflow');
-    if (cfEl) cfEl.textContent = `+${cashflow.toLocaleString()}`;
+    if (cfEl) cfEl.textContent = `+${Math.round(cashflow).toLocaleString()}`;
 
     // Mobile stats
     const umEl = document.getElementById('stat-username-mobile');
@@ -1804,14 +1804,14 @@ const UIController = (() => {
     if (tmEl) tmEl.textContent = s.title;
 
     const cmEl = document.getElementById('stat-cash-mobile');
-    if (cmEl) cmEl.textContent = s.cash.toLocaleString();
+    if (cmEl) cmEl.textContent = Math.floor(s.cash || 0).toLocaleString();
     const bmEl = document.getElementById('stat-bank-mobile');
-    if (bmEl) bmEl.textContent = s.bank.toLocaleString();
+    if (bmEl) bmEl.textContent = Math.floor(s.bank || 0).toLocaleString();
     const nmEl = document.getElementById('stat-networth-mobile');
-    if (nmEl) nmEl.textContent = s.netWorth.toLocaleString();
+    if (nmEl) nmEl.textContent = Math.floor(s.netWorth || 0).toLocaleString();
 
     const cfmEl = document.getElementById('stat-cashflow-mobile');
-    if (cfmEl) cfmEl.textContent = `+${cashflow.toLocaleString()}`;
+    if (cfmEl) cfmEl.textContent = `+${Math.round(cashflow).toLocaleString()}`;
 
     // Update Facebook Reward Button State
     updateFacebookButtonUI();
@@ -10267,11 +10267,11 @@ const UIController = (() => {
     const dayEl = document.getElementById('cf-proj-day');
     const totalNetEl = document.getElementById('cf-modal-total-net');
 
-    if (secEl) secEl.textContent = `+${breakdown.totalNetPerSec.toLocaleString()} EGP`;
-    if (minEl) minEl.textContent = `+${breakdown.totalNetPerMinute.toLocaleString()} EGP`;
-    if (hourEl) hourEl.textContent = `+${breakdown.totalNetPerHour.toLocaleString()} EGP`;
-    if (dayEl) dayEl.textContent = `+${breakdown.totalNetPerDay.toLocaleString()} EGP`;
-    if (totalNetEl) totalNetEl.textContent = `+${breakdown.totalNetPerSec.toLocaleString()}`;
+    if (secEl) secEl.textContent = `+${(breakdown.totalNetPerHour / 3600).toFixed(2)} EGP`;
+    if (minEl) minEl.textContent = `+${Math.round(breakdown.totalNetPerHour / 60).toLocaleString()} EGP`;
+    if (hourEl) hourEl.textContent = `+${Math.round(breakdown.totalNetPerHour).toLocaleString()} EGP`;
+    if (dayEl) dayEl.textContent = `+${Math.round(breakdown.totalNetPerHour * 24).toLocaleString()} EGP`;
+    if (totalNetEl) totalNetEl.textContent = `+${Math.round(breakdown.totalNetPerHour).toLocaleString()}`;
 
     // 2. Businesses Section
     const bizSubtotalEl = document.getElementById('cf-subtotal-businesses');
@@ -10283,7 +10283,8 @@ const UIController = (() => {
       } else {
         let html = '';
         breakdown.businesses.forEach(b => {
-          bizTotal += b.profitPerSec;
+          const pVal = Number(b.profitPerHour !== undefined ? b.profitPerHour : b.profitPerSec);
+          bizTotal += pVal;
           const badges = [];
           if (b.isFranchise) badges.push('<span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30">علامة تجارية +25%</span>');
           if (b.marketingActive) badges.push('<span class="text-[9px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/30">ترويج نشط +40%</span>');
@@ -10299,13 +10300,13 @@ const UIController = (() => {
                 </div>
                 <div class="flex gap-1 flex-wrap mt-1">${badges.join('')}</div>
               </div>
-              <span class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+${b.profitPerSec.toLocaleString()} EGP/ث</span>
+              <span class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+${pVal.toLocaleString()} EGP/س</span>
             </div>
           `;
         });
         bizListEl.innerHTML = html;
       }
-      if (bizSubtotalEl) bizSubtotalEl.textContent = `+${bizTotal.toLocaleString()} EGP/ث`;
+      if (bizSubtotalEl) bizSubtotalEl.textContent = `+${bizTotal.toLocaleString()} EGP/س`;
     }
 
     // 3. Real Estate Assets Section
@@ -10318,20 +10319,21 @@ const UIController = (() => {
       } else {
         let html = '';
         breakdown.assets.forEach(a => {
-          assetTotal += a.rentPerSec;
+          const rVal = Number(a.rentPerHour !== undefined ? a.rentPerHour : a.rentPerSec);
+          assetTotal += rVal;
           html += `
             <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
               <div class="text-white font-bold">
                 <span>${a.name}</span>
-                <span class="text-[10px] text-slate-400 font-normal block">(${a.count} وحدات • +${a.rentPerUnit.toLocaleString()} EGP/ث للوحدة)</span>
+                <span class="text-[10px] text-slate-400 font-normal block">(${a.count} وحدات • +${Number(a.rentPerUnit || 0).toLocaleString()} EGP/س للوحدة)</span>
               </div>
-              <span class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+${a.rentPerSec.toLocaleString()} EGP/ث</span>
+              <span class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+${rVal.toLocaleString()} EGP/س</span>
             </div>
           `;
         });
         assetListEl.innerHTML = html;
       }
-      if (assetSubtotalEl) assetSubtotalEl.textContent = `+${assetTotal.toLocaleString()} EGP/ث`;
+      if (assetSubtotalEl) assetSubtotalEl.textContent = `+${assetTotal.toLocaleString()} EGP/س`;
     }
 
     // 4. Rented Cars Section
@@ -10344,20 +10346,21 @@ const UIController = (() => {
       } else {
         let html = '';
         breakdown.cars.forEach(c => {
-          carsTotal += c.netProfitPerSec;
+          const cVal = Number(c.netProfitPerHour !== undefined ? c.netProfitPerHour : c.netProfitPerSec);
+          carsTotal += cVal;
           html += `
             <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
               <div>
                 <span class="text-white font-bold">${c.name}</span>
                 <span class="text-[10px] text-slate-400 block">(إيجار: +${c.grossRent.toLocaleString()} • صيانة: -${c.maintenance.toLocaleString()})</span>
               </div>
-              <span class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+${c.netProfitPerSec.toLocaleString()} EGP/ث</span>
+              <span class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+${cVal.toLocaleString()} EGP/س</span>
             </div>
           `;
         });
         carsListEl.innerHTML = html;
       }
-      if (carsSubtotalEl) carsSubtotalEl.textContent = `+${carsTotal.toLocaleString()} EGP/ث`;
+      if (carsSubtotalEl) carsSubtotalEl.textContent = `+${carsTotal.toLocaleString()} EGP/س`;
     }
 
     // 5. Bank Interest Section
@@ -10365,15 +10368,16 @@ const UIController = (() => {
     const bankListEl = document.getElementById('cf-list-bank');
     if (bankListEl) {
       const b = breakdown.bank;
-      if (bankSubtotalEl) bankSubtotalEl.textContent = `+${b.profitPerSec.toLocaleString()} EGP/ث`;
+      const bankVal = Number(b.profitPerHour !== undefined ? b.profitPerHour : b.profitPerSec);
+      if (bankSubtotalEl) bankSubtotalEl.textContent = `+${bankVal.toLocaleString()} EGP/س`;
       const rollsBadge = b.hasRollsBonus ? ' <span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 font-bold">+5% بونص رولز رويس</span>' : '';
       bankListEl.innerHTML = `
         <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
           <div>
             <span class="text-white font-bold">عائد الفائدة المركبة على الودائع</span>
-            <span class="text-[10px] text-slate-400 block">رصيد الوديعة: ${b.balance.toLocaleString()} EGP • النسبة: 0.0005%/ث${rollsBadge}</span>
+            <span class="text-[10px] text-slate-400 block">رصيد الوديعة: ${b.balance.toLocaleString()} EGP • النسبة: 0.018%/س${rollsBadge}</span>
           </div>
-          <span class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+${b.profitPerSec.toLocaleString()} EGP/ث</span>
+          <span class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+${bankVal.toLocaleString()} EGP/س</span>
         </div>
       `;
     }
@@ -10385,14 +10389,15 @@ const UIController = (() => {
     if (corpSection && corpListEl) {
       if (breakdown.corp.active) {
         corpSection.classList.remove('hidden');
-        if (corpSubtotalEl) corpSubtotalEl.textContent = `+${breakdown.corp.profitPerSec.toLocaleString()} EGP/ث`;
+        const corpVal = Number(breakdown.corp.profitPerHour !== undefined ? breakdown.corp.profitPerHour : breakdown.corp.profitPerSec);
+        if (corpSubtotalEl) corpSubtotalEl.textContent = `+${corpVal.toLocaleString()} EGP/س`;
         corpListEl.innerHTML = `
           <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
             <div>
               <span class="text-white font-bold">${breakdown.corp.name}</span>
               <span class="text-[10px] text-slate-400 block">مستوى ${breakdown.corp.level} • حصة المساهمة الشخصية: ${breakdown.corp.sharePct}%</span>
             </div>
-            <span class="numbers-font font-black text-purple-400 text-xs sm:text-sm">+${breakdown.corp.profitPerSec.toLocaleString()} EGP/ث</span>
+            <span class="numbers-font font-black text-purple-400 text-xs sm:text-sm">+${corpVal.toLocaleString()} EGP/س</span>
           </div>
         `;
       } else {
@@ -10407,14 +10412,15 @@ const UIController = (() => {
     if (hiredSection && hiredListEl) {
       if (breakdown.hiredJob.active) {
         hiredSection.classList.remove('hidden');
-        if (hiredSubtotalEl) hiredSubtotalEl.textContent = `+${breakdown.hiredJob.salaryPerSec.toLocaleString()} EGP/ث`;
+        const hiredVal = Number(breakdown.hiredJob.salaryPerHour !== undefined ? breakdown.hiredJob.salaryPerHour : breakdown.hiredJob.salaryPerSec);
+        if (hiredSubtotalEl) hiredSubtotalEl.textContent = `+${hiredVal.toLocaleString()} EGP/س`;
         hiredListEl.innerHTML = `
           <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
             <div>
               <span class="text-white font-bold">${breakdown.hiredJob.name}</span>
               <span class="text-[10px] text-slate-400 block">عقد موثق • تم حل اللغز اليومي بنجاح</span>
             </div>
-            <span class="numbers-font font-black text-blue-400 text-xs sm:text-sm">+${breakdown.hiredJob.salaryPerSec.toLocaleString()} EGP/ث</span>
+            <span class="numbers-font font-black text-blue-400 text-xs sm:text-sm">+${hiredVal.toLocaleString()} EGP/س</span>
           </div>
         `;
       } else {
@@ -10427,18 +10433,19 @@ const UIController = (() => {
     const taxListEl = document.getElementById('cf-list-tax');
     if (taxListEl) {
       if (breakdown.tax.active) {
-        if (taxSubtotalEl) taxSubtotalEl.textContent = `-${breakdown.tax.taxPerSec.toLocaleString()} EGP/ث`;
+        const taxVal = Number(breakdown.tax.taxPerHour !== undefined ? breakdown.tax.taxPerHour : breakdown.tax.taxPerSec);
+        if (taxSubtotalEl) taxSubtotalEl.textContent = `-${taxVal.toLocaleString()} EGP/س`;
         taxListEl.innerHTML = `
           <div class="flex justify-between items-center bg-rose-950/20 p-2.5 rounded-xl border border-rose-900/40">
             <div>
-              <span class="text-rose-400 font-bold">ضريبة الثروة اللحظية (5M+ EGP)</span>
+              <span class="text-rose-400 font-bold">ضريبة الثروة الدورية (5M+ EGP)</span>
               <span class="text-[10px] text-slate-400 block">تُخصم دورياً للحسابات ذات الثروات والسيولة العالية</span>
             </div>
-            <span class="numbers-font font-black text-rose-400 text-xs sm:text-sm">-${breakdown.tax.taxPerSec.toLocaleString()} EGP/ث</span>
+            <span class="numbers-font font-black text-rose-400 text-xs sm:text-sm">-${taxVal.toLocaleString()} EGP/س</span>
           </div>
         `;
       } else {
-        if (taxSubtotalEl) taxSubtotalEl.textContent = '0 EGP/ث (معفي)';
+        if (taxSubtotalEl) taxSubtotalEl.textContent = '0 EGP/س (معفي)';
         taxListEl.innerHTML = `
           <div class="text-[11px] text-emerald-400/90 bg-emerald-950/20 p-2.5 rounded-xl border border-emerald-900/30 flex items-center gap-1.5">
             <i class="fa-solid fa-shield-halved text-emerald-400 text-xs"></i>
