@@ -1016,6 +1016,19 @@ var AppDB = (() => {
         activeCar: null,
         smugglingFleet: { speedboat: 0, plane: 0, ship: 0 },
         activeSmugglingJobs: [],
+        tradeCompany: {
+          warehouseCapacity: 10,
+          warehouse: {},
+          activeImports: [],
+          activeExports: [],
+          totalProfitEarned: 0,
+          totalShipmentsCompleted: 0
+        },
+        workCooldownUntil: 0,
+        overtimeCooldownUntil: 0,
+        casinoCooldownUntil: 0,
+        loanCooldownUntil: 0,
+        stockTradeCooldownUntil: 0,
         activityLog: [],
         lastSeen: now,
         cloudSavedAt: now
@@ -1136,6 +1149,19 @@ var AppDB = (() => {
         activeCar: null,
         smugglingFleet: { speedboat: 0, plane: 0, ship: 0 },
         activeSmugglingJobs: [],
+        tradeCompany: {
+          warehouseCapacity: 10,
+          warehouse: {},
+          activeImports: [],
+          activeExports: [],
+          totalProfitEarned: 0,
+          totalShipmentsCompleted: 0
+        },
+        workCooldownUntil: 0,
+        overtimeCooldownUntil: 0,
+        casinoCooldownUntil: 0,
+        loanCooldownUntil: 0,
+        stockTradeCooldownUntil: 0,
         activityLog: [],
         lastSeen: now,
         cloudSavedAt: now

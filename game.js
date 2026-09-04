@@ -270,9 +270,9 @@ const GameEngine = (() => {
       id: 'gold_pen',
       name: 'القلم الذهبي للمدراء',
       cost: 20000,
-      desc: 'يزيد خبرتك الوظيفية XP بنسبة +15% لتسريع الترقيات. ينتهي مفعوله بعد 3 دقائق.',
+      desc: 'يزيد خبرتك الوظيفية XP بنسبة +8% لتسريع الترقيات. ينتهي مفعوله بعد 3 دقائق.',
       effect: 'xp_boost',
-      value: 0.15,
+      value: 0.08,
       durationTicks: 180, // 3 minutes
       cooldownSec: 600    // 10 minutes cooldown
     },
@@ -280,9 +280,9 @@ const GameEngine = (() => {
       id: 'premium_lawyer',
       name: 'توكيل محامٍ دولي قدير',
       cost: 100000,
-      desc: 'يخفض خطورة القبض في صفقات السوق المحظورة بنسبة -12% لمدة 5 دقائق.',
+      desc: 'يخفض خطورة القبض في صفقات السوق المحظورة بنسبة -6% لمدة 5 دقائق.',
       effect: 'legal_protection',
-      value: 0.12,
+      value: 0.06,
       durationTicks: 300,  // 5 minutes
       cooldownSec: 900     // 15 minutes cooldown
     },
@@ -290,9 +290,9 @@ const GameEngine = (() => {
       id: 'energy_drink',
       name: 'مشروب الطاقة والتركيز الفائق',
       cost: 25000,
-      desc: 'يمنحك نشاطاً ويزيد راتب نوبات العمل بنسبة +25% لمدة 90 ثانية.',
+      desc: 'يمنحك نشاطاً ويزيد راتب نوبات العمل بنسبة +12.5% لمدة 90 ثانية.',
       effect: 'salary_multiplier',
-      value: 1.25,
+      value: 1.125,
       durationTicks: 90,  // 90 seconds
       cooldownSec: 480    // 8 minutes cooldown
     },
@@ -300,9 +300,9 @@ const GameEngine = (() => {
       id: 'tax_shield',
       name: 'درع الإعفاء والملاذ الضريبي',
       cost: 600000,
-      desc: 'يمنحك خصماً قدره 8% على ترقيات الشركات ويخفض ضريبة الثروة بنسبة 25% لمدة 6 ساعات.',
+      desc: 'يمنحك خصماً قدره 4% على ترقيات الشركات ويخفض ضريبة الثروة بنسبة 12.5% لمدة 6 ساعات.',
       effect: 'upgrade_discount',
-      value: 0.08,
+      value: 0.04,
       durationTicks: 7200,  // 6 hours (in ticks)
       cooldownSec: 86400    // 24 hours cooldown
     },
@@ -310,9 +310,9 @@ const GameEngine = (() => {
       id: 'market_scanner',
       name: 'ماسح البورصة والتداول الذكي',
       cost: 200000,
-      desc: 'يخفف أثر الهبوط والتصحيحات العكسية لأسهمك بنسبة 20% لمدة 4 دقائق.',
+      desc: 'يخفف أثر الهبوط والتصحيحات العكسية لأسهمك بنسبة 10% لمدة 4 دقائق.',
       effect: 'stock_shield',
-      value: 0.20,
+      value: 0.10,
       durationTicks: 240,  // 4 minutes
       cooldownSec: 1200    // 20 minutes cooldown
     },
@@ -320,9 +320,9 @@ const GameEngine = (() => {
       id: 'vip_casino_pass',
       name: 'بطاقة VIP لكازينو الحظ',
       cost: 80000,
-      desc: 'ترفع نسبة الفوز في الكازينو وعجلة الحظ بنسبة +8%. تنتهي صلاحيتها بعد 5 دقائق.',
+      desc: 'ترفع نسبة الفوز في الكازينو وعجلة الحظ بنسبة +4%. تنتهي صلاحيتها بعد 5 دقائق.',
       effect: 'casino_luck_boost',
-      value: 0.08,
+      value: 0.04,
       durationTicks: 100,  // ~5 minutes
       cooldownSec: 900     // 15 minutes cooldown
     },
@@ -330,9 +330,9 @@ const GameEngine = (() => {
       id: 'quantum_cpu',
       name: 'معالج الحوسبة الكمومية (Quantum Core)',
       cost: 500000,
-      desc: 'يرفع أرباح وتدفقات كافة مشاريعك بنسبة +25% لمدة 4 دقائق.',
+      desc: 'يرفع أرباح وتدفقات كافة مشاريعك بنسبة +12.5% لمدة 4 دقائق.',
       effect: 'biz_multiplier',
-      value: 1.25,
+      value: 1.125,
       durationTicks: 240,  // 4 minutes
       cooldownSec: 1800    // 30 minutes cooldown
     },
@@ -340,9 +340,9 @@ const GameEngine = (() => {
       id: 'diamond_card',
       name: 'عضوية النادي الماسي للبنوك الدولية',
       cost: 1200000,
-      desc: 'ترفع فوائد الودائع البنكية بنسبة 20% وتخفض ضرائب الثروة بنسبة 25% لمدة 8 دقائق.',
+      desc: 'ترفع فوائد الودائع البنكية بنسبة 10% وتخفض ضرائب الثروة بنسبة 12.5% لمدة 8 دقائق.',
       effect: 'bank_perk',
-      value: 0.20,
+      value: 0.10,
       durationTicks: 480,  // 8 minutes
       cooldownSec: 7200    // 2 hours cooldown
     },
@@ -350,9 +350,9 @@ const GameEngine = (() => {
       id: 'cronos_gear',
       name: 'ساعة الكرونوس لتسريع العمليات',
       cost: 350000,
-      desc: 'تقلل وقت التبريد (Cooldown) للعمليات المشبوهة وفترات نوبات العمل بنسبة 30% لمدة 5 دقائق.',
+      desc: 'تقلل وقت التبريد (Cooldown) للعمليات وفترات نوبات العمل بنسبة 15% لمدة 5 دقائق.',
       effect: 'cooldown_reduction',
-      value: 0.30,
+      value: 0.15,
       durationTicks: 300,  // 5 minutes
       cooldownSec: 1200    // 20 minutes cooldown
     }
@@ -595,7 +595,7 @@ const GameEngine = (() => {
     radar_jammer: {
       id: 'radar_jammer',
       name: 'جهاز تشويش رادارات الشرطة',
-      desc: 'يقلل احتمالية المداهمة الأمنية في صفقات السوق السوداء بنسبة 12% لمدة 4 دقائق.',
+      desc: 'يقلل احتمالية المداهمة الأمنية في صفقات السوق السوداء بنسبة 6% لمدة 4 دقائق.',
       cost: 80000,
       icon: 'fa-satellite-dish',
       durationTicks: 240
@@ -611,7 +611,7 @@ const GameEngine = (() => {
     crypto_cleaner: {
       id: 'crypto_cleaner',
       name: 'بروتوكول تشفير مالي (Zero-Trace)',
-      desc: 'يخفض ضريبة غسيل وتبييض الأموال إلى الحد الأدنى 35% بدلاً من 45%.',
+      desc: 'يخفض ضريبة غسيل وتبييض الأموال إلى 40% بدلاً من 45%.',
       cost: 200000,
       icon: 'fa-shield-virus',
       durationTicks: 200
@@ -619,7 +619,7 @@ const GameEngine = (() => {
     diplomatic_bag: {
       id: 'diplomatic_bag',
       name: 'حقيبة التشفير الدبلوماسية المصفحة',
-      desc: 'تحمي 35% من الأموال المشبوهة من المصادرة التامة في حال المداهمة.',
+      desc: 'تحمي 18% من الأموال المشبوهة من المصادرة في حال المداهمة.',
       cost: 800000,
       icon: 'fa-briefcase',
       durationTicks: 240
@@ -627,12 +627,130 @@ const GameEngine = (() => {
     commissioner_wire: {
       id: 'commissioner_wire',
       name: 'شريحة اتصال كبار المسؤولين (VIP Wire)',
-      desc: 'تخفض تكلفة الرشوة وإسقاط الملاحقات الأمنية بنسبة 35%.',
+      desc: 'تخفض تكلفة الرشوة وإسقاط الملاحقات الأمنية بنسبة 18%.',
       cost: 1000000,
       icon: 'fa-mobile-retro',
       durationTicks: 300
     }
   };
+
+  // --- شركة الاستيراد والتصدير الدولية (Import & Export Global Fleet) ---
+  const TRADE_COMMODITIES = {
+    fashion_brands: {
+      id: 'fashion_brands',
+      name: 'أزياء وملابس ماركات عالمية',
+      tier: 'air_cargo',
+      tierName: 'شحن جوي سريع (Express Air Cargo)',
+      unitCost: 5000,
+      importDurationSec: 1800, // 30 minutes
+      exportDurationSec: 1800, // 30 minutes
+      baseSellMin: 6800,       // +36%
+      baseSellMax: 7600,       // +52%
+      icon: 'fa-shirt',
+      color: 'sky'
+    },
+    espresso_coffee: {
+      id: 'espresso_coffee',
+      name: 'بن إسبريسو كولومبي فاخر',
+      tier: 'air_cargo',
+      tierName: 'شحن جوي سريع (Express Air Cargo)',
+      unitCost: 8000,
+      importDurationSec: 2700, // 45 minutes
+      exportDurationSec: 2700, // 45 minutes
+      baseSellMin: 11000,      // +37.5%
+      baseSellMax: 12500,      // +56%
+      icon: 'fa-mug-hot',
+      color: 'amber'
+    },
+    auto_spare_parts: {
+      id: 'auto_spare_parts',
+      name: 'قطع غيار سيارات أوروبية أصلية',
+      tier: 'regional_freight',
+      tierName: 'شحن إقليمي بحري/بري (Regional Freight)',
+      unitCost: 30000,
+      importDurationSec: 7200, // 2 hours
+      exportDurationSec: 7200, // 2 hours
+      baseSellMin: 48000,      // +60%
+      baseSellMax: 56000,      // +86%
+      icon: 'fa-gears',
+      color: 'indigo'
+    },
+    solar_panels: {
+      id: 'solar_panels',
+      name: 'ألواح وخلايا طاقة شمسية ألمانية',
+      tier: 'regional_freight',
+      tierName: 'شحن إقليمي بحري/بري (Regional Freight)',
+      unitCost: 65000,
+      importDurationSec: 14400, // 4 hours
+      exportDurationSec: 14400, // 4 hours
+      baseSellMin: 110000,     // +69%
+      baseSellMax: 128000,     // +97%
+      icon: 'fa-solar-panel',
+      color: 'emerald'
+    },
+    luxury_cars: {
+      id: 'luxury_cars',
+      name: 'سيارات فارهة ومدرعة مستوردة',
+      tier: 'ocean_shipping',
+      tierName: 'شحن بحري عالمي بالحاويات (Global Ocean Shipping)',
+      unitCost: 150000,
+      importDurationSec: 21600, // 6 hours
+      exportDurationSec: 21600, // 6 hours
+      baseSellMin: 330000,     // +120%
+      baseSellMax: 380000,     // +153%
+      icon: 'fa-car-side',
+      color: 'violet'
+    },
+    industrial_turbines: {
+      id: 'industrial_turbines',
+      name: 'توربينات وخطوط إنتاج صناعية ثقيلة',
+      tier: 'ocean_shipping',
+      tierName: 'شحن بحري عالمي بالحاويات (Global Ocean Shipping)',
+      unitCost: 400000,
+      importDurationSec: 32400, // 9 hours
+      exportDurationSec: 32400, // 9 hours
+      baseSellMin: 920000,     // +130%
+      baseSellMax: 1080000,    // +170%
+      icon: 'fa-industry',
+      color: 'rose'
+    },
+    ai_quantum_chips: {
+      id: 'ai_quantum_chips',
+      name: 'رقائق ومعالجات ذكاء اصطناعي سيليكونية',
+      tier: 'mega_oceanic',
+      tierName: 'سفن عابرة للمحيطات ضخمة (Mega Trans-Oceanic)',
+      unitCost: 800000,
+      importDurationSec: 43200, // 12 hours
+      exportDurationSec: 43200, // 12 hours
+      baseSellMin: 2400000,    // +200%
+      baseSellMax: 2900000,    // +262%
+      icon: 'fa-microchip',
+      color: 'cyan'
+    },
+    gold_bullion_bars: {
+      id: 'gold_bullion_bars',
+      name: 'سبائك ذهب ومعادن نادرة نقية',
+      tier: 'mega_oceanic',
+      tierName: 'سفن عابرة للمحيطات ضخمة (Mega Trans-Oceanic)',
+      unitCost: 1500000,
+      importDurationSec: 86400, // 24 hours
+      exportDurationSec: 86400, // 24 hours
+      baseSellMin: 5000000,    // +233%
+      baseSellMax: 6200000,    // +313%
+      icon: 'fa-cubes-stacked',
+      color: 'yellow'
+    }
+  };
+
+  const TRADE_BUYERS = [
+    { id: 'dubai_retail_group', name: 'مجموعة تجزئة دبي القابضة 🇦🇪', region: 'الخليج العربي', demands: ['fashion_brands', 'espresso_coffee'], priceMult: 1.05 },
+    { id: 'berlin_energy_consortium', name: 'كونسورتيوم برلين للطاقة المتجددة 🇩🇪', region: 'الاتحاد الأوروبي', demands: ['solar_panels', 'industrial_turbines'], priceMult: 1.10 },
+    { id: 'tokyo_tech_giants', name: 'تكتل شركات التكنولوجيا بطوكيو 🇯🇵', region: 'شرق آسيا', demands: ['ai_quantum_chips', 'auto_spare_parts'], priceMult: 1.15 },
+    { id: 'london_bullion_vault', name: 'خزائن وبنك لندن للمعادن 🇬🇧', region: 'المملكة المتحدة', demands: ['gold_bullion_bars', 'luxury_cars'], priceMult: 1.12 },
+    { id: 'singapore_logistics_hub', name: 'مؤسسة التجارة الحرة بسنغافورة 🇸🇬', region: 'جنوب شرق آسيا', demands: ['auto_spare_parts', 'fashion_brands', 'espresso_coffee'], priceMult: 1.08 },
+    { id: 'cairo_sovereign_procurement', name: 'الهيئة العامة للتوريدات والمشروعات 🇪🇬', region: 'شمال أفريقيا', demands: ['solar_panels', 'luxury_cars', 'industrial_turbines'], priceMult: 1.06 },
+    { id: 'zurich_private_clients', name: 'نخبة عملاء المصارف الخاصة بزيورخ 🇨🇭', region: 'سويسرا', demands: ['gold_bullion_bars', 'ai_quantum_chips'], priceMult: 1.18 }
+  ];
 
   // --- Initial Default Player State ---
   const INITIAL_STATE = {
@@ -709,7 +827,20 @@ const GameEngine = (() => {
     smugglingFleet: { speedboat: 0, plane: 0, ship: 0 },
     activeSmugglingJobs: [],
     stockCooldowns: {}, // Stores { SYMBOL: lockUntilTimestamp }
-    dailyQuests: null // Stores { date: 'YYYY-MM-DD', quests: [...], grandBonusClaimed: boolean }
+    dailyQuests: null, // Stores { date: 'YYYY-MM-DD', quests: [...], grandBonusClaimed: boolean }
+    tradeCompany: {
+      warehouseCapacity: 10,
+      warehouse: {},
+      activeImports: [],
+      activeExports: [],
+      totalProfitEarned: 0,
+      totalShipmentsCompleted: 0
+    },
+    workCooldownUntil: 0,
+    overtimeCooldownUntil: 0,
+    casinoCooldownUntil: 0,
+    loanCooldownUntil: 0,
+    stockTradeCooldownUntil: 0
   };
 
   let state = { ...INITIAL_STATE };
@@ -1155,7 +1286,7 @@ const GameEngine = (() => {
     // When supplies are available: 125% peak capacity bonus.
     // When supplies run out: 0% production (project halts completely until goods are re-stocked).
     const suppliesMultiplier = hasSupplies ? 1.25 : 0.0;
-    const quantumMultiplier = (s && s.itemDurations && s.itemDurations.quantum_processor > 0) ? 1.5 : 1.0;
+    const quantumMultiplier = (s && ((s.inventory && s.inventory.quantum_cpu > 0) || (s.itemDurations && s.itemDurations.quantum_cpu > 0))) ? (STORE_ITEMS.quantum_cpu ? STORE_ITEMS.quantum_cpu.value : 1.125) : 1.0;
     const boost = 1.0;
     const grossProfit = hasSupplies ? Math.max(0, Math.floor(demand * margin * 0.85 * quantumMultiplier * boost * suppliesMultiplier)) : 0;
 
@@ -1298,6 +1429,9 @@ const GameEngine = (() => {
     let rate = 0.000005;
     if (s.activeCar === 'rolls') {
       rate *= 1.05; // Rolls-Royce Phantom +5% bank interest boost
+    }
+    if (s.inventory && s.inventory.diamond_card > 0) {
+      rate *= (1 + (STORE_ITEMS.diamond_card ? STORE_ITEMS.diamond_card.value : 0.10)); // Diamond Card +10% interest boost
     }
     return Math.floor(s.bank * rate);
   }
@@ -1584,7 +1718,7 @@ const GameEngine = (() => {
       bracketColor = 'text-amber-400';
     }
 
-    const effectiveRate = taxShieldActive ? (baseRate * 0.40) : baseRate; // Tax shield gives 60% discount
+    const effectiveRate = taxShieldActive ? (baseRate * 0.70) : baseRate; // Tax shield gives 30% discount (rebalanced 50%)
     // Max cap: Never drain more than 450 EGP/sec even for extreme billionaires
     const calculatedTax = Math.floor(taxable * effectiveRate);
     const taxPerSecond = Math.min(450, Math.max(0, calculatedTax));
@@ -1683,8 +1817,12 @@ const GameEngine = (() => {
 
       if (Math.random() < finalChance) {
         state.raidActive = true;
-        // Bribe cost: 20% of cash + 10% of dirty cash, minimum 10,000
-        state.raidBribeCost = Math.max(10000, Math.floor((state.cash || 0) * 0.2) + Math.floor((state.dirtyCash || 0) * 0.1));
+        // Bribe cost: 20% of cash + 10% of dirty cash, minimum 10,000 (reduced 18% if commissioner_wire active)
+        let baseBribe = Math.max(10000, Math.floor((state.cash || 0) * 0.2) + Math.floor((state.dirtyCash || 0) * 0.1));
+        if (state.inventory && state.inventory.commissioner_wire > 0) {
+          baseBribe = Math.floor(baseBribe * 0.82); // 18% discount from Commissioner Wire (rebalanced 50%)
+        }
+        state.raidBribeCost = baseBribe;
         // Escape chance: 40% + Underworld Rep / 5, max 90%
         state.raidEscapeChance = Math.min(90, 40 + Math.floor((state.underworldRep || 0) / 5));
         
@@ -1720,6 +1858,9 @@ const GameEngine = (() => {
       // Decrement marketing campaign timer if active
       if (bizState.marketingTicks && bizState.marketingTicks > 0) {
         bizState.marketingTicks--;
+        if (bizState.marketingTicks === 0) {
+          bizState.marketingCooldownUntil = Date.now() + 60000; // 60s cooldown after campaign ends
+        }
       }
 
       const tickProfit = (breakdown.ownerProfit || 0) / 3600;
@@ -1933,6 +2074,34 @@ const GameEngine = (() => {
           updates.loanPenaltyApplied = { penalty, totalDue: state.activeLoan.totalDue };
           recordPlayerActivity('غرامة تأخير قرض ⚠️', `تطبيق غرامة تأخير +${penalty.toLocaleString()} EGP على القرض المتعثر. إجمالي المستحق: ${state.activeLoan.totalDue.toLocaleString()} EGP`, 'banking');
         }
+      }
+    }
+
+    // 6.8 Trade Company (الاستيراد والتصدير): Arrival of imports and delivery of exports
+    if (state.tradeCompany) {
+      const nowMs = Date.now();
+      if (state.tradeCompany.activeImports && state.tradeCompany.activeImports.length > 0) {
+        state.tradeCompany.activeImports.forEach(imp => {
+          if (!imp.arrived && nowMs >= imp.arrivalTime) {
+            imp.arrived = true;
+            if (!state.tradeCompany.warehouse) state.tradeCompany.warehouse = {};
+            state.tradeCompany.warehouse[imp.commodityId] = (state.tradeCompany.warehouse[imp.commodityId] || 0) + imp.quantity;
+            if (!updates.tradeImportsArrived) updates.tradeImportsArrived = [];
+            const comm = TRADE_COMMODITIES[imp.commodityId];
+            updates.tradeImportsArrived.push({ commodityName: comm ? comm.name : imp.commodityId, quantity: imp.quantity });
+            recordPlayerActivity('وصول شحنة استيراد 🚢', `وصلت شحنة "${comm ? comm.name : imp.commodityId}" (${imp.quantity} وحدة) لمستودع الشركة بنجاح وجاهزة للبيع والتصدير.`, 'trade');
+          }
+        });
+      }
+      if (state.tradeCompany.activeExports && state.tradeCompany.activeExports.length > 0) {
+        state.tradeCompany.activeExports.forEach(exp => {
+          if (!exp.delivered && nowMs >= exp.deliveryTime) {
+            exp.delivered = true;
+            if (!updates.tradeExportsDelivered) updates.tradeExportsDelivered = [];
+            updates.tradeExportsDelivered.push({ id: exp.id, buyerName: exp.buyerName, payout: exp.totalPayout });
+            recordPlayerActivity('تسليم شحنة تصدير 📦', `وصلت شحنة التصدير إلى العميل "${exp.buyerName}". أرباحك جاهزة للتحصيل فوراً (${exp.totalPayout.toLocaleString()} EGP).`, 'trade');
+          }
+        });
       }
     }
 
@@ -2258,9 +2427,34 @@ const GameEngine = (() => {
           };
         }
       }
-      if (!state.afkManagerExpiresAt || state.afkManagerExpiresAt <= 0) {
-        state.afkManagerExpiresAt = Date.now() + (12 * 60 * 60 * 1000);
+      // Ensure tradeCompany state integrity & resolve offline shipments
+      if (!state.tradeCompany) {
+        state.tradeCompany = {
+          warehouseCapacity: 10,
+          warehouse: {},
+          activeImports: [],
+          activeExports: [],
+          totalProfitEarned: 0,
+          totalShipmentsCompleted: 0
+        };
       }
+      if (!state.tradeCompany.warehouse) state.tradeCompany.warehouse = {};
+      if (!state.tradeCompany.activeImports) state.tradeCompany.activeImports = [];
+      if (!state.tradeCompany.activeExports) state.tradeCompany.activeExports = [];
+
+      const nowSessionMs = Date.now();
+      state.tradeCompany.activeImports.forEach(imp => {
+        if (!imp.arrived && nowSessionMs >= imp.arrivalTime) {
+          imp.arrived = true;
+          state.tradeCompany.warehouse[imp.commodityId] = (state.tradeCompany.warehouse[imp.commodityId] || 0) + imp.quantity;
+        }
+      });
+      state.tradeCompany.activeExports.forEach(exp => {
+        if (!exp.delivered && nowSessionMs >= exp.deliveryTime) {
+          exp.delivered = true;
+        }
+      });
+
       state.lastActiveTimestamp = Date.now();
       state.netWorth = calculateNetWorth();
       await AppDB.savePlayerState(username, state);
@@ -2301,12 +2495,21 @@ const GameEngine = (() => {
     const job = JOBS[state.jobId] || JOBS.worker;
     if (!job) throw new Error("الوظيفة غير صالحة.");
 
+    // Enforce 1.5s shift cooldown (reduced 15% if cronos_gear active)
+    if (state.workCooldownUntil && Date.now() < state.workCooldownUntil) {
+      const remSec = ((state.workCooldownUntil - Date.now()) / 1000).toFixed(1);
+      throw new Error(`أنت مرهق من نوبة العمل السابقة! يرجى أخذ استراحة (${remSec} ثانية).`);
+    }
+    const hasCronos = Boolean(state.inventory && state.inventory.cronos_gear > 0);
+    const workCdMs = Math.floor(1500 * (hasCronos ? 0.85 : 1.0));
+    state.workCooldownUntil = Date.now() + workCdMs;
+
     // Calculate XP boosters & energy drink salary multipliers
     const isPenActive = (state.inventory && state.inventory.gold_pen > 0);
     const isEnergyActive = (state.inventory && state.inventory.energy_drink > 0);
 
-    const xpBoost = isPenActive ? (1 + (STORE_ITEMS.gold_pen ? STORE_ITEMS.gold_pen.value : 0.5)) : 1.0;
-    const salaryMultiplier = isEnergyActive ? (STORE_ITEMS.energy_drink ? STORE_ITEMS.energy_drink.value : 2.0) : 1.0;
+    const xpBoost = isPenActive ? (1 + (STORE_ITEMS.gold_pen ? STORE_ITEMS.gold_pen.value : 0.08)) : 1.0;
+    const salaryMultiplier = isEnergyActive ? (STORE_ITEMS.energy_drink ? STORE_ITEMS.energy_drink.value : 1.125) : 1.0;
 
     const boost = window.serverBoostMultiplier || 1.0;
     const finalXpReward = Math.ceil(job.xpReward * xpBoost * boost);
@@ -2384,7 +2587,7 @@ const GameEngine = (() => {
 
     const baseCost = Math.floor(biz.cost * Math.pow(1.75, bizState.level));
     const hasTaxShield = (state.inventory && state.inventory.tax_shield > 0);
-    const upgradeCost = hasTaxShield ? Math.floor(baseCost * 0.75) : baseCost;
+    const upgradeCost = hasTaxShield ? Math.floor(baseCost * 0.875) : baseCost;
 
     if (state.cash < upgradeCost) {
       throw new Error(`رصيدك غير كافٍ للترقية. تحتاج: ${upgradeCost.toLocaleString()} EGP — لديك: ${state.cash.toLocaleString()} EGP`);
@@ -2501,11 +2704,19 @@ const GameEngine = (() => {
     AppDB.savePlayerState(activeUsername, state);
   }
 
-  // Launch Marketing Campaign (+40% demand boost for 30 ticks = 90 seconds)
+  // Launch Marketing Campaign (+40% demand boost for 30 ticks = 90 seconds, followed by 60s cooldown)
   function launchMarketingCampaign(key) {
     const biz = BUSINESSES[key];
     const bizState = state.businesses[key];
     if (!bizState || bizState.level === 0) throw new Error("المشروع مغلق حالياً.");
+
+    if (bizState.marketingTicks && bizState.marketingTicks > 0) {
+      throw new Error("توجد حملة تسويقية نشطة بالفعل لهذا المشروع!");
+    }
+    if (bizState.marketingCooldownUntil && Date.now() < bizState.marketingCooldownUntil) {
+      const remSec = Math.ceil((bizState.marketingCooldownUntil - Date.now()) / 1000);
+      throw new Error(`قسم التسويق: انتظر ${remSec} ثانية حتى ينتهي تأثير الحملة السابقة قبل إطلاق حملة جديدة.`);
+    }
 
     const campaignCost = Math.floor(biz.cost * 0.25);
     if (state.cash < campaignCost) {
@@ -2513,7 +2724,7 @@ const GameEngine = (() => {
     }
 
     state.cash -= campaignCost;
-    bizState.marketingTicks = (bizState.marketingTicks || 0) + 30; // 30 ticks = 90 seconds
+    bizState.marketingTicks = 30; // 30 ticks = 90 seconds
 
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
@@ -2604,6 +2815,12 @@ const GameEngine = (() => {
     if (!stock) throw new Error("رمز الشركة غير صالح.");
     if (shares <= 0 || !Number.isInteger(shares)) throw new Error("عدد الأسهم يجب أن يكون عدداً صحيحاً موجباً.");
 
+    // Anti-Spam Trade Cooldown (3 seconds)
+    if (state.stockTradeCooldownUntil && Date.now() < state.stockTradeCooldownUntil) {
+      const remSec = Math.ceil((state.stockTradeCooldownUntil - Date.now()) / 1000);
+      throw new Error(`البورصة: نظام منع التداول فائق السرعة نشط. انتظر ${remSec} ثانية بين كل أمر تداول.`);
+    }
+
     // Guard: initialize stock slot if missing
     if (!state.stocks[sym]) {
       state.stocks[sym] = { shares: 0, avgPrice: 0 };
@@ -2638,9 +2855,10 @@ const GameEngine = (() => {
     state.stocks[sym].shares = newShares;
     state.stocks[sym].avgPrice = newAvg;
 
-    // 2. Set 45-second holding cooldown on this stock
+    // Set 45-second holding cooldown on this stock and 3s global trade cooldown
     state.stockCooldowns = state.stockCooldowns || {};
     state.stockCooldowns[sym] = Date.now() + 45000;
+    state.stockTradeCooldownUntil = Date.now() + 3000;
 
     recordPlayerActivity('شراء أسهم', `شراء ${shares} سهم (${sym}) بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`, 'stock');
     trackDailyQuestProgress('stock_trade', 1);
@@ -2653,6 +2871,12 @@ const GameEngine = (() => {
     const stock = STOCKS[sym];
     if (!stock) throw new Error("الشركة غير موجودة.");
     if (shares <= 0 || !Number.isInteger(shares)) throw new Error("عدد الأسهم غير صالح.");
+
+    // Anti-Spam Trade Cooldown (3 seconds)
+    if (state.stockTradeCooldownUntil && Date.now() < state.stockTradeCooldownUntil) {
+      const remSec = Math.ceil((state.stockTradeCooldownUntil - Date.now()) / 1000);
+      throw new Error(`البورصة: نظام منع التداول فائق السرعة نشط. انتظر ${remSec} ثانية بين كل أمر تداول.`);
+    }
 
     // Guard: initialize if missing
     if (!state.stocks[sym]) {
@@ -2686,22 +2910,36 @@ const GameEngine = (() => {
       state.totalTaxesPaid = (state.totalTaxesPaid || 0) + capitalGainsTax;
     }
 
-    const netReturn = Math.max(0, grossReturn - fee - capitalGainsTax);
+    let netReturn = Math.max(0, grossReturn - fee - capitalGainsTax);
+
+    // 3. Market Scanner Loss Shield (10% loss protection if trade was at a loss)
+    let scannerCompensation = 0;
+    if (grossReturn < costBasis && state.inventory && state.inventory.market_scanner > 0) {
+      const tradeLoss = costBasis - grossReturn;
+      const shieldPct = STORE_ITEMS.market_scanner ? STORE_ITEMS.market_scanner.value : 0.10;
+      scannerCompensation = Math.floor(tradeLoss * shieldPct);
+      netReturn += scannerCompensation;
+    }
 
     state.stocks[sym].shares -= shares;
     if (state.stocks[sym].shares === 0) {
       state.stocks[sym].avgPrice = 0;
     }
     state.cash += netReturn;
+    state.stockTradeCooldownUntil = Date.now() + 3000;
 
-    const logDetails = capitalGainsTax > 0
-      ? `بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} + ضريبة أرباح: ${capitalGainsTax.toLocaleString()} ج.م)`
-      : `بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} ج.م)`;
+    let logDetails = `بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} ج.م)`;
+    if (capitalGainsTax > 0) {
+      logDetails += ` [ضريبة أرباح: ${capitalGainsTax.toLocaleString()} ج.م]`;
+    }
+    if (scannerCompensation > 0) {
+      logDetails += ` [حماية الماسح الذكي عوّضت: +${scannerCompensation.toLocaleString()} ج.م]`;
+    }
 
     recordPlayerActivity('بيع أسهم', logDetails, 'stock');
     trackDailyQuestProgress('stock_trade', 1);
     forceSaveState(true);
-    return { shares, price: currentPrice, grossReturn, fee, capitalGainsTax, totalReturn: netReturn };
+    return { shares, price: currentPrice, grossReturn, fee, capitalGainsTax, scannerCompensation, totalReturn: netReturn };
   }
 
   // Store: Buy Item (Refreshes duration, prevents exploit stacking, enforces cooldown)
@@ -2788,23 +3026,23 @@ const GameEngine = (() => {
       state.cash -= remainingCost;
     }
 
-    // Calculate risk & success modifiers
+    // Calculate risk & success modifiers (rebalanced by 50%)
     let successBonus = 0;
     const hasLawyer = Boolean(state.inventory && state.inventory.premium_lawyer > 0);
     const hasJammer = Boolean(state.inventory && state.inventory.radar_jammer > 0);
 
     if (hasLawyer) {
-      successBonus += 0.22; // +22% direct success boost from Lawyer
+      successBonus += 0.11; // +11% direct success boost from Lawyer (rebalanced 50%)
     }
     if (hasJammer) {
-      successBonus += 0.15; // +15% direct success boost from Jammer
+      successBonus += 0.075; // +7.5% direct success boost from Jammer (rebalanced 50%)
     }
 
     const finalSuccessChance = Math.min(0.92, deal.successChance + successBonus);
 
     // Prepare Cooldown Timers (Full cooldown for success, Half cooldown for failure)
     const hasCronos = Boolean(state.inventory && state.inventory.cronos_gear > 0);
-    const cdMultiplier = hasCronos ? 0.5 : 1.0;
+    const cdMultiplier = hasCronos ? 0.75 : 1.0; // 25% faster with Cronos (rebalanced 50%)
     const fullCdMs = Math.floor((deal.cooldownSec || 120) * cdMultiplier * 1000);
     const halfCdMs = Math.floor(((deal.cooldownSec || 120) / 2) * cdMultiplier * 1000);
     if (!state.blackMarketCooldowns) state.blackMarketCooldowns = {};
@@ -2837,9 +3075,9 @@ const GameEngine = (() => {
       // CAUGHT BY POLICE! Apply Half Cooldown on Failure
       state.blackMarketCooldowns[dealId] = Date.now() + halfCdMs;
 
-      // 1. Lawyer Acquittal: 50% chance the lawyer dismisses charges immediately!
-      if (hasLawyer && Math.random() < 0.50) {
-        recordPlayerActivity('براءة قضائية', `تدخل المحامي وأثبت براءة اللاعب في صفقة "${deal.name}" دون عقوبة (كول داون مخفض 50%)`, 'blackmarket');
+      // 1. Lawyer Acquittal: 25% chance the lawyer dismisses charges immediately (rebalanced 50%)
+      if (hasLawyer && Math.random() < 0.25) {
+        recordPlayerActivity('براءة قضائية', `تدخل المحامي وأثبت براءة اللاعب في صفقة "${deal.name}" دون عقوبة (كول داون مخفض)`, 'blackmarket');
         state.netWorth = calculateNetWorth();
         AppDB.savePlayerState(activeUsername, state);
         return {
@@ -2849,7 +3087,7 @@ const GameEngine = (() => {
           confiscation: 0,
           jailDuration: 0,
           cooldownSec: Math.floor((deal.cooldownSec || 120) / 2 * cdMultiplier),
-          message: 'تدخل المحامي الدولي وأسقط القضية وأثبت براءتك دون سجن أو غرامات! (فترة تهدئة مخفضة للنصف)'
+          message: 'تدخل المحامي الدولي وأسقط القضية وأثبت براءتك دون سجن أو غرامات!'
         };
       }
 
@@ -2857,7 +3095,7 @@ const GameEngine = (() => {
       if (state.inventory && state.inventory.fake_passport > 0) {
         state.inventory.fake_passport--;
         if (state.itemDurations) delete state.itemDurations.fake_passport;
-        recordPlayerActivity('هروب دبلوماسي', `استخدام جواز السفر المزور للهروب من المداهمة في صفقة "${deal.name}" (كول داون مخفض 50%)`, 'blackmarket');
+        recordPlayerActivity('هروب دبلوماسي', `استخدام جواز السفر المزور للهروب من المداهمة في صفقة "${deal.name}" (كول داون مخفض)`, 'blackmarket');
         state.netWorth = calculateNetWorth();
         AppDB.savePlayerState(activeUsername, state);
         return {
@@ -2866,13 +3104,13 @@ const GameEngine = (() => {
           confiscation: 0,
           jailDuration: 0,
           cooldownSec: Math.floor((deal.cooldownSec || 120) / 2 * cdMultiplier),
-          message: 'تمكنت من الهروب الفوري باستخدام جواز السفر الدبلوماسي المزور! (فترة تهدئة مخفضة للنصف)'
+          message: 'تمكنت من الهروب الفوري باستخدام جواز السفر الدبلوماسي المزور!'
         };
       }
 
-      // 3. Arrest & Confiscation (Diplomatic bag protects 50% of dirty cash)
+      // 3. Arrest & Confiscation (Diplomatic bag protects 18% of dirty cash, rebalanced 50%)
       const hasDiplomaticBag = Boolean(state.inventory && state.inventory.diplomatic_bag > 0);
-      const confiscatedDirty = hasDiplomaticBag ? Math.floor((state.dirtyCash || 0) * 0.5) : (state.dirtyCash || 0);
+      const confiscatedDirty = hasDiplomaticBag ? Math.floor((state.dirtyCash || 0) * 0.82) : (state.dirtyCash || 0);
       const confiscatedClean = Math.floor((state.cash || 0) * 0.15);
       const totalConfiscation = confiscatedDirty + confiscatedClean;
 
@@ -2968,9 +3206,9 @@ const GameEngine = (() => {
       throw new Error(`المبلغ المطلوب (${amount.toLocaleString()} ج.م) أكبر من رصيد الأموال غير المشروعة المتاحة (${availableDirty.toLocaleString()} ج.م).`);
     }
 
-    // Money laundering tax rate: base 45%, drops to 35% with crypto_cleaner (Never less than 35%)
+    // Money laundering tax rate: base 45%, drops to 40% with crypto_cleaner (Never less than 40%, rebalanced 50%)
     const hasCryptoCleaner = Boolean(state.inventory && state.inventory.crypto_cleaner > 0);
-    const feeRate = hasCryptoCleaner ? 0.35 : 0.45;
+    const feeRate = hasCryptoCleaner ? 0.40 : 0.45;
     const fee = Math.floor(amount * feeRate);
     const cleanedAmount = amount - fee;
 
@@ -3077,6 +3315,13 @@ const GameEngine = (() => {
 
   // Casino Flip Game with Streak Bonus
   function playCoinFlip(betAmount, choice, currentStreak = 0) {
+    // Anti-Spam Casino Cooldown (3 seconds)
+    if (state.casinoCooldownUntil && Date.now() < state.casinoCooldownUntil) {
+      const remSec = Math.ceil((state.casinoCooldownUntil - Date.now()) / 1000);
+      throw new Error(`الكازينو: يرجى التمهل! انتظر ${remSec} ثانية قبل اللعب مجدداً.`);
+    }
+    state.casinoCooldownUntil = Date.now() + 3000;
+
     const MAX_CASINO_BET = 2500000;
     if (betAmount <= 0) throw new Error("مبلغ الرهان يجب أن يكون أكبر من صفر جنيه.");
     if (betAmount > MAX_CASINO_BET) throw new Error(`الحد الأقصى المسموح به للرهان الواحد هو ${MAX_CASINO_BET.toLocaleString()} ج.م.`);
@@ -3120,6 +3365,13 @@ const GameEngine = (() => {
 
   // Casino Slots Game with 5 Premium Tier Symbols
   function playSlots(betAmount) {
+    // Anti-Spam Casino Cooldown (3 seconds)
+    if (state.casinoCooldownUntil && Date.now() < state.casinoCooldownUntil) {
+      const remSec = Math.ceil((state.casinoCooldownUntil - Date.now()) / 1000);
+      throw new Error(`الكازينو: يرجى التمهل! انتظر ${remSec} ثانية قبل تشغيل الماكينة مجدداً.`);
+    }
+    state.casinoCooldownUntil = Date.now() + 3000;
+
     const MAX_CASINO_BET = 2500000;
     if (betAmount <= 0) throw new Error("مبلغ الرهان غير صالح.");
     if (betAmount > MAX_CASINO_BET) throw new Error(`الحد الأقصى المسموح به للرهان هو ${MAX_CASINO_BET.toLocaleString()} ج.م.`);
@@ -3193,6 +3445,13 @@ const GameEngine = (() => {
 
   // NEW Casino Game: Lucky Royale Dice (رمي النرد الملكي)
   function playDice(betAmount, choice) {
+    // Anti-Spam Casino Cooldown (3 seconds)
+    if (state.casinoCooldownUntil && Date.now() < state.casinoCooldownUntil) {
+      const remSec = Math.ceil((state.casinoCooldownUntil - Date.now()) / 1000);
+      throw new Error(`الكازينو: يرجى التمهل! انتظر ${remSec} ثانية قبل رمي النرد مجدداً.`);
+    }
+    state.casinoCooldownUntil = Date.now() + 3000;
+
     const MAX_CASINO_BET = 2500000;
     if (betAmount <= 0) throw new Error("مبلغ الرهان غير صالح.");
     if (betAmount > MAX_CASINO_BET) throw new Error(`الحد الأقصى المسموح به لرهان النرد هو ${MAX_CASINO_BET.toLocaleString()} ج.م.`);
@@ -3245,11 +3504,21 @@ const GameEngine = (() => {
   // Perform Overtime Double Shift
   function performOvertimeShift() {
     const job = JOBS[state.jobId] || JOBS.worker;
+
+    // Enforce 20s overtime cooldown (reduced 15% if cronos_gear active)
+    if (state.overtimeCooldownUntil && Date.now() < state.overtimeCooldownUntil) {
+      const remSec = Math.ceil((state.overtimeCooldownUntil - Date.now()) / 1000);
+      throw new Error(`أنت مجهد للغاية من العمل الإضافي! يرجى الانتظار ${remSec} ثانية قبل نوبة إضافية جديدة.`);
+    }
+    const hasCronos = Boolean(state.inventory && state.inventory.cronos_gear > 0);
+    const overtimeCdMs = Math.floor(20000 * (hasCronos ? 0.85 : 1.0));
+    state.overtimeCooldownUntil = Date.now() + overtimeCdMs;
+
     const isEnergyActive = (state.inventory && state.inventory.energy_drink > 0);
     const isPenActive = (state.inventory && state.inventory.gold_pen > 0);
 
-    const xpBonus = isPenActive ? (1 + (STORE_ITEMS.gold_pen ? STORE_ITEMS.gold_pen.value : 0.5)) : 1.0;
-    const energyMult = isEnergyActive ? (STORE_ITEMS.energy_drink ? STORE_ITEMS.energy_drink.value : 2.0) : 1.0;
+    const xpBonus = isPenActive ? (1 + (STORE_ITEMS.gold_pen ? STORE_ITEMS.gold_pen.value : 0.08)) : 1.0;
+    const energyMult = isEnergyActive ? (STORE_ITEMS.energy_drink ? STORE_ITEMS.energy_drink.value : 1.125) : 1.0;
 
     // Overtime gives 2.5x base salary and 3x XP
     const boost = window.serverBoostMultiplier || 1.0;
@@ -3426,6 +3695,10 @@ const GameEngine = (() => {
     if (state.activeLoan && state.activeLoan.amount > 0) {
       throw new Error(`لديك قرض قائم بالفعل بقيمة ${state.activeLoan.totalDue.toLocaleString()} EGP يجب سداده أولاً!`);
     }
+    if (state.loanCooldownUntil && Date.now() < state.loanCooldownUntil) {
+      const remSec = Math.ceil((state.loanCooldownUntil - Date.now()) / 1000);
+      throw new Error(`البنك: فترة التقييم الائتماني نشطة. لا يمكنك طلب قرض جديد إلا بعد مرور ${remSec} ثانية من سداد القرض السابق.`);
+    }
     const maxLoan = Math.max(50000, Math.floor(state.netWorth * 0.35));
     if (amount <= 0 || amount > maxLoan) {
       throw new Error(`الحد الأقصى للقرض المسموح لك هو ${maxLoan.toLocaleString()} جنيه.`);
@@ -3466,6 +3739,7 @@ const GameEngine = (() => {
     }
     recordPlayerActivity('سداد قرض بنكي 🏛️', `تم سداد القرض البنكي بالكامل بقيمة ${due.toLocaleString()} ج.م وفك أي حظر مصرفي`, 'banking');
     state.activeLoan = null;
+    state.loanCooldownUntil = Date.now() + 180000; // 3 minutes credit cooldown before next loan
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
     return { repaid: due };
@@ -3498,6 +3772,13 @@ const GameEngine = (() => {
 
   // European Roulette Wheel Game
   function playRoulette(betAmount, betType, betValue) {
+    // Anti-Spam Casino Cooldown (3 seconds)
+    if (state.casinoCooldownUntil && Date.now() < state.casinoCooldownUntil) {
+      const remSec = Math.ceil((state.casinoCooldownUntil - Date.now()) / 1000);
+      throw new Error(`الكازينو: يرجى التمهل! انتظر ${remSec} ثانية قبل إدارة عجلة الروليت مجدداً.`);
+    }
+    state.casinoCooldownUntil = Date.now() + 3000;
+
     const MAX_ROULETTE_BET = 2500000;
     if (betAmount <= 0) throw new Error("مبلغ الرهان يجب أن يكون أكبر من صفر.");
     if (betAmount > MAX_ROULETTE_BET) throw new Error(`الحد الأقصى المسموح به للرهان في الروليت هو ${MAX_ROULETTE_BET.toLocaleString()} ج.م.`);
@@ -3568,6 +3849,218 @@ const GameEngine = (() => {
       multiplier,
       payout,
       profit: payout - betAmount
+    };
+  }
+
+  // --- شركة الاستيراد والتصدير الدولية (Import & Export Global Company) ---
+
+  function getTradeCompanyState() {
+    if (!state.tradeCompany) {
+      state.tradeCompany = {
+        warehouseCapacity: 10,
+        warehouse: {},
+        activeImports: [],
+        activeExports: [],
+        totalProfitEarned: 0,
+        totalShipmentsCompleted: 0
+      };
+    }
+    if (!state.tradeCompany.warehouse) state.tradeCompany.warehouse = {};
+    if (!state.tradeCompany.activeImports) state.tradeCompany.activeImports = [];
+    if (!state.tradeCompany.activeExports) state.tradeCompany.activeExports = [];
+
+    // Calculate current storage utilization
+    let storedUnits = 0;
+    Object.values(state.tradeCompany.warehouse).forEach(qty => {
+      storedUnits += (qty || 0);
+    });
+
+    let incomingUnits = 0;
+    state.tradeCompany.activeImports.forEach(imp => {
+      if (!imp.arrived) incomingUnits += (imp.quantity || 0);
+    });
+
+    const capacity = state.tradeCompany.warehouseCapacity || 10;
+    const upgradeCost = Math.floor(50000 * Math.pow(1.8, Math.max(0, (capacity - 10) / 10)));
+
+    return {
+      warehouseCapacity: capacity,
+      storedUnits,
+      incomingUnits,
+      availableSlots: Math.max(0, capacity - storedUnits - incomingUnits),
+      warehouse: state.tradeCompany.warehouse,
+      activeImports: state.tradeCompany.activeImports,
+      activeExports: state.tradeCompany.activeExports,
+      totalProfitEarned: state.tradeCompany.totalProfitEarned || 0,
+      totalShipmentsCompleted: state.tradeCompany.totalShipmentsCompleted || 0,
+      upgradeCost,
+      commodities: TRADE_COMMODITIES,
+      buyers: TRADE_BUYERS
+    };
+  }
+
+  function buyImportCargo(commodityId, quantity) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك إدارة عمليات الاستيراد والتصدير.");
+    const item = TRADE_COMMODITIES[commodityId];
+    if (!item) throw new Error("نوع البضاعة غير معروف في سجل التجارة الدولية.");
+    quantity = parseInt(quantity, 10);
+    if (!quantity || quantity <= 0) throw new Error("يرجى تحديد كمية صالحة (عدد صحيح موجب).");
+
+    const tradeInfo = getTradeCompanyState();
+    if (tradeInfo.availableSlots < quantity) {
+      throw new Error(`سعة المستودع لا تكفي! المتاح للاستيراد: ${tradeInfo.availableSlots} وحدة (تشمل البضاعة المخزنة والشحنات في الطريق).`);
+    }
+
+    const totalCost = item.unitCost * quantity;
+    const totalLiquid = (state.cash || 0) + (state.bank || 0);
+    if (totalLiquid < totalCost) {
+      throw new Error(`سيولتك غير كافية لتمويل استيراد هذه الشحنة. التكلفة: ${totalCost.toLocaleString()} EGP — المتاح لديك: ${totalLiquid.toLocaleString()} EGP.`);
+    }
+
+    // Deduct cost: try cash first, then bank
+    if ((state.cash || 0) >= totalCost) {
+      state.cash -= totalCost;
+    } else {
+      const rem = totalCost - (state.cash || 0);
+      state.cash = 0;
+      state.bank -= rem;
+    }
+
+    const orderId = 'imp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    const importOrder = {
+      id: orderId,
+      commodityId,
+      quantity,
+      unitCost: item.unitCost,
+      totalCost,
+      startTime: Date.now(),
+      arrivalTime: Date.now() + (item.importDurationSec * 1000),
+      durationSec: item.importDurationSec,
+      arrived: false
+    };
+
+    state.tradeCompany.activeImports.push(importOrder);
+    recordPlayerActivity('استيراد بضاعة 🚢', `بدء استيراد ${quantity} وحدة من "${item.name}" بتكلفة ${totalCost.toLocaleString()} ج.م (تصل خلال ${Math.round(item.importDurationSec / 60)} دقيقة).`, 'trade');
+    forceSaveState(true);
+
+    return importOrder;
+  }
+
+  function sellExportCargo(commodityId, buyerId, quantity) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك إبرام عقود التصدير.");
+    const item = TRADE_COMMODITIES[commodityId];
+    if (!item) throw new Error("نوع البضاعة غير صالح.");
+    const buyer = TRADE_BUYERS.find(b => b.id === buyerId);
+    if (!buyer) throw new Error("الجهة المستوردة غير موجودة في الدليل التجاري.");
+    quantity = parseInt(quantity, 10);
+    if (!quantity || quantity <= 0) throw new Error("يرجى تحديد كمية صالحة للتصدير.");
+
+    const currentStock = (state.tradeCompany && state.tradeCompany.warehouse && state.tradeCompany.warehouse[commodityId]) || 0;
+    if (currentStock < quantity) {
+      throw new Error(`المخزون المتوفر في مستودعك (${currentStock} وحدة) أقل من الكمية المطلوبة للتعاقد (${quantity} وحدة).`);
+    }
+
+    // Determine unit selling price based on buyer demand
+    const isDemanded = buyer.demands.includes(commodityId);
+    let basePrice = item.baseSellMin + Math.floor(Math.random() * (item.baseSellMax - item.baseSellMin));
+    if (isDemanded) {
+      basePrice = Math.floor(basePrice * buyer.priceMult);
+    }
+    const totalPayout = basePrice * quantity;
+    const estProfit = totalPayout - (item.unitCost * quantity);
+
+    // Deduct from warehouse
+    state.tradeCompany.warehouse[commodityId] -= quantity;
+    if (state.tradeCompany.warehouse[commodityId] <= 0) {
+      delete state.tradeCompany.warehouse[commodityId];
+    }
+
+    const exportOrderId = 'exp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    const exportOrder = {
+      id: exportOrderId,
+      commodityId,
+      commodityName: item.name,
+      buyerId: buyer.id,
+      buyerName: buyer.name,
+      region: buyer.region,
+      quantity,
+      unitPrice: basePrice,
+      totalPayout,
+      estProfit,
+      startTime: Date.now(),
+      deliveryTime: Date.now() + (item.exportDurationSec * 1000),
+      durationSec: item.exportDurationSec,
+      delivered: false,
+      claimed: false
+    };
+
+    state.tradeCompany.activeExports.push(exportOrder);
+    recordPlayerActivity('تصدير بضاعة 📦', `شحن وتصدير ${quantity} وحدة من "${item.name}" إلى ${buyer.name} بقيمة تعاقد ${totalPayout.toLocaleString()} ج.م (ربح تقديري: +${estProfit.toLocaleString()} ج.م).`, 'trade');
+    forceSaveState(true);
+
+    return exportOrder;
+  }
+
+  function claimExportProfit(exportId) {
+    if (!state.tradeCompany || !state.tradeCompany.activeExports) {
+      throw new Error("لا توجد شحنات تصدير مسجلة.");
+    }
+    const index = state.tradeCompany.activeExports.findIndex(e => e.id === exportId);
+    if (index === -1) throw new Error("عقد التصدير المحدد غير موجود.");
+    const order = state.tradeCompany.activeExports[index];
+
+    if (Date.now() < order.deliveryTime && !order.delivered) {
+      const remSec = Math.ceil((order.deliveryTime - Date.now()) / 1000);
+      throw new Error(`الشحنة ما زالت في طريقها للعميل! متبقي على الوصول والتسليم: ${remSec} ثانية.`);
+    }
+
+    if (order.claimed) {
+      throw new Error("تم تحصيل أرباح هذه الشحنة مسبقاً.");
+    }
+
+    // Pay out to bank
+    state.bank = (state.bank || 0) + order.totalPayout;
+    state.tradeCompany.totalProfitEarned = (state.tradeCompany.totalProfitEarned || 0) + (order.estProfit || 0);
+    state.tradeCompany.totalShipmentsCompleted = (state.tradeCompany.totalShipmentsCompleted || 0) + 1;
+
+    // Remove from activeExports
+    state.tradeCompany.activeExports.splice(index, 1);
+
+    recordPlayerActivity('تحصيل أرباح تصدير 💰', `تم تحصيل عائد تصدير شحنة "${order.commodityName}" من ${order.buyerName} بمبلغ +${order.totalPayout.toLocaleString()} EGP (صافي ربح: +${order.estProfit.toLocaleString()} EGP).`, 'trade');
+    forceSaveState(true);
+
+    return {
+      payout: order.totalPayout,
+      profit: order.estProfit,
+      buyerName: order.buyerName,
+      commodityName: order.commodityName
+    };
+  }
+
+  function upgradeWarehouse() {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك توسعة المستودعات.");
+    const tradeInfo = getTradeCompanyState();
+    const cost = tradeInfo.upgradeCost;
+    const totalLiquid = (state.cash || 0) + (state.bank || 0);
+    if (totalLiquid < cost) {
+      throw new Error(`تكلفة توسعة المستودع (+10 حاويات) هي ${cost.toLocaleString()} EGP. رصيدك غير كافٍ.`);
+    }
+
+    if ((state.cash || 0) >= cost) {
+      state.cash -= cost;
+    } else {
+      const rem = cost - (state.cash || 0);
+      state.cash = 0;
+      state.bank -= rem;
+    }
+
+    state.tradeCompany.warehouseCapacity = (state.tradeCompany.warehouseCapacity || 10) + 10;
+    recordPlayerActivity('توسعة مستودع الاستيراد 🏢', `توسعة المستودع الرئيسي (+10 حاويات) لتصبح السعة الإجمالية ${state.tradeCompany.warehouseCapacity} وحدة.`, 'trade');
+    forceSaveState(true);
+
+    return {
+      newCapacity: state.tradeCompany.warehouseCapacity,
+      cost
     };
   }
 
@@ -3685,7 +4178,16 @@ const GameEngine = (() => {
     claimGrandDailyBonus,
 
     // Business Supply Method
-    supplyBusiness
+    supplyBusiness,
+
+    // Import & Export Company Exports
+    TRADE_COMMODITIES,
+    TRADE_BUYERS,
+    getTradeCompanyState,
+    buyImportCargo,
+    sellExportCargo,
+    claimExportProfit,
+    upgradeWarehouse
   };
 })();
 

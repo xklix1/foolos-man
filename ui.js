@@ -325,10 +325,15 @@ const UIController = (() => {
     });
   }
 
-  // Work shift cooldown state (2.5 seconds)
+  // Work shift cooldown state (1.5 seconds)
   let workCooldownActive = false;
   let workCooldownTimer = null;
-  const WORK_COOLDOWN_MS = 2500;
+  const WORK_COOLDOWN_MS = 1500;
+
+  // Overtime shift cooldown state (20 seconds)
+  let overtimeCooldownActive = false;
+  let overtimeCooldownTimer = null;
+  const OVERTIME_COOLDOWN_MS = 20000;
 
   // Sound FX & Audio System State
   let audioCtx = null;
@@ -1551,6 +1556,8 @@ const UIController = (() => {
       renderAcquisitionMarket();
     } else if (tabId === 'corporations') {
       renderCorporationsTab();
+    } else if (tabId === 'trade') {
+      renderTradePanel();
     }
 
     // Immediate toggle of jail-overlay based on selected tab
@@ -1736,6 +1743,21 @@ const UIController = (() => {
         }
       }
 
+      // Handle Trade Arrivals and Deliveries
+      if (updates.tradeImportsArrived && updates.tradeImportsArrived.length > 0) {
+        updates.tradeImportsArrived.forEach(item => {
+          showToast('وصول شحنة استيراد! 🚢📦', `وصلت شحنة ${item.name} (${item.qty} وحدة) وتم تخزينها في المستودع بنجاح!`, 'success');
+        });
+        if (activeTab === 'trade') renderTradePanel();
+      }
+
+      if (updates.tradeExportsDelivered && updates.tradeExportsDelivered.length > 0) {
+        updates.tradeExportsDelivered.forEach(item => {
+          showToast('وصول شحنة تصدير للعميل! 💰✈️', `وصلت شحنة ${item.name} إلى ${item.buyerName}. يمكنك الآن تحصيل أرباح الصفقة بقيمة ${item.payout.toLocaleString()} EGP!`, 'success');
+        });
+        if (activeTab === 'trade') renderTradePanel();
+      }
+
       // Fast in-place numerical updates on every tick without DOM destruction
       renderStatsBar();
 
@@ -1746,6 +1768,7 @@ const UIController = (() => {
       else if (activeTab === 'stocks') updateStockPricesInDOM();
       else if (activeTab === 'taxes') renderTaxesTab();
       else if (activeTab === 'blackmarket') updateBlackMarketCooldownsInDOM();
+      else if (activeTab === 'trade') updateTradeShipmentsInDOM();
 
       // Real-time live update for cashflow breakdown modal if open
       const cfModal = document.getElementById('cashflow-breakdown-modal');
@@ -1906,6 +1929,9 @@ const UIController = (() => {
         break;
       case 'leaderboard':
         renderLeaderboard();
+        break;
+      case 'trade':
+        renderTradePanel();
         break;
     }
     if (window.currentLang === 'en') {
@@ -2551,7 +2577,7 @@ const UIController = (() => {
     const hasCronos = GameEngine.state && GameEngine.state.inventory && GameEngine.state.inventory.cronos_gear > 0;
     
     let cooldownReduction = 0.0;
-    if (hasCronos) cooldownReduction += 0.50;
+    if (hasCronos) cooldownReduction += 0.15;
     
     const activeCarId = GameEngine.state && GameEngine.state.activeCar;
     if (activeCarId === 'lambo') {
@@ -2592,6 +2618,74 @@ const UIController = (() => {
         workCooldownActive = false;
 
         // Restore button
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        btn.className = originalClasses;
+        btn.style.opacity = '';
+        btn.style.cursor = '';
+        btn.style.position = '';
+        btn.style.overflow = '';
+      }
+    }, tickMs);
+  }
+
+  // --- Overtime Shift Cooldown Controller (20s) ---
+  function startOvertimeCooldown(btn) {
+    if (!btn) return;
+    overtimeCooldownActive = true;
+
+    const originalHTML = btn.innerHTML;
+    const originalClasses = btn.className;
+
+    btn.disabled = true;
+    btn.className = btn.className
+      .replace(/bg-gradient-to-r\s+from-amber-600\s+to-orange-600/g, 'bg-slate-700')
+      .replace(/hover:from-amber-500\s+hover:to-orange-500/g, '')
+      .replace(/text-slate-950/g, 'text-slate-400');
+    btn.style.opacity = '0.65';
+    btn.style.cursor = 'not-allowed';
+
+    const hasCronos = GameEngine.state && GameEngine.state.inventory && GameEngine.state.inventory.cronos_gear > 0;
+    let cooldownReduction = 0.0;
+    if (hasCronos) cooldownReduction += 0.15;
+
+    const activeCarId = GameEngine.state && GameEngine.state.activeCar;
+    if (activeCarId === 'lambo') {
+      cooldownReduction += 0.15;
+    }
+
+    const totalMs = Math.floor(OVERTIME_COOLDOWN_MS * (1.0 - cooldownReduction));
+    const tickMs = 100;
+    let elapsed = 0;
+
+    function renderCountdown() {
+      const remaining = Math.ceil((totalMs - elapsed) / 1000);
+      const progress = elapsed / totalMs;
+      const barWidth = Math.round(progress * 100);
+      btn.innerHTML = `
+        <span class="flex items-center justify-center gap-2 w-full">
+          <svg class="w-4 h-4 animate-spin text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          <span>مهلة الإضافي... ${remaining}ث</span>
+        </span>
+        <div class="absolute bottom-0 right-0 h-1 bg-orange-500/70 transition-all duration-100 rounded-b-lg" style="width: ${barWidth}%; left: 0;"></div>
+      `;
+      btn.style.position = 'relative';
+      btn.style.overflow = 'hidden';
+    }
+
+    renderCountdown();
+
+    overtimeCooldownTimer = setInterval(() => {
+      elapsed += tickMs;
+      renderCountdown();
+
+      if (elapsed >= totalMs) {
+        clearInterval(overtimeCooldownTimer);
+        overtimeCooldownTimer = null;
+        overtimeCooldownActive = false;
+
         btn.disabled = false;
         btn.innerHTML = originalHTML;
         btn.className = originalClasses;
@@ -2726,7 +2820,7 @@ const UIController = (() => {
 
     const s = GameEngine.state;
 
-    // Shift worker button click — with 2-second cooldown + floating reward particle
+    // Shift worker button click — with 1.5-second cooldown + floating reward particle
     const jobWorkBtn = document.getElementById('btn-perform-shift');
     if (jobWorkBtn) {
       jobWorkBtn.addEventListener('click', () => {
@@ -2734,8 +2828,8 @@ const UIController = (() => {
         try {
           const res = GameEngine.performJobShift();
           const boosts = [];
-          if (res.isEnergyBoosted) boosts.push('⚡ مضاعفة الطاقة 2x');
-          if (res.isPenBoosted) boosts.push('✍️ القلم الذهبي +50% XP');
+          if (res.isEnergyBoosted) boosts.push('⚡ مشروب الطاقة +12.5%');
+          if (res.isPenBoosted) boosts.push('✍️ القلم الذهبي +8% XP');
           const boostText = boosts.length > 0 ? ` (${boosts.join(' + ')})` : '';
 
           showPassiveGainFloat(`+${res.salary.toLocaleString()} EGP ⚡`);
@@ -2748,22 +2842,22 @@ const UIController = (() => {
       });
     }
 
-    // Overtime Double Shift Button
+    // Overtime Double Shift Button — with 20-second cooldown
     const overtimeWorkBtn = document.getElementById('btn-perform-overtime-shift');
     if (overtimeWorkBtn) {
       overtimeWorkBtn.addEventListener('click', () => {
-        if (workCooldownActive) return;
+        if (overtimeCooldownActive) return;
         try {
           const res = GameEngine.performOvertimeShift();
           const boosts = [];
-          if (res.isEnergyBoosted) boosts.push('⚡ مشروب الطاقة 2x');
-          if (res.isPenBoosted) boosts.push('✍️ القلم الذهبي +50% XP');
+          if (res.isEnergyBoosted) boosts.push('⚡ مشروب الطاقة +12.5%');
+          if (res.isPenBoosted) boosts.push('✍️ القلم الذهبي +8% XP');
           const boostText = boosts.length > 0 ? ` (${boosts.join(' + ')})` : '';
 
           showPassiveGainFloat(`+${res.earnedSalary.toLocaleString()} EGP 🔥`);
           showToast('نوبة عمل إضافية مضاعفة', `كسبت +${res.earnedSalary.toLocaleString()} EGP و +${res.earnedXp} خبرة مضاعفة${boostText}!`, 'success');
           renderAll();
-          startWorkCooldown(overtimeWorkBtn);
+          startOvertimeCooldown(overtimeWorkBtn);
         } catch (err) {
           showToast('خطأ العمل الإضافي', err.message, 'error');
         }
@@ -3809,8 +3903,16 @@ const UIController = (() => {
       'panel-store': {
         title: 'متجر كبار الشخصيات والحقيبة',
         desc: `المستلزمات ومقويات الكفاءة:
-        <br>• اشترِ أغراض تعزز أدائك (القلم الذهبي لزيادة الـ XP، معالج الكوانتم لرفع أرباح شركاتك +50%، تذكرة VIP الكازينو لرفع الحظ).
+        <br>• اشترِ أغراض تعزز أدائك (القلم الذهبي لزيادة الـ XP، معالج الكوانتم لرفع أرباح شركاتك +12.5%، تذكرة VIP الكازينو لرفع الحظ).
         <br>• استخدم الأغراض مباشرة من الحقيبة لتفعيلها بمؤقت زمني محدد.`
+      },
+      'panel-trade': {
+        title: 'شركة الاستيراد والتصدير الدولية',
+        desc: `التجارة العالمية والخدمات اللوجستية:
+        <br>• <strong>الاستيراد</strong>: تعاقد على استيراد بضائع عالمية بأسعار الجملة وانتظر وصول الشحنة بحراً أو جواً (من 30 دقيقة إلى 24 ساعة).
+        <br>• <strong>المستودع الجمركي</strong>: قم بتخزين الحاويات وتوسعة الطاقة الاستيعابية لمستودعك كلما كبرت أعمالك.
+        <br>• <strong>مجلس المشترين والأسواق</strong>: اختر أفضل مشترٍ دولي يقدم أعلى هامش ربح (+35% إلى +313%) ووقع عقد التصدير.
+        <br>• <strong>الشحن وتحصيل الأرباح</strong>: تتبع شحنة التصدير حتى تصل للمشتري، ثم حصّل أرباح الصفقة ومكاسب التجارة الدولية.`
       },
       'panel-auctions': {
         title: 'المزادات والصفقات الحصرية',
@@ -3887,6 +3989,16 @@ const UIController = (() => {
         await renderLeaderboard(true);
       });
     }
+    // Trade Company Subtabs Binding
+    ['catalog', 'warehouse', 'buyers', 'shipments'].forEach(tab => {
+      const btn = document.getElementById(`btn-trade-subtab-${tab}`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          switchTradeSubtab(tab);
+        });
+      }
+    });
+
     setupV2UIHandlers();
   }
 
@@ -13059,6 +13171,638 @@ const UIController = (() => {
     }
   });
 
+  // ── شركة الاستيراد والتصدير الدولية (Import & Export Global Company UI) ──────────
+  let activeTradeSubtab = 'catalog';
+  let preselectedExportCommodity = null;
+
+  function switchTradeSubtab(subtabId) {
+    activeTradeSubtab = subtabId;
+    const subtabs = ['catalog', 'warehouse', 'buyers', 'shipments'];
+    subtabs.forEach(tab => {
+      const btn = document.getElementById(`btn-trade-subtab-${tab}`);
+      const content = document.getElementById(`trade-content-${tab}`);
+      if (tab === subtabId) {
+        if (btn) {
+          btn.className = 'trade-subtab-btn px-4 py-2 rounded-xl font-bold text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 transition flex items-center gap-2 cursor-pointer shadow-lg shadow-cyan-500/10';
+        }
+        if (content) content.classList.remove('hidden');
+      } else {
+        if (btn) {
+          btn.className = 'trade-subtab-btn px-4 py-2 rounded-xl font-bold text-xs bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800 transition flex items-center gap-2 cursor-pointer';
+        }
+        if (content) content.classList.add('hidden');
+      }
+    });
+
+    renderTradePanel();
+  }
+  window.switchTradeSubtab = switchTradeSubtab;
+
+  function formatTradeDuration(totalSec) {
+    if (!totalSec || totalSec <= 0) return '0 ثانية';
+    if (totalSec >= 3600) {
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      return m > 0 ? `${h} س و ${m} دقيقة` : `${h} ساعة`;
+    }
+    if (totalSec >= 60) {
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      return s > 0 ? `${m} د و ${s} ث` : `${m} دقيقة`;
+    }
+    return `${totalSec} ثانية`;
+  }
+
+  function renderTradeIcon(iconStr) {
+    if (!iconStr) return '<i class="fa-solid fa-box text-cyan-400 text-xl"></i>';
+    if (typeof iconStr === 'string' && iconStr.startsWith('fa-')) {
+      return `<i class="fa-solid ${iconStr} text-cyan-400 text-xl"></i>`;
+    }
+    return iconStr;
+  }
+
+  function renderTradePanel() {
+    if (!GameEngine || typeof GameEngine.getTradeCompanyState !== 'function') return;
+    const tradeInfo = GameEngine.getTradeCompanyState();
+
+    // 1. Warehouse Storage Meter & Stats
+    const totalOccupied = tradeInfo.storedUnits + tradeInfo.incomingUnits;
+    const capacity = tradeInfo.warehouseCapacity || 10;
+    const pct = Math.min(100, Math.round((totalOccupied / capacity) * 100));
+
+    const statsEl = document.getElementById('trade-warehouse-stats');
+    if (statsEl) statsEl.textContent = `${totalOccupied} / ${capacity} حاويات (${pct}%)`;
+
+    const barEl = document.getElementById('trade-warehouse-bar');
+    if (barEl) {
+      barEl.style.width = `${pct}%`;
+      if (pct >= 90) {
+        barEl.className = 'bg-gradient-to-r from-rose-500 to-amber-500 h-full rounded-full transition-all duration-500';
+      } else {
+        barEl.className = 'bg-gradient-to-r from-cyan-500 to-emerald-500 h-full rounded-full transition-all duration-500';
+      }
+    }
+
+    const storedEl = document.getElementById('trade-stored-count');
+    if (storedEl) storedEl.textContent = `مخزن: ${tradeInfo.storedUnits}`;
+    const incomingEl = document.getElementById('trade-incoming-count');
+    if (incomingEl) incomingEl.textContent = `في الطريق: ${tradeInfo.incomingUnits}`;
+    const availableEl = document.getElementById('trade-available-count');
+    if (availableEl) availableEl.textContent = `متاح: ${tradeInfo.availableSlots}`;
+
+    const costBadge = document.getElementById('trade-upgrade-cost-badge');
+    if (costBadge) costBadge.textContent = `${tradeInfo.upgradeCost.toLocaleString()} EGP`;
+
+    const upgradeBtn = document.getElementById('btn-upgrade-warehouse');
+    if (upgradeBtn) {
+      upgradeBtn.onclick = () => {
+        try {
+          const res = GameEngine.upgradeWarehouse();
+          playMenuSound('success');
+          showToast('توسعة المستودع 🏢', `تمت توسعة المستودع الرئيسي بنجاح! السعة الاستيعابية الآن: ${res.newCapacity} حاوية.`, 'success');
+          renderTradePanel();
+        } catch (err) {
+          showToast('فشل التوسعة', err.message, 'error');
+        }
+      };
+    }
+
+    // Active Shipments Badge
+    const activeBadge = document.getElementById('trade-active-badge');
+    const activeCount = (tradeInfo.activeImports ? tradeInfo.activeImports.length : 0) + (tradeInfo.activeExports ? tradeInfo.activeExports.length : 0);
+    if (activeBadge) {
+      if (activeCount > 0) {
+        activeBadge.textContent = activeCount;
+        activeBadge.classList.remove('hidden');
+      } else {
+        activeBadge.classList.add('hidden');
+      }
+    }
+
+    // 2. Render Subtabs Content
+    if (activeTradeSubtab === 'catalog') {
+      renderTradeCatalog(tradeInfo);
+    } else if (activeTradeSubtab === 'warehouse') {
+      renderTradeWarehouse(tradeInfo);
+    } else if (activeTradeSubtab === 'buyers') {
+      renderTradeBuyers(tradeInfo);
+    } else if (activeTradeSubtab === 'shipments') {
+      renderTradeShipments(tradeInfo);
+    }
+  }
+
+  function renderTradeCatalog(tradeInfo) {
+    const grid = document.getElementById('trade-catalog-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const commodities = tradeInfo.commodities || {};
+    const tierMeta = {
+      'air_cargo': { badge: 'شحن جوي سريع (Air Express)', color: 'border-sky-500/30 bg-sky-500/10 text-sky-300' },
+      'regional_freight': { badge: 'شحن إقليمي بحري/بري (Freight)', color: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' },
+      'ocean_shipping': { badge: 'شحن بحري حاويات (Ocean Shipping)', color: 'border-purple-500/30 bg-purple-500/10 text-purple-300' },
+      'mega_oceanic': { badge: 'سفن عابرة للمحيطات (Mega Trans-Oceanic)', color: 'border-amber-500/30 bg-amber-500/10 text-amber-300' }
+    };
+
+    Object.keys(commodities).forEach(key => {
+      const c = commodities[key];
+      const tierInfo = tierMeta[c.tier] || { badge: c.tierName || 'شحن دولي', color: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300' };
+
+      const minProfPct = Math.round(((c.baseSellMin - c.unitCost) / c.unitCost) * 100);
+      const maxProfPct = Math.round(((Math.floor(c.baseSellMax * 1.18) - c.unitCost) / c.unitCost) * 100);
+
+      const card = document.createElement('div');
+      card.className = 'glass-panel p-4 rounded-2xl border border-slate-800/80 hover:border-cyan-500/30 transition-all flex flex-col justify-between space-y-4 shadow-lg';
+      card.innerHTML = `
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${tierInfo.color}">${tierInfo.badge}</span>
+            <span class="text-[11px] text-slate-400 flex items-center gap-1 font-mono">
+              <i class="fa-solid fa-clock text-cyan-400 text-[10px]"></i>
+              <span>${formatTradeDuration(c.importDurationSec)}</span>
+            </span>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+              ${renderTradeIcon(c.icon)}
+            </div>
+            <div>
+              <h4 class="font-black text-sm text-white">${c.name}</h4>
+              <p class="text-[11px] text-slate-400 leading-snug line-clamp-2 mt-0.5">${c.desc || c.name}</p>
+            </div>
+          </div>
+
+          <div class="bg-slate-950/60 rounded-xl p-2.5 border border-slate-800/60 space-y-1.5 text-xs">
+            <div class="flex justify-between items-center text-slate-400">
+              <span>تكلفة استيراد الوحدة:</span>
+              <span class="font-black text-white numbers-font">${c.unitCost.toLocaleString()} EGP</span>
+            </div>
+            <div class="flex justify-between items-center text-slate-400">
+              <span>سعر البيع المتوقع:</span>
+              <span class="font-bold text-amber-400 numbers-font">${c.baseSellMin.toLocaleString()} - ${c.baseSellMax.toLocaleString()} EGP</span>
+            </div>
+            <div class="flex justify-between items-center pt-1 border-t border-slate-800/50">
+              <span class="text-cyan-300 font-bold">هامش الربح المتوقع:</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-black text-[10px] numbers-font">+${minProfPct}% إلى +${maxProfPct}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2 pt-2 border-t border-slate-800/60">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-400 font-medium">كمية الاستيراد (حاويات):</span>
+            <div class="flex items-center gap-1">
+              <input type="number" id="trade-qty-input-${key}" min="1" max="${Math.max(1, tradeInfo.availableSlots)}" value="1" class="w-16 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-center font-black text-xs text-white numbers-font focus:border-cyan-500 focus:outline-none">
+              <span class="text-[10px] text-slate-500">حاوية</span>
+            </div>
+          </div>
+          <div class="flex justify-between text-[11px] text-slate-400 pb-1">
+            <span>التكلفة الإجمالية:</span>
+            <span id="trade-total-cost-${key}" class="font-black text-cyan-300 numbers-font">${c.unitCost.toLocaleString()} EGP</span>
+          </div>
+          <button id="btn-import-order-${key}" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-plane-departure"></i>
+            <span>تعاقد واستيراد البضاعة</span>
+          </button>
+        </div>
+      `;
+
+      grid.appendChild(card);
+
+      const qtyInput = card.querySelector(`#trade-qty-input-${key}`);
+      const costPreview = card.querySelector(`#trade-total-cost-${key}`);
+      const importBtn = card.querySelector(`#btn-import-order-${key}`);
+
+      if (qtyInput && costPreview) {
+        qtyInput.addEventListener('input', () => {
+          let val = parseInt(qtyInput.value) || 1;
+          if (val < 1) val = 1;
+          costPreview.textContent = `${(val * c.unitCost).toLocaleString()} EGP`;
+        });
+      }
+
+      if (importBtn && qtyInput) {
+        importBtn.addEventListener('click', () => {
+          const qty = parseInt(qtyInput.value) || 1;
+          try {
+            const order = GameEngine.buyImportCargo(key, qty);
+            playMenuSound('success');
+            showToast('بدء الاستيراد الدولي 🚢', `تم توقيع أمر توريد ${qty} وحدة من "${c.name}" بتكلفة ${order.totalCost.toLocaleString()} EGP! الشحنة الآن في طريقها لمستودعك.`, 'success');
+            switchTradeSubtab('shipments');
+          } catch (err) {
+            showToast('تعذر الاستيراد', err.message, 'error');
+          }
+        });
+      }
+    });
+  }
+
+  function renderTradeWarehouse(tradeInfo) {
+    const grid = document.getElementById('trade-warehouse-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const warehouse = tradeInfo.warehouse || {};
+    const storedKeys = Object.keys(warehouse).filter(k => warehouse[k] > 0);
+
+    if (storedKeys.length === 0) {
+      grid.innerHTML = `
+        <div class="col-span-full glass-panel p-8 rounded-2xl border border-dashed border-slate-800 text-center space-y-3">
+          <div class="w-16 h-16 mx-auto rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-3xl">
+            📦
+          </div>
+          <h4 class="font-black text-white text-base">المستودع خاوٍ من البضائع حالياً</h4>
+          <p class="text-xs text-slate-400 max-w-md mx-auto">لم تقم باستيراد أي بضائع بعد، أو قمت ببيع وتصدير كامل المخزون المتوفر. تصفح دليل الاستيراد لطلب شحنات جديدة.</p>
+          <button onclick="switchTradeSubtab('catalog')" class="px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs transition cursor-pointer inline-flex items-center gap-2">
+            <i class="fa-solid fa-boxes-packing"></i>
+            <span>فتح دليل الاستيراد الدولي</span>
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    storedKeys.forEach(key => {
+      const qty = warehouse[key];
+      const c = tradeInfo.commodities[key] || { name: key, icon: '📦', baseSellMin: 0, baseSellMax: 0, unitCost: 0 };
+      const estMinVal = qty * c.baseSellMin;
+      const estMaxVal = Math.floor(qty * c.baseSellMax * 1.18);
+
+      const card = document.createElement('div');
+      card.className = 'glass-panel p-5 rounded-2xl border border-slate-800 hover:border-emerald-500/30 transition-all flex flex-col justify-between space-y-4 shadow-lg';
+      card.innerHTML = `
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-[10px]">جاهزة للتصدير والبيع</span>
+            <span class="text-xs font-bold text-slate-400">مخزن: <span class="font-black text-emerald-400 numbers-font text-sm">${qty}</span> حاوية</span>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-2xl shrink-0">
+              ${renderTradeIcon(c.icon)}
+            </div>
+            <div>
+              <h4 class="font-black text-white text-sm">${c.name}</h4>
+              <p class="text-[11px] text-slate-400">تكلفة الشراء: ${c.unitCost.toLocaleString()} EGP للوحدة</p>
+            </div>
+          </div>
+
+          <div class="bg-slate-950/60 rounded-xl p-3 border border-slate-800/60 space-y-1 text-xs">
+            <div class="flex justify-between text-slate-400">
+              <span>القيمة السوقية التقديرية:</span>
+              <span class="font-black text-amber-400 numbers-font">${estMinVal.toLocaleString()} - ${estMaxVal.toLocaleString()} EGP</span>
+            </div>
+            <div class="flex justify-between text-slate-400">
+              <span>أقصى ربح متوقع للدفعة:</span>
+              <span class="font-black text-emerald-400 numbers-font">+${(estMaxVal - (qty * c.unitCost)).toLocaleString()} EGP</span>
+            </div>
+          </div>
+        </div>
+
+        <button id="btn-quick-export-${key}" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-plane-departure"></i>
+          <span>عرض على المشترين وتصدير الشحنة</span>
+        </button>
+      `;
+
+      grid.appendChild(card);
+
+      const expBtn = card.querySelector(`#btn-quick-export-${key}`);
+      if (expBtn) {
+        expBtn.addEventListener('click', () => {
+          preselectedExportCommodity = key;
+          switchTradeSubtab('buyers');
+        });
+      }
+    });
+  }
+
+  function renderTradeBuyers(tradeInfo) {
+    const grid = document.getElementById('trade-buyers-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const buyers = tradeInfo.buyers || [];
+    const warehouse = tradeInfo.warehouse || {};
+    const commodities = tradeInfo.commodities || {};
+
+    buyers.forEach(buyer => {
+      const bonusPct = Math.round((buyer.priceMult - 1.0) * 100);
+
+      const card = document.createElement('div');
+      card.className = 'glass-panel p-5 rounded-2xl border border-slate-800 hover:border-amber-500/30 transition-all flex flex-col justify-between space-y-4 shadow-lg';
+
+      // Build demand tags
+      const demandTags = buyer.demands.map(commId => {
+        const item = commodities[commId];
+        const hasStock = warehouse[commId] && warehouse[commId] > 0;
+        return `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold border ${hasStock ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse' : 'bg-slate-800/80 text-slate-400 border-slate-700'}">${item ? item.name : commId}</span>`;
+      }).join(' ');
+
+      // Build commodity options
+      let optionsHtml = '';
+      Object.keys(commodities).forEach(k => {
+        const item = commodities[k];
+        const inStock = warehouse[k] || 0;
+        const isDemanded = buyer.demands.includes(k);
+        const selected = (preselectedExportCommodity === k) || (inStock > 0 && !preselectedExportCommodity);
+        const demandMark = isDemanded ? ` (+${bonusPct}% علاوة طلب)` : '';
+        optionsHtml += `<option value="${k}" ${selected ? 'selected' : ''}>${item.name} [متوفر: ${inStock}]${demandMark}</option>`;
+      });
+
+      card.innerHTML = `
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-2xl">${buyer.flag}</span>
+              <div>
+                <h4 class="font-black text-white text-sm">${buyer.name}</h4>
+                <span class="text-[10px] text-slate-400">${buyer.region}</span>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-black text-[10px] numbers-font">
+              +${bonusPct}% علاوة سعرية
+            </span>
+          </div>
+
+          <div class="space-y-1 text-xs">
+            <span class="text-slate-400 text-[11px] font-medium">السلع المطلوبة ذات الأولوية والعلاوة:</span>
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              ${demandTags}
+            </div>
+          </div>
+
+          <div class="space-y-2 pt-2 border-t border-slate-800/60">
+            <div class="space-y-1">
+              <label class="text-[11px] text-slate-400 font-medium">اختر البضاعة المراد تصديرها:</label>
+              <select id="buyer-select-${buyer.id}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:border-amber-500 focus:outline-none cursor-pointer">
+                ${optionsHtml}
+              </select>
+            </div>
+
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-slate-400 font-medium">كمية التصدير (حاويات):</span>
+              <div class="flex items-center gap-1">
+                <input type="number" id="buyer-qty-${buyer.id}" min="1" value="1" class="w-20 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-center font-black text-xs text-white numbers-font focus:border-amber-500 focus:outline-none">
+                <span class="text-[10px] text-slate-500">حاوية</span>
+              </div>
+            </div>
+
+            <div class="bg-slate-950/70 rounded-xl p-2.5 border border-slate-800/60 space-y-1 text-xs">
+              <div class="flex justify-between text-slate-400">
+                <span>مدة الشحن للعميل:</span>
+                <span id="buyer-duration-${buyer.id}" class="font-bold text-slate-300 numbers-font">-</span>
+              </div>
+              <div class="flex justify-between text-slate-400">
+                <span>قيمة العقد المتوقعة:</span>
+                <span id="buyer-payout-preview-${buyer.id}" class="font-black text-amber-400 numbers-font">-</span>
+              </div>
+              <div class="flex justify-between text-slate-400">
+                <span>صافي الربح التقديري:</span>
+                <span id="buyer-profit-preview-${buyer.id}" class="font-black text-emerald-400 numbers-font">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button id="btn-sign-export-${buyer.id}" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-file-contract"></i>
+          <span>توقيع عقد التصدير والشحن ✈️</span>
+        </button>
+      `;
+
+      grid.appendChild(card);
+
+      const selEl = card.querySelector(`#buyer-select-${buyer.id}`);
+      const qtyEl = card.querySelector(`#buyer-qty-${buyer.id}`);
+      const durationEl = card.querySelector(`#buyer-duration-${buyer.id}`);
+      const payoutEl = card.querySelector(`#buyer-payout-preview-${buyer.id}`);
+      const profitEl = card.querySelector(`#buyer-profit-preview-${buyer.id}`);
+      const signBtn = card.querySelector(`#btn-sign-export-${buyer.id}`);
+
+      function updateCalculator() {
+        const commKey = selEl.value;
+        const comm = commodities[commKey];
+        if (!comm) return;
+        const qty = parseInt(qtyEl.value) || 1;
+        const isDemanded = buyer.demands.includes(commKey);
+        const mult = isDemanded ? buyer.priceMult : 1.0;
+        const avgSellPrice = Math.floor(((comm.baseSellMin + comm.baseSellMax) / 2) * mult);
+        const totalRev = avgSellPrice * qty;
+        const totalProfit = totalRev - (comm.unitCost * qty);
+
+        durationEl.textContent = formatTradeDuration(comm.exportDurationSec);
+        payoutEl.textContent = `~ ${totalRev.toLocaleString()} EGP`;
+        profitEl.textContent = `+${totalProfit.toLocaleString()} EGP (${Math.round((totalProfit / (comm.unitCost * qty)) * 100)}%)`;
+      }
+
+      selEl.addEventListener('change', updateCalculator);
+      qtyEl.addEventListener('input', updateCalculator);
+      updateCalculator();
+
+      if (signBtn) {
+        signBtn.addEventListener('click', () => {
+          const commKey = selEl.value;
+          const qty = parseInt(qtyEl.value) || 1;
+          try {
+            const order = GameEngine.sellExportCargo(commKey, buyer.id, qty);
+            playMenuSound('success');
+            showToast('تم توقيع عقد التصدير! ✈️📦', `تم تصدير ${qty} وحدة إلى "${buyer.name}". إجمالي العقد: ${order.totalPayout.toLocaleString()} EGP (ربح تقديري: +${order.estProfit.toLocaleString()} EGP). الشحنة انطلقت الآن!`, 'success');
+            preselectedExportCommodity = null;
+            switchTradeSubtab('shipments');
+          } catch (err) {
+            showToast('تعذر توقيع العقد', err.message, 'error');
+          }
+        });
+      }
+    });
+  }
+
+  function renderTradeShipments(tradeInfo) {
+    const list = document.getElementById('trade-shipments-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    const imports = tradeInfo.activeImports || [];
+    const exports = tradeInfo.activeExports || [];
+    const commodities = tradeInfo.commodities || {};
+
+    if (imports.length === 0 && exports.length === 0) {
+      list.innerHTML = `
+        <div class="glass-panel p-8 rounded-2xl border border-dashed border-slate-800 text-center space-y-3">
+          <div class="w-16 h-16 mx-auto rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-3xl">
+            🚢
+          </div>
+          <h4 class="font-black text-white text-base">لا توجد شحنات بحرية أو جوية جارية حالياً</h4>
+          <p class="text-xs text-slate-400 max-w-md mx-auto">جميع الشحنات السابقة اكتملت وتم تسليمها أو تحصيل أرباحها. يمكنك استيراد سلع جديدة أو تصدير ما في المستودع.</p>
+          <div class="flex items-center justify-center gap-3 pt-2">
+            <button onclick="switchTradeSubtab('catalog')" class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs transition cursor-pointer">
+              استيراد سلع جديدة
+            </button>
+            <button onclick="switchTradeSubtab('warehouse')" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition cursor-pointer">
+              فحص المستودع والتصدير
+            </button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Render Active Imports
+    imports.forEach(order => {
+      const comm = commodities[order.commodityId] || { name: 'بضاعة استيراد', icon: '📦' };
+      const now = Date.now();
+      const isArrived = order.arrived || (now >= order.arrivalTime);
+      const totalDur = (order.arrivalTime - order.startTime) || 1;
+      const progress = isArrived ? 100 : Math.min(100, Math.max(0, ((now - order.startTime) / totalDur) * 100));
+      const remSec = Math.max(0, Math.ceil((order.arrivalTime - now) / 1000));
+
+      const card = document.createElement('div');
+      card.id = `trade-order-card-${order.id}`;
+      card.className = 'glass-panel p-4 rounded-2xl border border-slate-800 hover:border-cyan-500/30 transition flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg';
+      card.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-cyan-950/60 border border-cyan-500/30 flex items-center justify-center text-2xl shrink-0">
+            ${renderTradeIcon(comm.icon)}
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-[10px] border border-cyan-500/30">شحنة استيراد دولية 🚢</span>
+              <h4 class="font-black text-white text-sm">${comm.name} (${order.quantity} حاوية)</h4>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-0.5">التكلفة المدفوعة: <span class="numbers-font font-bold text-slate-200">${order.totalCost.toLocaleString()} EGP</span> — الوجهة: المستودع الجمركي</p>
+          </div>
+        </div>
+
+        <div class="w-full md:w-72 space-y-1.5">
+          <div class="flex justify-between text-xs">
+            <span class="text-slate-400 font-medium">${isArrived ? 'الحالة: وصلت المستودع 📦' : 'في طريق الشحن...'}</span>
+            <span id="timer-${order.id}" class="font-mono font-bold text-cyan-400">${isArrived ? 'تم التخزين' : formatCountdownHMS(remSec)}</span>
+          </div>
+          <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
+            <div id="bar-${order.id}" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full transition-all duration-300" style="width: ${progress}%"></div>
+          </div>
+        </div>
+      `;
+
+      list.appendChild(card);
+    });
+
+    // Render Active Exports
+    exports.forEach(order => {
+      const comm = commodities[order.commodityId] || { name: order.commodityName || 'بضاعة تصدير', icon: '📦' };
+      const now = Date.now();
+      const isDelivered = order.delivered || (now >= order.deliveryTime);
+      const totalDur = (order.deliveryTime - order.startTime) || 1;
+      const progress = isDelivered ? 100 : Math.min(100, Math.max(0, ((now - order.startTime) / totalDur) * 100));
+      const remSec = Math.max(0, Math.ceil((order.deliveryTime - now) / 1000));
+
+      const card = document.createElement('div');
+      card.id = `trade-order-card-${order.id}`;
+      card.className = 'glass-panel p-4 rounded-2xl border border-slate-800 hover:border-emerald-500/30 transition flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg';
+      card.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center text-2xl shrink-0">
+            ${renderTradeIcon(comm.icon)}
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-500/30">شحنة تصدير جوية ✈️</span>
+              <h4 class="font-black text-white text-sm">${order.commodityName} (${order.quantity} حاوية)</h4>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-0.5">العميل: <span class="font-bold text-white">${order.buyerName}</span> (${order.region}) — قيمة العقد: <span class="numbers-font font-black text-amber-400">${order.totalPayout.toLocaleString()} EGP</span></p>
+          </div>
+        </div>
+
+        <div class="w-full md:w-80 space-y-2">
+          ${isDelivered ? `
+            <button class="btn-claim-trade-export w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 animate-pulse cursor-pointer" data-id="${order.id}">
+              <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
+              <span>تحصيل أرباح الصفقة (${order.totalPayout.toLocaleString()} EGP)</span>
+            </button>
+          ` : `
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs">
+                <span class="text-slate-400 font-medium">جاري نقل الشحنة للعميل...</span>
+                <span id="timer-${order.id}" class="font-mono font-bold text-amber-400">${formatCountdownHMS(remSec)}</span>
+              </div>
+              <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
+                <div id="bar-${order.id}" class="bg-gradient-to-r from-emerald-500 to-amber-500 h-full rounded-full transition-all duration-300" style="width: ${progress}%"></div>
+              </div>
+            </div>
+          `}
+        </div>
+      `;
+
+      list.appendChild(card);
+    });
+
+    // Bind claim buttons
+    list.querySelectorAll('.btn-claim-trade-export').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const orderId = btn.getAttribute('data-id');
+        try {
+          const res = GameEngine.claimExportProfit(orderId);
+          playMenuSound('success');
+          showToast('تحصيل أرباح التصدير 💰🎉', `تم تحصيل مبلغ ${res.payout.toLocaleString()} EGP وأودع مباشرة في حسابك البنكي! صافي الربح المحقق: +${res.profit.toLocaleString()} EGP.`, 'success');
+          renderTradePanel();
+          renderStatsBar();
+        } catch (err) {
+          showToast('فشل التحصيل', err.message, 'error');
+        }
+      });
+    });
+  }
+
+  function updateTradeShipmentsInDOM() {
+    if (activeTradeSubtab !== 'shipments') return;
+    if (!GameEngine || typeof GameEngine.getTradeCompanyState !== 'function') return;
+    const tradeInfo = GameEngine.getTradeCompanyState();
+
+    const imports = tradeInfo.activeImports || [];
+    const exports = tradeInfo.activeExports || [];
+    const now = Date.now();
+    let requiresFullReRender = false;
+
+    imports.forEach(order => {
+      const timerEl = document.getElementById(`timer-${order.id}`);
+      const barEl = document.getElementById(`bar-${order.id}`);
+      if (!timerEl || !barEl) return;
+
+      const isArrived = order.arrived || (now >= order.arrivalTime);
+      if (isArrived && timerEl.textContent !== 'تم التخزين') {
+        requiresFullReRender = true;
+      } else if (!isArrived) {
+        const totalDur = (order.arrivalTime - order.startTime) || 1;
+        const progress = Math.min(100, Math.max(0, ((now - order.startTime) / totalDur) * 100));
+        const remSec = Math.max(0, Math.ceil((order.arrivalTime - now) / 1000));
+        timerEl.textContent = formatCountdownHMS(remSec);
+        barEl.style.width = `${progress}%`;
+      }
+    });
+
+    exports.forEach(order => {
+      const timerEl = document.getElementById(`timer-${order.id}`);
+      const barEl = document.getElementById(`bar-${order.id}`);
+      const isDelivered = order.delivered || (now >= order.deliveryTime);
+
+      if (isDelivered && timerEl) {
+        requiresFullReRender = true;
+      } else if (!isDelivered && timerEl && barEl) {
+        const totalDur = (order.deliveryTime - order.startTime) || 1;
+        const progress = Math.min(100, Math.max(0, ((now - order.startTime) / totalDur) * 100));
+        const remSec = Math.max(0, Math.ceil((order.deliveryTime - now) / 1000));
+        timerEl.textContent = formatCountdownHMS(remSec);
+        barEl.style.width = `${progress}%`;
+      }
+    });
+
+    if (requiresFullReRender) {
+      renderTradePanel();
+    }
+  }
+
   return {
     init,
     switchTab,
@@ -13104,7 +13848,12 @@ const UIController = (() => {
     closeCashflowBreakdownModal,
     renderCashflowBreakdown,
     triggerMandatoryReloadModal,
-    handleIncomingForceReload
+    handleIncomingForceReload,
+
+    // Trade & Export Company Exports
+    renderTradePanel,
+    switchTradeSubtab,
+    updateTradeShipmentsInDOM
   };
 })();
 
