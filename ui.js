@@ -5384,8 +5384,9 @@ const UIController = (() => {
       }, (err) => console.error("Airdrop listen err: ", err));
     activeListeners.push(unsubAirdrop);
 
-    // 5. Global Unified Market Event synchronization
+    // 5. Global Unified Market Event synchronization (Egress-optimized: 60s interval, pauses when hidden)
     const syncMarketEvent = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       try {
         if (typeof AppDB.getGlobalMarketEvent === 'function') {
           const ev = await AppDB.getGlobalMarketEvent();
@@ -5402,7 +5403,7 @@ const UIController = (() => {
       } catch (e) {}
     };
     syncMarketEvent();
-    const marketEventPoll = setInterval(syncMarketEvent, 15000);
+    const marketEventPoll = setInterval(syncMarketEvent, 60000);
     activeListeners.push(() => clearInterval(marketEventPoll));
 
     // 3. User document listener for ban & external edits (Live Real-Time Sync)
@@ -12728,9 +12729,10 @@ const UIController = (() => {
 window.UIController = UIController;
 window.UI = UIController;
 
-// Global watchdog for mandatory reload (runs periodically even before login)
+// Global watchdog for mandatory reload (Egress-optimized: checks every 60s when active)
 if (typeof window !== 'undefined' && !window.location.pathname.includes('ctrl-vault')) {
   setInterval(async () => {
+    if (typeof document !== 'undefined' && document.hidden) return;
     try {
       if (typeof AppDB !== 'undefined' && typeof AppDB.getForceReloadStatus === 'function') {
         const reloadData = await AppDB.getForceReloadStatus();
@@ -12741,5 +12743,5 @@ if (typeof window !== 'undefined' && !window.location.pathname.includes('ctrl-va
         }
       }
     } catch (e) {}
-  }, 1500);
+  }, 60000);
 }

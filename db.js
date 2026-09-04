@@ -25,12 +25,22 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   async function _api(endpoint, options = {}) {
     const url = `${SUPABASE_URL}/rest/v1/${endpoint}`;
+    const method = (options.method || 'GET').toUpperCase();
     const headers = {
       'apikey': SUPABASE_ANON_KEY,
       'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       'Content-Type': 'application/json',
       ...(options.headers || {})
     };
+
+    // Auto-inject Prefer: return=minimal for mutating queries to save Supabase Egress (HTTP 204)
+    if (method === 'POST' || method === 'PATCH' || method === 'DELETE') {
+      if (!headers['Prefer']) {
+        headers['Prefer'] = 'return=minimal';
+      } else if (!headers['Prefer'].includes('return=')) {
+        headers['Prefer'] += ', return=minimal';
+      }
+    }
 
     const res = await fetch(url, { ...options, headers });
     if (!res.ok) {
@@ -534,8 +544,9 @@ var AppDB = (() => {
     const u = username.trim();
 
     const fetchMails = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       try {
-        const rows = await _api(`mailbox?recipient=eq.${encodeURIComponent(u)}&order=created_at.desc&limit=50`);
+        const rows = await _api(`mailbox?recipient=eq.${encodeURIComponent(u)}&order=created_at.desc&limit=30`);
         const normalized = (rows || []).map(r => ({
           ...r,
           timestamp: Number(r.created_at || r.timestamp || Date.now()),
@@ -546,8 +557,13 @@ var AppDB = (() => {
     };
 
     fetchMails();
-    const interval = setInterval(fetchMails, 4000); // 4-second polling for instant wire transfer and mail delivery
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchMails, 30000); // 30-second polling (Egress-optimized)
+    const onMailVis = () => { if (typeof document !== 'undefined' && !document.hidden) fetchMails(); };
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onMailVis);
+    return () => {
+      clearInterval(interval);
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onMailVis);
+    };
   }
 
   async function updateMailStatus(mailId, status) {
@@ -745,9 +761,9 @@ var AppDB = (() => {
   }
 
   async function adminGetAllPlayers() {
-    const rows = await _api('players?select=*&order=net_worth.desc');
+    const rows = await _api('players?select=username,pin,cash,bank,dirty_cash,net_worth,xp,title,job_id,is_admin,is_banned,jail_timer,total_taxes_paid,afk_manager_expires_at,last_seen,created_at&order=net_worth.desc');
     return (rows || []).map(r => {
-      const p = (typeof r.state === 'object' && r.state) ? { ...r.state } : {};
+      const p = {};
       p.username = r.username;
       p.pin = r.pin;
       p.cash = Number(r.cash || 0);
@@ -1060,6 +1076,7 @@ var AppDB = (() => {
     let lastJson = null;
 
     const fetchCorps = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       try {
         const list = await getCorporationsList();
         const currentJson = JSON.stringify(list);
@@ -1071,7 +1088,7 @@ var AppDB = (() => {
     };
 
     fetchCorps();
-    const interval = setInterval(fetchCorps, 6000);
+    const interval = setInterval(fetchCorps, 45000); // 45-second polling (Egress-optimized)
     return () => {
       isSubscribed = false;
       clearInterval(interval);
@@ -1528,7 +1545,7 @@ var AppDB = (() => {
   // 🏆 Top 10 Richest Players Leaderboard
   async function getLeaderboard() {
     try {
-      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned,state&is_banned=eq.false&order=net_worth.desc&limit=25');
+      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&order=net_worth.desc&limit=25');
       return (rows || []).map(r => ({
         username: r.username,
         cash: Number(r.cash || 0),
@@ -1538,7 +1555,7 @@ var AppDB = (() => {
         title: r.title || 'عامل مبتدئ',
         jobId: r.job_id || 'worker',
         isAdmin: r.is_admin === true,
-        facebookVerified: Boolean(r.state && (r.state.facebookVerified || (r.state.badges && r.state.badges.includes('facebook'))))
+        facebookVerified: false
       }));
     } catch (e) {
       console.warn('[DB] getLeaderboard error:', e.message);
@@ -1699,11 +1716,12 @@ var AppDB = (() => {
             let isSubscribed = true;
             const checkPlayer = async () => {
               if (!isSubscribed) return;
+              if (typeof document !== 'undefined' && document.hidden) return;
               try {
-                const rows = await _api(`players?username=eq.${encodeURIComponent(docId)}&select=*`);
+                const rows = await _api(`players?username=eq.${encodeURIComponent(docId)}&select=username,cash,bank,dirty_cash,net_worth,xp,title,job_id,is_admin,is_banned,jail_timer,admin_modified_timestamp`);
                 if (rows && rows.length > 0 && isSubscribed) {
                   const r = rows[0];
-                  const d = (typeof r.state === 'object' && r.state) ? { ...r.state } : {};
+                  const d = {};
                   d.username = r.username;
                   d.cash = Number(r.cash || 0);
                   d.bank = Number(r.bank || 0);
@@ -1721,10 +1739,21 @@ var AppDB = (() => {
               } catch (e) {}
             };
             checkPlayer();
-            const pollId = setInterval(checkPlayer, 2000); // 2-second real-time check for instant admin sync
+            const pollId = setInterval(checkPlayer, 15000); // 15-second real-time check (Egress-optimized)
+            const onVisChange = () => {
+              if (typeof document !== 'undefined' && !document.hidden && isSubscribed) {
+                checkPlayer();
+              }
+            };
+            if (typeof document !== 'undefined') {
+              document.addEventListener('visibilitychange', onVisChange);
+            }
             return () => {
               isSubscribed = false;
               clearInterval(pollId);
+              if (typeof document !== 'undefined') {
+                document.removeEventListener('visibilitychange', onVisChange);
+              }
             };
           }
 
@@ -1732,6 +1761,7 @@ var AppDB = (() => {
             let isSubscribed = true;
             const checkGlobal = async () => {
               if (!isSubscribed) return;
+              if (typeof document !== 'undefined' && document.hidden) return;
               try {
                 const rows = await _api(`globals?id=eq.${encodeURIComponent(docId)}`).catch(() => []);
                 if (rows && rows.length > 0 && isSubscribed) {
@@ -1740,10 +1770,21 @@ var AppDB = (() => {
               } catch (e) {}
             };
             checkGlobal();
-            const pollId = setInterval(checkGlobal, 5000);
+            const pollId = setInterval(checkGlobal, 35000); // 35-second check (Egress-optimized)
+            const onGlobalVis = () => {
+              if (typeof document !== 'undefined' && !document.hidden && isSubscribed) {
+                checkGlobal();
+              }
+            };
+            if (typeof document !== 'undefined') {
+              document.addEventListener('visibilitychange', onGlobalVis);
+            }
             return () => {
               isSubscribed = false;
               clearInterval(pollId);
+              if (typeof document !== 'undefined') {
+                document.removeEventListener('visibilitychange', onGlobalVis);
+              }
             };
           }
 

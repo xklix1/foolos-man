@@ -4557,6 +4557,7 @@
       let isOverlayActive = false;
 
       async function checkForceReloadDirectly() {
+        if (typeof document !== 'undefined' && document.hidden) return;
         try {
           const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.force_reload', {
             headers: {
@@ -4601,7 +4602,13 @@
       }
 
       checkForceReloadDirectly();
-      setInterval(checkForceReloadDirectly, 1500);
+      // Egress optimization: check every 45s when tab is active (reduces traffic by 97%)
+      setInterval(checkForceReloadDirectly, 45000);
+      if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', function() {
+          if (!document.hidden) checkForceReloadDirectly();
+        });
+      }
     })();
   </script>
 
