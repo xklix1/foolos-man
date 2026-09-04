@@ -1165,6 +1165,177 @@ const GameEngine = (() => {
     return income;
   }
 
+  // Comprehensive Financial Audit: Returns exact breakdown of all cashflow streams
+  function getDetailedCashflowBreakdown(playerState = state) {
+    const s = playerState || state;
+    if (!s) return null;
+
+    const breakdown = {
+      businesses: [],
+      assets: [],
+      cars: [],
+      bank: {
+        balance: s.bank || 0,
+        rate: 0.000005,
+        hasRollsBonus: (s.activeCar === 'rolls'),
+        effectiveRate: (s.activeCar === 'rolls') ? 0.000005 * 1.05 : 0.000005,
+        profitPerSec: calculateBankInterestPerTick(s)
+      },
+      corp: {
+        active: false,
+        name: '',
+        level: 1,
+        sharePct: 0,
+        profitPerSec: 0,
+        projects: []
+      },
+      hiredJob: {
+        active: false,
+        name: '',
+        salaryPerSec: 0
+      },
+      tax: {
+        active: false,
+        taxPerSec: 0,
+        exemptReason: ''
+      },
+      totalGrossPerSec: 0,
+      totalNetPerSec: 0,
+      totalNetPerMinute: 0,
+      totalNetPerHour: 0,
+      totalNetPerDay: 0
+    };
+
+    let grossIncome = 0;
+
+    // 1. Businesses
+    if (s.businesses) {
+      Object.keys(s.businesses).forEach(key => {
+        const b = s.businesses[key];
+        const cfg = BUSINESSES[key];
+        if (b && b.level > 0 && cfg) {
+          const res = calculateSingleBusinessProfit(key, b, s);
+          breakdown.businesses.push({
+            id: key,
+            name: cfg.name,
+            level: b.level,
+            workers: b.workers || 0,
+            price: b.price || res.opt,
+            optPrice: res.opt,
+            actualCostOfGoods: res.actualCostOfGoods,
+            demand: res.demand,
+            margin: res.margin,
+            isFranchise: Boolean(b.isFranchise),
+            marketingActive: res.marketingActive,
+            synergyMultiplier: res.synergyMultiplier,
+            employeeBoost: res.employeeBoost,
+            profitPerSec: res.ownerProfit
+          });
+          grossIncome += res.ownerProfit;
+        }
+      });
+    }
+
+    // 2. Assets
+    if (s.assets) {
+      Object.keys(s.assets).forEach(key => {
+        const count = s.assets[key] || 0;
+        const cfg = ASSETS[key];
+        if (count > 0 && cfg) {
+          const rentPerSec = count * Math.floor(cfg.rent * 0.1);
+          breakdown.assets.push({
+            id: key,
+            name: cfg.name,
+            count: count,
+            rentPerUnit: Math.floor(cfg.rent * 0.1),
+            rentPerSec: rentPerSec
+          });
+          grossIncome += rentPerSec;
+        }
+      });
+    }
+
+    // 3. Cars
+    if (s.ownedCars && s.ownedCars.length > 0) {
+      s.ownedCars.forEach(carRef => {
+        const carCfg = CAR_TEMPLATES[carRef.id];
+        if (carCfg && carRef.rentStatus === 'rented') {
+          const netProfit = carCfg.rentalIncomePerTick - carCfg.maintenanceCostPerTick;
+          if (netProfit > 0) {
+            breakdown.cars.push({
+              id: carRef.id,
+              name: carCfg.name,
+              grossRent: carCfg.rentalIncomePerTick,
+              maintenance: carCfg.maintenanceCostPerTick,
+              netProfitPerSec: netProfit
+            });
+            grossIncome += netProfit;
+          }
+        }
+      });
+    }
+
+    // 4. Bank Interest
+    grossIncome += breakdown.bank.profitPerSec;
+
+    // 5. Joint Corp
+    if (typeof window !== 'undefined' && window.activeCorporationState) {
+      const corp = window.activeCorporationState;
+      const username = s.username;
+      if (corp.members && corp.members.includes(username)) {
+        let totalCont = corp.totalContributions || 0;
+        let myCont = corp.contributions ? (corp.contributions[username] || 0) : 0;
+        let sharePct = (totalCont > 0) ? (myCont / totalCont) : (username === corp.founder ? 1.0 : 0);
+        const corpTickProfit = calculateCorpTickProfit(s);
+        breakdown.corp.active = true;
+        breakdown.corp.name = corp.name || 'تحالف مشترك';
+        breakdown.corp.level = corp.level || 1;
+        breakdown.corp.sharePct = Math.round(sharePct * 100);
+        breakdown.corp.profitPerSec = corpTickProfit;
+        grossIncome += corpTickProfit;
+      }
+    }
+
+    // 6. Hired Job
+    if (s.hiredJob) {
+      const solved = Boolean(s.lastPuzzleSolved && (Date.now() - s.lastPuzzleSolved < 86400000));
+      breakdown.hiredJob.name = s.hiredJob.title || 'موظف تعاقدي';
+      breakdown.hiredJob.salaryPerSec = s.hiredJob.salary || 0;
+      breakdown.hiredJob.active = solved;
+      if (solved && (s.hiredJob.salary || 0) > 0) {
+        grossIncome += s.hiredJob.salary;
+      }
+    }
+
+    // 7. Wealth Tax
+    let taxDeduction = 0;
+    if (s.netWorth > 5000000) {
+      const liquidFunds = (s.bank || 0) + (s.cash || 0);
+      if (liquidFunds > 100000) {
+        const taxReport = calculateTaxReport();
+        taxDeduction = taxReport.taxPerSecond || 0;
+        breakdown.tax.active = true;
+        breakdown.tax.taxPerSec = taxDeduction;
+      } else {
+        breakdown.tax.active = false;
+        breakdown.tax.exemptReason = 'محمي بحاجز السيولة (أقل من 100 ألف كاش/بنك)';
+      }
+    } else {
+      breakdown.tax.active = false;
+      breakdown.tax.exemptReason = 'معفي (صافي الثروة أقل من 5 مليون EGP)';
+    }
+
+    const netIncome = Math.max(0, grossIncome - taxDeduction);
+
+    breakdown.totalGrossPerSec = grossIncome;
+    breakdown.totalNetPerSec = netIncome;
+    breakdown.totalNetPerMinute = netIncome * 60;
+    breakdown.totalNetPerHour = netIncome * 3600;
+    breakdown.totalNetPerDay = netIncome * 86400;
+
+    return breakdown;
+  }
+
   // Tax Report & Bracket Engine (Rebalanced to prevent cash-drain while rewarding tax planning)
   function calculateTaxReport() {
     const netWorth = calculateNetWorth();
@@ -3070,6 +3241,7 @@ const GameEngine = (() => {
     calculateSingleBusinessProfit,
     calculateCorpTickProfit,
     calculateBankInterestPerTick,
+    getDetailedCashflowBreakdown,
     calculateNetWorth,
     renewAfkManager,
     forceSaveState,

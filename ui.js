@@ -1707,6 +1707,12 @@ const UIController = (() => {
       else if (activeTab === 'taxes') renderTaxesTab();
       else if (activeTab === 'blackmarket') updateBlackMarketCooldownsInDOM();
 
+      // Real-time live update for cashflow breakdown modal if open
+      const cfModal = document.getElementById('cashflow-breakdown-modal');
+      if (cfModal && !cfModal.classList.contains('hidden')) {
+        renderCashflowBreakdown();
+      }
+
       checkAndClaimDividends();
 
       // V2: Check and auto-activate pending live auctions from cache
@@ -9105,6 +9111,32 @@ const UIController = (() => {
       });
     }
 
+    // Cashflow Breakdown Modal Listeners
+    const btnCfDesktop = document.getElementById('btn-cashflow-breakdown-desktop');
+    if (btnCfDesktop) {
+      btnCfDesktop.addEventListener('click', openCashflowBreakdownModal);
+    }
+    const btnCfMobile = document.getElementById('btn-cashflow-breakdown-mobile');
+    if (btnCfMobile) {
+      btnCfMobile.addEventListener('click', openCashflowBreakdownModal);
+    }
+    const btnCloseCf = document.getElementById('btn-close-cashflow-modal');
+    if (btnCloseCf) {
+      btnCloseCf.addEventListener('click', closeCashflowBreakdownModal);
+    }
+    const btnCloseCfFooter = document.getElementById('btn-close-cashflow-modal-footer');
+    if (btnCloseCfFooter) {
+      btnCloseCfFooter.addEventListener('click', closeCashflowBreakdownModal);
+    }
+    const cfModalEl = document.getElementById('cashflow-breakdown-modal');
+    if (cfModalEl) {
+      cfModalEl.addEventListener('click', (e) => {
+        if (e.target === cfModalEl) {
+          closeCashflowBreakdownModal();
+        }
+      });
+    }
+
     const btnAddFriend = document.getElementById('btn-profile-add-friend');
     const btnProfileDM = document.getElementById('btn-profile-dm');
     const btnProfileJob = document.getElementById('btn-profile-job-offer');
@@ -9709,6 +9741,217 @@ const UIController = (() => {
 
   function openPrivateChat() {}
   function switchMailboxTab() {}
+
+  // --- Real-Time Live Cashflow Breakdown & Projections Modal ---
+  function renderCashflowBreakdown() {
+    if (!GameEngine || !GameEngine.getDetailedCashflowBreakdown) return;
+    const breakdown = GameEngine.getDetailedCashflowBreakdown();
+    if (!breakdown) return;
+
+    // 1. Time Projections Cards
+    const secEl = document.getElementById('cf-proj-sec');
+    const minEl = document.getElementById('cf-proj-min');
+    const hourEl = document.getElementById('cf-proj-hour');
+    const dayEl = document.getElementById('cf-proj-day');
+    const totalNetEl = document.getElementById('cf-modal-total-net');
+
+    if (secEl) secEl.textContent = `+${breakdown.totalNetPerSec.toLocaleString()} EGP`;
+    if (minEl) minEl.textContent = `+${breakdown.totalNetPerMinute.toLocaleString()} EGP`;
+    if (hourEl) hourEl.textContent = `+${breakdown.totalNetPerHour.toLocaleString()} EGP`;
+    if (dayEl) dayEl.textContent = `+${breakdown.totalNetPerDay.toLocaleString()} EGP`;
+    if (totalNetEl) totalNetEl.textContent = `+${breakdown.totalNetPerSec.toLocaleString()}`;
+
+    // 2. Businesses Section
+    const bizSubtotalEl = document.getElementById('cf-subtotal-businesses');
+    const bizListEl = document.getElementById('cf-list-businesses');
+    if (bizListEl) {
+      let bizTotal = 0;
+      if (breakdown.businesses.length === 0) {
+        bizListEl.innerHTML = `<div class="text-[11px] text-slate-500 py-1">لا توجد مشاريع نشطة حالياً. يمكنك تأسيس مشاريعك الحرة من قسم الأعمال لجني تدفقات ضخمة!</div>`;
+      } else {
+        let html = '';
+        breakdown.businesses.forEach(b => {
+          bizTotal += b.profitPerSec;
+          const badges = [];
+          if (b.isFranchise) badges.push('<span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30">علامة تجارية +25%</span>');
+          if (b.marketingActive) badges.push('<span class="text-[9px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/30">ترويج نشط +40%</span>');
+          if (b.synergyMultiplier > 1) badges.push(`<span class="text-[9px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded border border-cyan-500/30">سلاسل إمداد x${b.synergyMultiplier}</span>`);
+          if (b.employeeBoost > 1) badges.push(`<span class="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30">موظفين x${b.employeeBoost.toFixed(1)}</span>`);
+
+          html += `
+            <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
+              <div>
+                <div class="font-bold text-white flex items-center gap-1.5">
+                  <span>${b.name}</span>
+                  <span class="text-[10px] text-slate-400 font-normal">(مستوى ${b.level} • ${b.workers} عمال)</span>
+                </div>
+                <div class="flex gap-1 flex-wrap mt-1">${badges.join('')}</div>
+              </div>
+              <span class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+${b.profitPerSec.toLocaleString()} EGP/ث</span>
+            </div>
+          `;
+        });
+        bizListEl.innerHTML = html;
+      }
+      if (bizSubtotalEl) bizSubtotalEl.textContent = `+${bizTotal.toLocaleString()} EGP/ث`;
+    }
+
+    // 3. Real Estate Assets Section
+    const assetSubtotalEl = document.getElementById('cf-subtotal-assets');
+    const assetListEl = document.getElementById('cf-list-assets');
+    if (assetListEl) {
+      let assetTotal = 0;
+      if (breakdown.assets.length === 0) {
+        assetListEl.innerHTML = `<div class="text-[11px] text-slate-500 py-1">لا توجد عقارات مؤجرة حالياً. اشترِ العقارات لجني إيجارات لحظية مستقرة تنمي ثروتك!</div>`;
+      } else {
+        let html = '';
+        breakdown.assets.forEach(a => {
+          assetTotal += a.rentPerSec;
+          html += `
+            <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
+              <div class="text-white font-bold">
+                <span>${a.name}</span>
+                <span class="text-[10px] text-slate-400 font-normal block">(${a.count} وحدات • +${a.rentPerUnit.toLocaleString()} EGP/ث للوحدة)</span>
+              </div>
+              <span class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+${a.rentPerSec.toLocaleString()} EGP/ث</span>
+            </div>
+          `;
+        });
+        assetListEl.innerHTML = html;
+      }
+      if (assetSubtotalEl) assetSubtotalEl.textContent = `+${assetTotal.toLocaleString()} EGP/ث`;
+    }
+
+    // 4. Rented Cars Section
+    const carsSubtotalEl = document.getElementById('cf-subtotal-cars');
+    const carsListEl = document.getElementById('cf-list-cars');
+    if (carsListEl) {
+      let carsTotal = 0;
+      if (breakdown.cars.length === 0) {
+        carsListEl.innerHTML = `<div class="text-[11px] text-slate-500 py-1">لا توجد سيارات بحالة الإيجار. اشترِ سيارات فارهة وقم بتأجيرها من قسم الأصول!</div>`;
+      } else {
+        let html = '';
+        breakdown.cars.forEach(c => {
+          carsTotal += c.netProfitPerSec;
+          html += `
+            <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
+              <div>
+                <span class="text-white font-bold">${c.name}</span>
+                <span class="text-[10px] text-slate-400 block">(إيجار: +${c.grossRent.toLocaleString()} • صيانة: -${c.maintenance.toLocaleString()})</span>
+              </div>
+              <span class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+${c.netProfitPerSec.toLocaleString()} EGP/ث</span>
+            </div>
+          `;
+        });
+        carsListEl.innerHTML = html;
+      }
+      if (carsSubtotalEl) carsSubtotalEl.textContent = `+${carsTotal.toLocaleString()} EGP/ث`;
+    }
+
+    // 5. Bank Interest Section
+    const bankSubtotalEl = document.getElementById('cf-subtotal-bank');
+    const bankListEl = document.getElementById('cf-list-bank');
+    if (bankListEl) {
+      const b = breakdown.bank;
+      if (bankSubtotalEl) bankSubtotalEl.textContent = `+${b.profitPerSec.toLocaleString()} EGP/ث`;
+      const rollsBadge = b.hasRollsBonus ? ' <span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 font-bold">+5% بونص رولز رويس</span>' : '';
+      bankListEl.innerHTML = `
+        <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
+          <div>
+            <span class="text-white font-bold">عائد الفائدة المركبة على الودائع</span>
+            <span class="text-[10px] text-slate-400 block">رصيد الوديعة: ${b.balance.toLocaleString()} EGP • النسبة: 0.0005%/ث${rollsBadge}</span>
+          </div>
+          <span class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+${b.profitPerSec.toLocaleString()} EGP/ث</span>
+        </div>
+      `;
+    }
+
+    // 6. Joint Corporation Section
+    const corpSection = document.getElementById('cf-section-corp');
+    const corpSubtotalEl = document.getElementById('cf-subtotal-corp');
+    const corpListEl = document.getElementById('cf-list-corp');
+    if (corpSection && corpListEl) {
+      if (breakdown.corp.active) {
+        corpSection.classList.remove('hidden');
+        if (corpSubtotalEl) corpSubtotalEl.textContent = `+${breakdown.corp.profitPerSec.toLocaleString()} EGP/ث`;
+        corpListEl.innerHTML = `
+          <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
+            <div>
+              <span class="text-white font-bold">${breakdown.corp.name}</span>
+              <span class="text-[10px] text-slate-400 block">مستوى ${breakdown.corp.level} • حصة المساهمة الشخصية: ${breakdown.corp.sharePct}%</span>
+            </div>
+            <span class="numbers-font font-black text-purple-400 text-xs sm:text-sm">+${breakdown.corp.profitPerSec.toLocaleString()} EGP/ث</span>
+          </div>
+        `;
+      } else {
+        corpSection.classList.add('hidden');
+      }
+    }
+
+    // 7. Hired Job Section
+    const hiredSection = document.getElementById('cf-section-hired');
+    const hiredSubtotalEl = document.getElementById('cf-subtotal-hired');
+    const hiredListEl = document.getElementById('cf-list-hired');
+    if (hiredSection && hiredListEl) {
+      if (breakdown.hiredJob.active) {
+        hiredSection.classList.remove('hidden');
+        if (hiredSubtotalEl) hiredSubtotalEl.textContent = `+${breakdown.hiredJob.salaryPerSec.toLocaleString()} EGP/ث`;
+        hiredListEl.innerHTML = `
+          <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
+            <div>
+              <span class="text-white font-bold">${breakdown.hiredJob.name}</span>
+              <span class="text-[10px] text-slate-400 block">عقد موثق • تم حل اللغز اليومي بنجاح</span>
+            </div>
+            <span class="numbers-font font-black text-blue-400 text-xs sm:text-sm">+${breakdown.hiredJob.salaryPerSec.toLocaleString()} EGP/ث</span>
+          </div>
+        `;
+      } else {
+        hiredSection.classList.add('hidden');
+      }
+    }
+
+    // 8. Wealth Tax Section
+    const taxSubtotalEl = document.getElementById('cf-subtotal-tax');
+    const taxListEl = document.getElementById('cf-list-tax');
+    if (taxListEl) {
+      if (breakdown.tax.active) {
+        if (taxSubtotalEl) taxSubtotalEl.textContent = `-${breakdown.tax.taxPerSec.toLocaleString()} EGP/ث`;
+        taxListEl.innerHTML = `
+          <div class="flex justify-between items-center bg-rose-950/20 p-2.5 rounded-xl border border-rose-900/40">
+            <div>
+              <span class="text-rose-400 font-bold">ضريبة الثروة اللحظية (5M+ EGP)</span>
+              <span class="text-[10px] text-slate-400 block">تُخصم دورياً للحسابات ذات الثروات والسيولة العالية</span>
+            </div>
+            <span class="numbers-font font-black text-rose-400 text-xs sm:text-sm">-${breakdown.tax.taxPerSec.toLocaleString()} EGP/ث</span>
+          </div>
+        `;
+      } else {
+        if (taxSubtotalEl) taxSubtotalEl.textContent = '0 EGP/ث (معفي)';
+        taxListEl.innerHTML = `
+          <div class="text-[11px] text-emerald-400/90 bg-emerald-950/20 p-2.5 rounded-xl border border-emerald-900/30 flex items-center gap-1.5">
+            <i class="fa-solid fa-shield-halved text-emerald-400 text-xs"></i>
+            <span>${breakdown.tax.exemptReason || 'لا توجد ضرائب مطبقة حالياً.'}</span>
+          </div>
+        `;
+      }
+    }
+  }
+
+  function openCashflowBreakdownModal() {
+    renderCashflowBreakdown();
+    const modal = document.getElementById('cashflow-breakdown-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      if (typeof playMenuSound === 'function') playMenuSound('click');
+    }
+  }
+
+  function closeCashflowBreakdownModal() {
+    const modal = document.getElementById('cashflow-breakdown-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  }
 
   const profileCache = new Map();
 
@@ -11797,7 +12040,10 @@ const UIController = (() => {
     toggleServerBoostAction,
     manualSaveProgressAction,
     claimFacebookReward,
-    updateFacebookButtonUI
+    updateFacebookButtonUI,
+    openCashflowBreakdownModal,
+    closeCashflowBreakdownModal,
+    renderCashflowBreakdown
   };
 })();
 

@@ -1505,10 +1505,11 @@
               </div>
               <span class="numbers-font text-sm font-bold text-emerald-400"><span id="stat-bank">0</span> EGP</span>
             </div>
-            <div class="flex items-center justify-between border-b border-slate-800/50 pb-2">
-              <div class="flex items-center gap-2">
-                <i class="fa-solid fa-arrow-trend-up text-emerald-400 text-xs"></i>
-                <span class="text-xs text-slate-400">التدفق اللحظي</span>
+            <div id="btn-cashflow-breakdown-desktop" class="flex items-center justify-between border-b border-slate-800/50 pb-2 cursor-pointer hover:bg-slate-800/50 px-1.5 py-1 rounded-lg transition group" title="اضغط لعرض كشف الحساب وتفاصيل التدفق اللحظي 📊">
+              <div class="flex items-center gap-1.5">
+                <i class="fa-solid fa-arrow-trend-up text-emerald-400 text-xs group-hover:scale-110 transition-transform"></i>
+                <span class="text-xs text-slate-400 group-hover:text-slate-200">التدفق اللحظي</span>
+                <span class="text-[9px] px-1.5 py-0.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 rounded-md font-bold">كشف 📊</span>
               </div>
               <span class="numbers-font text-xs font-bold text-emerald-400 flex items-center gap-1.5">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -1708,10 +1709,10 @@
                 id="stat-networth-mobile">0</span></span>
           </div>
         </div>
-        <div
-          class="px-2 py-1 bg-emerald-950/40 rounded-lg border border-emerald-500/20 flex justify-between items-center text-[10px]">
+        <div id="btn-cashflow-breakdown-mobile"
+          class="px-2.5 py-1.5 bg-emerald-950/40 hover:bg-emerald-950/70 active:scale-95 rounded-lg border border-emerald-500/20 flex justify-between items-center text-[10px] cursor-pointer transition" title="اضغط لعرض كشف الحساب وتفاصيل التدفق اللحظي 📊">
           <span class="text-slate-300 font-bold flex items-center gap-1.5"><i
-              class="fa-solid fa-arrow-trend-up text-emerald-400"></i> التدفق النقدي اللحظي:</span>
+              class="fa-solid fa-arrow-trend-up text-emerald-400"></i> التدفق اللحظي: <span class="text-[9px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded font-bold">كشف الحساب 📊</span></span>
           <span class="numbers-font font-black text-emerald-400 flex items-center gap-1"><span
               class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span><span
               id="stat-cashflow-mobile">+0</span> EGP/ث</span>
@@ -3851,6 +3852,152 @@
         <!-- Dynamic Inbox Items -->
         <div class="text-center text-slate-500 text-xs py-12">لا توجد رسائل أو طلبات جديدة في صندوقك.</div>
       </div>
+    </div>
+  </div>
+
+  <!-- ==================== CASHFLOW BREAKDOWN AUDIT MODAL ==================== -->
+  <div id="cashflow-breakdown-modal" dir="rtl"
+    class="hidden fixed inset-0 z-[140] flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in">
+    <div
+      class="glass-panel w-full max-w-lg max-h-[90vh] flex flex-col rounded-3xl border-2 border-emerald-500/50 bg-slate-950/98 shadow-2xl text-right relative overflow-hidden">
+      
+      <!-- Sticky Header -->
+      <div class="flex items-center justify-between gap-3 p-4 sm:p-5 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur shrink-0 relative z-10">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 shadow-md">
+            <i class="fa-solid fa-chart-line text-lg"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 class="text-base sm:text-lg font-black text-white truncate flex items-center gap-2">
+              <span>كشف التدفق النقدي اللحظي</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">مباشر ⚡</span>
+            </h3>
+            <p class="text-[11px] text-slate-400 truncate">تحليل حي وحقيقي لكل مصادر أرباحك وتوقعاتها الزمنية</p>
+          </div>
+        </div>
+        <button id="btn-close-cashflow-modal" type="button"
+          class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:bg-rose-600 hover:border-rose-500 flex items-center justify-center transition shadow shrink-0 cursor-pointer" title="إغلاق">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Scrollable Body -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-xs">
+        
+        <!-- Smart Time Projections Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div class="p-2.5 bg-slate-900/80 border border-slate-800 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 block mb-0.5">⏱️ لكل ثانية</span>
+            <span id="cf-proj-sec" class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+0</span>
+          </div>
+          <div class="p-2.5 bg-slate-900/80 border border-slate-800 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 block mb-0.5">⏳ لكل دقيقة</span>
+            <span id="cf-proj-min" class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+0</span>
+          </div>
+          <div class="p-2.5 bg-gradient-to-br from-emerald-950/40 to-slate-900 border border-emerald-500/30 rounded-xl text-center">
+            <span class="text-[10px] text-emerald-300 font-bold block mb-0.5">🕒 لكل ساعة</span>
+            <span id="cf-proj-hour" class="numbers-font font-black text-yellow-400 text-xs sm:text-sm">+0</span>
+          </div>
+          <div class="p-2.5 bg-gradient-to-br from-amber-950/40 to-slate-900 border border-yellow-500/30 rounded-xl text-center">
+            <span class="text-[10px] text-amber-300 font-bold block mb-0.5">📅 لكل 24 ساعة</span>
+            <span id="cf-proj-day" class="numbers-font font-black text-amber-400 text-xs sm:text-sm">+0</span>
+          </div>
+        </div>
+
+        <!-- Section 1: Businesses -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 border-b border-slate-800 pb-1">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-briefcase text-amber-400"></i> أرباح المشاريع والشركات</span>
+            <span id="cf-subtotal-businesses" class="numbers-font text-emerald-400 font-bold">+0 EGP/ث</span>
+          </div>
+          <div id="cf-list-businesses" class="space-y-1.5">
+            <!-- Dynamic businesses injected here -->
+          </div>
+        </div>
+
+        <!-- Section 2: Real Estate Assets -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 border-b border-slate-800 pb-1">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-city text-cyan-400"></i> عوائد إيجار العقارات والأصول</span>
+            <span id="cf-subtotal-assets" class="numbers-font text-emerald-400 font-bold">+0 EGP/ث</span>
+          </div>
+          <div id="cf-list-assets" class="space-y-1.5">
+            <!-- Dynamic assets injected here -->
+          </div>
+        </div>
+
+        <!-- Section 3: Rented Cars -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 border-b border-slate-800 pb-1">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-car text-indigo-400"></i> صافي تأجير أسطول السيارات</span>
+            <span id="cf-subtotal-cars" class="numbers-font text-emerald-400 font-bold">+0 EGP/ث</span>
+          </div>
+          <div id="cf-list-cars" class="space-y-1.5">
+            <!-- Dynamic cars injected here -->
+          </div>
+        </div>
+
+        <!-- Section 4: Bank Interest -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 border-b border-slate-800 pb-1">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-building-columns text-emerald-400"></i> فوائد الودائع البنكية (0.0005%/ث)</span>
+            <span id="cf-subtotal-bank" class="numbers-font text-emerald-400 font-bold">+0 EGP/ث</span>
+          </div>
+          <div id="cf-list-bank" class="space-y-1.5">
+            <!-- Dynamic bank details injected here -->
+          </div>
+        </div>
+
+        <!-- Section 5: Joint Corporation -->
+        <div id="cf-section-corp" class="space-y-2 hidden">
+          <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 border-b border-slate-800 pb-1">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-handshake text-purple-400"></i> أرباح الشركات المساهمة المشتركة</span>
+            <span id="cf-subtotal-corp" class="numbers-font text-emerald-400 font-bold">+0 EGP/ث</span>
+          </div>
+          <div id="cf-list-corp" class="space-y-1.5">
+            <!-- Dynamic corp injected here -->
+          </div>
+        </div>
+
+        <!-- Section 6: Hired Peer Job -->
+        <div id="cf-section-hired" class="space-y-2 hidden">
+          <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 border-b border-slate-800 pb-1">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-user-tie text-blue-400"></i> عقود التوظيف الحر</span>
+            <span id="cf-subtotal-hired" class="numbers-font text-emerald-400 font-bold">+0 EGP/ث</span>
+          </div>
+          <div id="cf-list-hired" class="space-y-1.5">
+            <!-- Dynamic hired job injected here -->
+          </div>
+        </div>
+
+        <!-- Section 7: Wealth Tax -->
+        <div id="cf-section-tax" class="space-y-2">
+          <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 border-b border-slate-800 pb-1">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-scale-balanced text-rose-400"></i> استقطاع ضريبة الثروة الدورية</span>
+            <span id="cf-subtotal-tax" class="numbers-font text-rose-400 font-bold">-0 EGP/ث</span>
+          </div>
+          <div id="cf-list-tax" class="space-y-1.5">
+            <!-- Dynamic tax info injected here -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Sticky Footer -->
+      <div class="p-4 border-t border-slate-800/80 bg-slate-950/95 flex justify-between items-center shrink-0">
+        <div>
+          <span class="text-[10px] text-slate-400 block">صافي التدفق المودع في البنك:</span>
+          <span class="numbers-font font-black text-emerald-400 text-sm sm:text-base flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="cf-modal-total-net">+0</span> EGP/ثانية
+          </span>
+        </div>
+        <button id="btn-close-cashflow-modal-footer" type="button"
+          class="py-2 px-5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition cursor-pointer">
+          إغلاق
+        </button>
+      </div>
+
     </div>
   </div>
 
