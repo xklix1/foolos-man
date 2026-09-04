@@ -347,8 +347,9 @@ var AppDB = (() => {
     const amt = Number(amount);
     if (isNaN(amt) || amt <= 0) throw new Error('مبلغ الطلب غير صالح.');
 
-    await _api('transfer_requests', {
+    const res = await _api('transfer_requests', {
       method: 'POST',
+      headers: { 'Prefer': 'return=representation' },
       body: JSON.stringify({
         sender: senderUsername.trim(),
         recipient: recipientUsername.trim(),
@@ -357,6 +358,26 @@ var AppDB = (() => {
         created_at: Date.now()
       })
     });
+
+    const createdReq = (res && res[0]) ? res[0] : null;
+
+    // Send interactive notification mail to the recipient
+    try {
+      await sendMail(
+        senderUsername.trim(),
+        recipientUsername.trim(),
+        'transfer_request',
+        {
+          requestId: createdReq ? createdReq.id : null,
+          amount: amt,
+          title: 'طلب تحويل أموال 💸',
+          message: `يطلب منك اللاعب "${senderUsername.trim()}" تحويل مبلغ ${amt.toLocaleString()} EGP.`
+        }
+      );
+    } catch (mailErr) {
+      console.warn('[DB] Failed to send transfer_request mail notification:', mailErr.message);
+    }
+
     return true;
   }
 
@@ -390,11 +411,20 @@ var AppDB = (() => {
     // Execute transfer from recipient to sender
     await executeWireTransfer(recipientUsername, req.sender, req.amount);
 
-    // Update status
+    // Update status in transfer_requests
     await _api(`transfer_requests?id=eq.${encodeURIComponent(requestId)}`, {
       method: 'PATCH',
       body: JSON.stringify({ status: 'accepted' })
     });
+
+    // Also update any matching mail notification in mailbox
+    try {
+      await _api(`mailbox?recipient=eq.${encodeURIComponent(recipientUsername.trim())}&type=eq.transfer_request`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'accepted' })
+      });
+    } catch (e) {}
+
     return true;
   }
 
@@ -403,6 +433,15 @@ var AppDB = (() => {
       method: 'PATCH',
       body: JSON.stringify({ status: 'rejected' })
     });
+
+    // Also update any matching mail notification in mailbox
+    try {
+      await _api(`mailbox?recipient=eq.${encodeURIComponent(recipientUsername.trim())}&type=eq.transfer_request`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'rejected' })
+      });
+    } catch (e) {}
+
     return true;
   }
 
@@ -475,14 +514,15 @@ var AppDB = (() => {
   //  MAILBOX & NOTIFICATIONS
   // ─────────────────────────────────────────────
   async function sendMail(sender, recipient, type, payload) {
+    const isInteractive = ['friend_request', 'job_offer', 'partnership_invite', 'transfer_request', 'system_add_employee', 'system_add_partner', 'dividend_claim', 'auction_win'].includes(type);
     await _api('mailbox', {
       method: 'POST',
       body: JSON.stringify({
         sender: sender.trim(),
         recipient: recipient.trim(),
         type,
-        payload,
-        status: 'unread',
+        payload: payload || {},
+        status: isInteractive ? 'pending' : 'unread',
         created_at: Date.now()
       })
     });

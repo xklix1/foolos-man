@@ -8643,6 +8643,20 @@ const UIController = (() => {
               if (rejectBtn) rejectBtn.disabled = true;
               acceptBtn.textContent = 'جاري المعالجة...';
 
+              // If player has insufficient cash in wallet but enough in bank, auto-withdraw difference
+              const curCash = Number(GameEngine.state.cash) || 0;
+              const curBank = Number(GameEngine.state.bank) || 0;
+              if (curCash < r.amount) {
+                const diff = r.amount - curCash;
+                if (curBank >= diff) {
+                  GameEngine.state.bank -= diff;
+                  GameEngine.state.cash += diff;
+                  await AppDB.savePlayerState(username, GameEngine.state, true);
+                } else {
+                  throw new Error(`رصيدك الإجمالي (كاش + بنك) غير كافٍ لسداد هذا الطلب.`);
+                }
+              }
+
               await AppDB.acceptTransferRequest(r.id, username);
               showToast('موافقة الطلب', `تم قبول طلب التحويل ودفع ${r.amount.toLocaleString()} EGP بنجاح!`, 'success');
 
@@ -8653,6 +8667,9 @@ const UIController = (() => {
                 GameEngine.state.netWorth = updatedState.netWorth;
               }
               await fetchAndRenderTransferRequests(true);
+              if (typeof loadTransferHistory === 'function') {
+                loadTransferHistory(true);
+              }
               renderAll();
             } catch (err) {
               showToast('خطأ في قبول الطلب', err.message, 'error');
@@ -9723,42 +9740,71 @@ const UIController = (() => {
         let contentHtml = '';
         let actionsHtml = '';
 
+        const isActionPending = (mail.status === 'pending' || mail.status === 'unread');
+
         if (mail.type === 'friend_request') {
           contentHtml = `يريد اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> إضافتك كصديق في اللعبة.`;
-          if (mail.status === 'pending') {
+          if (isActionPending) {
             actionsHtml = `
               <div class="flex gap-2">
                 <button onclick="window.UI.handleMailAction('${mail.id}', 'friend_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول الصداقة</button>
                 <button onclick="window.UI.handleMailAction('${mail.id}', 'reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
               </div>
             `;
+          } else if (mail.status === 'accepted') {
+            actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول الصداقة ✅</span>`;
           } else {
-            actionsHtml = `<span class="text-[10px] text-slate-500 font-bold">${mail.status === 'accepted' ? 'تم قبول الصداقة ✅' : 'تم الرفض ❌'}</span>`;
+            actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم الرفض ❌</span>`;
           }
         } else if (mail.type === 'job_offer') {
-          contentHtml = `يعرض عليك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> العمل كمساعد في شركته: (<span class="text-sky-400 font-bold">${mail.payload.businessName}</span>) براتب دوري قدره <strong class="text-yellow-500 numbers-font font-bold">${mail.payload.salary} EGP</strong> لكل ثانية عمل.`;
-          if (mail.status === 'pending') {
+          contentHtml = `يعرض عليك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> العمل كمساعد في شركته: (<span class="text-sky-400 font-bold">${mail.payload && mail.payload.businessName ? mail.payload.businessName : 'مشروع'}</span>) براتب دوري قدره <strong class="text-yellow-500 numbers-font font-bold">${(mail.payload && mail.payload.salary ? mail.payload.salary : 0).toLocaleString()} EGP</strong> لكل ثانية عمل.`;
+          if (isActionPending) {
             actionsHtml = `
               <div class="flex gap-2">
                 <button onclick="window.UI.handleMailAction('${mail.id}', 'job_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول عقد العمل</button>
                 <button onclick="window.UI.handleMailAction('${mail.id}', 'reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
               </div>
             `;
+          } else if (mail.status === 'accepted') {
+            actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول عقد العمل ✅</span>`;
           } else {
-            actionsHtml = `<span class="text-[10px] text-slate-500 font-bold">${mail.status === 'accepted' ? 'تم قبول عقد العمل ✅' : 'تم الرفض ❌'}</span>`;
+            actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم الرفض ❌</span>`;
           }
         } else if (mail.type === 'partnership_invite') {
-          const pct = Math.round(mail.payload.sharePct * 100);
-          contentHtml = `يدعوك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> لتكون شريكاً استثمارياً مساهماً في شركته: (<span class="text-emerald-400 font-bold">${mail.payload.businessName}</span>) مقابل نسبة توزيع أرباح قدرها <strong class="text-emerald-400 font-bold">${pct}%</strong> من صافي العائد.`;
-          if (mail.status === 'pending') {
+          const pct = Math.round(((mail.payload && mail.payload.sharePct) || 0) * 100);
+          contentHtml = `يدعوك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> لتكون شريكاً استثمارياً مساهماً في شركته: (<span class="text-emerald-400 font-bold">${mail.payload && mail.payload.businessName ? mail.payload.businessName : 'مشروع'}</span>) مقابل نسبة توزيع أرباح قدرها <strong class="text-emerald-400 font-bold">${pct}%</strong> من صافي العائد.`;
+          if (isActionPending) {
             actionsHtml = `
               <div class="flex gap-2">
                 <button onclick="window.UI.handleMailAction('${mail.id}', 'partnership_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول الشراكة</button>
                 <button onclick="window.UI.handleMailAction('${mail.id}', 'reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
               </div>
             `;
+          } else if (mail.status === 'accepted') {
+            actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول الشراكة ✅</span>`;
           } else {
-            actionsHtml = `<span class="text-[10px] text-slate-500 font-bold">${mail.status === 'accepted' ? 'تم قبول الشراكة ✅' : 'تم الرفض ❌'}</span>`;
+            actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم الرفض ❌</span>`;
+          }
+        } else if (mail.type === 'transfer_request') {
+          const amt = Number(mail.payload && mail.payload.amount ? mail.payload.amount : 0);
+          contentHtml = `
+            <div class="space-y-1.5">
+              <div class="text-slate-200">
+                يطلب منك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> تحويل مبلغ مالي كاش قدره: <strong class="text-yellow-400 font-black numbers-font text-sm">${amt.toLocaleString()} EGP</strong>.
+              </div>
+            </div>
+          `;
+          if (isActionPending) {
+            actionsHtml = `
+              <div class="flex gap-2">
+                <button onclick="window.UI.handleMailAction('${mail.id}', 'transfer_request_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول ودفع المبلغ</button>
+                <button onclick="window.UI.handleMailAction('${mail.id}', 'transfer_request_reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
+              </div>
+            `;
+          } else if (mail.status === 'accepted') {
+            actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول ودفع الطلب بنجاح ✅</span>`;
+          } else {
+            actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم رفض الطلب ❌</span>`;
           }
         } else if (mail.type === 'transfer_received') {
           const amt = Number(mail.payload && mail.payload.amount ? mail.payload.amount : 0);
@@ -9790,6 +9836,7 @@ const UIController = (() => {
         const badgeText = mail.type === 'friend_request' ? 'طلب صداقة' :
                           mail.type === 'job_offer' ? 'عقد عمل' :
                           mail.type === 'partnership_invite' ? 'دعوة شراكة' :
+                          mail.type === 'transfer_request' ? 'طلب تحويل أموال 💸' :
                           mail.type === 'transfer_received' ? 'حوالة بنكية 💸' : 'رسالة';
 
         mailDiv.innerHTML = `
@@ -10315,6 +10362,7 @@ const UIController = (() => {
         showToast('تم قبول الصداقة', `أنت واللاعب ${mailDoc.sender} أصدقاء الآن! 🎉`, 'success');
 
         await AppDB.sendMail(GameEngine.state.username, mailDoc.sender, 'dm', { message: 'مرحباً بك! لقد قبلت طلب الصداقة، يمكننا الآن التنسيق في الصفقات والشراكات.' });
+        await AppDB.sendMail(GameEngine.state.username, mailDoc.sender, 'system_add_friend', { friend: GameEngine.state.username });
       } else if (action === 'job_accept') {
         GameEngine.state.hiredJob = {
           employer: mailDoc.sender,
@@ -10327,9 +10375,9 @@ const UIController = (() => {
 
         await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
         await AppDB.updateMailStatus(mailId, 'accepted');
-        showToast('تم التوظيف! 💼', `لقد التحقت بالعمل لدى ${mailDoc.sender} براتب ثنائي قدره ${mailDoc.payload.salary} EGP!`, 'success');
+        showToast('تم التوظيف! 💼', `لقد التحقت بالعمل لدى ${mailDoc.sender} براتب دوري قدره ${mailDoc.payload.salary} EGP!`, 'success');
 
-        await AppDB.sendMail(GameEngine.state.username, mailDoc.sender, 'dm', { message: `مرحباً! لقد قبلت عرض التوظيف في شركتك (${mailDoc.payload.businessName}). بدأت في حل المهام الآن.` });
+        await AppDB.sendMail(GameEngine.state.username, mailDoc.sender, 'dm', { message: `مرحباً! لقد قبلت عرض التوظيف في شركتك (${mailDoc.payload.businessName}). بدأت في العمل الآن.` });
 
         await AppDB.sendMail(GameEngine.state.username, mailDoc.sender, 'system_add_employee', {
           employee: GameEngine.state.username,
@@ -10356,6 +10404,52 @@ const UIController = (() => {
           businessId: mailDoc.payload.businessId,
           sharePct: mailDoc.payload.sharePct
         });
+      } else if (action === 'transfer_request_accept') {
+        const reqId = mailDoc.payload && mailDoc.payload.requestId;
+        const amt = Number((mailDoc.payload && mailDoc.payload.amount) || 0);
+
+        // Auto top-up cash from bank if needed
+        const curCash = Number(GameEngine.state.cash) || 0;
+        const curBank = Number(GameEngine.state.bank) || 0;
+        if (curCash < amt) {
+          const diff = amt - curCash;
+          if (curBank >= diff) {
+            GameEngine.state.bank -= diff;
+            GameEngine.state.cash += diff;
+            await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
+          } else {
+            throw new Error(`رصيدك الإجمالي (كاش + بنك) غير كافٍ لسداد هذا المبلغ.`);
+          }
+        }
+
+        if (reqId) {
+          await AppDB.acceptTransferRequest(reqId, GameEngine.activeUsername);
+        }
+        await AppDB.updateMailStatus(mailId, 'accepted');
+        showToast('تم السداد', `تم قبول طلب التحويل ودفع مبلغ ${amt.toLocaleString()} EGP بنجاح!`, 'success');
+
+        const updatedState = await AppDB.getPlayerState(GameEngine.activeUsername);
+        if (updatedState) {
+          GameEngine.state.cash = updatedState.cash;
+          GameEngine.state.bank = updatedState.bank;
+          GameEngine.state.netWorth = updatedState.netWorth;
+        }
+        if (typeof fetchAndRenderTransferRequests === 'function') {
+          fetchAndRenderTransferRequests(true);
+        }
+        if (typeof loadTransferHistory === 'function') {
+          loadTransferHistory(true);
+        }
+      } else if (action === 'transfer_request_reject') {
+        const reqId = mailDoc.payload && mailDoc.payload.requestId;
+        if (reqId) {
+          await AppDB.rejectTransferRequest(reqId, GameEngine.activeUsername);
+        }
+        await AppDB.updateMailStatus(mailId, 'rejected');
+        showToast('رفض الطلب', 'تم رفض طلب التحويل بنجاح.', 'info');
+        if (typeof fetchAndRenderTransferRequests === 'function') {
+          fetchAndRenderTransferRequests(true);
+        }
       } else if (action === 'reject') {
         await AppDB.updateMailStatus(mailId, 'rejected');
         showToast('تم الرفض', 'تم رفض الطلب بنجاح.', 'info');
@@ -10908,7 +11002,23 @@ const UIController = (() => {
       }
     }
 
-    const wins = mails.filter(m => m.type === 'auction_win' && m.status === 'pending');
+    // Process system auto-actions
+    const friendAdds = mails.filter(m => m.type === 'system_add_friend' && (m.status === 'pending' || m.status === 'unread'));
+    for (const add of friendAdds) {
+      const fr = add.payload && add.payload.friend;
+      if (fr) {
+        GameEngine.state.friends = GameEngine.state.friends || [];
+        if (!GameEngine.state.friends.includes(fr)) {
+          GameEngine.state.friends.push(fr);
+          await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        }
+        await AppDB.updateMailStatus(add.id, 'accepted');
+        showToast('صديق جديد 🎉', `قبل اللاعب ${fr} طلب الصداقة! أصبحتم أصدقاء الآن.`, 'success');
+        renderAll();
+      }
+    }
+
+    const wins = mails.filter(m => m.type === 'auction_win' && (m.status === 'pending' || m.status === 'unread'));
     for (const win of wins) {
       try {
         const price = win.payload.price;
@@ -10953,7 +11063,7 @@ const UIController = (() => {
       }
     }
 
-    const empAdds = mails.filter(m => m.type === 'system_add_employee' && m.status === 'pending');
+    const empAdds = mails.filter(m => m.type === 'system_add_employee' && (m.status === 'pending' || m.status === 'unread'));
     for (const add of empAdds) {
       const bizId = add.payload.businessId;
       const emp = add.payload.employee;
@@ -10972,7 +11082,7 @@ const UIController = (() => {
       }
     }
 
-    const partAdds = mails.filter(m => m.type === 'system_add_partner' && m.status === 'pending');
+    const partAdds = mails.filter(m => m.type === 'system_add_partner' && (m.status === 'pending' || m.status === 'unread'));
     for (const add of partAdds) {
       const bizId = add.payload.businessId;
       const partner = add.payload.partner;
@@ -10993,7 +11103,7 @@ const UIController = (() => {
       }
     }
 
-    const divs = mails.filter(m => m.type === 'dividend_claim' && m.status === 'pending');
+    const divs = mails.filter(m => m.type === 'dividend_claim' && (m.status === 'pending' || m.status === 'unread'));
     for (const div of divs) {
       try {
         const amt = div.payload.amount;
