@@ -298,12 +298,281 @@ const UIController = (() => {
     "المستخدمين المسجلين": "Registered Users",
     "إجمالي ثروة السيرفر": "Total Server Wealth",
     "المساجين حالياً": "Jailed Players",
-    "الحسابات المحظورة": "Banned Players"
+    "الحسابات المحظورة": "Banned Players",
+
+    // Additional Panel Headers & Navigation
+    "الشركات القابضة والمشاريع العملاقة": "Mega Corporations & Holding Projects",
+    "شركة الاستيراد والتصدير": "Import & Export Trading Co.",
+    "مجمع الصناعات وسلاسل الإمداد": "Industrial Supply Chain Empire",
+    "سوق الاستحواذ والشركات المتعثرة": "Distressed Asset Acquisition Market",
+    "صالة المزاد العلني المباشر": "Live Public Auctions Hall",
+    "الصناعات": "Industries",
+    "المزادات": "Auctions",
+    "التجارة": "Trade",
+    "الشركات": "Corporations",
+    "السيارات": "Cars",
+    "التهريب": "Smuggling",
+    "الكازينو": "Casino",
+    "الضرائب": "Taxes",
+    "المتجر": "VIP Shop",
+    "العقارات": "Real Estate",
+    "البورصة": "Stocks",
+    "البنك": "Bank",
+    "الوظائف": "Jobs",
+    "المشاريع": "Businesses",
+
+    // Dashboard terms
+    "كشف حساب المحفظة المفصل": "Detailed Portfolio Statement",
+    "النقد المتوفر (الكاش)": "Available Liquid Cash",
+    "رصيد حساب الادخار (البنك)": "Bank Savings Balance",
+    "أموال مشبوهة (غير مشروعة)": "Black Market Dirty Funds",
+    "القيمة الصافية للثروة": "Net Worth Total",
+    "التدفق بالساعة": "Hourly Cashflow",
+    "التدفق بالساعة:": "Hourly Cashflow:",
+    "كشف الحساب 📊": "Statement 📊",
+    "كشف 📊": "Statement 📊",
+    "الكاش": "Cash",
+    "الثروة": "Net Worth",
+    "مضاعف السيرفر نشط! 🔥": "Server Boost Active! 🔥",
+    "تنويه هام ⚠️": "Important Notice ⚠️",
+    "اسم الحساب": "Account Name",
+    "الرتبة الاجتماعية": "Social Rank",
+    "الخبرة الكلية المتراكمة": "Accumulated Total XP",
+    "شرح الصفحة": "Page Guide",
+    "سيولة نقدية شرعية ونظيفة للشراء والاستثمار.": "Legitimate cash ready for purchases and investments.",
+    "تراكم فائدة مركبة تلقائية بمرور الوقت لكل دقيقة.": "Automatic compound interest accumulating over time.",
+    "أرباح السوق السوداء التي تحتاج لغسيل مالي لإيداعها بالبنك.": "Black market profits that require money laundering before bank deposit.",
+    "المجموع الكلي: كاش + بنك + أموال مشبوهة + عقارات + أسهم.": "Total: Cash + Bank + Dirty Cash + Real Estate + Stocks.",
+    "نشط (تجميع مستمر)": "Active (Collecting)",
+    "متوقف": "Inactive",
+    "تجديد ترخيص الإدارة الذاتية (12 ساعة)": "Renew AFK License (12 Hours)",
+    "المهام اليومية": "Daily Quests",
+    "المهام اليومية المنجزة": "Completed Daily Quests",
+    "فتح صندوق المكافأة الكبرى": "Claim Grand Daily Chest",
+    "استلام": "Claim",
+    "مكتمل": "Completed",
+    "متبقي": "Remaining",
+    "الوقت المتبقي": "Time Left",
+
+    // Bank
+    "إدارة حساب الادخار والتحويلات": "Savings & Transfers Management",
+    "أودع أموالك في البنك لتحميها وتحصل على فائدة مركبة بمعدل 0.005% لكل دورة تيك.": "Deposit money in the bank to protect it and earn compound interest.",
+    "السيولة النقدية المتوفرة": "Available Liquid Cash",
+    "رصيد الادخار البنكي": "Bank Savings Balance",
+    "المبلغ المطلوب إيداعه / سحبه": "Amount to Deposit / Withdraw",
+    "أودع 25%": "Deposit 25%",
+    "أودع 50%": "Deposit 50%",
+    "أودع 100%": "Deposit 100%",
+    "إيداع نقدي بالبنك": "Deposit Cash",
+    "سحب نقدي من البنك": "Withdraw Cash",
+    "سحب 25%": "Withdraw 25%",
+    "سحب 50%": "Withdraw 50%",
+    "سحب 100%": "Withdraw 100%",
+    "تحويل بنكي للاعب آخر": "Transfer to Another Player",
+    "اسم اللاعب المستلم": "Recipient Username",
+    "المبلغ المراد تحويله": "Amount to Transfer",
+    "إرسال الحوالة البنكية": "Send Bank Wire",
+    "القروض البنكية والائتمان": "Bank Loans & Credit Facilities",
+    "طلب قرض جديد": "Request New Loan",
+    "سداد القرض الحالي": "Repay Current Loan",
+    "أقصى حد للقرض:": "Maximum Loan Limit:",
+    "القرض النشط:": "Active Loan:",
+    "المبلغ المستحق:": "Due Amount:",
+    "المهلة المتبقية:": "Remaining Time:",
+    "سداد 50%": "Repay 50%",
+    "سداد كامل": "Repay All",
+    "أصول مقفلة في الصناديق الاستثمارية": "Locked Investment Funds Assets",
+    "سجل التحويلات والحوالات الأخيرة": "Recent Wire Transfers History",
+
+    // Stocks
+    "صالة تداول البورصة والأسهم الحية": "Live Stock Trading Hall",
+    "بورصة عالمية موحدة لجميع اللاعبين (جلسات M15 موحدة ومطابقة بدقة 100%).": "Global Unified Stock Market (100% Identical M15 Sessions for All Players).",
+    "إغلاق الشمعة وتحديث الأسعار:": "Candle Close & Price Update:",
+    "جلسة M15 موحدة": "Unified M15 Session",
+    "شريط الأخبار الاقتصادي:": "Economic News Ticker:",
+    "الأسهم المملوكة:": "Owned Shares:",
+    "متوسط سعر الشراء:": "Avg Buy Price:",
+    "قيمة الأسهم الكلية:": "Total Shares Value:",
+    "ربح/خسارة المحفظة:": "Portfolio Profit/Loss:",
+    "سقف تملك السهم:": "Max Holding Limit:",
+    "شراء أسهم": "Buy Shares",
+    "بيع أسهم": "Sell Shares",
+    "بيع كل الأسهم": "Sell All Shares",
+    "شراء 25%": "Buy 25%",
+    "شراء 50%": "Buy 50%",
+    "شراء أقصى": "Buy Max",
+    "بيع 25%": "Sell 25%",
+    "بيع 50%": "Sell 50%",
+    "بيع الكل": "Sell All",
+
+    // Taxes
+    "مصلحة الضرائب والمالية العامة (Tax Authority)": "Tax Authority & Public Finance",
+    "إدارة الوعاء الضريبي، نسب الاستقطاع للثروات الكبرى، وتفعيل الدروع الضريبية القانونية": "Tax base management, wealth bracket deductions, and legal tax shields",
+    "الرقم الضريبي للممول:": "Taxpayer ID:",
+    "ممتثل ضريبياً 🟢": "Tax Compliant 🟢",
+    "متأخرات ضريبية ⚠️": "Tax Arrears ⚠️",
+    "الوعاء الضريبي للثروة": "Taxable Wealth Base",
+    "إجمالي الضرائب المسددة": "Total Taxes Paid",
+    "درع الإعفاء الضريبي (Shield)": "Tax Exemption Shield",
+    "شراء وتفعيل الدرع الضريبي": "Purchase Tax Exemption Shield",
+    "تجديد وتمديد الدرع الضريبي": "Renew Tax Exemption Shield",
+    "تقديم الإقرار والتسوية": "Submit Tax Return & Settle",
+    "دفع الضرائب المستحقة": "Pay Due Taxes",
+
+    // Leaderboard
+    "عرش الأثرياء (توب 25)": "Wealthiest Billionaires (Top 25)",
+    "تحديث تلقائي كل ساعة موحد لجميع اللاعبين": "Hourly Unified Auto-Refresh for All Players",
+    "الترتيب": "Rank",
+    "اللاعب": "Player",
+    "اللقب": "Title",
+    "صافي الثروة": "Net Worth",
+    "أنت (حسابك)": "You (Your Account)",
+
+    // Casino
+    "رمي العملة الملكية": "Royal Coin Flip",
+    "صاروخ المضاعفات": "Multiplier Rocket Crash",
+    "آلة السلوتس الذهبية": "Golden Slots Machine",
+    "طاولة البلاك جاك 21": "Blackjack 21 Table",
+    "سباق الخيول الملكي": "Royal Horse Racing",
+    "رهان": "Bet",
+    "المبلغ:": "Amount:",
+    "سحب الأرباح": "Cash Out",
+    "تدوير": "Spin",
+    "طلب ورقة": "Hit",
+    "توقف": "Stand",
+    "مضاعفة": "Double",
+    "تقسيم": "Split",
+    "رمي العملة": "Coin Flip",
+    "الصاروخ": "Rocket Crash",
+    "السلوتس": "Slots",
+    "البلاك جاك": "Blackjack",
+    "عجلة الحظ": "Fortune Wheel",
+    "الروليت": "Roulette",
+    "تحديد الرهان": "Set Bet",
+    "بدء الجولة": "Start Round",
+    "سحب الأرباح فوراً": "Cash Out Now",
+
+    // Common Actions & Measurements
+    "إيداع": "Deposit",
+    "سحب": "Withdraw",
+    "تحويل": "Transfer",
+    "سداد": "Repay",
+    "شراء": "Buy",
+    "بيع": "Sell",
+    "ترقية": "Upgrade",
+    "توظيف": "Hire",
+    "تسريح": "Lay off",
+    "تأكيد": "Confirm",
+    "إلغاء": "Cancel",
+    "إغلاق": "Close",
+    "حفظ": "Save",
+    "تعديل": "Edit",
+    "حذف": "Delete",
+    "سهم": "shares",
+    "عمال": "workers",
+    "وحدة": "units",
+    "دورة": "cycle",
+    "ساعة": "hour",
+    "ثانية": "second",
+    "دقيقة": "minute",
+    "يوم": "day",
+    "جنيه": "EGP",
+    "ج.م": "EGP",
+    "جنيه/ساعة": "EGP/hr",
+    "جنيه/دورة": "EGP/cycle",
+    "جنيه/وحدة": "EGP/unit",
+    "جنيه/ثانية": "EGP/sec",
+    "جنيه/س": "EGP/hr",
+
+    // Cars & Fleet
+    "السيارات الفارهة والأسطول الملكي": "Luxury Fleet & Royal Garage",
+    "السيارات الفارهة": "Luxury Cars",
+    "تأجير": "Rent",
+    "إلغاء التأجير": "Cancel Rental",
+    "قيادة": "Drive",
+    "إلغاء القيادة": "Cancel Drive",
+    "مؤجرة": "Rented",
+    "نشطة": "Active",
+    "المرأب": "Garage",
+    "بدء تأجير السيارة": "Start Car Rental",
+    "إيقاف التأجير": "Stop Rental",
+
+    // Real Estate
+    "مملوك:": "Owned:",
+    "القيمة السوقية الحالية:": "Current Market Value:",
+    "عائد الإيجار السلبي:": "Passive Rental Yield:",
+    "قيمة التسييل الفوري (85%):": "Immediate Liquidation (85%):",
+    "شراء وحدة إضافية": "Buy Additional Unit",
+    "تسييل وبيع وحدة": "Liquidate & Sell Unit",
+
+    // Jobs
+    "الوظيفة الحالية": "Current Job",
+    "الراتب الثابت:": "Base Salary:",
+    "العائد من الخبرة:": "XP Reward:",
+    "الخبرة المطلوبة:": "XP Required:",
+    "أنت تمارس هذه المهنة": "You hold this career",
+    "التحاق بهذه الوظيفة": "Apply for this job",
+    "مغلق (تحتاج لخبرة)": "Locked (XP needed)",
+
+    // Businesses
+    "تكلفة التأسيس:": "Establish Cost:",
+    "العائد التقريبي الأساسي:": "Approx. Base Yield:",
+    "تأسيس المشروع واستثمار رأس المال": "Establish Business & Invest Capital",
+    "سعر بيع الوحدة:": "Unit Selling Price:",
+    "العمال الحاليين:": "Current Workers:",
+    "ترقية المشروع": "Upgrade Business",
+    "توظيف عامل": "Hire Worker",
+    "تسريح عامل": "Fire Worker",
+    "شراء ترخيص الامتياز التجاري (Franchise)": "Buy Franchise License",
+    "إطلاق حملة تسويقية كبرى": "Launch Marketing Campaign",
+
+    // Taxes
+    "الشريحة الأولى (المبتدئين)": "First Bracket (Beginners)",
+    "الشريحة الفضية (المستثمر المتوسط)": "Silver Bracket (Mid Investor)",
+    "شريحة كبار الممولين": "Major Taxpayers Bracket",
+    "شريحة حيتان المال والمليارديرات": "Whales & Billionaires Bracket",
+    "شريحتك الحالية": "Current Bracket",
+    "شريحتك الحالية 👈": "Current Bracket 👈",
+    "غير خاضع": "Exempt",
+    "تقديم الإقرار الضريبي الطوعي السنوي": "Annual Voluntary Tax Return",
+    "تقديم الإقرار والتسوية": "Submit Tax Return & Settle",
+
+    // Auctions
+    "تقديم عرض مزايدة أعلى": "Place Higher Bid",
+    "شراء فوري مباشر": "Instant Buyout",
+    "المزايد الحالي:": "Current Bidder:",
+    "العرض الحالي:": "Current Bid:",
+    "الشراء الفوري:": "Buyout Price:",
+
+    // Trade & Industry
+    "سجل الصفقات وعقود التوريد الدولية": "International Trade Contracts Log",
+    "شحن الصفقة": "Ship Order",
+    "تحصيل الأرباح": "Collect Profits",
+    "ترقية المستودع": "Upgrade Warehouse",
+    "سعة المستودع:": "Warehouse Capacity:",
+    "الأرباح المعلقة:": "Pending Profits:",
+    "سلسلة الصناعات الثقيلة والإنتاج": "Heavy Industries Supply Chain",
+
+    // Social & Profile
+    "متصل الآن": "Online",
+    "غير متصل": "Offline",
+    "إضافة صديق": "Add Friend",
+    "صديق بالفعل": "Already Friends",
+    "حظر اللاعب": "Block Player",
+    "عرض عقد وظيفي": "Send Job Offer",
+    "دعوة شراكة": "Invite Partner",
+    "الملف الشخصي": "Player Profile",
+    "الأوسمة والتشريفات": "Honors & Badges",
+    "أنت (حسابك)": "You (Your Account)"
   };
 
   // ─────────────────────────────────────────────
-  //  SMART COMPACT CURRENCY FORMATTER (K, M, B, T, Q)
+  //  SMART COMPACT CURRENCY FORMATTER & LOCALIZER
   // ─────────────────────────────────────────────
+  function getCurrencySymbol() {
+    return (window.currentLang === 'en') ? 'EGP' : 'جنيه';
+  }
+
   function formatCompactNumber(num) {
     if (num === null || num === undefined || isNaN(num)) return '0';
     const val = Number(num);
@@ -331,20 +600,75 @@ const UIController = (() => {
   }
 
   function formatFullCurrency(num) {
-    if (num === null || num === undefined || isNaN(num)) return '0 EGP';
-    return Number(num).toLocaleString('en-US') + ' EGP';
+    const sym = getCurrencySymbol();
+    if (num === null || num === undefined || isNaN(num)) return `0 ${sym}`;
+    return Number(num).toLocaleString('en-US') + ' ' + sym;
   }
 
   function translateDOM(root = document.body) {
-    if (window.currentLang === 'ar') return;
+    if (!root) return;
+    const isEn = (window.currentLang === 'en');
 
     // Recursively walk text nodes
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
     let node;
     while (node = walker.nextNode()) {
-      const text = node.nodeValue.trim();
-      if (text && translationDict[text]) {
-        node.nodeValue = node.nodeValue.replace(text, translationDict[text]);
+      let val = node.nodeValue;
+      if (!val) continue;
+
+      if (isEn) {
+        if (val.includes('جنيه/ساعة') || val.includes('جنيه/س')) {
+          val = val.replaceAll(/جنيه\s*\/\s*(ساعة|س)/g, 'EGP/hr');
+        }
+        if (val.includes('جنيه/دورة')) {
+          val = val.replaceAll('جنيه/دورة', 'EGP/cycle');
+        }
+        if (val.includes('جنيه/وحدة')) {
+          val = val.replaceAll('جنيه/وحدة', 'EGP/unit');
+        }
+        if (val.includes('جنيه/ثانية')) {
+          val = val.replaceAll('جنيه/ثانية', 'EGP/sec');
+        }
+        if (val.includes('جنيه')) {
+          val = val.replaceAll('جنيه', 'EGP');
+        }
+        if (val.includes('ج.م')) {
+          val = val.replaceAll('ج.م', 'EGP');
+        }
+        const trimmed = val.trim();
+        if (trimmed && translationDict[trimmed]) {
+          val = val.replace(trimmed, translationDict[trimmed]);
+        } else if (trimmed && /[\u0600-\u06FF]/.test(val)) {
+          for (const [arKey, enVal] of Object.entries(translationDict)) {
+            if (val.includes(arKey)) {
+              val = val.replaceAll(arKey, enVal);
+            }
+          }
+        }
+      } else {
+        // Arabic mode: ensure all rogue EGP occurrences are converted to جنيه
+        if (val.includes('EGP/ساعة') || val.includes('EGP / ساعة') || val.includes('EGP/hr') || val.includes('EGP / hr')) {
+          val = val.replaceAll(/EGP\s*\/\s*(ساعة|hr|س)/gi, 'جنيه/ساعة');
+        }
+        if (val.includes('EGP/دورة') || val.includes('EGP / دورة') || val.includes('EGP/cycle') || val.includes('EGP / cycle')) {
+          val = val.replaceAll(/EGP\s*\/\s*(دورة|cycle)/gi, 'جنيه/دورة');
+        }
+        if (val.includes('EGP/وحدة') || val.includes('EGP / وحدة') || val.includes('EGP/unit') || val.includes('EGP / unit')) {
+          val = val.replaceAll(/EGP\s*\/\s*(وحدة|unit)/gi, 'جنيه/وحدة');
+        }
+        if (val.includes('EGP/ثانية') || val.includes('EGP / ثانية') || val.includes('EGP/sec') || val.includes('EGP / sec')) {
+          val = val.replaceAll(/EGP\s*\/\s*(ثانية|sec)/gi, 'جنيه/ثانية');
+        }
+        if (val.includes('EGP/س') || val.includes('EGP / س')) {
+          val = val.replaceAll(/EGP\s*\/\s*س/gi, 'جنيه/س');
+        }
+        if (val.includes('EGP')) {
+          val = val.replaceAll('EGP', 'جنيه');
+        }
+      }
+
+      if (node.nodeValue !== val) {
+        node.nodeValue = val;
       }
     }
 
@@ -352,10 +676,28 @@ const UIController = (() => {
     const elements = root.querySelectorAll('[placeholder], [title], input[type="button"], input[type="submit"]');
     elements.forEach(el => {
       const ph = el.getAttribute('placeholder');
-      if (ph && translationDict[ph.trim()]) el.setAttribute('placeholder', translationDict[ph.trim()]);
+      if (ph) {
+        let newPh = ph;
+        if (isEn) {
+          if (translationDict[ph.trim()]) newPh = translationDict[ph.trim()];
+          else if (newPh.includes('جنيه')) newPh = newPh.replaceAll('جنيه', 'EGP');
+        } else {
+          if (newPh.includes('EGP')) newPh = newPh.replaceAll('EGP', 'جنيه');
+        }
+        if (newPh !== ph) el.setAttribute('placeholder', newPh);
+      }
 
       const title = el.getAttribute('title');
-      if (title && translationDict[title.trim()]) el.setAttribute('title', translationDict[title.trim()]);
+      if (title) {
+        let newTitle = title;
+        if (isEn) {
+          if (translationDict[title.trim()]) newTitle = translationDict[title.trim()];
+          else if (newTitle.includes('جنيه')) newTitle = newTitle.replaceAll('جنيه', 'EGP');
+        } else {
+          if (newTitle.includes('EGP')) newTitle = newTitle.replaceAll('EGP', 'جنيه');
+        }
+        if (newTitle !== title) el.setAttribute('title', newTitle);
+      }
     });
   }
 
@@ -420,7 +762,7 @@ const UIController = (() => {
       else playMenuSound('click');
     }
 
-    // Dynamic translation for English mode
+    // Dynamic translation & currency adjustment
     if (window.currentLang === 'en') {
       if (translationDict[title]) title = translationDict[title];
       if (translationDict[message]) {
@@ -432,6 +774,11 @@ const UIController = (() => {
           }
         }
       }
+      if (title) title = title.replaceAll('جنيه', 'EGP').replaceAll('ج.م', 'EGP');
+      if (message) message = message.replaceAll('جنيه', 'EGP').replaceAll('ج.م', 'EGP');
+    } else {
+      if (title) title = title.replaceAll('EGP', 'جنيه');
+      if (message) message = message.replaceAll('EGP', 'جنيه');
     }
 
     // Cap maximum visible toasts to 2 to prevent screen clutter on mobile
@@ -466,13 +813,17 @@ const UIController = (() => {
     toast.innerHTML = `
       <div class="shrink-0">${iconHtml}</div>
       <div class="flex-1 min-w-0">
-        <h4 class="text-[11px] sm:text-xs font-black ${titleColor} leading-tight">${title || 'إشعار المنظومة'}</h4>
+        <h4 class="text-[11px] sm:text-xs font-black ${titleColor} leading-tight">${title || (window.currentLang === 'en' ? 'System Notification' : 'إشعار المنظومة')}</h4>
         ${message ? `<p class="text-[10px] sm:text-[11px] text-slate-300 leading-tight mt-0.5 break-words">${message}</p>` : ''}
       </div>
       <button class="text-slate-500 hover:text-white transition text-xs shrink-0 px-1 py-0.5">
         <i class="fa-solid fa-xmark"></i>
       </button>
     `;
+
+    if (typeof translateDOM === 'function') {
+      translateDOM(toast);
+    }
 
     let isDismissed = false;
     const dismiss = () => {
@@ -782,8 +1133,8 @@ const UIController = (() => {
     setupEventListeners();
     setupAdminModal();
 
+    translateDOM(document.body);
     if (window.currentLang === 'en') {
-      translateDOM(document.body);
       document.querySelectorAll('.lang-ar-guide').forEach(el => el.classList.add('hidden'));
       document.querySelectorAll('.lang-en-guide').forEach(el => el.classList.remove('hidden'));
     } else {
@@ -2018,15 +2369,15 @@ const UIController = (() => {
         renderIndustryPanel();
         break;
     }
-    if (window.currentLang === 'en') {
-      translateDOM(document.body);
-    }
+    translateDOM(document.body);
   }
 
   // --- Tab 1: Dashboard Panel ---
   function renderDashboard() {
     const s = GameEngine.state;
     if (!s) return;
+
+    const sym = getCurrencySymbol();
 
     document.getElementById('dash-uid').textContent = GameEngine.activeUsername;
     document.getElementById('dash-title').textContent = s.title;
@@ -2035,18 +2386,18 @@ const UIController = (() => {
     const dashCashEl = document.getElementById('dash-cash');
     if (dashCashEl) {
       if (s.cash >= 1000000) {
-        dashCashEl.innerHTML = `<span class="break-all">${s.cash.toLocaleString()} EGP</span> <span class="text-xs text-yellow-400 font-bold ml-1 bg-yellow-500/10 px-2 py-0.5 rounded-lg border border-yellow-500/20 inline-block numbers-font">(${formatCompactNumber(s.cash)})</span>`;
+        dashCashEl.innerHTML = `<span class="break-all">${s.cash.toLocaleString()} ${sym}</span> <span class="text-xs text-yellow-400 font-bold ml-1 bg-yellow-500/10 px-2 py-0.5 rounded-lg border border-yellow-500/20 inline-block numbers-font">(${formatCompactNumber(s.cash)})</span>`;
       } else {
-        dashCashEl.textContent = s.cash.toLocaleString() + ' EGP';
+        dashCashEl.textContent = s.cash.toLocaleString() + ' ' + sym;
       }
     }
 
     const dashBankEl = document.getElementById('dash-bank');
     if (dashBankEl) {
       if (s.bank >= 1000000) {
-        dashBankEl.innerHTML = `<span class="break-all">${s.bank.toLocaleString()} EGP</span> <span class="text-xs text-emerald-400 font-bold ml-1 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20 inline-block numbers-font">(${formatCompactNumber(s.bank)})</span>`;
+        dashBankEl.innerHTML = `<span class="break-all">${s.bank.toLocaleString()} ${sym}</span> <span class="text-xs text-emerald-400 font-bold ml-1 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20 inline-block numbers-font">(${formatCompactNumber(s.bank)})</span>`;
       } else {
-        dashBankEl.textContent = s.bank.toLocaleString() + ' EGP';
+        dashBankEl.textContent = s.bank.toLocaleString() + ' ' + sym;
       }
     }
 
@@ -2054,18 +2405,18 @@ const UIController = (() => {
     if (dashDirtyEl) {
       const dirty = s.dirtyCash || 0;
       if (dirty >= 1000000) {
-        dashDirtyEl.innerHTML = `<span class="break-all">${dirty.toLocaleString()} EGP</span> <span class="text-xs text-rose-400 font-bold ml-1 bg-rose-500/10 px-2 py-0.5 rounded-lg border border-rose-500/20 inline-block numbers-font">(${formatCompactNumber(dirty)})</span>`;
+        dashDirtyEl.innerHTML = `<span class="break-all">${dirty.toLocaleString()} ${sym}</span> <span class="text-xs text-rose-400 font-bold ml-1 bg-rose-500/10 px-2 py-0.5 rounded-lg border border-rose-500/20 inline-block numbers-font">(${formatCompactNumber(dirty)})</span>`;
       } else {
-        dashDirtyEl.textContent = dirty.toLocaleString() + ' EGP';
+        dashDirtyEl.textContent = dirty.toLocaleString() + ' ' + sym;
       }
     }
 
     const dashWorthEl = document.getElementById('dash-worth');
     if (dashWorthEl) {
       if (s.netWorth >= 1000000) {
-        dashWorthEl.innerHTML = `<span class="break-all">${s.netWorth.toLocaleString()} EGP</span> <span class="text-xs text-amber-300 font-bold ml-1 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20 inline-block numbers-font">(${formatCompactNumber(s.netWorth)})</span>`;
+        dashWorthEl.innerHTML = `<span class="break-all">${s.netWorth.toLocaleString()} ${sym}</span> <span class="text-xs text-amber-300 font-bold ml-1 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20 inline-block numbers-font">(${formatCompactNumber(s.netWorth)})</span>`;
       } else {
-        dashWorthEl.textContent = s.netWorth.toLocaleString() + ' EGP';
+        dashWorthEl.textContent = s.netWorth.toLocaleString() + ' ' + sym;
       }
     }
 
