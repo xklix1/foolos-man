@@ -71,7 +71,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=124">
+  <link rel="stylesheet" href="app.css?v=125">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -1618,75 +1618,42 @@
       <div
         class="lg:hidden mobile-top-bar glass-panel p-3 mb-4 rounded-xl border border-slate-800 flex flex-col gap-2 sticky top-2 z-30 shadow-xl"
         style="background: rgba(8,12,28,0.92) !important; backdrop-filter: blur(24px) !important;">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
+        <div class="flex items-center justify-between gap-3">
+          <!-- Profile & Identity Section -->
+          <div class="flex items-center gap-2.5 min-w-0">
             <!-- Mobile Menu Drawer Toggle Button -->
             <button id="btn-mobile-nav-toggle" type="button" title="قائمة الأقسام والتنقل"
-              class="w-8 h-8 rounded-lg bg-yellow-500/15 hover:bg-yellow-500/25 active:bg-yellow-500/30 border border-yellow-500/40 text-yellow-400 flex items-center justify-center transition active:scale-95 shrink-0 shadow-sm cursor-pointer">
+              class="w-9 h-9 rounded-xl bg-yellow-500/15 hover:bg-yellow-500/25 active:bg-yellow-500/30 border border-yellow-500/40 text-yellow-400 flex items-center justify-center transition active:scale-95 shrink-0 shadow-sm cursor-pointer">
               <i class="fa-solid fa-bars text-sm"></i>
             </button>
             <img src="assets/logo-transparent.png" alt="رأس المال"
-              class="w-10 h-auto object-contain drop-shadow-[0_2px_8px_rgba(234,179,8,0.4)]">
-            <div>
-              <div class="flex items-center gap-1.5">
-                <span id="stat-username-mobile" class="text-xs font-bold text-white">تحميل...</span>
-                <span id="stat-fb-badge-mobile" class="hidden fb-vip-badge" title="عضو رسمي موثق في مجتمع فيسبوك 👍">f</span>
-                <span id="stat-title-mobile" class="text-[10px] font-bold text-yellow-400">...</span>
+              class="w-9 h-9 object-contain drop-shadow-[0_2px_8px_rgba(234,179,8,0.4)] shrink-0">
+            <div class="flex flex-col min-w-0 justify-center">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span id="stat-username-mobile" class="text-xs font-black text-white truncate max-w-[120px] cursor-pointer hover:underline" title="اضغط لعرض ملفك الشخصي">تحميل...</span>
+                <span id="stat-fb-badge-mobile" class="hidden fb-vip-badge shrink-0" title="عضو رسمي موثق في مجتمع فيسبوك 👍">f</span>
               </div>
+              <span id="stat-title-mobile" class="text-[10px] font-bold text-yellow-400/90 truncate max-w-[140px] leading-tight mt-0.5">...</span>
             </div>
           </div>
-          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 max-w-[65%] shrink-0">
-            <!-- Cloud Save / Sync Button Mobile -->
-            <button id="btn-ingame-leaderboard-mobile" title="عرش الأثرياء (توب 10)" onclick="window.UI.switchTab('leaderboard')"
-              class="px-2.5 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/50 rounded-lg text-[10px] font-black transition flex items-center gap-1 shrink-0 cursor-pointer shadow-sm">
-              <i class="fa-solid fa-trophy text-[10px] text-yellow-400"></i>
-              <span>توب 10 🏆</span>
+
+          <!-- Quick Top Utility Actions (Clean, spaced, no horizontal scroll) -->
+          <div class="flex items-center gap-1.5 shrink-0">
+            <!-- Cloud Save -->
+            <button id="btn-save-progress-cloud-mobile" title="حفظ التقدم في السحابة" type="button"
+              class="w-8 h-8 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 active:bg-yellow-500/30 text-yellow-400 border border-yellow-500/30 flex items-center justify-center transition active:scale-95 shrink-0 cursor-pointer shadow-sm">
+              <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
             </button>
-            <button id="btn-save-progress-cloud-mobile" title="حفظ التقدم في السحابة"
-              class="px-2.5 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/40 rounded-lg text-[10px] font-black transition flex items-center gap-1 shrink-0 cursor-pointer">
-              <i class="fa-solid fa-cloud-arrow-up text-[10px]"></i>
-              <span>حفظ السحابة</span>
+            <!-- Announcement Notice -->
+            <button id="btn-ingame-season2-mobile" title="بيان وتنويه هام للاعبين" type="button"
+              class="w-8 h-8 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
+              <i class="fa-solid fa-bell text-xs"></i>
+              <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
             </button>
-            <button id="btn-ingame-season2-mobile" title="بيان وتنويه هام للاعبين"
-              class="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded-lg text-[10px] font-black transition flex items-center gap-1 shadow-sm shrink-0 cursor-pointer">
-              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
-              <span>تنويه ⚠️</span>
-            </button>
-            <a id="btn-mobile-facebook" href="https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" title="صفحة الفيسبوك الرسمية - وثّق حسابك" onclick="window.UI.claimFacebookReward(event)"
-              class="px-2 py-1 bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 border border-blue-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0 relative">
-              <i class="fa-brands fa-facebook text-[11px] text-blue-400"></i>
-              <span>فيسبوك</span>
-              <span id="badge-mobile-facebook" class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
-            </a>
-            <button id="btn-open-industry-mobile" onclick="window.UI.switchTab('industry')" title="مجمع الصناعات وسلاسل الإمداد"
-              class="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0 cursor-pointer">
-              <i class="fa-solid fa-industry text-[10px]"></i>
-              <span>الصناعات</span>
-            </button>
-            <button id="btn-ingame-guide-mobile" title="دليل الملياردير"
-              class="px-2 py-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0">
-              <i class="fa-solid fa-book-open text-[10px]"></i>
-              <span>الدليل</span>
-            </button>
-            <button id="btn-open-start-menu-mobile" title="الرجوع للقائمة الرئيسية"
-              class="px-2 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0">
-              <i class="fa-solid fa-house text-[10px]"></i>
-              <span>القائمة</span>
-            </button>
-            <button id="btn-ingame-settings-mobile" title="إعدادات الصوت والإشعارات"
-              class="px-2 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0 cursor-pointer">
-              <i class="fa-solid fa-sliders text-[10px]"></i>
-              <span>الإعدادات</span>
-            </button>
-            <button id="btn-lang-toggle-mobile" type="button"
-              class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0">
-              <i class="fa-solid fa-language text-[10px]"></i>
-              <span>EN</span>
-            </button>
-            <button id="btn-user-logout-mobile" title="تسجيل الخروج"
-              class="text-[10px] text-rose-400 hover:text-rose-300 font-bold border border-rose-500/30 px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition flex items-center gap-1 shrink-0">
-              <i class="fa-solid fa-right-from-bracket text-[10px]"></i>
-              <span>خروج</span>
+            <!-- Settings -->
+            <button id="btn-ingame-settings-mobile" title="إعدادات الصوت والإشعارات" type="button"
+              class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/80 flex items-center justify-center transition active:scale-95 shrink-0 cursor-pointer shadow-sm">
+              <i class="fa-solid fa-sliders text-xs"></i>
             </button>
           </div>
         </div>
@@ -4014,16 +3981,48 @@
           <i class="fa-solid fa-dice w-5 text-center text-fuchsia-400 text-sm"></i>
           <span>كازينو التسلية</span>
         </button>
+
+        <!-- Group 4: الخدمات والمجتمع -->
+        <div class="text-[10px] font-black text-slate-500 px-3 pt-3 pb-1 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-compass text-[10px] text-amber-400/70"></i>
+          <span>الخدمات والمجتمع</span>
+        </div>
+
+        <a id="btn-mobile-facebook" href="https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" onclick="window.UI?.claimFacebookReward(event)"
+          class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 text-xs font-bold transition duration-200 cursor-pointer">
+          <div class="flex items-center gap-2.5">
+            <i class="fa-brands fa-facebook w-5 text-center text-blue-400 text-sm"></i>
+            <span>مجتمع فيسبوك الرسمي</span>
+          </div>
+          <span id="badge-mobile-facebook" class="text-[9px] px-2 py-0.5 rounded-full bg-blue-600 text-white font-black animate-pulse">وثّق 💎</span>
+        </a>
+
+        <button id="btn-ingame-guide-mobile" type="button"
+          class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-book-open w-5 text-center text-sky-400 text-sm"></i>
+          <span>دليل الملياردير الشامل</span>
+        </button>
       </div>
 
-      <!-- Drawer Footer -->
-      <div class="p-3 border-t border-slate-800/80 bg-slate-950/60 flex items-center justify-between text-xs">
-        <button onclick="window.UI?.switchTab('dashboard'); window.UI?.closeMobileNav?.();"
-          class="flex items-center gap-1.5 text-slate-400 hover:text-yellow-400 font-bold transition cursor-pointer">
+      <!-- Drawer Footer Utilities -->
+      <div class="p-3 border-t border-slate-800/80 bg-slate-950/90 flex items-center justify-between text-xs gap-2">
+        <button id="btn-open-start-menu-mobile" type="button"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-yellow-400 font-bold text-[11px] transition cursor-pointer border border-slate-800 shadow-sm">
           <i class="fa-solid fa-house text-xs"></i>
-          <span>الرئيسية</span>
+          <span>القائمة</span>
         </button>
-        <span class="text-[10px] text-slate-500 numbers-font">رأس المال v2.5</span>
+
+        <button id="btn-lang-toggle-mobile" type="button"
+          class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-[11px] transition cursor-pointer border border-slate-800 flex items-center gap-1 shadow-sm">
+          <i class="fa-solid fa-language text-xs"></i>
+          <span>EN</span>
+        </button>
+
+        <button id="btn-user-logout-mobile" type="button" title="تسجيل الخروج"
+          class="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-[11px] transition cursor-pointer border border-rose-500/20 shadow-sm">
+          <i class="fa-solid fa-right-from-bracket text-xs"></i>
+          <span>خروج</span>
+        </button>
       </div>
     </div>
   </div>
@@ -4510,7 +4509,7 @@
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
   <script src="db.js?v=7.8"></script>
   <script src="game.js?v=7.8"></script>
-  <script src="ui.js?v=8.0"></script>
+  <script src="ui.js?v=8.1"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
