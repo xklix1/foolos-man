@@ -10356,59 +10356,13 @@ const UIController = (() => {
       });
     }
 
-    // ──────── Facebook Community Verification & Badge Claim ────────
-    const fbMenuBtn = document.getElementById('btn-menu-facebook');
-    const fbSidebarBtn = document.getElementById('btn-sidebar-facebook');
-    const fbMobileBtn = document.getElementById('btn-mobile-facebook');
-
-    [fbMenuBtn, fbSidebarBtn, fbMobileBtn].forEach(btn => {
-      if (btn) {
-        btn.addEventListener('click', (e) => {
-          claimFacebookReward(e);
-        });
-      }
-    });
+    // ──────── Facebook Community Official Link ────────
+    // Purely an external link to the official community, no rewards or automated verification.
   }
 
-  // ── Facebook Official Verification & Reward Engine ──
+  // ── Facebook Official Community Link (No Reward) ──
   async function claimFacebookReward(e) {
-    const s = GameEngine.state;
-    if (!s) {
-      showToast('يرجى بدء اللعب أولاً ️','اضغط على (متابعة اللعب) أو سجل دخولك لحسابك أولاً، ثم اضغط زر فيسبوك لتوثيق حسابك واستلام الهدية والشارة!','warning',
-        5000
-      );
-      return;
-    }
-
-    if (s.facebookVerified) {
-      showToast('حسابك موثق بالفعل','أهلاً بك مجدداً! حسابك موثق رسمياً ويحمل شارة فيسبوك الزرقاء في الشات وقائمة المتصدرين.','info'
-      );
-      return;
-    }
-
-    // Grant Verified Status & Badge
-    s.facebookVerified = true;
-    if (!Array.isArray(s.badges)) s.badges = [];
-    if (!s.badges.includes('facebook')) s.badges.push('facebook');
-
-    // Welcome Cash Bonus (100,000 EGP)
-    const bonusReward = 100000;
-    s.cash = (Number(s.cash) || 0) + bonusReward;
-    s.netWorth = (Number(s.netWorth) || 0) + bonusReward;
-
-    // Cloud Save immediately
-    if (GameEngine.activeUsername && AppDB.savePlayerState) {
-      await AppDB.savePlayerState(GameEngine.activeUsername, s, true);
-    }
-
-    if (typeof playMenuSound ==='function') playMenuSound('start');
-
-    updateFacebookButtonUI();
-    renderStatsBar();
-
-    showToast(' تهانينا! تم توثيق حسابك بنجاح!',`أصبحت عضواً رسمياً في مجتمع اللعبة! حصلت على شارة فيسبوك الزرقاء بجانب اسمك في الشات والمتصدرين + مكافأة ${bonusReward.toLocaleString()} EGP!`,'success',
-      8000
-    );
+    // No-op: No cash bonus or automated rewards granted upon clicking.
   }
 
   function updateFacebookButtonUI() {
@@ -10418,32 +10372,28 @@ const UIController = (() => {
     const menuBadge = document.getElementById('badge-menu-facebook');
     if (menuBadge) {
       if (isVerified) {
-        menuBadge.className ='text-[9px] px-1.5 py-0.5 rounded-full bg-blue-900/80 text-blue-300 font-bold border border-blue-500/40 shadow-sm';
-        menuBadge.innerHTML ='<i class="fa-brands fa-facebook mr-0.5"></i> موثق';
+        menuBadge.className = 'text-[9px] px-1.5 py-0.5 rounded-full bg-blue-900/80 text-blue-300 font-bold border border-blue-500/40 shadow-sm';
+        menuBadge.innerHTML = '<i class="fa-brands fa-facebook mr-0.5"></i> موثق';
       } else {
-        menuBadge.className ='text-[9px] px-1.5 py-0.5 rounded-full bg-blue-600/90 text-white font-black animate-pulse shadow-sm';
-        menuBadge.textContent ='وثّق حسابك';
+        menuBadge.className = 'text-[9px] px-1.5 py-0.5 rounded-full bg-blue-950/80 text-blue-300 font-bold border border-blue-500/30 shadow-sm';
+        menuBadge.textContent = 'رسمي';
       }
     }
 
     const sidebarBadge = document.getElementById('badge-sidebar-facebook');
     if (sidebarBadge) {
       if (isVerified) {
-        sidebarBadge.className ='text-[9px] px-1.5 py-0.5 rounded-full bg-blue-900/80 text-blue-300 font-bold border border-blue-500/40 shadow-sm';
-        sidebarBadge.innerHTML ='<i class="fa-brands fa-facebook mr-0.5"></i> موثق';
+        sidebarBadge.className = 'text-[9px] px-1.5 py-0.5 rounded-full bg-blue-900/80 text-blue-300 font-bold border border-blue-500/40 shadow-sm';
+        sidebarBadge.innerHTML = '<i class="fa-brands fa-facebook mr-0.5"></i> موثق';
       } else {
-        sidebarBadge.className ='text-[9px] px-1.5 py-0.5 rounded-full bg-blue-600 text-white font-black animate-pulse shadow-sm';
-        sidebarBadge.textContent ='وثّق';
+        sidebarBadge.className = 'text-[9px] px-1.5 py-0.5 rounded-full bg-blue-950/80 text-blue-300 font-bold border border-blue-500/30 shadow-sm';
+        sidebarBadge.textContent = 'رسمي';
       }
     }
 
     const mobileBadge = document.getElementById('badge-mobile-facebook');
     if (mobileBadge) {
-      if (isVerified) {
-        mobileBadge.className ='w-2 h-2 rounded-full bg-blue-400';
-      } else {
-        mobileBadge.className ='w-2 h-2 rounded-full bg-blue-500 animate-ping';
-      }
+      mobileBadge.className = isVerified ? 'w-2 h-2 rounded-full bg-blue-400' : 'w-2 h-2 rounded-full bg-blue-500/60';
     }
   }
 
