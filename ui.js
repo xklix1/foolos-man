@@ -2217,7 +2217,7 @@ const UIController = (() => {
           </div>
           <div class="text-sm text-slate-400 space-y-1 mb-6">
             <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Establish Cost:' :'تكلفة التأسيس:'}</span><span class="numbers-font text-yellow-500 font-semibold">${biz.cost.toLocaleString()} EGP</span></div>
-            <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Approx. Base Yield:' :'العائد التقريبي الأساسي:'}</span><span class="numbers-font text-emerald-400">~${biz.baseDemand * (biz.optimumPrice - biz.costOfGoods)} EGP / ${window.currentLang ==='en' ?'cycle' :'دورة'}</span></div>
+            <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Approx. Base Yield:' :'العائد التقريبي الأساسي:'}</span><span class="numbers-font text-emerald-400">${window.currentLang === 'en' ? '~' : 'حوالي '}${(biz.baseDemand * (biz.optimumPrice - biz.costOfGoods)).toLocaleString()} EGP / ${window.currentLang ==='en' ?'cycle' :'دورة'}</span></div>
           </div>
           <button class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition duration-300">
             ${window.currentLang ==='en' ?'Establish Business & Invest Capital' :'تأسيس المشروع واستثمار رأس المال'}
@@ -13671,7 +13671,7 @@ const UIController = (() => {
             </div>
             <div class="flex justify-between items-center text-slate-400">
               <span>سعر البيع المتوقع:</span>
-              <span class="font-bold text-amber-400 numbers-font">${c.baseSellMin.toLocaleString()} - ${c.baseSellMax.toLocaleString()} EGP</span>
+              <span class="font-bold text-amber-400 numbers-font">من ${c.baseSellMin.toLocaleString()} إلى ${c.baseSellMax.toLocaleString()} EGP</span>
             </div>
             <div class="flex justify-between items-center pt-1 border-t border-slate-800/50">
               <span class="text-cyan-300 font-bold">هامش الربح المتوقع:</span>
@@ -13791,7 +13791,7 @@ const UIController = (() => {
           <div class="bg-slate-950/60 rounded-xl p-3 border border-slate-800/60 space-y-1 text-xs">
             <div class="flex justify-between text-slate-400">
               <span>القيمة السوقية التقديرية:</span>
-              <span class="font-black text-amber-400 numbers-font">${estMinVal.toLocaleString()} - ${estMaxVal.toLocaleString()} EGP</span>
+              <span class="font-black text-amber-400 numbers-font">من ${estMinVal.toLocaleString()} إلى ${estMaxVal.toLocaleString()} EGP</span>
             </div>
             <div class="flex justify-between text-slate-400">
               <span>أقصى ربح متوقع للدفعة:</span>
@@ -13978,9 +13978,16 @@ const UIController = (() => {
         const profitMarginPct = totalCost > 0 ? Math.round((totalProfit / totalCost) * 100) : 0;
 
         durationEl.textContent = formatTradeDuration(comm.exportDurationSec);
-        const satNotice = satDiscount > 0 ? ` (تشبع سوق: -${Math.round(satDiscount * 100)}%)` : '';
-        payoutEl.textContent = `حوالي ${totalRev.toLocaleString()} EGP ${isDemanded ? '' : '(-15% خصم)'}${satNotice}`;
-        profitEl.textContent = `${totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString()} EGP (${profitMarginPct}%)`;
+        const satNotice = satDiscount > 0 ? ` (تشبع سوق: خصم ${Math.round(satDiscount * 100)}%)` : '';
+        const demandNotice = isDemanded ? ` (+${Math.round((Number(buyer.priceMult || 1) - 1) * 100)}% علاوة طلب)` : ' (خصم 15% لعدم توفر طلب)';
+        payoutEl.textContent = `حوالي ${totalRev.toLocaleString()} EGP ${demandNotice}${satNotice}`;
+        if (totalProfit >= 0) {
+          profitEl.className = 'font-black text-emerald-400 numbers-font';
+          profitEl.textContent = `ربح صافي: +${totalProfit.toLocaleString()} EGP (+${profitMarginPct}%)`;
+        } else {
+          profitEl.className = 'font-black text-rose-400 numbers-font';
+          profitEl.textContent = `خسارة: ${totalProfit.toLocaleString()} EGP (${profitMarginPct}%)`;
+        }
       }
 
       selEl.addEventListener('change', updateCalculator);
@@ -13995,7 +14002,7 @@ const UIController = (() => {
           try {
             const order = GameEngine.sellExportCargo(commKey, buyer.id, qty);
             playMenuSound('success');
-            showToast('تم توقيع عقد التصدير! ️',`تم تصدير ${qty} وحدة إلى"${buyer.name}". إجمالي العقد: ${order.totalPayout.toLocaleString()} EGP (ربح تقديري: +${order.estProfit.toLocaleString()} EGP). الشحنة انطلقت الآن!`,'success');
+            showToast('تم توقيع عقد التصدير! 🚢',`تم تصدير ${qty} وحدة إلى "${buyer.name}". إجمالي العقد: ${order.totalPayout.toLocaleString()} EGP (صافي ربح: +${order.estProfit.toLocaleString()} EGP). الشحنة انطلقت الآن!`,'success');
             preselectedExportCommodity = null;
             switchTradeSubtab('shipments');
           } catch (err) {
@@ -14096,7 +14103,7 @@ const UIController = (() => {
               <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-500/30">شحنة تصدير جوية ️</span>
               <h4 class="font-black text-white text-sm">${order.commodityName} (${order.quantity} حاوية)</h4>
             </div>
-            <p class="text-[11px] text-slate-400 mt-0.5">العميل: <span class="font-bold text-white">${order.buyerName}</span> (${order.region}) — قيمة العقد: <span class="numbers-font font-black text-amber-400">${order.totalPayout.toLocaleString()} EGP</span></p>
+            <p class="text-[11px] text-slate-400 mt-0.5">العميل: <span class="font-bold text-white">${order.buyerName}</span> (${order.region}) — قيمة العقد: <span class="numbers-font font-black text-amber-400">${order.totalPayout.toLocaleString()} EGP</span> <span class="numbers-font font-bold text-emerald-400 mr-1">(صافي ربح: +${(order.estProfit || 0).toLocaleString()} EGP)</span></p>
           </div>
         </div>
 
@@ -14104,7 +14111,7 @@ const UIController = (() => {
           ${isDelivered ?`
             <button class="btn-claim-trade-export w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 animate-pulse cursor-pointer" data-id="${order.id}">
               <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
-              <span>تحصيل أرباح الصفقة (${order.totalPayout.toLocaleString()} EGP)</span>
+              <span>تحصيل أرباح الصفقة (${order.totalPayout.toLocaleString()} EGP — صافي ربح: +${(order.estProfit || 0).toLocaleString()} EGP)</span>
             </button>` :`
             <div class="space-y-1.5">
               <div class="flex justify-between text-xs">
