@@ -28,122 +28,122 @@ const GameEngine = (() => {
       id: 'kiosk',
       name: 'كشك حلوى وجرائد ومشروبات 🍬',
       cost: 1500,
-      baseDemand: 6,
+      baseDemand: 15,
       optimumPrice: 15,
-      costOfGoods: 8,
-      upgradeMultiplier: 1.35,
-      workerMultiplier: 1.08,
-      workerWage: 6
+      costOfGoods: 9,
+      maxWorkers: 5,
+      workerMultiplier: 1.04,
+      workerWage: 12
     },
     coffee: {
       id: 'coffee',
-      name: 'عربة قهوة ومأكولات خفيفة',
+      name: 'عربة قهوة ومأكولات خفيفة ☕',
       cost: 6800,
-      baseDemand: 8,
-      optimumPrice: 24,
-      costOfGoods: 14,
-      upgradeMultiplier: 1.45,
-      workerMultiplier: 1.10,
-      workerWage: 12
+      baseDemand: 22,
+      optimumPrice: 28,
+      costOfGoods: 16,
+      maxWorkers: 8,
+      workerMultiplier: 1.04,
+      workerWage: 25
     },
     tech: {
       id: 'tech',
-      name: 'شركة برمجيات وتطبيقات',
+      name: 'شركة برمجيات وتطبيقات 💻',
       cost: 140000,
-      baseDemand: 5,
-      optimumPrice: 180,
-      costOfGoods: 95,
-      upgradeMultiplier: 1.55,
-      workerMultiplier: 1.15,
-      workerWage: 65
+      baseDemand: 25,
+      optimumPrice: 160,
+      costOfGoods: 85,
+      maxWorkers: 20,
+      workerMultiplier: 1.04,
+      workerWage: 120
     },
     logistics: {
       id: 'logistics',
-      name: 'مجمع خدمات لوجستية وشحن',
+      name: 'مجمع خدمات لوجستية وشحن 🚚',
       cost: 780000,
-      baseDemand: 5,
-      optimumPrice: 850,
-      costOfGoods: 450,
-      upgradeMultiplier: 1.65,
-      workerMultiplier: 1.18,
-      workerWage: 280
+      baseDemand: 28,
+      optimumPrice: 420,
+      costOfGoods: 220,
+      maxWorkers: 35,
+      workerMultiplier: 1.04,
+      workerWage: 340
     },
     supermarket: {
       id: 'supermarket',
-      name: 'سلسلة سوبرماركت وتجزئة',
+      name: 'سلسلة سوبرماركت وتجزئة 🛒',
       cost: 3200000,
-      baseDemand: 8,
-      optimumPrice: 1200,
-      costOfGoods: 680,
-      upgradeMultiplier: 1.72,
-      workerMultiplier: 1.20,
-      workerWage: 850
+      baseDemand: 32,
+      optimumPrice: 780,
+      costOfGoods: 410,
+      maxWorkers: 50,
+      workerMultiplier: 1.04,
+      workerWage: 750
     },
     solar_factory: {
       id: 'solar_factory',
-      name: 'مصنع ألواح الطاقة الشمسية',
+      name: 'مصنع ألواح الطاقة الشمسية ☀️',
       cost: 14000000,
-      baseDemand: 5,
-      optimumPrice: 3500,
-      costOfGoods: 2100,
-      upgradeMultiplier: 1.78,
-      workerMultiplier: 1.22,
-      workerWage: 2400
+      baseDemand: 30,
+      optimumPrice: 1800,
+      costOfGoods: 950,
+      maxWorkers: 65,
+      workerMultiplier: 1.04,
+      workerWage: 1800
     },
     private_hospital: {
       id: 'private_hospital',
-      name: 'مستشفى ومجمع طبي تخصصي',
+      name: 'مستشفى ومجمع طبي تخصصي 🏥',
       cost: 55000000,
-      baseDemand: 4,
-      optimumPrice: 11000,
-      costOfGoods: 6800,
-      upgradeMultiplier: 1.82,
-      workerMultiplier: 1.25,
-      workerWage: 6500
+      baseDemand: 26,
+      optimumPrice: 4500,
+      costOfGoods: 2400,
+      maxWorkers: 75,
+      workerMultiplier: 1.04,
+      workerWage: 4200
     },
     media_studio: {
       id: 'media_studio',
-      name: 'مؤسسة إنتاج إعلامي وسينمائي',
+      name: 'مؤسسة إنتاج إعلامي وسينمائي 🎬',
       cost: 160000000,
-      baseDemand: 5,
-      optimumPrice: 26000,
-      costOfGoods: 15500,
-      upgradeMultiplier: 1.85,
-      workerMultiplier: 1.28,
-      workerWage: 16000
+      baseDemand: 24,
+      optimumPrice: 11000,
+      costOfGoods: 5800,
+      maxWorkers: 80,
+      workerMultiplier: 1.04,
+      workerWage: 9500
     },
     private_bank: {
       id: 'private_bank',
-      name: 'بنك استثماري وشركة وساطة مالية',
+      name: 'بنك استثماري وشركة وساطة مالية 🏛️',
       cost: 520000000,
-      baseDemand: 4,
-      optimumPrice: 78000,
-      costOfGoods: 46000,
-      upgradeMultiplier: 1.88,
-      workerMultiplier: 1.30,
-      workerWage: 45000
+      baseDemand: 22,
+      optimumPrice: 28000,
+      costOfGoods: 14500,
+      maxWorkers: 90,
+      workerMultiplier: 1.04,
+      workerWage: 24000
     },
     oil_refinery: {
       id: 'oil_refinery',
-      name: 'مجمع مصافي البترول والطاقة',
+      name: 'مجمع مصافي البترول والطاقة 🛢️',
       cost: 1600000000,
-      baseDemand: 3,
-      optimumPrice: 220000,
-      costOfGoods: 135000,
-      upgradeMultiplier: 1.92,
-      workerMultiplier: 1.32,
-      workerWage: 130000
+      baseDemand: 20,
+      optimumPrice: 65000,
+      costOfGoods: 34000,
+      maxWorkers: 100,
+      workerMultiplier: 1.04,
+      workerWage: 60000
     },
     space_tech: {
       id: 'space_tech',
-      name: 'مؤسسة استكشاف الفضاء والأقمار الصناعية',
+      name: 'مؤسسة استكشاف الفضاء والأقمار الصناعية 🚀',
       cost: 4800000000,
-      baseDemand: 2,
-      optimumPrice: 680000,
-      costOfGoods: 420000,
-      upgradeMultiplier: 1.95,
-      workerMultiplier: 1.35,
-      workerWage: 420000
+      baseDemand: 16,
+      optimumPrice: 180000,
+      costOfGoods: 92000,
+      maxWorkers: 120,
+      workerMultiplier: 1.04,
+      workerWage: 150000
     }
   };
 
@@ -1397,36 +1397,44 @@ const GameEngine = (() => {
     }
 
     const s = playerState || state;
-    const levelMultiplier = Math.pow(1.12, Math.max(0, (bizState.level || 1) - 1));
-    const franchiseOptMultiplier = bizState.isFranchise ? 1.30 : 1.0;
+    const lvl = Math.max(1, bizState.level || 1);
+    const levelMultiplier = 1 + (lvl - 1) * 0.05; // Linear +5% pricing power per level
+    const franchiseOptMultiplier = bizState.isFranchise ? 1.20 : 1.0;
     const opt = Math.round(bizConfig.optimumPrice * levelMultiplier * franchiseOptMultiplier);
     const price = bizState.price || opt;
 
     let elasticity = 1.0;
     if (price > opt) {
-      elasticity = Math.max(0, 1 - (price - opt) / opt);
+      elasticity = Math.max(0.1, 1 - ((price - opt) / opt));
     } else if (price < opt) {
-      elasticity = 1 + (opt - price) / opt * 0.3;
+      elasticity = 1 + ((opt - price) / opt) * 0.25;
     }
 
     const marketingActive = Boolean(bizState.marketingTicks && bizState.marketingTicks > 0);
-    const marketingBoost = marketingActive ? 1.4 : 1.0;
-    const costOfGoodsLevelMultiplier = Math.pow(1.06, Math.max(0, (bizState.level || 1) - 1));
-    const actualCostOfGoods = Math.floor(bizConfig.costOfGoods * costOfGoodsLevelMultiplier * 1.05);
-    const upgradeFactor = Math.pow(bizConfig.upgradeMultiplier, bizState.level - 1);
-    const workerFactor = 1 + ((bizState.workers || 0) * ((bizConfig.workerMultiplier || 1.2) - 1));
-    const demand = Math.floor(bizConfig.baseDemand * upgradeFactor * elasticity * workerFactor * marketingBoost);
-    const margin = price - actualCostOfGoods;
+    const marketingBoost = marketingActive ? 1.25 : 1.0;
+    const actualCostOfGoods = Math.floor(bizConfig.costOfGoods * (1 + (lvl - 1) * 0.03));
+    
+    // Balanced linear upgrade scaling: +25% base demand per level (3.25x at level 10)
+    const upgradeFactor = 1 + (lvl - 1) * 0.25;
+    
+    // Cap effective workers to maxWorkers defined for this business
+    const maxW = bizConfig.maxWorkers || 20;
+    const effectiveWorkers = Math.min(maxW, Math.max(0, bizState.workers || 0));
+    const workerEff = (bizConfig.workerMultiplier || 1.04) - 1.0;
+    const workerFactor = 1 + (effectiveWorkers * workerEff);
+
+    const demand = Math.max(1, Math.floor(bizConfig.baseDemand * upgradeFactor * elasticity * workerFactor * marketingBoost));
+    const margin = Math.max(1, price - actualCostOfGoods);
     const hasSupplies = Boolean(bizState.suppliesTicks && bizState.suppliesTicks > 0);
-    // When supplies are available: 125% peak capacity bonus.
+    // When supplies are available: 115% peak capacity bonus.
     // When supplies run out: 0% production (project halts completely until goods are re-stocked).
-    const suppliesMultiplier = hasSupplies ? 1.25 : 0.0;
+    const suppliesMultiplier = hasSupplies ? 1.15 : 0.0;
     const quantumMultiplier = (s && ((s.inventory && s.inventory.quantum_cpu > 0) || (s.itemDurations && s.itemDurations.quantum_cpu > 0))) ? (STORE_ITEMS.quantum_cpu ? STORE_ITEMS.quantum_cpu.value : 1.125) : 1.0;
     const boost = 1.0;
     const grossProfit = hasSupplies ? Math.max(0, Math.floor(demand * margin * 0.85 * quantumMultiplier * boost * suppliesMultiplier)) : 0;
 
-    const workerPayroll = hasSupplies ? ((bizState.workers || 0) * (bizConfig.workerWage || 0)) : 0;
-    const cappedPayroll = Math.min(workerPayroll, Math.floor(grossProfit * 0.40));
+    const workerPayroll = hasSupplies ? (effectiveWorkers * (bizConfig.workerWage || 0)) : 0;
+    const cappedPayroll = Math.min(workerPayroll, Math.floor(grossProfit * 0.35));
     const netProfit = Math.max(0, grossProfit - cappedPayroll);
 
     // V2: Supply Chain Synergies Multiplier
@@ -1444,7 +1452,7 @@ const GameEngine = (() => {
     }
 
     // V2: Franchise Multiplier
-    const franchiseMultiplier = bizState.isFranchise ? 1.25 : 1.0;
+    const franchiseMultiplier = bizState.isFranchise ? 1.20 : 1.0;
 
     // V2: Employee Boost & Salary Deductions
     let employeeBoost = 1.0;
@@ -1460,19 +1468,19 @@ const GameEngine = (() => {
           }
         }
         if (solved) {
-          employeeBoost += 0.30;
+          employeeBoost += 0.20;
           employeePayrollDeduction += (empData.salary || 0);
         }
       });
     }
 
-    // V2: Corporation Level Booster (+5% per level above Level 1)
+    // V2: Corporation Level Booster (+2% per level above Level 1, max +20%)
     let corpBooster = 1.0;
     if (typeof window !== 'undefined' && window.activeCorporationState && s) {
       const corp = window.activeCorporationState;
       if (corp.members && corp.members.includes(s.username)) {
         const corpLevel = corp.level || 1;
-        corpBooster = 1 + (corpLevel - 1) * 0.05;
+        corpBooster = 1 + Math.min(10, (corpLevel - 1)) * 0.02;
       }
     }
 
@@ -1557,18 +1565,58 @@ const GameEngine = (() => {
     return Math.floor(totalCorpTickProfit * sharePct);
   }
 
-  // Calculate compound bank interest per tick (0.0005% per second, boosted +5% if Rolls-Royce active)
-  function calculateBankInterestPerTick(playerState = state) {
+  function ensureDailyEconomyReset(s = state) {
+    if (!s) return;
+    const now = Date.now();
+    if (!s.dailyBankInterestResetAt || now > s.dailyBankInterestResetAt) {
+      s.dailyBankInterest = 0;
+      const nextMidnight = new Date();
+      nextMidnight.setHours(24, 0, 0, 0);
+      s.dailyBankInterestResetAt = nextMidnight.getTime();
+    }
+  }
+
+  // Calculate compound bank interest hourly (0.015% per hour with tiered brackets and 250k daily cap)
+  function calculateBankInterestHourly(playerState = state) {
     const s = playerState || state;
     if (!s || !s.bank || s.bank <= 0) return 0;
-    let rate = 0.000005;
+
+    ensureDailyEconomyReset(s);
+    const dailyCap = 250000;
+    const todayEarned = s.dailyBankInterest || 0;
+    if (todayEarned >= dailyCap) return 0;
+
+    const bal = s.bank;
+    let baseRate = 0.00015; // 0.015% per hour (~0.36% per day = ~13% APY)
     if (s.activeCar === 'rolls') {
-      rate *= 1.05; // Rolls-Royce Phantom +5% bank interest boost
+      baseRate *= 1.05; // Rolls-Royce Phantom +5% boost
     }
     if (s.inventory && s.inventory.diamond_card > 0) {
-      rate *= (1 + (STORE_ITEMS.diamond_card ? STORE_ITEMS.diamond_card.value : 0.10)); // Diamond Card +10% interest boost
+      baseRate *= (1 + (STORE_ITEMS.diamond_card ? STORE_ITEMS.diamond_card.value : 0.10));
     }
-    return Math.floor(s.bank * rate);
+
+    // Tiered brackets for deposit balance:
+    // Bracket 1: First 5M EGP -> 100% rate
+    // Bracket 2: 5M to 25M EGP -> 40% rate
+    // Bracket 3: 25M to 100M EGP -> 15% rate
+    // Above 100M EGP -> 0% rate (no passive billions generation)
+    let effBalance = Math.min(bal, 5000000);
+    if (bal > 5000000) {
+      effBalance += Math.min(bal - 5000000, 20000000) * 0.40;
+    }
+    if (bal > 25000000) {
+      effBalance += Math.min(bal - 25000000, 75000000) * 0.15;
+    }
+
+    const hourlyEst = Math.floor(effBalance * baseRate);
+    const remainingToday = Math.max(0, dailyCap - todayEarned);
+    return Math.min(hourlyEst, remainingToday);
+  }
+
+  function calculateBankInterestPerTick(playerState = state) {
+    const hourly = calculateBankInterestHourly(playerState);
+    if (hourly <= 0) return 0;
+    return Math.floor(hourly / 1200);
   }
 
   // Calculate total passive cashflow per hour from all businesses, real estate, bank interest, corp, and peer employment
@@ -1619,7 +1667,7 @@ const GameEngine = (() => {
     }
 
     // 6. Bank interest (Hourly)
-    income += calculateBankInterestPerTick(state);
+    income += calculateBankInterestHourly(state);
 
     // 7. Wealth Tax deduction for ultra-high net worth (5M+ EGP, with liquid safety buffer > 100k)
     if (state.netWorth > 5000000 && !excludeTax) {
@@ -1652,9 +1700,11 @@ const GameEngine = (() => {
       cars: [],
       bank: {
         balance: s.bank || 0,
-        rate: 0.000005,
+        rate: 0.00015,
+        dailyCap: 250000,
+        dailyEarned: Math.round(s.dailyBankInterest || 0),
         hasRollsBonus: (s.activeCar === 'rolls'),
-        effectiveRate: (s.activeCar === 'rolls') ? 0.000005 * 1.05 : 0.000005,
+        profitPerHour: calculateBankInterestHourly(s),
         profitPerSec: calculateBankInterestPerTick(s)
       },
       corp: {
@@ -1968,9 +2018,11 @@ const GameEngine = (() => {
     }
 
     // 2. Bank compound interest accrual (Hourly rate distributed per tick)
+    ensureDailyEconomyReset(state);
     const interestGained = calculateBankInterestPerTick(state);
     if (interestGained > 0) {
       state.bank += interestGained;
+      state.dailyBankInterest = (state.dailyBankInterest || 0) + interestGained;
       updates.bankInterestGained = interestGained;
     }
 
@@ -2845,10 +2897,13 @@ const GameEngine = (() => {
     const bizState = state.businesses[key];
     if (!bizState || bizState.level === 0) throw new Error("يجب شراء المشروع أولاً.");
 
-    // Max workers = 5 per business level
-    const maxWorkers = bizState.level * 5;
-    if (bizState.workers >= maxWorkers) {
-      throw new Error(`الحد الأقصى للعمال هو ${maxWorkers} عامل (5 لكل مستوى). رقّ المشروع لزيادة العدد.`);
+    const maxAllowed = biz.maxWorkers || 20;
+    const maxWorkersForLvl = Math.min(maxAllowed, Math.max(1, Math.ceil((bizState.level / 10) * maxAllowed)));
+    if (bizState.workers >= maxWorkersForLvl) {
+      if (bizState.workers >= maxAllowed) {
+        throw new Error(`وصل المشروع للحد الأقصى المطلق للعمالة المسموح بها (${maxAllowed} عامل).`);
+      }
+      throw new Error(`الحد الأقصى للعمال في المستوى ${bizState.level} هو ${maxWorkersForLvl} عمال. رقّ المشروع لإتاحة شواغر جديدة.`);
     }
 
     // Worker hiring fee scales with number of existing workers

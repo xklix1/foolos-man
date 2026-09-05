@@ -11352,7 +11352,7 @@ const UIController = (() => {
         <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
           <div>
             <span class="text-white font-bold">عائد الفائدة المركبة على الودائع</span>
-            <span class="text-[10px] text-slate-400 block">رصيد الوديعة: ${b.balance.toLocaleString()} EGP • النسبة: 0.018%/س${rollsBadge}</span>
+            <span class="text-[10px] text-slate-400 block">رصيد الوديعة: ${b.balance.toLocaleString()} EGP • النسبة: 0.015%/س${rollsBadge} (سقف اليوم: ${Number(b.dailyEarned || 0).toLocaleString()} / 250,000 EGP)</span>
           </div>
           <span class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+${bankVal.toLocaleString()} EGP/س</span>
         </div>
