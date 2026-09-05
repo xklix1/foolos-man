@@ -4327,11 +4327,17 @@ const GameEngine = (() => {
       if (!imp.arrived) incomingUnits += (imp.quantity || 0);
     });
 
-    const capacity = state.tradeCompany.warehouseCapacity || 10;
-    const upgradeCost = Math.floor(50000 * Math.pow(1.8, Math.max(0, (capacity - 10) / 10)));
+    const rawCapacity = state.tradeCompany.warehouseCapacity || 10;
+    const capacity = Math.min(50, rawCapacity);
+    state.tradeCompany.warehouseCapacity = capacity;
+    const isMaxCapacity = capacity >= 50;
+    const upgradeCost = isMaxCapacity ? 0 : Math.floor(50000 * Math.pow(1.8, Math.max(0, (capacity - 10) / 10)));
 
     return {
       warehouseCapacity: capacity,
+      isMaxCapacity,
+      maxWarehouseCapacity: 50,
+      maxContainersPerShipment: 10,
       storedUnits,
       incomingUnits,
       availableSlots: Math.max(0, capacity - storedUnits - incomingUnits),
@@ -4363,6 +4369,9 @@ const GameEngine = (() => {
     if (!item) throw new Error("نوع البضاعة غير معروف في سجل التجارة الدولية.");
     quantity = parseInt(quantity, 10);
     if (!quantity || quantity <= 0) throw new Error("يرجى تحديد كمية صالحة (عدد صحيح موجب).");
+    if (quantity > 10) {
+      throw new Error("أقصى حمولة لسفينة الشحن الواحدة هي 10 حاويات في الرحلة البحرية الواحدة لمنع الاختناق المينائي.");
+    }
 
     const tradeInfo = getTradeCompanyState();
     if (tradeInfo.availableSlots < quantity) {
@@ -4425,6 +4434,9 @@ const GameEngine = (() => {
     if (!buyer) throw new Error("الجهة المستوردة غير موجودة في الدليل التجاري.");
     quantity = parseInt(quantity, 10);
     if (!quantity || quantity <= 0) throw new Error("يرجى تحديد كمية صالحة للتصدير.");
+    if (quantity > 10) {
+      throw new Error("أقصى حمولة لسفينة التصدير الواحدة هي 10 حاويات في الرحلة البحرية الواحدة لمنع الاختناق المينائي.");
+    }
 
     const activeExportsCount = (state.tradeCompany.activeExports || []).filter(e => !e.claimed).length;
     if (activeExportsCount >= 2) {
@@ -4538,6 +4550,10 @@ const GameEngine = (() => {
 
   function upgradeWarehouse() {
     if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك توسعة المستودعات.");
+    const currentCap = state.tradeCompany.warehouseCapacity || 10;
+    if (currentCap >= 50) {
+      throw new Error("وصل مستودع الشركة إلى أقصى طاقة استيعابية ممكنة (50 حاوية)! لا يمكن توسيع المستودع أكثر من ذلك.");
+    }
     const tradeInfo = getTradeCompanyState();
     const cost = tradeInfo.upgradeCost;
     const totalLiquid = (state.cash || 0) + (state.bank || 0);
@@ -4553,8 +4569,8 @@ const GameEngine = (() => {
       state.bank -= rem;
     }
 
-    state.tradeCompany.warehouseCapacity = (state.tradeCompany.warehouseCapacity || 10) + 10;
-    recordPlayerActivity('توسعة مستودع الاستيراد 🏢', `توسعة المستودع الرئيسي (+10 حاويات) لتصبح السعة الإجمالية ${state.tradeCompany.warehouseCapacity} وحدة.`, 'trade');
+    state.tradeCompany.warehouseCapacity = Math.min(50, (state.tradeCompany.warehouseCapacity || 10) + 10);
+    recordPlayerActivity('توسعة مستودع الاستيراد 🏢', `توسعة المستودع الرئيسي (+10 حاويات) لتصبح السعة الإجمالية ${state.tradeCompany.warehouseCapacity} حاوية.`, 'trade');
     forceSaveState(true);
 
     return {
@@ -4826,14 +4842,14 @@ const GameEngine = (() => {
       currentWarehouseTotal += Number(state.tradeCompany.warehouse[k] || 0);
     });
 
-    const cap = state.tradeCompany.warehouseCapacity || 10;
+    const cap = Math.min(50, state.tradeCompany.warehouseCapacity || 10);
     const availableSpace = Math.max(0, cap - currentWarehouseTotal);
 
     if (availableSpace <= 0) {
-      throw new Error(`مستودع شركة الاستيراد والتصدير ممتلئ بالكامل (${currentWarehouseTotal}/${cap} حاوية)! قم بتوسيعه أولاً أو بيع البضائع المخزنة.`);
+      throw new Error(`مستودع شركة الاستيراد والتصدير ممتلئ بالكامل (${currentWarehouseTotal}/${cap} حاوية)! قم ببيع البضائع المخزنة أولاً.`);
     }
 
-    const containersToTransfer = Math.min(maxContainers, availableSpace);
+    const containersToTransfer = Math.min(maxContainers, availableSpace, 10);
     const unitsDeducted = containersToTransfer * unitsPerContainer;
     const tradeCommId = info.definition.product.tradeCommodityId || 'espresso_coffee';
 

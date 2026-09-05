@@ -13926,11 +13926,12 @@ const UIController = (() => {
 
     // 1. Warehouse Storage Meter & Stats
     const totalOccupied = tradeInfo.storedUnits + tradeInfo.incomingUnits;
-    const capacity = tradeInfo.warehouseCapacity || 10;
+    const capacity = Math.min(50, tradeInfo.warehouseCapacity || 10);
+    const isMaxCapacity = capacity >= 50;
     const pct = Math.min(100, Math.round((totalOccupied / capacity) * 100));
 
     const statsEl = document.getElementById('trade-warehouse-stats');
-    if (statsEl) statsEl.textContent = `${totalOccupied} / ${capacity} حاويات (${pct}%)`;
+    if (statsEl) statsEl.textContent = `${totalOccupied} / ${capacity} حاويات ${isMaxCapacity ? '(الحد الأقصى) 🏢🔒' : `(${pct}%)`}`;
 
     const barEl = document.getElementById('trade-warehouse-bar');
     if (barEl) {
@@ -13950,7 +13951,15 @@ const UIController = (() => {
     if (availableEl) availableEl.textContent = `متاح: ${tradeInfo.availableSlots}`;
 
     const costBadge = document.getElementById('trade-upgrade-cost-badge');
-    if (costBadge) costBadge.textContent = `${tradeInfo.upgradeCost.toLocaleString()} EGP`;
+    if (costBadge) {
+      if (isMaxCapacity) {
+        costBadge.textContent = 'مكتمل (الحد الأقصى)';
+        costBadge.className = 'px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 text-[10px] font-bold';
+      } else {
+        costBadge.textContent = `${tradeInfo.upgradeCost.toLocaleString()} EGP`;
+        costBadge.className = 'px-2 py-0.5 rounded bg-slate-950/50 text-cyan-200 text-[10px] numbers-font font-bold';
+      }
+    }
 
     const quotaEl = document.getElementById('trade-daily-quota');
     if (quotaEl) {
@@ -13967,16 +13976,33 @@ const UIController = (() => {
 
     const upgradeBtn = document.getElementById('btn-upgrade-warehouse');
     if (upgradeBtn) {
-      upgradeBtn.onclick = () => {
-        try {
-          const res = GameEngine.upgradeWarehouse();
-          playMenuSound('success');
-          showToast('توسعة المستودع 🏢', `تمت توسعة المستودع الرئيسي بنجاح! السعة الاستيعابية الآن: ${res.newCapacity} حاوية.`, 'success');
-          renderTradePanel();
-        } catch (err) {
-          showToast('فشل التوسعة', err.message, 'error');
-        }
-      };
+      if (isMaxCapacity) {
+        upgradeBtn.disabled = true;
+        upgradeBtn.className = 'w-full md:w-auto px-5 py-3 rounded-xl bg-slate-800/80 text-slate-400 font-bold text-xs flex items-center justify-center gap-2 shrink-0 cursor-not-allowed border border-slate-700/60';
+        upgradeBtn.innerHTML = `
+          <i class="fa-solid fa-lock text-amber-400"></i>
+          <span>أقصى طاقة استيعابية للمستودع (50 حاوية)</span>
+          <span class="px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 text-[10px] font-bold">مكتمل 🏢🔒</span>
+        `;
+      } else {
+        upgradeBtn.disabled = false;
+        upgradeBtn.className = 'w-full md:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 shrink-0 cursor-pointer';
+        upgradeBtn.innerHTML = `
+          <i class="fa-solid fa-expand"></i>
+          <span>توسعة المستودع (+10 حاويات)</span>
+          <span id="trade-upgrade-cost-badge" class="px-2 py-0.5 rounded bg-slate-950/50 text-cyan-200 text-[10px] numbers-font font-bold">${tradeInfo.upgradeCost.toLocaleString()} EGP</span>
+        `;
+        upgradeBtn.onclick = () => {
+          try {
+            const res = GameEngine.upgradeWarehouse();
+            playMenuSound('success');
+            showToast('توسعة المستودع 🏢', `تمت توسعة المستودع الرئيسي بنجاح! السعة الاستيعابية الآن: ${res.newCapacity} حاوية.`, 'success');
+            renderTradePanel();
+          } catch (err) {
+            showToast('فشل التوسعة', err.message, 'error');
+          }
+        };
+      }
     }
 
     // Active Shipments Badge
@@ -14072,8 +14098,8 @@ const UIController = (() => {
           <div class="flex items-center justify-between text-xs">
             <span class="text-slate-400 font-medium">كمية الاستيراد (حاويات):</span>
             <div class="flex items-center gap-1">
-              <input type="number" id="trade-qty-input-${key}" min="1" max="${Math.max(1, tradeInfo.availableSlots)}" value="1" class="w-16 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-center font-black text-xs text-white numbers-font focus:border-cyan-500 focus:outline-none">
-              <span class="text-[10px] text-slate-500">حاوية</span>
+              <input type="number" id="trade-qty-input-${key}" min="1" max="${Math.min(10, Math.max(1, tradeInfo.availableSlots))}" value="1" class="w-16 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-center font-black text-xs text-white numbers-font focus:border-cyan-500 focus:outline-none">
+              <span class="text-[10px] text-slate-500">حاوية (أقصى 10)</span>
             </div>
           </div>
           <div class="flex justify-between text-[11px] text-slate-400 pb-1">
@@ -14097,6 +14123,14 @@ const UIController = (() => {
         qtyInput.addEventListener('input', () => {
           let val = parseInt(qtyInput.value) || 1;
           if (val < 1) val = 1;
+          if (val > 10) {
+            val = 10;
+            qtyInput.value = 10;
+          }
+          if (tradeInfo.availableSlots > 0 && val > tradeInfo.availableSlots) {
+            val = Math.min(10, tradeInfo.availableSlots);
+            qtyInput.value = val;
+          }
           const bCost = val * c.unitCost;
           const fee = Math.floor(bCost * 0.05);
           costPreview.textContent = `${(bCost + fee).toLocaleString()} EGP`;
@@ -14105,7 +14139,8 @@ const UIController = (() => {
 
       if (importBtn && qtyInput) {
         importBtn.addEventListener('click', () => {
-          const qty = parseInt(qtyInput.value) || 1;
+          let qty = parseInt(qtyInput.value) || 1;
+          if (qty > 10) qty = 10;
           try {
             const order = GameEngine.buyImportCargo(key, qty);
             playMenuSound('success');
@@ -14275,8 +14310,8 @@ const UIController = (() => {
             <div class="flex items-center justify-between text-xs">
               <span class="text-slate-400 font-medium">كمية التصدير (حاويات):</span>
               <div class="flex items-center gap-1">
-                <input type="number" id="buyer-qty-${buyer.id}" min="1" value="1" class="w-20 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-center font-black text-xs text-white numbers-font focus:border-amber-500 focus:outline-none">
-                <span class="text-[10px] text-slate-500">حاوية</span>
+                <input type="number" id="buyer-qty-${buyer.id}" min="1" max="10" value="1" class="w-20 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-center font-black text-xs text-white numbers-font focus:border-amber-500 focus:outline-none">
+                <span class="text-[10px] text-slate-500">حاوية (أقصى 10)</span>
               </div>
             </div>
 
@@ -14316,7 +14351,17 @@ const UIController = (() => {
         const commKey = selEl.value;
         const comm = commodities[commKey];
         if (!comm) return;
-        const qty = parseInt(qtyEl.value) || 1;
+        let qty = parseInt(qtyEl.value) || 1;
+        if (qty < 1) qty = 1;
+        if (qty > 10) {
+          qty = 10;
+          qtyEl.value = 10;
+        }
+        const availInStock = Number(tradeInfo.warehouse ? tradeInfo.warehouse[commKey] || 0 : 0);
+        if (availInStock > 0 && qty > availInStock) {
+          qty = Math.min(10, availInStock);
+          qtyEl.value = qty;
+        }
         const isDemanded = buyer.demands.includes(commKey);
         let mult = isDemanded ? buyer.priceMult : 0.80;
 
@@ -14342,7 +14387,8 @@ const UIController = (() => {
       if (signBtn) {
         signBtn.addEventListener('click', () => {
           const commKey = selEl.value;
-          const qty = parseInt(qtyEl.value) || 1;
+          let qty = parseInt(qtyEl.value) || 1;
+          if (qty > 10) qty = 10;
           try {
             const order = GameEngine.sellExportCargo(commKey, buyer.id, qty);
             playMenuSound('success');
