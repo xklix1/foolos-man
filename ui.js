@@ -13519,7 +13519,7 @@ const UIController = (() => {
             <div class="flex justify-between items-center bg-slate-950/60 p-2 rounded-lg border border-slate-900 text-[10px]">
               <div class="flex flex-col text-right">
                 <span class="text-white font-bold">النسخة #${absIdx + 1}</span>
-                <span class="${isRented ? 'text-emerald-400 font-bold' : 'text-slate-400'}">${isRented ? 'مؤجرة وتدر عائداً' : 'مركونة بالمرآب'}</span>
+                <span class="${isRented ? 'text-emerald-400 font-bold' : 'text-slate-400'}">${isRented ? `مؤجرة (+${(car.rentalIncomePerTick - car.maintenanceCostPerTick).toLocaleString()} ج.م/س)` : 'مركونة بالمرآب'}</span>
               </div>
               <div class="flex gap-1">
                 ${isRented ? `
@@ -13560,7 +13560,7 @@ const UIController = (() => {
               </div>
               <div>
                 <span class="text-slate-500 block">دخل الإيجار الصافي</span>
-                <span class="text-emerald-400 font-black numbers-font text-xs">+${(car.rentalIncomePerTick - car.maintenanceCostPerTick).toLocaleString()}/s</span>
+                <span class="text-emerald-400 font-black numbers-font text-xs">+${(car.rentalIncomePerTick - car.maintenanceCostPerTick).toLocaleString()} ج.م / س</span>
               </div>
             </div>
           </div>

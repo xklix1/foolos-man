@@ -184,8 +184,8 @@ const GameEngine = (() => {
       id: 'lambo',
       name: 'Lamborghini Aventador 🏎️',
       cost: 15000000,
-      rentalIncomePerTick: 15000,
-      maintenanceCostPerTick: 5000,
+      rentalIncomePerTick: 2200,
+      maintenanceCostPerTick: 800,
       prestigeBonus: 5,
       cooldownReduction: 0.15,
       desc: 'سيارة رياضية خارقة. تمنحك خصم 15% على فترة انتظار نوبات العمل عند تفعيلها كسيارة شخصية.'
@@ -194,8 +194,8 @@ const GameEngine = (() => {
       id: 'rolls',
       name: 'Rolls-Royce Phantom 👑',
       cost: 40000000,
-      rentalIncomePerTick: 50000,
-      maintenanceCostPerTick: 12000,
+      rentalIncomePerTick: 5000,
+      maintenanceCostPerTick: 1800,
       prestigeBonus: 15,
       interestBonus: 0.05,
       desc: 'عنوان الفخامة المفرطة. تزيد أرباح فوائد إيداعات البنك بنسبة +5% عند تفعيلها كسيارة شخصية.'
@@ -204,10 +204,10 @@ const GameEngine = (() => {
       id: 'shelby',
       name: 'Shelby Cobra 1965 🌟',
       cost: 120000000,
-      rentalIncomePerTick: 180000,
-      maintenanceCostPerTick: 35000,
+      rentalIncomePerTick: 12000,
+      maintenanceCostPerTick: 4000,
       prestigeBonus: 40,
-      desc: 'أسطورة كلاسيكية نادرة. تدر دخلاً خيالياً عند تأجيرها وقيمتها قابلة للزيادة بمرور الوقت.'
+      desc: 'أسطورة كلاسيكية نادرة. تدر دخلاً ثابتاً عند تأجيرها وقيمتها قابلة للزيادة بمرور الوقت.'
     }
   };
 
