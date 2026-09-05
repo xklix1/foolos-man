@@ -1918,19 +1918,24 @@ var AppDB = (() => {
     return true;
   }
 
-  // 🏆 Top 10 Richest Players Leaderboard (Smart 30s In-Memory Cache)
+  // 🏆 Unified Official Hourly Leaderboard Document Engine
+  let _leaderboardMeta = {
+    updatedAt: Date.now(),
+    nextUpdateAt: Date.now() + 3600000,
+    cycleMinutes: 60
+  };
   let _leaderboardCache = null;
-  let _leaderboardCacheTime = 0;
-  const LEADERBOARD_CACHE_TTL = 30000;
+  let _lastLeaderboardFetchTime = 0;
 
-  async function getLeaderboard(forceRefresh = false) {
+  function getLeaderboardMeta() {
+    return _leaderboardMeta;
+  }
+
+  async function _rebuildAndSaveLeaderboard() {
     const now = Date.now();
-    if (!forceRefresh && _leaderboardCache && (now - _leaderboardCacheTime < LEADERBOARD_CACHE_TTL)) {
-      return _leaderboardCache;
-    }
     try {
       const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&order=net_worth.desc&limit=25');
-      _leaderboardCache = (rows || []).map(r => ({
+      const topPlayers = (rows || []).map(r => ({
         username: r.username,
         cash: Number(r.cash || 0),
         bank: Number(r.bank || 0),
@@ -1941,12 +1946,74 @@ var AppDB = (() => {
         isAdmin: r.is_admin === true,
         facebookVerified: false
       }));
-      _leaderboardCacheTime = now;
-      return _leaderboardCache;
+
+      _leaderboardMeta = {
+        updatedAt: now,
+        nextUpdateAt: now + (60 * 60 * 1000), // Exactly 1 hour
+        cycleMinutes: 60
+      };
+
+      const docPayload = {
+        id: 'leaderboard',
+        data: {
+          updatedAt: _leaderboardMeta.updatedAt,
+          nextUpdateAt: _leaderboardMeta.nextUpdateAt,
+          cycleMinutes: 60,
+          topPlayers: topPlayers
+        },
+        updated_at: now
+      };
+
+      await _api('globals', {
+        method: 'POST',
+        headers: { 'Prefer': 'resolution=merge-duplicates' },
+        body: JSON.stringify(docPayload)
+      });
+
+      _leaderboardCache = topPlayers;
+      _lastLeaderboardFetchTime = now;
+      return topPlayers;
     } catch (e) {
-      console.warn('[DB] getLeaderboard error:', e.message);
+      console.warn('[DB] _rebuildAndSaveLeaderboard error:', e.message);
       return _leaderboardCache || [];
     }
+  }
+
+  async function getLeaderboard(forceRefresh = false) {
+    const now = Date.now();
+
+    // Fast in-memory cache for repeated calls within 10 seconds
+    if (!forceRefresh && _leaderboardCache && (now - _lastLeaderboardFetchTime < 10000)) {
+      return _leaderboardCache;
+    }
+
+    try {
+      const gRows = await _api('globals?id=eq.leaderboard');
+      if (gRows && gRows.length > 0 && gRows[0].data) {
+        const d = gRows[0].data;
+        const nextUpdate = Number(d.nextUpdateAt || 0);
+        const topList = Array.isArray(d.topPlayers) ? d.topPlayers : [];
+
+        _leaderboardMeta = {
+          updatedAt: Number(d.updatedAt || now),
+          nextUpdateAt: nextUpdate > 0 ? nextUpdate : (now + 3600000),
+          cycleMinutes: Number(d.cycleMinutes || 60)
+        };
+
+        // If the hour has passed, or leaderboard is empty, rebuild and update the unified document
+        if (forceRefresh || topList.length === 0 || now >= nextUpdate) {
+          return await _rebuildAndSaveLeaderboard();
+        }
+
+        _leaderboardCache = topList;
+        _lastLeaderboardFetchTime = now;
+        return topList;
+      }
+    } catch (err) {
+      console.warn('[DB] getLeaderboard globals fetch error:', err.message);
+    }
+
+    return await _rebuildAndSaveLeaderboard();
   }
 
   // 💬 Live In-Game Public Chat (Egress-Optimized with Metadata Polling)
@@ -2373,7 +2440,7 @@ var AppDB = (() => {
     adminCreateGiftCode,
     adminDeleteGiftCode,
     getSeasonHonors: async () => [],
-    getLeaderboardMeta: async () => ({ season: 1, endsAt: Date.now() + 86400000 }),
+    getLeaderboardMeta,
     adminSaveItemConfig: async () => true,
     adminCreateAuctionItem: async () => true,
     getAuctionItems: async () => [],
