@@ -472,12 +472,11 @@
 
       <!-- Modal Footer -->
       <div class="pt-4 border-t border-slate-800 mt-2 flex justify-between items-center text-xs">
-        <span class="text-slate-400">تحديث مباشر من خوادم السيرفر</span>
-        <button id="btn-refresh-start-leaderboard"
-          class="px-3 py-1.5 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold transition flex items-center gap-1.5">
-          <i class="fa-solid fa-rotate text-xs"></i>
-          <span>تحديث القائمة</span>
-        </button>
+        <span class="text-slate-400">قائمة معتمدة رسمياً</span>
+        <span class="text-[11px] text-amber-400/90 font-bold flex items-center gap-1">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>تُفرز وتُعتمد موحدة كل ساعة</span>
+        </span>
       </div>
     </div>
   </div>
@@ -3742,11 +3741,6 @@
             </div>
           </div>
         </div>
-        <button id="btn-leaderboard-refresh"
-          class="px-3.5 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 rounded-xl text-xs font-black transition shadow-lg shadow-yellow-500/20 flex items-center gap-1.5 flex-shrink-0">
-          <i class="fa-solid fa-arrows-rotate"></i>
-          <span>تحديث</span>
-        </button>
       </div>
     </div>
 
@@ -4516,7 +4510,7 @@
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
   <script src="db.js?v=7.8"></script>
   <script src="game.js?v=7.8"></script>
-  <script src="ui.js?v=7.9"></script>
+  <script src="ui.js?v=8.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
