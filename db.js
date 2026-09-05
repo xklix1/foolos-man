@@ -13,9 +13,9 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   //  CONFIG & CREDENTIALS
   // ─────────────────────────────────────────────
-  const CLIENT_VERSION = 'V5.2';
-  const SUPABASE_URL = 'https://rasalmal.online';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08';
+  const CLIENT_VERSION ='V5.2';
+  const SUPABASE_URL ='https://rasalmal.online';
+  const SUPABASE_ANON_KEY ='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08';
 
   let firebaseReady = true; // Kept for backward compatibility checks across UI
   let _supabaseClient = null;
@@ -24,34 +24,31 @@ var AppDB = (() => {
   //  HTTP HELPER (POSTGREST DIRECT REST ENGINE)
   // ─────────────────────────────────────────────
   async function _api(endpoint, options = {}) {
-    const url = `${SUPABASE_URL}/rest/v1/${endpoint}`;
-    const method = (options.method || 'GET').toUpperCase();
-    const headers = {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
+    const url =`${SUPABASE_URL}/rest/v1/${endpoint}`;
+    const method = (options.method ||'GET').toUpperCase();
+    const headers = {'apikey': SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json',
       ...(options.headers || {})
     };
 
     // Auto-inject Prefer: return=minimal for mutating queries to save Supabase Egress (HTTP 204)
-    if (method === 'POST' || method === 'PATCH' || method === 'DELETE') {
+    if (method ==='POST' || method ==='PATCH' || method ==='DELETE') {
       if (!headers['Prefer']) {
-        headers['Prefer'] = 'return=minimal';
+        headers['Prefer'] ='return=minimal';
       } else if (!headers['Prefer'].includes('return=')) {
-        headers['Prefer'] += ', return=minimal';
+        headers['Prefer'] +=', return=minimal';
       }
     }
 
     const res = await fetch(url, { ...options, headers });
     if (!res.ok) {
-      const errBody = await res.text().catch(() => '');
+      const errBody = await res.text().catch(() =>'');
       let parsed = null;
       try { parsed = JSON.parse(errBody); } catch (e) {}
-      const msg = (parsed && (parsed.message || parsed.hint || parsed.details)) || errBody || `HTTP ${res.status}`;
+      const msg = (parsed && (parsed.message || parsed.hint || parsed.details)) || errBody ||`HTTP ${res.status}`;
       throw new Error(msg);
     }
 
-    const contentType = res.headers.get('content-type') || '';
+    const contentType = res.headers.get('content-type') ||'';
     if (contentType.includes('application/json')) {
       return await res.json();
     }
@@ -61,8 +58,8 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   //  LOCAL ENCRYPTION CACHE
   // ─────────────────────────────────────────────
-  function _xorEncryptDecrypt(input, key = "FoolosMan_2026_SecureKey") {
-    let output = "";
+  function _xorEncryptDecrypt(input, key ="FoolosMan_2026_SecureKey") {
+    let output ="";
     for (let i = 0; i < input.length; i++) {
       output += String.fromCharCode(input.charCodeAt(i) ^ key.charCodeAt(i % key.length));
     }
@@ -104,7 +101,7 @@ var AppDB = (() => {
   const _registeredPollingIntervals = new Set();
 
   function isNetworkActive() {
-    if (typeof document !== 'undefined' && document.hidden) return false;
+    if (typeof document !=='undefined' && document.hidden) return false;
     return !_isUserIdle;
   }
 
@@ -131,7 +128,7 @@ var AppDB = (() => {
   }
 
   function onActiveResume(callback) {
-    if (typeof callback === 'function') {
+    if (typeof callback ==='function') {
       _activeResumeListeners.add(callback);
       return () => _activeResumeListeners.delete(callback);
     }
@@ -156,8 +153,8 @@ var AppDB = (() => {
     stopListeningToChat();
   }
 
-  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'pointerdown'];
+  if (typeof window !=='undefined' && typeof document !=='undefined') {
+    const activityEvents = ['mousemove','mousedown','keydown','touchstart','scroll','pointerdown'];
     activityEvents.forEach(evt => {
       window.addEventListener(evt, _resetIdleTimer, { passive: true });
     });
@@ -194,13 +191,13 @@ var AppDB = (() => {
   //  PLAYER AUTH & STATE MANAGEMENT
   // ─────────────────────────────────────────────
   async function hashPin(pin) {
-    if (!pin) return '1234';
-    if (typeof crypto !== 'undefined' && crypto.subtle) {
+    if (!pin) return'1234';
+    if (typeof crypto !=='undefined' && crypto.subtle) {
       try {
         const msgBuffer = new TextEncoder().encode(String(pin));
         const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
       } catch (e) {}
     }
     return String(pin);
@@ -227,8 +224,8 @@ var AppDB = (() => {
       dirty_cash: 0,
       net_worth: 400,
       xp: 0,
-      title: 'عامل مبتدئ',
-      job_id: 'worker',
+      title:'عامل مبتدئ',
+      job_id:'worker',
       is_admin: false,
       is_banned: false,
       jail_timer: 0,
@@ -242,8 +239,8 @@ var AppDB = (() => {
         dirtyCash: 0,
         netWorth: 400,
         xp: 0,
-        title: 'عامل مبتدئ',
-        jobId: 'worker',
+        title:'عامل مبتدئ',
+        jobId:'worker',
         assets: { apartment: 0, office: 0, mansion: 0, skyline_tower: 0, luxury_resort: 0, mega_yacht: 0, private_island: 0, orbital_station: 0 },
         businesses: {
           kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
@@ -272,7 +269,7 @@ var AppDB = (() => {
     };
 
     await _api('players', {
-      method: 'POST',
+      method:'POST',
       body: JSON.stringify(newPlayerRow)
     });
 
@@ -291,15 +288,15 @@ var AppDB = (() => {
 
     const hashed = await hashPin(p);
     for (const r of rows) {
-      const stored = String(r.pin || '').trim();
+      const stored = String(r.pin ||'').trim();
       if (!stored) continue;
 
       if (
         stored === p ||
         stored === hashed ||
-        stored === 's256_' + hashed ||
-        stored.replace(/^s256_/, '') === hashed ||
-        stored === 's256_' + p
+        stored ==='s256_' + hashed ||
+        stored.replace(/^s256_/,'') === hashed ||
+        stored ==='s256_' + p
       ) {
         return true;
       }
@@ -319,7 +316,7 @@ var AppDB = (() => {
       }
 
       const row = rows[0];
-      const stateObj = (typeof row.state === 'object' && row.state) ? { ...row.state } : {};
+      const stateObj = (typeof row.state ==='object' && row.state) ? { ...row.state } : {};
 
       // Overwrite critical authoritative server fields using canonical database username
       stateObj.username = row.username;
@@ -328,8 +325,8 @@ var AppDB = (() => {
       stateObj.dirtyCash = Number(row.dirty_cash || 0);
       stateObj.netWorth = Number(row.net_worth || 0);
       stateObj.xp = Number(row.xp || 0);
-      stateObj.title = row.title || stateObj.title || 'عامل مبتدئ';
-      stateObj.jobId = row.job_id || stateObj.jobId || 'worker';
+      stateObj.title = row.title || stateObj.title ||'عامل مبتدئ';
+      stateObj.jobId = row.job_id || stateObj.jobId ||'worker';
       stateObj.isAdmin = row.is_admin === true;
       stateObj.isBanned = row.is_banned === true;
       stateObj.jailTimer = Number(row.jail_timer || 0);
@@ -373,8 +370,8 @@ var AppDB = (() => {
       dirty_cash: Number(state.dirtyCash || 0),
       net_worth: Number(state.netWorth || 0),
       xp: Number(state.xp || 0),
-      title: state.title || 'عامل مبتدئ',
-      job_id: state.jobId || 'worker',
+      title: state.title ||'عامل مبتدئ',
+      job_id: state.jobId ||'worker',
       is_admin: state.isAdmin === true,
       is_banned: state.isBanned === true,
       jail_timer: Number(state.jailTimer || 0),
@@ -387,16 +384,12 @@ var AppDB = (() => {
 
     try {
       const adminTs = Number(state.adminModifiedTimestamp || 0);
-      const tsFilter = adminTs > 0 ? `&admin_modified_timestamp=lte.${adminTs}` : '';
-      const url = `${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}${tsFilter}`;
+      const tsFilter = adminTs > 0 ?`&admin_modified_timestamp=lte.${adminTs}` :'';
+      const url =`${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}${tsFilter}`;
       fetch(url, {
-        method: 'PATCH',
+        method:'PATCH',
         keepalive: true,
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
+        headers: {'apikey': SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'
         },
         body: JSON.stringify(payload)
       }).catch(() => {});
@@ -404,7 +397,7 @@ var AppDB = (() => {
   }
 
   // Attach exit listeners immediately
-  if (typeof window !== 'undefined') {
+  if (typeof window !=='undefined') {
     const handleExitFlush = () => {
       const activeUser = (window.GameEngine && window.GameEngine.activeUsername);
       const activeState = (window.GameEngine && window.GameEngine.state);
@@ -431,8 +424,8 @@ var AppDB = (() => {
       dirty_cash: Number(state.dirtyCash || 0),
       net_worth: Number(state.netWorth || 0),
       xp: Number(state.xp || 0),
-      title: state.title || 'عامل مبتدئ',
-      job_id: state.jobId || 'worker',
+      title: state.title ||'عامل مبتدئ',
+      job_id: state.jobId ||'worker',
       is_admin: state.isAdmin === true,
       is_banned: state.isBanned === true,
       jail_timer: Number(state.jailTimer || 0),
@@ -445,10 +438,10 @@ var AppDB = (() => {
 
     try {
       const adminTs = Number(state.adminModifiedTimestamp || 0);
-      const tsFilter = adminTs > 0 ? `&admin_modified_timestamp=lte.${adminTs}` : '';
+      const tsFilter = adminTs > 0 ?`&admin_modified_timestamp=lte.${adminTs}` :'';
       await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
-        method: 'PATCH',
-        headers: { 'Prefer': 'return=minimal' },
+        method:'PATCH',
+        headers: {'Prefer':'return=minimal' },
         body: JSON.stringify(payload)
       });
       _lastCloudSyncTimestamp = Date.now();
@@ -493,11 +486,11 @@ var AppDB = (() => {
   }
 
   async function syncProgressToCloud(username, force = false) {
-    if (!username) return { success: false, message: 'مطلوب اسم المستخدم.' };
+    if (!username) return { success: false, message:'مطلوب اسم المستخدم.' };
     const s = (window.GameEngine && window.GameEngine.state) || getDecryptedLocalState(`rasalmal_state_${username}`);
-    if (!s) return { success: false, message: 'لا توجد بيانات لحفظها.' };
+    if (!s) return { success: false, message:'لا توجد بيانات لحفظها.' };
     await savePlayerState(username, s, true);
-    return { success: true, message: 'تم حفظ ومزامنة التقدم مع السحابة بنجاح! ☁️✅' };
+    return { success: true, message:'تم حفظ ومزامنة التقدم مع السحابة بنجاح! ️' };
   }
 
   // ─────────────────────────────────────────────
@@ -511,7 +504,7 @@ var AppDB = (() => {
 
     // Execute the atomic SQL Stored Procedure
     await _api('rpc/execute_wire_transfer', {
-      method: 'POST',
+      method:'POST',
       body: JSON.stringify({
         sender_username: senderUsername.trim(),
         recipient_username: recipientUsername.trim(),
@@ -546,13 +539,13 @@ var AppDB = (() => {
     if (isNaN(amt) || amt <= 0) throw new Error('مبلغ الطلب غير صالح.');
 
     const res = await _api('transfer_requests', {
-      method: 'POST',
-      headers: { 'Prefer': 'return=representation' },
+      method:'POST',
+      headers: {'Prefer':'return=representation' },
       body: JSON.stringify({
         sender: senderUsername.trim(),
         recipient: recipientUsername.trim(),
         amount: amt,
-        status: 'pending',
+        status:'pending',
         created_at: Date.now()
       })
     });
@@ -563,13 +556,12 @@ var AppDB = (() => {
     try {
       await sendMail(
         senderUsername.trim(),
-        recipientUsername.trim(),
-        'transfer_request',
+        recipientUsername.trim(),'transfer_request',
         {
           requestId: createdReq ? createdReq.id : null,
           amount: amt,
-          title: 'طلب تحويل أموال 💸',
-          message: `يطلب منك اللاعب "${senderUsername.trim()}" تحويل مبلغ ${amt.toLocaleString()} EGP.`
+          title:'طلب تحويل أموال',
+          message:`يطلب منك اللاعب"${senderUsername.trim()}" تحويل مبلغ ${amt.toLocaleString()} EGP.`
         }
       );
     } catch (mailErr) {
@@ -604,22 +596,22 @@ var AppDB = (() => {
     if (!rows || rows.length === 0) throw new Error('طلب التحويل غير موجود.');
     const req = rows[0];
     if (req.recipient !== recipientUsername) throw new Error('غير مصرح لك بقبول هذا الطلب.');
-    if (req.status !== 'pending') throw new Error('هذا الطلب تم الرد عليه مسبقاً.');
+    if (req.status !=='pending') throw new Error('هذا الطلب تم الرد عليه مسبقاً.');
 
     // Execute transfer from recipient to sender
     await executeWireTransfer(recipientUsername, req.sender, req.amount);
 
     // Update status in transfer_requests
     await _api(`transfer_requests?id=eq.${encodeURIComponent(requestId)}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status: 'accepted' })
+      method:'PATCH',
+      body: JSON.stringify({ status:'accepted' })
     });
 
     // Also update any matching mail notification in mailbox
     try {
       await _api(`mailbox?recipient=eq.${encodeURIComponent(recipientUsername.trim())}&type=eq.transfer_request`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: 'accepted' })
+        method:'PATCH',
+        body: JSON.stringify({ status:'accepted' })
       });
     } catch (e) {}
 
@@ -628,15 +620,15 @@ var AppDB = (() => {
 
   async function rejectTransferRequest(requestId, recipientUsername) {
     await _api(`transfer_requests?id=eq.${encodeURIComponent(requestId)}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status: 'rejected' })
+      method:'PATCH',
+      body: JSON.stringify({ status:'rejected' })
     });
 
     // Also update any matching mail notification in mailbox
     try {
       await _api(`mailbox?recipient=eq.${encodeURIComponent(recipientUsername.trim())}&type=eq.transfer_request`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: 'rejected' })
+        method:'PATCH',
+        body: JSON.stringify({ status:'rejected' })
       });
     } catch (e) {}
 
@@ -676,12 +668,12 @@ var AppDB = (() => {
     const newCash = curCash + reward;
     const newWorth = curWorth + reward;
 
-    const pState = (typeof p.state === 'object' && p.state) ? { ...p.state } : {};
+    const pState = (typeof p.state ==='object' && p.state) ? { ...p.state } : {};
     pState.cash = newCash;
     pState.netWorth = newWorth;
 
     await _api(`players?username=eq.${encodeURIComponent(u)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({
         cash: newCash,
         net_worth: newWorth,
@@ -692,14 +684,14 @@ var AppDB = (() => {
     // Update gift code usedBy
     usedBy.push(u.toLowerCase());
     await _api(`gift_codes?code=eq.${encodeURIComponent(normalized)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({ used_by: usedBy })
     });
 
     return {
       success: true,
-      rewardType: 'cash',
-      rewardText: `${reward.toLocaleString()} EGP كاش مالي`,
+      rewardType:'cash',
+      rewardText:`${reward.toLocaleString()} EGP كاش مالي`,
       amount: reward,
       playerUpdates: {
         cash: newCash,
@@ -712,15 +704,15 @@ var AppDB = (() => {
   //  MAILBOX & NOTIFICATIONS
   // ─────────────────────────────────────────────
   async function sendMail(sender, recipient, type, payload) {
-    const isInteractive = ['friend_request', 'job_offer', 'partnership_invite', 'transfer_request', 'system_add_employee', 'system_add_partner', 'dividend_claim', 'auction_win'].includes(type);
+    const isInteractive = ['friend_request','job_offer','partnership_invite','transfer_request','system_add_employee','system_add_partner','dividend_claim','auction_win'].includes(type);
     await _api('mailbox', {
-      method: 'POST',
+      method:'POST',
       body: JSON.stringify({
         sender: sender.trim(),
         recipient: recipient.trim(),
         type,
         payload: payload || {},
-        status: isInteractive ? 'pending' : 'unread',
+        status: isInteractive ?'pending' :'unread',
         created_at: Date.now()
       })
     });
@@ -728,7 +720,7 @@ var AppDB = (() => {
   }
 
   function listenToMailbox(username, callback) {
-    if (!username || typeof callback !== 'function') return () => {};
+    if (!username || typeof callback !=='function') return () => {};
     let isSubscribed = true;
     let lastKnownMailIds = new Set();
     let isFirstRun = true;
@@ -741,10 +733,10 @@ var AppDB = (() => {
         if (rows && isSubscribed) {
           if (!isFirstRun) {
             for (const m of rows) {
-              if (!lastKnownMailIds.has(m.id) && m.status !== 'read' && m.status !== 'accepted' && m.status !== 'rejected') {
-                if (typeof showToast === 'function') {
-                  showToast(m.title || '📬 بريد جديد', m.message || 'وصلتك رسالة أو حوالة جديدة في صندوق البريد!', 'info');
-                  if (typeof playMenuSound === 'function') playMenuSound('success');
+              if (!lastKnownMailIds.has(m.id) && m.status !=='read' && m.status !=='accepted' && m.status !=='rejected') {
+                if (typeof showToast ==='function') {
+                  showToast(m.title ||' بريد جديد', m.message ||'وصلتك رسالة أو حوالة جديدة في صندوق البريد!','info');
+                  if (typeof playMenuSound ==='function') playMenuSound('success');
                 }
                 break;
               }
@@ -772,7 +764,7 @@ var AppDB = (() => {
 
   async function updateMailStatus(mailId, status) {
     await _api(`mailbox?id=eq.${encodeURIComponent(mailId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({ status })
     });
     return true;
@@ -780,7 +772,7 @@ var AppDB = (() => {
 
   async function deleteMail(mailId) {
     await _api(`mailbox?id=eq.${encodeURIComponent(mailId)}`, {
-      method: 'DELETE'
+      method:'DELETE'
     });
     return true;
   }
@@ -789,12 +781,12 @@ var AppDB = (() => {
     if (!username) return true;
     try {
       await _api(`mailbox?recipient=eq.${encodeURIComponent(username.trim())}&status=eq.unread`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: 'read' })
+        method:'PATCH',
+        body: JSON.stringify({ status:'read' })
       });
       await _api(`mailbox?recipient=eq.${encodeURIComponent(username.trim())}&status=eq.pending`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: 'read' })
+        method:'PATCH',
+        body: JSON.stringify({ status:'read' })
       });
     } catch (e) {
       console.warn('[DB] markAllMailsRead error:', e);
@@ -807,10 +799,10 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   async function sendBroadcast(title, message) {
     await _api('globals', {
-      method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      method:'POST',
+      headers: {'Prefer':'resolution=merge-duplicates' },
       body: JSON.stringify({
-        id: 'broadcast',
+        id:'broadcast',
         data: { title, message, timestamp: Date.now() },
         updated_at: Date.now()
       })
@@ -820,10 +812,10 @@ var AppDB = (() => {
 
   async function sendAirdrop(amount) {
     await _api('globals', {
-      method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      method:'POST',
+      headers: {'Prefer':'resolution=merge-duplicates' },
       body: JSON.stringify({
-        id: 'airdrop',
+        id:'airdrop',
         data: { amount: Number(amount), timestamp: Date.now() },
         updated_at: Date.now()
       })
@@ -831,12 +823,12 @@ var AppDB = (() => {
     return true;
   }
 
-  async function setMaintenanceMode(active, message = '') {
+  async function setMaintenanceMode(active, message ='') {
     await _api('globals', {
-      method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      method:'POST',
+      headers: {'Prefer':'resolution=merge-duplicates' },
       body: JSON.stringify({
-        id: 'maintenance',
+        id:'maintenance',
         data: { active: Boolean(active), message, timestamp: Date.now() },
         updated_at: Date.now()
       })
@@ -851,20 +843,20 @@ var AppDB = (() => {
         return rows[0].data;
       }
     } catch (e) {}
-    return { active: false, message: '' };
+    return { active: false, message:'' };
   }
 
-  async function sendForceReload(message = '') {
+  async function sendForceReload(message ='') {
     const ts = Date.now();
     await _api('globals', {
-      method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      method:'POST',
+      headers: {'Prefer':'resolution=merge-duplicates' },
       body: JSON.stringify({
-        id: 'force_reload',
+        id:'force_reload',
         data: {
           timestamp: ts,
-          message: message || 'تم إطلاق تحديث جديد للعبة بواسطة الإدارة. يجب إعادة تحميل الصفحة الآن لتطبيق التغييرات وضمان استقرار حسابك.',
-          forcedBy: 'admin'
+          message: message ||'تم إطلاق تحديث جديد للعبة بواسطة الإدارة. يجب إعادة تحميل الصفحة الآن لتطبيق التغييرات وضمان استقرار حسابك.',
+          forcedBy:'admin'
         },
         updated_at: ts
       })
@@ -884,10 +876,10 @@ var AppDB = (() => {
 
   async function adminSaveTaxConfig(config) {
     await _api('globals', {
-      method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      method:'POST',
+      headers: {'Prefer':'resolution=merge-duplicates' },
       body: JSON.stringify({
-        id: 'taxConfig',
+        id:'taxConfig',
         data: config,
         updated_at: Date.now()
       })
@@ -897,10 +889,10 @@ var AppDB = (() => {
 
   async function adminSaveServerConfig(config) {
     await _api('globals', {
-      method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      method:'POST',
+      headers: {'Prefer':'resolution=merge-duplicates' },
       body: JSON.stringify({
-        id: 'serverConfig',
+        id:'serverConfig',
         data: config,
         updated_at: Date.now()
       })
@@ -921,40 +913,40 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   const DEFAULT_TOPUP_PACKAGES = [
     {
-      id: 'starter_pack',
-      name: 'حزمة المستثمر الصاعد',
+      id:'starter_pack',
+      name:'حزمة المستثمر الصاعد',
       price: 25,
       cash: 250000,
       bank: 50000,
       xp: 500,
       items: { lottery_ticket: 3 },
-      customBadge: '🥉',
-      badgeTitle: 'مستثمر صاعد',
-      description: 'انطلاقة قوية: 250 ألف كاش، 50 ألف بالبنك، 500 خبرة، وتذاكر يانصيب مع وسام برونزي.'
+      customBadge:'',
+      badgeTitle:'مستثمر صاعد',
+      description:'انطلاقة قوية: 250 ألف كاش، 50 ألف بالبنك، 500 خبرة، وتذاكر يانصيب مع وسام برونزي.'
     },
     {
-      id: 'vip_silver_pack',
-      name: 'حزمة رجل الأعمال VIP',
+      id:'vip_silver_pack',
+      name:'حزمة رجل الأعمال VIP',
       price: 50,
       cash: 1000000,
       bank: 250000,
       xp: 2000,
       items: { vip_casino_pass: 1, safe_lock: 2 },
-      customBadge: '🥈',
-      badgeTitle: 'رجل أعمال VIP',
-      description: 'مليون جنيه كاش، 250 ألف بالبنك، 2000 خبرة، تصريح كازينو VIP، مع وسام فضي أنيق.'
+      customBadge:'',
+      badgeTitle:'رجل أعمال VIP',
+      description:'مليون جنيه كاش، 250 ألف بالبنك، 2000 خبرة، تصريح كازينو VIP، مع وسام فضي أنيق.'
     },
     {
-      id: 'whale_gold_pack',
-      name: 'حزمة الحوت الملكي 👑',
+      id:'whale_gold_pack',
+      name:'حزمة الحوت الملكي',
       price: 100,
       cash: 5000000,
       bank: 1000000,
       xp: 6000,
       items: { vip_casino_pass: 1, offshore_account: 1, swiss_safe: 1 },
-      customBadge: '👑',
-      badgeTitle: 'الحوت الملكي',
-      description: 'حزمة الدعم الملكية: 5 مليون كاش، مليون بالبنك، 6000 خبرة، خزنة سويسرية وحساب خارجي وتاج الملك 👑.'
+      customBadge:'',
+      badgeTitle:'الحوت الملكي',
+      description:'حزمة الدعم الملكية: 5 مليون كاش، مليون بالبنك، 6000 خبرة، خزنة سويسرية وحساب خارجي وتاج الملك .'
     }
   ];
 
@@ -972,10 +964,10 @@ var AppDB = (() => {
 
   async function saveTopupPackages(packages) {
     await _api('globals', {
-      method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      method:'POST',
+      headers: {'Prefer':'resolution=merge-duplicates' },
       body: JSON.stringify({
-        id: 'topup_packages',
+        id:'topup_packages',
         data: { packages, updatedAt: Date.now() },
         updated_at: Date.now()
       })
@@ -991,22 +983,22 @@ var AppDB = (() => {
       }
     } catch (e) {}
     return {
-      vodafoneCash: '',
-      instapay: '',
-      notes: 'يرجى تحويل المبلغ بدقة وكتابة رقم الهاتف المحوّل منه أو اسم حسابك في انستاباي ورقم العملية/الوصل لتأكيد الشحن فوراً.'
+      vodafoneCash:'',
+      instapay:'',
+      notes:'يرجى تحويل المبلغ بدقة وكتابة رقم الهاتف المحوّل منه أو اسم حسابك في انستاباي ورقم العملية/الوصل لتأكيد الشحن فوراً.'
     };
   }
 
   async function savePaymentSettings(settings) {
     await _api('globals', {
-      method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      method:'POST',
+      headers: {'Prefer':'resolution=merge-duplicates' },
       body: JSON.stringify({
-        id: 'topup_payment_settings',
+        id:'topup_payment_settings',
         data: {
-          vodafoneCash: (settings.vodafoneCash || '').trim(),
-          instapay: (settings.instapay || '').trim(),
-          notes: settings.notes || '',
+          vodafoneCash: (settings.vodafoneCash ||'').trim(),
+          instapay: (settings.instapay ||'').trim(),
+          notes: settings.notes ||'',
           updatedAt: Date.now()
         },
         updated_at: Date.now()
@@ -1026,18 +1018,18 @@ var AppDB = (() => {
     } catch (e) {}
 
     const newRequest = {
-      id: 'req_' + ts + '_' + Math.random().toString(36).substring(2, 7),
-      username: (requestData.username || '').trim(),
+      id:'req_' + ts +'_' + Math.random().toString(36).substring(2, 7),
+      username: (requestData.username ||'').trim(),
       packageId: requestData.packageId,
       packageName: requestData.packageName,
       price: Number(requestData.price) || 0,
       rewards: requestData.rewards || {},
-      senderPhoneOrName: (requestData.senderPhoneOrName || '').trim(),
-      receiptNumber: (requestData.receiptNumber || '').trim(),
-      status: 'pending',
+      senderPhoneOrName: (requestData.senderPhoneOrName ||'').trim(),
+      receiptNumber: (requestData.receiptNumber ||'').trim(),
+      status:'pending',
       createdAt: ts,
       reviewedAt: null,
-      reviewerNote: ''
+      reviewerNote:''
     };
 
     currentRequests.unshift(newRequest);
@@ -1046,10 +1038,10 @@ var AppDB = (() => {
     }
 
     await _api('globals', {
-      method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      method:'POST',
+      headers: {'Prefer':'resolution=merge-duplicates' },
       body: JSON.stringify({
-        id: 'topup_requests',
+        id:'topup_requests',
         data: { requests: currentRequests, updatedAt: ts },
         updated_at: ts
       })
@@ -1078,7 +1070,7 @@ var AppDB = (() => {
     }
   }
 
-  async function processTopupRequest(requestId, action, reviewerNote = '') {
+  async function processTopupRequest(requestId, action, reviewerNote ='') {
     const ts = Date.now();
     const rows = await _api(`globals?id=eq.topup_requests`);
     if (!rows || rows.length === 0 || !rows[0].data || !Array.isArray(rows[0].data.requests)) {
@@ -1092,15 +1084,15 @@ var AppDB = (() => {
     }
 
     const req = requests[reqIndex];
-    if (req.status !== 'pending') {
-      throw new Error(`تمت معالجة هذا الطلب مسبقاً (${req.status === 'approved' ? 'مقبول' : 'مرفوض'}).`);
+    if (req.status !=='pending') {
+      throw new Error(`تمت معالجة هذا الطلب مسبقاً (${req.status ==='approved' ?'مقبول' :'مرفوض'}).`);
     }
 
-    if (action === 'approved') {
+    if (action ==='approved') {
       const targetUser = req.username;
       const playerDoc = await getPlayerData(targetUser);
       if (!playerDoc) {
-        throw new Error(`حساب اللاعب "${targetUser}" غير موجود بقاعدة البيانات.`);
+        throw new Error(`حساب اللاعب"${targetUser}" غير موجود بقاعدة البيانات.`);
       }
 
       const pState = playerDoc.state || {};
@@ -1108,7 +1100,7 @@ var AppDB = (() => {
       const addedCash = Number(rewards.cash) || 0;
       const addedBank = Number(rewards.bank) || 0;
       const addedXP = Number(rewards.xp) || 0;
-      const customBadge = rewards.customBadge || '';
+      const customBadge = rewards.customBadge ||'';
 
       const updatedCash = (Number(playerDoc.cash) || 0) + addedCash;
       const updatedBank = (Number(playerDoc.bank) || 0) + addedBank;
@@ -1125,7 +1117,7 @@ var AppDB = (() => {
         pState.badgeTitle = rewards.badgeTitle || req.packageName;
       }
 
-      if (rewards.items && typeof rewards.items === 'object') {
+      if (rewards.items && typeof rewards.items ==='object') {
         pState.inventory = pState.inventory || {};
         for (const [itemId, qty] of Object.entries(rewards.items)) {
           pState.inventory[itemId] = (Number(pState.inventory[itemId]) || 0) + Number(qty);
@@ -1133,7 +1125,7 @@ var AppDB = (() => {
       }
 
       await _api(`players?username=eq.${encodeURIComponent(targetUser)}`, {
-        method: 'PATCH',
+        method:'PATCH',
         body: JSON.stringify({
           cash: updatedCash,
           bank: updatedBank,
@@ -1154,50 +1146,50 @@ var AppDB = (() => {
         customBadge: customBadge,
         badgeTitle: rewards.badgeTitle || req.packageName,
         items: rewards.items || {},
-        status: 'approved',
+        status:'approved',
         date: ts,
-        receiptNumber: req.receiptNumber || '',
-        senderPhoneOrName: req.senderPhoneOrName || '',
-        reviewerNote: req.reviewerNote || 'تم الاعتماد والشحن بنجاح'
+        receiptNumber: req.receiptNumber ||'',
+        senderPhoneOrName: req.senderPhoneOrName ||'',
+        reviewerNote: req.reviewerNote ||'تم الاعتماد والشحن بنجاح'
       };
 
-      await sendMail('SYSTEM', targetUser, 'topup_receipt', {
-        title: `🎉 تم شحن باقة [${req.packageName}] بنجاح!`,
-        message: `شكراً لدعمك لسيرفر لعبة رأس المال! تم اعتماد تحويلك بمبلغ ${req.price} ج.م وإيداع جميع مزايا باقتك بحسابك فوراً.`,
+      await sendMail('SYSTEM', targetUser,'topup_receipt', {
+        title:` تم شحن باقة [${req.packageName}] بنجاح!`,
+        message:`شكراً لدعمك لسيرفر لعبة رأس المال! تم اعتماد تحويلك بمبلغ ${req.price} ج.م وإيداع جميع مزايا باقتك بحسابك فوراً.`,
         topupDetails: topupReceiptData
       }).catch(() => {});
 
-      req.status = 'approved';
+      req.status ='approved';
       req.reviewedAt = ts;
-      req.reviewerNote = reviewerNote || 'تم الاعتماد والشحن بنجاح';
+      req.reviewerNote = reviewerNote ||'تم الاعتماد والشحن بنجاح';
     } else {
-      req.status = 'rejected';
+      req.status ='rejected';
       req.reviewedAt = ts;
-      req.reviewerNote = reviewerNote || 'تم رفض الطلب لعدم تطابق بيانات التحويل';
+      req.reviewerNote = reviewerNote ||'تم رفض الطلب لعدم تطابق بيانات التحويل';
 
       const topupRejectData = {
         packageId: req.packageId,
         packageName: req.packageName,
         price: req.price,
-        status: 'rejected',
+        status:'rejected',
         date: ts,
-        receiptNumber: req.receiptNumber || '',
-        senderPhoneOrName: req.senderPhoneOrName || '',
-        reviewerNote: req.reviewerNote || 'تم رفض الطلب لعدم تطابق بيانات التحويل'
+        receiptNumber: req.receiptNumber ||'',
+        senderPhoneOrName: req.senderPhoneOrName ||'',
+        reviewerNote: req.reviewerNote ||'تم رفض الطلب لعدم تطابق بيانات التحويل'
       };
 
-      await sendMail('SYSTEM', req.username, 'topup_receipt', {
-        title: `⚠️ تعذر اعتماد طلب شحن [${req.packageName}]`,
-        message: `نعتذر، لم تتمكن الإدارة من اعتماد طلب الشحن الخاص بك.\nالسبب: ${req.reviewerNote}\nيرجى التواصل مع الإدارة أو التأكد من بيانات التحويل وإعادة الطلب.`,
+      await sendMail('SYSTEM', req.username,'topup_receipt', {
+        title:`️ تعذر اعتماد طلب شحن [${req.packageName}]`,
+        message:`نعتذر، لم تتمكن الإدارة من اعتماد طلب الشحن الخاص بك.\nالسبب: ${req.reviewerNote}\nيرجى التواصل مع الإدارة أو التأكد من بيانات التحويل وإعادة الطلب.`,
         topupDetails: topupRejectData
       }).catch(() => {});
     }
 
     await _api('globals', {
-      method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      method:'POST',
+      headers: {'Prefer':'resolution=merge-duplicates' },
       body: JSON.stringify({
-        id: 'topup_requests',
+        id:'topup_requests',
         data: { requests, updatedAt: ts },
         updated_at: ts
       })
@@ -1282,8 +1274,8 @@ var AppDB = (() => {
       p.dirtyCash = Number(r.dirty_cash || 0);
       p.netWorth = Number(r.net_worth || 0);
       p.xp = Number(r.xp || 0);
-      p.title = r.title || 'عامل مبتدئ';
-      p.jobId = r.job_id || 'worker';
+      p.title = r.title ||'عامل مبتدئ';
+      p.jobId = r.job_id ||'worker';
       p.isAdmin = r.is_admin === true;
       p.isBanned = r.is_banned === true;
       p.jailTimer = Number(r.jail_timer || 0);
@@ -1306,7 +1298,7 @@ var AppDB = (() => {
     const rows = await _api(`players?username=eq.${encodeURIComponent(username)}&select=*`);
     if (!rows || rows.length === 0) return null;
     const r = rows[0];
-    const p = (typeof r.state === 'object' && r.state) ? { ...r.state } : {};
+    const p = (typeof r.state ==='object' && r.state) ? { ...r.state } : {};
     p.username = r.username;
     p.pin = r.pin;
     p.cash = Number(r.cash || 0);
@@ -1314,8 +1306,8 @@ var AppDB = (() => {
     p.dirtyCash = Number(r.dirty_cash || 0);
     p.netWorth = Number(r.net_worth || 0);
     p.xp = Number(r.xp || 0);
-    p.title = r.title || 'عامل مبتدئ';
-    p.jobId = r.job_id || 'worker';
+    p.title = r.title ||'عامل مبتدئ';
+    p.jobId = r.job_id ||'worker';
     p.isAdmin = r.is_admin === true;
     p.isBanned = r.is_banned === true;
     p.jailTimer = Number(r.jail_timer || 0);
@@ -1348,7 +1340,7 @@ var AppDB = (() => {
     payload.admin_modified_timestamp = Date.now();
 
     await _api(`players?username=eq.${encodeURIComponent(username)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify(payload)
     });
     return true;
@@ -1356,7 +1348,7 @@ var AppDB = (() => {
 
   async function adminDeletePlayer(username) {
     await _api(`players?username=eq.${encodeURIComponent(username)}`, {
-      method: 'DELETE'
+      method:'DELETE'
     });
     try { localStorage.removeItem(`rasalmal_state_${username}`); } catch (e) {}
     return true;
@@ -1387,8 +1379,8 @@ var AppDB = (() => {
       dirty_cash: 0,
       net_worth: 400,
       xp: 0,
-      title: 'عامل مبتدئ',
-      job_id: 'worker',
+      title:'عامل مبتدئ',
+      job_id:'worker',
       is_banned: false,
       jail_timer: 0,
       total_taxes_paid: 0,
@@ -1400,8 +1392,8 @@ var AppDB = (() => {
         dirtyCash: 0,
         netWorth: 400,
         xp: 0,
-        title: 'عامل مبتدئ',
-        jobId: 'worker',
+        title:'عامل مبتدئ',
+        jobId:'worker',
         underworldRep: 0,
         heatLevel: 0,
         jailTimer: 0,
@@ -1440,7 +1432,7 @@ var AppDB = (() => {
       admin_modified_timestamp: now
     };
     await _api(`players?username=ilike.${encodeURIComponent(username.trim())}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify(row)
     });
     return true;
@@ -1448,7 +1440,7 @@ var AppDB = (() => {
 
   async function adminBanPlayer(username) {
     await _api(`players?username=eq.${encodeURIComponent(username)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({ is_banned: true, admin_modified_timestamp: Date.now() })
     });
     return true;
@@ -1456,7 +1448,7 @@ var AppDB = (() => {
 
   async function adminUnbanPlayer(username) {
     await _api(`players?username=eq.${encodeURIComponent(username)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({ is_banned: false, admin_modified_timestamp: Date.now() })
     });
     return true;
@@ -1465,7 +1457,7 @@ var AppDB = (() => {
   async function adminChangePlayerPin(username, newPin) {
     const hashed = await hashPin(newPin);
     await _api(`players?username=eq.${encodeURIComponent(username)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({ pin: hashed })
     });
     return true;
@@ -1473,7 +1465,7 @@ var AppDB = (() => {
 
   async function adminReleaseJail(username) {
     await _api(`players?username=eq.${encodeURIComponent(username)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({ jail_timer: 0 })
     });
     return true;
@@ -1481,7 +1473,7 @@ var AppDB = (() => {
 
   async function adminSetPlayerJail(username, seconds) {
     await _api(`players?username=eq.${encodeURIComponent(username)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({ jail_timer: Number(seconds) })
     });
     return true;
@@ -1489,7 +1481,7 @@ var AppDB = (() => {
 
   async function adminSetPlayerAdminStatus(username, isAdmin) {
     await _api(`players?username=eq.${encodeURIComponent(username)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({ is_admin: Boolean(isAdmin) })
     });
     return true;
@@ -1522,8 +1514,8 @@ var AppDB = (() => {
       dirty_cash: 0,
       net_worth: 400,
       xp: 0,
-      title: 'عامل مبتدئ',
-      job_id: 'worker',
+      title:'عامل مبتدئ',
+      job_id:'worker',
       jail_timer: 0,
       total_taxes_paid: 0,
       afk_manager_expires_at: now + (12 * 60 * 60 * 1000),
@@ -1533,8 +1525,8 @@ var AppDB = (() => {
         dirtyCash: 0,
         netWorth: 400,
         xp: 0,
-        title: 'عامل مبتدئ',
-        jobId: 'worker',
+        title:'عامل مبتدئ',
+        jobId:'worker',
         underworldRep: 0,
         heatLevel: 0,
         jailTimer: 0,
@@ -1575,42 +1567,42 @@ var AppDB = (() => {
 
     // 1. Reset ALL players to baseline (cash 300, bank 0, net worth 400, etc.)
     await _api('players?created_at=gt.0', {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify(resetRow)
     });
 
     // 2. Wipe ALL corporations/alliances
     try {
-      await _api('corporations?created_at=gt.0', { method: 'DELETE' });
+      await _api('corporations?created_at=gt.0', { method:'DELETE' });
     } catch (e) {}
 
     // 3. Wipe ALL wire transfers history
     try {
-      await _api('transfers?created_at=gt.0', { method: 'DELETE' });
+      await _api('transfers?created_at=gt.0', { method:'DELETE' });
     } catch (e) {}
 
     // 4. Wipe ALL mailbox messages
     try {
-      await _api('mailbox?created_at=gt.0', { method: 'DELETE' });
+      await _api('mailbox?created_at=gt.0', { method:'DELETE' });
     } catch (e) {}
 
     // 5. Reset all leaderboard caches
     try {
       await _api('globals?id=eq.hourly_leaderboard', {
-        method: 'PATCH',
+        method:'PATCH',
         body: JSON.stringify({ data: { timestamp: now, topPlayers: [] } })
       });
     } catch (e) {}
     try {
       await _api('globals?id=eq.season_leaderboard', {
-        method: 'PATCH',
+        method:'PATCH',
         body: JSON.stringify({ data: { timestamp: now, topPlayers: [] } })
       });
     } catch (e) {}
 
     // 6. Broadcast reload notification to all online players
     try {
-      await sendForceReload('تم تصفير وإعادة ضبط اقتصاد ومشاريع اللعبة بالكامل لبدء موسم جديد عادل للجميع! انطلق الآن من الصفر 🚀');
+      await sendForceReload('تم تصفير وإعادة ضبط اقتصاد ومشاريع اللعبة بالكامل لبدء موسم جديد عادل للجميع! انطلق الآن من الصفر');
     } catch (e) {}
 
     // NOTE: gift_codes table is strictly PRESERVED and untouched!
@@ -1622,28 +1614,28 @@ var AppDB = (() => {
 
     // 1. Delete ALL player accounts completely from Supabase
     await _api('players?created_at=gt.0', {
-      method: 'DELETE'
+      method:'DELETE'
     });
 
     // 2. Wipe ALL corporations
     try {
-      await _api('corporations?created_at=gt.0', { method: 'DELETE' });
+      await _api('corporations?created_at=gt.0', { method:'DELETE' });
     } catch (e) {}
 
     // 3. Wipe ALL wire transfers
     try {
-      await _api('transfers?created_at=gt.0', { method: 'DELETE' });
+      await _api('transfers?created_at=gt.0', { method:'DELETE' });
     } catch (e) {}
 
     // 4. Wipe ALL mailbox messages
     try {
-      await _api('mailbox?created_at=gt.0', { method: 'DELETE' });
+      await _api('mailbox?created_at=gt.0', { method:'DELETE' });
     } catch (e) {}
 
     // 5. Reset leaderboard caches
     try {
       await _api('globals?id=eq.hourly_leaderboard', {
-        method: 'PATCH',
+        method:'PATCH',
         body: JSON.stringify({ data: { timestamp: now, topPlayers: [] } })
       });
     } catch (e) {}
@@ -1662,17 +1654,17 @@ var AppDB = (() => {
     const list = (rows || []).map(r => ({
       username: r.username,
       netWorth: Number(r.net_worth || 0),
-      title: r.title || 'عامل مبتدئ'
+      title: r.title ||'عامل مبتدئ'
     }));
     await _api('globals?id=eq.hourly_leaderboard', {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({ data: { timestamp: Date.now(), topPlayers: list } })
     });
     return list;
   }
 
   async function adminClearTransfers() {
-    await _api('transfers?created_at=gt.0', { method: 'DELETE' });
+    await _api('transfers?created_at=gt.0', { method:'DELETE' });
     return true;
   }
 
@@ -1688,39 +1680,39 @@ var AppDB = (() => {
   //  CORPORATIONS & AUCTIONS
   // ─────────────────────────────────────────────
   async function createCorporation(arg1, arg2, arg3, arg4) {
-    let corpId = '';
-    let name = '';
-    let founder = '';
-    let description = '';
+    let corpId ='';
+    let name ='';
+    let founder ='';
+    let description ='';
     let treasury = 0;
     let members = [];
     let contributions = {};
     let projects = [];
     let isAdminCorp = false;
 
-    if (typeof arg1 === 'object' && arg1 !== null) {
+    if (typeof arg1 ==='object' && arg1 !== null) {
       corpId = arg1.id || String(Date.now());
-      name = String(arg1.name || '').trim();
-      founder = String(arg1.founder || '').trim();
-      description = String(arg1.desc || arg1.description || '').trim();
+      name = String(arg1.name ||'').trim();
+      founder = String(arg1.founder ||'').trim();
+      description = String(arg1.desc || arg1.description ||'').trim();
       treasury = Number(arg1.treasury || 0);
       members = Array.isArray(arg1.members) && arg1.members.length > 0 ? arg1.members : [founder];
-      contributions = (typeof arg1.contributions === 'object' && arg1.contributions) ? arg1.contributions : {};
+      contributions = (typeof arg1.contributions ==='object' && arg1.contributions) ? arg1.contributions : {};
       projects = Array.isArray(arg1.projects) ? arg1.projects : [];
       isAdminCorp = arg1.isAdminCorp === true || arg1.is_admin_corp === true;
     } else {
       // Called with parameters:
       // ui.js calls: AppDB.createCorporation(name, desc, founder)
       // or admin: AppDB.createCorporation(name, founder, desc, treasury)
-      name = String(arg1 || '').trim();
-      if (typeof arg3 === 'string' && arg3.trim().length > 0 && (!arg4 || isNaN(Number(arg4)))) {
+      name = String(arg1 ||'').trim();
+      if (typeof arg3 ==='string' && arg3.trim().length > 0 && (!arg4 || isNaN(Number(arg4)))) {
         // (name, desc, founder)
-        description = String(arg2 || '').trim();
-        founder = String(arg3 || '').trim();
-      } else if (arg2 && typeof arg2 === 'string') {
+        description = String(arg2 ||'').trim();
+        founder = String(arg3 ||'').trim();
+      } else if (arg2 && typeof arg2 ==='string') {
         // (name, founder, desc, treasury)
-        founder = String(arg2 || '').trim();
-        description = String(arg3 || '').trim();
+        founder = String(arg2 ||'').trim();
+        description = String(arg3 ||'').trim();
         treasury = Number(arg4 || 0);
       }
       corpId = String(Date.now());
@@ -1732,7 +1724,7 @@ var AppDB = (() => {
     if (!founder) throw new Error('اسم المؤسس مطلوب.');
 
     contributions._level = 1;
-    contributions._roles = { [founder]: 'founder' };
+    contributions._roles = { [founder]:'founder' };
 
     // Embed description in contributions if provided so schema constraint is respected
     if (description) {
@@ -1752,7 +1744,7 @@ var AppDB = (() => {
     };
 
     await _api('corporations', {
-      method: 'POST',
+      method:'POST',
       body: JSON.stringify(payload)
     });
 
@@ -1763,10 +1755,10 @@ var AppDB = (() => {
     try {
       const rows = await _api('corporations?order=treasury.desc');
       return (rows || []).map(r => {
-        const contribs = (typeof r.contributions === 'object' && r.contributions) ? r.contributions : {};
+        const contribs = (typeof r.contributions ==='object' && r.contributions) ? r.contributions : {};
         let totalContributions = 0;
         Object.keys(contribs).forEach(k => {
-          if (!k.startsWith('_') && typeof contribs[k] === 'number') {
+          if (!k.startsWith('_') && typeof contribs[k] ==='number') {
             totalContributions += contribs[k];
           }
         });
@@ -1776,13 +1768,13 @@ var AppDB = (() => {
           founder: r.founder,
           treasury: Number(r.treasury || 0),
           level: Number(contribs._level || 1),
-          roles: (contribs._roles && typeof contribs._roles === 'object') ? contribs._roles : { [r.founder]: 'founder' },
+          roles: (contribs._roles && typeof contribs._roles ==='object') ? contribs._roles : { [r.founder]:'founder' },
           members: Array.isArray(r.members) ? r.members : [],
           contributions: contribs,
           totalContributions,
-          projects: Array.isArray(r.projects) ? r.projects : (r.projects && typeof r.projects === 'object' ? Object.keys(r.projects).filter(k => r.projects[k] === true) : []),
+          projects: Array.isArray(r.projects) ? r.projects : (r.projects && typeof r.projects ==='object' ? Object.keys(r.projects).filter(k => r.projects[k] === true) : []),
           isAdminCorp: r.is_admin_corp === true,
-          desc: contribs._desc || ''
+          desc: contribs._desc ||''
         };
       });
     } catch (e) {
@@ -1804,7 +1796,7 @@ var AppDB = (() => {
     if (members.length >= 25) throw new Error('الشركة بلغت الحد الأقصى من الأعضاء (25).');
     members.push(username);
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({ members })
     });
     return true;
@@ -1827,7 +1819,7 @@ var AppDB = (() => {
         // Transfer founder to next member
         const newFounder = members[0];
         await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-          method: 'PATCH',
+          method:'PATCH',
           body: JSON.stringify({
             founder: newFounder,
             members: members
@@ -1836,7 +1828,7 @@ var AppDB = (() => {
       } else {
         // No members left, delete the corporation
         await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-          method: 'DELETE'
+          method:'DELETE'
         });
       }
       return true;
@@ -1844,7 +1836,7 @@ var AppDB = (() => {
 
     // Normal member leaving
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({ members })
     });
     return true;
@@ -1859,7 +1851,7 @@ var AppDB = (() => {
     let members = Array.isArray(corp.members) ? corp.members : [];
     members = members.filter(m => m !== u);
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({ members })
     });
     return true;
@@ -1879,7 +1871,7 @@ var AppDB = (() => {
 
     // Deduct cash from player
     await _api(`players?username=eq.${encodeURIComponent(username)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({
         cash: Number(pRows[0].cash) - amt,
         net_worth: Math.max(0, Number(pRows[0].net_worth) - amt)
@@ -1890,7 +1882,7 @@ var AppDB = (() => {
     const contribs = corp.contributions || {};
     contribs[username] = (Number(contribs[username]) || 0) + amt;
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({
         treasury: Number(corp.treasury || 0) + amt,
         contributions: contribs
@@ -1910,7 +1902,7 @@ var AppDB = (() => {
     projects.push(projectId);
 
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({
         treasury: Number(corp.treasury) - Number(projectCost),
         projects
@@ -1924,10 +1916,10 @@ var AppDB = (() => {
     const rows = await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`);
     if (!rows || rows.length === 0) throw new Error('الشركة غير موجودة.');
     const corp = rows[0];
-    const contribs = (typeof corp.contributions === 'object' && corp.contributions) ? { ...corp.contributions } : {};
-    contribs._desc = newDesc || '';
+    const contribs = (typeof corp.contributions ==='object' && corp.contributions) ? { ...corp.contributions } : {};
+    contribs._desc = newDesc ||'';
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({
         name: newName || corp.name,
         contributions: contribs
@@ -1943,12 +1935,12 @@ var AppDB = (() => {
     const corp = rows[0];
     const members = Array.isArray(corp.members) ? corp.members : [];
     if (!members.includes(newFounder)) throw new Error('العضو المحدد غير موجود في الشركة.');
-    const contribs = (typeof corp.contributions === 'object' && corp.contributions) ? { ...corp.contributions } : {};
+    const contribs = (typeof corp.contributions ==='object' && corp.contributions) ? { ...corp.contributions } : {};
     contribs._roles = contribs._roles || {};
-    contribs._roles[corp.founder] = 'member';
-    contribs._roles[newFounder] = 'founder';
+    contribs._roles[corp.founder] ='member';
+    contribs._roles[newFounder] ='founder';
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({
         founder: newFounder,
         contributions: contribs
@@ -1964,11 +1956,11 @@ var AppDB = (() => {
     const corp = rows[0];
     const members = Array.isArray(corp.members) ? corp.members : [];
     if (!members.includes(targetUsername)) throw new Error('اللاعب ليس عضواً في الشركة.');
-    const contribs = (typeof corp.contributions === 'object' && corp.contributions) ? { ...corp.contributions } : {};
+    const contribs = (typeof corp.contributions ==='object' && corp.contributions) ? { ...corp.contributions } : {};
     contribs._roles = contribs._roles || {};
-    contribs._roles[targetUsername] = role; // 'cfo' or 'member'
+    contribs._roles[targetUsername] = role; //'cfo' or'member'
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({
         contributions: contribs
       })
@@ -1993,7 +1985,7 @@ var AppDB = (() => {
 
     // Deduct from corp treasury
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({
         treasury: treasury - amt
       })
@@ -2001,7 +1993,7 @@ var AppDB = (() => {
 
     // Add to player cash
     await _api(`players?username=eq.${encodeURIComponent(targetUsername)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({
         cash: Number(p.cash || 0) + amt,
         net_worth: Number(p.net_worth || 0) + amt
@@ -2019,12 +2011,12 @@ var AppDB = (() => {
     const treasury = Number(corp.treasury || 0);
     if (treasury < c) throw new Error(`رصيد الخزينة (${treasury.toLocaleString()} EGP) لا يكفي لتكلفة الترقية (${c.toLocaleString()} EGP).`);
 
-    const contribs = (typeof corp.contributions === 'object' && corp.contributions) ? { ...corp.contributions } : {};
+    const contribs = (typeof corp.contributions ==='object' && corp.contributions) ? { ...corp.contributions } : {};
     const curLevel = Number(contribs._level || 1);
     contribs._level = curLevel + 1;
 
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({
         treasury: treasury - c,
         contributions: contribs
@@ -2039,12 +2031,12 @@ var AppDB = (() => {
     if (!rows || rows.length === 0) throw new Error('الشركة غير موجودة.');
     const corp = rows[0];
     const treasury = Number(corp.treasury || 0);
-    const contribs = (typeof corp.contributions === 'object' && corp.contributions) ? corp.contributions : {};
+    const contribs = (typeof corp.contributions ==='object' && corp.contributions) ? corp.contributions : {};
     const members = Array.isArray(corp.members) ? corp.members : [];
 
     let totalCont = 0;
     Object.keys(contribs).forEach(k => {
-      if (!k.startsWith('_') && typeof contribs[k] === 'number') totalCont += contribs[k];
+      if (!k.startsWith('_') && typeof contribs[k] ==='number') totalCont += contribs[k];
     });
 
     // Refund treasury to members proportionally
@@ -2058,7 +2050,7 @@ var AppDB = (() => {
             const pRows = await _api(`players?username=eq.${encodeURIComponent(m)}&select=cash,net_worth`);
             if (pRows && pRows.length > 0) {
               await _api(`players?username=eq.${encodeURIComponent(m)}`, {
-                method: 'PATCH',
+                method:'PATCH',
                 body: JSON.stringify({
                   cash: Number(pRows[0].cash || 0) + refund,
                   net_worth: Number(pRows[0].net_worth || 0) + refund
@@ -2066,14 +2058,14 @@ var AppDB = (() => {
               });
             }
           } catch (e) {
-            console.warn('[DB] Failed refund to ' + m, e);
+            console.warn('[DB] Failed refund to' + m, e);
           }
         }
       }
     }
 
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'DELETE'
+      method:'DELETE'
     });
     return true;
   }
@@ -2083,15 +2075,15 @@ var AppDB = (() => {
     const rows = await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`);
     if (!rows || rows.length === 0) throw new Error('الشركة غير موجودة.');
     const corp = rows[0];
-    const contribs = (typeof corp.contributions === 'object' && corp.contributions) ? { ...corp.contributions } : {};
+    const contribs = (typeof corp.contributions ==='object' && corp.contributions) ? { ...corp.contributions } : {};
     if (updates.level !== undefined) contribs._level = Number(updates.level || 1);
-    if (updates.desc !== undefined) contribs._desc = String(updates.desc || '');
+    if (updates.desc !== undefined) contribs._desc = String(updates.desc ||'');
 
     const patchPayload = { contributions: contribs };
     if (updates.name) patchPayload.name = String(updates.name).trim();
 
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify(patchPayload)
     });
     return true;
@@ -2113,7 +2105,7 @@ var AppDB = (() => {
     }
 
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({ projects })
     });
     return true;
@@ -2123,7 +2115,7 @@ var AppDB = (() => {
     const val = Number(newTreasury);
     if (isNaN(val) || val < 0) throw new Error('قيمة الخزينة غير صالحة.');
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({ treasury: val })
     });
     return true;
@@ -2132,7 +2124,7 @@ var AppDB = (() => {
   async function adminDeleteCorporation(corpId) {
     if (!corpId) throw new Error('معرف الشركة مطلوب.');
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'DELETE'
+      method:'DELETE'
     });
     return true;
   }
@@ -2150,10 +2142,10 @@ var AppDB = (() => {
     const members = Array.isArray(corp.members) ? corp.members : [];
     if (members.length === 0) throw new Error('لا يوجد أعضاء في هذه الشركة.');
 
-    const contribs = (typeof corp.contributions === 'object' && corp.contributions) ? corp.contributions : {};
+    const contribs = (typeof corp.contributions ==='object' && corp.contributions) ? corp.contributions : {};
     let totalCont = 0;
     Object.keys(contribs).forEach(k => {
-      if (!k.startsWith('_') && typeof contribs[k] === 'number') totalCont += contribs[k];
+      if (!k.startsWith('_') && typeof contribs[k] ==='number') totalCont += contribs[k];
     });
 
     for (const m of members) {
@@ -2165,7 +2157,7 @@ var AppDB = (() => {
           const pRows = await _api(`players?username=eq.${encodeURIComponent(m)}&select=cash,net_worth`);
           if (pRows && pRows.length > 0) {
             await _api(`players?username=eq.${encodeURIComponent(m)}`, {
-              method: 'PATCH',
+              method:'PATCH',
               body: JSON.stringify({
                 cash: Number(pRows[0].cash || 0) + payout,
                 net_worth: Number(pRows[0].net_worth || 0) + payout
@@ -2173,13 +2165,13 @@ var AppDB = (() => {
             });
           }
         } catch (e) {
-          console.warn('[DB] Failed dividend to ' + m, e);
+          console.warn('[DB] Failed dividend to' + m, e);
         }
       }
     }
 
     await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({
         treasury: treasury - totalDividends
       })
@@ -2210,7 +2202,7 @@ var AppDB = (() => {
     if (amt <= Number(auc.current_bid)) throw new Error('المزايدة يجب أن تكون أعلى من السعر الحالي.');
 
     await _api(`live_auctions?id=eq.${encodeURIComponent(auctionId)}`, {
-      method: 'PATCH',
+      method:'PATCH',
       body: JSON.stringify({
         current_bid: amt,
         highest_bidder: username,
@@ -2225,7 +2217,7 @@ var AppDB = (() => {
     return true;
   }
 
-  // 🏆 Unified Official Hourly Leaderboard Document Engine
+  //  Unified Official Hourly Leaderboard Document Engine
   let _leaderboardMeta = {
     updatedAt: Date.now(),
     nextUpdateAt: Date.now() + 3600000,
@@ -2248,8 +2240,8 @@ var AppDB = (() => {
         bank: Number(r.bank || 0),
         netWorth: Number(r.net_worth || 0),
         net_worth: Number(r.net_worth || 0),
-        title: r.title || 'عامل مبتدئ',
-        jobId: r.job_id || 'worker',
+        title: r.title ||'عامل مبتدئ',
+        jobId: r.job_id ||'worker',
         isAdmin: r.is_admin === true,
         facebookVerified: false
       }));
@@ -2261,7 +2253,7 @@ var AppDB = (() => {
       };
 
       const docPayload = {
-        id: 'leaderboard',
+        id:'leaderboard',
         data: {
           updatedAt: _leaderboardMeta.updatedAt,
           nextUpdateAt: _leaderboardMeta.nextUpdateAt,
@@ -2272,8 +2264,8 @@ var AppDB = (() => {
       };
 
       await _api('globals', {
-        method: 'POST',
-        headers: { 'Prefer': 'resolution=merge-duplicates' },
+        method:'POST',
+        headers: {'Prefer':'resolution=merge-duplicates' },
         body: JSON.stringify(docPayload)
       });
 
@@ -2323,7 +2315,7 @@ var AppDB = (() => {
     return await _rebuildAndSaveLeaderboard();
   }
 
-  // 💬 Live In-Game Public Chat (Egress-Optimized with Metadata Polling)
+  //  Live In-Game Public Chat (Egress-Optimized with Metadata Polling)
   let _lastChatUpdatedAt = 0;
   let _cachedChatMessages = [];
   let _chatPollInterval = null;
@@ -2333,9 +2325,9 @@ var AppDB = (() => {
   async function sendChatMessage(sender, senderTitle, message, facebookVerified = false) {
     if (!message || !message.trim()) return false;
     const msgObj = {
-      id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      sender: String(sender || 'لاعب'),
-      senderTitle: String(senderTitle || 'عامل مبتدئ'),
+      id:'msg_' + Date.now() +'_' + Math.random().toString(36).substring(2, 6),
+      sender: String(sender ||'لاعب'),
+      senderTitle: String(senderTitle ||'عامل مبتدئ'),
       message: String(message).trim().substring(0, 200),
       facebookVerified: Boolean(facebookVerified),
       timestamp: Date.now()
@@ -2357,10 +2349,10 @@ var AppDB = (() => {
       _lastChatUpdatedAt = nowTs;
 
       await _api('globals', {
-        method: 'POST',
-        headers: { 'Prefer': 'resolution=merge-duplicates' },
+        method:'POST',
+        headers: {'Prefer':'resolution=merge-duplicates' },
         body: JSON.stringify({
-          id: 'chat_feed',
+          id:'chat_feed',
           data: { messages: currentFeed },
           updated_at: nowTs
         })
@@ -2408,7 +2400,7 @@ var AppDB = (() => {
   }
 
   function _isChatDrawerOpen() {
-    if (typeof document === 'undefined') return false;
+    if (typeof document ==='undefined') return false;
     const drawer = document.getElementById('chat-drawer');
     const adminChatSubpanel = document.getElementById('admin-subpanel-chat');
     const isMainDrawerOpen = drawer && drawer.classList.contains('chat-drawer-open');
@@ -2448,7 +2440,7 @@ var AppDB = (() => {
   }
 
   function listenToChatMessages(callback) {
-    if (typeof callback !== 'function') return () => {};
+    if (typeof callback !=='function') return () => {};
     _chatCallbacks.add(callback);
 
     // Initial deliver from cache or fresh fetch
@@ -2485,10 +2477,10 @@ var AppDB = (() => {
       _cachedChatMessages = [];
       _lastChatUpdatedAt = Date.now();
       await _api('globals', {
-        method: 'POST',
-        headers: { 'Prefer': 'resolution=merge-duplicates' },
+        method:'POST',
+        headers: {'Prefer':'resolution=merge-duplicates' },
         body: JSON.stringify({
-          id: 'chat_feed',
+          id:'chat_feed',
           data: { messages: [] },
           updated_at: _lastChatUpdatedAt
         })
@@ -2518,10 +2510,10 @@ var AppDB = (() => {
   async function saveGlobalMarketEvent(eventData) {
     try {
       await _api('globals', {
-        method: 'POST',
-        headers: { 'Prefer': 'resolution=merge-duplicates' },
+        method:'POST',
+        headers: {'Prefer':'resolution=merge-duplicates' },
         body: JSON.stringify({
-          id: 'market_event',
+          id:'market_event',
           data: eventData,
           updated_at: Date.now()
         })
@@ -2535,25 +2527,25 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   //  COMPATIBILITY LAYER (MOCKS FIREBASE FOR ANY DIRECT UI CALLS)
   // ─────────────────────────────────────────────
-  if (typeof window !== 'undefined') {
+  if (typeof window !=='undefined') {
     const mockCollection = (collName) => ({
       doc: (docId) => ({
         get: async () => {
-          if (collName === 'globals') {
+          if (collName ==='globals') {
             const rows = await _api(`globals?id=eq.${encodeURIComponent(docId)}`).catch(() => []);
             return { exists: rows && rows.length > 0, data: () => (rows[0] && rows[0].data) || {} };
           }
-          if (collName === 'players') {
+          if (collName ==='players') {
             const rows = await _api(`players?username=eq.${encodeURIComponent(docId)}`).catch(() => []);
             return { exists: rows && rows.length > 0, data: () => (rows[0] && rows[0].state) || {} };
           }
           return { exists: false, data: () => ({}) };
         },
         set: async (data, opts) => {
-          if (collName === 'globals') {
+          if (collName ==='globals') {
             await _api('globals', {
-              method: 'POST',
-              headers: { 'Prefer': 'resolution=merge-duplicates' },
+              method:'POST',
+              headers: {'Prefer':'resolution=merge-duplicates' },
               body: JSON.stringify({ id: docId, data, updated_at: Date.now() })
             }).catch(() => {});
           }
@@ -2562,9 +2554,9 @@ var AppDB = (() => {
         update: async (data) => true,
         delete: async () => true,
         onSnapshot: (cb) => {
-          if (typeof cb !== 'function') return () => {};
+          if (typeof cb !=='function') return () => {};
 
-          if (collName === 'players') {
+          if (collName ==='players') {
             let isSubscribed = true;
             const checkPlayer = async () => {
               if (!isSubscribed) return;
@@ -2580,8 +2572,8 @@ var AppDB = (() => {
                   d.dirtyCash = Number(r.dirty_cash || 0);
                   d.netWorth = Number(r.net_worth || 0);
                   d.xp = Number(r.xp || 0);
-                  d.title = r.title || 'عامل مبتدئ';
-                  d.jobId = r.job_id || 'worker';
+                  d.title = r.title ||'عامل مبتدئ';
+                  d.jobId = r.job_id ||'worker';
                   d.isAdmin = r.is_admin === true;
                   d.isBanned = r.is_banned === true;
                   d.jailTimer = Number(r.jail_timer || 0);
@@ -2602,7 +2594,7 @@ var AppDB = (() => {
             };
           }
 
-          if (collName === 'globals') {
+          if (collName ==='globals') {
             let isSubscribed = true;
             const checkGlobal = async () => {
               if (!isSubscribed) return;
@@ -2683,7 +2675,7 @@ var AppDB = (() => {
         return {
           id: r.code,
           code: r.code,
-          rewardType: 'cash',
+          rewardType:'cash',
           rewardDetails: { amount: Number(r.reward_cash || 0) },
           maxUses: maxU,
           usedCount: usedBy.length,
@@ -2696,22 +2688,22 @@ var AppDB = (() => {
 
   async function adminCreateGiftCode(code, type, details, maxUses = 100) {
     let rewardCash = 0;
-    if (typeof type === 'number') {
+    if (typeof type ==='number') {
       rewardCash = type;
-      if (details !== undefined && typeof details === 'number') {
+      if (details !== undefined && typeof details ==='number') {
         maxUses = details;
       }
     } else if (details && details.amount) {
       rewardCash = Number(details.amount);
-    } else if (typeof details === 'number') {
+    } else if (typeof details ==='number') {
       rewardCash = details;
     }
 
     const maxU = Number(maxUses || 0);
 
     await _api('gift_codes', {
-      method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      method:'POST',
+      headers: {'Prefer':'resolution=merge-duplicates' },
       body: JSON.stringify({
         code: code.trim().toUpperCase(),
         reward_cash: rewardCash,
@@ -2725,7 +2717,7 @@ var AppDB = (() => {
 
   async function adminDeleteGiftCode(code) {
     await _api('gift_codes?code=eq.' + encodeURIComponent(code.trim().toUpperCase()), {
-      method: 'DELETE'
+      method:'DELETE'
     });
     return true;
   }
@@ -2753,7 +2745,7 @@ var AppDB = (() => {
     getAuctionItems: async () => [],
     purchaseAuctionItem: async () => true,
     adminDeleteAuctionItem: async () => true,
-    checkVersion: async () => ({ upToDate: true, clientVersion: '5.1', remoteVersion: '5.1' }),
+    checkVersion: async () => ({ upToDate: true, clientVersion:'5.1', remoteVersion:'5.1' }),
     pendingSyncs: 0,
 
     // Auth & Player
@@ -2887,10 +2879,10 @@ var AppDB = (() => {
   };
 })();
 
-if (typeof module !== 'undefined' && module.exports) {
+if (typeof module !=='undefined' && module.exports) {
   module.exports = AppDB;
 }
 
-if (typeof window !== "undefined") {
+if (typeof window !=="undefined") {
   window.AppDB = AppDB;
 }

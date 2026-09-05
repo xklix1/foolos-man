@@ -11,22 +11,22 @@ const GameEngine = (() => {
   // --- Game Configurations & Data Tables ---
 
   const JOBS = {
-    worker: { id: 'worker', name: 'عامل باليومية', salary: 6, xpReward: 2, xpNeeded: 0 },
-    cashier: { id: 'cashier', name: 'محاسب صندوق', salary: 14, xpReward: 4, xpNeeded: 180 },
-    accountant: { id: 'accountant', name: 'محاسب مالي قانوني', salary: 45, xpReward: 8, xpNeeded: 600 },
-    manager: { id: 'manager', name: 'مدير فرع وتطوير', salary: 130, xpReward: 14, xpNeeded: 2200 },
-    director: { id: 'director', name: 'مدير تنفيذي للمجموعة', salary: 350, xpReward: 24, xpNeeded: 6500 },
-    ceo: { id: 'ceo', name: 'رئيس مجلس الإدارة', salary: 980, xpReward: 38, xpNeeded: 18000 },
-    consultant: { id: 'consultant', name: 'مستشار اقتصادي ووزير سابق', salary: 2600, xpReward: 60, xpNeeded: 45000 },
-    bank_governor: { id: 'bank_governor', name: 'محافظ البنك المركزي', salary: 6800, xpReward: 95, xpNeeded: 120000 },
-    sovereign_head: { id: 'sovereign_head', name: 'رئيس صندوق الاستثمار السيادي', salary: 16500, xpReward: 140, xpNeeded: 280000 },
-    oligarch: { id: 'oligarch', name: 'إمبراطور كبار المستثمرين', salary: 42000, xpReward: 220, xpNeeded: 650000 }
+    worker: { id:'worker', name:'عامل باليومية', salary: 6, xpReward: 2, xpNeeded: 0 },
+    cashier: { id:'cashier', name:'محاسب صندوق', salary: 14, xpReward: 4, xpNeeded: 180 },
+    accountant: { id:'accountant', name:'محاسب مالي قانوني', salary: 45, xpReward: 8, xpNeeded: 600 },
+    manager: { id:'manager', name:'مدير فرع وتطوير', salary: 130, xpReward: 14, xpNeeded: 2200 },
+    director: { id:'director', name:'مدير تنفيذي للمجموعة', salary: 350, xpReward: 24, xpNeeded: 6500 },
+    ceo: { id:'ceo', name:'رئيس مجلس الإدارة', salary: 980, xpReward: 38, xpNeeded: 18000 },
+    consultant: { id:'consultant', name:'مستشار اقتصادي ووزير سابق', salary: 2600, xpReward: 60, xpNeeded: 45000 },
+    bank_governor: { id:'bank_governor', name:'محافظ البنك المركزي', salary: 6800, xpReward: 95, xpNeeded: 120000 },
+    sovereign_head: { id:'sovereign_head', name:'رئيس صندوق الاستثمار السيادي', salary: 16500, xpReward: 140, xpNeeded: 280000 },
+    oligarch: { id:'oligarch', name:'إمبراطور كبار المستثمرين', salary: 42000, xpReward: 220, xpNeeded: 650000 }
   };
 
   const BUSINESSES = {
     kiosk: {
-      id: 'kiosk',
-      name: 'كشك حلوى وجرائد ومشروبات 🍬',
+      id:'kiosk',
+      name:'كشك حلوى وجرائد ومشروبات',
       cost: 1500,
       baseDemand: 15,
       optimumPrice: 15,
@@ -36,8 +36,8 @@ const GameEngine = (() => {
       workerWage: 12
     },
     coffee: {
-      id: 'coffee',
-      name: 'عربة قهوة ومأكولات خفيفة ☕',
+      id:'coffee',
+      name:'عربة قهوة ومأكولات خفيفة',
       cost: 6800,
       baseDemand: 22,
       optimumPrice: 28,
@@ -47,8 +47,8 @@ const GameEngine = (() => {
       workerWage: 25
     },
     tech: {
-      id: 'tech',
-      name: 'شركة برمجيات وتطبيقات 💻',
+      id:'tech',
+      name:'شركة برمجيات وتطبيقات',
       cost: 140000,
       baseDemand: 15,
       optimumPrice: 75,
@@ -58,8 +58,8 @@ const GameEngine = (() => {
       workerWage: 70
     },
     logistics: {
-      id: 'logistics',
-      name: 'مجمع خدمات لوجستية وشحن 🚚',
+      id:'logistics',
+      name:'مجمع خدمات لوجستية وشحن',
       cost: 780000,
       baseDemand: 16,
       optimumPrice: 120,
@@ -69,8 +69,8 @@ const GameEngine = (() => {
       workerWage: 120
     },
     supermarket: {
-      id: 'supermarket',
-      name: 'سلسلة سوبرماركت وتجزئة 🛒',
+      id:'supermarket',
+      name:'سلسلة سوبرماركت وتجزئة',
       cost: 3200000,
       baseDemand: 18,
       optimumPrice: 200,
@@ -80,8 +80,8 @@ const GameEngine = (() => {
       workerWage: 210
     },
     solar_factory: {
-      id: 'solar_factory',
-      name: 'مصنع ألواح الطاقة الشمسية ☀️',
+      id:'solar_factory',
+      name:'مصنع ألواح الطاقة الشمسية ️',
       cost: 14000000,
       baseDemand: 17,
       optimumPrice: 340,
@@ -91,8 +91,8 @@ const GameEngine = (() => {
       workerWage: 380
     },
     private_hospital: {
-      id: 'private_hospital',
-      name: 'مستشفى ومجمع طبي تخصصي 🏥',
+      id:'private_hospital',
+      name:'مستشفى ومجمع طبي تخصصي',
       cost: 55000000,
       baseDemand: 15,
       optimumPrice: 600,
@@ -102,8 +102,8 @@ const GameEngine = (() => {
       workerWage: 680
     },
     media_studio: {
-      id: 'media_studio',
-      name: 'مؤسسة إنتاج إعلامي وسينمائي 🎬',
+      id:'media_studio',
+      name:'مؤسسة إنتاج إعلامي وسينمائي',
       cost: 160000000,
       baseDemand: 14,
       optimumPrice: 1100,
@@ -113,8 +113,8 @@ const GameEngine = (() => {
       workerWage: 1250
     },
     private_bank: {
-      id: 'private_bank',
-      name: 'بنك استثماري وشركة وساطة مالية 🏛️',
+      id:'private_bank',
+      name:'بنك استثماري وشركة وساطة مالية ️',
       cost: 520000000,
       baseDemand: 14,
       optimumPrice: 1800,
@@ -124,8 +124,8 @@ const GameEngine = (() => {
       workerWage: 2100
     },
     oil_refinery: {
-      id: 'oil_refinery',
-      name: 'مجمع مصافي البترول والطاقة 🛢️',
+      id:'oil_refinery',
+      name:'مجمع مصافي البترول والطاقة ️',
       cost: 1600000000,
       baseDemand: 13,
       optimumPrice: 2800,
@@ -135,8 +135,8 @@ const GameEngine = (() => {
       workerWage: 3600
     },
     space_tech: {
-      id: 'space_tech',
-      name: 'مؤسسة استكشاف الفضاء والأقمار الصناعية 🚀',
+      id:'space_tech',
+      name:'مؤسسة استكشاف الفضاء والأقمار الصناعية',
       cost: 4800000000,
       baseDemand: 12,
       optimumPrice: 4800,
@@ -148,218 +148,218 @@ const GameEngine = (() => {
   };
 
   const ASSETS = {
-    apartment: { id: 'apartment', name: 'شقة سكنية مؤجرة', cost: 250000, rent: 85, appreciation: 0.0004 },
-    office: { id: 'office', name: 'مبنى مكاتب تجارية', cost: 1600000, rent: 520, appreciation: 0.0006 },
-    mansion: { id: 'mansion', name: 'قصر ريفي فاخر', cost: 7200000, rent: 2400, appreciation: 0.0008 },
-    skyline_tower: { id: 'skyline_tower', name: 'برج ناطحة سحاب تجاري', cost: 35000000, rent: 11500, appreciation: 0.0010 },
-    luxury_resort: { id: 'luxury_resort', name: 'منتجع وفندق سياحي 5 نجوم', cost: 160000000, rent: 52000, appreciation: 0.0012 },
-    mega_yacht: { id: 'mega_yacht', name: 'يخت ملكي فاخر خاص', cost: 650000000, rent: 210000, appreciation: 0.0014 },
-    private_island: { id: 'private_island', name: 'جزيرة استوائية خاصة', cost: 2400000000, rent: 750000, appreciation: 0.0016 },
-    orbital_station: { id: 'orbital_station', name: 'محطة مدارية فضائية خاصة', cost: 9200000000, rent: 3000000, appreciation: 0.0020 }
+    apartment: { id:'apartment', name:'شقة سكنية مؤجرة', cost: 250000, rent: 85, appreciation: 0.0004 },
+    office: { id:'office', name:'مبنى مكاتب تجارية', cost: 1600000, rent: 520, appreciation: 0.0006 },
+    mansion: { id:'mansion', name:'قصر ريفي فاخر', cost: 7200000, rent: 2400, appreciation: 0.0008 },
+    skyline_tower: { id:'skyline_tower', name:'برج ناطحة سحاب تجاري', cost: 35000000, rent: 11500, appreciation: 0.0010 },
+    luxury_resort: { id:'luxury_resort', name:'منتجع وفندق سياحي 5 نجوم', cost: 160000000, rent: 52000, appreciation: 0.0012 },
+    mega_yacht: { id:'mega_yacht', name:'يخت ملكي فاخر خاص', cost: 650000000, rent: 210000, appreciation: 0.0014 },
+    private_island: { id:'private_island', name:'جزيرة استوائية خاصة', cost: 2400000000, rent: 750000, appreciation: 0.0016 },
+    orbital_station: { id:'orbital_station', name:'محطة مدارية فضائية خاصة', cost: 9200000000, rent: 3000000, appreciation: 0.0020 }
   };
 
   const STOCKS = {
-    COMI: { name: 'البنك التجاري الدولي', symbol: 'COMI', basePrice: 38, volatility: 0.015, reversion: 0.01, floor: 18, ceiling: 85, dividend: 0.00015, maxShares: 50000, seed: 101 },
-    EAST: { name: 'الشرقية للدخان', symbol: 'EAST', basePrice: 85, volatility: 0.02, reversion: 0.015, floor: 35, ceiling: 190, dividend: 0.00025, maxShares: 30000, seed: 202 },
-    ETEL: { name: 'المصرية للاتصالات', symbol: 'ETEL', basePrice: 48, volatility: 0.018, reversion: 0.012, floor: 22, ceiling: 110, dividend: 0.00018, maxShares: 40000, seed: 303 },
-    FWRY: { name: 'فوري للمدفوعات الإلكترونية', symbol: 'FWRY', basePrice: 92, volatility: 0.025, reversion: 0.02, floor: 42, ceiling: 215, dividend: 0.00015, maxShares: 25000, seed: 404 },
-    CASH: { name: 'صندوق الاستثمار التقني البديل', symbol: 'CASH', basePrice: 125, volatility: 0.03, reversion: 0.025, floor: 45, ceiling: 290, dividend: 0.00035, maxShares: 20000, seed: 505 },
-    BITC: { name: 'مؤشر البيتكوين والأصول الرقمية', symbol: 'BITC', basePrice: 310, volatility: 0.05, reversion: 0.03, floor: 90, ceiling: 780, dividend: 0, maxShares: 5000, seed: 606 },
-    GOLD: { name: 'صندوق سبائك الذهب الخالص', symbol: 'GOLD', basePrice: 220, volatility: 0.01, reversion: 0.008, floor: 130, ceiling: 480, dividend: 0.0003, maxShares: 10000, seed: 707 },
-    AIX: { name: 'صندوق الذكاء الاصطناعي العالمي', symbol: 'AIX', basePrice: 380, volatility: 0.035, reversion: 0.022, floor: 120, ceiling: 890, dividend: 0.00025, maxShares: 8000, seed: 808 }
+    COMI: { name:'البنك التجاري الدولي', symbol:'COMI', basePrice: 38, volatility: 0.015, reversion: 0.01, floor: 18, ceiling: 85, dividend: 0.00015, maxShares: 50000, seed: 101 },
+    EAST: { name:'الشرقية للدخان', symbol:'EAST', basePrice: 85, volatility: 0.02, reversion: 0.015, floor: 35, ceiling: 190, dividend: 0.00025, maxShares: 30000, seed: 202 },
+    ETEL: { name:'المصرية للاتصالات', symbol:'ETEL', basePrice: 48, volatility: 0.018, reversion: 0.012, floor: 22, ceiling: 110, dividend: 0.00018, maxShares: 40000, seed: 303 },
+    FWRY: { name:'فوري للمدفوعات الإلكترونية', symbol:'FWRY', basePrice: 92, volatility: 0.025, reversion: 0.02, floor: 42, ceiling: 215, dividend: 0.00015, maxShares: 25000, seed: 404 },
+    CASH: { name:'صندوق الاستثمار التقني البديل', symbol:'CASH', basePrice: 125, volatility: 0.03, reversion: 0.025, floor: 45, ceiling: 290, dividend: 0.00035, maxShares: 20000, seed: 505 },
+    BITC: { name:'مؤشر البيتكوين والأصول الرقمية', symbol:'BITC', basePrice: 310, volatility: 0.05, reversion: 0.03, floor: 90, ceiling: 780, dividend: 0, maxShares: 5000, seed: 606 },
+    GOLD: { name:'صندوق سبائك الذهب الخالص', symbol:'GOLD', basePrice: 220, volatility: 0.01, reversion: 0.008, floor: 130, ceiling: 480, dividend: 0.0003, maxShares: 10000, seed: 707 },
+    AIX: { name:'صندوق الذكاء الاصطناعي العالمي', symbol:'AIX', basePrice: 380, volatility: 0.035, reversion: 0.022, floor: 120, ceiling: 890, dividend: 0.00025, maxShares: 8000, seed: 808 }
   };
 
   const CORP_PROJECTS = {
-    gigafactory: { id: 'gigafactory', name: 'مجمع أشباه الموصلات والرقائق', cost: 12000000000, profitPerTick: 25000000, minMembers: 1 },
-    zohr_field: { id: 'zohr_field', name: 'حق امتياز حقل غاز ظهر الطبيعي', cost: 38000000000, profitPerTick: 95000000, minMembers: 1 },
-    asteroid_mining: { id: 'asteroid_mining', name: 'وكالة تعدين الكويكبات الفضائية', cost: 95000000000, profitPerTick: 280000000, minMembers: 1 },
-    submarine_cables: { id: 'submarine_cables', name: 'شبكة الألياف البحرية العالمية', cost: 220000000000, profitPerTick: 750000000, minMembers: 2 },
-    medical_city: { id: 'medical_city', name: 'المدينة الطبية العالمية المتكاملة', cost: 500000000000, profitPerTick: 1850000000, minMembers: 3 },
-    nuclear_reactor: { id: 'nuclear_reactor', name: 'المفاعل النووي القومي لإنتاج الطاقة', cost: 1200000000000, profitPerTick: 4600000000, minMembers: 8 },
-    mars_colony: { id: 'mars_colony', name: 'مستعمرة التعدين المريخية المستقلة', cost: 3500000000000, profitPerTick: 15000000000, minMembers: 15 }
+    gigafactory: { id:'gigafactory', name:'مجمع أشباه الموصلات والرقائق', cost: 12000000000, profitPerTick: 25000000, minMembers: 1 },
+    zohr_field: { id:'zohr_field', name:'حق امتياز حقل غاز ظهر الطبيعي', cost: 38000000000, profitPerTick: 95000000, minMembers: 1 },
+    asteroid_mining: { id:'asteroid_mining', name:'وكالة تعدين الكويكبات الفضائية', cost: 95000000000, profitPerTick: 280000000, minMembers: 1 },
+    submarine_cables: { id:'submarine_cables', name:'شبكة الألياف البحرية العالمية', cost: 220000000000, profitPerTick: 750000000, minMembers: 2 },
+    medical_city: { id:'medical_city', name:'المدينة الطبية العالمية المتكاملة', cost: 500000000000, profitPerTick: 1850000000, minMembers: 3 },
+    nuclear_reactor: { id:'nuclear_reactor', name:'المفاعل النووي القومي لإنتاج الطاقة', cost: 1200000000000, profitPerTick: 4600000000, minMembers: 8 },
+    mars_colony: { id:'mars_colony', name:'مستعمرة التعدين المريخية المستقلة', cost: 3500000000000, profitPerTick: 15000000000, minMembers: 15 }
   };
 
   const CAR_TEMPLATES = {
     lambo: {
-      id: 'lambo',
-      name: 'Lamborghini Aventador 🏎️',
+      id:'lambo',
+      name:'Lamborghini Aventador ️',
       cost: 15000000,
       rentalIncomePerTick: 2200,
       maintenanceCostPerTick: 800,
       prestigeBonus: 5,
       cooldownReduction: 0.15,
-      desc: 'سيارة رياضية خارقة. تمنحك خصم 15% على فترة انتظار نوبات العمل عند تفعيلها كسيارة شخصية.'
+      desc:'سيارة رياضية خارقة. تمنحك خصم 15% على فترة انتظار نوبات العمل عند تفعيلها كسيارة شخصية.'
     },
     rolls: {
-      id: 'rolls',
-      name: 'Rolls-Royce Phantom 👑',
+      id:'rolls',
+      name:'Rolls-Royce Phantom',
       cost: 40000000,
       rentalIncomePerTick: 5000,
       maintenanceCostPerTick: 1800,
       prestigeBonus: 15,
       interestBonus: 0.05,
-      desc: 'عنوان الفخامة المفرطة. تزيد أرباح فوائد إيداعات البنك بنسبة +5% عند تفعيلها كسيارة شخصية.'
+      desc:'عنوان الفخامة المفرطة. تزيد أرباح فوائد إيداعات البنك بنسبة +5% عند تفعيلها كسيارة شخصية.'
     },
     shelby: {
-      id: 'shelby',
-      name: 'Shelby Cobra 1965 🌟',
+      id:'shelby',
+      name:'Shelby Cobra 1965',
       cost: 120000000,
       rentalIncomePerTick: 12000,
       maintenanceCostPerTick: 4000,
       prestigeBonus: 40,
-      desc: 'أسطورة كلاسيكية نادرة. تدر دخلاً ثابتاً عند تأجيرها وقيمتها قابلة للزيادة بمرور الوقت.'
+      desc:'أسطورة كلاسيكية نادرة. تدر دخلاً ثابتاً عند تأجيرها وقيمتها قابلة للزيادة بمرور الوقت.'
     }
   };
 
   const SMUGGLING_VEHICLES = {
     speedboat: {
-      id: 'speedboat',
-      name: 'قارب سريع مضاد للرادار 🚤',
+      id:'speedboat',
+      name:'قارب سريع مضاد للرادار',
       cost: 200000000,
       capacity: 50,
-      desc: 'قارب تهريب سريع وخفيف الحركة. مثالي للممرات المائية القصيرة والذهب.'
+      desc:'قارب تهريب سريع وخفيف الحركة. مثالي للممرات المائية القصيرة والذهب.'
     },
     plane: {
-      id: 'plane',
-      name: 'طائرة شحن جوي خفيفة ✈️',
+      id:'plane',
+      name:'طائرة شحن جوي خفيفة ️',
       cost: 2000000000,
       capacity: 200,
-      desc: 'طائرة شحن سريعة تتجاوز الحدود البرية لنقل المجوهرات والتحف الثمينة.'
+      desc:'طائرة شحن سريعة تتجاوز الحدود البرية لنقل المجوهرات والتحف الثمينة.'
     },
     ship: {
-      id: 'ship',
-      name: 'سفينة حاويات عملاقة 🚢',
+      id:'ship',
+      name:'سفينة حاويات عملاقة',
       cost: 20000000000,
       capacity: 1000,
-      desc: 'سفينة شحن تجارية عملاقة قادرة على نقل أطنان من البضائع وغسيل الأموال.'
+      desc:'سفينة شحن تجارية عملاقة قادرة على نقل أطنان من البضائع وغسيل الأموال.'
     }
   };
 
   const SMUGGLING_ROUTES = {
     dubai: {
-      id: 'dubai',
-      name: 'تهريب مجوهرات وذهب لـ دبي 🇦🇪',
-      requiredVehicles: ['speedboat', 'plane'],
+      id:'dubai',
+      name:'تهريب مجوهرات وذهب لـ دبي',
+      requiredVehicles: ['speedboat','plane'],
       durationTicks: 60,
       yieldCash: 500000000,
       riskPct: 20,
-      desc: 'طريق مائي وجوي سريع لنقل المعادن النفيسة لخزائن دبي.'
+      desc:'طريق مائي وجوي سريع لنقل المعادن النفيسة لخزائن دبي.'
     },
     switzerland: {
-      id: 'switzerland',
-      name: 'تهريب تحف وسندات لـ سويسرا 🇨🇭',
-      requiredVehicles: ['plane', 'ship'],
+      id:'switzerland',
+      name:'تهريب تحف وسندات لـ سويسرا',
+      requiredVehicles: ['plane','ship'],
       durationTicks: 180,
       yieldCash: 6000000000,
       riskPct: 12,
-      desc: 'طريق التفافي معقد لنقل السندات المصرفية والأصول الذهبية للبنوك السويسرية.'
+      desc:'طريق التفافي معقد لنقل السندات المصرفية والأصول الذهبية للبنوك السويسرية.'
     },
     cayman: {
-      id: 'cayman',
-      name: 'غسيل ونقل أموال لـ جزر الكايمان 🇰🇾',
+      id:'cayman',
+      name:'غسيل ونقل أموال لـ جزر الكايمان',
       requiredVehicles: ['ship'],
       durationTicks: 400,
       yieldCash: 80000000000,
       riskPct: 6,
-      desc: 'عملية نقل أموال عملاقة لغسل أرباح الكارتيل عبر البنوك الخارجية المجهولة.'
+      desc:'عملية نقل أموال عملاقة لغسل أرباح الكارتيل عبر البنوك الخارجية المجهولة.'
     }
   };
 
   const STORE_ITEMS = {
     gold_pen: {
-      id: 'gold_pen',
-      name: 'القلم الذهبي للمدراء',
+      id:'gold_pen',
+      name:'القلم الذهبي للمدراء',
       cost: 20000,
-      desc: 'يزيد خبرتك الوظيفية XP بنسبة +8% لتسريع الترقيات. ينتهي مفعوله بعد 3 دقائق.',
-      effect: 'xp_boost',
+      desc:'يزيد خبرتك الوظيفية XP بنسبة +8% لتسريع الترقيات. ينتهي مفعوله بعد 3 دقائق.',
+      effect:'xp_boost',
       value: 0.08,
       durationTicks: 180, // 3 minutes
       cooldownSec: 600,   // 10 minutes cooldown
       maxDailyUses: 4     // max 4 times per 24 hours
     },
     premium_lawyer: {
-      id: 'premium_lawyer',
-      name: 'توكيل محامٍ دولي قدير',
+      id:'premium_lawyer',
+      name:'توكيل محامٍ دولي قدير',
       cost: 100000,
-      desc: 'يخفض خطورة القبض في صفقات السوق المحظورة بنسبة -6% لمدة 5 دقائق.',
-      effect: 'legal_protection',
+      desc:'يخفض خطورة القبض في صفقات السوق المحظورة بنسبة -6% لمدة 5 دقائق.',
+      effect:'legal_protection',
       value: 0.06,
       durationTicks: 300,  // 5 minutes
       cooldownSec: 900,    // 15 minutes cooldown
       maxDailyUses: 3     // max 3 times per 24 hours
     },
     energy_drink: {
-      id: 'energy_drink',
-      name: 'مشروب الطاقة والتركيز الفائق',
+      id:'energy_drink',
+      name:'مشروب الطاقة والتركيز الفائق',
       cost: 25000,
-      desc: 'يمنحك نشاطاً ويزيد راتب نوبات العمل بنسبة +12.5% لمدة 90 ثانية.',
-      effect: 'salary_multiplier',
+      desc:'يمنحك نشاطاً ويزيد راتب نوبات العمل بنسبة +12.5% لمدة 90 ثانية.',
+      effect:'salary_multiplier',
       value: 1.125,
       durationTicks: 90,  // 90 seconds
       cooldownSec: 480,   // 8 minutes cooldown
       maxDailyUses: 5     // max 5 times per 24 hours
     },
     tax_shield: {
-      id: 'tax_shield',
-      name: 'درع الإعفاء والملاذ الضريبي',
+      id:'tax_shield',
+      name:'درع الإعفاء والملاذ الضريبي',
       cost: 600000,
-      desc: 'يمنحك خصماً قدره 4% على ترقيات الشركات ويخفض ضريبة الثروة بنسبة 12.5% لمدة 6 ساعات.',
-      effect: 'upgrade_discount',
+      desc:'يمنحك خصماً قدره 4% على ترقيات الشركات ويخفض ضريبة الثروة بنسبة 12.5% لمدة 6 ساعات.',
+      effect:'upgrade_discount',
       value: 0.04,
       durationTicks: 7200,  // 6 hours (in ticks)
       cooldownSec: 86400,   // 24 hours cooldown
       maxDailyUses: 1      // max 1 time per 24 hours
     },
     market_scanner: {
-      id: 'market_scanner',
-      name: 'ماسح البورصة والتداول الذكي',
+      id:'market_scanner',
+      name:'ماسح البورصة والتداول الذكي',
       cost: 200000,
-      desc: 'يخفف أثر الهبوط والتصحيحات العكسية لأسهمك بنسبة 10% لمدة 4 دقائق.',
-      effect: 'stock_shield',
+      desc:'يخفف أثر الهبوط والتصحيحات العكسية لأسهمك بنسبة 10% لمدة 4 دقائق.',
+      effect:'stock_shield',
       value: 0.10,
       durationTicks: 240,  // 4 minutes
       cooldownSec: 1200,   // 20 minutes cooldown
       maxDailyUses: 3     // max 3 times per 24 hours
     },
     vip_casino_pass: {
-      id: 'vip_casino_pass',
-      name: 'بطاقة VIP لكازينو الحظ',
+      id:'vip_casino_pass',
+      name:'بطاقة VIP لكازينو الحظ',
       cost: 80000,
-      desc: 'تمنحك بونص مالي إضافي بنسبة +20% على أرباح الكازينو وعجلة الحظ، مع استرداد تعادل البلاك جاك. صالحة لمدة 5 دقائق.',
-      effect: 'casino_luck_boost',
+      desc:'تمنحك بونص مالي إضافي بنسبة +20% على أرباح الكازينو وعجلة الحظ، مع استرداد تعادل البلاك جاك. صالحة لمدة 5 دقائق.',
+      effect:'casino_luck_boost',
       value: 0.20,
       durationTicks: 100,  // ~5 minutes
       cooldownSec: 900,    // 15 minutes cooldown
       maxDailyUses: 3     // max 3 times per 24 hours
     },
     quantum_cpu: {
-      id: 'quantum_cpu',
-      name: 'معالج الحوسبة الكمومية (Quantum Core)',
+      id:'quantum_cpu',
+      name:'معالج الحوسبة الكمومية (Quantum Core)',
       cost: 500000,
-      desc: 'يرفع أرباح وتدفقات كافة مشاريعك بنسبة +12.5% لمدة 4 دقائق.',
-      effect: 'biz_multiplier',
+      desc:'يرفع أرباح وتدفقات كافة مشاريعك بنسبة +12.5% لمدة 4 دقائق.',
+      effect:'biz_multiplier',
       value: 1.125,
       durationTicks: 240,  // 4 minutes
       cooldownSec: 1800,   // 30 minutes cooldown
       maxDailyUses: 3     // max 3 times per 24 hours
     },
     diamond_card: {
-      id: 'diamond_card',
-      name: 'عضوية النادي الماسي للبنوك الدولية',
+      id:'diamond_card',
+      name:'عضوية النادي الماسي للبنوك الدولية',
       cost: 1200000,
-      desc: 'ترفع فوائد الودائع البنكية بنسبة 10% وتخفض ضرائب الثروة بنسبة 12.5% لمدة 8 دقائق.',
-      effect: 'bank_perk',
+      desc:'ترفع فوائد الودائع البنكية بنسبة 10% وتخفض ضرائب الثروة بنسبة 12.5% لمدة 8 دقائق.',
+      effect:'bank_perk',
       value: 0.10,
       durationTicks: 480,  // 8 minutes
       cooldownSec: 7200,   // 2 hours cooldown
       maxDailyUses: 2     // max 2 times per 24 hours
     },
     cronos_gear: {
-      id: 'cronos_gear',
-      name: 'ساعة الكرونوس لتسريع العمليات',
+      id:'cronos_gear',
+      name:'ساعة الكرونوس لتسريع العمليات',
       cost: 350000,
-      desc: 'تقلل وقت التبريد (Cooldown) للعمليات وفترات نوبات العمل بنسبة 15% لمدة 5 دقائق.',
-      effect: 'cooldown_reduction',
+      desc:'تقلل وقت التبريد (Cooldown) للعمليات وفترات نوبات العمل بنسبة 15% لمدة 5 دقائق.',
+      effect:'cooldown_reduction',
       value: 0.15,
       durationTicks: 300,  // 5 minutes
       cooldownSec: 1200,   // 20 minutes cooldown
@@ -369,57 +369,57 @@ const GameEngine = (() => {
 
   const INVESTMENTS = {
     short: {
-      id: 'short',
-      name: 'وديعة بنكية قصيرة الأجل',
+      id:'short',
+      name:'وديعة بنكية قصيرة الأجل',
       durationTicks: 600, // 10 minutes
       rate: 0.08,
       minAmount: 10000,
       maxAmount: 100000,
-      desc: 'تجميد السيولة لمدة 10 دقائق لتوفير التمويل المصرفي مقابل عائد أرباح إضافي (+8%).'
+      desc:'تجميد السيولة لمدة 10 دقائق لتوفير التمويل المصرفي مقابل عائد أرباح إضافي (+8%).'
     },
     medium: {
-      id: 'medium',
-      name: 'صندوق استثمار عقاري وسندات',
+      id:'medium',
+      name:'صندوق استثمار عقاري وسندات',
       durationTicks: 1800, // 30 minutes
       rate: 0.25,
       minAmount: 50000,
       maxAmount: 500000,
-      desc: 'استثمار مضمون في أصول إنشائية وتجارية مدرة للدخل لمدة 30 دقيقة (+25%).'
+      desc:'استثمار مضمون في أصول إنشائية وتجارية مدرة للدخل لمدة 30 دقيقة (+25%).'
     },
     long: {
-      id: 'long',
-      name: 'صندوق أسهم وتحوط دولي خاص',
+      id:'long',
+      name:'صندوق أسهم وتحوط دولي خاص',
       durationTicks: 7200, // 2 hours
       rate: 0.65,
       minAmount: 250000,
       maxAmount: 3000000,
-      desc: 'محفظة استثمارية مغلقة في أسواق المال العالمية لمدة ساعتين بعوائد استثنائية (+65%).'
+      desc:'محفظة استثمارية مغلقة في أسواق المال العالمية لمدة ساعتين بعوائد استثنائية (+65%).'
     },
     venture: {
-      id: 'venture',
-      name: 'صندوق الاكتتابات والشركات المليارية',
+      id:'venture',
+      name:'صندوق الاكتتابات والشركات المليارية',
       durationTicks: 21600, // 6 hours
       rate: 1.50,
       minAmount: 1500000,
       maxAmount: 20000000,
-      desc: 'استثمار استراتيجي مغلق في شركات التكنولوجيا الصاعدة لمدة 6 ساعات بعوائد فائقة (+150%).'
+      desc:'استثمار استراتيجي مغلق في شركات التكنولوجيا الصاعدة لمدة 6 ساعات بعوائد فائقة (+150%).'
     },
     imperial: {
-      id: 'imperial',
-      name: 'صندوق الثروة الإمبراطوري الماسي',
+      id:'imperial',
+      name:'صندوق الثروة الإمبراطوري الماسي',
       durationTicks: 43200, // 12 hours (43,200 seconds)
       rate: 3.00,
       minAmount: 10000000,
       maxAmount: 100000000,
-      desc: 'خزينة مقفلة لكبار أثرياء العالم لمدة 12 ساعة تمنح عائداً أسطورياً أربعة أضعاف (+300%).'
+      desc:'خزينة مقفلة لكبار أثرياء العالم لمدة 12 ساعة تمنح عائداً أسطورياً أربعة أضعاف (+300%).'
     }
   };
 
   const BLACK_MARKET = {
     contraband_cigars: {
-      id: 'contraband_cigars',
-      name: 'تهريب بضائع وسيجار جمركي فاخر',
-      desc: 'إدخال شحنة بضائع حصرية عبر الميناء بدون دفع رسوم جمركية.',
+      id:'contraband_cigars',
+      name:'تهريب بضائع وسيجار جمركي فاخر',
+      desc:'إدخال شحنة بضائع حصرية عبر الميناء بدون دفع رسوم جمركية.',
       cost: 6000,
       payout: 15000,
       successChance: 0.82,
@@ -428,13 +428,13 @@ const GameEngine = (() => {
       repLoss: 10,
       repNeeded: 0,
       cooldownSec: 60,
-      icon: 'fa-box-open',
-      tier: 'سهل'
+      icon:'fa-box-open',
+      tier:'سهل'
     },
     electronics: {
-      id: 'electronics',
-      name: 'تهريب حاوية أجهزة إلكترونية حديثة',
-      desc: 'استيراد غير رسمي لأجهزة هواتف ومعدات حاسوبية من وراء الجمارك.',
+      id:'electronics',
+      name:'تهريب حاوية أجهزة إلكترونية حديثة',
+      desc:'استيراد غير رسمي لأجهزة هواتف ومعدات حاسوبية من وراء الجمارك.',
       cost: 35000,
       payout: 88000,
       successChance: 0.72,
@@ -443,13 +443,13 @@ const GameEngine = (() => {
       repLoss: 20,
       repNeeded: 0,
       cooldownSec: 180,
-      icon: 'fa-laptop-code',
-      tier: 'متوسط'
+      icon:'fa-laptop-code',
+      tier:'متوسط'
     },
     arms_intel: {
-      id: 'arms_intel',
-      name: 'صفقة تسريب سيرفرات وبيانات استخباراتية',
-      desc: 'بيع وثائق حساسة وشفرات سرية لجهات استثمارية عالمية.',
+      id:'arms_intel',
+      name:'صفقة تسريب سيرفرات وبيانات استخباراتية',
+      desc:'بيع وثائق حساسة وشفرات سرية لجهات استثمارية عالمية.',
       cost: 110000,
       payout: 320000,
       successChance: 0.58,
@@ -458,13 +458,13 @@ const GameEngine = (() => {
       repLoss: 50,
       repNeeded: 0,
       cooldownSec: 360,
-      icon: 'fa-user-secret',
-      tier: 'متقدم'
+      icon:'fa-user-secret',
+      tier:'متقدم'
     },
     swiss_laundry: {
-      id: 'swiss_laundry',
-      name: 'مركز غسيل الأموال السويسري',
-      desc: 'قنوات بنكية سويسرية سرية لغسيل الأموال المشبوهة بأمان تام ونسبة عمولة منخفضة جداً (15% فاقد).',
+      id:'swiss_laundry',
+      name:'مركز غسيل الأموال السويسري',
+      desc:'قنوات بنكية سويسرية سرية لغسيل الأموال المشبوهة بأمان تام ونسبة عمولة منخفضة جداً (15% فاقد).',
       cost: 1000000,
       payout: 850000,
       successChance: 1.0,
@@ -473,15 +473,15 @@ const GameEngine = (() => {
       repLoss: 0,
       repNeeded: 250,
       cooldownSec: 900, // 15 mins
-      icon: 'fa-building-columns',
-      tier: 'عملية خاصة',
+      icon:'fa-building-columns',
+      tier:'عملية خاصة',
       cleanPayout: true,
       requireDirtyCost: true
     },
     crypto: {
-      id: 'crypto',
-      name: 'اختراق منصات رقمية وغسيل عملات مشفرة',
-      desc: 'هجوم سيبراني معقد على محافظ العملات المشفرة مع تحويل الأصول لخوادم خارجية.',
+      id:'crypto',
+      name:'اختراق منصات رقمية وغسيل عملات مشفرة',
+      desc:'هجوم سيبراني معقد على محافظ العملات المشفرة مع تحويل الأصول لخوادم خارجية.',
       cost: 380000,
       payout: 1500000,
       successChance: 0.45,
@@ -490,13 +490,13 @@ const GameEngine = (() => {
       repLoss: 100,
       repNeeded: 120,
       cooldownSec: 720, // 12 mins
-      icon: 'fa-network-wired',
-      tier: 'محترف'
+      icon:'fa-network-wired',
+      tier:'محترف'
     },
     artifacts: {
-      id: 'artifacts',
-      name: 'تهريب آثار ومخطوطات نادرة لمزادات سرية',
-      desc: 'صفقة كبرى لبيع قطع أثرية نادرة لكبار هواة الجمع في السوق السوداء الدولية.',
+      id:'artifacts',
+      name:'تهريب آثار ومخطوطات نادرة لمزادات سرية',
+      desc:'صفقة كبرى لبيع قطع أثرية نادرة لكبار هواة الجمع في السوق السوداء الدولية.',
       cost: 1200000,
       payout: 5000000,
       successChance: 0.36,
@@ -505,13 +505,13 @@ const GameEngine = (() => {
       repLoss: 200,
       repNeeded: 500,
       cooldownSec: 1500, // 25 mins
-      icon: 'fa-gem',
-      tier: 'خطر جداً'
+      icon:'fa-gem',
+      tier:'خطر جداً'
     },
     diamond_heist: {
-      id: 'diamond_heist',
-      name: 'عملية السطو الكبرى على خزائن الماس الدولية',
-      desc: 'أضخم عملية سرقة منظمة في التاريخ لخزينة الماس والسبائك البنكية.',
+      id:'diamond_heist',
+      name:'عملية السطو الكبرى على خزائن الماس الدولية',
+      desc:'أضخم عملية سرقة منظمة في التاريخ لخزينة الماس والسبائك البنكية.',
       cost: 4000000,
       payout: 25000000,
       successChance: 0.24,
@@ -520,13 +520,13 @@ const GameEngine = (() => {
       repLoss: 500,
       repNeeded: 1500,
       cooldownSec: 2700, // 45 mins
-      icon: 'fa-shield-halved',
-      tier: 'أسطوري'
+      icon:'fa-shield-halved',
+      tier:'أسطوري'
     },
     uranium_smuggling: {
-      id: 'uranium_smuggling',
-      name: 'تهريب اليورانيوم المخصب الدولي',
-      desc: 'صفقة تهريب وتوريد شحنة يورانيوم مخصب لتشغيل مفاعلات طاقة خاصة تابعة لمنظمات دولية سرية.',
+      id:'uranium_smuggling',
+      name:'تهريب اليورانيوم المخصب الدولي',
+      desc:'صفقة تهريب وتوريد شحنة يورانيوم مخصب لتشغيل مفاعلات طاقة خاصة تابعة لمنظمات دولية سرية.',
       cost: 30000000,
       payout: 180000000,
       successChance: 0.22,
@@ -535,13 +535,13 @@ const GameEngine = (() => {
       repLoss: 2000,
       repNeeded: 3200,
       cooldownSec: 3600, // 60 mins
-      icon: 'fa-radiation',
-      tier: 'عملية خاصة'
+      icon:'fa-radiation',
+      tier:'عملية خاصة'
     },
     defense_tech: {
-      id: 'defense_tech',
-      name: 'صفقة تكنولوجيا دفاعية وشفرات رادار مسربة',
-      desc: 'بيع شفرات منظومات دفاع جوي فائقة التطور لجهات أجنبية خاصة.',
+      id:'defense_tech',
+      name:'صفقة تكنولوجيا دفاعية وشفرات رادار مسربة',
+      desc:'بيع شفرات منظومات دفاع جوي فائقة التطور لجهات أجنبية خاصة.',
       cost: 15000000,
       payout: 100000000,
       successChance: 0.20,
@@ -550,13 +550,13 @@ const GameEngine = (() => {
       repLoss: 1000,
       repNeeded: 4500,
       cooldownSec: 4200, // 70 mins
-      icon: 'fa-jet-fighter',
-      tier: 'أسطوري'
+      icon:'fa-jet-fighter',
+      tier:'أسطوري'
     },
     central_bank_hack: {
-      id: 'central_bank_hack',
-      name: 'قرصنة واختراق البنوك المركزية',
-      desc: 'فرض السيطرة والقرصنة السيبرانية على خوادم بنوك مركزية كبرى وسحب احتياطيات رقمية.',
+      id:'central_bank_hack',
+      name:'قرصنة واختراق البنوك المركزية',
+      desc:'فرض السيطرة والقرصنة السيبرانية على خوادم بنوك مركزية كبرى وسحب احتياطيات رقمية.',
       cost: 120000000,
       payout: 1000000000,
       successChance: 0.16,
@@ -565,13 +565,13 @@ const GameEngine = (() => {
       repLoss: 6000,
       repNeeded: 6500,
       cooldownSec: 7200, // 2 hours
-      icon: 'fa-terminal',
-      tier: 'عملية خاصة'
+      icon:'fa-terminal',
+      tier:'عملية خاصة'
     },
     satellite_hack: {
-      id: 'satellite_hack',
-      name: 'السيطرة على شبكة أقمار صناعية وتشفيرها',
-      desc: 'اختراق منظومة البث الفضائي العالمية وطلب فدية بمليارات الدولارات.',
+      id:'satellite_hack',
+      name:'السيطرة على شبكة أقمار صناعية وتشفيرها',
+      desc:'اختراق منظومة البث الفضائي العالمية وطلب فدية بمليارات الدولارات.',
       cost: 60000000,
       payout: 500000000,
       successChance: 0.16,
@@ -580,13 +580,13 @@ const GameEngine = (() => {
       repLoss: 2000,
       repNeeded: 4500,
       cooldownSec: 7200,
-      icon: 'fa-satellite',
-      tier: 'خطر مطلق'
+      icon:'fa-satellite',
+      tier:'خطر مطلق'
     },
     godfather: {
-      id: 'godfather',
-      name: 'عملية العراب: السيطرة على كارتيل التجارة العالمي',
-      desc: 'الانقلاب الشامل والسيطرة على مقاليد إمبراطورية السوق السوداء العالمية.',
+      id:'godfather',
+      name:'عملية العراب: السيطرة على كارتيل التجارة العالمي',
+      desc:'الانقلاب الشامل والسيطرة على مقاليد إمبراطورية السوق السوداء العالمية.',
       cost: 250000000,
       payout: 3000000000,
       successChance: 0.12,
@@ -595,50 +595,50 @@ const GameEngine = (() => {
       repLoss: 6000,
       repNeeded: 10000,
       cooldownSec: 14400,
-      icon: 'fa-crown',
-      tier: 'سيد الظلال'
+      icon:'fa-crown',
+      tier:'سيد الظلال'
     }
   };
 
   const BLACK_MARKET_GEAR = {
     radar_jammer: {
-      id: 'radar_jammer',
-      name: 'جهاز تشويش رادارات الشرطة',
-      desc: 'يقلل احتمالية المداهمة الأمنية في صفقات السوق السوداء بنسبة 6% لمدة 4 دقائق.',
+      id:'radar_jammer',
+      name:'جهاز تشويش رادارات الشرطة',
+      desc:'يقلل احتمالية المداهمة الأمنية في صفقات السوق السوداء بنسبة 6% لمدة 4 دقائق.',
       cost: 80000,
-      icon: 'fa-satellite-dish',
+      icon:'fa-satellite-dish',
       durationTicks: 240
     },
     fake_passport: {
-      id: 'fake_passport',
-      name: 'جواز سفر دبلوماسي مزور',
-      desc: 'حماية طوارئ لمرة واحدة — يضمن لك الهروب وتفادي السجن عند أول مداهمة.',
+      id:'fake_passport',
+      name:'جواز سفر دبلوماسي مزور',
+      desc:'حماية طوارئ لمرة واحدة — يضمن لك الهروب وتفادي السجن عند أول مداهمة.',
       cost: 600000,
-      icon: 'fa-passport',
+      icon:'fa-passport',
       durationTicks: 300
     },
     crypto_cleaner: {
-      id: 'crypto_cleaner',
-      name: 'بروتوكول تشفير مالي (Zero-Trace)',
-      desc: 'يخفض ضريبة غسيل وتبييض الأموال إلى 40% بدلاً من 45%.',
+      id:'crypto_cleaner',
+      name:'بروتوكول تشفير مالي (Zero-Trace)',
+      desc:'يخفض ضريبة غسيل وتبييض الأموال إلى 40% بدلاً من 45%.',
       cost: 200000,
-      icon: 'fa-shield-virus',
+      icon:'fa-shield-virus',
       durationTicks: 200
     },
     diplomatic_bag: {
-      id: 'diplomatic_bag',
-      name: 'حقيبة التشفير الدبلوماسية المصفحة',
-      desc: 'تحمي 18% من الأموال المشبوهة من المصادرة في حال المداهمة.',
+      id:'diplomatic_bag',
+      name:'حقيبة التشفير الدبلوماسية المصفحة',
+      desc:'تحمي 18% من الأموال المشبوهة من المصادرة في حال المداهمة.',
       cost: 800000,
-      icon: 'fa-briefcase',
+      icon:'fa-briefcase',
       durationTicks: 240
     },
     commissioner_wire: {
-      id: 'commissioner_wire',
-      name: 'شريحة اتصال كبار المسؤولين (VIP Wire)',
-      desc: 'تخفض تكلفة الرشوة وإسقاط الملاحقات الأمنية بنسبة 18%.',
+      id:'commissioner_wire',
+      name:'شريحة اتصال كبار المسؤولين (VIP Wire)',
+      desc:'تخفض تكلفة الرشوة وإسقاط الملاحقات الأمنية بنسبة 18%.',
       cost: 1000000,
-      icon: 'fa-mobile-retro',
+      icon:'fa-mobile-retro',
       durationTicks: 300
     }
   };
@@ -646,207 +646,207 @@ const GameEngine = (() => {
   // --- شركة الاستيراد والتصدير الدولية (Import & Export Global Fleet) ---
   const TRADE_COMMODITIES = {
     fashion_brands: {
-      id: 'fashion_brands',
-      name: 'أزياء وملابس ماركات عالمية',
-      tier: 'air_cargo',
-      tierName: 'شحن جوي سريع (Express Air Cargo)',
+      id:'fashion_brands',
+      name:'أزياء وملابس ماركات عالمية',
+      tier:'air_cargo',
+      tierName:'شحن جوي سريع (Express Air Cargo)',
       unitCost: 5000,
       importDurationSec: 2700, // 45 minutes
       exportDurationSec: 2700, // 45 minutes
       baseSellMin: 5900,       // +18%
       baseSellMax: 6250,       // +25%
-      icon: 'fa-shirt',
-      color: 'sky'
+      icon:'fa-shirt',
+      color:'sky'
     },
     espresso_coffee: {
-      id: 'espresso_coffee',
-      name: 'بن إسبريسو كولومبي فاخر',
-      tier: 'air_cargo',
-      tierName: 'شحن جوي سريع (Express Air Cargo)',
+      id:'espresso_coffee',
+      name:'بن إسبريسو كولومبي فاخر',
+      tier:'air_cargo',
+      tierName:'شحن جوي سريع (Express Air Cargo)',
       unitCost: 8000,
       importDurationSec: 4500, // 75 minutes
       exportDurationSec: 4500, // 75 minutes
       baseSellMin: 9500,       // +18.75%
       baseSellMax: 10200,      // +27.5%
-      icon: 'fa-mug-hot',
-      color: 'amber'
+      icon:'fa-mug-hot',
+      color:'amber'
     },
     auto_spare_parts: {
-      id: 'auto_spare_parts',
-      name: 'قطع غيار سيارات أوروبية أصلية',
-      tier: 'regional_freight',
-      tierName: 'شحن إقليمي بحري/بري (Regional Freight)',
+      id:'auto_spare_parts',
+      name:'قطع غيار سيارات أوروبية أصلية',
+      tier:'regional_freight',
+      tierName:'شحن إقليمي بحري/بري (Regional Freight)',
       unitCost: 25000,
       importDurationSec: 10800, // 3 hours
       exportDurationSec: 10800, // 3 hours
       baseSellMin: 29500,      // +18%
       baseSellMax: 32000,      // +28%
-      icon: 'fa-gears',
-      color: 'indigo'
+      icon:'fa-gears',
+      color:'indigo'
     },
     solar_panels: {
-      id: 'solar_panels',
-      name: 'ألواح وخلايا طاقة شمسية ألمانية',
-      tier: 'regional_freight',
-      tierName: 'شحن إقليمي بحري/بري (Regional Freight)',
+      id:'solar_panels',
+      name:'ألواح وخلايا طاقة شمسية ألمانية',
+      tier:'regional_freight',
+      tierName:'شحن إقليمي بحري/بري (Regional Freight)',
       unitCost: 50000,
       importDurationSec: 18000, // 5 hours
       exportDurationSec: 18000, // 5 hours
       baseSellMin: 60000,      // +20%
       baseSellMax: 65000,      // +30%
-      icon: 'fa-solar-panel',
-      color: 'emerald'
+      icon:'fa-solar-panel',
+      color:'emerald'
     },
     luxury_cars: {
-      id: 'luxury_cars',
-      name: 'سيارات فارهة ومدرعة مستوردة',
-      tier: 'ocean_shipping',
-      tierName: 'شحن بحري عالمي بالحاويات (Global Ocean Shipping)',
+      id:'luxury_cars',
+      name:'سيارات فارهة ومدرعة مستوردة',
+      tier:'ocean_shipping',
+      tierName:'شحن بحري عالمي بالحاويات (Global Ocean Shipping)',
       unitCost: 120000,
       importDurationSec: 28800, // 8 hours
       exportDurationSec: 28800, // 8 hours
       baseSellMin: 145000,     // +20.8%
       baseSellMax: 156000,     // +30%
-      icon: 'fa-car-side',
-      color: 'violet'
+      icon:'fa-car-side',
+      color:'violet'
     },
     industrial_turbines: {
-      id: 'industrial_turbines',
-      name: 'توربينات وخطوط إنتاج صناعية ثقيلة',
-      tier: 'ocean_shipping',
-      tierName: 'شحن بحري عالمي بالحاويات (Global Ocean Shipping)',
+      id:'industrial_turbines',
+      name:'توربينات وخطوط إنتاج صناعية ثقيلة',
+      tier:'ocean_shipping',
+      tierName:'شحن بحري عالمي بالحاويات (Global Ocean Shipping)',
       unitCost: 250000,
       importDurationSec: 43200, // 12 hours
       exportDurationSec: 43200, // 12 hours
       baseSellMin: 305000,     // +22%
       baseSellMax: 335000,     // +34%
-      icon: 'fa-industry',
-      color: 'rose'
+      icon:'fa-industry',
+      color:'rose'
     },
     ai_quantum_chips: {
-      id: 'ai_quantum_chips',
-      name: 'رقائق ومعالجات ذكاء اصطناعي سيليكونية',
-      tier: 'mega_oceanic',
-      tierName: 'سفن عابرة للمحيطات ضخمة (Mega Trans-Oceanic)',
+      id:'ai_quantum_chips',
+      name:'رقائق ومعالجات ذكاء اصطناعي سيليكونية',
+      tier:'mega_oceanic',
+      tierName:'سفن عابرة للمحيطات ضخمة (Mega Trans-Oceanic)',
       unitCost: 500000,
       importDurationSec: 64800, // 18 hours
       exportDurationSec: 64800, // 18 hours
       baseSellMin: 610000,     // +22%
       baseSellMax: 670000,     // +34%
-      icon: 'fa-microchip',
-      color: 'cyan'
+      icon:'fa-microchip',
+      color:'cyan'
     },
     gold_bullion_bars: {
-      id: 'gold_bullion_bars',
-      name: 'سبائك ذهب ومعادن نادرة نقية',
-      tier: 'mega_oceanic',
-      tierName: 'سفن عابرة للمحيطات ضخمة (Mega Trans-Oceanic)',
+      id:'gold_bullion_bars',
+      name:'سبائك ذهب ومعادن نادرة نقية',
+      tier:'mega_oceanic',
+      tierName:'سفن عابرة للمحيطات ضخمة (Mega Trans-Oceanic)',
       unitCost: 1000000,
       importDurationSec: 86400, // 24 hours
       exportDurationSec: 86400, // 24 hours
       baseSellMin: 1220000,    // +22%
       baseSellMax: 1350000,    // +35%
-      icon: 'fa-cubes-stacked',
-      color: 'yellow'
+      icon:'fa-cubes-stacked',
+      color:'yellow'
     }
   };
 
   const TRADE_BUYERS = [
-    { id: 'dubai_retail_group', name: 'مجموعة تجزئة دبي القابضة', flag: '🇦🇪', region: 'الخليج العربي', demands: ['fashion_brands', 'espresso_coffee'], priceMult: 1.05 },
-    { id: 'berlin_energy_consortium', name: 'كونسورتيوم برلين للطاقة المتجددة', flag: '🇩🇪', region: 'الاتحاد الأوروبي', demands: ['solar_panels', 'industrial_turbines'], priceMult: 1.08 },
-    { id: 'tokyo_tech_giants', name: 'تكتل شركات التكنولوجيا بطوكيو', flag: '🇯🇵', region: 'شرق آسيا', demands: ['ai_quantum_chips', 'auto_spare_parts'], priceMult: 1.08 },
-    { id: 'london_bullion_vault', name: 'خزائن وبنك لندن للمعادن', flag: '🇬🇧', region: 'المملكة المتحدة', demands: ['gold_bullion_bars', 'luxury_cars'], priceMult: 1.07 },
-    { id: 'singapore_logistics_hub', name: 'مؤسسة التجارة الحرة بسنغافورة', flag: '🇸🇬', region: 'جنوب شرق آسيا', demands: ['auto_spare_parts', 'fashion_brands', 'espresso_coffee'], priceMult: 1.06 },
-    { id: 'cairo_sovereign_procurement', name: 'الهيئة العامة للتوريدات والمشروعات', flag: '🇪🇬', region: 'شمال أفريقيا', demands: ['solar_panels', 'luxury_cars', 'industrial_turbines'], priceMult: 1.05 },
-    { id: 'zurich_private_clients', name: 'نخبة عملاء المصارف الخاصة بزيورخ', flag: '🇨🇭', region: 'سويسرا', demands: ['gold_bullion_bars', 'ai_quantum_chips'], priceMult: 1.09 }
+    { id:'dubai_retail_group', name:'مجموعة تجزئة دبي القابضة', flag:'', region:'الخليج العربي', demands: ['fashion_brands','espresso_coffee'], priceMult: 1.05 },
+    { id:'berlin_energy_consortium', name:'كونسورتيوم برلين للطاقة المتجددة', flag:'', region:'الاتحاد الأوروبي', demands: ['solar_panels','industrial_turbines'], priceMult: 1.08 },
+    { id:'tokyo_tech_giants', name:'تكتل شركات التكنولوجيا بطوكيو', flag:'', region:'شرق آسيا', demands: ['ai_quantum_chips','auto_spare_parts'], priceMult: 1.08 },
+    { id:'london_bullion_vault', name:'خزائن وبنك لندن للمعادن', flag:'', region:'المملكة المتحدة', demands: ['gold_bullion_bars','luxury_cars'], priceMult: 1.07 },
+    { id:'singapore_logistics_hub', name:'مؤسسة التجارة الحرة بسنغافورة', flag:'', region:'جنوب شرق آسيا', demands: ['auto_spare_parts','fashion_brands','espresso_coffee'], priceMult: 1.06 },
+    { id:'cairo_sovereign_procurement', name:'الهيئة العامة للتوريدات والمشروعات', flag:'', region:'شمال أفريقيا', demands: ['solar_panels','luxury_cars','industrial_turbines'], priceMult: 1.05 },
+    { id:'zurich_private_clients', name:'نخبة عملاء المصارف الخاصة بزيورخ', flag:'', region:'سويسرا', demands: ['gold_bullion_bars','ai_quantum_chips'], priceMult: 1.09 }
   ];
 
   // --- مجمع الصناعات وسلاسل الإمداد (Industrial Supply Chain Empire) ---
   const INDUSTRIAL_SECTORS = {
     food: {
-      id: 'food',
-      shortName: 'الصناعات الغذائية',
-      name: 'الصناعات الغذائية وسلاسل الإمداد الزراعي 🌾',
-      desc: 'سلسلة تبدأ من استصلاح المزارع والبساتين ثم وحدات المعالجة والمطاحن وصولاً للتعبئة وأسطول النقل المبرد.',
-      icon: 'fa-solid fa-wheat-awn',
-      color: 'emerald',
+      id:'food',
+      shortName:'الصناعات الغذائية',
+      name:'الصناعات الغذائية وسلاسل الإمداد الزراعي',
+      desc:'سلسلة تبدأ من استصلاح المزارع والبساتين ثم وحدات المعالجة والمطاحن وصولاً للتعبئة وأسطول النقل المبرد.',
+      icon:'fa-solid fa-wheat-awn',
+      color:'emerald',
       unlockCost: 1500000,
       unlockNetWorth: 3000000,
       stages: {
-        stage1: { id: 'stage1', name: 'المزارع والبساتين (المادة الخام)', baseCost: 120000, icon: 'fa-solid fa-wheat-awn', desc: 'إنتاج القمح والفاكهة والبن الخام' },
-        stage2: { id: 'stage2', name: 'المطاحن ووحدات التجفيف والمعالجة', baseCost: 350000, icon: 'fa-solid fa-mortar-pestle', desc: 'طحن ومعالجة وتنقية المحاصيل' },
-        stage3: { id: 'stage3', name: 'مجمع التعبئة والصناعات الغذائية', baseCost: 950000, icon: 'fa-solid fa-boxes-packing', desc: 'خطوط إنتاج وتعليب السلع الجاهزة' },
-        logistics: { id: 'logistics', name: 'أسطول شاحنات التوزيع المبردة', baseCost: 450000, icon: 'fa-solid fa-truck-fast', desc: 'تسريع دورة التوزيع وتوسيع صوامع التخزين' }
+        stage1: { id:'stage1', name:'المزارع والبساتين (المادة الخام)', baseCost: 120000, icon:'fa-solid fa-wheat-awn', desc:'إنتاج القمح والفاكهة والبن الخام' },
+        stage2: { id:'stage2', name:'المطاحن ووحدات التجفيف والمعالجة', baseCost: 350000, icon:'fa-solid fa-mortar-pestle', desc:'طحن ومعالجة وتنقية المحاصيل' },
+        stage3: { id:'stage3', name:'مجمع التعبئة والصناعات الغذائية', baseCost: 950000, icon:'fa-solid fa-boxes-packing', desc:'خطوط إنتاج وتعليب السلع الجاهزة' },
+        logistics: { id:'logistics', name:'أسطول شاحنات التوزيع المبردة', baseCost: 450000, icon:'fa-solid fa-truck-fast', desc:'تسريع دورة التوزيع وتوسيع صوامع التخزين' }
       },
-      product: { name: 'سلع تموينية وغذائية فاخرة', baseValue: 35, icon: 'fa-solid fa-box', tradeCommodityId: 'espresso_coffee', unitsPerContainer: 20 }
+      product: { name:'سلع تموينية وغذائية فاخرة', baseValue: 35, icon:'fa-solid fa-box', tradeCommodityId:'espresso_coffee', unitsPerContainer: 20 }
     },
     auto: {
-      id: 'auto',
-      shortName: 'صناعة السيارات',
-      name: 'تجميع وتصنيع السيارات والمركبات 🚗',
-      desc: 'سلسلة تعدين الحديد واستخراج المطاط الطبيعي وصولاً لمصانع المحركات والتجميع الآلي وناقلات السيارات.',
-      icon: 'fa-solid fa-car-side',
-      color: 'amber',
+      id:'auto',
+      shortName:'صناعة السيارات',
+      name:'تجميع وتصنيع السيارات والمركبات',
+      desc:'سلسلة تعدين الحديد واستخراج المطاط الطبيعي وصولاً لمصانع المحركات والتجميع الآلي وناقلات السيارات.',
+      icon:'fa-solid fa-car-side',
+      color:'amber',
       unlockCost: 15000000,
       unlockNetWorth: 30000000,
       stages: {
-        stage1: { id: 'stage1', name: 'مناجم الحديد ومزارع المطاط الطبيعي', baseCost: 1200000, icon: 'fa-solid fa-cubes', desc: 'توفير خامات الصلب والبوليمرات' },
-        stage2: { id: 'stage2', name: 'مسابك المحركات ومكابس الهياكل', baseCost: 3500000, icon: 'fa-solid fa-gears', desc: 'سباكة الشاسيهات وتصنيع المحركات' },
-        stage3: { id: 'stage3', name: 'خط التجميع الروبوتي الذكي للسيارات', baseCost: 9500000, icon: 'fa-solid fa-robot', desc: 'تركيب الأنظمة الإلكترونية والتشطيب' },
-        logistics: { id: 'logistics', name: 'أسطول ناقلات السيارات العملاقة', baseCost: 4200000, icon: 'fa-solid fa-truck-moving', desc: 'شحن أساطيل السيارات وتوسيع ساحات التخزين' }
+        stage1: { id:'stage1', name:'مناجم الحديد ومزارع المطاط الطبيعي', baseCost: 1200000, icon:'fa-solid fa-cubes', desc:'توفير خامات الصلب والبوليمرات' },
+        stage2: { id:'stage2', name:'مسابك المحركات ومكابس الهياكل', baseCost: 3500000, icon:'fa-solid fa-gears', desc:'سباكة الشاسيهات وتصنيع المحركات' },
+        stage3: { id:'stage3', name:'خط التجميع الروبوتي الذكي للسيارات', baseCost: 9500000, icon:'fa-solid fa-robot', desc:'تركيب الأنظمة الإلكترونية والتشطيب' },
+        logistics: { id:'logistics', name:'أسطول ناقلات السيارات العملاقة', baseCost: 4200000, icon:'fa-solid fa-truck-moving', desc:'شحن أساطيل السيارات وتوسيع ساحات التخزين' }
       },
-      product: { name: 'سيارات سيدان وتجارية حديثة', baseValue: 220, icon: 'fa-solid fa-car', tradeCommodityId: 'auto_spare_parts', unitsPerContainer: 8 }
+      product: { name:'سيارات سيدان وتجارية حديثة', baseValue: 220, icon:'fa-solid fa-car', tradeCommodityId:'auto_spare_parts', unitsPerContainer: 8 }
     },
     semiconductor: {
-      id: 'semiconductor',
-      shortName: 'أشباه الموصلات',
-      name: 'الرقائق وأشباه الموصلات وسيرفرات AI 💻',
-      desc: 'استخلاص رمال السيليكون فائق النقاوة وتصنيع الدوائر الليزرية وطباعة معالجات ومسارعات الذكاء الاصطناعي.',
-      icon: 'fa-solid fa-microchip',
-      color: 'cyan',
+      id:'semiconductor',
+      shortName:'أشباه الموصلات',
+      name:'الرقائق وأشباه الموصلات وسيرفرات AI',
+      desc:'استخلاص رمال السيليكون فائق النقاوة وتصنيع الدوائر الليزرية وطباعة معالجات ومسارعات الذكاء الاصطناعي.',
+      icon:'fa-solid fa-microchip',
+      color:'cyan',
       unlockCost: 80000000,
       unlockNetWorth: 150000000,
       stages: {
-        stage1: { id: 'stage1', name: 'مناجم السيليكون النقي والمعادن النادرة', baseCost: 8500000, icon: 'fa-solid fa-gem', desc: 'تنقية رمال السيليكون إلى نقاوة 99.999%' },
-        stage2: { id: 'stage2', name: 'غرف الطباعة الليزرية الفائقة (Cleanrooms)', baseCost: 24000000, icon: 'fa-solid fa-atom', desc: 'طباعة الدوائر والنانوميتر بدقة فائقة' },
-        stage3: { id: 'stage3', name: 'مجمع تصنيع معالجات وسيرفرات AI', baseCost: 65000000, icon: 'fa-solid fa-server', desc: 'تجميع وتغليف وحدات المعالجة الفائقة' },
-        logistics: { id: 'logistics', name: 'طيران الشحن الدبلوماسي فائق الأمان', baseCost: 28000000, icon: 'fa-solid fa-plane-departure', desc: 'نقل سريع ومؤمن وتوسيع مستودعات الكوانتم' }
+        stage1: { id:'stage1', name:'مناجم السيليكون النقي والمعادن النادرة', baseCost: 8500000, icon:'fa-solid fa-gem', desc:'تنقية رمال السيليكون إلى نقاوة 99.999%' },
+        stage2: { id:'stage2', name:'غرف الطباعة الليزرية الفائقة (Cleanrooms)', baseCost: 24000000, icon:'fa-solid fa-atom', desc:'طباعة الدوائر والنانوميتر بدقة فائقة' },
+        stage3: { id:'stage3', name:'مجمع تصنيع معالجات وسيرفرات AI', baseCost: 65000000, icon:'fa-solid fa-server', desc:'تجميع وتغليف وحدات المعالجة الفائقة' },
+        logistics: { id:'logistics', name:'طيران الشحن الدبلوماسي فائق الأمان', baseCost: 28000000, icon:'fa-solid fa-plane-departure', desc:'نقل سريع ومؤمن وتوسيع مستودعات الكوانتم' }
       },
-      product: { name: 'معالجات كوانتم وسيرفرات ذكاء اصطناعي', baseValue: 950, icon: 'fa-solid fa-microchip', tradeCommodityId: 'ai_quantum_chips', unitsPerContainer: 18 }
+      product: { name:'معالجات كوانتم وسيرفرات ذكاء اصطناعي', baseValue: 950, icon:'fa-solid fa-microchip', tradeCommodityId:'ai_quantum_chips', unitsPerContainer: 18 }
     },
     petrochemical: {
-      id: 'petrochemical',
-      shortName: 'البتروكيماويات',
-      name: 'الطاقة ومجمعات البتروكيماويات والبلمرة 🛢️',
-      desc: 'حفر آبار النفط والغاز، التكرير المتطور، مجمعات البلمرة لإنتاج البوليمرات الاستراتيجية ووقود الطائرات النفاثة.',
-      icon: 'fa-solid fa-oil-well',
-      color: 'orange',
+      id:'petrochemical',
+      shortName:'البتروكيماويات',
+      name:'الطاقة ومجمعات البتروكيماويات والبلمرة ️',
+      desc:'حفر آبار النفط والغاز، التكرير المتطور، مجمعات البلمرة لإنتاج البوليمرات الاستراتيجية ووقود الطائرات النفاثة.',
+      icon:'fa-solid fa-oil-well',
+      color:'orange',
       unlockCost: 350000000,
       unlockNetWorth: 600000000,
       stages: {
-        stage1: { id: 'stage1', name: 'منصات الحفر وحقول استخراج الخام', baseCost: 45000000, icon: 'fa-solid fa-oil-well', desc: 'ضخ النفط والغاز الطبيعي من الأعماق' },
-        stage2: { id: 'stage2', name: 'مصافي التقطير والتكسير الحراري', baseCost: 120000000, icon: 'fa-solid fa-fire-burner', desc: 'فصل المشتقات البترولية عالية الجودة' },
-        stage3: { id: 'stage3', name: 'مجمع صناعات البلمرة والبوليمرات', baseCost: 320000000, icon: 'fa-solid fa-flask-vial', desc: 'تحويل المشتقات إلى بوليمرات ووقود نفاث' },
-        logistics: { id: 'logistics', name: 'خطوط الأنابيب وشبكات الناقلات البترولية', baseCost: 140000000, icon: 'fa-solid fa-ship', desc: 'ضخ المنتجات وتوسيع صهاريج التخزين الاستراتيجي' }
+        stage1: { id:'stage1', name:'منصات الحفر وحقول استخراج الخام', baseCost: 45000000, icon:'fa-solid fa-oil-well', desc:'ضخ النفط والغاز الطبيعي من الأعماق' },
+        stage2: { id:'stage2', name:'مصافي التقطير والتكسير الحراري', baseCost: 120000000, icon:'fa-solid fa-fire-burner', desc:'فصل المشتقات البترولية عالية الجودة' },
+        stage3: { id:'stage3', name:'مجمع صناعات البلمرة والبوليمرات', baseCost: 320000000, icon:'fa-solid fa-flask-vial', desc:'تحويل المشتقات إلى بوليمرات ووقود نفاث' },
+        logistics: { id:'logistics', name:'خطوط الأنابيب وشبكات الناقلات البترولية', baseCost: 140000000, icon:'fa-solid fa-ship', desc:'ضخ المنتجات وتوسيع صهاريج التخزين الاستراتيجي' }
       },
-      product: { name: 'بوليمرات ووقود طائرات عالي النقاوة', baseValue: 2800, icon: 'fa-solid fa-gas-pump', tradeCommodityId: 'industrial_turbines', unitsPerContainer: 3 }
+      product: { name:'بوليمرات ووقود طائرات عالي النقاوة', baseValue: 2800, icon:'fa-solid fa-gas-pump', tradeCommodityId:'industrial_turbines', unitsPerContainer: 3 }
     },
     aerospace: {
-      id: 'aerospace',
-      shortName: 'صناعات الفضاء',
-      name: 'الصناعات الفضائية والملاحة الجوية 🚀',
-      desc: 'سبائك التيتانيوم والكربون، مصانع المحركات النفاثة والهيدروجينية، أحواض تجميع الصواريخ والمكوك والأقمار.',
-      icon: 'fa-solid fa-rocket',
-      color: 'purple',
+      id:'aerospace',
+      shortName:'صناعات الفضاء',
+      name:'الصناعات الفضائية والملاحة الجوية',
+      desc:'سبائك التيتانيوم والكربون، مصانع المحركات النفاثة والهيدروجينية، أحواض تجميع الصواريخ والمكوك والأقمار.',
+      icon:'fa-solid fa-rocket',
+      color:'purple',
       unlockCost: 1500000000,
       unlockNetWorth: 3000000000,
       stages: {
-        stage1: { id: 'stage1', name: 'معامل سبائك التيتانيوم وألياف الكربون', baseCost: 200000000, icon: 'fa-solid fa-shield-halved', desc: 'تجهيز مواد متقدمة تتحمل الضغط والحرارة' },
-        stage2: { id: 'stage2', name: 'مصانع محركات الدفع النفاث والهيدروجين', baseCost: 550000000, icon: 'fa-solid fa-jet-fighter', desc: 'تصنيع توربينات الاحتراق والدفع الصاروخي' },
-        stage3: { id: 'stage3', name: 'حوض تجميع الصواريخ والمكوك والأقمار', baseCost: 1400000000, icon: 'fa-solid fa-satellite', desc: 'تجميع المركبات الفضائية وأنظمة التوجيه' },
-        logistics: { id: 'logistics', name: 'منصات الإطلاق وشبكة التوجيه المداري', baseCost: 650000000, icon: 'fa-solid fa-satellite-dish', desc: 'إطلاق وتوجيه وتوسيع هناجر الصواريخ' }
+        stage1: { id:'stage1', name:'معامل سبائك التيتانيوم وألياف الكربون', baseCost: 200000000, icon:'fa-solid fa-shield-halved', desc:'تجهيز مواد متقدمة تتحمل الضغط والحرارة' },
+        stage2: { id:'stage2', name:'مصانع محركات الدفع النفاث والهيدروجين', baseCost: 550000000, icon:'fa-solid fa-jet-fighter', desc:'تصنيع توربينات الاحتراق والدفع الصاروخي' },
+        stage3: { id:'stage3', name:'حوض تجميع الصواريخ والمكوك والأقمار', baseCost: 1400000000, icon:'fa-solid fa-satellite', desc:'تجميع المركبات الفضائية وأنظمة التوجيه' },
+        logistics: { id:'logistics', name:'منصات الإطلاق وشبكة التوجيه المداري', baseCost: 650000000, icon:'fa-solid fa-satellite-dish', desc:'إطلاق وتوجيه وتوسيع هناجر الصواريخ' }
       },
-      product: { name: 'مركبات فضائية ومحطات مدارية سيادية', baseValue: 8500, icon: 'fa-solid fa-rocket', tradeCommodityId: 'gold_bullion_bars', unitsPerContainer: 1 }
+      product: { name:'مركبات فضائية ومحطات مدارية سيادية', baseValue: 8500, icon:'fa-solid fa-rocket', tradeCommodityId:'gold_bullion_bars', unitsPerContainer: 1 }
     }
   };
 
@@ -860,7 +860,7 @@ const GameEngine = (() => {
     xp: 0,
     underworldRep: 0,
     heatLevel: 0,
-    jobId: 'worker',
+    jobId:'worker',
     businesses: {
       kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
       coffee: { level: 0, price: 28, workers: 0, suppliesTicks: 0 },
@@ -876,8 +876,8 @@ const GameEngine = (() => {
     },
     investments: [], // Array of { id, investedAmount, ticksRemaining, rate, name }
     activeLoan: null, // Stores { amount, totalDue, ticksRemaining, initialTicks, isDefaulted, latePenaltyTicks, latePenaltyCount }
-    dailyLoans: { date: '', count: 0 }, // Max 2 loans per 24 hours (calendar day)
-    dailyToolUses: { date: '', uses: {} }, // Max daily uses per tool (calendar day)
+    dailyLoans: { date:'', count: 0 }, // Max 2 loans per 24 hours (calendar day)
+    dailyToolUses: { date:'', uses: {} }, // Max daily uses per tool (calendar day)
     assets: {
       apartment: 0,
       office: 0,
@@ -923,13 +923,13 @@ const GameEngine = (() => {
     activityLog: [], // Rolling audit log of player actions
     totalTaxesPaid: 0, // Cumulative taxes paid to public treasury
     netWorth: 400,
-    title: 'عامل مبتدئ',
+    title:'عامل مبتدئ',
     ownedCars: [],
     activeCar: null,
     smugglingFleet: { speedboat: 0, plane: 0, ship: 0 },
     activeSmugglingJobs: [],
     stockCooldowns: {}, // Stores { SYMBOL: lockUntilTimestamp }
-    dailyQuests: null, // Stores { date: 'YYYY-MM-DD', quests: [...], grandBonusClaimed: boolean }
+    dailyQuests: null, // Stores { date:'YYYY-MM-DD', quests: [...], grandBonusClaimed: boolean }
     tradeCompany: {
       warehouseCapacity: 10,
       warehouse: {},
@@ -954,10 +954,10 @@ const GameEngine = (() => {
 
   let state = { ...INITIAL_STATE };
   let stockPrices = {}; // Stores { SYMBOL: [priceHistory...] }
-  let stockRegimes = {}; // Stores { SYMBOL: { direction: 'bullish'|'bearish'|'sideways', duration: 15, floatingBase: price } }
+  let stockRegimes = {}; // Stores { SYMBOL: { direction:'bullish'|'bearish'|'sideways', duration: 15, floatingBase: price } }
   let stockTickCounter = 0;
   const STOCK_PULSE_INTERVAL = 6; // Update stock prices every 6 seconds instead of every 1 second
-  let activeUsername = "";
+  let activeUsername ="";
   let lastTipEventTimestamp = 0;
   let lastMarketEventTimestamp = 0;
 
@@ -979,13 +979,13 @@ const GameEngine = (() => {
   }
 
   // Record player action in rolling audit log
-  function recordPlayerActivity(action, details, category = 'info') {
+  function recordPlayerActivity(action, details, category ='info') {
     if (!state.activityLog) state.activityLog = [];
     state.activityLog.unshift({
       timestamp: Date.now(),
       action: action,
       details: details,
-      category: category // 'work' | 'business' | 'stock' | 'investment' | 'banking' | 'casino' | 'blackmarket' | 'store' | 'trade'
+      category: category //'work' |'business' |'stock' |'investment' |'banking' |'casino' |'blackmarket' |'store' |'trade'
     });
     if (state.activityLog.length > 60) {
       state.activityLog.length = 60; // Keep last 60 entries
@@ -993,57 +993,57 @@ const GameEngine = (() => {
   }
 
   // ─────────────────────────────────────────────────────────
-  // 🎯 DAILY QUESTS SYSTEM (نظام المهام اليومية المتجددة)
+  //  DAILY QUESTS SYSTEM (نظام المهام اليومية المتجددة)
   // ─────────────────────────────────────────────────────────
   const DAILY_QUEST_TEMPLATES = [
     {
-      id: 'work_shifts',
-      title: 'العمل الجاد والمثابرة',
-      desc: 'أكمل 5 ورديات عمل (دوام عادي أو دوام إضافي)',
+      id:'work_shifts',
+      title:'العمل الجاد والمثابرة',
+      desc:'أكمل 5 ورديات عمل (دوام عادي أو دوام إضافي)',
       target: 5,
-      icon: 'fa-briefcase',
-      category: 'work'
+      icon:'fa-briefcase',
+      category:'work'
     },
     {
-      id: 'bank_deposit',
-      title: 'تأمين رأس المال',
-      desc: 'قم بإيداع أي مبلغ مالي في حسابك البنكي لتأمينه',
+      id:'bank_deposit',
+      title:'تأمين رأس المال',
+      desc:'قم بإيداع أي مبلغ مالي في حسابك البنكي لتأمينه',
       target: 1,
-      icon: 'fa-building-columns',
-      category: 'banking'
+      icon:'fa-building-columns',
+      category:'banking'
     },
     {
-      id: 'stock_trade',
-      title: 'مضارب البورصة',
-      desc: 'نفذ عملية تداول واحدة (شراء أو بيع أي سهم)',
+      id:'stock_trade',
+      title:'مضارب البورصة',
+      desc:'نفذ عملية تداول واحدة (شراء أو بيع أي سهم)',
       target: 1,
-      icon: 'fa-chart-line',
-      category: 'stock'
+      icon:'fa-chart-line',
+      category:'stock'
     },
     {
-      id: 'biz_upgrade',
-      title: 'التوسع الاستثماري',
-      desc: 'طوّر مشروعاً قائماً، اشترِ مشروعاً جديداً، أو عيّن موظفاً',
+      id:'biz_upgrade',
+      title:'التوسع الاستثماري',
+      desc:'طوّر مشروعاً قائماً، اشترِ مشروعاً جديداً، أو عيّن موظفاً',
       target: 1,
-      icon: 'fa-arrow-up-right-dots',
-      category: 'business'
+      icon:'fa-arrow-up-right-dots',
+      category:'business'
     },
     {
-      id: 'casino_play',
-      title: 'المغامر الذكي',
-      desc: 'جرّب حظك في جولة واحدة داخل ألعاب الكازينو',
+      id:'casino_play',
+      title:'المغامر الذكي',
+      desc:'جرّب حظك في جولة واحدة داخل ألعاب الكازينو',
       target: 1,
-      icon: 'fa-dice',
-      category: 'casino'
+      icon:'fa-dice',
+      category:'casino'
     }
   ];
 
   function getTodayDateString() {
     const d = new Date();
     const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    const month = String(d.getMonth() + 1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return`${year}-${month}-${day}`;
   }
 
   function getDailyResetRemainingSeconds() {
@@ -1056,7 +1056,7 @@ const GameEngine = (() => {
     if (!state) return;
     const today = getTodayDateString();
     if (!state.dailyQuests || state.dailyQuests.date !== today || !Array.isArray(state.dailyQuests.quests)) {
-      const netWorth = (typeof calculateNetWorth === 'function') ? calculateNetWorth() : (state.netWorth || 400);
+      const netWorth = (typeof calculateNetWorth ==='function') ? calculateNetWorth() : (state.netWorth || 400);
       const baseCash = Math.max(500, Math.round(Math.min(50000000, netWorth * 0.02 + 500)));
       const baseXP = Math.max(25, Math.round(Math.min(500, 20 + Math.log10(Math.max(10, netWorth)) * 15)));
 
@@ -1107,7 +1107,7 @@ const GameEngine = (() => {
     state.cash = (state.cash || 0) + q.cashReward;
     state.xp = (state.xp || 0) + q.xpReward;
 
-    recordPlayerActivity('استلام مكافأة مهمة يومية', `استلام مكافأة: "${q.title}" (+${q.cashReward.toLocaleString('ar-EG')} EGP, +${q.xpReward} XP)`, 'reward');
+    recordPlayerActivity('استلام مكافأة مهمة يومية',`استلام مكافأة:"${q.title}" (+${q.cashReward.toLocaleString('ar-EG')} EGP, +${q.xpReward} XP)`,'reward');
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
     if (activeUsername) {
@@ -1143,7 +1143,7 @@ const GameEngine = (() => {
     state.cash = (state.cash || 0) + grandCash;
     state.xp = (state.xp || 0) + grandXP;
 
-    recordPlayerActivity('فتح صندوق المكافأة الكبرى اليومي', `فتح صندوق المكافأة الكبرى! (+${grandCash.toLocaleString('ar-EG')} EGP, +${grandXP} XP)`, 'reward');
+    recordPlayerActivity('فتح صندوق المكافأة الكبرى اليومي',`فتح صندوق المكافأة الكبرى! (+${grandCash.toLocaleString('ar-EG')} EGP, +${grandXP} XP)`,'reward');
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
     if (activeUsername) {
@@ -1157,45 +1157,45 @@ const GameEngine = (() => {
   }
 
   // ─────────────────────────────────────────────────────────
-  // 🏛️ UNIFIED GLOBAL STOCK MARKET (بورصة مركزية موحدة لجميع اللاعبين)
+  // ️ UNIFIED GLOBAL STOCK MARKET (بورصة مركزية موحدة لجميع اللاعبين)
   // ─────────────────────────────────────────────────────────
-  let globalMarketEvent = null; // { targets: { BITC: 1.1 }, title: "...", expiresAt: 123456 }
+  let globalMarketEvent = null; // { targets: { BITC: 1.1 }, title:"...", expiresAt: 123456 }
 
   const UNIFIED_SCHEDULED_EVENTS = [
     {
-      title: 'السوق مستقر وتداولات اعتيادية متزنة بين المتعاملين في البورصة المصرية...',
+      title:'السوق مستقر وتداولات اعتيادية متزنة بين المتعاملين في البورصة المصرية...',
       targets: {}
     },
     {
-      title: '🚀 موجة شراء مؤسسية تقفز بسهم فوري FWRY وصندوق الذكاء الاصطناعي AIX!',
+      title:' موجة شراء مؤسسية تقفز بسهم فوري FWRY وصندوق الذكاء الاصطناعي AIX!',
       targets: { FWRY: 1.12, AIX: 1.10 }
     },
     {
-      title: '👑 إقبال قياسي على الذهب كملاذ آمن: صعود ملحوظ لسهم GOLD وصندوق CASH!',
+      title:' إقبال قياسي على الذهب كملاذ آمن: صعود ملحوظ لسهم GOLD وصندوق CASH!',
       targets: { GOLD: 1.12, CASH: 1.08 }
     },
     {
-      title: '🏛️ البنك المركزي يحرك الفائدة: انتعاش سهم البنك التجاري COMI وتصحيح طفيف!',
+      title:'️ البنك المركزي يحرك الفائدة: انتعاش سهم البنك التجاري COMI وتصحيح طفيف!',
       targets: { COMI: 1.12, CASH: 1.06, EAST: 0.95 }
     },
     {
-      title: '📡 المصرية للاتصالات ETEL تفوز بتراخيص الجيل الخامس: نشاط إيجابي للسهم!',
+      title:' المصرية للاتصالات ETEL تفوز بتراخيص الجيل الخامس: نشاط إيجابي للسهم!',
       targets: { ETEL: 1.12 }
     },
     {
-      title: '⚡ جني أرباح وتصحيح فني هادئ في سوق العملات الرقمية والبيتكوين BITC!',
+      title:' جني أرباح وتصحيح فني هادئ في سوق العملات الرقمية والبيتكوين BITC!',
       targets: { BITC: 0.90, AIX: 0.95 }
     },
     {
-      title: '🚢 انتظام سلاسل التوريد ووصول شحنات المواد الخام يدعم الشرقية للدخان EAST!',
+      title:' انتظام سلاسل التوريد ووصول شحنات المواد الخام يدعم الشرقية للدخان EAST!',
       targets: { EAST: 1.10 }
     },
     {
-      title: '🌐 تفاؤل استثماري وصعود جماعي لمؤشرات الأسهم بقيادة CIB والمدفوعات!',
+      title:' تفاؤل استثماري وصعود جماعي لمؤشرات الأسهم بقيادة CIB والمدفوعات!',
       targets: { COMI: 1.08, FWRY: 1.08, ETEL: 1.06, EAST: 1.06, AIX: 1.07 }
     },
     {
-      title: '📉 ضغوط بيعية مؤقتة في قطاع التكنولوجيا تتيح فرص دخول جاذبة للمستثمرين!',
+      title:' ضغوط بيعية مؤقتة في قطاع التكنولوجيا تتيح فرص دخول جاذبة للمستثمرين!',
       targets: { FWRY: 0.92, CASH: 0.93 }
     }
   ];
@@ -1226,7 +1226,7 @@ const GameEngine = (() => {
 
   function getCurrentMarketTicker() {
     const ev = getCurrentMarketEvent();
-    return (ev && ev.title) ? ev.title : 'السوق مستقر وتداولات اعتيادية بين المتعاملين...';
+    return (ev && ev.title) ? ev.title :'السوق مستقر وتداولات اعتيادية بين المتعاملين...';
   }
 
   // Deterministic 32-bit integer PRNG noise in [-1, 1]
@@ -1237,7 +1237,7 @@ const GameEngine = (() => {
     return ((x >>> 0) / 4294967296) * 2 - 1;
   }
 
-  // Calculate the EXACT identical price of stock `sym` at any given 15-minute tick number
+  // Calculate the EXACT identical price of stock`sym` at any given 15-minute tick number
   function calculateUnifiedPriceAtTick(sym, tick) {
     const stock = STOCKS[sym];
     if (!stock) return 10;
@@ -1330,13 +1330,13 @@ const GameEngine = (() => {
     });
 
     // Add industrial supply chain infrastructure & inventory value
-    if (state.industry && typeof INDUSTRIAL_SECTORS !== 'undefined') {
+    if (state.industry && typeof INDUSTRIAL_SECTORS !=='undefined') {
       Object.keys(INDUSTRIAL_SECTORS).forEach(secKey => {
         const secDef = INDUSTRIAL_SECTORS[secKey];
         const sec = state.industry[secKey];
         if (sec && sec.unlocked) {
           worth += secDef.unlockCost;
-          ['stage1', 'stage2', 'stage3', 'logistics'].forEach(stKey => {
+          ['stage1','stage2','stage3','logistics'].forEach(stKey => {
             const lvl = Number(sec[stKey] || 0);
             if (lvl > 0 && secDef.stages[stKey]) {
               worth += Math.floor(secDef.stages[stKey].baseCost * lvl * 1.15);
@@ -1354,17 +1354,17 @@ const GameEngine = (() => {
 
   // Update Player Title based on Net Worth and XP
   function getAppropriateTitle(worth, xp) {
-    if (worth >= 1000000000 && xp >= 50000) return 'سلطان الاقتصاد العالمي 👑';
-    if (worth >= 500000000 && xp >= 30000) return 'إمبراطور المال والفلوس 🏆';
-    if (worth >= 150000000 && xp >= 15000) return 'حوت المال الدولي 🐋';
-    if (worth >= 50000000 && xp >= 7500) return 'ملياردير عصامي 💎';
-    if (worth >= 15000000 && xp >= 3500) return 'مليونير فخم 🎩';
-    if (worth >= 4000000 && xp >= 1500) return 'سيد الأعمال 🏢';
-    if (worth >= 1000000 && xp >= 600) return 'مستثمر طموح 📈';
-    if (worth >= 200000 && xp >= 200) return 'تاجر صاعد 💼';
-    if (xp >= 80) return 'موظف متميز 👔';
-    if (xp >= 25) return 'عامل ماهر 🛠️';
-    return 'عامل مبتدئ';
+    if (worth >= 1000000000 && xp >= 50000) return'سلطان الاقتصاد العالمي';
+    if (worth >= 500000000 && xp >= 30000) return'إمبراطور المال والفلوس';
+    if (worth >= 150000000 && xp >= 15000) return'حوت المال الدولي';
+    if (worth >= 50000000 && xp >= 7500) return'ملياردير عصامي';
+    if (worth >= 15000000 && xp >= 3500) return'مليونير فخم';
+    if (worth >= 4000000 && xp >= 1500) return'سيد الأعمال';
+    if (worth >= 1000000 && xp >= 600) return'مستثمر طموح';
+    if (worth >= 200000 && xp >= 200) return'تاجر صاعد';
+    if (xp >= 80) return'موظف متميز';
+    if (xp >= 25) return'عامل ماهر ️';
+    return'عامل مبتدئ';
   }
 
   // --- Unified Engine Mathematical Helpers for Instant & Continuous Cashflow ---
@@ -1445,13 +1445,13 @@ const GameEngine = (() => {
     // V2: Supply Chain Synergies Multiplier
     let synergyMultiplier = 1.0;
     if (s && s.assets && s.businesses) {
-      if (key === 'logistics' && ((s.assets.mega_yacht || 0) > 0 || (s.assets.private_island || 0) > 0)) {
+      if (key ==='logistics' && ((s.assets.mega_yacht || 0) > 0 || (s.assets.private_island || 0) > 0)) {
         synergyMultiplier = 1.15;
-      } else if (key === 'coffee' && (s.businesses.supermarket && s.businesses.supermarket.level > 0)) {
+      } else if (key ==='coffee' && (s.businesses.supermarket && s.businesses.supermarket.level > 0)) {
         synergyMultiplier = 1.10;
-      } else if (key === 'tech' && (s.businesses.private_bank && s.businesses.private_bank.level > 0)) {
+      } else if (key ==='tech' && (s.businesses.private_bank && s.businesses.private_bank.level > 0)) {
         synergyMultiplier = 1.20;
-      } else if (key === 'space_tech' && ((s.assets.orbital_station || 0) > 0)) {
+      } else if (key ==='space_tech' && ((s.assets.orbital_station || 0) > 0)) {
         synergyMultiplier = 1.30;
       }
     }
@@ -1466,7 +1466,7 @@ const GameEngine = (() => {
       Object.keys(bizState.employees).forEach(empUser => {
         const empData = bizState.employees[empUser];
         let solved = false;
-        if (typeof window !== 'undefined' && window.employeesCache && window.employeesCache[empUser]) {
+        if (typeof window !=='undefined' && window.employeesCache && window.employeesCache[empUser]) {
           const empState = window.employeesCache[empUser];
           if (empState.lastPuzzleSolved && (Date.now() - empState.lastPuzzleSolved < 86400000)) {
             solved = true;
@@ -1481,7 +1481,7 @@ const GameEngine = (() => {
 
     // V2: Corporation Level Booster (+2% per level above Level 1, max +20%)
     let corpBooster = 1.0;
-    if (typeof window !== 'undefined' && window.activeCorporationState && s) {
+    if (typeof window !=='undefined' && window.activeCorporationState && s) {
       const corp = window.activeCorporationState;
       if (corp.members && corp.members.includes(s.username)) {
         const corpLevel = corp.level || 1;
@@ -1538,7 +1538,7 @@ const GameEngine = (() => {
   // Calculate live tick profit from joint corporation projects
   function calculateCorpTickProfit(playerState = state) {
     const s = playerState || state;
-    if (!s || typeof window === 'undefined' || !window.activeCorporationState) return 0;
+    if (!s || typeof window ==='undefined' || !window.activeCorporationState) return 0;
     const corp = window.activeCorporationState;
     const username = s.username;
     if (!corp.members || !corp.members.includes(username) || !corp.projects) return 0;
@@ -1559,7 +1559,7 @@ const GameEngine = (() => {
           totalCorpTickProfit += CORP_PROJECTS[projId].profitPerTick;
         }
       });
-    } else if (corp.projects && typeof corp.projects === 'object') {
+    } else if (corp.projects && typeof corp.projects ==='object') {
       Object.keys(corp.projects).forEach(projId => {
         if (corp.projects[projId] && CORP_PROJECTS[projId]) {
           totalCorpTickProfit += CORP_PROJECTS[projId].profitPerTick;
@@ -1593,7 +1593,7 @@ const GameEngine = (() => {
 
     const bal = s.bank;
     let baseRate = 0.00015; // 0.015% per hour (~0.36% per day = ~13% APY)
-    if (s.activeCar === 'rolls') {
+    if (s.activeCar ==='rolls') {
       baseRate *= 1.05; // Rolls-Royce Phantom +5% boost
     }
     if (s.inventory && s.inventory.diamond_card > 0) {
@@ -1662,7 +1662,7 @@ const GameEngine = (() => {
     if (state.ownedCars && state.ownedCars.length > 0) {
       state.ownedCars.forEach(carRef => {
         const car = CAR_TEMPLATES[carRef.id];
-        if (car && carRef.rentStatus === 'rented') {
+        if (car && carRef.rentStatus ==='rented') {
           const netProfit = car.rentalIncomePerTick - car.maintenanceCostPerTick;
           if (netProfit > 0) {
             income += netProfit;
@@ -1708,13 +1708,13 @@ const GameEngine = (() => {
         rate: 0.00015,
         dailyCap: 250000,
         dailyEarned: Math.round(s.dailyBankInterest || 0),
-        hasRollsBonus: (s.activeCar === 'rolls'),
+        hasRollsBonus: (s.activeCar ==='rolls'),
         profitPerHour: calculateBankInterestHourly(s),
         profitPerSec: calculateBankInterestPerTick(s)
       },
       corp: {
         active: false,
-        name: '',
+        name:'',
         level: 1,
         sharePct: 0,
         profitPerSec: 0,
@@ -1722,13 +1722,13 @@ const GameEngine = (() => {
       },
       hiredJob: {
         active: false,
-        name: '',
+        name:'',
         salaryPerSec: 0
       },
       tax: {
         active: false,
         taxPerSec: 0,
-        exemptReason: ''
+        exemptReason:''
       },
       totalGrossPerSec: 0,
       totalNetPerSec: 0,
@@ -1790,7 +1790,7 @@ const GameEngine = (() => {
     if (s.ownedCars && s.ownedCars.length > 0) {
       s.ownedCars.forEach(carRef => {
         const carCfg = CAR_TEMPLATES[carRef.id];
-        if (carCfg && carRef.rentStatus === 'rented') {
+        if (carCfg && carRef.rentStatus ==='rented') {
           const netProfit = carCfg.rentalIncomePerTick - carCfg.maintenanceCostPerTick;
           if (netProfit > 0) {
             breakdown.cars.push({
@@ -1810,7 +1810,7 @@ const GameEngine = (() => {
     grossIncome += breakdown.bank.profitPerSec;
 
     // 5. Joint Corp
-    if (typeof window !== 'undefined' && window.activeCorporationState) {
+    if (typeof window !=='undefined' && window.activeCorporationState) {
       const corp = window.activeCorporationState;
       const username = s.username;
       if (corp.members && corp.members.includes(username)) {
@@ -1819,7 +1819,7 @@ const GameEngine = (() => {
         let sharePct = (totalCont > 0) ? (myCont / totalCont) : (username === corp.founder ? 1.0 : 0);
         const corpTickProfit = calculateCorpTickProfit(s);
         breakdown.corp.active = true;
-        breakdown.corp.name = corp.name || 'تحالف مشترك';
+        breakdown.corp.name = corp.name ||'تحالف مشترك';
         breakdown.corp.level = corp.level || 1;
         breakdown.corp.sharePct = Math.round(sharePct * 100);
         breakdown.corp.profitPerSec = corpTickProfit;
@@ -1830,7 +1830,7 @@ const GameEngine = (() => {
     // 6. Hired Job
     if (s.hiredJob) {
       const solved = Boolean(s.lastPuzzleSolved && (Date.now() - s.lastPuzzleSolved < 86400000));
-      breakdown.hiredJob.name = s.hiredJob.title || 'موظف تعاقدي';
+      breakdown.hiredJob.name = s.hiredJob.title ||'موظف تعاقدي';
       breakdown.hiredJob.salaryPerSec = s.hiredJob.salary || 0;
       breakdown.hiredJob.active = solved;
       if (solved && (s.hiredJob.salary || 0) > 0) {
@@ -1849,11 +1849,11 @@ const GameEngine = (() => {
         breakdown.tax.taxPerSec = taxDeduction;
       } else {
         breakdown.tax.active = false;
-        breakdown.tax.exemptReason = 'محمي بحاجز السيولة (أقل من 100 ألف كاش/بنك)';
+        breakdown.tax.exemptReason ='محمي بحاجز السيولة (أقل من 100 ألف كاش/بنك)';
       }
     } else {
       breakdown.tax.active = false;
-      breakdown.tax.exemptReason = 'معفي (صافي الثروة أقل من 5 مليون EGP)';
+      breakdown.tax.exemptReason ='معفي (صافي الثروة أقل من 5 مليون EGP)';
     }
 
     const netIncome = Math.max(0, grossIncome - taxDeduction);
@@ -1878,11 +1878,11 @@ const GameEngine = (() => {
     if (netWorth <= EXEMPTION_THRESHOLD) {
       return {
         taxableNetWorth: 0,
-        bracketName: 'الشريحة الأولى (معفى تماماً حتى 5 مليون ج.م)',
+        bracketName:'الشريحة الأولى (معفى تماماً حتى 5 مليون ج.م)',
         bracketId: 1,
-        bracketColor: 'text-emerald-400',
-        baseRatePct: '0.0000%',
-        effectiveRatePct: '0.0000%',
+        bracketColor:'text-emerald-400',
+        baseRatePct:'0.0000%',
+        effectiveRatePct:'0.0000%',
         taxPerSecond: 0,
         taxShieldActive,
         shieldDurationTicks,
@@ -1892,20 +1892,20 @@ const GameEngine = (() => {
 
     const taxable = netWorth - EXEMPTION_THRESHOLD;
     let baseRate = (taxConfig.silverRate || 0.000003) * (taxConfig.rateMultiplier || 1.0);
-    let bracketName = 'الشريحة الفضية (5M - 20M ج.م)';
+    let bracketName ='الشريحة الفضية (5M - 20M ج.م)';
     let bracketId = 2;
-    let bracketColor = 'text-sky-400';
+    let bracketColor ='text-sky-400';
 
     if (netWorth > 60000000) {
       baseRate = (taxConfig.whaleRate || 0.000010) * (taxConfig.rateMultiplier || 1.0);
-      bracketName = 'شريحة كبار المستثمرين والمليارديرات (+60M ج.م)';
+      bracketName ='شريحة كبار المستثمرين والمليارديرات (+60M ج.م)';
       bracketId = 4;
-      bracketColor = 'text-rose-400';
+      bracketColor ='text-rose-400';
     } else if (netWorth > 20000000) {
       baseRate = (taxConfig.majorRate || 0.000006) * (taxConfig.rateMultiplier || 1.0);
-      bracketName = 'شريحة الممولين المتقدمين (20M - 60M ج.م)';
+      bracketName ='شريحة الممولين المتقدمين (20M - 60M ج.م)';
       bracketId = 3;
-      bracketColor = 'text-amber-400';
+      bracketColor ='text-amber-400';
     }
 
     const effectiveRate = taxShieldActive ? (baseRate * 0.70) : baseRate; // Tax shield gives 30% discount (rebalanced 50%)
@@ -1918,8 +1918,8 @@ const GameEngine = (() => {
       bracketName,
       bracketId,
       bracketColor,
-      baseRatePct: (baseRate * 100).toFixed(4) + '%',
-      effectiveRatePct: (effectiveRate * 100).toFixed(4) + '%',
+      baseRatePct: (baseRate * 100).toFixed(4) +'%',
+      effectiveRatePct: (effectiveRate * 100).toFixed(4) +'%',
       taxPerSecond,
       taxShieldActive,
       shieldDurationTicks,
@@ -1935,7 +1935,7 @@ const GameEngine = (() => {
     state.cash -= cost;
     state.totalTaxesPaid = (state.totalTaxesPaid || 0) + cost;
     state.xp = (state.xp || 0) + 250;
-    recordPlayerActivity('إقرار ضريبي', `تقديم إقرار ضريبي طوعي وتسوية ${cost.toLocaleString()} ج.م (+250 XP)`, 'banking');
+    recordPlayerActivity('إقرار ضريبي',`تقديم إقرار ضريبي طوعي وتسوية ${cost.toLocaleString()} ج.م (+250 XP)`,'banking');
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
     return { cost, xpGain: 250 };
@@ -2062,7 +2062,7 @@ const GameEngine = (() => {
       }
 
       // Record partner dividends for claim distribution
-      if (typeof window !== 'undefined' && breakdown.partnerDividends) {
+      if (typeof window !=='undefined' && breakdown.partnerDividends) {
         if (!window.pendingDividends) window.pendingDividends = {};
         if (!window.pendingDividends[key]) window.pendingDividends[key] = {};
         Object.entries(breakdown.partnerDividends).forEach(([partner, amt]) => {
@@ -2145,7 +2145,7 @@ const GameEngine = (() => {
     if (state.ownedCars && state.ownedCars.length > 0) {
       state.ownedCars.forEach(carRef => {
         const car = CAR_TEMPLATES[carRef.id];
-        if (car && carRef.rentStatus === 'rented') {
+        if (car && carRef.rentStatus ==='rented') {
           const netProfit = (car.rentalIncomePerTick - car.maintenanceCostPerTick) / 3600;
           if (netProfit > 0) {
             state.bank += netProfit;
@@ -2198,22 +2198,22 @@ const GameEngine = (() => {
                 state.smugglingFleet[job.vehicleType]--;
               }
               state.jailTimer = 600; // 10 minutes
-              recordPlayerActivity('تهريب فشل 🚔', `مداهمة أمنية لشحنة "${route.name}". تم اعتقالك ومصادرة الـ ${SMUGGLING_VEHICLES[job.vehicleType].name}.`, 'dark');
+              recordPlayerActivity('تهريب فشل',`مداهمة أمنية لشحنة"${route.name}". تم اعتقالك ومصادرة الـ ${SMUGGLING_VEHICLES[job.vehicleType].name}.`,'dark');
               if (!updates.tipEvent) {
                 updates.tipEvent = {
-                  title: '🚨 مداهمة أمنية وسجن!',
-                  message: `تم اعتراض شحنتك المهربة إلى "${route.name}". تم اعتقالك وحبسك لمدة 10 دقائق ومصادرة مركبة الشحن!`,
+                  title:' مداهمة أمنية وسجن!',
+                  message:`تم اعتراض شحنتك المهربة إلى"${route.name}". تم اعتقالك وحبسك لمدة 10 دقائق ومصادرة مركبة الشحن!`,
                   gain: 0
                 };
               }
             } else {
               state.cash += route.yieldCash;
               state.xp += 800;
-              recordPlayerActivity('تهريب ناجح 🚢✈️', `وصول شحنة "${route.name}" بسلام! عائد: ${route.yieldCash.toLocaleString()} EGP (+800 XP)`, 'dark');
+              recordPlayerActivity('تهريب ناجح ️',`وصول شحنة"${route.name}" بسلام! عائد: ${route.yieldCash.toLocaleString()} EGP (+800 XP)`,'dark');
               if (!updates.tipEvent) {
                 updates.tipEvent = {
-                  title: '🚢 شحنة تهريب ناجحة!',
-                  message: `وصلت شحنتك بسلام إلى وجهتها! تم إيداع الأرباح الكاش: +${route.yieldCash.toLocaleString()} EGP (+800 XP)`,
+                  title:' شحنة تهريب ناجحة!',
+                  message:`وصلت شحنتك بسلام إلى وجهتها! تم إيداع الأرباح الكاش: +${route.yieldCash.toLocaleString()} EGP (+800 XP)`,
                   gain: route.yieldCash
                 };
               }
@@ -2230,14 +2230,14 @@ const GameEngine = (() => {
     if (state.businesses) {
       Object.keys(state.businesses).forEach(bk => {
         const b = state.businesses[bk];
-        if (b && b.level > 0 && typeof b.suppliesTicks === 'number' && b.suppliesTicks > 0) {
+        if (b && b.level > 0 && typeof b.suppliesTicks ==='number' && b.suppliesTicks > 0) {
           b.suppliesTicks--;
           if (b.suppliesTicks <= 0) {
             b.suppliesTicks = 0;
             if (!updates.suppliesExhausted) updates.suppliesExhausted = [];
             const bizCfg = BUSINESSES[bk];
             updates.suppliesExhausted.push(bizCfg ? bizCfg.name : bk);
-            recordPlayerActivity('نفاد بضاعة ⚠️', `نفدت بضاعة ومستلزمات تشغيل مشروع "${bizCfg ? bizCfg.name : bk}" وتوقف الإنتاج تماماً! يلزم توريد شحنة جديدة فوراً.`, 'business');
+            recordPlayerActivity('نفاد بضاعة ️',`نفدت بضاعة ومستلزمات تشغيل مشروع"${bizCfg ? bizCfg.name : bk}" وتوقف الإنتاج تماماً! يلزم توريد شحنة جديدة فوراً.`,'business');
           }
         }
       });
@@ -2245,7 +2245,7 @@ const GameEngine = (() => {
 
     // 6.7 Active Bank Loan countdown, default status & late penalty enforcement
     if (state.activeLoan && state.activeLoan.amount > 0) {
-      if (typeof state.activeLoan.ticksRemaining !== 'number') {
+      if (typeof state.activeLoan.ticksRemaining !=='number') {
         state.activeLoan.ticksRemaining = 300;
       }
       if (state.activeLoan.ticksRemaining > 0) {
@@ -2253,7 +2253,7 @@ const GameEngine = (() => {
         if (state.activeLoan.ticksRemaining <= 0) {
           state.activeLoan.isDefaulted = true;
           updates.loanDefaulted = true;
-          recordPlayerActivity('تعثر سداد قرض ⚠️', `انتهت مهلة سداد القرض البنكي (${(state.activeLoan.totalDue || 0).toLocaleString()} EGP). تم تجميد حسابك البنكي وتطبيق غرامة تأخير دورية 3%!`, 'banking');
+          recordPlayerActivity('تعثر سداد قرض ️',`انتهت مهلة سداد القرض البنكي (${(state.activeLoan.totalDue || 0).toLocaleString()} EGP). تم تجميد حسابك البنكي وتطبيق غرامة تأخير دورية 3%!`,'banking');
         }
       } else if (state.activeLoan.isDefaulted) {
         // Late penalty: 3% compound fee every 60 ticks (60 seconds)
@@ -2264,7 +2264,7 @@ const GameEngine = (() => {
           const penalty = Math.max(500, Math.floor(state.activeLoan.totalDue * 0.03));
           state.activeLoan.totalDue += penalty;
           updates.loanPenaltyApplied = { penalty, totalDue: state.activeLoan.totalDue };
-          recordPlayerActivity('غرامة تأخير قرض ⚠️', `تطبيق غرامة تأخير +${penalty.toLocaleString()} EGP على القرض المتعثر. إجمالي المستحق: ${state.activeLoan.totalDue.toLocaleString()} EGP`, 'banking');
+          recordPlayerActivity('غرامة تأخير قرض ️',`تطبيق غرامة تأخير +${penalty.toLocaleString()} EGP على القرض المتعثر. إجمالي المستحق: ${state.activeLoan.totalDue.toLocaleString()} EGP`,'banking');
         }
       }
     }
@@ -2281,7 +2281,7 @@ const GameEngine = (() => {
             if (!updates.tradeImportsArrived) updates.tradeImportsArrived = [];
             const comm = TRADE_COMMODITIES[imp.commodityId];
             updates.tradeImportsArrived.push({ commodityName: comm ? comm.name : imp.commodityId, quantity: imp.quantity });
-            recordPlayerActivity('وصول شحنة استيراد 🚢', `وصلت شحنة "${comm ? comm.name : imp.commodityId}" (${imp.quantity} وحدة) لمستودع الشركة بنجاح وجاهزة للبيع والتصدير.`, 'trade');
+            recordPlayerActivity('وصول شحنة استيراد',`وصلت شحنة"${comm ? comm.name : imp.commodityId}" (${imp.quantity} وحدة) لمستودع الشركة بنجاح وجاهزة للبيع والتصدير.`,'trade');
           }
         });
       }
@@ -2291,7 +2291,7 @@ const GameEngine = (() => {
             exp.delivered = true;
             if (!updates.tradeExportsDelivered) updates.tradeExportsDelivered = [];
             updates.tradeExportsDelivered.push({ id: exp.id, buyerName: exp.buyerName, payout: exp.totalPayout });
-            recordPlayerActivity('تسليم شحنة تصدير 📦', `وصلت شحنة التصدير إلى العميل "${exp.buyerName}". أرباحك جاهزة للتحصيل فوراً (${exp.totalPayout.toLocaleString()} EGP).`, 'trade');
+            recordPlayerActivity('تسليم شحنة تصدير',`وصلت شحنة التصدير إلى العميل"${exp.buyerName}". أرباحك جاهزة للتحصيل فوراً (${exp.totalPayout.toLocaleString()} EGP).`,'trade');
           }
         });
       }
@@ -2319,7 +2319,7 @@ const GameEngine = (() => {
     });
 
     // 6.9 Industrial Supply Chain Empire (مجمع الصناعات وسلاسل الإمداد): Balanced manufacturing & storage
-    if (state.industry && typeof INDUSTRIAL_SECTORS !== 'undefined') {
+    if (state.industry && typeof INDUSTRIAL_SECTORS !=='undefined') {
       Object.keys(INDUSTRIAL_SECTORS).forEach(secKey => {
         const secDef = INDUSTRIAL_SECTORS[secKey];
         const sec = state.industry[secKey];
@@ -2382,8 +2382,8 @@ const GameEngine = (() => {
     if (!updates.tipEvent && (now - lastTipEventTimestamp >= TIP_COOLDOWN_MS) && Math.random() < 0.30) {
       lastTipEventTimestamp = now;
       const eventChance = Math.random();
-      let tipTitle = "";
-      let tipText = "";
+      let tipTitle ="";
+      let tipText ="";
       let amountGained = 0;
       let xpBonus = 0;
 
@@ -2391,26 +2391,26 @@ const GameEngine = (() => {
         // Customer Tip (50 - 200 EGP)
         amountGained = Math.floor(50 + Math.random() * 150);
         xpBonus = 5;
-        tipTitle = "💵 إكرامية عميل";
-        tipText = `حصلت على إكرامية لقاء حسن تعاملك بقيمة +${amountGained.toLocaleString()} EGP!`;
+        tipTitle =" إكرامية عميل";
+        tipText =`حصلت على إكرامية لقاء حسن تعاملك بقيمة +${amountGained.toLocaleString()} EGP!`;
       } else if (eventChance < 0.65) {
         // Fast Minor Gig (200 - 450 EGP)
         amountGained = Math.floor(200 + Math.random() * 250);
         xpBonus = 10;
-        tipTitle = "🤝 خدمة تجارية سريعة";
-        tipText = `أنجزت وساطة بسيطة وحصدت عمولة كاش بقيمة +${amountGained.toLocaleString()} EGP!`;
+        tipTitle =" خدمة تجارية سريعة";
+        tipText =`أنجزت وساطة بسيطة وحصدت عمولة كاش بقيمة +${amountGained.toLocaleString()} EGP!`;
       } else if (eventChance < 0.85) {
         // Performance Incentive (450 - 750 EGP)
         amountGained = Math.floor(450 + Math.random() * 300);
         xpBonus = 20;
-        tipTitle = "⭐ حافز إنجاز وتميز";
-        tipText = `حصلت على حافز تميز تقديراً لجهودك بقيمة +${amountGained.toLocaleString()} EGP!`;
+        tipTitle ="⭐ حافز إنجاز وتميز";
+        tipText =`حصلت على حافز تميز تقديراً لجهودك بقيمة +${amountGained.toLocaleString()} EGP!`;
       } else {
         // Special Opportunity (750 - 1,000 EGP MAX)
         amountGained = Math.floor(750 + Math.random() * 250);
         xpBonus = 35;
-        tipTitle = "💎 فرصة استثمارية جانبية";
-        tipText = `أثمرت فرصة جانبية غير متوقعة عن أرباح إضافية بقيمة +${amountGained.toLocaleString()} EGP!`;
+        tipTitle =" فرصة استثمارية جانبية";
+        tipText =`أثمرت فرصة جانبية غير متوقعة عن أرباح إضافية بقيمة +${amountGained.toLocaleString()} EGP!`;
       }
 
       state.cash += amountGained;
@@ -2511,7 +2511,7 @@ const GameEngine = (() => {
         ...INITIAL_STATE,
         ...dbState,
         username: dbState.username || username,
-        pin: dbState.pin || '',
+        pin: dbState.pin ||'',
         isAdmin: dbState.isAdmin === true,
         dirtyCash: Number(dbState.dirtyCash || 0),
         businesses: mergedBusinesses,
@@ -2533,10 +2533,10 @@ const GameEngine = (() => {
         const elapsedSinceLastActive = Math.max(0, Math.floor((effectiveEnd - dbState.lastActiveTimestamp) / 1000));
 
         let offlineCorpEarnings = 0;
-        if (typeof firebase !== 'undefined' && AppDB.isFirebaseReady) {
+        if (typeof firebase !=='undefined' && AppDB.isFirebaseReady) {
           try {
             const db = firebase.firestore();
-            const snapshot = await db.collection('corporations').where('members', 'array-contains', username).get();
+            const snapshot = await db.collection('corporations').where('members','array-contains', username).get();
             if (!snapshot.empty) {
               const corp = snapshot.docs[0].data();
               
@@ -2557,7 +2557,7 @@ const GameEngine = (() => {
                       totalCorpTickProfit += CORP_PROJECTS[projId].profitPerTick;
                     }
                   });
-                } else if (typeof corp.projects === 'object') {
+                } else if (typeof corp.projects ==='object') {
                   Object.keys(corp.projects).forEach(projId => {
                     if (corp.projects[projId] && CORP_PROJECTS[projId]) {
                       totalCorpTickProfit += CORP_PROJECTS[projId].profitPerTick;
@@ -2595,7 +2595,7 @@ const GameEngine = (() => {
           if (state.businesses) {
             Object.keys(state.businesses).forEach(bk => {
               const b = state.businesses[bk];
-              if (b && b.level > 0 && typeof b.suppliesTicks === 'number' && b.suppliesTicks > 0) {
+              if (b && b.level > 0 && typeof b.suppliesTicks ==='number' && b.suppliesTicks > 0) {
                 // Business produced profit ONLY while supplies lasted!
                 const activeSuppliesSec = Math.min(b.suppliesTicks, cappedSeconds);
                 const tempState = { ...b, suppliesTicks: activeSuppliesSec };
@@ -2620,7 +2620,7 @@ const GameEngine = (() => {
           if (state.ownedCars && state.ownedCars.length > 0) {
             state.ownedCars.forEach(carRef => {
               const car = CAR_TEMPLATES[carRef.id];
-              if (car && carRef.rentStatus === 'rented') {
+              if (car && carRef.rentStatus ==='rented') {
                 const netP = car.rentalIncomePerTick - car.maintenanceCostPerTick;
                 if (netP > 0) nonBizHourly += netP;
               }
@@ -2646,7 +2646,7 @@ const GameEngine = (() => {
         } else if (elapsedSinceLastActive > 0 && state.businesses) {
           Object.keys(state.businesses).forEach(bk => {
             const b = state.businesses[bk];
-            if (b && b.level > 0 && typeof b.suppliesTicks === 'number' && b.suppliesTicks > 0) {
+            if (b && b.level > 0 && typeof b.suppliesTicks ==='number' && b.suppliesTicks > 0) {
               b.suppliesTicks = Math.max(0, b.suppliesTicks - elapsedSinceLastActive);
             }
           });
@@ -2697,7 +2697,7 @@ const GameEngine = (() => {
 
       // Ensure industry state integrity
       if (!state.industry) state.industry = {};
-      ['food', 'auto', 'semiconductor', 'petrochemical', 'aerospace'].forEach(sec => {
+      ['food','auto','semiconductor','petrochemical','aerospace'].forEach(sec => {
         if (!state.industry[sec]) {
           state.industry[sec] = { unlocked: false, stage1: 0, stage2: 0, stage3: 0, logistics: 0, readyStock: 0, totalEarned: 0, totalExported: 0 };
         }
@@ -2732,7 +2732,7 @@ const GameEngine = (() => {
   }
 
   function logoutUser() {
-    activeUsername = "";
+    activeUsername ="";
     state = { ...INITIAL_STATE };
   }
 
@@ -2770,7 +2770,7 @@ const GameEngine = (() => {
     // Recalculate and Save
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
-    recordPlayerActivity('نوبة عمل 💼', `إتمام وردية عمل كـ "${job.name}" (+${finalSalary.toLocaleString()} ج.م للبنك و +${finalXpReward} XP)`, 'work');
+    recordPlayerActivity('نوبة عمل',`إتمام وردية عمل كـ"${job.name}" (+${finalSalary.toLocaleString()} ج.م للبنك و +${finalXpReward} XP)`,'work');
     trackDailyQuestProgress('work_shifts', 1);
     AppDB.savePlayerState(activeUsername, state);
 
@@ -2792,7 +2792,7 @@ const GameEngine = (() => {
     }
 
     state.jobId = jobId;
-    recordPlayerActivity('ترقية وظيفية 🎖️', `ترقية إلى مرتبة "${targetJob.name}" براتب أساسي ${targetJob.salary.toLocaleString()} ج.م/دورة`, 'work');
+    recordPlayerActivity('ترقية وظيفية ️',`ترقية إلى مرتبة"${targetJob.name}" براتب أساسي ${targetJob.salary.toLocaleString()} ج.م/دورة`,'work');
     AppDB.savePlayerState(activeUsername, state);
     return targetJob;
   }
@@ -2820,7 +2820,7 @@ const GameEngine = (() => {
     bizState.level = 1;
     bizState.suppliesTicks = 600; // 10 minutes initial operating supplies included with purchase
 
-    recordPlayerActivity('شراء مشروع', `شراء وتأسيس مشروع "${biz.name}" بسعر ${biz.cost.toLocaleString()} ج.م (يشمل مخزون تشغيل أولي لـ 10 دقائق)`, 'business');
+    recordPlayerActivity('شراء مشروع',`شراء وتأسيس مشروع"${biz.name}" بسعر ${biz.cost.toLocaleString()} ج.م (يشمل مخزون تشغيل أولي لـ 10 دقائق)`,'business');
     state.netWorth = calculateNetWorth();
     trackDailyQuestProgress('biz_upgrade', 1);
     forceSaveState(true);
@@ -2846,7 +2846,7 @@ const GameEngine = (() => {
     state.cash -= upgradeCost;
     bizState.level++;
 
-    recordPlayerActivity('ترقية مشروع', `ترقية مشروع "${biz.name}" إلى المستوى ${bizState.level}`, 'business');
+    recordPlayerActivity('ترقية مشروع',`ترقية مشروع"${biz.name}" إلى المستوى ${bizState.level}`,'business');
     state.netWorth = calculateNetWorth();
     trackDailyQuestProgress('biz_upgrade', 1);
     forceSaveState(true);
@@ -2871,7 +2871,7 @@ const GameEngine = (() => {
     state.cash -= franchiseCost;
     bizState.isFranchise = true;
 
-    recordPlayerActivity('تسجيل علامة تجارية', `تحويل مشروع "${biz.name}" إلى علامة تجارية مسجلة (Franchise)`, 'business');
+    recordPlayerActivity('تسجيل علامة تجارية',`تحويل مشروع"${biz.name}" إلى علامة تجارية مسجلة (Franchise)`,'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
     return true;
@@ -2890,7 +2890,7 @@ const GameEngine = (() => {
     bizState.workers = 0;
     bizState.isFranchise = false;
 
-    recordPlayerActivity('بيع علامة تجارية', `بيع العلامة التجارية "${biz.name}" (استراتيجية خروج) بمبلغ ${sellPayout.toLocaleString()} EGP`, 'business');
+    recordPlayerActivity('بيع علامة تجارية',`بيع العلامة التجارية"${biz.name}" (استراتيجية خروج) بمبلغ ${sellPayout.toLocaleString()} EGP`,'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
     return { payout: sellPayout };
@@ -3001,14 +3001,14 @@ const GameEngine = (() => {
         const paid = state.activeLoan.totalDue;
         state.activeLoan = null;
         state.bank += excess;
-        recordPlayerActivity('سداد كامل لقرض متعثر 🏛️', `تم استقطاع كامل الدين (${paid.toLocaleString()} ج.م) من الإيداع وفك تجميد الحساب البنكي بنجاح!`, 'banking');
+        recordPlayerActivity('سداد كامل لقرض متعثر ️',`تم استقطاع كامل الدين (${paid.toLocaleString()} ج.م) من الإيداع وفك تجميد الحساب البنكي بنجاح!`,'banking');
       } else {
         state.activeLoan.totalDue -= amount;
-        recordPlayerActivity('سداد جزئي لقرض متعثر 🏛️', `تم توجيه مبلغ ${amount.toLocaleString()} ج.م من الإيداع لسداد جزء من القرض المتعثر. المتبقي: ${state.activeLoan.totalDue.toLocaleString()} ج.م`, 'banking');
+        recordPlayerActivity('سداد جزئي لقرض متعثر ️',`تم توجيه مبلغ ${amount.toLocaleString()} ج.م من الإيداع لسداد جزء من القرض المتعثر. المتبقي: ${state.activeLoan.totalDue.toLocaleString()} ج.م`,'banking');
       }
     } else {
       state.bank += amount;
-      recordPlayerActivity('إيداع بنكي 🏛️', `إيداع نقدي بقيمة ${amount.toLocaleString()} ج.م في الحساب المصرفي`, 'banking');
+      recordPlayerActivity('إيداع بنكي ️',`إيداع نقدي بقيمة ${amount.toLocaleString()} ج.م في الحساب المصرفي`,'banking');
     }
 
     state.netWorth = calculateNetWorth();
@@ -3026,7 +3026,7 @@ const GameEngine = (() => {
 
     state.bank -= amount;
     state.cash += amount;
-    recordPlayerActivity('سحب بنكي 💵', `سحب نقدي بقيمة ${amount.toLocaleString()} ج.م من الحساب المصرفي`, 'banking');
+    recordPlayerActivity('سحب بنكي',`سحب نقدي بقيمة ${amount.toLocaleString()} ج.م من الحساب المصرفي`,'banking');
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
   }
@@ -3042,7 +3042,7 @@ const GameEngine = (() => {
 
     state.cash -= asset.cost;
     state.assets[key] = (state.assets[key] || 0) + 1;
-    recordPlayerActivity('شراء عقار/أصل 🏠', `شراء "${asset.name}" بقيمة ${asset.cost.toLocaleString()} ج.م (+${asset.income.toLocaleString()} ج.م/دورة)`, 'investment');
+    recordPlayerActivity('شراء عقار/أصل',`شراء"${asset.name}" بقيمة ${asset.cost.toLocaleString()} ج.م (+${asset.income.toLocaleString()} ج.م/دورة)`,'investment');
 
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
@@ -3059,7 +3059,7 @@ const GameEngine = (() => {
 
     state.assets[key]--;
     state.cash += sellValue;
-    recordPlayerActivity('تصفية عقار/أصل 💰', `بيع "${asset.name}" بسعر تصفية ${sellValue.toLocaleString()} ج.م`, 'investment');
+    recordPlayerActivity('تصفية عقار/أصل',`بيع"${asset.name}" بسعر تصفية ${sellValue.toLocaleString()} ج.م`,'investment');
 
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
@@ -3117,7 +3117,7 @@ const GameEngine = (() => {
     state.stockCooldowns[sym] = Date.now() + 45000;
     state.stockTradeCooldownUntil = Date.now() + 3000;
 
-    recordPlayerActivity('شراء أسهم', `شراء ${shares} سهم (${sym}) بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`, 'stock');
+    recordPlayerActivity('شراء أسهم',`شراء ${shares} سهم (${sym}) بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`,'stock');
     trackDailyQuestProgress('stock_trade', 1);
     forceSaveState(true);
     return { shares, price: currentPrice, grossCost, fee, totalCost };
@@ -3185,15 +3185,15 @@ const GameEngine = (() => {
     state.cash += netReturn;
     state.stockTradeCooldownUntil = Date.now() + 3000;
 
-    let logDetails = `بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} ج.م)`;
+    let logDetails =`بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} ج.م)`;
     if (capitalGainsTax > 0) {
-      logDetails += ` [ضريبة أرباح: ${capitalGainsTax.toLocaleString()} ج.م]`;
+      logDetails +=` [ضريبة أرباح: ${capitalGainsTax.toLocaleString()} ج.م]`;
     }
     if (scannerCompensation > 0) {
-      logDetails += ` [حماية الماسح الذكي عوّضت: +${scannerCompensation.toLocaleString()} ج.م]`;
+      logDetails +=` [حماية الماسح الذكي عوّضت: +${scannerCompensation.toLocaleString()} ج.م]`;
     }
 
-    recordPlayerActivity('بيع أسهم', logDetails, 'stock');
+    recordPlayerActivity('بيع أسهم', logDetails,'stock');
     trackDailyQuestProgress('stock_trade', 1);
     forceSaveState(true);
     return { shares, price: currentPrice, grossReturn, fee, capitalGainsTax, scannerCompensation, totalReturn: netReturn };
@@ -3222,7 +3222,7 @@ const GameEngine = (() => {
     // 1. Guard against re-buying an already active tool
     if (state.inventory && state.inventory[itemId] > 0 && state.itemDurations && state.itemDurations[itemId] > 0) {
       const remSec = (state.itemDurations[itemId] || 0) * 3;
-      throw new Error(`أداة "${item.name}" نشطة وتعمل في حقيبتك حالياً (${remSec} ثانية متبقية). لا يمكنك شراء نسخة جديدة حتى ينتهي مفعول الحالية.`);
+      throw new Error(`أداة"${item.name}" نشطة وتعمل في حقيبتك حالياً (${remSec} ثانية متبقية). لا يمكنك شراء نسخة جديدة حتى ينتهي مفعول الحالية.`);
     }
 
     // 2. Guard against excessive concurrent active tools (max 3 simultaneously)
@@ -3239,7 +3239,7 @@ const GameEngine = (() => {
       const remSec = getDailyResetRemainingSeconds();
       const remHours = Math.floor(remSec / 3600);
       const remMins = Math.floor((remSec % 3600) / 60);
-      throw new Error(`لقد استنفدت الحد الأقصى اليومي لاستخدام "${item.name}" (${maxUses} مرات كل 24 ساعة)! يتجدد الاستخدام بعد ${remHours} ساعة و ${remMins} دقيقة.`);
+      throw new Error(`لقد استنفدت الحد الأقصى اليومي لاستخدام"${item.name}" (${maxUses} مرات كل 24 ساعة)! يتجدد الاستخدام بعد ${remHours} ساعة و ${remMins} دقيقة.`);
     }
 
     // 4. Check item cooldown
@@ -3249,7 +3249,7 @@ const GameEngine = (() => {
       const remainingSec = Math.ceil((cooldownExpiry - Date.now()) / 1000);
       const mins = Math.floor(remainingSec / 60);
       const secs = remainingSec % 60;
-      const timeStr = mins > 0 ? `${mins} دقيقة و${secs} ثانية` : `${secs} ثانية`;
+      const timeStr = mins > 0 ?`${mins} دقيقة و${secs} ثانية` :`${secs} ثانية`;
       throw new Error(`هذه الأداة في فترة التبريد (كول داون). يمكنك استخدامها مجدداً بعد ${timeStr}.`);
     }
 
@@ -3273,7 +3273,7 @@ const GameEngine = (() => {
       state.itemCooldowns[itemId] = Date.now() + (item.cooldownSec * 1000);
     }
 
-    recordPlayerActivity('شراء متجر', `شراء وتفعيل أداة "${item.name}" (الاستخدام ${usedToday + 1}/${maxUses} لليوم)`, 'store');
+    recordPlayerActivity('شراء متجر',`شراء وتفعيل أداة"${item.name}" (الاستخدام ${usedToday + 1}/${maxUses} لليوم)`,'store');
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
     return item;
@@ -3301,7 +3301,7 @@ const GameEngine = (() => {
       const remainingSec = Math.ceil((state.blackMarketCooldowns[dealId] - Date.now()) / 1000);
       const mins = Math.floor(remainingSec / 60);
       const secs = remainingSec % 60;
-      const timeStr = mins > 0 ? `${mins} دقيقة و ${secs} ثانية` : `${secs} ثانية`;
+      const timeStr = mins > 0 ?`${mins} دقيقة و ${secs} ثانية` :`${secs} ثانية`;
       throw new Error(`العملية في فترة تهدئة أمنية (كول داون)! يرجى الانتظار ${timeStr}.`);
     }
 
@@ -3356,8 +3356,8 @@ const GameEngine = (() => {
       state.underworldRep = (state.underworldRep || 0) + (deal.repGain || 0);
       state.blackMarketCooldowns[dealId] = Date.now() + fullCdMs;
 
-      const payoutTypeStr = deal.cleanPayout ? 'كاش نظيف' : 'كاش مشبوه';
-      recordPlayerActivity('سوق سوداء', `نجاح صفقة "${deal.name}" (+${deal.payout.toLocaleString()} ج.م ${payoutTypeStr})`, 'blackmarket');
+      const payoutTypeStr = deal.cleanPayout ?'كاش نظيف' :'كاش مشبوه';
+      recordPlayerActivity('سوق سوداء',`نجاح صفقة"${deal.name}" (+${deal.payout.toLocaleString()} ج.م ${payoutTypeStr})`,'blackmarket');
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
       return {
@@ -3375,7 +3375,7 @@ const GameEngine = (() => {
 
       // 1. Lawyer Acquittal: 25% chance the lawyer dismisses charges immediately (rebalanced 50%)
       if (hasLawyer && Math.random() < 0.25) {
-        recordPlayerActivity('براءة قضائية', `تدخل المحامي وأثبت براءة اللاعب في صفقة "${deal.name}" دون عقوبة (كول داون مخفض)`, 'blackmarket');
+        recordPlayerActivity('براءة قضائية',`تدخل المحامي وأثبت براءة اللاعب في صفقة"${deal.name}" دون عقوبة (كول داون مخفض)`,'blackmarket');
         state.netWorth = calculateNetWorth();
         AppDB.savePlayerState(activeUsername, state);
         return {
@@ -3385,7 +3385,7 @@ const GameEngine = (() => {
           confiscation: 0,
           jailDuration: 0,
           cooldownSec: Math.floor((deal.cooldownSec || 120) / 2 * cdMultiplier),
-          message: 'تدخل المحامي الدولي وأسقط القضية وأثبت براءتك دون سجن أو غرامات!'
+          message:'تدخل المحامي الدولي وأسقط القضية وأثبت براءتك دون سجن أو غرامات!'
         };
       }
 
@@ -3393,7 +3393,7 @@ const GameEngine = (() => {
       if (state.inventory && state.inventory.fake_passport > 0) {
         state.inventory.fake_passport--;
         if (state.itemDurations) delete state.itemDurations.fake_passport;
-        recordPlayerActivity('هروب دبلوماسي', `استخدام جواز السفر المزور للهروب من المداهمة في صفقة "${deal.name}" (كول داون مخفض)`, 'blackmarket');
+        recordPlayerActivity('هروب دبلوماسي',`استخدام جواز السفر المزور للهروب من المداهمة في صفقة"${deal.name}" (كول داون مخفض)`,'blackmarket');
         state.netWorth = calculateNetWorth();
         AppDB.savePlayerState(activeUsername, state);
         return {
@@ -3402,7 +3402,7 @@ const GameEngine = (() => {
           confiscation: 0,
           jailDuration: 0,
           cooldownSec: Math.floor((deal.cooldownSec || 120) / 2 * cdMultiplier),
-          message: 'تمكنت من الهروب الفوري باستخدام جواز السفر الدبلوماسي المزور!'
+          message:'تمكنت من الهروب الفوري باستخدام جواز السفر الدبلوماسي المزور!'
         };
       }
 
@@ -3421,7 +3421,7 @@ const GameEngine = (() => {
       const repLoss = deal.repLoss || Math.floor((deal.repGain || 20) * 1.2);
       state.underworldRep = Math.max(0, (state.underworldRep || 0) - repLoss);
 
-      recordPlayerActivity('مداهمة وسجن', `فشل صفقة "${deal.name}" ومصادرة ${totalConfiscation.toLocaleString()} ج.م وسجن ${deal.jailDuration}ث وفقدان -${repLoss} سمعة (كول داون مخفض 50%)`, 'blackmarket');
+      recordPlayerActivity('مداهمة وسجن',`فشل صفقة"${deal.name}" ومصادرة ${totalConfiscation.toLocaleString()} ج.م وسجن ${deal.jailDuration}ث وفقدان -${repLoss} سمعة (كول داون مخفض 50%)`,'blackmarket');
       state.netWorth = calculateNetWorth();
       AppDB.savePlayerState(activeUsername, state);
       return {
@@ -3513,7 +3513,7 @@ const GameEngine = (() => {
     state.dirtyCash = Math.max(0, state.dirtyCash - amount);
     state.bank = (state.bank || 0) + cleanedAmount;
     state.totalTaxesPaid = (state.totalTaxesPaid || 0) + fee;
-    recordPlayerActivity('غسيل أموال', `غسيل ${amount.toLocaleString()} ج.م (ضريبة/عمولة ${Math.round(feeRate * 100)}% = ${fee.toLocaleString()} ج.م) وتحويل صافي ${cleanedAmount.toLocaleString()} ج.م إلى رصيد البنك النظيف`, 'blackmarket');
+    recordPlayerActivity('غسيل أموال',`غسيل ${amount.toLocaleString()} ج.م (ضريبة/عمولة ${Math.round(feeRate * 100)}% = ${fee.toLocaleString()} ج.م) وتحويل صافي ${cleanedAmount.toLocaleString()} ج.م إلى رصيد البنك النظيف`,'blackmarket');
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
     return {
@@ -3545,7 +3545,7 @@ const GameEngine = (() => {
     state.raidActive = false;
     state.heatLevel = 0;
     state.netWorth = calculateNetWorth();
-    recordPlayerActivity('دفع رشوة مداهمة', `تم دفع رشوة بقيمة ${cost.toLocaleString()} ج.م لإنهاء المداهمة الأمنية وتصفير الملاحقة.`, 'blackmarket');
+    recordPlayerActivity('دفع رشوة مداهمة',`تم دفع رشوة بقيمة ${cost.toLocaleString()} ج.م لإنهاء المداهمة الأمنية وتصفير الملاحقة.`,'blackmarket');
     AppDB.savePlayerState(activeUsername, state);
     return { bribeCost: cost };
   }
@@ -3562,7 +3562,7 @@ const GameEngine = (() => {
     if (success) {
       state.heatLevel = Math.max(0, (state.heatLevel || 0) - 1);
       state.netWorth = calculateNetWorth();
-      recordPlayerActivity('مقاومة المداهمة', 'نجحت في إخفاء الأدلة والإنكار بنجاح وتفادي المداهمة دون خسائر.', 'blackmarket');
+      recordPlayerActivity('مقاومة المداهمة','نجحت في إخفاء الأدلة والإنكار بنجاح وتفادي المداهمة دون خسائر.','blackmarket');
       AppDB.savePlayerState(activeUsername, state);
       return { success: true };
     } else {
@@ -3571,7 +3571,7 @@ const GameEngine = (() => {
       state.jailTimer = 600; // 10 minutes
       state.heatLevel = Math.min(5, (state.heatLevel || 0) + 2);
       state.netWorth = calculateNetWorth();
-      recordPlayerActivity('فشل المقاومة (سجن ومصادرة)', `فشلت في المقاومة؛ تم مصادرة ${loss.toLocaleString()} ج.م من الكاش القذر وسجنك لمدة 10 دقائق.`, 'blackmarket');
+      recordPlayerActivity('فشل المقاومة (سجن ومصادرة)',`فشلت في المقاومة؛ تم مصادرة ${loss.toLocaleString()} ج.م من الكاش القذر وسجنك لمدة 10 دقائق.`,'blackmarket');
       AppDB.savePlayerState(activeUsername, state);
       return { success: false, loss };
     }
@@ -3582,10 +3582,10 @@ const GameEngine = (() => {
     const plan = INVESTMENTS[planId];
     if (!plan) throw new Error("خطة الاستثمار غير موجودة.");
     if (!amount || isNaN(amount) || amount < plan.minAmount) {
-      throw new Error(`الحد الأدنى للاستثمار في "${plan.name}" هو ${plan.minAmount.toLocaleString()} جنيه.`);
+      throw new Error(`الحد الأدنى للاستثمار في"${plan.name}" هو ${plan.minAmount.toLocaleString()} جنيه.`);
     }
     if (plan.maxAmount && amount > plan.maxAmount) {
-      throw new Error(`الحد الأقصى للإيداع في "${plan.name}" هو ${plan.maxAmount.toLocaleString()} جنيه.`);
+      throw new Error(`الحد الأقصى للإيداع في"${plan.name}" هو ${plan.maxAmount.toLocaleString()} جنيه.`);
     }
     if (state.cash < amount) {
       throw new Error(`رصيدك النقدي ${state.cash.toLocaleString()} جنيه لا يكفي لاستثمار ${amount.toLocaleString()} جنيه.`);
@@ -3605,7 +3605,7 @@ const GameEngine = (() => {
       rate: plan.rate
     });
 
-    recordPlayerActivity('استثمار مالي', `إيداع ${amount.toLocaleString()} ج.م في "${plan.name}"`, 'investment');
+    recordPlayerActivity('استثمار مالي',`إيداع ${amount.toLocaleString()} ج.م في"${plan.name}"`,'investment');
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
     return { plan, amount };
@@ -3618,15 +3618,15 @@ const GameEngine = (() => {
 
   // Unified Casino Gatekeeper: Validates cooldown, daily net profit cap, 5% dynamic bet limit, instant deduction & save
   function checkCasinoAllowedAndDeduct(betAmount, skipCooldown = false) {
-    const isEn = (typeof window !== 'undefined' && window.currentLang === 'en');
-    const currency = isEn ? 'EGP' : 'ج.م';
+    const isEn = (typeof window !=='undefined' && window.currentLang ==='en');
+    const currency = isEn ?'EGP' :'ج.م';
 
     // 1. Anti-Spam Cooldown (6 seconds)
     if (!skipCooldown && state.casinoCooldownUntil && Date.now() < state.casinoCooldownUntil) {
       const remSec = Math.ceil((state.casinoCooldownUntil - Date.now()) / 1000);
       throw new Error(isEn
-        ? `Casino Cooldown: Please wait ${remSec}s before placing another bet.`
-        : `الكازينو: يرجى التمهل! انتظر ${remSec} ثانية قبل وضع رهان جديد.`);
+        ?`Casino Cooldown: Please wait ${remSec}s before placing another bet.`
+        :`الكازينو: يرجى التمهل! انتظر ${remSec} ثانية قبل وضع رهان جديد.`);
     }
 
     // 2. Daily Net Profit Cap Enforcement (Rolling 24-hour cycle)
@@ -3638,16 +3638,16 @@ const GameEngine = (() => {
     if ((state.dailyCasinoNetProfit || 0) >= MAX_CASINO_DAILY_PROFIT) {
       const remHours = Math.ceil((state.dailyCasinoResetAt - now) / 3600000);
       throw new Error(isEn
-        ? `Daily Profit Limit: You reached the casino net profit cap (${MAX_CASINO_DAILY_PROFIT.toLocaleString()} ${currency} / 24h). Resets in ~${remHours}h.`
-        : `بلغت الحد الأقصى اليومي لصافي أرباح الكازينو (${MAX_CASINO_DAILY_PROFIT.toLocaleString()} ${currency} / 24 ساعة). يرجى العودة بعد ~${remHours} ساعة.`);
+        ?`Daily Profit Limit: You reached the casino net profit cap (${MAX_CASINO_DAILY_PROFIT.toLocaleString()} ${currency} / 24h). Resets in ~${remHours}h.`
+        :`بلغت الحد الأقصى اليومي لصافي أرباح الكازينو (${MAX_CASINO_DAILY_PROFIT.toLocaleString()} ${currency} / 24 ساعة). يرجى العودة بعد ~${remHours} ساعة.`);
     }
 
     // 3. Dynamic Bet Limit: min 100, max 2.5M, capped at 5% of player's cash to defeat Martingale exploit
-    if (typeof betAmount !== 'number' || isNaN(betAmount) || betAmount <= 0) {
-      throw new Error(isEn ? "Please enter a valid bet amount." : "مبلغ الرهان غير صالح.");
+    if (typeof betAmount !=='number' || isNaN(betAmount) || betAmount <= 0) {
+      throw new Error(isEn ?"Please enter a valid bet amount." :"مبلغ الرهان غير صالح.");
     }
     if (betAmount < 100) {
-      throw new Error(isEn ? `Minimum bet is 100 ${currency}.` : `الحد الأدنى للرهان هو 100 ${currency}.`);
+      throw new Error(isEn ?`Minimum bet is 100 ${currency}.` :`الحد الأدنى للرهان هو 100 ${currency}.`);
     }
 
     const dynamicCap = Math.max(500, Math.floor(state.cash * 0.05));
@@ -3655,12 +3655,12 @@ const GameEngine = (() => {
 
     if (betAmount > effectiveMaxBet) {
       throw new Error(isEn
-        ? `Bet exceeds limit! Maximum allowed bet right now is ${effectiveMaxBet.toLocaleString()} ${currency} (capped at 5% of cash or 2,500,000 ${currency}).`
-        : `الرهان يتجاوز الحد المسموح به! الحد الأقصى المسموح لرهانك الآن هو ${effectiveMaxBet.toLocaleString()} ${currency} (بحد أقصى 5% من رصيدك الكاش أو 2,500,000 ${currency}).`);
+        ?`Bet exceeds limit! Maximum allowed bet right now is ${effectiveMaxBet.toLocaleString()} ${currency} (capped at 5% of cash or 2,500,000 ${currency}).`
+        :`الرهان يتجاوز الحد المسموح به! الحد الأقصى المسموح لرهانك الآن هو ${effectiveMaxBet.toLocaleString()} ${currency} (بحد أقصى 5% من رصيدك الكاش أو 2,500,000 ${currency}).`);
     }
 
     if (state.cash < betAmount) {
-      throw new Error(isEn ? "Insufficient cash balance for this bet." : "رصيدك النقدي لا يكفي لهذا الرهان.");
+      throw new Error(isEn ?"Insufficient cash balance for this bet." :"رصيدك النقدي لا يكفي لهذا الرهان.");
     }
 
     // 4. Set Cooldown & Deduct Immediately
@@ -3676,9 +3676,9 @@ const GameEngine = (() => {
   }
 
   // Unified Casino Settlement: Applies House Rake (3%), VIP Bonus (+20% on net profit), net profit tracking & immediate persistence
-  function settleCasinoRound(betAmount, grossPayout, gameName = 'الكازينو') {
-    const isEn = (typeof window !== 'undefined' && window.currentLang === 'en');
-    const currency = isEn ? 'EGP' : 'ج.م';
+  function settleCasinoRound(betAmount, grossPayout, gameName ='الكازينو') {
+    const isEn = (typeof window !=='undefined' && window.currentLang ==='en');
+    const currency = isEn ?'EGP' :'ج.م';
     const hasVIP = Boolean(state.inventory && state.inventory.vip_casino_pass > 0);
     const grossProfit = grossPayout - betAmount;
 
@@ -3703,24 +3703,24 @@ const GameEngine = (() => {
       state.dailyCasinoNetProfit = Math.min(MAX_CASINO_DAILY_PROFIT, Math.max(0, (state.dailyCasinoNetProfit || 0) + netProfit));
 
       recordPlayerActivity(gameName, isEn
-        ? `Won ${finalPayout.toLocaleString()} ${currency} (Net: +${netProfit.toLocaleString()} ${currency})`
-        : `فوز في ${gameName}: +${finalPayout.toLocaleString()} ${currency} (صافي ربح +${netProfit.toLocaleString()} ${currency})`, 'casino');
+        ?`Won ${finalPayout.toLocaleString()} ${currency} (Net: +${netProfit.toLocaleString()} ${currency})`
+        :`فوز في ${gameName}: +${finalPayout.toLocaleString()} ${currency} (صافي ربح +${netProfit.toLocaleString()} ${currency})`,'casino');
     } else if (grossPayout === betAmount) {
       // Push / Tie: Return original bet
       finalPayout = betAmount;
       netProfit = 0;
       state.cash += finalPayout;
       recordPlayerActivity(gameName, isEn
-        ? `Tie/Push in ${gameName}: bet refunded (${betAmount.toLocaleString()} ${currency})`
-        : `تعادل في ${gameName}: استرداد الرهان (${betAmount.toLocaleString()} ${currency})`, 'casino');
+        ?`Tie/Push in ${gameName}: bet refunded (${betAmount.toLocaleString()} ${currency})`
+        :`تعادل في ${gameName}: استرداد الرهان (${betAmount.toLocaleString()} ${currency})`,'casino');
     } else {
       // Loss
       finalPayout = 0;
       netProfit = -betAmount;
       state.dailyCasinoNetProfit = Math.max(0, (state.dailyCasinoNetProfit || 0) - betAmount);
       recordPlayerActivity(gameName, isEn
-        ? `Lost bet of ${betAmount.toLocaleString()} ${currency}`
-        : `خسارة رهان في ${gameName}: -${betAmount.toLocaleString()} ${currency}`, 'casino');
+        ?`Lost bet of ${betAmount.toLocaleString()} ${currency}`
+        :`خسارة رهان في ${gameName}: -${betAmount.toLocaleString()} ${currency}`,'casino');
     }
 
     state.netWorth = calculateNetWorth();
@@ -3748,7 +3748,7 @@ const GameEngine = (() => {
 
     let outcomeSide = choice;
     if (!won) {
-      outcomeSide = choice === 'heads' ? 'tails' : 'heads';
+      outcomeSide = choice ==='heads' ?'tails' :'heads';
     }
 
     let grossPayout = 0;
@@ -3761,7 +3761,7 @@ const GameEngine = (() => {
       grossPayout = Math.floor(betAmount * mult);
     }
 
-    const settlement = settleCasinoRound(betAmount, grossPayout, 'رمي العملة (Coin Flip)');
+    const settlement = settleCasinoRound(betAmount, grossPayout,'رمي العملة (Coin Flip)');
 
     return {
       won: settlement.won,
@@ -3783,11 +3783,11 @@ const GameEngine = (() => {
     // Fair balanced distribution
     function getRandomSymbol() {
       const r = Math.random();
-      if (r < 0.08) return 'CROWN';
-      if (r < 0.24) return 'DIAMOND';
-      if (r < 0.50) return 'GOLD';
-      if (r < 0.77) return 'SACK';
-      return 'KEY';
+      if (r < 0.08) return'CROWN';
+      if (r < 0.24) return'DIAMOND';
+      if (r < 0.50) return'GOLD';
+      if (r < 0.77) return'SACK';
+      return'KEY';
     }
 
     const r1 = getRandomSymbol();
@@ -3795,22 +3795,22 @@ const GameEngine = (() => {
     const r3 = getRandomSymbol();
 
     let multiplier = 0;
-    let winMessage = (typeof window !== 'undefined' && window.currentLang === 'en') ? "Better luck next time!" : "حظ أوفر المرة القادمة!";
+    let winMessage = (typeof window !=='undefined' && window.currentLang ==='en') ?"Better luck next time!" :"حظ أوفر المرة القادمة!";
     let isJackpot = false;
 
     if (r1 === r2 && r2 === r3) {
-      if (r1 === 'CROWN') { multiplier = 25; winMessage = "الجاكبوت الملكي الذهبي الأكبر!"; isJackpot = true; }
-      else if (r1 === 'DIAMOND') { multiplier = 18; winMessage = "ألماس ثلاثي أسطوري!"; isJackpot = true; }
-      else if (r1 === 'GOLD') { multiplier = 12; winMessage = "ثلاث سبائك ذهبية متطابقة!"; }
-      else if (r1 === 'SACK') { multiplier = 8; winMessage = "ثلاث حقائب أموال ضخمة!"; }
-      else { multiplier = 5; winMessage = "ثلاثة مفاتيح ذهبية نادرة!"; }
+      if (r1 ==='CROWN') { multiplier = 25; winMessage ="الجاكبوت الملكي الذهبي الأكبر!"; isJackpot = true; }
+      else if (r1 ==='DIAMOND') { multiplier = 18; winMessage ="ألماس ثلاثي أسطوري!"; isJackpot = true; }
+      else if (r1 ==='GOLD') { multiplier = 12; winMessage ="ثلاث سبائك ذهبية متطابقة!"; }
+      else if (r1 ==='SACK') { multiplier = 8; winMessage ="ثلاث حقائب أموال ضخمة!"; }
+      else { multiplier = 5; winMessage ="ثلاثة مفاتيح ذهبية نادرة!"; }
     } else if (r1 === r2 || r2 === r3 || r1 === r3) {
       multiplier = 1.5;
-      winMessage = (typeof window !== 'undefined' && window.currentLang === 'en') ? "Two matching symbols consolation!" : "رمزان متطابقان، جائزة ترضية!";
+      winMessage = (typeof window !=='undefined' && window.currentLang ==='en') ?"Two matching symbols consolation!" :"رمزان متطابقان، جائزة ترضية!";
     }
 
     const grossPayout = Math.floor(betAmount * multiplier);
-    const settlement = settleCasinoRound(betAmount, grossPayout, 'ماكينة الحظ (Slots)');
+    const settlement = settleCasinoRound(betAmount, grossPayout,'ماكينة الحظ (Slots)');
 
     return {
       reels: [r1, r2, r3],
@@ -3839,27 +3839,27 @@ const GameEngine = (() => {
     let won = false;
     let multiplier = 0;
 
-    if (choice === 'under' && sum < 7) {
+    if (choice ==='under' && sum < 7) {
       won = true;
       multiplier = 2.0;
-    } else if (choice === 'over' && sum > 7) {
+    } else if (choice ==='over' && sum > 7) {
       won = true;
       multiplier = 2.0;
-    } else if (choice === 'exact7' && sum === 7) {
+    } else if (choice ==='exact7' && sum === 7) {
       won = true;
       multiplier = 5.8;
-    } else if (choice === 'double' && isDouble) {
+    } else if (choice ==='double' && isDouble) {
       won = true;
       multiplier = 3.5;
     }
 
     const grossPayout = won ? Math.floor(betAmount * multiplier) : 0;
-    const settlement = settleCasinoRound(betAmount, grossPayout, 'رمي النرد الملكي');
+    const settlement = settleCasinoRound(betAmount, grossPayout,'رمي النرد الملكي');
 
-    const isEn = (typeof window !== 'undefined' && window.currentLang === 'en');
+    const isEn = (typeof window !=='undefined' && window.currentLang ==='en');
     const msg = settlement.won
-      ? (isEn ? `You rolled ${sum}!` : `مجموع النرد ${sum}!`)
-      : (isEn ? `Rolled ${sum}.` : `مجموع النرد ${sum}.`);
+      ? (isEn ?`You rolled ${sum}!` :`مجموع النرد ${sum}!`)
+      : (isEn ?`Rolled ${sum}.` :`مجموع النرد ${sum}.`);
 
     return {
       d1,
@@ -3899,7 +3899,7 @@ const GameEngine = (() => {
     }
 
     const grossPayout = Math.floor(betAmount * selectedMult);
-    const settlement = settleCasinoRound(betAmount, grossPayout, 'عجلة الحظ (Wheel of Fortune)');
+    const settlement = settleCasinoRound(betAmount, grossPayout,'عجلة الحظ (Wheel of Fortune)');
 
     return {
       multiplier: selectedMult,
@@ -3941,7 +3941,7 @@ const GameEngine = (() => {
     state.xp += earnedXp;
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
-    recordPlayerActivity('عمل إضافي مضاعف ⚡', `إنجاز وردية إضافية كـ "${job.name}" (+${earnedSalary.toLocaleString()} ج.م و +${earnedXp} XP)`, 'work');
+    recordPlayerActivity('عمل إضافي مضاعف',`إنجاز وردية إضافية كـ"${job.name}" (+${earnedSalary.toLocaleString()} ج.م و +${earnedXp} XP)`,'work');
     trackDailyQuestProgress('work_shifts', 1);
     forceSaveState(true);
 
@@ -3970,9 +3970,9 @@ const GameEngine = (() => {
     }
 
     if (!state.ownedCars) state.ownedCars = [];
-    state.ownedCars.push({ id: carId, rentStatus: 'idle' });
+    state.ownedCars.push({ id: carId, rentStatus:'idle' });
 
-    recordPlayerActivity('شراء سيارة 🏎️', `شراء سيارة ${car.name} بقيمة ${car.cost.toLocaleString()} ج.م.`, 'assets');
+    recordPlayerActivity('شراء سيارة ️',`شراء سيارة ${car.name} بقيمة ${car.cost.toLocaleString()} ج.م.`,'assets');
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
   }
@@ -3980,17 +3980,17 @@ const GameEngine = (() => {
   function setActiveCar(carId) {
     if (carId === null) {
       state.activeCar = null;
-      recordPlayerActivity('تفعيل سيارة', 'تم إلغاء تفعيل السيارة الشخصية النشطة.', 'assets');
+      recordPlayerActivity('تفعيل سيارة','تم إلغاء تفعيل السيارة الشخصية النشطة.','assets');
     } else {
       const idx = state.ownedCars.findIndex(c => c.id === carId);
       if (idx === -1) throw new Error("لا تملك هذه السيارة لتفعيلها.");
       
-      if (state.ownedCars[idx].rentStatus === 'rented') {
+      if (state.ownedCars[idx].rentStatus ==='rented') {
         throw new Error("السيارة مؤجرة حالياً! لا يمكنك قيادتها.");
       }
 
       state.activeCar = carId;
-      recordPlayerActivity('تفعيل سيارة 🏎️', `تم تفعيل ${CAR_TEMPLATES[carId].name} كسيارة شخصية نشطة.`, 'assets');
+      recordPlayerActivity('تفعيل سيارة ️',`تم تفعيل ${CAR_TEMPLATES[carId].name} كسيارة شخصية نشطة.`,'assets');
     }
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
@@ -4003,15 +4003,15 @@ const GameEngine = (() => {
     }
     if (idx === -1 || idx >= state.ownedCars.length) throw new Error("لا تملك هذه السيارة لتأجيرها.");
 
-    if (rentStatus === 'rented') {
+    if (rentStatus ==='rented') {
       if (state.activeCar === carId) {
         state.activeCar = null;
       }
-      state.ownedCars[idx].rentStatus = 'rented';
-      recordPlayerActivity('تأجير سيارة 📈', `بدء تأجير سيارة ${CAR_TEMPLATES[carId].name} لتحقيق دخل سلبي.`, 'assets');
+      state.ownedCars[idx].rentStatus ='rented';
+      recordPlayerActivity('تأجير سيارة',`بدء تأجير سيارة ${CAR_TEMPLATES[carId].name} لتحقيق دخل سلبي.`,'assets');
     } else {
-      state.ownedCars[idx].rentStatus = 'idle';
-      recordPlayerActivity('إلغاء تأجير سيارة 📉', `إيقاف تأجير سيارة ${CAR_TEMPLATES[carId].name} وإرجاعها للمرأب.`, 'assets');
+      state.ownedCars[idx].rentStatus ='idle';
+      recordPlayerActivity('إلغاء تأجير سيارة',`إيقاف تأجير سيارة ${CAR_TEMPLATES[carId].name} وإرجاعها للمرأب.`,'assets');
     }
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
@@ -4025,7 +4025,7 @@ const GameEngine = (() => {
     if (idx === -1 || idx >= state.ownedCars.length) throw new Error("لا تملك هذه السيارة لبيعها.");
 
     const car = CAR_TEMPLATES[carId];
-    if (state.ownedCars[idx].rentStatus === 'rented') {
+    if (state.ownedCars[idx].rentStatus ==='rented') {
       throw new Error("السيارة مؤجرة! يجب إلغاء تأجيرها أولاً قبل البيع.");
     }
 
@@ -4037,7 +4037,7 @@ const GameEngine = (() => {
     state.ownedCars.splice(idx, 1);
     state.bank += sellPrice;
 
-    recordPlayerActivity('بيع سيارة 💰', `بيع سيارة ${car.name} واسترداد ${sellPrice.toLocaleString()} EGP.`, 'assets');
+    recordPlayerActivity('بيع سيارة',`بيع سيارة ${car.name} واسترداد ${sellPrice.toLocaleString()} EGP.`,'assets');
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
   }
@@ -4061,7 +4061,7 @@ const GameEngine = (() => {
     if (!state.smugglingFleet) state.smugglingFleet = { speedboat: 0, plane: 0, ship: 0 };
     state.smugglingFleet[vehicleId] = (state.smugglingFleet[vehicleId] || 0) + 1;
 
-    recordPlayerActivity('شراء مركبة تهريب 🚤', `شراء ${v.name} وتضمينها للأسطول بقيمة ${v.cost.toLocaleString()} ج.م.`, 'dark');
+    recordPlayerActivity('شراء مركبة تهريب',`شراء ${v.name} وتضمينها للأسطول بقيمة ${v.cost.toLocaleString()} ج.م.`,'dark');
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
   }
@@ -4090,7 +4090,7 @@ const GameEngine = (() => {
     }
 
     const job = {
-      id: 'smug_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      id:'smug_' + Date.now() +'_' + Math.floor(Math.random() * 1000),
       routeId: routeId,
       vehicleType: vehicleType,
       endTime: Date.now() + (route.durationTicks * 1000)
@@ -4099,7 +4099,7 @@ const GameEngine = (() => {
     if (!state.activeSmugglingJobs) state.activeSmugglingJobs = [];
     state.activeSmugglingJobs.push(job);
 
-    recordPlayerActivity('بدء تهريب 🚢', `شحن شحنة تهريب إلى "${route.name}" عبر ${SMUGGLING_VEHICLES[vehicleType].name}.`, 'dark');
+    recordPlayerActivity('بدء تهريب',`شحن شحنة تهريب إلى"${route.name}" عبر ${SMUGGLING_VEHICLES[vehicleType].name}.`,'dark');
     AppDB.savePlayerState(activeUsername, state);
   }
 
@@ -4150,7 +4150,7 @@ const GameEngine = (() => {
     state.dailyLoans.count = (state.dailyLoans.count || 0) + 1;
     state.cash += amount;
     state.netWorth = calculateNetWorth();
-    recordPlayerActivity('طلب قرض بنكي 🏛️', `اقتراض ${amount.toLocaleString()} ج.م من البنك (القرض ${state.dailyLoans.count}/2 لليوم، مطلوب سداد ${totalDue.toLocaleString()} ج.م خلال 5 دقائق)`, 'banking');
+    recordPlayerActivity('طلب قرض بنكي ️',`اقتراض ${amount.toLocaleString()} ج.م من البنك (القرض ${state.dailyLoans.count}/2 لليوم، مطلوب سداد ${totalDue.toLocaleString()} ج.م خلال 5 دقائق)`,'banking');
     forceSaveState(true);
     return { amount, totalDue, ticksRemaining: 300, dailyCount: state.dailyLoans.count };
   }
@@ -4172,7 +4172,7 @@ const GameEngine = (() => {
       state.cash = 0;
       state.bank -= rem;
     }
-    recordPlayerActivity('سداد قرض بنكي 🏛️', `تم سداد القرض البنكي بالكامل بقيمة ${due.toLocaleString()} ج.م وفك أي حظر مصرفي`, 'banking');
+    recordPlayerActivity('سداد قرض بنكي ️',`تم سداد القرض البنكي بالكامل بقيمة ${due.toLocaleString()} ج.م وفك أي حظر مصرفي`,'banking');
     state.activeLoan = null;
     state.loanCooldownUntil = Date.now() + 180000; // 3 minutes credit cooldown before next loan
     state.netWorth = calculateNetWorth();
@@ -4196,7 +4196,7 @@ const GameEngine = (() => {
     state.cash -= supplyCost;
     bizState.suppliesTicks = Math.min(3600, (bizState.suppliesTicks || 0) + 1200);
 
-    recordPlayerActivity('توريد بضاعة ومستلزمات 📦', `توريد شحنة بضاعة لمشروع "${biz.name}" بتكلفة ${supplyCost.toLocaleString()} ج.م (+20 دقيقة كفاءة إنتاجية قصوى 125%)`, 'business');
+    recordPlayerActivity('توريد بضاعة ومستلزمات',`توريد شحنة بضاعة لمشروع"${biz.name}" بتكلفة ${supplyCost.toLocaleString()} ج.م (+20 دقيقة كفاءة إنتاجية قصوى 125%)`,'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
     return {
@@ -4212,19 +4212,19 @@ const GameEngine = (() => {
     let betType = betTypeOrChoice;
     let val = betValue;
 
-    // Support single choice argument from UI (e.g., 'red', 'black', 'green', 'even', 'odd')
+    // Support single choice argument from UI (e.g.,'red','black','green','even','odd')
     if (val === undefined || val === null) {
-      if (betTypeOrChoice === 'red' || betTypeOrChoice === 'black') {
-        betType = 'color';
+      if (betTypeOrChoice ==='red' || betTypeOrChoice ==='black') {
+        betType ='color';
         val = betTypeOrChoice;
-      } else if (betTypeOrChoice === 'green') {
-        betType = 'number';
+      } else if (betTypeOrChoice ==='green') {
+        betType ='number';
         val = 0;
-      } else if (betTypeOrChoice === 'even' || betTypeOrChoice === 'odd') {
-        betType = 'parity';
+      } else if (betTypeOrChoice ==='even' || betTypeOrChoice ==='odd') {
+        betType ='parity';
         val = betTypeOrChoice;
       } else if (!isNaN(Number(betTypeOrChoice))) {
-        betType = 'number';
+        betType ='number';
         val = Number(betTypeOrChoice);
       }
     }
@@ -4239,46 +4239,46 @@ const GameEngine = (() => {
     let won = false;
     let multiplier = 0;
 
-    if (betType === 'number') {
+    if (betType ==='number') {
       if (Number(val) === rolledNumber) {
         won = true;
         multiplier = 36; // Straight up 36x
       }
-    } else if (betType === 'color') {
-      if (val === 'red' && isRed) {
+    } else if (betType ==='color') {
+      if (val ==='red' && isRed) {
         won = true;
         multiplier = 2.0;
-      } else if (val === 'black' && isBlack) {
-        won = true;
-        multiplier = 2.0;
-      }
-    } else if (betType === 'parity') {
-      if (val === 'even' && rolledNumber > 0 && rolledNumber % 2 === 0) {
-        won = true;
-        multiplier = 2.0;
-      } else if (val === 'odd' && rolledNumber % 2 !== 0) {
+      } else if (val ==='black' && isBlack) {
         won = true;
         multiplier = 2.0;
       }
-    } else if (betType === 'dozen') {
-      if (val === '1' && rolledNumber >= 1 && rolledNumber <= 12) {
+    } else if (betType ==='parity') {
+      if (val ==='even' && rolledNumber > 0 && rolledNumber % 2 === 0) {
+        won = true;
+        multiplier = 2.0;
+      } else if (val ==='odd' && rolledNumber % 2 !== 0) {
+        won = true;
+        multiplier = 2.0;
+      }
+    } else if (betType ==='dozen') {
+      if (val ==='1' && rolledNumber >= 1 && rolledNumber <= 12) {
         won = true;
         multiplier = 3.0;
-      } else if (val === '2' && rolledNumber >= 13 && rolledNumber <= 24) {
+      } else if (val ==='2' && rolledNumber >= 13 && rolledNumber <= 24) {
         won = true;
         multiplier = 3.0;
-      } else if (val === '3' && rolledNumber >= 25 && rolledNumber <= 36) {
+      } else if (val ==='3' && rolledNumber >= 25 && rolledNumber <= 36) {
         won = true;
         multiplier = 3.0;
       }
     }
 
     const grossPayout = won ? Math.floor(betAmount * multiplier) : 0;
-    const settlement = settleCasinoRound(betAmount, grossPayout, 'عجلة الروليت (Roulette)');
+    const settlement = settleCasinoRound(betAmount, grossPayout,'عجلة الروليت (Roulette)');
 
     return {
       rolledNumber,
-      color: isGreen ? 'green' : (isRed ? 'red' : 'black'),
+      color: isGreen ?'green' : (isRed ?'red' :'black'),
       won: settlement.won,
       multiplier,
       payout: settlement.payout,
@@ -4311,7 +4311,7 @@ const GameEngine = (() => {
       state.tradeCompany.dailyTradeResetAt = nextMidnight.getTime();
     }
     if (!state.tradeCompany.dailyExportsCount) state.tradeCompany.dailyExportsCount = {};
-    if (typeof state.tradeCompany.dailyTradeProfit !== 'number') state.tradeCompany.dailyTradeProfit = 0;
+    if (typeof state.tradeCompany.dailyTradeProfit !=='number') state.tradeCompany.dailyTradeProfit = 0;
   }
 
   function getTradeCompanyState() {
@@ -4401,7 +4401,7 @@ const GameEngine = (() => {
       state.bank -= rem;
     }
 
-    const orderId = 'imp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    const orderId ='imp_' + Date.now() +'_' + Math.random().toString(36).substring(2, 6);
     const importOrder = {
       id: orderId,
       commodityId,
@@ -4417,7 +4417,7 @@ const GameEngine = (() => {
     };
 
     state.tradeCompany.activeImports.push(importOrder);
-    recordPlayerActivity('استيراد بضاعة 🚢', `بدء استيراد ${quantity} وحدة من "${item.name}" بتكلفة ${baseCost.toLocaleString()} EGP + ${customsAndFreightFee.toLocaleString()} EGP رسوم جمركية وشحن دولي (تصل خلال ${Math.round(item.importDurationSec / 60)} دقيقة).`, 'trade');
+    recordPlayerActivity('استيراد بضاعة',`بدء استيراد ${quantity} وحدة من"${item.name}" بتكلفة ${baseCost.toLocaleString()} EGP + ${customsAndFreightFee.toLocaleString()} EGP رسوم جمركية وشحن دولي (تصل خلال ${Math.round(item.importDurationSec / 60)} دقيقة).`,'trade');
     forceSaveState(true);
 
     return importOrder;
@@ -4430,7 +4430,7 @@ const GameEngine = (() => {
     const DAILY_TRADE_MAX_PROFIT = 500000;
     const currentDailyProfit = Number(state.tradeCompany.dailyTradeProfit || 0);
     if (currentDailyProfit >= DAILY_TRADE_MAX_PROFIT) {
-      throw new Error(`وصلت شركتك إلى سقف الأرباح اليومية للتصدير (500,000 EGP) المحدد من هيئة الرقابة الجمركية 🛑. تتجدد الحصص الليلة الساعة 12:00 منتصف الليل.`);
+      throw new Error(`وصلت شركتك إلى سقف الأرباح اليومية للتصدير (500,000 EGP) المحدد من هيئة الرقابة الجمركية . تتجدد الحصص الليلة الساعة 12:00 منتصف الليل.`);
     }
 
     const item = TRADE_COMMODITIES[commodityId];
@@ -4450,7 +4450,7 @@ const GameEngine = (() => {
 
     const activeWithBuyer = (state.tradeCompany.activeExports || []).filter(e => e.buyerId === buyer.id && !e.claimed).length;
     if (activeWithBuyer >= 1) {
-      throw new Error(`العميل الدولي "${buyer.name}" لديه بالفعل شحنة جاري تسليمها له! تعاقد مع مشتري دولي آخر لتوزيع البضائع.`);
+      throw new Error(`العميل الدولي"${buyer.name}" لديه بالفعل شحنة جاري تسليمها له! تعاقد مع مشتري دولي آخر لتوزيع البضائع.`);
     }
 
     const currentStock = (state.tradeCompany && state.tradeCompany.warehouse && state.tradeCompany.warehouse[commodityId]) || 0;
@@ -4486,7 +4486,7 @@ const GameEngine = (() => {
       delete state.tradeCompany.warehouse[commodityId];
     }
 
-    const exportOrderId = 'exp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    const exportOrderId ='exp_' + Date.now() +'_' + Math.random().toString(36).substring(2, 6);
     const exportOrder = {
       id: exportOrderId,
       commodityId,
@@ -4507,7 +4507,7 @@ const GameEngine = (() => {
     };
 
     state.tradeCompany.activeExports.push(exportOrder);
-    recordPlayerActivity('تصدير بضاعة 📦', `شحن وتصدير ${quantity} وحدة من "${item.name}" إلى ${buyer.name} بقيمة تعاقد ${totalPayout.toLocaleString()} ج.م (ربح تقديري: +${estProfit.toLocaleString()} ج.م)${saturationDiscount > 0 ? ` [تشبع سوق: -${Math.round(saturationDiscount * 100)}%]` : ''}.`, 'trade');
+    recordPlayerActivity('تصدير بضاعة',`شحن وتصدير ${quantity} وحدة من"${item.name}" إلى ${buyer.name} بقيمة تعاقد ${totalPayout.toLocaleString()} ج.م (ربح تقديري: +${estProfit.toLocaleString()} ج.م)${saturationDiscount > 0 ?` [تشبع سوق: -${Math.round(saturationDiscount * 100)}%]` :''}.`,'trade');
     forceSaveState(true);
 
     return exportOrder;
@@ -4542,7 +4542,7 @@ const GameEngine = (() => {
     // Remove from activeExports
     state.tradeCompany.activeExports.splice(index, 1);
 
-    recordPlayerActivity('تحصيل أرباح تصدير 💰', `تم تحصيل عائد تصدير شحنة "${order.commodityName}" من ${order.buyerName} بمبلغ +${order.totalPayout.toLocaleString()} EGP (صافي ربح: +${order.estProfit.toLocaleString()} EGP).`, 'trade');
+    recordPlayerActivity('تحصيل أرباح تصدير',`تم تحصيل عائد تصدير شحنة"${order.commodityName}" من ${order.buyerName} بمبلغ +${order.totalPayout.toLocaleString()} EGP (صافي ربح: +${order.estProfit.toLocaleString()} EGP).`,'trade');
     forceSaveState(true);
 
     return {
@@ -4575,7 +4575,7 @@ const GameEngine = (() => {
     }
 
     state.tradeCompany.warehouseCapacity = Math.min(50, (state.tradeCompany.warehouseCapacity || 10) + 10);
-    recordPlayerActivity('توسعة مستودع الاستيراد 🏢', `توسعة المستودع الرئيسي (+10 حاويات) لتصبح السعة الإجمالية ${state.tradeCompany.warehouseCapacity} حاوية.`, 'trade');
+    recordPlayerActivity('توسعة مستودع الاستيراد',`توسعة المستودع الرئيسي (+10 حاويات) لتصبح السعة الإجمالية ${state.tradeCompany.warehouseCapacity} حاوية.`,'trade');
     forceSaveState(true);
 
     return {
@@ -4585,7 +4585,7 @@ const GameEngine = (() => {
   }
 
   // ─────────────────────────────────────────────────────────
-  // 🏭 مجمع الصناعات وسلاسل الإمداد (INDUSTRIAL SUPPLY CHAIN EMPIRE)
+  //  مجمع الصناعات وسلاسل الإمداد (INDUSTRIAL SUPPLY CHAIN EMPIRE)
   // ─────────────────────────────────────────────────────────
   function ensureIndustryState() {
     if (!state.industry) state.industry = {};
@@ -4636,10 +4636,10 @@ const GameEngine = (() => {
 
     let bottleneckStage = null;
     if (secState.unlocked && (s1 > 0 || s2 > 0 || s3 > 0)) {
-      if (s1 === 0) bottleneckStage = 'stage1';
-      else if (s2 === 0 || s2 < s1) bottleneckStage = 'stage2';
-      else if (s3 === 0 || s3 < s2) bottleneckStage = 'stage3';
-      else if (log === 0 || log < s3) bottleneckStage = 'logistics';
+      if (s1 === 0) bottleneckStage ='stage1';
+      else if (s2 === 0 || s2 < s1) bottleneckStage ='stage2';
+      else if (s3 === 0 || s3 < s2) bottleneckStage ='stage3';
+      else if (log === 0 || log < s3) bottleneckStage ='logistics';
     }
 
     return {
@@ -4688,7 +4688,7 @@ const GameEngine = (() => {
     info.state.stage3 = 1;
     info.state.logistics = 1;
 
-    recordPlayerActivity('ترخيص قطاع صناعي 🏭', `الحصول على رخصة وتأسيس "${info.definition.name}" بتكلفة ${cost.toLocaleString()} EGP`, 'business');
+    recordPlayerActivity('ترخيص قطاع صناعي',`الحصول على رخصة وتأسيس"${info.definition.name}" بتكلفة ${cost.toLocaleString()} EGP`,'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(false);
 
@@ -4713,7 +4713,7 @@ const GameEngine = (() => {
     const maxPossible = 50 - curLvl;
 
     let targetCount = 1;
-    if (multiplier === 'max') {
+    if (multiplier ==='max') {
       targetCount = maxPossible;
     } else {
       targetCount = Math.min(parseInt(multiplier) || 1, maxPossible);
@@ -4725,14 +4725,14 @@ const GameEngine = (() => {
     for (let i = 0; i < targetCount; i++) {
       const lvlToBuy = curLvl + i;
       const stepCost = Math.floor(stDef.baseCost * Math.pow(1.65, lvlToBuy));
-      if (multiplier === 'max') {
+      if (multiplier ==='max') {
         if (actualCount > 0 && (totalCost + stepCost > totalFunds)) {
           break;
         }
       }
       totalCost += stepCost;
       actualCount++;
-      if (multiplier === 'max' && totalCost > totalFunds) {
+      if (multiplier ==='max' && totalCost > totalFunds) {
         break;
       }
     }
@@ -4767,7 +4767,7 @@ const GameEngine = (() => {
     const cost = multi.cost;
     const totalFunds = (state.cash || 0) + (state.bank || 0);
     if (totalFunds < cost) {
-      throw new Error(`تكلفة ترقية "${stDef.name}" (+${multi.count} مستويات) هي ${cost.toLocaleString()} EGP. رصيدك لا يكفي.`);
+      throw new Error(`تكلفة ترقية"${stDef.name}" (+${multi.count} مستويات) هي ${cost.toLocaleString()} EGP. رصيدك لا يكفي.`);
     }
 
     if ((state.cash || 0) >= cost) {
@@ -4779,7 +4779,7 @@ const GameEngine = (() => {
     }
 
     info.state[stageKey] = curLvl + multi.count;
-    recordPlayerActivity('تطوير خط إنتاج صناعي ⚙️', `ترقية "${stDef.name}" في ${info.definition.name} بمقدار +${multi.count} (إلى المستوى ${info.state[stageKey]}) بتكلفة ${cost.toLocaleString()} EGP`, 'business');
+    recordPlayerActivity('تطوير خط إنتاج صناعي ️',`ترقية"${stDef.name}" في ${info.definition.name} بمقدار +${multi.count} (إلى المستوى ${info.state[stageKey]}) بتكلفة ${cost.toLocaleString()} EGP`,'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(false);
 
@@ -4809,7 +4809,7 @@ const GameEngine = (() => {
     state.cash = (state.cash || 0) + netPayout;
     info.state.totalEarned = (info.state.totalEarned || 0) + netPayout;
 
-    recordPlayerActivity('بيع إنتاج صناعي 💰', `بيع ${units.toLocaleString()} وحدة من "${info.definition.product.name}" بإجمالي ${grossPayout.toLocaleString()} EGP (مصاريف تشغيل 35%: -${overheadCost.toLocaleString()} EGP | صافي مودع: +${netPayout.toLocaleString()} EGP)`, 'business');
+    recordPlayerActivity('بيع إنتاج صناعي',`بيع ${units.toLocaleString()} وحدة من"${info.definition.product.name}" بإجمالي ${grossPayout.toLocaleString()} EGP (مصاريف تشغيل 35%: -${overheadCost.toLocaleString()} EGP | صافي مودع: +${netPayout.toLocaleString()} EGP)`,'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(false);
 
@@ -4856,7 +4856,7 @@ const GameEngine = (() => {
 
     const containersToTransfer = Math.min(maxContainers, availableSpace, 10);
     const unitsDeducted = containersToTransfer * unitsPerContainer;
-    const tradeCommId = info.definition.product.tradeCommodityId || 'espresso_coffee';
+    const tradeCommId = info.definition.product.tradeCommodityId ||'espresso_coffee';
 
     info.state.readyStock -= unitsDeducted;
     state.tradeCompany.warehouse[tradeCommId] = (state.tradeCompany.warehouse[tradeCommId] || 0) + containersToTransfer;
@@ -4865,7 +4865,7 @@ const GameEngine = (() => {
     const commDef = TRADE_COMMODITIES[tradeCommId];
     const commName = commDef ? commDef.name : tradeCommId;
 
-    recordPlayerActivity('شحن لمستودع التصدير 🚢', `تعبئة وشحن ${containersToTransfer} حاوية من "${info.definition.product.name}" (${unitsDeducted} وحدة منتجة) إلى مستودع التصدير كبضاعة "${commName}"!`, 'trade');
+    recordPlayerActivity('شحن لمستودع التصدير',`تعبئة وشحن ${containersToTransfer} حاوية من"${info.definition.product.name}" (${unitsDeducted} وحدة منتجة) إلى مستودع التصدير كبضاعة"${commName}"!`,'trade');
     state.netWorth = calculateNetWorth();
     forceSaveState(false);
 
@@ -4881,9 +4881,9 @@ const GameEngine = (() => {
 
   function sanitizeGameState() {
     if (!state) return;
-    const numFields = ['cash', 'bank', 'dirtyCash', 'netWorth', 'xp', 'dailyCasinoNetProfit', 'dailyCasinoResetAt'];
+    const numFields = ['cash','bank','dirtyCash','netWorth','xp','dailyCasinoNetProfit','dailyCasinoResetAt'];
     numFields.forEach(k => {
-      if (typeof state[k] !== 'number' || isNaN(state[k]) || !isFinite(state[k]) || state[k] < 0) {
+      if (typeof state[k] !=='number' || isNaN(state[k]) || !isFinite(state[k]) || state[k] < 0) {
         state[k] = 0;
       }
       if (state[k] > Number.MAX_SAFE_INTEGER) {
@@ -5028,9 +5028,9 @@ const GameEngine = (() => {
 })();
 
 // Export globally
-if (typeof window !== "undefined") {
+if (typeof window !=="undefined") {
   window.GameEngine = GameEngine;
 }
-if (typeof module !== "undefined" && module.exports) {
+if (typeof module !=="undefined" && module.exports) {
   module.exports = GameEngine;
 }
