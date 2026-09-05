@@ -2103,126 +2103,6 @@
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
-</main>
-      </div>
-    </div>
-  </div>
-
-  
-  <!-- ==================== DEEP CORPORATION INSPECTOR MODAL ==================== -->
-  <div id="admin-corp-inspect-modal"
-    class="hidden fixed inset-0 z-[650] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 text-right">
-    <div class="glass-panel w-full max-w-4xl max-h-[90vh] rounded-2xl border border-violet-500/30 p-5 shadow-2xl flex flex-col bg-slate-900/98 space-y-4 overflow-hidden">
-      <!-- Header -->
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400">
-            <i class="fa-solid fa-building-user text-lg"></i>
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <h3 id="adm-corp-modal-title" class="text-base font-black text-white">--</h3>
-              <span id="adm-corp-modal-level-badge" class="px-2 py-0.5 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[10px] font-bold rounded-md">Lvl 1</span>
-              <span id="adm-corp-modal-id-badge" class="px-2 py-0.5 bg-slate-800 text-slate-400 text-[9px] font-mono rounded">--</span>
-            </div>
-            <p class="text-[10px] text-slate-400">لوحة الفحص والتحكم الشامل ببيانات وأعضاء ومشاريع وخزينة الشركة.</p>
-          </div>
-        </div>
-        <button id="btn-close-corp-inspect" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <!-- Scrollable Tabs Content -->
-      <div class="flex-1 overflow-y-auto space-y-5 pr-1 text-xs">
-        <!-- 1. Basic Info & Level Editing -->
-        <div class="p-4 bg-slate-950/60 border border-slate-800/80 rounded-xl space-y-3">
-          <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-pen-to-square text-violet-400"></i> تعديل البيانات الأساسية والمستوى</h4>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label class="block text-[10px] text-slate-400 mb-1">اسم الشركة</label>
-              <input type="text" id="adm-corp-edit-name" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-white font-bold">
-            </div>
-            <div>
-              <label class="block text-[10px] text-slate-400 mb-1">المستوى الإداري (1-10)</label>
-              <input type="number" id="adm-corp-edit-level" min="1" max="10" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-yellow-400 font-bold text-center font-mono">
-            </div>
-            <div>
-              <label class="block text-[10px] text-slate-400 mb-1">وصف الشركة</label>
-              <input type="text" id="adm-corp-edit-desc" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-white">
-            </div>
-          </div>
-          <button id="btn-adm-corp-save-basic" class="py-2 px-4 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-lg transition text-xs flex items-center gap-1.5">
-            <i class="fa-solid fa-floppy-disk"></i>
-            <span>حفظ تعديل البيانات</span>
-          </button>
-        </div>
-
-        <!-- 2. Treasury Operations & Dividends Distribution -->
-        <div class="p-4 bg-slate-950/60 border border-slate-800/80 rounded-xl space-y-3">
-          <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-vault text-emerald-400"></i> العمليات المالية وتوزيع الأرباح</h4>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <!-- Left: Treasury edit -->
-            <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-lg space-y-2">
-              <div class="flex justify-between items-center">
-                <span class="text-[10px] text-slate-400 font-bold">رصيد الخزينة الحالي:</span>
-                <span id="adm-corp-modal-treasury-val" class="numbers-font font-black text-emerald-400 text-sm">0 EGP</span>
-              </div>
-              <div class="flex gap-2">
-                <input type="number" id="adm-corp-edit-treasury-input" min="0" placeholder="قيمة الخزينة الجديدة" class="flex-1 p-2 bg-slate-950 border border-slate-800 rounded-lg text-emerald-400 font-bold text-center font-mono">
-                <button id="btn-adm-corp-save-treasury" class="px-3 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black rounded-lg transition text-xs">تحديث</button>
-              </div>
-            </div>
-
-            <!-- Right: Dividends Distribution -->
-            <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-lg space-y-2">
-              <div class="flex justify-between items-center">
-                <span class="text-[10px] text-slate-400 font-bold">توزيع أرباح جماعية للمساهمين:</span>
-                <span class="text-[9px] text-sky-400">تودع في كاش حساباتهم فوراً</span>
-              </div>
-              <div class="flex gap-2">
-                <input type="number" id="adm-corp-dividends-pct" min="1" max="100" value="25" placeholder="نسبة %" class="w-24 p-2 bg-slate-950 border border-slate-800 rounded-lg text-sky-400 font-bold text-center font-mono">
-                <button id="btn-adm-corp-distribute-dividends" class="flex-1 px-3 bg-sky-600 hover:bg-sky-500 text-white font-black rounded-lg transition text-xs flex items-center justify-center gap-1.5">
-                  <i class="fa-solid fa-hand-holding-dollar"></i>
-                  <span>صرف أرباح الخزينة</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 3. Projects & Tech Control -->
-        <div class="p-4 bg-slate-950/60 border border-slate-800/80 rounded-xl space-y-3">
-          <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-microchip text-yellow-400"></i> التحكم بمشاريع ورخص الشركة (Projects Suite)</h4>
-          <p class="text-[10px] text-slate-400">يمكنك تفعيل أو إلغاء أي مشروع استراتيجي للشركة بضغطة زر واحدة مجاناً.</p>
-          <div id="adm-corp-projects-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            <!-- Dynamic Projects Cards -->
-          </div>
-        </div>
-
-        <!-- 4. Members & Roles Management -->
-        <div class="p-4 bg-slate-950/60 border border-slate-800/80 rounded-xl space-y-3">
-          <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-users-gear text-cyan-400"></i> إدارة الأعضاء والرتب والحصص</h4>
-          <div class="overflow-x-auto">
-            <table class="w-full text-right text-xs">
-              <thead>
-                <tr class="border-b border-slate-800 text-slate-400">
-                  <th class="pb-2">اسم العضو</th>
-                  <th class="pb-2 text-center">الرتبة</th>
-                  <th class="pb-2 text-center">المساهمة (EGP)</th>
-                  <th class="pb-2 text-center">الحصة %</th>
-                  <th class="pb-2 text-left">إجراءات العضو</th>
-                </tr>
-              </thead>
-              <tbody id="adm-corp-members-table-body" class="divide-y divide-slate-800/40">
-                <!-- Dynamic Members Rows -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
       <!-- 11. PANEL TOP-UP & MONETIZATION (إدارة الشحن والباقات) -->
       <div id="admin-subpanel-topup" class="hidden space-y-6">
         <!-- Topup Overview KPI Stats -->
@@ -2366,6 +2246,124 @@
               </thead>
               <tbody id="adm-topup-requests-tbody" class="divide-y divide-slate-800/50">
                 <!-- Dynamically populated request rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+</main>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- ==================== DEEP CORPORATION INSPECTOR MODAL ==================== -->
+  <div id="admin-corp-inspect-modal"
+    class="hidden fixed inset-0 z-[650] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 text-right">
+    <div class="glass-panel w-full max-w-4xl max-h-[90vh] rounded-2xl border border-violet-500/30 p-5 shadow-2xl flex flex-col bg-slate-900/98 space-y-4 overflow-hidden">
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400">
+            <i class="fa-solid fa-building-user text-lg"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 id="adm-corp-modal-title" class="text-base font-black text-white">--</h3>
+              <span id="adm-corp-modal-level-badge" class="px-2 py-0.5 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[10px] font-bold rounded-md">Lvl 1</span>
+              <span id="adm-corp-modal-id-badge" class="px-2 py-0.5 bg-slate-800 text-slate-400 text-[9px] font-mono rounded">--</span>
+            </div>
+            <p class="text-[10px] text-slate-400">لوحة الفحص والتحكم الشامل ببيانات وأعضاء ومشاريع وخزينة الشركة.</p>
+          </div>
+        </div>
+        <button id="btn-close-corp-inspect" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Scrollable Tabs Content -->
+      <div class="flex-1 overflow-y-auto space-y-5 pr-1 text-xs">
+        <!-- 1. Basic Info & Level Editing -->
+        <div class="p-4 bg-slate-950/60 border border-slate-800/80 rounded-xl space-y-3">
+          <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-pen-to-square text-violet-400"></i> تعديل البيانات الأساسية والمستوى</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">اسم الشركة</label>
+              <input type="text" id="adm-corp-edit-name" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-white font-bold">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">المستوى الإداري (1-10)</label>
+              <input type="number" id="adm-corp-edit-level" min="1" max="10" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-yellow-400 font-bold text-center font-mono">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">وصف الشركة</label>
+              <input type="text" id="adm-corp-edit-desc" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-white">
+            </div>
+          </div>
+          <button id="btn-adm-corp-save-basic" class="py-2 px-4 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-lg transition text-xs flex items-center gap-1.5">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>حفظ تعديل البيانات</span>
+          </button>
+        </div>
+
+        <!-- 2. Treasury Operations & Dividends Distribution -->
+        <div class="p-4 bg-slate-950/60 border border-slate-800/80 rounded-xl space-y-3">
+          <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-vault text-emerald-400"></i> العمليات المالية وتوزيع الأرباح</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Left: Treasury edit -->
+            <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-lg space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-[10px] text-slate-400 font-bold">رصيد الخزينة الحالي:</span>
+                <span id="adm-corp-modal-treasury-val" class="numbers-font font-black text-emerald-400 text-sm">0 EGP</span>
+              </div>
+              <div class="flex gap-2">
+                <input type="number" id="adm-corp-edit-treasury-input" min="0" placeholder="قيمة الخزينة الجديدة" class="flex-1 p-2 bg-slate-950 border border-slate-800 rounded-lg text-emerald-400 font-bold text-center font-mono">
+                <button id="btn-adm-corp-save-treasury" class="px-3 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black rounded-lg transition text-xs">تحديث</button>
+              </div>
+            </div>
+
+            <!-- Right: Dividends Distribution -->
+            <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-lg space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-[10px] text-slate-400 font-bold">توزيع أرباح جماعية للمساهمين:</span>
+                <span class="text-[9px] text-sky-400">تودع في كاش حساباتهم فوراً</span>
+              </div>
+              <div class="flex gap-2">
+                <input type="number" id="adm-corp-dividends-pct" min="1" max="100" value="25" placeholder="نسبة %" class="w-24 p-2 bg-slate-950 border border-slate-800 rounded-lg text-sky-400 font-bold text-center font-mono">
+                <button id="btn-adm-corp-distribute-dividends" class="flex-1 px-3 bg-sky-600 hover:bg-sky-500 text-white font-black rounded-lg transition text-xs flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-hand-holding-dollar"></i>
+                  <span>صرف أرباح الخزينة</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Projects & Tech Control -->
+        <div class="p-4 bg-slate-950/60 border border-slate-800/80 rounded-xl space-y-3">
+          <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-microchip text-yellow-400"></i> التحكم بمشاريع ورخص الشركة (Projects Suite)</h4>
+          <p class="text-[10px] text-slate-400">يمكنك تفعيل أو إلغاء أي مشروع استراتيجي للشركة بضغطة زر واحدة مجاناً.</p>
+          <div id="adm-corp-projects-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <!-- Dynamic Projects Cards -->
+          </div>
+        </div>
+
+        <!-- 4. Members & Roles Management -->
+        <div class="p-4 bg-slate-950/60 border border-slate-800/80 rounded-xl space-y-3">
+          <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-users-gear text-cyan-400"></i> إدارة الأعضاء والرتب والحصص</h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400">
+                  <th class="pb-2">اسم العضو</th>
+                  <th class="pb-2 text-center">الرتبة</th>
+                  <th class="pb-2 text-center">المساهمة (EGP)</th>
+                  <th class="pb-2 text-center">الحصة %</th>
+                  <th class="pb-2 text-left">إجراءات العضو</th>
+                </tr>
+              </thead>
+              <tbody id="adm-corp-members-table-body" class="divide-y divide-slate-800/40">
+                <!-- Dynamic Members Rows -->
               </tbody>
             </table>
           </div>
@@ -2761,9 +2759,9 @@
   <div id="toast-container" class="fixed top-4 left-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Core Modules -->
-  <script src="game.js?v=7.9"></script>
-  <script src="db.js?v=7.9"></script>
-  <script src="admin-panel.js?v=7.9"></script>
+  <script src="game.js?v=8.3"></script>
+  <script src="db.js?v=8.3"></script>
+  <script src="admin-panel.js?v=8.3"></script>
 
   <!-- Standalone Admin Controller Script -->
   <script>
