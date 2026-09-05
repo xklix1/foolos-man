@@ -321,6 +321,18 @@ header {
 .glow-border-emerald { box-shadow: 0 0 20px rgba(16,185,129,0.15) !important; border-color: rgba(16,185,129,0.35) !important; }
 .glow-border-rose    { box-shadow: 0 0 20px rgba(244,63,94,0.15) !important;  border-color: rgba(244,63,94,0.35) !important; }
 
+body.no-glow .glow-gold,
+body.no-glow .glow-emerald,
+body.no-glow .glow-rose {
+  text-shadow: none !important;
+}
+body.no-glow .glow-border-gold,
+body.no-glow .glow-border-emerald,
+body.no-glow .glow-border-rose,
+body.no-glow .topup-glow-border {
+  box-shadow: none !important;
+}
+
 /* ═══════════════════════════════════════════
    CARD SUB-PANELS
 ═══════════════════════════════════════════ */

@@ -228,6 +228,18 @@ const UIController = (() => {
   let coinFlipStreak = 0;
   let ambientOscillator = null;
   let ambientGainNode = null;
+  let openSettingsModal = () => {};
+  let closeSettingsModal = () => {};
+
+  function applyGlowSetting(enabled) {
+    if (typeof document !=='undefined' && document.body) {
+      if (enabled) {
+        document.body.classList.remove('no-glow');
+      } else {
+        document.body.classList.add('no-glow');
+      }
+    }
+  }
 
   function getAudioCtx() {
     if (!audioCtx) {
@@ -347,7 +359,8 @@ const UIController = (() => {
       titleColor ='text-amber-400';
     }
 
-    toast.classList.add(...borderColor.split(''), ...bgColor.split(''));
+    borderColor.split(' ').filter(Boolean).forEach(c => toast.classList.add(c));
+    bgColor.split(' ').filter(Boolean).forEach(c => toast.classList.add(c));
 
     toast.innerHTML =`
       <div class="shrink-0">${iconHtml}</div>
@@ -671,6 +684,7 @@ const UIController = (() => {
 
   // UI Setup & Bindings
   async function init() {
+    applyGlowSetting(glowEnabled);
     setupStartMenu();
     setupAuthPanel();
     setupNavigation();
@@ -847,19 +861,30 @@ const UIController = (() => {
     const menuSoundIcon = document.getElementById('menu-sound-icon');
     const fullscreenBtn = document.getElementById('btn-menu-fullscreen');
 
+    applyGlowSetting(glowEnabled);
+
     if (sfxToggle) sfxToggle.checked = sfxEnabled;
     if (musicToggle) musicToggle.checked = musicEnabled;
     if (glowToggle) glowToggle.checked = glowEnabled;
     if (notificationsToggle) notificationsToggle.checked = notificationsEnabled;
     updateSoundIconState();
 
-    const openSettingsModal = () => {
+    openSettingsModal = () => {
+      // Close mobile drawer if open
+      const mobileDrawer = document.getElementById('mobile-nav-drawer');
+      if (mobileDrawer) mobileDrawer.classList.add('hidden');
+
       playMenuSound('modal_open');
       if (sfxToggle) sfxToggle.checked = sfxEnabled;
       if (musicToggle) musicToggle.checked = musicEnabled;
       if (glowToggle) glowToggle.checked = glowEnabled;
       if (notificationsToggle) notificationsToggle.checked = notificationsEnabled;
-      startSettingsModal.classList.remove('hidden');
+      if (startSettingsModal) startSettingsModal.classList.remove('hidden');
+    };
+
+    closeSettingsModal = () => {
+      playMenuSound('modal_close');
+      if (startSettingsModal) startSettingsModal.classList.add('hidden');
     };
 
     if (menuSettingsBtn && startSettingsModal) {
@@ -873,33 +898,80 @@ const UIController = (() => {
     }
 
     if (closeSettingsBtn && startSettingsModal) {
-      closeSettingsBtn.addEventListener('click', () => {
-        playMenuSound('modal_close');
-        startSettingsModal.classList.add('hidden');
+      closeSettingsBtn.addEventListener('click', closeSettingsModal);
+    }
+
+    if (startSettingsModal) {
+      startSettingsModal.addEventListener('click', (e) => {
+        if (e.target === startSettingsModal) {
+          closeSettingsModal();
+        }
+      });
+    }
+
+    // Live reactive toggles
+    if (sfxToggle) {
+      sfxToggle.addEventListener('change', () => {
+        sfxEnabled = sfxToggle.checked;
+        localStorage.setItem('rasalmal_sfx_enabled', sfxEnabled ?'true' :'false');
+        updateSoundIconState();
+        if (sfxEnabled) playMenuSound('click');
+      });
+    }
+
+    if (musicToggle) {
+      musicToggle.addEventListener('change', () => {
+        setAmbientMusicState(musicToggle.checked);
+      });
+    }
+
+    if (glowToggle) {
+      glowToggle.addEventListener('change', () => {
+        glowEnabled = glowToggle.checked;
+        localStorage.setItem('rasalmal_glow_enabled', glowEnabled ?'true' :'false');
+        applyGlowSetting(glowEnabled);
+      });
+    }
+
+    if (notificationsToggle) {
+      notificationsToggle.addEventListener('change', () => {
+        notificationsEnabled = notificationsToggle.checked;
+        localStorage.setItem('rasalmal_notifications_enabled', notificationsEnabled ?'true' :'false');
+        if (notificationsEnabled) {
+          showToast('تنبيهات النظام','تم تفعيل الإشعارات بنجاح.','info', 1800);
+        }
       });
     }
 
     if (saveSettingsBtn && startSettingsModal) {
       saveSettingsBtn.addEventListener('click', () => {
         playMenuSound('click');
-        sfxEnabled = sfxToggle.checked;
+        sfxEnabled = sfxToggle ? sfxToggle.checked : sfxEnabled;
         localStorage.setItem('rasalmal_sfx_enabled', sfxEnabled ?'true' :'false');
-        setAmbientMusicState(musicToggle.checked);
-        glowEnabled = glowToggle.checked;
+        if (musicToggle) setAmbientMusicState(musicToggle.checked);
+        glowEnabled = glowToggle ? glowToggle.checked : glowEnabled;
         localStorage.setItem('rasalmal_glow_enabled', glowEnabled ?'true' :'false');
+        applyGlowSetting(glowEnabled);
         if (notificationsToggle) {
           notificationsEnabled = notificationsToggle.checked;
           localStorage.setItem('rasalmal_notifications_enabled', notificationsEnabled ?'true' :'false');
         }
         updateSoundIconState();
-        startSettingsModal.classList.add('hidden');
-        showToast('تم حفظ الإعدادات','تم تحديث تفضيلات الصوت والإشعارات بنجاح.','success');
+        closeSettingsModal();
+        showToast('تم حفظ الإعدادات','تم تحديث تفضيلات الصوت والمؤثرات بنجاح.','success');
       });
     }
 
     if (testSoundBtn) {
       testSoundBtn.addEventListener('click', () => {
+        try {
+          const ctx = getAudioCtx();
+          if (ctx && ctx.state ==='suspended') ctx.resume();
+        } catch (e) {}
+        const prev = sfxEnabled;
+        sfxEnabled = true;
         playMenuSound('start');
+        sfxEnabled = prev;
       });
     }
 
@@ -15373,6 +15445,10 @@ const UIController = (() => {
     openNotificationsModal,
     closeNotificationsModal,
     markAllMailsReadAction,
+
+    // Settings Modal Exports
+    openSettingsModal: () => openSettingsModal(),
+    closeSettingsModal: () => closeSettingsModal(),
 
     // Player Tools & Inventory Exports
     openPlayerInventoryModal,

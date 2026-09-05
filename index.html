@@ -1052,7 +1052,7 @@
 
   <!-- ==================== START MENU: SETTINGS & AUDIO MODAL ==================== -->
   <div id="start-menu-settings-modal"
-    class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+    class="hidden fixed inset-0 z-[350] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
     <div
       class="glass-panel w-full max-w-md flex flex-col rounded-3xl border border-purple-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
       <!-- Modal Header -->
@@ -1388,7 +1388,7 @@
                 <span>الرئيسية</span>
               </button>
 
-              <button id="btn-ingame-settings" title="إعدادات الصوت والإشعارات"
+              <button id="btn-ingame-settings" onclick="window.UI?.openSettingsModal?.()" title="إعدادات الصوت والإشعارات"
                 class="py-1.5 px-1 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/80 text-purple-400 hover:text-purple-300 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 cursor-pointer">
                 <i class="fa-solid fa-sliders text-[10px]"></i>
                 <span>الإعدادات</span>
@@ -1625,7 +1625,7 @@
               <span id="mailbox-unread-badge-mobile" class="hidden absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-rose-600 text-white font-black text-[9px] flex items-center justify-center border border-slate-950 shadow animate-pulse">0</span>
             </button>
             <!-- Settings -->
-            <button id="btn-ingame-settings-mobile" title="إعدادات الصوت والإشعارات" type="button"
+            <button id="btn-ingame-settings-mobile" onclick="window.UI?.openSettingsModal?.()" title="إعدادات الصوت والإشعارات" type="button"
               class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/80 flex items-center justify-center transition active:scale-95 shrink-0 cursor-pointer shadow-sm">
               <i class="fa-solid fa-sliders text-xs"></i>
             </button>
@@ -4026,21 +4026,27 @@
       </div>
 
       <!-- Drawer Footer Utilities -->
-      <div class="p-3 border-t border-slate-800/80 bg-slate-950/90 flex items-center justify-between text-xs gap-2">
+      <div class="p-3 border-t border-slate-800/80 bg-slate-950/90 grid grid-cols-4 text-xs gap-1.5">
         <button id="btn-open-start-menu-mobile" type="button"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-yellow-400 font-bold text-[11px] transition cursor-pointer border border-slate-800 shadow-sm">
+          class="flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-yellow-400 font-bold text-[10px] transition cursor-pointer border border-slate-800 shadow-sm">
           <i class="fa-solid fa-house text-xs"></i>
           <span>القائمة</span>
         </button>
 
+        <button id="btn-settings-drawer-mobile" onclick="window.UI?.openSettingsModal?.()" type="button"
+          class="flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-purple-400 hover:text-purple-300 font-bold text-[10px] transition cursor-pointer border border-slate-800 shadow-sm">
+          <i class="fa-solid fa-sliders text-xs"></i>
+          <span>الإعدادات</span>
+        </button>
+
         <button id="btn-lang-toggle-mobile" type="button"
-          class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-[11px] transition cursor-pointer border border-slate-800 flex items-center gap-1 shadow-sm">
+          class="flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-[10px] transition cursor-pointer border border-slate-800 shadow-sm">
           <i class="fa-solid fa-language text-xs"></i>
           <span>EN</span>
         </button>
 
         <button id="btn-user-logout-mobile" type="button" title="تسجيل الخروج"
-          class="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-[11px] transition cursor-pointer border border-rose-500/20 shadow-sm">
+          class="flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-[10px] transition cursor-pointer border border-rose-500/20 shadow-sm">
           <i class="fa-solid fa-right-from-bracket text-xs"></i>
           <span>خروج</span>
         </button>
