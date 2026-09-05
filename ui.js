@@ -1791,6 +1791,14 @@ const UIController = (() => {
         }
       }
 
+      // Handle Unified 15-min Candlestick Stock Movement
+      if (updates.stockMovement) {
+        if (activeTab === 'stocks') {
+          renderStocks(true);
+        }
+        showToast('جلسة البورصة M15 📈', 'أُغلقت شمعة التداول السابقة وتم تحديث أسعار الأسهم موحداً لجميع اللاعبين!', 'info');
+      }
+
       // Handle Trade Arrivals and Deliveries
       if (updates.tradeImportsArrived && updates.tradeImportsArrived.length > 0) {
         updates.tradeImportsArrived.forEach(item => {
@@ -4615,6 +4623,16 @@ const UIController = (() => {
       if (tickerText && tickerEl.textContent !== tickerText) {
         tickerEl.textContent = tickerText;
       }
+    }
+
+    // Update Live 15-Minute Candlestick Session Countdown Timer
+    const sessionTimerEl = document.getElementById('stock-session-timer');
+    if (sessionTimerEl && typeof GameEngine.getStockSessionTimeRemaining === 'function') {
+      const remainingMs = GameEngine.getStockSessionTimeRemaining();
+      const totalSec = Math.floor(remainingMs / 1000);
+      const mins = Math.floor(totalSec / 60);
+      const secs = totalSec % 60;
+      sessionTimerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
   }
 

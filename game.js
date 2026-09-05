@@ -1191,12 +1191,23 @@ const GameEngine = (() => {
     globalMarketEvent = event;
   }
 
+  const STOCK_TICK_INTERVAL_MS = 15 * 60 * 1000; // 15-minute global synchronized candlestick
+
+  function getUnifiedStockTick() {
+    return Math.floor(Date.now() / STOCK_TICK_INTERVAL_MS);
+  }
+
+  function getStockSessionTimeRemaining() {
+    const now = Date.now();
+    return Math.max(0, STOCK_TICK_INTERVAL_MS - (now % STOCK_TICK_INTERVAL_MS));
+  }
+
   function getCurrentMarketEvent() {
     if (globalMarketEvent && (!globalMarketEvent.expiresAt || Date.now() < globalMarketEvent.expiresAt)) {
       return globalMarketEvent;
     }
-    // Synchronized 30-minute global cycle (1,800,000 ms)
-    const cycleIndex = Math.floor(Date.now() / (30 * 60 * 1000)) % UNIFIED_SCHEDULED_EVENTS.length;
+    // Synchronized 15-minute global cycle (1 event per 15-minute trading candle)
+    const cycleIndex = Math.floor(Date.now() / STOCK_TICK_INTERVAL_MS) % UNIFIED_SCHEDULED_EVENTS.length;
     return UNIFIED_SCHEDULED_EVENTS[cycleIndex];
   }
 
@@ -1213,26 +1224,26 @@ const GameEngine = (() => {
     return ((x >>> 0) / 4294967296) * 2 - 1;
   }
 
-  // Calculate the EXACT identical price of stock `sym` at any given tick number
+  // Calculate the EXACT identical price of stock `sym` at any given 15-minute tick number
   function calculateUnifiedPriceAtTick(sym, tick) {
     const stock = STOCKS[sym];
     if (!stock) return 10;
     const seed = stock.seed || 101;
 
-    // 1. Long-term Macro Cycle (~45 mins = 337.5 ticks at 8s per tick)
-    const wave1 = Math.sin((tick + seed * 13) * (2 * Math.PI / 337.5));
-    // 2. Medium-term Sector Momentum (~12 mins = 90 ticks)
-    const wave2 = Math.sin((tick + seed * 29) * (2 * Math.PI / 91.3));
-    // 3. Short-term Intraday Swing (~2.5 mins = 19 ticks)
-    const wave3 = Math.sin((tick + seed * 47) * (2 * Math.PI / 19.1));
-    // 4. Intraday Brownian Noise
+    // 1. Long-term Macro Cycle (48 ticks = 12 hours)
+    const wave1 = Math.sin((tick + seed * 13) * (2 * Math.PI / 48));
+    // 2. Medium-term Sector Momentum (16 ticks = 4 hours)
+    const wave2 = Math.sin((tick + seed * 29) * (2 * Math.PI / 16));
+    // 3. Short-term Intraday Swing (4 ticks = 1 hour)
+    const wave3 = Math.sin((tick + seed * 47) * (2 * Math.PI / 4));
+    // 4. Intraday Brownian Noise for this 15-minute period
     const noise = getDeterministicNoise(seed, tick);
 
     // Weighted Cycle Factor
     const cycleFactor = 1 + (wave1 * 0.22) + (wave2 * 0.12) + (wave3 * 0.06) + (noise * stock.volatility * 1.8);
     let price = Math.round(stock.basePrice * cycleFactor);
 
-    // Apply Active Market Event Multiplier (Admin or Synchronized Cycle)
+    // Apply Active Market Event Multiplier (Admin or Synchronized 15-min Cycle)
     const activeEv = getCurrentMarketEvent();
     if (activeEv && activeEv.targets && activeEv.targets[sym]) {
       price = Math.round(price * activeEv.targets[sym]);
@@ -1245,18 +1256,13 @@ const GameEngine = (() => {
     return price;
   }
 
-  function getUnifiedStockTick() {
-    // 8-second global synchronized pulse
-    return Math.floor(Date.now() / 8000);
-  }
-
   // Initialize Stock Price Histories (100% Unified across all players)
   function initStocks() {
     const currentTick = getUnifiedStockTick();
     Object.keys(STOCKS).forEach(sym => {
       const history = [];
-      // Generate past 25 synchronized points
-      for (let i = 24; i >= 0; i--) {
+      // Generate past 24 synchronized points (6 hours of trading history at 15-min intervals)
+      for (let i = 23; i >= 0; i--) {
         history.push(calculateUnifiedPriceAtTick(sym, currentTick - i));
       }
       stockPrices[sym] = history;
@@ -1281,7 +1287,7 @@ const GameEngine = (() => {
       const lastPrice = stockPrices[sym][stockPrices[sym].length - 1];
       if (newPrice !== lastPrice) {
         stockPrices[sym].push(newPrice);
-        if (stockPrices[sym].length > 30) stockPrices[sym].shift();
+        if (stockPrices[sym].length > 25) stockPrices[sym].shift();
         changed = true;
       }
     });
@@ -4642,6 +4648,8 @@ const GameEngine = (() => {
     getCurrentMarketTicker,
     getCurrentMarketEvent,
     syncUnifiedStocks,
+    getStockSessionTimeRemaining,
+    STOCK_TICK_INTERVAL_MS,
 
     // Daily Quests Exports
     DAILY_QUEST_TEMPLATES,
