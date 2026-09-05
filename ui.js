@@ -2156,6 +2156,23 @@ const UIController = (() => {
   // --- Tab 3: Business Tycoon Panel (High-Performance In-Place Updates) ---
   let lastBizLevels = {};
 
+  function formatBusinessSupplies(ticks) {
+    const t = Math.max(0, Number(ticks) || 0);
+    const hours = Math.floor(t / 3600);
+    const remSec = t % 3600;
+    const mins = Math.floor(remSec / 60);
+    const secs = remSec % 60;
+    const timeFormatted = `${hours > 0 ? hours.toString().padStart(2, '0') + ':' : ''}${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    if (window.currentLang === 'en') {
+      if (hours > 0) return `${hours}h ${mins}m (${timeFormatted})`;
+      return `${mins}m ${secs}s (${timeFormatted})`;
+    }
+    if (hours > 0) {
+      return `${hours} ساعة و ${mins} دقيقة (${timeFormatted})`;
+    }
+    return `${mins} دقيقة و ${secs} ثانية (${timeFormatted})`;
+  }
+
   function renderBusinesses(force = false) {
     const s = GameEngine.state;
     const container = document.getElementById('businesses-list');
@@ -2240,8 +2257,9 @@ const UIController = (() => {
         const workerPayroll = bizCalc.workerPayroll;
 
         const hasSupplies = Boolean(bizCalc.hasSupplies);
-        const suppliesTicks = bizCalc.suppliesTicks || 0;
-        const suppliesMins = Math.floor(suppliesTicks / 60);
+        const suppliesTicks = Math.max(0, Number(bizState.suppliesTicks) || 0);
+        const isMaxSupplies = suppliesTicks >= 43200;
+        const suppliesTimeStr = formatBusinessSupplies(suppliesTicks);
         const supplyCost = Math.max(80, Math.floor(biz.cost * 0.04 * Math.pow(1.15, (bizState.level || 1) - 1)));
 
         const translatedBizName = window.currentLang ==='en' ? (translationDict[biz.name] || biz.name) : biz.name;
@@ -2282,16 +2300,16 @@ const UIController = (() => {
               <span id="biz-supply-icon-${key}" class="text-sm">${hasSupplies ?'<i class="fa-solid fa-circle text-emerald-400 text-xs"></i>' :'<i class="fa-solid fa-circle text-rose-500 text-xs"></i>'}</span>
               <div>
                 <div id="biz-supply-title-${key}" class="text-[11px] font-bold ${hasSupplies ?'text-white' :'text-rose-400 font-black'}">
-                  ${hasSupplies ?'بضاعة وخامات متوفرة (كفاءة إنتاجية 125%)' :'المخزون نفد بالكامل! المشروع متوقف'}
+                  ${hasSupplies ? (isMaxSupplies ? (window.currentLang === 'en' ? 'Supplies Stack Full (12h Max Peak)' : 'المخزون مكتمل بالكامل (12 ساعة كفاءة 125%)') : (window.currentLang === 'en' ? 'Supplies Available (125% Peak Output)' : 'بضاعة وخامات متوفرة (كفاءة إنتاجية 125%)')) : (window.currentLang === 'en' ? 'Stock Depleted! Project Halted' : 'المخزون نفد بالكامل! المشروع متوقف')}
                 </div>
-                <div id="biz-supply-time-${key}" class="text-[10px] ${hasSupplies ?'text-slate-400' :'text-rose-300 font-bold'}">
-                  ${hasSupplies ?`متبقي: ${suppliesMins} دقيقة طاقة قصوى` :'الأرباح: 0 ج.م — يجب توريد بضاعة لإعادة تشغيل المشروع'}
+                <div id="biz-supply-time-${key}" class="text-[10px] ${hasSupplies ?'text-slate-400 font-mono' :'text-rose-300 font-bold'}">
+                  ${hasSupplies ? `${window.currentLang === 'en' ? 'Remaining: ' : 'متبقي: '}${suppliesTimeStr}` : (window.currentLang === 'en' ? 'Profit: 0 EGP — Supply goods to resume production' : 'الأرباح: 0 ج.م — يجب توريد بضاعة لإعادة تشغيل المشروع')}
                 </div>
               </div>
             </div>
-            <button id="btn-supply-${key}" class="w-full sm:w-auto px-3 py-1.5 ${hasSupplies ?'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white' :'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-lg shadow-emerald-500/30 animate-bounce'} rounded-lg text-xs font-black transition flex items-center justify-center gap-1 shadow shrink-0 cursor-pointer">
+            <button id="btn-supply-${key}" class="w-full sm:w-auto px-3 py-1.5 ${hasSupplies ?'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white' :'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-lg shadow-emerald-500/30 animate-bounce'} ${isMaxSupplies ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} rounded-lg text-xs font-black transition flex items-center justify-center gap-1 shadow shrink-0">
               <i class="fa-solid fa-box-open"></i>
-              <span id="biz-supply-btn-text-${key}">توريد بضاعة (${supplyCost.toLocaleString()} EGP)</span>
+              <span id="biz-supply-btn-text-${key}">${isMaxSupplies ? (window.currentLang === 'en' ? 'Max Stocked (12h)' : 'المخزون ممتلئ (12 ساعة)') : (window.currentLang === 'en' ? `+1h Supplies (${supplyCost.toLocaleString()} EGP)` : `توريد +1 ساعة (${supplyCost.toLocaleString()} EGP)`)}</span>
             </button>
           </div>
 
@@ -2353,11 +2371,17 @@ const UIController = (() => {
           btnSupply.addEventListener('click', () => {
             try {
               const res = GameEngine.supplyBusiness(key);
-              showToast('توريد ناجح',`تم توريد خامات وبضاعة لمشروع"${biz.name}" بتكلفة ${res.cost.toLocaleString()} EGP (+20 دقيقة كفاءة 125%)!`,'success');
+              showToast(
+                window.currentLang === 'en' ? 'Supplies Restocked' : 'توريد ناجح',
+                window.currentLang === 'en'
+                  ? `Supplied goods to "${biz.name}" for ${res.cost.toLocaleString()} EGP (+1h, Total: ${res.hoursStacked}h stacked at 125% output)!`
+                  : `تم توريد خامات وبضاعة لمشروع "${biz.name}" بتكلفة ${res.cost.toLocaleString()} EGP (+1 ساعة، الإجمالي المكدس: ${res.hoursStacked} ساعة كفاءة 125%)!`,
+                'success'
+              );
               renderBusinesses(true);
               renderStatsBar();
             } catch (err) {
-              showToast('تنبيه', err.message,'error');
+              showToast(window.currentLang === 'en' ? 'Notice' : 'تنبيه', err.message, 'warning');
             }
           });
         }
@@ -2486,26 +2510,54 @@ const UIController = (() => {
       const supplyIcon = document.getElementById(`biz-supply-icon-${key}`);
       const supplyTitle = document.getElementById(`biz-supply-title-${key}`);
       const supplyTime = document.getElementById(`biz-supply-time-${key}`);
+      const btnSupply = document.getElementById(`btn-supply-${key}`);
+      const btnSupplyText = document.getElementById(`biz-supply-btn-text-${key}`);
+      const supplyCost = Math.max(80, Math.floor(biz.cost * 0.04 * Math.pow(1.15, (bizState.level || 1) - 1)));
 
       if (supplyBox && supplyIcon && supplyTitle && supplyTime) {
         if (hasSupplies) {
-          const ticks = bizState.suppliesTicks || 0;
-          const mins = Math.floor(ticks / 60);
-          const secs = ticks % 60;
-          const timeStr =`${mins}:${secs.toString().padStart(2,'0')}`;
+          const ticks = Math.max(0, Number(bizState.suppliesTicks) || 0);
+          const isMax = ticks >= 43200;
+          const timeFormattedStr = formatBusinessSupplies(ticks);
+
           supplyBox.className ="mb-3 p-2 bg-slate-950/60 rounded-xl border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 transition-all";
           supplyIcon.innerHTML ='<i class="fa-solid fa-circle text-emerald-400 text-xs"></i>';
           supplyTitle.className ="text-[11px] font-bold text-white";
-          supplyTitle.textContent ="بضاعة وخامات متوفرة (كفاءة إنتاجية 125%)";
-          supplyTime.className ="text-[10px] text-slate-400";
-          supplyTime.textContent =`متبقي: ${timeStr} دقيقة حتى نفاد المخزون`;
+          supplyTitle.textContent = isMax
+            ? (window.currentLang === 'en' ? 'Supplies Stack Full (12h Max Peak)' : 'المخزون مكتمل بالكامل (12 ساعة كفاءة 125%)')
+            : (window.currentLang === 'en' ? 'Supplies Available (125% Peak Output)' : 'بضاعة وخامات متوفرة (كفاءة إنتاجية 125%)');
+          supplyTime.className ="text-[10px] text-slate-400 font-mono";
+          supplyTime.textContent = (window.currentLang === 'en' ? 'Remaining: ' : 'متبقي: ') + timeFormattedStr;
+
+          if (btnSupplyText) {
+            btnSupplyText.textContent = isMax
+              ? (window.currentLang === 'en' ? 'Max Stocked (12h)' : 'المخزون ممتلئ (12 ساعة)')
+              : (window.currentLang === 'en' ? `+1h Supplies (${supplyCost.toLocaleString()} EGP)` : `توريد +1 ساعة (${supplyCost.toLocaleString()} EGP)`);
+          }
+          if (btnSupply) {
+            if (isMax) {
+              btnSupply.classList.add('opacity-70', 'cursor-not-allowed');
+              btnSupply.classList.remove('cursor-pointer');
+            } else {
+              btnSupply.classList.remove('opacity-70', 'cursor-not-allowed');
+              btnSupply.classList.add('cursor-pointer');
+            }
+          }
         } else {
           supplyBox.className ="mb-3 p-2 bg-rose-950/30 rounded-xl border border-rose-500/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 transition-all animate-pulse";
           supplyIcon.innerHTML ='<i class="fa-solid fa-circle text-rose-500 text-xs"></i>';
           supplyTitle.className ="text-[11px] font-bold text-rose-400";
-          supplyTitle.textContent ="المخزون نفد بالكامل! المشروع متوقف";
+          supplyTitle.textContent = window.currentLang === 'en' ? 'Stock Depleted! Project Halted' : 'المخزون نفد بالكامل! المشروع متوقف';
           supplyTime.className ="text-[10px] text-rose-300 font-bold";
-          supplyTime.textContent ="الأرباح: 0 ج.م — يجب توريد بضاعة لإعادة تشغيل المشروع";
+          supplyTime.textContent = window.currentLang === 'en' ? 'Profit: 0 EGP — Supply goods to resume production' : 'الأرباح: 0 ج.م — يجب توريد بضاعة لإعادة تشغيل المشروع';
+
+          if (btnSupplyText) {
+            btnSupplyText.textContent = window.currentLang === 'en' ? `+1h Supplies (${supplyCost.toLocaleString()} EGP)` : `توريد +1 ساعة (${supplyCost.toLocaleString()} EGP)`;
+          }
+          if (btnSupply) {
+            btnSupply.classList.remove('opacity-70', 'cursor-not-allowed');
+            btnSupply.classList.add('cursor-pointer');
+          }
         }
       }
 

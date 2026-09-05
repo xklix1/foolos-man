@@ -580,7 +580,7 @@
           });
           bizDiv.querySelector('.btn-inline-biz-lvl-inc').addEventListener('click', async () => {
             biz.level += 1;
-            biz.suppliesTicks = Math.max(biz.suppliesTicks || 0, 1800);
+            biz.suppliesTicks = Math.max(biz.suppliesTicks || 0, 3600);
             await saveAndSyncPlayerPossessions();
             renderPlayerPossessions(state);
           });
@@ -630,7 +630,7 @@
               level: 1,
               workers: 1,
               price: (cfg && cfg.optimumPrice) || 50,
-              suppliesTicks: 1800
+              suppliesTicks: 3600
             };
             await saveAndSyncPlayerPossessions();
             renderPlayerPossessions(state);

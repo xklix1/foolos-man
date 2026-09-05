@@ -2246,14 +2246,19 @@ const GameEngine = (() => {
     if (state.businesses) {
       Object.keys(state.businesses).forEach(bk => {
         const b = state.businesses[bk];
-        if (b && b.level > 0 && typeof b.suppliesTicks ==='number' && b.suppliesTicks > 0) {
-          b.suppliesTicks--;
-          if (b.suppliesTicks <= 0) {
+        if (b && b.level > 0) {
+          if (typeof b.suppliesTicks !== 'number' || isNaN(b.suppliesTicks)) {
             b.suppliesTicks = 0;
-            if (!updates.suppliesExhausted) updates.suppliesExhausted = [];
-            const bizCfg = BUSINESSES[bk];
-            updates.suppliesExhausted.push(bizCfg ? bizCfg.name : bk);
-            recordPlayerActivity('نفاد بضاعة ️',`نفدت بضاعة ومستلزمات تشغيل مشروع"${bizCfg ? bizCfg.name : bk}" وتوقف الإنتاج تماماً! يلزم توريد شحنة جديدة فوراً.`,'business');
+          }
+          if (b.suppliesTicks > 0) {
+            b.suppliesTicks--;
+            if (b.suppliesTicks <= 0) {
+              b.suppliesTicks = 0;
+              if (!updates.suppliesExhausted) updates.suppliesExhausted = [];
+              const bizCfg = BUSINESSES[bk];
+              updates.suppliesExhausted.push(bizCfg ? bizCfg.name : bk);
+              recordPlayerActivity('نفاد بضاعة ️',`نفدت بضاعة ومستلزمات تشغيل مشروع "${bizCfg ? bizCfg.name : bk}" وتوقف الإنتاج تماماً! يلزم توريد شحنة جديدة فوراً.`,'business');
+            }
           }
         }
       });
@@ -2846,9 +2851,9 @@ const GameEngine = (() => {
 
     state.cash -= biz.cost;
     bizState.level = 1;
-    bizState.suppliesTicks = 600; // 10 minutes initial operating supplies included with purchase
+    bizState.suppliesTicks = 3600; // 1 hour initial operating supplies included with purchase
 
-    recordPlayerActivity('شراء مشروع',`شراء وتأسيس مشروع"${biz.name}" بسعر ${biz.cost.toLocaleString()} ج.م (يشمل مخزون تشغيل أولي لـ 10 دقائق)`,'business');
+    recordPlayerActivity('شراء مشروع',`شراء وتأسيس مشروع "${biz.name}" بسعر ${biz.cost.toLocaleString()} ج.م (يشمل مخزون تشغيل أولي لساعة كاملة)`,'business');
     state.netWorth = calculateNetWorth();
     trackDailyQuestProgress('biz_upgrade', 1);
     forceSaveState(true);
@@ -4232,7 +4237,7 @@ const GameEngine = (() => {
     return { repaid: due };
   }
 
-  // Business: Supply stock and inventory materials (gives 20 mins of peak 125% productivity)
+  // Business: Supply stock and inventory materials (gives 1 hour per shipment, stackable up to 12 hours)
   function supplyBusiness(key) {
     const biz = BUSINESSES[key];
     if (!biz) throw new Error("المشروع غير متوفر.");
@@ -4240,21 +4245,31 @@ const GameEngine = (() => {
       throw new Error("يجب تأسيس وشراء المشروع أولاً لتوريد البضاعة له.");
     }
     const bizState = state.businesses[key];
+    const currentTicks = Math.max(0, Number(bizState.suppliesTicks) || 0);
+    const MAX_SUPPLIES_TICKS = 43200; // 12 hours = 12 * 3600 seconds
+    const SUPPLY_INCREMENT_TICKS = 3600; // 1 hour per shipment = 3600 seconds
+
+    if (currentTicks >= MAX_SUPPLIES_TICKS) {
+      throw new Error("وصل مخزون المشروع للحد الأقصى للتكديس (12 ساعة كاملة)!");
+    }
+
     const supplyCost = Math.max(80, Math.floor(biz.cost * 0.04 * Math.pow(1.15, (bizState.level || 1) - 1)));
     if (state.cash < supplyCost) {
       throw new Error(`رصيدك الكاش لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP — لديك: ${state.cash.toLocaleString()} EGP`);
     }
 
     state.cash -= supplyCost;
-    bizState.suppliesTicks = Math.min(3600, (bizState.suppliesTicks || 0) + 1200);
+    bizState.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, currentTicks + SUPPLY_INCREMENT_TICKS);
 
-    recordPlayerActivity('توريد بضاعة ومستلزمات',`توريد شحنة بضاعة لمشروع"${biz.name}" بتكلفة ${supplyCost.toLocaleString()} ج.م (+20 دقيقة كفاءة إنتاجية قصوى 125%)`,'business');
+    const totalHours = (bizState.suppliesTicks / 3600).toFixed(1);
+    recordPlayerActivity('توريد بضاعة ومستلزمات',`توريد شحنة بضاعة لمشروع "${biz.name}" بتكلفة ${supplyCost.toLocaleString()} ج.م (+1 ساعة تشغيل، الإجمالي المكدس: ${totalHours} ساعة)`,'business');
     state.netWorth = calculateNetWorth();
     trackDailyQuestProgress('biz_upgrade', 1);
     forceSaveState(true);
     return {
       cost: supplyCost,
-      suppliesTicks: bizState.suppliesTicks
+      suppliesTicks: bizState.suppliesTicks,
+      hoursStacked: totalHours
     };
   }
 
