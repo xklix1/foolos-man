@@ -209,10 +209,10 @@ const UIController = (() => {
     });
   }
 
-  // Work shift cooldown state (1.5 seconds)
+  // Work shift cooldown state (2.5 seconds)
   let workCooldownActive = false;
   let workCooldownTimer = null;
-  const WORK_COOLDOWN_MS = 1500;
+  const WORK_COOLDOWN_MS = 2500;
 
   // Overtime shift cooldown state (20 seconds)
   let overtimeCooldownActive = false;
@@ -2876,7 +2876,8 @@ const UIController = (() => {
           const boostText = boosts.length > 0 ?` (${boosts.join(' +')})` :'';
 
           showPassiveGainFloat(`+${res.salary.toLocaleString()} EGP`);
-          showToast('عمل نوبة',`كسبت +${res.salary.toLocaleString()} EGP و +${res.xp} خبرة${boostText}.`,'success');
+          const remText = res.dailyRemaining !== undefined ? ` (متبقي ${res.dailyRemaining} نوبة)` : '';
+          showToast('عمل نوبة',`كسبت +${res.salary.toLocaleString()} EGP و +${res.xp} خبرة${boostText}${remText}.`,'success');
           renderAll();
           startWorkCooldown(jobWorkBtn);
         } catch (err) {
@@ -7458,15 +7459,15 @@ const UIController = (() => {
 
       const JOBS_MAP = {
         worker: { name:'عامل باليومية', xpNeeded: 0, salary: 6 },
-        cashier: { name:'محاسب صندوق', xpNeeded: 180, salary: 14 },
-        accountant: { name:'محاسب مالي قانوني', xpNeeded: 600, salary: 45 },
-        manager: { name:'مدير فرع وتطوير', xpNeeded: 2200, salary: 130 },
-        director: { name:'مدير تنفيذي للمجموعة', xpNeeded: 6500, salary: 350 },
-        ceo: { name:'رئيس مجلس الإدارة', xpNeeded: 18000, salary: 980 },
-        consultant: { name:'مستشار اقتصادي ووزير سابق', xpNeeded: 45000, salary: 2600 },
-        bank_governor: { name:'محافظ البنك المركزي', xpNeeded: 110000, salary: 6800 },
-        sovereign_head: { name:'رئيس المجلس الاقتصادي الأعلى', xpNeeded: 250000, salary: 18000 },
-        minister: { name:'وزير المالية والاقتصاد السيادي ️', xpNeeded: 500000, salary: 45000 }
+        cashier: { name:'محاسب صندوق', xpNeeded: 180, salary: 12 },
+        accountant: { name:'محاسب مالي قانوني', xpNeeded: 600, salary: 24 },
+        manager: { name:'مدير فرع وتطوير', xpNeeded: 2200, salary: 50 },
+        director: { name:'مدير تنفيذي للمجموعة', xpNeeded: 6500, salary: 95 },
+        ceo: { name:'رئيس مجلس الإدارة', xpNeeded: 18000, salary: 180 },
+        consultant: { name:'مستشار اقتصادي ووزير سابق', xpNeeded: 45000, salary: 320 },
+        bank_governor: { name:'محافظ البنك المركزي', xpNeeded: 110000, salary: 550 },
+        sovereign_head: { name:'رئيس المجلس الاقتصادي الأعلى', xpNeeded: 250000, salary: 950 },
+        minister: { name:'وزير المالية والاقتصاد السيادي ️', xpNeeded: 500000, salary: 1600 }
       };
 
       const BIZ_MAP = {

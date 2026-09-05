@@ -12,15 +12,15 @@ const GameEngine = (() => {
 
   const JOBS = {
     worker: { id:'worker', name:'عامل باليومية', salary: 6, xpReward: 2, xpNeeded: 0 },
-    cashier: { id:'cashier', name:'محاسب صندوق', salary: 14, xpReward: 4, xpNeeded: 180 },
-    accountant: { id:'accountant', name:'محاسب مالي قانوني', salary: 45, xpReward: 8, xpNeeded: 600 },
-    manager: { id:'manager', name:'مدير فرع وتطوير', salary: 130, xpReward: 14, xpNeeded: 2200 },
-    director: { id:'director', name:'مدير تنفيذي للمجموعة', salary: 350, xpReward: 24, xpNeeded: 6500 },
-    ceo: { id:'ceo', name:'رئيس مجلس الإدارة', salary: 980, xpReward: 38, xpNeeded: 18000 },
-    consultant: { id:'consultant', name:'مستشار اقتصادي ووزير سابق', salary: 2600, xpReward: 60, xpNeeded: 45000 },
-    bank_governor: { id:'bank_governor', name:'محافظ البنك المركزي', salary: 6800, xpReward: 95, xpNeeded: 120000 },
-    sovereign_head: { id:'sovereign_head', name:'رئيس صندوق الاستثمار السيادي', salary: 16500, xpReward: 140, xpNeeded: 280000 },
-    oligarch: { id:'oligarch', name:'إمبراطور كبار المستثمرين', salary: 42000, xpReward: 220, xpNeeded: 650000 }
+    cashier: { id:'cashier', name:'محاسب صندوق', salary: 12, xpReward: 4, xpNeeded: 180 },
+    accountant: { id:'accountant', name:'محاسب مالي قانوني', salary: 24, xpReward: 8, xpNeeded: 600 },
+    manager: { id:'manager', name:'مدير فرع وتطوير', salary: 50, xpReward: 14, xpNeeded: 2200 },
+    director: { id:'director', name:'مدير تنفيذي للمجموعة', salary: 95, xpReward: 24, xpNeeded: 6500 },
+    ceo: { id:'ceo', name:'رئيس مجلس الإدارة', salary: 180, xpReward: 38, xpNeeded: 18000 },
+    consultant: { id:'consultant', name:'مستشار اقتصادي ووزير سابق', salary: 320, xpReward: 60, xpNeeded: 45000 },
+    bank_governor: { id:'bank_governor', name:'محافظ البنك المركزي', salary: 550, xpReward: 95, xpNeeded: 120000 },
+    sovereign_head: { id:'sovereign_head', name:'رئيس صندوق الاستثمار السيادي', salary: 950, xpReward: 140, xpNeeded: 280000 },
+    oligarch: { id:'oligarch', name:'إمبراطور كبار المستثمرين', salary: 1600, xpReward: 220, xpNeeded: 650000 }
   };
 
   const BUSINESSES = {
@@ -877,6 +877,7 @@ const GameEngine = (() => {
     investments: [], // Array of { id, investedAmount, ticksRemaining, rate, name }
     activeLoan: null, // Stores { amount, totalDue, ticksRemaining, initialTicks, isDefaulted, latePenaltyTicks, latePenaltyCount }
     dailyLoans: { date:'', count: 0 }, // Max 2 loans per 24 hours (calendar day)
+    dailyWork: { date:'', shifts: 0, overtimeShifts: 0 }, // Max 100 regular shifts and 15 overtime shifts per 24h
     dailyToolUses: { date:'', uses: {} }, // Max daily uses per tool (calendar day)
     assets: {
       apartment: 0,
@@ -2758,14 +2759,25 @@ const GameEngine = (() => {
     const job = JOBS[state.jobId] || JOBS.worker;
     if (!job) throw new Error("الوظيفة غير صالحة.");
 
-    // Enforce 1.5s shift cooldown (reduced 15% if cronos_gear active)
+    // Enforce 2.5s shift cooldown (reduced 15% if cronos_gear active)
     if (state.workCooldownUntil && Date.now() < state.workCooldownUntil) {
       const remSec = ((state.workCooldownUntil - Date.now()) / 1000).toFixed(1);
       throw new Error(`أنت مرهق من نوبة العمل السابقة! يرجى أخذ استراحة (${remSec} ثانية).`);
     }
+
+    ensureDailyWorkTracking();
+    const MAX_DAILY_SHIFTS = 100;
+    if ((state.dailyWork.shifts || 0) >= MAX_DAILY_SHIFTS) {
+      const remSec = getDailyResetRemainingSeconds();
+      const remH = Math.floor(remSec / 3600);
+      const remM = Math.floor((remSec % 3600) / 60);
+      throw new Error(`لقد استنفدت طاقتك وورديات العمل المسموح بها لليوم (${MAX_DAILY_SHIFTS}/100 وردية)! تتجدد الطاقة بعد ${remH} س و ${remM} د. استثمر في مشاريعك لتوليد أرباح إضافية.`);
+    }
+
     const hasCronos = Boolean(state.inventory && state.inventory.cronos_gear > 0);
-    const workCdMs = Math.floor(1500 * (hasCronos ? 0.85 : 1.0));
+    const workCdMs = Math.floor(2500 * (hasCronos ? 0.85 : 1.0));
     state.workCooldownUntil = Date.now() + workCdMs;
+    state.dailyWork.shifts = (state.dailyWork.shifts || 0) + 1;
 
     // Calculate XP boosters & energy drink salary multipliers
     const isPenActive = (state.inventory && state.inventory.gold_pen > 0);
@@ -2792,6 +2804,7 @@ const GameEngine = (() => {
     return {
       salary: finalSalary,
       xp: finalXpReward,
+      dailyRemaining: MAX_DAILY_SHIFTS - state.dailyWork.shifts,
       isEnergyBoosted: isEnergyActive,
       isPenBoosted: isPenActive
     };
@@ -3937,9 +3950,20 @@ const GameEngine = (() => {
       const remSec = Math.ceil((state.overtimeCooldownUntil - Date.now()) / 1000);
       throw new Error(`أنت مجهد للغاية من العمل الإضافي! يرجى الانتظار ${remSec} ثانية قبل نوبة إضافية جديدة.`);
     }
+
+    ensureDailyWorkTracking();
+    const MAX_DAILY_OVERTIME = 15;
+    if ((state.dailyWork.overtimeShifts || 0) >= MAX_DAILY_OVERTIME) {
+      const remSec = getDailyResetRemainingSeconds();
+      const remH = Math.floor(remSec / 3600);
+      const remM = Math.floor((remSec % 3600) / 60);
+      throw new Error(`لقد بلغت الحد الأقصى للعمل الإضافي اليومي (${MAX_DAILY_OVERTIME}/15 نوبة)! يتجدد النشاط بعد ${remH} س و ${remM} د.`);
+    }
+
     const hasCronos = Boolean(state.inventory && state.inventory.cronos_gear > 0);
     const overtimeCdMs = Math.floor(20000 * (hasCronos ? 0.85 : 1.0));
     state.overtimeCooldownUntil = Date.now() + overtimeCdMs;
+    state.dailyWork.overtimeShifts = (state.dailyWork.overtimeShifts || 0) + 1;
 
     const isEnergyActive = (state.inventory && state.inventory.energy_drink > 0);
     const isPenActive = (state.inventory && state.inventory.gold_pen > 0);
@@ -4116,6 +4140,19 @@ const GameEngine = (() => {
 
     recordPlayerActivity('بدء تهريب',`شحن شحنة تهريب إلى"${route.name}" عبر ${SMUGGLING_VEHICLES[vehicleType].name}.`,'dark');
     AppDB.savePlayerState(activeUsername, state);
+  }
+
+  // Helper: Ensure daily work shifts tracking (max 100 regular, 15 overtime per 24 hours)
+  function ensureDailyWorkTracking() {
+    if (!state) return;
+    const today = getTodayDateString();
+    if (!state.dailyWork || state.dailyWork.date !== today) {
+      state.dailyWork = {
+        date: today,
+        shifts: 0,
+        overtimeShifts: 0
+      };
+    }
   }
 
   // Helper: Ensure daily loan tracking (max 2 loans per 24 hours)
