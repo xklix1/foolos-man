@@ -1120,7 +1120,7 @@ const UIController = (() => {
   // Crash game state variables
   let crashBetAmount = 0;
   let crashMultiplier = 1.0;
-  let crashTarget = 1.0;
+  let crashLastMultiplier = 1.0;
   let crashState = 'idle'; // 'idle', 'running', 'cashed_out', 'crashed'
   let crashAnimationId = null;
   let crashStartTime = 0;
@@ -3659,8 +3659,8 @@ const UIController = (() => {
         const bet = parseInt(betInput.value);
 
         try {
-          if (isNaN(bet) || bet <= 0) throw new Error("يرجى إدخال قيمة رهان صحيحة.");
-          if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
+          // Play immediately: checks daily limit, 5% cash cap, 6s cooldown, and saves state to prevent save-scumming
+          const res = GameEngine.playCoinFlip(bet, choice, coinFlipStreak);
 
           coinFlipBtn.disabled = true;
           playCasinoSound('coin');
@@ -3673,7 +3673,6 @@ const UIController = (() => {
 
           setTimeout(() => {
             try {
-              const res = GameEngine.playCoinFlip(bet, choice, coinFlipStreak);
               const isTails = (res.side === 'tails');
               if (coinVisual) {
                 coinVisual.style.transition = 'transform 0.2s ease-out';
@@ -3681,34 +3680,51 @@ const UIController = (() => {
               }
 
               const streakBadge = document.getElementById('coin-streak-badge');
+              const isEn = (window.currentLang === 'en');
+              const currency = isEn ? 'EGP' : 'ج.م';
+
               if (res.won) {
                 coinFlipStreak = (coinFlipStreak || 0) + 1;
                 playCasinoSound('win');
                 if (streakBadge) {
-                  streakBadge.textContent = `سلسلة الانتصارات: ${coinFlipStreak}x متتالية`;
+                  streakBadge.textContent = isEn ? `Streak: ${coinFlipStreak}x` : `سلسلة الانتصارات: ${coinFlipStreak}x متتالية`;
                   streakBadge.className = 'text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30 animate-pulse';
                 }
-                const multText = res.streakMultiplier > 1 ? ` (بونص سلسلة الفوز: ${res.streakMultiplier}x)` : '';
-                showToast('ربح ملكي!', `صبت التخمين (${res.side === 'heads' ? 'التاج الملكي' : 'الدرع الدفاعي'})!${multText} كسبت +${res.profit.toLocaleString()} EGP.`, 'success');
+                const multText = res.streakMultiplier > 1 ? (isEn ? ` (Streak Bonus: ${res.streakMultiplier}x)` : ` (بونص سلسلة الفوز: ${res.streakMultiplier}x)`) : '';
+                const sideText = res.side === 'heads' ? (isEn ? 'Crown' : 'التاج الملكي') : (isEn ? 'Shield' : 'الدرع الدفاعي');
+                showToast(
+                  isEn ? 'Royal Win!' : 'ربح ملكي!',
+                  isEn
+                    ? `Guessed right (${sideText})!${multText} Net profit: +${res.profit.toLocaleString()} ${currency}.`
+                    : `صبت التخمين (${sideText})!${multText} كسبت صافي +${res.profit.toLocaleString()} ${currency}.`,
+                  'success'
+                );
               } else {
                 coinFlipStreak = 0;
                 playCasinoSound('lose');
                 if (streakBadge) {
-                  streakBadge.textContent = 'سلسلة الانتصارات: 0';
+                  streakBadge.textContent = isEn ? 'Streak: 0' : 'سلسلة الانتصارات: 0';
                   streakBadge.className = 'text-[10px] text-slate-500 font-bold bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800';
                 }
-                showToast('خسارة الجولة', `لسوء الحظ، استقرت العملة على (${res.side === 'heads' ? 'التاج' : 'الدرع'}). خسرت -${res.loss.toLocaleString()} EGP.`, 'error');
+                const sideText = res.side === 'heads' ? (isEn ? 'Crown' : 'التاج') : (isEn ? 'Shield' : 'الدرع');
+                showToast(
+                  isEn ? 'Round Lost' : 'خسارة الجولة',
+                  isEn
+                    ? `Landed on (${sideText}). Lost bet -${res.loss.toLocaleString()} ${currency}.`
+                    : `استقرت العملة على (${sideText}). خسرت -${res.loss.toLocaleString()} ${currency}.`,
+                  'error'
+                );
               }
               renderAll();
             } catch (e) {
-              showToast('خطأ رهان', e.message, 'error');
+              showToast(window.currentLang === 'en' ? 'Bet Error' : 'خطأ رهان', e.message, 'error');
             } finally {
               coinFlipBtn.disabled = false;
             }
           }, 450);
 
         } catch (err) {
-          showToast('خطأ رهان', err.message, 'error');
+          showToast(window.currentLang === 'en' ? 'Bet Error' : 'خطأ رهان', err.message, 'error');
         }
       });
     }
@@ -3721,8 +3737,8 @@ const UIController = (() => {
         const bet = parseInt(betInput.value);
 
         try {
-          if (isNaN(bet) || bet <= 0) throw new Error("يرجى تحديد مبلغ رهان صحيح.");
-          if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
+          // Play immediately in engine to prevent save-scumming & validate rules
+          const res = GameEngine.playSlots(bet);
 
           slotsSpinBtn.disabled = true;
           playCasinoSound('coin');
@@ -3744,7 +3760,6 @@ const UIController = (() => {
 
           setTimeout(() => {
             try {
-              const res = GameEngine.playSlots(bet);
               clearInterval(spinInterval);
 
               r1.classList.remove('slot-blur-spin');
@@ -3760,17 +3775,38 @@ const UIController = (() => {
                   r3.classList.remove('slot-blur-spin');
                   r3.innerHTML = getReelSymbolIcon(res.reels[2]);
 
+                  const isEn = (window.currentLang === 'en');
+                  const currency = isEn ? 'EGP' : 'ج.م';
+
                   if (res.won) {
                     if (res.isJackpot) {
                       playCasinoSound('jackpot');
-                      showToast('جاكبوت كاسح!', `🎉 مبروك! حصلت على الجاكبوت الذهبي الأقصى! ربحت +${res.profit.toLocaleString()} EGP!`, 'success');
+                      showToast(
+                        isEn ? 'Mega Jackpot!' : 'جاكبوت كاسح!',
+                        isEn 
+                          ? `🎉 Jackpot! Net profit: +${res.profit.toLocaleString()} ${currency}!` 
+                          : `🎉 مبروك! حصلت على الجاكبوت الذهبي! ربحت صافي +${res.profit.toLocaleString()} ${currency}!`,
+                        'success'
+                      );
                     } else {
                       playCasinoSound('win');
-                      showToast('فوز الآلة', `${res.message} ربحت +${res.profit.toLocaleString()} EGP!`, 'success');
+                      showToast(
+                        isEn ? 'Slots Win' : 'فوز الآلة',
+                        isEn
+                          ? `${res.message} Net profit: +${res.profit.toLocaleString()} ${currency}!`
+                          : `${res.message} ربحت صافي +${res.profit.toLocaleString()} ${currency}!`,
+                        'success'
+                      );
                     }
                   } else {
                     playCasinoSound('lose');
-                    showToast('حظ أوفر', `${res.message} خسرت -${bet.toLocaleString()} EGP.`, 'error');
+                    showToast(
+                      isEn ? 'Better Luck' : 'حظ أوفر',
+                      isEn
+                        ? `${res.message} Lost -${bet.toLocaleString()} ${currency}.`
+                        : `${res.message} خسرت -${bet.toLocaleString()} ${currency}.`,
+                      'error'
+                    );
                   }
                   renderAll();
                   slotsSpinBtn.disabled = false;
@@ -3779,13 +3815,13 @@ const UIController = (() => {
 
             } catch (e) {
               clearInterval(spinInterval);
-              showToast('خطأ الآلة', e.message, 'error');
+              showToast(window.currentLang === 'en' ? 'Machine Error' : 'خطأ الآلة', e.message, 'error');
               slotsSpinBtn.disabled = false;
             }
           }, 240);
 
         } catch (err) {
-          showToast('خطأ رهان', err.message, 'error');
+          showToast(window.currentLang === 'en' ? 'Bet Error' : 'خطأ رهان', err.message, 'error');
         }
       });
     }
@@ -3816,8 +3852,8 @@ const UIController = (() => {
         const resNum = document.getElementById('roulette-result-num');
 
         try {
-          if (isNaN(bet) || bet <= 0) throw new Error("يرجى تحديد مبلغ رهان صحيح للروليت.");
-          if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
+          // Play immediately in engine to prevent save-scumming & enforce limits
+          const res = GameEngine.playRoulette(bet, choice);
 
           rouletteBtn.disabled = true;
           playCasinoSound('tick');
@@ -3826,51 +3862,35 @@ const UIController = (() => {
 
           setTimeout(() => {
             try {
-              GameEngine.state.cash -= bet;
+              resNum.textContent = res.rolledNumber;
 
-              // 0 to 36
-              const landedNum = Math.floor(Math.random() * 37);
-              resNum.textContent = landedNum;
+              const isEn = (window.currentLang === 'en');
+              const currency = isEn ? 'EGP' : 'ج.م';
+              const colorLabel = res.color === 'red' ? (isEn ? 'Red' : 'أحمر') : (res.color === 'black' ? (isEn ? 'Black' : 'أسود') : (isEn ? 'Green Zero' : 'الصفر الأخضر'));
 
-              // Color determination
-              let color = 'green';
-              const redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
-              if (landedNum !== 0) {
-                color = redNumbers.includes(landedNum) ? 'red' : 'black';
-              }
-
-              let won = false;
-              let multiplier = 0;
-
-              if (choice === 'green' && landedNum === 0) {
-                won = true;
-                multiplier = 35;
-              } else if (choice === color && landedNum !== 0) {
-                won = true;
-                multiplier = 2;
-              } else if (choice === 'even' && landedNum !== 0 && landedNum % 2 === 0) {
-                won = true;
-                multiplier = 2;
-              } else if (choice === 'odd' && landedNum !== 0 && landedNum % 2 !== 0) {
-                won = true;
-                multiplier = 2;
-              }
-
-              if (won) {
-                const winAmount = bet * multiplier;
-                GameEngine.state.cash += winAmount;
-                const profit = winAmount - bet;
+              if (res.won) {
                 playCasinoSound('win');
-                showToast('فوز الروليت!', `أصابت روليت الحظ رقم ${landedNum} (${color === 'red' ? 'أحمر' : color === 'black' ? 'أسود' : 'الصفر الأخضر'})! ربحت +${profit.toLocaleString()} EGP!`, 'success');
+                showToast(
+                  isEn ? 'Roulette Win!' : 'فوز الروليت!',
+                  isEn
+                    ? `Roulette landed on ${res.rolledNumber} (${colorLabel})! Net profit: +${res.profit.toLocaleString()} ${currency}!`
+                    : `أصابت روليت الحظ رقم ${res.rolledNumber} (${colorLabel})! ربحت صافي +${res.profit.toLocaleString()} ${currency}!`,
+                  'success'
+                );
               } else {
                 playCasinoSound('lose');
-                showToast('خسارة الروليت', `استقرت العجلة على رقم ${landedNum} (${color === 'red' ? 'أحمر' : color === 'black' ? 'أسود' : 'الصفر الأخضر'}). خسرت -${bet.toLocaleString()} EGP.`, 'error');
+                showToast(
+                  isEn ? 'Roulette Loss' : 'خسارة الروليت',
+                  isEn
+                    ? `Wheel stopped at ${res.rolledNumber} (${colorLabel}). Lost -${bet.toLocaleString()} ${currency}.`
+                    : `استقرت العجلة على رقم ${res.rolledNumber} (${colorLabel}). خسرت -${bet.toLocaleString()} ${currency}.`,
+                  'error'
+                );
               }
 
-              GameEngine.forceSaveState();
               renderAll();
             } catch (e) {
-              showToast('خطأ روليت', e.message, 'error');
+              showToast(isEn ? 'Roulette Error' : 'خطأ روليت', e.message, 'error');
             } finally {
               rouletteBtn.disabled = false;
               wheel.style.transform = 'rotate(0deg)';
@@ -3879,7 +3899,7 @@ const UIController = (() => {
           }, 600);
 
         } catch (err) {
-          showToast('خطأ رهان', err.message, 'error');
+          showToast(window.currentLang === 'en' ? 'Bet Error' : 'خطأ رهان', err.message, 'error');
         }
       });
     }
@@ -3894,8 +3914,8 @@ const UIController = (() => {
         const resText = document.getElementById('wheel-multiplier-result');
 
         try {
-          if (isNaN(bet) || bet <= 0) throw new Error("يرجى تحديد مبلغ رهان صحيح لعجلة الحظ.");
-          if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
+          // Play immediately in engine to prevent save-scumming & enforce limits
+          const res = GameEngine.playWheelOfFortune(bet);
 
           wheelBtn.disabled = true;
           playCasinoSound('tick');
@@ -3904,42 +3924,39 @@ const UIController = (() => {
 
           setTimeout(() => {
             try {
-              GameEngine.state.cash -= bet;
+              resText.textContent = `${res.multiplier}x`;
+              const isEn = (window.currentLang === 'en');
+              const currency = isEn ? 'EGP' : 'ج.م';
 
-              // Wheel Multipliers distribution table
-              const multipliers = [0, 0.5, 1.2, 1.5, 2.0, 3.0, 5.0, 10.0];
-              const weights = [15, 25, 25, 15, 10, 6, 3, 1];
-
-              let rand = Math.floor(Math.random() * 100);
-              let cumulative = 0;
-              let selectedMult = 1.2;
-
-              for (let i = 0; i < multipliers.length; i++) {
-                cumulative += weights[i];
-                if (rand < cumulative) {
-                  selectedMult = multipliers[i];
-                  break;
-                }
-              }
-
-              resText.textContent = `${selectedMult}x`;
-              const payout = Math.floor(bet * selectedMult);
-              GameEngine.state.cash += payout;
-
-              if (selectedMult > 1.0) {
-                playCasinoSound(selectedMult >= 5.0 ? 'jackpot' : 'win');
-                showToast('ضربة عجلة الحظ!', `حصلت على مضاعف ${selectedMult}x! ربحت +${(payout - bet).toLocaleString()} EGP.`, 'success');
-              } else if (selectedMult === 1.0) {
-                showToast('استرداد الرهان', `حصلت على 1.0x واسترددت رهانك بالكامل.`, 'info');
+              if (res.won) {
+                playCasinoSound(res.multiplier >= 5.0 ? 'jackpot' : 'win');
+                showToast(
+                  isEn ? 'Wheel Win!' : 'ضربة عجلة الحظ!',
+                  isEn
+                    ? `Landed on ${res.multiplier}x! Net profit: +${res.profit.toLocaleString()} ${currency}.`
+                    : `حصلت على مضاعف ${res.multiplier}x! ربحت صافي +${res.profit.toLocaleString()} ${currency}.`,
+                  'success'
+                );
+              } else if (res.isPush) {
+                showToast(
+                  isEn ? 'Bet Refunded' : 'استرداد الرهان',
+                  isEn ? `Landed on 1.0x. Bet refunded.` : `حصلت على 1.0x واسترددت رهانك بالكامل.`,
+                  'info'
+                );
               } else {
                 playCasinoSound('lose');
-                showToast('خسارة العجلة', `توقفت العجلة عند مضاعف ${selectedMult}x. خسرت -${(bet - payout).toLocaleString()} EGP.`, 'error');
+                showToast(
+                  isEn ? 'Wheel Loss' : 'خسارة العجلة',
+                  isEn
+                    ? `Wheel stopped at ${res.multiplier}x. Lost -${bet.toLocaleString()} ${currency}.`
+                    : `توقفت العجلة عند مضاعف ${res.multiplier}x. خسرت -${bet.toLocaleString()} ${currency}.`,
+                  'error'
+                );
               }
 
-              GameEngine.forceSaveState();
               renderAll();
             } catch (e) {
-              showToast('خطأ العجلة', e.message, 'error');
+              showToast(isEn ? 'Wheel Error' : 'خطأ العجلة', e.message, 'error');
             } finally {
               wheelBtn.disabled = false;
               wheelVis.style.transform = 'rotate(0deg)';
@@ -3948,7 +3965,7 @@ const UIController = (() => {
           }, 600);
 
         } catch (err) {
-          showToast('خطأ رهان', err.message, 'error');
+          showToast(window.currentLang === 'en' ? 'Bet Error' : 'خطأ رهان', err.message, 'error');
         }
       });
     }
@@ -3965,8 +3982,8 @@ const UIController = (() => {
         const sumDisplay = document.getElementById('dice-sum-display');
 
         try {
-          if (isNaN(bet) || bet <= 0) throw new Error("يرجى تحديد مبلغ رهان صحيح للنرد.");
-          if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
+          // Play immediately in engine to prevent save-scumming & enforce limits
+          const res = GameEngine.playDice(bet, choice);
 
           diceRollBtn.disabled = true;
           playCasinoSound('dice');
@@ -3976,32 +3993,46 @@ const UIController = (() => {
 
           setTimeout(() => {
             try {
-              const res = GameEngine.playDice(bet, choice);
               d1.classList.remove('dice-rolling');
               d2.classList.remove('dice-rolling');
 
-              d1.innerHTML = getDicePipIcon(res.die1);
-              d2.innerHTML = getDicePipIcon(res.die2);
+              d1.innerHTML = getDicePipIcon(res.die1 || res.d1);
+              d2.innerHTML = getDicePipIcon(res.die2 || res.d2);
               if (sumDisplay) sumDisplay.textContent = res.sum;
+
+              const isEn = (window.currentLang === 'en');
+              const currency = isEn ? 'EGP' : 'ج.م';
 
               if (res.won) {
                 playCasinoSound(res.multiplier >= 5 ? 'jackpot' : 'win');
-                showToast('فوز النرد الملكي!', `${res.message} ربحت +${res.profit.toLocaleString()} EGP!`, 'success');
+                showToast(
+                  isEn ? 'Royale Dice Win!' : 'فوز النرد الملكي!',
+                  isEn
+                    ? `${res.message} Net profit: +${res.profit.toLocaleString()} ${currency}!`
+                    : `${res.message} ربحت صافي +${res.profit.toLocaleString()} ${currency}!`,
+                  'success'
+                );
               } else {
                 playCasinoSound('lose');
-                showToast('خسارة النرد', `${res.message} خسرت -${res.loss.toLocaleString()} EGP.`, 'error');
+                showToast(
+                  isEn ? 'Dice Loss' : 'خسارة النرد',
+                  isEn
+                    ? `${res.message} Lost -${res.loss.toLocaleString()} ${currency}.`
+                    : `${res.message} خسرت -${res.loss.toLocaleString()} ${currency}.`,
+                  'error'
+                );
               }
 
               renderAll();
             } catch (e) {
-              showToast('خطأ النرد', e.message, 'error');
+              showToast(isEn ? 'Dice Error' : 'خطأ النرد', e.message, 'error');
             } finally {
               diceRollBtn.disabled = false;
             }
           }, 350);
 
         } catch (err) {
-          showToast('خطأ رهان', err.message, 'error');
+          showToast(window.currentLang === 'en' ? 'Bet Error' : 'خطأ رهان', err.message, 'error');
         }
       });
     }
@@ -4114,11 +4145,8 @@ const UIController = (() => {
         const bet = parseInt(betInput.value);
 
         try {
-          if (isNaN(bet) || bet < 100) throw new Error("الحد الأدنى للرهان هو 100 EGP.");
-          if (GameEngine.state.cash < bet) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
-
-          // Deduct Bet
-          GameEngine.state.cash -= bet;
+          // Check limits, 6s cooldown, daily cap, dynamic 5% cap, deduct cash & save state immediately
+          GameEngine.checkCasinoAllowedAndDeduct(bet);
           bjBet = bet;
           bjActive = true;
 
@@ -4143,7 +4171,7 @@ const UIController = (() => {
           }
 
         } catch (e) {
-          showToast('بلاك جاك', e.message, 'error');
+          showToast(window.currentLang === 'en' ? 'Blackjack' : 'بلاك جاك', e.message, 'error');
         }
       });
     }
@@ -4188,22 +4216,22 @@ const UIController = (() => {
     if (bjDoubleBtn) {
       bjDoubleBtn.addEventListener('click', () => {
         if (!bjActive) return;
-        if (GameEngine.state.cash < bjBet) {
-          showToast('مضاعفة الرهان', 'رصيدك لا يكفي لمضاعفة الرهان!', 'error');
-          return;
-        }
+        try {
+          // Deduct matching bet for double down (skipCooldown=true since within active hand)
+          GameEngine.checkCasinoAllowedAndDeduct(bjBet, true);
+          bjBet *= 2;
+          bjPlayerHand.push(bjDeck.pop());
+          playCasinoSound('card');
+          updateBlackjackUI(true);
 
-        GameEngine.state.cash -= bjBet;
-        bjBet *= 2;
-        bjPlayerHand.push(bjDeck.pop());
-        playCasinoSound('card');
-        updateBlackjackUI(true);
-
-        const score = calculateScore(bjPlayerHand);
-        if (score > 21) {
-          endBlackjackRound('bust');
-        } else {
-          bjStandBtn.click();
+          const score = calculateScore(bjPlayerHand);
+          if (score > 21) {
+            endBlackjackRound('bust');
+          } else {
+            bjStandBtn.click();
+          }
+        } catch (e) {
+          showToast(window.currentLang === 'en' ? 'Double Down' : 'مضاعفة الرهان', e.message, 'error');
         }
       });
     }
@@ -4235,38 +4263,62 @@ const UIController = (() => {
       let toastType = 'success';
       let sound = 'win';
 
-      const hasVIP = GameEngine.state.inventory && GameEngine.state.inventory.vip_casino_pass > 0;
+      const isEn = (window.currentLang === 'en');
+      const currency = isEn ? 'EGP' : 'ج.م';
 
       if (result === 'blackjack') {
-        multiplier = hasVIP ? 2.6 : 2.5;
-        winText = `بلاك جاك طبيعي! ربحت +${Math.floor(bjBet * multiplier).toLocaleString()} EGP.`;
+        multiplier = 2.5; // Base 2.5x payout (+20% bonus applied via settleCasinoRound if VIP)
         sound = 'jackpot';
       } else if (result === 'win' || result === 'dealer_bust' || result === 'win_vip_push') {
         multiplier = 2.0;
-        winText = result === 'dealer_bust'
-          ? `تجاوز الموزع! ربحت +${Math.floor(bjBet * multiplier).toLocaleString()} EGP.`
-          : (result === 'win_vip_push' ? `تعادل بمجموع ${calculateScore(bjPlayerHand)}! تم احتسابه فوزاً لصالحك (عضوية VIP) +${Math.floor(bjBet * multiplier).toLocaleString()} EGP.` : `تفوقت على الموزع! ربحت +${Math.floor(bjBet * multiplier).toLocaleString()} EGP.`);
       } else if (result === 'push') {
         multiplier = 1.0;
-        winText = `تعادل (Push) بمجموع ${calculateScore(bjPlayerHand)}؛ تم استرداد الرهان.`;
         toastType = 'info';
         sound = 'tick';
       } else {
         multiplier = 0;
-        winText = result === 'bust'
-          ? `تجاوزت الـ 21 (Bust)! خسرت الرهان -${bjBet.toLocaleString()} EGP.`
-          : `تغلّب الموزع عليك! خسرت الرهان -${bjBet.toLocaleString()} EGP.`;
         toastType = 'error';
         sound = 'lose';
       }
 
-      if (multiplier > 0) {
-        GameEngine.state.cash += Math.floor(bjBet * multiplier);
+      const grossPayout = Math.floor(bjBet * multiplier);
+      const settlement = GameEngine.settleCasinoRound(bjBet, grossPayout, 'بلاك جاك (Blackjack)');
+
+      if (result === 'blackjack') {
+        winText = isEn
+          ? `Natural Blackjack! Net profit: +${settlement.profit.toLocaleString()} ${currency}.`
+          : `بلاك جاك طبيعي! ربحت صافي +${settlement.profit.toLocaleString()} ${currency}.`;
+      } else if (result === 'dealer_bust') {
+        winText = isEn
+          ? `Dealer Busted! Net profit: +${settlement.profit.toLocaleString()} ${currency}.`
+          : `تجاوز الموزع! ربحت صافي +${settlement.profit.toLocaleString()} ${currency}.`;
+      } else if (result === 'win_vip_push') {
+        winText = isEn
+          ? `Tie at ${calculateScore(bjPlayerHand)}! Awarded as win (VIP Perk) net: +${settlement.profit.toLocaleString()} ${currency}.`
+          : `تعادل بمجموع ${calculateScore(bjPlayerHand)}! تم احتسابه فوزاً (ميزة VIP) صافي +${settlement.profit.toLocaleString()} ${currency}.`;
+      } else if (result === 'win') {
+        winText = isEn
+          ? `Beat the Dealer! Net profit: +${settlement.profit.toLocaleString()} ${currency}.`
+          : `تفوقت على الموزع! ربحت صافي +${settlement.profit.toLocaleString()} ${currency}.`;
+      } else if (result === 'push') {
+        winText = isEn
+          ? `Push at ${calculateScore(bjPlayerHand)}. Bet refunded.`
+          : `تعادل بمجموع ${calculateScore(bjPlayerHand)}؛ تم استرداد الرهان بالكامل.`;
+      } else if (result === 'bust') {
+        winText = isEn
+          ? `Busted over 21! Lost bet -${bjBet.toLocaleString()} ${currency}.`
+          : `تجاوزت الـ 21 (Bust)! خسرت الرهان -${bjBet.toLocaleString()} ${currency}.`;
+      } else {
+        winText = isEn
+          ? `Dealer won. Lost bet -${bjBet.toLocaleString()} ${currency}.`
+          : `تغلّب الموزع عليك! خسرت الرهان -${bjBet.toLocaleString()} ${currency}.`;
       }
 
       playCasinoSound(sound);
       showToast(
-        result.includes('win') || result === 'blackjack' || result === 'dealer_bust' ? 'فوز بلاك جاك' : (result === 'push' ? 'تعادل' : 'خسارة رهان'),
+        result.includes('win') || result === 'blackjack' || result === 'dealer_bust' 
+          ? (isEn ? 'Blackjack Win' : 'فوز بلاك جاك') 
+          : (result === 'push' ? (isEn ? 'Push' : 'تعادل') : (isEn ? 'Bet Lost' : 'خسارة رهان')),
         winText,
         toastType
       );
@@ -4276,7 +4328,6 @@ const UIController = (() => {
       bjActions.classList.add('hidden');
 
       updateBlackjackUI(false);
-      GameEngine.forceSaveState();
       renderAll();
     }
 
@@ -5555,10 +5606,10 @@ const UIController = (() => {
     if (vipBadge) {
       const hasVIP = GameEngine.state.inventory && GameEngine.state.inventory.vip_casino_pass > 0;
       if (hasVIP) {
-        vipBadge.innerHTML = `<i class="fa-solid fa-crown text-amber-400"></i><span>${window.currentLang === 'en' ? 'Active VIP Pass (+15% Luck)' : 'عضوية VIP نشطة (+15% حظ)'}</span>`;
+        vipBadge.innerHTML = `<i class="fa-solid fa-crown text-amber-400"></i><span>${window.currentLang === 'en' ? 'Active VIP Pass (+20% Win Bonus)' : 'عضوية VIP نشطة (+20% بونص أرباح)'}</span>`;
         vipBadge.className = 'text-xs px-3 py-1 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-300 border border-amber-500/40 rounded-full font-bold shadow-sm flex items-center gap-1.5 glow-gold';
       } else {
-        vipBadge.innerHTML = `<i class="fa-solid fa-gem text-slate-400"></i><span>${window.currentLang === 'en' ? 'Regular Member (Buy VIP Pass in shop for luck boost)' : 'عضو عادي (شراء تذكرة VIP من المتجر لرفع الحظ)'}</span>`;
+        vipBadge.innerHTML = `<i class="fa-solid fa-gem text-slate-400"></i><span>${window.currentLang === 'en' ? 'Regular Member (Buy VIP Pass in shop for +20% win bonus)' : 'عضو عادي (شراء تذكرة VIP من المتجر لبونص أرباح 20%)'}</span>`;
         vipBadge.className = 'text-xs px-3 py-1 bg-slate-800/80 text-slate-400 border border-slate-700/80 rounded-full font-bold flex items-center gap-1.5';
       }
     }
@@ -5571,26 +5622,21 @@ const UIController = (() => {
 
     try {
       if (crashState === 'running') return;
-      if (isNaN(bet) || bet <= 0) throw new Error(window.currentLang === 'en' ? "Please enter a valid bet amount." : "يرجى إدخال مبلغ رهان صحيح.");
-      if (GameEngine.state.cash < bet) throw new Error(window.currentLang === 'en' ? "Your cash balance is insufficient for this bet." : "رصيدك النقدي لا يكفي لهذا الرهان.");
+      
+      // Enforce 6s cooldown, daily net profit cap, 5% cash dynamic cap, deduct cash & immediately save to Firestore
+      GameEngine.checkCasinoAllowedAndDeduct(bet);
 
       playCasinoSound('tick');
 
-      // Deduct cash immediately
-      GameEngine.state.cash -= bet;
       crashBetAmount = bet;
       crashMultiplier = 1.0;
+      crashLastMultiplier = 1.0;
       crashState = 'running';
 
-      // Predetermine crash point (VIP pass gives bonus endurance)
-      const hasVIP = GameEngine.state.inventory && GameEngine.state.inventory.vip_casino_pass > 0;
-      const instantCrashChance = hasVIP ? 0.02 : 0.05;
-
-      if (Math.random() < instantCrashChance) {
-        crashTarget = 1.0;
-      } else {
-        // Exponential distribution up to 15x
-        crashTarget = parseFloat((1 + Math.pow(Math.random(), hasVIP ? 2.3 : 2.8) * 14).toFixed(2));
+      // 3% instant takeoff explosion hazard
+      if (Math.random() < 0.03) {
+        triggerCrash(1.00);
+        return;
       }
 
       // Update Buttons & Visuals
@@ -5612,7 +5658,7 @@ const UIController = (() => {
       animateCrashGame();
 
     } catch (err) {
-      showToast('خطأ رهان', err.message, 'error');
+      showToast(window.currentLang === 'en' ? 'Bet Error' : 'خطأ رهان', err.message, 'error');
     }
   }
 
@@ -5648,23 +5694,36 @@ const UIController = (() => {
       return;
     }
 
-    // Check if crash target hit
-    if (crashMultiplier >= crashTarget) {
-      triggerCrash();
+    // Dynamic Frame-by-Frame Hazard Evaluation (Zero pre-computed targets in memory)
+    if (crashMultiplier > crashLastMultiplier) {
+      const hazardChance = 1 - (crashLastMultiplier / crashMultiplier);
+      crashLastMultiplier = crashMultiplier;
+
+      if (Math.random() < hazardChance) {
+        triggerCrash(crashMultiplier);
+        return;
+      }
+    }
+
+    // Safety visual ceiling (30.0x max)
+    if (crashMultiplier >= 30.0) {
+      triggerCrash(crashMultiplier);
       return;
     }
 
     crashAnimationId = requestAnimationFrame(animateCrashGame);
   }
 
-  function triggerCrash() {
+  function triggerCrash(explodedAt = crashMultiplier) {
     cancelAnimationFrame(crashAnimationId);
     crashState = 'crashed';
     playCasinoSound('lose');
 
+    const mult = (typeof explodedAt === 'number') ? explodedAt : crashMultiplier;
+
     const statusText = document.getElementById('crash-status-text');
     if (statusText) {
-      statusText.textContent = window.currentLang === 'en' ? `Exploded at ${crashTarget.toFixed(2)}x !` : `انفجر عند ${crashTarget.toFixed(2)}x !`;
+      statusText.textContent = window.currentLang === 'en' ? `Exploded at ${mult.toFixed(2)}x !` : `انفجر عند ${mult.toFixed(2)}x !`;
       statusText.className = 'text-[11px] text-rose-400 font-bold bg-rose-950/80 px-2 py-0.5 rounded-lg border border-rose-500/40 animate-pulse';
     }
 
@@ -5674,10 +5733,18 @@ const UIController = (() => {
     document.getElementById('btn-crash-start').classList.remove('hidden');
     document.getElementById('btn-crash-cashout').classList.add('hidden');
 
-    GameEngine.state.netWorth = GameEngine.calculateNetWorth();
-    AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+    // Settle loss in GameEngine
+    GameEngine.settleCasinoRound(crashBetAmount, 0, 'صاروخ الحظ (Crash)');
 
-    showToast('تحطم الصاروخ', `انفجر الصاروخ عند مضاعف ${crashTarget.toFixed(2)}x. خسرت رهانك -${crashBetAmount.toLocaleString()} EGP.`, 'error');
+    const isEn = (window.currentLang === 'en');
+    const currency = isEn ? 'EGP' : 'ج.م';
+    showToast(
+      isEn ? 'Rocket Crashed' : 'تحطم الصاروخ',
+      isEn
+        ? `Rocket exploded at ${mult.toFixed(2)}x. Lost bet -${crashBetAmount.toLocaleString()} ${currency}.`
+        : `انفجر الصاروخ عند مضاعف ${mult.toFixed(2)}x. خسرت رهانك -${crashBetAmount.toLocaleString()} ${currency}.`,
+      'error'
+    );
     renderAll();
   }
 
@@ -5687,8 +5754,8 @@ const UIController = (() => {
     cancelAnimationFrame(crashAnimationId);
     crashState = 'cashed_out';
 
-    const winAmount = Math.floor(crashBetAmount * crashMultiplier);
-    GameEngine.state.cash += winAmount;
+    const grossPayout = Math.floor(crashBetAmount * crashMultiplier);
+    const settlement = GameEngine.settleCasinoRound(crashBetAmount, grossPayout, 'صاروخ الحظ (Crash)');
 
     playCasinoSound(crashMultiplier >= 5.0 ? 'jackpot' : 'win');
 
@@ -5701,10 +5768,15 @@ const UIController = (() => {
     document.getElementById('btn-crash-start').classList.remove('hidden');
     document.getElementById('btn-crash-cashout').classList.add('hidden');
 
-    GameEngine.state.netWorth = GameEngine.calculateNetWorth();
-    AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
-
-    showToast('صرف الأرباح بنجاح', `تم صرف الأرباح عند مضاعف ${crashMultiplier.toFixed(2)}x! ربحت +${(winAmount - crashBetAmount).toLocaleString()} EGP!`, 'success');
+    const isEn = (window.currentLang === 'en');
+    const currency = isEn ? 'EGP' : 'ج.م';
+    showToast(
+      isEn ? 'Cashout Successful' : 'صرف الأرباح بنجاح',
+      isEn
+        ? `Cashed out at ${crashMultiplier.toFixed(2)}x! Net profit: +${settlement.profit.toLocaleString()} ${currency}!`
+        : `تم صرف الأرباح عند مضاعف ${crashMultiplier.toFixed(2)}x! صافي ربحك: +${settlement.profit.toLocaleString()} ${currency}!`,
+      'success'
+    );
     renderAll();
   }
 

@@ -320,9 +320,9 @@ const GameEngine = (() => {
       id: 'vip_casino_pass',
       name: 'بطاقة VIP لكازينو الحظ',
       cost: 80000,
-      desc: 'ترفع نسبة الفوز في الكازينو وعجلة الحظ بنسبة +4%. تنتهي صلاحيتها بعد 5 دقائق.',
+      desc: 'تمنحك بونص مالي إضافي بنسبة +20% على أرباح الكازينو وعجلة الحظ، مع استرداد تعادل البلاك جاك. صالحة لمدة 5 دقائق.',
       effect: 'casino_luck_boost',
-      value: 0.04,
+      value: 0.20,
       durationTicks: 100,  // ~5 minutes
       cooldownSec: 900     // 15 minutes cooldown
     },
@@ -846,6 +846,8 @@ const GameEngine = (() => {
     cash: 300,
     bank: 100,
     dirtyCash: 0,
+    dailyCasinoNetProfit: 0,
+    dailyCasinoResetAt: 0,
     xp: 0,
     underworldRep: 0,
     heatLevel: 0,
@@ -3491,93 +3493,183 @@ const GameEngine = (() => {
     return { plan, amount };
   }
 
-  // Casino Flip Game with Streak Bonus
-  function playCoinFlip(betAmount, choice, currentStreak = 0) {
-    // Anti-Spam Casino Cooldown (3 seconds)
-    if (state.casinoCooldownUntil && Date.now() < state.casinoCooldownUntil) {
+  // --- Secure Anti-Exploit Casino System Constants & Core Safeguards ---
+  const MAX_CASINO_DAILY_PROFIT = 15000000; // 15,000,000 EGP / 24h net profit cap
+  const CASINO_COOLDOWN_MS = 6000;          // 6 seconds cooldown across all games
+  const CASINO_HOUSE_RAKE = 0.03;           // 3% house rake on winning net profits
+
+  // Unified Casino Gatekeeper: Validates cooldown, daily net profit cap, 5% dynamic bet limit, instant deduction & save
+  function checkCasinoAllowedAndDeduct(betAmount, skipCooldown = false) {
+    const isEn = (typeof window !== 'undefined' && window.currentLang === 'en');
+    const currency = isEn ? 'EGP' : 'ج.م';
+
+    // 1. Anti-Spam Cooldown (6 seconds)
+    if (!skipCooldown && state.casinoCooldownUntil && Date.now() < state.casinoCooldownUntil) {
       const remSec = Math.ceil((state.casinoCooldownUntil - Date.now()) / 1000);
-      throw new Error(`الكازينو: يرجى التمهل! انتظر ${remSec} ثانية قبل اللعب مجدداً.`);
+      throw new Error(isEn
+        ? `Casino Cooldown: Please wait ${remSec}s before placing another bet.`
+        : `الكازينو: يرجى التمهل! انتظر ${remSec} ثانية قبل وضع رهان جديد.`);
     }
-    state.casinoCooldownUntil = Date.now() + 3000;
 
-    const MAX_CASINO_BET = 2500000;
-    if (betAmount <= 0) throw new Error("مبلغ الرهان يجب أن يكون أكبر من صفر جنيه.");
-    if (betAmount > MAX_CASINO_BET) throw new Error(`الحد الأقصى المسموح به للرهان الواحد هو ${MAX_CASINO_BET.toLocaleString()} ج.م.`);
-    if (state.cash < betAmount) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
+    // 2. Daily Net Profit Cap Enforcement (Rolling 24-hour cycle)
+    const now = Date.now();
+    if (!state.dailyCasinoResetAt || now >= state.dailyCasinoResetAt) {
+      state.dailyCasinoNetProfit = 0;
+      state.dailyCasinoResetAt = now + (24 * 60 * 60 * 1000);
+    }
+    if ((state.dailyCasinoNetProfit || 0) >= MAX_CASINO_DAILY_PROFIT) {
+      const remHours = Math.ceil((state.dailyCasinoResetAt - now) / 3600000);
+      throw new Error(isEn
+        ? `Daily Profit Limit: You reached the casino net profit cap (${MAX_CASINO_DAILY_PROFIT.toLocaleString()} ${currency} / 24h). Resets in ~${remHours}h.`
+        : `بلغت الحد الأقصى اليومي لصافي أرباح الكازينو (${MAX_CASINO_DAILY_PROFIT.toLocaleString()} ${currency} / 24 ساعة). يرجى العودة بعد ~${remHours} ساعة.`);
+    }
 
+    // 3. Dynamic Bet Limit: min 100, max 2.5M, capped at 5% of player's cash to defeat Martingale exploit
+    if (typeof betAmount !== 'number' || isNaN(betAmount) || betAmount <= 0) {
+      throw new Error(isEn ? "Please enter a valid bet amount." : "مبلغ الرهان غير صالح.");
+    }
+    if (betAmount < 100) {
+      throw new Error(isEn ? `Minimum bet is 100 ${currency}.` : `الحد الأدنى للرهان هو 100 ${currency}.`);
+    }
+
+    const dynamicCap = Math.max(500, Math.floor(state.cash * 0.05));
+    const effectiveMaxBet = state.cash < 500 ? state.cash : Math.min(2500000, dynamicCap);
+
+    if (betAmount > effectiveMaxBet) {
+      throw new Error(isEn
+        ? `Bet exceeds limit! Maximum allowed bet right now is ${effectiveMaxBet.toLocaleString()} ${currency} (capped at 5% of cash or 2,500,000 ${currency}).`
+        : `الرهان يتجاوز الحد المسموح به! الحد الأقصى المسموح لرهانك الآن هو ${effectiveMaxBet.toLocaleString()} ${currency} (بحد أقصى 5% من رصيدك الكاش أو 2,500,000 ${currency}).`);
+    }
+
+    if (state.cash < betAmount) {
+      throw new Error(isEn ? "Insufficient cash balance for this bet." : "رصيدك النقدي لا يكفي لهذا الرهان.");
+    }
+
+    // 4. Set Cooldown & Deduct Immediately
+    if (!skipCooldown) {
+      state.casinoCooldownUntil = Date.now() + CASINO_COOLDOWN_MS;
+    }
     state.cash -= betAmount;
 
-    // 49.0% base win probability (+15% if VIP casino pass active)
-    let winChance = 0.49;
-    if (state.inventory.vip_casino_pass > 0) {
-      winChance += STORE_ITEMS.vip_casino_pass.value;
+    // 5. Anti Save-Scumming: Immediately persist deduction so reload/close forfeits bet
+    forceSaveState(true);
+
+    return { allowed: true, betAmount, effectiveMaxBet };
+  }
+
+  // Unified Casino Settlement: Applies House Rake (3%), VIP Bonus (+20% on net profit), net profit tracking & immediate persistence
+  function settleCasinoRound(betAmount, grossPayout, gameName = 'الكازينو') {
+    const isEn = (typeof window !== 'undefined' && window.currentLang === 'en');
+    const currency = isEn ? 'EGP' : 'ج.م';
+    const hasVIP = Boolean(state.inventory && state.inventory.vip_casino_pass > 0);
+    const grossProfit = grossPayout - betAmount;
+
+    let finalPayout = 0;
+    let netProfit = 0;
+    let rakeAmount = 0;
+    let vipBonusAmount = 0;
+
+    if (grossProfit > 0) {
+      // Won round!
+      // VIP Pass Perk: +20% bonus on net winnings
+      if (hasVIP) {
+        vipBonusAmount = Math.floor(grossProfit * 0.20);
+      }
+      // House Rake: 3% commission on net profit
+      rakeAmount = Math.floor(grossProfit * CASINO_HOUSE_RAKE);
+
+      netProfit = grossProfit - rakeAmount + vipBonusAmount;
+      finalPayout = betAmount + netProfit;
+
+      state.cash += finalPayout;
+      state.dailyCasinoNetProfit = Math.min(MAX_CASINO_DAILY_PROFIT, Math.max(0, (state.dailyCasinoNetProfit || 0) + netProfit));
+
+      recordPlayerActivity(gameName, isEn
+        ? `Won ${finalPayout.toLocaleString()} ${currency} (Net: +${netProfit.toLocaleString()} ${currency})`
+        : `فوز في ${gameName}: +${finalPayout.toLocaleString()} ${currency} (صافي ربح +${netProfit.toLocaleString()} ${currency})`, 'casino');
+    } else if (grossPayout === betAmount) {
+      // Push / Tie: Return original bet
+      finalPayout = betAmount;
+      netProfit = 0;
+      state.cash += finalPayout;
+      recordPlayerActivity(gameName, isEn
+        ? `Tie/Push in ${gameName}: bet refunded (${betAmount.toLocaleString()} ${currency})`
+        : `تعادل في ${gameName}: استرداد الرهان (${betAmount.toLocaleString()} ${currency})`, 'casino');
+    } else {
+      // Loss
+      finalPayout = 0;
+      netProfit = -betAmount;
+      state.dailyCasinoNetProfit = Math.max(0, (state.dailyCasinoNetProfit || 0) - betAmount);
+      recordPlayerActivity(gameName, isEn
+        ? `Lost bet of ${betAmount.toLocaleString()} ${currency}`
+        : `خسارة رهان في ${gameName}: -${betAmount.toLocaleString()} ${currency}`, 'casino');
     }
+
+    state.netWorth = calculateNetWorth();
+    trackDailyQuestProgress('casino_play', 1);
+    forceSaveState(true);
+
+    return {
+      payout: finalPayout,
+      profit: netProfit,
+      rake: rakeAmount,
+      vipBonus: vipBonusAmount,
+      won: grossProfit > 0,
+      isPush: grossPayout === betAmount
+    };
+  }
+
+  // Casino Flip Game with Streak Bonus & Anti-Exploit
+  function playCoinFlip(betAmount, choice, currentStreak = 0) {
+    checkCasinoAllowedAndDeduct(betAmount);
+
+    // 49.0% fair win probability
+    const winChance = 0.49;
     const roll = Math.random();
     const won = roll < winChance;
 
-    // Determine flipped side
     let outcomeSide = choice;
     if (!won) {
       outcomeSide = choice === 'heads' ? 'tails' : 'heads';
     }
 
+    let grossPayout = 0;
+    let mult = 0;
+
     if (won) {
       // Streak bonus multiplier: 2.0x base, +0.25x per streak level up to 3.5x max
       const streakBonus = Math.min(1.5, currentStreak * 0.25);
-      const mult = 2.0 + streakBonus;
-      const payout = Math.floor(betAmount * mult);
-      state.cash += payout;
-      recordPlayerActivity('رمي العملة', `فوز برهان الكازينو +${payout.toLocaleString()} ج.م (مضاعف x${mult.toFixed(2)})`, 'casino');
-      state.netWorth = calculateNetWorth();
-      trackDailyQuestProgress('casino_play', 1);
-      forceSaveState(true);
-      return { won: true, side: outcomeSide, multiplier: mult, payout: payout, profit: payout - betAmount };
-    } else {
-      recordPlayerActivity('رمي العملة', `خسارة رهان الكازينو ${betAmount.toLocaleString()} ج.م`, 'casino');
-      state.netWorth = calculateNetWorth();
-      trackDailyQuestProgress('casino_play', 1);
-      forceSaveState(true);
-      return { won: false, side: outcomeSide, loss: betAmount };
+      mult = 2.0 + streakBonus;
+      grossPayout = Math.floor(betAmount * mult);
     }
+
+    const settlement = settleCasinoRound(betAmount, grossPayout, 'رمي العملة (Coin Flip)');
+
+    return {
+      won: settlement.won,
+      side: outcomeSide,
+      multiplier: mult,
+      streakMultiplier: mult,
+      payout: settlement.payout,
+      profit: settlement.profit,
+      loss: betAmount,
+      rake: settlement.rake,
+      vipBonus: settlement.vipBonus
+    };
   }
 
-  // Casino Slots Game with 5 Premium Tier Symbols
+  // Casino Slots Game with 5 Balanced Tier Symbols & Anti-Exploit
   function playSlots(betAmount) {
-    // Anti-Spam Casino Cooldown (3 seconds)
-    if (state.casinoCooldownUntil && Date.now() < state.casinoCooldownUntil) {
-      const remSec = Math.ceil((state.casinoCooldownUntil - Date.now()) / 1000);
-      throw new Error(`الكازينو: يرجى التمهل! انتظر ${remSec} ثانية قبل تشغيل الماكينة مجدداً.`);
-    }
-    state.casinoCooldownUntil = Date.now() + 3000;
+    checkCasinoAllowedAndDeduct(betAmount);
 
-    const MAX_CASINO_BET = 2500000;
-    if (betAmount <= 0) throw new Error("مبلغ الرهان غير صالح.");
-    if (betAmount > MAX_CASINO_BET) throw new Error(`الحد الأقصى المسموح به للرهان هو ${MAX_CASINO_BET.toLocaleString()} ج.م.`);
-    if (state.cash < betAmount) throw new Error("رصيدك الكاش لا يكفي لتشغيل آلة الحظ.");
-
-    state.cash -= betAmount;
-
-    // Reels Symbols (CROWN, DIAMOND, GOLD, SACK, KEY)
-    const symbols = ['CROWN', 'DIAMOND', 'GOLD', 'SACK', 'KEY'];
-
-    // Weight distribution: VIP pass gives higher chance of high tier symbols
-    let hasVip = state.inventory.vip_casino_pass > 0;
-
+    // Fair balanced distribution
     function getRandomSymbol() {
       const r = Math.random();
-      if (hasVip) {
-        if (r < 0.15) return 'CROWN';
-        if (r < 0.35) return 'DIAMOND';
-        if (r < 0.60) return 'GOLD';
-        if (r < 0.82) return 'SACK';
-        return 'KEY';
-      } else {
-        if (r < 0.08) return 'CROWN';
-        if (r < 0.24) return 'DIAMOND';
-        if (r < 0.50) return 'GOLD';
-        if (r < 0.77) return 'SACK';
-        return 'KEY';
-      }
+      if (r < 0.08) return 'CROWN';
+      if (r < 0.24) return 'DIAMOND';
+      if (r < 0.50) return 'GOLD';
+      if (r < 0.77) return 'SACK';
+      return 'KEY';
     }
 
     const r1 = getRandomSymbol();
@@ -3585,57 +3677,40 @@ const GameEngine = (() => {
     const r3 = getRandomSymbol();
 
     let multiplier = 0;
-    let winMessage = "حظ أوفر المرة القادمة!";
+    let winMessage = (typeof window !== 'undefined' && window.currentLang === 'en') ? "Better luck next time!" : "حظ أوفر المرة القادمة!";
     let isJackpot = false;
 
     if (r1 === r2 && r2 === r3) {
-      // 3 Matching
       if (r1 === 'CROWN') { multiplier = 25; winMessage = "الجاكبوت الملكي الذهبي الأكبر!"; isJackpot = true; }
       else if (r1 === 'DIAMOND') { multiplier = 18; winMessage = "ألماس ثلاثي أسطوري!"; isJackpot = true; }
       else if (r1 === 'GOLD') { multiplier = 12; winMessage = "ثلاث سبائك ذهبية متطابقة!"; }
       else if (r1 === 'SACK') { multiplier = 8; winMessage = "ثلاث حقائب أموال ضخمة!"; }
       else { multiplier = 5; winMessage = "ثلاثة مفاتيح ذهبية نادرة!"; }
     } else if (r1 === r2 || r2 === r3 || r1 === r3) {
-      // 2 Matching
       multiplier = 1.5;
-      winMessage = "رمزان متطابقان، جائزة ترضية!";
-    } else {
-      multiplier = 0;
+      winMessage = (typeof window !== 'undefined' && window.currentLang === 'en') ? "Two matching symbols consolation!" : "رمزان متطابقان، جائزة ترضية!";
     }
 
-    const payout = Math.floor(betAmount * multiplier);
-    state.cash += payout;
-
-    state.netWorth = calculateNetWorth();
-    trackDailyQuestProgress('casino_play', 1);
-    forceSaveState(true);
+    const grossPayout = Math.floor(betAmount * multiplier);
+    const settlement = settleCasinoRound(betAmount, grossPayout, 'ماكينة الحظ (Slots)');
 
     return {
       reels: [r1, r2, r3],
-      won: payout > 0,
-      isJackpot: isJackpot,
-      multiplier: multiplier,
-      payout: payout,
-      profit: payout - betAmount,
+      won: settlement.won,
+      isJackpot,
+      multiplier,
+      payout: settlement.payout,
+      profit: settlement.profit,
+      loss: betAmount,
+      rake: settlement.rake,
+      vipBonus: settlement.vipBonus,
       message: winMessage
     };
   }
 
-  // NEW Casino Game: Lucky Royale Dice (رمي النرد الملكي)
+  // Lucky Royale Dice (رمي النرد الملكي)
   function playDice(betAmount, choice) {
-    // Anti-Spam Casino Cooldown (3 seconds)
-    if (state.casinoCooldownUntil && Date.now() < state.casinoCooldownUntil) {
-      const remSec = Math.ceil((state.casinoCooldownUntil - Date.now()) / 1000);
-      throw new Error(`الكازينو: يرجى التمهل! انتظر ${remSec} ثانية قبل رمي النرد مجدداً.`);
-    }
-    state.casinoCooldownUntil = Date.now() + 3000;
-
-    const MAX_CASINO_BET = 2500000;
-    if (betAmount <= 0) throw new Error("مبلغ الرهان غير صالح.");
-    if (betAmount > MAX_CASINO_BET) throw new Error(`الحد الأقصى المسموح به لرهان النرد هو ${MAX_CASINO_BET.toLocaleString()} ج.م.`);
-    if (state.cash < betAmount) throw new Error("رصيدك الكاش لا يكفي لرهان النرد.");
-
-    state.cash -= betAmount;
+    checkCasinoAllowedAndDeduct(betAmount);
 
     // Roll 2 dice (1 to 6)
     const d1 = Math.floor(Math.random() * 6) + 1;
@@ -3660,22 +3735,63 @@ const GameEngine = (() => {
       multiplier = 3.5;
     }
 
-    const payout = won ? Math.floor(betAmount * multiplier) : 0;
-    state.cash += payout;
+    const grossPayout = won ? Math.floor(betAmount * multiplier) : 0;
+    const settlement = settleCasinoRound(betAmount, grossPayout, 'رمي النرد الملكي');
 
-    state.netWorth = calculateNetWorth();
-    trackDailyQuestProgress('casino_play', 1);
-    forceSaveState(true);
+    const isEn = (typeof window !== 'undefined' && window.currentLang === 'en');
+    const msg = settlement.won
+      ? (isEn ? `You rolled ${sum}!` : `مجموع النرد ${sum}!`)
+      : (isEn ? `Rolled ${sum}.` : `مجموع النرد ${sum}.`);
 
     return {
       d1,
       d2,
+      die1: d1,
+      die2: d2,
       sum,
       isDouble,
-      won,
+      won: settlement.won,
       multiplier,
-      payout,
-      profit: payout - betAmount
+      payout: settlement.payout,
+      profit: settlement.profit,
+      loss: betAmount,
+      rake: settlement.rake,
+      vipBonus: settlement.vipBonus,
+      message: msg
+    };
+  }
+
+  // Wheel of Fortune (عجلة الحظ)
+  function playWheelOfFortune(betAmount) {
+    checkCasinoAllowedAndDeduct(betAmount);
+
+    const multipliers = [0, 0.5, 1.2, 1.5, 2.0, 3.0, 5.0, 10.0];
+    const weights = [18, 25, 25, 14, 10, 5, 2, 1]; // Balanced house edge ~9%
+
+    let rand = Math.floor(Math.random() * 100);
+    let cumulative = 0;
+    let selectedMult = 0;
+
+    for (let i = 0; i < multipliers.length; i++) {
+      cumulative += weights[i];
+      if (rand < cumulative) {
+        selectedMult = multipliers[i];
+        break;
+      }
+    }
+
+    const grossPayout = Math.floor(betAmount * selectedMult);
+    const settlement = settleCasinoRound(betAmount, grossPayout, 'عجلة الحظ (Wheel of Fortune)');
+
+    return {
+      multiplier: selectedMult,
+      payout: settlement.payout,
+      profit: settlement.profit,
+      loss: betAmount,
+      rake: settlement.rake,
+      vipBonus: settlement.vipBonus,
+      won: selectedMult > 1.0,
+      isPush: selectedMult === 1.0
     };
   }
 
@@ -3948,21 +4064,29 @@ const GameEngine = (() => {
     };
   }
 
-  // European Roulette Wheel Game
-  function playRoulette(betAmount, betType, betValue) {
-    // Anti-Spam Casino Cooldown (3 seconds)
-    if (state.casinoCooldownUntil && Date.now() < state.casinoCooldownUntil) {
-      const remSec = Math.ceil((state.casinoCooldownUntil - Date.now()) / 1000);
-      throw new Error(`الكازينو: يرجى التمهل! انتظر ${remSec} ثانية قبل إدارة عجلة الروليت مجدداً.`);
+  // European Roulette Wheel Game with Anti-Exploit & House Rake
+  function playRoulette(betAmount, betTypeOrChoice, betValue) {
+    checkCasinoAllowedAndDeduct(betAmount);
+
+    let betType = betTypeOrChoice;
+    let val = betValue;
+
+    // Support single choice argument from UI (e.g., 'red', 'black', 'green', 'even', 'odd')
+    if (val === undefined || val === null) {
+      if (betTypeOrChoice === 'red' || betTypeOrChoice === 'black') {
+        betType = 'color';
+        val = betTypeOrChoice;
+      } else if (betTypeOrChoice === 'green') {
+        betType = 'number';
+        val = 0;
+      } else if (betTypeOrChoice === 'even' || betTypeOrChoice === 'odd') {
+        betType = 'parity';
+        val = betTypeOrChoice;
+      } else if (!isNaN(Number(betTypeOrChoice))) {
+        betType = 'number';
+        val = Number(betTypeOrChoice);
+      }
     }
-    state.casinoCooldownUntil = Date.now() + 3000;
-
-    const MAX_ROULETTE_BET = 2500000;
-    if (betAmount <= 0) throw new Error("مبلغ الرهان يجب أن يكون أكبر من صفر.");
-    if (betAmount > MAX_ROULETTE_BET) throw new Error(`الحد الأقصى المسموح به للرهان في الروليت هو ${MAX_ROULETTE_BET.toLocaleString()} ج.م.`);
-    if (state.cash < betAmount) throw new Error("رصيدك النقدي لا يكفي لهذا الرهان.");
-
-    state.cash -= betAmount;
 
     // Roulette wheel number: 0 to 36
     const rolledNumber = Math.floor(Math.random() * 37);
@@ -3975,58 +4099,52 @@ const GameEngine = (() => {
     let multiplier = 0;
 
     if (betType === 'number') {
-      if (Number(betValue) === rolledNumber) {
+      if (Number(val) === rolledNumber) {
         won = true;
         multiplier = 36; // Straight up 36x
       }
     } else if (betType === 'color') {
-      if (betValue === 'red' && isRed) {
+      if (val === 'red' && isRed) {
         won = true;
         multiplier = 2.0;
-      } else if (betValue === 'black' && isBlack) {
+      } else if (val === 'black' && isBlack) {
         won = true;
         multiplier = 2.0;
       }
     } else if (betType === 'parity') {
-      if (betValue === 'even' && rolledNumber > 0 && rolledNumber % 2 === 0) {
+      if (val === 'even' && rolledNumber > 0 && rolledNumber % 2 === 0) {
         won = true;
         multiplier = 2.0;
-      } else if (betValue === 'odd' && rolledNumber % 2 !== 0) {
+      } else if (val === 'odd' && rolledNumber % 2 !== 0) {
         won = true;
         multiplier = 2.0;
       }
     } else if (betType === 'dozen') {
-      if (betValue === '1' && rolledNumber >= 1 && rolledNumber <= 12) {
+      if (val === '1' && rolledNumber >= 1 && rolledNumber <= 12) {
         won = true;
         multiplier = 3.0;
-      } else if (betValue === '2' && rolledNumber >= 13 && rolledNumber <= 24) {
+      } else if (val === '2' && rolledNumber >= 13 && rolledNumber <= 24) {
         won = true;
         multiplier = 3.0;
-      } else if (betValue === '3' && rolledNumber >= 25 && rolledNumber <= 36) {
+      } else if (val === '3' && rolledNumber >= 25 && rolledNumber <= 36) {
         won = true;
         multiplier = 3.0;
       }
     }
 
-    // VIP casino pass perk (+15% payout boost if won)
-    if (won && state.inventory && state.inventory.vip_casino_pass > 0) {
-      multiplier *= 1.15;
-    }
-
-    const payout = won ? Math.floor(betAmount * multiplier) : 0;
-    state.cash += payout;
-    sanitizeGameState();
-    state.netWorth = calculateNetWorth();
-    trackDailyQuestProgress('casino_play', 1);
-    forceSaveState(true);
+    const grossPayout = won ? Math.floor(betAmount * multiplier) : 0;
+    const settlement = settleCasinoRound(betAmount, grossPayout, 'عجلة الروليت (Roulette)');
 
     return {
       rolledNumber,
       color: isGreen ? 'green' : (isRed ? 'red' : 'black'),
-      won,
+      won: settlement.won,
       multiplier,
-      payout,
-      profit: payout - betAmount
+      payout: settlement.payout,
+      profit: settlement.profit,
+      loss: betAmount,
+      rake: settlement.rake,
+      vipBonus: settlement.vipBonus
     };
   }
 
@@ -4546,7 +4664,7 @@ const GameEngine = (() => {
 
   function sanitizeGameState() {
     if (!state) return;
-    const numFields = ['cash', 'bank', 'dirtyCash', 'netWorth', 'xp'];
+    const numFields = ['cash', 'bank', 'dirtyCash', 'netWorth', 'xp', 'dailyCasinoNetProfit', 'dailyCasinoResetAt'];
     numFields.forEach(k => {
       if (typeof state[k] !== 'number' || isNaN(state[k]) || !isFinite(state[k]) || state[k] < 0) {
         state[k] = 0;
@@ -4612,11 +4730,16 @@ const GameEngine = (() => {
     bribePolice,
     launderMoney,
     resolveRaidBribe,
-    resolveRaidResist,
+    MAX_CASINO_DAILY_PROFIT,
+    CASINO_COOLDOWN_MS,
+    CASINO_HOUSE_RAKE,
+    checkCasinoAllowedAndDeduct,
+    settleCasinoRound,
     playCoinFlip,
     playSlots,
     playDice,
     playRoulette,
+    playWheelOfFortune,
     calculateTaxReport,
     setTaxConfig,
     getTaxConfig: () => taxConfig,
