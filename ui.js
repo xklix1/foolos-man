@@ -779,6 +779,8 @@ const UIController = (() => {
   //  TOP NOTIFICATIONS (TOAST ENGINE)
   // ─────────────────────────────────────────────
   function showToast(title, message, type = 'info', duration = 2400) {
+    if (typeof title === 'string') title = title.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/gu, '').trim();
+    if (typeof message === 'string') message = message.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/gu, '').trim();
     if (!notificationsEnabled && type !== 'error') return;
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -1741,11 +1743,11 @@ const UIController = (() => {
 
         let rankBadge = '';
         if (rank === 1) {
-          rankBadge = `<span class="w-6 h-6 rounded-lg bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center shadow">👑1</span>`;
+          rankBadge = `<span class="w-6 h-6 rounded-lg bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center shadow"><i class="fa-solid fa-crown text-[9px] mr-0.5"></i>1</span>`;
         } else if (rank === 2) {
-          rankBadge = `<span class="w-6 h-6 rounded-lg bg-slate-700 border border-slate-500 text-slate-200 font-black text-[10px] flex items-center justify-center">🥈2</span>`;
+          rankBadge = `<span class="w-6 h-6 rounded-lg bg-slate-700 border border-slate-500 text-slate-200 font-black text-[10px] flex items-center justify-center"><i class="fa-solid fa-medal text-[9px] mr-0.5"></i>2</span>`;
         } else if (rank === 3) {
-          rankBadge = `<span class="w-6 h-6 rounded-lg bg-amber-950 border border-amber-700 text-amber-300 font-black text-[10px] flex items-center justify-center">🥉3</span>`;
+          rankBadge = `<span class="w-6 h-6 rounded-lg bg-amber-950 border border-amber-700 text-amber-300 font-black text-[10px] flex items-center justify-center"><i class="fa-solid fa-medal text-[9px] mr-0.5"></i>3</span>`;
         } else {
           rankBadge = `<span class="text-slate-400 font-bold numbers-font text-xs">#${rank}</span>`;
         }
@@ -2508,7 +2510,7 @@ const UIController = (() => {
     if (desktopBadge || mobileBadge) {
       const inv = s.inventory || {};
       const totalInvCount = Object.keys(inv).reduce((sum, k) => sum + (Number(inv[k]) || 0), 0);
-      if (desktopBadge) desktopBadge.textContent = `${totalInvCount} 🎒`;
+      if (desktopBadge) desktopBadge.textContent = `${totalInvCount}`;
       if (mobileBadge) {
         mobileBadge.textContent = totalInvCount;
         mobileBadge.classList.toggle('hidden', totalInvCount === 0);
@@ -2672,7 +2674,7 @@ const UIController = (() => {
           <div class="flex justify-between items-center mb-3">
             <h4 class="text-lg font-bold text-white">${translatedBizName}</h4>
             <span id="biz-level-badge-${key}" class="text-xs px-2.5 py-0.5 ${bizState.isFranchise ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'} rounded border font-bold">
-              ${bizState.isFranchise ? (window.currentLang === 'en' ? 'Franchise Brand 👑' : 'علامة تجارية 👑') : `${window.currentLang === 'en' ? 'Level' : 'المستوى'} ${bizState.level}`}
+              ${bizState.isFranchise ? (window.currentLang === 'en' ? 'Franchise Brand' : 'علامة تجارية') : `${window.currentLang === 'en' ? 'Level' : 'المستوى'} ${bizState.level}`}
             </span>
           </div>
           
@@ -2702,10 +2704,10 @@ const UIController = (() => {
           <!-- Operating Supplies Status & Shipment Trigger -->
           <div id="biz-supply-box-${key}" class="mb-3 p-2 bg-slate-950/60 rounded-xl border ${hasSupplies ? 'border-emerald-500/30' : 'border-rose-500/50 bg-rose-950/20 animate-pulse'} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 transition-all">
             <div class="flex items-center gap-2">
-              <span id="biz-supply-icon-${key}" class="text-sm">${hasSupplies ? '🟢' : '🔴'}</span>
+              <span id="biz-supply-icon-${key}" class="text-sm">${hasSupplies ? '<i class="fa-solid fa-circle text-emerald-400 text-xs"></i>' : '<i class="fa-solid fa-circle text-rose-500 text-xs"></i>'}</span>
               <div>
                 <div id="biz-supply-title-${key}" class="text-[11px] font-bold ${hasSupplies ? 'text-white' : 'text-rose-400 font-black'}">
-                  ${hasSupplies ? 'بضاعة وخامات متوفرة (كفاءة إنتاجية 125%)' : 'المخزون نفد بالكامل! المشروع متوقف ⚠️'}
+                  ${hasSupplies ? 'بضاعة وخامات متوفرة (كفاءة إنتاجية 125%)' : 'المخزون نفد بالكامل! المشروع متوقف'}
                 </div>
                 <div id="biz-supply-time-${key}" class="text-[10px] ${hasSupplies ? 'text-slate-400' : 'text-rose-300 font-bold'}">
                   ${hasSupplies ? `متبقي: ${suppliesMins} دقيقة طاقة قصوى` : 'الأرباح: 0 ج.م — يجب توريد بضاعة لإعادة تشغيل المشروع'}
@@ -2923,16 +2925,16 @@ const UIController = (() => {
           const secs = ticks % 60;
           const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
           supplyBox.className = "mb-3 p-2 bg-slate-950/60 rounded-xl border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 transition-all";
-          supplyIcon.textContent = '🟢';
+          supplyIcon.innerHTML = '<i class="fa-solid fa-circle text-emerald-400 text-xs"></i>';
           supplyTitle.className = "text-[11px] font-bold text-white";
           supplyTitle.textContent = "بضاعة وخامات متوفرة (كفاءة إنتاجية 125%)";
           supplyTime.className = "text-[10px] text-slate-400";
           supplyTime.textContent = `متبقي: ${timeStr} دقيقة حتى نفاد المخزون`;
         } else {
           supplyBox.className = "mb-3 p-2 bg-rose-950/30 rounded-xl border border-rose-500/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 transition-all animate-pulse";
-          supplyIcon.textContent = '🔴';
+          supplyIcon.innerHTML = '<i class="fa-solid fa-circle text-rose-500 text-xs"></i>';
           supplyTitle.className = "text-[11px] font-bold text-rose-400";
-          supplyTitle.textContent = "المخزون نفد بالكامل! المشروع متوقف ⚠️";
+          supplyTitle.textContent = "المخزون نفد بالكامل! المشروع متوقف";
           supplyTime.className = "text-[10px] text-rose-300 font-bold";
           supplyTime.textContent = "الأرباح: 0 ج.م — يجب توريد بضاعة لإعادة تشغيل المشروع";
         }
@@ -5336,8 +5338,13 @@ const UIController = (() => {
     const heatEl = document.getElementById('police-heat-display');
     if (heatEl) {
       const heat = Math.min(5, Math.max(0, s.heatLevel || 0));
-      const stars = '⭐'.repeat(heat) + '☆'.repeat(5 - heat);
-      heatEl.textContent = `${window.currentLang === 'en' ? 'Police Heat' : 'الملاحقة'}: ${stars}`;
+      let starsHtml = '';
+      for (let i = 0; i < 5; i++) {
+        starsHtml += (i < heat) 
+          ? '<i class="fa-solid fa-star text-amber-400 text-[10px]"></i>' 
+          : '<i class="fa-regular fa-star text-slate-600 text-[10px]"></i>';
+      }
+      heatEl.innerHTML = `${window.currentLang === 'en' ? 'Police Heat' : 'الملاحقة'}: ${starsHtml}`;
     }
 
     // 2. Money Laundering Status & Presets
@@ -15809,7 +15816,7 @@ const UIController = (() => {
     });
 
     if (totalBadge) totalBadge.textContent = `${totalItemsCount} مقتنى`;
-    if (desktopBadge) desktopBadge.textContent = `${totalItemsCount} 🎒`;
+    if (desktopBadge) desktopBadge.textContent = `${totalItemsCount}`;
     if (mobileBadge) {
       mobileBadge.textContent = totalItemsCount;
       mobileBadge.classList.toggle('hidden', totalItemsCount === 0);
