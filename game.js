@@ -993,57 +993,58 @@ const GameEngine = (() => {
   }
 
   // ─────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────
   //  DAILY QUESTS SYSTEM (نظام المهام اليومية المتجددة)
   // ─────────────────────────────────────────────────────────
   const DAILY_QUEST_TEMPLATES = [
     {
-      id:'work_shifts',
-      title:'العمل الجاد والمثابرة',
-      desc:'أكمل 5 ورديات عمل (دوام عادي أو دوام إضافي)',
+      id: 'work_shifts',
+      title: 'العمل الجاد والمثابرة',
+      desc: 'أكمل 10 ورديات عمل (دوام عادي أو دوام إضافي)',
+      target: 10,
+      icon: 'fa-briefcase',
+      category: 'work'
+    },
+    {
+      id: 'bank_deposit',
+      title: 'تأمين رأس المال',
+      desc: 'أنجز 3 عمليات إيداع لتغذية وتأمين رصيدك البنكي',
+      target: 3,
+      icon: 'fa-building-columns',
+      category: 'banking'
+    },
+    {
+      id: 'stock_trade',
+      title: 'مضارب البورصة',
+      desc: 'نفذ 3 صفقات تداول أسهم في البورصة المركزية (شراء أو بيع)',
+      target: 3,
+      icon: 'fa-chart-line',
+      category: 'stock'
+    },
+    {
+      id: 'biz_upgrade',
+      title: 'إدارة وتطوير المشاريع',
+      desc: 'طوّر مشروعاً، عيّن موظفاً، أو ورّد بضاعة لمشروعين',
+      target: 2,
+      icon: 'fa-arrow-up-right-dots',
+      category: 'business'
+    },
+    {
+      id: 'casino_play',
+      title: 'المغامر الذكي',
+      desc: 'خُض 5 جولات في ألعاب الكازينو المختلفة',
       target: 5,
-      icon:'fa-briefcase',
-      category:'work'
-    },
-    {
-      id:'bank_deposit',
-      title:'تأمين رأس المال',
-      desc:'قم بإيداع أي مبلغ مالي في حسابك البنكي لتأمينه',
-      target: 1,
-      icon:'fa-building-columns',
-      category:'banking'
-    },
-    {
-      id:'stock_trade',
-      title:'مضارب البورصة',
-      desc:'نفذ عملية تداول واحدة (شراء أو بيع أي سهم)',
-      target: 1,
-      icon:'fa-chart-line',
-      category:'stock'
-    },
-    {
-      id:'biz_upgrade',
-      title:'التوسع الاستثماري',
-      desc:'طوّر مشروعاً قائماً، اشترِ مشروعاً جديداً، أو عيّن موظفاً',
-      target: 1,
-      icon:'fa-arrow-up-right-dots',
-      category:'business'
-    },
-    {
-      id:'casino_play',
-      title:'المغامر الذكي',
-      desc:'جرّب حظك في جولة واحدة داخل ألعاب الكازينو',
-      target: 1,
-      icon:'fa-dice',
-      category:'casino'
+      icon: 'fa-dice',
+      category: 'casino'
     }
   ];
 
   function getTodayDateString() {
     const d = new Date();
     const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2,'0');
-    const day = String(d.getDate()).padStart(2,'0');
-    return`${year}-${month}-${day}`;
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   function getDailyResetRemainingSeconds() {
@@ -1056,9 +1057,10 @@ const GameEngine = (() => {
     if (!state) return;
     const today = getTodayDateString();
     if (!state.dailyQuests || state.dailyQuests.date !== today || !Array.isArray(state.dailyQuests.quests)) {
-      const netWorth = (typeof calculateNetWorth ==='function') ? calculateNetWorth() : (state.netWorth || 400);
-      const baseCash = Math.max(500, Math.round(Math.min(50000000, netWorth * 0.02 + 500)));
-      const baseXP = Math.max(25, Math.round(Math.min(500, 20 + Math.log10(Math.max(10, netWorth)) * 15)));
+      const netWorth = (typeof calculateNetWorth === 'function') ? calculateNetWorth() : (state.netWorth || 400);
+      // Balanced reward scaling: Starts at ~350 EGP, scales gradually with sqrt of wealth, capped at 35,000 EGP per quest
+      const baseCash = Math.max(350, Math.round(350 + Math.min(35000, Math.sqrt(Math.max(0, netWorth)) * 1.2)));
+      const baseXP = Math.max(20, Math.round(Math.min(250, 15 + Math.log10(Math.max(10, netWorth)) * 10)));
 
       state.dailyQuests = {
         date: today,
@@ -1077,6 +1079,19 @@ const GameEngine = (() => {
           category: t.category
         }))
       };
+    } else {
+      // Re-normalize if existing active quests have obsolete overpowered rewards (> 50,000 EGP)
+      if (state.dailyQuests.quests.some(q => q.cashReward > 50000)) {
+        const netWorth = (typeof calculateNetWorth === 'function') ? calculateNetWorth() : (state.netWorth || 400);
+        const baseCash = Math.max(350, Math.round(350 + Math.min(35000, Math.sqrt(Math.max(0, netWorth)) * 1.2)));
+        const baseXP = Math.max(20, Math.round(Math.min(250, 15 + Math.log10(Math.max(10, netWorth)) * 10)));
+        state.dailyQuests.quests.forEach(q => {
+          if (!q.claimed) {
+            q.cashReward = baseCash;
+            q.xpReward = baseXP;
+          }
+        });
+      }
     }
   }
 
@@ -1136,8 +1151,8 @@ const GameEngine = (() => {
     }
 
     const sampleQ = state.dailyQuests.quests[0];
-    const grandCash = (sampleQ ? sampleQ.cashReward : 1000) * 3;
-    const grandXP = (sampleQ ? sampleQ.xpReward : 25) * 3;
+    const grandCash = Math.round((sampleQ ? sampleQ.cashReward : 500) * 2);
+    const grandXP = Math.round((sampleQ ? sampleQ.xpReward : 20) * 2);
 
     state.dailyQuests.grandBonusClaimed = true;
     state.cash = (state.cash || 0) + grandCash;
@@ -4198,6 +4213,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('توريد بضاعة ومستلزمات',`توريد شحنة بضاعة لمشروع"${biz.name}" بتكلفة ${supplyCost.toLocaleString()} ج.م (+20 دقيقة كفاءة إنتاجية قصوى 125%)`,'business');
     state.netWorth = calculateNetWorth();
+    trackDailyQuestProgress('biz_upgrade', 1);
     forceSaveState(true);
     return {
       cost: supplyCost,
