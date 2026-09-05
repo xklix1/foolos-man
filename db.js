@@ -1929,8 +1929,23 @@ var AppDB = (() => {
   }
 
   function listenToCorporations(callback) {
-    // Egress Zero-Traffic: Corporations polling replaced with local supply chain engine
-    return () => {};
+    if (typeof callback !== 'function') return () => {};
+    let active = true;
+    const fetchCorps = async () => {
+      if (!active) return;
+      try {
+        const rows = await _api('corporations?select=*&order=created_at.desc');
+        if (active) callback(rows || []);
+      } catch (e) {
+        if (active) callback([]);
+      }
+    };
+    fetchCorps();
+    const interval = setInterval(fetchCorps, 15000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }
 
   async function joinCorporation(corpId, username) {

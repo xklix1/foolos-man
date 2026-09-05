@@ -2869,7 +2869,7 @@
     // Custom Stock Market Event Broadcast & Impact Controller
     const broadcastCustomEventBtn = document.getElementById('btn-admin-broadcast-custom-event');
     if (broadcastCustomEventBtn) {
-      broadcastCustomEventBtn.addEventListener('click', () => {
+      broadcastCustomEventBtn.addEventListener('click', async () => {
         const titleInput = document.getElementById('adm-custom-news-title');
         const symbolSelect = document.getElementById('adm-custom-stock-select');
         const directionSelect = document.getElementById('adm-custom-stock-direction');
@@ -2905,19 +2905,17 @@
           targets[targetSymbol] = multiplier;
         }
 
-        if (AppDB.isFirebaseReady) {
-          try {
-            firebase.firestore().collection('globals').doc('market_event').set({
-              title: formattedTicker,
-              desc: rawTitle,
-              targets: targets,
-              timestamp: Date.now()
-            }).then(() => {
-              logAdminAction(`إطلاق خبر بورصة مخصص:"${rawTitle}" [${targetSymbol} | ${isUp ?'+' :'-'}${pctVal}%]`);
-            }).catch(() => { });
-          } catch (e) { }
-        } else {
-          showToast('إطلاق الخبر','يجب الاتصال بقاعدة البيانات لنشر أحداث البورصة.','error');
+        try {
+          await AppDB.saveGlobalMarketEvent({
+            title: formattedTicker,
+            desc: rawTitle,
+            targets: targets,
+            timestamp: Date.now()
+          });
+          logAdminAction(`إطلاق خبر بورصة مخصص:"${rawTitle}" [${targetSymbol} | ${isUp ?'+' :'-'}${pctVal}%]`);
+          showToast('نجاح النشر', 'تم نشر وتطبيق خبر البورصة في السيرفر بنجاح!', 'success');
+        } catch (e) {
+          showToast('خطأ في النشر', e.message, 'error');
         }
       });
     }
@@ -3016,7 +3014,7 @@
     // Apply Direct Stock Price Buttons
     const applyStockPriceBtns = document.querySelectorAll('.btn-admin-apply-stock-price');
     applyStockPriceBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const sym = btn.getAttribute('data-symbol');
         const inp = document.getElementById(`adm-input-stock-${sym}`);
         if (!sym || !inp) return;
@@ -3026,19 +3024,19 @@
           return;
         }
 
-        if (AppDB.isFirebaseReady) {
-          firebase.firestore().collection('globals').doc('market_event').set({
+        try {
+          await AppDB.saveGlobalMarketEvent({
             title:`تدخل إداري مباشر: تم تعديل سعر سهم (${sym}) إلى ${newPrice.toLocaleString()} ج.م`,
             desc:`تم تعديل سعر سهم (${sym}) إلى ${newPrice.toLocaleString()} ج.م`,
             targetSymbol: sym,
             directPrice: newPrice,
             timestamp: Date.now()
-          }).then(() => {
-            inp.value ='';
-            logAdminAction(`تعديل مباشر لسعر سهم ${sym} -> ${newPrice.toLocaleString()} EGP`);
-          }).catch(err => showToast('خطأ في الاتصال', err.message,'error'));
-        } else {
-          showToast('تعديل السعر','يجب الاتصال بقاعدة البيانات لتعديل أسعار الأسهم.','error');
+          });
+          inp.value ='';
+          logAdminAction(`تعديل مباشر لسعر سهم ${sym} -> ${newPrice.toLocaleString()} EGP`);
+          showToast('تعديل السعر', `تم تعديل سعر سهم (${sym}) إلى ${newPrice.toLocaleString()} ج.م بنجاح!`, 'success');
+        } catch (err) {
+          showToast('خطأ في الاتصال', err.message, 'error');
         }
       });
     });
@@ -3046,18 +3044,18 @@
     // Reset Market to Baseline
     const resetMarketBaselineBtn = document.getElementById('btn-admin-reset-market-baseline');
     if (resetMarketBaselineBtn) {
-      resetMarketBaselineBtn.addEventListener('click', () => {
-        if (AppDB.isFirebaseReady) {
-          firebase.firestore().collection('globals').doc('market_event').set({
+      resetMarketBaselineBtn.addEventListener('click', async () => {
+        try {
+          await AppDB.saveGlobalMarketEvent({
             title:'إعادة ضبط البورصة',
             desc:'تم إعادة أسعار جميع الأسهم إلى القيمة الأساسية.',
             resetBaseline: true,
             timestamp: Date.now()
-          }).then(() => {
-            logAdminAction('إعادة ضبط أسعار كافة الأسهم في البورصة للقيمة الأساسية');
-          }).catch(err => showToast('خطأ في الاتصال', err.message,'error'));
-        } else {
-          showToast('إعادة ضبط البورصة','يجب الاتصال بقاعدة البيانات لإعادة ضبط البورصة.','error');
+          });
+          logAdminAction('إعادة ضبط أسعار كافة الأسهم في البورصة للقيمة الأساسية');
+          showToast('إعادة ضبط البورصة', 'تم إعادة أسعار كافة الأسهم للقيمة الأساسية بنجاح!', 'success');
+        } catch (err) {
+          showToast('خطأ في الاتصال', err.message, 'error');
         }
       });
     }
@@ -3065,7 +3063,7 @@
     // Market Sudden Event Triggers
     const eventBtns = document.querySelectorAll('.btn-admin-trigger-event');
     eventBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const evType = btn.getAttribute('data-event');
         const eventsMap = {
           tech_boom: {
@@ -3161,17 +3159,17 @@
           });
         }
 
-        if (AppDB.isFirebaseReady) {
-          firebase.firestore().collection('globals').doc('market_event').set({
+        try {
+          await AppDB.saveGlobalMarketEvent({
             title: ev.title,
             desc: ev.desc,
             targets: targets,
             timestamp: Date.now()
-          }).then(() => {
-            logAdminAction(`افتعال حدث اقتصادي: ${ev.title}`);
-          }).catch(err => showToast('خطأ في الاتصال', err.message,'error'));
-        } else {
-          showToast('افتعال الحدث','يجب الاتصال بقاعدة البيانات لفرض الأحداث.','error');
+          });
+          logAdminAction(`افتعال حدث اقتصادي: ${ev.title}`);
+          showToast('افتعال الحدث', `تم إطلاق وتطبيق الحدث "${ev.title}" في السيرفر بنجاح!`, 'success');
+        } catch (err) {
+          showToast('خطأ في الاتصال', err.message, 'error');
         }
       });
     });
