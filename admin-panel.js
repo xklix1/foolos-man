@@ -1848,6 +1848,106 @@
       });
     }
 
+    // ==================== MODULE: DIRECT ADMIN POPUP SENDER TO PLAYER ====================
+    const openPopupModalBtn = document.getElementById('btn-admin-open-popup-modal');
+    const sendPopupModal = document.getElementById('modal-admin-send-player-popup');
+    const closePopupModalBtn = document.getElementById('btn-close-admin-popup-modal');
+    const cancelPopupModalBtn = document.getElementById('btn-cancel-admin-popup');
+    const confirmSendPopupBtn = document.getElementById('btn-confirm-send-admin-popup');
+    const targetUserBadge = document.getElementById('adm-popup-target-user');
+    const popupStyleSelect = document.getElementById('adm-popup-style');
+    const popupTitleInput = document.getElementById('adm-popup-title-input');
+    const popupMsgInput = document.getElementById('adm-popup-message-input');
+
+    function openDirectPopupSender() {
+      const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
+      if (!targetUser || targetUser === '...' || targetUser === '') {
+        showToast('إرسال تنبيه منبثق', 'يرجى تحديد واختيار لاعب أولاً من قائمة اللاعبين.', 'warning');
+        return;
+      }
+      if (targetUserBadge) targetUserBadge.textContent = `@${targetUser}`;
+      if (popupMsgInput) popupMsgInput.value = '';
+      if (popupTitleInput) popupTitleInput.value = 'تنبيه إداري مباشر 📢';
+      if (popupStyleSelect) popupStyleSelect.value = 'warning';
+      if (sendPopupModal) sendPopupModal.classList.remove('hidden');
+      if (popupMsgInput) setTimeout(() => popupMsgInput.focus(), 150);
+    }
+
+    if (openPopupModalBtn) {
+      openPopupModalBtn.addEventListener('click', openDirectPopupSender);
+    }
+
+    if (closePopupModalBtn) {
+      closePopupModalBtn.addEventListener('click', () => {
+        if (sendPopupModal) sendPopupModal.classList.add('hidden');
+      });
+    }
+
+    if (cancelPopupModalBtn) {
+      cancelPopupModalBtn.addEventListener('click', () => {
+        if (sendPopupModal) sendPopupModal.classList.add('hidden');
+      });
+    }
+
+    if (confirmSendPopupBtn) {
+      confirmSendPopupBtn.addEventListener('click', async () => {
+        const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
+        if (!targetUser) {
+          showToast('إرسال تنبيه', 'تعذر تحديد اللاعب المستهدف.', 'error');
+          return;
+        }
+
+        const title = popupTitleInput ? popupTitleInput.value.trim() : 'تنبيه إداري';
+        const message = popupMsgInput ? popupMsgInput.value.trim() : '';
+        const style = popupStyleSelect ? popupStyleSelect.value : 'warning';
+
+        if (!message) {
+          showToast('تنبيه ناقص', 'يرجى كتابة نص الرسالة المنبثقة أولاً قبل الإرسال.', 'warning');
+          if (popupMsgInput) popupMsgInput.focus();
+          return;
+        }
+
+        try {
+          confirmSendPopupBtn.disabled = true;
+          confirmSendPopupBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> <span>جاري إرسال الشاشة المنبثقة...</span>';
+
+          const popupPayload = {
+            title: title || 'تنبيه إداري مباشر',
+            message: message,
+            style: style || 'warning',
+            sentAt: Date.now()
+          };
+
+          // 1. Send via mailbox system (delivered in real-time)
+          await AppDB.sendMail('إدارة اللعبة (Admin)', targetUser, 'admin_popup', popupPayload);
+
+          // 2. Also inject directly into player state if player exists in database
+          try {
+            const pState = await AppDB.adminGetPlayer(targetUser);
+            if (pState) {
+              pState.pendingAdminPopup = popupPayload;
+              pState.adminModifiedTimestamp = Date.now();
+              await AppDB.adminSavePlayer(targetUser, pState);
+            }
+          } catch (e) {
+            console.warn('[Admin Popup] Optional direct state injection skipped:', e);
+          }
+
+          // 3. Log action
+          logAdminAction(`إرسال شاشة منبثقة للاعب [${targetUser}]: "${title}" - ${message.substring(0, 50)}...`);
+
+          showToast('تم الإرسال بنجاح 🚀', `تم إرسال الشاشة المنبثقة للاعب "${targetUser}" بنجاح! ستظهر في منتصف شاشته فوراً.`, 'success');
+
+          if (sendPopupModal) sendPopupModal.classList.add('hidden');
+        } catch (err) {
+          showToast('فشل الإرسال', err.message, 'error');
+        } finally {
+          confirmSendPopupBtn.disabled = false;
+          confirmSendPopupBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>إرسال التنبيه الآن 🚀</span>';
+        }
+      });
+    }
+
     // ==================== PLAYER CASH FLOW DETAILED INSPECTOR ====================
     const inspectFlowBtn = document.getElementById('btn-admin-inspect-flow');
     const flowModal = document.getElementById('admin-player-flow-modal');

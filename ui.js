@@ -5759,6 +5759,15 @@ const UIController = (() => {
       }
     }
 
+    // Check if player has an incoming pending admin popup stored in state
+    if (GameEngine.state && GameEngine.state.pendingAdminPopup) {
+      setTimeout(() => {
+        if (GameEngine.state && GameEngine.state.pendingAdminPopup) {
+          showDirectAdminPopupModal(GameEngine.state.pendingAdminPopup);
+        }
+      }, 1200);
+    }
+
     if (!AppDB.isFirebaseReady) return;
 
     const db = firebase.firestore();
@@ -12117,8 +12126,109 @@ const UIController = (() => {
     }
   }
 
+  // =========================================================================
+  // Direct Admin Popup Modal Controller (شاشة منبثقة مباشرة من الإدارة)
+  // =========================================================================
+  function showDirectAdminPopupModal(popupData) {
+    if (!popupData || !popupData.message) return;
+    const modal = document.getElementById('modal-direct-admin-popup');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('admin-popup-title');
+    const msgEl = document.getElementById('admin-popup-message');
+    const timeEl = document.getElementById('admin-popup-time');
+    const badgeEl = document.getElementById('admin-popup-badge');
+    const cardEl = document.getElementById('admin-popup-card');
+    const glowEl = document.getElementById('admin-popup-glow');
+    const iconContainer = document.getElementById('admin-popup-icon-container');
+    const iconEl = document.getElementById('admin-popup-icon');
+    const closeBtn = document.getElementById('btn-close-direct-admin-popup');
+
+    if (titleEl) titleEl.textContent = popupData.title || 'رسالة من الإدارة';
+    if (msgEl) msgEl.textContent = popupData.message || '';
+    if (timeEl) {
+      const d = popupData.timestamp ? new Date(popupData.timestamp) : new Date();
+      timeEl.textContent = d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Apply Dynamic Theme based on style (warning / official / reward / critical)
+    const style = popupData.style || 'warning';
+    if (cardEl && iconContainer && iconEl && glowEl && badgeEl) {
+      if (style === 'critical') {
+        cardEl.className = 'glass-panel w-full max-w-lg rounded-3xl border-2 border-rose-500/60 p-5 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden space-y-4';
+        glowEl.className = 'absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-32 bg-rose-500/25 blur-3xl rounded-full pointer-events-none';
+        iconContainer.className = 'w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-red-700 text-white flex items-center justify-center text-xl font-black shadow-lg shadow-rose-500/30 shrink-0 animate-pulse';
+        iconEl.className = 'fa-solid fa-triangle-exclamation';
+        badgeEl.className = 'px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold text-[10px] animate-pulse';
+        badgeEl.textContent = 'إنذار إداري هام ⛔';
+      } else if (style === 'official') {
+        cardEl.className = 'glass-panel w-full max-w-lg rounded-3xl border-2 border-blue-500/60 p-5 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden space-y-4';
+        glowEl.className = 'absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-32 bg-blue-500/25 blur-3xl rounded-full pointer-events-none';
+        iconContainer.className = 'w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xl font-black shadow-lg shadow-blue-500/30 shrink-0';
+        iconEl.className = 'fa-solid fa-shield-halved';
+        badgeEl.className = 'px-2.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 font-bold text-[10px]';
+        badgeEl.textContent = 'إشعار رسمي من الإدارة 📢';
+      } else if (style === 'reward') {
+        cardEl.className = 'glass-panel w-full max-w-lg rounded-3xl border-2 border-emerald-500/60 p-5 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden space-y-4';
+        glowEl.className = 'absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-32 bg-emerald-500/25 blur-3xl rounded-full pointer-events-none';
+        iconContainer.className = 'w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 text-slate-950 flex items-center justify-center text-xl font-black shadow-lg shadow-emerald-500/30 shrink-0 animate-bounce';
+        iconEl.className = 'fa-solid fa-gift';
+        badgeEl.className = 'px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-[10px]';
+        badgeEl.textContent = 'تهنئة ومكافأة خاصة 🎉';
+      } else {
+        cardEl.className = 'glass-panel w-full max-w-lg rounded-3xl border-2 border-amber-500/50 p-5 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden space-y-4';
+        glowEl.className = 'absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-32 bg-amber-500/20 blur-3xl rounded-full pointer-events-none';
+        iconContainer.className = 'w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 text-slate-950 flex items-center justify-center text-xl font-black shadow-lg shadow-amber-500/25 shrink-0 animate-bounce';
+        iconEl.className = 'fa-solid fa-bullhorn';
+        badgeEl.className = 'px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-[10px]';
+        badgeEl.textContent = 'تنبيه إداري مباشر ⚡';
+      }
+    }
+
+    modal.classList.remove('hidden');
+    if (typeof playMenuSound === 'function') {
+      playMenuSound(style === 'reward' ? 'success' : 'alert');
+    }
+
+    if (closeBtn) {
+      closeBtn.onclick = async () => {
+        modal.classList.add('hidden');
+        if (typeof playMenuSound === 'function') playMenuSound('click');
+        if (popupData.id && typeof AppDB !== 'undefined' && typeof AppDB.updateMailStatus === 'function') {
+          try {
+            await AppDB.updateMailStatus(popupData.id, 'read');
+          } catch (e) {}
+        }
+        if (window.GameEngine && window.GameEngine.state && window.GameEngine.state.pendingAdminPopup) {
+          window.GameEngine.state.pendingAdminPopup = null;
+          if (typeof window.GameEngine.forceSaveState === 'function') {
+            window.GameEngine.forceSaveState(true);
+          }
+        }
+      };
+    }
+  }
+
   async function processInboxSystemMessages(mails) {
     if (!mails || mails.length === 0) return;
+
+    // 0. Process incoming Direct Admin Popup Messages
+    const adminPopups = mails.filter(m => (m.type === 'admin_popup' || m.type === 'urgent_alert') && (m.status === 'unread' || m.status === 'pending'));
+    for (const popup of adminPopups) {
+      if (!window._processedAdminPopupIds) window._processedAdminPopupIds = new Set();
+      if (window._processedAdminPopupIds.has(popup.id)) continue;
+      window._processedAdminPopupIds.add(popup.id);
+
+      showDirectAdminPopupModal({
+        id: popup.id,
+        title: (popup.payload && popup.payload.title) || 'تنبيه إداري مباشر 📢',
+        message: (popup.payload && popup.payload.message) || popup.message || '',
+        sender: popup.sender || 'إدارة اللعبة (Admin)',
+        timestamp: popup.created_at || Date.now(),
+        style: (popup.payload && popup.payload.style) || 'warning'
+      });
+      break; // Display one popup at a time to prevent overlapping
+    }
 
     // Process incoming bank transfers
     const transfers = mails.filter(m => m.type ==='transfer_received' && (m.status ==='unread' || m.status ==='pending'));
@@ -15554,7 +15664,8 @@ const UIController = (() => {
     openPlayerInventoryModal,
     closePlayerInventoryModal,
     renderPlayerInventory,
-    useInventoryItem
+    useInventoryItem,
+    showDirectAdminPopupModal
   };
 
 })();

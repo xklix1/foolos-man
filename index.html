@@ -5045,6 +5045,49 @@
     </div>
   </div>
 
+  <!-- ==================== DIRECT ADMIN POPUP MODAL (شاشة منبثقة مباشرة من الإدارة) ==================== -->
+  <div id="modal-direct-admin-popup" dir="rtl"
+    class="hidden fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in text-right">
+    <div id="admin-popup-card"
+      class="glass-panel w-full max-w-lg rounded-3xl border-2 border-amber-500/50 p-5 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden space-y-4">
+      
+      <!-- Top Ambient Glow -->
+      <div id="admin-popup-glow" class="absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-32 bg-amber-500/20 blur-3xl rounded-full pointer-events-none"></div>
+
+      <!-- Header -->
+      <div class="flex items-center gap-3 border-b border-slate-800 pb-3.5 relative z-10">
+        <div id="admin-popup-icon-container" class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 text-slate-950 flex items-center justify-center text-xl font-black shadow-lg shadow-amber-500/25 shrink-0 animate-bounce">
+          <i id="admin-popup-icon" class="fa-solid fa-bullhorn"></i>
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <span id="admin-popup-badge" class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-[10px]">تنبيه إداري مباشر ⚡</span>
+            <span id="admin-popup-time" class="text-[10px] text-slate-400">الآن</span>
+          </div>
+          <h3 id="admin-popup-title" class="text-base sm:text-lg font-black text-white mt-0.5">رسالة من الإدارة</h3>
+        </div>
+      </div>
+
+      <!-- Message Content -->
+      <div class="relative z-10 bg-slate-950/80 p-4 rounded-2xl border border-slate-800/80 text-slate-200 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-medium min-h-[90px]" id="admin-popup-message">
+        --
+      </div>
+
+      <!-- Sender Info & Acknowledge Button -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1 relative z-10">
+        <div class="flex items-center gap-1.5 text-[11px] text-slate-400">
+          <i class="fa-solid fa-shield-halved text-amber-400"></i>
+          <span>مرسلة رسمياً من: <strong class="text-white">إدارة اللعبة (Admin)</strong></span>
+        </div>
+        <button id="btn-close-direct-admin-popup" type="button"
+          class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 cursor-pointer flex items-center justify-center gap-2">
+          <i class="fa-solid fa-check"></i>
+          <span>فهمت الرسالة / إغلاق</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== V2: CHAT SIDEBAR DRAWER ==================== -->
   <div id="chat-drawer"
     class="fixed top-0 bottom-0 right-0 z-[100] w-[360px] max-w-full bg-slate-950/98 border-l border-slate-800/80 shadow-2xl transition-all duration-300 translate-x-full flex flex-col backdrop-blur-xl">
