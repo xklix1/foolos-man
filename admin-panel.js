@@ -1,3 +1,7 @@
+  // Centralized Admin Listeners (Top-level scope)
+  let adminCorpsUnsubscribe = null;
+  let adminLiveAuctionsUnsubscribe = null;
+
   // Safe in-game renderAll fallback for admin panel terminal
   function renderAll() {
     if (typeof window.UIController !== 'undefined' && typeof window.UIController.renderAll === 'function') {
@@ -100,8 +104,6 @@
 
     // Centralized Admin Listeners Management (Egress Zero-Leak)
     let _adminChatUnsub = null;
-    let adminCorpsUnsubscribe = null;
-    let adminLiveAuctionsUnsubscribe = null;
 
     function cleanupAdminListeners() {
       if (typeof _adminChatUnsub ==='function') {
@@ -556,7 +558,7 @@
           bizDiv.className ='flex justify-between items-center bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/80 hover:border-yellow-500/20 transition gap-2 mt-2';
           bizDiv.innerHTML =`
             <div class="flex items-center gap-2 flex-1 text-right">
-              <span class="text-base"></span>
+              <span class="text-base"><i class="fa-solid fa-briefcase text-yellow-400"></i></span>
               <div>
                 <div class="font-bold text-slate-200">${bizName}</div>
                 <div class="text-[10px] text-slate-400">المستوى: <span class="text-yellow-400 font-bold font-mono">${biz.level}</span> | الموظفين: <span class="text-sky-400 font-bold font-mono">${biz.workers}</span></div>
@@ -574,29 +576,68 @@
           bizDiv.querySelector('.btn-inline-biz-lvl-dec').addEventListener('click', async () => {
             biz.level = Math.max(0, biz.level - 1);
             await saveAndSyncPlayerPossessions();
+            renderPlayerPossessions(state);
           });
           bizDiv.querySelector('.btn-inline-biz-lvl-inc').addEventListener('click', async () => {
             biz.level += 1;
+            biz.suppliesTicks = Math.max(biz.suppliesTicks || 0, 1800);
             await saveAndSyncPlayerPossessions();
+            renderPlayerPossessions(state);
           });
           bizDiv.querySelector('.btn-inline-biz-wrk-dec').addEventListener('click', async () => {
             biz.workers = Math.max(0, biz.workers - 1);
             await saveAndSyncPlayerPossessions();
+            renderPlayerPossessions(state);
           });
           bizDiv.querySelector('.btn-inline-biz-wrk-inc').addEventListener('click', async () => {
             biz.workers += 1;
             await saveAndSyncPlayerPossessions();
+            renderPlayerPossessions(state);
           });
           bizDiv.querySelector('.btn-inline-biz-del').addEventListener('click', async () => {
-            if (confirm(`هل أنت متأكد من حذف مشروع"${bizName}" لللاعب؟`)) {
+            if (confirm(`هل أنت متأكد من حذف مشروع "${bizName}" لللاعب؟`)) {
               biz.level = 0;
               biz.workers = 0;
               await saveAndSyncPlayerPossessions();
+              renderPlayerPossessions(state);
             }
           });
 
           container.appendChild(bizDiv);
         });
+      }
+
+      // Add / Grant Business Bar for unowned projects
+      if (typeof GameEngine !== 'undefined' && GameEngine.BUSINESSES) {
+        const unownedBizKeys = Object.keys(GameEngine.BUSINESSES).filter(bk => !state.businesses || !state.businesses[bk] || state.businesses[bk].level <= 0);
+        if (unownedBizKeys.length > 0) {
+          const addBizDiv = document.createElement('div');
+          addBizDiv.className = 'flex items-center gap-2 bg-slate-950/60 p-2 rounded-lg border border-dashed border-slate-800 mt-2';
+          addBizDiv.innerHTML = `
+            <i class="fa-solid fa-plus text-yellow-400 text-xs"></i>
+            <span class="text-[10px] text-slate-400 font-bold shrink-0">منح مشروع جديد:</span>
+            <select class="admin-grant-biz-select flex-1 bg-slate-900 border border-slate-800 text-slate-200 p-1 rounded text-[10px]">
+              ${unownedBizKeys.map(bk => `<option value="${bk}">${GameEngine.BUSINESSES[bk].name}</option>`).join('')}
+            </select>
+            <button class="btn-admin-grant-biz px-2.5 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/30 rounded text-[10px] font-bold transition">منح</button>
+          `;
+          addBizDiv.querySelector('.btn-admin-grant-biz').addEventListener('click', async () => {
+            const selectedBiz = addBizDiv.querySelector('.admin-grant-biz-select').value;
+            if (!selectedBiz) return;
+            if (!state.businesses) state.businesses = {};
+            const cfg = GameEngine.BUSINESSES[selectedBiz];
+            state.businesses[selectedBiz] = {
+              level: 1,
+              workers: 1,
+              price: (cfg && cfg.optimumPrice) || 50,
+              suppliesTicks: 1800
+            };
+            await saveAndSyncPlayerPossessions();
+            renderPlayerPossessions(state);
+            showToast('منح مشروع', `تم منح مشروع "${cfg ? cfg.name : selectedBiz}" لللاعب بنجاح.`, 'success');
+          });
+          container.appendChild(addBizDiv);
+        }
       }
 
       // 3. Assets / Real Estate
@@ -4108,12 +4149,13 @@
   let activeInspectedCorp = null;
 
   const ADMIN_CORP_MEGA_PROJECTS = {
-    data_center: { name:'مركز بيانات استراتيجي', icon:'fa-server', color:'text-sky-400', cost: 50000000, desc:'بنية تحتية سحابية وتأمين بيانات التحالف' },
-    ai_supercluster: { name:'عنقود الذكاء الاصطناعي الفائق', icon:'fa-brain', color:'text-purple-400', cost: 150000000, desc:'خوارزميات تنبؤ بالأسواق وتوليد سيولة' },
-    submarine_cables: { name:'شبكة الألياف البحرية العالمية', icon:'fa-network-wired', color:'text-cyan-400', cost: 400000000, desc:'ربط قاري فائق السرعة وخفض عمولات التداول' },
-    medical_city: { name:'المدينة الطبية العالمية المتكاملة', icon:'fa-hospital', color:'text-emerald-400', cost: 900000000, desc:'أبحاث جينات وصيدلة وتأمين صحي شامل' },
-    nuclear_reactor: { name:'المفاعل النووي القومي لإنتاج الطاقة', icon:'fa-atom', color:'text-amber-400', cost: 2500000000, desc:'توليد طاقة نظيفة وخفض تكاليف التشغيل' },
-    mars_colony: { name:'مستعمرة التعدين المريخية المستقلة', icon:'fa-shuttle-space', color:'text-rose-400', cost: 10000000000, desc:'استخراج معادن فلكية نادرة ومضاعفة الأرباح' }
+    gigafactory: { name: 'مجمع أشباه الموصلات والرقائق', icon: 'fa-microchip', color: 'text-yellow-400', cost: 12000000000, desc: 'تصنيع معالجات ورقائق إلكترونية سيادية (+25M/ثانية)' },
+    zohr_field: { name: 'حق امتياز حقل غاز ظهر الطبيعي', icon: 'fa-fire-flame-simple', color: 'text-cyan-400', cost: 38000000000, desc: 'استخراج وتصدير الغاز الطبيعي السائل (+95M/ثانية)' },
+    asteroid_mining: { name: 'وكالة تعدين الكويكبات الفضائية', icon: 'fa-meteor', color: 'text-purple-400', cost: 95000000000, desc: 'استخراج البلاتين والمعادن الثمينة من الفضاء (+280M/ثانية)' },
+    submarine_cables: { name: 'شبكة الألياف البحرية العالمية', icon: 'fa-network-wired', color: 'text-sky-400', cost: 220000000000, desc: 'ربط قاري فائق السرعة وخفض عمولات التداول (+750M/ثانية)' },
+    medical_city: { name: 'المدينة الطبية العالمية المتكاملة', icon: 'fa-hospital', color: 'text-emerald-400', cost: 500000000000, desc: 'أبحاث جينات وصيدلة وتأمين صحي شامل (+1.85B/ثانية)' },
+    nuclear_reactor: { name: 'المفاعل النووي القومي لإنتاج الطاقة', icon: 'fa-atom', color: 'text-amber-400', cost: 1200000000000, desc: 'توليد طاقة نظيفة وخفض تكاليف التشغيل (+4.6B/ثانية)' },
+    mars_colony: { name: 'مستعمرة التعدين المريخية المستقلة', icon: 'fa-shuttle-space', color: 'text-rose-400', cost: 3500000000000, desc: 'استخراج معادن فلكية نادرة ومضاعفة الأرباح (+15B/ثانية)' }
   };
 
   function renderAdminCorporationsPanel() {
@@ -4165,7 +4207,7 @@
           <td class="p-2.5 text-center font-mono text-emerald-400 font-bold">${(corp.treasury || 0).toLocaleString()} EGP</td>
           <td class="p-2.5 text-center font-mono text-slate-300 font-bold">${(corp.members || []).length} عضو</td>
           <td class="p-2.5 text-center">
-            <span class="px-2 py-0.5 bg-slate-950 border border-slate-800 rounded font-mono text-cyan-400 font-bold text-[10px]">${projCount} / 6 مشاريع</span>
+            <span class="px-2 py-0.5 bg-slate-950 border border-slate-800 rounded font-mono text-cyan-400 font-bold text-[10px]">${projCount} / 7 مشاريع</span>
           </td>
           <td class="p-2.5 text-left space-x-1 space-x-reverse">
             <button class="btn-admin-inspect-corp py-1 px-2.5 bg-violet-600/20 hover:bg-violet-600/40 text-violet-300 border border-violet-500/30 rounded font-bold transition text-[10px]"><i class="fa-solid fa-sliders ml-1"></i>فحص وتحكم</button>
@@ -4181,7 +4223,7 @@
         // Edit Treasury Button
         tr.querySelector('.btn-admin-edit-corp-treasury').addEventListener('click', async () => {
           const currentTreasury = corp.treasury || 0;
-          const val = prompt(`أدخل الرصيد الجديد لخزينة شركة"${corp.name}":`, currentTreasury);
+          const val = prompt(`أدخل الرصيد الجديد لخزينة شركة "${corp.name}":`, currentTreasury);
           if (val === null || val.trim() ==='') return;
           try {
             await AppDB.adminEditCorporationTreasury(corp.id, val);
@@ -4194,7 +4236,7 @@
 
         // Delete Button
         tr.querySelector('.btn-admin-delete-corp').addEventListener('click', async () => {
-          if (!confirm(`هل أنت متأكد تماماً من تفكيك وحذف شركة"${corp.name}" نهائياً من قاعدة البيانات؟\nلا يمكن استرجاع هذا الإجراء.`)) return;
+          if (!confirm(`هل أنت متأكد تماماً من تفكيك وحذف شركة "${corp.name}" نهائياً من قاعدة البيانات؟\nلا يمكن استرجاع هذا الإجراء.`)) return;
           try {
             await AppDB.adminDeleteCorporation(corp.id);
             showToast('تفكيك شركة',`تم تفكيك وحذف شركة ${corp.name} بنجاح.`,'success');
@@ -4270,6 +4312,19 @@
         card.querySelector('button').addEventListener('click', async () => {
           try {
             await AppDB.adminToggleCorpProject(corp.id, pKey, !isActive);
+            // Immediately sync local in-memory corp.projects array
+            if (!Array.isArray(corp.projects)) {
+              corp.projects = (corp.projects && typeof corp.projects === 'object')
+                ? Object.keys(corp.projects).filter(k => corp.projects[k])
+                : [];
+            }
+            if (!isActive) {
+              if (!corp.projects.includes(pKey)) corp.projects.push(pKey);
+            } else {
+              corp.projects = corp.projects.filter(p => p !== pKey);
+            }
+            // Re-render inspect modal immediately without requiring reload
+            updateInspectModalContent(corp);
             showToast('تحديث مشاريع الشركة',`تم ${isActive ?'إلغاء تفعيل' :'تفعيل'} مشروع (${pDef.name}) بنجاح.`,'success');
             logAdminAction(`تغيير حالة مشروع ${pDef.name} لشركة ${corp.name} إلى ${!isActive ?'مفعل' :'معطل'}`);
           } catch (e) {

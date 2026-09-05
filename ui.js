@@ -12894,8 +12894,23 @@ const UIController = (() => {
   async function buyCorporationProjectAction(corpId, projectId, cost) {
     try {
       await AppDB.buyCorporationProject(corpId, projectId, cost);
+
+      if (window.activeCorporationState && window.activeCorporationState.id === corpId) {
+        window.activeCorporationState.treasury = Math.max(0, (window.activeCorporationState.treasury || 0) - Number(cost));
+        if (!Array.isArray(window.activeCorporationState.projects)) {
+          window.activeCorporationState.projects = (window.activeCorporationState.projects && typeof window.activeCorporationState.projects === 'object')
+            ? Object.keys(window.activeCorporationState.projects).filter(k => window.activeCorporationState.projects[k])
+            : [];
+        }
+        if (!window.activeCorporationState.projects.includes(projectId)) {
+          window.activeCorporationState.projects.push(projectId);
+        }
+      }
+
       showToast('تم الشراء بنجاح!','تم شراء المشروع العملاق وسوف يساهم في مضاعفة أرباح الشركاء والتحالف بالكامل من الآن.','success');
       playMenuSound('success');
+      renderCorporationsTab();
+      renderAll();
     } catch (err) {
       showToast('فشل شراء المشروع', err.message,'error');
     }
@@ -13339,9 +13354,14 @@ const UIController = (() => {
     if (!confirm(`هل أنت متأكد من ترقية مستوى التحالف المشترك بقيمة ${cost.toLocaleString()} EGP من الخزينة؟`)) return;
     try {
       await AppDB.upgradeCorporationLevel(corpId, cost);
+      if (window.activeCorporationState && window.activeCorporationState.id === corpId) {
+        window.activeCorporationState.level = (window.activeCorporationState.level || 1) + 1;
+        window.activeCorporationState.treasury = Math.max(0, (window.activeCorporationState.treasury || 0) - Number(cost));
+      }
       showToast('تمت الترقية','تم ترقية مستوى التحالف المشترك بنجاح! تم زيادة دعم أرباح الأعضاء بمقدار +5% إضافية.','success');
       playMenuSound('success');
       renderCorporationsTab();
+      renderAll();
     } catch (e) {
       showToast('فشل الترقية', e.message,'error');
     }

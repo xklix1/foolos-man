@@ -1897,7 +1897,9 @@ var AppDB = (() => {
     const corp = cRows[0];
     if (Number(corp.treasury) < Number(projectCost)) throw new Error('خزينة الشركة لا تكفي لتمويل هذا المشروع.');
 
-    const projects = corp.projects || [];
+    let projects = Array.isArray(corp.projects)
+      ? [...corp.projects]
+      : (corp.projects && typeof corp.projects === 'object' ? Object.keys(corp.projects).filter(k => corp.projects[k]) : []);
     if (projects.includes(projectId)) throw new Error('هذا المشروع مملوك للشركة بالفعل.');
     projects.push(projectId);
 
@@ -2094,7 +2096,9 @@ var AppDB = (() => {
     const rows = await _api(`corporations?id=eq.${encodeURIComponent(corpId)}`);
     if (!rows || rows.length === 0) throw new Error('الشركة غير موجودة.');
     const corp = rows[0];
-    let projects = Array.isArray(corp.projects) ? [...corp.projects] : [];
+    let projects = Array.isArray(corp.projects)
+      ? [...corp.projects]
+      : (corp.projects && typeof corp.projects === 'object' ? Object.keys(corp.projects).filter(k => corp.projects[k]) : []);
     const hasProj = projects.includes(projectId);
     const enable = (forceState !== undefined) ? Boolean(forceState) : !hasProj;
 
