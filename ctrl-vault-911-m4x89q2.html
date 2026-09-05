@@ -1245,9 +1245,30 @@
                 class="glass-input w-full p-2 text-xs font-bold text-center font-mono"></div></div>
 
           <button id="btn-admin-send-airdrop"
-            class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+            class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
             <i class="fa-solid fa-hand-holding-dollar"></i>
-            <span>توزيع المكافأة المالية</span></button></div>
+            <span>توزيع المكافأة المالية</span></button>
+
+          <!-- Retry / Resend to Unclaimed Section -->
+          <div class="pt-2 border-t border-slate-800 space-y-2">
+            <div id="adm-airdrop-status-box" class="p-2.5 bg-slate-950/80 rounded-lg border border-slate-800 flex flex-wrap items-center justify-between text-[11px] gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-slate-400">آخر مكافأة:</span>
+                <strong id="adm-last-airdrop-amt" class="text-emerald-400 font-bold numbers-font">... EGP</strong>
+                <span id="adm-last-airdrop-id" class="px-1.5 py-0.5 bg-slate-800 text-slate-400 font-mono text-[9px] rounded">--</span>
+              </div>
+              <div id="adm-last-airdrop-time" class="text-slate-500 text-[10px]">--</div>
+            </div>
+
+            <button id="btn-admin-resend-unclaimed-airdrop"
+              class="w-full py-2 bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-600 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-600/20 flex items-center justify-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-rotate-right"></i>
+              <span>إعادة إرسال الدروب الأخير لمن لم يصله فقط ⚡</span>
+            </button>
+            <p class="text-[10px] text-amber-400/80 text-center leading-tight">
+              *يفحص حسابات جميع اللاعبين ويودع المبلغ مباشرة في حساب أي لاعب لم يصله هذا الكود، مع استثناء من استلموه مسبقاً لمنع تكرار الفلوس.*
+            </p>
+          </div></div>
 
         <!-- Mandatory Force Reload Card (New Request) -->
         <div class="p-3.5 bg-gradient-to-br from-amber-950/40 via-slate-900/60 to-red-950/30 border border-amber-500/40 rounded-xl space-y-3 shadow-lg">

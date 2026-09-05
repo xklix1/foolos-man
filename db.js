@@ -874,6 +874,100 @@ var AppDB = (() => {
     return null;
   }
 
+  async function retryLatestAirdropToUnclaimed() {
+    const airdrop = await getLatestAirdrop();
+    if (!airdrop || !airdrop.amount) {
+      throw new Error("لا توجد أي عملية دروب سابقة مسجلة لإعادة إرسالها.");
+    }
+
+    const airdropId = airdrop.airdropId || `airdrop_${airdrop.timestamp}`;
+    const amt = Number(airdrop.amount);
+    const ts = Date.now();
+
+    // Fetch all players with cash, net_worth and state
+    const rows = await _api('players?select=username,cash,net_worth,state');
+    if (!rows || rows.length === 0) {
+      throw new Error("لم يتم العثور على أي حسابات لاعبين في قاعدة البيانات.");
+    }
+
+    let alreadyClaimedCount = 0;
+    let newlyCreditedCount = 0;
+    const newlyCreditedUsers = [];
+
+    for (const player of rows) {
+      const uname = player.username;
+      if (!uname) continue;
+
+      let pState = player.state;
+      if (typeof pState === 'string') {
+        try { pState = JSON.parse(pState); } catch (e) { pState = {}; }
+      }
+      pState = pState || {};
+      pState.claimedAirdrops = pState.claimedAirdrops || [];
+
+      // Check if player has already claimed this specific airdrop
+      if (pState.claimedAirdrops.includes(airdropId)) {
+        alreadyClaimedCount++;
+        continue;
+      }
+
+      // Player has NOT received it -> credit directly now!
+      pState.claimedAirdrops.push(airdropId);
+      if (pState.claimedAirdrops.length > 20) pState.claimedAirdrops.shift();
+
+      const newCash = (Number(player.cash) || Number(pState.cash) || 0) + amt;
+      const newNet = (Number(player.net_worth) || Number(player.netWorth) || Number(pState.netWorth) || 0) + amt;
+
+      pState.cash = newCash;
+      pState.netWorth = newNet;
+      pState.adminModifiedTimestamp = ts;
+
+      // Update player row in Supabase
+      await _api(`players?username=eq.${encodeURIComponent(uname)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          cash: newCash,
+          net_worth: newNet,
+          state: pState,
+          admin_modified_timestamp: ts
+        })
+      });
+
+      // Send mail notification
+      try {
+        await sendMail('إدارة اللعبة (Admin)', uname, 'admin_popup', {
+          title: 'مكافأة عامة متأخرة 🎁',
+          message: `تم إيداع مكافأة الإيردروب المستحقة لك بقيمة +${amt.toLocaleString()} EGP مباشرة في كاش محفظتك!`,
+          style: 'reward',
+          sentAt: ts
+        });
+      } catch (e) {}
+
+      newlyCreditedCount++;
+      newlyCreditedUsers.push(uname);
+    }
+
+    // Refresh globals updated_at so online listeners get a pulse
+    await _api('globals', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        id: 'airdrop',
+        data: airdrop,
+        updated_at: ts
+      })
+    });
+
+    return {
+      airdropId,
+      amount: amt,
+      totalScanned: rows.length,
+      alreadyClaimedCount,
+      newlyCreditedCount,
+      newlyCreditedUsers
+    };
+  }
+
   async function setMaintenanceMode(active, message ='') {
     await _api('globals', {
       method:'POST',
@@ -2836,6 +2930,7 @@ var AppDB = (() => {
     sendBroadcast,
     sendAirdrop,
     getLatestAirdrop,
+    retryLatestAirdropToUnclaimed,
     setMaintenanceMode,
     getMaintenanceStatus,
     sendForceReload,

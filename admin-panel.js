@@ -3235,11 +3235,70 @@
           showToast('نجاح التوزيع 🎁', `تم توزيع المكافأة (+${amount.toLocaleString()} EGP) ${targetDesc} بنجاح! ستصلهم في الكاش فوراً.`, 'success');
           document.getElementById('admin-airdrop-amount').value = '';
           logAdminAction(`توزيع مكافأة مالية: +${amount.toLocaleString()} EGP -> ${target}`);
+          updateAirdropStatusUI();
         } catch (err) {
           showToast('فشل التوزيع', err.message, 'error');
         } finally {
           sendAirdropBtn.disabled = false;
           sendAirdropBtn.innerHTML = '<i class="fa-solid fa-parachute-box text-sm"></i> <span>توزيع المكافأة المالية</span>';
+        }
+      });
+    }
+
+    async function updateAirdropStatusUI() {
+      try {
+        if (typeof AppDB.getLatestAirdrop !== 'function') return;
+        const airdrop = await AppDB.getLatestAirdrop();
+        const amtEl = document.getElementById('adm-last-airdrop-amt');
+        const idEl = document.getElementById('adm-last-airdrop-id');
+        const timeEl = document.getElementById('adm-last-airdrop-time');
+
+        if (airdrop && airdrop.amount) {
+          if (amtEl) amtEl.textContent = `+${Number(airdrop.amount).toLocaleString()} EGP`;
+          if (idEl) idEl.textContent = airdrop.airdropId || `airdrop_${airdrop.timestamp}`;
+          if (timeEl && airdrop.timestamp) {
+            const d = new Date(airdrop.timestamp);
+            timeEl.textContent = `${d.toLocaleDateString('ar-EG')} - ${d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}`;
+          }
+        } else {
+          if (amtEl) amtEl.textContent = 'لا يوجد دروب سابق';
+          if (idEl) idEl.textContent = '--';
+          if (timeEl) timeEl.textContent = '--';
+        }
+      } catch (e) {}
+    }
+
+    updateAirdropStatusUI();
+
+    const resendUnclaimedBtn = document.getElementById('btn-admin-resend-unclaimed-airdrop');
+    if (resendUnclaimedBtn) {
+      resendUnclaimedBtn.addEventListener('click', async () => {
+        try {
+          const airdrop = await AppDB.getLatestAirdrop();
+          if (!airdrop || !airdrop.amount) {
+            showToast('إعادة الدروب', 'لا توجد أي عملية دروب سابقة مسجلة لإعادة إرسالها.', 'warning');
+            return;
+          }
+
+          const amt = Number(airdrop.amount);
+          const confirmMsg = `⚡ تأكيد فحص وإيداع الدروب:\n\nهل تريد فحص قاعدة بيانات جميع اللاعبين الآن، وإيداع مبلغ المكافأة (+${amt.toLocaleString()} EGP) في حساب أي لاعب لم تصله هذه المكافأة من قبل؟\n\n(اللاعبون الذين استلموها مسبقاً لن يتكرر لهم شيء)`;
+          if (!confirm(confirmMsg)) return;
+
+          resendUnclaimedBtn.disabled = true;
+          resendUnclaimedBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i> <span>جاري فحص الحسابات وإيداع الفلوس...</span>';
+
+          const result = await AppDB.retryLatestAirdropToUnclaimed();
+
+          const summaryMsg = `تم فحص ${result.totalScanned} لاعب:\n• استلموا مسبقاً: ${result.alreadyClaimedCount} لاعب.\n• تم إيداع المكافأة في حساباتهم الآن: ${result.newlyCreditedCount} لاعب بنجاح!`;
+          showToast('اكتملت إعادة التوزيع 🚀', summaryMsg, 'success');
+          logAdminAction(`إعادة إرسال الدروب (${result.airdropId}): تم إيداع الفلوس لـ ${result.newlyCreditedCount} لاعب لم يستلموا مسبقاً.`);
+
+          updateAirdropStatusUI();
+        } catch (err) {
+          showToast('خطأ إعادة الدروب', err.message, 'error');
+        } finally {
+          resendUnclaimedBtn.disabled = false;
+          resendUnclaimedBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> <span>إعادة إرسال الدروب الأخير لمن لم يصله فقط ⚡</span>';
         }
       });
     }
