@@ -3502,6 +3502,9 @@
           const topList = await AppDB.adminRebuildLeaderboard();
           showToast('توحيد المتصدرين',`تم فرز وتوحيد ليدربورد الأثرياء بنجاح (${topList.length} لاعب في القمة). سيظهر نفس الترتيب لجميع اللاعبين فوراً!`,'success');
           logAdminAction(`إعادة فرز وتوحيد ليدربورد المتصدرين سحابياً (${topList.length} لاعب)`);
+          if (typeof loadAdminPlayersDirectory === 'function') {
+            loadAdminPlayersDirectory(false);
+          }
         } catch (err) {
           showToast('خطأ المزامنة', err.message,'error');
         } finally {

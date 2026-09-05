@@ -1796,17 +1796,67 @@ var AppDB = (() => {
   }
 
   async function adminRebuildLeaderboard() {
-    const rows = await _api('players?order=net_worth.desc&limit=10&select=username,net_worth,title');
-    const list = (rows || []).map(r => ({
-      username: r.username,
-      netWorth: Number(r.net_worth || 0),
-      title: r.title ||'عامل مبتدئ'
-    }));
-    await _api('globals?id=eq.hourly_leaderboard', {
-      method:'PATCH',
-      body: JSON.stringify({ data: { timestamp: Date.now(), topPlayers: list } })
+    const now = Date.now();
+    const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned,state&is_banned=eq.false&order=net_worth.desc&limit=25');
+
+    const topPlayers = (rows || []).map(r => {
+      let pState = r.state;
+      if (typeof pState === 'string') {
+        try { pState = JSON.parse(pState); } catch(e) { pState = {}; }
+      }
+      pState = pState || {};
+      const isFb = pState.facebookVerified === true || (Array.isArray(pState.badges) && pState.badges.includes('facebook'));
+
+      return {
+        username: r.username,
+        cash: Number(r.cash || 0),
+        bank: Number(r.bank || 0),
+        netWorth: Number(r.net_worth || 0),
+        net_worth: Number(r.net_worth || 0),
+        title: r.title || 'عامل مبتدئ',
+        jobId: r.job_id || 'worker',
+        isAdmin: r.is_admin === true,
+        facebookVerified: isFb
+      };
     });
-    return list;
+
+    _leaderboardMeta = {
+      updatedAt: now,
+      nextUpdateAt: now + (60 * 60 * 1000),
+      cycleMinutes: 60
+    };
+
+    const docPayload = {
+      id: 'leaderboard',
+      data: {
+        updatedAt: _leaderboardMeta.updatedAt,
+        nextUpdateAt: _leaderboardMeta.nextUpdateAt,
+        cycleMinutes: 60,
+        topPlayers: topPlayers
+      },
+      updated_at: now
+    };
+
+    await _api('globals', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify(docPayload)
+    });
+
+    await _api('globals', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        id: 'hourly_leaderboard',
+        data: { timestamp: now, topPlayers: topPlayers },
+        updated_at: now
+      })
+    });
+
+    _leaderboardCache = topPlayers;
+    _lastLeaderboardFetchTime = now;
+
+    return topPlayers;
   }
 
   async function adminClearTransfers() {
