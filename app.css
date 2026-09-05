@@ -569,7 +569,8 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.3); }
 
   #btn-floating-chat-trigger {
     bottom: calc(var(--safe-b) + 16px) !important;
-    right: 16px !important;
+    left: 16px !important;
+    right: auto !important;
     z-index: 75 !important;
   }
 
