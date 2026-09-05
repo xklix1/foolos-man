@@ -13952,6 +13952,19 @@ const UIController = (() => {
     const costBadge = document.getElementById('trade-upgrade-cost-badge');
     if (costBadge) costBadge.textContent = `${tradeInfo.upgradeCost.toLocaleString()} EGP`;
 
+    const quotaEl = document.getElementById('trade-daily-quota');
+    if (quotaEl) {
+      const dailyProfit = tradeInfo.dailyTradeProfit || 0;
+      const maxDaily = tradeInfo.dailyTradeMaxProfit || 500000;
+      const quotaPct = Math.min(100, Math.round((dailyProfit / maxDaily) * 100));
+      quotaEl.textContent = `${dailyProfit.toLocaleString()} / ${maxDaily.toLocaleString()} EGP (${quotaPct}%)`;
+      if (dailyProfit >= maxDaily) {
+        quotaEl.className = 'px-3 py-1.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 font-black text-xs numbers-font animate-pulse';
+      } else {
+        quotaEl.className = 'px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 font-black text-xs numbers-font';
+      }
+    }
+
     const upgradeBtn = document.getElementById('btn-upgrade-warehouse');
     if (upgradeBtn) {
       upgradeBtn.onclick = () => {
@@ -14003,12 +14016,15 @@ const UIController = (() => {
       'mega_oceanic': { badge: 'سفن عابرة للمحيطات (Mega Trans-Oceanic)', color: 'border-amber-500/30 bg-amber-500/10 text-amber-300' }
     };
 
+    const activeImportsCount = (tradeInfo.activeImports || []).filter(e => !e.claimed).length;
+    const isImportFleetFull = activeImportsCount >= 2;
+
     Object.keys(commodities).forEach(key => {
       const c = commodities[key];
       const tierInfo = tierMeta[c.tier] || { badge: c.tierName || 'شحن دولي', color: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300' };
 
       const minProfPct = Math.round(((c.baseSellMin - c.unitCost) / c.unitCost) * 100);
-      const maxProfPct = Math.round(((Math.floor(c.baseSellMax * 1.18) - c.unitCost) / c.unitCost) * 100);
+      const maxProfPct = Math.round(((Math.floor(c.baseSellMax * 1.08) - c.unitCost) / c.unitCost) * 100);
 
       const card = document.createElement('div');
       card.className = 'glass-panel p-4 rounded-2xl border border-slate-800/80 hover:border-cyan-500/30 transition-all flex flex-col justify-between space-y-4 shadow-lg';
@@ -14064,9 +14080,9 @@ const UIController = (() => {
             <span>التكلفة الكلية (شامل 5% شحن وجمارك):</span>
             <span id="trade-total-cost-${key}" class="font-black text-cyan-300 numbers-font">${(c.unitCost + Math.floor(c.unitCost * 0.05)).toLocaleString()} EGP</span>
           </div>
-          <button id="btn-import-order-${key}" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 cursor-pointer">
+          <button id="btn-import-order-${key}" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 cursor-pointer ${isImportFleetFull ? 'opacity-50 cursor-not-allowed' : ''}" ${isImportFleetFull ? 'disabled' : ''}>
             <i class="fa-solid fa-plane-departure"></i>
-            <span>تعاقد واستيراد البضاعة</span>
+            <span>${isImportFleetFull ? 'أسطول الاستيراد مشغول (2/2) 🚢⚠️' : 'تعاقد واستيراد البضاعة'}</span>
           </button>
         </div>
       `;
@@ -14195,7 +14211,10 @@ const UIController = (() => {
     buyers.forEach(buyer => {
       const bonusPct = Math.round((buyer.priceMult - 1.0) * 100);
       const buyerActiveOrders = (tradeInfo.activeExports || []).filter(e => e.buyerId === buyer.id && !e.claimed).length;
-      const isBuyerFull = buyerActiveOrders >= 2;
+      const totalActiveExports = (tradeInfo.activeExports || []).filter(e => !e.claimed).length;
+      const isFleetFull = totalActiveExports >= 2;
+      const isBuyerFull = buyerActiveOrders >= 1;
+      const isExportDisabled = isBuyerFull || isFleetFull;
 
       const card = document.createElement('div');
       card.className = 'glass-panel p-5 rounded-2xl border border-slate-800 hover:border-amber-500/30 transition-all flex flex-col justify-between space-y-4 shadow-lg';
@@ -14233,7 +14252,7 @@ const UIController = (() => {
                 +${bonusPct}% علاوة سعرية
               </span>
               <span class="text-[9px] px-2 py-0.5 rounded border ${isBuyerFull ? 'bg-rose-500/20 text-rose-300 border-rose-500/30 font-bold' : 'bg-slate-900 text-slate-400 border-slate-800'} numbers-font">
-                عقود جارية: ${buyerActiveOrders}/2
+                عقد جارٍ: ${buyerActiveOrders}/1 ${isFleetFull ? '(الأسطول ممتلئ 2/2)' : ''}
               </span>
             </div>
           </div>
@@ -14278,9 +14297,9 @@ const UIController = (() => {
           </div>
         </div>
 
-        <button id="btn-sign-export-${buyer.id}" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer ${isBuyerFull ? 'opacity-50 cursor-not-allowed' : ''}" ${isBuyerFull ? 'disabled' : ''}>
+        <button id="btn-sign-export-${buyer.id}" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer ${isExportDisabled ? 'opacity-50 cursor-not-allowed' : ''}" ${isExportDisabled ? 'disabled' : ''}>
           <i class="fa-solid fa-file-contract"></i>
-          <span>${isBuyerFull ? 'الحد الأقصى للعقود الجارية (2/2) ⚠️' : 'توقيع عقد التصدير والشحن ✈️'}</span>
+          <span>${isBuyerFull ? 'الحد الأقصى لعقود هذا العميل (1/1) ⚠️' : (isFleetFull ? 'أسطول التصدير مشغول بالكامل (2/2) 🚢⚠️' : 'توقيع عقد التصدير والشحن ✈️')}</span>
         </button>
       `;
 
@@ -14299,13 +14318,20 @@ const UIController = (() => {
         if (!comm) return;
         const qty = parseInt(qtyEl.value) || 1;
         const isDemanded = buyer.demands.includes(commKey);
-        const mult = isDemanded ? buyer.priceMult : 0.80;
-        const avgSellPrice = Math.floor(((comm.baseSellMin + comm.baseSellMax) / 2) * mult);
+        let mult = isDemanded ? buyer.priceMult : 0.80;
+
+        const dailyCount = tradeInfo.dailyExportsCount || 0;
+        const satStep = Math.min(5, Math.floor(dailyCount / 3));
+        const satPenalty = satStep * 0.05;
+        const effMult = Math.max(0.60, mult - satPenalty);
+
+        const avgSellPrice = Math.floor(((comm.baseSellMin + comm.baseSellMax) / 2) * effMult);
         const totalRev = avgSellPrice * qty;
         const totalProfit = totalRev - (comm.unitCost * qty);
 
         durationEl.textContent = formatTradeDuration(comm.exportDurationSec);
-        payoutEl.textContent = `~ ${totalRev.toLocaleString()} EGP ${isDemanded ? '' : '(-20% خصم)'}`;
+        const satNotice = satPenalty > 0 ? ` (تشبع سوق: -${Math.round(satPenalty * 100)}%)` : '';
+        payoutEl.textContent = `~ ${totalRev.toLocaleString()} EGP ${isDemanded ? '' : '(-20% خصم)'}${satNotice}`;
         profitEl.textContent = `${totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString()} EGP (${Math.round((totalProfit / (comm.unitCost * qty)) * 100)}%)`;
       }
 
@@ -14788,7 +14814,9 @@ const UIController = (() => {
     const flowRatePerMin = (activeInfo.outputRatePerSec * 60).toFixed(0);
     const flowRatePerSec = (activeInfo.outputRatePerSec || 0).toFixed(2);
     const readyUnits = Math.floor(secState.readyStock || 0);
-    const pendingRevenue = readyUnits * secDef.product.baseValue;
+    const grossRevenue = readyUnits * secDef.product.baseValue;
+    const overheadEst = Math.floor(grossRevenue * 0.35);
+    const netRevenue = grossRevenue - overheadEst;
 
     // Check trade warehouse capacity
     let warehouseFree = 30;
@@ -14929,13 +14957,13 @@ const UIController = (() => {
             <div id="industry-stock-full-badge" class="${activeInfo.isStorageFull ? '' : 'hidden'} mb-1">
               <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">الصوامع ممتلئة ⚠️ توقف الإنتاج</span>
             </div>
-            <span class="text-[10px] text-yellow-400 block numbers-font">القيمة: <strong id="industry-active-stock-rev">${pendingRevenue.toLocaleString()} EGP</strong></span>
+            <span class="text-[10px] text-yellow-400 block numbers-font">صافي البيع: <strong id="industry-active-stock-rev">${netRevenue.toLocaleString()} EGP</strong> <span class="text-[9px] text-slate-400 font-normal">(بعد خصم 35% تشغيل)</span></span>
           </div>
 
           <div class="flex flex-col gap-2 flex-1 sm:flex-initial">
             <button id="btn-industry-sell-cash" class="px-4 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-md shadow-yellow-500/10 flex items-center justify-center gap-2 cursor-pointer ${readyUnits <= 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${readyUnits <= 0 ? 'disabled' : ''}>
               <i class="fa-solid fa-sack-dollar text-xs"></i>
-              <span class="btn-label">${readyUnits > 0 ? `بيع فوري نقداً (+${pendingRevenue.toLocaleString()} EGP)` : 'بيع فوري نقداً'}</span>
+              <span class="btn-label">${readyUnits > 0 ? `بيع فوري نقداً (+${netRevenue.toLocaleString()} EGP صافي)` : 'بيع فوري نقداً'}</span>
             </button>
 
             <button id="btn-industry-transfer-export" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${possibleContainers <= 0 || warehouseFree <= 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${possibleContainers <= 0 || warehouseFree <= 0 ? 'disabled' : ''}>
@@ -15052,7 +15080,7 @@ const UIController = (() => {
         try {
           playCasinoSound('win');
           const res = GameEngine.collectIndustryRevenue(currentIndustrySector);
-          showToast('تم البيع نقداً 💰', `تم بيع ${res.units.toLocaleString()} وحدة وإضافة +${res.totalPayout.toLocaleString()} EGP إلى رصيدك.`, 'success');
+          showToast('تم البيع نقداً 💰', `تم بيع ${res.units.toLocaleString()} وحدة بإجمالي ${res.grossPayout.toLocaleString()} EGP (مصاريف تشغيل وصيانة 35%: -${res.overheadCost.toLocaleString()} EGP | صافي أرباح مودعة: +${res.netPayout.toLocaleString()} EGP).`, 'success');
           renderIndustryPanel();
           renderDashboard();
         } catch (err) {

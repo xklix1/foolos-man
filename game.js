@@ -651,10 +651,10 @@ const GameEngine = (() => {
       tier: 'air_cargo',
       tierName: 'شحن جوي سريع (Express Air Cargo)',
       unitCost: 5000,
-      importDurationSec: 1800, // 30 minutes
-      exportDurationSec: 1800, // 30 minutes
-      baseSellMin: 6800,       // +36%
-      baseSellMax: 7600,       // +52%
+      importDurationSec: 2700, // 45 minutes
+      exportDurationSec: 2700, // 45 minutes
+      baseSellMin: 5900,       // +18%
+      baseSellMax: 6250,       // +25%
       icon: 'fa-shirt',
       color: 'sky'
     },
@@ -664,10 +664,10 @@ const GameEngine = (() => {
       tier: 'air_cargo',
       tierName: 'شحن جوي سريع (Express Air Cargo)',
       unitCost: 8000,
-      importDurationSec: 2700, // 45 minutes
-      exportDurationSec: 2700, // 45 minutes
-      baseSellMin: 11000,      // +37.5%
-      baseSellMax: 12500,      // +56%
+      importDurationSec: 4500, // 75 minutes
+      exportDurationSec: 4500, // 75 minutes
+      baseSellMin: 9500,       // +18.75%
+      baseSellMax: 10200,      // +27.5%
       icon: 'fa-mug-hot',
       color: 'amber'
     },
@@ -676,11 +676,11 @@ const GameEngine = (() => {
       name: 'قطع غيار سيارات أوروبية أصلية',
       tier: 'regional_freight',
       tierName: 'شحن إقليمي بحري/بري (Regional Freight)',
-      unitCost: 30000,
-      importDurationSec: 7200, // 2 hours
-      exportDurationSec: 7200, // 2 hours
-      baseSellMin: 48000,      // +60%
-      baseSellMax: 56000,      // +86%
+      unitCost: 25000,
+      importDurationSec: 10800, // 3 hours
+      exportDurationSec: 10800, // 3 hours
+      baseSellMin: 29500,      // +18%
+      baseSellMax: 32000,      // +28%
       icon: 'fa-gears',
       color: 'indigo'
     },
@@ -689,11 +689,11 @@ const GameEngine = (() => {
       name: 'ألواح وخلايا طاقة شمسية ألمانية',
       tier: 'regional_freight',
       tierName: 'شحن إقليمي بحري/بري (Regional Freight)',
-      unitCost: 65000,
-      importDurationSec: 14400, // 4 hours
-      exportDurationSec: 14400, // 4 hours
-      baseSellMin: 110000,     // +69%
-      baseSellMax: 128000,     // +97%
+      unitCost: 50000,
+      importDurationSec: 18000, // 5 hours
+      exportDurationSec: 18000, // 5 hours
+      baseSellMin: 60000,      // +20%
+      baseSellMax: 65000,      // +30%
       icon: 'fa-solar-panel',
       color: 'emerald'
     },
@@ -702,11 +702,11 @@ const GameEngine = (() => {
       name: 'سيارات فارهة ومدرعة مستوردة',
       tier: 'ocean_shipping',
       tierName: 'شحن بحري عالمي بالحاويات (Global Ocean Shipping)',
-      unitCost: 150000,
-      importDurationSec: 21600, // 6 hours
-      exportDurationSec: 21600, // 6 hours
-      baseSellMin: 330000,     // +120%
-      baseSellMax: 380000,     // +153%
+      unitCost: 120000,
+      importDurationSec: 28800, // 8 hours
+      exportDurationSec: 28800, // 8 hours
+      baseSellMin: 145000,     // +20.8%
+      baseSellMax: 156000,     // +30%
       icon: 'fa-car-side',
       color: 'violet'
     },
@@ -715,11 +715,11 @@ const GameEngine = (() => {
       name: 'توربينات وخطوط إنتاج صناعية ثقيلة',
       tier: 'ocean_shipping',
       tierName: 'شحن بحري عالمي بالحاويات (Global Ocean Shipping)',
-      unitCost: 400000,
-      importDurationSec: 32400, // 9 hours
-      exportDurationSec: 32400, // 9 hours
-      baseSellMin: 920000,     // +130%
-      baseSellMax: 1080000,    // +170%
+      unitCost: 250000,
+      importDurationSec: 43200, // 12 hours
+      exportDurationSec: 43200, // 12 hours
+      baseSellMin: 305000,     // +22%
+      baseSellMax: 335000,     // +34%
       icon: 'fa-industry',
       color: 'rose'
     },
@@ -728,11 +728,11 @@ const GameEngine = (() => {
       name: 'رقائق ومعالجات ذكاء اصطناعي سيليكونية',
       tier: 'mega_oceanic',
       tierName: 'سفن عابرة للمحيطات ضخمة (Mega Trans-Oceanic)',
-      unitCost: 800000,
-      importDurationSec: 43200, // 12 hours
-      exportDurationSec: 43200, // 12 hours
-      baseSellMin: 2400000,    // +200%
-      baseSellMax: 2900000,    // +262%
+      unitCost: 500000,
+      importDurationSec: 64800, // 18 hours
+      exportDurationSec: 64800, // 18 hours
+      baseSellMin: 610000,     // +22%
+      baseSellMax: 670000,     // +34%
       icon: 'fa-microchip',
       color: 'cyan'
     },
@@ -741,11 +741,11 @@ const GameEngine = (() => {
       name: 'سبائك ذهب ومعادن نادرة نقية',
       tier: 'mega_oceanic',
       tierName: 'سفن عابرة للمحيطات ضخمة (Mega Trans-Oceanic)',
-      unitCost: 1500000,
+      unitCost: 1000000,
       importDurationSec: 86400, // 24 hours
       exportDurationSec: 86400, // 24 hours
-      baseSellMin: 5000000,    // +233%
-      baseSellMax: 6200000,    // +313%
+      baseSellMin: 1220000,    // +22%
+      baseSellMax: 1350000,    // +35%
       icon: 'fa-cubes-stacked',
       color: 'yellow'
     }
@@ -753,12 +753,12 @@ const GameEngine = (() => {
 
   const TRADE_BUYERS = [
     { id: 'dubai_retail_group', name: 'مجموعة تجزئة دبي القابضة', flag: '🇦🇪', region: 'الخليج العربي', demands: ['fashion_brands', 'espresso_coffee'], priceMult: 1.05 },
-    { id: 'berlin_energy_consortium', name: 'كونسورتيوم برلين للطاقة المتجددة', flag: '🇩🇪', region: 'الاتحاد الأوروبي', demands: ['solar_panels', 'industrial_turbines'], priceMult: 1.10 },
-    { id: 'tokyo_tech_giants', name: 'تكتل شركات التكنولوجيا بطوكيو', flag: '🇯🇵', region: 'شرق آسيا', demands: ['ai_quantum_chips', 'auto_spare_parts'], priceMult: 1.15 },
-    { id: 'london_bullion_vault', name: 'خزائن وبنك لندن للمعادن', flag: '🇬🇧', region: 'المملكة المتحدة', demands: ['gold_bullion_bars', 'luxury_cars'], priceMult: 1.12 },
-    { id: 'singapore_logistics_hub', name: 'مؤسسة التجارة الحرة بسنغافورة', flag: '🇸🇬', region: 'جنوب شرق آسيا', demands: ['auto_spare_parts', 'fashion_brands', 'espresso_coffee'], priceMult: 1.08 },
-    { id: 'cairo_sovereign_procurement', name: 'الهيئة العامة للتوريدات والمشروعات', flag: '🇪🇬', region: 'شمال أفريقيا', demands: ['solar_panels', 'luxury_cars', 'industrial_turbines'], priceMult: 1.06 },
-    { id: 'zurich_private_clients', name: 'نخبة عملاء المصارف الخاصة بزيورخ', flag: '🇨🇭', region: 'سويسرا', demands: ['gold_bullion_bars', 'ai_quantum_chips'], priceMult: 1.18 }
+    { id: 'berlin_energy_consortium', name: 'كونسورتيوم برلين للطاقة المتجددة', flag: '🇩🇪', region: 'الاتحاد الأوروبي', demands: ['solar_panels', 'industrial_turbines'], priceMult: 1.08 },
+    { id: 'tokyo_tech_giants', name: 'تكتل شركات التكنولوجيا بطوكيو', flag: '🇯🇵', region: 'شرق آسيا', demands: ['ai_quantum_chips', 'auto_spare_parts'], priceMult: 1.08 },
+    { id: 'london_bullion_vault', name: 'خزائن وبنك لندن للمعادن', flag: '🇬🇧', region: 'المملكة المتحدة', demands: ['gold_bullion_bars', 'luxury_cars'], priceMult: 1.07 },
+    { id: 'singapore_logistics_hub', name: 'مؤسسة التجارة الحرة بسنغافورة', flag: '🇸🇬', region: 'جنوب شرق آسيا', demands: ['auto_spare_parts', 'fashion_brands', 'espresso_coffee'], priceMult: 1.06 },
+    { id: 'cairo_sovereign_procurement', name: 'الهيئة العامة للتوريدات والمشروعات', flag: '🇪🇬', region: 'شمال أفريقيا', demands: ['solar_panels', 'luxury_cars', 'industrial_turbines'], priceMult: 1.05 },
+    { id: 'zurich_private_clients', name: 'نخبة عملاء المصارف الخاصة بزيورخ', flag: '🇨🇭', region: 'سويسرا', demands: ['gold_bullion_bars', 'ai_quantum_chips'], priceMult: 1.09 }
   ];
 
   // --- مجمع الصناعات وسلاسل الإمداد (Industrial Supply Chain Empire) ---
@@ -778,7 +778,7 @@ const GameEngine = (() => {
         stage3: { id: 'stage3', name: 'مجمع التعبئة والصناعات الغذائية', baseCost: 950000, icon: 'fa-solid fa-boxes-packing', desc: 'خطوط إنتاج وتعليب السلع الجاهزة' },
         logistics: { id: 'logistics', name: 'أسطول شاحنات التوزيع المبردة', baseCost: 450000, icon: 'fa-solid fa-truck-fast', desc: 'تسريع دورة التوزيع وتوسيع صوامع التخزين' }
       },
-      product: { name: 'سلع تموينية وغذائية فاخرة', baseValue: 450, icon: 'fa-solid fa-box', tradeCommodityId: 'espresso_coffee', unitsPerContainer: 20 }
+      product: { name: 'سلع تموينية وغذائية فاخرة', baseValue: 35, icon: 'fa-solid fa-box', tradeCommodityId: 'espresso_coffee', unitsPerContainer: 20 }
     },
     auto: {
       id: 'auto',
@@ -795,7 +795,7 @@ const GameEngine = (() => {
         stage3: { id: 'stage3', name: 'خط التجميع الروبوتي الذكي للسيارات', baseCost: 9500000, icon: 'fa-solid fa-robot', desc: 'تركيب الأنظمة الإلكترونية والتشطيب' },
         logistics: { id: 'logistics', name: 'أسطول ناقلات السيارات العملاقة', baseCost: 4200000, icon: 'fa-solid fa-truck-moving', desc: 'شحن أساطيل السيارات وتوسيع ساحات التخزين' }
       },
-      product: { name: 'سيارات سيدان وتجارية حديثة', baseValue: 5200, icon: 'fa-solid fa-car', tradeCommodityId: 'auto_spare_parts', unitsPerContainer: 8 }
+      product: { name: 'سيارات سيدان وتجارية حديثة', baseValue: 220, icon: 'fa-solid fa-car', tradeCommodityId: 'auto_spare_parts', unitsPerContainer: 8 }
     },
     semiconductor: {
       id: 'semiconductor',
@@ -812,7 +812,7 @@ const GameEngine = (() => {
         stage3: { id: 'stage3', name: 'مجمع تصنيع معالجات وسيرفرات AI', baseCost: 65000000, icon: 'fa-solid fa-server', desc: 'تجميع وتغليف وحدات المعالجة الفائقة' },
         logistics: { id: 'logistics', name: 'طيران الشحن الدبلوماسي فائق الأمان', baseCost: 28000000, icon: 'fa-solid fa-plane-departure', desc: 'نقل سريع ومؤمن وتوسيع مستودعات الكوانتم' }
       },
-      product: { name: 'معالجات كوانتم وسيرفرات ذكاء اصطناعي', baseValue: 42000, icon: 'fa-solid fa-microchip', tradeCommodityId: 'ai_quantum_chips', unitsPerContainer: 18 }
+      product: { name: 'معالجات كوانتم وسيرفرات ذكاء اصطناعي', baseValue: 950, icon: 'fa-solid fa-microchip', tradeCommodityId: 'ai_quantum_chips', unitsPerContainer: 18 }
     },
     petrochemical: {
       id: 'petrochemical',
@@ -829,7 +829,7 @@ const GameEngine = (() => {
         stage3: { id: 'stage3', name: 'مجمع صناعات البلمرة والبوليمرات', baseCost: 320000000, icon: 'fa-solid fa-flask-vial', desc: 'تحويل المشتقات إلى بوليمرات ووقود نفاث' },
         logistics: { id: 'logistics', name: 'خطوط الأنابيب وشبكات الناقلات البترولية', baseCost: 140000000, icon: 'fa-solid fa-ship', desc: 'ضخ المنتجات وتوسيع صهاريج التخزين الاستراتيجي' }
       },
-      product: { name: 'بوليمرات ووقود طائرات عالي النقاوة', baseValue: 260000, icon: 'fa-solid fa-gas-pump', tradeCommodityId: 'industrial_turbines', unitsPerContainer: 3 }
+      product: { name: 'بوليمرات ووقود طائرات عالي النقاوة', baseValue: 2800, icon: 'fa-solid fa-gas-pump', tradeCommodityId: 'industrial_turbines', unitsPerContainer: 3 }
     },
     aerospace: {
       id: 'aerospace',
@@ -846,7 +846,7 @@ const GameEngine = (() => {
         stage3: { id: 'stage3', name: 'حوض تجميع الصواريخ والمكوك والأقمار', baseCost: 1400000000, icon: 'fa-solid fa-satellite', desc: 'تجميع المركبات الفضائية وأنظمة التوجيه' },
         logistics: { id: 'logistics', name: 'منصات الإطلاق وشبكة التوجيه المداري', baseCost: 650000000, icon: 'fa-solid fa-satellite-dish', desc: 'إطلاق وتوجيه وتوسيع هناجر الصواريخ' }
       },
-      product: { name: 'مركبات فضائية ومحطات مدارية سيادية', baseValue: 1950000, icon: 'fa-solid fa-rocket', tradeCommodityId: 'gold_bullion_bars', unitsPerContainer: 1 }
+      product: { name: 'مركبات فضائية ومحطات مدارية سيادية', baseValue: 8500, icon: 'fa-solid fa-rocket', tradeCommodityId: 'gold_bullion_bars', unitsPerContainer: 1 }
     }
   };
 
@@ -4231,7 +4231,7 @@ const GameEngine = (() => {
 
   // --- شركة الاستيراد والتصدير الدولية (Import & Export Global Company) ---
 
-  function getTradeCompanyState() {
+  function ensureDailyTradeReset() {
     if (!state.tradeCompany) {
       state.tradeCompany = {
         warehouseCapacity: 10,
@@ -4242,6 +4242,21 @@ const GameEngine = (() => {
         totalShipmentsCompleted: 0
       };
     }
+    const now = Date.now();
+    if (!state.tradeCompany.dailyTradeResetAt || now > state.tradeCompany.dailyTradeResetAt) {
+      state.tradeCompany.dailyTradeProfit = 0;
+      state.tradeCompany.dailyExportsCount = {};
+      const nextMidnight = new Date();
+      nextMidnight.setHours(24, 0, 0, 0);
+      state.tradeCompany.dailyTradeResetAt = nextMidnight.getTime();
+    }
+    if (!state.tradeCompany.dailyExportsCount) state.tradeCompany.dailyExportsCount = {};
+    if (typeof state.tradeCompany.dailyTradeProfit !== 'number') state.tradeCompany.dailyTradeProfit = 0;
+  }
+
+  function getTradeCompanyState() {
+    ensureDailyTradeReset();
+
     if (!state.tradeCompany.warehouse) state.tradeCompany.warehouse = {};
     if (!state.tradeCompany.activeImports) state.tradeCompany.activeImports = [];
     if (!state.tradeCompany.activeExports) state.tradeCompany.activeExports = [];
@@ -4270,6 +4285,10 @@ const GameEngine = (() => {
       activeExports: state.tradeCompany.activeExports,
       totalProfitEarned: state.tradeCompany.totalProfitEarned || 0,
       totalShipmentsCompleted: state.tradeCompany.totalShipmentsCompleted || 0,
+      dailyTradeProfit: state.tradeCompany.dailyTradeProfit || 0,
+      dailyTradeMaxProfit: 500000,
+      dailyExportsCount: state.tradeCompany.dailyExportsCount || {},
+      dailyTradeResetAt: state.tradeCompany.dailyTradeResetAt,
       upgradeCost,
       commodities: TRADE_COMMODITIES,
       buyers: TRADE_BUYERS
@@ -4278,6 +4297,13 @@ const GameEngine = (() => {
 
   function buyImportCargo(commodityId, quantity) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك إدارة عمليات الاستيراد والتصدير.");
+    ensureDailyTradeReset();
+
+    const activeImportsCount = (state.tradeCompany.activeImports || []).filter(imp => !imp.arrived).length;
+    if (activeImportsCount >= 2) {
+      throw new Error("أسطول الاستيراد البحري يعمل بكامل طاقته (شحنتان قيد الإبحار)! انتظر وصول وتسليم إحدى الشحنات أولاً لتفريغ رصيف الميناء.");
+    }
+
     const item = TRADE_COMMODITIES[commodityId];
     if (!item) throw new Error("نوع البضاعة غير معروف في سجل التجارة الدولية.");
     quantity = parseInt(quantity, 10);
@@ -4330,6 +4356,14 @@ const GameEngine = (() => {
 
   function sellExportCargo(commodityId, buyerId, quantity) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك إبرام عقود التصدير.");
+    ensureDailyTradeReset();
+
+    const DAILY_TRADE_MAX_PROFIT = 500000;
+    const currentDailyProfit = Number(state.tradeCompany.dailyTradeProfit || 0);
+    if (currentDailyProfit >= DAILY_TRADE_MAX_PROFIT) {
+      throw new Error(`وصلت شركتك إلى سقف الأرباح اليومية للتصدير (500,000 EGP) المحدد من هيئة الرقابة الجمركية 🛑. تتجدد الحصص الليلة الساعة 12:00 منتصف الليل.`);
+    }
+
     const item = TRADE_COMMODITIES[commodityId];
     if (!item) throw new Error("نوع البضاعة غير صالح.");
     const buyer = TRADE_BUYERS.find(b => b.id === buyerId);
@@ -4337,9 +4371,14 @@ const GameEngine = (() => {
     quantity = parseInt(quantity, 10);
     if (!quantity || quantity <= 0) throw new Error("يرجى تحديد كمية صالحة للتصدير.");
 
+    const activeExportsCount = (state.tradeCompany.activeExports || []).filter(e => !e.claimed).length;
+    if (activeExportsCount >= 2) {
+      throw new Error("أسطول التصدير البحري يعمل بكامل طاقته (سفينتان نشطتان قيد الإبحار)! انتظر تسليم إحدى الشحنات أولاً لتحرير سفينة شحن.");
+    }
+
     const activeWithBuyer = (state.tradeCompany.activeExports || []).filter(e => e.buyerId === buyer.id && !e.claimed).length;
-    if (activeWithBuyer >= 2) {
-      throw new Error(`العميل الدولي "${buyer.name}" لديه بالفعل شحنتان جاري تسليمهما (${activeWithBuyer}/2)! انتظر تسليم إحداهما أو تعاقد مع مشتري دولي آخر.`);
+    if (activeWithBuyer >= 1) {
+      throw new Error(`العميل الدولي "${buyer.name}" لديه بالفعل شحنة جاري تسليمها له! تعاقد مع مشتري دولي آخر لتوزيع البضائع.`);
     }
 
     const currentStock = (state.tradeCompany && state.tradeCompany.warehouse && state.tradeCompany.warehouse[commodityId]) || 0;
@@ -4347,15 +4386,25 @@ const GameEngine = (() => {
       throw new Error(`المخزون المتوفر في مستودعك (${currentStock} وحدة) أقل من الكمية المطلوبة للتعاقد (${quantity} وحدة).`);
     }
 
-    // Determine unit selling price based on buyer demand
+    // Determine unit selling price based on buyer demand & market saturation
     const isDemanded = buyer.demands.includes(commodityId);
     let basePrice = item.baseSellMin + Math.floor(Math.random() * (item.baseSellMax - item.baseSellMin));
     if (isDemanded) {
       basePrice = Math.floor(basePrice * buyer.priceMult);
     } else {
-      // Non-demanded goods sold at wholesale discount (-20%)
-      basePrice = Math.floor(item.baseSellMin * 0.80);
+      // Non-demanded goods sold at wholesale discount (-15%)
+      basePrice = Math.floor(item.baseSellMin * 0.85);
     }
+
+    // Market saturation penalty (-5% per 3 shipments today, max -25%)
+    const todayExported = Number(state.tradeCompany.dailyExportsCount[commodityId] || 0);
+    let saturationDiscount = 0;
+    if (todayExported >= 3) {
+      const tiers = Math.floor((todayExported - 3) / 3) + 1;
+      saturationDiscount = Math.min(0.25, tiers * 0.05);
+      basePrice = Math.floor(basePrice * (1 - saturationDiscount));
+    }
+
     const totalPayout = basePrice * quantity;
     const estProfit = totalPayout - (item.unitCost * quantity);
 
@@ -4377,6 +4426,7 @@ const GameEngine = (() => {
       unitPrice: basePrice,
       totalPayout,
       estProfit,
+      saturationDiscountPct: Math.round(saturationDiscount * 100),
       startTime: Date.now(),
       deliveryTime: Date.now() + (item.exportDurationSec * 1000),
       durationSec: item.exportDurationSec,
@@ -4385,7 +4435,7 @@ const GameEngine = (() => {
     };
 
     state.tradeCompany.activeExports.push(exportOrder);
-    recordPlayerActivity('تصدير بضاعة 📦', `شحن وتصدير ${quantity} وحدة من "${item.name}" إلى ${buyer.name} بقيمة تعاقد ${totalPayout.toLocaleString()} ج.م (ربح تقديري: +${estProfit.toLocaleString()} ج.م).`, 'trade');
+    recordPlayerActivity('تصدير بضاعة 📦', `شحن وتصدير ${quantity} وحدة من "${item.name}" إلى ${buyer.name} بقيمة تعاقد ${totalPayout.toLocaleString()} ج.م (ربح تقديري: +${estProfit.toLocaleString()} ج.م)${saturationDiscount > 0 ? ` [تشبع سوق: -${Math.round(saturationDiscount * 100)}%]` : ''}.`, 'trade');
     forceSaveState(true);
 
     return exportOrder;
@@ -4412,6 +4462,10 @@ const GameEngine = (() => {
     state.bank = (state.bank || 0) + order.totalPayout;
     state.tradeCompany.totalProfitEarned = (state.tradeCompany.totalProfitEarned || 0) + (order.estProfit || 0);
     state.tradeCompany.totalShipmentsCompleted = (state.tradeCompany.totalShipmentsCompleted || 0) + 1;
+
+    ensureDailyTradeReset();
+    state.tradeCompany.dailyTradeProfit = (state.tradeCompany.dailyTradeProfit || 0) + Math.max(0, order.estProfit || 0);
+    state.tradeCompany.dailyExportsCount[order.commodityId] = (state.tradeCompany.dailyExportsCount[order.commodityId] || 0) + (order.quantity || 1);
 
     // Remove from activeExports
     state.tradeCompany.activeExports.splice(index, 1);
@@ -4495,7 +4549,7 @@ const GameEngine = (() => {
     const isStorageFull = currentStock >= siloCapacity;
     const efficiencyPct = Math.round(balanceFactor * 100);
 
-    const outputRatePerSec = bottleneck > 0 ? (bottleneck * 0.04 * logisticsMult * balanceFactor) : 0;
+    const outputRatePerSec = bottleneck > 0 ? (bottleneck * 0.012 * logisticsMult * balanceFactor) : 0;
     const revenueRatePerHour = Math.floor(outputRatePerSec * secDef.product.baseValue * 3600);
 
     const stageCosts = {};
@@ -4670,20 +4724,26 @@ const GameEngine = (() => {
     if (units <= 0) throw new Error("لا يوجد إنتاج جاهز للبيع في مستودع هذا المصنع حالياً.");
 
     const unitPrice = info.definition.product.baseValue;
-    const totalPayout = units * unitPrice;
+    const grossPayout = units * unitPrice;
+    const overheadRate = 0.35; // 35% operational, energy & maintenance expenses
+    const overheadCost = Math.floor(grossPayout * overheadRate);
+    const netPayout = grossPayout - overheadCost;
 
     info.state.readyStock -= units;
-    state.cash = (state.cash || 0) + totalPayout;
-    info.state.totalEarned = (info.state.totalEarned || 0) + totalPayout;
+    state.cash = (state.cash || 0) + netPayout;
+    info.state.totalEarned = (info.state.totalEarned || 0) + netPayout;
 
-    recordPlayerActivity('بيع إنتاج صناعي 💰', `بيع ${units.toLocaleString()} وحدة من "${info.definition.product.name}" نقداً بمبلغ +${totalPayout.toLocaleString()} EGP`, 'business');
+    recordPlayerActivity('بيع إنتاج صناعي 💰', `بيع ${units.toLocaleString()} وحدة من "${info.definition.product.name}" بإجمالي ${grossPayout.toLocaleString()} EGP (مصاريف تشغيل 35%: -${overheadCost.toLocaleString()} EGP | صافي مودع: +${netPayout.toLocaleString()} EGP)`, 'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(false);
 
     return {
       units,
       unitPrice,
-      totalPayout
+      grossPayout,
+      overheadCost,
+      netPayout,
+      totalPayout: netPayout
     };
   }
 
