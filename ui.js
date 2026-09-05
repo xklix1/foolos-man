@@ -5871,22 +5871,58 @@ const UIController = (() => {
       activeListeners.push(unsubMail);
     }
 
-    // 3. Airdrop Listener
-    let lastAirdropTime = Date.now();
-    const unsubAirdrop = db.collection('globals').doc('airdrop')
-      .onSnapshot(async (doc) => {
-        if (!doc.exists) return;
-        const data = doc.data();
-        if (data.timestamp > lastAirdropTime) {
-          lastAirdropTime = data.timestamp;
-          const s = GameEngine.state;
-          s.cash += data.amount;
-          GameEngine.forceSaveState();
-          showToast('مكافأة عامة',`استلمت مكافأة عامة بقيمة +${data.amount.toLocaleString()} EGP!`,'success');
-          renderAll();
+    // 3. Reliable Global Airdrop Synchronization (Supabase REST)
+    const checkAirdrop = async () => {
+      if (typeof AppDB !== 'undefined' && typeof AppDB.isNetworkActive === 'function' && !AppDB.isNetworkActive()) return;
+      if (typeof document !== 'undefined' && document.hidden) return;
+      try {
+        if (typeof AppDB.getLatestAirdrop === 'function') {
+          const airdrop = await AppDB.getLatestAirdrop();
+          if (airdrop && airdrop.amount && airdrop.timestamp) {
+            const airdropId = airdrop.airdropId || `airdrop_${airdrop.timestamp}`;
+            const s = GameEngine.state;
+            if (!s) return;
+
+            s.claimedAirdrops = s.claimedAirdrops || [];
+            // If player hasn't claimed this airdrop yet
+            if (!s.claimedAirdrops.includes(airdropId)) {
+              // Safety check: only grant airdrops emitted within the last 24 hours
+              const isRecent = (Date.now() - Number(airdrop.timestamp)) < (24 * 3600 * 1000);
+              if (isRecent) {
+                s.claimedAirdrops.push(airdropId);
+                if (s.claimedAirdrops.length > 20) s.claimedAirdrops.shift();
+
+                const amt = Number(airdrop.amount) || 0;
+                s.cash = (Number(s.cash) || 0) + amt;
+                s.netWorth = (Number(s.netWorth) || 0) + amt;
+                await AppDB.savePlayerState(GameEngine.activeUsername, s, true);
+
+                if (typeof showDirectAdminPopupModal === 'function') {
+                  showDirectAdminPopupModal({
+                    title: 'مكافأة عامة من الإدارة (Airdrop) 🎁',
+                    message: `تهانينا! قامت إدارة اللعبة بتوزيع مكافأة مالية عامة لجميع اللاعبين بقيمة +${amt.toLocaleString()} EGP.\nتم إضافة المبلغ مباشرة إلى سيولة الكاش الخاصة بك!`,
+                    style: 'reward',
+                    timestamp: airdrop.timestamp
+                  });
+                } else {
+                  showToast('مكافأة عامة 🎁', `استلمت مكافأة عامة بقيمة +${amt.toLocaleString()} EGP!`, 'success');
+                }
+                renderAll();
+              } else {
+                // If it is older than 24h, mark as seen so it won't check again
+                s.claimedAirdrops.push(airdropId);
+              }
+            }
+          }
         }
-      }, (err) => console.error("Airdrop listen err:", err));
-    activeListeners.push(unsubAirdrop);
+      } catch (e) {
+        console.warn('[Airdrop Sync] Check failed:', e);
+      }
+    };
+
+    checkAirdrop();
+    const airdropPollInterval = setInterval(checkAirdrop, 15000);
+    activeListeners.push(() => clearInterval(airdropPollInterval));
 
     // 5. Global Unified Market Event synchronization (30s interval, pauses when hidden or idle)
     const syncMarketEvent = async () => {

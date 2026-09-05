@@ -810,17 +810,68 @@ var AppDB = (() => {
     return true;
   }
 
-  async function sendAirdrop(amount) {
+  async function sendAirdrop(amount, target = 'ALL') {
+    const amt = Number(amount);
+    if (!amt || amt <= 0) throw new Error("مبلغ المكافأة غير صحيح.");
+    const cleanTarget = (target || 'ALL').trim().replace(/^@/, '');
+    const ts = Date.now();
+    const airdropId = `airdrop_${ts}_${Math.floor(Math.random() * 10000)}`;
+
+    if (cleanTarget.toUpperCase() !== 'ALL' && cleanTarget !== 'الجميع' && cleanTarget !== '') {
+      // Specific player target
+      const pState = await adminGetPlayer(cleanTarget);
+      if (!pState) throw new Error(`اللاعب "${cleanTarget}" غير موجود في قاعدة البيانات.`);
+
+      pState.cash = (Number(pState.cash) || 0) + amt;
+      pState.netWorth = (Number(pState.netWorth) || 0) + amt;
+      pState.adminModifiedTimestamp = ts;
+
+      await adminSavePlayer(cleanTarget, pState);
+      await savePlayerState(cleanTarget, pState, true);
+
+      // Send a direct reward popup to their mailbox
+      await sendMail('إدارة اللعبة (Admin)', cleanTarget, 'admin_popup', {
+        title: 'مكافأة مالية خاصة 🎁',
+        message: `تهانينا! قررت إدارة اللعبة منحك مكافأة مالية خاصة بقيمة +${amt.toLocaleString()} EGP.\nتم إيداع المبلغ في كاش محفظتك فوراً بنجاح!`,
+        style: 'reward',
+        sentAt: ts
+      });
+
+      return { type: 'single', target: cleanTarget, amount: amt };
+    }
+
+    // Broadcast Airdrop to ALL players:
+    // 1. Save persistent airdrop in globals table
     await _api('globals', {
-      method:'POST',
-      headers: {'Prefer':'resolution=merge-duplicates' },
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates' },
       body: JSON.stringify({
-        id:'airdrop',
-        data: { amount: Number(amount), timestamp: Date.now() },
-        updated_at: Date.now()
+        id: 'airdrop',
+        data: {
+          airdropId: airdropId,
+          amount: amt,
+          timestamp: ts,
+          target: 'ALL',
+          sender: 'Admin'
+        },
+        updated_at: ts
       })
     });
-    return true;
+
+    // 2. Also send broadcast message in globals so all players see the news
+    await sendBroadcast('مكافأة عامة للجميع 🎁', `قامت إدارة اللعبة بتوزيع إيردروب مالي بقيمة +${amt.toLocaleString()} EGP لجميع المستثمرين!`);
+
+    return { type: 'all', amount: amt, airdropId };
+  }
+
+  async function getLatestAirdrop() {
+    try {
+      const rows = await _api(`globals?id=eq.airdrop`);
+      if (rows && rows.length > 0 && rows[0].data) {
+        return rows[0].data;
+      }
+    } catch (e) {}
+    return null;
   }
 
   async function setMaintenanceMode(active, message ='') {
@@ -2784,6 +2835,7 @@ var AppDB = (() => {
     // Globals
     sendBroadcast,
     sendAirdrop,
+    getLatestAirdrop,
     setMaintenanceMode,
     getMaintenanceStatus,
     sendForceReload,

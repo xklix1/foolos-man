@@ -3227,12 +3227,19 @@
           return;
         }
         try {
-          await AppDB.sendAirdrop(amount, target);
-          showToast('نجاح التوزيع',`تم توزيع المكافأة (+${amount.toLocaleString()} EGP) للمستهدفين (${target}) بنجاح.`,'success');
-          document.getElementById('admin-airdrop-amount').value ='';
+          sendAirdropBtn.disabled = true;
+          sendAirdropBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i> <span>جاري توزيع المكافأة...</span>';
+
+          const res = await AppDB.sendAirdrop(amount, target);
+          const targetDesc = res && res.type === 'single' ? `للاعب @${res.target}` : 'لجميع اللاعبين';
+          showToast('نجاح التوزيع 🎁', `تم توزيع المكافأة (+${amount.toLocaleString()} EGP) ${targetDesc} بنجاح! ستصلهم في الكاش فوراً.`, 'success');
+          document.getElementById('admin-airdrop-amount').value = '';
           logAdminAction(`توزيع مكافأة مالية: +${amount.toLocaleString()} EGP -> ${target}`);
         } catch (err) {
-          showToast('فشل التوزيع', err.message,'error');
+          showToast('فشل التوزيع', err.message, 'error');
+        } finally {
+          sendAirdropBtn.disabled = false;
+          sendAirdropBtn.innerHTML = '<i class="fa-solid fa-parachute-box text-sm"></i> <span>توزيع المكافأة المالية</span>';
         }
       });
     }
