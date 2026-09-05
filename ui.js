@@ -5208,6 +5208,26 @@ const UIController = (() => {
       const ticksRemaining = (s.itemDurations && s.itemDurations[id]) ? s.itemDurations[id] : 0;
       const secRemaining = ticksRemaining * 3;
 
+      const maxDailyUses = item.maxDailyUses || 3;
+      const todayStr = (typeof GameEngine.getTodayDateString === 'function') ? GameEngine.getTodayDateString() : '';
+      const usedToday = (s.dailyToolUses && s.dailyToolUses.date === todayStr && s.dailyToolUses.uses) ? (s.dailyToolUses.uses[id] || 0) : 0;
+      const remainingDailyUses = Math.max(0, maxDailyUses - usedToday);
+      const isCurrentlyActive = (count > 0 && ticksRemaining > 0);
+
+      let btnLabel = window.currentLang === 'en' ? 'Buy & Activate Effect' : 'شراء وتفعيل المفعول';
+      let btnClass = 'w-full py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-lg text-xs font-bold transition shadow-lg shadow-yellow-500/10';
+      let btnDisabled = false;
+
+      if (isCurrentlyActive) {
+        btnLabel = window.currentLang === 'en' ? `Active (${secRemaining}s)` : `الأداة نشطة حالياً (${secRemaining}ث)`;
+        btnClass = 'w-full py-2 bg-slate-800 text-slate-400 rounded-lg text-xs font-bold cursor-not-allowed border border-slate-700';
+        btnDisabled = true;
+      } else if (remainingDailyUses <= 0) {
+        btnLabel = window.currentLang === 'en' ? `Daily Limit Reached (${maxDailyUses}/${maxDailyUses})` : `استُنفد الحد اليومي (${maxDailyUses}/${maxDailyUses})`;
+        btnClass = 'w-full py-2 bg-rose-950/40 text-rose-400 border border-rose-800/60 rounded-lg text-xs font-bold cursor-not-allowed';
+        btnDisabled = true;
+      }
+
       const card = document.createElement('div');
       card.className = 'glass-panel p-4 rounded-xl border border-slate-800 flex flex-col justify-between items-start';
 
@@ -5225,10 +5245,11 @@ const UIController = (() => {
         <div class="w-full text-xs text-slate-400 space-y-1 mb-4 border-t border-slate-800/60 pt-2.5">
           <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Selling Price:' : 'سعر البيع:'}</span><span class="numbers-font text-yellow-500 font-bold">${item.cost.toLocaleString()} EGP</span></div>
           <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Validity Duration:' : 'مدة الصلاحية:'}</span><span class="numbers-font text-rose-400 font-semibold">${item.durationTicks * 3} ${window.currentLang === 'en' ? 'seconds' : 'ثانية'}</span></div>
-          ${count > 0 ? `<div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Self-Destruct Timer:' : 'عداد التدمير الذاتي:'}</span><span class="numbers-font text-yellow-400 font-bold animate-pulse">${secRemaining} ${window.currentLang === 'en' ? 'seconds remaining' : 'ثانية متبقية'}</span></div>` : ''}
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Daily Remaining Uses:' : 'الاستخدام اليومي المتبقي:'}</span><span class="numbers-font font-black ${remainingDailyUses > 0 ? 'text-amber-400' : 'text-rose-500'}">${remainingDailyUses} / ${maxDailyUses}</span></div>
+          ${isCurrentlyActive ? `<div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Self-Destruct Timer:' : 'عداد التدمير الذاتي:'}</span><span class="numbers-font text-yellow-400 font-bold animate-pulse">${secRemaining} ${window.currentLang === 'en' ? 'seconds remaining' : 'ثانية متبقية'}</span></div>` : ''}
         </div>
-        <button id="btn-buy-store-${id}" class="w-full py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-lg text-xs font-bold transition shadow-lg shadow-yellow-500/10">
-          ${window.currentLang === 'en' ? 'Buy & Activate Effect' : 'شراء وتفعيل المفعول'}
+        <button id="btn-buy-store-${id}" ${btnDisabled ? 'disabled' : ''} class="${btnClass}">
+          ${btnLabel}
         </button>
       `;
 

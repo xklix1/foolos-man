@@ -274,7 +274,8 @@ const GameEngine = (() => {
       effect: 'xp_boost',
       value: 0.08,
       durationTicks: 180, // 3 minutes
-      cooldownSec: 600    // 10 minutes cooldown
+      cooldownSec: 600,   // 10 minutes cooldown
+      maxDailyUses: 4     // max 4 times per 24 hours
     },
     premium_lawyer: {
       id: 'premium_lawyer',
@@ -284,7 +285,8 @@ const GameEngine = (() => {
       effect: 'legal_protection',
       value: 0.06,
       durationTicks: 300,  // 5 minutes
-      cooldownSec: 900     // 15 minutes cooldown
+      cooldownSec: 900,    // 15 minutes cooldown
+      maxDailyUses: 3     // max 3 times per 24 hours
     },
     energy_drink: {
       id: 'energy_drink',
@@ -294,7 +296,8 @@ const GameEngine = (() => {
       effect: 'salary_multiplier',
       value: 1.125,
       durationTicks: 90,  // 90 seconds
-      cooldownSec: 480    // 8 minutes cooldown
+      cooldownSec: 480,   // 8 minutes cooldown
+      maxDailyUses: 5     // max 5 times per 24 hours
     },
     tax_shield: {
       id: 'tax_shield',
@@ -304,7 +307,8 @@ const GameEngine = (() => {
       effect: 'upgrade_discount',
       value: 0.04,
       durationTicks: 7200,  // 6 hours (in ticks)
-      cooldownSec: 86400    // 24 hours cooldown
+      cooldownSec: 86400,   // 24 hours cooldown
+      maxDailyUses: 1      // max 1 time per 24 hours
     },
     market_scanner: {
       id: 'market_scanner',
@@ -314,7 +318,8 @@ const GameEngine = (() => {
       effect: 'stock_shield',
       value: 0.10,
       durationTicks: 240,  // 4 minutes
-      cooldownSec: 1200    // 20 minutes cooldown
+      cooldownSec: 1200,   // 20 minutes cooldown
+      maxDailyUses: 3     // max 3 times per 24 hours
     },
     vip_casino_pass: {
       id: 'vip_casino_pass',
@@ -324,7 +329,8 @@ const GameEngine = (() => {
       effect: 'casino_luck_boost',
       value: 0.20,
       durationTicks: 100,  // ~5 minutes
-      cooldownSec: 900     // 15 minutes cooldown
+      cooldownSec: 900,    // 15 minutes cooldown
+      maxDailyUses: 3     // max 3 times per 24 hours
     },
     quantum_cpu: {
       id: 'quantum_cpu',
@@ -334,7 +340,8 @@ const GameEngine = (() => {
       effect: 'biz_multiplier',
       value: 1.125,
       durationTicks: 240,  // 4 minutes
-      cooldownSec: 1800    // 30 minutes cooldown
+      cooldownSec: 1800,   // 30 minutes cooldown
+      maxDailyUses: 3     // max 3 times per 24 hours
     },
     diamond_card: {
       id: 'diamond_card',
@@ -344,7 +351,8 @@ const GameEngine = (() => {
       effect: 'bank_perk',
       value: 0.10,
       durationTicks: 480,  // 8 minutes
-      cooldownSec: 7200    // 2 hours cooldown
+      cooldownSec: 7200,   // 2 hours cooldown
+      maxDailyUses: 2     // max 2 times per 24 hours
     },
     cronos_gear: {
       id: 'cronos_gear',
@@ -354,7 +362,8 @@ const GameEngine = (() => {
       effect: 'cooldown_reduction',
       value: 0.15,
       durationTicks: 300,  // 5 minutes
-      cooldownSec: 1200    // 20 minutes cooldown
+      cooldownSec: 1200,   // 20 minutes cooldown
+      maxDailyUses: 3     // max 3 times per 24 hours
     }
   };
 
@@ -868,6 +877,7 @@ const GameEngine = (() => {
     investments: [], // Array of { id, investedAmount, ticksRemaining, rate, name }
     activeLoan: null, // Stores { amount, totalDue, ticksRemaining, initialTicks, isDefaulted, latePenaltyTicks, latePenaltyCount }
     dailyLoans: { date: '', count: 0 }, // Max 2 loans per 24 hours (calendar day)
+    dailyToolUses: { date: '', uses: {} }, // Max daily uses per tool (calendar day)
     assets: {
       apartment: 0,
       office: 0,
@@ -3129,12 +3139,50 @@ const GameEngine = (() => {
     return { shares, price: currentPrice, grossReturn, fee, capitalGainsTax, scannerCompensation, totalReturn: netReturn };
   }
 
-  // Store: Buy Item (Refreshes duration, prevents exploit stacking, enforces cooldown)
+  // Helper: Ensure daily tool tracking (limits abuse and spam per 24 hours)
+  function ensureDailyToolTracking() {
+    if (!state) return;
+    const today = getTodayDateString();
+    if (!state.dailyToolUses || state.dailyToolUses.date !== today) {
+      state.dailyToolUses = {
+        date: today,
+        uses: {}
+      };
+    }
+    if (!state.dailyToolUses.uses) {
+      state.dailyToolUses.uses = {};
+    }
+  }
+
+  // Store: Buy Item (Refreshes duration, prevents exploit stacking, enforces daily limits & cooldown)
   function buyStoreItem(itemId) {
     const item = STORE_ITEMS[itemId];
     if (!item) throw new Error("المنتج المطلوب غير متوفر بالمتجر.");
 
-    // Check item cooldown
+    // 1. Guard against re-buying an already active tool
+    if (state.inventory && state.inventory[itemId] > 0 && state.itemDurations && state.itemDurations[itemId] > 0) {
+      const remSec = (state.itemDurations[itemId] || 0) * 3;
+      throw new Error(`أداة "${item.name}" نشطة وتعمل في حقيبتك حالياً (${remSec} ثانية متبقية). لا يمكنك شراء نسخة جديدة حتى ينتهي مفعول الحالية.`);
+    }
+
+    // 2. Guard against excessive concurrent active tools (max 3 simultaneously)
+    const activeCount = Object.keys(state.inventory || {}).filter(k => (state.inventory[k] > 0) && (state.itemDurations && state.itemDurations[k] > 0)).length;
+    if (activeCount >= 3) {
+      throw new Error("وصلت للحد الأقصى لتشغيل الأدوات المتزامنة (3 أدوات تعمل معاً في نفس اللحظة). انتظر انتهاء إحداها.");
+    }
+
+    // 3. Guard against daily overuse (maxDailyUses per 24 hours)
+    ensureDailyToolTracking();
+    const usedToday = (state.dailyToolUses.uses && state.dailyToolUses.uses[itemId]) || 0;
+    const maxUses = item.maxDailyUses || 3;
+    if (usedToday >= maxUses) {
+      const remSec = getDailyResetRemainingSeconds();
+      const remHours = Math.floor(remSec / 3600);
+      const remMins = Math.floor((remSec % 3600) / 60);
+      throw new Error(`لقد استنفدت الحد الأقصى اليومي لاستخدام "${item.name}" (${maxUses} مرات كل 24 ساعة)! يتجدد الاستخدام بعد ${remHours} ساعة و ${remMins} دقيقة.`);
+    }
+
+    // 4. Check item cooldown
     if (!state.itemCooldowns) state.itemCooldowns = {};
     const cooldownExpiry = state.itemCooldowns[itemId] || 0;
     if (Date.now() < cooldownExpiry) {
@@ -3142,7 +3190,7 @@ const GameEngine = (() => {
       const mins = Math.floor(remainingSec / 60);
       const secs = remainingSec % 60;
       const timeStr = mins > 0 ? `${mins} دقيقة و${secs} ثانية` : `${secs} ثانية`;
-      throw new Error(`هذه الأداة في فترة التبريد. يمكنك استخدامها مجدداً بعد ${timeStr}.`);
+      throw new Error(`هذه الأداة في فترة التبريد (كول داون). يمكنك استخدامها مجدداً بعد ${timeStr}.`);
     }
 
     if (state.cash < item.cost) {
@@ -3157,12 +3205,15 @@ const GameEngine = (() => {
     if (!state.itemDurations) state.itemDurations = {};
     state.itemDurations[itemId] = item.durationTicks;
 
+    // Increment daily usage count
+    state.dailyToolUses.uses[itemId] = usedToday + 1;
+
     // Set cooldown so player cannot immediately re-purchase after effect expires
     if (item.cooldownSec) {
       state.itemCooldowns[itemId] = Date.now() + (item.cooldownSec * 1000);
     }
 
-    recordPlayerActivity('شراء متجر', `شراء أداة "${item.name}" من المتجر`, 'store');
+    recordPlayerActivity('شراء متجر', `شراء وتفعيل أداة "${item.name}" (الاستخدام ${usedToday + 1}/${maxUses} لليوم)`, 'store');
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
     return item;
@@ -4810,6 +4861,7 @@ const GameEngine = (() => {
     getTodayDateString,
     getDailyResetRemainingSeconds,
     ensureDailyLoanTracking,
+    ensureDailyToolTracking,
     trackDailyQuestProgress,
     claimDailyQuestReward,
     claimGrandDailyBonus,
