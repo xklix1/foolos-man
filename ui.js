@@ -2522,9 +2522,7 @@ const UIController = (() => {
     }
 
     // Update Loan Info
-    const minLoanNetWorth = 10000;
-    const isLoanEligible = (s.netWorth || 0) >= minLoanNetWorth;
-    const maxLoan = isLoanEligible ? Math.floor(s.netWorth * 0.35) : 0;
+    const maxLoan = Math.max(10000, Math.floor(s.netWorth * 0.35));
     const maxLoanEl = document.getElementById('loan-max-limit');
     if (maxLoanEl) {
       maxLoanEl.textContent =`${formatCompactNumber(maxLoan)} EGP`;
@@ -2579,10 +2577,7 @@ const UIController = (() => {
         loanTimeEl.className ='numbers-font font-bold text-sky-400';
       }
       if (loanBadgeEl) {
-        if (!isLoanEligible) {
-          loanBadgeEl.textContent = window.currentLang ==='en' ?'Ineligible (< 10k EGP)' :'غير مؤهل (يلزم ثروة 10,000+ ج.م)';
-          loanBadgeEl.className ='text-[10px] px-2.5 py-0.5 bg-slate-800/80 text-slate-400 border border-slate-700/60 rounded-full font-bold';
-        } else if (remainingLoans <= 0) {
+        if (remainingLoans <= 0) {
           loanBadgeEl.textContent ='استُنفد الحد اليومي (2/2)';
           loanBadgeEl.className ='text-[10px] px-2.5 py-0.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full font-bold';
         } else {
