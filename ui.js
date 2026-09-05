@@ -13979,7 +13979,7 @@ const UIController = (() => {
 
         durationEl.textContent = formatTradeDuration(comm.exportDurationSec);
         const satNotice = satDiscount > 0 ? ` (تشبع سوق: -${Math.round(satDiscount * 100)}%)` : '';
-        payoutEl.textContent = `~ ${totalRev.toLocaleString()} EGP ${isDemanded ? '' : '(-15% خصم)'}${satNotice}`;
+        payoutEl.textContent = `حوالي ${totalRev.toLocaleString()} EGP ${isDemanded ? '' : '(-15% خصم)'}${satNotice}`;
         profitEl.textContent = `${totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString()} EGP (${profitMarginPct}%)`;
       }
 
