@@ -1333,6 +1333,26 @@
               <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black animate-pulse">VIP 💎</span>
             </button>
 
+            <!-- Notifications & Messages Desktop Button -->
+            <button id="btn-open-notifications-desktop" onclick="window.UI.openNotificationsModal()" title="صندوق الإشعارات والرسائل"
+              class="w-full py-2 px-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-white transition-all font-bold text-xs flex items-center justify-between gap-2 shadow cursor-pointer active:scale-95 mb-2">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-bell text-amber-400 text-sm"></i>
+                <span>صندوق الإشعارات والرسائل</span>
+              </div>
+              <span id="mailbox-unread-badge" class="hidden px-2 py-0.5 rounded-full bg-rose-600 text-white font-black text-[10px] shadow animate-pulse">0</span>
+            </button>
+
+            <!-- Player Inventory & Tools Desktop Button -->
+            <button id="btn-open-inventory-desktop" onclick="window.UI.openPlayerInventoryModal()" title="حقيبة الأدوات والمقتنيات"
+              class="w-full py-2 px-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/40 text-slate-300 hover:text-white transition-all font-bold text-xs flex items-center justify-between gap-2 shadow cursor-pointer active:scale-95 mb-2">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-briefcase text-sky-400 text-sm"></i>
+                <span>حقيبة الأدوات والمقتنيات</span>
+              </div>
+              <span id="desktop-inventory-count-badge" class="px-2 py-0.5 rounded-full bg-sky-950 border border-sky-500/30 text-sky-300 font-black text-[10px]">🎒</span>
+            </button>
+
             <!-- Quick Hall of Fame / Leaderboard Ingame Button -->
             <button id="btn-ingame-leaderboard-sidebar" onclick="window.UI.switchTab('leaderboard')" title="عرش الأثرياء (توب 10)"
               class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-yellow-500/20 via-amber-500/30 to-yellow-500/20 border border-yellow-500/50 hover:border-yellow-400 text-yellow-400 hover:text-yellow-300 transition-all font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/10 cursor-pointer active:scale-95 mb-2">
@@ -1541,10 +1561,22 @@
 
           <!-- Quick Top Utility Actions (Clean, spaced, no horizontal scroll) -->
           <div class="flex items-center gap-1.5 shrink-0">
+            <!-- Player Tools / Inventory Mobile -->
+            <button id="btn-open-inventory-mobile" onclick="window.UI.openPlayerInventoryModal()" title="حقيبة الأدوات والمقتنيات" type="button"
+              class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-sky-400 border border-sky-500/30 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
+              <i class="fa-solid fa-briefcase text-xs"></i>
+              <span id="mobile-inventory-count-badge" class="hidden absolute -top-1 -right-1 min-w-[15px] h-3.5 px-0.5 rounded-full bg-sky-600 text-white font-black text-[8px] flex items-center justify-center border border-slate-950 shadow">0</span>
+            </button>
             <!-- Cloud Save -->
             <button id="btn-save-progress-cloud-mobile" title="حفظ التقدم في السحابة" type="button"
               class="w-8 h-8 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 active:bg-yellow-500/30 text-yellow-400 border border-yellow-500/30 flex items-center justify-center transition active:scale-95 shrink-0 cursor-pointer shadow-sm">
               <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+            </button>
+            <!-- Notifications Center Mobile -->
+            <button id="btn-open-notifications-mobile" onclick="window.UI.openNotificationsModal()" title="صندوق الإشعارات والرسائل" type="button"
+              class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-400 border border-amber-500/30 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
+              <i class="fa-solid fa-bell text-xs"></i>
+              <span id="mailbox-unread-badge-mobile" class="hidden absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-rose-600 text-white font-black text-[9px] flex items-center justify-center border border-slate-950 shadow animate-pulse">0</span>
             </button>
             <!-- Settings -->
             <button id="btn-ingame-settings-mobile" title="إعدادات الصوت والإشعارات" type="button"
@@ -4408,6 +4440,130 @@
           class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg">إرسال
           دعوة الشراكة</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ==================== NOTIFICATIONS & MESSAGES CENTER MODAL ==================== -->
+  <div id="modal-notifications-center" dir="rtl"
+    class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-4 animate-fade-in text-right">
+    <div dir="rtl"
+      class="glass-panel w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl border-2 border-amber-500/40 p-4 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden">
+      
+      <!-- Top Glowing Accent -->
+      <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-36 bg-amber-500/15 blur-3xl rounded-full pointer-events-none"></div>
+
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-3.5 border-b border-slate-800/80 shrink-0 relative z-10">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 text-slate-950 flex items-center justify-center text-lg font-black shadow-lg shadow-amber-500/20 shrink-0">
+            <i class="fa-solid fa-bell"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base sm:text-lg font-black text-white">صندوق الإشعارات والرسائل</h3>
+              <span id="modal-mailbox-counter" class="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-black text-[10px]">0 جديد</span>
+            </div>
+            <p class="text-[11px] text-slate-400">إيصالات الشحن • رسائل النظام • الحوالات والطلبات</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btn-mark-all-mails-read" title="تحديد الكل كمقروء"
+            class="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5">
+            <i class="fa-solid fa-check-double text-emerald-400"></i>
+            <span class="hidden sm:inline">تحديد الكل كمقروء</span>
+          </button>
+          <button id="btn-close-notifications-modal"
+            class="w-9 h-9 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700/80 flex items-center justify-center transition cursor-pointer">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="flex items-center gap-1.5 py-3 border-b border-slate-800/60 overflow-x-auto shrink-0 no-scrollbar relative z-10">
+        <button class="mailbox-tab-btn active px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-black text-xs transition shrink-0 cursor-pointer" data-filter="all">
+          <i class="fa-solid fa-inbox text-[11px]"></i>
+          <span>الكل</span>
+        </button>
+        <button class="mailbox-tab-btn px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs transition shrink-0 cursor-pointer" data-filter="topup">
+          <i class="fa-solid fa-gem text-amber-400 text-[11px]"></i>
+          <span>شحن وباقات 💎</span>
+        </button>
+        <button class="mailbox-tab-btn px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs transition shrink-0 cursor-pointer" data-filter="system">
+          <i class="fa-solid fa-bullhorn text-sky-400 text-[11px]"></i>
+          <span>رسائل النظام 📢</span>
+        </button>
+        <button class="mailbox-tab-btn px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs transition shrink-0 cursor-pointer" data-filter="requests">
+          <i class="fa-solid fa-handshake text-emerald-400 text-[11px]"></i>
+          <span>طلبات وحوالات 🤝</span>
+        </button>
+      </div>
+
+      <!-- Messages / Receipts Container -->
+      <div id="mailbox-inbox-panel" class="flex-1 overflow-y-auto py-3 pr-1 space-y-3 relative z-10 custom-scrollbar">
+        <div class="text-center text-slate-500 text-xs py-12">لا توجد إشعارات حتى الآن.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== PLAYER TOOLS & INVENTORY MODAL ==================== -->
+  <div id="modal-player-inventory" dir="rtl"
+    class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-4 animate-fade-in text-right">
+    <div dir="rtl"
+      class="glass-panel w-full max-w-3xl max-h-[90vh] flex flex-col rounded-3xl border-2 border-sky-500/40 p-4 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden">
+      
+      <!-- Top Glowing Accent -->
+      <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-36 bg-sky-500/15 blur-3xl rounded-full pointer-events-none"></div>
+
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-3.5 border-b border-slate-800/80 shrink-0 relative z-10">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-600 text-white flex items-center justify-center text-lg font-black shadow-lg shadow-sky-500/20 shrink-0">
+            <i class="fa-solid fa-briefcase"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base sm:text-lg font-black text-white">حقيبة الأدوات والمقتنيات</h3>
+              <span id="modal-inventory-total-badge" class="px-2 py-0.5 rounded-full bg-sky-500/20 border border-sky-500/40 text-sky-300 font-black text-[10px]">0 أدوات</span>
+            </div>
+            <p class="text-[11px] text-slate-400">جميع الأدوات والمعدات والتصاريح الخاصة بك وتأثيراتها النشطة</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="window.UI.closePlayerInventoryModal(); window.switchTab('store');"
+            class="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-300 hover:text-amber-200 border border-amber-500/30 text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <span class="hidden sm:inline">متجر الأدوات</span>
+          </button>
+          <button id="btn-close-inventory-modal"
+            class="w-9 h-9 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700/80 flex items-center justify-center transition cursor-pointer">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Inventory Category Filters -->
+      <div class="flex items-center gap-1.5 py-3 border-b border-slate-800/60 overflow-x-auto shrink-0 no-scrollbar relative z-10">
+        <button class="inventory-filter-btn active px-3 py-1.5 rounded-xl bg-sky-500 text-slate-950 font-black text-xs transition shrink-0 cursor-pointer" data-category="all">
+          <i class="fa-solid fa-boxes-stacked text-[11px]"></i>
+          <span>كافة الأدوات</span>
+        </button>
+        <button class="inventory-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs transition shrink-0 cursor-pointer" data-category="vip">
+          <i class="fa-solid fa-crown text-amber-400 text-[11px]"></i>
+          <span>أدوات الشحن و VIP 👑</span>
+        </button>
+        <button class="inventory-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs transition shrink-0 cursor-pointer" data-category="store">
+          <i class="fa-solid fa-bolt text-yellow-400 text-[11px]"></i>
+          <span>مقويات المتجر ⚡</span>
+        </button>
+      </div>
+
+      <!-- Items Grid -->
+      <div id="player-inventory-grid" class="flex-1 overflow-y-auto py-3 pr-1 grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10 custom-scrollbar">
+        <!-- Dynamically rendered -->
+      </div>
+
     </div>
   </div>
 

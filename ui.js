@@ -2502,6 +2502,19 @@ const UIController = (() => {
       }
     }
 
+    // Update inventory quick badges
+    const desktopBadge = document.getElementById('desktop-inventory-count-badge');
+    const mobileBadge = document.getElementById('mobile-inventory-count-badge');
+    if (desktopBadge || mobileBadge) {
+      const inv = s.inventory || {};
+      const totalInvCount = Object.keys(inv).reduce((sum, k) => sum + (Number(inv[k]) || 0), 0);
+      if (desktopBadge) desktopBadge.textContent = `${totalInvCount} 🎒`;
+      if (mobileBadge) {
+        mobileBadge.textContent = totalInvCount;
+        mobileBadge.classList.toggle('hidden', totalInvCount === 0);
+      }
+    }
+
     renderDailyQuests();
   }
 
@@ -10967,145 +10980,21 @@ const UIController = (() => {
     container.scrollTop = container.scrollHeight;
   }
 
+  let _currentMailboxFilter = 'all';
+
   function renderMailbox(mails) {
-    window.lastMailsCache = mails;
+    window.lastMailsCache = mails || [];
     const inboxPanel = document.getElementById('mailbox-inbox-panel');
     const unreadBadge = document.getElementById('mailbox-unread-badge');
     const unreadBadgeMobile = document.getElementById('mailbox-unread-badge-mobile');
-
-    if (!inboxPanel) return;
-    inboxPanel.innerHTML = '';
+    const counterEl = document.getElementById('modal-mailbox-counter');
 
     let pendingCount = 0;
-    const requests = mails.filter(m => m.type !== 'dm');
+    const allRequests = (mails || []).filter(m => m.type !== 'dm');
 
-    processInboxSystemMessages(mails);
-
-    if (requests.length === 0) {
-      inboxPanel.innerHTML = '<div class="text-center text-slate-500 text-xs py-12">لا توجد رسائل أو طلبات جديدة في صندوقك.</div>';
-    } else {
-      requests.forEach(mail => {
-        if (mail.status === 'pending' || mail.status === 'unread') pendingCount++;
-
-        const mailDiv = document.createElement('div');
-        mailDiv.className = `p-4 rounded-xl border ${mail.status === 'pending' || mail.status === 'unread' ? 'bg-slate-900/60 border-emerald-500/20' : 'bg-slate-900/20 border-slate-800'} text-xs text-slate-300 space-y-3`;
-
-        let contentHtml = '';
-        let actionsHtml = '';
-
-        const isActionPending = (mail.status === 'pending' || mail.status === 'unread');
-
-        if (mail.type === 'friend_request') {
-          contentHtml = `يريد اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> إضافتك كصديق في اللعبة.`;
-          if (isActionPending) {
-            actionsHtml = `
-              <div class="flex gap-2">
-                <button onclick="window.UI.handleMailAction('${mail.id}', 'friend_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول الصداقة</button>
-                <button onclick="window.UI.handleMailAction('${mail.id}', 'reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
-              </div>
-            `;
-          } else if (mail.status === 'accepted') {
-            actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول الصداقة ✅</span>`;
-          } else {
-            actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم الرفض ❌</span>`;
-          }
-        } else if (mail.type === 'job_offer') {
-          contentHtml = `يعرض عليك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> العمل كمساعد في شركته: (<span class="text-sky-400 font-bold">${mail.payload && mail.payload.businessName ? mail.payload.businessName : 'مشروع'}</span>) براتب دوري قدره <strong class="text-yellow-500 numbers-font font-bold">${(mail.payload && mail.payload.salary ? mail.payload.salary : 0).toLocaleString()} EGP</strong> لكل ثانية عمل.`;
-          if (isActionPending) {
-            actionsHtml = `
-              <div class="flex gap-2">
-                <button onclick="window.UI.handleMailAction('${mail.id}', 'job_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول عقد العمل</button>
-                <button onclick="window.UI.handleMailAction('${mail.id}', 'reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
-              </div>
-            `;
-          } else if (mail.status === 'accepted') {
-            actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول عقد العمل ✅</span>`;
-          } else {
-            actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم الرفض ❌</span>`;
-          }
-        } else if (mail.type === 'partnership_invite') {
-          const pct = Math.round(((mail.payload && mail.payload.sharePct) || 0) * 100);
-          contentHtml = `يدعوك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> لتكون شريكاً استثمارياً مساهماً في شركته: (<span class="text-emerald-400 font-bold">${mail.payload && mail.payload.businessName ? mail.payload.businessName : 'مشروع'}</span>) مقابل نسبة توزيع أرباح قدرها <strong class="text-emerald-400 font-bold">${pct}%</strong> من صافي العائد.`;
-          if (isActionPending) {
-            actionsHtml = `
-              <div class="flex gap-2">
-                <button onclick="window.UI.handleMailAction('${mail.id}', 'partnership_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول الشراكة</button>
-                <button onclick="window.UI.handleMailAction('${mail.id}', 'reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
-              </div>
-            `;
-          } else if (mail.status === 'accepted') {
-            actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول الشراكة ✅</span>`;
-          } else {
-            actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم الرفض ❌</span>`;
-          }
-        } else if (mail.type === 'transfer_request') {
-          const amt = Number(mail.payload && mail.payload.amount ? mail.payload.amount : 0);
-          contentHtml = `
-            <div class="space-y-1.5">
-              <div class="text-slate-200">
-                يطلب منك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> تحويل مبلغ مالي كاش قدره: <strong class="text-yellow-400 font-black numbers-font text-sm">${amt.toLocaleString()} EGP</strong>.
-              </div>
-            </div>
-          `;
-          if (isActionPending) {
-            actionsHtml = `
-              <div class="flex gap-2">
-                <button onclick="window.UI.handleMailAction('${mail.id}', 'transfer_request_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول ودفع المبلغ</button>
-                <button onclick="window.UI.handleMailAction('${mail.id}', 'transfer_request_reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
-              </div>
-            `;
-          } else if (mail.status === 'accepted') {
-            actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول ودفع الطلب بنجاح ✅</span>`;
-          } else {
-            actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم رفض الطلب ❌</span>`;
-          }
-        } else if (mail.type === 'transfer_received') {
-          const amt = Number(mail.payload && mail.payload.amount ? mail.payload.amount : 0);
-          contentHtml = `
-            <div class="space-y-1">
-              <div class="text-slate-200">
-                وصلتك حوالة مالية بقيمة <strong class="text-emerald-400 font-black numbers-font text-sm">+${amt.toLocaleString()} EGP</strong> من اللاعب <strong class="text-white hover:underline cursor-pointer" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong>.
-              </div>
-              <div class="text-[11px] text-emerald-400/90 flex items-center gap-1.5 font-medium pt-0.5">
-                <i class="fa-solid fa-circle-check text-xs"></i> تم إيداع المبلغ بنجاح في كاشك.
-              </div>
-            </div>
-          `;
-          actionsHtml = `
-            <button onclick="window.switchTab('bank')" class="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-bold transition flex items-center gap-1">
-              <i class="fa-solid fa-building-columns"></i> فتح البنك
-            </button>
-          `;
-        }
-
-        const mailTime = Number(mail.timestamp || mail.created_at || Date.now());
-        const timeStr = new Date(mailTime).toLocaleString('ar-EG', {
-          month: 'numeric',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-
-        const badgeText = mail.type === 'friend_request' ? 'طلب صداقة' :
-                          mail.type === 'job_offer' ? 'عقد عمل' :
-                          mail.type === 'partnership_invite' ? 'دعوة شراكة' :
-                          mail.type === 'transfer_request' ? 'طلب تحويل أموال 💸' :
-                          mail.type === 'transfer_received' ? 'حوالة بنكية 💸' : 'رسالة';
-
-        mailDiv.innerHTML = `
-          <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
-            <span class="text-[10px] text-slate-500 font-bold numbers-font">${timeStr}</span>
-            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[9px] text-slate-400 font-bold">${badgeText}</span>
-          </div>
-          <div>${contentHtml}</div>
-          <div class="flex justify-between items-center pt-1">
-            ${actionsHtml}
-            <button onclick="window.UI.deleteMail('${mail.id}')" class="text-[10px] text-rose-400 hover:underline"><i class="fa-solid fa-trash mr-1"></i> حذف الرسالة</button>
-          </div>
-        `;
-        inboxPanel.appendChild(mailDiv);
-      });
-    }
+    allRequests.forEach(m => {
+      if (m.status === 'pending' || m.status === 'unread') pendingCount++;
+    });
 
     if (unreadBadge) {
       unreadBadge.textContent = pendingCount;
@@ -11115,6 +11004,292 @@ const UIController = (() => {
       unreadBadgeMobile.textContent = pendingCount;
       unreadBadgeMobile.classList.toggle('hidden', pendingCount === 0);
     }
+    if (counterEl) {
+      counterEl.textContent = `${pendingCount} جديد`;
+    }
+
+    if (!inboxPanel) return;
+    inboxPanel.innerHTML = '';
+
+    processInboxSystemMessages(mails);
+
+    // Apply Filter
+    let filteredList = allRequests;
+    if (_currentMailboxFilter === 'topup') {
+      filteredList = allRequests.filter(m => m.type === 'topup_receipt' || (m.payload && m.payload.topupDetails));
+    } else if (_currentMailboxFilter === 'system') {
+      filteredList = allRequests.filter(m => m.type === 'system_announcement' || m.type === 'system_notification' || m.sender === 'SYSTEM' || m.sender === 'SYSTEM_ACQUISITION' || m.sender === 'SYSTEM_DIVIDEND');
+    } else if (_currentMailboxFilter === 'requests') {
+      filteredList = allRequests.filter(m => ['friend_request', 'job_offer', 'partnership_invite', 'transfer_request', 'transfer_received'].includes(m.type));
+    }
+
+    if (filteredList.length === 0) {
+      inboxPanel.innerHTML = `
+        <div class="p-8 text-center text-slate-500 text-xs">
+          <i class="fa-solid fa-envelope-open text-2xl mb-2 text-slate-600 block"></i>
+          <span>لا توجد رسائل أو إشعارات في هذا القسم حالياً.</span>
+        </div>
+      `;
+      return;
+    }
+
+    filteredList.forEach(mail => {
+      const isUnread = (mail.status === 'pending' || mail.status === 'unread');
+      const mailDiv = document.createElement('div');
+      
+      const mailTime = Number(mail.timestamp || mail.created_at || Date.now());
+      const timeStr = new Date(mailTime).toLocaleString('ar-EG', {
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      // 1. Top-up Receipt Card
+      if (mail.type === 'topup_receipt' || (mail.payload && mail.payload.topupDetails)) {
+        const details = (mail.payload && mail.payload.topupDetails) || {};
+        const isApproved = (details.status === 'approved');
+
+        if (isApproved) {
+          // Render Approved Receipt
+          const itemsObj = details.items || {};
+          let itemsListHtml = '';
+          const itemKeys = Object.keys(itemsObj);
+          if (itemKeys.length > 0) {
+            const chips = itemKeys.map(k => {
+              const count = itemsObj[k];
+              const itemDef = (typeof INVENTORY_ITEM_CATALOG !== 'undefined' && INVENTORY_ITEM_CATALOG[k]) || (GameEngine.STORE_ITEMS && GameEngine.STORE_ITEMS[k]);
+              const name = itemDef ? itemDef.name : k;
+              return `<span class="px-2 py-0.5 rounded-lg bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 font-bold text-[10px]">${name} (x${count})</span>`;
+            }).join(' ');
+            itemsListHtml = `
+              <div class="pt-2 border-t border-slate-800/80">
+                <span class="text-[10px] text-slate-400 font-bold block mb-1">🎁 المقتنيات والأدوات المضافة لحقيبتك:</span>
+                <div class="flex flex-wrap gap-1.5">${chips}</div>
+              </div>
+            `;
+          }
+
+          mailDiv.className = `p-4 rounded-2xl border ${isUnread ? 'bg-gradient-to-r from-amber-500/10 via-slate-900/90 to-emerald-950/20 border-amber-500/50 shadow-lg shadow-amber-500/5' : 'bg-slate-900/40 border-slate-800'} text-xs text-slate-200 space-y-3`;
+          mailDiv.innerHTML = `
+            <div class="flex justify-between items-center border-b border-slate-800/80 pb-2.5">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-xs font-black">
+                  💎
+                </div>
+                <div>
+                  <h4 class="font-black text-amber-300 text-xs sm:text-sm">إيصال اعتماد شحن [${details.packageName || 'باقة شحن'}]</h4>
+                  <span class="text-[10px] text-emerald-400 font-bold">معتمد ومودع بحسابك بنجاح ✅</span>
+                </div>
+              </div>
+              <span class="text-[10px] text-slate-400 numbers-font font-bold">${timeStr}</span>
+            </div>
+
+            <p class="text-xs text-slate-300 leading-relaxed">${mail.payload.message || 'تم اعتماد تحويلك بنجاح وإيداع كافة مزايا الباقة بحسابك.'}</p>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center pt-1">
+              <div class="p-2 rounded-xl bg-slate-950/80 border border-slate-800">
+                <span class="text-[10px] text-slate-400 block font-bold">المبلغ المدفوع</span>
+                <span class="text-xs font-black text-white numbers-font">${(Number(details.price) || 0).toLocaleString()} ج.م</span>
+              </div>
+              <div class="p-2 rounded-xl bg-slate-950/80 border border-slate-800">
+                <span class="text-[10px] text-slate-400 block font-bold">كاش مضاف</span>
+                <span class="text-xs font-black text-yellow-400 numbers-font">+${(Number(details.cash) || 0).toLocaleString()}</span>
+              </div>
+              <div class="p-2 rounded-xl bg-slate-950/80 border border-slate-800">
+                <span class="text-[10px] text-slate-400 block font-bold">إيداع بالبنك</span>
+                <span class="text-xs font-black text-emerald-400 numbers-font">+${(Number(details.bank) || 0).toLocaleString()}</span>
+              </div>
+              <div class="p-2 rounded-xl bg-slate-950/80 border border-slate-800">
+                <span class="text-[10px] text-slate-400 block font-bold">نقاط خبرة XP</span>
+                <span class="text-xs font-black text-sky-400 numbers-font">+${(Number(details.xp) || 0).toLocaleString()}</span>
+              </div>
+            </div>
+
+            ${itemsListHtml}
+
+            ${details.reviewerNote ? `<div class="p-2 bg-slate-950/60 rounded-xl border border-slate-800 text-[10px] text-slate-400"><strong class="text-slate-300">ملاحظة الإدارة:</strong> ${details.reviewerNote}</div>` : ''}
+
+            <div class="flex justify-between items-center pt-1 border-t border-slate-800/60">
+              <span class="text-[10px] text-slate-500">رقم الوصل: <span class="font-mono text-slate-400">${details.receiptNumber || 'معتمد آلياً'}</span></span>
+              <button onclick="window.UI.deleteMail('${mail.id}')" class="text-[10px] text-rose-400 hover:underline cursor-pointer">
+                <i class="fa-solid fa-trash mr-1"></i> حذف الإيصال
+              </button>
+            </div>
+          `;
+        } else {
+          // Render Rejected Notice
+          mailDiv.className = `p-4 rounded-2xl border ${isUnread ? 'bg-rose-950/20 border-rose-500/50' : 'bg-slate-900/40 border-slate-800'} text-xs text-slate-200 space-y-3`;
+          mailDiv.innerHTML = `
+            <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center text-xs font-black">
+                  ⚠️
+                </div>
+                <div>
+                  <h4 class="font-black text-rose-300 text-xs sm:text-sm">تعذر اعتماد طلب شحن [${details.packageName || 'باقة شحن'}]</h4>
+                  <span class="text-[10px] text-rose-400 font-bold">تم رفض الطلب ❌</span>
+                </div>
+              </div>
+              <span class="text-[10px] text-slate-400 numbers-font font-bold">${timeStr}</span>
+            </div>
+
+            <div class="p-3 bg-rose-950/30 border border-rose-500/20 rounded-xl text-xs text-slate-300 leading-relaxed">
+              <strong class="text-rose-300 block mb-1">سبب تعذر الاعتماد:</strong>
+              ${details.reviewerNote || mail.payload.message || 'بيانات التحويل غير مطابقة أو لم يتم العثور على الإشعار.'}
+            </div>
+
+            <div class="flex justify-between items-center pt-1 border-t border-slate-800/60">
+              <button onclick="window.UI.openTopupModal()" class="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-amber-300 text-[10px] font-bold transition">
+                إعادة المحاولة من المتجر
+              </button>
+              <button onclick="window.UI.deleteMail('${mail.id}')" class="text-[10px] text-rose-400 hover:underline cursor-pointer">
+                <i class="fa-solid fa-trash mr-1"></i> حذف الإشعار
+              </button>
+            </div>
+          `;
+        }
+
+        inboxPanel.appendChild(mailDiv);
+        return;
+      }
+
+      // 2. System Announcement Card
+      if (mail.type === 'system_announcement' || mail.type === 'system_notification') {
+        const title = (mail.payload && mail.payload.title) || 'إشعار من إدارة رأس المال';
+        const message = (mail.payload && mail.payload.message) || '';
+        
+        mailDiv.className = `p-4 rounded-2xl border ${isUnread ? 'bg-slate-900/80 border-sky-500/40' : 'bg-slate-900/30 border-slate-800'} text-xs text-slate-200 space-y-3`;
+        mailDiv.innerHTML = `
+          <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-500/40 text-sky-400 flex items-center justify-center text-xs font-black">
+                📢
+              </div>
+              <h4 class="font-black text-sky-300 text-xs sm:text-sm">${title}</h4>
+            </div>
+            <span class="text-[10px] text-slate-400 numbers-font font-bold">${timeStr}</span>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed whitespace-pre-line">${message}</p>
+          <div class="flex justify-end items-center pt-1 border-t border-slate-800/60">
+            <button onclick="window.UI.deleteMail('${mail.id}')" class="text-[10px] text-rose-400 hover:underline cursor-pointer">
+              <i class="fa-solid fa-trash mr-1"></i> حذف الرسالة
+            </button>
+          </div>
+        `;
+        inboxPanel.appendChild(mailDiv);
+        return;
+      }
+
+      // 3. Interactive Social / Wire / Job Requests
+      mailDiv.className = `p-4 rounded-xl border ${isUnread ? 'bg-slate-900/60 border-emerald-500/20' : 'bg-slate-900/20 border-slate-800'} text-xs text-slate-300 space-y-3`;
+
+      let contentHtml = '';
+      let actionsHtml = '';
+      const isActionPending = isUnread;
+
+      if (mail.type === 'friend_request') {
+        contentHtml = `يريد اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> إضافتك كصديق في اللعبة.`;
+        if (isActionPending) {
+          actionsHtml = `
+            <div class="flex gap-2">
+              <button onclick="window.UI.handleMailAction('${mail.id}', 'friend_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول الصداقة</button>
+              <button onclick="window.UI.handleMailAction('${mail.id}', 'reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
+            </div>
+          `;
+        } else if (mail.status === 'accepted') {
+          actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول الصداقة ✅</span>`;
+        } else {
+          actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم الرفض ❌</span>`;
+        }
+      } else if (mail.type === 'job_offer') {
+        contentHtml = `يعرض عليك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> العمل كمساعد في شركته: (<span class="text-sky-400 font-bold">${mail.payload && mail.payload.businessName ? mail.payload.businessName : 'مشروع'}</span>) براتب دوري قدره <strong class="text-yellow-500 numbers-font font-bold">${(mail.payload && mail.payload.salary ? mail.payload.salary : 0).toLocaleString()} EGP</strong> لكل ثانية عمل.`;
+        if (isActionPending) {
+          actionsHtml = `
+            <div class="flex gap-2">
+              <button onclick="window.UI.handleMailAction('${mail.id}', 'job_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول عقد العمل</button>
+              <button onclick="window.UI.handleMailAction('${mail.id}', 'reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
+            </div>
+          `;
+        } else if (mail.status === 'accepted') {
+          actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول عقد العمل ✅</span>`;
+        } else {
+          actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم الرفض ❌</span>`;
+        }
+      } else if (mail.type === 'partnership_invite') {
+        const pct = Math.round(((mail.payload && mail.payload.sharePct) || 0) * 100);
+        contentHtml = `يدعوك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> لتكون شريكاً استثمارياً مساهماً في شركته: (<span class="text-emerald-400 font-bold">${mail.payload && mail.payload.businessName ? mail.payload.businessName : 'مشروع'}</span>) مقابل نسبة توزيع أرباح قدرها <strong class="text-emerald-400 font-bold">${pct}%</strong> من صافي العائد.`;
+        if (isActionPending) {
+          actionsHtml = `
+            <div class="flex gap-2">
+              <button onclick="window.UI.handleMailAction('${mail.id}', 'partnership_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول الشراكة</button>
+              <button onclick="window.UI.handleMailAction('${mail.id}', 'reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
+            </div>
+          `;
+        } else if (mail.status === 'accepted') {
+          actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول الشراكة ✅</span>`;
+        } else {
+          actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم الرفض ❌</span>`;
+        }
+      } else if (mail.type === 'transfer_request') {
+        const amt = Number(mail.payload && mail.payload.amount ? mail.payload.amount : 0);
+        contentHtml = `
+          <div class="space-y-1.5">
+            <div class="text-slate-200">
+              يطلب منك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> تحويل مبلغ مالي كاش قدره: <strong class="text-yellow-400 font-black numbers-font text-sm">${amt.toLocaleString()} EGP</strong>.
+            </div>
+          </div>
+        `;
+        if (isActionPending) {
+          actionsHtml = `
+            <div class="flex gap-2">
+              <button onclick="window.UI.handleMailAction('${mail.id}', 'transfer_request_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول ودفع المبلغ</button>
+              <button onclick="window.UI.handleMailAction('${mail.id}', 'transfer_request_reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
+            </div>
+          `;
+        } else if (mail.status === 'accepted') {
+          actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول ودفع الطلب بنجاح ✅</span>`;
+        } else {
+          actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم رفض الطلب ❌</span>`;
+        }
+      } else if (mail.type === 'transfer_received') {
+        const amt = Number(mail.payload && mail.payload.amount ? mail.payload.amount : 0);
+        contentHtml = `
+          <div class="space-y-1">
+            <div class="text-slate-200">
+              وصلتك حوالة مالية بقيمة <strong class="text-emerald-400 font-black numbers-font text-sm">+${amt.toLocaleString()} EGP</strong> من اللاعب <strong class="text-white hover:underline cursor-pointer" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong>.
+            </div>
+            <div class="text-[11px] text-emerald-400/90 flex items-center gap-1.5 font-medium pt-0.5">
+              <i class="fa-solid fa-circle-check text-xs"></i> تم إيداع المبلغ بنجاح في كاشك.
+            </div>
+          </div>
+        `;
+        actionsHtml = `
+          <button onclick="window.switchTab('bank')" class="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-bold transition flex items-center gap-1">
+            <i class="fa-solid fa-building-columns"></i> فتح البنك
+          </button>
+        `;
+      }
+
+      const badgeText = mail.type === 'friend_request' ? 'طلب صداقة' :
+                        mail.type === 'job_offer' ? 'عقد عمل' :
+                        mail.type === 'partnership_invite' ? 'دعوة شراكة' :
+                        mail.type === 'transfer_request' ? 'طلب تحويل أموال 💸' :
+                        mail.type === 'transfer_received' ? 'حوالة بنكية 💸' : 'رسالة';
+
+      mailDiv.innerHTML = `
+        <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
+          <span class="text-[10px] text-slate-500 font-bold numbers-font">${timeStr}</span>
+          <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[9px] text-slate-400 font-bold">${badgeText}</span>
+        </div>
+        <div>${contentHtml}</div>
+        <div class="flex justify-between items-center pt-1">
+          ${actionsHtml}
+          <button onclick="window.UI.deleteMail('${mail.id}')" class="text-[10px] text-rose-400 hover:underline cursor-pointer"><i class="fa-solid fa-trash mr-1"></i> حذف الرسالة</button>
+        </div>
+      `;
+      inboxPanel.appendChild(mailDiv);
+    });
 
     renderDMsConversationList(mails);
   }
@@ -15330,9 +15505,450 @@ const UIController = (() => {
       };
     }
   }
+  // ─────────────────────────────────────────────
+  //  NOTIFICATIONS & MESSAGES CENTER CONTROLLER
+  // ─────────────────────────────────────────────
+  let _notificationsModalEventsBound = false;
+
+  function bindNotificationsModalEvents() {
+    if (_notificationsModalEventsBound) return;
+    _notificationsModalEventsBound = true;
+
+    // Filter tabs
+    const filterBtns = document.querySelectorAll('.mailbox-tab-btn');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        playMenuSound('click');
+        filterBtns.forEach(b => {
+          b.classList.remove('active', 'bg-amber-500', 'text-slate-950', 'font-black');
+          b.classList.add('bg-slate-900', 'text-slate-300', 'font-bold');
+        });
+        btn.classList.add('active', 'bg-amber-500', 'text-slate-950', 'font-black');
+        btn.classList.remove('bg-slate-900', 'text-slate-300', 'font-bold');
+
+        _currentMailboxFilter = btn.dataset.filter || 'all';
+        if (window.lastMailsCache) {
+          renderMailbox(window.lastMailsCache);
+        }
+      });
+    });
+
+    // Close button
+    const closeBtn = document.getElementById('btn-close-notifications-modal');
+    if (closeBtn) closeBtn.addEventListener('click', closeNotificationsModal);
+
+    // Mark all read button
+    const markAllBtn = document.getElementById('btn-mark-all-mails-read');
+    if (markAllBtn) markAllBtn.addEventListener('click', markAllMailsReadAction);
+  }
+
+  function openNotificationsModal() {
+    playMenuSound('modal_open');
+    bindNotificationsModalEvents();
+    const modal = document.getElementById('modal-notifications-center');
+    if (modal) modal.classList.remove('hidden');
+    if (window.lastMailsCache) {
+      renderMailbox(window.lastMailsCache);
+    }
+  }
+
+  function closeNotificationsModal() {
+    playMenuSound('modal_close');
+    const modal = document.getElementById('modal-notifications-center');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  async function markAllMailsReadAction() {
+    if (!GameEngine.activeUsername) return;
+    try {
+      playMenuSound('click');
+      await AppDB.markAllMailsRead(GameEngine.activeUsername);
+      showToast('صندوق البريد', 'تم تحديد كافة الرسائل والإشعارات كمقروءة ✅', 'success');
+      if (window.lastMailsCache) {
+        window.lastMailsCache.forEach(m => {
+          if (m.status === 'unread' || m.status === 'pending') m.status = 'read';
+        });
+        renderMailbox(window.lastMailsCache);
+      }
+    } catch (e) {
+      showToast('خطأ', 'تعذر تحديث حالة الإشعارات', 'error');
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  //  PLAYER TOOLS & INVENTORY CONTROLLER
+  // ─────────────────────────────────────────────
+  const INVENTORY_ITEM_CATALOG = {
+    // Top-Up & VIP items
+    vip_casino_pass: {
+      id: 'vip_casino_pass',
+      name: 'بطاقة VIP لكازينو الحظ',
+      icon: 'fa-solid fa-dice text-amber-400',
+      category: 'vip',
+      badge: 'VIP حصري 👑',
+      badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+      desc: 'بونص +20% إضافي على أرباح الكازينو وعجلة الحظ، واسترداد تعادل البلاك جاك.',
+      isUsable: true,
+      durationTicks: 100
+    },
+    safe_lock: {
+      id: 'safe_lock',
+      name: 'قفل الأمان السويسري المشفر',
+      icon: 'fa-solid fa-lock text-emerald-400',
+      category: 'vip',
+      badge: 'أمان بنكي 🔒',
+      badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+      desc: 'أداة حماية متقدمة لحسابك وأرصدتك البنكية ضد المخاطر والأزمات المالية.',
+      isUsable: false
+    },
+    swiss_safe: {
+      id: 'swiss_safe',
+      name: 'خزنة البنك السويسري السرية',
+      icon: 'fa-solid fa-vault text-yellow-400',
+      category: 'vip',
+      badge: 'أصول ملكية 🏛️',
+      badgeClass: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40',
+      desc: 'خزنة سرية مؤمنة بنكياً ترفع كفاءة حفظ أموالك واستثماراتك.',
+      isUsable: false
+    },
+    swiss_vault: {
+      id: 'swiss_vault',
+      name: 'خزنة البنك السويسري السرية',
+      icon: 'fa-solid fa-vault text-yellow-400',
+      category: 'vip',
+      badge: 'أصول ملكية 🏛️',
+      badgeClass: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40',
+      desc: 'خزنة سرية مؤمنة بنكياً ترفع كفاءة حفظ أموالك واستثماراتك.',
+      isUsable: false
+    },
+    offshore_account: {
+      id: 'offshore_account',
+      name: 'حساب مالي خارجي (Offshore)',
+      icon: 'fa-solid fa-earth-americas text-sky-400',
+      category: 'vip',
+      badge: 'ملاذ دولي 🌐',
+      badgeClass: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
+      desc: 'حساب مصرفي دولي يحفظ أموالك وأرباحك من الضرائب والمقتطعات.',
+      isUsable: false
+    },
+    lottery_ticket: {
+      id: 'lottery_ticket',
+      name: 'تذكرة اليانصيب الكبرى',
+      icon: 'fa-solid fa-ticket text-rose-400',
+      category: 'vip',
+      badge: 'سحب الحظ 🎟️',
+      badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+      desc: 'تذكرة مؤهلة للدخول في سحوبات اليانصيب وتوزيع الجوائز الكبرى.',
+      isUsable: false
+    },
+    lottery_tickets: {
+      id: 'lottery_tickets',
+      name: 'تذكرة اليانصيب الكبرى',
+      icon: 'fa-solid fa-ticket text-rose-400',
+      category: 'vip',
+      badge: 'سحب الحظ 🎟️',
+      badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+      desc: 'تذكرة مؤهلة للدخول في سحوبات اليانصيب وتوزيع الجوائز الكبرى.',
+      isUsable: false
+    },
+    // Store items
+    gold_pen: {
+      id: 'gold_pen',
+      name: 'القلم الذهبي للمدراء',
+      icon: 'fa-solid fa-pen-nib text-yellow-400',
+      category: 'store',
+      badge: 'خبرة وظيفية ✍️',
+      badgeClass: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40',
+      desc: 'يزيد خبرتك الوظيفية XP بنسبة +8% لتسريع الترقيات.',
+      isUsable: true,
+      durationTicks: 180
+    },
+    premium_lawyer: {
+      id: 'premium_lawyer',
+      name: 'توكيل محامٍ دولي قدير',
+      icon: 'fa-solid fa-scale-balanced text-amber-400',
+      category: 'store',
+      badge: 'حماية قانونية ⚖️',
+      badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+      desc: 'يخفض خطورة القبض في صفقات السوق المحظورة بنسبة -6%.',
+      isUsable: true,
+      durationTicks: 300
+    },
+    energy_drink: {
+      id: 'energy_drink',
+      name: 'مشروب الطاقة والتركيز الفائق',
+      icon: 'fa-solid fa-bolt text-lime-400',
+      category: 'store',
+      badge: 'نشاط مضاعف ⚡',
+      badgeClass: 'bg-lime-500/20 text-lime-300 border-lime-500/40',
+      desc: 'يزيد راتب نوبات العمل بنسبة +12.5%.',
+      isUsable: true,
+      durationTicks: 90
+    },
+    tax_shield: {
+      id: 'tax_shield',
+      name: 'درع الإعفاء والملاذ الضريبي',
+      icon: 'fa-solid fa-shield-halved text-emerald-400',
+      category: 'store',
+      badge: 'ملاذ ضريبي 🛡️',
+      badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+      desc: 'خصم 4% على ترقيات الشركات ويخفض ضريبة الثروة بنسبة 12.5%.',
+      isUsable: true,
+      durationTicks: 7200
+    },
+    market_scanner: {
+      id: 'market_scanner',
+      name: 'ماسح البورصة والتداول الذكي',
+      icon: 'fa-solid fa-chart-line text-sky-400',
+      category: 'store',
+      badge: 'تداول ذكي 📊',
+      badgeClass: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
+      desc: 'يخفف أثر الهبوط والتصحيحات العكسية لأسهمك بنسبة 10%.',
+      isUsable: true,
+      durationTicks: 240
+    },
+    quantum_cpu: {
+      id: 'quantum_cpu',
+      name: 'معالج الحوسبة الكمومية',
+      icon: 'fa-solid fa-microchip text-purple-400',
+      category: 'store',
+      badge: 'تسريع إنتاج 🔮',
+      badgeClass: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
+      desc: 'يرفع أرباح وتدفقات كافة مشاريعك بنسبة +12.5%.',
+      isUsable: true,
+      durationTicks: 240
+    },
+    diamond_card: {
+      id: 'diamond_card',
+      name: 'عضوية النادي الماسي للبنوك',
+      icon: 'fa-solid fa-gem text-cyan-400',
+      category: 'store',
+      badge: 'نادي ماسي 💎',
+      badgeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+      desc: 'ترفع فوائد الودائع البنكية بنسبة 10% وتخفض ضرائب الثروة بنسبة 12.5%.',
+      isUsable: true,
+      durationTicks: 480
+    },
+    cronos_gear: {
+      id: 'cronos_gear',
+      name: 'ساعة الكرونوس لتسريع العمليات',
+      icon: 'fa-solid fa-stopwatch text-orange-400',
+      category: 'store',
+      badge: 'تسريع وقت ⏱️',
+      badgeClass: 'bg-orange-500/20 text-orange-300 border-orange-500/40',
+      desc: 'تقلل وقت التبريد وفترات نوبات العمل بنسبة 15%.',
+      isUsable: true,
+      durationTicks: 300
+    }
+  };
+
+  let _currentInventoryCategory = 'all';
+  let _inventoryModalEventsBound = false;
+
+  function bindInventoryModalEvents() {
+    if (_inventoryModalEventsBound) return;
+    _inventoryModalEventsBound = true;
+
+    // Filter tabs
+    const filterBtns = document.querySelectorAll('.inventory-filter-btn');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        playMenuSound('click');
+        filterBtns.forEach(b => {
+          b.classList.remove('active', 'bg-sky-500', 'text-slate-950', 'font-black');
+          b.classList.add('bg-slate-900', 'text-slate-300', 'font-bold');
+        });
+        btn.classList.add('active', 'bg-sky-500', 'text-slate-950', 'font-black');
+        btn.classList.remove('bg-slate-900', 'text-slate-300', 'font-bold');
+
+        _currentInventoryCategory = btn.dataset.category || 'all';
+        renderPlayerInventory();
+      });
+    });
+
+    const closeBtn = document.getElementById('btn-close-inventory-modal');
+    if (closeBtn) closeBtn.addEventListener('click', closePlayerInventoryModal);
+  }
+
+  function openPlayerInventoryModal() {
+    playMenuSound('modal_open');
+    bindInventoryModalEvents();
+    const modal = document.getElementById('modal-player-inventory');
+    if (modal) modal.classList.remove('hidden');
+    renderPlayerInventory();
+  }
+
+  function closePlayerInventoryModal() {
+    playMenuSound('modal_close');
+    const modal = document.getElementById('modal-player-inventory');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function renderPlayerInventory() {
+    const grid = document.getElementById('player-inventory-grid');
+    const totalBadge = document.getElementById('modal-inventory-total-badge');
+    const desktopBadge = document.getElementById('desktop-inventory-count-badge');
+    const mobileBadge = document.getElementById('mobile-inventory-count-badge');
+
+    const s = GameEngine.state || {};
+    const inventory = s.inventory || {};
+    const itemDurations = s.itemDurations || {};
+
+    let totalItemsCount = 0;
+    const ownedItemIds = Object.keys(inventory).filter(id => Number(inventory[id]) > 0);
+
+    // Also include items with active durations even if inventory quantity depleted
+    Object.keys(itemDurations).forEach(id => {
+      if (itemDurations[id] > 0 && !ownedItemIds.includes(id)) {
+        ownedItemIds.push(id);
+      }
+    });
+
+    ownedItemIds.forEach(id => {
+      totalItemsCount += (Number(inventory[id]) || 0);
+    });
+
+    if (totalBadge) totalBadge.textContent = `${totalItemsCount} مقتنى`;
+    if (desktopBadge) desktopBadge.textContent = `${totalItemsCount} 🎒`;
+    if (mobileBadge) {
+      mobileBadge.textContent = totalItemsCount;
+      mobileBadge.classList.toggle('hidden', totalItemsCount === 0);
+    }
+
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    // Filter by Category
+    let visibleIds = ownedItemIds;
+    if (_currentInventoryCategory === 'vip') {
+      visibleIds = ownedItemIds.filter(id => {
+        const def = INVENTORY_ITEM_CATALOG[id];
+        return def && def.category === 'vip';
+      });
+    } else if (_currentInventoryCategory === 'store') {
+      visibleIds = ownedItemIds.filter(id => {
+        const def = INVENTORY_ITEM_CATALOG[id] || (GameEngine.STORE_ITEMS && GameEngine.STORE_ITEMS[id]);
+        return def && def.category !== 'vip';
+      });
+    }
+
+    if (visibleIds.length === 0) {
+      grid.innerHTML = `
+        <div class="col-span-full p-12 text-center text-slate-500 text-xs">
+          <i class="fa-solid fa-briefcase text-3xl mb-3 text-slate-600 block"></i>
+          <span class="font-bold block text-sm text-slate-400 mb-1">لا توجد أدوات في هذا القسم</span>
+          <span class="text-[11px]">يمكنك الحصول على الأدوات وتصاريح VIP من متجر الأدوات أو باقات الشحن الفوري.</span>
+        </div>
+      `;
+      return;
+    }
+
+    visibleIds.forEach(id => {
+      const def = INVENTORY_ITEM_CATALOG[id] || (GameEngine.STORE_ITEMS && GameEngine.STORE_ITEMS[id]) || {
+        id,
+        name: id,
+        icon: 'fa-solid fa-cube text-slate-400',
+        category: 'other',
+        badge: 'أداة',
+        badgeClass: 'bg-slate-800 text-slate-300 border-slate-700',
+        desc: 'أداة ومقتنى خاص في حسابك.',
+        isUsable: false
+      };
+
+      const count = Number(inventory[id]) || 0;
+      const ticksRemaining = Number(itemDurations[id]) || 0;
+      const isActive = ticksRemaining > 0;
+      const secRemaining = ticksRemaining * 3;
+
+      const card = document.createElement('div');
+      card.className = `p-3.5 rounded-2xl border ${isActive ? 'bg-gradient-to-br from-amber-500/10 via-slate-900 to-slate-950 border-amber-500/40 shadow-md shadow-amber-500/10' : 'bg-slate-900/60 border-slate-800'} flex flex-col justify-between gap-2.5`;
+
+      let actionButtonHtml = '';
+      if (def.isUsable) {
+        if (isActive) {
+          actionButtonHtml = `
+            <span class="px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-bold flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+              <span>نشط: ${secRemaining}ث</span>
+            </span>
+          `;
+        } else if (count > 0) {
+          actionButtonHtml = `
+            <button onclick="window.UI.useInventoryItem('${id}')" class="px-3 py-1 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black text-[10px] shadow transition active:scale-95 cursor-pointer">
+              تفعيل الآن ⚡
+            </button>
+          `;
+        } else {
+          actionButtonHtml = `<span class="text-[10px] text-slate-500 font-bold">مستنفد</span>`;
+        }
+      } else {
+        actionButtonHtml = `
+          <span class="px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400 text-[10px] font-bold">
+            نشط ومحفوظ ✅
+          </span>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-base shrink-0 shadow-inner">
+              <i class="${def.icon}"></i>
+            </div>
+            <div>
+              <h4 class="font-black text-white text-xs leading-tight">${def.name}</h4>
+              <span class="inline-block px-1.5 py-0.5 rounded-md border text-[9px] font-bold ${def.badgeClass || 'bg-slate-800 text-slate-300 border-slate-700'} mt-0.5">
+                ${def.badge || 'أداة'}
+              </span>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-yellow-400 numbers-font font-black text-xs shrink-0">
+            x${count}
+          </span>
+        </div>
+
+        <p class="text-[11px] text-slate-400 leading-relaxed font-medium">
+          ${def.desc}
+        </p>
+
+        <div class="flex justify-between items-center pt-2 border-t border-slate-800/80">
+          <span class="text-[10px] text-slate-500">${isActive ? 'المفعول قيد السريان' : (count > 0 ? 'جاهز للاستخدام' : 'مستنفد')}</span>
+          ${actionButtonHtml}
+        </div>
+      `;
+
+      grid.appendChild(card);
+    });
+  }
+
+  function useInventoryItem(itemId) {
+    const s = GameEngine.state;
+    if (!s || !s.inventory || !s.inventory[itemId] || s.inventory[itemId] <= 0) {
+      showToast('خطأ', 'لا تمتلك رصيداً كافياً من هذه الأداة.', 'error');
+      return;
+    }
+
+    const def = INVENTORY_ITEM_CATALOG[itemId] || (GameEngine.STORE_ITEMS && GameEngine.STORE_ITEMS[itemId]);
+    if (!def) return;
+
+    if (!s.itemDurations) s.itemDurations = {};
+    if (s.itemDurations[itemId] && s.itemDurations[itemId] > 0) {
+      showToast('أداة نشطة', 'هذه الأداة مفعلة ونشطة بالفعل حالياً.', 'info');
+      return;
+    }
+
+    s.inventory[itemId]--;
+    s.itemDurations[itemId] = def.durationTicks || 100;
+    GameEngine.forceSaveState();
+    playMenuSound('success');
+    showToast('تم التفعيل! ⚡', `تم تفعيل أداة "${def.name}" بنجاح!`, 'success');
+    renderPlayerInventory();
+    renderAll();
+  }
 
   return {
     init,
+    renderAll,
     switchTab,
     openMobileNav,
     closeMobileNav,
@@ -15362,8 +15978,6 @@ const UIController = (() => {
     promoteCorpMemberAction,
     payoutFromCorpTreasuryAction,
     upgradeCorporationLevelAction,
-    
-    // New V2: Cars and Smuggling exports
     buyCarAction,
     setActiveCarAction,
     rentCarAction,
@@ -15394,8 +16008,20 @@ const UIController = (() => {
     openTopupModal,
     closeTopupModal,
     selectPackageForTopup,
-    submitTopupOrder
+    submitTopupOrder,
+
+    // Notifications & Messages Center Exports
+    openNotificationsModal,
+    closeNotificationsModal,
+    markAllMailsReadAction,
+
+    // Player Tools & Inventory Exports
+    openPlayerInventoryModal,
+    closePlayerInventoryModal,
+    renderPlayerInventory,
+    useInventoryItem
   };
+
 })();
 
 

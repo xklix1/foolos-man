@@ -785,6 +785,23 @@ var AppDB = (() => {
     return true;
   }
 
+  async function markAllMailsRead(username) {
+    if (!username) return true;
+    try {
+      await _api(`mailbox?recipient=eq.${encodeURIComponent(username.trim())}&status=eq.unread`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'read' })
+      });
+      await _api(`mailbox?recipient=eq.${encodeURIComponent(username.trim())}&status=eq.pending`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'read' })
+      });
+    } catch (e) {
+      console.warn('[DB] markAllMailsRead error:', e);
+    }
+    return true;
+  }
+
   // ─────────────────────────────────────────────
   //  GLOBALS (BROADCASTS, CONFIG, MAINTENANCE)
   // ─────────────────────────────────────────────
@@ -1127,9 +1144,27 @@ var AppDB = (() => {
         })
       });
 
-      await sendMail('SYSTEM', targetUser, 'system_announcement', {
+      const topupReceiptData = {
+        packageId: req.packageId,
+        packageName: req.packageName,
+        price: req.price,
+        cash: addedCash,
+        bank: addedBank,
+        xp: addedXP,
+        customBadge: customBadge,
+        badgeTitle: rewards.badgeTitle || req.packageName,
+        items: rewards.items || {},
+        status: 'approved',
+        date: ts,
+        receiptNumber: req.receiptNumber || '',
+        senderPhoneOrName: req.senderPhoneOrName || '',
+        reviewerNote: req.reviewerNote || 'تم الاعتماد والشحن بنجاح'
+      };
+
+      await sendMail('SYSTEM', targetUser, 'topup_receipt', {
         title: `🎉 تم شحن باقة [${req.packageName}] بنجاح!`,
-        message: `شكراً لدعمك لسيرفر لعبة رأس المال! تم اعتماد تحويلك بمبلغ ${req.price} ج.م وإيداع جميع مزايا باقتك بحسابك فوراً. نتمنى لك تجربة لعب ممتعة ومميزة!`
+        message: `شكراً لدعمك لسيرفر لعبة رأس المال! تم اعتماد تحويلك بمبلغ ${req.price} ج.م وإيداع جميع مزايا باقتك بحسابك فوراً.`,
+        topupDetails: topupReceiptData
       }).catch(() => {});
 
       req.status = 'approved';
@@ -1140,9 +1175,21 @@ var AppDB = (() => {
       req.reviewedAt = ts;
       req.reviewerNote = reviewerNote || 'تم رفض الطلب لعدم تطابق بيانات التحويل';
 
-      await sendMail('SYSTEM', req.username, 'system_announcement', {
+      const topupRejectData = {
+        packageId: req.packageId,
+        packageName: req.packageName,
+        price: req.price,
+        status: 'rejected',
+        date: ts,
+        receiptNumber: req.receiptNumber || '',
+        senderPhoneOrName: req.senderPhoneOrName || '',
+        reviewerNote: req.reviewerNote || 'تم رفض الطلب لعدم تطابق بيانات التحويل'
+      };
+
+      await sendMail('SYSTEM', req.username, 'topup_receipt', {
         title: `⚠️ تعذر اعتماد طلب شحن [${req.packageName}]`,
-        message: `نعتذر، لم تتمكن الإدارة من اعتماد طلب الشحن الخاص بك.\nالسبب: ${req.reviewerNote}\nيرجى التواصل مع الإدارة أو التأكد من بيانات التحويل وإعادة الطلب.`
+        message: `نعتذر، لم تتمكن الإدارة من اعتماد طلب الشحن الخاص بك.\nالسبب: ${req.reviewerNote}\nيرجى التواصل مع الإدارة أو التأكد من بيانات التحويل وإعادة الطلب.`,
+        topupDetails: topupRejectData
       }).catch(() => {});
     }
 
@@ -2735,6 +2782,7 @@ var AppDB = (() => {
     listenToMailbox,
     updateMailStatus,
     deleteMail,
+    markAllMailsRead,
 
     // Globals
     sendBroadcast,
