@@ -2033,7 +2033,7 @@ const GameEngine = (() => {
         state.raidEscapeChance = Math.min(90, 40 + Math.floor((state.underworldRep || 0) / 5));
         
         state.netWorth = calculateNetWorth();
-        AppDB.savePlayerState(activeUsername, state);
+        forceSaveState(true);
         return updates; // Stop further processing to let player resolve raid
       }
     }
@@ -2215,6 +2215,7 @@ const GameEngine = (() => {
               }
               state.jailTimer = 600; // 10 minutes
               recordPlayerActivity('تهريب فشل',`مداهمة أمنية لشحنة"${route.name}". تم اعتقالك ومصادرة الـ ${SMUGGLING_VEHICLES[job.vehicleType].name}.`,'dark');
+              forceSaveState(true);
               if (!updates.tipEvent) {
                 updates.tipEvent = {
                   title:' مداهمة أمنية وسجن!',
@@ -3391,8 +3392,7 @@ const GameEngine = (() => {
 
       const payoutTypeStr = deal.cleanPayout ?'كاش نظيف' :'كاش مشبوه';
       recordPlayerActivity('سوق سوداء',`نجاح صفقة"${deal.name}" (+${deal.payout.toLocaleString()} ج.م ${payoutTypeStr})`,'blackmarket');
-      state.netWorth = calculateNetWorth();
-      AppDB.savePlayerState(activeUsername, state);
+      forceSaveState(true);
       return {
         success: true,
         payout: deal.payout,
@@ -3409,8 +3409,7 @@ const GameEngine = (() => {
       // 1. Lawyer Acquittal: 25% chance the lawyer dismisses charges immediately (rebalanced 50%)
       if (hasLawyer && Math.random() < 0.25) {
         recordPlayerActivity('براءة قضائية',`تدخل المحامي وأثبت براءة اللاعب في صفقة"${deal.name}" دون عقوبة (كول داون مخفض)`,'blackmarket');
-        state.netWorth = calculateNetWorth();
-        AppDB.savePlayerState(activeUsername, state);
+        forceSaveState(true);
         return {
           success: false,
           escaped: true,
@@ -3427,8 +3426,7 @@ const GameEngine = (() => {
         state.inventory.fake_passport--;
         if (state.itemDurations) delete state.itemDurations.fake_passport;
         recordPlayerActivity('هروب دبلوماسي',`استخدام جواز السفر المزور للهروب من المداهمة في صفقة"${deal.name}" (كول داون مخفض)`,'blackmarket');
-        state.netWorth = calculateNetWorth();
-        AppDB.savePlayerState(activeUsername, state);
+        forceSaveState(true);
         return {
           success: false,
           escaped: true,
@@ -3455,8 +3453,7 @@ const GameEngine = (() => {
       state.underworldRep = Math.max(0, (state.underworldRep || 0) - repLoss);
 
       recordPlayerActivity('مداهمة وسجن',`فشل صفقة"${deal.name}" ومصادرة ${totalConfiscation.toLocaleString()} ج.م وسجن ${deal.jailDuration}ث وفقدان -${repLoss} سمعة (كول داون مخفض 50%)`,'blackmarket');
-      state.netWorth = calculateNetWorth();
-      AppDB.savePlayerState(activeUsername, state);
+      forceSaveState(true);
       return {
         success: false,
         escaped: false,
@@ -3495,8 +3492,7 @@ const GameEngine = (() => {
     if (!state.itemDurations) state.itemDurations = {};
     state.itemDurations[gearId] = item.durationTicks;
 
-    state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return item;
   }
 
@@ -3519,8 +3515,7 @@ const GameEngine = (() => {
     }
     state.jailTimer = 0;
     state.heatLevel = 0;
-    state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return { bribeCost };
   }
 
@@ -3577,9 +3572,8 @@ const GameEngine = (() => {
 
     state.raidActive = false;
     state.heatLevel = 0;
-    state.netWorth = calculateNetWorth();
     recordPlayerActivity('دفع رشوة مداهمة',`تم دفع رشوة بقيمة ${cost.toLocaleString()} ج.م لإنهاء المداهمة الأمنية وتصفير الملاحقة.`,'blackmarket');
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return { bribeCost: cost };
   }
 
@@ -3594,18 +3588,16 @@ const GameEngine = (() => {
 
     if (success) {
       state.heatLevel = Math.max(0, (state.heatLevel || 0) - 1);
-      state.netWorth = calculateNetWorth();
       recordPlayerActivity('مقاومة المداهمة','نجحت في إخفاء الأدلة والإنكار بنجاح وتفادي المداهمة دون خسائر.','blackmarket');
-      AppDB.savePlayerState(activeUsername, state);
+      forceSaveState(true);
       return { success: true };
     } else {
       const loss = Math.floor((state.dirtyCash || 0) * 0.5);
       state.dirtyCash = Math.max(0, state.dirtyCash - loss);
       state.jailTimer = 600; // 10 minutes
       state.heatLevel = Math.min(5, (state.heatLevel || 0) + 2);
-      state.netWorth = calculateNetWorth();
       recordPlayerActivity('فشل المقاومة (سجن ومصادرة)',`فشلت في المقاومة؛ تم مصادرة ${loss.toLocaleString()} ج.م من الكاش القذر وسجنك لمدة 10 دقائق.`,'blackmarket');
-      AppDB.savePlayerState(activeUsername, state);
+      forceSaveState(true);
       return { success: false, loss };
     }
   }

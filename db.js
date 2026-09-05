@@ -294,8 +294,8 @@ var AppDB = (() => {
     const u = username.trim();
     const p = String(inputPin).trim();
 
-    // Query case-insensitively and sort by net_worth descending to prioritize main account over duplicates
-    const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&order=net_worth.desc&select=username,pin,net_worth`);
+    // Query case-insensitively and sort by last_seen descending to prioritize most recently active account over duplicates
+    const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&order=last_seen.desc&select=username,pin,net_worth`);
     if (!rows || rows.length === 0) return false;
 
     const hashed = await hashPin(p);
@@ -321,10 +321,11 @@ var AppDB = (() => {
     const u = username.trim();
 
     try {
-      // Use case-insensitive query and order by net_worth desc to guarantee the richest main account is loaded
-      const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&order=net_worth.desc&select=*`);
+      const local = getDecryptedLocalState(`rasalmal_state_${u}`);
+      // Order by last_seen desc to always prioritize the most recently active state
+      const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&order=last_seen.desc&select=*`);
       if (!rows || rows.length === 0) {
-        return getDecryptedLocalState(`rasalmal_state_${u}`);
+        return local;
       }
 
       const row = rows[0];
@@ -348,6 +349,51 @@ var AppDB = (() => {
       stateObj.lastSeen = Number(row.last_seen || Date.now());
       stateObj.adminModifiedTimestamp = Number(row.admin_modified_timestamp || 0);
       stateObj._loadedFromCloud = true;
+
+      // ── ANTI-SAVE-SCUMMING / RELOAD ROLLBACK GUARD ──
+      // If player lost money, got confiscated, or was sent to jail right before a reload/reconnect,
+      // prevent the reload from wiping out penalties!
+      if (local && typeof local === 'object') {
+        let shouldSyncCloud = false;
+
+        // 1. Jail sentence guard: Reload cannot evade prison time
+        if (typeof local.jailTimer === 'number' && local.jailTimer > 0 && local.jailTimer > stateObj.jailTimer) {
+          stateObj.jailTimer = local.jailTimer;
+          shouldSyncCloud = true;
+        }
+
+        // 2. Active police raid guard: Reload cannot evade active raids
+        if (local.raidActive && !stateObj.raidActive) {
+          stateObj.raidActive = true;
+          stateObj.raidBribeCost = local.raidBribeCost;
+          stateObj.raidEscapeChance = local.raidEscapeChance;
+          shouldSyncCloud = true;
+        }
+
+        // 3. Loss & confiscation guard:
+        // If local state was updated recently (within 3 minutes) and has a lower cash balance
+        // due to an in-flight raid or penalty that hadn't finished syncing before the reload
+        const localTs = Number(local.lastSeen || local.lastActiveTimestamp || 0);
+        const serverTs = Number(row.last_seen || 0);
+        if (localTs >= serverTs - 180000) {
+          if (typeof local.cash === 'number' && local.cash < stateObj.cash) {
+            stateObj.cash = local.cash;
+            shouldSyncCloud = true;
+          }
+          if (typeof local.dirtyCash === 'number' && local.dirtyCash < stateObj.dirtyCash) {
+            stateObj.dirtyCash = local.dirtyCash;
+            shouldSyncCloud = true;
+          }
+          if (local.blackMarketCooldowns && Object.keys(local.blackMarketCooldowns).length > 0) {
+            stateObj.blackMarketCooldowns = { ...(stateObj.blackMarketCooldowns || {}), ...local.blackMarketCooldowns };
+          }
+        }
+
+        if (shouldSyncCloud) {
+          stateObj.netWorth = Math.max(0, (stateObj.cash || 0) + (stateObj.bank || 0) + (stateObj.dirtyCash || 0));
+          _pushStateToCloud(row.username, stateObj).catch(() => {});
+        }
+      }
 
       if (!stateObj.businesses || Object.keys(stateObj.businesses).length === 0) {
         if (row.state && row.state.businesses) {
