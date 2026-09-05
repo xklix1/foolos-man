@@ -1928,16 +1928,17 @@
       };
 
       const BIZ_MAP = {
-        coffee: { name: 'عربة قهوة مختصة', baseProfitPerSec: 20 },
-        supermarket: { name: 'سلسلة سوبرماركت وتجزئة', baseProfitPerSec: 180 },
-        tech: { name: 'شركة برمجيات', baseProfitPerSec: 850 },
-        logistics: { name: 'مجمع خدمات لوجستية وشحن', baseProfitPerSec: 2800 },
-        solar_factory: { name: 'مصنع ألواح الطاقة الشمسية', baseProfitPerSec: 12000 },
-        private_hospital: { name: 'مستشفى ومجمع طبي تخصصي', baseProfitPerSec: 52000 },
-        media_studio: { name: 'مؤسسة إنتاج إعلامي وسينمائي', baseProfitPerSec: 210000 },
-        private_bank: { name: 'بنك استثماري وشركة وساطة', baseProfitPerSec: 850000 },
-        oil_refinery: { name: 'مجمع مصافي البترول والطاقة', baseProfitPerSec: 3200000 },
-        space_tech: { name: 'مؤسسة استكشاف الفضاء', baseProfitPerSec: 15000000 }
+        kiosk: { name: 'كشك حلوى وجرائد', baseProfitPerSec: 1 },
+        coffee: { name: 'عربة قهوة مختصة', baseProfitPerSec: 1 },
+        tech: { name: 'شركة برمجيات', baseProfitPerSec: 1 },
+        logistics: { name: 'مجمع خدمات لوجستية وشحن', baseProfitPerSec: 1 },
+        supermarket: { name: 'سلسلة سوبرماركت وتجزئة', baseProfitPerSec: 2 },
+        solar_factory: { name: 'مصنع ألواح الطاقة الشمسية', baseProfitPerSec: 2 },
+        private_hospital: { name: 'مستشفى ومجمع طبي تخصصي', baseProfitPerSec: 3 },
+        media_studio: { name: 'مؤسسة إنتاج إعلامي وسينمائي', baseProfitPerSec: 4 },
+        private_bank: { name: 'بنك استثماري وشركة وساطة', baseProfitPerSec: 6 },
+        oil_refinery: { name: 'مجمع مصافي البترول والطاقة', baseProfitPerSec: 8 },
+        space_tech: { name: 'مؤسسة استكشاف الفضاء', baseProfitPerSec: 12 }
       };
 
       // 1. LIQUIDITY & RAW BALANCES
@@ -3058,16 +3059,16 @@
       GameEngine.state.investments = [];
       GameEngine.state.businesses = {
         kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
-        coffee: { level: 0, price: 22, workers: 0, suppliesTicks: 0 },
-        tech: { level: 0, price: 160, workers: 0, suppliesTicks: 0 },
-        logistics: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
-        supermarket: { level: 0, price: 450, workers: 0, suppliesTicks: 0 },
-        solar_factory: { level: 0, price: 3200, workers: 0, suppliesTicks: 0 },
-        private_hospital: { level: 0, price: 11500, workers: 0, suppliesTicks: 0 },
-        media_studio: { level: 0, price: 28000, workers: 0, suppliesTicks: 0 },
-        private_bank: { level: 0, price: 95000, workers: 0, suppliesTicks: 0 },
-        oil_refinery: { level: 0, price: 310000, workers: 0, suppliesTicks: 0 },
-        space_tech: { level: 0, price: 1250000, workers: 0, suppliesTicks: 0 }
+        coffee: { level: 0, price: 28, workers: 0, suppliesTicks: 0 },
+        tech: { level: 0, price: 75, workers: 0, suppliesTicks: 0 },
+        logistics: { level: 0, price: 120, workers: 0, suppliesTicks: 0 },
+        supermarket: { level: 0, price: 200, workers: 0, suppliesTicks: 0 },
+        solar_factory: { level: 0, price: 340, workers: 0, suppliesTicks: 0 },
+        private_hospital: { level: 0, price: 600, workers: 0, suppliesTicks: 0 },
+        media_studio: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
+        private_bank: { level: 0, price: 1800, workers: 0, suppliesTicks: 0 },
+        oil_refinery: { level: 0, price: 2800, workers: 0, suppliesTicks: 0 },
+        space_tech: { level: 0, price: 4800, workers: 0, suppliesTicks: 0 }
       };
       GameEngine.state.assets = {
         apartment: 0,

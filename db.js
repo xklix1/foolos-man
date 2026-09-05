@@ -247,16 +247,16 @@ var AppDB = (() => {
         assets: { apartment: 0, office: 0, mansion: 0, skyline_tower: 0, luxury_resort: 0, mega_yacht: 0, private_island: 0, orbital_station: 0 },
         businesses: {
           kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
-          coffee: { level: 0, price: 22, workers: 0, suppliesTicks: 0 },
-          tech: { level: 0, price: 160, workers: 0, suppliesTicks: 0 },
-          logistics: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
-          supermarket: { level: 0, price: 450, workers: 0, suppliesTicks: 0 },
-          solar_factory: { level: 0, price: 3200, workers: 0, suppliesTicks: 0 },
-          private_hospital: { level: 0, price: 11500, workers: 0, suppliesTicks: 0 },
-          media_studio: { level: 0, price: 28000, workers: 0, suppliesTicks: 0 },
-          private_bank: { level: 0, price: 95000, workers: 0, suppliesTicks: 0 },
-          oil_refinery: { level: 0, price: 310000, workers: 0, suppliesTicks: 0 },
-          space_tech: { level: 0, price: 1250000, workers: 0, suppliesTicks: 0 }
+          coffee: { level: 0, price: 28, workers: 0, suppliesTicks: 0 },
+          tech: { level: 0, price: 75, workers: 0, suppliesTicks: 0 },
+          logistics: { level: 0, price: 120, workers: 0, suppliesTicks: 0 },
+          supermarket: { level: 0, price: 200, workers: 0, suppliesTicks: 0 },
+          solar_factory: { level: 0, price: 340, workers: 0, suppliesTicks: 0 },
+          private_hospital: { level: 0, price: 600, workers: 0, suppliesTicks: 0 },
+          media_studio: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
+          private_bank: { level: 0, price: 1800, workers: 0, suppliesTicks: 0 },
+          oil_refinery: { level: 0, price: 2800, workers: 0, suppliesTicks: 0 },
+          space_tech: { level: 0, price: 4800, workers: 0, suppliesTicks: 0 }
         },
         stocks: { COMI: { shares: 0, avgPrice: 0 }, EAST: { shares: 0, avgPrice: 0 }, ETEL: { shares: 0, avgPrice: 0 }, FWRY: { shares: 0, avgPrice: 0 }, CASH: { shares: 0, avgPrice: 0 }, BITC: { shares: 0, avgPrice: 0 }, GOLD: { shares: 0, avgPrice: 0 }, AIX: { shares: 0, avgPrice: 0 } },
         inventory: {},
@@ -1310,16 +1310,16 @@ var AppDB = (() => {
     const now = Date.now();
     const cleanBusinesses = {
       kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
-      coffee: { level: 0, price: 22, workers: 0, suppliesTicks: 0 },
-      tech: { level: 0, price: 160, workers: 0, suppliesTicks: 0 },
-      logistics: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
-      supermarket: { level: 0, price: 450, workers: 0, suppliesTicks: 0 },
-      solar_factory: { level: 0, price: 3200, workers: 0, suppliesTicks: 0 },
-      private_hospital: { level: 0, price: 11500, workers: 0, suppliesTicks: 0 },
-      media_studio: { level: 0, price: 28000, workers: 0, suppliesTicks: 0 },
-      private_bank: { level: 0, price: 95000, workers: 0, suppliesTicks: 0 },
-      oil_refinery: { level: 0, price: 310000, workers: 0, suppliesTicks: 0 },
-      space_tech: { level: 0, price: 1250000, workers: 0, suppliesTicks: 0 }
+      coffee: { level: 0, price: 28, workers: 0, suppliesTicks: 0 },
+      tech: { level: 0, price: 75, workers: 0, suppliesTicks: 0 },
+      logistics: { level: 0, price: 120, workers: 0, suppliesTicks: 0 },
+      supermarket: { level: 0, price: 200, workers: 0, suppliesTicks: 0 },
+      solar_factory: { level: 0, price: 340, workers: 0, suppliesTicks: 0 },
+      private_hospital: { level: 0, price: 600, workers: 0, suppliesTicks: 0 },
+      media_studio: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
+      private_bank: { level: 0, price: 1800, workers: 0, suppliesTicks: 0 },
+      oil_refinery: { level: 0, price: 2800, workers: 0, suppliesTicks: 0 },
+      space_tech: { level: 0, price: 4800, workers: 0, suppliesTicks: 0 }
     };
     const cleanAssets = { apartment: 0, office: 0, mansion: 0, skyline_tower: 0, luxury_resort: 0, mega_yacht: 0, private_island: 0, orbital_station: 0 };
     const cleanStocks = { COMI: { shares: 0, avgPrice: 0 }, EAST: { shares: 0, avgPrice: 0 }, ETEL: { shares: 0, avgPrice: 0 }, FWRY: { shares: 0, avgPrice: 0 }, CASH: { shares: 0, avgPrice: 0 }, BITC: { shares: 0, avgPrice: 0 }, GOLD: { shares: 0, avgPrice: 0 }, AIX: { shares: 0, avgPrice: 0 } };
@@ -1445,16 +1445,16 @@ var AppDB = (() => {
     const now = Date.now();
     const cleanBusinesses = {
       kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
-      coffee: { level: 0, price: 22, workers: 0, suppliesTicks: 0 },
-      tech: { level: 0, price: 160, workers: 0, suppliesTicks: 0 },
-      logistics: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
-      supermarket: { level: 0, price: 450, workers: 0, suppliesTicks: 0 },
-      solar_factory: { level: 0, price: 3200, workers: 0, suppliesTicks: 0 },
-      private_hospital: { level: 0, price: 11500, workers: 0, suppliesTicks: 0 },
-      media_studio: { level: 0, price: 28000, workers: 0, suppliesTicks: 0 },
-      private_bank: { level: 0, price: 95000, workers: 0, suppliesTicks: 0 },
-      oil_refinery: { level: 0, price: 310000, workers: 0, suppliesTicks: 0 },
-      space_tech: { level: 0, price: 1250000, workers: 0, suppliesTicks: 0 }
+      coffee: { level: 0, price: 28, workers: 0, suppliesTicks: 0 },
+      tech: { level: 0, price: 75, workers: 0, suppliesTicks: 0 },
+      logistics: { level: 0, price: 120, workers: 0, suppliesTicks: 0 },
+      supermarket: { level: 0, price: 200, workers: 0, suppliesTicks: 0 },
+      solar_factory: { level: 0, price: 340, workers: 0, suppliesTicks: 0 },
+      private_hospital: { level: 0, price: 600, workers: 0, suppliesTicks: 0 },
+      media_studio: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
+      private_bank: { level: 0, price: 1800, workers: 0, suppliesTicks: 0 },
+      oil_refinery: { level: 0, price: 2800, workers: 0, suppliesTicks: 0 },
+      space_tech: { level: 0, price: 4800, workers: 0, suppliesTicks: 0 }
     };
     const cleanAssets = { apartment: 0, office: 0, mansion: 0, skyline_tower: 0, luxury_resort: 0, mega_yacht: 0, private_island: 0, orbital_station: 0 };
     const cleanStocks = { COMI: { shares: 0, avgPrice: 0 }, EAST: { shares: 0, avgPrice: 0 }, ETEL: { shares: 0, avgPrice: 0 }, FWRY: { shares: 0, avgPrice: 0 }, CASH: { shares: 0, avgPrice: 0 }, BITC: { shares: 0, avgPrice: 0 }, GOLD: { shares: 0, avgPrice: 0 }, AIX: { shares: 0, avgPrice: 0 } };

@@ -50,100 +50,100 @@ const GameEngine = (() => {
       id: 'tech',
       name: 'شركة برمجيات وتطبيقات 💻',
       cost: 140000,
-      baseDemand: 25,
-      optimumPrice: 160,
-      costOfGoods: 85,
-      maxWorkers: 20,
+      baseDemand: 15,
+      optimumPrice: 75,
+      costOfGoods: 45,
+      maxWorkers: 10,
       workerMultiplier: 1.04,
-      workerWage: 120
+      workerWage: 70
     },
     logistics: {
       id: 'logistics',
       name: 'مجمع خدمات لوجستية وشحن 🚚',
       cost: 780000,
-      baseDemand: 28,
-      optimumPrice: 420,
-      costOfGoods: 220,
-      maxWorkers: 35,
+      baseDemand: 16,
+      optimumPrice: 120,
+      costOfGoods: 72,
+      maxWorkers: 12,
       workerMultiplier: 1.04,
-      workerWage: 340
+      workerWage: 120
     },
     supermarket: {
       id: 'supermarket',
       name: 'سلسلة سوبرماركت وتجزئة 🛒',
       cost: 3200000,
-      baseDemand: 32,
-      optimumPrice: 780,
-      costOfGoods: 410,
-      maxWorkers: 50,
+      baseDemand: 18,
+      optimumPrice: 200,
+      costOfGoods: 120,
+      maxWorkers: 15,
       workerMultiplier: 1.04,
-      workerWage: 750
+      workerWage: 210
     },
     solar_factory: {
       id: 'solar_factory',
       name: 'مصنع ألواح الطاقة الشمسية ☀️',
       cost: 14000000,
-      baseDemand: 30,
-      optimumPrice: 1800,
-      costOfGoods: 950,
-      maxWorkers: 65,
+      baseDemand: 17,
+      optimumPrice: 340,
+      costOfGoods: 200,
+      maxWorkers: 18,
       workerMultiplier: 1.04,
-      workerWage: 1800
+      workerWage: 380
     },
     private_hospital: {
       id: 'private_hospital',
       name: 'مستشفى ومجمع طبي تخصصي 🏥',
       cost: 55000000,
-      baseDemand: 26,
-      optimumPrice: 4500,
-      costOfGoods: 2400,
-      maxWorkers: 75,
+      baseDemand: 15,
+      optimumPrice: 600,
+      costOfGoods: 350,
+      maxWorkers: 20,
       workerMultiplier: 1.04,
-      workerWage: 4200
+      workerWage: 680
     },
     media_studio: {
       id: 'media_studio',
       name: 'مؤسسة إنتاج إعلامي وسينمائي 🎬',
       cost: 160000000,
-      baseDemand: 24,
-      optimumPrice: 11000,
-      costOfGoods: 5800,
-      maxWorkers: 80,
+      baseDemand: 14,
+      optimumPrice: 1100,
+      costOfGoods: 650,
+      maxWorkers: 22,
       workerMultiplier: 1.04,
-      workerWage: 9500
+      workerWage: 1250
     },
     private_bank: {
       id: 'private_bank',
       name: 'بنك استثماري وشركة وساطة مالية 🏛️',
       cost: 520000000,
-      baseDemand: 22,
-      optimumPrice: 28000,
-      costOfGoods: 14500,
-      maxWorkers: 90,
+      baseDemand: 14,
+      optimumPrice: 1800,
+      costOfGoods: 1050,
+      maxWorkers: 25,
       workerMultiplier: 1.04,
-      workerWage: 24000
+      workerWage: 2100
     },
     oil_refinery: {
       id: 'oil_refinery',
       name: 'مجمع مصافي البترول والطاقة 🛢️',
       cost: 1600000000,
-      baseDemand: 20,
-      optimumPrice: 65000,
-      costOfGoods: 34000,
-      maxWorkers: 100,
+      baseDemand: 13,
+      optimumPrice: 2800,
+      costOfGoods: 1600,
+      maxWorkers: 28,
       workerMultiplier: 1.04,
-      workerWage: 60000
+      workerWage: 3600
     },
     space_tech: {
       id: 'space_tech',
       name: 'مؤسسة استكشاف الفضاء والأقمار الصناعية 🚀',
       cost: 4800000000,
-      baseDemand: 16,
-      optimumPrice: 180000,
-      costOfGoods: 92000,
-      maxWorkers: 120,
+      baseDemand: 12,
+      optimumPrice: 4800,
+      costOfGoods: 2700,
+      maxWorkers: 30,
       workerMultiplier: 1.04,
-      workerWage: 150000
+      workerWage: 6500
     }
   };
 
@@ -863,16 +863,16 @@ const GameEngine = (() => {
     jobId: 'worker',
     businesses: {
       kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
-      coffee: { level: 0, price: 22, workers: 0, suppliesTicks: 0 },
-      tech: { level: 0, price: 160, workers: 0, suppliesTicks: 0 },
-      logistics: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
-      supermarket: { level: 0, price: 450, workers: 0, suppliesTicks: 0 },
-      solar_factory: { level: 0, price: 3200, workers: 0, suppliesTicks: 0 },
-      private_hospital: { level: 0, price: 11500, workers: 0, suppliesTicks: 0 },
-      media_studio: { level: 0, price: 28000, workers: 0, suppliesTicks: 0 },
-      private_bank: { level: 0, price: 95000, workers: 0, suppliesTicks: 0 },
-      oil_refinery: { level: 0, price: 310000, workers: 0, suppliesTicks: 0 },
-      space_tech: { level: 0, price: 1250000, workers: 0, suppliesTicks: 0 }
+      coffee: { level: 0, price: 28, workers: 0, suppliesTicks: 0 },
+      tech: { level: 0, price: 75, workers: 0, suppliesTicks: 0 },
+      logistics: { level: 0, price: 120, workers: 0, suppliesTicks: 0 },
+      supermarket: { level: 0, price: 200, workers: 0, suppliesTicks: 0 },
+      solar_factory: { level: 0, price: 340, workers: 0, suppliesTicks: 0 },
+      private_hospital: { level: 0, price: 600, workers: 0, suppliesTicks: 0 },
+      media_studio: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
+      private_bank: { level: 0, price: 1800, workers: 0, suppliesTicks: 0 },
+      oil_refinery: { level: 0, price: 2800, workers: 0, suppliesTicks: 0 },
+      space_tech: { level: 0, price: 4800, workers: 0, suppliesTicks: 0 }
     },
     investments: [], // Array of { id, investedAmount, ticksRemaining, rate, name }
     activeLoan: null, // Stores { amount, totalDue, ticksRemaining, initialTicks, isDefaulted, latePenaltyTicks, latePenaltyCount }
@@ -1401,7 +1401,12 @@ const GameEngine = (() => {
     const levelMultiplier = 1 + (lvl - 1) * 0.05; // Linear +5% pricing power per level
     const franchiseOptMultiplier = bizState.isFranchise ? 1.20 : 1.0;
     const opt = Math.round(bizConfig.optimumPrice * levelMultiplier * franchiseOptMultiplier);
-    const price = bizState.price || opt;
+    let price = bizState.price || opt;
+    // Auto-normalize obsolete uncalibrated prices from prior versions
+    if (price > opt * 3 || price < opt * 0.2) {
+      price = opt;
+      bizState.price = opt;
+    }
 
     let elasticity = 1.0;
     if (price > opt) {
@@ -2941,11 +2946,11 @@ const GameEngine = (() => {
     if (!bizState || bizState.level === 0) throw new Error("المشروع مغلق حالياً.");
     if (price <= 0) throw new Error("سعر البيع يجب أن يكون أعلى من صفر جنيه.");
 
-    // Price capping: Max 10x effective optimum price to keep numbers sensible
-    const levelMultiplier = Math.pow(1.12, Math.max(0, (bizState.level || 1) - 1));
-    const franchiseOptMultiplier = bizState.isFranchise ? 1.30 : 1.0;
+    // Price capping: Max 3x effective optimum price to keep numbers sensible
+    const levelMultiplier = 1 + (Math.max(1, (bizState.level || 1)) - 1) * 0.05;
+    const franchiseOptMultiplier = bizState.isFranchise ? 1.20 : 1.0;
     const effectiveOpt = Math.round(BUSINESSES[key].optimumPrice * levelMultiplier * franchiseOptMultiplier);
-    const maxPrice = effectiveOpt * 10;
+    const maxPrice = effectiveOpt * 3;
     if (price > maxPrice) throw new Error(`الحد الأقصى المسموح به للسعر هو ${maxPrice.toLocaleString()} جنيه.`);
 
     bizState.price = price;
