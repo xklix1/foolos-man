@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="app.css?v=120">
+  <link rel="stylesheet" href="app.css?v=126">
 
   <!-- Firebase 10.8.0 SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -245,6 +245,9 @@
         <button id="mobtab-admin-corporations" onclick="window.switchAdminTab('corporations')" class="shrink-0 px-3 py-1.5 rounded-lg border border-transparent bg-slate-800/60 text-slate-300 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition">
           <i class="fa-solid fa-building-user text-violet-400 text-xs"></i><span>الشركات</span>
         </button>
+        <button id="mobtab-admin-topup" onclick="window.switchAdminTab('topup')" class="shrink-0 px-3 py-1.5 rounded-lg border border-transparent bg-slate-800/60 text-amber-300 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-gem text-amber-400 text-xs"></i><span>متجر الشحن 💎</span>
+        </button>
         <button id="mobtab-admin-broadcast" onclick="window.switchAdminTab('broadcast')" class="shrink-0 px-3 py-1.5 rounded-lg border border-transparent bg-slate-800/60 text-slate-300 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition">
           <i class="fa-solid fa-bullhorn text-sky-400 text-xs"></i><span>البث</span>
         </button>
@@ -320,6 +323,10 @@
               <button id="tab-admin-corporations" onclick="window.switchAdminTab('corporations')"
                 class="admin-tab-btn w-full px-4 py-2.5 rounded-xl border border-transparent hover:bg-slate-900/60 text-slate-400 hover:text-white font-bold transition flex items-center gap-3">
                 <i class="fa-solid fa-building-user text-sm text-violet-400"></i><span>الشركات المشتركة</span>
+              </button>
+              <button id="tab-admin-topup" onclick="window.switchAdminTab('topup')"
+                class="admin-tab-btn w-full px-4 py-2.5 rounded-xl border border-transparent hover:bg-slate-900/60 text-amber-400/90 hover:text-amber-300 font-bold transition flex items-center gap-3">
+                <i class="fa-solid fa-gem text-sm text-amber-400"></i><span>إدارة الشحن والباقات 💎</span>
               </button>
             </div>
 
@@ -2216,6 +2223,266 @@
           </div>
         </div>
       </div>
+      <!-- 11. PANEL TOP-UP & MONETIZATION (إدارة الشحن والباقات) -->
+      <div id="admin-subpanel-topup" class="hidden space-y-6">
+        <!-- Topup Overview KPI Stats -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col justify-between">
+            <div class="flex justify-between items-center text-slate-400 mb-1">
+              <span class="text-[10px] font-bold">إجمالي طلبات الشحن</span>
+              <i class="fa-solid fa-receipt text-amber-400"></i>
+            </div>
+            <span id="adm-stat-topup-total" class="numbers-font text-base sm:text-lg font-black text-white">0</span>
+          </div>
+
+          <div class="p-3 bg-slate-900/60 border border-amber-500/30 bg-amber-500/5 rounded-xl flex flex-col justify-between">
+            <div class="flex justify-between items-center text-amber-400 mb-1">
+              <span class="text-[10px] font-bold">طلبات قيد المراجعة</span>
+              <i class="fa-solid fa-hourglass-half text-amber-400 animate-pulse"></i>
+            </div>
+            <span id="adm-stat-topup-pending" class="numbers-font text-base sm:text-lg font-black text-amber-300">0</span>
+          </div>
+
+          <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col justify-between">
+            <div class="flex justify-between items-center text-slate-400 mb-1">
+              <span class="text-[10px] font-bold">الطلبات المعتمدة</span>
+              <i class="fa-solid fa-circle-check text-emerald-400"></i>
+            </div>
+            <span id="adm-stat-topup-approved" class="numbers-font text-base sm:text-lg font-black text-emerald-400">0</span>
+          </div>
+
+          <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col justify-between">
+            <div class="flex justify-between items-center text-slate-400 mb-1">
+              <span class="text-[10px] font-bold">إجمالي الدعم المحصل</span>
+              <i class="fa-solid fa-hand-holding-dollar text-yellow-400"></i>
+            </div>
+            <span id="adm-stat-topup-revenue" class="numbers-font text-base sm:text-lg font-black text-yellow-400">0 EGP</span>
+          </div>
+        </div>
+
+        <!-- 1. Payment Methods Settings Card -->
+        <div class="glass-panel p-4 sm:p-5 rounded-2xl border border-amber-500/30 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div class="flex items-center gap-2 text-amber-400 font-black text-sm">
+              <i class="fa-solid fa-wallet text-base"></i>
+              <span>إعدادات وسائل الدفع والتحويل المباشر (فودافون كاش &amp; InstaPay)</span>
+            </div>
+            <button id="btn-save-topup-settings" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 rounded-xl font-black text-xs transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20 cursor-pointer">
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span>حفظ وتطبيق الإعدادات</span>
+            </button>
+          </div>
+
+          <p class="text-xs text-slate-400">
+            هذه الأرقام والبيانات تظهر مباشرة للاعبين داخل "متجر الشحن والدعم" مع زر نسخ بنقرة واحدة لتحويل قيمة الباقة بسهولة:
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl space-y-1.5">
+              <label class="text-xs font-bold text-rose-300 flex items-center gap-2">
+                <i class="fa-solid fa-mobile-screen"></i>
+                <span>رقم محفظة فودافون كاش (Vodafone Cash):</span>
+              </label>
+              <input type="text" id="adm-topup-vodafone" placeholder="مثال: 01012345678" dir="ltr"
+                class="glass-input w-full px-3 py-2 rounded-lg text-xs font-mono font-bold text-white focus:border-rose-400 outline-none" />
+            </div>
+
+            <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl space-y-1.5">
+              <label class="text-xs font-bold text-purple-300 flex items-center gap-2">
+                <i class="fa-solid fa-bolt"></i>
+                <span>معرف أو رابط حساب انستاباي (InstaPay):</span>
+              </label>
+              <input type="text" id="adm-topup-instapay" placeholder="مثال: username@instapay أو رقم الهاتف" dir="ltr"
+                class="glass-input w-full px-3 py-2 rounded-lg text-xs font-mono font-bold text-white focus:border-purple-400 outline-none" />
+            </div>
+          </div>
+
+          <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl space-y-1.5">
+            <label class="text-xs font-bold text-slate-300 flex items-center gap-2">
+              <i class="fa-solid fa-circle-info text-amber-400"></i>
+              <span>تعليمات وملاحظات التحويل المعروضة للاعبين:</span>
+            </label>
+            <textarea id="adm-topup-notes" rows="2" placeholder="اكتب أي تعليمات أو شروط إضافية تظهر للاعبين قبل تأكيد التحويل..."
+              class="glass-input w-full p-2.5 rounded-lg text-xs text-white focus:border-amber-400 outline-none leading-relaxed"></textarea>
+          </div>
+        </div>
+
+        <!-- 2. Packages Management Card -->
+        <div class="glass-panel p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
+            <div class="flex items-center gap-2 text-white font-black text-sm">
+              <i class="fa-solid fa-boxes-stacked text-amber-400"></i>
+              <span>باقات الشحن المتاحة في المتجر</span>
+            </div>
+            <button id="btn-adm-create-pkg" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 rounded-xl font-bold text-xs transition flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-plus text-xs"></i>
+              <span>إضافة باقة جديدة ➕</span>
+            </button>
+          </div>
+
+          <!-- Packages Grid -->
+          <div id="adm-topup-packages-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <!-- Dynamically populated package cards -->
+          </div>
+        </div>
+
+        <!-- 3. Topup Requests Queue Card -->
+        <div class="glass-panel p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
+            <div class="flex items-center gap-2 text-white font-black text-sm">
+              <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i>
+              <span>سجل وإدارة طلبات الشحن والتحويلات</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button id="btn-adm-refresh-topup-reqs" class="p-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                <i class="fa-solid fa-rotate-right text-xs"></i>
+                <span>تحديث الطلبات</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter Tabs -->
+          <div class="flex items-center gap-1 overflow-x-auto pb-1 text-xs">
+            <button class="topup-filter-btn px-3 py-1 rounded-lg font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40" data-filter="all">كافة الطلبات</button>
+            <button class="topup-filter-btn px-3 py-1 rounded-lg font-bold bg-slate-900 text-slate-400 hover:text-white" data-filter="pending">⏳ قيد المراجعة</button>
+            <button class="topup-filter-btn px-3 py-1 rounded-lg font-bold bg-slate-900 text-slate-400 hover:text-white" data-filter="approved">✅ المعتمدة</button>
+            <button class="topup-filter-btn px-3 py-1 rounded-lg font-bold bg-slate-900 text-slate-400 hover:text-white" data-filter="rejected">❌ المرفوضة</button>
+          </div>
+
+          <!-- Requests Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400">
+                  <th class="pb-2.5">تاريخ الطلب</th>
+                  <th class="pb-2.5">اللاعب</th>
+                  <th class="pb-2.5">الباقة</th>
+                  <th class="pb-2.5 text-center">السعر</th>
+                  <th class="pb-2.5">بيانات المحوّل</th>
+                  <th class="pb-2.5">رقم العملية أو الوصل</th>
+                  <th class="pb-2.5 text-center">الحالة</th>
+                  <th class="pb-2.5 text-left">إجراءات المراجعة</th>
+                </tr>
+              </thead>
+              <tbody id="adm-topup-requests-tbody" class="divide-y divide-slate-800/50">
+                <!-- Dynamically populated request rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== ADMIN PACKAGE EDIT MODAL ==================== -->
+  <div id="modal-admin-edit-package"
+    class="hidden fixed inset-0 z-[700] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in text-right">
+    <div class="glass-panel w-full max-w-lg max-h-[92vh] flex flex-col rounded-3xl border-2 border-amber-500/50 bg-slate-950 p-6 shadow-2xl space-y-4 overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2 text-amber-400 font-black text-sm">
+          <i class="fa-solid fa-gem text-base"></i>
+          <span id="adm-pkg-modal-title">إضافة / تعديل باقة شحن</span>
+        </div>
+        <button id="btn-close-edit-pkg-modal" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="adm-package-form" class="space-y-3 text-xs" onsubmit="event.preventDefault(); window._adminSavePackageSubmit();">
+        <input type="hidden" id="adm-pkg-is-edit" value="0">
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="font-bold text-slate-300 block mb-1">معرف الباقة (ID بالإنجليزية):</label>
+            <input type="text" id="adm-pkg-id" required placeholder="vip_gold_pack" dir="ltr"
+              class="glass-input w-full px-3 py-2 rounded-lg font-mono text-xs focus:border-amber-400 outline-none" />
+          </div>
+          <div>
+            <label class="font-bold text-slate-300 block mb-1">اسم الباقة (العنوان):</label>
+            <input type="text" id="adm-pkg-name" required placeholder="مثال: حزمة الحوت الملكي 👑"
+              class="glass-input w-full px-3 py-2 rounded-lg text-xs focus:border-amber-400 outline-none font-bold" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="font-bold text-amber-300 block mb-1">السعر (ج.م EGP):</label>
+            <input type="number" id="adm-pkg-price" required min="1" step="1" placeholder="50" dir="ltr"
+              class="glass-input w-full px-3 py-2 rounded-lg font-mono text-xs focus:border-amber-400 outline-none font-bold text-amber-400" />
+          </div>
+          <div>
+            <label class="font-bold text-emerald-300 block mb-1">الكاش الممنوح:</label>
+            <input type="number" id="adm-pkg-cash" min="0" step="1000" placeholder="1000000" dir="ltr"
+              class="glass-input w-full px-3 py-2 rounded-lg font-mono text-xs focus:border-emerald-400 outline-none font-bold text-emerald-400" />
+          </div>
+          <div>
+            <label class="font-bold text-sky-300 block mb-1">الرصيد بالبنك:</label>
+            <input type="number" id="adm-pkg-bank" min="0" step="1000" placeholder="250000" dir="ltr"
+              class="glass-input w-full px-3 py-2 rounded-lg font-mono text-xs focus:border-sky-400 outline-none font-bold text-sky-400" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="font-bold text-cyan-300 block mb-1">نقاط الخبرة (XP):</label>
+            <input type="number" id="adm-pkg-xp" min="0" step="50" placeholder="1000" dir="ltr"
+              class="glass-input w-full px-3 py-2 rounded-lg font-mono text-xs focus:border-cyan-400 outline-none font-bold text-cyan-400" />
+          </div>
+          <div>
+            <label class="font-bold text-yellow-300 block mb-1">وسام VIP (إيموجي):</label>
+            <input type="text" id="adm-pkg-badge" placeholder="👑 أو 💎 أو ⚡"
+              class="glass-input w-full px-3 py-2 rounded-lg text-center text-xs focus:border-yellow-400 outline-none font-bold text-yellow-400" />
+          </div>
+          <div>
+            <label class="font-bold text-yellow-300 block mb-1">لقب الوسام:</label>
+            <input type="text" id="adm-pkg-badgetitle" placeholder="مثال: الحوت الملكي"
+              class="glass-input w-full px-3 py-2 rounded-lg text-xs focus:border-yellow-400 outline-none font-bold" />
+          </div>
+        </div>
+
+        <div class="p-2.5 bg-slate-900/60 border border-slate-800 rounded-xl space-y-1.5">
+          <label class="font-bold text-slate-300 block">أدوات إضافية من المتجر (اختياري):</label>
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer">
+              <input type="number" id="adm-pkg-item-vip-pass" min="0" max="10" placeholder="0" dir="ltr"
+                class="glass-input w-14 px-2 py-1 rounded text-center font-mono text-xs" />
+              <span>تصريح كازينو VIP</span>
+            </label>
+            <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer">
+              <input type="number" id="adm-pkg-item-swiss-safe" min="0" max="10" placeholder="0" dir="ltr"
+                class="glass-input w-14 px-2 py-1 rounded text-center font-mono text-xs" />
+              <span>خزنة سويسرية</span>
+            </label>
+            <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer">
+              <input type="number" id="adm-pkg-item-offshore" min="0" max="10" placeholder="0" dir="ltr"
+                class="glass-input w-14 px-2 py-1 rounded text-center font-mono text-xs" />
+              <span>حساب أوفشور خارجي</span>
+            </label>
+            <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer">
+              <input type="number" id="adm-pkg-item-lottery" min="0" max="50" placeholder="0" dir="ltr"
+                class="glass-input w-14 px-2 py-1 rounded text-center font-mono text-xs" />
+              <span>تذاكر يانصيب كبرى</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-300 block mb-1">وصف الباقة ومميزاتها للاعب:</label>
+          <textarea id="adm-pkg-desc" rows="2" placeholder="وصف جذاب للباقة يظهر في بطاقتها داخل المتجر..."
+            class="glass-input w-full p-2.5 rounded-lg text-xs text-white focus:border-amber-400 outline-none leading-relaxed"></textarea>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2 border-t border-slate-800">
+          <button type="button" id="btn-cancel-edit-pkg" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition text-xs">
+            إلغاء
+          </button>
+          <button type="submit" class="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl transition text-xs shadow-lg shadow-amber-500/20 flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-check"></i>
+            <span>حفظ الباقة ونشرها</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -2494,9 +2761,9 @@
   <div id="toast-container" class="fixed top-4 left-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Core Modules -->
-  <script src="game.js?v=7.7"></script>
-  <script src="db.js?v=7.7"></script>
-  <script src="admin-panel.js?v=7.7"></script>
+  <script src="game.js?v=7.9"></script>
+  <script src="db.js?v=7.9"></script>
+  <script src="admin-panel.js?v=7.9"></script>
 
   <!-- Standalone Admin Controller Script -->
   <script>

@@ -71,7 +71,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=125">
+  <link rel="stylesheet" href="app.css?v=126">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -1430,6 +1430,16 @@
                 <span>تنويه هام ⚠️</span>
               </button>
             </div>
+
+            <!-- Top-Up & Support Store Desktop Button -->
+            <button id="btn-desktop-topup-store" onclick="window.UI.openTopupModal()" title="متجر الشحن والدعم"
+              class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/25 via-yellow-500/30 to-amber-500/25 border border-amber-500/50 hover:border-yellow-400 text-amber-300 hover:text-yellow-200 transition-all font-black text-xs flex items-center justify-between gap-2 shadow-lg shadow-yellow-500/10 cursor-pointer active:scale-95 mb-2">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-gem text-amber-400 text-sm"></i>
+                <span>متجر الشحن والدعم</span>
+              </div>
+              <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black animate-pulse">VIP 💎</span>
+            </button>
 
             <!-- Quick Hall of Fame / Leaderboard Ingame Button -->
             <button id="btn-ingame-leaderboard-sidebar" onclick="window.UI.switchTab('leaderboard')" title="عرش الأثرياء (توب 10)"
@@ -3886,6 +3896,18 @@
 
       <!-- Drawer Nav Items List (All 13 Sections categorized) -->
       <div class="flex-1 overflow-y-auto p-3 space-y-1.5 custom-scrollbar">
+        <!-- Featured Top-Up & Support Store Button -->
+        <button id="btn-mobile-topup-store" type="button" onclick="window.UI?.openTopupModal?.(); window.UI?.closeMobileNav?.();"
+          class="w-full flex items-center justify-between px-3.5 py-3 rounded-2xl bg-gradient-to-r from-amber-500/25 via-yellow-500/20 to-amber-500/25 hover:from-amber-500/35 hover:to-yellow-500/35 text-amber-300 border border-amber-500/40 text-xs font-black transition duration-200 cursor-pointer shadow-lg shadow-amber-500/10 active:scale-98 mb-2">
+          <div class="flex items-center gap-2.5">
+            <span class="w-7 h-7 rounded-xl bg-gradient-to-tr from-yellow-500 to-amber-300 flex items-center justify-center text-slate-950 font-black shadow-sm text-xs">
+              <i class="fa-solid fa-gem"></i>
+            </span>
+            <span>متجر الشحن والدعم</span>
+          </div>
+          <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black animate-pulse">VIP 💎</span>
+        </button>
+
         <!-- Group 1: الأنشطة والمالية -->
         <div class="text-[10px] font-black text-slate-500 px-3 py-1 uppercase tracking-wider flex items-center gap-1.5">
           <i class="fa-solid fa-wallet text-[10px] text-yellow-500/70"></i>
@@ -4497,6 +4519,158 @@
           دعوة الشراكة</button>
       </div>
     </div>
+  <!-- ==================== TOP-UP & SUPPORT STORE MODAL (متجر الشحن والدعم) ==================== -->
+  <div id="topup-store-modal" dir="rtl"
+    class="hidden fixed inset-0 z-[160] flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-4 animate-fade-in text-right">
+    <div dir="rtl"
+      class="glass-panel w-full max-w-3xl max-h-[92vh] flex flex-col rounded-3xl border-2 border-amber-500/50 p-4 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden">
+      
+      <!-- Top Glowing Accent -->
+      <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-36 bg-amber-500/15 blur-3xl rounded-full pointer-events-none"></div>
+
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3.5 border-b border-slate-800/80 shrink-0 relative z-10">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 text-slate-950 flex items-center justify-center text-lg sm:text-xl font-black shadow-lg shadow-amber-500/20 shrink-0">
+            <i class="fa-solid fa-gem text-slate-950"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-base sm:text-lg font-black text-white">متجر الشحن والدعم</h2>
+              <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-black">VIP &amp; Direct Top-up</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-0.5">احصل على باقات حصرية، سيولة نقدية، وأوسمة مميزة مع المساهمة في دعم استقرار السيرفر</p>
+          </div>
+        </div>
+
+        <button id="btn-close-topup-modal" class="w-9 h-9 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer border border-slate-700/60 shrink-0">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="flex-1 overflow-y-auto py-3 space-y-4 custom-scrollbar text-xs">
+
+        <!-- VIEW 1: PACKAGES SHOWCASE -->
+        <div id="topup-view-packages" class="space-y-4">
+          <!-- Guarantee Banner -->
+          <div class="p-3 sm:p-3.5 bg-gradient-to-r from-amber-950/40 via-slate-900/60 to-slate-950 border border-amber-500/30 rounded-2xl flex items-center justify-between gap-3 text-[11px]">
+            <div class="flex items-center gap-2.5">
+              <i class="fa-solid fa-shield-check text-amber-400 text-lg shrink-0"></i>
+              <span class="text-slate-300">تحويل مباشر وسريع وآمن عبر <strong>فودافون كاش</strong> أو <strong>InstaPay</strong> مع إيداع المكافآت بحسابك فوراً.</span>
+            </div>
+            <span class="text-[10px] px-2.5 py-1 bg-amber-500/15 border border-amber-500/30 text-amber-300 rounded-xl font-black shrink-0 hidden sm:inline-block">فوري ومعتمد</span>
+          </div>
+
+          <!-- Packages Grid -->
+          <div id="topup-packages-container" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <!-- Dynamically populated from AppDB.getTopupPackages() -->
+          </div>
+
+          <!-- Footer Help Note -->
+          <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 text-center text-slate-400 text-[11px]">
+            💡 إذا واجهتك أي مشكلة أثناء أو بعد التحويل، يمكنك التواصل فوراً مع الإدارة من خلال الشات المباشر أو البريد.
+          </div>
+        </div>
+
+        <!-- VIEW 2: DIRECT PAYMENT & CONFIRMATION FORM -->
+        <div id="topup-view-confirmation" class="hidden space-y-4">
+          <!-- Back button -->
+          <button id="btn-topup-back-to-pkgs" type="button" class="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1.5 transition cursor-pointer">
+            <i class="fa-solid fa-arrow-right"></i>
+            <span>الرجوع واختيار باقة أخرى</span>
+          </button>
+
+          <!-- Selected Package Summary Card -->
+          <div id="topup-selected-pkg-summary" class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3">
+            <!-- Dynamic selection overview -->
+          </div>
+
+          <!-- Direct Payment Info & One-Click Copy -->
+          <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+            <h4 class="text-xs font-black text-white flex items-center gap-2">
+              <i class="fa-solid fa-money-bill-transfer text-amber-400"></i>
+              <span>طرق وبيانات التحويل المباشر:</span>
+            </h4>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <!-- Vodafone Cash Card -->
+              <div class="p-3 bg-slate-950/80 rounded-xl border border-rose-500/30 flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <span class="text-[10px] text-rose-300 font-bold block flex items-center gap-1">
+                    <i class="fa-solid fa-mobile-screen"></i>
+                    <span>فودافون كاش (Vodafone Cash)</span>
+                  </span>
+                  <span id="player-topup-vodafone-num" class="numbers-font font-black text-sm text-white font-mono block mt-0.5 select-all">--</span>
+                </div>
+                <button id="btn-copy-topup-vodafone" type="button" class="px-2.5 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0">
+                  <i class="fa-solid fa-copy text-xs"></i>
+                  <span>نسخ</span>
+                </button>
+              </div>
+
+              <!-- InstaPay Card -->
+              <div class="p-3 bg-slate-950/80 rounded-xl border border-purple-500/30 flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <span class="text-[10px] text-purple-300 font-bold block flex items-center gap-1">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span>انستاباي (InstaPay)</span>
+                  </span>
+                  <span id="player-topup-instapay-num" class="numbers-font font-black text-sm text-white font-mono block mt-0.5 select-all truncate">--</span>
+                </div>
+                <button id="btn-copy-topup-instapay" type="button" class="px-2.5 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0">
+                  <i class="fa-solid fa-copy text-xs"></i>
+                  <span>نسخ</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Notes from admin -->
+            <p id="player-topup-instructions" class="text-[11px] text-slate-400 bg-slate-950/50 p-2.5 rounded-xl border border-slate-800 leading-relaxed"></p>
+          </div>
+
+          <!-- Submission Form -->
+          <form id="player-topup-form" class="space-y-3" onsubmit="event.preventDefault(); window.UI?.submitTopupOrder?.();">
+            <div class="p-3.5 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-3">
+              <h4 class="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+                <span>بيانات تأكيد وإثبات التحويل:</span>
+              </h4>
+
+              <div>
+                <label class="text-[11px] font-bold text-slate-300 block mb-1">رقم الهاتف المحوّل منه (أو اسم حساب انستاباي):</label>
+                <input type="text" id="topup-sender-phone" required placeholder="مثال: 010xxxxxxxx أو اسم حسابك" dir="ltr"
+                  class="glass-input w-full px-3.5 py-2.5 rounded-xl text-xs font-bold text-white focus:border-amber-400 outline-none" />
+              </div>
+
+              <div>
+                <label class="text-[11px] font-bold text-slate-300 block mb-1">رقم العملية أو الوصل:</label>
+                <input type="text" id="topup-receipt-number" required placeholder="اكتب رقم العملية من رسالة فودافون كاش أو إشعار انستاباي" dir="ltr"
+                  class="glass-input w-full px-3.5 py-2.5 rounded-xl text-xs font-mono font-bold text-yellow-300 focus:border-amber-400 outline-none" />
+              </div>
+            </div>
+
+            <button type="submit" id="btn-submit-topup-request"
+              class="w-full py-3.5 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-2xl text-xs sm:text-sm shadow-xl shadow-amber-500/20 transition flex items-center justify-center gap-2 cursor-pointer active:scale-98">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span id="topup-submit-btn-text">إرسال طلب الشحن للإدارة 🚀</span>
+            </button>
+          </form>
+
+          <!-- Status Message Container -->
+          <div id="topup-success-notice" class="hidden p-4 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 text-center space-y-2">
+            <div class="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-lg mx-auto">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <strong class="block font-black text-emerald-300 text-sm">تم إرسال طلب الشحن بنجاح!</strong>
+            <p class="text-[11px] text-slate-300 leading-relaxed max-w-md mx-auto">
+              طلبك الآن قيد المراجعة السريعة لدى الإدارة ⏳. فور مراجعة وتأكيد العملية، ستُودع كافة المكافآت والأوسمة بحسابك تلقائياً وتصلك رسالة تهنئة في بريدك!
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </div>
 
   <!-- FLOATING NOTIFICATIONS CONTAINER — top center -->
@@ -4507,9 +4681,9 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=7.8"></script>
-  <script src="game.js?v=7.8"></script>
-  <script src="ui.js?v=8.1"></script>
+  <script src="db.js?v=7.9"></script>
+  <script src="game.js?v=7.9"></script>
+  <script src="ui.js?v=8.2"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

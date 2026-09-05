@@ -57,8 +57,8 @@
       });
     }
 
-    // Tabs logic - bind all 10 subtabs
-    const tabs = ['stats', 'players', 'transfers', 'chat', 'market', 'broadcast', 'auctions', 'giftcodes', 'system', 'corporations'];
+    // Tabs logic - bind all subtabs
+    const tabs = ['stats', 'players', 'transfers', 'chat', 'market', 'broadcast', 'auctions', 'giftcodes', 'system', 'corporations', 'topup'];
     tabs.forEach(t => {
       const tabEl = document.getElementById(`tab-admin-${t}`);
       if (tabEl) {
@@ -4320,7 +4320,7 @@
 
   function switchAdminTab(tabId) {
     cleanupAdminListeners();
-    const subtabs = ['stats', 'players', 'transfers', 'chat', 'market', 'broadcast', 'auctions', 'giftcodes', 'system', 'corporations'];
+    const subtabs = ['stats', 'players', 'transfers', 'chat', 'market', 'broadcast', 'auctions', 'giftcodes', 'system', 'corporations', 'topup'];
     subtabs.forEach(t => {
       const btn = document.getElementById(`tab-admin-${t}`);
       const mobPill = document.getElementById(`mobtab-admin-${t}`);
@@ -4376,6 +4376,8 @@
       fetchAndRenderAdminGiftCodes();
     } else if (tabId === 'corporations') {
       renderAdminCorporationsPanel();
+    } else if (tabId === 'topup') {
+      renderAdminTopupPanel();
     } else if (tabId === 'system') {
       const itSelect = document.getElementById('admin-item-config-select');
       if (itSelect) {
@@ -5623,4 +5625,480 @@
         document.getElementById('admin-corp-inspect-modal')?.classList.add('hidden');
       });
     }
+  }
+
+  // ─────────────────────────────────────────────
+  //  TOP-UP & MONETIZATION ADMIN CONTROLLER (إدارة الشحن والباقات)
+  // ─────────────────────────────────────────────
+  let _currentTopupFilter = 'all';
+  let _currentTopupPackagesCache = [];
+  let _currentTopupRequestsCache = [];
+  let _topupAdminListenersBound = false;
+
+  async function renderAdminTopupPanel() {
+    bindTopupAdminGlobalEvents();
+    await Promise.all([
+      loadAndRenderTopupPaymentSettings(),
+      loadAndRenderTopupPackages(),
+      loadAndRenderTopupRequests()
+    ]);
+  }
+
+  function bindTopupAdminGlobalEvents() {
+    if (_topupAdminListenersBound) return;
+    _topupAdminListenersBound = true;
+
+    // Save Payment Settings Button
+    const btnSaveSettings = document.getElementById('btn-save-topup-settings');
+    if (btnSaveSettings) {
+      btnSaveSettings.addEventListener('click', async () => {
+        const vodafoneCash = (document.getElementById('adm-topup-vodafone')?.value || '').trim();
+        const instapay = (document.getElementById('adm-topup-instapay')?.value || '').trim();
+        const notes = (document.getElementById('adm-topup-notes')?.value || '').trim();
+
+        try {
+          btnSaveSettings.disabled = true;
+          btnSaveSettings.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري الحفظ...</span>';
+          await AppDB.savePaymentSettings({ vodafoneCash, instapay, notes });
+          showToast('تم الحفظ بنجاح', 'تم تحديث أرقام وبيانات الدفع (فودافون كاش & انستاباي) لجميع اللاعبين.', 'success');
+          logAdminAction(`تحديث بيانات الدفع: فودافون=${vodafoneCash}, انستاباي=${instapay}`);
+        } catch (err) {
+          showToast('خطأ في الحفظ', err.message || 'تعذر حفظ بيانات الدفع', 'error');
+        } finally {
+          btnSaveSettings.disabled = false;
+          btnSaveSettings.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>حفظ وتطبيق الإعدادات</span>';
+        }
+      });
+    }
+
+    // Refresh Requests Button
+    const btnRefreshReqs = document.getElementById('btn-adm-refresh-topup-reqs');
+    if (btnRefreshReqs) {
+      btnRefreshReqs.addEventListener('click', async () => {
+        btnRefreshReqs.disabled = true;
+        btnRefreshReqs.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-xs"></i> <span>جاري التحديث...</span>';
+        await loadAndRenderTopupRequests();
+        btnRefreshReqs.disabled = false;
+        btnRefreshReqs.innerHTML = '<i class="fa-solid fa-rotate-right text-xs"></i> <span>تحديث الطلبات</span>';
+        showToast('تم التحديث', 'تم جلب وتحديث أحدث طلبات الشحن بنجاح.', 'info');
+      });
+    }
+
+    // Create Package Button
+    const btnCreatePkg = document.getElementById('btn-adm-create-pkg');
+    if (btnCreatePkg) {
+      btnCreatePkg.addEventListener('click', () => {
+        openAdminPackageEditModal(null);
+      });
+    }
+
+    // Close / Cancel Package Modal
+    const btnClosePkg = document.getElementById('btn-close-edit-pkg-modal');
+    const btnCancelPkg = document.getElementById('btn-cancel-edit-pkg');
+    const pkgModal = document.getElementById('modal-admin-edit-package');
+    const closePkgModal = () => { if (pkgModal) pkgModal.classList.add('hidden'); };
+    if (btnClosePkg) btnClosePkg.addEventListener('click', closePkgModal);
+    if (btnCancelPkg) btnCancelPkg.addEventListener('click', closePkgModal);
+
+    // Filter Buttons
+    document.querySelectorAll('.topup-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.topup-filter-btn').forEach(b => {
+          b.className = 'topup-filter-btn px-3 py-1 rounded-lg font-bold bg-slate-900 text-slate-400 hover:text-white';
+        });
+        btn.className = 'topup-filter-btn px-3 py-1 rounded-lg font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+        _currentTopupFilter = btn.dataset.filter || 'all';
+        renderFilteredTopupRequestsTable();
+      });
+    });
+  }
+
+  async function loadAndRenderTopupPaymentSettings() {
+    try {
+      const settings = await AppDB.getPaymentSettings();
+      const vodafoneInput = document.getElementById('adm-topup-vodafone');
+      const instapayInput = document.getElementById('adm-topup-instapay');
+      const notesInput = document.getElementById('adm-topup-notes');
+
+      if (vodafoneInput) vodafoneInput.value = settings.vodafoneCash || '';
+      if (instapayInput) instapayInput.value = settings.instapay || '';
+      if (notesInput) notesInput.value = settings.notes || '';
+    } catch (e) {
+      console.warn('[Admin Topup] Error fetching payment settings:', e);
+    }
+  }
+
+  async function loadAndRenderTopupPackages() {
+    const listEl = document.getElementById('adm-topup-packages-list');
+    if (!listEl) return;
+
+    try {
+      _currentTopupPackagesCache = await AppDB.getTopupPackages();
+      if (!_currentTopupPackagesCache || _currentTopupPackagesCache.length === 0) {
+        listEl.innerHTML = '<div class="col-span-full p-4 text-center text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">لا توجد باقات شحن معرفة حالياً. اضغط "إضافة باقة جديدة ➕" لإنشاء أول باقة!</div>';
+        return;
+      }
+
+      listEl.innerHTML = '';
+      _currentTopupPackagesCache.forEach(pkg => {
+        const card = document.createElement('div');
+        card.className = 'p-4 rounded-2xl bg-slate-900/80 border border-amber-500/30 flex flex-col justify-between space-y-3 relative overflow-hidden shadow-lg';
+        
+        const badge = pkg.customBadge || '';
+        const itemsList = pkg.items ? Object.entries(pkg.items).map(([k, v]) => {
+          let label = k;
+          if (k === 'vip_casino_pass') label = 'تصريح كازينو VIP';
+          else if (k === 'swiss_safe') label = 'خزنة سويسرية';
+          else if (k === 'offshore_account') label = 'حساب خارجي';
+          else if (k === 'lottery_ticket') label = 'تذكرة يانصيب';
+          return `${v}x ${label}`;
+        }).join(' • ') : '';
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-800">
+              <div class="flex items-center gap-1.5 min-w-0">
+                ${badge ? `<span class="text-base">${badge}</span>` : ''}
+                <strong class="text-white font-bold text-xs truncate">${pkg.name}</strong>
+              </div>
+              <span class="numbers-font text-amber-400 font-black text-sm shrink-0 px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30">${Number(pkg.price).toLocaleString()} EGP</span>
+            </div>
+
+            <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">${pkg.description || 'باقة دعم ومكافآت مميزة في سيرفر رأس المال.'}</p>
+
+            <div class="mt-3 p-2 bg-slate-950/80 rounded-xl border border-slate-800/80 space-y-1 text-[10px]">
+              ${pkg.cash ? `<div class="flex justify-between text-emerald-400 font-bold"><span>كاش:</span><span class="numbers-font">+${Number(pkg.cash).toLocaleString()} EGP</span></div>` : ''}
+              ${pkg.bank ? `<div class="flex justify-between text-sky-400 font-bold"><span>بنك:</span><span class="numbers-font">+${Number(pkg.bank).toLocaleString()} EGP</span></div>` : ''}
+              ${pkg.xp ? `<div class="flex justify-between text-cyan-400 font-bold"><span>خبرة XP:</span><span class="numbers-font">+${Number(pkg.xp).toLocaleString()}</span></div>` : ''}
+              ${badge ? `<div class="flex justify-between text-yellow-400 font-bold"><span>وسام VIP:</span><span>${badge} ${pkg.badgeTitle || ''}</span></div>` : ''}
+              ${itemsList ? `<div class="flex justify-between text-purple-300 font-bold"><span>أدوات:</span><span class="truncate max-w-[150px]">${itemsList}</span></div>` : ''}
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2 border-t border-slate-800">
+            <button class="btn-edit-pkg flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
+              <i class="fa-solid fa-pen-to-square text-xs"></i>
+              <span>تعديل</span>
+            </button>
+            <button class="btn-delete-pkg px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/30 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1" title="حذف الباقة">
+              <i class="fa-solid fa-trash text-xs"></i>
+            </button>
+          </div>
+        `;
+
+        card.querySelector('.btn-edit-pkg').addEventListener('click', () => {
+          openAdminPackageEditModal(pkg);
+        });
+
+        card.querySelector('.btn-delete-pkg').addEventListener('click', async () => {
+          if (!confirm(`هل أنت متأكد من حذف باقة [${pkg.name}] نهائياً من المتجر؟`)) return;
+          try {
+            _currentTopupPackagesCache = _currentTopupPackagesCache.filter(p => p.id !== pkg.id);
+            await AppDB.saveTopupPackages(_currentTopupPackagesCache);
+            showToast('تم الحذف', `تم حذف باقة "${pkg.name}" بنجاح.`, 'success');
+            loadAndRenderTopupPackages();
+            logAdminAction(`حذف باقة الشحن: ${pkg.id}`);
+          } catch (err) {
+            showToast('خطأ في الحذف', err.message, 'error');
+          }
+        });
+
+        listEl.appendChild(card);
+      });
+    } catch (e) {
+      console.warn('[Admin Topup] Error rendering packages:', e);
+    }
+  }
+
+  function openAdminPackageEditModal(pkg = null) {
+    const modal = document.getElementById('modal-admin-edit-package');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('adm-pkg-modal-title');
+    const isEditEl = document.getElementById('adm-pkg-is-edit');
+    const idInput = document.getElementById('adm-pkg-id');
+    const nameInput = document.getElementById('adm-pkg-name');
+    const priceInput = document.getElementById('adm-pkg-price');
+    const cashInput = document.getElementById('adm-pkg-cash');
+    const bankInput = document.getElementById('adm-pkg-bank');
+    const xpInput = document.getElementById('adm-pkg-xp');
+    const badgeInput = document.getElementById('adm-pkg-badge');
+    const badgeTitleInput = document.getElementById('adm-pkg-badgetitle');
+    const descInput = document.getElementById('adm-pkg-desc');
+
+    const vipPassInput = document.getElementById('adm-pkg-item-vip-pass');
+    const swissSafeInput = document.getElementById('adm-pkg-item-swiss-safe');
+    const offshoreInput = document.getElementById('adm-pkg-item-offshore');
+    const lotteryInput = document.getElementById('adm-pkg-item-lottery');
+
+    if (pkg) {
+      titleEl.textContent = `تعديل باقة: ${pkg.name}`;
+      isEditEl.value = '1';
+      idInput.value = pkg.id;
+      idInput.readOnly = true;
+      nameInput.value = pkg.name || '';
+      priceInput.value = pkg.price || 0;
+      cashInput.value = pkg.cash || 0;
+      bankInput.value = pkg.bank || 0;
+      xpInput.value = pkg.xp || 0;
+      badgeInput.value = pkg.customBadge || '';
+      badgeTitleInput.value = pkg.badgeTitle || '';
+      descInput.value = pkg.description || '';
+
+      const items = pkg.items || {};
+      vipPassInput.value = items.vip_casino_pass || '';
+      swissSafeInput.value = items.swiss_safe || '';
+      offshoreInput.value = items.offshore_account || '';
+      lotteryInput.value = items.lottery_ticket || '';
+    } else {
+      titleEl.textContent = 'إضافة باقة شحن جديدة';
+      isEditEl.value = '0';
+      idInput.value = 'pack_' + Date.now().toString().slice(-4);
+      idInput.readOnly = false;
+      nameInput.value = '';
+      priceInput.value = '50';
+      cashInput.value = '1000000';
+      bankInput.value = '250000';
+      xpInput.value = '1000';
+      badgeInput.value = '👑';
+      badgeTitleInput.value = 'عضو VIP';
+      descInput.value = '';
+
+      vipPassInput.value = '';
+      swissSafeInput.value = '';
+      offshoreInput.value = '';
+      lotteryInput.value = '';
+    }
+
+    modal.classList.remove('hidden');
+  }
+
+  window._adminSavePackageSubmit = async function() {
+    const isEdit = document.getElementById('adm-pkg-is-edit')?.value === '1';
+    const id = (document.getElementById('adm-pkg-id')?.value || '').trim();
+    const name = (document.getElementById('adm-pkg-name')?.value || '').trim();
+    const price = Number(document.getElementById('adm-pkg-price')?.value) || 0;
+    const cash = Number(document.getElementById('adm-pkg-cash')?.value) || 0;
+    const bank = Number(document.getElementById('adm-pkg-bank')?.value) || 0;
+    const xp = Number(document.getElementById('adm-pkg-xp')?.value) || 0;
+    const customBadge = (document.getElementById('adm-pkg-badge')?.value || '').trim();
+    const badgeTitle = (document.getElementById('adm-pkg-badgetitle')?.value || '').trim();
+    const description = (document.getElementById('adm-pkg-desc')?.value || '').trim();
+
+    if (!id || !name || price <= 0) {
+      showToast('بيانات غير مكتملة', 'يرجى إدخال اسم الباقة، المعرف وسعر صحيح أكبر من صفر.', 'error');
+      return;
+    }
+
+    const items = {};
+    const vipPass = Number(document.getElementById('adm-pkg-item-vip-pass')?.value) || 0;
+    const swissSafe = Number(document.getElementById('adm-pkg-item-swiss-safe')?.value) || 0;
+    const offshore = Number(document.getElementById('adm-pkg-item-offshore')?.value) || 0;
+    const lottery = Number(document.getElementById('adm-pkg-item-lottery')?.value) || 0;
+
+    if (vipPass > 0) items.vip_casino_pass = vipPass;
+    if (swissSafe > 0) items.swiss_safe = swissSafe;
+    if (offshore > 0) items.offshore_account = offshore;
+    if (lottery > 0) items.lottery_ticket = lottery;
+
+    const pkgData = {
+      id,
+      name,
+      price,
+      cash,
+      bank,
+      xp,
+      customBadge,
+      badgeTitle,
+      items,
+      description
+    };
+
+    try {
+      if (isEdit) {
+        const idx = _currentTopupPackagesCache.findIndex(p => p.id === id);
+        if (idx !== -1) {
+          _currentTopupPackagesCache[idx] = pkgData;
+        } else {
+          _currentTopupPackagesCache.push(pkgData);
+        }
+      } else {
+        const exists = _currentTopupPackagesCache.some(p => p.id === id);
+        if (exists) {
+          showToast('معرف مكرر', 'يوجد باقة أخرى مسجلة بنفس المعرف (ID). استخدم معرفاً فريداً.', 'error');
+          return;
+        }
+        _currentTopupPackagesCache.push(pkgData);
+      }
+
+      await AppDB.saveTopupPackages(_currentTopupPackagesCache);
+      showToast('تم حفظ الباقة', `تم حفظ وتفعيل باقة "${name}" بنجاح في متجر الشحن.`, 'success');
+      logAdminAction(`حفظ باقة الشحن: ${id} (${name})`);
+      document.getElementById('modal-admin-edit-package')?.classList.add('hidden');
+      loadAndRenderTopupPackages();
+    } catch (e) {
+      showToast('خطأ في حفظ الباقة', e.message, 'error');
+    }
+  };
+
+  async function loadAndRenderTopupRequests() {
+    try {
+      _currentTopupRequestsCache = await AppDB.getTopupRequests();
+      
+      // Update KPIs
+      let total = _currentTopupRequestsCache.length;
+      let pending = 0;
+      let approved = 0;
+      let revenue = 0;
+
+      _currentTopupRequestsCache.forEach(r => {
+        if (r.status === 'pending') pending++;
+        else if (r.status === 'approved') {
+          approved++;
+          revenue += Number(r.price) || 0;
+        }
+      });
+
+      const elTotal = document.getElementById('adm-stat-topup-total');
+      const elPending = document.getElementById('adm-stat-topup-pending');
+      const elApproved = document.getElementById('adm-stat-topup-approved');
+      const elRevenue = document.getElementById('adm-stat-topup-revenue');
+
+      if (elTotal) elTotal.textContent = total.toLocaleString();
+      if (elPending) elPending.textContent = pending.toLocaleString();
+      if (elApproved) elApproved.textContent = approved.toLocaleString();
+      if (elRevenue) elRevenue.textContent = `${revenue.toLocaleString()} EGP`;
+
+      renderFilteredTopupRequestsTable();
+    } catch (e) {
+      console.warn('[Admin Topup] Error loading topup requests:', e);
+    }
+  }
+
+  function renderFilteredTopupRequestsTable() {
+    const tbody = document.getElementById('adm-topup-requests-tbody');
+    if (!tbody) return;
+
+    let list = _currentTopupRequestsCache || [];
+    if (_currentTopupFilter !== 'all') {
+      list = list.filter(r => r.status === _currentTopupFilter);
+    }
+
+    if (list.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-500">لا توجد طلبات شحن متطابقة مع الفلتر الحالي (${_currentTopupFilter === 'all' ? 'الكل' : _currentTopupFilter}).</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = '';
+    list.forEach(req => {
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-slate-850/60 transition border-b border-slate-800/40 text-xs';
+
+      let statusBadge = '';
+      if (req.status === 'pending') {
+        statusBadge = '<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold flex items-center justify-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>قيد المراجعة</span>';
+      } else if (req.status === 'approved') {
+        statusBadge = '<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold flex items-center justify-center gap-1">معتمد ومضاف ✅</span>';
+      } else {
+        statusBadge = `<span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold flex items-center justify-center gap-1" title="${req.reviewerNote || ''}">مرفوض ❌</span>`;
+      }
+
+      const dateFormatted = new Date(req.createdAt).toLocaleString('ar-EG', {
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      const receipt = req.receiptNumber || 'غير مدخل';
+
+      tr.innerHTML = `
+        <td class="p-2.5 text-slate-400 font-mono text-[11px]">${dateFormatted}</td>
+        <td class="p-2.5 font-bold text-white">
+          <span class="hover:underline cursor-pointer text-amber-300" onclick="window.inspectPlayerLog ? window.inspectPlayerLog('${req.username}') : null">@${req.username}</span>
+        </td>
+        <td class="p-2.5 font-bold text-slate-200">
+          <div>${req.packageName}</div>
+          <span class="text-[10px] text-slate-400 font-normal numbers-font">${req.packageId}</span>
+        </td>
+        <td class="p-2.5 text-center font-mono font-black text-amber-400">${Number(req.price).toLocaleString()} EGP</td>
+        <td class="p-2.5 font-mono text-cyan-300 select-all" dir="ltr">${req.senderPhoneOrName || '--'}</td>
+        <td class="p-2.5 font-mono font-bold text-yellow-300 select-all" dir="ltr">
+          <span class="bg-slate-900 px-2 py-1 rounded border border-slate-800 inline-flex items-center gap-1">
+            <span>${receipt}</span>
+            <button class="btn-copy-receipt text-slate-500 hover:text-white" title="نسخ رقم العملية"><i class="fa-solid fa-copy text-[10px]"></i></button>
+          </span>
+        </td>
+        <td class="p-2.5 text-center">${statusBadge}</td>
+        <td class="p-2.5 text-left space-x-1 space-x-reverse">
+          ${req.status === 'pending' ? `
+            <button class="btn-approve-topup px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition text-[11px] shadow-sm">
+              <i class="fa-solid fa-check"></i> قبول
+            </button>
+            <button class="btn-reject-topup px-2.5 py-1 bg-rose-900/60 hover:bg-rose-800 text-rose-200 font-bold rounded-lg transition text-[11px] border border-rose-500/30">
+              <i class="fa-solid fa-xmark"></i> رفض
+            </button>
+          ` : `
+            <span class="text-[10px] text-slate-500" title="${req.reviewerNote || ''}">
+              ${req.reviewerNote ? req.reviewerNote : (req.status === 'approved' ? 'تم الشحن' : 'تم الرفض')}
+            </span>
+          `}
+        </td>
+      `;
+
+      // Copy Receipt Number
+      const copyBtn = tr.querySelector('.btn-copy-receipt');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard.writeText(receipt);
+          showToast('تم النسخ', 'تم نسخ رقم العملية أو الوصل للحافظة.', 'info');
+        });
+      }
+
+      // Approve Button
+      const approveBtn = tr.querySelector('.btn-approve-topup');
+      if (approveBtn) {
+        approveBtn.addEventListener('click', async () => {
+          const confirmMsg = `تأكيد الشحن الفوري 💎\n\nهل أنت متأكد من اعتماد طلب الشحن للاعب "${req.username}"؟\nالباقة: ${req.packageName}\nالمبلغ: ${req.price} EGP\n\nسيتم إيداع الكاش والبنك ونقاط الخبرة والوسام بحساب اللاعب فوراً وإرسال إشعار له.`;
+          if (!confirm(confirmMsg)) return;
+
+          try {
+            approveBtn.disabled = true;
+            approveBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i>';
+            await AppDB.processTopupRequest(req.id, 'approved', 'تم الاعتماد والشحن بنجاح بواسطة الإدارة');
+            showToast('تم الاعتماد والشحن 🎉', `تم إيداع مكافآت باقة [${req.packageName}] بحساب اللاعب @${req.username} بنجاح!`, 'success');
+            logAdminAction(`اعتماد طلب شحن: ${req.id} للاعب ${req.username} باقة ${req.packageName}`);
+            await loadAndRenderTopupRequests();
+          } catch (err) {
+            showToast('فشل الاعتماد', err.message, 'error');
+            approveBtn.disabled = false;
+            approveBtn.innerHTML = '<i class="fa-solid fa-check"></i> قبول';
+          }
+        });
+      }
+
+      // Reject Button
+      const rejectBtn = tr.querySelector('.btn-reject-topup');
+      if (rejectBtn) {
+        rejectBtn.addEventListener('click', async () => {
+          const reason = prompt('اكتب سبب رفض طلب الشحن (سيصل للاعب في بريده):', 'عدم وصول التحويل أو عدم تطابق رقم العملية');
+          if (reason === null) return;
+
+          try {
+            rejectBtn.disabled = true;
+            rejectBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i>';
+            await AppDB.processTopupRequest(req.id, 'rejected', reason.trim() || 'لم يتم تأكيد وصول التحويل');
+            showToast('تم الرفض', `تم رفض طلب الشحن الخاص باللاعب @${req.username}.`, 'info');
+            logAdminAction(`رفض طلب شحن: ${req.id} للاعب ${req.username} - السبب: ${reason}`);
+            await loadAndRenderTopupRequests();
+          } catch (err) {
+            showToast('فشل الرفض', err.message, 'error');
+            rejectBtn.disabled = false;
+            rejectBtn.innerHTML = '<i class="fa-solid fa-xmark"></i> رفض';
+          }
+        });
+      }
+
+      tbody.appendChild(tr);
+    });
   }

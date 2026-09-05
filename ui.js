@@ -2294,10 +2294,13 @@ const UIController = (() => {
 
     const isFb = Boolean(s.facebookVerified || (s.badges && s.badges.includes('facebook')));
 
+    const customBadge = s.customBadge || '';
+    const badgeHtml = customBadge ? `<span class="vip-custom-badge ml-1 inline-block drop-shadow-sm" title="${s.badgeTitle || 'عضو VIP'}">${customBadge}</span>` : '';
+
     // Desktop stats
     const uEl = document.getElementById('stat-username');
     if (uEl) {
-      uEl.textContent = username;
+      uEl.innerHTML = badgeHtml + username;
       uEl.classList.add('cursor-pointer', 'hover:underline');
       uEl.title = 'اضغط لعرض ملفك الشخصي وأوسمتك';
       uEl.onclick = () => openPlayerProfileCard(username);
@@ -2337,7 +2340,7 @@ const UIController = (() => {
     // Mobile stats
     const umEl = document.getElementById('stat-username-mobile');
     if (umEl) {
-      umEl.textContent = username;
+      umEl.innerHTML = badgeHtml + username;
       umEl.classList.add('cursor-pointer', 'hover:underline');
       umEl.title = 'اضغط لعرض ملفك الشخصي وأوسمتك';
       umEl.onclick = () => openPlayerProfileCard(username);
@@ -15056,6 +15059,251 @@ const UIController = (() => {
     }
   }
 
+  // ─────────────────────────────────────────────
+  //  TOP-UP & SUPPORT STORE CONTROLLER (متجر الشحن والدعم)
+  // ─────────────────────────────────────────────
+  let _activeSelectedTopupPkg = null;
+  let _topupModalEventsBound = false;
+  let _currentTopupPaymentSettings = null;
+
+  async function openTopupModal() {
+    playMenuSound('modal_open');
+    bindTopupModalEvents();
+
+    const modal = document.getElementById('topup-store-modal');
+    if (!modal) return;
+
+    // Reset views
+    document.getElementById('topup-view-packages')?.classList.remove('hidden');
+    document.getElementById('topup-view-confirmation')?.classList.add('hidden');
+    document.getElementById('topup-success-notice')?.classList.add('hidden');
+    document.getElementById('player-topup-form')?.classList.remove('hidden');
+
+    modal.classList.remove('hidden');
+
+    const container = document.getElementById('topup-packages-container');
+    if (container) {
+      container.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400"><i class="fa-solid fa-spinner animate-spin text-xl text-amber-400 block mb-2"></i><span>جاري جلب باقات الشحن المعتمدة...</span></div>';
+    }
+
+    try {
+      const [packages, settings] = await Promise.all([
+        AppDB.getTopupPackages(),
+        AppDB.getPaymentSettings()
+      ]);
+
+      _currentTopupPaymentSettings = settings;
+
+      // Populate Payment Info in view 2
+      const vodafoneNumEl = document.getElementById('player-topup-vodafone-num');
+      const instapayNumEl = document.getElementById('player-topup-instapay-num');
+      const instructionsEl = document.getElementById('player-topup-instructions');
+
+      if (vodafoneNumEl) vodafoneNumEl.textContent = settings.vodafoneCash || 'غير محدد حالياً';
+      if (instapayNumEl) instapayNumEl.textContent = settings.instapay || 'غير محدد حالياً';
+      if (instructionsEl) instructionsEl.textContent = settings.notes || 'يرجى تحويل المبلغ بدقة وكتابة رقم الهاتف المحوّل منه ورقم العملية أو الوصل لتأكيد الشحن فوراً.';
+
+      // Render packages
+      renderTopupPackagesList(packages || []);
+    } catch (err) {
+      if (container) {
+        container.innerHTML = `<div class="col-span-full p-4 text-center text-rose-400 bg-rose-950/40 rounded-2xl border border-rose-500/30">تعذر جلب باقات الشحن: ${err.message}</div>`;
+      }
+    }
+  }
+
+  function closeTopupModal() {
+    const modal = document.getElementById('topup-store-modal');
+    if (modal) modal.classList.add('hidden');
+    _activeSelectedTopupPkg = null;
+  }
+
+  function renderTopupPackagesList(packages) {
+    const container = document.getElementById('topup-packages-container');
+    if (!container) return;
+
+    if (packages.length === 0) {
+      container.innerHTML = '<div class="col-span-full p-6 text-center text-slate-400 bg-slate-900/40 rounded-2xl border border-slate-800">لا توجد باقات متاحة حالياً. يرجى مراجعة الإدارة لاحقاً.</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    packages.forEach(pkg => {
+      const card = document.createElement('div');
+      card.className = 'p-4 rounded-3xl bg-slate-900/85 border-2 border-amber-500/30 hover:border-amber-400 flex flex-col justify-between space-y-3.5 transition-all duration-300 shadow-xl relative overflow-hidden group hover:scale-[1.01]';
+
+      const badge = pkg.customBadge || '';
+      const itemsList = pkg.items ? Object.entries(pkg.items).map(([k, v]) => {
+        let label = k;
+        if (k === 'vip_casino_pass') label = 'تصريح كازينو VIP';
+        else if (k === 'swiss_safe') label = 'خزنة سويسرية';
+        else if (k === 'offshore_account') label = 'حساب خارجي';
+        else if (k === 'lottery_ticket') label = 'تذكرة يانصيب';
+        return `${v}x ${label}`;
+      }).join(' • ') : '';
+
+      card.innerHTML = `
+        <!-- Card Content -->
+        <div class="space-y-3">
+          <!-- Header -->
+          <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-800/80">
+            <div class="flex items-center gap-2 min-w-0">
+              ${badge ? `<span class="text-xl shrink-0 drop-shadow-sm">${badge}</span>` : ''}
+              <h3 class="font-black text-white text-xs sm:text-sm truncate">${pkg.name}</h3>
+            </div>
+            <span class="numbers-font text-amber-400 font-black text-sm shrink-0 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 shadow-sm">${Number(pkg.price).toLocaleString()} EGP</span>
+          </div>
+
+          <p class="text-[11px] text-slate-300 leading-relaxed">${pkg.description || 'باقة استثنائية لدعم السيرفر وحصاد مزايا ومكافآت هائلة في اللعبة.'}</p>
+
+          <!-- Rewards Box -->
+          <div class="p-2.5 bg-slate-950/90 rounded-2xl border border-slate-800 space-y-1.5 text-[11px]">
+            ${pkg.cash ? `<div class="flex justify-between items-center text-emerald-400 font-black"><span>كاش فوري:</span><span class="numbers-font font-mono text-xs">+${Number(pkg.cash).toLocaleString()} EGP</span></div>` : ''}
+            ${pkg.bank ? `<div class="flex justify-between items-center text-sky-400 font-bold"><span>وديعة بالبنك:</span><span class="numbers-font font-mono text-xs">+${Number(pkg.bank).toLocaleString()} EGP</span></div>` : ''}
+            ${pkg.xp ? `<div class="flex justify-between items-center text-cyan-400 font-bold"><span>نقاط خبرة:</span><span class="numbers-font font-mono text-xs">+${Number(pkg.xp).toLocaleString()} XP</span></div>` : ''}
+            ${badge ? `<div class="flex justify-between items-center text-yellow-400 font-bold"><span>وسام VIP:</span><span class="flex items-center gap-1">${badge} ${pkg.badgeTitle || ''}</span></div>` : ''}
+            ${itemsList ? `<div class="flex justify-between items-center text-purple-300 font-bold"><span>معدات إضافية:</span><span class="text-[10px] truncate max-w-[140px]">${itemsList}</span></div>` : ''}
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <button class="btn-select-topup-pkg w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer">
+          <i class="fa-solid fa-bolt"></i>
+          <span>طلب وشحن الباقة ⚡</span>
+        </button>
+      `;
+
+      card.querySelector('.btn-select-topup-pkg').onclick = () => {
+        selectPackageForTopup(pkg);
+      };
+
+      container.appendChild(card);
+    });
+  }
+
+  function selectPackageForTopup(pkg) {
+    playMenuSound('click');
+    _activeSelectedTopupPkg = pkg;
+
+    const summaryEl = document.getElementById('topup-selected-pkg-summary');
+    if (summaryEl) {
+      const badge = pkg.customBadge || '';
+      summaryEl.innerHTML = `
+        <div class="flex items-center gap-2.5 min-w-0">
+          ${badge ? `<span class="text-2xl shrink-0">${badge}</span>` : ''}
+          <div class="min-w-0">
+            <h4 class="font-black text-white text-xs sm:text-sm truncate">${pkg.name}</h4>
+            <span class="text-[10px] text-amber-300 block">المبلغ المطلوب تحويله: <strong class="numbers-font text-amber-400 font-black text-xs">${Number(pkg.price).toLocaleString()} EGP</strong></span>
+          </div>
+        </div>
+        <span class="text-[10px] px-2.5 py-1 bg-amber-500/20 text-amber-300 rounded-xl border border-amber-500/30 font-black shrink-0">باقة مختارة</span>
+      `;
+    }
+
+    // Reset inputs & notice
+    const phoneInput = document.getElementById('topup-sender-phone');
+    const receiptInput = document.getElementById('topup-receipt-number');
+    if (phoneInput) phoneInput.value = '';
+    if (receiptInput) receiptInput.value = '';
+
+    document.getElementById('topup-success-notice')?.classList.add('hidden');
+    document.getElementById('player-topup-form')?.classList.remove('hidden');
+
+    document.getElementById('topup-view-packages')?.classList.add('hidden');
+    document.getElementById('topup-view-confirmation')?.classList.remove('hidden');
+  }
+
+  async function submitTopupOrder() {
+    if (!_activeSelectedTopupPkg) {
+      showToast('خطأ', 'يرجى اختيار باقة شحن أولاً.', 'error');
+      return;
+    }
+
+    const phone = (document.getElementById('topup-sender-phone')?.value || '').trim();
+    const receipt = (document.getElementById('topup-receipt-number')?.value || '').trim();
+    const submitBtn = document.getElementById('btn-submit-topup-request');
+    const btnText = document.getElementById('topup-submit-btn-text');
+
+    if (!phone || !receipt) {
+      showToast('بيانات ناقصة', 'يرجى إدخال رقم الهاتف المحوّل منه ورقم العملية أو الوصل.', 'error');
+      return;
+    }
+
+    try {
+      if (submitBtn) submitBtn.disabled = true;
+      if (btnText) btnText.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> جاري الإرسال...';
+
+      const requestPayload = {
+        username: GameEngine.activeUsername,
+        packageId: _activeSelectedTopupPkg.id,
+        packageName: _activeSelectedTopupPkg.name,
+        price: _activeSelectedTopupPkg.price,
+        rewards: {
+          cash: _activeSelectedTopupPkg.cash || 0,
+          bank: _activeSelectedTopupPkg.bank || 0,
+          xp: _activeSelectedTopupPkg.xp || 0,
+          customBadge: _activeSelectedTopupPkg.customBadge || '',
+          badgeTitle: _activeSelectedTopupPkg.badgeTitle || '',
+          items: _activeSelectedTopupPkg.items || {}
+        },
+        senderPhoneOrName: phone,
+        receiptNumber: receipt
+      };
+
+      await AppDB.submitTopupRequest(requestPayload);
+
+      playCasinoSound('win');
+      showToast('تم الإرسال بنجاح 💎', 'طلب الشحن قيد المراجعة لدى الإدارة حالياً.', 'success');
+
+      document.getElementById('player-topup-form')?.classList.add('hidden');
+      document.getElementById('topup-success-notice')?.classList.remove('hidden');
+    } catch (err) {
+      showToast('خطأ في إرسال الطلب', err.message || 'تعذر إرسال الطلب', 'error');
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+      if (btnText) btnText.textContent = 'إرسال طلب الشحن للإدارة 🚀';
+    }
+  }
+
+  function bindTopupModalEvents() {
+    if (_topupModalEventsBound) return;
+    _topupModalEventsBound = true;
+
+    // Close button
+    const closeBtn = document.getElementById('btn-close-topup-modal');
+    if (closeBtn) closeBtn.onclick = () => closeTopupModal();
+
+    // Back to packages button
+    const backBtn = document.getElementById('btn-topup-back-to-pkgs');
+    if (backBtn) {
+      backBtn.onclick = () => {
+        playMenuSound('click');
+        document.getElementById('topup-view-packages')?.classList.remove('hidden');
+        document.getElementById('topup-view-confirmation')?.classList.add('hidden');
+      };
+    }
+
+    // Copy Vodafone Cash
+    const copyVodafoneBtn = document.getElementById('btn-copy-topup-vodafone');
+    if (copyVodafoneBtn) {
+      copyVodafoneBtn.onclick = () => {
+        const num = document.getElementById('player-topup-vodafone-num')?.textContent || '';
+        navigator.clipboard.writeText(num.trim());
+        showToast('تم النسخ', 'تم نسخ رقم فودافون كاش للحافظة.', 'info');
+      };
+    }
+
+    // Copy InstaPay
+    const copyInstapayBtn = document.getElementById('btn-copy-topup-instapay');
+    if (copyInstapayBtn) {
+      copyInstapayBtn.onclick = () => {
+        const num = document.getElementById('player-topup-instapay-num')?.textContent || '';
+        navigator.clipboard.writeText(num.trim());
+        showToast('تم النسخ', 'تم نسخ حساب انستاباي للحافظة.', 'info');
+      };
+    }
+  }
+
   return {
     init,
     switchTab,
@@ -15113,7 +15361,13 @@ const UIController = (() => {
 
     // Industrial Conglomerate Exports
     renderIndustryPanel,
-    switchIndustrySector
+    switchIndustrySector,
+
+    // Top-up & Monetization Exports
+    openTopupModal,
+    closeTopupModal,
+    selectPackageForTopup,
+    submitTopupOrder
   };
 })();
 

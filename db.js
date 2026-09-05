@@ -900,6 +900,256 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
+  //  TOP-UP & RECHARGE SYSTEM (باقات الشحن والدعم)
+  // ─────────────────────────────────────────────
+  const DEFAULT_TOPUP_PACKAGES = [
+    {
+      id: 'starter_pack',
+      name: 'حزمة المستثمر الصاعد',
+      price: 25,
+      cash: 250000,
+      bank: 50000,
+      xp: 500,
+      items: { lottery_ticket: 3 },
+      customBadge: '🥉',
+      badgeTitle: 'مستثمر صاعد',
+      description: 'انطلاقة قوية: 250 ألف كاش، 50 ألف بالبنك، 500 خبرة، وتذاكر يانصيب مع وسام برونزي.'
+    },
+    {
+      id: 'vip_silver_pack',
+      name: 'حزمة رجل الأعمال VIP',
+      price: 50,
+      cash: 1000000,
+      bank: 250000,
+      xp: 2000,
+      items: { vip_casino_pass: 1, safe_lock: 2 },
+      customBadge: '🥈',
+      badgeTitle: 'رجل أعمال VIP',
+      description: 'مليون جنيه كاش، 250 ألف بالبنك، 2000 خبرة، تصريح كازينو VIP، مع وسام فضي أنيق.'
+    },
+    {
+      id: 'whale_gold_pack',
+      name: 'حزمة الحوت الملكي 👑',
+      price: 100,
+      cash: 5000000,
+      bank: 1000000,
+      xp: 6000,
+      items: { vip_casino_pass: 1, offshore_account: 1, swiss_safe: 1 },
+      customBadge: '👑',
+      badgeTitle: 'الحوت الملكي',
+      description: 'حزمة الدعم الملكية: 5 مليون كاش، مليون بالبنك، 6000 خبرة، خزنة سويسرية وحساب خارجي وتاج الملك 👑.'
+    }
+  ];
+
+  async function getTopupPackages() {
+    try {
+      const rows = await _api(`globals?id=eq.topup_packages`);
+      if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.packages)) {
+        return rows[0].data.packages;
+      }
+    } catch (e) {
+      console.warn('[DB] Could not fetch topup packages, falling back to defaults', e);
+    }
+    return DEFAULT_TOPUP_PACKAGES;
+  }
+
+  async function saveTopupPackages(packages) {
+    await _api('globals', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        id: 'topup_packages',
+        data: { packages, updatedAt: Date.now() },
+        updated_at: Date.now()
+      })
+    });
+    return true;
+  }
+
+  async function getPaymentSettings() {
+    try {
+      const rows = await _api(`globals?id=eq.topup_payment_settings`);
+      if (rows && rows.length > 0 && rows[0].data) {
+        return rows[0].data;
+      }
+    } catch (e) {}
+    return {
+      vodafoneCash: '',
+      instapay: '',
+      notes: 'يرجى تحويل المبلغ بدقة وكتابة رقم الهاتف المحوّل منه أو اسم حسابك في انستاباي ورقم العملية/الوصل لتأكيد الشحن فوراً.'
+    };
+  }
+
+  async function savePaymentSettings(settings) {
+    await _api('globals', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        id: 'topup_payment_settings',
+        data: {
+          vodafoneCash: (settings.vodafoneCash || '').trim(),
+          instapay: (settings.instapay || '').trim(),
+          notes: settings.notes || '',
+          updatedAt: Date.now()
+        },
+        updated_at: Date.now()
+      })
+    });
+    return true;
+  }
+
+  async function submitTopupRequest(requestData) {
+    const ts = Date.now();
+    let currentRequests = [];
+    try {
+      const rows = await _api(`globals?id=eq.topup_requests`);
+      if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.requests)) {
+        currentRequests = rows[0].data.requests;
+      }
+    } catch (e) {}
+
+    const newRequest = {
+      id: 'req_' + ts + '_' + Math.random().toString(36).substring(2, 7),
+      username: (requestData.username || '').trim(),
+      packageId: requestData.packageId,
+      packageName: requestData.packageName,
+      price: Number(requestData.price) || 0,
+      rewards: requestData.rewards || {},
+      senderPhoneOrName: (requestData.senderPhoneOrName || '').trim(),
+      receiptNumber: (requestData.receiptNumber || '').trim(),
+      status: 'pending',
+      createdAt: ts,
+      reviewedAt: null,
+      reviewerNote: ''
+    };
+
+    currentRequests.unshift(newRequest);
+    if (currentRequests.length > 300) {
+      currentRequests = currentRequests.slice(0, 300);
+    }
+
+    await _api('globals', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        id: 'topup_requests',
+        data: { requests: currentRequests, updatedAt: ts },
+        updated_at: ts
+      })
+    });
+
+    return newRequest;
+  }
+
+  async function getTopupRequests() {
+    try {
+      const rows = await _api(`globals?id=eq.topup_requests`);
+      if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.requests)) {
+        return rows[0].data.requests;
+      }
+    } catch (e) {}
+    return [];
+  }
+
+  async function processTopupRequest(requestId, action, reviewerNote = '') {
+    const ts = Date.now();
+    const rows = await _api(`globals?id=eq.topup_requests`);
+    if (!rows || rows.length === 0 || !rows[0].data || !Array.isArray(rows[0].data.requests)) {
+      throw new Error('لم يتم العثور على سجل طلبات الشحن.');
+    }
+
+    const requests = rows[0].data.requests;
+    const reqIndex = requests.findIndex(r => r.id === requestId);
+    if (reqIndex === -1) {
+      throw new Error('طلب الشحن غير موجود.');
+    }
+
+    const req = requests[reqIndex];
+    if (req.status !== 'pending') {
+      throw new Error(`تمت معالجة هذا الطلب مسبقاً (${req.status === 'approved' ? 'مقبول' : 'مرفوض'}).`);
+    }
+
+    if (action === 'approved') {
+      const targetUser = req.username;
+      const playerDoc = await getPlayerData(targetUser);
+      if (!playerDoc) {
+        throw new Error(`حساب اللاعب "${targetUser}" غير موجود بقاعدة البيانات.`);
+      }
+
+      const pState = playerDoc.state || {};
+      const rewards = req.rewards || {};
+      const addedCash = Number(rewards.cash) || 0;
+      const addedBank = Number(rewards.bank) || 0;
+      const addedXP = Number(rewards.xp) || 0;
+      const customBadge = rewards.customBadge || '';
+
+      const updatedCash = (Number(playerDoc.cash) || 0) + addedCash;
+      const updatedBank = (Number(playerDoc.bank) || 0) + addedBank;
+      const updatedXP = (Number(playerDoc.xp) || 0) + addedXP;
+      const updatedNetworth = updatedCash + updatedBank;
+
+      pState.cash = updatedCash;
+      pState.bank = updatedBank;
+      pState.xp = updatedXP;
+      pState.netWorth = updatedNetworth;
+
+      if (customBadge) {
+        pState.customBadge = customBadge;
+        pState.badgeTitle = rewards.badgeTitle || req.packageName;
+      }
+
+      if (rewards.items && typeof rewards.items === 'object') {
+        pState.inventory = pState.inventory || {};
+        for (const [itemId, qty] of Object.entries(rewards.items)) {
+          pState.inventory[itemId] = (Number(pState.inventory[itemId]) || 0) + Number(qty);
+        }
+      }
+
+      await _api(`players?username=eq.${encodeURIComponent(targetUser)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          cash: updatedCash,
+          bank: updatedBank,
+          xp: updatedXP,
+          net_worth: updatedNetworth,
+          state: pState,
+          admin_modified_timestamp: ts
+        })
+      });
+
+      await sendMail('SYSTEM', targetUser, 'system_announcement', {
+        title: `🎉 تم شحن باقة [${req.packageName}] بنجاح!`,
+        message: `شكراً لدعمك لسيرفر لعبة رأس المال! تم اعتماد تحويلك بمبلغ ${req.price} ج.م وإيداع جميع مزايا باقتك بحسابك فوراً. نتمنى لك تجربة لعب ممتعة ومميزة!`
+      }).catch(() => {});
+
+      req.status = 'approved';
+      req.reviewedAt = ts;
+      req.reviewerNote = reviewerNote || 'تم الاعتماد والشحن بنجاح';
+    } else {
+      req.status = 'rejected';
+      req.reviewedAt = ts;
+      req.reviewerNote = reviewerNote || 'تم رفض الطلب لعدم تطابق بيانات التحويل';
+
+      await sendMail('SYSTEM', req.username, 'system_announcement', {
+        title: `⚠️ تعذر اعتماد طلب شحن [${req.packageName}]`,
+        message: `نعتذر، لم تتمكن الإدارة من اعتماد طلب الشحن الخاص بك.\nالسبب: ${req.reviewerNote}\nيرجى التواصل مع الإدارة أو التأكد من بيانات التحويل وإعادة الطلب.`
+      }).catch(() => {});
+    }
+
+    await _api('globals', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        id: 'topup_requests',
+        data: { requests, updatedAt: ts },
+        updated_at: ts
+      })
+    });
+
+    return req;
+  }
+
+  // ─────────────────────────────────────────────
   //  SYSTEM STATS & ADMIN PANEL
   // ─────────────────────────────────────────────
   async function getSystemStats() {
@@ -2565,7 +2815,16 @@ var AppDB = (() => {
 
     // Unified Stock Market
     getGlobalMarketEvent,
-    saveGlobalMarketEvent
+    saveGlobalMarketEvent,
+
+    // Top-up & Monetization
+    getTopupPackages,
+    saveTopupPackages,
+    getPaymentSettings,
+    savePaymentSettings,
+    submitTopupRequest,
+    getTopupRequests,
+    processTopupRequest
   };
 })();
 
