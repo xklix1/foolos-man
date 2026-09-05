@@ -1,3 +1,10 @@
+  // Safe in-game renderAll fallback for admin panel terminal
+  function renderAll() {
+    if (typeof window.UIController !== 'undefined' && typeof window.UIController.renderAll === 'function') {
+      window.UIController.renderAll();
+    }
+  }
+
   function setupAdminModal() {
     const triggerSide = document.getElementById('btn-admin-panel-trigger');
     const triggerMobile = document.getElementById('btn-admin-panel-trigger-mobile');
@@ -1088,6 +1095,20 @@
           const titleEl = document.getElementById('admin-p-title');
           if (titleEl && selectedPlayerState.title) titleEl.textContent = selectedPlayerState.title;
           document.getElementById('admin-p-worth').textContent =`${worth.toLocaleString()} EGP`;
+
+          // Instant in-memory table reflection
+          if (Array.isArray(cachedPlayers)) {
+            const pIdx = cachedPlayers.findIndex(p => p.username === selectedPlayer);
+            if (pIdx !== -1) {
+              cachedPlayers[pIdx].cash = newCash;
+              cachedPlayers[pIdx].bank = newBank;
+              cachedPlayers[pIdx].xp = newXp;
+              cachedPlayers[pIdx].netWorth = worth;
+              cachedPlayers[pIdx].net_worth = worth;
+              if (selectedPlayerState.title) cachedPlayers[pIdx].title = selectedPlayerState.title;
+            }
+            renderPlayersTable();
+          }
 
           showToast('تم الحفظ بنجاح',`تم تحديث بيانات اللاعب ${selectedPlayer} بنجاح (كاش: ${newCash.toLocaleString()}، بنك: ${newBank.toLocaleString()}، خبرة: ${newXp.toLocaleString()} XP).`,'success');
           logAdminAction(`تعديل رصيد وخبرة اللاعب ${selectedPlayer} إلى كاش: ${newCash.toLocaleString()} ج.م، بنك: ${newBank.toLocaleString()} ج.م، خبرة: ${newXp.toLocaleString()} XP`);
