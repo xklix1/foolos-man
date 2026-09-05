@@ -446,18 +446,57 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.3); }
 }
 
 /* ═══════════════════════════════════════════
-   DESKTOP LAYOUT
+   DESKTOP LAYOUT & SIDEBAR UX/UI
 ═══════════════════════════════════════════ */
 @media (min-width: 1024px) {
   .desktop-sidebar {
-    width: 280px !important;
+    width: 300px !important;
     height: 100vh;
     border-radius: 0 !important;
-    border-left: 1px solid var(--border) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.07) !important;
     border-right: none !important;
+    background: linear-gradient(180deg, rgba(8, 12, 24, 0.96) 0%, rgba(4, 6, 15, 0.98) 100%) !important;
+    backdrop-filter: blur(20px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
     overflow-y: auto;
+    overflow-x: hidden;
     flex-shrink: 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(234, 179, 8, 0.2) transparent;
   }
+  .desktop-sidebar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .desktop-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(234, 179, 8, 0.25);
+    border-radius: 99px;
+  }
+  .desktop-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(234, 179, 8, 0.5);
+  }
+
+  /* Nav Tabs UX Enhancement */
+  .desktop-sidebar .nav-tab-btn {
+    border: 1px solid transparent !important;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+  .desktop-sidebar .nav-tab-btn:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #fff !important;
+    transform: translateX(-3px);
+  }
+  .desktop-sidebar .nav-tab-btn.glass-panel-active {
+    background: linear-gradient(90deg, rgba(234, 179, 8, 0.15) 0%, rgba(234, 179, 8, 0.03) 100%) !important;
+    border-color: rgba(234, 179, 8, 0.35) !important;
+    border-right: 3px solid #eab308 !important;
+    color: #fde047 !important;
+    font-weight: 800 !important;
+    box-shadow: 0 4px 15px rgba(234, 179, 8, 0.08) !important;
+  }
+
   .desktop-content {
     flex-grow: 1;
     height: 100vh;

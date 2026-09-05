@@ -1305,226 +1305,270 @@
         </div>
 
         <!-- Player Quick Stats Profile -->
-        <div class="space-y-4">
-          <div class="p-3.5 bg-slate-950/60 rounded-2xl border border-slate-800/80 shadow-xl space-y-3">
+        <!-- Player Quick Stats & Actions Hub -->
+        <div class="space-y-3.5">
+          <!-- 1. Player Identity Card -->
+          <div class="p-3.5 bg-slate-950/70 rounded-2xl border border-slate-800/80 shadow-xl space-y-3 relative overflow-hidden group">
+            <div class="absolute -right-6 -top-6 w-20 h-20 bg-yellow-500/5 rounded-full blur-xl pointer-events-none group-hover:bg-yellow-500/10 transition-all"></div>
             
             <!-- User Info Header -->
-            <div class="flex items-center justify-between pb-2.5 border-b border-slate-800/60">
-              <div class="flex items-center gap-2 min-w-0">
-                <div class="w-8 h-8 rounded-xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-400 shrink-0">
-                  <i class="fa-solid fa-user-tie text-sm"></i>
+            <div class="flex items-center justify-between pb-2.5 border-b border-slate-800/70">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-yellow-500/20 to-amber-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-400 shrink-0 shadow-sm">
+                  <i class="fa-solid fa-user-tie text-base"></i>
                 </div>
                 <div class="min-w-0">
                   <div class="flex items-center gap-1.5">
                     <span id="stat-username" class="text-sm font-black text-white block leading-tight truncate">تحميل...</span>
                     <span id="stat-fb-badge" class="hidden fb-vip-badge" title="عضو رسمي موثق في مجتمع فيسبوك 👍">f</span>
                   </div>
-                  <span id="stat-title" class="text-[11px] font-bold text-yellow-400 block truncate">تحميل...</span>
+                  <span id="stat-title" class="text-[11px] font-bold text-yellow-400 block truncate mt-0.5">تحميل...</span>
                 </div>
+              </div>
             </div>
 
-            <!-- Top-Up & Support Store Desktop Button -->
-            <button id="btn-desktop-topup-store" onclick="window.UI.openTopupModal()" title="متجر الشحن والدعم"
-              class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/25 via-yellow-500/30 to-amber-500/25 border border-amber-500/50 hover:border-yellow-400 text-amber-300 hover:text-yellow-200 transition-all font-black text-xs flex items-center justify-between gap-2 shadow-lg shadow-yellow-500/10 cursor-pointer active:scale-95 mb-2">
-              <div class="flex items-center gap-2">
-                <i class="fa-solid fa-gem text-amber-400 text-sm"></i>
-                <span>متجر الشحن والدعم</span>
-              </div>
-              <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black animate-pulse">VIP 💎</span>
-            </button>
-
-            <!-- Notifications & Messages Desktop Button -->
-            <button id="btn-open-notifications-desktop" onclick="window.UI.openNotificationsModal()" title="صندوق الإشعارات والرسائل"
-              class="w-full py-2 px-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-white transition-all font-bold text-xs flex items-center justify-between gap-2 shadow cursor-pointer active:scale-95 mb-2">
-              <div class="flex items-center gap-2">
-                <i class="fa-solid fa-bell text-amber-400 text-sm"></i>
-                <span>صندوق الإشعارات والرسائل</span>
-              </div>
-              <span id="mailbox-unread-badge" class="hidden px-2 py-0.5 rounded-full bg-rose-600 text-white font-black text-[10px] shadow animate-pulse">0</span>
-            </button>
-
-            <!-- Player Inventory & Tools Desktop Button -->
-            <button id="btn-open-inventory-desktop" onclick="window.UI.openPlayerInventoryModal()" title="حقيبة الأدوات والمقتنيات"
-              class="w-full py-2 px-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/40 text-slate-300 hover:text-white transition-all font-bold text-xs flex items-center justify-between gap-2 shadow cursor-pointer active:scale-95 mb-2">
-              <div class="flex items-center gap-2">
-                <i class="fa-solid fa-briefcase text-sky-400 text-sm"></i>
-                <span>حقيبة الأدوات والمقتنيات</span>
-              </div>
-              <span id="desktop-inventory-count-badge" class="px-2 py-0.5 rounded-full bg-sky-950 border border-sky-500/30 text-sky-300 font-black text-[10px]">🎒</span>
-            </button>
-
-            <!-- Quick Hall of Fame / Leaderboard Ingame Button -->
-            <button id="btn-ingame-leaderboard-sidebar" onclick="window.UI.switchTab('leaderboard')" title="عرش الأثرياء (توب 10)"
-              class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-yellow-500/20 via-amber-500/30 to-yellow-500/20 border border-yellow-500/50 hover:border-yellow-400 text-yellow-400 hover:text-yellow-300 transition-all font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/10 cursor-pointer active:scale-95 mb-2">
-              <i class="fa-solid fa-trophy text-sm text-yellow-400"></i>
-              <span>عرش الأثرياء (توب 10) 👑</span>
-            </button>
-
-            <!-- Primary Cloud Save Button -->
-            <button id="btn-save-progress-cloud-ingame" title="حفظ التقدم في السحابة"
-              class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-yellow-500/25 to-amber-500/20 border border-yellow-500/40 hover:border-yellow-400 text-yellow-400 hover:text-yellow-300 transition-all font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/5 cursor-pointer active:scale-95">
-              <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
-              <span>مزامنة وحفظ السحابة</span>
-            </button>
-
-            <!-- Quick Action Buttons 2-Column Grid -->
-            <div class="grid grid-cols-2 gap-1.5">
-              <button id="btn-open-industry-quick" onclick="window.UI.switchTab('industry')" title="مجمع الصناعات وسلاسل الإمداد"
-                class="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-emerald-400 hover:text-emerald-300 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5 relative cursor-pointer">
-                <i class="fa-solid fa-industry text-xs"></i>
-                <span>الصناعات</span>
+            <!-- VIP Topup & Hall of Fame Primary Highlights -->
+            <div class="grid grid-cols-2 gap-2">
+              <!-- Top-Up & Support Store Desktop Button -->
+              <button id="btn-desktop-topup-store" onclick="window.UI.openTopupModal()" title="متجر الشحن والدعم"
+                class="py-2 px-2.5 rounded-xl bg-gradient-to-br from-amber-500/20 via-yellow-500/25 to-amber-500/10 border border-amber-500/40 hover:border-yellow-400 text-amber-300 hover:text-yellow-200 transition-all font-black text-[11px] flex items-center justify-center gap-1.5 shadow-md hover:shadow-yellow-500/10 cursor-pointer active:scale-95">
+                <i class="fa-solid fa-gem text-amber-400 text-xs"></i>
+                <span>متجر VIP</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
               </button>
-              
+
+              <!-- Hall of Fame / Leaderboard Ingame Button -->
+              <button id="btn-ingame-leaderboard-sidebar" onclick="window.UI.switchTab('leaderboard')" title="عرش الأثرياء (توب 10)"
+                class="py-2 px-2.5 rounded-xl bg-gradient-to-br from-yellow-500/15 via-amber-500/20 to-yellow-500/10 border border-yellow-500/40 hover:border-yellow-400 text-yellow-400 hover:text-yellow-300 transition-all font-black text-[11px] flex items-center justify-center gap-1.5 shadow-md cursor-pointer active:scale-95">
+                <i class="fa-solid fa-trophy text-xs text-yellow-400"></i>
+                <span>توب 10 👑</span>
+              </button>
+            </div>
+
+            <!-- Player Hub Action Bar (Notifications, Inventory, Cloud) -->
+            <div class="grid grid-cols-3 gap-1.5 pt-1">
+              <!-- Notifications Desktop Button -->
+              <button id="btn-open-notifications-desktop" onclick="window.UI.openNotificationsModal()" title="صندوق الإشعارات والرسائل"
+                class="py-2 px-2 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-white transition-all font-bold text-[11px] flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 group">
+                <i class="fa-solid fa-bell text-amber-400 text-sm group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] leading-none">الإشعارات</span>
+                <span id="mailbox-unread-badge" class="hidden absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-black text-[9px] shadow animate-pulse border border-slate-950">0</span>
+              </button>
+
+              <!-- Player Inventory Desktop Button -->
+              <button id="btn-open-inventory-desktop" onclick="window.UI.openPlayerInventoryModal()" title="حقيبة الأدوات والمقتنيات"
+                class="py-2 px-2 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-sky-500/40 text-slate-300 hover:text-white transition-all font-bold text-[11px] flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 group">
+                <i class="fa-solid fa-briefcase text-sky-400 text-sm group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] leading-none">الحقيبة</span>
+                <span id="desktop-inventory-count-badge" class="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-sky-950 border border-sky-500/40 text-sky-300 font-black text-[9px]">0</span>
+              </button>
+
+              <!-- Cloud Save Desktop Button -->
+              <button id="btn-save-progress-cloud-ingame" title="مزامنة وحفظ السحابة"
+                class="py-2 px-2 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-emerald-500/40 text-slate-300 hover:text-white transition-all font-bold text-[11px] flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 group">
+                <i class="fa-solid fa-cloud-arrow-up text-emerald-400 text-sm group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] leading-none">حفظ سحابي</span>
+              </button>
+            </div>
+
+            <!-- Quick Utility Toolbar (3 Columns: Guide, Start Menu, Settings) -->
+            <div class="grid grid-cols-3 gap-1 pt-1 border-t border-slate-800/50">
               <button id="btn-ingame-guide" title="دليل الملياردير"
-                class="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-sky-400 hover:text-sky-300 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
-                <i class="fa-solid fa-book-open text-xs"></i>
+                class="py-1.5 px-1 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/80 text-sky-400 hover:text-sky-300 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-book-open text-[10px]"></i>
                 <span>الدليل</span>
               </button>
 
               <button id="btn-open-start-menu" title="الرجوع للقائمة الرئيسية"
-                class="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-amber-400 hover:text-amber-300 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
-                <i class="fa-solid fa-house text-xs"></i>
-                <span>القائمة</span>
+                class="py-1.5 px-1 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/80 text-amber-400 hover:text-amber-300 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-house text-[10px]"></i>
+                <span>الرئيسية</span>
               </button>
 
               <button id="btn-ingame-settings" title="إعدادات الصوت والإشعارات"
-                class="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-purple-400 hover:text-purple-300 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
-                <i class="fa-solid fa-sliders text-xs"></i>
+                class="py-1.5 px-1 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/80 text-purple-400 hover:text-purple-300 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-sliders text-[10px]"></i>
                 <span>الإعدادات</span>
+              </button>
+            </div>
+
+            <!-- Sub Utilities Row (Language & Logout) -->
+            <div class="flex items-center gap-1.5 pt-0.5">
+              <button id="btn-lang-toggle-ingame" type="button"
+                class="flex-1 py-1 px-2 bg-slate-900/50 hover:bg-slate-800/80 border border-slate-800/60 rounded-lg text-[10px] font-bold text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-language text-[10px]"></i>
+                <span>Language: EN</span>
               </button>
 
               <button id="btn-user-logout" title="تسجيل الخروج"
-                class="py-1.5 px-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
-                <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                class="py-1 px-2.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-right-from-bracket text-[10px]"></i>
                 <span>خروج</span>
               </button>
             </div>
-
-            <!-- Language Switcher -->
-            <button id="btn-lang-toggle-ingame" type="button"
-              class="w-full py-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 rounded-xl text-[11px] font-bold text-slate-300 transition flex items-center justify-center gap-1.5 cursor-pointer">
-              <i class="fa-solid fa-language text-xs"></i>
-              <span>Language: English</span>
-            </button>
           </div>
 
-          <!-- Financial Stats -->
-          <div class="space-y-3 p-3 bg-slate-950/40 rounded-xl border border-slate-800/50">
-            <div class="flex justify-between items-center border-b border-slate-800/50 pb-2">
+          <!-- 2. Financial Stats Overview Card -->
+          <div class="space-y-2 p-3 bg-slate-950/60 rounded-2xl border border-slate-800/70 shadow-lg">
+            <div class="flex justify-between items-center border-b border-slate-800/60 pb-2">
               <div class="flex items-center gap-2">
-                <i class="fa-solid fa-money-bill-wave text-yellow-400 text-xs"></i>
-                <span class="text-xs text-slate-400">سيولة الكاش</span>
+                <span class="w-5 h-5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 text-[10px]">
+                  <i class="fa-solid fa-money-bill-wave"></i>
+                </span>
+                <span class="text-xs text-slate-400 font-medium">سيولة الكاش</span>
               </div>
-              <span class="numbers-font text-sm font-bold text-yellow-500"><span id="stat-cash">0</span> جنيه</span>
+              <span class="numbers-font text-xs font-bold text-yellow-400"><span id="stat-cash">0</span> جنيه</span>
             </div>
-            <div class="flex items-center justify-between border-b border-slate-800/50 pb-2">
+
+            <div class="flex items-center justify-between border-b border-slate-800/60 pb-2">
               <div class="flex items-center gap-2">
-                <i class="fa-solid fa-building-columns text-emerald-400 text-xs"></i>
-                <span class="text-xs text-slate-400">حساب البنك</span>
+                <span class="w-5 h-5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-[10px]">
+                  <i class="fa-solid fa-building-columns"></i>
+                </span>
+                <span class="text-xs text-slate-400 font-medium">حساب البنك</span>
               </div>
-              <span class="numbers-font text-sm font-bold text-emerald-400"><span id="stat-bank">0</span> جنيه</span>
+              <span class="numbers-font text-xs font-bold text-emerald-400"><span id="stat-bank">0</span> جنيه</span>
             </div>
-            <div id="btn-cashflow-breakdown-desktop" class="flex items-center justify-between border-b border-slate-800/50 pb-2 cursor-pointer hover:bg-slate-800/50 px-1.5 py-1 rounded-lg transition group" title="اضغط لعرض كشف الحساب وتفاصيل التدفق اللحظي 📊">
-              <div class="flex items-center gap-1.5">
-                <i class="fa-solid fa-arrow-trend-up text-emerald-400 text-xs group-hover:scale-110 transition-transform"></i>
-                <span class="text-xs text-slate-400 group-hover:text-slate-200">التدفق بالساعة</span>
-                <span class="text-[9px] px-1.5 py-0.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 rounded-md font-bold">كشف 📊</span>
+
+            <div id="btn-cashflow-breakdown-desktop" class="flex items-center justify-between border-b border-slate-800/60 pb-2 cursor-pointer hover:bg-slate-900/60 px-1 py-0.5 rounded-lg transition group" title="اضغط لعرض كشف الحساب وتفاصيل التدفق اللحظي 📊">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-[10px] group-hover:scale-110 transition-transform">
+                  <i class="fa-solid fa-arrow-trend-up"></i>
+                </span>
+                <span class="text-xs text-slate-400 font-medium group-hover:text-slate-200">التدفق بالساعة</span>
+                <span class="text-[8px] px-1 py-0.2 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 rounded font-bold">كشف</span>
               </div>
               <span class="numbers-font text-xs font-bold text-emerald-400 flex items-center gap-1.5">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span id="stat-cashflow">+0</span> جنيه/س
               </span>
             </div>
+
             <div class="flex items-center justify-between pt-1">
               <div class="flex items-center gap-2">
-                <i class="fa-solid fa-gem text-cyan-400 text-xs"></i>
+                <span class="w-5 h-5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-[10px]">
+                  <i class="fa-solid fa-gem"></i>
+                </span>
                 <span class="text-xs font-bold text-white">إجمالي الثروة</span>
               </div>
-              <span class="numbers-font text-base font-bold text-yellow-400"><span id="stat-networth">0</span>
-                جنيه</span>
+              <span class="numbers-font text-sm font-black text-yellow-400"><span id="stat-networth">0</span> جنيه</span>
             </div>
           </div>
         </div>
 
         <!-- Main Desktop Navigation Tab Items -->
-        <nav class="hidden lg:flex flex-col gap-1.5">
-          <button data-tab="dashboard"
-            class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-gauge-high w-4 text-center text-yellow-400"></i>
-            <span>حسابي</span>
-          </button>
-          <button data-tab="leaderboard"
-            class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-trophy w-4 text-center text-yellow-400"></i>
-            <span>توب 10 الأثرياء</span>
-          </button>
-          <button data-tab="careers"
-            class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-briefcase w-4 text-center text-blue-400"></i>
-            <span>المهن والوظائف</span>
-          </button>
-          <button data-tab="business"
-            class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-city w-4 text-center text-emerald-400"></i>
-            <span>إدارة الأعمال</span>
-          </button>
-          <button data-tab="bank"
-            class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-building-columns w-4 text-center text-purple-400"></i>
-            <span>البنك والتحويلات</span>
-          </button>
-          <button data-tab="assets"
-            class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-house-chimney w-4 text-center text-cyan-400"></i>
-            <span>ممتلكاتي والعقارات</span>
-          </button>
-          <button data-tab="stocks"
-            class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-chart-line w-4 text-center text-sky-400"></i>
-            <span>البورصة والأسهم</span>
-          </button>
-          <button data-tab="taxes"
-            class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-landmark-dome w-4 text-center text-rose-400"></i>
-            <span>مصلحة الضرائب</span>
-          </button>
-          <button data-tab="store"
-            class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-store w-4 text-center text-amber-400"></i>
-            <span>المتجر والمستودع</span>
-          </button>
-          <button data-tab="trade"
-            class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-ship w-4 text-center text-cyan-400"></i>
-            <span>الاستيراد والتصدير</span>
-            <span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold ml-auto">جديد 🚢</span>
-          </button>
-          <button data-tab="industry"
-            class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-industry w-4 text-center text-emerald-400"></i>
-            <span>مجمع الصناعات وسلاسل الإمداد</span>
-            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold ml-auto">إمبراطورية 🏭</span>
-          </button>
-          <button data-tab="blackmarket"
-            class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-mask w-4 text-center text-rose-400"></i>
-            <span>السوق السوداء</span>
-          </button>
-          <button data-tab="casino"
-            class="nav-tab-btn flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 text-sm font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
-            <i class="fa-solid fa-dice w-4 text-center text-fuchsia-400"></i>
-            <span>كازينو التسلية</span>
-          </button>
-          
-          <!-- Facebook Community Sidebar Link -->
-          <a id="btn-sidebar-facebook" href="https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" onclick="window.UI.claimFacebookReward(event)"
-            class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 text-xs font-bold transition duration-200 group mt-2">
-            <div class="flex items-center gap-2.5">
-              <i class="fa-brands fa-facebook w-4 text-center text-blue-400 text-base group-hover:scale-110 transition drop-shadow-[0_0_6px_rgba(59,130,246,0.8)]"></i>
-              <span>مجتمع فيسبوك</span>
+        <!-- Main Desktop Navigation Tab Items -->
+        <nav class="hidden lg:flex flex-col gap-4">
+          <!-- Main Hub Category -->
+          <div class="space-y-1">
+            <div class="px-3 py-1 text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-compass text-[9px] text-yellow-500/70"></i>
+              <span>المركز الرئيسي</span>
             </div>
-            <span id="badge-sidebar-facebook" class="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-600 text-white font-black animate-pulse shadow-sm">وثّق 💎</span>
-          </a>
+            <button data-tab="dashboard"
+              class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+              <i class="fa-solid fa-gauge-high w-4 text-center text-yellow-400 text-sm"></i>
+              <span>لوحة التحكم الرئيسية</span>
+            </button>
+            <button data-tab="leaderboard"
+              class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+              <i class="fa-solid fa-trophy w-4 text-center text-yellow-400 text-sm"></i>
+              <span>توب 10 الأثرياء</span>
+            </button>
+          </div>
+
+          <!-- Business & Wealth Category -->
+          <div class="space-y-1">
+            <div class="px-3 py-1 text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-briefcase text-[9px] text-emerald-500/70"></i>
+              <span>الأعمال والاستثمار</span>
+            </div>
+            <button data-tab="careers"
+              class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+              <i class="fa-solid fa-user-gear w-4 text-center text-blue-400 text-sm"></i>
+              <span>المهن والوظائف</span>
+            </button>
+            <button data-tab="business"
+              class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+              <i class="fa-solid fa-city w-4 text-center text-emerald-400 text-sm"></i>
+              <span>إدارة الشركات والأعمال</span>
+            </button>
+            <button data-tab="bank"
+              class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+              <i class="fa-solid fa-building-columns w-4 text-center text-purple-400 text-sm"></i>
+              <span>البنك والتحويلات</span>
+            </button>
+            <button data-tab="assets"
+              class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+              <i class="fa-solid fa-house-chimney w-4 text-center text-cyan-400 text-sm"></i>
+              <span>ممتلكاتي والعقارات</span>
+            </button>
+            <button data-tab="stocks"
+              class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+              <i class="fa-solid fa-chart-line w-4 text-center text-sky-400 text-sm"></i>
+              <span>البورصة والأسهم</span>
+            </button>
+            <button data-tab="taxes"
+              class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+              <i class="fa-solid fa-landmark-dome w-4 text-center text-rose-400 text-sm"></i>
+              <span>مصلحة الضرائب</span>
+            </button>
+          </div>
+
+          <!-- Trade & Industry Category -->
+          <div class="space-y-1">
+            <div class="px-3 py-1 text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-industry text-[9px] text-sky-500/70"></i>
+              <span>التجارة والصناعة</span>
+            </div>
+            <button data-tab="store"
+              class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+              <i class="fa-solid fa-store w-4 text-center text-amber-400 text-sm"></i>
+              <span>المتجر والمستودع</span>
+            </button>
+            <button data-tab="trade"
+              class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+              <i class="fa-solid fa-ship w-4 text-center text-cyan-400 text-sm"></i>
+              <span>الاستيراد والتصدير</span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold ml-auto">جديد 🚢</span>
+            </button>
+            <button data-tab="industry"
+              class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+              <i class="fa-solid fa-industry w-4 text-center text-emerald-400 text-sm"></i>
+              <span>سلاسل الإمداد</span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold ml-auto">مصانع 🏭</span>
+            </button>
+          </div>
+
+          <!-- Entertainment & Shadow Economy -->
+          <div class="space-y-1">
+            <div class="px-3 py-1 text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-dice text-[9px] text-purple-500/70"></i>
+              <span>الترفيه والظل</span>
+            </div>
+            <button data-tab="blackmarket"
+              class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+              <i class="fa-solid fa-mask w-4 text-center text-rose-400 text-sm"></i>
+              <span>السوق السوداء</span>
+            </button>
+            <button data-tab="casino"
+              class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+              <i class="fa-solid fa-dice w-4 text-center text-fuchsia-400 text-sm"></i>
+              <span>كازينو التسلية</span>
+            </button>
+          </div>
+
+          <!-- Community Card -->
+          <div class="pt-2">
+            <a id="btn-sidebar-facebook" href="https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" onclick="window.UI.claimFacebookReward(event)"
+              class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600/15 to-indigo-600/10 hover:from-blue-600/25 hover:to-indigo-600/20 text-blue-300 border border-blue-500/30 text-xs font-bold transition duration-200 group">
+              <div class="flex items-center gap-2.5">
+                <i class="fa-brands fa-facebook w-4 text-center text-blue-400 text-base group-hover:scale-110 transition drop-shadow-[0_0_6px_rgba(59,130,246,0.8)]"></i>
+                <span>مجتمع فيسبوك</span>
+              </div>
+              <span id="badge-sidebar-facebook" class="text-[9px] px-2 py-0.5 rounded-full bg-blue-600 text-white font-black animate-pulse shadow-sm">وثّق 💎</span>
+            </a>
+          </div>
         </nav>
       </div>
 
