@@ -413,45 +413,77 @@ var AppDB = (() => {
     window.addEventListener('pagehide', handleExitFlush);
   }
 
+  let _cloudSyncDebounceTimer = null;
+  let _lastCloudSyncTimestamp = 0;
+  const SMART_SYNC_INTERVAL_MS = 35000; // 35 seconds max delay for background autosync
+
+  async function _pushStateToCloud(u, state) {
+    if (!u || !state) return;
+    if (!state._loadedFromCloud && state.cash <= 300 && state.netWorth <= 400 && state.xp === 0) return;
+
+    const payload = {
+      username: u,
+      cash: Number(state.cash || 0),
+      bank: Number(state.bank || 0),
+      dirty_cash: Number(state.dirtyCash || 0),
+      net_worth: Number(state.netWorth || 0),
+      xp: Number(state.xp || 0),
+      title: state.title || 'عامل مبتدئ',
+      job_id: state.jobId || 'worker',
+      is_admin: state.isAdmin === true,
+      is_banned: state.isBanned === true,
+      jail_timer: Number(state.jailTimer || 0),
+      afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
+      total_taxes_paid: Number(state.totalTaxesPaid || 0),
+      state: state,
+      last_seen: Date.now()
+    };
+    if (state.pin) payload.pin = state.pin;
+
+    try {
+      await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
+        method: 'PATCH',
+        headers: { 'Prefer': 'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+      _lastCloudSyncTimestamp = Date.now();
+    } catch (err) {
+      console.warn('[DB] Cloud save warning:', err.message);
+    }
+  }
+
   async function savePlayerState(username, state, forceCloud = false) {
     if (!username || !state) return;
     const u = username.trim();
     state.username = u;
     state.lastSeen = Date.now();
 
-    // Cache locally INSTANTLY (0 lag, 100% responsive, ZERO network egress)
+    // Cache locally INSTANTLY (0 lag, 100% responsive)
     setEncryptedLocalState(`rasalmal_state_${u}`, state);
 
-    // Only push to Supabase if forceCloud is true (30m periodic interval, reload/exit, or explicit sync)
     if (forceCloud) {
-      const payload = {
-        username: u,
-        cash: Number(state.cash || 0),
-        bank: Number(state.bank || 0),
-        dirty_cash: Number(state.dirtyCash || 0),
-        net_worth: Number(state.netWorth || 0),
-        xp: Number(state.xp || 0),
-        title: state.title || 'عامل مبتدئ',
-        job_id: state.jobId || 'worker',
-        is_admin: state.isAdmin === true,
-        is_banned: state.isBanned === true,
-        jail_timer: Number(state.jailTimer || 0),
-        afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
-        total_taxes_paid: Number(state.totalTaxesPaid || 0),
-        state: state,
-        last_seen: Date.now()
-      };
-      if (state.pin) payload.pin = state.pin;
-
-      try {
-        await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
-          method: 'PATCH',
-          headers: { 'Prefer': 'return=minimal' },
-          body: JSON.stringify(payload)
-        });
-      } catch (err) {
-        console.warn('[DB] Cloud save warning:', err.message);
+      if (_cloudSyncDebounceTimer) {
+        clearTimeout(_cloudSyncDebounceTimer);
+        _cloudSyncDebounceTimer = null;
       }
+      await _pushStateToCloud(u, state);
+      return;
+    }
+
+    // Smart Debounce: ensure progress is auto-saved to cloud every 35 seconds without flooding the server
+    const now = Date.now();
+    if (now - _lastCloudSyncTimestamp >= SMART_SYNC_INTERVAL_MS) {
+      if (_cloudSyncDebounceTimer) clearTimeout(_cloudSyncDebounceTimer);
+      _cloudSyncDebounceTimer = setTimeout(() => {
+        _cloudSyncDebounceTimer = null;
+        _pushStateToCloud(u, state);
+      }, 1500); // 1.5s micro-debounce to batch rapid clicks
+    } else if (!_cloudSyncDebounceTimer) {
+      const remainingTime = Math.max(2000, SMART_SYNC_INTERVAL_MS - (now - _lastCloudSyncTimestamp));
+      _cloudSyncDebounceTimer = setTimeout(() => {
+        _cloudSyncDebounceTimer = null;
+        _pushStateToCloud(u, state);
+      }, remainingTime);
     }
   }
 
@@ -691,8 +723,46 @@ var AppDB = (() => {
   }
 
   function listenToMailbox(username, callback) {
-    // Egress Zero-Traffic: Mailbox background polling disabled permanently
-    return () => {};
+    if (!username || typeof callback !== 'function') return () => {};
+    let isSubscribed = true;
+    let lastKnownMailIds = new Set();
+    let isFirstRun = true;
+
+    const checkMailbox = async () => {
+      if (!isSubscribed) return;
+      if (!isNetworkActive()) return;
+      try {
+        const rows = await _api(`mailbox?recipient=eq.${encodeURIComponent(username.trim())}&order=created_at.desc&limit=25`);
+        if (rows && isSubscribed) {
+          if (!isFirstRun) {
+            for (const m of rows) {
+              if (!lastKnownMailIds.has(m.id) && m.status !== 'read' && m.status !== 'accepted' && m.status !== 'rejected') {
+                if (typeof showToast === 'function') {
+                  showToast(m.title || '📬 بريد جديد', m.message || 'وصلتك رسالة أو حوالة جديدة في صندوق البريد!', 'info');
+                  if (typeof playMenuSound === 'function') playMenuSound('success');
+                }
+                break;
+              }
+            }
+          }
+          lastKnownMailIds = new Set(rows.map(r => r.id));
+          isFirstRun = false;
+          callback(rows);
+        }
+      } catch (e) {}
+    };
+
+    checkMailbox();
+    const pollId = registerPollingInterval(setInterval(checkMailbox, 12000));
+    const unsubResume = onActiveResume(() => {
+      if (isSubscribed) checkMailbox();
+    });
+
+    return () => {
+      isSubscribed = false;
+      unregisterPollingInterval(pollId);
+      unsubResume();
+    };
   }
 
   async function updateMailStatus(mailId, status) {
@@ -1843,11 +1913,19 @@ var AppDB = (() => {
     return true;
   }
 
-  // 🏆 Top 10 Richest Players Leaderboard
-  async function getLeaderboard() {
+  // 🏆 Top 10 Richest Players Leaderboard (Smart 30s In-Memory Cache)
+  let _leaderboardCache = null;
+  let _leaderboardCacheTime = 0;
+  const LEADERBOARD_CACHE_TTL = 30000;
+
+  async function getLeaderboard(forceRefresh = false) {
+    const now = Date.now();
+    if (!forceRefresh && _leaderboardCache && (now - _leaderboardCacheTime < LEADERBOARD_CACHE_TTL)) {
+      return _leaderboardCache;
+    }
     try {
       const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&order=net_worth.desc&limit=25');
-      return (rows || []).map(r => ({
+      _leaderboardCache = (rows || []).map(r => ({
         username: r.username,
         cash: Number(r.cash || 0),
         bank: Number(r.bank || 0),
@@ -1858,9 +1936,11 @@ var AppDB = (() => {
         isAdmin: r.is_admin === true,
         facebookVerified: false
       }));
+      _leaderboardCacheTime = now;
+      return _leaderboardCache;
     } catch (e) {
       console.warn('[DB] getLeaderboard error:', e.message);
-      return [];
+      return _leaderboardCache || [];
     }
   }
 

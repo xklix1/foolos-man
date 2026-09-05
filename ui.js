@@ -5571,23 +5571,25 @@ const UIController = (() => {
 
     // Public Chat listener removed to conserve Firebase read/write quota (replaced with Facebook Community)
 
-    // Zero-Egress Local-First Strategy:
-    // Cloud sync occurs ONLY:
-    // 1) On page close/reload via keepalive beacon.
-    // 2) Every 30 minutes of continuous gameplay.
-    // 3) On explicit logout or manual save button.
+    // Smart Cloud Auto-Sync:
+    // Debounced, safe background autosync every 45s without server spam
     if (!window._cloudBackupInterval) {
       window._cloudBackupInterval = setInterval(() => {
-        if (GameEngine.activeUsername && GameEngine.state) {
-          console.log('[AutoSync] 30-minute periodic cloud backup checkpoint');
+        if (GameEngine.activeUsername && GameEngine.state && GameEngine.state._loadedFromCloud) {
           AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
         }
-      }, 30 * 60 * 1000);
+      }, 45 * 1000);
     }
 
-
-
-
+    // 2.5. Live Incoming Mailbox & Wire Transfers Listener
+    if (typeof AppDB.listenToMailbox === 'function') {
+      const unsubMail = AppDB.listenToMailbox(username, (mails) => {
+        if (typeof renderMailbox === 'function') {
+          renderMailbox(mails);
+        }
+      });
+      activeListeners.push(unsubMail);
+    }
 
     // 3. Airdrop Listener
     let lastAirdropTime = Date.now();
@@ -5606,7 +5608,7 @@ const UIController = (() => {
       }, (err) => console.error("Airdrop listen err: ", err));
     activeListeners.push(unsubAirdrop);
 
-    // 5. Global Unified Market Event synchronization (Egress-optimized: 60s interval, pauses when hidden or idle)
+    // 5. Global Unified Market Event synchronization (30s interval, pauses when hidden or idle)
     const syncMarketEvent = async () => {
       if (typeof AppDB !== 'undefined' && typeof AppDB.isNetworkActive === 'function' && !AppDB.isNetworkActive()) return;
       if (typeof document !== 'undefined' && document.hidden) return;
@@ -5626,7 +5628,7 @@ const UIController = (() => {
       } catch (e) {}
     };
     syncMarketEvent();
-    const marketEventPoll = setInterval(syncMarketEvent, 60000);
+    const marketEventPoll = setInterval(syncMarketEvent, 30000);
     const unsubMarketResume = (typeof AppDB !== 'undefined' && typeof AppDB.onActiveResume === 'function') 
       ? AppDB.onActiveResume(() => syncMarketEvent()) 
       : () => {};
