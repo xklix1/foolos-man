@@ -4148,9 +4148,13 @@ const GameEngine = (() => {
       const remSec = Math.ceil((state.loanCooldownUntil - Date.now()) / 1000);
       throw new Error(`البنك: فترة التقييم الائتماني نشطة. لا يمكنك طلب قرض جديد إلا بعد مرور ${remSec} ثانية من سداد القرض السابق.`);
     }
-    const maxLoan = Math.max(50000, Math.floor(state.netWorth * 0.35));
+    const MIN_LOAN_NET_WORTH = 10000;
+    if ((state.netWorth || 0) < MIN_LOAN_NET_WORTH) {
+      throw new Error(`يشترط البنك توفر ملاءة مالية وصافي ثروة لا يقل عن ${MIN_LOAN_NET_WORTH.toLocaleString()} جنيه للتأهل لطلب القروض والتسهيلات المصرفية.`);
+    }
+    const maxLoan = Math.floor(state.netWorth * 0.35);
     if (amount <= 0 || amount > maxLoan) {
-      throw new Error(`الحد الأقصى للقرض المسموح لك هو ${maxLoan.toLocaleString()} جنيه.`);
+      throw new Error(`الحد الأقصى للقرض المسموح لك بناءً على ثروتك (35%) هو ${maxLoan.toLocaleString()} جنيه.`);
     }
     const totalDue = Math.floor(amount * 1.15); // 15% interest fee
     state.activeLoan = {

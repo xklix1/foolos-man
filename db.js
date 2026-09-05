@@ -384,7 +384,7 @@ var AppDB = (() => {
 
     try {
       const adminTs = Number(state.adminModifiedTimestamp || 0);
-      const tsFilter = adminTs > 0 ?`&admin_modified_timestamp=lte.${adminTs}` :'';
+      const tsFilter = `&admin_modified_timestamp=lte.${adminTs}`;
       const url =`${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}${tsFilter}`;
       fetch(url, {
         method:'PATCH',
@@ -438,7 +438,7 @@ var AppDB = (() => {
 
     try {
       const adminTs = Number(state.adminModifiedTimestamp || 0);
-      const tsFilter = adminTs > 0 ?`&admin_modified_timestamp=lte.${adminTs}` :'';
+      const tsFilter = `&admin_modified_timestamp=lte.${adminTs}`;
       await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
         method:'PATCH',
         headers: {'Prefer':'return=minimal' },
