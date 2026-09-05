@@ -316,7 +316,7 @@
             </div>
             <div>
               <div class="font-bold text-white">${p.username} ${p.username === GameEngine.activeUsername ?'<span class="text-[9px] text-yellow-400">(أنت)</span>' :''}</div>
-              <div class="text-[10px] text-slate-400 font-sans">${p.title ||'عامل مبتدئ'}</div>
+              <div class="text-[10px] text-slate-400 font-sans">${p.title ||'عامل مبتدئ'} • <span class="text-purple-400 font-bold">${Number(p.xp || 0).toLocaleString()} XP</span></div>
             </div>
           </td>
           <td class="p-2.5 text-center numbers-font font-bold text-yellow-400">${Number(p.netWorth !== undefined && p.netWorth !== null ? p.netWorth : (p.net_worth || 0)).toLocaleString()} EGP</td>
@@ -348,6 +348,8 @@
         const dirtyEl = document.getElementById('admin-p-dirty');
         if (dirtyEl) dirtyEl.textContent = (state.dirtyCash || 0).toLocaleString();
         document.getElementById('admin-p-title').textContent = state.title ||'عامل مبتدئ';
+        const xpEl = document.getElementById('admin-p-xp');
+        if (xpEl) xpEl.textContent = `${(state.xp || 0).toLocaleString()} XP`;
 
         // Format and render account creation date
         let createdStr ='غير معروف';
@@ -445,6 +447,8 @@
 
         document.getElementById('admin-input-cash').value = state.cash || 0;
         document.getElementById('admin-input-bank').value = state.bank || 0;
+        const xpInp = document.getElementById('admin-input-xp');
+        if (xpInp) xpInp.value = state.xp || 0;
 
         const bizSelect = document.getElementById('admin-input-biz-type');
         if (bizSelect) {
@@ -965,6 +969,27 @@
       });
     });
 
+    // Quick XP Injection Buttons (+500 XP, +5K XP, +50K XP)
+    const quickInjectXpBtns = document.querySelectorAll('.btn-quick-inject-xp');
+    quickInjectXpBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const addAmount = Number(btn.getAttribute('data-add-xp') || 0);
+        const xpInp = document.getElementById('admin-input-xp');
+        if (xpInp) {
+          const current = Number(xpInp.value || 0);
+          xpInp.value = Math.max(0, current + addAmount);
+          xpInp.classList.add('glow-gold');
+          setTimeout(() => xpInp.classList.remove('glow-gold'), 600);
+
+          // Auto-trigger save to make the addition instant in the database
+          const updateMoneyBtn = document.getElementById('btn-admin-update-money');
+          if (updateMoneyBtn && selectedPlayer && selectedPlayerState) {
+            updateMoneyBtn.click();
+          }
+        }
+      });
+    });
+
     // Quick Zero Buttons
     const quickZeroBtns = document.querySelectorAll('.btn-quick-set-zero');
     quickZeroBtns.forEach(btn => {
@@ -976,8 +1001,11 @@
         } else if (targetType ==='bank') {
           const b = document.getElementById('admin-input-bank');
           if (b) b.value = 0;
+        } else if (targetType ==='xp') {
+          const x = document.getElementById('admin-input-xp');
+          if (x) x.value = 0;
         }
-        
+
         // Auto-trigger save to make the zeroing instant in the database
         const updateMoneyBtn = document.getElementById('btn-admin-update-money');
         if (updateMoneyBtn && selectedPlayer && selectedPlayerState) {
@@ -991,20 +1019,23 @@
     if (updateMoneyBtn) {
       updateMoneyBtn.addEventListener('click', async () => {
         if (!selectedPlayer || !selectedPlayerState) {
-          showToast('تعديل الرصيد','يرجى اختيار لاعب أولاً من القائمة.','error');
+          showToast('تعديل الرصيد والخبرة','يرجى اختيار لاعب أولاً من القائمة.','error');
           return;
         }
         const newCash = Number(document.getElementById('admin-input-cash').value);
         const newBank = Number(document.getElementById('admin-input-bank').value);
+        const xpInp = document.getElementById('admin-input-xp');
+        const newXp = xpInp ? Number(xpInp.value) : (selectedPlayerState.xp || 0);
 
-        if (isNaN(newCash) || isNaN(newBank) || newCash < 0 || newBank < 0) {
-          showToast('خطأ مدخلات','يرجى إدخال مبالغ صحيحة وموجبة.','error');
+        if (isNaN(newCash) || isNaN(newBank) || isNaN(newXp) || newCash < 0 || newBank < 0 || newXp < 0) {
+          showToast('خطأ مدخلات','يرجى إدخال أرقام صحيحة وموجبة (الكاش، البنك، ونقاط الخبرة XP).','error');
           return;
         }
 
         try {
           selectedPlayerState.cash = newCash;
           selectedPlayerState.bank = newBank;
+          selectedPlayerState.xp = newXp;
 
           // Accurate NetWorth calculation
           let worth = newCash + newBank;
@@ -1026,14 +1057,23 @@
           }
           selectedPlayerState.netWorth = worth;
 
-          // Save to Firestore
+          // Recalculate title if GameEngine has getAppropriateTitle
+          if (typeof GameEngine.getAppropriateTitle ==='function') {
+            selectedPlayerState.title = GameEngine.getAppropriateTitle(worth, newXp);
+          }
+
+          // Save to Firestore / Supabase
           await AppDB.adminSavePlayer(selectedPlayer, selectedPlayerState);
 
           // CRITICAL: If the edited user is currently logged in, sync GameEngine memory & localStorage immediately!
           if (selectedPlayer === GameEngine.activeUsername) {
             GameEngine.state.cash = newCash;
             GameEngine.state.bank = newBank;
+            GameEngine.state.xp = newXp;
             GameEngine.state.netWorth = worth;
+            if (typeof GameEngine.getAppropriateTitle ==='function') {
+              GameEngine.state.title = GameEngine.getAppropriateTitle(worth, newXp);
+            }
             try {
               localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
             } catch (e) { }
@@ -1043,14 +1083,18 @@
           // Update UI Card
           document.getElementById('admin-p-cash').textContent = newCash.toLocaleString();
           document.getElementById('admin-p-bank').textContent = newBank.toLocaleString();
+          const xpEl = document.getElementById('admin-p-xp');
+          if (xpEl) xpEl.textContent =`${newXp.toLocaleString()} XP`;
+          const titleEl = document.getElementById('admin-p-title');
+          if (titleEl && selectedPlayerState.title) titleEl.textContent = selectedPlayerState.title;
           document.getElementById('admin-p-worth').textContent =`${worth.toLocaleString()} EGP`;
 
-          showToast('تم الحفظ بنجاح',`تم تحديث رصيد اللاعب ${selectedPlayer} بنجاح (كاش: ${newCash.toLocaleString()}، بنك: ${newBank.toLocaleString()}).`,'success');
-          logAdminAction(`تعديل رصيد اللاعب ${selectedPlayer} إلى كاش: ${newCash.toLocaleString()} ج.م، بنك: ${newBank.toLocaleString()} ج.م`);
+          showToast('تم الحفظ بنجاح',`تم تحديث بيانات اللاعب ${selectedPlayer} بنجاح (كاش: ${newCash.toLocaleString()}، بنك: ${newBank.toLocaleString()}، خبرة: ${newXp.toLocaleString()} XP).`,'success');
+          logAdminAction(`تعديل رصيد وخبرة اللاعب ${selectedPlayer} إلى كاش: ${newCash.toLocaleString()} ج.م، بنك: ${newBank.toLocaleString()} ج.م، خبرة: ${newXp.toLocaleString()} XP`);
 
           loadAdminPlayersDirectory(false);
         } catch (err) {
-          showToast('فشل تعديل الرصيد', err.message,'error');
+          showToast('فشل تعديل البيانات', err.message,'error');
         }
       });
     }

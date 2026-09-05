@@ -528,6 +528,7 @@
                     class="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-400">نشط</span></div>
                 <div class="text-[10px] text-slate-400 flex items-center gap-3 mt-0.5">
                   <span>الرتبة: <strong id="admin-p-title" class="text-slate-200">...</strong></span>
+                  <span>الخبرة: <strong id="admin-p-xp" class="text-purple-400 numbers-font font-bold">... XP</strong></span>
                   <span>صافي الثروة: <strong id="admin-p-worth" class="text-yellow-400 numbers-font font-bold">...
                       EGP</strong></span></div></div></div>
             <div class="text-left text-[10px] text-slate-400">
@@ -613,7 +614,7 @@
             <div class="flex justify-between items-center">
               <span class="text-xs font-bold text-white flex items-center gap-1.5">
                 <i class="fa-solid fa-coins text-yellow-400"></i>
-                <span>تعديل الرصيد وحقن الأموال</span></span>
+                <span>تعديل الرصيد وحقن الأموال ونقاط الخبرة (XP)</span></span>
               <span class="text-[10px] text-slate-400">أزرار إضافة فورية أو إدخال رقم محدد</span></div>
 
             <!-- Quick Injection Buttons -->
@@ -633,8 +634,27 @@
                 class="btn-quick-set-zero py-1.5 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 rounded font-bold text-[10px] transition">تصفير
                 بنك</button></div>
 
+            <!-- Quick XP Injection Buttons -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
+              <button data-add-xp="500"
+                class="btn-quick-inject-xp py-1.5 bg-purple-950/60 hover:bg-purple-900 border border-purple-500/30 text-purple-300 rounded font-bold text-[11px] transition flex items-center justify-center gap-1">
+                <i class="fa-solid fa-bolt text-[10px]"></i>
+                <span>+500 XP</span></button>
+              <button data-add-xp="5000"
+                class="btn-quick-inject-xp py-1.5 bg-purple-950/60 hover:bg-purple-900 border border-purple-500/30 text-purple-300 rounded font-bold text-[11px] transition flex items-center justify-center gap-1">
+                <i class="fa-solid fa-bolt text-[10px]"></i>
+                <span>+5,000 XP</span></button>
+              <button data-add-xp="50000"
+                class="btn-quick-inject-xp py-1.5 bg-purple-950/60 hover:bg-purple-900 border border-purple-500/30 text-purple-300 rounded font-bold text-[11px] transition flex items-center justify-center gap-1">
+                <i class="fa-solid fa-bolt text-[10px]"></i>
+                <span>+50,000 XP</span></button>
+              <button data-set-zero="xp"
+                class="btn-quick-set-zero py-1.5 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 rounded font-bold text-[10px] transition flex items-center justify-center gap-1">
+                <i class="fa-solid fa-rotate-left text-[10px]"></i>
+                <span>تصفير XP</span></button></div>
+
             <!-- Precise Inputs -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
               <div>
                 <label class="block text-[10px] text-slate-400 mb-1">السيولة النقدية (Cash EGP)</label>
                 <input type="number" id="admin-input-cash"
@@ -642,12 +662,16 @@
               <div>
                 <label class="block text-[10px] text-slate-400 mb-1">الوديعة البنكية (Bank EGP)</label>
                 <input type="number" id="admin-input-bank"
-                  class="glass-input w-full p-2 text-xs text-center font-bold font-mono"></div></div>
+                  class="glass-input w-full p-2 text-xs text-center font-bold font-mono"></div>
+              <div>
+                <label class="block text-[10px] text-purple-400 mb-1">نقاط الخبرة (Player XP)</label>
+                <input type="number" id="admin-input-xp"
+                  class="glass-input w-full p-2 text-xs text-center font-bold font-mono text-purple-300 border-purple-500/30 focus:border-purple-500"></div></div>
 
             <button id="btn-admin-update-money"
-              class="w-full py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-bold transition shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-1.5">
+              class="w-full py-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-purple-600 hover:from-emerald-500 hover:to-purple-500 text-white rounded-lg text-xs font-bold transition shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-floppy-disk"></i>
-              <span>حفظ وتطبيق الرصيد فوراً</span></button></div>
+              <span>حفظ وتطبيق الرصيد والـ XP فوراً</span></button></div>
 
           <!-- Player Possessions & Assets Directory (New Feature) -->
           <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">

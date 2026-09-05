@@ -5022,6 +5022,7 @@ const GameEngine = (() => {
     calculateBankInterestPerTick,
     getDetailedCashflowBreakdown,
     calculateNetWorth,
+    getAppropriateTitle,
     renewAfkManager,
     forceSaveState,
     
