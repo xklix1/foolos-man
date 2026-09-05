@@ -4118,23 +4118,38 @@
     const subtabs = ['stats', 'players', 'transfers', 'chat', 'market', 'broadcast', 'auctions', 'giftcodes', 'system', 'corporations'];
     subtabs.forEach(t => {
       const btn = document.getElementById(`tab-admin-${t}`);
+      const mobPill = document.getElementById(`mobtab-admin-${t}`);
       const panel = document.getElementById(`admin-subpanel-${t}`);
-      if (!btn || !panel) return;
+      if (!panel) return;
       if (t === tabId) {
-        btn.classList.add('border-yellow-500/40', 'bg-yellow-500/10', 'text-yellow-400', 'active-admin-tab', 'active-admin-sidebar-btn');
-        btn.classList.remove('border-transparent', 'text-slate-400', 'hover:bg-slate-900/60');
+        if (btn) {
+          btn.classList.add('border-yellow-500/40', 'bg-yellow-500/10', 'text-yellow-400', 'active-admin-tab', 'active-admin-sidebar-btn');
+          btn.classList.remove('border-transparent', 'text-slate-400', 'hover:bg-slate-900/60');
+        }
+        if (mobPill) {
+          mobPill.classList.add('active-admin-mob-pill');
+          mobPill.classList.remove('text-slate-300', 'border-transparent', 'bg-slate-800/60');
+          try {
+            mobPill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          } catch (e) {}
+        }
         panel.classList.remove('hidden');
       } else {
-        btn.classList.remove('border-yellow-500/40', 'bg-yellow-500/10', 'text-yellow-400', 'active-admin-tab', 'active-admin-sidebar-btn');
-        btn.classList.add('border-transparent', 'text-slate-400');
+        if (btn) {
+          btn.classList.remove('border-yellow-500/40', 'bg-yellow-500/10', 'text-yellow-400', 'active-admin-tab', 'active-admin-sidebar-btn');
+          btn.classList.add('border-transparent', 'text-slate-400');
+        }
+        if (mobPill) {
+          mobPill.classList.remove('active-admin-mob-pill');
+          mobPill.classList.add('text-slate-300', 'border-transparent', 'bg-slate-800/60');
+        }
         panel.classList.add('hidden');
       }
     });
 
     // Auto-collapse mobile sidebar on tab change
-    const sidebar = document.getElementById('admin-sidebar');
-    if (sidebar && window.innerWidth < 768) {
-      sidebar.classList.add('hidden');
+    if (typeof toggleAdminSidebarAction === 'function') {
+      toggleAdminSidebarAction(false);
     }
 
     if (tabId === 'stats') {
@@ -4184,17 +4199,26 @@
     }
   }
 
-  function toggleAdminSidebarAction() {
+  function toggleAdminSidebarAction(forceState) {
     const sidebar = document.getElementById('admin-sidebar');
-    if (sidebar) {
-      if (sidebar.classList.contains('hidden')) {
-        sidebar.classList.remove('hidden');
-        sidebar.className = 'w-64 border-l border-slate-900 bg-slate-900/90 backdrop-blur-xl flex flex-col justify-between shrink-0 transition-all duration-300 fixed md:relative right-0 top-16 bottom-0 z-[510] md:flex';
-      } else {
-        sidebar.classList.add('hidden');
-      }
+    const backdrop = document.getElementById('admin-sidebar-backdrop');
+    if (!sidebar) return;
+
+    const isCurrentlyOpen = !sidebar.classList.contains('translate-x-full');
+    const shouldOpen = (typeof forceState === 'boolean') ? forceState : !isCurrentlyOpen;
+
+    if (shouldOpen) {
+      sidebar.classList.remove('translate-x-full');
+      sidebar.classList.add('translate-x-0');
+      if (backdrop) backdrop.classList.remove('hidden');
+    } else {
+      sidebar.classList.add('translate-x-full');
+      sidebar.classList.remove('translate-x-0');
+      if (backdrop) backdrop.classList.add('hidden');
     }
   }
+  window.UI = window.UI || {};
+  window.UI.toggleAdminSidebarAction = toggleAdminSidebarAction;
 
   async function toggleServerBoostAction() {
     const currentBoost = window.serverBoostMultiplier || 1.0;
