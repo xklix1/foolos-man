@@ -2298,12 +2298,12 @@ const GameEngine = (() => {
       }
     }
 
-    // 9. Random Life & Career Opportunities (Cooldown: 45 seconds)
-    const TIP_COOLDOWN_MS = 45 * 1000; // 45 seconds for rich gameplay
+    // 9. Random Life & Career Opportunities (Cooldown: 60 seconds, Balanced micro-rewards <= 1,000 EGP)
+    const TIP_COOLDOWN_MS = 60 * 1000;
     const now = Date.now();
     if (!lastTipEventTimestamp) lastTipEventTimestamp = now;
 
-    if (!updates.tipEvent && (now - lastTipEventTimestamp >= TIP_COOLDOWN_MS) && Math.random() < 0.40) {
+    if (!updates.tipEvent && (now - lastTipEventTimestamp >= TIP_COOLDOWN_MS) && Math.random() < 0.30) {
       lastTipEventTimestamp = now;
       const eventChance = Math.random();
       let tipTitle = "";
@@ -2312,29 +2312,29 @@ const GameEngine = (() => {
       let xpBonus = 0;
 
       if (eventChance < 0.35) {
-        // Customer VIP Tip
-        amountGained = Math.floor(500 + Math.random() * 1500);
-        xpBonus = 15;
-        tipTitle = "💵 إكرامية من عميل VIP";
-        tipText = `حصلت على إكرامية سخية لقاء كفاءتك الاستثنائية بقيمة +${amountGained.toLocaleString()} EGP!`;
+        // Customer Tip (50 - 200 EGP)
+        amountGained = Math.floor(50 + Math.random() * 150);
+        xpBonus = 5;
+        tipTitle = "💵 إكرامية عميل";
+        tipText = `حصلت على إكرامية لقاء حسن تعاملك بقيمة +${amountGained.toLocaleString()} EGP!`;
       } else if (eventChance < 0.65) {
-        // Fast Commercial Deal
-        amountGained = Math.floor(3000 + Math.random() * 12000);
-        xpBonus = 35;
-        tipTitle = "🤝 صفقة وساطة سريعة";
-        tipText = `أتممت صفقة وساطة تجارية ناجحة وحصدت عمولة كاش بقيمة +${amountGained.toLocaleString()} EGP!`;
+        // Fast Minor Gig (200 - 450 EGP)
+        amountGained = Math.floor(200 + Math.random() * 250);
+        xpBonus = 10;
+        tipTitle = "🤝 خدمة تجارية سريعة";
+        tipText = `أنجزت وساطة بسيطة وحصدت عمولة كاش بقيمة +${amountGained.toLocaleString()} EGP!`;
       } else if (eventChance < 0.85) {
-        // Performance Bonus
-        amountGained = Math.floor(15000 + Math.random() * 45000);
-        xpBonus = 80;
-        tipTitle = "⭐ مكافأة تميز وإدارة";
-        tipText = `منحك مجلس الإدارة مكافأة تميز مفاجئة تقديراً لنمو استثماراتك بقيمة +${amountGained.toLocaleString()} EGP!`;
+        // Performance Incentive (450 - 750 EGP)
+        amountGained = Math.floor(450 + Math.random() * 300);
+        xpBonus = 20;
+        tipTitle = "⭐ حافز إنجاز وتميز";
+        tipText = `حصلت على حافز تميز تقديراً لجهودك بقيمة +${amountGained.toLocaleString()} EGP!`;
       } else {
-        // Angel Investor Dividend
-        amountGained = Math.floor(50000 + Math.random() * 150000);
-        xpBonus = 150;
-        tipTitle = "💎 منحة شريك استثماري";
-        tipText = `قام مستثمر ملاكي بضخ أرباح إضافية في محفظتك بقيمة +${amountGained.toLocaleString()} EGP!`;
+        // Special Opportunity (750 - 1,000 EGP MAX)
+        amountGained = Math.floor(750 + Math.random() * 250);
+        xpBonus = 35;
+        tipTitle = "💎 فرصة استثمارية جانبية";
+        tipText = `أثمرت فرصة جانبية غير متوقعة عن أرباح إضافية بقيمة +${amountGained.toLocaleString()} EGP!`;
       }
 
       state.cash += amountGained;
