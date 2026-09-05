@@ -1650,7 +1650,7 @@ var AppDB = (() => {
   }
 
   async function adminRebuildLeaderboard() {
-    const rows = await _api('players?order=net_worth.desc&limit=25&select=username,net_worth,title');
+    const rows = await _api('players?order=net_worth.desc&limit=10&select=username,net_worth,title');
     const list = (rows || []).map(r => ({
       username: r.username,
       netWorth: Number(r.net_worth || 0),
@@ -2233,7 +2233,7 @@ var AppDB = (() => {
   async function _rebuildAndSaveLeaderboard() {
     const now = Date.now();
     try {
-      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&order=net_worth.desc&limit=25');
+      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&order=net_worth.desc&limit=10');
       const topPlayers = (rows || []).map(r => ({
         username: r.username,
         cash: Number(r.cash || 0),

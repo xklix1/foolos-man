@@ -51,7 +51,7 @@ const UIController = (() => {
 
     // Taxes"مصلحة الضرائب والمالية العامة (Tax Authority)":"Tax Authority & Public Finance","إدارة الوعاء الضريبي، نسب الاستقطاع للثروات الكبرى، وتفعيل الدروع الضريبية القانونية":"Tax base management, wealth bracket deductions, and legal tax shields","الرقم الضريبي للممول:":"Taxpayer ID:","ممتثل ضريبياً":"Tax Compliant","متأخرات ضريبية ️":"Tax Arrears ️","الوعاء الضريبي للثروة":"Taxable Wealth Base","إجمالي الضرائب المسددة":"Total Taxes Paid","درع الإعفاء الضريبي (Shield)":"Tax Exemption Shield","شراء وتفعيل الدرع الضريبي":"Purchase Tax Exemption Shield","تجديد وتمديد الدرع الضريبي":"Renew Tax Exemption Shield","تقديم الإقرار والتسوية":"Submit Tax Return & Settle","دفع الضرائب المستحقة":"Pay Due Taxes",
 
-    // Leaderboard"عرش الأثرياء (توب 25)":"Wealthiest Billionaires (Top 25)","تحديث تلقائي كل ساعة موحد لجميع اللاعبين":"Hourly Unified Auto-Refresh for All Players","الترتيب":"Rank","اللاعب":"Player","اللقب":"Title","صافي الثروة":"Net Worth","أنت (حسابك)":"You (Your Account)",
+    // Leaderboard"عرش الأثرياء (توب 10)":"Wealthiest Billionaires (Top 10)","جدول الترتيب العام للمتصدرين (أفضل 10 مستثمرين)":"Overall Leaderboard Ranking (Top 10 Investors)","تحديث تلقائي كل ساعة موحد لجميع اللاعبين":"Hourly Unified Auto-Refresh for All Players","الترتيب":"Rank","اللاعب":"Player","اللقب":"Title","صافي الثروة":"Net Worth","أنت (حسابك)":"You (Your Account)",
 
     // Casino"رمي العملة الملكية":"Royal Coin Flip","صاروخ المضاعفات":"Multiplier Rocket Crash","آلة السلوتس الذهبية":"Golden Slots Machine","طاولة البلاك جاك 21":"Blackjack 21 Table","سباق الخيول الملكي":"Royal Horse Racing","رهان":"Bet","المبلغ:":"Amount:","سحب الأرباح":"Cash Out","تدوير":"Spin","طلب ورقة":"Hit","توقف":"Stand","مضاعفة":"Double","تقسيم":"Split","رمي العملة":"Coin Flip","الصاروخ":"Rocket Crash","السلوتس":"Slots","البلاك جاك":"Blackjack","عجلة الحظ":"Fortune Wheel","الروليت":"Roulette","تحديد الرهان":"Set Bet","بدء الجولة":"Start Round","سحب الأرباح فوراً":"Cash Out Now",
 
@@ -5383,6 +5383,9 @@ const UIController = (() => {
         cachedLeaderboard = players;
         lastLeaderboardFetchTime = now;
       }
+      if (Array.isArray(players) && players.length > 10) {
+        players = players.slice(0, 10);
+      }
       updateHourlyLeaderboardTimerUI();
       list.innerHTML ='';
 
@@ -5468,7 +5471,7 @@ const UIController = (() => {
       if (selfRankEl) {
         selfRankEl.textContent = selfIndex !== -1 
           ? (window.currentLang ==='en' ?`#${selfIndex + 1} of ${players.length}` :`#${selfIndex + 1} من ${players.length}`)
-          : (window.currentLang ==='en' ?'Outside Top 25' :'خارج قائمة الـ 25');
+          : (window.currentLang ==='en' ?'Outside Top 10' :'خارج قائمة الـ 10');
       }
 
       // Render Table Rows
