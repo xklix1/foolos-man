@@ -71,7 +71,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=122">
+  <link rel="stylesheet" href="app.css?v=123">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -1621,6 +1621,11 @@
         style="background: rgba(8,12,28,0.92) !important; backdrop-filter: blur(24px) !important;">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
+            <!-- Mobile Menu Drawer Toggle Button -->
+            <button id="btn-mobile-nav-toggle" type="button" title="قائمة الأقسام والتنقل"
+              class="w-8 h-8 rounded-lg bg-yellow-500/15 hover:bg-yellow-500/25 active:bg-yellow-500/30 border border-yellow-500/40 text-yellow-400 flex items-center justify-center transition active:scale-95 shrink-0 shadow-sm cursor-pointer">
+              <i class="fa-solid fa-bars text-sm"></i>
+            </button>
             <img src="assets/logo-transparent.png" alt="رأس المال"
               class="w-10 h-auto object-contain drop-shadow-[0_2px_8px_rgba(234,179,8,0.4)]">
             <div>
@@ -3894,69 +3899,140 @@
 
   </main>
 
-  <!-- MOBILE BOTTOM NAVIGATION BAR -->
-  <nav
-    class="mobile-bottom-nav lg:hidden glass-panel border-t border-slate-800/80 flex justify-around items-center px-2">
-    <button data-tab="dashboard"
-      class="nav-tab-btn flex flex-col items-center gap-1 text-yellow-500 text-[10px] font-bold">
-      <i class="fa-solid fa-gauge-high text-base text-yellow-400"></i>
-      <span>حسابي</span>
-    </button>
-    <button data-tab="leaderboard"
-      class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-      <i class="fa-solid fa-trophy text-base text-yellow-400"></i>
-      <span>توب 10</span>
-    </button>
-    <button data-tab="careers"
-      class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-      <i class="fa-solid fa-briefcase text-base text-blue-400"></i>
-      <span>الوظائف</span>
-    </button>
-    <button data-tab="business"
-      class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-      <i class="fa-solid fa-city text-base text-emerald-400"></i>
-      <span>الأعمال</span>
-    </button>
-    <button data-tab="bank" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-      <i class="fa-solid fa-building-columns text-base text-purple-400"></i>
-      <span>التحويلات</span>
-    </button>
-    <button data-tab="assets" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-      <i class="fa-solid fa-house-chimney text-base text-cyan-400"></i>
-      <span>العقارات</span>
-    </button>
-    <button data-tab="stocks" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-      <i class="fa-solid fa-chart-line text-base text-sky-400"></i>
-      <span>البورصة</span>
-    </button>
-    <button data-tab="taxes" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-      <i class="fa-solid fa-landmark-dome text-base text-rose-400"></i>
-      <span>الضرائب</span>
-    </button>
-    <button data-tab="store" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-      <i class="fa-solid fa-store text-base text-amber-400"></i>
-      <span>المتجر</span>
-    </button>
-    <button data-tab="trade" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-      <i class="fa-solid fa-ship text-base text-cyan-400"></i>
-      <span>استيراد وتصدير</span>
-    </button>
-    <button data-tab="industry"
-      class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-      <i class="fa-solid fa-industry text-base text-emerald-400"></i>
-      <span>المصانع</span>
-    </button>
-    <button data-tab="blackmarket"
-      class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-      <i class="fa-solid fa-mask text-base text-rose-400"></i>
-      <span>السوق السوداء</span>
-    </button>
-    <button data-tab="casino" class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 text-[10px] font-bold">
-      <i class="fa-solid fa-dice text-base text-fuchsia-400"></i>
-      <span>كازينو</span>
-    </button>
-    
-  </nav>
+  <!-- MOBILE SIDE DRAWER NAVIGATION -->
+  <div id="mobile-nav-drawer" class="mobile-drawer-wrapper fixed inset-0 z-[250] hidden">
+    <!-- Backdrop Blur Overlay -->
+    <div id="mobile-nav-backdrop" class="fixed inset-0 bg-black/75 backdrop-blur-sm opacity-0 transition-opacity duration-300"></div>
+
+    <!-- Drawer Content (Slides from Right in RTL) -->
+    <div id="mobile-nav-content"
+      class="fixed top-0 bottom-0 right-0 w-[290px] max-w-[85vw] bg-[#070b19] border-l border-yellow-500/20 shadow-2xl flex flex-col z-10 translate-x-full transition-transform duration-300 ease-out">
+      
+      <!-- Drawer Header -->
+      <div class="p-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-950/70">
+        <div class="flex items-center gap-2.5">
+          <img src="assets/logo-transparent.png" alt="رأس المال" class="w-8 h-8 object-contain drop-shadow-[0_2px_8px_rgba(234,179,8,0.4)]">
+          <div>
+            <h3 class="text-sm font-black text-white">قائمة الأقسام</h3>
+            <p class="text-[10px] text-yellow-400 font-bold">رأس المال | Ras ALmal</p>
+          </div>
+        </div>
+        <button id="btn-close-mobile-nav" type="button" title="إغلاق القائمة"
+          class="w-8 h-8 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition active:scale-95 cursor-pointer">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Drawer Nav Items List (All 13 Sections categorized) -->
+      <div class="flex-1 overflow-y-auto p-3 space-y-1.5 custom-scrollbar">
+        <!-- Group 1: الأنشطة والمالية -->
+        <div class="text-[10px] font-black text-slate-500 px-3 py-1 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-wallet text-[10px] text-yellow-500/70"></i>
+          <span>الأنشطة والمالية</span>
+        </div>
+        
+        <button data-tab="dashboard"
+          class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-gauge-high w-5 text-center text-yellow-400 text-sm"></i>
+          <span>حسابي الشخصي</span>
+        </button>
+
+        <button data-tab="leaderboard"
+          class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-trophy w-5 text-center text-yellow-400 text-sm"></i>
+          <span>توب 10 الأثرياء</span>
+        </button>
+
+        <button data-tab="careers"
+          class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-briefcase w-5 text-center text-blue-400 text-sm"></i>
+          <span>المهن والوظائف</span>
+        </button>
+
+        <button data-tab="business"
+          class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-city w-5 text-center text-emerald-400 text-sm"></i>
+          <span>إدارة الأعمال والمشاريع</span>
+        </button>
+
+        <button data-tab="bank"
+          class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-building-columns w-5 text-center text-purple-400 text-sm"></i>
+          <span>البنك والتحويلات</span>
+        </button>
+
+        <!-- Group 2: الاستثمار والأسواق -->
+        <div class="text-[10px] font-black text-slate-500 px-3 pt-3 pb-1 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-chart-pie text-[10px] text-cyan-400/70"></i>
+          <span>الاستثمار والأسواق</span>
+        </div>
+
+        <button data-tab="assets"
+          class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-house-chimney w-5 text-center text-cyan-400 text-sm"></i>
+          <span>ممتلكاتي والعقارات</span>
+        </button>
+
+        <button data-tab="stocks"
+          class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-chart-line w-5 text-center text-sky-400 text-sm"></i>
+          <span>البورصة والأسهم</span>
+        </button>
+
+        <button data-tab="taxes"
+          class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-landmark-dome w-5 text-center text-rose-400 text-sm"></i>
+          <span>مصلحة الضرائب</span>
+        </button>
+
+        <button data-tab="store"
+          class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-store w-5 text-center text-amber-400 text-sm"></i>
+          <span>المتجر والمستودع</span>
+        </button>
+
+        <button data-tab="trade"
+          class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-ship w-5 text-center text-cyan-400 text-sm"></i>
+          <span>الاستيراد والتصدير 🚢</span>
+        </button>
+
+        <button data-tab="industry"
+          class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-industry w-5 text-center text-emerald-400 text-sm"></i>
+          <span>مجمع الصناعات 🏭</span>
+        </button>
+
+        <!-- Group 3: المخاطر والتسلية -->
+        <div class="text-[10px] font-black text-slate-500 px-3 pt-3 pb-1 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-dice text-[10px] text-fuchsia-400/70"></i>
+          <span>المخاطر والتسلية</span>
+        </div>
+
+        <button data-tab="blackmarket"
+          class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-mask w-5 text-center text-rose-400 text-sm"></i>
+          <span>السوق السوداء</span>
+        </button>
+
+        <button data-tab="casino"
+          class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-dice w-5 text-center text-fuchsia-400 text-sm"></i>
+          <span>كازينو التسلية</span>
+        </button>
+      </div>
+
+      <!-- Drawer Footer -->
+      <div class="p-3 border-t border-slate-800/80 bg-slate-950/60 flex items-center justify-between text-xs">
+        <button onclick="window.UI?.switchTab('dashboard'); window.UI?.closeMobileNav?.();"
+          class="flex items-center gap-1.5 text-slate-400 hover:text-yellow-400 font-bold transition cursor-pointer">
+          <i class="fa-solid fa-house text-xs"></i>
+          <span>الرئيسية</span>
+        </button>
+        <span class="text-[10px] text-slate-500 numbers-font">رأس المال v2.5</span>
+      </div>
+    </div>
+  </div>
   </div>
 
   <!-- ==================== BAN SYSTEM OVERLAY ==================== -->
@@ -4440,7 +4516,7 @@
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
   <script src="db.js?v=7.8"></script>
   <script src="game.js?v=7.8"></script>
-  <script src="ui.js?v=7.8"></script>
+  <script src="ui.js?v=7.9"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

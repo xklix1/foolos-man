@@ -1960,7 +1960,28 @@ const UIController = (() => {
     }
   }
 
-  // --- Navigation Controls ---
+  // --- Navigation Controls & Mobile Drawer ---
+  function openMobileNav() {
+    const drawer = document.getElementById('mobile-nav-drawer');
+    if (!drawer) return;
+    drawer.classList.remove('hidden');
+    void drawer.offsetWidth;
+    drawer.classList.add('open');
+    document.body.classList.add('overflow-hidden');
+  }
+
+  function closeMobileNav() {
+    const drawer = document.getElementById('mobile-nav-drawer');
+    if (!drawer || !drawer.classList.contains('open')) return;
+    drawer.classList.remove('open');
+    document.body.classList.remove('overflow-hidden');
+    setTimeout(() => {
+      if (!drawer.classList.contains('open')) {
+        drawer.classList.add('hidden');
+      }
+    }, 280);
+  }
+
   function setupNavigation() {
     const navButtons = document.querySelectorAll('.nav-tab-btn');
     navButtons.forEach(btn => {
@@ -1969,6 +1990,28 @@ const UIController = (() => {
         switchTab(target);
       });
     });
+
+    // Mobile Drawer Triggers
+    const btnToggle = document.getElementById('btn-mobile-nav-toggle');
+    if (btnToggle) {
+      btnToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openMobileNav();
+      });
+    }
+
+    const btnClose = document.getElementById('btn-close-mobile-nav');
+    if (btnClose) {
+      btnClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeMobileNav();
+      });
+    }
+
+    const backdrop = document.getElementById('mobile-nav-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', closeMobileNav);
+    }
   }
 
   function switchTab(tabId) {
@@ -1976,6 +2019,10 @@ const UIController = (() => {
       playMenuSound('click');
     }
     activeTab = tabId;
+
+    // Smoothly close mobile side drawer if open
+    closeMobileNav();
+
     if (tabId === 'bank') {
       fetchAndRenderTransferRequests(true);
       loadTransferHistory(true);
@@ -2038,12 +2085,6 @@ const UIController = (() => {
       mainEl.scrollTop = 0;
     }
     window.scrollTo(0, 0);
-
-    // Auto-scroll active tab into view inside mobile bottom nav
-    const activeMobileNavBtn = document.querySelector(`.mobile-bottom-nav .nav-tab-btn[data-tab="${tabId}"]`);
-    if (activeMobileNavBtn) {
-      activeMobileNavBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
 
     if (tabId === 'careers') {
       checkAndOpenRiddleVerification();
@@ -15018,6 +15059,8 @@ const UIController = (() => {
   return {
     init,
     switchTab,
+    openMobileNav,
+    closeMobileNav,
     showToast,
     returnToStartMenu,
     playMenuSound,
