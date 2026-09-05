@@ -620,7 +620,7 @@ const GameEngine = (() => {
     crypto_cleaner: {
       id:'crypto_cleaner',
       name:'بروتوكول تشفير مالي (Zero-Trace)',
-      desc:'يخفض ضريبة غسيل وتبييض الأموال إلى 40% بدلاً من 45%.',
+      desc:'يخفض ضريبة غسيل وتبييض الأموال إلى 25% بدلاً من 35%.',
       cost: 200000,
       icon:'fa-shield-virus',
       durationTicks: 200
@@ -3537,9 +3537,9 @@ const GameEngine = (() => {
       throw new Error(`المبلغ المطلوب (${amount.toLocaleString()} ج.م) أكبر من رصيد الأموال غير المشروعة المتاحة (${availableDirty.toLocaleString()} ج.م).`);
     }
 
-    // Money laundering tax rate: base 45%, drops to 40% with crypto_cleaner (Never less than 40%, rebalanced 50%)
+    // Money laundering tax rate: base 35%, drops to 25% with crypto_cleaner (Zero-Trace)
     const hasCryptoCleaner = Boolean(state.inventory && state.inventory.crypto_cleaner > 0);
-    const feeRate = hasCryptoCleaner ? 0.40 : 0.45;
+    const feeRate = hasCryptoCleaner ? 0.25 : 0.35;
     const fee = Math.floor(amount * feeRate);
     const cleanedAmount = amount - fee;
 
