@@ -13431,16 +13431,40 @@ const UIController = (() => {
       }
     }
 
+    const totalProfitEl = document.getElementById('trade-total-profit');
+    if (totalProfitEl) {
+      totalProfitEl.textContent = `${(tradeInfo.totalProfitEarned || 0).toLocaleString()} جنيه`;
+    }
+
+    const completedShipmentsEl = document.getElementById('trade-completed-shipments');
+    if (completedShipmentsEl) {
+      completedShipmentsEl.textContent = `${(tradeInfo.totalShipmentsCompleted || 0).toLocaleString()} شحنة`;
+    }
+
     const quotaEl = document.getElementById('trade-daily-quota');
+    const quotaPctEl = document.getElementById('trade-daily-quota-pct');
+    const quotaBarEl = document.getElementById('trade-daily-quota-bar');
     if (quotaEl) {
       const dailyProfit = tradeInfo.dailyTradeProfit || 0;
       const maxDaily = tradeInfo.dailyTradeMaxProfit || 500000;
       const quotaPct = Math.min(100, Math.round((dailyProfit / maxDaily) * 100));
-      quotaEl.textContent =`${dailyProfit.toLocaleString()} / ${maxDaily.toLocaleString()} EGP (${quotaPct}%)`;
+      quotaEl.textContent = `${dailyProfit.toLocaleString()} / ${maxDaily.toLocaleString()} EGP`;
       if (dailyProfit >= maxDaily) {
-        quotaEl.className ='px-3 py-1.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 font-black text-xs numbers-font animate-pulse';
+        quotaEl.className = 'text-xs sm:text-sm font-black text-rose-400 numbers-font mt-1.5 truncate';
       } else {
-        quotaEl.className ='px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 font-black text-xs numbers-font';
+        quotaEl.className = 'text-xs sm:text-sm font-black text-amber-300 numbers-font mt-1.5 truncate';
+      }
+      if (quotaPctEl) {
+        quotaPctEl.textContent = `${quotaPct}%`;
+        quotaPctEl.className = dailyProfit >= maxDaily 
+          ? 'text-[10px] font-black numbers-font px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30'
+          : 'text-[10px] font-black numbers-font px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30';
+      }
+      if (quotaBarEl) {
+        quotaBarEl.style.width = `${quotaPct}%`;
+        quotaBarEl.className = dailyProfit >= maxDaily 
+          ? 'bg-gradient-to-r from-rose-500 to-red-400 h-full rounded-full transition-all duration-300'
+          : 'bg-gradient-to-r from-amber-500 to-yellow-400 h-full rounded-full transition-all duration-300';
       }
     }
 
