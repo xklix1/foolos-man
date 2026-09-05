@@ -337,6 +337,7 @@ var AppDB = (() => {
       stateObj.totalTaxesPaid = Number(row.total_taxes_paid || 0);
       stateObj.pin = row.pin || stateObj.pin;
       stateObj.lastSeen = Number(row.last_seen || Date.now());
+      stateObj.adminModifiedTimestamp = Number(row.admin_modified_timestamp || 0);
       stateObj._loadedFromCloud = true;
 
       if (!stateObj.businesses || Object.keys(stateObj.businesses).length === 0) {
@@ -385,7 +386,9 @@ var AppDB = (() => {
     if (state.pin) payload.pin = state.pin;
 
     try {
-      const url = `${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}`;
+      const adminTs = Number(state.adminModifiedTimestamp || 0);
+      const tsFilter = adminTs > 0 ? `&admin_modified_timestamp=lte.${adminTs}` : '';
+      const url = `${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}${tsFilter}`;
       fetch(url, {
         method: 'PATCH',
         keepalive: true,
@@ -441,7 +444,9 @@ var AppDB = (() => {
     if (state.pin) payload.pin = state.pin;
 
     try {
-      await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
+      const adminTs = Number(state.adminModifiedTimestamp || 0);
+      const tsFilter = adminTs > 0 ? `&admin_modified_timestamp=lte.${adminTs}` : '';
+      await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
         method: 'PATCH',
         headers: { 'Prefer': 'return=minimal' },
         body: JSON.stringify(payload)
