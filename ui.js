@@ -2012,6 +2012,24 @@ const UIController = (() => {
     if (backdrop) {
       backdrop.addEventListener('click', closeMobileNav);
     }
+
+    // Top-up store modal triggers (desktop & mobile)
+    const btnDesktopTopup = document.getElementById('btn-desktop-topup-store');
+    if (btnDesktopTopup) {
+      btnDesktopTopup.addEventListener('click', (e) => {
+        e.preventDefault();
+        openTopupModal();
+      });
+    }
+
+    const btnMobileTopup = document.getElementById('btn-mobile-topup-store');
+    if (btnMobileTopup) {
+      btnMobileTopup.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeMobileNav();
+        openTopupModal();
+      });
+    }
   }
 
   function switchTab(tabId) {
