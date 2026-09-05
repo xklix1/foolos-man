@@ -356,6 +356,18 @@
         document.getElementById('admin-p-bank').textContent = (state.bank || 0).toLocaleString();
         const dirtyEl = document.getElementById('admin-p-dirty');
         if (dirtyEl) dirtyEl.textContent = (state.dirtyCash || 0).toLocaleString();
+        const loanEl = document.getElementById('admin-p-loan');
+        if (loanEl) {
+          const l = state.activeLoan;
+          const due = l ? Number(l.totalDue || l.amount || 0) : 0;
+          if (due > 0) {
+            loanEl.textContent = `${due.toLocaleString()} EGP ${l.isDefaulted ? '(متعثر ⚠️)' : ''}`;
+            loanEl.className = l.isDefaulted ? 'text-rose-400 numbers-font font-bold animate-pulse' : 'text-amber-400 numbers-font font-bold';
+          } else {
+            loanEl.textContent = 'لا يوجد قرض';
+            loanEl.className = 'text-slate-400 font-normal';
+          }
+        }
         document.getElementById('admin-p-title').textContent = state.title ||'عامل مبتدئ';
         const xpEl = document.getElementById('admin-p-xp');
         if (xpEl) xpEl.textContent = `${(state.xp || 0).toLocaleString()} XP`;
@@ -1423,6 +1435,59 @@
           showToast('خطأ شارة', err.message,'error');
         } finally {
           toggleFbBtn.disabled = false;
+        }
+      });
+    }
+
+    // Forgive Player Loan Action (إعفاء وشطب القرض البنكي)
+    const forgiveLoanBtn = document.getElementById('btn-admin-forgive-loan');
+    if (forgiveLoanBtn) {
+      forgiveLoanBtn.addEventListener('click', async () => {
+        if (!selectedPlayer || !selectedPlayerState) {
+          showToast('إدارة القروض', 'يرجى اختيار لاعب أولاً من القائمة.', 'warning');
+          return;
+        }
+
+        const loan = selectedPlayerState.activeLoan;
+        const loanDue = loan ? Number(loan.totalDue || loan.amount || 0) : 0;
+        if (!loan || loanDue <= 0) {
+          showToast('إدارة القروض', `اللاعب "${selectedPlayer}" ليس لديه أي قرض بنكي قائم للإعفاء منه.`, 'info');
+          return;
+        }
+
+        const confirmMsg = `🏦 تأكيد إعفاء وشطب القرض:\n\nهل أنت متأكد من إعفاء اللاعب "${selectedPlayer}" وشطب مديونية القرض البنكي بالكامل بقيمة ${loanDue.toLocaleString()} EGP وفك أي تجميد بنكي ناتج عن التعثر؟`;
+        if (!confirm(confirmMsg)) return;
+
+        try {
+          forgiveLoanBtn.disabled = true;
+          forgiveLoanBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> <span>جاري شطب القرض...</span>';
+
+          selectedPlayerState.activeLoan = null;
+          selectedPlayerState.loanCooldownUntil = 0;
+          selectedPlayerState.adminModifiedTimestamp = Date.now();
+
+          // Sync active logged-in player in GameEngine if same
+          if (selectedPlayer === GameEngine.activeUsername && GameEngine.state) {
+            GameEngine.state.activeLoan = null;
+            GameEngine.state.loanCooldownUntil = 0;
+            try {
+              localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+            } catch (e) {}
+            if (typeof renderAll === 'function') renderAll();
+          }
+
+          await AppDB.adminSavePlayer(selectedPlayer, selectedPlayerState);
+          await AppDB.savePlayerState(selectedPlayer, selectedPlayerState, true);
+
+          showToast('إعفاء من القرض 🏛️', `تم إعفاء اللاعب "${selectedPlayer}" وشطب القرض المستحق بقيمة ${loanDue.toLocaleString()} EGP وفك التجميد بنجاح!`, 'success');
+          logAdminAction(`إعفاء وشطب قرض بنكي بقيمة ${loanDue.toLocaleString()} EGP للاعب: ${selectedPlayer}`);
+
+          selectPlayerForModeration(selectedPlayer);
+        } catch (err) {
+          showToast('خطأ إعفاء القرض', err.message, 'error');
+        } finally {
+          forgiveLoanBtn.disabled = false;
+          forgiveLoanBtn.innerHTML = '<i class="fa-solid fa-hand-holding-dollar text-xs"></i> <span id="admin-forgive-loan-text">إعفاء وشطب القرض البنكي (Forgive Loan)</span>';
         }
       });
     }

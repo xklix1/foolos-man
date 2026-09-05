@@ -1337,6 +1337,7 @@ var AppDB = (() => {
     if (updates.jailTimer !== undefined) payload.jail_timer = Number(updates.jailTimer);
     if (updates.pin !== undefined) payload.pin = updates.pin;
     if (updates.state !== undefined) payload.state = updates.state;
+    else payload.state = updates;
     payload.admin_modified_timestamp = Date.now();
 
     await _api(`players?username=eq.${encodeURIComponent(username)}`, {

@@ -2682,11 +2682,16 @@ const UIController = (() => {
         }
       } else {
         const remainingSec = Math.max(0, s.activeLoan.ticksRemaining || 0);
-        const mins = Math.floor(remainingSec / 60);
+        const hours = Math.floor(remainingSec / 3600);
+        const mins = Math.floor((remainingSec % 3600) / 60);
         const secs = remainingSec % 60;
         if (loanTimeEl) {
-          loanTimeEl.textContent =`${mins}:${secs.toString().padStart(2,'0')} دقيقة`;
-          loanTimeEl.className ='numbers-font font-bold text-sky-400';
+          if (hours > 0) {
+            loanTimeEl.textContent = `${hours} س و ${mins}:${secs.toString().padStart(2, '0')} د`;
+          } else {
+            loanTimeEl.textContent = `${mins}:${secs.toString().padStart(2, '0')} دقيقة`;
+          }
+          loanTimeEl.className = 'numbers-font font-bold text-sky-400';
         }
         if (loanBadgeEl) {
           loanBadgeEl.textContent ='قرض نشط (يلزم السداد)';
@@ -3116,7 +3121,7 @@ const UIController = (() => {
           if (!val || val <= 0) throw new Error("يرجى إدخال مبلغ صحيح للاقتراض.");
           const res = GameEngine.takeBankLoan(val);
           input.value ='';
-          showToast('تمويل مصرفي',`تم صرف قرض فوري بقيمة ${res.amount.toLocaleString()} EGP وإيداعه في الكاش!`,'success');
+          showToast('تمويل مصرفي',`تم صرف قرض فوري بقيمة ${res.amount.toLocaleString()} EGP وإيداعه في الكاش! (مهلة السداد: ساعة كاملة)`,'success');
           renderAll();
         } catch (err) {
           showToast('رفض القرض', err.message,'error');

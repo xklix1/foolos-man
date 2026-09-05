@@ -2267,7 +2267,7 @@ const GameEngine = (() => {
     // 6.7 Active Bank Loan countdown, default status & late penalty enforcement
     if (state.activeLoan && state.activeLoan.amount > 0) {
       if (typeof state.activeLoan.ticksRemaining !=='number') {
-        state.activeLoan.ticksRemaining = 300;
+        state.activeLoan.ticksRemaining = 3600;
       }
       if (state.activeLoan.ticksRemaining > 0) {
         state.activeLoan.ticksRemaining--;
@@ -4198,8 +4198,8 @@ const GameEngine = (() => {
     state.activeLoan = {
       amount,
       totalDue,
-      ticksRemaining: 300, // 300 seconds (5 minutes) to repay before penalty
-      initialTicks: 300,
+      ticksRemaining: 3600, // 3600 seconds (1 hour) to repay before penalty
+      initialTicks: 3600,
       isDefaulted: false,
       latePenaltyTicks: 0,
       latePenaltyCount: 0
@@ -4207,9 +4207,9 @@ const GameEngine = (() => {
     state.dailyLoans.count = (state.dailyLoans.count || 0) + 1;
     state.cash += amount;
     state.netWorth = calculateNetWorth();
-    recordPlayerActivity('طلب قرض بنكي ️',`اقتراض ${amount.toLocaleString()} ج.م من البنك (القرض ${state.dailyLoans.count}/2 لليوم، مطلوب سداد ${totalDue.toLocaleString()} ج.م خلال 5 دقائق)`,'banking');
+    recordPlayerActivity('طلب قرض بنكي 🏛️',`اقتراض ${amount.toLocaleString()} ج.م من البنك (القرض ${state.dailyLoans.count}/2 لليوم، مطلوب سداد ${totalDue.toLocaleString()} ج.م خلال 60 دقيقة)`,'banking');
     forceSaveState(true);
-    return { amount, totalDue, ticksRemaining: 300, dailyCount: state.dailyLoans.count };
+    return { amount, totalDue, ticksRemaining: 3600, dailyCount: state.dailyLoans.count };
   }
 
   // Bank Loan: Repay
