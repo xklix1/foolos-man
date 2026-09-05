@@ -867,6 +867,7 @@ const GameEngine = (() => {
     },
     investments: [], // Array of { id, investedAmount, ticksRemaining, rate, name }
     activeLoan: null, // Stores { amount, totalDue, ticksRemaining, initialTicks, isDefaulted, latePenaltyTicks, latePenaltyCount }
+    dailyLoans: { date: '', count: 0 }, // Max 2 loans per 24 hours (calendar day)
     assets: {
       apartment: 0,
       office: 0,
@@ -3991,11 +3992,32 @@ const GameEngine = (() => {
     AppDB.savePlayerState(activeUsername, state);
   }
 
-  // Bank Loan: Take instant liquidity loan (up to 35% of Net Worth)
+  // Helper: Ensure daily loan tracking (max 2 loans per 24 hours)
+  function ensureDailyLoanTracking() {
+    if (!state) return;
+    const today = getTodayDateString();
+    if (!state.dailyLoans || state.dailyLoans.date !== today) {
+      state.dailyLoans = {
+        date: today,
+        count: 0
+      };
+    }
+  }
+
+  // Bank Loan: Take instant liquidity loan (up to 35% of Net Worth, max 2 loans per 24 hours)
   function takeBankLoan(amount) {
     if (state.activeLoan && state.activeLoan.amount > 0) {
       throw new Error(`لديك قرض قائم بالفعل بقيمة ${state.activeLoan.totalDue.toLocaleString()} EGP يجب سداده أولاً!`);
     }
+
+    ensureDailyLoanTracking();
+    if (state.dailyLoans.count >= 2) {
+      const remSec = getDailyResetRemainingSeconds();
+      const remHours = Math.floor(remSec / 3600);
+      const remMins = Math.floor((remSec % 3600) / 60);
+      throw new Error(`لقد استنفدت الحد الأقصى للقروض اليومية (مرتان فقط كل 24 ساعة)! يتجدد الائتمان بعد ${remHours} ساعة و ${remMins} دقيقة.`);
+    }
+
     if (state.loanCooldownUntil && Date.now() < state.loanCooldownUntil) {
       const remSec = Math.ceil((state.loanCooldownUntil - Date.now()) / 1000);
       throw new Error(`البنك: فترة التقييم الائتماني نشطة. لا يمكنك طلب قرض جديد إلا بعد مرور ${remSec} ثانية من سداد القرض السابق.`);
@@ -4014,11 +4036,12 @@ const GameEngine = (() => {
       latePenaltyTicks: 0,
       latePenaltyCount: 0
     };
+    state.dailyLoans.count = (state.dailyLoans.count || 0) + 1;
     state.cash += amount;
     state.netWorth = calculateNetWorth();
-    recordPlayerActivity('طلب قرض بنكي 🏛️', `اقتراض ${amount.toLocaleString()} ج.م من البنك (مطلوب سداد ${totalDue.toLocaleString()} ج.م خلال 5 دقائق)`, 'banking');
+    recordPlayerActivity('طلب قرض بنكي 🏛️', `اقتراض ${amount.toLocaleString()} ج.م من البنك (القرض ${state.dailyLoans.count}/2 لليوم، مطلوب سداد ${totalDue.toLocaleString()} ج.م خلال 5 دقائق)`, 'banking');
     forceSaveState(true);
-    return { amount, totalDue, ticksRemaining: 300 };
+    return { amount, totalDue, ticksRemaining: 300, dailyCount: state.dailyLoans.count };
   }
 
   // Bank Loan: Repay
@@ -4784,7 +4807,9 @@ const GameEngine = (() => {
     // Daily Quests Exports
     DAILY_QUEST_TEMPLATES,
     ensureDailyQuests,
+    getTodayDateString,
     getDailyResetRemainingSeconds,
+    ensureDailyLoanTracking,
     trackDailyQuestProgress,
     claimDailyQuestReward,
     claimGrandDailyBonus,

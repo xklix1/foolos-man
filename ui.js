@@ -3027,6 +3027,16 @@ const UIController = (() => {
     const dueLoanEl = document.getElementById('loan-due-amount');
     const loanTimeEl = document.getElementById('loan-time-left');
     const loanBadgeEl = document.getElementById('loan-status-badge');
+    const dailyLoanRemEl = document.getElementById('loan-daily-remaining');
+
+    const todayStr = (typeof GameEngine.getTodayDateString === 'function') ? GameEngine.getTodayDateString() : '';
+    const dailyUsed = (s.dailyLoans && s.dailyLoans.date === todayStr) ? (s.dailyLoans.count || 0) : 0;
+    const remainingLoans = Math.max(0, 2 - dailyUsed);
+
+    if (dailyLoanRemEl) {
+      dailyLoanRemEl.textContent = `${remainingLoans} / 2`;
+      dailyLoanRemEl.className = `numbers-font font-black ${remainingLoans > 0 ? 'text-amber-400' : 'text-rose-500'}`;
+    }
 
     if (s.activeLoan && s.activeLoan.amount > 0) {
       if (activeLoanEl) activeLoanEl.textContent = `${s.activeLoan.amount.toLocaleString()} EGP`;
@@ -3061,8 +3071,13 @@ const UIController = (() => {
         loanTimeEl.className = 'numbers-font font-bold text-sky-400';
       }
       if (loanBadgeEl) {
-        loanBadgeEl.textContent = 'مؤهل للاقتراض';
-        loanBadgeEl.className = 'text-[10px] px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full font-bold';
+        if (remainingLoans <= 0) {
+          loanBadgeEl.textContent = 'استُنفد الحد اليومي (2/2)';
+          loanBadgeEl.className = 'text-[10px] px-2.5 py-0.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full font-bold';
+        } else {
+          loanBadgeEl.textContent = 'مؤهل للاقتراض';
+          loanBadgeEl.className = 'text-[10px] px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full font-bold';
+        }
       }
     }
 
