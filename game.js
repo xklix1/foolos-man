@@ -974,10 +974,10 @@ const GameEngine = (() => {
       timestamp: Date.now(),
       action: action,
       details: details,
-      category: category // 'work' | 'business' | 'stock' | 'investment' | 'banking' | 'casino' | 'blackmarket' | 'store'
+      category: category // 'work' | 'business' | 'stock' | 'investment' | 'banking' | 'casino' | 'blackmarket' | 'store' | 'trade'
     });
-    if (state.activityLog.length > 40) {
-      state.activityLog.length = 40; // Keep last 40 entries
+    if (state.activityLog.length > 60) {
+      state.activityLog.length = 60; // Keep last 60 entries
     }
   }
 
@@ -2702,6 +2702,7 @@ const GameEngine = (() => {
     // Recalculate and Save
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
+    recordPlayerActivity('نوبة عمل 💼', `إتمام وردية عمل كـ "${job.name}" (+${finalSalary.toLocaleString()} ج.م للبنك و +${finalXpReward} XP)`, 'work');
     trackDailyQuestProgress('work_shifts', 1);
     AppDB.savePlayerState(activeUsername, state);
 
@@ -2723,6 +2724,7 @@ const GameEngine = (() => {
     }
 
     state.jobId = jobId;
+    recordPlayerActivity('ترقية وظيفية 🎖️', `ترقية إلى مرتبة "${targetJob.name}" براتب أساسي ${targetJob.salary.toLocaleString()} ج.م/دورة`, 'work');
     AppDB.savePlayerState(activeUsername, state);
     return targetJob;
   }
@@ -2935,6 +2937,7 @@ const GameEngine = (() => {
       }
     } else {
       state.bank += amount;
+      recordPlayerActivity('إيداع بنكي 🏛️', `إيداع نقدي بقيمة ${amount.toLocaleString()} ج.م في الحساب المصرفي`, 'banking');
     }
 
     state.netWorth = calculateNetWorth();
@@ -2952,6 +2955,7 @@ const GameEngine = (() => {
 
     state.bank -= amount;
     state.cash += amount;
+    recordPlayerActivity('سحب بنكي 💵', `سحب نقدي بقيمة ${amount.toLocaleString()} ج.م من الحساب المصرفي`, 'banking');
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
   }
@@ -2967,6 +2971,7 @@ const GameEngine = (() => {
 
     state.cash -= asset.cost;
     state.assets[key] = (state.assets[key] || 0) + 1;
+    recordPlayerActivity('شراء عقار/أصل 🏠', `شراء "${asset.name}" بقيمة ${asset.cost.toLocaleString()} ج.م (+${asset.income.toLocaleString()} ج.م/دورة)`, 'investment');
 
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
@@ -2983,6 +2988,7 @@ const GameEngine = (() => {
 
     state.assets[key]--;
     state.cash += sellValue;
+    recordPlayerActivity('تصفية عقار/أصل 💰', `بيع "${asset.name}" بسعر تصفية ${sellValue.toLocaleString()} ج.م`, 'investment');
 
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
@@ -3823,6 +3829,7 @@ const GameEngine = (() => {
     state.xp += earnedXp;
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
+    recordPlayerActivity('عمل إضافي مضاعف ⚡', `إنجاز وردية إضافية كـ "${job.name}" (+${earnedSalary.toLocaleString()} ج.م و +${earnedXp} XP)`, 'work');
     trackDailyQuestProgress('work_shifts', 1);
     forceSaveState(true);
 
@@ -4784,6 +4791,7 @@ const GameEngine = (() => {
 
     // Business Supply Method
     supplyBusiness,
+    recordPlayerActivity,
 
     // Import & Export Company Exports
     TRADE_COMMODITIES,

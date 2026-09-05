@@ -734,14 +734,43 @@ const UIController = (() => {
     return audioCtx;
   }
 
-  // Global user interaction audio unlocker
-  const _unlockAudio = () => {
-    getAudioCtx();
-    window.removeEventListener('pointerdown', _unlockAudio);
-    window.removeEventListener('keydown', _unlockAudio);
-  };
-  window.addEventListener('pointerdown', _unlockAudio, { once: true });
-  window.addEventListener('keydown', _unlockAudio, { once: true });
+  // Bulletproof Web Audio unlocker for mobile devices (iOS Safari, Android Chrome)
+  function _unlockAudioEngine() {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => { });
+    }
+    // Play a silent 1-sample buffer to force hardware out of power-save / suspended state
+    try {
+      const buffer = ctx.createBuffer(1, 1, 22050);
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start(0);
+    } catch (e) { }
+
+    if (ctx.state === 'running') {
+      const events = ['touchstart', 'touchend', 'click', 'pointerdown', 'keydown'];
+      events.forEach(evt => {
+        document.removeEventListener(evt, _unlockAudioEngine, true);
+        window.removeEventListener(evt, _unlockAudioEngine, true);
+      });
+    }
+  }
+
+  const _userGestureEvents = ['touchstart', 'touchend', 'click', 'pointerdown', 'keydown'];
+  _userGestureEvents.forEach(evt => {
+    document.addEventListener(evt, _unlockAudioEngine, { capture: true, passive: true });
+    window.addEventListener(evt, _unlockAudioEngine, { capture: true, passive: true });
+  });
+
+  // Re-resume audio when returning from background / phone lock screen
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => { });
+    }
+  });
 
   // ─────────────────────────────────────────────
   //  TOP NOTIFICATIONS (TOAST ENGINE)
@@ -852,6 +881,9 @@ const UIController = (() => {
     try {
       const ctx = getAudioCtx();
       if (!ctx) return;
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => { });
+      }
 
       if (type === 'hover') {
         const osc = ctx.createOscillator();
@@ -964,6 +996,9 @@ const UIController = (() => {
     try {
       const ctx = getAudioCtx();
       if (!ctx) return;
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => { });
+      }
 
       if (type === 'coin') {
         const osc = ctx.createOscillator();
@@ -14950,6 +14985,7 @@ const UIController = (() => {
     showToast,
     returnToStartMenu,
     playMenuSound,
+    playCasinoSound,
     openPlayerProfileCard,
     handleMailAction,
     deleteMail,
@@ -15006,6 +15042,8 @@ const UIController = (() => {
 // Export globally
 window.UIController = UIController;
 window.UI = UIController;
+window.playMenuSound = UIController.playMenuSound;
+window.playCasinoSound = UIController.playCasinoSound;
 
 // Global watchdog for mandatory reload (Egress-optimized: checks every 90s when active and not idle)
 if (typeof window !== 'undefined' && !window.location.pathname.includes('ctrl-vault')) {

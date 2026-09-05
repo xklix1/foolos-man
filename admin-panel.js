@@ -1377,24 +1377,87 @@
     }
 
     // ─────────────────────────────────────────────
-    //  MODULE: LIVE PLAYER ACTIVITY AUDIT LOG
+    // ─────────────────────────────────────────────
+    //  MODULE: LIVE PLAYER ACTIVITY AUDIT & EXPLOIT DETECTION
     // ─────────────────────────────────────────────
     const inspectLogsBtn = document.getElementById('btn-admin-inspect-logs');
     const logModal = document.getElementById('admin-player-log-modal');
     const closeLogModalBtn = document.getElementById('btn-admin-close-log-modal');
     const logFeed = document.getElementById('admin-player-log-feed');
+    const exportLogBtn = document.getElementById('btn-admin-export-player-log');
     let currentLogFilter = 'all';
+
+    function evaluatePlayerExploitRisk(pState, transfers = []) {
+      const issues = [];
+      let riskLevel = 'safe'; // 'safe' | 'warning' | 'critical'
+
+      const netWorth = Number(pState.netWorth || 0);
+      const cash = Number(pState.cash || 0);
+      const bank = Number(pState.bank || 0);
+      const xp = Number(pState.xp || 0);
+      const createdAt = Number(pState.createdAt || pState.created_at || Date.now());
+      const ageHours = Math.max(0.05, (Date.now() - createdAt) / (1000 * 3600));
+
+      // 1. Wealth Velocity vs Account Age
+      const hourlyGain = netWorth / ageHours;
+      if (netWorth > 500000000 && ageHours < 1) {
+        riskLevel = 'critical';
+        issues.push(`تضخم ثروة فائق السرعة (+${(netWorth / 1000000).toFixed(1)}M ج.م في أقل من ساعة)`);
+      } else if (netWorth > 100000000 && ageHours < 0.5) {
+        riskLevel = 'critical';
+        issues.push(`حساب جديد جداً بثروة ضخمة تتجاوز 100M ج.م`);
+      } else if (hourlyGain > 250000000) {
+        if (riskLevel !== 'critical') riskLevel = 'warning';
+        issues.push(`معدل نمو ثروة مرتفع جداً (${(hourlyGain / 1000000).toFixed(1)}M ج.م/ساعة)`);
+      }
+
+      // 2. Transfers Influx Anomaly
+      let totalReceivedTransfers = 0;
+      (transfers || []).forEach(t => {
+        if ((t.recipient || '').toLowerCase() === (pState.username || '').toLowerCase()) {
+          const amt = Number(t.amount || 0);
+          totalReceivedTransfers += amt;
+        }
+      });
+      if (totalReceivedTransfers > 100000000) {
+        if (riskLevel !== 'critical') riskLevel = 'warning';
+        issues.push(`تلقى تحويلات مالية واردة ضخمة بإجمالي ${(totalReceivedTransfers / 1000000).toFixed(1)}M ج.م`);
+      }
+
+      // 3. Casino Daily Profit Check
+      const casinoProfit = Number(pState.dailyCasinoNetProfit || 0);
+      if (casinoProfit > 18000000) {
+        if (riskLevel !== 'critical') riskLevel = 'warning';
+        issues.push(`أرباح كازينو مرتفعة جداً اليوم (+${(casinoProfit / 1000000).toFixed(1)}M ج.م)`);
+      }
+
+      // 4. Dirty cash accumulation vs laundering capacity
+      const dirtyCash = Number(pState.dirtyCash || pState.dirty_cash || 0);
+      if (dirtyCash > 50000000) {
+        issues.push(`تراكم كاش مشبوه غير مغسول بقيمة ${(dirtyCash / 1000000).toFixed(1)}M ج.م`);
+      }
+
+      return {
+        riskLevel,
+        issues,
+        ageHours: ageHours.toFixed(1),
+        totalReceivedTransfers
+      };
+    }
 
     function renderPlayerLogFeed(pState) {
       if (!logFeed) return;
-      const logs = (pState && pState.activityLog) || [];
+      const logs = (pState && (pState.combinedActivityLog || pState.activityLog)) || [];
       const filtered = logs.filter(l => currentLogFilter === 'all' || l.category === currentLogFilter);
+
+      const countBadge = document.getElementById('adm-log-count-badge');
+      if (countBadge) countBadge.textContent = `${filtered.length} حركة`;
 
       if (filtered.length === 0) {
         logFeed.innerHTML = `
-          <div class="p-6 text-center text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">
-            <i class="fa-solid fa-clipboard-list text-2xl mb-2 text-slate-600 block"></i>
-            <span>لا توجد عمليات مسجلة لهذا اللاعب في هذا التصنيف حتى الآن.</span>
+          <div class="p-8 text-center text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">
+            <i class="fa-solid fa-clipboard-list text-3xl mb-2 text-slate-600 block"></i>
+            <span class="text-xs">لا توجد حركات مسجلة لهذا اللاعب في تصنيف "${currentLogFilter}" حتى الآن.</span>
           </div>
         `;
         return;
@@ -1403,51 +1466,62 @@
       logFeed.innerHTML = '';
       filtered.forEach(item => {
         const div = document.createElement('div');
-        div.className = 'p-2.5 bg-slate-900/70 hover:bg-slate-900 border border-slate-800/80 rounded-xl flex items-center justify-between gap-2 transition';
+        div.className = 'p-3 bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 rounded-xl flex items-center justify-between gap-3 transition shadow-sm';
 
         let icon = '<i class="fa-solid fa-circle-info text-sky-400"></i>';
         let badgeColor = 'bg-sky-500/10 text-sky-400 border-sky-500/20';
 
-        if (item.category === 'business') {
-          icon = '<i class="fa-solid fa-briefcase text-emerald-400"></i>';
+        if (item.category === 'work') {
+          icon = '<i class="fa-solid fa-briefcase text-blue-400"></i>';
+          badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+        } else if (item.category === 'business') {
+          icon = '<i class="fa-solid fa-city text-emerald-400"></i>';
           badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+        } else if (item.category === 'transfers') {
+          icon = '<i class="fa-solid fa-money-bill-transfer text-violet-400"></i>';
+          badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/20';
+        } else if (item.category === 'banking') {
+          icon = '<i class="fa-solid fa-building-columns text-teal-400"></i>';
+          badgeColor = 'bg-teal-500/10 text-teal-400 border-teal-500/20';
         } else if (item.category === 'stock') {
           icon = '<i class="fa-solid fa-chart-line text-yellow-400"></i>';
           badgeColor = 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
-        } else if (item.category === 'investment') {
-          icon = '<i class="fa-solid fa-vault text-amber-400"></i>';
+        } else if (item.category === 'investment' || item.category === 'assets') {
+          icon = '<i class="fa-solid fa-house-chimney text-amber-400"></i>';
           badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
         } else if (item.category === 'casino') {
           icon = '<i class="fa-solid fa-dice text-purple-400"></i>';
           badgeColor = 'bg-purple-500/10 text-purple-400 border-purple-500/20';
-        } else if (item.category === 'blackmarket') {
+        } else if (item.category === 'trade') {
+          icon = '<i class="fa-solid fa-ship text-cyan-400"></i>';
+          badgeColor = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
+        } else if (item.category === 'blackmarket' || item.category === 'dark') {
           icon = '<i class="fa-solid fa-skull-crossbones text-rose-400"></i>';
           badgeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-        } else if (item.category === 'banking') {
-          icon = '<i class="fa-solid fa-building-columns text-teal-400"></i>';
-          badgeColor = 'bg-teal-500/10 text-teal-400 border-teal-500/20';
         } else if (item.category === 'store') {
           icon = '<i class="fa-solid fa-bag-shopping text-cyan-400"></i>';
           badgeColor = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
         }
 
         const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--';
+        const fullDateStr = item.timestamp ? new Date(item.timestamp).toLocaleDateString('ar-EG', { month: 'numeric', day: 'numeric' }) : '';
 
         div.innerHTML = `
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center text-xs border border-slate-800">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center text-xs border border-slate-800 shrink-0">
               ${icon}
             </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="font-bold text-white">${item.action}</span>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-bold text-white text-xs truncate">${item.action}</span>
                 <span class="text-[9px] px-1.5 py-0.2 rounded border ${badgeColor} font-sans">${item.category}</span>
               </div>
-              <div class="text-[11px] text-slate-300 mt-0.5">${item.details}</div>
+              <div class="text-[11px] text-slate-300 mt-0.5 leading-tight">${item.details}</div>
             </div>
           </div>
-          <div class="text-[10px] text-slate-400 font-mono text-left shrink-0">
-            ${dateStr}
+          <div class="text-right shrink-0">
+            <div class="text-[10px] text-slate-300 font-mono">${dateStr}</div>
+            <div class="text-[9px] text-slate-500">${fullDateStr}</div>
           </div>
         `;
         logFeed.appendChild(div);
@@ -1461,9 +1535,37 @@
           showToast('سجل النشاط', 'يرجى تحديد واختيار لاعب أولاً من قائمة اللاعبين.', 'warning');
           return;
         }
+
+        const originalBtnHtml = inspectLogsBtn.innerHTML;
+        inspectLogsBtn.disabled = true;
+        inspectLogsBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i><span>جاري الفحص...</span>`;
+
         try {
-          const pState = await AppDB.adminGetPlayer(targetUser);
-          if (!pState) throw new Error("تعذر جلب بيانات اللاعب.");
+          // Strictly single, on-demand query for selected player
+          const [pState, transfers] = await Promise.all([
+            AppDB.adminGetPlayer(targetUser),
+            AppDB.getPlayerTransfers(targetUser, 40).catch(() => [])
+          ]);
+
+          if (!pState) throw new Error("تعذر جلب بيانات اللاعب من الخادم.");
+
+          // Map transfers into activity log entries
+          const transferLogs = (transfers || []).map(t => {
+            const isSender = (t.sender || '').toLowerCase() === targetUser.toLowerCase();
+            const amt = Number(t.amount || 0).toLocaleString();
+            return {
+              timestamp: Number(t.created_at || t.timestamp || Date.now()),
+              action: isSender ? 'إرسال تحويل بنكي 📤' : 'استلام تحويل بنكي 📥',
+              details: isSender ? `تحويل مبلغ ${amt} ج.م إلى @${t.recipient}` : `استلام مبلغ ${amt} ج.م من @${t.sender}`,
+              category: 'transfers'
+            };
+          });
+
+          // Merge player activities and wire transfers
+          const rawLogs = (pState.activityLog || []).concat(transferLogs);
+          // Sort descending by timestamp
+          pState.combinedActivityLog = rawLogs.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+
           selectedPlayerState = pState;
           document.getElementById('adm-log-modal-username').textContent = `@${targetUser}`;
           document.getElementById('adm-log-stat-worth').textContent = `${(pState.netWorth || 0).toLocaleString()} EGP`;
@@ -1471,11 +1573,114 @@
           document.getElementById('adm-log-stat-heat').textContent = `${pState.heatLevel || 0} / 5`;
           document.getElementById('adm-log-stat-jail').textContent = (pState.jailTimer > 0) ? `مسجون (${pState.jailTimer}ث)` : 'حر طليق';
 
+          // Exploit & Anomaly Analysis Radar
+          const audit = evaluatePlayerExploitRisk(pState, transfers);
+          const exploitBanner = document.getElementById('adm-log-exploit-banner');
+          const exploitIcon = document.getElementById('adm-exploit-icon');
+          const exploitStatus = document.getElementById('adm-exploit-status');
+          const exploitBadge = document.getElementById('adm-exploit-badge');
+          const exploitDetail = document.getElementById('adm-exploit-detail');
+
+          if (audit.riskLevel === 'critical') {
+            if (exploitIcon) {
+              exploitIcon.className = 'w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center text-sm shrink-0 animate-pulse';
+              exploitIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            }
+            if (exploitBadge) {
+              exploitBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30';
+              exploitBadge.textContent = 'خطر / شبهة ثغرة مؤكدة';
+            }
+            if (exploitStatus) exploitStatus.textContent = 'تحليل الثغرات: تم رصد مؤشرات استغلال غير مشروعة!';
+            if (exploitDetail) exploitDetail.textContent = audit.issues.join(' • ');
+          } else if (audit.riskLevel === 'warning') {
+            if (exploitIcon) {
+              exploitIcon.className = 'w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-sm shrink-0';
+              exploitIcon.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+            }
+            if (exploitBadge) {
+              exploitBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30';
+              exploitBadge.textContent = 'شبهة تستدعي التحقق';
+            }
+            if (exploitStatus) exploitStatus.textContent = 'تحليل الثغرات: نشاط مالي متسارع يحتاج لمراجعة';
+            if (exploitDetail) exploitDetail.textContent = audit.issues.join(' • ');
+          } else {
+            if (exploitIcon) {
+              exploitIcon.className = 'w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-sm shrink-0';
+              exploitIcon.innerHTML = '<i class="fa-solid fa-shield-check"></i>';
+            }
+            if (exploitBadge) {
+              exploitBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+              exploitBadge.textContent = 'سليم وطبيعي';
+            }
+            if (exploitStatus) exploitStatus.textContent = 'تحليل الثغرات: لا توجد شبهات تسارع ثروة أو تحويلات مريبة';
+            if (exploitDetail) exploitDetail.textContent = `عمر الحساب: ~${audit.ageHours} ساعة • إجمالي التحويلات الواردة: ${(audit.totalReceivedTransfers || 0).toLocaleString()} ج.م`;
+          }
+
           currentLogFilter = 'all';
+          const filterPills = document.querySelectorAll('.btn-log-filter');
+          filterPills.forEach(b => {
+            const f = b.getAttribute('data-log-filter');
+            if (f === 'all') {
+              b.className = 'btn-log-filter px-3 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-lg font-bold transition';
+            } else {
+              b.className = 'btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition';
+            }
+          });
+
           renderPlayerLogFeed(pState);
           logModal.classList.remove('hidden');
         } catch (e) {
           showToast('سجل النشاط', e.message, 'error');
+        } finally {
+          inspectLogsBtn.disabled = false;
+          inspectLogsBtn.innerHTML = originalBtnHtml;
+        }
+      });
+    }
+
+    // Export / Copy player audit log
+    if (exportLogBtn) {
+      exportLogBtn.addEventListener('click', () => {
+        if (!selectedPlayerState) {
+          showToast('تصدير التقرير', 'لا توجد بيانات نشاط محملة حالياً.', 'warning');
+          return;
+        }
+        try {
+          const p = selectedPlayerState;
+          const audit = evaluatePlayerExploitRisk(p, []);
+          const logs = p.combinedActivityLog || p.activityLog || [];
+
+          let reportText = `=========================================\n`;
+          reportText += `تقرير التدقيق الجنائي ونشاط اللاعب: @${p.username}\n`;
+          reportText += `تاريخ التقرير: ${new Date().toLocaleString('ar-EG')}\n`;
+          reportText += `صافي الثروة: ${(p.netWorth || 0).toLocaleString()} EGP\n`;
+          reportText += `الكاش: ${(p.cash || 0).toLocaleString()} | البنك: ${(p.bank || 0).toLocaleString()}\n`;
+          reportText += `التقييم الأمني: ${audit.riskLevel === 'safe' ? 'سليم' : audit.riskLevel === 'warning' ? 'مشبوه' : 'حرج - شبهة ثغرة'}\n`;
+          if (audit.issues.length) {
+            reportText += `الملاحظات والشبهات:\n - ` + audit.issues.join('\n - ') + `\n`;
+          }
+          reportText += `=========================================\n`;
+          reportText += `سجل الحركات الزمنية (${logs.length} عملية):\n`;
+          logs.forEach((l, idx) => {
+            const time = l.timestamp ? new Date(l.timestamp).toLocaleString('ar-EG') : 'غير محدد';
+            reportText += `[${idx + 1}] ${time} | [${l.category}] ${l.action}: ${l.details}\n`;
+          });
+
+          // Copy to clipboard
+          navigator.clipboard.writeText(reportText).then(() => {
+            showToast('تم النسخ والتصدير', 'تم نسخ تقرير نشاط اللاعب كاملاً إلى الحافظة بنجاح.', 'success');
+          }).catch(() => {
+            const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `audit_log_${p.username}_${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('تحميل التقرير', 'تم تنزيل ملف فحص نشاط اللاعب كملف نصي.', 'success');
+          });
+        } catch (err) {
+          showToast('تصدير التقرير', err.message, 'error');
         }
       });
     }

@@ -2233,16 +2233,23 @@
           </div>
           <div>
             <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2">
-              <span>سجل مراقبة نشاط وحركات اللاعب:</span>
+              <span>سجل فحص نشاط اللاعب وكشف الثغرات:</span>
               <span id="adm-log-modal-username" class="text-amber-400 font-mono">@...</span>
             </h3>
-            <p class="text-[11px] text-slate-400">تدقيق مالي ولحظي لكافة الصفقات والمشاريع والمراهنات والأموال</p>
+            <p class="text-[11px] text-slate-400">فحص دقيق فوري لحركات اللاعب وصفقاته وكشف محاولات استغلال الثغرات</p>
           </div>
         </div>
-        <button id="btn-admin-close-log-modal"
-          class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-rose-900/60 text-slate-400 hover:text-rose-300 flex items-center justify-center transition">
-          <i class="fa-solid fa-xmark text-sm"></i>
-        </button>
+        <div class="flex items-center gap-2">
+          <button id="btn-admin-export-player-log"
+            class="px-2.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+            <i class="fa-solid fa-file-export text-xs"></i>
+            <span class="hidden sm:inline">نسخ / تصدير التقرير</span>
+          </button>
+          <button id="btn-admin-close-log-modal"
+            class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-rose-900/60 text-slate-400 hover:text-rose-300 flex items-center justify-center transition">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Quick Metrics Summary Bar -->
@@ -2265,27 +2272,47 @@
         </div>
       </div>
 
+      <!-- Exploit & Anomaly Detection Banner -->
+      <div id="adm-log-exploit-banner" class="p-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2.5">
+          <div id="adm-exploit-icon" class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-sm shrink-0">
+            <i class="fa-solid fa-shield-check"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <strong id="adm-exploit-status" class="text-white font-bold">تحليل الثغرات والشبهات: جاري التحقق...</strong>
+              <span id="adm-exploit-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">آمن</span>
+            </div>
+            <p id="adm-exploit-detail" class="text-[11px] text-slate-400 mt-0.5">فحص رياضي لتسارع الثروة، نوبات العمل، أرباح الكازينو، وحركات التحويل.</p>
+          </div>
+        </div>
+        <span id="adm-log-count-badge" class="text-[10px] text-slate-400 font-mono shrink-0 px-2 py-1 bg-slate-950 rounded border border-slate-800">0 حركة</span>
+      </div>
+
       <!-- Filter Tabs -->
       <div class="p-2.5 bg-slate-950/70 border-b border-slate-800 flex flex-wrap gap-1.5 text-[11px] overflow-x-auto">
         <button data-log-filter="all"
           class="btn-log-filter px-3 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-lg font-bold transition">الكل</button>
+        <button data-log-filter="work"
+          class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">الوظائف والعمل</button>
         <button data-log-filter="business"
           class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">المشاريع</button>
+        <button data-log-filter="transfers"
+          class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">التحويلات البنكية</button>
+        <button data-log-filter="banking"
+          class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">البنوك والقروض</button>
         <button data-log-filter="stock"
           class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">الأسهم</button>
         <button data-log-filter="investment"
-          class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">الاستثمار</button>
+          class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">العقارات والاستثمار</button>
         <button data-log-filter="casino"
           class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">الكازينو</button>
+        <button data-log-filter="trade"
+          class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">استيراد وتصدير</button>
         <button data-log-filter="blackmarket"
-          class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">السوق
-          السوداء</button>
-        <button data-log-filter="banking"
-          class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">البنوك
-          والقروض</button>
+          class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">السوق السوداء</button>
         <button data-log-filter="store"
-          class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">المتجر
-          والمعدات</button>
+          class="btn-log-filter px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg font-bold transition">المتجر والمعدات</button>
       </div>
 
       <!-- Feed Container -->
