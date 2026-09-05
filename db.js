@@ -1051,6 +1051,16 @@ var AppDB = (() => {
     return [];
   }
 
+  async function getPlayerData(username) {
+    if (!username) return null;
+    try {
+      const rows = await _api(`players?username=eq.${encodeURIComponent(username)}&select=*`);
+      return (rows && rows.length > 0) ? rows[0] : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   async function processTopupRequest(requestId, action, reviewerNote = '') {
     const ts = Date.now();
     const rows = await _api(`globals?id=eq.topup_requests`);
@@ -2824,7 +2834,8 @@ var AppDB = (() => {
     savePaymentSettings,
     submitTopupRequest,
     getTopupRequests,
-    processTopupRequest
+    processTopupRequest,
+    getPlayerData
   };
 })();
 
