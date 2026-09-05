@@ -216,6 +216,17 @@ var AppDB = (() => {
 
     const hashed = await hashPin(p);
     const now = Date.now();
+
+    // Prevent new accounts from claiming airdrops created before registration
+    let initialClaimedAirdrops = [];
+    try {
+      const curAirdrop = await getLatestAirdrop();
+      if (curAirdrop && curAirdrop.timestamp) {
+        const aId = curAirdrop.airdropId || `airdrop_${curAirdrop.timestamp}`;
+        initialClaimedAirdrops.push(aId);
+      }
+    } catch (e) {}
+
     const newPlayerRow = {
       username: u,
       pin: hashed,
@@ -261,6 +272,7 @@ var AppDB = (() => {
         activeCar: null,
         smugglingFleet: { speedboat: 0, plane: 0, ship: 0 },
         activeSmugglingJobs: [],
+        claimedAirdrops: initialClaimedAirdrops,
         createdAt: now,
         lastSeen: now
       },
@@ -882,10 +894,11 @@ var AppDB = (() => {
 
     const airdropId = airdrop.airdropId || `airdrop_${airdrop.timestamp}`;
     const amt = Number(airdrop.amount);
+    const airdropTs = Number(airdrop.timestamp);
     const ts = Date.now();
 
-    // Fetch all players with cash, net_worth and state
-    const rows = await _api('players?select=username,cash,net_worth,state');
+    // Fetch all players with cash, net_worth, state and created_at
+    const rows = await _api('players?select=username,cash,net_worth,state,created_at');
     if (!rows || rows.length === 0) {
       throw new Error("لم يتم العثور على أي حسابات لاعبين في قاعدة البيانات.");
     }
@@ -908,6 +921,18 @@ var AppDB = (() => {
       // Check if player has already claimed this specific airdrop
       if (pState.claimedAirdrops.includes(airdropId)) {
         alreadyClaimedCount++;
+        continue;
+      }
+
+      // Check account creation timestamp: ONLY accounts created BEFORE this airdrop are eligible!
+      const playerCreatedAt = Number(player.created_at || (pState && (pState.createdAt || pState.created_at)) || 0);
+      if (playerCreatedAt > 0 && playerCreatedAt > (airdropTs + 10000)) {
+        // Account was created AFTER the airdrop was launched! Skip and mark as claimed so they never get it
+        pState.claimedAirdrops.push(airdropId);
+        await _api(`players?username=eq.${encodeURIComponent(uname)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ state: pState })
+        });
         continue;
       }
 

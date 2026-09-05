@@ -5886,8 +5886,21 @@ const UIController = (() => {
             s.claimedAirdrops = s.claimedAirdrops || [];
             // If player hasn't claimed this airdrop yet
             if (!s.claimedAirdrops.includes(airdropId)) {
+              // 1. ELIGIBILITY CHECK: Was this account created BEFORE this airdrop was launched?
+              const accountCreatedAt = Number(s.createdAt || s.created_at || 0);
+              const airdropTs = Number(airdrop.timestamp);
+              // Only existing accounts created before the drop are eligible (10s clock skew tolerance)
+              const isEligible = accountCreatedAt > 0 && (accountCreatedAt <= (airdropTs + 10000));
+
+              if (!isEligible) {
+                // Account was created AFTER this airdrop! Mark as claimed with 0 money so it is never granted
+                s.claimedAirdrops.push(airdropId);
+                await AppDB.savePlayerState(GameEngine.activeUsername, s, false);
+                return;
+              }
+
               // Safety check: only grant airdrops emitted within the last 24 hours
-              const isRecent = (Date.now() - Number(airdrop.timestamp)) < (24 * 3600 * 1000);
+              const isRecent = (Date.now() - airdropTs) < (24 * 3600 * 1000);
               if (isRecent) {
                 s.claimedAirdrops.push(airdropId);
                 if (s.claimedAirdrops.length > 20) s.claimedAirdrops.shift();
