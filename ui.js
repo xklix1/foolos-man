@@ -301,6 +301,40 @@ const UIController = (() => {
     "الحسابات المحظورة": "Banned Players"
   };
 
+  // ─────────────────────────────────────────────
+  //  SMART COMPACT CURRENCY FORMATTER (K, M, B, T, Q)
+  // ─────────────────────────────────────────────
+  function formatCompactNumber(num) {
+    if (num === null || num === undefined || isNaN(num)) return '0';
+    const val = Number(num);
+    const sign = val < 0 ? '-' : '';
+    const abs = Math.abs(val);
+
+    if (abs < 10000) {
+      return sign + Math.floor(abs).toLocaleString('en-US');
+    } else if (abs < 1000000) {
+      const k = abs / 1000;
+      return sign + (k >= 100 ? k.toFixed(0) : k.toFixed(1)).replace(/\.0$/, '') + 'K';
+    } else if (abs < 1000000000) {
+      const m = abs / 1000000;
+      return sign + (m >= 100 ? m.toFixed(1) : m.toFixed(2)).replace(/\.00$/, '').replace(/(\.[1-9])0$/, '$1') + 'M';
+    } else if (abs < 1000000000000) {
+      const b = abs / 1000000000;
+      return sign + (b >= 100 ? b.toFixed(1) : b.toFixed(2)).replace(/\.00$/, '').replace(/(\.[1-9])0$/, '$1') + 'B';
+    } else if (abs < 1000000000000000) {
+      const t = abs / 1000000000000;
+      return sign + (t >= 100 ? t.toFixed(1) : t.toFixed(2)).replace(/\.00$/, '').replace(/(\.[1-9])0$/, '$1') + 'T';
+    } else {
+      const q = abs / 1000000000000000;
+      return sign + q.toFixed(2).replace(/\.00$/, '') + 'Q';
+    }
+  }
+
+  function formatFullCurrency(num) {
+    if (num === null || num === undefined || isNaN(num)) return '0 EGP';
+    return Number(num).toLocaleString('en-US') + ' EGP';
+  }
+
   function translateDOM(root = document.body) {
     if (window.currentLang === 'ar') return;
 
@@ -1355,15 +1389,27 @@ const UIController = (() => {
 
       if (top1) {
         document.getElementById('start-podium-name-1').textContent = top1.username;
-        document.getElementById('start-podium-worth-1').textContent = `${Number(top1.netWorth || 0).toLocaleString()} EGP`;
+        const w1 = document.getElementById('start-podium-worth-1');
+        if (w1) {
+          w1.textContent = `${formatCompactNumber(top1.netWorth || 0)} EGP`;
+          w1.title = `${Number(top1.netWorth || 0).toLocaleString()} EGP`;
+        }
       }
       if (top2) {
         document.getElementById('start-podium-name-2').textContent = top2.username;
-        document.getElementById('start-podium-worth-2').textContent = `${Number(top2.netWorth || 0).toLocaleString()} EGP`;
+        const w2 = document.getElementById('start-podium-worth-2');
+        if (w2) {
+          w2.textContent = `${formatCompactNumber(top2.netWorth || 0)} EGP`;
+          w2.title = `${Number(top2.netWorth || 0).toLocaleString()} EGP`;
+        }
       }
       if (top3) {
         document.getElementById('start-podium-name-3').textContent = top3.username;
-        document.getElementById('start-podium-worth-3').textContent = `${Number(top3.netWorth || 0).toLocaleString()} EGP`;
+        const w3 = document.getElementById('start-podium-worth-3');
+        if (w3) {
+          w3.textContent = `${formatCompactNumber(top3.netWorth || 0)} EGP`;
+          w3.title = `${Number(top3.netWorth || 0).toLocaleString()} EGP`;
+        }
       }
 
       // Rows
@@ -1397,8 +1443,8 @@ const UIController = (() => {
           <td class="py-2.5 text-slate-400">
             <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300 inline-block truncate max-w-[90px] sm:max-w-none">${p.title || 'مستثمر'}</span>
           </td>
-          <td class="py-2.5 pl-2 text-left numbers-font font-black ${rank === 1 ? 'text-yellow-400 text-xs glow-gold' : 'text-emerald-400 text-xs'} whitespace-nowrap">
-            ${Number(p.netWorth || 0).toLocaleString()} EGP
+          <td class="py-2.5 pl-2 text-left numbers-font font-black ${rank === 1 ? 'text-yellow-400 text-xs glow-gold' : 'text-emerald-400 text-xs'} whitespace-nowrap" title="${Number(p.netWorth || 0).toLocaleString()} EGP">
+            ${formatCompactNumber(p.netWorth || 0)} EGP
           </td>
         `;
         tbody.appendChild(tr);
@@ -1830,16 +1876,28 @@ const UIController = (() => {
     if (tEl) tEl.textContent = s.title;
 
     const cEl = document.getElementById('stat-cash');
-    if (cEl) cEl.textContent = s.cash.toLocaleString();
+    if (cEl) {
+      cEl.textContent = formatCompactNumber(s.cash);
+      cEl.title = formatFullCurrency(s.cash);
+    }
     const bEl = document.getElementById('stat-bank');
-    if (bEl) bEl.textContent = Math.floor(s.bank || 0).toLocaleString();
+    if (bEl) {
+      bEl.textContent = formatCompactNumber(s.bank);
+      bEl.title = formatFullCurrency(s.bank);
+    }
     const nEl = document.getElementById('stat-networth');
-    if (nEl) nEl.textContent = Math.floor(s.netWorth || 0).toLocaleString();
+    if (nEl) {
+      nEl.textContent = formatCompactNumber(s.netWorth);
+      nEl.title = formatFullCurrency(s.netWorth);
+    }
 
     // Hourly Cashflow Rate (Smooth live distribution)
     const cashflow = GameEngine.calculatePassiveIncomePerHour ? GameEngine.calculatePassiveIncomePerHour() : (GameEngine.calculatePassiveIncomePerSecond ? (GameEngine.calculatePassiveIncomePerSecond() * 3600) : 0);
     const cfEl = document.getElementById('stat-cashflow');
-    if (cfEl) cfEl.textContent = `+${Math.round(cashflow).toLocaleString()}`;
+    if (cfEl) {
+      cfEl.textContent = `+${formatCompactNumber(cashflow)}`;
+      cfEl.title = `+${formatFullCurrency(cashflow)}`;
+    }
 
     // Mobile stats
     const umEl = document.getElementById('stat-username-mobile');
@@ -1858,14 +1916,26 @@ const UIController = (() => {
     if (tmEl) tmEl.textContent = s.title;
 
     const cmEl = document.getElementById('stat-cash-mobile');
-    if (cmEl) cmEl.textContent = Math.floor(s.cash || 0).toLocaleString();
+    if (cmEl) {
+      cmEl.textContent = formatCompactNumber(s.cash);
+      cmEl.title = formatFullCurrency(s.cash);
+    }
     const bmEl = document.getElementById('stat-bank-mobile');
-    if (bmEl) bmEl.textContent = Math.floor(s.bank || 0).toLocaleString();
+    if (bmEl) {
+      bmEl.textContent = formatCompactNumber(s.bank);
+      bmEl.title = formatFullCurrency(s.bank);
+    }
     const nmEl = document.getElementById('stat-networth-mobile');
-    if (nmEl) nmEl.textContent = Math.floor(s.netWorth || 0).toLocaleString();
+    if (nmEl) {
+      nmEl.textContent = formatCompactNumber(s.netWorth);
+      nmEl.title = formatFullCurrency(s.netWorth);
+    }
 
     const cfmEl = document.getElementById('stat-cashflow-mobile');
-    if (cfmEl) cfmEl.textContent = `+${Math.round(cashflow).toLocaleString()}`;
+    if (cfmEl) {
+      cfmEl.textContent = `+${formatCompactNumber(cashflow)}`;
+      cfmEl.title = `+${formatFullCurrency(cashflow)}`;
+    }
 
     // Update Facebook Reward Button State
     updateFacebookButtonUI();
@@ -1953,11 +2023,43 @@ const UIController = (() => {
     document.getElementById('dash-uid').textContent = GameEngine.activeUsername;
     document.getElementById('dash-title').textContent = s.title;
     document.getElementById('dash-xp').textContent = s.xp.toLocaleString();
-    document.getElementById('dash-cash').textContent = s.cash.toLocaleString() + ' EGP';
-    document.getElementById('dash-bank').textContent = s.bank.toLocaleString() + ' EGP';
+    // In My Account (حسابي), display full amount prominently, with compact badge if large
+    const dashCashEl = document.getElementById('dash-cash');
+    if (dashCashEl) {
+      if (s.cash >= 1000000) {
+        dashCashEl.innerHTML = `<span class="break-all">${s.cash.toLocaleString()} EGP</span> <span class="text-xs text-yellow-400 font-bold ml-1 bg-yellow-500/10 px-2 py-0.5 rounded-lg border border-yellow-500/20 inline-block numbers-font">(${formatCompactNumber(s.cash)})</span>`;
+      } else {
+        dashCashEl.textContent = s.cash.toLocaleString() + ' EGP';
+      }
+    }
+
+    const dashBankEl = document.getElementById('dash-bank');
+    if (dashBankEl) {
+      if (s.bank >= 1000000) {
+        dashBankEl.innerHTML = `<span class="break-all">${s.bank.toLocaleString()} EGP</span> <span class="text-xs text-emerald-400 font-bold ml-1 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20 inline-block numbers-font">(${formatCompactNumber(s.bank)})</span>`;
+      } else {
+        dashBankEl.textContent = s.bank.toLocaleString() + ' EGP';
+      }
+    }
+
     const dashDirtyEl = document.getElementById('dash-dirty-cash');
-    if (dashDirtyEl) dashDirtyEl.textContent = (s.dirtyCash || 0).toLocaleString() + ' EGP';
-    document.getElementById('dash-worth').textContent = s.netWorth.toLocaleString() + ' EGP';
+    if (dashDirtyEl) {
+      const dirty = s.dirtyCash || 0;
+      if (dirty >= 1000000) {
+        dashDirtyEl.innerHTML = `<span class="break-all">${dirty.toLocaleString()} EGP</span> <span class="text-xs text-rose-400 font-bold ml-1 bg-rose-500/10 px-2 py-0.5 rounded-lg border border-rose-500/20 inline-block numbers-font">(${formatCompactNumber(dirty)})</span>`;
+      } else {
+        dashDirtyEl.textContent = dirty.toLocaleString() + ' EGP';
+      }
+    }
+
+    const dashWorthEl = document.getElementById('dash-worth');
+    if (dashWorthEl) {
+      if (s.netWorth >= 1000000) {
+        dashWorthEl.innerHTML = `<span class="break-all">${s.netWorth.toLocaleString()} EGP</span> <span class="text-xs text-amber-300 font-bold ml-1 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20 inline-block numbers-font">(${formatCompactNumber(s.netWorth)})</span>`;
+      } else {
+        dashWorthEl.textContent = s.netWorth.toLocaleString() + ' EGP';
+      }
+    }
 
     // 12-Hour AFK Auto-Manager Status & Countdown
     const badgeEl = document.getElementById('afk-manager-status-badge');
@@ -2459,8 +2561,16 @@ const UIController = (() => {
     const s = GameEngine.state;
 
     // Display basic balances
-    document.getElementById('bank-cash').textContent = s.cash.toLocaleString() + ' EGP';
-    document.getElementById('bank-balance').textContent = s.bank.toLocaleString() + ' EGP';
+    const bCash = document.getElementById('bank-cash');
+    if (bCash) {
+      bCash.textContent = `${formatCompactNumber(s.cash)} EGP`;
+      bCash.title = `${s.cash.toLocaleString()} EGP`;
+    }
+    const bBal = document.getElementById('bank-balance');
+    if (bBal) {
+      bBal.textContent = `${formatCompactNumber(s.bank)} EGP`;
+      bBal.title = `${s.bank.toLocaleString()} EGP`;
+    }
 
     // Show locked investments in bank
     const invContainer = document.getElementById('investments-locked-list');
@@ -2501,14 +2611,23 @@ const UIController = (() => {
   function updateBankInDOM() {
     const s = GameEngine.state;
     const cashEl = document.getElementById('bank-cash');
-    if (cashEl) cashEl.textContent = s.cash.toLocaleString() + ' EGP';
+    if (cashEl) {
+      cashEl.textContent = `${formatCompactNumber(s.cash)} EGP`;
+      cashEl.title = `${s.cash.toLocaleString()} EGP`;
+    }
     const balEl = document.getElementById('bank-balance');
-    if (balEl) balEl.textContent = s.bank.toLocaleString() + ' EGP';
+    if (balEl) {
+      balEl.textContent = `${formatCompactNumber(s.bank)} EGP`;
+      balEl.title = `${s.bank.toLocaleString()} EGP`;
+    }
 
     // Update Loan Info
     const maxLoan = Math.max(50000, Math.floor(s.netWorth * 0.35));
     const maxLoanEl = document.getElementById('loan-max-limit');
-    if (maxLoanEl) maxLoanEl.textContent = `${maxLoan.toLocaleString()} EGP`;
+    if (maxLoanEl) {
+      maxLoanEl.textContent = `${formatCompactNumber(maxLoan)} EGP`;
+      maxLoanEl.title = `${maxLoan.toLocaleString()} EGP`;
+    }
 
     const activeLoanEl = document.getElementById('loan-active-amount');
     const dueLoanEl = document.getElementById('loan-due-amount');
@@ -5328,7 +5447,10 @@ const UIController = (() => {
           p1Name.onclick = () => openPlayerProfileCard(top1.username);
         }
         if (p1Title) p1Title.textContent = top1.title || (window.currentLang === 'en' ? 'Money Emperor' : 'إمبراطور المال');
-        if (p1Worth) p1Worth.textContent = `${Number(top1.netWorth || 0).toLocaleString()} EGP`;
+        if (p1Worth) {
+          p1Worth.textContent = `${formatCompactNumber(top1.netWorth || 0)} EGP`;
+          p1Worth.title = `${Number(top1.netWorth || 0).toLocaleString()} EGP`;
+        }
         if (p1Avatar) p1Avatar.innerHTML = `<span class="text-sm sm:text-base font-black">${(top1.username || 'P').substring(0, 2).toUpperCase()}</span>`;
       }
 
@@ -5345,7 +5467,10 @@ const UIController = (() => {
           p2Name.onclick = () => openPlayerProfileCard(top2.username);
         }
         if (p2Title) p2Title.textContent = top2.title || (window.currentLang === 'en' ? 'Business Baron' : 'بارون التجارة');
-        if (p2Worth) p2Worth.textContent = `${Number(top2.netWorth || 0).toLocaleString()} EGP`;
+        if (p2Worth) {
+          p2Worth.textContent = `${formatCompactNumber(top2.netWorth || 0)} EGP`;
+          p2Worth.title = `${Number(top2.netWorth || 0).toLocaleString()} EGP`;
+        }
         if (p2Avatar) p2Avatar.innerHTML = `<span class="text-xs sm:text-sm font-black">${(top2.username || 'P').substring(0, 2).toUpperCase()}</span>`;
       }
 
@@ -5362,7 +5487,10 @@ const UIController = (() => {
           p3Name.onclick = () => openPlayerProfileCard(top3.username);
         }
         if (p3Title) p3Title.textContent = top3.title || (window.currentLang === 'en' ? 'Senior Businessman' : 'رجل أعمال كبار');
-        if (p3Worth) p3Worth.textContent = `${Number(top3.netWorth || 0).toLocaleString()} EGP`;
+        if (p3Worth) {
+          p3Worth.textContent = `${formatCompactNumber(top3.netWorth || 0)} EGP`;
+          p3Worth.title = `${Number(top3.netWorth || 0).toLocaleString()} EGP`;
+        }
         if (p3Avatar) p3Avatar.innerHTML = `<span class="text-xs sm:text-sm font-black">${(top3.username || 'P').substring(0, 2).toUpperCase()}</span>`;
       }
 
@@ -5428,8 +5556,8 @@ const UIController = (() => {
             </span>
           </td>
           <td class="py-3 pl-4 pr-3 text-left">
-            <span class="numbers-font font-black ${rank === 1 ? 'text-yellow-400 text-xs sm:text-sm glow-gold' : 'text-emerald-400 text-xs sm:text-sm'} whitespace-nowrap">
-              ${Number(player.netWorth || 0).toLocaleString()} EGP
+            <span class="numbers-font font-black ${rank === 1 ? 'text-yellow-400 text-xs sm:text-sm glow-gold' : 'text-emerald-400 text-xs sm:text-sm'} whitespace-nowrap" title="${Number(player.netWorth || 0).toLocaleString()} EGP">
+              ${formatCompactNumber(player.netWorth || 0)} EGP
             </span>
           </td>
         `;
@@ -10955,7 +11083,15 @@ const UIController = (() => {
         uCardEl.innerHTML = (pState.username || '---') + fbIconHtml;
       }
       document.getElementById('profile-card-title').textContent = pState.title || 'عامل مبتدئ';
-      document.getElementById('profile-card-networth').textContent = `${(pState.netWorth || 0).toLocaleString()} EGP`;
+      const pwEl = document.getElementById('profile-card-networth');
+      if (pwEl) {
+        const nw = pState.netWorth || 0;
+        if (nw >= 1000000) {
+          pwEl.innerHTML = `<span class="break-all">${nw.toLocaleString()} EGP</span> <span class="text-xs text-yellow-400 font-bold ml-1 bg-yellow-500/10 px-2 py-0.5 rounded-lg border border-yellow-500/20 inline-block numbers-font">(${formatCompactNumber(nw)})</span>`;
+        } else {
+          pwEl.textContent = `${nw.toLocaleString()} EGP`;
+        }
+      }
       document.getElementById('profile-card-reputation').textContent = `${(pState.underworldRep || 0).toLocaleString()} ⭐`;
       document.getElementById('profile-card-createdat').textContent = pState.createdAt ? new Date(pState.createdAt).toLocaleDateString() : 'غير معروف';
 
