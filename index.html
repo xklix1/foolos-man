@@ -290,22 +290,6 @@
         </button>
 
         <!-- Secondary Grid: Hall of Fame, Guide, Settings -->
-        <!-- Important Announcement Banner Button -->
-        <button id="btn-menu-season2-announce"
-          class="w-full mb-3 p-3 bg-gradient-to-r from-amber-500/20 via-rose-500/10 to-slate-900 border border-amber-500/40 hover:border-amber-400 rounded-2xl flex items-center justify-between gap-2.5 transition group shadow-lg">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-rose-600 text-slate-950 flex items-center justify-center font-black text-sm shadow group-hover:scale-105 transition">
-              ⚠️
-            </div>
-            <div class="text-right">
-              <span class="text-xs font-black text-amber-300 block">بيان وتنويه هام للاعبين</span>
-              <span class="text-[10px] text-slate-400 block">إعادة هيكلة اللعبة • كود تعويض: T3WED</span>
-            </div>
-          </div>
-          <span class="px-2.5 py-1 bg-amber-500/20 text-amber-300 rounded-lg text-[10px] font-black border border-amber-500/30 group-hover:bg-amber-500 group-hover:text-slate-950 transition">
-            قراءة البيان
-          </span>
-        </button>
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
 
@@ -482,92 +466,6 @@
   </div>
 
   
-  <!-- ==================== SYSTEM ANNOUNCEMENT & COMPENSATION MODAL ==================== -->
-  <div id="season2-launch-modal" dir="rtl"
-    class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-black/90 backdrop-blur-lg p-3 sm:p-4 animate-fade-in">
-    <div dir="rtl"
-      class="glass-panel w-full max-w-xl max-h-[90vh] flex flex-col rounded-3xl border-2 border-amber-500/60 p-5 sm:p-7 shadow-2xl bg-gradient-to-b from-slate-900/95 via-slate-950/98 to-black text-right relative overflow-hidden">
-
-      <!-- Glowing Decorative Top Glow -->
-      <div class="absolute -top-20 left-1/2 -translate-x-1/2 w-72 h-32 bg-amber-500/20 blur-3xl rounded-full pointer-events-none"></div>
-
-      <!-- Close Button -->
-      <button id="btn-close-season2-modal"
-        class="absolute top-4 left-4 w-9 h-9 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition z-10 cursor-pointer">
-        <i class="fa-solid fa-xmark text-sm"></i>
-      </button>
-
-      <!-- Modal Header / Badge -->
-      <div class="flex items-center gap-3 pb-3 border-b border-slate-800/80">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-rose-600 text-slate-950 flex items-center justify-center text-xl font-black shadow-lg glow-gold shrink-0">
-          <i class="fa-solid fa-triangle-exclamation text-slate-950"></i>
-        </div>
-        <div>
-          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase tracking-wider mb-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
-            بيان رسمي من إدارة اللعبة
-          </div>
-          <h2 class="text-lg sm:text-xl font-black text-white">تنويه واعتذار رسمي لكافة اللاعبين</h2>
-        </div>
-      </div>
-
-      <!-- Modal Scrollable Body -->
-      <div class="flex-1 overflow-y-auto pr-1 py-4 space-y-4 text-slate-200 text-xs sm:text-sm leading-relaxed">
-        <!-- Main Statement Card -->
-        <div class="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-start gap-3">
-          <i class="fa-solid fa-circle-exclamation text-amber-400 text-lg mt-0.5 shrink-0"></i>
-          <div class="space-y-2">
-            <h3 class="font-black text-amber-300 text-sm sm:text-base">بيان إدارة رأس المال (Ras ALmal)</h3>
-            <p class="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
-              تعرضت اللعبة لأزمة وكان من الإجبار أن يتم إعادة هيكلتها بالكامل ومسح الحسابات القديمة. نعتذر لكم عن كثرة المشاكل، لكن يرجى مراعاة أن اللعبة ما زالت قيد المراجعة والتطوير المستمر لتقديم أفضل تجربة عادلة وممتعة ومستقرة للجميع.
-            </p>
-          </div>
-        </div>
-
-        <!-- Gift Code Box T3WED -->
-        <div class="p-4 bg-gradient-to-r from-emerald-950/40 via-slate-950 to-slate-900 border-2 border-emerald-500/40 rounded-2xl space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 text-emerald-400 font-black text-xs sm:text-sm">
-              <i class="fa-solid fa-gift text-sm"></i>
-              <span>كود تعويض لجميع اللاعبين:</span>
-            </div>
-            <span class="text-[11px] font-black text-emerald-300 numbers-font">هدية مالية فورية 🎁</span>
-          </div>
-          <p class="text-xs text-slate-300 leading-normal">
-            يمكنكم الاستفادة من كود الهدايا <strong class="text-emerald-400 numbers-font text-sm">T3WED</strong> كتعويض خاص في انطلاقتكم الجديدة!
-          </p>
-          
-          <div class="flex items-center gap-2 pt-1">
-            <div class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl flex items-center justify-between text-white font-mono font-black text-sm tracking-wider numbers-font">
-              <span id="s2-code-text" class="text-yellow-400 font-bold">T3WED</span>
-              <span class="text-[10px] text-slate-500 font-sans font-normal">كود التعويض</span>
-            </div>
-            <button id="btn-copy-s2-code"
-              class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-emerald-900/30 shrink-0 cursor-pointer">
-              <i class="fa-solid fa-copy"></i>
-              <span>نسخ الكود</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Motivational Closer -->
-        <div class="text-center py-1 text-slate-400 text-xs font-medium">
-          نشكر تفهمكم ودعمكم المستمر لرحلة تطوير اللعبة نحو الأفضل دائماً.
-        </div>
-      </div>
-
-      <!-- Modal Footer Action -->
-      <div class="pt-3 border-t border-slate-800 flex items-center gap-3">
-        <button id="btn-confirm-season2-action"
-          class="w-full py-3 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-2xl text-xs sm:text-sm shadow-xl shadow-yellow-500/20 transition flex items-center justify-center gap-2 cursor-pointer">
-          <span>فهمت ذلك، استمرار إلى اللعبة</span>
-          <i class="fa-solid fa-arrow-left text-xs"></i>
-        </button>
-      </div>
-
-    </div>
-  </div>
-
   <!-- ==================== TYCOON GUIDE MODAL (DUAL MODE) ==================== -->
   <div id="start-menu-guide-modal"
     class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in">
@@ -1423,12 +1321,6 @@
                   </div>
                   <span id="stat-title" class="text-[11px] font-bold text-yellow-400 block truncate">تحميل...</span>
                 </div>
-              </div>
-              <button id="btn-ingame-season2" title="بيان وتنويه هام للاعبين"
-                class="text-[10px] text-amber-400 font-black border border-amber-500/40 px-2 py-0.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 transition flex items-center gap-1 shadow-sm shrink-0 cursor-pointer">
-                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
-                <span>تنويه هام ⚠️</span>
-              </button>
             </div>
 
             <!-- Top-Up & Support Store Desktop Button -->
@@ -1653,12 +1545,6 @@
             <button id="btn-save-progress-cloud-mobile" title="حفظ التقدم في السحابة" type="button"
               class="w-8 h-8 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 active:bg-yellow-500/30 text-yellow-400 border border-yellow-500/30 flex items-center justify-center transition active:scale-95 shrink-0 cursor-pointer shadow-sm">
               <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
-            </button>
-            <!-- Announcement Notice -->
-            <button id="btn-ingame-season2-mobile" title="بيان وتنويه هام للاعبين" type="button"
-              class="w-8 h-8 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
-              <i class="fa-solid fa-bell text-xs"></i>
-              <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
             </button>
             <!-- Settings -->
             <button id="btn-ingame-settings-mobile" title="إعدادات الصوت والإشعارات" type="button"

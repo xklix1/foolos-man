@@ -144,17 +144,6 @@ async function migrateGiftCodes() {
     });
   }
 
-  // Ensure T3WED is present
-  if (!rows.some(r => r.code === 'T3WED')) {
-    rows.push({
-      code: 'T3WED',
-      reward_cash: 100000,
-      max_uses: 10000,
-      used_by: [],
-      created_at: Date.now()
-    });
-  }
-
   const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/gift_codes`, {
     method: 'POST',
     headers: {
