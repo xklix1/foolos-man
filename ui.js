@@ -13851,7 +13851,7 @@ const UIController = (() => {
         const inStock = warehouse[k] || 0;
         const isDemanded = buyer.demands.includes(k);
         const selected = (preselectedExportCommodity === k) || (inStock > 0 && !preselectedExportCommodity);
-        const demandMark = isDemanded ?` (+${bonusPct}% علاوة طلب)` :' (-20% خصم عدم توفر طلب)';
+        const demandMark = isDemanded ? ` (+${bonusPct}% علاوة طلب)` : ' (-15% خصم عدم توفر طلب)';
         optionsHtml +=`<option value="${k}" ${selected ?'selected' :''}>${item.name} [متوفر: ${inStock}]${demandMark}</option>`;
       });
 
@@ -13933,7 +13933,7 @@ const UIController = (() => {
         const commKey = selEl.value;
         const comm = commodities[commKey];
         if (!comm) return;
-        let qty = parseInt(qtyEl.value) || 1;
+        let qty = parseInt(qtyEl.value, 10) || 1;
         if (qty < 1) qty = 1;
         if (qty > 10) {
           qty = 10;
@@ -13944,22 +13944,43 @@ const UIController = (() => {
           qty = Math.min(10, availInStock);
           qtyEl.value = qty;
         }
-        const isDemanded = buyer.demands.includes(commKey);
-        let mult = isDemanded ? buyer.priceMult : 0.80;
+        const isDemanded = Array.isArray(buyer.demands) && buyer.demands.includes(commKey);
 
-        const dailyCount = tradeInfo.dailyExportsCount || 0;
-        const satStep = Math.min(5, Math.floor(dailyCount / 3));
-        const satPenalty = satStep * 0.05;
-        const effMult = Math.max(0.60, mult - satPenalty);
+        // Daily exports count is stored as an object { [commodityId]: count }
+        let todayExported = 0;
+        if (tradeInfo.dailyExportsCount && typeof tradeInfo.dailyExportsCount === 'object') {
+          todayExported = Number(tradeInfo.dailyExportsCount[commKey] || 0);
+        } else if (typeof tradeInfo.dailyExportsCount === 'number') {
+          todayExported = Number(tradeInfo.dailyExportsCount || 0);
+        }
 
-        const avgSellPrice = Math.floor(((comm.baseSellMin + comm.baseSellMax) / 2) * effMult);
-        const totalRev = avgSellPrice * qty;
-        const totalProfit = totalRev - (comm.unitCost * qty);
+        let satDiscount = 0;
+        if (todayExported >= 3) {
+          const tiers = Math.floor((todayExported - 3) / 3) + 1;
+          satDiscount = Math.min(0.25, tiers * 0.05);
+        }
+
+        const baseSellMin = Number(comm.baseSellMin) || 0;
+        const baseSellMax = Number(comm.baseSellMax) || baseSellMin;
+        const avgBasePrice = (baseSellMin + baseSellMax) / 2;
+        let unitEstPrice = isDemanded
+          ? Math.floor(avgBasePrice * (Number(buyer.priceMult) || 1.0))
+          : Math.floor(baseSellMin * 0.85);
+
+        if (satDiscount > 0) {
+          unitEstPrice = Math.floor(unitEstPrice * (1 - satDiscount));
+        }
+
+        const totalRev = Math.max(0, unitEstPrice * qty);
+        const unitCost = Number(comm.unitCost) || 0;
+        const totalCost = unitCost * qty;
+        const totalProfit = totalRev - totalCost;
+        const profitMarginPct = totalCost > 0 ? Math.round((totalProfit / totalCost) * 100) : 0;
 
         durationEl.textContent = formatTradeDuration(comm.exportDurationSec);
-        const satNotice = satPenalty > 0 ?` (تشبع سوق: -${Math.round(satPenalty * 100)}%)` :'';
-        payoutEl.textContent =`~ ${totalRev.toLocaleString()} EGP ${isDemanded ?'' :'(-20% خصم)'}${satNotice}`;
-        profitEl.textContent =`${totalProfit >= 0 ?'+' :''}${totalProfit.toLocaleString()} EGP (${Math.round((totalProfit / (comm.unitCost * qty)) * 100)}%)`;
+        const satNotice = satDiscount > 0 ? ` (تشبع سوق: -${Math.round(satDiscount * 100)}%)` : '';
+        payoutEl.textContent = `~ ${totalRev.toLocaleString()} EGP ${isDemanded ? '' : '(-15% خصم)'}${satNotice}`;
+        profitEl.textContent = `${totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString()} EGP (${profitMarginPct}%)`;
       }
 
       selEl.addEventListener('change', updateCalculator);
