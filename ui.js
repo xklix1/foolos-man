@@ -6109,14 +6109,86 @@ const UIController = (() => {
   }
 
   async function checkMaintenanceMode() {
-    hideMaintenanceOverlay();
-    return false;
+    try {
+      if (typeof AppDB === 'undefined' || typeof AppDB.getMaintenanceStatus !== 'function') return false;
+      const st = await AppDB.getMaintenanceStatus();
+      const isMaint = Boolean(st && (st.active || st.enabled));
+      if (isMaint) {
+        if (GameEngine.state && GameEngine.state.isAdmin) {
+          return false;
+        }
+        showMaintenancePopup(st.message);
+        return true;
+      } else {
+        hideMaintenanceOverlay();
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
   }
 
-  function showMaintenancePopup(msg) {}
+  function showMaintenancePopup(msg) {
+    let overlay = document.getElementById('maintenance-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'maintenance-overlay';
+      overlay.className = 'fixed inset-0 z-[9999998] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4 select-none';
+      overlay.style.pointerEvents = 'auto';
+      overlay.innerHTML = `
+        <div class="relative w-full max-w-md bg-slate-900 border-2 border-rose-500/80 rounded-2xl p-6 text-center shadow-2xl shadow-rose-500/20">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 text-3xl">
+            <i class="fa-solid fa-screwdriver-wrench animate-bounce" style="animation-duration: 2s;"></i>
+          </div>
+          <h3 class="text-xl font-black text-white mb-1.5 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+            <span>الخوادم رهن الصيانة الفنية</span>
+          </h3>
+          <div class="inline-block px-3 py-1 bg-rose-500/20 text-rose-300 text-xs font-bold rounded-full border border-rose-500/30 mb-3">
+            تحديث وصيانة طارئة
+          </div>
+          <p id="maintenance-overlay-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6 font-medium">
+            ${msg || 'تخضع خوادم اللعبة حالياً لأعمال صيانة وتحديث إداري لتحسين الأداء وحماية الحسابات. يرجى الانتظار والمحاولة لاحقاً.'}
+          </p>
+          <button id="btn-maintenance-recheck" class="w-full py-3.5 px-6 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-sm rounded-xl shadow-lg shadow-amber-500/20 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-rotate-right text-lg"></i>
+            <span>إعادة فحص حالة الخوادم الآن</span>
+          </button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      const recheckBtn = document.getElementById('btn-maintenance-recheck');
+      if (recheckBtn) {
+        recheckBtn.addEventListener('click', async () => {
+          recheckBtn.disabled = true;
+          recheckBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري فحص حالة الخوادم...</span>';
+          try {
+            const st = await AppDB.getMaintenanceStatus();
+            if (st && (st.active || st.enabled)) {
+              recheckBtn.disabled = false;
+              recheckBtn.innerHTML = '<i class="fa-solid fa-rotate-right text-lg"></i> <span>الخوادم ما زالت قيد الصيانة.. إعادة الفحص</span>';
+            } else {
+              hideMaintenanceOverlay();
+              window.location.reload();
+            }
+          } catch (e) {
+            recheckBtn.disabled = false;
+            recheckBtn.innerHTML = '<i class="fa-solid fa-rotate-right text-lg"></i> <span>إعادة فحص حالة الخوادم</span>';
+          }
+        });
+      }
+    }
+    const reasonEl = document.getElementById('maintenance-overlay-reason');
+    if (reasonEl && msg) {
+      reasonEl.textContent = msg;
+    }
+    overlay.classList.remove('hidden');
+  }
 
   function handleMaintenanceMode(customMsg) {
-    hideMaintenanceOverlay();
+    if (GameEngine.state && GameEngine.state.isAdmin) return;
+    showMaintenancePopup(customMsg);
   }
 
   function hideMaintenanceOverlay() {

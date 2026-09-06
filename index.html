@@ -4812,9 +4812,9 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=8.3"></script>
-  <script src="game.js?v=8.3"></script>
-  <script src="ui.js?v=8.3"></script>
+  <script src="db.js?v=8.4"></script>
+  <script src="game.js?v=8.4"></script>
+  <script src="ui.js?v=8.4"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -5215,12 +5215,96 @@
         } catch (err) {}
       }
 
+      async function checkMaintenanceDirectly() {
+        if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.isNetworkActive === 'function' && !window.AppDB.isNetworkActive()) return;
+        if (typeof document !== 'undefined' && document.hidden) return;
+        try {
+          const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.maintenance', {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+            }
+          });
+          if (!res.ok) return;
+          const rows = await res.json();
+          if (!rows || rows.length === 0 || !rows[0].data) return;
+          const data = rows[0].data;
+          const isMaint = Boolean(data.active || data.enabled);
+          if (isMaint) {
+            if (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.isAdmin) return;
+            let overlay = document.getElementById('maintenance-overlay');
+            if (!overlay) {
+              overlay = document.createElement('div');
+              overlay.id = 'maintenance-overlay';
+              overlay.className = 'fixed inset-0 z-[9999998] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4 select-none';
+              overlay.style.pointerEvents = 'auto';
+              overlay.innerHTML = `
+                <div class="relative w-full max-w-md bg-slate-900 border-2 border-rose-500/80 rounded-2xl p-6 text-center shadow-2xl shadow-rose-500/20">
+                  <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 text-3xl">
+                    <i class="fa-solid fa-screwdriver-wrench animate-bounce" style="animation-duration: 2s;"></i>
+                  </div>
+                  <h3 class="text-xl font-black text-white mb-1.5 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+                    <span>الخوادم رهن الصيانة الفنية</span>
+                  </h3>
+                  <div class="inline-block px-3 py-1 bg-rose-500/20 text-rose-300 text-xs font-bold rounded-full border border-rose-500/30 mb-3">
+                    تحديث وصيانة طارئة
+                  </div>
+                  <p id="maintenance-overlay-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6 font-medium">
+                    ${data.message || 'تخضع خوادم اللعبة حالياً لأعمال صيانة وتحديث إداري لتحسين الأداء وحماية الحسابات. يرجى الانتظار والمحاولة لاحقاً.'}
+                  </p>
+                  <button id="btn-maintenance-recheck" class="w-full py-3.5 px-6 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-sm rounded-xl shadow-lg shadow-amber-500/20 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-rotate-right text-lg"></i>
+                    <span>إعادة فحص حالة الخوادم الآن</span>
+                  </button>
+                </div>
+              `;
+              document.body.appendChild(overlay);
+
+              const recheckBtn = document.getElementById('btn-maintenance-recheck');
+              if (recheckBtn) {
+                recheckBtn.onclick = async () => {
+                  recheckBtn.disabled = true;
+                  recheckBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري فحص الاتصال...</span>';
+                  try {
+                    const r = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.maintenance', {
+                      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+                    });
+                    const rRows = await r.json();
+                    if (rRows && rRows[0] && rRows[0].data && (rRows[0].data.active || rRows[0].data.enabled)) {
+                      recheckBtn.disabled = false;
+                      recheckBtn.innerHTML = '<i class="fa-solid fa-rotate-right text-lg"></i> <span>الخوادم ما زالت قيد الصيانة.. إعادة الفحص</span>';
+                    } else {
+                      overlay.classList.add('hidden');
+                      window.location.reload();
+                    }
+                  } catch (e) {
+                    recheckBtn.disabled = false;
+                    recheckBtn.innerHTML = '<i class="fa-solid fa-rotate-right text-lg"></i> <span>إعادة فحص حالة الخوادم</span>';
+                  }
+                };
+              }
+            } else {
+              overlay.classList.remove('hidden');
+            }
+          } else {
+            const overlay = document.getElementById('maintenance-overlay');
+            if (overlay) overlay.classList.add('hidden');
+          }
+        } catch (err) {}
+      }
+
       checkForceReloadDirectly();
+      checkMaintenanceDirectly();
       // Egress optimization: check every 90s when tab is active and not idle
       setInterval(checkForceReloadDirectly, 90000);
+      setInterval(checkMaintenanceDirectly, 90000);
       if (typeof document !== 'undefined') {
         document.addEventListener('visibilitychange', function() {
-          if (!document.hidden) checkForceReloadDirectly();
+          if (!document.hidden) {
+            checkForceReloadDirectly();
+            checkMaintenanceDirectly();
+          }
         });
       }
     })();

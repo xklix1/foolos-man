@@ -3339,28 +3339,99 @@
       const btnText = document.getElementById('admin-maintenance-btn-text');
       if (badge) {
         if (isMaint) {
-          badge.textContent ='وضع الصيانة نشط';
-          badge.className ='text-[10px] px-2 py-0.5 bg-rose-500/20 text-rose-400 rounded border border-rose-500/30 font-bold animate-pulse';
+          badge.textContent = 'وضع الصيانة نشط';
+          badge.className = 'text-[10px] px-2 py-0.5 bg-rose-500/20 text-rose-400 rounded border border-rose-500/30 font-bold animate-pulse';
         } else {
-          badge.textContent ='النظام يعمل بشكل طبيعي';
-          badge.className ='text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold';
+          badge.textContent = 'الخادم متاح للجميع';
+          badge.className = 'text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold';
         }
       }
       if (toggleBtn) {
         const text = isMaint
-          ?' إنهاء وضع الصيانة والعودة للتشغيل الطبيعي للجميع'
-          :' إغلاق اللعبة وتفعيل وضع الصيانة الشامل للجميع';
+          ? 'إنهاء وضع الصيانة والعودة للتشغيل الطبيعي للجميع'
+          : 'تفعيل وضع الصيانة الشامل وإغلاق الخوادم';
         if (btnText) {
           btnText.textContent = text;
         } else {
           toggleBtn.textContent = text;
         }
         if (isMaint) {
-          toggleBtn.className ='w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2';
+          toggleBtn.className = 'w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer';
         } else {
-          toggleBtn.className ='w-full py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-600/10 flex items-center justify-center gap-2';
+          toggleBtn.className = 'w-full py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-600/10 flex items-center justify-center gap-2 cursor-pointer';
         }
       }
+    }
+
+    // Auto-fetch maintenance status on admin panel initialization
+    if (typeof AppDB !== 'undefined' && typeof AppDB.getMaintenanceStatus === 'function') {
+      AppDB.getMaintenanceStatus().then(st => {
+        updateMaintenanceUIState(Boolean(st && (st.active || st.enabled)));
+      }).catch(err => console.warn('Failed to load initial maintenance state:', err));
+    }
+
+    // Bind maintenance toggle click handler
+    const maintToggleBtn = document.getElementById('btn-admin-toggle-maintenance');
+    if (maintToggleBtn && !maintToggleBtn.dataset.bound) {
+      maintToggleBtn.dataset.bound = 'true';
+      maintToggleBtn.addEventListener('click', async () => {
+        try {
+          maintToggleBtn.disabled = true;
+          let currentSt = { active: false };
+          if (typeof AppDB !== 'undefined' && typeof AppDB.getMaintenanceStatus === 'function') {
+            currentSt = await AppDB.getMaintenanceStatus();
+          }
+          const isCurrentlyMaint = Boolean(currentSt && (currentSt.active || currentSt.enabled));
+          const nextState = !isCurrentlyMaint;
+
+          const confirmMsg = nextState
+            ? "⚠️ تنبيه إداري عاجل:\n\nهل أنت متأكد من رغبتك في إغلاق اللعبة وتفعيل وضع الصيانة الشامل لكافة اللاعبين؟\n\nسيتم منع أي لاعب غير المشرفين من الدخول وتظهر له شاشة الصيانة الفنية."
+            : "✅ هل تريد إنهاء وضع الصيانة وإعادة فتح الخوادم لجميع اللاعبين؟";
+
+          if (!confirm(confirmMsg)) {
+            maintToggleBtn.disabled = false;
+            return;
+          }
+
+          maintToggleBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري تطبيق حالة الخادم...</span>';
+
+          if (typeof AppDB !== 'undefined' && typeof AppDB.setMaintenanceMode === 'function') {
+            await AppDB.setMaintenanceMode(nextState, nextState ? 'الخوادم رهن الصيانة الفنية والتحديث الإداري حالياً.' : '');
+          } else {
+            const SUPABASE_URL = 'https://rasalmal.online';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08';
+            await fetch(`${SUPABASE_URL}/rest/v1/globals`, {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'resolution=merge-duplicates'
+              },
+              body: JSON.stringify({
+                id: 'maintenance',
+                data: { active: Boolean(nextState), message: nextState ? 'الخوادم رهن الصيانة الفنية والتحديث الإداري حالياً.' : '', timestamp: Date.now() },
+                updated_at: Date.now()
+              })
+            });
+          }
+
+          updateMaintenanceUIState(nextState);
+
+          if (nextState) {
+            showToast('وضع الصيانة نشط ⚠️', 'تم إغلاق الخوادم وتفعيل وضع الصيانة الشامل بنجاح!', 'warning');
+            logAdminAction('تفعيل وضع الصيانة الشامل وإغلاق الخوادم');
+          } else {
+            showToast('الخوادم مفتوحة ✅', 'تم إنهاء وضع الصيانة وإتاحة اللعبة للجميع بنجاح!', 'success');
+            logAdminAction('إنهاء وضع الصيانة وإعادة فتح الخوادم');
+          }
+        } catch (err) {
+          console.error('Maintenance toggle error:', err);
+          showToast('خطأ في العملية', err.message || err, 'error');
+        } finally {
+          maintToggleBtn.disabled = false;
+        }
+      });
     }
 
     function applyCompleteZeroStateToGameEngine(username) {

@@ -2189,9 +2189,9 @@
   <div id="toast-container" class="fixed top-4 left-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Core Modules -->
-  <script src="game.js?v=8.3"></script>
-  <script src="db.js?v=8.3"></script>
-  <script src="admin-panel.js?v=8.3"></script>
+  <script src="game.js?v=8.4"></script>
+  <script src="db.js?v=8.4"></script>
+  <script src="admin-panel.js?v=8.4"></script>
 
   <!-- Standalone Admin Controller Script -->
   <script>
@@ -2244,6 +2244,115 @@
           } finally {
             forceReloadBtn.disabled = false;
             forceReloadBtn.innerHTML = '<i class="fa-solid fa-rotate-right text-sm"></i><span>إرسال شاشة إعادة التحميل الإجبارية لجميع اللاعبين المتصلين الآن</span>';
+          }
+        };
+      }
+
+      // Direct Maintenance Toggle Hook
+      const maintToggleBtn = document.getElementById('btn-admin-toggle-maintenance');
+      const maintBadge = document.getElementById('admin-maintenance-badge');
+      const maintBtnText = document.getElementById('admin-maintenance-btn-text');
+
+      function syncMaintUI(isMaint) {
+        if (maintBadge) {
+          if (isMaint) {
+            maintBadge.textContent = 'وضع الصيانة نشط';
+            maintBadge.className = 'text-[10px] px-2 py-0.5 bg-rose-500/20 text-rose-400 rounded border border-rose-500/30 font-bold animate-pulse';
+          } else {
+            maintBadge.textContent = 'الخادم متاح للجميع';
+            maintBadge.className = 'text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold';
+          }
+        }
+        if (maintToggleBtn) {
+          const text = isMaint
+            ? 'إنهاء وضع الصيانة والعودة للتشغيل الطبيعي للجميع'
+            : 'تفعيل وضع الصيانة الشامل وإغلاق الخوادم';
+          if (maintBtnText) {
+            maintBtnText.textContent = text;
+          } else {
+            maintToggleBtn.textContent = text;
+          }
+          if (isMaint) {
+            maintToggleBtn.className = 'w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer';
+          } else {
+            maintToggleBtn.className = 'w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-600/10 flex items-center justify-center gap-2 cursor-pointer';
+          }
+        }
+      }
+
+      // Initial check from Supabase
+      fetch('https://rasalmal.online/rest/v1/globals?id=eq.maintenance', {
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08'
+        }
+      }).then(r => r.json()).then(rows => {
+        if (rows && rows[0] && rows[0].data) {
+          syncMaintUI(Boolean(rows[0].data.active || rows[0].data.enabled));
+        }
+      }).catch(() => {});
+
+      if (maintToggleBtn && !maintToggleBtn.dataset.boundDirect) {
+        maintToggleBtn.dataset.boundDirect = 'true';
+        maintToggleBtn.onclick = async () => {
+          try {
+            maintToggleBtn.disabled = true;
+            let currentActive = false;
+            try {
+              const res = await fetch('https://rasalmal.online/rest/v1/globals?id=eq.maintenance', {
+                headers: {
+                  'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
+                  'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08'
+                }
+              });
+              const rows = await res.json();
+              if (rows && rows[0] && rows[0].data) {
+                currentActive = Boolean(rows[0].data.active || rows[0].data.enabled);
+              }
+            } catch (e) {}
+
+            const nextState = !currentActive;
+            const confirmMsg = nextState
+              ? "⚠️ تنبيه إداري عاجل:\n\nهل أنت متأكد من إغلاق اللعبة وتفعيل وضع الصيانة الشامل لجميع اللاعبين؟\n\nستظهر شاشة الصيانة الإدارية وتمنع أي لاعب غير المشرفين من الدخول أو اللعب."
+              : "✅ هل تريد إنهاء وضع الصيانة وإعادة فتح الخوادم للجميع؟";
+
+            if (!confirm(confirmMsg)) {
+              maintToggleBtn.disabled = false;
+              return;
+            }
+
+            maintToggleBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري تطبيق التعديل...</span>';
+
+            await fetch('https://rasalmal.online/rest/v1/globals', {
+              method: 'POST',
+              headers: {
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
+                'Content-Type': 'application/json',
+                'Prefer': 'resolution=merge-duplicates'
+              },
+              body: JSON.stringify({
+                id: 'maintenance',
+                data: {
+                  active: Boolean(nextState),
+                  message: nextState ? 'الخوادم رهن الصيانة الفنية والتحديث الإداري حالياً.' : '',
+                  timestamp: Date.now()
+                },
+                updated_at: Date.now()
+              })
+            });
+
+            syncMaintUI(nextState);
+
+            if (nextState) {
+              showToast('وضع الصيانة نشط ⚠️', 'تم إغلاق الخوادم وتفعيل وضع الصيانة الشامل بنجاح!', 'warning');
+            } else {
+              showToast('الخوادم مفتوحة ✅', 'تم إنهاء وضع الصيانة وإعادة فتح الخوادم للجميع بنجاح!', 'success');
+            }
+          } catch (err) {
+            showToast('خطأ', 'فشل تغيير حالة الصيانة: ' + (err.message || err), 'error');
+          } finally {
+            maintToggleBtn.disabled = false;
           }
         };
       }
