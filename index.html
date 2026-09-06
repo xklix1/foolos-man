@@ -2176,9 +2176,19 @@
         </div>
 
         <!-- News Ticker Banner -->
-        <div class="bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 text-xs flex items-center gap-2">
-          <span class="text-yellow-500 font-bold flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-bullhorn"></i><span>شريط الأخبار الاقتصادي:</span></span>
-          <span id="stock-market-news-ticker" class="text-slate-300 font-medium truncate">السوق مستقر وتداولات اعتيادية بين المتعاملين...</span>
+        <div id="stock-market-news-banner" class="glass-panel border border-yellow-500/30 bg-gradient-to-r from-yellow-950/20 via-slate-950/90 to-slate-900/60 rounded-2xl p-3 sm:p-4 text-xs shadow-lg transition-all duration-300 hover:border-yellow-500/50 cursor-pointer" title="انقر لعرض تفاصيل نشرة الأخبار كاملة">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="w-7 h-7 rounded-lg bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 flex items-center justify-center text-xs shadow-inner">
+                <i class="fa-solid fa-bullhorn animate-pulse"></i>
+              </span>
+              <span class="text-yellow-400 font-bold text-xs flex items-center gap-1">
+                <span>شريط الأخبار الاقتصادي:</span>
+              </span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-300 border border-yellow-500/20 font-mono font-bold">M15</span>
+            </div>
+            <div id="stock-market-news-ticker" class="text-slate-100 font-medium text-xs sm:text-sm leading-relaxed break-words flex-1 w-full">السوق مستقر وتداولات اعتيادية بين المتعاملين...</div>
+          </div>
         </div>
         <div id="stocks-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-28 mb-10">
           <!-- Dyn list -->

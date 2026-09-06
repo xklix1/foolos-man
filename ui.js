@@ -4725,6 +4725,17 @@ const UIController = (() => {
       }
     }
 
+    const newsBanner = document.getElementById('stock-market-news-banner');
+    if (newsBanner && !newsBanner.dataset.hasListener) {
+      newsBanner.dataset.hasListener = 'true';
+      newsBanner.addEventListener('click', () => {
+        const text = tickerEl ? tickerEl.textContent.trim() : '';
+        if (text) {
+          showToast(window.currentLang === 'en' ? 'Stock Market Bulletin' : 'نشرة الأخبار الاقتصادية', text, 'info', 4000);
+        }
+      });
+    }
+
     // Update Live 15-Minute Candlestick Session Countdown Timer
     const sessionTimerEl = document.getElementById('stock-session-timer');
     if (sessionTimerEl && typeof GameEngine.getStockSessionTimeRemaining ==='function') {
