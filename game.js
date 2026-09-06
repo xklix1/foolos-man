@@ -4398,6 +4398,20 @@ const GameEngine = (() => {
     if (!state.tradeCompany.activeImports) state.tradeCompany.activeImports = [];
     if (!state.tradeCompany.activeExports) state.tradeCompany.activeExports = [];
 
+    // Auto-resolve any arrived imports and deliver exports
+    const nowMs = Date.now();
+    state.tradeCompany.activeImports.forEach(imp => {
+      if (!imp.arrived && nowMs >= imp.arrivalTime) {
+        imp.arrived = true;
+        state.tradeCompany.warehouse[imp.commodityId] = (state.tradeCompany.warehouse[imp.commodityId] || 0) + imp.quantity;
+      }
+    });
+    state.tradeCompany.activeExports.forEach(exp => {
+      if (!exp.delivered && nowMs >= exp.deliveryTime) {
+        exp.delivered = true;
+      }
+    });
+
     // Calculate current storage utilization
     let storedUnits = 0;
     Object.values(state.tradeCompany.warehouse).forEach(qty => {
@@ -4406,7 +4420,7 @@ const GameEngine = (() => {
 
     let incomingUnits = 0;
     state.tradeCompany.activeImports.forEach(imp => {
-      if (!imp.arrived) incomingUnits += (imp.quantity || 0);
+      if (!imp.arrived && nowMs < imp.arrivalTime) incomingUnits += (imp.quantity || 0);
     });
 
     const rawCapacity = state.tradeCompany.warehouseCapacity || 10;
@@ -4442,7 +4456,16 @@ const GameEngine = (() => {
     if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك إدارة عمليات الاستيراد والتصدير.");
     ensureDailyTradeReset();
 
-    const activeImportsCount = (state.tradeCompany.activeImports || []).filter(imp => !imp.arrived).length;
+    const nowMs = Date.now();
+    (state.tradeCompany.activeImports || []).forEach(imp => {
+      if (!imp.arrived && nowMs >= imp.arrivalTime) {
+        imp.arrived = true;
+        if (!state.tradeCompany.warehouse) state.tradeCompany.warehouse = {};
+        state.tradeCompany.warehouse[imp.commodityId] = (state.tradeCompany.warehouse[imp.commodityId] || 0) + imp.quantity;
+      }
+    });
+
+    const activeImportsCount = (state.tradeCompany.activeImports || []).filter(imp => !imp.arrived && nowMs < imp.arrivalTime).length;
     if (activeImportsCount >= 2) {
       throw new Error("أسطول الاستيراد البحري يعمل بكامل طاقته (شحنتان قيد الإبحار)! انتظر وصول وتسليم إحدى الشحنات أولاً لتفريغ رصيف الميناء.");
     }
@@ -4659,6 +4682,17 @@ const GameEngine = (() => {
       newCapacity: state.tradeCompany.warehouseCapacity,
       cost
     };
+  }
+
+  function dismissTradeImport(orderId) {
+    if (!state.tradeCompany || !state.tradeCompany.activeImports) return false;
+    const idx = state.tradeCompany.activeImports.findIndex(imp => imp.id === orderId);
+    if (idx !== -1) {
+      state.tradeCompany.activeImports.splice(idx, 1);
+      forceSaveState(true);
+      return true;
+    }
+    return false;
   }
 
   // ─────────────────────────────────────────────────────────
@@ -5093,6 +5127,7 @@ const GameEngine = (() => {
     sellExportCargo,
     claimExportProfit,
     upgradeWarehouse,
+    dismissTradeImport,
 
     // Industrial Supply Chain Empire Exports
     INDUSTRIAL_SECTORS,

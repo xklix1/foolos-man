@@ -13883,9 +13883,11 @@ const UIController = (() => {
       }
     }
 
-    // Active Shipments Badge
+    // Active Shipments Badge (Only count shipments currently in transit or waiting claim)
     const activeBadge = document.getElementById('trade-active-badge');
-    const activeCount = (tradeInfo.activeImports ? tradeInfo.activeImports.length : 0) + (tradeInfo.activeExports ? tradeInfo.activeExports.length : 0);
+    const nowTs = Date.now();
+    const activeCount = (tradeInfo.activeImports ? tradeInfo.activeImports.filter(e => !e.arrived && nowTs < e.arrivalTime).length : 0) 
+                      + (tradeInfo.activeExports ? tradeInfo.activeExports.filter(e => !e.claimed).length : 0);
     if (activeBadge) {
       if (activeCount > 0) {
         activeBadge.textContent = activeCount;
@@ -13916,7 +13918,7 @@ const UIController = (() => {
     const tierMeta = {'air_cargo': { badge:'شحن جوي سريع (Air Express)', color:'border-sky-500/30 bg-sky-500/10 text-sky-300' },'regional_freight': { badge:'شحن إقليمي بحري/بري (Freight)', color:'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' },'ocean_shipping': { badge:'شحن بحري حاويات (Ocean Shipping)', color:'border-purple-500/30 bg-purple-500/10 text-purple-300' },'mega_oceanic': { badge:'سفن عابرة للمحيطات (Mega Trans-Oceanic)', color:'border-amber-500/30 bg-amber-500/10 text-amber-300' }
     };
 
-    const activeImportsCount = (tradeInfo.activeImports || []).filter(e => !e.claimed).length;
+    const activeImportsCount = (tradeInfo.activeImports || []).filter(e => !e.arrived && Date.now() < e.arrivalTime).length;
     const isImportFleetFull = activeImportsCount >= 2;
 
     Object.keys(commodities).forEach(key => {
@@ -14356,14 +14358,21 @@ const UIController = (() => {
           </div>
         </div>
 
-        <div class="w-full md:w-72 space-y-1.5">
-          <div class="flex justify-between text-xs">
-            <span class="text-slate-400 font-medium">${isArrived ?'الحالة: وصلت المستودع' :'في طريق الشحن...'}</span>
-            <span id="timer-${order.id}" class="font-mono font-bold text-cyan-400">${isArrived ?'تم التخزين' : formatCountdownHMS(remSec)}</span>
-          </div>
-          <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
-            <div id="bar-${order.id}" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full transition-all duration-300" style="width: ${progress}%"></div>
-          </div>
+        <div class="w-full md:w-72 space-y-2">
+          ${isArrived ?`
+            <button class="btn-dismiss-trade-import w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-900/60 to-slate-800 hover:from-cyan-800/80 hover:to-slate-700 text-cyan-300 border border-cyan-500/30 font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow" data-id="${order.id}">
+              <i class="fa-solid fa-boxes-packing text-emerald-400"></i>
+              <span>وصلت المستودع (إخلاء الرصيف)</span>
+            </button>` :`
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-400 font-medium">في طريق الشحن...</span>
+              <span id="timer-${order.id}" class="font-mono font-bold text-cyan-400">${formatCountdownHMS(remSec)}</span>
+            </div>
+            <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
+              <div id="bar-${order.id}" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full transition-all duration-300" style="width: ${progress}%"></div>
+            </div>
+          </div>`}
         </div>`;
 
       list.appendChild(card);
@@ -14430,6 +14439,18 @@ const UIController = (() => {
         }
       });
     });
+
+    // Bind dismiss import buttons
+    list.querySelectorAll('.btn-dismiss-trade-import').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const orderId = btn.getAttribute('data-id');
+        if (GameEngine && typeof GameEngine.dismissTradeImport === 'function') {
+          GameEngine.dismissTradeImport(orderId);
+          playMenuSound('click');
+          renderTradePanel();
+        }
+      });
+    });
   }
 
   function updateTradeShipmentsInDOM() {
@@ -14445,12 +14466,13 @@ const UIController = (() => {
     imports.forEach(order => {
       const timerEl = document.getElementById(`timer-${order.id}`);
       const barEl = document.getElementById(`bar-${order.id}`);
-      if (!timerEl || !barEl) return;
+      const cardEl = document.getElementById(`trade-order-card-${order.id}`);
+      const dismissBtn = cardEl ? cardEl.querySelector('.btn-dismiss-trade-import') : null;
 
       const isArrived = order.arrived || (now >= order.arrivalTime);
-      if (isArrived && timerEl.textContent !=='تم التخزين') {
+      if (isArrived && !dismissBtn) {
         requiresFullReRender = true;
-      } else if (!isArrived) {
+      } else if (!isArrived && timerEl && barEl) {
         const totalDur = (order.arrivalTime - order.startTime) || 1;
         const progress = Math.min(100, Math.max(0, ((now - order.startTime) / totalDur) * 100));
         const remSec = Math.max(0, Math.ceil((order.arrivalTime - now) / 1000));
