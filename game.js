@@ -127,23 +127,23 @@ const GameEngine = (() => {
       id:'oil_refinery',
       name:'مجمع مصافي البترول والطاقة ️',
       cost: 1600000000,
-      baseDemand: 1000,
-      optimumPrice: 18000,
-      costOfGoods: 7500,
+      baseDemand: 750,
+      optimumPrice: 16000,
+      costOfGoods: 7000,
       maxWorkers: 28,
       workerMultiplier: 1.08,
-      workerWage: 60000
+      workerWage: 45000
     },
     space_tech: {
       id:'space_tech',
       name:'مؤسسة استكشاف الفضاء والأقمار الصناعية',
       cost: 4800000000,
-      baseDemand: 1300,
-      optimumPrice: 38000,
-      costOfGoods: 16000,
+      baseDemand: 800,
+      optimumPrice: 28000,
+      costOfGoods: 12000,
       maxWorkers: 30,
       workerMultiplier: 1.08,
-      workerWage: 150000
+      workerWage: 90000
     }
   };
 
