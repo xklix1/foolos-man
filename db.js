@@ -1497,6 +1497,29 @@ var AppDB = (() => {
     return { active: false, message:'' };
   }
 
+  async function setStagingStatus(enabled, message = '') {
+    await _api('globals', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        id: 'staging_status',
+        data: { enabled: Boolean(enabled), message, timestamp: Date.now() },
+        updated_at: Date.now()
+      })
+    });
+    return true;
+  }
+
+  async function getStagingStatus() {
+    try {
+      const rows = await _api('globals?id=eq.staging_status');
+      if (rows && rows.length > 0 && rows[0].data) {
+        return rows[0].data;
+      }
+    } catch (e) {}
+    return { enabled: true, message: '' };
+  }
+
   async function sendForceReload(message ='') {
     const ts = Date.now();
     await _api('globals', {
@@ -3641,6 +3664,8 @@ var AppDB = (() => {
     retryLatestAirdropToUnclaimed,
     setMaintenanceMode,
     getMaintenanceStatus,
+    setStagingStatus,
+    getStagingStatus,
     sendForceReload,
     getForceReloadStatus,
     adminSaveTaxConfig,

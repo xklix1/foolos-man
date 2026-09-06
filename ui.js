@@ -6142,12 +6142,67 @@ const UIController = (() => {
     document.body.appendChild(banner);
   }
 
+  async function checkStagingAccess() {
+    if (!isStagingEnvironment()) return true;
+    try {
+      if (typeof AppDB === 'undefined' || typeof AppDB.getStagingStatus !== 'function') return true;
+      const st = await AppDB.getStagingStatus();
+      if (st && st.enabled === false) {
+        showStagingDisabledPopup(st.message);
+        return false;
+      }
+    } catch (e) {}
+    return true;
+  }
+
+  function showStagingDisabledPopup(msg) {
+    let overlay = document.getElementById('staging-disabled-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'staging-disabled-overlay';
+      overlay.className = 'fixed inset-0 z-[99999999] flex items-center justify-center bg-slate-950/98 backdrop-blur-2xl p-4 select-none';
+      overlay.innerHTML = `
+        <div class="relative w-full max-w-md bg-slate-900 border-2 border-rose-500/80 rounded-2xl p-6 text-center shadow-2xl shadow-rose-500/20">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 text-3xl">
+            <i class="fa-solid fa-lock animate-pulse"></i>
+          </div>
+          <h3 class="text-xl font-black text-white mb-1.5 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-flask text-cyan-400"></i>
+            <span>بيئة الاختبار التجريبية مغلقة</span>
+          </h3>
+          <div class="inline-block px-3 py-1 bg-rose-500/20 text-rose-300 text-xs font-bold rounded-full border border-rose-500/30 mb-3">
+            تم إيقاف الرابط بواسطة الإدارة
+          </div>
+          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6 font-medium">
+            ${msg || 'هذا الرابط التجريبي مغلق حالياً بقرار من إدارة اللعبة. يمكنك إعادة تفعيله في أي وقت مباشرة عبر لوحة تحكم الأدمن.'}
+          </p>
+          <a href="https://rasalmal.online" class="w-full py-3.5 px-6 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2 no-underline">
+            <i class="fa-solid fa-house"></i>
+            <span>الذهاب إلى اللعبة الرسمية (rasalmal.online)</span>
+          </a>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+    overlay.classList.remove('hidden');
+
+    const authScreen = document.getElementById('auth-screen');
+    if (authScreen) authScreen.classList.add('hidden');
+    const startMenu = document.getElementById('start-menu-screen');
+    if (startMenu) startMenu.classList.add('hidden');
+    const mainLayout = document.getElementById('main-game-layout');
+    if (mainLayout) mainLayout.classList.add('hidden');
+  }
+
   async function checkMaintenanceMode() {
     try {
-      initStagingBanner();
       if (isStagingEnvironment()) {
         hideMaintenanceOverlay();
-        return false; // Staging environment is 100% immune to maintenance mode!
+        const allowed = await checkStagingAccess();
+        if (allowed) {
+          initStagingBanner();
+        }
+        return !allowed;
       }
       if (typeof AppDB === 'undefined' || typeof AppDB.getMaintenanceStatus !== 'function') return false;
       const st = await AppDB.getMaintenanceStatus();

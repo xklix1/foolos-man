@@ -1376,6 +1376,31 @@
             <i class="fa-solid fa-triangle-exclamation"></i>
             <span id="admin-maintenance-btn-text">تفعيل وضع الصيانة الشامل وإغلاق الخوادم</span></button></div>
 
+        <!-- Staging Sandbox Toggle Card -->
+        <div class="p-3.5 bg-cyan-950/20 border border-cyan-500/30 rounded-xl space-y-2.5">
+          <div class="flex justify-between items-center flex-wrap gap-2">
+            <div>
+              <h4 class="text-xs font-bold text-cyan-400 flex items-center gap-2">
+                <i class="fa-solid fa-flask-vial text-cyan-400"></i>
+                <span>بوابة صفحة الاختبار التجريبية (Staging Sandbox)</span>
+                <span id="admin-staging-badge"
+                  class="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold">نشطة ومتاحة</span>
+              </h4>
+              <p class="text-[10px] text-slate-400 mt-0.5">التحكم في إتاحة أو قفل رابط الاختبار السحابي الخارجي. عند الإيقاف يُمنع الدخول للبيئة التجريبية تماماً حتى تعيد تفعيلها.</p>
+            </div>
+            <a href="https://xklix1.github.io/foolos-man/" target="_blank"
+              class="px-3 py-1.5 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/40 text-cyan-300 text-xs font-bold rounded-lg transition flex items-center gap-1.5 no-underline">
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+              <span>زيارة صفحة الاختبار</span>
+            </a>
+          </div>
+          <button id="btn-admin-toggle-staging"
+            class="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-rose-600/20 flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-power-off"></i>
+            <span id="admin-staging-btn-text">إيقاف وقفل صفحة الاختبار</span>
+          </button>
+        </div>
+
         <!-- Items Configuration Card (New Feature) -->
         <div class="p-3.5 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2.5">
           <div class="flex justify-between items-center">
@@ -2420,6 +2445,109 @@
             showToast('خطأ', 'فشل تغيير حالة الصيانة: ' + (err.message || err), 'error');
           } finally {
             maintToggleBtn.disabled = false;
+          }
+        };
+      }
+
+      // Direct Staging Sandbox Toggle Hook
+      const stagingToggleBtn = document.getElementById('btn-admin-toggle-staging');
+      const stagingBadge = document.getElementById('admin-staging-badge');
+      const stagingBtnText = document.getElementById('admin-staging-btn-text');
+
+      function syncStagingUI(isEnabled) {
+        if (stagingBadge) {
+          if (isEnabled) {
+            stagingBadge.textContent = 'نشطة ومتاحة';
+            stagingBadge.className = 'text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold';
+          } else {
+            stagingBadge.textContent = 'مغلقة أمنياً';
+            stagingBadge.className = 'text-[10px] px-2 py-0.5 bg-rose-500/20 text-rose-400 rounded border border-rose-500/30 font-bold animate-pulse';
+          }
+        }
+        if (stagingToggleBtn) {
+          const text = isEnabled ? 'إيقاف وقفل صفحة الاختبار' : 'تفعيل وفتح صفحة الاختبار';
+          if (stagingBtnText) {
+            stagingBtnText.textContent = text;
+          } else {
+            stagingToggleBtn.textContent = text;
+          }
+          if (isEnabled) {
+            stagingToggleBtn.className = 'w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-rose-600/20 flex items-center justify-center gap-2 cursor-pointer';
+          } else {
+            stagingToggleBtn.className = 'w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer';
+          }
+        }
+      }
+
+      // Initial check for Staging Status from Supabase
+      fetch('https://rasalmal.online/rest/v1/globals?id=eq.staging_status', {
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08'
+        }
+      }).then(r => r.json()).then(rows => {
+        if (rows && rows[0] && rows[0].data) {
+          syncStagingUI(rows[0].data.enabled !== false);
+        } else {
+          syncStagingUI(true);
+        }
+      }).catch(() => { syncStagingUI(true); });
+
+      if (stagingToggleBtn && !stagingToggleBtn.dataset.boundDirect) {
+        stagingToggleBtn.dataset.boundDirect = 'true';
+        stagingToggleBtn.onclick = async () => {
+          try {
+            stagingToggleBtn.disabled = true;
+            let currentActive = true;
+            try {
+              const res = await fetch('https://rasalmal.online/rest/v1/globals?id=eq.staging_status', {
+                headers: {
+                  'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
+                  'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08'
+                }
+              });
+              const rows = await res.json();
+              if (rows && rows[0] && rows[0].data) {
+                currentActive = (rows[0].data.enabled !== false);
+              }
+            } catch (e) {}
+
+            const nextState = !currentActive;
+            const confirmMsg = nextState
+              ? 'هل تريد تفعيل وفتح صفحة الاختبار التجريبية الآن؟'
+              : 'هل أنت متأكد من رغبتك في إيقاف وقفل صفحة الاختبار التجريبية؟ سيُمنع أي شخص من فتحها.';
+            if (!confirm(confirmMsg)) return;
+
+            await fetch('https://rasalmal.online/rest/v1/globals', {
+              method: 'POST',
+              headers: {
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
+                'Content-Type': 'application/json',
+                'Prefer': 'resolution=merge-duplicates'
+              },
+              body: JSON.stringify({
+                id: 'staging_status',
+                data: {
+                  enabled: Boolean(nextState),
+                  message: nextState ? '' : 'تم إيقاف رابط الاختبار مؤقتاً بواسطة الإدارة.',
+                  timestamp: Date.now()
+                },
+                updated_at: Date.now()
+              })
+            });
+
+            syncStagingUI(nextState);
+
+            if (nextState) {
+              showToast('صفحة الاختبار مفتوحة ✅', 'تم تفعيل وفتح صفحة الاختبار بنجاح!', 'success');
+            } else {
+              showToast('صفحة الاختبار مقفلة 🔒', 'تم إيقاف وقفل صفحة الاختبار بنجاح.', 'warning');
+            }
+          } catch (err) {
+            showToast('خطأ', 'فشل تغيير حالة صفحة الاختبار: ' + (err.message || err), 'error');
+          } finally {
+            stagingToggleBtn.disabled = false;
           }
         };
       }
