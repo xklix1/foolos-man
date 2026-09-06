@@ -2841,13 +2841,18 @@
 
         <!-- SECTION 4: الاستثمار المقفل طويل الأجل -->
         <div class="glass-panel p-6 rounded-2xl border border-slate-800">
-          <div class="mb-4">
-            <h4 class="text-md font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-vault text-yellow-400"></i>
-              <span>الاستثمار المقفل والصناديق الاستثمارية السرية</span>
-            </h4>
-            <p class="text-xs text-slate-400 mt-1">تجميد السيولة في صناديق استثمارية خاصة لتحصيل عوائد ربحية ثابتة
-              ومضمونة عند انتهاء مدة التجميد.</p>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <h4 class="text-md font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-vault text-yellow-400"></i>
+                <span>الاستثمار المقفل والصناديق الاستثمارية</span>
+              </h4>
+              <p class="text-xs text-slate-400 mt-1">تجميد السيولة في صناديق استثمارية مصرفية لتحصيل عوائد ربحية مضمونة عند انتهاء مدة التجميد.</p>
+            </div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-xl text-[11px] text-amber-400 font-bold self-start sm:self-auto">
+              <i class="fa-solid fa-circle-info text-xs"></i>
+              <span>الحد الأقصى: استثماران فقط في نفس الوقت</span>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -2856,25 +2861,23 @@
               class="p-5 bg-slate-950/50 border border-slate-800 rounded-xl flex flex-col justify-between hover:border-slate-700 transition">
               <div>
                 <div class="flex justify-between items-center mb-1">
-                  <h5 class="font-bold text-white text-sm">وديعة بنكية قصيرة الأجل</h5>
-                  <span class="text-[10px] px-2 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full font-bold">10
-                    دقائق</span>
+                  <h5 class="font-bold text-white text-sm">وديعة بنكية سريعة</h5>
+                  <span class="text-[10px] px-2 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full font-bold">1 ساعة</span>
                 </div>
-                <p class="text-[11px] text-slate-400 mt-1">تجميد السيولة لتوفير التمويل المصرفي مقابل عائد أرباح إضافي.
-                </p>
+                <p class="text-[11px] text-slate-400 mt-1">تجميد السيولة لتوفير التمويل المصرفي مقابل عائد أرباح قصير الأجل.</p>
                 <div class="text-xs text-slate-400 space-y-1.5 my-3 border-t border-b border-slate-800/80 py-2.5">
                   <div class="flex justify-between"><span>مدة التجميد:</span><span
-                      class="numbers-font text-white font-bold">10 دقائق</span></div>
+                      class="numbers-font text-white font-bold">1 ساعة (60 دقيقة)</span></div>
                   <div class="flex justify-between"><span>عائد الأرباح:</span><span
-                      class="numbers-font text-emerald-400 font-bold">+8% مضمونة</span></div>
+                      class="numbers-font text-emerald-400 font-bold">+4% مضمونة</span></div>
                   <div class="flex justify-between"><span>الحد الأدنى:</span><span
-                      class="numbers-font text-yellow-500">10,000 جنيه</span></div>
+                      class="numbers-font text-yellow-500">5,000 جنيه</span></div>
                   <div class="flex justify-between"><span>الحد الأقصى:</span><span
-                      class="numbers-font text-yellow-400 font-bold">100,000 جنيه</span></div>
+                      class="numbers-font text-yellow-400 font-bold">50,000 جنيه</span></div>
                 </div>
               </div>
               <div class="mt-2">
-                <input type="number" id="invest-amount-short" min="10000" max="100000" placeholder="المبلغ (10K - 100K)"
+                <input type="number" id="invest-amount-short" min="5000" max="50000" placeholder="المبلغ (5K - 50K)"
                   class="glass-input w-full p-2.5 text-center text-xs rounded-xl mb-2 font-bold">
                 <button data-type="short"
                   class="btn-invest-start w-full py-2.5 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-black rounded-xl transition">
@@ -2889,24 +2892,23 @@
               <div>
                 <div class="flex justify-between items-center mb-1">
                   <h5 class="font-bold text-white text-sm">صندوق استثمار عقاري وسندات</h5>
-                  <span class="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full font-bold">30
-                    دقيقة</span>
+                  <span class="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full font-bold">3 ساعات</span>
                 </div>
                 <p class="text-[11px] text-slate-400 mt-1">استثمار مضمون في أصول إنشائية وتجارية مدرة للدخل.</p>
                 <div class="text-xs text-slate-400 space-y-1.5 my-3 border-t border-b border-slate-800/80 py-2.5">
                   <div class="flex justify-between"><span>مدة التجميد:</span><span
-                      class="numbers-font text-white font-bold">30 دقيقة</span></div>
+                      class="numbers-font text-white font-bold">3 ساعات</span></div>
                   <div class="flex justify-between"><span>عائد الأرباح:</span><span
-                      class="numbers-font text-emerald-400 font-bold">+25% مضمونة</span></div>
+                      class="numbers-font text-emerald-400 font-bold">+12% مضمونة</span></div>
                   <div class="flex justify-between"><span>الحد الأدنى:</span><span
-                      class="numbers-font text-yellow-500">50,000 جنيه</span></div>
+                      class="numbers-font text-yellow-500">25,000 جنيه</span></div>
                   <div class="flex justify-between"><span>الحد الأقصى:</span><span
-                      class="numbers-font text-emerald-400 font-bold">500,000 جنيه</span></div>
+                      class="numbers-font text-emerald-400 font-bold">250,000 جنيه</span></div>
                 </div>
               </div>
               <div class="mt-2">
-                <input type="number" id="invest-amount-medium" min="50000" max="500000"
-                  placeholder="المبلغ (50K - 500K)"
+                <input type="number" id="invest-amount-medium" min="25000" max="250000"
+                  placeholder="المبلغ (25K - 250K)"
                   class="glass-input w-full p-2.5 text-center text-xs rounded-xl mb-2 font-bold">
                 <button data-type="medium"
                   class="btn-invest-start w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl transition">
@@ -2921,23 +2923,22 @@
               <div>
                 <div class="flex justify-between items-center mb-1">
                   <h5 class="font-bold text-white text-sm">صندوق أسهم وتحوط دولي خاص</h5>
-                  <span class="text-[10px] px-2 py-0.5 bg-indigo-500/20 text-indigo-400 rounded-full font-bold">2
-                    ساعة</span>
+                  <span class="text-[10px] px-2 py-0.5 bg-indigo-500/20 text-indigo-400 rounded-full font-bold">8 ساعات</span>
                 </div>
                 <p class="text-[11px] text-slate-400 mt-1">محفظة استثمارية مغلقة في أسواق المال بعوائد استثنائية.</p>
                 <div class="text-xs text-slate-400 space-y-1.5 my-3 border-t border-b border-slate-800/80 py-2.5">
                   <div class="flex justify-between"><span>مدة التجميد:</span><span
-                      class="numbers-font text-white font-bold">ساعتان (2 ساعة)</span></div>
+                      class="numbers-font text-white font-bold">8 ساعات</span></div>
                   <div class="flex justify-between"><span>عائد الأرباح:</span><span
-                      class="numbers-font text-emerald-400 font-bold">+65% مضمونة</span></div>
+                      class="numbers-font text-emerald-400 font-bold">+25% مضمونة</span></div>
                   <div class="flex justify-between"><span>الحد الأدنى:</span><span
-                      class="numbers-font text-yellow-500">250,000 جنيه</span></div>
+                      class="numbers-font text-yellow-500">100,000 جنيه</span></div>
                   <div class="flex justify-between"><span>الحد الأقصى:</span><span
-                      class="numbers-font text-indigo-400 font-bold">3,000,000 جنيه</span></div>
+                      class="numbers-font text-indigo-400 font-bold">1,000,000 جنيه</span></div>
                 </div>
               </div>
               <div class="mt-2">
-                <input type="number" id="invest-amount-long" min="250000" max="3000000" placeholder="المبلغ (250K - 3M)"
+                <input type="number" id="invest-amount-long" min="100000" max="1000000" placeholder="المبلغ (100K - 1M)"
                   class="glass-input w-full p-2.5 text-center text-xs rounded-xl mb-2 font-bold">
                 <button data-type="long"
                   class="btn-invest-start w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-black rounded-xl transition">
@@ -2952,25 +2953,23 @@
               <div>
                 <div class="flex justify-between items-center mb-1">
                   <h5 class="font-bold text-amber-400 text-sm">صندوق الاكتتابات والشركات المليارية</h5>
-                  <span class="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-full font-bold">6
-                    ساعات</span>
+                  <span class="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-full font-bold">18 ساعة</span>
                 </div>
-                <p class="text-[11px] text-slate-400 mt-1">استثمار استراتيجي مغلق في شركات التكنولوجيا الصاعدة بعوائد
-                  فائقة.</p>
+                <p class="text-[11px] text-slate-400 mt-1">استثمار استراتيجي مغلق في شركات التكنولوجيا الصاعدة بعوائد فائقة.</p>
                 <div class="text-xs text-slate-400 space-y-1.5 my-3 border-t border-b border-slate-800/80 py-2.5">
                   <div class="flex justify-between"><span>مدة التجميد:</span><span
-                      class="numbers-font text-white font-bold">6 ساعات</span></div>
+                      class="numbers-font text-white font-bold">18 ساعة</span></div>
                   <div class="flex justify-between"><span>عائد الأرباح:</span><span
-                      class="numbers-font text-emerald-400 font-bold">+150% مضمونة</span></div>
+                      class="numbers-font text-emerald-400 font-bold">+45% مضمونة</span></div>
                   <div class="flex justify-between"><span>الحد الأدنى:</span><span
-                      class="numbers-font text-yellow-500">1,500,000 جنيه</span></div>
+                      class="numbers-font text-yellow-500">500,000 جنيه</span></div>
                   <div class="flex justify-between"><span>الحد الأقصى:</span><span
-                      class="numbers-font text-amber-400 font-bold">20,000,000 جنيه</span></div>
+                      class="numbers-font text-amber-400 font-bold">4,000,000 جنيه</span></div>
                 </div>
               </div>
               <div class="mt-2">
-                <input type="number" id="invest-amount-venture" min="1500000" max="20000000"
-                  placeholder="المبلغ (1.5M - 20M)"
+                <input type="number" id="invest-amount-venture" min="500000" max="4000000"
+                  placeholder="المبلغ (500K - 4M)"
                   class="glass-input w-full p-2.5 text-center text-xs rounded-xl mb-2 font-bold">
                 <button data-type="venture"
                   class="btn-invest-start w-full py-2.5 bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-slate-950 text-xs font-black rounded-xl transition">
@@ -2985,25 +2984,23 @@
               <div>
                 <div class="flex justify-between items-center mb-1">
                   <h5 class="font-bold text-cyan-300 text-sm">صندوق الثروة الإمبراطوري الماسي</h5>
-                  <span class="text-[10px] px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded-full font-bold">12 ساعة
-                    كاملة</span>
+                  <span class="text-[10px] px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded-full font-bold">36 ساعة (1.5 يوم)</span>
                 </div>
-                <p class="text-[11px] text-slate-400 mt-1">خزينة مقفلة لكبار أثرياء العالم تمنح عائداً أسطورياً أربعة
-                  أضعاف.</p>
+                <p class="text-[11px] text-slate-400 mt-1">خزينة مقفلة لكبار أثرياء اللعبة تمنح عائداً استثمارياً كبيراً.</p>
                 <div class="text-xs text-slate-400 space-y-1.5 my-3 border-t border-b border-slate-800/80 py-2.5">
                   <div class="flex justify-between"><span>مدة التجميد:</span><span
-                      class="numbers-font text-cyan-300 font-bold">12 ساعة (43,200 ثانية)</span></div>
+                      class="numbers-font text-cyan-300 font-bold">36 ساعة (يوم ونصف)</span></div>
                   <div class="flex justify-between"><span>عائد الأرباح:</span><span
-                      class="numbers-font text-emerald-400 font-bold">+300% (4 أضعاف)</span></div>
+                      class="numbers-font text-emerald-400 font-bold">+80% مضمونة</span></div>
                   <div class="flex justify-between"><span>الحد الأدنى:</span><span
-                      class="numbers-font text-cyan-400">10,000,000 جنيه</span></div>
+                      class="numbers-font text-cyan-400">2,000,000 جنيه</span></div>
                   <div class="flex justify-between"><span>الحد الأقصى:</span><span
-                      class="numbers-font text-cyan-300 font-bold">100,000,000 جنيه</span></div>
+                      class="numbers-font text-cyan-300 font-bold">15,000,000 جنيه</span></div>
                 </div>
               </div>
               <div class="mt-2">
-                <input type="number" id="invest-amount-imperial" min="10000000" max="100000000"
-                  placeholder="المبلغ (10M - 100M)"
+                <input type="number" id="invest-amount-imperial" min="2000000" max="15000000"
+                  placeholder="المبلغ (2M - 15M)"
                   class="glass-input w-full p-2.5 text-center text-xs rounded-xl mb-2 font-bold">
                 <button data-type="imperial"
                   class="btn-invest-start w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-black rounded-xl transition">
@@ -4812,9 +4809,9 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=8.4"></script>
-  <script src="game.js?v=8.4"></script>
-  <script src="ui.js?v=8.4"></script>
+  <script src="db.js?v=8.5"></script>
+  <script src="game.js?v=8.5"></script>
+  <script src="ui.js?v=8.5"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

@@ -370,48 +370,48 @@ const GameEngine = (() => {
   const INVESTMENTS = {
     short: {
       id:'short',
-      name:'وديعة بنكية قصيرة الأجل',
-      durationTicks: 600, // 10 minutes
-      rate: 0.08,
-      minAmount: 10000,
-      maxAmount: 100000,
-      desc:'تجميد السيولة لمدة 10 دقائق لتوفير التمويل المصرفي مقابل عائد أرباح إضافي (+8%).'
+      name:'وديعة بنكية سريعة',
+      durationTicks: 3600, // 1 hour (3,600 seconds)
+      rate: 0.04, // +4%
+      minAmount: 5000,
+      maxAmount: 50000,
+      desc:'تجميد السيولة لمدة ساعة واحدة لتوفير التمويل المصرفي مقابل عائد أرباح (+4%).'
     },
     medium: {
       id:'medium',
       name:'صندوق استثمار عقاري وسندات',
-      durationTicks: 1800, // 30 minutes
-      rate: 0.25,
-      minAmount: 50000,
-      maxAmount: 500000,
-      desc:'استثمار مضمون في أصول إنشائية وتجارية مدرة للدخل لمدة 30 دقيقة (+25%).'
+      durationTicks: 10800, // 3 hours (10,800 seconds)
+      rate: 0.12, // +12%
+      minAmount: 25000,
+      maxAmount: 250000,
+      desc:'استثمار مضمون في أصول إنشائية وتجارية مدرة للدخل لمدة 3 ساعات (+12%).'
     },
     long: {
       id:'long',
       name:'صندوق أسهم وتحوط دولي خاص',
-      durationTicks: 7200, // 2 hours
-      rate: 0.65,
-      minAmount: 250000,
-      maxAmount: 3000000,
-      desc:'محفظة استثمارية مغلقة في أسواق المال العالمية لمدة ساعتين بعوائد استثنائية (+65%).'
+      durationTicks: 28800, // 8 hours (28,800 seconds)
+      rate: 0.25, // +25%
+      minAmount: 100000,
+      maxAmount: 1000000,
+      desc:'محفظة استثمارية مغلقة في أسواق المال العالمية لمدة 8 ساعات بعوائد استثنائية (+25%).'
     },
     venture: {
       id:'venture',
       name:'صندوق الاكتتابات والشركات المليارية',
-      durationTicks: 21600, // 6 hours
-      rate: 1.50,
-      minAmount: 1500000,
-      maxAmount: 20000000,
-      desc:'استثمار استراتيجي مغلق في شركات التكنولوجيا الصاعدة لمدة 6 ساعات بعوائد فائقة (+150%).'
+      durationTicks: 64800, // 18 hours (64,800 seconds)
+      rate: 0.45, // +45%
+      minAmount: 500000,
+      maxAmount: 4000000,
+      desc:'استثمار استراتيجي مغلق في شركات التكنولوجيا الصاعدة لمدة 18 ساعة بعوائد فائقة (+45%).'
     },
     imperial: {
       id:'imperial',
       name:'صندوق الثروة الإمبراطوري الماسي',
-      durationTicks: 43200, // 12 hours (43,200 seconds)
-      rate: 3.00,
-      minAmount: 10000000,
-      maxAmount: 100000000,
-      desc:'خزينة مقفلة لكبار أثرياء العالم لمدة 12 ساعة تمنح عائداً أسطورياً أربعة أضعاف (+300%).'
+      durationTicks: 129600, // 36 hours (129,600 seconds)
+      rate: 0.80, // +80%
+      minAmount: 2000000,
+      maxAmount: 15000000,
+      desc:'خزينة مقفلة لكبار أثرياء اللعبة لمدة 36 ساعة تمنح عائداً استثمارياً كبيراً (+80%).'
     }
   };
 
@@ -3606,11 +3606,17 @@ const GameEngine = (() => {
   function startInvestment(planId, amount) {
     const plan = INVESTMENTS[planId];
     if (!plan) throw new Error("خطة الاستثمار غير موجودة.");
+
+    // Limit check: maximum 2 concurrent active investments
+    if (state.investments && state.investments.length >= 2) {
+      throw new Error("لا يمكنك فتح أكثر من استثمارين مقفلين في نفس الوقت. انتظر حتى يكتمل أحدهما أو استثمر في عقاراتك ومصانعك.");
+    }
+
     if (!amount || isNaN(amount) || amount < plan.minAmount) {
-      throw new Error(`الحد الأدنى للاستثمار في"${plan.name}" هو ${plan.minAmount.toLocaleString()} جنيه.`);
+      throw new Error(`الحد الأدنى للاستثمار في "${plan.name}" هو ${plan.minAmount.toLocaleString()} جنيه.`);
     }
     if (plan.maxAmount && amount > plan.maxAmount) {
-      throw new Error(`الحد الأقصى للإيداع في"${plan.name}" هو ${plan.maxAmount.toLocaleString()} جنيه.`);
+      throw new Error(`الحد الأقصى للإيداع في "${plan.name}" هو ${plan.maxAmount.toLocaleString()} جنيه.`);
     }
     if (state.cash < amount) {
       throw new Error(`رصيدك النقدي ${state.cash.toLocaleString()} جنيه لا يكفي لاستثمار ${amount.toLocaleString()} جنيه.`);
