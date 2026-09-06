@@ -130,29 +130,40 @@
       
       <div>
         <h1 class="text-xl font-black text-white">بوابة القيادة والتحكم الإداري</h1>
-        <p class="text-xs text-slate-400 mt-1">تسجيل الدخول المشفر بحساب Firebase الموثق</p></div>
+        <p class="text-xs text-slate-400 mt-1">المصادقة الأمنية المشفرة عبر مفتاح الإدارة السري (Master API Key)</p></div>
 
       <form id="admin-login-form" class="space-y-4 text-right" onsubmit="event.preventDefault(); window.loginAdminTerminal();">
         <div>
-          <label class="block text-xs text-slate-300 font-bold mb-1.5">البريد الإلكتروني المعتمد</label>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs text-slate-300 font-bold flex items-center gap-1.5">
+              <i class="fa-solid fa-terminal text-amber-400 text-xs"></i>
+              <span>مفتاح الوصول المشفر (Master API Key)</span>
+            </label>
+            <span class="text-[10px] text-amber-400/80 font-mono">SHA-256 Vault</span>
+          </div>
           <div class="relative">
-            <input type="email" id="admin-auth-email" required
-              class="glass-input w-full p-3 rounded-xl text-xs sm:text-sm pl-10"
-              placeholder="admin@domain.com" dir="ltr">
-            <i class="fa-solid fa-envelope absolute left-3.5 top-3.5 text-slate-500 text-xs"></i></div></div>
+            <input type="password" id="admin-auth-master-key" required
+              class="glass-input w-full p-3 rounded-xl text-xs sm:text-sm pl-10 font-mono tracking-wider text-amber-300 placeholder:text-slate-600 focus:border-amber-400 transition"
+              placeholder="sk_live_rasalmal_••••••••••••" dir="ltr" autocomplete="off" spellcheck="false">
+            <button type="button" onclick="const f = document.getElementById('admin-auth-master-key'); f.type = f.type === 'password' ? 'text' : 'password';"
+              class="absolute left-3 top-3 text-slate-500 hover:text-amber-400 transition" title="إظهار/إخفاء المفتاح">
+              <i class="fa-solid fa-eye text-xs"></i>
+            </button>
+          </div>
+          <p class="text-[10px] text-slate-500 mt-1 text-right">أدخل المفتاح البرمجي السري الخاص بك لفك تشفير المنظومة والوصول لقاعدة البيانات.</p>
+        </div>
 
-        <div>
-          <label class="block text-xs text-slate-300 font-bold mb-1.5">كلمة المرور المشفرة</label>
-          <div class="relative">
-            <input type="password" id="admin-auth-pass" required
-              class="glass-input w-full p-3 rounded-xl text-xs sm:text-sm pl-10"
-              placeholder="••••••••••••" dir="ltr">
-            <i class="fa-solid fa-lock absolute left-3.5 top-3.5 text-slate-500 text-xs"></i></div></div>
+        <div class="flex items-center gap-2 justify-end text-xs text-slate-400">
+          <label for="admin-remember-key" class="cursor-pointer text-[11px] select-none">حفظ الجلسة على هذا المتصفح</label>
+          <input type="checkbox" id="admin-remember-key" checked class="rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-400 cursor-pointer">
+        </div>
 
         <button type="submit" id="btn-admin-submit-login"
-          class="w-full py-3 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-sm transition duration-300 shadow-xl shadow-amber-500/20 flex items-center justify-center gap-2">
-          <i class="fa-solid fa-key"></i>
-          <span id="admin-login-btn-text">توثيق ودخول المنظومة</span></button></form>
+          class="w-full py-3 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-sm transition duration-300 shadow-xl shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span id="admin-login-btn-text">توثيق المفتاح ودخول المنظومة</span>
+        </button>
+      </form>
 
       <div id="admin-login-error" class="hidden p-3 bg-rose-950/60 border border-rose-500/40 rounded-xl text-rose-300 text-xs text-center font-bold"></div></div></div>
 
@@ -2617,53 +2628,67 @@
       if (closeBtn) {
         closeBtn.innerHTML = '<i class="fa-solid fa-right-from-bracket text-xs"></i><span class="hidden sm:inline">تسجيل الخروج</span>';
         closeBtn.onclick = () => {
+          if (!confirm('هل تريد تأكيد تسجيل الخروج وقفل لوحة التحكم؟')) return;
           if (typeof window.cleanupAdminListeners === 'function') window.cleanupAdminListeners();
           if (typeof AppDB !== 'undefined' && typeof AppDB.cleanupAllNetworkPolling === 'function') {
             AppDB.cleanupAllNetworkPolling();
           }
-          firebase.auth().signOut().then(() => {
-            document.getElementById('admin-auth-screen').classList.remove('hidden');
-            document.getElementById('admin-main-interface').classList.add('hidden');
-          });
+          sessionStorage.removeItem('rasalmal_admin_auth_token');
+          localStorage.removeItem('rasalmal_admin_auth_token');
+          document.getElementById('admin-auth-screen').classList.remove('hidden');
+          document.getElementById('admin-main-interface').classList.add('hidden');
+          const keyInput = document.getElementById('admin-auth-master-key');
+          if (keyInput) keyInput.value = '';
+          showToast('تسجيل الخروج', 'تم قفل لوحة التحكم بنجاح.', 'info');
         };
       }
     });
 
+    // Master API Key Authentication Engine (SHA-256 Vault)
+    const ADMIN_KEY_SHA256 = '686e4c577d8bb01be2b93e8a0e8c44a20e690b56691971a968f5a3e3537938cb';
+
+    async function hashKey(raw) {
+      const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(raw || '').trim()));
+      return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     // Login Method
     window.loginAdminTerminal = async function() {
-      const email = document.getElementById('admin-auth-email').value.trim();
-      const pass = document.getElementById('admin-auth-pass').value.trim();
+      const keyInput = document.getElementById('admin-auth-master-key');
+      const input = (keyInput ? keyInput.value : '').trim();
       const errBox = document.getElementById('admin-login-error');
       const btn = document.getElementById('btn-admin-submit-login');
       const btnText = document.getElementById('admin-login-btn-text');
 
       errBox.classList.add('hidden');
+      if (!input) {
+        errBox.textContent = 'يرجى إدخال مفتاح الإدارة السري (Master API Key).';
+        errBox.classList.remove('hidden');
+        return;
+      }
+
       btn.disabled = true;
-      btnText.textContent = 'جاري التحقق والمصادقة...';
+      if (btnText) btnText.textContent = 'جاري مطابقة التشفير الأمني...';
 
       try {
-                try {
-          await firebase.auth().signInWithEmailAndPassword(email, pass);
-          console.log('[AUTH] Logged in successfully:', firebase.auth().currentUser.email);
-        } catch (authErr) {
-          console.warn('[AUTH] Firebase Auth notice:', authErr.code || authErr.message);
-          // Allow access if Firebase Auth is not yet toggled on in Firebase Console
-          if (authErr.code === 'auth/configuration-not-found' || 
-              authErr.code === 'auth/user-not-found' || 
-              authErr.code === 'auth/invalid-credential' ||
-              authErr.code === 'auth/invalid-login-credentials' ||
-              email.toLowerCase().includes('admin') ||
-              pass === '2026' || pass === 'admin2026') {
-            console.log('[AUTH] Admin authenticated in Direct Manager Mode.');
-          } else {
-            throw authErr;
-          }
+        const hashed = await hashKey(input);
+        if (hashed !== ADMIN_KEY_SHA256) {
+          throw new Error('مفتاح الوصول غير صحيح! تم رفض محاولة الدخول أمنياً.');
         }
-        
+
+        // Save session token (only the hash is stored locally)
+        sessionStorage.setItem('rasalmal_admin_auth_token', hashed);
+        const rememberEl = document.getElementById('admin-remember-key');
+        if (rememberEl && rememberEl.checked) {
+          localStorage.setItem('rasalmal_admin_auth_token', hashed);
+        } else {
+          localStorage.removeItem('rasalmal_admin_auth_token');
+        }
+
         // Show interface
         document.getElementById('admin-auth-screen').classList.add('hidden');
         document.getElementById('admin-main-interface').classList.remove('hidden');
-        
+
         // Initialize Admin components
         await AppDB.init();
         if (typeof setupAdminModal === 'function') {
@@ -2672,28 +2697,30 @@
         if (typeof switchAdminTab === 'function') {
           switchAdminTab('stats');
         }
-        showToast('تم التحقق بنجاح', 'مرحباً بك في مركز التحكم والإدارة المركزي.', 'success');
+        showToast('تم التحقق بنجاح 🛡️', 'مرحباً بك في مركز القيادة والتحكم الموثق.', 'success');
       } catch (err) {
         console.error('[AUTH ERROR]:', err);
-        errBox.textContent = 'فشل تسجيل الدخول: ' + (err.message || 'بيانات الاعتماد غير صالحة.');
+        errBox.textContent = '🚫 ' + (err.message || 'بيانات الاعتماد غير صالحة.');
         errBox.classList.remove('hidden');
       } finally {
         btn.disabled = false;
-        btnText.textContent = 'توثيق ودخول المنظومة';
+        if (btnText) btnText.textContent = 'توثيق المفتاح ودخول المنظومة';
       }
     };
 
-    // Auto-check existing session
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) {
-        document.getElementById('admin-auth-screen').classList.add('hidden');
-        document.getElementById('admin-main-interface').classList.remove('hidden');
-        AppDB.init().then(() => {
+    // Auto-check existing authenticated session
+    (async () => {
+      try {
+        const stored = sessionStorage.getItem('rasalmal_admin_auth_token') || localStorage.getItem('rasalmal_admin_auth_token');
+        if (stored && stored === ADMIN_KEY_SHA256) {
+          document.getElementById('admin-auth-screen').classList.add('hidden');
+          document.getElementById('admin-main-interface').classList.remove('hidden');
+          await AppDB.init();
           if (typeof setupAdminModal === 'function') setupAdminModal();
           if (typeof switchAdminTab === 'function') switchAdminTab('stats');
-        });
-      }
-    });</script>
+        }
+      } catch (e) {}
+    })();</script>
   <!-- ==================== ADMIN S1 HONORS MODAL ==================== -->
   <div id="modal-admin-s1-honors"
     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in text-right">
