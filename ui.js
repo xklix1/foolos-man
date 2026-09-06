@@ -6123,6 +6123,8 @@ const UIController = (() => {
   function isStagingEnvironment() {
     try {
       if (window.IS_STAGING_ENV === true) return true;
+      const host = (window.location && window.location.hostname) || '';
+      if (host.includes('github.io') || host.includes('pages.dev') || host.includes('vercel.app')) return true;
       const path = (window.location && window.location.pathname) || '';
       if (path.includes('stage-x91-k8q7') || path.includes('staging') || path.includes('test-sandbox')) return true;
       if (window.location && window.location.search && window.location.search.includes('staging=1')) return true;
