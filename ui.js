@@ -6202,7 +6202,7 @@ const UIController = (() => {
         if (allowed) {
           initStagingBanner();
         }
-        return !allowed;
+        return false;
       }
       if (typeof AppDB === 'undefined' || typeof AppDB.getMaintenanceStatus !== 'function') return false;
       const st = await AppDB.getMaintenanceStatus();
@@ -6223,7 +6223,10 @@ const UIController = (() => {
   }
 
   function showMaintenancePopup(msg) {
-    if (isStagingEnvironment()) return;
+    if (isStagingEnvironment()) {
+      hideMaintenanceOverlay();
+      return;
+    }
     let overlay = document.getElementById('maintenance-overlay');
     if (!overlay) {
       overlay = document.createElement('div');
@@ -6294,9 +6297,16 @@ const UIController = (() => {
 
   function hideMaintenanceOverlay() {
     const maintOverlay = document.getElementById('maintenance-overlay');
-    if (maintOverlay) maintOverlay.classList.add('hidden');
+    if (maintOverlay) {
+      maintOverlay.classList.add('hidden');
+      maintOverlay.style.display = 'none';
+      try { maintOverlay.remove(); } catch (e) {}
+    }
     const maintPopup = document.getElementById('maintenance-popup-modal');
-    if (maintPopup) maintPopup.classList.add('hidden');
+    if (maintPopup) {
+      maintPopup.classList.add('hidden');
+      maintPopup.style.display = 'none';
+    }
   }
 
   function updateMaintenanceUIState(isMaint) {}
