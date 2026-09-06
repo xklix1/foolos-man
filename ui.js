@@ -10091,6 +10091,14 @@ const UIController = (() => {
         const text = chatInput.value.trim();
         if (!text) return;
 
+        // Immediate Client-Side Anti-Profanity / Anti-Cursing Check
+        const filter = window.ProfanityFilter || (window.AppDB && window.AppDB.ProfanityFilter);
+        if (filter && filter.containsProfanity(text)) {
+          showToast('تم حجب الرسالة 🚫', 'لا يمكنك إرسال هذه الرسالة لاحتوائها على شتائم أو ألفاظ غير لائقة ومخالفة للآداب العامة.', 'error');
+          playMenuSound('error');
+          return;
+        }
+
         const timeSinceLast = Date.now() - lastChatSent;
         if (timeSinceLast < 800) {
           return;
@@ -10621,6 +10629,12 @@ const UIController = (() => {
       const safeTitle = String(msg.senderTitle ||'مبتدئ').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
       const safeMsg = String(msg.message ||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
 
+      const filter = window.ProfanityFilter || (window.AppDB && window.AppDB.ProfanityFilter);
+      const hasProfanity = !isSystem && filter && filter.containsProfanity(msg.message);
+      const finalMsgHtml = hasProfanity
+        ? '<span class="text-rose-400 italic font-medium text-[11px] flex items-center gap-1.5"><i class="fa-solid fa-ban text-rose-500 text-[10px]"></i> [تم حجب الرسالة لاحتوائها على ألفاظ غير لائقة]</span>'
+        : safeMsg;
+
       if (isSystem) {
         msgDiv.innerHTML =`
           <div class="flex items-center gap-1 mb-1 justify-center">
@@ -10645,8 +10659,8 @@ const UIController = (() => {
             </span>
             <span class="text-[8px] px-1 bg-slate-900 border border-slate-800 rounded-md text-slate-400">${safeTitle}</span>
           </div>
-          <div class="chat-message-bubble ${bubbleClass}">
-            ${safeMsg}
+          <div class="chat-message-bubble ${bubbleClass} ${hasProfanity ? 'border-rose-500/40 bg-rose-950/20' : ''}">
+            ${finalMsgHtml}
           </div>`;
       }
       container.appendChild(msgDiv);

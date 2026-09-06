@@ -2608,13 +2608,112 @@ var AppDB = (() => {
   let _lastChatPollTime = 0;
   const _chatCallbacks = new Set();
 
+  // ─────────────────────────────────────────────
+  //  Advanced Anti-Profanity & Swear Filter Engine
+  // ─────────────────────────────────────────────
+  const ProfanityFilter = (() => {
+    // Severe roots/words that are always offensive regardless of context
+    const SEVERE_PATTERNS = [
+      /شرمو*[طت]/i,
+      /منيو*[كق]/i,
+      /قحب/i,
+      /متنا*[كق]/i,
+      /تنا*[كق]/i,
+      /معر*[صس]/i,
+      /ديو*[ثس]/i,
+      /خو*[لت]/i,
+      /عاه[ره]/i,
+      /بظر/i,
+      /طيز/i,
+      /ني[كق]/i,
+      /يني[كق]/i,
+      /اني[كق]/i,
+      /كسم/i,
+      /كسخت/i,
+      /عرص[هة]?/i,
+      /لبو*[هة]/i,
+      /سكس/i,
+      /بورن/i,
+      /شاذ/i,
+      /لوطي/i,
+      /لواط/i,
+      /سحاق/i,
+      /وسخ/i,
+      /حقير/i
+    ];
+
+    // Word boundary patterns (prevents false positives on words like مكسرات, كسب, انكسار, تركيز, حزب, عسل, إلخ)
+    const BOUNDARY_PATTERNS = [
+      /(?:^|[^\p{L}\p{N}])(كس|الكس|كسك|كسها|كسهم|كسكم|كسم|كسمك|كسختك|كسختكم)(?:[^\p{L}\p{N}]|$)/u,
+      /(?:^|[^\p{L}\p{N}])(زب|الزب|زبي|زبك|زبها|زبهم)(?:[^\p{L}\p{N}]|$)/u,
+      /(?:^|[^\p{L}\p{N}])(عرص|العرص|ياعرص|يا معرص)(?:[^\p{L}\p{N}]|$)/u,
+      /(?:^|[^\p{L}\p{N}])(خول|الخول|ياخول|يا خول)(?:[^\p{L}\p{N}]|$)/u,
+      /(?:^|[^\p{L}\p{N}])(واطي|الواطي|ياواطي|يا واطي)(?:[^\p{L}\p{N}]|$)/u,
+      /(?:^|[^\p{L}\p{N}])(كلب|الكلب|ياكلب|يا كلب|ابن الكلب|ابن كلب|ولاد الكلب)(?:[^\p{L}\p{N}]|$)/u,
+      /(?:^|[^\p{L}\p{N}])(حيوان|الحيوان|ياحيوان|يا حيوان|حمار|الحمار|ياحمار|يا حمار)(?:[^\p{L}\p{N}]|$)/u,
+      /(?:^|[^\p{L}\p{N}])(وسخ|الوسخ|ياوسخ|يا وسخ|قذر|القذر|ياقذر|يا قذر)(?:[^\p{L}\p{N}]|$)/u,
+      /(?:^|[^\p{L}\p{N}])(تفو|تفه|يلعن|يلعنك|يلعنكم|ملعون|اللعنة|تبا لك)(?:[^\p{L}\p{N}]|$)/u,
+      /(?:^|[^\p{L}\p{N}])(fuck|fucking|fucker|fuk|fck|shit|bitch|asshole|pussy|cunt|dick|cock|bastard|slut|whore|motherfucker|nigger|nigga|porn|blowjob)(?:[^\p{L}\p{N}]|$)/iu
+    ];
+
+    function normalizeArabic(text) {
+      return String(text || '')
+        .toLowerCase()
+        .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+        .replace(/[أإآٱ]/g, 'ا')
+        .replace(/ة/g, 'ه')
+        .replace(/ى/g, 'ي')
+        .replace(/ؤ/g, 'و')
+        .replace(/ئ/g, 'ي');
+    }
+
+    function containsProfanity(rawText) {
+      if (!rawText || typeof rawText !== 'string') return false;
+      const norm = normalizeArabic(rawText);
+      const collapsed = norm.replace(/(.)\1+/g, '$1');
+      const stripped = norm.replace(/[^\p{L}\p{N}]/gu, '');
+      const strippedCollapsed = stripped.replace(/(.)\1+/g, '$1');
+
+      // 1. Check severe patterns on all variants
+      for (const p of SEVERE_PATTERNS) {
+        if (p.test(norm) || p.test(collapsed) || p.test(stripped) || p.test(strippedCollapsed)) return true;
+      }
+
+      // 2. Check boundary patterns on word-separated text
+      for (const p of BOUNDARY_PATTERNS) {
+        if (p.test(norm) || p.test(collapsed)) return true;
+      }
+
+      // 3. Check stripped English profanity
+      if (/(fuck|shit|bitch|asshole|pussy|dick|cunt|slut|whore|nigger|nigga)/i.test(stripped)) return true;
+
+      return false;
+    }
+
+    return {
+      normalizeArabic,
+      containsProfanity
+    };
+  })();
+
+  if (typeof window !== 'undefined') {
+    window.ProfanityFilter = ProfanityFilter;
+  }
+
   async function sendChatMessage(sender, senderTitle, message, facebookVerified = false) {
     if (!message || !message.trim()) return false;
+    const trimmedMsg = String(message).trim().substring(0, 200);
+
+    // Enforce anti-profanity shield (except official administration broadcasts)
+    if (sender !== 'الإدارة' && ProfanityFilter.containsProfanity(trimmedMsg)) {
+      throw new Error("تم حظر إرسال الرسالة! تحتوي الرسالة على ألفاظ غير لائقة أو شتائم مخالفة لقواعد اللعبة.");
+    }
+
     const msgObj = {
       id:'msg_' + Date.now() +'_' + Math.random().toString(36).substring(2, 6),
       sender: String(sender ||'لاعب'),
       senderTitle: String(senderTitle ||'عامل مبتدئ'),
-      message: String(message).trim().substring(0, 200),
+      message: trimmedMsg,
       facebookVerified: Boolean(facebookVerified),
       timestamp: Date.now()
     };
@@ -3138,6 +3237,7 @@ var AppDB = (() => {
     placeAuctionBid,
 
     // Chat methods
+    ProfanityFilter,
     sendChatMessage,
     getChatMessages,
     listenToChatMessages,
