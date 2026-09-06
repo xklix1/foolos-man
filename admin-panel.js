@@ -157,45 +157,63 @@
 
     function updateFilterCounts() {
       const countAll = cachedPlayers.length;
+      const ONLINE_THRESHOLD = 2.5 * 60 * 1000; // 2.5 minutes (150 seconds)
+      const now = Date.now();
+      const countOnline = cachedPlayers.filter(p => {
+        const lastActive = Number(p.lastActiveTimestamp || p.lastSeen || p.last_seen || 0);
+        return lastActive > 0 && (now - lastActive) < ONLINE_THRESHOLD;
+      }).length;
       const countJailed = cachedPlayers.filter(p => p.jailTimer > 0).length;
       const countBanned = cachedPlayers.filter(p => p.isBanned).length;
 
       const elAll = document.getElementById('adm-filter-count-all');
+      const elOnline = document.getElementById('adm-filter-count-online');
       const elJailed = document.getElementById('adm-filter-count-jailed');
       const elBanned = document.getElementById('adm-filter-count-banned');
       const elTotal = document.getElementById('admin-players-total-label');
+      const elHeaderOnline = document.getElementById('adm-header-online-count');
+      const elStatOnline = document.getElementById('adm-stat-online');
 
       if (elAll) elAll.textContent = countAll;
+      if (elOnline) elOnline.textContent = countOnline;
       if (elJailed) elJailed.textContent = countJailed;
       if (elBanned) elBanned.textContent = countBanned;
+      if (elHeaderOnline) elHeaderOnline.textContent = countOnline;
+      if (elStatOnline) elStatOnline.textContent = countOnline;
       
       const serverTotal = window._adminLastTotalPlayers;
       if (elTotal) {
         if (serverTotal && serverTotal > countAll) {
-          elTotal.textContent =`${serverTotal} لاعب مسجل (${countAll} مفهرس)`;
+          elTotal.textContent = `${serverTotal} لاعب مسجل (${countAll} مفهرس)`;
         } else {
-          elTotal.textContent =`${countAll} لاعب مسجل`;
+          elTotal.textContent = `${countAll} لاعب مسجل`;
         }
       }
     }
 
     function renderPlayersTable() {
       if (!playersTableBody) return;
-      const rawQuery = (searchInput ? searchInput.value.trim() :'');
+      const rawQuery = (searchInput ? searchInput.value.trim() : '');
       const query = rawQuery.toLowerCase();
+      const ONLINE_THRESHOLD = 2.5 * 60 * 1000;
+      const now = Date.now();
 
       let filtered = cachedPlayers.filter(p => {
         const matchesQuery = !query || p.username.toLowerCase().includes(query) || (p.title && p.title.toLowerCase().includes(query));
         if (!matchesQuery) return false;
 
-        if (activeFilter ==='jailed') return p.jailTimer > 0;
-        if (activeFilter ==='banned') return p.isBanned;
+        if (activeFilter === 'online') {
+          const lastActive = Number(p.lastActiveTimestamp || p.lastSeen || p.last_seen || 0);
+          return lastActive > 0 && (now - lastActive) < ONLINE_THRESHOLD;
+        }
+        if (activeFilter === 'jailed') return p.jailTimer > 0;
+        if (activeFilter === 'banned') return p.isBanned;
         return true;
       });
 
       // Dynamic sorting logic (Alphabetical, Wealth, Date, Cash)
       const sortSelect = document.getElementById('adm-players-sort-select');
-      const sortVal = sortSelect ? sortSelect.value :'netWorth_desc';
+      const sortVal = sortSelect ? sortSelect.value : 'netWorth_desc';
 
       if (sortSelect && !sortSelect._hasSortListener) {
         sortSelect._hasSortListener = true;
@@ -209,27 +227,27 @@
         const nwB = Number(b.netWorth !== undefined && b.netWorth !== null ? b.netWorth : (b.net_worth || 0));
         const cashA = Number(a.cash || 0);
         const cashB = Number(b.cash || 0);
-        const timeA = Number(a.createdAt || a.created_at || a.lastSeen || a.last_seen || 0);
-        const timeB = Number(b.createdAt || b.created_at || b.lastSeen || b.last_seen || 0);
-        const nameA = String(a.username ||'').toLowerCase();
-        const nameB = String(b.username ||'').toLowerCase();
+        const timeA = Number(a.createdAt || a.created_at || a.lastSeen || a.last_seen || a.lastActiveTimestamp || 0);
+        const timeB = Number(b.createdAt || b.created_at || b.lastSeen || b.last_seen || b.lastActiveTimestamp || 0);
+        const nameA = String(a.username || '').toLowerCase();
+        const nameB = String(b.username || '').toLowerCase();
 
         switch (sortVal) {
-          case'netWorth_desc':
+          case 'netWorth_desc':
             return nwB - nwA;
-          case'netWorth_asc':
+          case 'netWorth_asc':
             return nwA - nwB;
-          case'cash_desc':
+          case 'cash_desc':
             return cashB - cashA;
-          case'cash_asc':
+          case 'cash_asc':
             return cashA - cashB;
-          case'alpha_asc':
-            return nameA.localeCompare(nameB,'ar', { sensitivity:'base' });
-          case'alpha_desc':
-            return nameB.localeCompare(nameA,'ar', { sensitivity:'base' });
-          case'created_desc':
+          case 'alpha_asc':
+            return nameA.localeCompare(nameB, 'ar', { sensitivity: 'base' });
+          case 'alpha_desc':
+            return nameB.localeCompare(nameA, 'ar', { sensitivity: 'base' });
+          case 'created_desc':
             return timeB - timeA;
-          case'created_asc':
+          case 'created_asc':
             return timeA - timeB;
           default:
             return nwB - nwA;
@@ -238,10 +256,10 @@
 
       if (filtered.length === 0) {
         if (rawQuery) {
-          playersTableBody.innerHTML =`
+          playersTableBody.innerHTML = `
             <tr>
               <td colspan="5" class="py-6 text-center space-y-2">
-                <div class="text-slate-400 text-xs">لم يتم العثور على اللاعب"${rawQuery}" في القائمة المفهرسة محلياً.</div>
+                <div class="text-slate-400 text-xs">لم يتم العثور على اللاعب "${rawQuery}" في القائمة المفهرسة محلياً.</div>
                 <button id="btn-admin-direct-cloud-lookup" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-lg text-xs transition inline-flex items-center gap-2 shadow-lg shadow-yellow-500/20">
                   <i class="fa-solid fa-cloud-arrow-down"></i>
                   <span>فحص وبحث مباشر بالاسم في السيرفر السحابي</span>
@@ -252,7 +270,7 @@
           if (lookupBtn) {
             lookupBtn.onclick = async () => {
               lookupBtn.disabled = true;
-              lookupBtn.innerHTML ='<i class="fa-solid fa-spinner fa-spin"></i> جاري الاستعلام السحابي...';
+              lookupBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الاستعلام السحابي...';
               try {
                 const fetchedDoc = await AppDB.adminGetPlayer(rawQuery);
                 if (fetchedDoc) {
@@ -263,14 +281,14 @@
                     netWorth: Number(fetchedDoc.netWorth || 0),
                     cash: Number(fetchedDoc.cash || 0),
                     bank: Number(fetchedDoc.bank || 0),
-                    title: fetchedDoc.title ||'عامل مبتدئ',
-                    jobId: fetchedDoc.jobId ||'unemployed',
+                    title: fetchedDoc.title || 'عامل مبتدئ',
+                    jobId: fetchedDoc.jobId || 'unemployed',
                     jailTimer: Number(fetchedDoc.jailTimer || 0),
                     isBanned: Boolean(fetchedDoc.isBanned),
                     isAdmin: Boolean(fetchedDoc.isAdmin),
                     createdAt: fetchedDoc.createdAt || 0,
-                    lastSeen: fetchedDoc.lastSeen || 0,
-                    lastActiveTimestamp: fetchedDoc.lastActiveTimestamp || 0,
+                    lastSeen: fetchedDoc.lastSeen || fetchedDoc.last_seen || 0,
+                    lastActiveTimestamp: fetchedDoc.lastActiveTimestamp || fetchedDoc.lastSeen || fetchedDoc.last_seen || 0,
                     raw: fetchedDoc
                   };
                   if (existingIdx >= 0) {
@@ -281,41 +299,42 @@
                   renderPlayersTable();
                   updateFilterCounts();
                   selectPlayerForModeration(playerObj.username);
-                  showToast('تم العثور على الحساب',`تم جلب ملف اللاعب ${playerObj.username} مباشرة من السيرفر!`,'success');
+                  showToast('تم العثور على الحساب', `تم جلب ملف اللاعب ${playerObj.username} مباشرة من السيرفر!`, 'success');
                 } else {
-                  showToast('غير موجود',`اسم المستخدم"${rawQuery}" غير مسجل في خوادم اللعبة.`,'warning');
+                  showToast('غير موجود', `اسم المستخدم "${rawQuery}" غير مسجل في خوادم اللعبة.`, 'warning');
                   lookupBtn.disabled = false;
-                  lookupBtn.innerHTML ='<i class="fa-solid fa-triangle-exclamation"></i> غير مسجل بالسيرفر';
+                  lookupBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> غير مسجل بالسيرفر';
                 }
               } catch (err) {
-                showToast('خطأ استعلام', err.message,'error');
+                showToast('خطأ استعلام', err.message, 'error');
                 lookupBtn.disabled = false;
-                lookupBtn.innerHTML ='<i class="fa-solid fa-rotate-right"></i> إعادة المحاولة';
+                lookupBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> إعادة المحاولة';
               }
             };
           }
         } else {
-          playersTableBody.innerHTML ='<tr><td colspan="5" class="py-6 text-center text-slate-500">لا يوجد حسابات مطابقة لمعايير الفلترة الحالية.</td></tr>';
+          playersTableBody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-500">لا يوجد حسابات مطابقة لمعايير الفلترة الحالية.</td></tr>';
         }
         return;
       }
 
-      playersTableBody.innerHTML ='';
+      playersTableBody.innerHTML = '';
       filtered.forEach(p => {
         const tr = document.createElement('tr');
-        tr.className =`hover:bg-slate-800/60 transition cursor-pointer ${selectedPlayer === p.username ?'bg-yellow-500/10 border-r-2 border-yellow-500' :''}`;
+        tr.className = `hover:bg-slate-800/60 transition cursor-pointer ${selectedPlayer === p.username ? 'bg-yellow-500/10 border-r-2 border-yellow-500' : ''}`;
 
-        const isOnlineThreshold = 2 * 60 * 1000; // 2 minutes
-        const isPlayerOnline = p.lastActiveTimestamp && (Date.now() - p.lastActiveTimestamp) < isOnlineThreshold;
+        const isOnlineThreshold = 2.5 * 60 * 1000;
+        const lastActive = Number(p.lastActiveTimestamp || p.lastSeen || p.last_seen || 0);
+        const isPlayerOnline = lastActive > 0 && (Date.now() - lastActive) < isOnlineThreshold;
         let statusBadge = isPlayerOnline
-          ?'<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">متصل </span>'
-          :'<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-500/10 text-slate-400 border border-slate-500/20">غير نشط </span>';
+          ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 inline-flex items-center gap-1 shadow-sm"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>متصل الآن</span>'
+          : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800/60 text-slate-400 border border-slate-700/50">غير نشط</span>';
         if (p.isBanned) {
-          statusBadge ='<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">محظور </span>';
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">محظور</span>';
         } else if (p.jailTimer > 0) {
-          statusBadge =`<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">سجين (${p.jailTimer}ث)${isPlayerOnline ?'' :''}</span>`;
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">سجين (${p.jailTimer}ث)${isPlayerOnline ? ' 🟢' : ''}</span>`;
         } else if (p.isAdmin) {
-          statusBadge =`<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">الإدارة ⭐${isPlayerOnline ?'' :''}</span>`;
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">الإدارة ⭐${isPlayerOnline ? ' 🟢' : ''}</span>`;
         }
 
         tr.innerHTML =`
@@ -447,22 +466,50 @@
         }
 
         const statusBadge = document.getElementById('admin-p-badge-status');
-        if (statusBadge) {
-          const onlineThreshold = 2 * 60 * 1000; // 2 minutes
-          const isOnline = state.lastActiveTimestamp && (Date.now() - state.lastActiveTimestamp) < onlineThreshold;
-          const lastSeenText = state.lastActiveTimestamp ? new Date(state.lastActiveTimestamp).toLocaleTimeString('ar-EG') :'غير معروف';
-          if (state.isBanned) {
-            statusBadge.textContent ='محظور نهائياً';
-            statusBadge.className ='text-[10px] px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30';
-          } else if (state.jailTimer > 0) {
-            statusBadge.textContent =`مسجون (${state.jailTimer} ثانية) ${isOnline ?' متصل' :' غير نشط'}`;
-            statusBadge.className ='text-[10px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30';
-          } else if (isOnline) {
-            statusBadge.textContent =`متصل الآن  (آخر نشاط: ${lastSeenText})`;
-            statusBadge.className ='text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+        const lastActiveEl = document.getElementById('admin-p-last-active');
+        const onlineThreshold = 2.5 * 60 * 1000; // 2.5 minutes (150s)
+        const lastActive = Number(state.lastActiveTimestamp || state.lastSeen || state.last_seen || 0);
+        const isOnline = lastActive > 0 && (Date.now() - lastActive) < onlineThreshold;
+
+        let lastSeenDetail = 'غير معروف';
+        if (lastActive > 0) {
+          const diffSec = Math.floor((Date.now() - lastActive) / 1000);
+          if (diffSec < 60) {
+            lastSeenDetail = `منذ ${Math.max(1, diffSec)} ثانية`;
+          } else if (diffSec < 3600) {
+            lastSeenDetail = `منذ ${Math.floor(diffSec / 60)} دقيقة`;
           } else {
-            statusBadge.textContent =`غير نشط  (آخر ظهور: ${lastSeenText})`;
-            statusBadge.className ='text-[10px] px-2 py-0.5 rounded font-bold bg-slate-600/20 text-slate-400 border border-slate-500/30';
+            const d = new Date(lastActive);
+            const isToday = d.toDateString() === new Date().toDateString();
+            lastSeenDetail = (isToday ? 'اليوم ' : d.toLocaleDateString('ar-EG') + ' ') + d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+          }
+        }
+
+        if (lastActiveEl) {
+          if (isOnline) {
+            lastActiveEl.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>متصل الآن (${lastSeenDetail})</span>`;
+          } else if (lastActive > 0) {
+            lastActiveEl.textContent = lastSeenDetail;
+            lastActiveEl.className = 'text-slate-300 font-normal';
+          } else {
+            lastActiveEl.textContent = 'غير معروف';
+            lastActiveEl.className = 'text-slate-500 font-normal';
+          }
+        }
+
+        if (statusBadge) {
+          if (state.isBanned) {
+            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block ml-1"></span>محظور نهائياً ⛔';
+            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center';
+          } else if (state.jailTimer > 0) {
+            statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block ml-1"></span>سجين (${state.jailTimer}ث) ${isOnline ? '🟢 متصل الآن' : '⚪ غير نشط'}`;
+            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center';
+          } else if (isOnline) {
+            statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block ml-1"></span>نشط ومتصل الآن 🟢 (${lastSeenDetail})`;
+            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm shadow-emerald-500/20 flex items-center';
+          } else {
+            statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block ml-1"></span>غير نشط ⚪ (${lastSeenDetail})`;
+            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-slate-800/80 text-slate-400 border border-slate-700 flex items-center';
           }
         }
 
@@ -968,20 +1015,38 @@
       });
     }
 
-    // Filter Buttons
-    const filterBtns = document.querySelectorAll('.admin-player-filter-btn');
+    // Filter Buttons (Supports both .btn-admin-filter-players and .admin-player-filter-btn)
+    const filterBtns = document.querySelectorAll('.btn-admin-filter-players, .admin-player-filter-btn');
+    function applyPlayerFilter(targetFilter) {
+      activeFilter = targetFilter;
+      filterBtns.forEach(b => {
+        const isCurrent = b.getAttribute('data-filter') === targetFilter;
+        if (isCurrent) {
+          b.classList.remove('bg-slate-900', 'text-slate-400', 'text-emerald-400', 'border-transparent', 'border-emerald-500/20');
+          b.classList.add('bg-yellow-500/20', 'text-yellow-400', 'border-yellow-500/30');
+        } else {
+          b.classList.remove('bg-yellow-500/20', 'text-yellow-400', 'border-yellow-500/30', 'bg-yellow-500', 'text-slate-950');
+          b.classList.add('bg-slate-900');
+          if (b.getAttribute('data-filter') === 'online') {
+            b.classList.add('text-emerald-400');
+          } else {
+            b.classList.add('text-slate-400');
+          }
+        }
+      });
+      renderPlayersTable();
+    }
+
     filterBtns.forEach(btn => {
       btn.addEventListener('click', () => {
-        filterBtns.forEach(b => {
-          b.classList.remove('bg-yellow-500','text-slate-950');
-          b.classList.add('bg-slate-800','text-slate-300');
-        });
-        btn.classList.remove('bg-slate-800','text-slate-300');
-        btn.classList.add('bg-yellow-500','text-slate-950');
-        activeFilter = btn.getAttribute('data-filter');
-        renderPlayersTable();
+        const f = btn.getAttribute('data-filter');
+        applyPlayerFilter(f);
       });
     });
+
+    window.filterAdminOnline = function() {
+      applyPlayerFilter('online');
+    };
 
     // Live search filter input
     if (searchInput) {
@@ -4083,6 +4148,8 @@
       window._adminLastTotalPlayers = stats.totalPlayers || 0;
       
       const elP = document.getElementById('adm-stat-players');
+      const elOnline = document.getElementById('adm-stat-online');
+      const elHeaderOnline = document.getElementById('adm-header-online-count');
       const elC = document.getElementById('adm-stat-cash');
       const elB = document.getElementById('adm-stat-bank');
       const elNW = document.getElementById('adm-stat-networth') || document.getElementById('adm-stat-worth');
@@ -4098,6 +4165,8 @@
         }
         elP.innerHTML =`${(stats.totalPlayers || 0).toLocaleString()}${badgeHtml}`;
       }
+      if (elOnline) elOnline.textContent = (stats.onlineCount || 0).toLocaleString();
+      if (elHeaderOnline) elHeaderOnline.textContent = (stats.onlineCount || 0).toLocaleString();
       if (elC) elC.textContent =`${(stats.totalCash || 0).toLocaleString()} EGP`;
       if (elB) elB.textContent =`${(stats.totalBank || 0).toLocaleString()} EGP`;
       if (elNW) elNW.textContent =`${(stats.totalNetWorth || 0).toLocaleString()} EGP`;

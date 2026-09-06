@@ -1892,16 +1892,23 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   async function getSystemStats() {
     try {
-      const rows = await _api('players?select=username,cash,bank,dirty_cash,net_worth,xp,is_banned,jail_timer,title');
+      const rows = await _api('players?select=username,cash,bank,dirty_cash,net_worth,xp,is_banned,jail_timer,title,last_seen');
       let totalCash = 0, totalBank = 0, totalNetWorth = 0;
       let jailedCount = 0, bannedCount = 0;
       let billionaires = 0, millionaires = 0, middleClass = 0, workingClass = 0;
+      let onlineCount = 0;
+      const ONLINE_THRESHOLD = 2.5 * 60 * 1000; // 2.5 minutes (150s)
+      const now = Date.now();
       const allPlayersList = [];
 
       (rows || []).forEach(r => {
         const cash = Number(r.cash || 0);
         const bank = Number(r.bank || 0);
         const nw = Number(r.net_worth || 0);
+        const lastSeen = Number(r.last_seen || 0);
+        const isOnline = lastSeen > 0 && (now - lastSeen) < ONLINE_THRESHOLD;
+        if (isOnline) onlineCount++;
+
         totalCash += cash;
         totalBank += bank;
         totalNetWorth += nw;
@@ -1922,7 +1929,11 @@ var AppDB = (() => {
           xp: Number(r.xp || 0),
           title: r.title,
           isBanned: r.is_banned,
-          isJailed: Number(r.jail_timer) > 0
+          isJailed: Number(r.jail_timer) > 0,
+          lastSeen,
+          last_seen: lastSeen,
+          lastActiveTimestamp: lastSeen,
+          isOnline
         });
       });
 
@@ -1931,6 +1942,7 @@ var AppDB = (() => {
       return {
         totalPlayers: rows.length,
         scannedPlayers: rows.length,
+        onlineCount,
         isFromCache: false,
         quotaExceeded: false,
         totalCash,
@@ -1948,7 +1960,7 @@ var AppDB = (() => {
       };
     } catch (err) {
       console.warn('[DB] getSystemStats error:', err.message);
-      return { totalPlayers: 0, totalCash: 0, totalBank: 0, totalNetWorth: 0, jailedCount: 0, bannedCount: 0 };
+      return { totalPlayers: 0, onlineCount: 0, totalCash: 0, totalBank: 0, totalNetWorth: 0, jailedCount: 0, bannedCount: 0 };
     }
   }
 
@@ -1963,14 +1975,16 @@ var AppDB = (() => {
       p.dirtyCash = Number(r.dirty_cash || 0);
       p.netWorth = Number(r.net_worth || 0);
       p.xp = Number(r.xp || 0);
-      p.title = r.title ||'عامل مبتدئ';
-      p.jobId = r.job_id ||'worker';
+      p.title = r.title || 'عامل مبتدئ';
+      p.jobId = r.job_id || 'worker';
       p.isAdmin = r.is_admin === true;
       p.isBanned = r.is_banned === true;
       p.jailTimer = Number(r.jail_timer || 0);
       p.totalTaxesPaid = Number(r.total_taxes_paid || 0);
       p.afkManagerExpiresAt = Number(r.afk_manager_expires_at || 0);
       p.lastSeen = Number(r.last_seen || 0);
+      p.lastActiveTimestamp = p.lastSeen;
+      p.last_seen = p.lastSeen;
       p.createdAt = Number(r.created_at || 0);
 
       // Keep snake_case mirrors as well
@@ -1987,7 +2001,7 @@ var AppDB = (() => {
     const rows = await _api(`players?username=eq.${encodeURIComponent(username)}&select=*`);
     if (!rows || rows.length === 0) return null;
     const r = rows[0];
-    const p = (typeof r.state ==='object' && r.state) ? { ...r.state } : {};
+    const p = (typeof r.state === 'object' && r.state) ? { ...r.state } : {};
     p.username = r.username;
     p.pin = r.pin;
     p.cash = Number(r.cash || 0);
@@ -1995,14 +2009,17 @@ var AppDB = (() => {
     p.dirtyCash = Number(r.dirty_cash || 0);
     p.netWorth = Number(r.net_worth || 0);
     p.xp = Number(r.xp || 0);
-    p.title = r.title ||'عامل مبتدئ';
-    p.jobId = r.job_id ||'worker';
+    p.title = r.title || 'عامل مبتدئ';
+    p.jobId = r.job_id || 'worker';
     p.isAdmin = r.is_admin === true;
     p.isBanned = r.is_banned === true;
     p.jailTimer = Number(r.jail_timer || 0);
     p.totalTaxesPaid = Number(r.total_taxes_paid || 0);
     p.afkManagerExpiresAt = Number(r.afk_manager_expires_at || 0);
-    p.lastSeen = Number(r.last_seen || 0);
+    const seenTs = Number(r.last_seen || (r.state && (r.state.lastSeen || r.state.lastActiveTimestamp)) || 0);
+    p.lastSeen = seenTs;
+    p.lastActiveTimestamp = seenTs;
+    p.last_seen = seenTs;
     p.createdAt = Number(r.created_at || 0);
     p.is_admin = p.isAdmin;
     p.is_banned = p.isBanned;

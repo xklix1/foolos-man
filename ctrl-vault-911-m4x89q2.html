@@ -195,6 +195,18 @@
             <p class="text-[11px] text-slate-400 hidden sm:block">إدارة ومراقبة حركة الاقتصاد، اللاعبين، سجل الأنشطة، التحويلات، البورصة، والبث المباشر</p></div></div>
 
         <div class="flex items-center gap-1.5 sm:gap-3 text-xs font-mono">
+          <!-- Live Online Players Interactive Button -->
+          <button id="btn-admin-header-online"
+            onclick="window.switchAdminTab('players'); if(typeof window.filterAdminOnline === 'function') window.filterAdminOnline();"
+            class="p-2 sm:px-3 sm:py-1.5 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-400 font-bold rounded-xl transition flex items-center gap-2 text-xs shadow-lg cursor-pointer group"
+            title="انقر لعرض قائمة اللاعبين المتصلين حالياً">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span class="hidden sm:inline">المتواجدين الآن:</span>
+            <span id="adm-header-online-count" class="numbers-font font-black text-white text-xs sm:text-sm bg-emerald-500/20 px-1.5 py-0.5 rounded border border-emerald-500/30 group-hover:bg-emerald-500/30 transition">0</span>
+          </button>
           <div
             class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-950/80 border border-slate-800 rounded-lg text-slate-300">
             <i class="fa-regular fa-clock text-yellow-500"></i>
@@ -359,12 +371,24 @@
 
       <!-- 1. PANEL STATS -->
       <div id="admin-subpanel-stats" class="space-y-4">
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
           <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col justify-between">
             <div class="flex justify-between items-center text-slate-400 mb-1">
               <span class="text-[10px] font-bold">الحسابات المسجلة</span>
               <i class="fa-solid fa-users text-yellow-500/80"></i></div>
             <span id="adm-stat-players" class="numbers-font text-lg font-black text-white">0</span></div>
+          <div id="adm-stat-online-card" onclick="window.switchAdminTab('players'); if(typeof window.filterAdminOnline === 'function') window.filterAdminOnline();"
+            class="p-3 bg-emerald-950/30 hover:bg-emerald-950/50 border border-emerald-500/40 hover:border-emerald-500/70 rounded-xl flex flex-col justify-between transition cursor-pointer group shadow-lg shadow-emerald-950/20"
+            title="انقر للانتقال المباشر لدليل اللاعبين وعرض المتصلين الآن">
+            <div class="flex justify-between items-center text-slate-400 mb-1">
+              <span class="text-[10px] font-bold text-emerald-400 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                المتواجدين حالياً
+              </span>
+              <i class="fa-solid fa-users-viewfinder text-emerald-400 group-hover:scale-110 transition"></i></div>
+            <div class="flex items-baseline justify-between">
+              <span id="adm-stat-online" class="numbers-font text-lg sm:text-xl font-black text-emerald-400">0</span>
+              <span class="text-[9px] text-emerald-400/80 font-sans group-hover:translate-x-[-2px] transition">عرض القائمة ❯</span></div></div>
           <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col justify-between">
             <div class="flex justify-between items-center text-slate-400 mb-1">
               <span class="text-[10px] font-bold">الكاش المتداول</span>
@@ -487,15 +511,20 @@
 
           <!-- Filter tabs & Sorting options -->
           <div class="flex flex-wrap justify-between items-center gap-2 pt-1.5 border-t border-slate-800/80 text-[11px]">
-            <div class="flex gap-1">
+            <div class="flex flex-wrap gap-1">
               <button data-filter="all"
-                class="btn-admin-filter-players px-2.5 py-1 rounded bg-yellow-500/20 text-yellow-400 font-bold border border-yellow-500/30">الكل
+                class="btn-admin-filter-players px-2.5 py-1 rounded bg-yellow-500/20 text-yellow-400 font-bold border border-yellow-500/30 cursor-pointer">الكل
                 (<span id="adm-filter-count-all">0</span>)</button>
+              <button data-filter="online" id="btn-admin-filter-online"
+                class="btn-admin-filter-players px-2.5 py-1 rounded bg-slate-900 text-emerald-400 hover:bg-slate-800 border border-emerald-500/20 hover:border-emerald-500/40 transition flex items-center gap-1.5 cursor-pointer">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>المتصلين الآن</span>
+                (<span id="adm-filter-count-online">0</span>)</button>
               <button data-filter="jailed"
-                class="btn-admin-filter-players px-2.5 py-1 rounded bg-slate-900 text-slate-400 hover:bg-slate-800 transition">المساجين
+                class="btn-admin-filter-players px-2.5 py-1 rounded bg-slate-900 text-slate-400 hover:bg-slate-800 transition cursor-pointer">المساجين
                 (<span id="adm-filter-count-jailed">0</span>)</button>
               <button data-filter="banned"
-                class="btn-admin-filter-players px-2.5 py-1 rounded bg-slate-900 text-slate-400 hover:bg-slate-800 transition">المحظورين
+                class="btn-admin-filter-players px-2.5 py-1 rounded bg-slate-900 text-slate-400 hover:bg-slate-800 transition cursor-pointer">المحظورين
                 (<span id="adm-filter-count-banned">0</span>)</button></div>
 
             <!-- Sorting Select Dropdown -->
@@ -562,10 +591,13 @@
 
           <!-- Detailed Financials & Metadata (New) -->
           <div
-            class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/80 text-xs">
+            class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/80 text-xs">
             <div class="space-y-1">
               <span class="text-slate-400 block">تاريخ إنشاء الحساب:</span>
               <strong id="admin-p-created-at" class="text-white">...</strong></div>
+            <div class="space-y-1">
+              <span class="text-slate-400 block">آخر نشاط وتواجد:</span>
+              <strong id="admin-p-last-active" class="text-emerald-400">...</strong></div>
             <div class="space-y-1">
               <span class="text-slate-400 block">التدفق اللحظي الإجمالي:</span>
               <strong id="admin-p-flow-gross" class="text-emerald-400 numbers-font">... EGP/ث</strong></div>
