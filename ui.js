@@ -6120,8 +6120,33 @@ const UIController = (() => {
     }
   }
 
+  function isStagingEnvironment() {
+    try {
+      if (window.IS_STAGING_ENV === true) return true;
+      const path = (window.location && window.location.pathname) || '';
+      if (path.includes('stage-x91-k8q7') || path.includes('staging') || path.includes('test-sandbox')) return true;
+      if (window.location && window.location.search && window.location.search.includes('staging=1')) return true;
+    } catch (e) {}
+    return false;
+  }
+
+  function initStagingBanner() {
+    if (!isStagingEnvironment()) return;
+    if (document.getElementById('staging-env-banner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'staging-env-banner';
+    banner.className = 'fixed top-2 right-2 z-[9999999] px-3 py-1 bg-amber-500/95 text-slate-950 font-black text-[11px] rounded-full shadow-xl border border-amber-300 flex items-center gap-1.5 backdrop-blur-sm pointer-events-none select-none';
+    banner.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-800 animate-ping"></span> <span>🧪 بيئة تجريبية (Staging) | الصيانة معطلة</span>';
+    document.body.appendChild(banner);
+  }
+
   async function checkMaintenanceMode() {
     try {
+      initStagingBanner();
+      if (isStagingEnvironment()) {
+        hideMaintenanceOverlay();
+        return false; // Staging environment is 100% immune to maintenance mode!
+      }
       if (typeof AppDB === 'undefined' || typeof AppDB.getMaintenanceStatus !== 'function') return false;
       const st = await AppDB.getMaintenanceStatus();
       const isMaint = Boolean(st && (st.active || st.enabled));
@@ -6141,6 +6166,7 @@ const UIController = (() => {
   }
 
   function showMaintenancePopup(msg) {
+    if (isStagingEnvironment()) return;
     let overlay = document.getElementById('maintenance-overlay');
     if (!overlay) {
       overlay = document.createElement('div');
@@ -6204,6 +6230,7 @@ const UIController = (() => {
   }
 
   function handleMaintenanceMode(customMsg) {
+    if (isStagingEnvironment()) return;
     if (GameEngine.state && GameEngine.state.isAdmin) return;
     showMaintenancePopup(customMsg);
   }
