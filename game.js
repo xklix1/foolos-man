@@ -28,122 +28,122 @@ const GameEngine = (() => {
       id:'kiosk',
       name:'كشك حلوى وجرائد ومشروبات',
       cost: 1500,
-      baseDemand: 15,
-      optimumPrice: 15,
-      costOfGoods: 9,
+      baseDemand: 25,
+      optimumPrice: 20,
+      costOfGoods: 10,
       maxWorkers: 5,
-      workerMultiplier: 1.04,
-      workerWage: 12
+      workerMultiplier: 1.08,
+      workerWage: 4
     },
     coffee: {
       id:'coffee',
       name:'عربة قهوة ومأكولات خفيفة',
       cost: 6800,
-      baseDemand: 22,
-      optimumPrice: 28,
+      baseDemand: 35,
+      optimumPrice: 32,
       costOfGoods: 16,
       maxWorkers: 8,
-      workerMultiplier: 1.04,
-      workerWage: 25
+      workerMultiplier: 1.08,
+      workerWage: 10
     },
     tech: {
       id:'tech',
       name:'شركة برمجيات وتطبيقات',
       cost: 140000,
-      baseDemand: 15,
-      optimumPrice: 75,
+      baseDemand: 45,
+      optimumPrice: 120,
       costOfGoods: 45,
       maxWorkers: 10,
-      workerMultiplier: 1.04,
-      workerWage: 70
+      workerMultiplier: 1.08,
+      workerWage: 60
     },
     logistics: {
       id:'logistics',
       name:'مجمع خدمات لوجستية وشحن',
       cost: 780000,
-      baseDemand: 16,
-      optimumPrice: 120,
-      costOfGoods: 72,
+      baseDemand: 80,
+      optimumPrice: 260,
+      costOfGoods: 100,
       maxWorkers: 12,
-      workerMultiplier: 1.04,
-      workerWage: 120
+      workerMultiplier: 1.08,
+      workerWage: 200
     },
     supermarket: {
       id:'supermarket',
       name:'سلسلة سوبرماركت وتجزئة',
       cost: 3200000,
-      baseDemand: 18,
-      optimumPrice: 200,
-      costOfGoods: 120,
+      baseDemand: 140,
+      optimumPrice: 500,
+      costOfGoods: 200,
       maxWorkers: 15,
-      workerMultiplier: 1.04,
-      workerWage: 210
+      workerMultiplier: 1.08,
+      workerWage: 500
     },
     solar_factory: {
       id:'solar_factory',
       name:'مصنع ألواح الطاقة الشمسية ️',
       cost: 14000000,
-      baseDemand: 17,
-      optimumPrice: 340,
-      costOfGoods: 200,
+      baseDemand: 220,
+      optimumPrice: 1100,
+      costOfGoods: 450,
       maxWorkers: 18,
-      workerMultiplier: 1.04,
-      workerWage: 380
+      workerMultiplier: 1.08,
+      workerWage: 1500
     },
     private_hospital: {
       id:'private_hospital',
       name:'مستشفى ومجمع طبي تخصصي',
       cost: 55000000,
-      baseDemand: 15,
-      optimumPrice: 600,
-      costOfGoods: 350,
+      baseDemand: 350,
+      optimumPrice: 2400,
+      costOfGoods: 1000,
       maxWorkers: 20,
-      workerMultiplier: 1.04,
-      workerWage: 680
+      workerMultiplier: 1.08,
+      workerWage: 4000
     },
     media_studio: {
       id:'media_studio',
       name:'مؤسسة إنتاج إعلامي وسينمائي',
       cost: 160000000,
-      baseDemand: 14,
-      optimumPrice: 1100,
-      costOfGoods: 650,
+      baseDemand: 500,
+      optimumPrice: 4500,
+      costOfGoods: 1900,
       maxWorkers: 22,
-      workerMultiplier: 1.04,
-      workerWage: 1250
+      workerMultiplier: 1.08,
+      workerWage: 10000
     },
     private_bank: {
       id:'private_bank',
       name:'بنك استثماري وشركة وساطة مالية ️',
       cost: 520000000,
-      baseDemand: 14,
-      optimumPrice: 1800,
-      costOfGoods: 1050,
+      baseDemand: 700,
+      optimumPrice: 8800,
+      costOfGoods: 3600,
       maxWorkers: 25,
-      workerMultiplier: 1.04,
-      workerWage: 2100
+      workerMultiplier: 1.08,
+      workerWage: 25000
     },
     oil_refinery: {
       id:'oil_refinery',
       name:'مجمع مصافي البترول والطاقة ️',
       cost: 1600000000,
-      baseDemand: 13,
-      optimumPrice: 2800,
-      costOfGoods: 1600,
+      baseDemand: 1000,
+      optimumPrice: 18000,
+      costOfGoods: 7500,
       maxWorkers: 28,
-      workerMultiplier: 1.04,
-      workerWage: 3600
+      workerMultiplier: 1.08,
+      workerWage: 60000
     },
     space_tech: {
       id:'space_tech',
       name:'مؤسسة استكشاف الفضاء والأقمار الصناعية',
       cost: 4800000000,
-      baseDemand: 12,
-      optimumPrice: 4800,
-      costOfGoods: 2700,
+      baseDemand: 1300,
+      optimumPrice: 38000,
+      costOfGoods: 16000,
       maxWorkers: 30,
-      workerMultiplier: 1.04,
-      workerWage: 6500
+      workerMultiplier: 1.08,
+      workerWage: 150000
     }
   };
 
@@ -1441,7 +1441,7 @@ const GameEngine = (() => {
     // Cap effective workers to maxWorkers defined for this business
     const maxW = bizConfig.maxWorkers || 20;
     const effectiveWorkers = Math.min(maxW, Math.max(0, bizState.workers || 0));
-    const workerEff = (bizConfig.workerMultiplier || 1.04) - 1.0;
+    const workerEff = (bizConfig.workerMultiplier || 1.08) - 1.0;
     const workerFactor = 1 + (effectiveWorkers * workerEff);
 
     const demand = Math.max(1, Math.floor(bizConfig.baseDemand * upgradeFactor * elasticity * workerFactor * marketingBoost));
@@ -4235,6 +4235,17 @@ const GameEngine = (() => {
     return { repaid: due };
   }
 
+  // Calculate calibrated 1-hour operating supplies cost for any business
+  // Directly tied to hourly capacity and scale (~20% of base hourly output) so players keep 80%+ net profits
+  function getBusinessSupplyCost(key, bizState) {
+    const biz = BUSINESSES[key];
+    if (!biz) return 50;
+    const lvl = Math.max(1, (bizState && bizState.level) || 1);
+    const baseMargin = Math.max(1, biz.optimumPrice - biz.costOfGoods);
+    const hourlyCapacity = biz.baseDemand * baseMargin * (1 + (lvl - 1) * 0.25);
+    return Math.max(50, Math.round(hourlyCapacity * 0.20));
+  }
+
   // Business: Supply stock and inventory materials (gives 1 hour per shipment, stackable up to 12 hours)
   function supplyBusiness(key) {
     const biz = BUSINESSES[key];
@@ -4251,7 +4262,7 @@ const GameEngine = (() => {
       throw new Error("وصل مخزون المشروع للحد الأقصى للتكديس (12 ساعة كاملة)!");
     }
 
-    const supplyCost = Math.max(80, Math.floor(biz.cost * 0.04 * Math.pow(1.15, (bizState.level || 1) - 1)));
+    const supplyCost = getBusinessSupplyCost(key, bizState);
     if (state.cash < supplyCost) {
       throw new Error(`رصيدك الكاش لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP — لديك: ${state.cash.toLocaleString()} EGP`);
     }
@@ -5071,6 +5082,7 @@ const GameEngine = (() => {
 
     // Business Supply Method
     supplyBusiness,
+    getBusinessSupplyCost,
     recordPlayerActivity,
 
     // Import & Export Company Exports

@@ -2303,7 +2303,9 @@ const UIController = (() => {
         const suppliesTicks = Math.max(0, Number(bizState.suppliesTicks) || 0);
         const isMaxSupplies = suppliesTicks >= 43200;
         const suppliesTimeStr = formatBusinessSupplies(suppliesTicks);
-        const supplyCost = Math.max(80, Math.floor(biz.cost * 0.04 * Math.pow(1.15, (bizState.level || 1) - 1)));
+        const supplyCost = (window.GameEngine && window.GameEngine.getBusinessSupplyCost)
+          ? window.GameEngine.getBusinessSupplyCost(key, bizState)
+          : Math.max(50, Math.round(biz.baseDemand * (biz.optimumPrice - biz.costOfGoods) * (1 + (Math.max(1, bizState.level || 1) - 1) * 0.25) * 0.20));
 
         const translatedBizName = window.currentLang ==='en' ? (translationDict[biz.name] || biz.name) : biz.name;
         card.innerHTML =`
@@ -2555,7 +2557,9 @@ const UIController = (() => {
       const supplyTime = document.getElementById(`biz-supply-time-${key}`);
       const btnSupply = document.getElementById(`btn-supply-${key}`);
       const btnSupplyText = document.getElementById(`biz-supply-btn-text-${key}`);
-      const supplyCost = Math.max(80, Math.floor(biz.cost * 0.04 * Math.pow(1.15, (bizState.level || 1) - 1)));
+      const supplyCost = (window.GameEngine && window.GameEngine.getBusinessSupplyCost)
+        ? window.GameEngine.getBusinessSupplyCost(key, bizState)
+        : Math.max(50, Math.round(biz.baseDemand * (biz.optimumPrice - biz.costOfGoods) * (1 + (Math.max(1, bizState.level || 1) - 1) * 0.25) * 0.20));
 
       if (supplyBox && supplyIcon && supplyTitle && supplyTime) {
         if (hasSupplies) {
