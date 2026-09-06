@@ -4308,6 +4308,91 @@
       .replace(/'/g,'&#039;');
   }
 
+  async function renderAdminFraudMonitor() {
+    const tbody = document.getElementById('admin-fraud-table-body');
+    const badge = document.getElementById('admin-fraud-badge');
+    const regDevicesEl = document.getElementById('admin-fraud-registered-devices');
+    const blockedCountEl = document.getElementById('admin-fraud-blocked-count');
+    const feedersCountEl = document.getElementById('admin-fraud-feeders-count');
+
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-500 font-sans"><i class="fa-solid fa-spinner fa-spin mr-2"></i>جاري تحميل سجل الأمان والمكافحة...</td></tr>';
+    }
+
+    try {
+      const [alerts, registry] = await Promise.all([
+        AppDB.getFraudAlerts ? AppDB.getFraudAlerts(100) : [],
+        AppDB.getDeviceRegistry ? AppDB.getDeviceRegistry() : { devices: {}, accounts: {} }
+      ]);
+
+      const deviceCount = Object.keys((registry && registry.devices) || {}).length;
+      if (regDevicesEl) regDevicesEl.textContent = deviceCount.toLocaleString();
+
+      const blockedCount = alerts.length;
+      if (blockedCountEl) blockedCountEl.textContent = blockedCount.toLocaleString();
+
+      const feederCount = alerts.filter(a => a.type === 'FEEDER_EMPTY_ACCOUNT' || a.type === 'SIMILAR_NAME_FEEDER' || a.type === 'GIBBERISH_NAME_FEEDER').length;
+      if (feedersCountEl) feedersCountEl.textContent = feederCount.toLocaleString();
+
+      if (badge) {
+        badge.textContent = blockedCount;
+        if (blockedCount > 0) {
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+
+      if (!tbody) return;
+
+      if (!alerts || alerts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-emerald-400 font-sans">
+          <i class="fa-solid fa-shield-check text-2xl mb-2 block"></i>
+          المنظومة آمنة بالكامل: لم يتم تسجيل أي محاولات تحايل أو تعدد حسابات مشبوهة حتى الآن.
+        </td></tr>`;
+        return;
+      }
+
+      const typeLabels = {
+        'MULTI_ACCOUNT_SAME_DEVICE': '<span class="px-2 py-0.5 rounded text-[10px] bg-rose-500/20 text-rose-400 border border-rose-500/30">نفس الجهاز (Same Device)</span>',
+        'FEEDER_EMPTY_ACCOUNT': '<span class="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30">حساب فارغ (Feeder 0 Biz)</span>',
+        'SIMILAR_NAME_FEEDER': '<span class="px-2 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-400 border border-purple-500/30">تشابه أسماء مريب (Clone)</span>',
+        'GIBBERISH_NAME_FEEDER': '<span class="px-2 py-0.5 rounded text-[10px] bg-orange-500/20 text-orange-400 border border-orange-500/30">اسم عشوائي (Gibberish)</span>',
+        'RAPID_MULTI_FEEDER_RECIPIENT': '<span class="px-2 py-0.5 rounded text-[10px] bg-red-600/20 text-red-300 border border-red-500/30">سيل حسابات مجمّعة (Funnel)</span>'
+      };
+
+      tbody.innerHTML = alerts.map(a => {
+        const timeStr = a.timestamp ? new Date(a.timestamp).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' }) : '--';
+        const typeBadge = typeLabels[a.type] || `<span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300">${a.type || 'UNKNOWN'}</span>`;
+        const amtStr = Number(a.amount || 0) > 0 ? `${Number(a.amount).toLocaleString()} EGP` : '-';
+        const sender = escapeHtml(a.sender || 'غير معروف');
+        const recipient = escapeHtml(a.recipient || 'غير معروف');
+        const details = escapeHtml(a.details || '');
+
+        return `
+          <tr class="hover:bg-slate-900/60 transition border-b border-slate-800/40">
+            <td class="p-2.5 text-slate-400 text-[11px] whitespace-nowrap">${timeStr}</td>
+            <td class="p-2.5 whitespace-nowrap">${typeBadge}</td>
+            <td class="p-2.5 font-bold text-rose-300">${sender}</td>
+            <td class="p-2.5 font-bold text-amber-300">${recipient}</td>
+            <td class="p-2.5 text-center text-emerald-400 font-bold whitespace-nowrap">${amtStr}</td>
+            <td class="p-2.5 text-slate-300 text-[11px] font-sans max-w-xs">${details}</td>
+            <td class="p-2.5 text-center whitespace-nowrap">
+              <button onclick="window.adminBanPlayer && window.adminBanPlayer('${sender}')" class="px-2 py-1 bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 text-rose-300 rounded text-[10px] transition">
+                حظر الراسل
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } catch (e) {
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-rose-400 font-sans">فشل تحميل سجل الأمان: ${e.message}</td></tr>`;
+      }
+    }
+  }
+  window.loadAdminFraudAlerts = renderAdminFraudMonitor;
+
   let _adminChatUnsub = null;
   let _adminChatBound = false;
   async function renderAdminChatMonitor() {
@@ -4720,7 +4805,7 @@
 
   function switchAdminTab(tabId) {
     cleanupAdminListeners();
-    const subtabs = ['stats','players','transfers','chat','market','broadcast','auctions','giftcodes','system','corporations','topup'];
+    const subtabs = ['stats','players','transfers','fraud','chat','market','broadcast','auctions','giftcodes','system','corporations','topup'];
     subtabs.forEach(t => {
       const btn = document.getElementById(`tab-admin-${t}`);
       const mobPill = document.getElementById(`mobtab-admin-${t}`);
@@ -4763,6 +4848,8 @@
       if (window._adminReloadPlayers) window._adminReloadPlayers(false);
     } else if (tabId ==='transfers') {
       renderAdminTransfersMonitor();
+    } else if (tabId ==='fraud') {
+      renderAdminFraudMonitor();
     } else if (tabId ==='chat') {
       renderAdminChatMonitor();
     } else if (tabId ==='market') {

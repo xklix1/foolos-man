@@ -1411,6 +1411,12 @@ const UIController = (() => {
         if (authActionBtn) authActionBtn.textContent ='إنشاء حساب وبدء اللعب';
         authRegBtn.classList.add('border-yellow-500','text-yellow-500');
         authLoginBtn.classList.remove('border-yellow-500','text-yellow-500');
+
+        // Check if device already has a registered account
+        const existingDeviceAcc = (window.AppDB && window.AppDB.DeviceFingerprint && window.AppDB.DeviceFingerprint.getRegisteredAccountOnDevice()) || null;
+        if (existingDeviceAcc) {
+          showToast('تنبيه أمني', `هذا الجهاز مسجل به حساب بالفعل (${existingDeviceAcc}). تسمح اللعبة بحساب واحد فقط لكل جهاز.`, 'warning');
+        }
       });
     }
 
@@ -1442,12 +1448,14 @@ const UIController = (() => {
           isAuthSubmitting = true;
           setAuthLoading(true);
 
-
-
           let playerState;
 
           let canonicalUser = usernameInput;
           if (currentAuthMode ==='register') {
+            const registeredOnDevice = (window.AppDB && window.AppDB.DeviceFingerprint && window.AppDB.DeviceFingerprint.getRegisteredAccountOnDevice()) || null;
+            if (registeredOnDevice && registeredOnDevice.toLowerCase() !== usernameInput.toLowerCase()) {
+              throw new Error(`🚫 لا يمكن إنشاء حساب جديد! هذا الجهاز مسجل به حساب بالفعل ("${registeredOnDevice}"). تسمح قوانين اللعبة بحساب واحد فقط لكل جهاز.`);
+            }
             await AppDB.registerPlayer(usernameInput, pinInput);
             playerState = await GameEngine.loadUserSession(usernameInput);
             localStorage.setItem('rasalmal_active_session_user', usernameInput);

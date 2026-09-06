@@ -203,12 +203,419 @@ var AppDB = (() => {
     return String(pin);
   }
 
+  // ─────────────────────────────────────────────
+  //  DEVICE FINGERPRINTING & HARDWARE INTEGRITY
+  // ─────────────────────────────────────────────
+  const DeviceFingerprint = (() => {
+    let _cachedFp = null;
+
+    function _simpleHash(str) {
+      let h1 = 0xdeadbeef ^ 0, h2 = 0x41c64e6d ^ 0;
+      for (let i = 0, ch; i < str.length; i++) {
+        ch = str.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+      }
+      h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+      h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+      return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(16, '0');
+    }
+
+    function _getWebGlFingerprint() {
+      try {
+        if (typeof document === 'undefined') return 'no_dom';
+        const canvas = document.createElement('canvas');
+        canvas.width = 16;
+        canvas.height = 16;
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) return 'no_webgl';
+        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        if (debugInfo) {
+          const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '';
+          const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '';
+          return `${vendor}~${renderer}`;
+        }
+        return `${gl.getParameter(gl.VENDOR)}~${gl.getParameter(gl.RENDERER)}`;
+      } catch (e) {
+        return 'webgl_err';
+      }
+    }
+
+    function _getCanvas2dFingerprint() {
+      try {
+        if (typeof document === 'undefined') return 'no_dom';
+        const canvas = document.createElement('canvas');
+        canvas.width = 200;
+        canvas.height = 50;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return 'no_2d_ctx';
+        ctx.textBaseline = 'top';
+        ctx.font = "14px 'Arial', sans-serif";
+        ctx.fillStyle = '#f60';
+        ctx.fillRect(125, 1, 62, 20);
+        ctx.fillStyle = '#069';
+        ctx.fillText('RasAlMal.Online-2026🛡️', 2, 15);
+        ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+        ctx.fillText('Anti-Feeder-Shield', 4, 30);
+        return _simpleHash(canvas.toDataURL());
+      } catch (e) {
+        return 'canvas_err';
+      }
+    }
+
+    function _getScreenMetrics() {
+      try {
+        if (typeof window === 'undefined') return 'no_window';
+        const w = (window.screen && window.screen.width) || 0;
+        const h = (window.screen && window.screen.height) || 0;
+        const cd = (window.screen && window.screen.colorDepth) || 0;
+        const dpr = window.devicePixelRatio || 1;
+        return `${w}x${h}x${cd}@${dpr}`;
+      } catch (e) {
+        return 'screen_err';
+      }
+    }
+
+    function _getPersistentSeed() {
+      try {
+        if (typeof localStorage === 'undefined') return 'no_storage';
+        let seed = localStorage.getItem('rasalmal_device_seed');
+        if (!seed) {
+          seed = 'seed_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now().toString(36);
+          localStorage.setItem('rasalmal_device_seed', seed);
+        }
+        return seed;
+      } catch (e) {
+        return 'seed_err';
+      }
+    }
+
+    async function getFingerprint() {
+      if (_cachedFp) return _cachedFp;
+      try {
+        const webgl = _getWebGlFingerprint();
+        const canvasHash = _getCanvas2dFingerprint();
+        const screen = _getScreenMetrics();
+        const lang = (typeof navigator !== 'undefined' && ((navigator.languages && navigator.languages[0]) || navigator.language)) || '';
+        const cores = (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 0;
+        const tz = new Date().getTimezoneOffset();
+        const seed = _getPersistentSeed();
+
+        // Hardware profile components (consistent even in Incognito mode)
+        const hwProfile = [webgl, canvasHash, screen, lang, cores, tz].join('|');
+        const hwHash = _simpleHash(hwProfile);
+        const fullHash = _simpleHash(`${hwHash}|${seed}`);
+
+        _cachedFp = `dev_${hwHash}_${fullHash.substring(0, 8)}`;
+        return _cachedFp;
+      } catch (e) {
+        return 'dev_fallback_' + Math.random().toString(36).substring(2, 10);
+      }
+    }
+
+    function getRegisteredAccountOnDevice() {
+      try {
+        if (typeof localStorage === 'undefined') return null;
+        return localStorage.getItem('rasalmal_registered_account') || null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function recordRegisteredAccountOnDevice(username) {
+      try {
+        if (typeof localStorage !== 'undefined' && username) {
+          localStorage.setItem('rasalmal_registered_account', String(username).trim());
+        }
+      } catch (e) {}
+    }
+
+    return {
+      getFingerprint,
+      getRegisteredAccountOnDevice,
+      recordRegisteredAccountOnDevice
+    };
+  })();
+
+  // ─────────────────────────────────────────────
+  //  DEVICE REGISTRY & FRAUD AUDITING
+  // ─────────────────────────────────────────────
+  async function getDeviceRegistry() {
+    try {
+      const rows = await _api('globals?id=eq.device_registry');
+      if (rows && rows.length > 0 && rows[0].data) {
+        const data = typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data;
+        return {
+          devices: (data && data.devices) || {},
+          accounts: (data && data.accounts) || {}
+        };
+      }
+    } catch (e) {
+      console.warn('[DB] getDeviceRegistry error:', e.message);
+    }
+    return { devices: {}, accounts: {} };
+  }
+
+  async function saveDeviceRegistry(registry) {
+    try {
+      await _api('globals', {
+        method: 'POST',
+        headers: { 'Prefer': 'resolution=merge-duplicates' },
+        body: JSON.stringify({
+          id: 'device_registry',
+          data: {
+            devices: (registry && registry.devices) || {},
+            accounts: (registry && registry.accounts) || {}
+          },
+          updated_at: Date.now()
+        })
+      });
+    } catch (e) {
+      console.warn('[DB] saveDeviceRegistry error:', e.message);
+    }
+  }
+
+  async function getFraudAlerts(limit = 60) {
+    try {
+      const rows = await _api('globals?id=eq.fraud_alerts');
+      if (rows && rows.length > 0 && rows[0].data) {
+        const data = typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data;
+        const alerts = Array.isArray(data.alerts) ? data.alerts : [];
+        return alerts.slice(0, limit);
+      }
+    } catch (e) {
+      console.warn('[DB] getFraudAlerts error:', e.message);
+    }
+    return [];
+  }
+
+  async function logFraudAlert(alert) {
+    try {
+      const rows = await _api('globals?id=eq.fraud_alerts');
+      let alerts = [];
+      if (rows && rows.length > 0 && rows[0].data) {
+        const data = typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data;
+        alerts = Array.isArray(data.alerts) ? data.alerts : [];
+      }
+      alerts.unshift({
+        id: 'fa_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        timestamp: Date.now(),
+        ...alert
+      });
+      if (alerts.length > 100) alerts = alerts.slice(0, 100);
+
+      await _api('globals', {
+        method: 'POST',
+        headers: { 'Prefer': 'resolution=merge-duplicates' },
+        body: JSON.stringify({
+          id: 'fraud_alerts',
+          data: { alerts },
+          updated_at: Date.now()
+        })
+      });
+    } catch (e) {
+      console.warn('[DB] logFraudAlert error:', e.message);
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  //  SIMILARITY & GIBBERISH DETECTION HEURISTICS
+  // ─────────────────────────────────────────────
+  function levenshteinDistance(s1, s2) {
+    s1 = (s1 || '').toLowerCase().trim();
+    s2 = (s2 || '').toLowerCase().trim();
+    const m = s1.length, n = s2.length;
+    const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        if (s1[i - 1] === s2[j - 1]) dp[i][j] = dp[i - 1][j - 1];
+        else dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      }
+    }
+    return dp[m][n];
+  }
+
+  function isSimilarName(name1, name2) {
+    const n1 = (name1 || '').toLowerCase().trim();
+    const n2 = (name2 || '').toLowerCase().trim();
+    if (!n1 || !n2 || n1 === n2) return true;
+    // Prefix / Suffix clones (e.g. lol & lol1, lolly & lol, ahmed & ahmed99)
+    if (n1.startsWith(n2) || n2.startsWith(n1)) {
+      const diff = Math.abs(n1.length - n2.length);
+      if (diff <= 3) return true;
+    }
+    const dist = levenshteinDistance(n1, n2);
+    const minLen = Math.min(n1.length, n2.length);
+    if (minLen <= 4 && dist <= 1) return true;
+    if (minLen <= 8 && dist <= 2) return true;
+    return false;
+  }
+
+  function isGibberishName(name) {
+    const n = (name || '').toLowerCase().trim();
+    if (n.length < 5) return false;
+    // 5+ consonants in a row (e.g. djgudinjsstg, xkcdstr)
+    if (/[bcdfghjklmnpqrstvwxyz]{5,}/i.test(n)) return true;
+    // Keyboard smash patterns (English & Arabic)
+    if (/(?:asdf|sdfg|dfgh|fghj|ghjk|hjkl|qwer|wert|erty|rtyu|tyui|yuio|uiop|zxcv|xcvb|cvbn|vbnm)/i.test(n)) return true;
+    if (/(?:شسيب|سيبل|يبلات|كمنت|ضصثق)/i.test(n)) return true;
+    // Repeated characters (4 or more, e.g. aaaaa, 1111)
+    if (/(.)\1{3,}/.test(n)) return true;
+    return false;
+  }
+
+  // ─────────────────────────────────────────────
+  //  ANTI-FEEDER & TRANSFER FRAUD GATEKEEPER
+  // ─────────────────────────────────────────────
+  async function checkWireTransferFraud(senderUsername, recipientUsername, amount) {
+    const sUser = (senderUsername || '').trim();
+    const rUser = (recipientUsername || '').trim();
+    const amt = Number(amount);
+
+    if (sUser.toLowerCase() === rUser.toLowerCase()) {
+      throw new Error('لا يمكنك التحويل لنفسك!');
+    }
+
+    // 1. Fetch sender and recipient states
+    const sender = await getPlayerState(sUser);
+    const recipient = await getPlayerState(rUser);
+    if (!sender) throw new Error('تعذر العثور على بيانات الحساب المحول.');
+    if (!recipient) throw new Error('تعذر العثور على بيانات الحساب المستلم.');
+
+    const fp = await DeviceFingerprint.getFingerprint();
+    const registry = await getDeviceRegistry();
+
+    // 2. Multi-Account / Same Device Intersection Check
+    const senderDevs = Array.isArray(sender.known_devices) ? sender.known_devices : (sender.initial_device ? [sender.initial_device] : []);
+    const recipientDevs = Array.isArray(recipient.known_devices) ? recipient.known_devices : (recipient.initial_device ? [recipient.initial_device] : []);
+    const regSenderDevs = (registry.accounts && registry.accounts[sUser]) || [];
+    const regRecipientDevs = (registry.accounts && registry.accounts[rUser]) || [];
+
+    const allSenderDevs = new Set([...senderDevs, ...regSenderDevs]);
+    const allRecipientDevs = new Set([...recipientDevs, ...regRecipientDevs]);
+
+    let sharedDev = false;
+    for (const d of allSenderDevs) {
+      if (allRecipientDevs.has(d)) {
+        sharedDev = true;
+        break;
+      }
+    }
+
+    const currentDeviceBoundToRecipient = (allRecipientDevs.has(fp) || (registry.devices && registry.devices[fp] === rUser));
+
+    if (sharedDev || currentDeviceBoundToRecipient) {
+      await logFraudAlert({
+        type: 'MULTI_ACCOUNT_SAME_DEVICE',
+        sender: sUser,
+        recipient: rUser,
+        amount: amt,
+        device: fp,
+        details: `رصد ارتباط واستخدام نفس الجهاز بين الحسابين (${sUser} و ${rUser})`
+      });
+      throw new Error('🚫 مرفوض أمنياً: تم رصد ارتباط بين الحسابين على نفس الجهاز، وتمنع قواعد اللعبة التحويلات المالية بين حسابات المستخدم الواحد.');
+    }
+
+    // 3. Feeder Account Progression Check
+    const bizCount = Object.values(sender.businesses || {}).filter(b => (b.level || 0) > 0 || (b.workers || 0) > 0).length;
+    const assetCount = Object.values(sender.assets || {}).filter(v => (v || 0) > 0).length;
+    const carCount = (sender.ownedCars || []).length;
+    const stockShares = Object.values(sender.stocks || {}).reduce((sum, s) => sum + (s.shares || 0), 0);
+    const isZeroProgress = (bizCount === 0 && assetCount === 0 && carCount === 0 && stockShares === 0);
+
+    const totalSenderFunds = Number(sender.cash || 0) + Number(sender.bank || 0);
+    const transferRatio = totalSenderFunds > 0 ? (amt / totalSenderFunds) : 1;
+    const senderAgeHours = (Date.now() - Number(sender.createdAt || sender.created_at || 0)) / (3600 * 1000);
+
+    if (isZeroProgress && (transferRatio >= 0.65 || senderAgeHours < 4)) {
+      await logFraudAlert({
+        type: 'FEEDER_EMPTY_ACCOUNT',
+        sender: sUser,
+        recipient: rUser,
+        amount: amt,
+        device: fp,
+        details: `حساب بدون أي نشاط تجاري (0 مشاريع) يحول ${Math.round(transferRatio * 100)}% من رصيده (${amt.toLocaleString()} EGP)`
+      });
+      throw new Error('🚫 مرفوض أمنياً: حسابك لم يقم بأي نشاط تجاري أو استثماري بعد (0 مشاريع). لا يمكن تفريغ رأس المال في حساب آخر فور التسجيل لمنع الحسابات الوهمية (Feeder Accounts). يرجى البدء بتشغيل مشاريعك أولاً!');
+    }
+
+    // 4. Clone / Similar Name or Gibberish Name Heuristics
+    const similar = isSimilarName(sUser, rUser);
+    const gibberish = isGibberishName(sUser);
+
+    if ((similar || gibberish) && bizCount === 0) {
+      await logFraudAlert({
+        type: similar ? 'SIMILAR_NAME_FEEDER' : 'GIBBERISH_NAME_FEEDER',
+        sender: sUser,
+        recipient: rUser,
+        amount: amt,
+        device: fp,
+        details: similar 
+          ? `تشابه كبير في أسماء الحسابات النمطية (${sUser} -> ${rUser}) مع انعدام المشاريع`
+          : `اسم حساب عشوائي (${sUser}) مع انعدام المشاريع`
+      });
+      throw new Error('🚫 تم رفض التحويل أمنياً: تم رصد نمط حسابات وهمية متطابقة (Clone/Feeder Accounts). يرجى اللعب وتطوير المشاريع بشكل مستقل.');
+    }
+
+    // 5. Rapid Multi-Account Feeders to Single Recipient
+    try {
+      const recentIncoming = await _api(`transfers?recipient=eq.${encodeURIComponent(rUser)}&order=created_at.desc&limit=15`);
+      const now = Date.now();
+      const twelveHoursAgo = now - (12 * 3600 * 1000);
+      const recentSenders = new Set();
+      (recentIncoming || []).forEach(t => {
+        const tTime = Number(t.created_at || t.timestamp || 0);
+        if (tTime > twelveHoursAgo && t.sender && t.sender !== sUser) {
+          recentSenders.add(t.sender);
+        }
+      });
+      if (recentSenders.size >= 3 && isZeroProgress) {
+        await logFraudAlert({
+          type: 'RAPID_MULTI_FEEDER_RECIPIENT',
+          sender: sUser,
+          recipient: rUser,
+          amount: amt,
+          device: fp,
+          details: `المستلم ${rUser} يتلقى تدفقات متكررة من ${recentSenders.size + 1} حسابات مختلفة، ومحاولة تحويل من حساب فارغ ${sUser}`
+        });
+        throw new Error('🚫 تم إيقاف التحويل أمنياً: يتلقى حساب المستلم تدفقات متكررة من عدة حسابات حديثة. تم حظر المعاملة وإحالتها للفحص الأمني.');
+      }
+    } catch (e) {
+      if (e.message && e.message.includes('🚫')) throw e;
+    }
+
+    return true;
+  }
+
+  // ─────────────────────────────────────────────
+  //  REGISTRATION & STRICT SINGLE-ACCOUNT PER DEVICE
+  // ─────────────────────────────────────────────
   async function registerPlayer(username, pin) {
     if (!username || !pin) throw new Error('يرجى إدخال اسم المستخدم ورمز PIN.');
     const u = username.trim();
     const p = String(pin).trim();
 
-    // Check if exists (case-insensitive)
+    // 1. Check local device anchor
+    const localRegistered = DeviceFingerprint.getRegisteredAccountOnDevice();
+    if (localRegistered && localRegistered.toLowerCase() !== u.toLowerCase()) {
+      throw new Error(`🚫 لا يمكن إنشاء حساب جديد! هذا الجهاز مسجل به حساب بالفعل ("${localRegistered}"). تسمح قوانين اللعبة بحساب واحد فقط لكل جهاز لمنع التلاعب.`);
+    }
+
+    // 2. Obtain hardware device fingerprint
+    const fp = await DeviceFingerprint.getFingerprint();
+
+    // 3. Check cloud device registry
+    const registry = await getDeviceRegistry();
+    if (registry.devices && registry.devices[fp]) {
+      const boundUser = registry.devices[fp];
+      if (boundUser && boundUser.toLowerCase() !== u.toLowerCase()) {
+        throw new Error(`🚫 لا يمكن إنشاء حساب جديد! هذا الجهاز مسجل به حساب بالفعل ("${boundUser}"). تسمح قوانين اللعبة بحساب واحد فقط لكل جهاز لمنع التلاعب.`);
+      }
+    }
+
+    // 4. Check if exists (case-insensitive)
     const existing = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username`);
     if (existing && existing.length > 0) {
       throw new Error('اسم المستخدم مسجل بالفعل. يرجى اختيار اسم آخر.');
@@ -252,6 +659,8 @@ var AppDB = (() => {
         xp: 0,
         title:'عامل مبتدئ',
         jobId:'worker',
+        known_devices: [fp],
+        initial_device: fp,
         assets: { apartment: 0, office: 0, mansion: 0, skyline_tower: 0, luxury_resort: 0, mega_yacht: 0, private_island: 0, orbital_station: 0 },
         businesses: {
           kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
@@ -284,6 +693,17 @@ var AppDB = (() => {
       method:'POST',
       body: JSON.stringify(newPlayerRow)
     });
+
+    // Bind device in cloud registry & locally
+    try {
+      registry.devices[fp] = u;
+      if (!registry.accounts[u]) registry.accounts[u] = [];
+      if (!registry.accounts[u].includes(fp)) registry.accounts[u].push(fp);
+      await saveDeviceRegistry(registry);
+    } catch (regErr) {
+      console.warn('[DB] Failed to bind device in registry:', regErr.message);
+    }
+    DeviceFingerprint.recordRegisteredAccountOnDevice(u);
 
     setEncryptedLocalState(`rasalmal_state_${u}`, newPlayerRow.state);
     return true;
@@ -560,6 +980,9 @@ var AppDB = (() => {
     const amt = Number(amount);
     if (isNaN(amt) || amt <= 0) throw new Error('مبلغ التحويل يجب أن يكون أكبر من صفر.');
 
+    // Security & Anti-Feeder / Multi-Account Gatekeeper
+    await checkWireTransferFraud(senderUsername, recipientUsername, amt);
+
     // Execute the atomic SQL Stored Procedure
     await _api('rpc/execute_wire_transfer', {
       method:'POST',
@@ -595,6 +1018,18 @@ var AppDB = (() => {
     if (senderUsername === recipientUsername) throw new Error('لا يمكنك إرسال طلب تحويل لنفسك!');
     const amt = Number(amount);
     if (isNaN(amt) || amt <= 0) throw new Error('مبلغ الطلب غير صالح.');
+
+    // Pre-check basic device linkage on transfer request
+    try {
+      const fp = await DeviceFingerprint.getFingerprint();
+      const registry = await getDeviceRegistry();
+      const regRecipientDevs = (registry.accounts && registry.accounts[recipientUsername.trim()]) || [];
+      if (regRecipientDevs.includes(fp) || (registry.devices && registry.devices[fp] === recipientUsername.trim())) {
+        throw new Error('🚫 لا يمكن إرسال طلب تحويل لحساب مرتبط بنفس الجهاز.');
+      }
+    } catch (reqSecErr) {
+      if (reqSecErr.message && reqSecErr.message.includes('🚫')) throw reqSecErr;
+    }
 
     const res = await _api('transfer_requests', {
       method:'POST',
@@ -3048,6 +3483,44 @@ var AppDB = (() => {
     if (!state) {
       throw new Error('تعذر تحميل بيانات الحساب من السحابة، يرجى المحاولة مرة أخرى.');
     }
+
+    // Track device linkage asynchronously without blocking login
+    (async () => {
+      try {
+        const fp = await DeviceFingerprint.getFingerprint();
+        let stateChanged = false;
+        if (!state.known_devices) state.known_devices = [];
+        if (!state.known_devices.includes(fp)) {
+          state.known_devices.push(fp);
+          stateChanged = true;
+        }
+        if (stateChanged) {
+          savePlayerState(u, state).catch(() => {});
+        }
+
+        const reg = await getDeviceRegistry();
+        let regChanged = false;
+        if (!reg.devices[fp]) {
+          reg.devices[fp] = u;
+          regChanged = true;
+        }
+        if (!reg.accounts[u]) reg.accounts[u] = [];
+        if (!reg.accounts[u].includes(fp)) {
+          reg.accounts[u].push(fp);
+          regChanged = true;
+        }
+        if (regChanged) {
+          saveDeviceRegistry(reg).catch(() => {});
+        }
+
+        if (!DeviceFingerprint.getRegisteredAccountOnDevice()) {
+          DeviceFingerprint.recordRegisteredAccountOnDevice(u);
+        }
+      } catch (devErr) {
+        console.warn('[DB] login device tracking warning:', devErr.message);
+      }
+    })().catch(() => {});
+
     return state;
   }
 
@@ -3254,6 +3727,14 @@ var AppDB = (() => {
     // Unified Stock Market
     getGlobalMarketEvent,
     saveGlobalMarketEvent,
+
+    // Security & Anti-Fraud Shield
+    DeviceFingerprint,
+    getDeviceRegistry,
+    saveDeviceRegistry,
+    getFraudAlerts,
+    logFraudAlert,
+    checkWireTransferFraud,
 
     // Top-up & Monetization
     getTopupPackages,
