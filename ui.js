@@ -4989,8 +4989,8 @@ const UIController = (() => {
     const hasCryptoCleaner = Boolean(s.inventory && s.inventory.crypto_cleaner > 0);
     if (feeBadgeEl) {
       feeBadgeEl.textContent = hasCryptoCleaner 
-        ? (window.currentLang ==='en' ?'25% (Zero-Trace Active)' :'25% (Zero-Trace نشط)')
-        :'35%';
+        ? (window.currentLang ==='en' ?'15% (Zero-Trace Active)' :'15% (Zero-Trace نشط)')
+        :'22%';
       feeBadgeEl.className = hasCryptoCleaner ?'numbers-font font-black text-cyan-400' :'numbers-font font-black text-emerald-400';
     }
 
@@ -5003,9 +5003,9 @@ const UIController = (() => {
       const hasJammer = s.inventory && s.inventory.radar_jammer > 0;
       const hasPassport = s.inventory && s.inventory.fake_passport > 0;
 
-      let riskDiscount = 0;
-      if (hasLawyer) riskDiscount += 0.35;
-      if (hasJammer) riskDiscount += 0.20;
+      let successBonus = 0;
+      if (hasLawyer) successBonus += 0.04;
+      if (hasJammer) successBonus += 0.025;
 
       Object.keys(GameEngine.BLACK_MARKET).forEach(id => {
         const deal = GameEngine.BLACK_MARKET[id];
@@ -5015,10 +5015,9 @@ const UIController = (() => {
         const playerRep = s.underworldRep || 0;
         const isLockedByRep = playerRep < repNeeded;
 
-        const baseFailChance = 1 - deal.successChance;
-        const finalFailChance = deal.successChance === 1.0 ? 0 : Math.max(0.05, baseFailChance * (1 - riskDiscount));
-        const riskPct = Math.round(finalFailChance * 100);
-        const successPct = 100 - riskPct;
+        const finalSuccessChance = Math.min(0.85, deal.successChance + successBonus);
+        const successPct = Math.round(finalSuccessChance * 100);
+        const riskPct = 100 - successPct;
 
         let badgeStyle ='bg-slate-800 text-slate-300 border-slate-700';
         if (deal.tier ==='عملية خاصة') badgeStyle ='bg-rose-500/20 text-rose-300 border-rose-500/40 glow-gold animate-pulse';

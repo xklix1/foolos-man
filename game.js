@@ -417,186 +417,186 @@ const GameEngine = (() => {
 
   const BLACK_MARKET = {
     contraband_cigars: {
-      id:'contraband_cigars',
-      name:'تهريب بضائع وسيجار جمركي فاخر',
-      desc:'إدخال شحنة بضائع حصرية عبر الميناء بدون دفع رسوم جمركية.',
+      id: 'contraband_cigars',
+      name: 'تهريب بضائع وسيجار جمركي فاخر',
+      desc: 'إدخال شحنة بضائع حصرية عبر الميناء بدون دفع رسوم جمركية.',
       cost: 6000,
-      payout: 15000,
-      successChance: 0.82,
-      jailDuration: 18,
+      payout: 9500,
+      successChance: 0.68,
+      jailDuration: 20,
       repGain: 5,
       repLoss: 10,
       repNeeded: 0,
-      cooldownSec: 60,
-      icon:'fa-box-open',
-      tier:'سهل'
+      cooldownSec: 90,
+      icon: 'fa-box-open',
+      tier: 'سهل'
     },
     electronics: {
-      id:'electronics',
-      name:'تهريب حاوية أجهزة إلكترونية حديثة',
-      desc:'استيراد غير رسمي لأجهزة هواتف ومعدات حاسوبية من وراء الجمارك.',
+      id: 'electronics',
+      name: 'تهريب حاوية أجهزة إلكترونية حديثة',
+      desc: 'استيراد غير رسمي لأجهزة هواتف ومعدات حاسوبية من وراء الجمارك.',
       cost: 35000,
-      payout: 88000,
-      successChance: 0.72,
-      jailDuration: 35,
+      payout: 55000,
+      successChance: 0.58,
+      jailDuration: 40,
       repGain: 10,
       repLoss: 20,
       repNeeded: 0,
-      cooldownSec: 180,
-      icon:'fa-laptop-code',
-      tier:'متوسط'
+      cooldownSec: 240,
+      icon: 'fa-laptop-code',
+      tier: 'متوسط'
     },
     arms_intel: {
-      id:'arms_intel',
-      name:'صفقة تسريب سيرفرات وبيانات استخباراتية',
-      desc:'بيع وثائق حساسة وشفرات سرية لجهات استثمارية عالمية.',
-      cost: 110000,
-      payout: 320000,
-      successChance: 0.58,
+      id: 'arms_intel',
+      name: 'صفقة تسريب سيرفرات وبيانات استخباراتية',
+      desc: 'بيع وثائق حساسة وشفرات سرية لجهات استثمارية عالمية.',
+      cost: 120000,
+      payout: 195000,
+      successChance: 0.48,
       jailDuration: 60,
       repGain: 25,
       repLoss: 50,
       repNeeded: 0,
-      cooldownSec: 360,
-      icon:'fa-user-secret',
-      tier:'متقدم'
+      cooldownSec: 480,
+      icon: 'fa-user-secret',
+      tier: 'متقدم'
     },
     swiss_laundry: {
-      id:'swiss_laundry',
-      name:'مركز غسيل الأموال السويسري',
-      desc:'قنوات بنكية سويسرية سرية لغسيل الأموال المشبوهة بأمان تام ونسبة عمولة منخفضة جداً (15% فاقد).',
+      id: 'swiss_laundry',
+      name: 'مركز غسيل الأموال السويسري',
+      desc: 'قنوات بنكية سويسرية سرية لغسيل الأموال المشبوهة بأمان تام ونسبة عمولة منخفضة (12% فاقد).',
       cost: 1000000,
-      payout: 850000,
+      payout: 880000,
       successChance: 1.0,
       jailDuration: 0,
       repGain: 0,
       repLoss: 0,
       repNeeded: 250,
       cooldownSec: 900, // 15 mins
-      icon:'fa-building-columns',
-      tier:'عملية خاصة',
+      icon: 'fa-building-columns',
+      tier: 'عملية خاصة',
       cleanPayout: true,
       requireDirtyCost: true
     },
     crypto: {
-      id:'crypto',
-      name:'اختراق منصات رقمية وغسيل عملات مشفرة',
-      desc:'هجوم سيبراني معقد على محافظ العملات المشفرة مع تحويل الأصول لخوادم خارجية.',
-      cost: 380000,
-      payout: 1500000,
-      successChance: 0.45,
+      id: 'crypto',
+      name: 'اختراق منصات رقمية وغسيل عملات مشفرة',
+      desc: 'هجوم سيبراني معقد على محافظ العملات المشفرة مع تحويل الأصول لخوادم خارجية.',
+      cost: 400000,
+      payout: 660000,
+      successChance: 0.35,
       jailDuration: 90,
       repGain: 50,
       repLoss: 100,
       repNeeded: 120,
-      cooldownSec: 720, // 12 mins
-      icon:'fa-network-wired',
-      tier:'محترف'
+      cooldownSec: 900, // 15 mins
+      icon: 'fa-network-wired',
+      tier: 'محترف'
     },
     artifacts: {
-      id:'artifacts',
-      name:'تهريب آثار ومخطوطات نادرة لمزادات سرية',
-      desc:'صفقة كبرى لبيع قطع أثرية نادرة لكبار هواة الجمع في السوق السوداء الدولية.',
-      cost: 1200000,
-      payout: 5000000,
-      successChance: 0.36,
+      id: 'artifacts',
+      name: 'تهريب آثار ومخطوطات نادرة لمزادات سرية',
+      desc: 'صفقة كبرى لبيع قطع أثرية نادرة لكبار هواة الجمع في السوق السوداء الدولية.',
+      cost: 1500000,
+      payout: 2500000,
+      successChance: 0.26,
       jailDuration: 130,
       repGain: 100,
       repLoss: 200,
       repNeeded: 500,
-      cooldownSec: 1500, // 25 mins
-      icon:'fa-gem',
-      tier:'خطر جداً'
+      cooldownSec: 1800, // 30 mins
+      icon: 'fa-gem',
+      tier: 'خطر جداً'
     },
     diamond_heist: {
-      id:'diamond_heist',
-      name:'عملية السطو الكبرى على خزائن الماس الدولية',
-      desc:'أضخم عملية سرقة منظمة في التاريخ لخزينة الماس والسبائك البنكية.',
-      cost: 4000000,
-      payout: 25000000,
-      successChance: 0.24,
+      id: 'diamond_heist',
+      name: 'عملية السطو الكبرى على خزائن الماس الدولية',
+      desc: 'أضخم عملية سرقة منظمة في التاريخ لخزينة الماس والسبائك البنكية.',
+      cost: 5000000,
+      payout: 8500000,
+      successChance: 0.19,
       jailDuration: 180,
       repGain: 250,
       repLoss: 500,
       repNeeded: 1500,
       cooldownSec: 2700, // 45 mins
-      icon:'fa-shield-halved',
-      tier:'أسطوري'
-    },
-    uranium_smuggling: {
-      id:'uranium_smuggling',
-      name:'تهريب اليورانيوم المخصب الدولي',
-      desc:'صفقة تهريب وتوريد شحنة يورانيوم مخصب لتشغيل مفاعلات طاقة خاصة تابعة لمنظمات دولية سرية.',
-      cost: 30000000,
-      payout: 180000000,
-      successChance: 0.22,
-      jailDuration: 200,
-      repGain: 800,
-      repLoss: 2000,
-      repNeeded: 3200,
-      cooldownSec: 3600, // 60 mins
-      icon:'fa-radiation',
-      tier:'عملية خاصة'
+      icon: 'fa-shield-halved',
+      tier: 'أسطوري'
     },
     defense_tech: {
-      id:'defense_tech',
-      name:'صفقة تكنولوجيا دفاعية وشفرات رادار مسربة',
-      desc:'بيع شفرات منظومات دفاع جوي فائقة التطور لجهات أجنبية خاصة.',
-      cost: 15000000,
-      payout: 100000000,
-      successChance: 0.20,
+      id: 'defense_tech',
+      name: 'صفقة تكنولوجيا دفاعية وشفرات رادار مسربة',
+      desc: 'بيع شفرات منظومات دفاع جوي فائقة التطور لجهات أجنبية خاصة.',
+      cost: 18000000,
+      payout: 30000000,
+      successChance: 0.15,
       jailDuration: 240,
       repGain: 500,
       repLoss: 1000,
       repNeeded: 4500,
-      cooldownSec: 4200, // 70 mins
-      icon:'fa-jet-fighter',
-      tier:'أسطوري'
+      cooldownSec: 4500, // 75 mins
+      icon: 'fa-jet-fighter',
+      tier: 'أسطوري'
     },
-    central_bank_hack: {
-      id:'central_bank_hack',
-      name:'قرصنة واختراق البنوك المركزية',
-      desc:'فرض السيطرة والقرصنة السيبرانية على خوادم بنوك مركزية كبرى وسحب احتياطيات رقمية.',
-      cost: 120000000,
-      payout: 1000000000,
-      successChance: 0.16,
-      jailDuration: 300,
-      repGain: 2000,
-      repLoss: 6000,
-      repNeeded: 6500,
+    uranium_smuggling: {
+      id: 'uranium_smuggling',
+      name: 'تهريب اليورانيوم المخصب الدولي',
+      desc: 'صفقة تهريب وتوريد شحنة يورانيوم مخصب لتشغيل مفاعلات طاقة خاصة تابعة لمنظمات دولية سرية.',
+      cost: 35000000,
+      payout: 60000000,
+      successChance: 0.13,
+      jailDuration: 220,
+      repGain: 800,
+      repLoss: 2000,
+      repNeeded: 3200,
       cooldownSec: 7200, // 2 hours
-      icon:'fa-terminal',
-      tier:'عملية خاصة'
+      icon: 'fa-radiation',
+      tier: 'عملية خاصة'
     },
     satellite_hack: {
-      id:'satellite_hack',
-      name:'السيطرة على شبكة أقمار صناعية وتشفيرها',
-      desc:'اختراق منظومة البث الفضائي العالمية وطلب فدية بمليارات الدولارات.',
-      cost: 60000000,
-      payout: 500000000,
-      successChance: 0.16,
+      id: 'satellite_hack',
+      name: 'السيطرة على شبكة أقمار صناعية وتشفيرها',
+      desc: 'اختراق منظومة البث الفضائي العالمية وطلب فدية بمبالغ طائلة.',
+      cost: 70000000,
+      payout: 120000000,
+      successChance: 0.10,
       jailDuration: 300,
       repGain: 1000,
       repLoss: 2000,
       repNeeded: 4500,
-      cooldownSec: 7200,
-      icon:'fa-satellite',
-      tier:'خطر مطلق'
+      cooldownSec: 10800, // 3 hours
+      icon: 'fa-satellite',
+      tier: 'خطر مطلق'
+    },
+    central_bank_hack: {
+      id: 'central_bank_hack',
+      name: 'قرصنة واختراق البنوك المركزية',
+      desc: 'فرض السيطرة والقرصنة السيبرانية على خوادم بنوك مركزية كبرى وسحب احتياطيات رقمية.',
+      cost: 120000000,
+      payout: 210000000,
+      successChance: 0.08,
+      jailDuration: 320,
+      repGain: 2000,
+      repLoss: 6000,
+      repNeeded: 6500,
+      cooldownSec: 14400, // 4 hours
+      icon: 'fa-terminal',
+      tier: 'عملية خاصة'
     },
     godfather: {
-      id:'godfather',
-      name:'عملية العراب: السيطرة على كارتيل التجارة العالمي',
-      desc:'الانقلاب الشامل والسيطرة على مقاليد إمبراطورية السوق السوداء العالمية.',
+      id: 'godfather',
+      name: 'عملية العراب: السيطرة على كارتيل التجارة العالمي',
+      desc: 'الانقلاب الشامل والسيطرة على مقاليد إمبراطورية السوق السوداء العالمية.',
       cost: 250000000,
-      payout: 3000000000,
-      successChance: 0.12,
-      jailDuration: 400,
+      payout: 440000000,
+      successChance: 0.06,
+      jailDuration: 420,
       repGain: 3000,
       repLoss: 6000,
       repNeeded: 10000,
-      cooldownSec: 14400,
-      icon:'fa-crown',
-      tier:'سيد الظلال'
+      cooldownSec: 21600, // 6 hours
+      icon: 'fa-crown',
+      tier: 'سيد الظلال'
     }
   };
 
@@ -620,7 +620,7 @@ const GameEngine = (() => {
     crypto_cleaner: {
       id:'crypto_cleaner',
       name:'بروتوكول تشفير مالي (Zero-Trace)',
-      desc:'يخفض ضريبة غسيل وتبييض الأموال إلى 25% بدلاً من 35%.',
+      desc:'يخفض ضريبة غسيل وتبييض الأموال إلى 15% بدلاً من 22%.',
       cost: 200000,
       icon:'fa-shield-virus',
       durationTicks: 200
@@ -2107,7 +2107,7 @@ const GameEngine = (() => {
       });
       if (bizFrontCapacity > 0) {
         const autoAmount = Math.min(state.dirtyCash, bizFrontCapacity);
-        const autoFeeRate = 0.25; // Never less than 25% laundering tax
+        const autoFeeRate = 0.18; // Business front auto-laundering tax (18%)
         const autoFee = Math.floor(autoAmount * autoFeeRate);
         const autoCleaned = autoAmount - autoFee;
         state.dirtyCash -= autoAmount;
@@ -3358,19 +3358,19 @@ const GameEngine = (() => {
       state.cash -= remainingCost;
     }
 
-    // Calculate risk & success modifiers (rebalanced by 50%)
+    // Calculate risk & success modifiers (rebalanced)
     let successBonus = 0;
     const hasLawyer = Boolean(state.inventory && state.inventory.premium_lawyer > 0);
     const hasJammer = Boolean(state.inventory && state.inventory.radar_jammer > 0);
 
     if (hasLawyer) {
-      successBonus += 0.11; // +11% direct success boost from Lawyer (rebalanced 50%)
+      successBonus += 0.04; // +4% direct success boost from Lawyer
     }
     if (hasJammer) {
-      successBonus += 0.075; // +7.5% direct success boost from Jammer (rebalanced 50%)
+      successBonus += 0.025; // +2.5% direct success boost from Jammer
     }
 
-    const finalSuccessChance = Math.min(0.92, deal.successChance + successBonus);
+    const finalSuccessChance = Math.min(0.85, deal.successChance + successBonus);
 
     // Prepare Cooldown Timers (Full cooldown for success, Half cooldown for failure)
     const hasCronos = Boolean(state.inventory && state.inventory.cronos_gear > 0);
@@ -3532,9 +3532,9 @@ const GameEngine = (() => {
       throw new Error(`المبلغ المطلوب (${amount.toLocaleString()} ج.م) أكبر من رصيد الأموال غير المشروعة المتاحة (${availableDirty.toLocaleString()} ج.م).`);
     }
 
-    // Money laundering tax rate: base 35%, drops to 25% with crypto_cleaner (Zero-Trace)
+    // Money laundering tax rate: base 22%, drops to 15% with crypto_cleaner (Zero-Trace)
     const hasCryptoCleaner = Boolean(state.inventory && state.inventory.crypto_cleaner > 0);
-    const feeRate = hasCryptoCleaner ? 0.25 : 0.35;
+    const feeRate = hasCryptoCleaner ? 0.15 : 0.22;
     const fee = Math.floor(amount * feeRate);
     const cleanedAmount = amount - fee;
 
