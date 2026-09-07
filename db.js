@@ -1898,6 +1898,26 @@ var AppDB = (() => {
         pState.badgeTitle = rewards.badgeTitle || req.packageName;
       }
 
+      // VIP package features (Chat Glow, Verification Badge, Titles)
+      if (req.packageId === 'pkg_vip_chat_glow') {
+        pState.chatGlow = 'gold_neon';
+      } else if (req.packageId === 'pkg_vip_royal_ultimate') {
+        pState.chatGlow = 'cyber_rainbow';
+        pState.isVerified = true;
+        pState.vipVerified = true;
+      } else if (req.packageId === 'pkg_vip_verified') {
+        pState.isVerified = true;
+        pState.vipVerified = true;
+      }
+
+      if (rewards.features) {
+        if (rewards.features.chatGlow) pState.chatGlow = rewards.features.chatGlow;
+        if (rewards.features.verified) { pState.isVerified = true; pState.vipVerified = true; }
+        if (rewards.features.title) pState.title = rewards.features.title;
+        if (rewards.features.stickersPack) pState.stickersPack = true;
+        if (rewards.features.customAvatar) pState.canUploadAvatar = true;
+      }
+
       if (rewards.items && typeof rewards.items ==='object') {
         pState.inventory = pState.inventory || {};
         for (const [itemId, qty] of Object.entries(rewards.items)) {
@@ -3311,7 +3331,7 @@ var AppDB = (() => {
     window.ProfanityFilter = ProfanityFilter;
   }
 
-  async function sendChatMessage(sender, senderTitle, message, facebookVerified = false) {
+  async function sendChatMessage(sender, senderTitle, message, facebookVerified = false, extraMeta = {}) {
     if (!message || !message.trim()) return false;
     const trimmedMsg = String(message).trim().substring(0, 200);
 
@@ -3326,6 +3346,9 @@ var AppDB = (() => {
       senderTitle: String(senderTitle ||'عامل مبتدئ'),
       message: trimmedMsg,
       facebookVerified: Boolean(facebookVerified),
+      chatGlow: (extraMeta && extraMeta.chatGlow) ? String(extraMeta.chatGlow) : '',
+      isVerified: Boolean(extraMeta && (extraMeta.isVerified || extraMeta.verified)),
+      customBadge: (extraMeta && extraMeta.customBadge) ? String(extraMeta.customBadge) : '',
       timestamp: Date.now()
     };
 

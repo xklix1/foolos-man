@@ -10343,7 +10343,16 @@ const UIController = (() => {
           if (charCounter) charCounter.textContent ='0 / 200';
           lastChatSent = Date.now();
           const isFb = Boolean(GameEngine.state && (GameEngine.state.facebookVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('facebook'))));
-          await AppDB.sendChatMessage(username, userTitle, text, isFb);
+          
+          let chatGlow = (GameEngine.state && (GameEngine.state.chatGlow || (GameEngine.state.hasChatGlow ? 'gold_neon' : ''))) || '';
+          if (!chatGlow && GameEngine.state) {
+            if (GameEngine.state.activePackage === 'pkg_vip_chat_glow') chatGlow = 'gold_neon';
+            else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate') chatGlow = 'cyber_rainbow';
+          }
+          const isVerified = Boolean(GameEngine.state && (GameEngine.state.isVerified || GameEngine.state.vipVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('vip_verified'))));
+          const customBadge = (GameEngine.state && GameEngine.state.customBadge) || '';
+
+          await AppDB.sendChatMessage(username, userTitle, text, isFb, { chatGlow, isVerified, customBadge });
         } catch (err) {
           showToast('خطأ إرسال', err.message,'error');
           chatInput.value = text;
@@ -10848,6 +10857,34 @@ const UIController = (() => {
       if (isSystem) {
         bubbleClass ='bg-red-950/40 border border-red-500/30 text-red-200 w-full text-center py-2 px-3 rounded-xl shadow-lg shadow-red-950/20';
         alignClass ='text-center flex flex-col items-center w-full';
+      } else {
+        // Detect chat glow styling
+        let glowType = '';
+        if (msg.chatGlow) {
+          glowType = msg.chatGlow;
+        } else if (isMe && GameEngine.state) {
+          if (GameEngine.state.chatGlow) glowType = GameEngine.state.chatGlow;
+          else if (GameEngine.state.hasChatGlow) glowType = 'gold_neon';
+          else if (GameEngine.state.activePackage === 'pkg_vip_chat_glow') glowType = 'gold_neon';
+          else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate') glowType = 'cyber_rainbow';
+        } else {
+          const lb = window.cachedLeaderboard || (typeof cachedLeaderboard !== 'undefined' ? cachedLeaderboard : null);
+          if (Array.isArray(lb)) {
+            const senderP = lb.find(p => p.username === msg.sender);
+            if (senderP) {
+              if (senderP.chatGlow) glowType = senderP.chatGlow;
+              else if (senderP.hasChatGlow) glowType = 'gold_neon';
+              else if (senderP.activePackage === 'pkg_vip_chat_glow') glowType = 'gold_neon';
+              else if (senderP.activePackage === 'pkg_vip_royal_ultimate') glowType = 'cyber_rainbow';
+            }
+          }
+        }
+
+        if (glowType === 'gold_neon' || glowType === 'gold') {
+          bubbleClass += ' chat-bubble-glow-gold';
+        } else if (glowType === 'cyber_rainbow' || glowType === 'rainbow') {
+          bubbleClass += ' chat-bubble-glow-rainbow';
+        }
       }
 
       const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) :'';
@@ -10877,15 +10914,31 @@ const UIController = (() => {
           </div>`;
       } else {
         const isMyMsg = curUser && msg.sender === curUser;
-        const isSenderVerifiedInLeaderboard = Boolean((cachedLeaderboard || window.cachedLeaderboard) && Array.isArray(cachedLeaderboard || window.cachedLeaderboard) && (cachedLeaderboard || window.cachedLeaderboard).some(p => p.username === msg.sender && p.facebookVerified));
-        const hasFb = Boolean(msg.facebookVerified || msg.isFbVerified || isSenderVerifiedInLeaderboard || (isMyMsg && GameEngine.state && (GameEngine.state.facebookVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('facebook')))));
-        const fbIconHtml = hasFb ?'<span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' :'';
+        const lb = window.cachedLeaderboard || (typeof cachedLeaderboard !== 'undefined' ? cachedLeaderboard : null);
+        const cachedP = Array.isArray(lb) ? lb.find(p => p.username === msg.sender) : null;
+        
+        const hasFb = Boolean(msg.facebookVerified || msg.isFbVerified || (cachedP && cachedP.facebookVerified) || (isMyMsg && GameEngine.state && (GameEngine.state.facebookVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('facebook')))));
+        const isVipVerified = Boolean(msg.isVerified || (cachedP && (cachedP.isVerified || cachedP.vipVerified)) || (isMyMsg && GameEngine.state && (GameEngine.state.isVerified || GameEngine.state.vipVerified)));
+
+        const fbIconHtml = hasFb ? '<span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' : '';
+        const verifiedBadgeHtml = isVipVerified ? '<span class="inline-flex items-center justify-center text-sky-400 text-[11px] font-black mr-0.5 select-none" title="عضو VIP موثق رسمياً">✔️</span>' : '';
+
+        let customBadgeVal = msg.customBadge || (cachedP && cachedP.customBadge) || (isMyMsg && GameEngine.state && GameEngine.state.customBadge) || '';
+        let badgeIconHtml = customBadgeVal ? `<span class="text-[11px] select-none" title="شارة خاصة">${customBadgeVal}</span>` : '';
+        if (!badgeIconHtml && (bubbleClass.includes('chat-bubble-glow-gold'))) {
+          badgeIconHtml = '<span class="text-[11px] select-none animate-pulse" title="حوت الشات">🌟</span>';
+        } else if (!badgeIconHtml && (bubbleClass.includes('chat-bubble-glow-rainbow'))) {
+          badgeIconHtml = '<span class="text-[11px] select-none animate-bounce" title="عضو ملكي أسطوري">👑</span>';
+        }
+
         msgDiv.innerHTML =`
           <div class="flex items-center gap-1.5 mb-0.5">
             <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
             <span class="text-[10px] font-bold text-yellow-400 cursor-pointer hover:underline inline-flex items-center gap-1" onclick="window.UI.openPlayerProfileCard('${safeSender}')">
               <span>${safeSender}</span>
+              ${verifiedBadgeHtml}
               ${fbIconHtml}
+              ${badgeIconHtml}
             </span>
             <span class="text-[8px] px-1 bg-slate-900 border border-slate-800 rounded-md text-slate-400">${safeTitle}</span>
           </div>

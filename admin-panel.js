@@ -2361,6 +2361,36 @@
           freshPlayer.badgeTitle = customBadge;
         }
 
+        // Apply VIP package features (Chat Glow, Verification Badge, Profile customization)
+        const templateSelect = document.getElementById('adm-send-pkg-template');
+        const selectedPkgId = templateSelect ? templateSelect.value : '';
+        const foundPkg = Array.isArray(_currentTopupPackagesCache) ? _currentTopupPackagesCache.find(p => p.id === selectedPkgId) : null;
+
+        if (selectedPkgId === 'pkg_vip_chat_glow' || (foundPkg && foundPkg.features && foundPkg.features.chatGlow === 'gold_neon')) {
+          freshPlayer.chatGlow = 'gold_neon';
+          freshPlayer.hasChatGlow = true;
+          freshPlayer.activePackage = 'pkg_vip_chat_glow';
+        } else if (selectedPkgId === 'pkg_vip_royal_ultimate' || (foundPkg && foundPkg.features && foundPkg.features.chatGlow === 'cyber_rainbow')) {
+          freshPlayer.chatGlow = 'cyber_rainbow';
+          freshPlayer.hasChatGlow = true;
+          freshPlayer.isVerified = true;
+          freshPlayer.vipVerified = true;
+          freshPlayer.canUploadAvatar = true;
+          freshPlayer.stickersPack = true;
+          freshPlayer.activePackage = 'pkg_vip_royal_ultimate';
+        } else if (selectedPkgId === 'pkg_vip_verified' || (foundPkg && foundPkg.features && foundPkg.features.verified)) {
+          freshPlayer.isVerified = true;
+          freshPlayer.vipVerified = true;
+          freshPlayer.canUploadAvatar = true;
+          freshPlayer.activePackage = 'pkg_vip_verified';
+        }
+
+        if (foundPkg && foundPkg.features) {
+          if (foundPkg.features.title) freshPlayer.title = foundPkg.features.title;
+          if (foundPkg.features.stickersPack) freshPlayer.stickersPack = true;
+          if (foundPkg.features.customAvatar) freshPlayer.canUploadAvatar = true;
+        }
+
         if (Object.keys(items).length > 0) {
           freshPlayer.inventory = freshPlayer.inventory || {};
           for (const [itKey, qty] of Object.entries(items)) {
@@ -5188,15 +5218,23 @@
         const timeStr = m.timestamp ? new Date(m.timestamp).toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit', second:'2-digit' }) :'';
         const isAdminMsg = m.sender && (m.sender.includes('الإدارة') || m.sender.includes('Admin') || m.senderTitle ==='مدير النظام');
 
+        const hasGlow = Boolean(m.chatGlow);
+        const glowTag = m.chatGlow === 'cyber_rainbow'
+          ? '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/25 text-purple-300 font-bold border border-purple-500/40">👑 رويال متوهج</span>'
+          : (m.chatGlow ? '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/25 text-amber-300 font-bold border border-amber-500/40">✨ VIP متوهج</span>' : '');
+        const verifiedTag = (m.isVerified || m.facebookVerified) ? '<span class="text-sky-400 font-black text-xs" title="موثق">✔️</span>' : '';
+        const badgeTag = m.customBadge ? `<span class="text-xs">${escapeHtml(m.customBadge)}</span>` : '';
+
         html +=`
-          <div class="p-3 rounded-xl border ${isAdminMsg ?'bg-amber-950/25 border-amber-500/40 text-amber-200' :'bg-slate-900/60 border-slate-800/80 text-slate-200'} flex items-start justify-between gap-3 text-xs transition hover:bg-slate-850">
+          <div class="p-3 rounded-xl border ${isAdminMsg ?'bg-amber-950/25 border-amber-500/40 text-amber-200' : (hasGlow ? 'bg-amber-950/15 border-amber-500/30 text-amber-100 shadow-sm shadow-amber-500/10' : 'bg-slate-900/60 border-slate-800/80 text-slate-200')} flex items-start justify-between gap-3 text-xs transition hover:bg-slate-850">
             <div class="space-y-1 overflow-hidden">
               <div class="flex items-center gap-2 flex-wrap">
-                <span class="font-black ${isAdminMsg ?'text-amber-400 font-sans' :'text-cyan-400 font-sans'}">${escapeHtml(m.sender)}</span>
+                <span class="font-black ${isAdminMsg ?'text-amber-400 font-sans' :'text-cyan-400 font-sans'} flex items-center gap-1">${escapeHtml(m.sender)} ${verifiedTag} ${badgeTag}</span>
                 <span class="text-[10px] px-2 py-0.5 rounded-md ${isAdminMsg ?'bg-amber-500/20 text-amber-300 font-bold' :'bg-slate-800 text-slate-400'}">${escapeHtml(m.senderTitle ||'لاعب')}</span>
+                ${glowTag}
                 <span class="text-[10px] text-slate-500 numbers-font">${timeStr}</span>
               </div>
-              <p class="text-xs break-words font-sans text-slate-200 leading-relaxed">${escapeHtml(m.message)}</p>
+              <p class="text-xs break-words font-sans ${hasGlow ? 'text-amber-100 font-medium' : 'text-slate-200'} leading-relaxed">${escapeHtml(m.message)}</p>
             </div>
             <div class="flex items-center gap-1 shrink-0">
               <button onclick="window.quickInspectPlayer('${escapeHtml(m.sender)}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] rounded-lg font-bold transition flex items-center gap-1 cursor-pointer" title="فحص وفتح ملف هذا اللاعب">
@@ -6370,7 +6408,16 @@
 
         try {
           chatSendBtn.disabled = true;
-          await AppDB.sendChatMessage(GameEngine.state.username, GameEngine.state.title, text);
+          const isFb = Boolean(GameEngine.state && (GameEngine.state.facebookVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('facebook'))));
+          let chatGlow = (GameEngine.state && (GameEngine.state.chatGlow || (GameEngine.state.hasChatGlow ? 'gold_neon' : ''))) || '';
+          if (!chatGlow && GameEngine.state) {
+            if (GameEngine.state.activePackage === 'pkg_vip_chat_glow') chatGlow = 'gold_neon';
+            else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate') chatGlow = 'cyber_rainbow';
+          }
+          const isVerified = Boolean(GameEngine.state && (GameEngine.state.isVerified || GameEngine.state.vipVerified));
+          const customBadge = (GameEngine.state && GameEngine.state.customBadge) || '';
+
+          await AppDB.sendChatMessage(GameEngine.state.username, GameEngine.state.title, text, isFb, { chatGlow, isVerified, customBadge });
           chatInput.value ='';
           charCounter.textContent ='0 / 200';
           lastChatSent = Date.now();
