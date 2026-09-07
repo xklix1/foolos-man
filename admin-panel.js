@@ -2514,7 +2514,7 @@
             if (breakdown) {
               grossPerSec = breakdown.totalGrossPerSec || 0;
               taxPerSec = (breakdown.tax && breakdown.tax.taxPerSec) || 0;
-              netPerSec = breakdown.totalNetPerSec || 0;
+              netPerSec = Math.max(0, grossPerSec - taxPerSec);
 
               // 1. Businesses
               if (breakdown.businesses && breakdown.businesses.length > 0) {
@@ -2608,21 +2608,46 @@
           }
 
           // Populate Summary Cards
-          document.getElementById('adm-flow-summary-gross').textContent =`${grossPerSec.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث`;
-          document.getElementById('adm-flow-summary-gross-hour').textContent =`${(grossPerSec * 3600).toLocaleString(undefined, { maximumFractionDigits: 0 })} EGP / ساعة`;
+          const setElemText = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+          };
 
-          document.getElementById('adm-flow-summary-tax').textContent =`${taxPerSec.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث`;
-          document.getElementById('adm-flow-summary-tax-rate').textContent = taxTierName;
+          const formatEGP = (num, decimals = 0) => {
+            const n = Number(num || 0);
+            const prefix = n > 0 ? '+' : '';
+            return `${prefix}${n.toLocaleString(undefined, {
+              minimumFractionDigits: decimals > 0 ? 1 : 0,
+              maximumFractionDigits: decimals
+            })} EGP`;
+          };
 
-          document.getElementById('adm-flow-summary-net').textContent =`${netPerSec.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث`;
-          document.getElementById('adm-flow-summary-net-hour').textContent =`${(netPerSec * 3600).toLocaleString(undefined, { maximumFractionDigits: 0 })} EGP / ساعة`;
+          // Gross
+          setElemText('adm-flow-summary-gross', `${(grossPerSec || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث`);
+          setElemText('adm-flow-summary-gross-hour', `${((grossPerSec || 0) * 3600).toLocaleString(undefined, { maximumFractionDigits: 0 })} EGP / ساعة`);
+          setElemText('adm-flow-summary-gross-day', `${((grossPerSec || 0) * 86400).toLocaleString(undefined, { maximumFractionDigits: 0 })} EGP / يوم`);
+
+          // Tax
+          setElemText('adm-flow-summary-tax', `${(taxPerSec || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث`);
+          setElemText('adm-flow-summary-tax-hour', `${((taxPerSec || 0) * 3600).toLocaleString(undefined, { maximumFractionDigits: 0 })} EGP / ساعة`);
+          setElemText('adm-flow-summary-tax-rate', `شريحة: ${taxTierName}`);
+
+          // 4 Net Profit Intervals (Second, Minute, Hour, Day)
+          setElemText('adm-flow-net-sec', formatEGP(netPerSec, 1));
+          setElemText('adm-flow-net-min', formatEGP(netPerSec * 60, 0));
+          setElemText('adm-flow-net-hour', formatEGP(netPerSec * 3600, 0));
+          setElemText('adm-flow-net-day', formatEGP(netPerSec * 86400, 0));
+
+          // Compatibility with older bindings
+          setElemText('adm-flow-summary-net', `${(netPerSec || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث`);
+          setElemText('adm-flow-summary-net-hour', `${((netPerSec || 0) * 3600).toLocaleString(undefined, { maximumFractionDigits: 0 })} EGP / ساعة`);
 
           // Populate Breakdown Items List
           const container = document.getElementById('adm-flow-breakdown-container');
           if (container) {
-            container.innerHTML ='';
+            container.innerHTML = '';
             if (breakdownItems.length === 0) {
-              container.innerHTML =`
+              container.innerHTML = `
                 <div class="p-6 text-center text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">
                   <i class="fa-solid fa-hourglass-empty text-2xl mb-2 text-slate-600 block"></i>
                   <span>اللاعب لا يمتلك أي مشاريع أو وظائف أو أصول مدرة للدخل حالياً.</span>
@@ -2630,8 +2655,8 @@
             } else {
               breakdownItems.forEach(item => {
                 const row = document.createElement('div');
-                row.className ='p-3 bg-slate-900/70 border border-slate-800/80 rounded-xl flex items-center justify-between gap-2 hover:border-cyan-500/30 transition';
-                row.innerHTML =`
+                row.className = 'p-3 bg-slate-900/70 border border-slate-800/80 rounded-xl flex items-center justify-between gap-2 hover:border-cyan-500/30 transition';
+                row.innerHTML = `
                   <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center text-sm border border-slate-800">
                       ${item.icon}
@@ -2643,7 +2668,7 @@
                   </div>
                   <div class="text-left font-mono shrink-0">
                     <span class="text-xs font-bold text-emerald-400 block">+${(item.grossPerSec || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} EGP/ث</span>
-                    <span class="text-[10px] text-slate-400">${((item.grossPerSec || 0) * 60).toLocaleString(undefined, { maximumFractionDigits: 0 })} / د</span>
+                    <span class="text-[10px] text-slate-400 block">${((item.grossPerSec || 0) * 60).toLocaleString(undefined, { maximumFractionDigits: 0 })} / د &bull; ${((item.grossPerSec || 0) * 3600).toLocaleString(undefined, { maximumFractionDigits: 0 })} / س</span>
                   </div>`;
                 container.appendChild(row);
               });

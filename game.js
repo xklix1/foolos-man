@@ -1872,14 +1872,15 @@ const GameEngine = (() => {
       breakdown.tax.exemptReason ='معفي (صافي الثروة أقل من 5 مليون EGP)';
     }
 
-    const netIncome = Math.max(0, grossIncome - taxDeduction);
+    const hourlyTax = taxDeduction * 3600;
+    const netIncome = Math.max(0, grossIncome - hourlyTax);
 
     breakdown.totalGrossPerHour = grossIncome;
     breakdown.totalNetPerHour = netIncome;
     breakdown.totalGrossPerSec = grossIncome / 3600;
-    breakdown.totalNetPerSec = netIncome / 3600;
-    breakdown.totalNetPerMinute = Math.round(netIncome / 60);
-    breakdown.totalNetPerDay = netIncome * 24;
+    breakdown.totalNetPerSec = Math.max(0, breakdown.totalGrossPerSec - taxDeduction);
+    breakdown.totalNetPerMinute = Math.round(breakdown.totalNetPerSec * 60);
+    breakdown.totalNetPerDay = Math.round(breakdown.totalNetPerSec * 86400);
 
     return breakdown;
   }
