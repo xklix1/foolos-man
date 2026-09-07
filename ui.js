@@ -12664,17 +12664,28 @@ const UIController = (() => {
 
         // Synchronize in-memory balances
         if (GameEngine.state) {
-          GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + addedCash;
-          GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + addedBank;
-          GameEngine.state.xp = (Number(GameEngine.state.xp) || 0) + addedXp;
-          GameEngine.state.netWorth = (Number(GameEngine.state.cash) || 0) + (Number(GameEngine.state.bank) || 0);
+          if (details.isPreApplied) {
+            if (details.newCash !== undefined && !isNaN(Number(details.newCash))) GameEngine.state.cash = Number(details.newCash);
+            if (details.newBank !== undefined && !isNaN(Number(details.newBank))) GameEngine.state.bank = Number(details.newBank);
+            if (details.newXp !== undefined && !isNaN(Number(details.newXp))) GameEngine.state.xp = Number(details.newXp);
+            if (details.newWorth !== undefined && !isNaN(Number(details.newWorth))) {
+              GameEngine.state.netWorth = Number(details.newWorth);
+            } else {
+              GameEngine.state.netWorth = (Number(GameEngine.state.cash) || 0) + (Number(GameEngine.state.bank) || 0);
+            }
+          } else {
+            GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + addedCash;
+            GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + addedBank;
+            GameEngine.state.xp = (Number(GameEngine.state.xp) || 0) + addedXp;
+            GameEngine.state.netWorth = (Number(GameEngine.state.cash) || 0) + (Number(GameEngine.state.bank) || 0);
+          }
 
           if (details.customBadge) {
             GameEngine.state.customBadge = details.customBadge;
             GameEngine.state.badgeTitle = details.badgeTitle || pkgName;
           }
 
-          if (details.items && typeof details.items === 'object') {
+          if (!details.isPreApplied && details.items && typeof details.items === 'object') {
             GameEngine.state.inventory = GameEngine.state.inventory || {};
             for (const [itKey, qty] of Object.entries(details.items)) {
               GameEngine.state.inventory[itKey] = (Number(GameEngine.state.inventory[itKey]) || 0) + Number(qty);

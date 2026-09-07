@@ -2090,7 +2090,13 @@
       if (sendPopupModal) sendPopupModal.classList.add('hidden');
     }
 
+    let _isSendingPopupInProgress = false;
     async function confirmSendPopupAction() {
+      if (_isSendingPopupInProgress) {
+        console.warn('[Admin Popup] Already sending, ignoring duplicate trigger.');
+        return;
+      }
+
       const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
       if (!targetUser) {
         showToast('إرسال تنبيه', 'تعذر تحديد اللاعب المستهدف.', 'error');
@@ -2113,6 +2119,7 @@
       }
 
       try {
+        _isSendingPopupInProgress = true;
         if (confirmSendPopupBtn) {
           confirmSendPopupBtn.disabled = true;
           confirmSendPopupBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> <span>جاري إرسال الشاشة المنبثقة...</span>';
@@ -2149,6 +2156,7 @@
       } catch (err) {
         showToast('فشل الإرسال', err.message, 'error');
       } finally {
+        _isSendingPopupInProgress = false;
         if (confirmSendPopupBtn) {
           confirmSendPopupBtn.disabled = false;
           confirmSendPopupBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>إرسال التنبيه الآن 🚀</span>';
@@ -2162,16 +2170,16 @@
     window.confirmSendPopupAction = confirmSendPopupAction;
 
     const openPopupModalBtn = document.getElementById('btn-admin-open-popup-modal');
-    if (openPopupModalBtn) openPopupModalBtn.addEventListener('click', openDirectPopupSender);
+    if (openPopupModalBtn) openPopupModalBtn.onclick = openDirectPopupSender;
 
     const closePopupModalBtn = document.getElementById('btn-close-admin-popup-modal');
-    if (closePopupModalBtn) closePopupModalBtn.addEventListener('click', closeDirectPopupSender);
+    if (closePopupModalBtn) closePopupModalBtn.onclick = closeDirectPopupSender;
 
     const cancelPopupModalBtn = document.getElementById('btn-cancel-admin-popup');
-    if (cancelPopupModalBtn) cancelPopupModalBtn.addEventListener('click', closeDirectPopupSender);
+    if (cancelPopupModalBtn) cancelPopupModalBtn.onclick = closeDirectPopupSender;
 
     const confirmSendPopupBtn = document.getElementById('btn-confirm-send-admin-popup');
-    if (confirmSendPopupBtn) confirmSendPopupBtn.addEventListener('click', confirmSendPopupAction);
+    if (confirmSendPopupBtn) confirmSendPopupBtn.onclick = confirmSendPopupAction;
 
     // ==================== MODULE: DIRECT ADMIN PACKAGE SENDER TO PLAYER ====================
     async function openSendPackageModal() {
@@ -2255,7 +2263,13 @@
       if (sendPkgModal) sendPkgModal.classList.add('hidden');
     }
 
+    let _isSendingPackageInProgress = false;
     async function confirmSendPackageAction() {
+      if (_isSendingPackageInProgress) {
+        console.warn('[Admin Package] Already sending, ignoring duplicate trigger.');
+        return;
+      }
+
       const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
       if (!targetUser) {
         showToast('إرسال حزمة', 'تعذر تحديد اللاعب المستهدف.', 'error');
@@ -2312,6 +2326,7 @@
       if (!confirm(confirmMsg)) return;
 
       try {
+        _isSendingPackageInProgress = true;
         if (confirmSendPkgBtn) {
           confirmSendPkgBtn.disabled = true;
           confirmSendPkgBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> <span>جاري إرسال الحزمة وشحن حساب اللاعب...</span>';
@@ -2355,7 +2370,7 @@
         // 2. Save directly to DB
         await AppDB.adminSavePlayer(targetUser, freshPlayer);
 
-        // 3. Dispatch official topup_receipt mail
+        // 3. Dispatch official topup_receipt mail with pre-applied sync data
         const topupReceiptData = {
           packageId: 'admin_bundle_' + ts,
           packageName: pkgName,
@@ -2367,6 +2382,11 @@
           badgeTitle: customBadge || pkgName,
           items: items,
           status: 'approved',
+          isPreApplied: true,
+          newCash: newCash,
+          newBank: newBank,
+          newXp: newXp,
+          newWorth: newWorth,
           date: ts,
           receiptNumber: 'ADMIN-GIFT-' + Math.floor(100000 + Math.random() * 900000),
           reviewerNote: note
@@ -2424,6 +2444,7 @@
         console.error('[Send Package Error]', err);
         showToast('فشل إرسال الحزمة', err.message, 'error');
       } finally {
+        _isSendingPackageInProgress = false;
         if (confirmSendPkgBtn) {
           confirmSendPkgBtn.disabled = false;
           confirmSendPkgBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>إرسال الحزمة للاعب فوراً 🚀</span>';
@@ -2437,16 +2458,16 @@
     window.confirmSendPackageAction = confirmSendPackageAction;
 
     const openSendPkgModalBtn = document.getElementById('btn-admin-open-send-pkg-modal');
-    if (openSendPkgModalBtn) openSendPkgModalBtn.addEventListener('click', openSendPackageModal);
+    if (openSendPkgModalBtn) openSendPkgModalBtn.onclick = openSendPackageModal;
 
     const closeSendPkgModalBtn = document.getElementById('btn-close-send-pkg-modal');
-    if (closeSendPkgModalBtn) closeSendPkgModalBtn.addEventListener('click', closeSendPackageModal);
+    if (closeSendPkgModalBtn) closeSendPkgModalBtn.onclick = closeSendPackageModal;
 
     const cancelSendPkgModalBtn = document.getElementById('btn-cancel-send-pkg');
-    if (cancelSendPkgModalBtn) cancelSendPkgModalBtn.addEventListener('click', closeSendPackageModal);
+    if (cancelSendPkgModalBtn) cancelSendPkgModalBtn.onclick = closeSendPackageModal;
 
     const confirmSendPkgBtn = document.getElementById('btn-confirm-send-pkg');
-    if (confirmSendPkgBtn) confirmSendPkgBtn.addEventListener('click', confirmSendPackageAction);
+    if (confirmSendPkgBtn) confirmSendPkgBtn.onclick = confirmSendPackageAction;
 
     // ==================== PLAYER CASH FLOW DETAILED INSPECTOR ====================
     const inspectFlowBtn = document.getElementById('btn-admin-inspect-flow');
