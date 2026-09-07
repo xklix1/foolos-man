@@ -2439,6 +2439,16 @@
             GameEngine.state.customBadge = customBadge;
             GameEngine.state.badgeTitle = customBadge;
           }
+          if (freshPlayer.chatGlow) {
+            GameEngine.state.chatGlow = freshPlayer.chatGlow;
+            GameEngine.state.hasChatGlow = true;
+          }
+          if (freshPlayer.activePackage) GameEngine.state.activePackage = freshPlayer.activePackage;
+          if (freshPlayer.isVerified) GameEngine.state.isVerified = true;
+          if (freshPlayer.vipVerified) GameEngine.state.vipVerified = true;
+          if (freshPlayer.stickersPack) GameEngine.state.stickersPack = true;
+          if (freshPlayer.canUploadAvatar) GameEngine.state.canUploadAvatar = true;
+
           if (Object.keys(items).length > 0) {
             GameEngine.state.inventory = GameEngine.state.inventory || {};
             for (const [itKey, qty] of Object.entries(items)) {
@@ -2450,6 +2460,37 @@
             localStorage.setItem(`rasalmal_state_${targetUser}`, JSON.stringify(GameEngine.state));
           } catch (e) {}
           renderAll();
+        }
+
+        // 4.5. Backfill any existing messages in chat_feed so they glow immediately
+        if (freshPlayer.chatGlow) {
+          try {
+            const feedRows = await (AppDB._api ? AppDB._api("globals?id=eq.chat_feed&select=data") : null);
+            if (feedRows && feedRows.length > 0 && feedRows[0].data && Array.isArray(feedRows[0].data.messages)) {
+              let feedModified = false;
+              feedRows[0].data.messages.forEach(m => {
+                if (m.sender === targetUser) {
+                  m.chatGlow = freshPlayer.chatGlow;
+                  if (freshPlayer.isVerified) m.isVerified = true;
+                  if (freshPlayer.customBadge) m.customBadge = freshPlayer.customBadge;
+                  feedModified = true;
+                }
+              });
+              if (feedModified) {
+                await AppDB._api('globals', {
+                  method: 'POST',
+                  headers: { 'Prefer': 'resolution=merge-duplicates' },
+                  body: JSON.stringify({
+                    id: 'chat_feed',
+                    data: { messages: feedRows[0].data.messages },
+                    updated_at: Date.now()
+                  })
+                });
+              }
+            }
+          } catch (eFeed) {
+            console.warn('[Admin] Chat feed backfill warning:', eFeed.message);
+          }
         }
 
         // 5. Update admin dashboard stats

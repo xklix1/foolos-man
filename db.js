@@ -1901,17 +1901,25 @@ var AppDB = (() => {
       // VIP package features (Chat Glow, Verification Badge, Titles)
       if (req.packageId === 'pkg_vip_chat_glow') {
         pState.chatGlow = 'gold_neon';
+        pState.hasChatGlow = true;
+        pState.activePackage = 'pkg_vip_chat_glow';
       } else if (req.packageId === 'pkg_vip_royal_ultimate') {
         pState.chatGlow = 'cyber_rainbow';
+        pState.hasChatGlow = true;
         pState.isVerified = true;
         pState.vipVerified = true;
+        pState.activePackage = 'pkg_vip_royal_ultimate';
       } else if (req.packageId === 'pkg_vip_verified') {
         pState.isVerified = true;
         pState.vipVerified = true;
+        pState.activePackage = 'pkg_vip_verified';
       }
 
       if (rewards.features) {
-        if (rewards.features.chatGlow) pState.chatGlow = rewards.features.chatGlow;
+        if (rewards.features.chatGlow) {
+          pState.chatGlow = rewards.features.chatGlow;
+          pState.hasChatGlow = true;
+        }
         if (rewards.features.verified) { pState.isVerified = true; pState.vipVerified = true; }
         if (rewards.features.title) pState.title = rewards.features.title;
         if (rewards.features.stickersPack) pState.stickersPack = true;
@@ -1936,6 +1944,37 @@ var AppDB = (() => {
           admin_modified_timestamp: ts
         })
       });
+
+      // Automatically backfill any existing messages in chat_feed so they glow immediately
+      if (pState.chatGlow) {
+        try {
+          const feedRows = await _api("globals?id=eq.chat_feed&select=data");
+          if (feedRows && feedRows.length > 0 && feedRows[0].data && Array.isArray(feedRows[0].data.messages)) {
+            let feedModified = false;
+            feedRows[0].data.messages.forEach(m => {
+              if (m.sender === targetUser) {
+                m.chatGlow = pState.chatGlow;
+                if (pState.isVerified) m.isVerified = true;
+                if (pState.customBadge) m.customBadge = pState.customBadge;
+                feedModified = true;
+              }
+            });
+            if (feedModified) {
+              await _api('globals', {
+                method: 'POST',
+                headers: { 'Prefer': 'resolution=merge-duplicates' },
+                body: JSON.stringify({
+                  id: 'chat_feed',
+                  data: { messages: feedRows[0].data.messages },
+                  updated_at: Date.now()
+                })
+              });
+            }
+          }
+        } catch (errFeed) {
+          console.warn('[DB] Chat feed backfill warning:', errFeed.message);
+        }
+      }
 
       const topupReceiptData = {
         packageId: req.packageId,
@@ -3352,12 +3391,45 @@ var AppDB = (() => {
       timestamp: Date.now()
     };
 
+    // Auto-detect player VIP glow from Cloud/State if not provided in extraMeta
+    if (!msgObj.chatGlow && sender && sender !== 'الإدارة') {
+      try {
+        const pRows = await _api(`players?username=eq.${encodeURIComponent(sender)}&select=state`);
+        if (pRows && pRows.length > 0 && pRows[0].state) {
+          const st = pRows[0].state;
+          if (st.chatGlow) {
+            msgObj.chatGlow = st.chatGlow;
+          } else if (st.hasChatGlow || st.activePackage === 'pkg_vip_chat_glow') {
+            msgObj.chatGlow = 'gold_neon';
+          } else if (st.activePackage === 'pkg_vip_royal_ultimate') {
+            msgObj.chatGlow = 'cyber_rainbow';
+          }
+          if (st.isVerified || st.vipVerified) msgObj.isVerified = true;
+          if (st.customBadge && !msgObj.customBadge) msgObj.customBadge = st.customBadge;
+        }
+      } catch (e) {
+        // Fallback silently if network query fails
+      }
+    }
+
     try {
       const rows = await _api("globals?id=eq.chat_feed&select=data,updated_at");
       let currentFeed = [];
       if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.messages)) {
         currentFeed = rows[0].data.messages;
       }
+
+      // If sender has glow, backfill their older messages in current feed so everything glows!
+      if (msgObj.chatGlow) {
+        currentFeed.forEach(m => {
+          if (m.sender === msgObj.sender) {
+            m.chatGlow = msgObj.chatGlow;
+            if (msgObj.isVerified) m.isVerified = true;
+            if (msgObj.customBadge) m.customBadge = msgObj.customBadge;
+          }
+        });
+      }
+
       currentFeed.push(msgObj);
       if (currentFeed.length > 50) {
         currentFeed = currentFeed.slice(currentFeed.length - 50);
