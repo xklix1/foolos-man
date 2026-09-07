@@ -12268,9 +12268,10 @@ const UIController = (() => {
             :`يبدأ المزاد تلقائياً بعد مرور <strong>${diff} دقيقة</strong>`;
         }
 
+        const _safeId1 = escapeHtml(String(auc.id || ''));
         actionBtnHtml = isRegistered
           ?`<button class="w-full py-2 bg-slate-800 border border-slate-700 text-slate-400 rounded-xl text-xs font-bold" disabled>${window.currentLang ==='en' ?'You are registered' :'أنت مسجل في المزاد بالفعل'}</button>`
-          :`<button onclick="window.UI.registerForAuction('${auc.id}')" class="w-full py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition">${window.currentLang ==='en' ?'Register for Auction' :'تسجيل للمشاركة في المزاد'}</button>`;
+          :`<button onclick="window.UI.registerForAuction('${_safeId1}')" class="w-full py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition">${window.currentLang ==='en' ?'Register for Auction' :'تسجيل للمشاركة في المزاد'}</button>`;
 
         timerHtml =`<div class="text-[10px] text-slate-400 text-center">${condText}</div>`;
       } else if (auc.status ==='active') {
@@ -12294,16 +12295,18 @@ const UIController = (() => {
           const nextMinBid = Math.floor(auc.currentBid * 1.05);
           const savedVal = savedInputs[auc.id];
           const valToUse = savedVal !== undefined ? savedVal : nextMinBid;
+          const _safeId2 = escapeHtml(String(auc.id || ''));
           actionBtnHtml =`
             <div class="flex gap-2">
-              <input type="number" id="bid-input-${auc.id}" min="${nextMinBid}" value="${valToUse}" class="w-2/3 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-black text-white text-center">
-              <button onclick="window.UI.placeAuctionBid('${auc.id}')" class="flex-1 py-1.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition">${window.currentLang ==='en' ?'Bid' :'زايد'}</button>
+              <input type="number" id="bid-input-${_safeId2}" min="${nextMinBid}" value="${valToUse}" class="w-2/3 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-black text-white text-center">
+              <button onclick="window.UI.placeAuctionBid('${_safeId2}')" class="flex-1 py-1.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition">${window.currentLang ==='en' ?'Bid' :'زايد'}</button>
             </div>`;
         }
       }
 
       const safeItemName = escapeHtml(translatedItemName);
       const safeHighestBidder = escapeHtml(auc.highestBidder || (window.currentLang ==='en' ?'None' :'لا يوجد'));
+      const safeAucId = escapeHtml(String(auc.id || ''));
 
       card.innerHTML =`
         <div class="flex justify-between items-start border-b border-slate-800 pb-3">
