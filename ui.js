@@ -12308,11 +12308,17 @@ const UIController = (() => {
       const safeHighestBidder = escapeHtml(auc.highestBidder || (window.currentLang ==='en' ?'None' :'لا يوجد'));
       const safeAucId = escapeHtml(String(auc.id || ''));
 
+      const safeItemType = auc.itemType ==='property'
+        ? (window.currentLang ==='en' ? 'Financial Property' : 'عقار مالي')
+        : auc.itemType ==='business'
+          ? (window.currentLang ==='en' ? 'Commercial Business' : 'مشروع تجاري')
+          : (window.currentLang ==='en' ? 'Collectible Item' : 'غرض مقتنيات');
+
       card.innerHTML =`
         <div class="flex justify-between items-start border-b border-slate-800 pb-3">
           <div>
             <h4 class="font-black text-white text-sm">${safeItemName}</h4>
-            <span class="text-[10px] text-slate-400">${auc.itemType ==='property' ? (window.currentLang ==='en' ?'Financial Property' :'عقار مالي') : auc.itemType ==='business' ? (window.currentLang ==='en' ?'Commercial Business' :'مشروع تجاري') : (window.currentLang ==='en' ?'Collectible Item' :'غرض مقتنيات')}</span>
+            <span class="text-[10px] text-slate-400">${safeItemType}</span>
           </div>
           ${badgeHtml}
         </div>
