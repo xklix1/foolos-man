@@ -3391,24 +3391,30 @@ var AppDB = (() => {
       timestamp: Date.now()
     };
 
-    // Auto-detect player VIP glow from Cloud/State if not provided in extraMeta
+    // Auto-detect player VIP glow from Cloud/State or customBadge if not provided in extraMeta
     if (!msgObj.chatGlow && sender && sender !== 'الإدارة') {
-      try {
-        const pRows = await _api(`players?username=eq.${encodeURIComponent(sender)}&select=state`);
-        if (pRows && pRows.length > 0 && pRows[0].state) {
-          const st = pRows[0].state;
-          if (st.chatGlow) {
-            msgObj.chatGlow = st.chatGlow;
-          } else if (st.hasChatGlow || st.activePackage === 'pkg_vip_chat_glow') {
-            msgObj.chatGlow = 'gold_neon';
-          } else if (st.activePackage === 'pkg_vip_royal_ultimate') {
-            msgObj.chatGlow = 'cyber_rainbow';
+      if (extraMeta && (extraMeta.customBadge === '🌟' || (extraMeta.badgeTitle && extraMeta.badgeTitle.includes('حوت الشات')))) {
+        msgObj.chatGlow = 'gold_neon';
+      } else if (extraMeta && (extraMeta.customBadge === '👑✔️' || (extraMeta.customBadge && extraMeta.customBadge.includes('👑')))) {
+        msgObj.chatGlow = 'cyber_rainbow';
+      } else {
+        try {
+          const pRows = await _api(`players?username=eq.${encodeURIComponent(sender)}&select=state`);
+          if (pRows && pRows.length > 0 && pRows[0].state) {
+            const st = pRows[0].state;
+            if (st.chatGlow) {
+              msgObj.chatGlow = st.chatGlow;
+            } else if (st.hasChatGlow || st.activePackage === 'pkg_vip_chat_glow' || st.customBadge === '🌟' || (st.badgeTitle && st.badgeTitle.includes('حوت الشات'))) {
+              msgObj.chatGlow = 'gold_neon';
+            } else if (st.activePackage === 'pkg_vip_royal_ultimate' || st.customBadge === '👑✔️' || (st.customBadge && st.customBadge.includes('👑'))) {
+              msgObj.chatGlow = 'cyber_rainbow';
+            }
+            if (st.isVerified || st.vipVerified) msgObj.isVerified = true;
+            if (st.customBadge && !msgObj.customBadge) msgObj.customBadge = st.customBadge;
           }
-          if (st.isVerified || st.vipVerified) msgObj.isVerified = true;
-          if (st.customBadge && !msgObj.customBadge) msgObj.customBadge = st.customBadge;
+        } catch (e) {
+          // Fallback silently if network query fails
         }
-      } catch (e) {
-        // Fallback silently if network query fails
       }
     }
 
