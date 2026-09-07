@@ -1531,7 +1531,7 @@ var AppDB = (() => {
     try {
       if (typeof window !== 'undefined' && window.IS_STAGING_ENV === true) return true;
       const host = (typeof window !== 'undefined' && window.location && window.location.hostname) || '';
-      if (host.includes('github.io') || host.includes('pages.dev') || host.includes('vercel.app')) return true;
+      if (/(^|\.)(github\.io|pages\.dev|vercel\.app)$/i.test(host)) return true;
       const path = (typeof window !== 'undefined' && window.location && window.location.pathname) || '';
       if (path.includes('stage-x91-k8q7') || path.includes('staging') || path.includes('test-sandbox')) return true;
       if (typeof window !== 'undefined' && window.location && window.location.search && window.location.search.includes('staging=1')) return true;

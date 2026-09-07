@@ -2688,9 +2688,9 @@
   <div id="toast-container" class="fixed top-4 left-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Core Modules -->
-  <script src="game.js?v=10.6"></script>
-  <script src="db.js?v=10.6"></script>
-  <script src="admin-panel.js?v=10.6"></script>
+  <script src="game.js?v=10.7"></script>
+  <script src="db.js?v=10.7"></script>
+  <script src="admin-panel.js?v=10.7"></script>
 
   <!-- Standalone Admin Controller Script -->
   <script>
@@ -2963,13 +2963,17 @@
     // Audio mock
     function playMenuSound() {}
 
+    function _esc(s) {
+      return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    }
+
     // Toast helper
     function showToast(title, message, type = 'info') {
       const container = document.getElementById('toast-container');
       if (!container) return;
       const t = document.createElement('div');
       t.className = 'glass-panel p-3.5 rounded-xl border border-amber-500/40 text-xs text-white max-w-sm pointer-events-auto flex items-center gap-2.5 shadow-2xl transition duration-300 transform translate-y-2';
-      t.innerHTML = '<i class="fa-solid fa-circle-info text-yellow-400 text-sm"></i><div><strong class="block font-bold text-yellow-400">' + title + '</strong><span>' + message + '</span></div>';
+      t.innerHTML = '<i class="fa-solid fa-circle-info text-yellow-400 text-sm"></i><div><strong class="block font-bold text-yellow-400">' + _esc(title) + '</strong><span>' + _esc(message) + '</span></div>';
       container.appendChild(t);
       setTimeout(() => { t.classList.remove('translate-y-2'); }, 10);
       setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 4000);

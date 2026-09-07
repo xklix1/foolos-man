@@ -257,10 +257,11 @@
 
       if (filtered.length === 0) {
         if (rawQuery) {
+          const safeQ = escapeHtml(rawQuery);
           playersTableBody.innerHTML = `
             <tr>
               <td colspan="5" class="py-6 text-center space-y-2">
-                <div class="text-slate-400 text-xs">لم يتم العثور على اللاعب "${rawQuery}" في القائمة المفهرسة محلياً.</div>
+                <div class="text-slate-400 text-xs">لم يتم العثور على اللاعب "${safeQ}" في القائمة المفهرسة محلياً.</div>
                 <button id="btn-admin-direct-cloud-lookup" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-lg text-xs transition inline-flex items-center gap-2 shadow-lg shadow-yellow-500/20">
                   <i class="fa-solid fa-cloud-arrow-down"></i>
                   <span>فحص وبحث مباشر بالاسم في السيرفر السحابي</span>
@@ -590,7 +591,7 @@
             <span class="text-base"></span>
             <div>
               <div class="font-bold text-slate-200">الوظيفة الحالية</div>
-              <div class="text-[10px] text-slate-400 font-sans">${state.title ||'عامل مبتدئ'}</div>
+              <div class="text-[10px] text-slate-400 font-sans">${escapeHtml(state.title ||'عامل مبتدئ')}</div>
             </div>
           </div>
           <select class="admin-inline-job-select bg-slate-950 border border-slate-700 text-slate-300 p-1.5 rounded-md text-[10px] focus:outline-none focus:border-yellow-500">
@@ -1834,7 +1835,7 @@
         logFeed.innerHTML =`
           <div class="p-8 text-center text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">
             <i class="fa-solid fa-clipboard-list text-3xl mb-2 text-slate-600 block"></i>
-            <span class="text-xs">لا توجد حركات مسجلة لهذا اللاعب في تصنيف"${currentLogFilter}" حتى الآن.</span>
+            <span class="text-xs">لا توجد حركات مسجلة لهذا اللاعب في تصنيف "${escapeHtml(currentLogFilter)}" حتى الآن.</span>
           </div>`;
         return;
       }
@@ -5179,8 +5180,8 @@
         const sender = escapeHtml(rawSender);
         const recipient = escapeHtml(rawRecipient);
         const details = escapeHtml(a.details || '');
-        const safeSenderArg = rawSender.replace(/'/g, "\\'");
-        const safeRecipientArg = rawRecipient.replace(/'/g, "\\'");
+        const safeSenderArg = encodeURIComponent(rawSender);
+        const safeRecipientArg = encodeURIComponent(rawRecipient);
 
         return `
           <tr class="hover:bg-slate-900/60 transition border-b border-slate-800/40">
@@ -5193,7 +5194,7 @@
             <td class="p-2.5 text-center whitespace-nowrap">
               <div class="flex items-center justify-center gap-1.5 flex-wrap">
                 <!-- تصفير كلا الطرفين -->
-                <button onclick="window.adminHandleFraudAction && window.adminHandleFraudAction('reset_both', '${safeSenderArg}', '${safeRecipientArg}')"
+                <button onclick="window.adminHandleFraudAction && window.adminHandleFraudAction('reset_both', decodeURIComponent('${safeSenderArg}'), decodeURIComponent('${safeRecipientArg}'))"
                   class="px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 hover:text-amber-200 rounded-lg text-[10px] font-black transition flex items-center gap-1 cursor-pointer shadow-sm"
                   title="تصفير أموال ومشاريع الطرفين وإرسال تنبيه كشف رسمي لهما">
                   <i class="fa-solid fa-rotate-left text-xs"></i>
@@ -5201,7 +5202,7 @@
                 </button>
                 
                 <!-- حظر كلا الطرفين -->
-                <button onclick="window.adminHandleFraudAction && window.adminHandleFraudAction('ban_both', '${safeSenderArg}', '${safeRecipientArg}')"
+                <button onclick="window.adminHandleFraudAction && window.adminHandleFraudAction('ban_both', decodeURIComponent('${safeSenderArg}'), decodeURIComponent('${safeRecipientArg}'))"
                   class="px-2.5 py-1 bg-rose-950/60 hover:bg-rose-900 border border-rose-500/50 text-rose-300 hover:text-rose-200 rounded-lg text-[10px] font-black transition flex items-center gap-1 cursor-pointer shadow-sm"
                   title="حظر كلا الطرفين نهائياً من اللعبة وإرسال تنبيه الحظر لهما">
                   <i class="fa-solid fa-ban text-xs"></i>
@@ -5209,7 +5210,7 @@
                 </button>
 
                 <!-- قائمة الإجراءات الفردية والمتقدمة -->
-                <select onchange="window.adminHandleFraudDropdown && window.adminHandleFraudDropdown(this, '${safeSenderArg}', '${safeRecipientArg}')"
+                <select onchange="window.adminHandleFraudDropdown && window.adminHandleFraudDropdown(this, decodeURIComponent('${safeSenderArg}'), decodeURIComponent('${safeRecipientArg}'))"
                   class="px-2 py-1 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold cursor-pointer transition focus:outline-none focus:border-cyan-400">
                   <option value="" disabled selected>المزيد ▾</option>
                   <option value="reset_ban_both">💥 تصفير + حظر الطرفين معاً</option>
@@ -5225,7 +5226,7 @@
       }).join('');
     } catch (e) {
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-rose-400 font-sans">فشل تحميل سجل الأمان: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-rose-400 font-sans">فشل تحميل سجل الأمان: ${escapeHtml(e.message)}</td></tr>`;
       }
     }
   }
@@ -5806,8 +5807,14 @@
         logBox.innerHTML ='';
       }
       const entry = document.createElement('div');
-      entry.className ='border-b border-slate-900/60 pb-1 mb-1';
-      entry.innerHTML =`<span class="text-yellow-500 font-bold ml-1 font-mono">[${time}]</span> ${msg}`;
+      entry.className ='border-b border-slate-900/60 pb-1 mb-1 flex items-center gap-1';
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'text-yellow-500 font-bold ml-1 font-mono';
+      timeSpan.textContent = `[${time}]`;
+      const msgSpan = document.createElement('span');
+      msgSpan.textContent = String(msg || '');
+      entry.appendChild(timeSpan);
+      entry.appendChild(msgSpan);
       logBox.insertBefore(entry, logBox.firstChild);
     });
   }

@@ -18,9 +18,15 @@ const MIME_TYPES = {
 http.createServer((req, res) => {
   // Normalize URL to prevent directory traversal
   let safeUrl = req.url.split('?')[0];
-  if (safeUrl === '/') safeUrl = '/index.html';
+  if (safeUrl === '/' || !safeUrl) safeUrl = '/index.html';
   
-  const filePath = path.join(__dirname, safeUrl);
+  const rootDir = path.resolve(__dirname);
+  const filePath = path.resolve(path.join(rootDir, safeUrl));
+  if (!filePath.startsWith(rootDir)) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('403 Forbidden');
+    return;
+  }
   
   const ext = path.extname(filePath);
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';

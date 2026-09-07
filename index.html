@@ -4819,9 +4819,9 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=10.6"></script>
-  <script src="game.js?v=10.6"></script>
-  <script src="ui.js?v=10.6"></script>
+  <script src="db.js?v=10.7"></script>
+  <script src="game.js?v=10.7"></script>
+  <script src="ui.js?v=10.7"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -5286,7 +5286,7 @@
         try {
           if (window.IS_STAGING_ENV === true) return true;
           const host = (window.location && window.location.hostname) || '';
-          if (host.includes('github.io') || host.includes('pages.dev') || host.includes('vercel.app')) return true;
+          if (/(^|\.)(github\.io|pages\.dev|vercel\.app)$/i.test(host)) return true;
           const path = (window.location && window.location.pathname) || '';
           if (path.includes('stage-x91-k8q7') || path.includes('staging') || path.includes('test-sandbox')) return true;
           if (window.location && window.location.search && window.location.search.includes('staging=1')) return true;

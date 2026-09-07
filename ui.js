@@ -66,6 +66,12 @@ const UIController = (() => {
     document.documentElement.lang ='en';
   }
 
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+  }
+
   const translationDict = {
     // Nav / Sidebar"حسابي":"My Account","المهن والوظائف":"Careers & Jobs","إدارة الأعمال":"Businesses","البنك والتحويلات":"Banking & Wire","ممتلكاتي والعقارات":"Real Estate","البورصة والأسهم":"Stock Market","مصلحة الضرائب":"Tax Department","المتجر والمستودع":"VIP Shop & Inventory","المزادات والصفقات الخاصة":"Auctions & Special","السوق السوداء":"Black Market","كازينو التسلية":"Casino & Slots","توب الأغنياء":"Leaderboard","خروج":"Logout","القائمة":"Menu","الدليل":"Guide","الإدارة":"Admin","الإصدار V1 • الإطلاق الرسمي":"Version V1 • Official Launch","الإصدار 1":"Version V1","الإصدار V1.01":"Version V1","الإصدار V2":"Version V1","الإصدار V2.5":"Version V1","خوادم الأونلاين نشطة":"Online Servers Active","جاهز للإقلاع":"Ready for takeoff","المحفظة النشطة":"Active Profile","سيولة الكاش":"Cash Balance","حساب البنك":"Bank Account","التدفق اللحظي":"Passive Cashflow","إجمالي الثروة":"Net Worth","من الصفر إلى عرش المليارات • محاكي إمبراطورية المال والاستثمار":"From Scratch to Billions • Business Empire Tycoon","محفظتك المحفوظة والجاهزة للمتابعة":"Your Saved Wallet Profile","تسجيل الدخول للمحفظة":"Login to Wallet","رأس المال • Ras ALmal":"Ras ALmal Tycoon","أدخل اسم مستخدم فريد ورمز سري لتأسيس محفظتك وحفظ أرباحك السحابية.":"Enter username & PIN to manage your wallet and save progress.","تسجيل الدخول":"Login","إنشاء حساب جديد":"Register","اسم المستخدم (بالأحرف أو الأرقام)":"Username (letters & numbers)","الرقم السري للمحفظة (PIN)":"PIN Code (numbers)","دخول وتزامن الحساب":"Login & Sync","متابعة الإمبراطورية":"Continue Empire","استكمال إدارتك للأموال والمشاريع":"Resume managing funds & business","بدء رحلة جديدة":"Start New Journey","تأسيس محفظة والانطلاق من الصفر":"Create profile & launch from scratch","تسجيل الدخول لمحفظة سابقة":"Login to existing wallet","استعادة حسابك المحفوظ بكلمة المرور (PIN)":"Restore saved wallet via PIN","عرش الأثرياء":"Wealthiest Leaderboard","دليل الملياردير":"Billionaire Guide","الإعدادات":"Settings","إعدادات اللعبة والصوت":"Game & Sound Settings","تخصيص التجربة والمؤثرات الصوتية والبصرية":"Customize audio & visual preferences","المؤثرات الصوتية (Sound FX)":"Sound FX","أصوات النقر والربح والكازينو والتنبيهات":"Click sounds, earnings, casino, and alerts","الموسيقى المحيطية (Ambient Sound)":"Ambient Sound / Synth","موسيقى هادئة سينمائية لأجواء اللعبة":"Quiet cinematic music for game atmosphere","تأثيرات الإضاءة والنيون (Glow FX)":"Glow & Visual FX","تأثير التوهج والفلورسنت (Glow FX)":"Glow & Visual FX","توهج الذهب والجزيئات المتحركة":"Glow details and animated particles","تجربة نغمة الصوت":"Test Sound Tone","حفظ التفضيلات":"Save Preferences","قاعة الشرف وعرش الأثرياء":"Hall of Fame & Leaderboard","أعلى أصحاب الثروات في سيرفر رأس المال (Ras ALmal) المباشر":"Top billionaires on the live Ras ALmal server","دليل الملياردير الإمبراطوري":"Billionaire Imperial Guide","أسرار الهيمنة وصناعة الثروة من الصفر حتى قمة عرش أثرياء رأس المال":"Secrets of wealth and dominance from scratch to the throne of Ras ALmal"," الدليل الإمبراطوري الشامل (المفصل)":" Detailed Billionaire Guide"," الدليل السريع والمختصر":" Compact Quick Guide","الإصدار الشامل ⭐":"Imperial Edition ⭐","إنشاء محفظة جديدة وبدء اللعب":"Create Profile & Play","الرجوع للقائمة الرئيسية":"Return to Menu","فهمت القواعد! انطلق الآن":"Got the Rules! Start Playing"," يمكنك الرجوع للدليل في أي وقت من القائمة أو شريط اللعبة":" You can open this guide at any time from the main menu or HUD","تغيير اللغة / Change Language":"اللغة: العربية","EN":"العربية",
     // Toast titles & messages & game status terms"تهانينا":"Congratulations","تم ترقيتك لوظيفة:":"You have been promoted to:","خطأ الترقية":"Promotion Error","نجاح التأسيس":"Establishment Successful","تم افتتاح مشروع":"Successfully opened"," بنجاح!":"!","فشل المشروع":"Project Failure","عقود عقارية":"Real Estate Contracts","تم شراء عقار":"Successfully purchased property"," بنجاح وإضافته لمحفظتك.":" and added it to your portfolio.","بيع كلي":"Full Liquidation","تمت بيع وتسييل كامل الأسهم":"Successfully sold and liquidated all shares"," سهم) بقيمة":" shares) for","فشل البيع":"Sale Failed","خطأ رهان":"Bet Error","ربح ملكي!":"Royal Win!","صبت التخمين":"You guessed correctly","التاج الملكي":"Royal Crown","الدرع الدفاعي":"Defense Shield"," كسبت":" won","بونص سلسلة الفوز:":"Win streak bonus:","خسارة الجولة":"Round Lost","لسوء الحظ، استقرت العملة على":"Unfortunately, the coin landed on","التاج":"Heads","الدرع":"Tails"," خسرت":" lost","تحطم الصاروخ":"Rocket Crashed","انفجر الصاروخ عند مضاعف":"Rocket exploded at multiplier","خسرت رهانك":"You lost your bet","عملية سحب ناجحة":"Cashout Successful","تم سحب أرباحك بقيمة":"Your profits were cashed out at"," بمضاعف":" at multiplier","فاتورة متجر":"Store Bill","تم شراء":"Successfully purchased"," ودفع القيمة النقود.":" and paid the cash value.","رصيد معلق":"Insufficient Balance","لا تملك أي أسهم في هذه الشركة لبيعها.":"You do not own any shares in this company to sell.","يرجى تحديد مبلغ رهان صحيح.":"Please enter a valid bet amount.","جاكبوت كاسح!":"Jackpot!"," مبروك! حصلت على الجاكبوت الذهبي الأقصى! ربحت":" Congrats! You hit the golden jackpot! You won","فوز الآلة":"Slots Win","ربحت":"You won","خسرت":"You lost","حظ أوفر":"Better Luck Next Time","خطأ الآلة":"Slots Error","فوز بلاك جاك":"Blackjack Win","تعادل":"Push","خسارة رهان":"Loss","بلاك جاك طبيعي! ربحت":"Natural Blackjack! You won","تجاوز الموزع! ربحت":"Dealer Bust! You won","تفوقت على الموزع! ربحت":"You beat the dealer! You won","تعادل بمجموع":"Push at score","! تم احتسابه فوزاً لصالحك (عضوية VIP)":"! counted as a win (VIP Benefit)","تعادل (Push) بمجموع":"Push at score","؛ تم استرداد الرهان.":"; bet refunded.","تجاوزت الـ 21 (Bust)! خسرت الرهان":"You went over 21 (Bust)! You lost the bet","تغلّب الموزع عليك! خسرت الرهان":"Dealer beat you! You lost the bet","تم التسجيل بنجاح":"Registered Successfully","تم تسجيل اسمك للمزايدة الحية بنجاح.":"Your name has been registered for the live auction.","فشل التسجيل":"Registration Failed","رصيد غير كافي":"Insufficient Funds","لا تملك رصيداً كافياً لتقديم هذا العرض.":"You do not have enough funds to place this bid.","تمت المزايدة":"Bid Placed","لقد قدمت عرض مزايدة أعلى بنجاح!":"You placed a higher bid successfully!","فشل المزايدة":"Bid Failed","لوحة العمل والاستثمار اليومي":"Daily Work & Investment Board","انقر للعمل، أسس مشاريعك الحرة، ودع الأرباح تصب في محفظتك تلقائياً.":"Click to work, build businesses, and accumulate passive income directly.","العمل بنوبة اعتيادية":"Perform Regular Shift","نوبة إضافية مضاعفة (x2.5 راتب + x3 خبرة)":"Double Overtime Shift (x2.5 Pay, x3 XP)","لوحة التحكم والإشراف":"Admin Dashboard","إصدار النظام":"System Version","نوع التخزين":"Storage Type","تحديث الإحصائيات الحية":"Refresh Stats","اللعبة في وضع الصيانة":"Game Under Maintenance","تخضع اللعبة حالياً لأعمال تحديث وصيانة طارئة. يرجى المحاولة لاحقاً.":"The game is currently under maintenance. Please try again later.","حسناً":"OK","الخوادم رهن الصيانة الفنية!":"Servers Under Maintenance!","تخضع اللعبة حالياً لأعمال تحديث وصيانة طارئة من قبل الإدارة لتحسين الأداء وتأمين الحسابات. يرجى الانتظار والمحاولة لاحقاً.":"The game is currently undergoing maintenance. Please try again later.","إعادة فحص حالة الخادم":"Re-check Server Status","بوابة دخول الإدارة والمشرفين (Admin Portal)":"Admin Portal Portal",
@@ -414,11 +420,14 @@ const UIController = (() => {
         </button>`;
     }
 
+    const safeTitle = escapeHtml(title || (window.currentLang ==='en' ?'System Notification' :'إشعار المنظومة'));
+    const safeMessage = escapeHtml(message);
+
     toast.innerHTML =`
       <div class="shrink-0">${iconHtml}</div>
       <div class="flex-1 min-w-0">
-        <h4 class="text-[11px] sm:text-xs font-black ${titleColor} leading-tight">${title || (window.currentLang ==='en' ?'System Notification' :'إشعار المنظومة')}</h4>
-        ${message ?`<p class="text-[10px] sm:text-[11px] text-slate-300 leading-tight mt-0.5 break-words">${message}</p>` :''}
+        <h4 class="text-[11px] sm:text-xs font-black ${titleColor} leading-tight">${safeTitle}</h4>
+        ${safeMessage ?`<p class="text-[10px] sm:text-[11px] text-slate-300 leading-tight mt-0.5 break-words">${safeMessage}</p>` :''}
       </div>
       ${actionBtnHtml}
       <button class="text-slate-500 hover:text-white transition text-xs shrink-0 px-1 py-0.5 btn-toast-dismiss">
@@ -1929,9 +1938,10 @@ const UIController = (() => {
     const badgeHtml = customBadge ?`<span class="vip-custom-badge ml-1 inline-block drop-shadow-sm" title="${s.badgeTitle ||'عضو VIP'}">${customBadge}</span>` :'';
 
     // Desktop stats
+    const safeUsername = escapeHtml(username);
     const uEl = document.getElementById('stat-username');
     if (uEl) {
-      uEl.innerHTML = badgeHtml + username;
+      uEl.innerHTML = badgeHtml + safeUsername;
       uEl.classList.add('cursor-pointer','hover:underline');
       uEl.title ='اضغط لعرض ملفك الشخصي وأوسمتك';
       uEl.onclick = () => openPlayerProfileCard(username);
@@ -1971,7 +1981,7 @@ const UIController = (() => {
     // Mobile stats
     const umEl = document.getElementById('stat-username-mobile');
     if (umEl) {
-      umEl.innerHTML = badgeHtml + username;
+      umEl.innerHTML = badgeHtml + safeUsername;
       umEl.classList.add('cursor-pointer','hover:underline');
       umEl.title ='اضغط لعرض ملفك الشخصي وأوسمتك';
       umEl.onclick = () => openPlayerProfileCard(username);
@@ -6183,7 +6193,7 @@ const UIController = (() => {
     try {
       if (window.IS_STAGING_ENV === true) return true;
       const host = (window.location && window.location.hostname) || '';
-      if (host.includes('github.io') || host.includes('pages.dev') || host.includes('vercel.app')) return true;
+      if (/(^|\.)(github\.io|pages\.dev|vercel\.app)$/i.test(host)) return true;
       const path = (window.location && window.location.pathname) || '';
       if (path.includes('stage-x91-k8q7') || path.includes('staging') || path.includes('test-sandbox')) return true;
       if (window.location && window.location.search && window.location.search.includes('staging=1')) return true;
@@ -6665,7 +6675,7 @@ const UIController = (() => {
           showToast('قائمة اللاعبين',`تم جلب بيانات ${cachedPlayers.length} لاعب بنجاح${cacheMsg}.`,'success');
         }
       } catch (err) {
-        playersTableBody.innerHTML =`<tr><td colspan="5" class="py-4 text-center text-rose-400">تعذر تحميل القائمة: ${err.message}</td></tr>`;
+        playersTableBody.innerHTML =`<tr><td colspan="5" class="py-4 text-center text-rose-400">تعذر تحميل القائمة: ${escapeHtml(err.message)}</td></tr>`;
       }
     }
 
@@ -6727,10 +6737,11 @@ const UIController = (() => {
 
       if (filtered.length === 0) {
         if (rawQuery) {
+          const safeQ = escapeHtml(rawQuery);
           playersTableBody.innerHTML = `
             <tr>
               <td colspan="5" class="py-6 text-center space-y-2">
-                <div class="text-slate-400 text-xs">لم يتم العثور على اللاعب "${rawQuery}" في القائمة المفهرسة محلياً.</div>
+                <div class="text-slate-400 text-xs">لم يتم العثور على اللاعب "${safeQ}" في القائمة المفهرسة محلياً.</div>
                 <button id="btn-ui-direct-cloud-lookup" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-lg text-xs transition inline-flex items-center gap-2 shadow-lg shadow-yellow-500/20">
                   <i class="fa-solid fa-cloud-arrow-down"></i>
                   <span>فحص وبحث مباشر بالاسم في السيرفر السحابي</span>
@@ -7013,7 +7024,7 @@ const UIController = (() => {
             <span class="text-base"></span>
             <div>
               <div class="font-bold text-slate-200">الوظيفة الحالية</div>
-              <div class="text-[10px] text-slate-400 font-sans">${state.title ||'عامل مبتدئ'}</div>
+              <div class="text-[10px] text-slate-400 font-sans">${escapeHtml(state.title ||'عامل مبتدئ')}</div>
             </div>
           </div>
           <select class="admin-inline-job-select bg-slate-950 border border-slate-700 text-slate-300 p-1.5 rounded-md text-[10px] focus:outline-none focus:border-yellow-500">
@@ -9749,8 +9760,14 @@ const UIController = (() => {
         logBox.innerHTML ='';
       }
       const entry = document.createElement('div');
-      entry.className ='border-b border-slate-900/60 pb-1 mb-1';
-      entry.innerHTML =`<span class="text-yellow-500 font-bold ml-1 font-mono">[${time}]</span> ${msg}`;
+      entry.className ='border-b border-slate-900/60 pb-1 mb-1 flex items-center gap-1';
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'text-yellow-500 font-bold ml-1 font-mono';
+      timeSpan.textContent = `[${time}]`;
+      const msgSpan = document.createElement('span');
+      msgSpan.textContent = String(msg || '');
+      entry.appendChild(timeSpan);
+      entry.appendChild(msgSpan);
       logBox.insertBefore(entry, logBox.firstChild);
     });
   }
@@ -12285,10 +12302,13 @@ const UIController = (() => {
         }
       }
 
+      const safeItemName = escapeHtml(translatedItemName);
+      const safeHighestBidder = escapeHtml(auc.highestBidder || (window.currentLang ==='en' ?'None' :'لا يوجد'));
+
       card.innerHTML =`
         <div class="flex justify-between items-start border-b border-slate-800 pb-3">
           <div>
-            <h4 class="font-black text-white text-sm">${translatedItemName}</h4>
+            <h4 class="font-black text-white text-sm">${safeItemName}</h4>
             <span class="text-[10px] text-slate-400">${auc.itemType ==='property' ? (window.currentLang ==='en' ?'Financial Property' :'عقار مالي') : auc.itemType ==='business' ? (window.currentLang ==='en' ?'Commercial Business' :'مشروع تجاري') : (window.currentLang ==='en' ?'Collectible Item' :'غرض مقتنيات')}</span>
           </div>
           ${badgeHtml}
@@ -12304,7 +12324,7 @@ const UIController = (() => {
           </div>
         </div>
         <div class="text-[10px] text-slate-400">
-          <span>${window.currentLang ==='en' ?'Current Highest Bidder:' :'أعلى مزايد الآن:'} <strong class="text-white">${auc.highestBidder || (window.currentLang ==='en' ?'None' :'لا يوجد')}</strong></span>
+          <span>${window.currentLang ==='en' ?'Current Highest Bidder:' :'أعلى مزايد الآن:'} <strong class="text-white">${safeHighestBidder}</strong></span>
         </div>
         ${timerHtml}
         ${actionBtnHtml}`;
