@@ -1278,6 +1278,8 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.3); }
   margin-bottom: 6px !important;
   text-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
   font-weight: 500;
+  min-width: 100px; /* prevent badge overflow on short messages */
+  overflow: visible;
 }
 
 .chat-bubble-glow-gold::before {
@@ -1298,6 +1300,12 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.3); }
   box-shadow: 0 0 12px rgba(245, 158, 11, 0.8), inset 0 0 6px rgba(251, 191, 36, 0.4);
   z-index: 2;
   white-space: nowrap;
+}
+
+/* --- Badge direction fix: sent messages (left side in RTL) use left:8px to avoid overflowing off-screen left --- */
+html[dir="rtl"] .chat-bubble-sent.chat-bubble-glow-gold::before {
+  left: 8px;
+  right: auto;
 }
 
 html[dir="ltr"] .chat-bubble-glow-gold::before {
@@ -1327,6 +1335,8 @@ html[dir="ltr"] .chat-bubble-glow-gold[data-vip-tag=""]::before {
   margin-bottom: 6px !important;
   text-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
   font-weight: 500;
+  min-width: 100px; /* prevent badge overflow on short messages */
+  overflow: visible;
 }
 
 .chat-bubble-glow-rainbow::before {
@@ -1347,6 +1357,12 @@ html[dir="ltr"] .chat-bubble-glow-gold[data-vip-tag=""]::before {
   box-shadow: 0 0 14px rgba(168, 85, 247, 0.8), inset 0 0 6px rgba(192, 132, 252, 0.4);
   z-index: 2;
   white-space: nowrap;
+}
+
+/* --- Badge direction fix: sent messages (left side in RTL) use left:8px to avoid overflowing off-screen left --- */
+html[dir="rtl"] .chat-bubble-sent.chat-bubble-glow-rainbow::before {
+  left: 8px;
+  right: auto;
 }
 
 html[dir="ltr"] .chat-bubble-glow-rainbow::before {

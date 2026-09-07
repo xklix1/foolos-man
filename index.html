@@ -5157,7 +5157,7 @@
 
   <!-- ==================== V2: CHAT SIDEBAR DRAWER ==================== -->
   <div id="chat-drawer"
-    class="fixed top-0 bottom-0 right-0 z-[100] w-[360px] max-w-full bg-slate-950/98 border-l border-slate-800/80 shadow-2xl transition-all duration-300 translate-x-full flex flex-col backdrop-blur-xl">
+    class="fixed top-0 bottom-0 right-0 z-[100] w-[360px] max-w-full bg-slate-950/98 border-l border-slate-800/80 shadow-2xl transition-all duration-300 translate-x-full flex flex-col backdrop-blur-xl overflow-x-hidden">
     <!-- Chat Header -->
     <div class="p-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/40">
       <div class="flex items-center gap-2">
@@ -5170,7 +5170,7 @@
       </button>
     </div>
     <!-- Messages Container -->
-    <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
+    <div id="chat-messages-container" class="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3 scrollbar-thin">
       <!-- Dyn Messages -->
     </div>
     <!-- Chat Input Area -->
