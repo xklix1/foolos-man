@@ -2211,7 +2211,8 @@
             _currentTopupPackagesCache.forEach(pkg => {
               const opt = document.createElement('option');
               opt.value = pkg.id;
-              opt.textContent = `📦 ${pkg.name} (${Number(pkg.price || 0).toLocaleString()} EGP)`;
+              const isHidden = (pkg.hidden === true || pkg.visible === false);
+              opt.textContent = `📦 ${pkg.name} (${Number(pkg.price || 0).toLocaleString()} EGP)${isHidden ? ' 🔒 [مخفية بالمتجر]' : ''}`;
               templateSelect.appendChild(opt);
             });
           }
@@ -2232,21 +2233,21 @@
               const pkgXpInp = document.getElementById('adm-send-pkg-xp');
 
               if (pkgNameInp) pkgNameInp.value = found.name || 'حزمة متجر مميزة';
-              if (pkgBadgeInp) pkgBadgeInp.value = rewards.customBadge || rewards.badgeTitle || '';
-              if (pkgCashInp) pkgCashInp.value = Number(rewards.cash || 0);
-              if (pkgBankInp) pkgBankInp.value = Number(rewards.bank || 0);
-              if (pkgXpInp) pkgXpInp.value = Number(rewards.xp || 0);
+              if (pkgBadgeInp) pkgBadgeInp.value = found.customBadge || found.badgeTitle || rewards.customBadge || rewards.badgeTitle || '';
+              if (pkgCashInp) pkgCashInp.value = Number(found.cash !== undefined ? found.cash : (rewards.cash || 0));
+              if (pkgBankInp) pkgBankInp.value = Number(found.bank !== undefined ? found.bank : (rewards.bank || 0));
+              if (pkgXpInp) pkgXpInp.value = Number(found.xp !== undefined ? found.xp : (rewards.xp || 0));
 
-              const items = rewards.items || {};
+              const items = found.items || rewards.items || {};
               const itemShieldInp = document.getElementById('adm-send-pkg-item-shield');
               const itemServerInp = document.getElementById('adm-send-pkg-item-server');
               const itemMinerInp = document.getElementById('adm-send-pkg-item-miner');
               const itemDronesInp = document.getElementById('adm-send-pkg-item-drones');
 
               if (itemShieldInp) itemShieldInp.value = Number(items.legalShield || 0);
-              if (itemServerInp) itemServerInp.value = Number(items.offshoreServer || 0);
+              if (itemServerInp) itemServerInp.value = Number(items.offshoreServer || items.offshore_account || 0);
               if (itemMinerInp) itemMinerInp.value = Number(items.cryptoMiner || 0);
-              if (itemDronesInp) itemDronesInp.value = Number(items.securityDrones || 0);
+              if (itemDronesInp) itemDronesInp.value = Number(items.securityDrones || items.vip_casino_pass || 0);
             });
           }
         }
@@ -6984,51 +6985,78 @@
         return;
       }
 
-      listEl.innerHTML ='';
+      listEl.innerHTML = '';
       _currentTopupPackagesCache.forEach(pkg => {
+        const isHidden = (pkg.hidden === true || pkg.visible === false);
         const card = document.createElement('div');
-        card.className ='p-4 rounded-2xl bg-slate-900/80 border border-amber-500/30 flex flex-col justify-between space-y-3 relative overflow-hidden shadow-lg';
+        card.className = `p-4 rounded-2xl bg-slate-900/80 border ${isHidden ? 'border-slate-800 opacity-90' : 'border-amber-500/30'} flex flex-col justify-between space-y-3 relative overflow-hidden shadow-lg transition`;
         
-        const badge = pkg.customBadge ||'';
+        const badge = pkg.customBadge || '';
         const itemsList = pkg.items ? Object.entries(pkg.items).map(([k, v]) => {
           let label = k;
-          if (k ==='vip_casino_pass') label ='تصريح كازينو VIP';
-          else if (k ==='swiss_safe') label ='خزنة سويسرية';
-          else if (k ==='offshore_account') label ='حساب خارجي';
-          else if (k ==='lottery_ticket') label ='تذكرة يانصيب';
-          return`${v}x ${label}`;
-        }).join(' •') :'';
+          if (k === 'vip_casino_pass') label = 'تصريح كازينو VIP';
+          else if (k === 'swiss_safe') label = 'خزنة سويسرية';
+          else if (k === 'offshore_account') label = 'حساب خارجي';
+          else if (k === 'lottery_ticket') label = 'تذكرة يانصيب';
+          else if (k === 'legalShield') label = 'درع قانوني';
+          return `${v}x ${label}`;
+        }).join(' • ') : '';
 
-        card.innerHTML =`
+        const statusBadge = isHidden
+          ? `<span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 flex items-center gap-1 shrink-0"><i class="fa-solid fa-eye-slash text-[9px]"></i> مخفية من المتجر</span>`
+          : `<span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 shrink-0"><i class="fa-solid fa-eye text-[9px]"></i> ظاهرة في المتجر</span>`;
+
+        card.innerHTML = `
           <div>
             <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-800">
               <div class="flex items-center gap-1.5 min-w-0">
-                ${badge ?`<span class="text-base">${badge}</span>` :''}
+                ${badge ? `<span class="text-base">${badge}</span>` : ''}
                 <strong class="text-white font-bold text-xs truncate">${pkg.name}</strong>
               </div>
-              <span class="numbers-font text-amber-400 font-black text-sm shrink-0 px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30">${Number(pkg.price).toLocaleString()} EGP</span>
+              <div class="flex items-center gap-1.5 shrink-0">
+                ${statusBadge}
+                <span class="numbers-font text-amber-400 font-black text-xs sm:text-sm shrink-0 px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30">${Number(pkg.price).toLocaleString()} EGP</span>
+              </div>
             </div>
 
-            <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">${pkg.description ||'باقة دعم ومكافآت مميزة في سيرفر رأس المال.'}</p>
+            <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">${pkg.description || 'باقة دعم ومكافآت مميزة في سيرفر رأس المال.'}</p>
 
             <div class="mt-3 p-2 bg-slate-950/80 rounded-xl border border-slate-800/80 space-y-1 text-[10px]">
-              ${pkg.cash ?`<div class="flex justify-between text-emerald-400 font-bold"><span>كاش:</span><span class="numbers-font">+${Number(pkg.cash).toLocaleString()} EGP</span></div>` :''}
-              ${pkg.bank ?`<div class="flex justify-between text-sky-400 font-bold"><span>بنك:</span><span class="numbers-font">+${Number(pkg.bank).toLocaleString()} EGP</span></div>` :''}
-              ${pkg.xp ?`<div class="flex justify-between text-cyan-400 font-bold"><span>خبرة XP:</span><span class="numbers-font">+${Number(pkg.xp).toLocaleString()}</span></div>` :''}
-              ${badge ?`<div class="flex justify-between text-yellow-400 font-bold"><span>وسام VIP:</span><span>${badge} ${pkg.badgeTitle ||''}</span></div>` :''}
-              ${itemsList ?`<div class="flex justify-between text-purple-300 font-bold"><span>أدوات:</span><span class="truncate max-w-[150px]">${itemsList}</span></div>` :''}
+              ${pkg.cash ? `<div class="flex justify-between text-emerald-400 font-bold"><span>كاش:</span><span class="numbers-font">+${Number(pkg.cash).toLocaleString()} EGP</span></div>` : ''}
+              ${pkg.bank ? `<div class="flex justify-between text-sky-400 font-bold"><span>بنك:</span><span class="numbers-font">+${Number(pkg.bank).toLocaleString()} EGP</span></div>` : ''}
+              ${pkg.xp ? `<div class="flex justify-between text-cyan-400 font-bold"><span>خبرة XP:</span><span class="numbers-font">+${Number(pkg.xp).toLocaleString()}</span></div>` : ''}
+              ${badge ? `<div class="flex justify-between text-yellow-400 font-bold"><span>وسام VIP:</span><span>${badge} ${pkg.badgeTitle || ''}</span></div>` : ''}
+              ${itemsList ? `<div class="flex justify-between text-purple-300 font-bold"><span>أدوات:</span><span class="truncate max-w-[150px]">${itemsList}</span></div>` : ''}
             </div>
           </div>
 
           <div class="flex items-center gap-2 pt-2 border-t border-slate-800">
-            <button class="btn-edit-pkg flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
+            <button class="btn-toggle-visibility-pkg flex-1 py-1.5 ${isHidden ? 'bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/40'} rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer" title="${isHidden ? 'إظهار الحزمة للاعبين في متجر VIP' : 'إخفاء الحزمة من متجر VIP'}">
+              <i class="fa-solid ${isHidden ? 'fa-eye' : 'fa-eye-slash'} text-xs"></i>
+              <span>${isHidden ? 'إظهار بالمتجر' : 'إخفاء من المتجر'}</span>
+            </button>
+            <button class="btn-edit-pkg px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer">
               <i class="fa-solid fa-pen-to-square text-xs"></i>
               <span>تعديل</span>
             </button>
-            <button class="btn-delete-pkg px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/30 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1" title="حذف الباقة">
+            <button class="btn-delete-pkg px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/30 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer" title="حذف الباقة">
               <i class="fa-solid fa-trash text-xs"></i>
             </button>
           </div>`;
+
+        // Visibility toggle button listener
+        card.querySelector('.btn-toggle-visibility-pkg').addEventListener('click', async () => {
+          try {
+            pkg.hidden = !isHidden;
+            await AppDB.saveTopupPackages(_currentTopupPackagesCache);
+            const stateText = pkg.hidden ? 'تم إخفاء الحزمة من متجر VIP' : 'تم إظهار الحزمة في متجر VIP للجميع';
+            showToast('حالة الحزمة', `${stateText}: "${pkg.name}"`, pkg.hidden ? 'warning' : 'success');
+            loadAndRenderTopupPackages();
+            logAdminAction(`تعديل ظهور الباقة: ${pkg.id} -> ${pkg.hidden ? 'مخفية' : 'ظاهرة'}`);
+          } catch (err) {
+            showToast('خطأ', 'فشل تعديل حالة الحزمة: ' + err.message, 'error');
+          }
+        });
 
         card.querySelector('.btn-edit-pkg').addEventListener('click', () => {
           openAdminPackageEditModal(pkg);
@@ -7039,11 +7067,11 @@
           try {
             _currentTopupPackagesCache = _currentTopupPackagesCache.filter(p => p.id !== pkg.id);
             await AppDB.saveTopupPackages(_currentTopupPackagesCache);
-            showToast('تم الحذف',`تم حذف باقة"${pkg.name}" بنجاح.`,'success');
+            showToast('تم الحذف', `تم حذف باقة "${pkg.name}" بنجاح.`, 'success');
             loadAndRenderTopupPackages();
             logAdminAction(`حذف باقة الشحن: ${pkg.id}`);
           } catch (err) {
-            showToast('خطأ في الحذف', err.message,'error');
+            showToast('خطأ في الحذف', err.message, 'error');
           }
         });
 
@@ -7069,6 +7097,7 @@
     const badgeInput = document.getElementById('adm-pkg-badge');
     const badgeTitleInput = document.getElementById('adm-pkg-badgetitle');
     const descInput = document.getElementById('adm-pkg-desc');
+    const visibleCheck = document.getElementById('adm-pkg-visible');
 
     const vipPassInput = document.getElementById('adm-pkg-item-vip-pass');
     const swissSafeInput = document.getElementById('adm-pkg-item-swiss-safe');
@@ -7076,61 +7105,64 @@
     const lotteryInput = document.getElementById('adm-pkg-item-lottery');
 
     if (pkg) {
-      titleEl.textContent =`تعديل باقة: ${pkg.name}`;
-      isEditEl.value ='1';
+      titleEl.textContent = `تعديل باقة: ${pkg.name}`;
+      isEditEl.value = '1';
       idInput.value = pkg.id;
       idInput.readOnly = true;
-      nameInput.value = pkg.name ||'';
+      nameInput.value = pkg.name || '';
       priceInput.value = pkg.price || 0;
       cashInput.value = pkg.cash || 0;
       bankInput.value = pkg.bank || 0;
       xpInput.value = pkg.xp || 0;
-      badgeInput.value = pkg.customBadge ||'';
-      badgeTitleInput.value = pkg.badgeTitle ||'';
-      descInput.value = pkg.description ||'';
+      badgeInput.value = pkg.customBadge || '';
+      badgeTitleInput.value = pkg.badgeTitle || '';
+      descInput.value = pkg.description || '';
+      if (visibleCheck) visibleCheck.checked = (pkg.hidden !== true && pkg.visible !== false);
 
       const items = pkg.items || {};
-      vipPassInput.value = items.vip_casino_pass ||'';
-      swissSafeInput.value = items.swiss_safe ||'';
-      offshoreInput.value = items.offshore_account ||'';
-      lotteryInput.value = items.lottery_ticket ||'';
+      vipPassInput.value = items.vip_casino_pass || '';
+      swissSafeInput.value = items.swiss_safe || '';
+      offshoreInput.value = items.offshore_account || '';
+      lotteryInput.value = items.lottery_ticket || '';
     } else {
-      titleEl.textContent ='إضافة باقة شحن جديدة';
-      isEditEl.value ='0';
-      idInput.value ='pack_' + Date.now().toString().slice(-4);
+      titleEl.textContent = 'إضافة باقة شحن جديدة';
+      isEditEl.value = '0';
+      idInput.value = 'pack_' + Date.now().toString().slice(-4);
       idInput.readOnly = false;
-      nameInput.value ='';
-      priceInput.value ='50';
-      cashInput.value ='1000000';
-      bankInput.value ='250000';
-      xpInput.value ='1000';
-      badgeInput.value ='';
-      badgeTitleInput.value ='عضو VIP';
-      descInput.value ='';
+      nameInput.value = '';
+      priceInput.value = '50';
+      cashInput.value = '1000000';
+      bankInput.value = '250000';
+      xpInput.value = '1000';
+      badgeInput.value = '';
+      badgeTitleInput.value = 'عضو VIP';
+      descInput.value = '';
+      if (visibleCheck) visibleCheck.checked = true;
 
-      vipPassInput.value ='';
-      swissSafeInput.value ='';
-      offshoreInput.value ='';
-      lotteryInput.value ='';
+      vipPassInput.value = '';
+      swissSafeInput.value = '';
+      offshoreInput.value = '';
+      lotteryInput.value = '';
     }
 
     modal.classList.remove('hidden');
   }
 
   window._adminSavePackageSubmit = async function() {
-    const isEdit = document.getElementById('adm-pkg-is-edit')?.value ==='1';
-    const id = (document.getElementById('adm-pkg-id')?.value ||'').trim();
-    const name = (document.getElementById('adm-pkg-name')?.value ||'').trim();
+    const isEdit = document.getElementById('adm-pkg-is-edit')?.value === '1';
+    const id = (document.getElementById('adm-pkg-id')?.value || '').trim();
+    const name = (document.getElementById('adm-pkg-name')?.value || '').trim();
     const price = Number(document.getElementById('adm-pkg-price')?.value) || 0;
     const cash = Number(document.getElementById('adm-pkg-cash')?.value) || 0;
     const bank = Number(document.getElementById('adm-pkg-bank')?.value) || 0;
     const xp = Number(document.getElementById('adm-pkg-xp')?.value) || 0;
-    const customBadge = (document.getElementById('adm-pkg-badge')?.value ||'').trim();
-    const badgeTitle = (document.getElementById('adm-pkg-badgetitle')?.value ||'').trim();
-    const description = (document.getElementById('adm-pkg-desc')?.value ||'').trim();
+    const customBadge = (document.getElementById('adm-pkg-badge')?.value || '').trim();
+    const badgeTitle = (document.getElementById('adm-pkg-badgetitle')?.value || '').trim();
+    const description = (document.getElementById('adm-pkg-desc')?.value || '').trim();
+    const isVisible = document.getElementById('adm-pkg-visible') ? document.getElementById('adm-pkg-visible').checked : true;
 
     if (!id || !name || price <= 0) {
-      showToast('بيانات غير مكتملة','يرجى إدخال اسم الباقة، المعرف وسعر صحيح أكبر من صفر.','error');
+      showToast('بيانات غير مكتملة', 'يرجى إدخال اسم الباقة، المعرف وسعر صحيح أكبر من صفر.', 'error');
       return;
     }
 
@@ -7145,6 +7177,8 @@
     if (offshore > 0) items.offshore_account = offshore;
     if (lottery > 0) items.lottery_ticket = lottery;
 
+    const existingPkg = _currentTopupPackagesCache.find(p => p.id === id);
+
     const pkgData = {
       id,
       name,
@@ -7155,7 +7189,9 @@
       customBadge,
       badgeTitle,
       items,
-      description
+      description,
+      hidden: !isVisible,
+      features: (existingPkg && existingPkg.features) ? existingPkg.features : undefined
     };
 
     try {

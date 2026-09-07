@@ -15556,13 +15556,16 @@ const UIController = (() => {
     const container = document.getElementById('topup-packages-container');
     if (!container) return;
 
-    if (packages.length === 0) {
-      container.innerHTML ='<div class="col-span-full p-6 text-center text-slate-400 bg-slate-900/40 rounded-2xl border border-slate-800">لا توجد باقات متاحة حالياً. يرجى مراجعة الإدارة لاحقاً.</div>';
+    // Filter out packages hidden by admin
+    const visiblePackages = (packages || []).filter(pkg => pkg.hidden !== true && pkg.visible !== false && pkg.active !== false);
+
+    if (visiblePackages.length === 0) {
+      container.innerHTML = '<div class="col-span-full p-6 text-center text-slate-400 bg-slate-900/40 rounded-2xl border border-slate-800">لا توجد باقات متاحة حالياً. يرجى مراجعة الإدارة لاحقاً.</div>';
       return;
     }
 
-    container.innerHTML ='';
-    packages.forEach(pkg => {
+    container.innerHTML = '';
+    visiblePackages.forEach(pkg => {
       const card = document.createElement('div');
       card.className ='p-4 rounded-3xl bg-slate-900/85 border-2 border-amber-500/30 hover:border-amber-400 flex flex-col justify-between space-y-3.5 transition-all duration-300 shadow-xl relative overflow-hidden group hover:scale-[1.01]';
 

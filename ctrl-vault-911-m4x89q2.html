@@ -2166,6 +2166,18 @@
           <textarea id="adm-pkg-desc" rows="2" placeholder="وصف جذاب للباقة يظهر في بطاقتها داخل المتجر..."
             class="glass-input w-full p-2.5 rounded-lg text-xs text-white focus:border-amber-400 outline-none leading-relaxed"></textarea></div>
 
+        <!-- Visibility in Store Toggle -->
+        <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl flex items-center justify-between gap-3">
+          <div>
+            <label for="adm-pkg-visible" class="font-bold text-slate-200 block text-xs cursor-pointer flex items-center gap-1.5">
+              <i class="fa-solid fa-eye text-amber-400"></i>
+              <span>إظهار الحزمة في متجر VIP للاعبين</span>
+            </label>
+            <span class="text-[10px] text-slate-400 block mt-0.5">عند إلغاء التحديد، تظل الحزمة مخفية من متجر اللاعبين ولكن يمكنك إرسالها يدوياً لأي لاعب.</span>
+          </div>
+          <input type="checkbox" id="adm-pkg-visible" class="w-5 h-5 accent-amber-500 rounded cursor-pointer shrink-0" checked>
+        </div>
+
         <div class="flex items-center gap-2 pt-2 border-t border-slate-800">
           <button type="button" id="btn-cancel-edit-pkg" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition text-xs">
             إلغاء</button>
@@ -2676,9 +2688,9 @@
   <div id="toast-container" class="fixed top-4 left-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Core Modules -->
-  <script src="game.js?v=10.0"></script>
-  <script src="db.js?v=10.0"></script>
-  <script src="admin-panel.js?v=10.0"></script>
+  <script src="game.js?v=10.1"></script>
+  <script src="db.js?v=10.1"></script>
+  <script src="admin-panel.js?v=10.1"></script>
 
   <!-- Standalone Admin Controller Script -->
   <script>

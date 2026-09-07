@@ -1673,9 +1673,52 @@ var AppDB = (() => {
       bank: 1000000,
       xp: 6000,
       items: { vip_casino_pass: 1, offshore_account: 1, swiss_safe: 1 },
-      customBadge:'',
+      customBadge:'👑',
       badgeTitle:'الحوت الملكي',
-      description:'حزمة الدعم الملكية: 5 مليون كاش، مليون بالبنك، 6000 خبرة، خزنة سويسرية وحساب خارجي وتاج الملك .'
+      description:'حزمة الدعم الملكية: 5 مليون كاش، مليون بالبنك، 6000 خبرة، خزنة سويسرية وحساب خارجي وتاج الملك 👑.',
+      hidden: false
+    },
+    {
+      id:'pkg_vip_verified',
+      name:'حزمة توثيق المشاهير والحسابات VIP',
+      price: 150,
+      cash: 3000000,
+      bank: 1000000,
+      xp: 5000,
+      customBadge:'✔️',
+      badgeTitle:'حساب موثق رسمي',
+      features: { verified: true, customAvatar: true, title:'شخصية موثقة' },
+      items: { vip_casino_pass: 1, legalShield: 2 },
+      description:'علامة توثيق زرقاء رسمية بجانب اسمك ✔️ + صلاحية رفع صورة شخصية لحسابك + لقب حصري + 3 مليون كاش.',
+      hidden: true
+    },
+    {
+      id:'pkg_vip_chat_glow',
+      name:'حزمة حوت الشات المتوهج والملصقات',
+      price: 120,
+      cash: 2500000,
+      bank: 500000,
+      xp: 4000,
+      customBadge:'🌟',
+      badgeTitle:'حوت الشات',
+      features: { chatGlow:'gold_neon', stickersPack: true, title:'حوت الشات' },
+      items: { lottery_ticket: 5 },
+      description:'رسائل شات متوهجة ومميزة بلون نيون ذهبي 🌟 + فتح حزمة ملصقات الشات التعبيرية + 2.5 مليون كاش.',
+      hidden: true
+    },
+    {
+      id:'pkg_vip_royal_ultimate',
+      name:'الباقة الملكية الأسطورية الشاملة',
+      price: 300,
+      cash: 10000000,
+      bank: 3000000,
+      xp: 15000,
+      customBadge:'👑✔️',
+      badgeTitle:'الملك الأسطوري',
+      features: { verified: true, customAvatar: true, chatGlow:'cyber_rainbow', stickersPack: true, title:'إمبراطور السيرفر' },
+      items: { vip_casino_pass: 2, offshore_account: 2, swiss_safe: 2 },
+      description:'الباقة المتكاملة: علامة التوثيق ✔️ + رفع صورة شخصية + توهج ملكي في الشات + كافة الملصقات + 10 مليون كاش وخزائن سويسرية.',
+      hidden: true
     }
   ];
 
@@ -1683,7 +1726,16 @@ var AppDB = (() => {
     try {
       const rows = await _api(`globals?id=eq.topup_packages`);
       if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.packages)) {
-        return rows[0].data.packages;
+        const dbPackages = rows[0].data.packages;
+        // Merge missing default packages (retaining hidden: true)
+        let hasNew = false;
+        DEFAULT_TOPUP_PACKAGES.forEach(defPkg => {
+          if (!dbPackages.some(p => p.id === defPkg.id)) {
+            dbPackages.push({ ...defPkg });
+            hasNew = true;
+          }
+        });
+        return dbPackages;
       }
     } catch (e) {
       console.warn('[DB] Could not fetch topup packages, falling back to defaults', e);
