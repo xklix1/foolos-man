@@ -3527,7 +3527,7 @@ var AppDB = (() => {
               } catch (e) {}
             };
             checkPlayer();
-            const pollId = registerPollingInterval(setInterval(checkPlayer, 25000));
+            const pollId = registerPollingInterval(setInterval(checkPlayer, 10000));
             const unsubResume = onActiveResume(() => {
               if (isSubscribed) checkPlayer();
             });

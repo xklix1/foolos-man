@@ -1238,6 +1238,152 @@
       });
     }
 
+    // Instant Balance Addition Action (Direct Real-time Sync to player)
+    const instantAddBtn = document.getElementById('btn-admin-instant-add-balance');
+    if (instantAddBtn) {
+      instantAddBtn.addEventListener('click', async () => {
+        if (!selectedPlayer) {
+          showToast('إضافة رصيد', 'يرجى اختيار لاعب أولاً من القائمة.', 'error');
+          return;
+        }
+
+        const amountInp = document.getElementById('admin-instant-add-amount');
+        const targetSel = document.getElementById('admin-instant-add-target');
+        const amount = Number(amountInp ? amountInp.value : 0);
+        const target = targetSel ? targetSel.value : 'bank';
+
+        if (isNaN(amount) || amount <= 0) {
+          showToast('مبلغ غير صالح', 'يرجى إدخال مبلغ صحيح وموجب أكبر من صفر.', 'error');
+          if (amountInp) amountInp.focus();
+          return;
+        }
+
+        let targetLabel = 'البنك';
+        let addCash = 0;
+        let addBank = 0;
+
+        if (target === 'bank') {
+          targetLabel = 'البنك (Bank)';
+          addBank = amount;
+        } else if (target === 'cash') {
+          targetLabel = 'الكاش (Cash)';
+          addCash = amount;
+        } else if (target === 'split') {
+          targetLabel = 'مناصفة (50% كاش / 50% بنك)';
+          addCash = Math.floor(amount / 2);
+          addBank = amount - addCash;
+        }
+
+        const confirmMsg = `💰 تأكيد إضافة الرصيد الفوري:\n\nهل أنت متأكد من إضافة ${amount.toLocaleString()} EGP إلى [${targetLabel}] للاعب "${selectedPlayer}"؟\n\nسيتم ظهور الرصيد الجديد مباشرة في شاشة اللاعب فوراً.`;
+        if (!confirm(confirmMsg)) return;
+
+        try {
+          instantAddBtn.disabled = true;
+          instantAddBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> <span>جاري إضافة الرصيد وتحديث شاشة اللاعب...</span>';
+
+          // 1. Fetch freshest state from database to avoid overwriting recent activity
+          const freshPlayer = await AppDB.adminGetPlayer(selectedPlayer) || selectedPlayerState || {};
+          const currentCash = Number(freshPlayer.cash || 0);
+          const currentBank = Number(freshPlayer.bank || 0);
+          const newCash = currentCash + addCash;
+          const newBank = currentBank + addBank;
+          const newWorth = Number(freshPlayer.netWorth || 0) + amount;
+          const now = Date.now();
+
+          freshPlayer.cash = newCash;
+          freshPlayer.bank = newBank;
+          freshPlayer.netWorth = newWorth;
+          freshPlayer.adminModifiedTimestamp = now;
+
+          if (selectedPlayerState) {
+            selectedPlayerState.cash = newCash;
+            selectedPlayerState.bank = newBank;
+            selectedPlayerState.netWorth = newWorth;
+            selectedPlayerState.adminModifiedTimestamp = now;
+          }
+
+          // 2. Save directly to Supabase with latest adminModifiedTimestamp
+          await AppDB.adminSavePlayer(selectedPlayer, freshPlayer);
+
+          // 3. Dispatch high-priority real-time balance grant mail to player's client
+          const grantPayload = {
+            addedCash: addCash,
+            addedBank: addBank,
+            totalAmount: amount,
+            target: target,
+            newCash: newCash,
+            newBank: newBank,
+            timestamp: now
+          };
+
+          await AppDB.sendMail('إدارة اللعبة (Admin)', selectedPlayer, 'admin_balance_grant', grantPayload);
+
+          // 4. Inject pendingAdminPopup into state
+          try {
+            freshPlayer.pendingAdminPopup = {
+              title: '💰 تم استلام إيداع مالي مباشر!',
+              message: `تم تحويل وإضافة مبلغ +${amount.toLocaleString()} EGP إلى حسابك بنجاح من قبل الإدارة.` +
+                (addCash > 0 ? `\n💵 كاش: +${addCash.toLocaleString()} EGP` : '') +
+                (addBank > 0 ? `\n🏦 بنك: +${addBank.toLocaleString()} EGP` : ''),
+              style: 'reward',
+              sentAt: now
+            };
+            freshPlayer.adminModifiedTimestamp = now;
+            await AppDB.adminSavePlayer(selectedPlayer, freshPlayer);
+          } catch (_) {}
+
+          // 5. If this admin is the active player locally, immediately update in-memory GameEngine
+          if (selectedPlayer === GameEngine.activeUsername) {
+            GameEngine.state.cash = newCash;
+            GameEngine.state.bank = newBank;
+            GameEngine.state.netWorth = newWorth;
+            GameEngine.state.adminModifiedTimestamp = now;
+            try {
+              localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+            } catch (e) {}
+            renderAll();
+          }
+
+          // 6. Update UI in Admin Dashboard
+          const cashEl = document.getElementById('admin-p-cash');
+          if (cashEl) cashEl.textContent = newCash.toLocaleString();
+          const bankEl = document.getElementById('admin-p-bank');
+          if (bankEl) bankEl.textContent = newBank.toLocaleString();
+          const worthEl = document.getElementById('admin-p-worth');
+          if (worthEl) worthEl.textContent = `${newWorth.toLocaleString()} EGP`;
+
+          const cashInp = document.getElementById('admin-input-cash');
+          if (cashInp) cashInp.value = newCash;
+          const bankInp = document.getElementById('admin-input-bank');
+          if (bankInp) bankInp.value = newBank;
+
+          if (amountInp) amountInp.value = '';
+
+          // 7. Update in cachedPlayers table
+          if (Array.isArray(cachedPlayers)) {
+            const pIdx = cachedPlayers.findIndex(p => p.username === selectedPlayer);
+            if (pIdx !== -1) {
+              cachedPlayers[pIdx].cash = newCash;
+              cachedPlayers[pIdx].bank = newBank;
+              cachedPlayers[pIdx].netWorth = newWorth;
+              cachedPlayers[pIdx].net_worth = newWorth;
+            }
+            renderPlayersTable();
+          }
+
+          showToast('تمت الإضافة بنجاح 💰', `تمت إضافة ${amount.toLocaleString()} EGP لحساب اللاعب [${selectedPlayer}] فوراً! الرصيد الجديد: ${newCash.toLocaleString()} كاش / ${newBank.toLocaleString()} بنك.`, 'success');
+          logAdminAction(`إضافة مبلغ فوري بقيمة ${amount.toLocaleString()} EGP إلى [${targetLabel}] للاعب ${selectedPlayer}`);
+
+        } catch (err) {
+          console.error('[Instant Add Error]', err);
+          showToast('فشل إضافة الرصيد', err.message || 'حدث خطأ أثناء الاتصال بقاعدة البيانات', 'error');
+        } finally {
+          instantAddBtn.disabled = false;
+          instantAddBtn.innerHTML = '<i class="fa-solid fa-plus-circle text-sm"></i> <span>إضافة المبلغ فوراً</span>';
+        }
+      });
+    }
+
     // Business Moderation Event Listeners
     const bizSelect = document.getElementById('admin-input-biz-type');
     if (bizSelect) {

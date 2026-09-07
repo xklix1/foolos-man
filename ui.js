@@ -12709,6 +12709,60 @@ const UIController = (() => {
       }
     }
 
+    // 0.05. Process incoming Instant Admin Balance Grants (Live in-game balance injection)
+    const balanceMails = mails.filter(m => m.type === 'admin_balance_grant' && (m.status === 'unread' || m.status === 'pending'));
+    for (const bm of balanceMails) {
+      if (!window._processedBalanceGrantIds) window._processedBalanceGrantIds = new Set();
+      if (window._processedBalanceGrantIds.has(bm.id)) continue;
+      window._processedBalanceGrantIds.add(bm.id);
+
+      const p = bm.payload || {};
+      const addCash = Number(p.addedCash) || 0;
+      const addBank = Number(p.addedBank) || 0;
+      const totalAmount = Number(p.totalAmount) || (addCash + addBank);
+
+      if (GameEngine.state && (addCash > 0 || addBank > 0)) {
+        GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + addCash;
+        GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + addBank;
+        if (typeof GameEngine.calculateTotalNetWorth === 'function') {
+          GameEngine.calculateTotalNetWorth();
+        } else {
+          GameEngine.state.netWorth = (Number(GameEngine.state.cash) || 0) + (Number(GameEngine.state.bank) || 0);
+        }
+
+        const grantTs = Number(p.timestamp || bm.created_at || Date.now());
+        GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), grantTs);
+
+        try {
+          if (typeof AppDB.setEncryptedLocalState === 'function') {
+            AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, GameEngine.state);
+          }
+          localStorage.setItem(`rasalmal_state_${GameEngine.activeUsername}`, JSON.stringify(GameEngine.state));
+        } catch (_) {}
+
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
+        await AppDB.updateMailStatus(bm.id, 'read');
+
+        // Play cash sound and render all UI elements immediately
+        if (typeof playMenuSound === 'function') playMenuSound('cash');
+        renderAll();
+
+        // Show instant floating modal
+        showDirectAdminPopupModal({
+          id: bm.id,
+          title: '💰 إيداع مالي إداري مباشر!',
+          message: `تم تحويل وإضافة مبلغ [${totalAmount.toLocaleString()} EGP] إلى حسابك فوراً من قبل الإدارة.` +
+            (addCash > 0 ? `\n💵 كاش مالي: +${addCash.toLocaleString()} EGP` : '') +
+            (addBank > 0 ? `\n🏦 إيداع بنكي: +${addBank.toLocaleString()} EGP` : '') +
+            `\n\nالرصيد متاح الآن في حسابك وجاهز للاستخدام مباشرة!`,
+          sender: 'إدارة اللعبة (Admin)',
+          timestamp: grantTs,
+          style: 'reward'
+        });
+        break;
+      }
+    }
+
     // 0. Process incoming Direct Admin Popup Messages
     const adminPopups = mails.filter(m => (m.type === 'admin_popup' || m.type === 'urgent_alert') && (m.status === 'unread' || m.status === 'pending'));
     for (const popup of adminPopups) {

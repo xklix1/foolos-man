@@ -729,7 +729,61 @@
             <button id="btn-admin-update-money"
               class="w-full py-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-purple-600 hover:from-emerald-500 hover:to-purple-500 text-white rounded-lg text-xs font-bold transition shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-floppy-disk"></i>
-              <span>حفظ وتطبيق الرصيد والـ XP فوراً</span></button></div>
+              <span>حفظ وتطبيق الرصيد والـ XP فوراً</span></button>
+
+            <!-- Direct Instant Balance Addition Input -->
+            <div class="p-3.5 bg-gradient-to-r from-emerald-950/40 via-slate-900 to-sky-950/40 rounded-xl border border-emerald-500/40 space-y-3 mt-3">
+              <div class="flex justify-between items-center flex-wrap gap-1">
+                <span class="text-xs font-black text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-bolt text-yellow-400"></i>
+                  <span>إضافة مبلغ فوري على رصيد اللاعب (Live Instant Balance Addition)</span>
+                </span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                  تحديث مباشر بلحظته في شاشة اللاعب
+                </span>
+              </div>
+              <p class="text-[10px] text-slate-300">أدخل أي مبلغ وسيتم جمعه وإضافته مباشرة على رصيد اللاعب الحالي، وسيظهر للاعب فوراً مع صوت الكاش وإشعار لحظي.</p>
+
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                <!-- Amount Input -->
+                <div class="sm:col-span-6 relative">
+                  <input type="number" id="admin-instant-add-amount" placeholder="أدخل المبلغ للإضافة (مثلاً: 250000)"
+                    class="glass-input w-full p-2.5 text-xs text-right font-bold font-mono text-emerald-400 placeholder-slate-500 rounded-lg focus:border-emerald-400 outline-none">
+                  <span class="absolute left-2.5 top-2.5 text-xs text-emerald-500/80 font-bold">EGP</span>
+                </div>
+
+                <!-- Target Destination (Bank or Cash) -->
+                <div class="sm:col-span-3">
+                  <select id="admin-instant-add-target"
+                    class="w-full p-2.5 text-xs text-right bg-slate-900 border border-slate-700 text-slate-200 rounded-lg font-bold outline-none focus:border-emerald-400 cursor-pointer">
+                    <option value="bank" selected>🏦 في البنك (Bank)</option>
+                    <option value="cash">💵 في الكاش (Cash)</option>
+                    <option value="split">⚖️ مناصفة (50% كاش / 50% بنك)</option>
+                  </select>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="sm:col-span-3">
+                  <button id="btn-admin-instant-add-balance" type="button"
+                    class="w-full py-2.5 px-3 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-plus-circle text-sm"></i>
+                    <span>إضافة المبلغ فوراً</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Quick preset buttons for instant add input -->
+              <div class="flex items-center gap-1.5 flex-wrap pt-1 text-[10px]">
+                <span class="text-slate-400 font-bold">مبالغ سريعة للإدخال:</span>
+                <button type="button" onclick="document.getElementById('admin-instant-add-amount').value = 50000" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono transition cursor-pointer">+50K</button>
+                <button type="button" onclick="document.getElementById('admin-instant-add-amount').value = 100000" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono transition cursor-pointer">+100K</button>
+                <button type="button" onclick="document.getElementById('admin-instant-add-amount').value = 500000" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono transition cursor-pointer">+500K</button>
+                <button type="button" onclick="document.getElementById('admin-instant-add-amount').value = 1000000" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono transition cursor-pointer">+1M</button>
+                <button type="button" onclick="document.getElementById('admin-instant-add-amount').value = 5000000" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono transition cursor-pointer">+5M</button>
+                <button type="button" onclick="document.getElementById('admin-instant-add-amount').value = 10000000" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono transition cursor-pointer">+10M</button>
+              </div>
+            </div>
+          </div>
 
           <!-- Player Possessions & Assets Directory (New Feature) -->
           <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
@@ -2324,9 +2378,9 @@
   <div id="toast-container" class="fixed top-4 left-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Core Modules -->
-  <script src="game.js?v=9.5"></script>
-  <script src="db.js?v=9.5"></script>
-  <script src="admin-panel.js?v=9.5"></script>
+  <script src="game.js?v=9.6"></script>
+  <script src="db.js?v=9.6"></script>
+  <script src="admin-panel.js?v=9.6"></script>
 
   <!-- Standalone Admin Controller Script -->
   <script>
