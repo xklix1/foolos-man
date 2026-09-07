@@ -12229,7 +12229,9 @@ const UIController = (() => {
     list.forEach(auc => {
       const inputEl = document.getElementById(`bid-input-${auc.id}`);
       if (inputEl) {
-        savedInputs[auc.id] = inputEl.value;
+        // Parse as integer — prevents DOM-read string from being injected into innerHTML (XSS-through-DOM)
+        const parsed = parseInt(inputEl.value, 10);
+        savedInputs[auc.id] = isNaN(parsed) ? 0 : parsed;
       }
     });
 
