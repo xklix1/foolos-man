@@ -608,8 +608,8 @@
               <span class="text-slate-400 block">صافي التدفق (الفرق):</span>
               <strong id="admin-p-flow-net" class="text-sky-400 numbers-font">... EGP/ث</strong></div></div>
 
-          <!-- LIVE ACTIVITY LOG BUTTON & FLOW INSPECTION & DOWNLOAD BACKUP & AUDIT & SEND POPUP -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+          <!-- LIVE ACTIVITY LOG BUTTON & FLOW INSPECTION & DOWNLOAD BACKUP & AUDIT & SEND POPUP & SEND PACKAGE -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
             <button id="btn-admin-inspect-logs"
               class="py-2.5 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2">
               <i class="fa-solid fa-list-check text-sm"></i>
@@ -622,6 +622,10 @@
               class="py-2.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black rounded-xl text-xs transition shadow-lg shadow-rose-600/20 flex items-center justify-center gap-2">
               <i class="fa-solid fa-user-shield text-sm animate-pulse"></i>
               <span>فحص الأمان (Fraud)</span></button>
+            <button id="btn-admin-open-send-pkg-modal"
+              class="py-2.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-black rounded-xl text-xs transition shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer">
+              <i class="fa-solid fa-gift text-sm animate-bounce"></i>
+              <span>إرسال حزمة (Package)</span></button>
             <button id="btn-admin-open-popup-modal"
               class="py-2.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black rounded-xl text-xs transition shadow-lg shadow-purple-600/25 flex items-center justify-center gap-2">
               <i class="fa-solid fa-bullhorn text-sm"></i>
@@ -2378,9 +2382,9 @@
   <div id="toast-container" class="fixed top-4 left-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Core Modules -->
-  <script src="game.js?v=9.6"></script>
-  <script src="db.js?v=9.6"></script>
-  <script src="admin-panel.js?v=9.6"></script>
+  <script src="game.js?v=9.7"></script>
+  <script src="db.js?v=9.7"></script>
+  <script src="admin-panel.js?v=9.7"></script>
 
   <!-- Standalone Admin Controller Script -->
   <script>
@@ -2914,6 +2918,128 @@
           class="py-2.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black rounded-xl text-xs transition shadow-lg shadow-purple-600/30 flex items-center justify-center gap-1.5 cursor-pointer">
           <i class="fa-solid fa-paper-plane"></i>
           <span>إرسال التنبيه الآن 🚀</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ADMIN SEND PACKAGE MODAL ==================== -->
+  <div id="modal-admin-send-package"
+    class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in text-right">
+    <div class="glass-panel w-full max-w-lg rounded-2xl border border-emerald-500/50 p-5 bg-slate-950/95 text-white shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center text-lg shadow-lg shadow-emerald-500/20">
+            <i class="fa-solid fa-gift"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-black text-white flex items-center gap-2">
+              <span>إرسال حزمة / باقة للاعب</span>
+              <span id="adm-send-pkg-username" class="text-emerald-400 font-mono text-xs">@...</span>
+            </h3>
+            <p class="text-[10px] text-slate-400">تصل الحزمة ومكافآتها لشاشة اللاعب فوراً مع صوت احتفالي ونافذة منبثقة.</p>
+          </div>
+        </div>
+        <button id="btn-close-send-pkg-modal" type="button"
+          class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Quick Preset: Choose from existing Store Topup Packages -->
+      <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl space-y-2">
+        <label class="block text-xs text-yellow-400 font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-store text-xs"></i>
+          <span>اختر باقة جاهزة من متجر الشحن (تعبئة تلقائية):</span>
+        </label>
+        <select id="adm-send-pkg-template-select"
+          class="w-full p-2.5 text-xs text-right bg-slate-950 border border-slate-700 text-slate-200 rounded-xl font-bold outline-none focus:border-emerald-500 cursor-pointer">
+          <option value="">-- تخصيص حزمة يدوياً بدون قالب --</option>
+        </select>
+        <span class="text-[10px] text-slate-400 block">اختيارك لأي باقة من القائمة سيقوم بملء كافة الحقول أدناه تلقائياً ويمكنك تعديلها.</span>
+      </div>
+
+      <!-- Package Name & Custom Badge -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div>
+          <label class="block text-xs text-slate-300 mb-1 font-bold">اسم الحزمة / الباقة:</label>
+          <input type="text" id="adm-send-pkg-name" value="حزمة الدعم الإداري 🎁" placeholder="مثلاً: حزمة VIP أو باقة الترقية"
+            class="w-full p-2.5 text-xs text-right bg-slate-900 border border-slate-800 text-white rounded-xl font-bold outline-none focus:border-emerald-500">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-300 mb-1 font-bold">وسام أو لقب شرفي (اختياري):</label>
+          <input type="text" id="adm-send-pkg-badge" placeholder="مثلاً: 👑 مستثمر ملكي"
+            class="w-full p-2.5 text-xs text-right bg-slate-900 border border-slate-800 text-amber-300 rounded-xl font-bold outline-none focus:border-emerald-500">
+        </div>
+      </div>
+
+      <!-- Financial Rewards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div>
+          <label class="block text-xs text-emerald-400 mb-1 font-bold">كاش مالي (Cash):</label>
+          <input type="number" id="adm-send-pkg-cash" value="1000000" placeholder="0"
+            class="w-full p-2.5 text-xs text-center bg-slate-900 border border-slate-800 text-emerald-400 font-mono font-bold rounded-xl outline-none focus:border-emerald-500">
+        </div>
+        <div>
+          <label class="block text-xs text-sky-400 mb-1 font-bold">إيداع بنكي (Bank):</label>
+          <input type="number" id="adm-send-pkg-bank" value="0" placeholder="0"
+            class="w-full p-2.5 text-xs text-center bg-slate-900 border border-slate-800 text-sky-400 font-mono font-bold rounded-xl outline-none focus:border-emerald-500">
+        </div>
+        <div>
+          <label class="block text-xs text-purple-400 mb-1 font-bold">نقاط خبرة (XP):</label>
+          <input type="number" id="adm-send-pkg-xp" value="5000" placeholder="0"
+            class="w-full p-2.5 text-xs text-center bg-slate-900 border border-slate-800 text-purple-400 font-mono font-bold rounded-xl outline-none focus:border-emerald-500">
+        </div>
+      </div>
+
+      <!-- Inventory Items Grant (Optional) -->
+      <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2">
+        <label class="block text-xs text-slate-300 font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-cubes text-yellow-400"></i>
+          <span>عناصر ومعدات في حقيبة اللاعب (Inventory):</span>
+        </label>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          <div>
+            <span class="text-[10px] text-slate-400 block mb-0.5">درع قانوني 🛡️</span>
+            <input type="number" id="adm-send-pkg-item-shield" placeholder="0" min="0" value="0"
+              class="w-full p-1.5 text-center bg-slate-950 border border-slate-800 text-white rounded-lg font-mono text-xs focus:border-emerald-500 outline-none">
+          </div>
+          <div>
+            <span class="text-[10px] text-slate-400 block mb-0.5">سيرفر أوفشور 💻</span>
+            <input type="number" id="adm-send-pkg-item-server" placeholder="0" min="0" value="0"
+              class="w-full p-1.5 text-center bg-slate-950 border border-slate-800 text-white rounded-lg font-mono text-xs focus:border-emerald-500 outline-none">
+          </div>
+          <div>
+            <span class="text-[10px] text-slate-400 block mb-0.5">معدن تعدين ⛏️</span>
+            <input type="number" id="adm-send-pkg-item-miner" placeholder="0" min="0" value="0"
+              class="w-full p-1.5 text-center bg-slate-950 border border-slate-800 text-white rounded-lg font-mono text-xs focus:border-emerald-500 outline-none">
+          </div>
+          <div>
+            <span class="text-[10px] text-slate-400 block mb-0.5">درونز حراسة 🛸</span>
+            <input type="number" id="adm-send-pkg-item-drones" placeholder="0" min="0" value="0"
+              class="w-full p-1.5 text-center bg-slate-950 border border-slate-800 text-white rounded-lg font-mono text-xs focus:border-emerald-500 outline-none">
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Admin Note to Player -->
+      <div>
+        <label class="block text-xs text-slate-400 mb-1 font-bold">رسالة إدارية مرافقة للحزمة (تظهر في النافذة):</label>
+        <input type="text" id="adm-send-pkg-note" value="هدية وتكريم خاص من إدارة اللعبة! نتمنى لك التوفيق."
+          class="w-full p-2.5 text-xs text-right bg-slate-900 border border-slate-800 text-slate-200 rounded-xl font-medium outline-none focus:border-emerald-500">
+      </div>
+
+      <!-- Actions Footer -->
+      <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+        <button id="btn-cancel-send-pkg" type="button"
+          class="py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition cursor-pointer">
+          إلغاء
+        </button>
+        <button id="btn-confirm-send-pkg" type="button"
+          class="py-2.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span>إرسال الحزمة للاعب فوراً 🚀</span>
         </button>
       </div>
     </div>

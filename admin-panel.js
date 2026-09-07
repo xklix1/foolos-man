@@ -2159,6 +2159,258 @@
       });
     }
 
+    // ==================== MODULE: DIRECT ADMIN PACKAGE SENDER TO PLAYER ====================
+    const openSendPkgModalBtn = document.getElementById('btn-admin-open-send-pkg-modal');
+    const sendPkgModal = document.getElementById('modal-admin-send-package');
+    const closeSendPkgModalBtn = document.getElementById('btn-close-send-pkg-modal');
+    const cancelSendPkgModalBtn = document.getElementById('btn-cancel-send-pkg');
+    const confirmSendPkgBtn = document.getElementById('btn-confirm-send-pkg');
+    const sendPkgUserBadge = document.getElementById('adm-send-pkg-username');
+    const templateSelect = document.getElementById('adm-send-pkg-template-select');
+
+    const pkgNameInp = document.getElementById('adm-send-pkg-name');
+    const pkgBadgeInp = document.getElementById('adm-send-pkg-badge');
+    const pkgCashInp = document.getElementById('adm-send-pkg-cash');
+    const pkgBankInp = document.getElementById('adm-send-pkg-bank');
+    const pkgXpInp = document.getElementById('adm-send-pkg-xp');
+    const pkgNoteInp = document.getElementById('adm-send-pkg-note');
+
+    const itemShieldInp = document.getElementById('adm-send-pkg-item-shield');
+    const itemServerInp = document.getElementById('adm-send-pkg-item-server');
+    const itemMinerInp = document.getElementById('adm-send-pkg-item-miner');
+    const itemDronesInp = document.getElementById('adm-send-pkg-item-drones');
+
+    async function openSendPackageModal() {
+      const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
+      if (!targetUser || targetUser === '...' || targetUser === '') {
+        showToast('إرسال حزمة', 'يرجى تحديد واختيار لاعب أولاً من قائمة اللاعبين.', 'warning');
+        return;
+      }
+
+      if (sendPkgUserBadge) sendPkgUserBadge.textContent = `@${targetUser}`;
+
+      // Populate template dropdown from cache or DB
+      try {
+        if (!_currentTopupPackagesCache || _currentTopupPackagesCache.length === 0) {
+          _currentTopupPackagesCache = await AppDB.getTopupPackages();
+        }
+        if (templateSelect) {
+          templateSelect.innerHTML = '<option value="">-- تخصيص حزمة يدوياً بدون قالب --</option>';
+          if (Array.isArray(_currentTopupPackagesCache)) {
+            _currentTopupPackagesCache.forEach(pkg => {
+              const opt = document.createElement('option');
+              opt.value = pkg.id;
+              opt.textContent = `📦 ${pkg.name} (${Number(pkg.price || 0).toLocaleString()} EGP)`;
+              templateSelect.appendChild(opt);
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('Failed loading package templates:', e);
+      }
+
+      if (sendPkgModal) sendPkgModal.classList.remove('hidden');
+    }
+
+    if (templateSelect) {
+      templateSelect.addEventListener('change', () => {
+        const pkgId = templateSelect.value;
+        if (!pkgId || !Array.isArray(_currentTopupPackagesCache)) return;
+        const found = _currentTopupPackagesCache.find(p => p.id === pkgId);
+        if (!found) return;
+
+        const rewards = found.rewards || {};
+        if (pkgNameInp) pkgNameInp.value = found.name || 'حزمة متجر مميزة';
+        if (pkgBadgeInp) pkgBadgeInp.value = rewards.customBadge || rewards.badgeTitle || '';
+        if (pkgCashInp) pkgCashInp.value = Number(rewards.cash || 0);
+        if (pkgBankInp) pkgBankInp.value = Number(rewards.bank || 0);
+        if (pkgXpInp) pkgXpInp.value = Number(rewards.xp || 0);
+
+        const items = rewards.items || {};
+        if (itemShieldInp) itemShieldInp.value = Number(items.legalShield || 0);
+        if (itemServerInp) itemServerInp.value = Number(items.offshoreServer || 0);
+        if (itemMinerInp) itemMinerInp.value = Number(items.cryptoMiner || 0);
+        if (itemDronesInp) itemDronesInp.value = Number(items.securityDrones || 0);
+      });
+    }
+
+    if (openSendPkgModalBtn) {
+      openSendPkgModalBtn.addEventListener('click', openSendPackageModal);
+    }
+
+    if (closeSendPkgModalBtn) {
+      closeSendPkgModalBtn.addEventListener('click', () => {
+        if (sendPkgModal) sendPkgModal.classList.add('hidden');
+      });
+    }
+
+    if (cancelSendPkgModalBtn) {
+      cancelSendPkgModalBtn.addEventListener('click', () => {
+        if (sendPkgModal) sendPkgModal.classList.add('hidden');
+      });
+    }
+
+    if (confirmSendPkgBtn) {
+      confirmSendPkgBtn.addEventListener('click', async () => {
+        const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
+        if (!targetUser) {
+          showToast('إرسال حزمة', 'تعذر تحديد اللاعب المستهدف.', 'error');
+          return;
+        }
+
+        const pkgName = pkgNameInp ? pkgNameInp.value.trim() : 'حزمة الدعم الإداري 🎁';
+        const customBadge = pkgBadgeInp ? pkgBadgeInp.value.trim() : '';
+        const addCash = Number(pkgCashInp ? pkgCashInp.value : 0);
+        const addBank = Number(pkgBankInp ? pkgBankInp.value : 0);
+        const addXp = Number(pkgXpInp ? pkgXpInp.value : 0);
+        const note = pkgNoteInp ? pkgNoteInp.value.trim() : 'هدية وتكريم خاص من إدارة اللعبة!';
+
+        const items = {};
+        const shields = Number(itemShieldInp ? itemShieldInp.value : 0);
+        const servers = Number(itemServerInp ? itemServerInp.value : 0);
+        const miners = Number(itemMinerInp ? itemMinerInp.value : 0);
+        const drones = Number(itemDronesInp ? itemDronesInp.value : 0);
+        if (shields > 0) items.legalShield = shields;
+        if (servers > 0) items.offshoreServer = servers;
+        if (miners > 0) items.cryptoMiner = miners;
+        if (drones > 0) items.securityDrones = drones;
+
+        if (!pkgName) {
+          showToast('بيانات ناقصة', 'يرجى كتابة اسم الحزمة أولاً.', 'warning');
+          return;
+        }
+
+        if (addCash <= 0 && addBank <= 0 && addXp <= 0 && !customBadge && Object.keys(items).length === 0) {
+          showToast('حزمة فارغة', 'يرجى تحديد مكافأة واحدة على الأقل (كاش، بنك، خبرة، وسام، أو معدات).', 'warning');
+          return;
+        }
+
+        const confirmMsg = `🎁 تأكيد إرسال الحزمة الفورية:\n\nهل أنت متأكد من إرسال [${pkgName}] للاعب "${targetUser}"؟\n` +
+          (addCash > 0 ? `• كاش مالي: +${addCash.toLocaleString()} EGP\n` : '') +
+          (addBank > 0 ? `• إيداع بنكي: +${addBank.toLocaleString()} EGP\n` : '') +
+          (addXp > 0 ? `• نقاط خبرة: +${addXp.toLocaleString()} XP\n` : '') +
+          (customBadge ? `• وسام شرفي: [${customBadge}]\n` : '') +
+          `\nستصل الحزمة للاعب فوراً وتظهر في منتصف شاشته.`;
+
+        if (!confirm(confirmMsg)) return;
+
+        try {
+          confirmSendPkgBtn.disabled = true;
+          confirmSendPkgBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> <span>جاري إرسال الحزمة وشحن حساب اللاعب...</span>';
+
+          const ts = Date.now();
+
+          // 1. Fetch fresh player doc from database
+          const freshPlayer = await AppDB.adminGetPlayer(targetUser);
+          if (!freshPlayer) {
+            throw new Error(`تعذر العثور على حساب اللاعب "${targetUser}"`);
+          }
+
+          const currentCash = Number(freshPlayer.cash || 0);
+          const currentBank = Number(freshPlayer.bank || 0);
+          const currentXp = Number(freshPlayer.xp || 0);
+
+          const newCash = currentCash + addCash;
+          const newBank = currentBank + addBank;
+          const newXp = currentXp + addXp;
+          const newWorth = Number(freshPlayer.netWorth || 0) + addCash + addBank;
+
+          freshPlayer.cash = newCash;
+          freshPlayer.bank = newBank;
+          freshPlayer.xp = newXp;
+          freshPlayer.netWorth = newWorth;
+          freshPlayer.adminModifiedTimestamp = ts;
+
+          if (customBadge) {
+            freshPlayer.customBadge = customBadge;
+            freshPlayer.badgeTitle = customBadge;
+          }
+
+          if (Object.keys(items).length > 0) {
+            freshPlayer.inventory = freshPlayer.inventory || {};
+            for (const [itKey, qty] of Object.entries(items)) {
+              freshPlayer.inventory[itKey] = (Number(freshPlayer.inventory[itKey]) || 0) + Number(qty);
+            }
+          }
+
+          // 2. Save directly to DB
+          await AppDB.adminSavePlayer(targetUser, freshPlayer);
+
+          // 3. Dispatch official topup_receipt mail
+          const topupReceiptData = {
+            packageId: 'admin_bundle_' + ts,
+            packageName: pkgName,
+            price: 0,
+            cash: addCash,
+            bank: addBank,
+            xp: addXp,
+            customBadge: customBadge,
+            badgeTitle: customBadge || pkgName,
+            items: items,
+            status: 'approved',
+            date: ts,
+            receiptNumber: 'ADMIN-GIFT-' + Math.floor(100000 + Math.random() * 900000),
+            reviewerNote: note
+          };
+
+          await AppDB.sendMail('إدارة اللعبة (Financial Team)', targetUser, 'topup_receipt', {
+            title: `🎉 تم استلام [${pkgName}] بنجاح!`,
+            message: note || `مبروك! تم إرسال حزمة [${pkgName}] لحسابك بنجاح من قبل إدارة اللعبة.`,
+            topupDetails: topupReceiptData
+          });
+
+          // 4. Update in-memory GameEngine if this admin is the active user
+          if (targetUser === GameEngine.activeUsername) {
+            GameEngine.state.cash = newCash;
+            GameEngine.state.bank = newBank;
+            GameEngine.state.xp = newXp;
+            GameEngine.state.netWorth = newWorth;
+            if (customBadge) {
+              GameEngine.state.customBadge = customBadge;
+              GameEngine.state.badgeTitle = customBadge;
+            }
+            if (Object.keys(items).length > 0) {
+              GameEngine.state.inventory = GameEngine.state.inventory || {};
+              for (const [itKey, qty] of Object.entries(items)) {
+                GameEngine.state.inventory[itKey] = (Number(GameEngine.state.inventory[itKey]) || 0) + Number(qty);
+              }
+            }
+            GameEngine.state.adminModifiedTimestamp = ts;
+            try {
+              localStorage.setItem(`rasalmal_state_${targetUser}`, JSON.stringify(GameEngine.state));
+            } catch (e) {}
+            renderAll();
+          }
+
+          // 5. Update admin dashboard stats
+          const cashEl = document.getElementById('admin-p-cash');
+          if (cashEl) cashEl.textContent = newCash.toLocaleString();
+          const bankEl = document.getElementById('admin-p-bank');
+          if (bankEl) bankEl.textContent = newBank.toLocaleString();
+          const xpEl = document.getElementById('admin-p-xp');
+          if (xpEl) xpEl.textContent = `${newXp.toLocaleString()} XP`;
+          const worthEl = document.getElementById('admin-p-worth');
+          if (worthEl) worthEl.textContent = `${newWorth.toLocaleString()} EGP`;
+
+          logAdminAction(`إرسال حزمة [${pkgName}] للاعب ${targetUser}: كاش ${addCash.toLocaleString()}، بنك ${addBank.toLocaleString()}، خبرة ${addXp.toLocaleString()}`);
+          showToast('تم إرسال الحزمة بنجاح 🎁', `تم شحن وإرسال حزمة [${pkgName}] للاعب @${targetUser} بنجاح وستظهر في شاشته فوراً!`, 'success');
+
+          if (sendPkgModal) sendPkgModal.classList.add('hidden');
+
+          if (typeof loadAdminPlayersDirectory === 'function') {
+            loadAdminPlayersDirectory(false);
+          }
+
+        } catch (err) {
+          console.error('[Send Package Error]', err);
+          showToast('فشل إرسال الحزمة', err.message, 'error');
+        } finally {
+          confirmSendPkgBtn.disabled = false;
+          confirmSendPkgBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>إرسال الحزمة للاعب فوراً 🚀</span>';
+        }
+      });
+    }
+
     // ==================== PLAYER CASH FLOW DETAILED INSPECTOR ====================
     const inspectFlowBtn = document.getElementById('btn-admin-inspect-flow');
     const flowModal = document.getElementById('admin-player-flow-modal');
