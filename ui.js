@@ -341,7 +341,7 @@ const UIController = (() => {
   // ─────────────────────────────────────────────
   //  TOP NOTIFICATIONS (TOAST ENGINE)
   // ─────────────────────────────────────────────
-  function showToast(title, message, type ='info', duration = 2400) {
+  function showToast(title, message, type ='info', duration = 2400, action = null) {
     if (typeof title ==='string') title = title.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/gu,'').trim();
     if (typeof message ==='string') message = message.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/gu,'').trim();
     if (!notificationsEnabled && type !=='error') return;
@@ -405,15 +405,36 @@ const UIController = (() => {
     borderColor.split(' ').filter(Boolean).forEach(c => toast.classList.add(c));
     bgColor.split(' ').filter(Boolean).forEach(c => toast.classList.add(c));
 
+    let actionBtnHtml = '';
+    if (action && action.text) {
+      actionBtnHtml = `
+        <button type="button" class="toast-action-btn shrink-0 px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-[10.5px] transition shadow-md shadow-emerald-500/20 active:scale-95 flex items-center gap-1">
+          ${action.icon ? `<i class="${action.icon}"></i>` : ''}
+          <span>${action.text}</span>
+        </button>`;
+    }
+
     toast.innerHTML =`
       <div class="shrink-0">${iconHtml}</div>
       <div class="flex-1 min-w-0">
         <h4 class="text-[11px] sm:text-xs font-black ${titleColor} leading-tight">${title || (window.currentLang ==='en' ?'System Notification' :'إشعار المنظومة')}</h4>
         ${message ?`<p class="text-[10px] sm:text-[11px] text-slate-300 leading-tight mt-0.5 break-words">${message}</p>` :''}
       </div>
-      <button class="text-slate-500 hover:text-white transition text-xs shrink-0 px-1 py-0.5">
+      ${actionBtnHtml}
+      <button class="text-slate-500 hover:text-white transition text-xs shrink-0 px-1 py-0.5 btn-toast-dismiss">
         <i class="fa-solid fa-xmark"></i>
       </button>`;
+
+    if (action && typeof action.onClick === 'function') {
+      const actBtn = toast.querySelector('.toast-action-btn');
+      if (actBtn) {
+        actBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          action.onClick();
+          dismiss();
+        });
+      }
+    }
 
     if (typeof translateDOM ==='function') {
       translateDOM(toast);
@@ -430,8 +451,23 @@ const UIController = (() => {
       }, 200);
     };
 
-    toast.addEventListener('click', dismiss);
-    setTimeout(dismiss, duration);
+    const dismissBtn = toast.querySelector('.btn-toast-dismiss');
+    if (dismissBtn) {
+      dismissBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dismiss();
+      });
+    }
+
+    toast.addEventListener('click', () => {
+      if (action && typeof action.onClick === 'function') {
+        action.onClick();
+      }
+      dismiss();
+    });
+
+    const actualDuration = action ? Math.max(duration, 5000) : duration;
+    setTimeout(dismiss, actualDuration);
 
     container.prepend(toast);
 
@@ -1238,17 +1274,16 @@ const UIController = (() => {
       renderAll();
       showToast('أهلاً بعودتك',`تم استئناف جلسة الإمبراطور: ${canonicalUser}`,'success');
 
-      // Check and display offline idle earnings with 12-Hour Manager context
+      // Check and display offline idle earnings with detailed report modal
       if (playerState && playerState.offlineReport) {
         const rep = playerState.offlineReport;
-        const mins = Math.max(1, Math.round(rep.seconds / 60));
         setTimeout(() => {
-          if (rep.earnings > 0) {
-            showToast(' أرباح أثناء غيابك!',`جمعت إمبراطوريتك +${rep.earnings.toLocaleString()} EGP أثناء غيابك (${mins} دقيقة) بفضل ترخيص الإدارة الذاتية!`,'success');
+          if (rep.earnings > 0 || (rep.breakdown && rep.breakdown.length > 0)) {
+            showOfflineReportModal(rep);
           } else if (rep.expiredDuringAbsence) {
-            showToast('️ تنبيه الإدارة الذاتية','انتهت صلاحية ترخيص الـ 12 ساعة أثناء غيابك! يرجى الضغط على زر التجديد لمواصلة جمع الأرباح عند الخروج.','warning');
+            showToast('⚠️ تنبيه الإدارة الذاتية', 'انتهت صلاحية ترخيص الـ 12 ساعة أثناء غيابك! يرجى الضغط على زر التجديد لمواصلة جمع الأرباح عند الخروج.', 'warning');
           }
-        }, 1200);
+        }, 1000);
         delete playerState.offlineReport;
       }
     } catch (err) {
@@ -1485,17 +1520,16 @@ const UIController = (() => {
           startGameLoop();
           renderAll();
 
-          // Check and display offline idle earnings with 12-Hour Manager context
+          // Check and display offline idle earnings with detailed report modal
           if (playerState && playerState.offlineReport) {
             const rep = playerState.offlineReport;
-            const mins = Math.max(1, Math.round(rep.seconds / 60));
             setTimeout(() => {
-              if (rep.earnings > 0) {
-                showToast(' أرباح أثناء غيابك!',`جمعت إمبراطوريتك +${rep.earnings.toLocaleString()} EGP أثناء غيابك (${mins} دقيقة) بفضل ترخيص الإدارة الذاتية!`,'success');
+              if (rep.earnings > 0 || (rep.breakdown && rep.breakdown.length > 0)) {
+                showOfflineReportModal(rep);
               } else if (rep.expiredDuringAbsence) {
-                showToast('️ تنبيه الإدارة الذاتية','انتهت صلاحية ترخيص الـ 12 ساعة أثناء غيابك! يرجى الضغط على زر التجديد لمواصلة جمع الأرباح عند الخروج.','warning');
+                showToast('⚠️ تنبيه الإدارة الذاتية', 'انتهت صلاحية ترخيص الـ 12 ساعة أثناء غيابك! يرجى الضغط على زر التجديد لمواصلة جمع الأرباح عند الخروج.', 'warning');
               }
-            }, 1200);
+            }, 1000);
             delete playerState.offlineReport;
           }
         } catch (err) {
@@ -1818,7 +1852,22 @@ const UIController = (() => {
 
       if (updates.tradeExportsDelivered && updates.tradeExportsDelivered.length > 0) {
         updates.tradeExportsDelivered.forEach(item => {
-          showToast('وصول شحنة تصدير للعميل! ️',`وصلت شحنة ${item.name} إلى ${item.buyerName}. يمكنك الآن تحصيل أرباح الصفقة بقيمة ${item.payout.toLocaleString()} EGP!`,'success');
+          showToast(
+            'وصول شحنة تصدير للعميل! 🚢',
+            `وصلت شحنة ${item.name} إلى ${item.buyerName}. أرباحك جاهزة بقيمة ${item.payout.toLocaleString()} EGP!`,
+            'success',
+            6000,
+            {
+              text: 'استلم أرباحك الآن 💰',
+              icon: 'fa-solid fa-hand-holding-dollar',
+              onClick: () => {
+                window.switchTab('trade');
+                if (typeof window.switchTradeSubtab === 'function') {
+                  window.switchTradeSubtab('shipments');
+                }
+              }
+            }
+          );
         });
         if (activeTab ==='trade') renderTradePanel();
       }
@@ -11120,7 +11169,7 @@ const UIController = (() => {
               وصلتك حوالة مالية بقيمة <strong class="text-emerald-400 font-black numbers-font text-sm">+${amt.toLocaleString()} EGP</strong> من اللاعب <strong class="text-white hover:underline cursor-pointer" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong>.
             </div>
             <div class="text-[11px] text-emerald-400/90 flex items-center gap-1.5 font-medium pt-0.5">
-              <i class="fa-solid fa-circle-check text-xs"></i> تم إيداع المبلغ بنجاح في كاشك.
+              <i class="fa-solid fa-circle-check text-xs"></i> تم إيداع المبلغ بنجاح في حسابك البنكي.
             </div>
           </div>`;
         actionsHtml =`
@@ -12450,6 +12499,70 @@ const UIController = (() => {
   }
 
   // =========================================================================
+  // Offline Earnings & Supplies Report Modal Controller
+  // =========================================================================
+  function showOfflineReportModal(rep) {
+    if (!rep) return;
+    const modal = document.getElementById('modal-offline-report');
+    if (!modal) return;
+
+    const mins = Math.max(1, Math.round((rep.seconds || 0) / 60));
+    const hours = (mins / 60).toFixed(1);
+    const durationText = mins >= 60 ? `${hours} ساعة (${mins} دقيقة)` : `${mins} دقيقة`;
+
+    const durEl = document.getElementById('offline-report-duration');
+    if (durEl) durEl.textContent = durationText;
+
+    const totalEl = document.getElementById('offline-report-total-amount');
+    if (totalEl) totalEl.textContent = `+${(rep.earnings || 0).toLocaleString()} EGP`;
+
+    const suppliesSummEl = document.getElementById('offline-report-supplies-summary');
+    if (suppliesSummEl) {
+      if (rep.suppliesHours && rep.suppliesHours > 0) {
+        suppliesSummEl.textContent = `تم استهلاك ${rep.suppliesHours} ساعة بضاعة`;
+      } else {
+        suppliesSummEl.textContent = 'مخزون البضائع مكتمل';
+      }
+    }
+
+    const listEl = document.getElementById('offline-report-projects-list');
+    if (listEl) {
+      listEl.innerHTML = '';
+      if (rep.breakdown && rep.breakdown.length > 0) {
+        rep.breakdown.forEach(item => {
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs';
+          row.innerHTML = `
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-store text-emerald-400"></i>
+              <span class="font-bold text-white">${item.name}</span>
+              <span class="text-[10px] text-amber-400/90 font-mono">(استهلك ${item.consumedHours} س بضاعة)</span>
+            </div>
+            <span class="font-black text-emerald-400 numbers-font">+${item.profit.toLocaleString()} EGP</span>
+          `;
+          listEl.appendChild(row);
+        });
+      } else {
+        listEl.innerHTML = `
+          <div class="p-3 text-center text-slate-400 text-xs bg-slate-900/40 rounded-xl border border-slate-800/60">
+            تم جمع الأرباح وتوريدها للبنك بنجاح.
+          </div>
+        `;
+      }
+    }
+
+    const closeBtn = document.getElementById('btn-close-offline-report');
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        modal.classList.add('hidden');
+      };
+    }
+
+    modal.classList.remove('hidden');
+    playMenuSound('success');
+  }
+
+  // =========================================================================
   // Direct Admin Popup Modal Controller (شاشة منبثقة مباشرة من الإدارة)
   // =========================================================================
   function showDirectAdminPopupModal(popupData) {
@@ -12535,6 +12648,67 @@ const UIController = (() => {
   async function processInboxSystemMessages(mails) {
     if (!mails || mails.length === 0) return;
 
+    // 0. Process incoming Top-up approvals (Live in-game package delivery)
+    const topupMails = mails.filter(m => (m.type === 'topup_receipt' || (m.payload && m.payload.topupDetails)) && (m.status === 'unread' || m.status === 'pending'));
+    for (const tm of topupMails) {
+      if (!window._processedTopupMailIds) window._processedTopupMailIds = new Set();
+      if (window._processedTopupMailIds.has(tm.id)) continue;
+      window._processedTopupMailIds.add(tm.id);
+
+      const details = (tm.payload && tm.payload.topupDetails) || {};
+      if (details.status === 'approved') {
+        const addedCash = Number(details.cash) || 0;
+        const addedBank = Number(details.bank) || 0;
+        const addedXp = Number(details.xp) || 0;
+        const pkgName = details.packageName || 'باقة الشحن';
+
+        // Synchronize in-memory balances
+        if (GameEngine.state) {
+          GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + addedCash;
+          GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + addedBank;
+          GameEngine.state.xp = (Number(GameEngine.state.xp) || 0) + addedXp;
+          GameEngine.state.netWorth = (Number(GameEngine.state.cash) || 0) + (Number(GameEngine.state.bank) || 0);
+
+          if (details.customBadge) {
+            GameEngine.state.customBadge = details.customBadge;
+            GameEngine.state.badgeTitle = details.badgeTitle || pkgName;
+          }
+
+          if (details.items && typeof details.items === 'object') {
+            GameEngine.state.inventory = GameEngine.state.inventory || {};
+            for (const [itKey, qty] of Object.entries(details.items)) {
+              GameEngine.state.inventory[itKey] = (Number(GameEngine.state.inventory[itKey]) || 0) + Number(qty);
+            }
+          }
+
+          // Advance adminModifiedTimestamp in memory to prevent cloud save rejection
+          const topupTs = Number(details.date || tm.created_at || Date.now());
+          GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), topupTs);
+          await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
+        }
+
+        // Show celebratory popup modal
+        showDirectAdminPopupModal({
+          id: tm.id,
+          title: `🎉 تم اعتماد باقة [${pkgName}] بنجاح!`,
+          message: `مبروك يا بطل! تم تأكيد الشحن بنجاح وإضافة المزايا لحسابك فوراً:\n\n` +
+            (addedCash > 0 ? `💵 كاش مالي: +${addedCash.toLocaleString()} EGP\n` : '') +
+            (addedBank > 0 ? `🏦 إيداع بنكي: +${addedBank.toLocaleString()} EGP\n` : '') +
+            (addedXp > 0 ? `⭐ نقاط خبرة: +${addedXp.toLocaleString()} XP\n` : '') +
+            (details.customBadge ? `👑 وسام خاص: [${details.badgeTitle || pkgName}]\n` : '') +
+            `\nشكراً لدعمك لسيرفر لعبة رأس المال! نتمنى لك تجربة لعب ممتعة وموفقة.`,
+          sender: 'إدارة اللعبة (Financial Team)',
+          timestamp: details.date || Date.now(),
+          style: 'reward'
+        });
+
+        playMenuSound('success');
+        await AppDB.updateMailStatus(tm.id, 'read');
+        renderAll();
+        break;
+      }
+    }
+
     // 0. Process incoming Direct Admin Popup Messages
     const adminPopups = mails.filter(m => (m.type === 'admin_popup' || m.type === 'urgent_alert') && (m.status === 'unread' || m.status === 'pending'));
     for (const popup of adminPopups) {
@@ -12569,12 +12743,12 @@ const UIController = (() => {
           // Only add to in-memory cash if this transfer occurred during the active session.
           // If it was sent while offline before this session, getPlayerState already loaded the updated balance on login.
           if (mailTime >= sessionStart) {
-            GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + amount;
+            GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
             GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
             await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
           }
 
-          showToast('حوالة بنكية واردة',`وصلتك حوالة مالية بقيمة ${amount.toLocaleString()} EGP من اللاعب"${tr.sender}".`,'success');
+          showToast('حوالة بنكية واردة',`وصلتك حوالة مالية بقيمة ${amount.toLocaleString()} EGP من اللاعب "${tr.sender}" أودعت في البنك.`,'success');
           playMenuSound('success');
 
           await AppDB.updateMailStatus(tr.id,'read');

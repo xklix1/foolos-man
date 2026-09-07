@@ -164,10 +164,14 @@ BEGIN
       net_worth = GREATEST(0, net_worth - transfer_amount)
   WHERE username = sender_username;
 
-  -- إضافة المبلغ للمستلم
+  -- إضافة المبلغ للمستلم في البنك (Bank) بدلاً من الكاش
   UPDATE public.players
-  SET cash = cash + transfer_amount,
-      net_worth = net_worth + transfer_amount
+  SET bank = bank + transfer_amount,
+      net_worth = net_worth + transfer_amount,
+      state = CASE 
+        WHEN state IS NOT NULL THEN jsonb_set(state, '{bank}', to_jsonb(COALESCE((state->>'bank')::numeric, 0) + transfer_amount))
+        ELSE state 
+      END
   WHERE username = recipient_username;
 
   -- تسجيل إيصال التحويل

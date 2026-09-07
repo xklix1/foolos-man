@@ -4377,6 +4377,193 @@
       .replace(/'/g,'&#039;');
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ANTI-FEEDER & MULTI-ACCOUNT FRAUD MODERATION ACTIONS
+  // ─────────────────────────────────────────────────────────────────────────────
+  window.adminHandleFraudAction = async function(actionType, sender, recipient) {
+    if (!sender && !recipient) {
+      if (typeof showToast === 'function') showToast('خطأ', 'لم يتم تحديد أسماء اللاعبين', 'error');
+      return;
+    }
+
+    const isUnknown = (u) => !u || u === 'غير معروف' || u === 'UNKNOWN' || u === 'SYSTEM';
+    const validSender = !isUnknown(sender) ? sender.trim() : null;
+    const validRecipient = !isUnknown(recipient) ? recipient.trim() : null;
+
+    let targetUsers = [];
+    let confirmMsg = '';
+    let actionTitle = '';
+    let popupTitle = '';
+    let popupMessage = '';
+    let doReset = false;
+    let doBan = false;
+
+    switch (actionType) {
+      case 'reset_both':
+        targetUsers = [validSender, validRecipient].filter(Boolean);
+        if (targetUsers.length === 0) {
+          alert('كلا الطرفين غير معروفين!');
+          return;
+        }
+        confirmMsg = `⚠️ هل أنت متأكد من [تصفير كلا الطرفين] (${targetUsers.join(' و ')})؟\n\n` +
+          `• سيتم مسح الكاش والبنك والأصول والمشاريع بالكامل لكلا الحسابين.\n` +
+          `• سيتم إرسال تنبيه أمني عاجل لشاشة كل منهما يفيد بأنه تم كشفه وتصفير حسابه لمخالفة قوانين اللعبة.`;
+        actionTitle = 'تصفير الطرفين';
+        popupTitle = '⚠️ تنبيه أمني عاجل: تم كشف الحساب وتصفيره';
+        popupMessage = 'تم رصد محاولة تحايل مالي وتعدد حسابات مخالف لقوانين اللعبة. تم تصفير كافة أرصدتك النقدية والبنكية وأصولك ومشاريعك بالكامل. أي تكرار للمخالفة سيؤدي للحظر النهائي لحسابك وجهازك.';
+        doReset = true;
+        break;
+
+      case 'ban_both':
+        targetUsers = [validSender, validRecipient].filter(Boolean);
+        if (targetUsers.length === 0) {
+          alert('كلا الطرفين غير معروفين!');
+          return;
+        }
+        confirmMsg = `⛔ هل أنت متأكد من [حظر كلا الطرفين] (${targetUsers.join(' و ')}) نهائياً؟\n\n` +
+          `• سيتم حظر الحسابين ومنعهما من الدخول للعبة نهائياً.\n` +
+          `• سيتم إرسال تنبيه رسمي بالحظر النهائي لكل منهما.`;
+        actionTitle = 'حظر الطرفين';
+        popupTitle = '⛔ تم حظر حسابك نهائياً';
+        popupMessage = 'تم حظر حسابك نهائياً من قبل إدارة اللعبة لمخالفة القوانين ومحاولة التحايل المالي وتعدد الحسابات ونقل الأموال المشبوهة.';
+        doBan = true;
+        break;
+
+      case 'reset_ban_both':
+        targetUsers = [validSender, validRecipient].filter(Boolean);
+        if (targetUsers.length === 0) {
+          alert('كلا الطرفين غير معروفين!');
+          return;
+        }
+        confirmMsg = `💥 هل أنت متأكد من [تصفير وحظر كلا الطرفين معاً] (${targetUsers.join(' و ')})؟\n\n` +
+          `• سيتم تصفير الأرصدة والمشاريع وحظر الحسابين نهائياً من اللعبة.\n` +
+          `• سيتم إرسال تنبيه رسمي شديد اللهجة لكل منهما.`;
+        actionTitle = 'تصفير وحظر الطرفين';
+        popupTitle = '⛔ حظر وتصفير نهائي للحساب';
+        popupMessage = 'تم تصفير حسابك وحظره نهائياً من قبل إدارة اللعبة لارتكاب مخالفة جسيمة ومحاولة التحايل المالي وتعدد الحسابات.';
+        doReset = true;
+        doBan = true;
+        break;
+
+      case 'reset_sender':
+        if (!validSender) { alert('اسم الراسل غير صالح'); return; }
+        targetUsers = [validSender];
+        confirmMsg = `هل أنت متأكد من تصفير حساب الراسل (${validSender}) فقط وإرسال تنبيه الكشف له؟`;
+        actionTitle = 'تصفير الراسل';
+        popupTitle = '⚠️ تنبيه أمني عاجل: تم تصفير حسابك';
+        popupMessage = 'تم رصد محاولة تحايل مالي وتغذية حسابات مشبوهة. تم تصفير كافة أرصدتك ومشاريعك بالكامل.';
+        doReset = true;
+        break;
+
+      case 'reset_recipient':
+        if (!validRecipient) { alert('اسم المستلم غير صالح'); return; }
+        targetUsers = [validRecipient];
+        confirmMsg = `هل أنت متأكد من تصفير حساب المستلم (${validRecipient}) فقط وإرسال تنبيه الكشف له؟`;
+        actionTitle = 'تصفير المستلم';
+        popupTitle = '⚠️ تنبيه أمني عاجل: تم تصفير حسابك';
+        popupMessage = 'تم رصد استقبال أموال مشبوهة من حسابات وهمية. تم تصفير كافة أرصدتك ومشاريعك بالكامل.';
+        doReset = true;
+        break;
+
+      case 'ban_sender':
+        if (!validSender) { alert('اسم الراسل غير صالح'); return; }
+        targetUsers = [validSender];
+        confirmMsg = `هل أنت متأكد من حظر حساب الراسل (${validSender}) نهائياً؟`;
+        actionTitle = 'حظر الراسل';
+        popupTitle = '⛔ تم حظر حسابك نهائياً';
+        popupMessage = 'تم حظر حسابك نهائياً من قبل إدارة اللعبة لإنشاء حسابات وهمية ومحاولة التحايل المالي.';
+        doBan = true;
+        break;
+
+      case 'ban_recipient':
+        if (!validRecipient) { alert('اسم المستلم غير صالح'); return; }
+        targetUsers = [validRecipient];
+        confirmMsg = `هل أنت متأكد من حظر حساب المستلم (${validRecipient}) نهائياً؟`;
+        actionTitle = 'حظر المستلم';
+        popupTitle = '⛔ تم حظر حسابك نهائياً';
+        popupMessage = 'تم حظر حسابك نهائياً من قبل إدارة اللعبة لاستقبال أموال مشبوهة ومخالفة قوانين اللعبة.';
+        doBan = true;
+        break;
+
+      default:
+        return;
+    }
+
+    if (!confirm(confirmMsg)) return;
+
+    const notify = (title, msg, type = 'info') => {
+      if (typeof showToast === 'function') showToast(title, msg, type);
+      else if (typeof window.showToast === 'function') window.showToast(title, msg, type);
+      else alert(`${title}\n${msg}`);
+    };
+
+    notify('جاري التنفيذ...', `جاري تنفيذ ${actionTitle} وإرسال التنبيهات...`, 'info');
+
+    try {
+      for (const uname of targetUsers) {
+        // 1. Reset player if requested
+        if (doReset && AppDB.adminResetPlayer) {
+          await AppDB.adminResetPlayer(uname);
+        }
+
+        // 2. Ban player if requested (performed after reset so is_banned remains true)
+        if (doBan && AppDB.adminBanPlayer) {
+          await AppDB.adminBanPlayer(uname);
+        }
+
+        // 3. Send direct in-game admin popup modal notification
+        const popupPayload = {
+          title: popupTitle,
+          message: popupMessage,
+          style: 'critical',
+          sentAt: Date.now()
+        };
+
+        if (AppDB.sendMail) {
+          await AppDB.sendMail('إدارة اللعبة (Admin)', uname, 'admin_popup', popupPayload);
+        }
+
+        // 4. Inject into player state directly for immediate trigger
+        try {
+          if (AppDB.adminGetPlayer && AppDB.adminSavePlayer) {
+            const pState = await AppDB.adminGetPlayer(uname);
+            if (pState) {
+              pState.pendingAdminPopup = popupPayload;
+              pState.adminModifiedTimestamp = Date.now();
+              if (doBan) pState.isBanned = true;
+              await AppDB.adminSavePlayer(uname, pState);
+            }
+          }
+        } catch (e) {
+          console.warn(`[Fraud Mod] direct state inject skipped for ${uname}:`, e);
+        }
+      }
+
+      notify('تمت العملية بنجاح ✅', `تم تنفيذ ${actionTitle} بنجاح لـ [${targetUsers.join(', ')}] وإرسال شاشة التنبيه لهما.`, 'success');
+
+      // Refresh admin tables
+      if (typeof renderAdminFraudMonitor === 'function') renderAdminFraudMonitor();
+      if (window._adminReloadPlayers) window._adminReloadPlayers(false);
+      if (typeof renderAdminAnalyticsDashboard === 'function') renderAdminAnalyticsDashboard();
+
+    } catch (err) {
+      console.error('[Fraud Mod Error]', err);
+      notify('فشل الإجراء', err.message || 'حدث خطأ أثناء تنفيذ الإجراء الإداري', 'error');
+    }
+  };
+
+  window.adminHandleFraudDropdown = function(selectEl, sender, recipient) {
+    if (!selectEl) return;
+    const val = selectEl.value;
+    selectEl.selectedIndex = 0;
+    if (!val) return;
+    window.adminHandleFraudAction(val, sender, recipient);
+  };
+
+  window.adminBanPlayer = function(username) {
+    window.adminHandleFraudAction('ban_sender', username, '');
+  };
+
   async function renderAdminFraudMonitor() {
     const tbody = document.getElementById('admin-fraud-table-body');
     const badge = document.getElementById('admin-fraud-badge');
@@ -4434,9 +4621,13 @@
         const timeStr = a.timestamp ? new Date(a.timestamp).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' }) : '--';
         const typeBadge = typeLabels[a.type] || `<span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300">${a.type || 'UNKNOWN'}</span>`;
         const amtStr = Number(a.amount || 0) > 0 ? `${Number(a.amount).toLocaleString()} EGP` : '-';
-        const sender = escapeHtml(a.sender || 'غير معروف');
-        const recipient = escapeHtml(a.recipient || 'غير معروف');
+        const rawSender = a.sender || 'غير معروف';
+        const rawRecipient = a.recipient || 'غير معروف';
+        const sender = escapeHtml(rawSender);
+        const recipient = escapeHtml(rawRecipient);
         const details = escapeHtml(a.details || '');
+        const safeSenderArg = rawSender.replace(/'/g, "\\'");
+        const safeRecipientArg = rawRecipient.replace(/'/g, "\\'");
 
         return `
           <tr class="hover:bg-slate-900/60 transition border-b border-slate-800/40">
@@ -4447,9 +4638,34 @@
             <td class="p-2.5 text-center text-emerald-400 font-bold whitespace-nowrap">${amtStr}</td>
             <td class="p-2.5 text-slate-300 text-[11px] font-sans max-w-xs">${details}</td>
             <td class="p-2.5 text-center whitespace-nowrap">
-              <button onclick="window.adminBanPlayer && window.adminBanPlayer('${sender}')" class="px-2 py-1 bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 text-rose-300 rounded text-[10px] transition">
-                حظر الراسل
-              </button>
+              <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                <!-- تصفير كلا الطرفين -->
+                <button onclick="window.adminHandleFraudAction && window.adminHandleFraudAction('reset_both', '${safeSenderArg}', '${safeRecipientArg}')"
+                  class="px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 hover:text-amber-200 rounded-lg text-[10px] font-black transition flex items-center gap-1 cursor-pointer shadow-sm"
+                  title="تصفير أموال ومشاريع الطرفين وإرسال تنبيه كشف رسمي لهما">
+                  <i class="fa-solid fa-rotate-left text-xs"></i>
+                  <span>تصفير الطرفين</span>
+                </button>
+                
+                <!-- حظر كلا الطرفين -->
+                <button onclick="window.adminHandleFraudAction && window.adminHandleFraudAction('ban_both', '${safeSenderArg}', '${safeRecipientArg}')"
+                  class="px-2.5 py-1 bg-rose-950/60 hover:bg-rose-900 border border-rose-500/50 text-rose-300 hover:text-rose-200 rounded-lg text-[10px] font-black transition flex items-center gap-1 cursor-pointer shadow-sm"
+                  title="حظر كلا الطرفين نهائياً من اللعبة وإرسال تنبيه الحظر لهما">
+                  <i class="fa-solid fa-ban text-xs"></i>
+                  <span>حظر الطرفين</span>
+                </button>
+
+                <!-- قائمة الإجراءات الفردية والمتقدمة -->
+                <select onchange="window.adminHandleFraudDropdown && window.adminHandleFraudDropdown(this, '${safeSenderArg}', '${safeRecipientArg}')"
+                  class="px-2 py-1 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold cursor-pointer transition focus:outline-none focus:border-cyan-400">
+                  <option value="" disabled selected>المزيد ▾</option>
+                  <option value="reset_ban_both">💥 تصفير + حظر الطرفين معاً</option>
+                  <option value="reset_sender">⚠️ تصفير الراسل (${sender})</option>
+                  <option value="reset_recipient">⚠️ تصفير المستلم (${recipient})</option>
+                  <option value="ban_sender">⛔ حظر الراسل (${sender})</option>
+                  <option value="ban_recipient">⛔ حظر المستلم (${recipient})</option>
+                </select>
+              </div>
             </td>
           </tr>
         `;
@@ -6577,7 +6793,7 @@
           </span>
         </td>
         <td class="p-2.5 text-center">${statusBadge}</td>
-        <td class="p-2.5 text-left space-x-1 space-x-reverse">
+        <td class="p-2.5 text-left space-x-1 space-x-reverse flex items-center justify-end gap-1">
           ${req.status ==='pending' ?`
             <button class="btn-approve-topup px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition text-[11px] shadow-sm">
               <i class="fa-solid fa-check"></i> قبول
@@ -6588,6 +6804,9 @@
             <span class="text-[10px] text-slate-500" title="${req.reviewerNote ||''}">
               ${req.reviewerNote ? req.reviewerNote : (req.status ==='approved' ?'تم الشحن' :'تم الرفض')}
             </span>`}
+          <button class="btn-delete-topup px-2 py-1 bg-slate-900 hover:bg-rose-600 text-slate-400 hover:text-white font-bold rounded-lg transition text-[11px] border border-slate-800 hover:border-rose-500 shadow-sm" title="حذف هذا الطلب الوهمي نهائياً من السجل">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
         </td>`;
 
       // Copy Receipt Number
@@ -6639,6 +6858,28 @@
             showToast('فشل الرفض', err.message,'error');
             rejectBtn.disabled = false;
             rejectBtn.innerHTML ='<i class="fa-solid fa-xmark"></i> رفض';
+          }
+        });
+      }
+
+      // Delete Button (حذف الطلبات الوهمية)
+      const deleteBtn = tr.querySelector('.btn-delete-topup');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', async () => {
+          const confirmDelete = confirm(`حذف طلب الشحن نهائياً 🗑️\n\nهل أنت متأكد من حذف هذا الطلب نهائياً من السجل؟\nاللاعب: @${req.username}\nالباقة: ${req.packageName}\nالمبلغ: ${req.price} EGP\n\nلن يظهر هذا الطلب مجدداً في لوحة الإدارة.`);
+          if (!confirmDelete) return;
+
+          try {
+            deleteBtn.disabled = true;
+            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i>';
+            await AppDB.deleteTopupRequest(req.id);
+            showToast('تم الحذف', `تم حذف طلب الشحن الخاص باللاعب @${req.username} بنجاح.`, 'info');
+            logAdminAction(`حذف طلب شحن وهمي: ${req.id} للاعب ${req.username}`);
+            await loadAndRenderTopupRequests();
+          } catch (err) {
+            showToast('فشل الحذف', err.message, 'error');
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
           }
         });
       }

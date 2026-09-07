@@ -2614,6 +2614,9 @@ const GameEngine = (() => {
 
           // 1. Calculate business offline profits based strictly on supplies remaining
           let offlineBizEarnings = 0;
+          let totalSuppliesConsumedSec = 0;
+          const bizOfflineBreakdown = [];
+
           if (state.businesses) {
             Object.keys(state.businesses).forEach(bk => {
               const b = state.businesses[bk];
@@ -2623,7 +2626,15 @@ const GameEngine = (() => {
                 const tempState = { ...b, suppliesTicks: activeSuppliesSec };
                 const bCalc = calculateSingleBusinessProfit(bk, tempState, state);
                 const bizSecProfit = (bCalc.ownerProfit || 0) / 3600;
-                offlineBizEarnings += Math.floor(bizSecProfit * activeSuppliesSec);
+                const earned = Math.floor(bizSecProfit * activeSuppliesSec);
+                offlineBizEarnings += earned;
+                totalSuppliesConsumedSec += activeSuppliesSec;
+
+                bizOfflineBreakdown.push({
+                  name: BUSINESSES[bk] ? BUSINESSES[bk].name : bk,
+                  consumedHours: Number((activeSuppliesSec / 3600).toFixed(1)),
+                  profit: earned
+                });
 
                 // Deplete supplies by elapsed offline time
                 b.suppliesTicks = Math.max(0, b.suppliesTicks - elapsedSinceLastActive);
@@ -2661,6 +2672,10 @@ const GameEngine = (() => {
               seconds: cappedSeconds,
               earnings: (totalOffline || 0) + (offlineCorpEarnings || 0),
               corpEarnings: offlineCorpEarnings,
+              bizEarnings: offlineBizEarnings,
+              nonBizEarnings: nonBizOfflineEarnings,
+              suppliesHours: Number((totalSuppliesConsumedSec / 3600).toFixed(1)),
+              breakdown: bizOfflineBreakdown,
               wasManagerActive: true,
               expiredDuringAbsence: now > managerExpiry
             };

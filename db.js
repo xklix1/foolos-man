@@ -917,11 +917,27 @@ var AppDB = (() => {
     try {
       const adminTs = Number(state.adminModifiedTimestamp || 0);
       const tsFilter = `&admin_modified_timestamp=lte.${adminTs}`;
-      await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
+      const res = await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
         method:'PATCH',
-        headers: {'Prefer':'return=minimal' },
+        headers: {'Prefer':'return=representation' },
         body: JSON.stringify(payload)
       });
+      
+      // If 0 rows were updated due to server having a newer admin_modified_timestamp, sync the timestamp
+      if (Array.isArray(res) && res.length === 0) {
+        const checkRows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=admin_modified_timestamp,cash,bank,net_worth,xp`);
+        if (checkRows && checkRows.length > 0) {
+          const srv = checkRows[0];
+          state.adminModifiedTimestamp = Number(srv.admin_modified_timestamp || Date.now());
+          payload.admin_modified_timestamp = state.adminModifiedTimestamp;
+          // Retry save with updated timestamp
+          await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
+            method:'PATCH',
+            headers: {'Prefer':'return=minimal' },
+            body: JSON.stringify(payload)
+          });
+        }
+      }
       _lastCloudSyncTimestamp = Date.now();
     } catch (err) {
       console.warn('[DB] Cloud save warning:', err.message);
@@ -992,6 +1008,30 @@ var AppDB = (() => {
         transfer_amount: amt
       })
     });
+
+    // Ensure recipient receives the funds in the Bank (reconcile bank balance on server)
+    try {
+      const recipRows = await _api(`players?username=eq.${encodeURIComponent(recipientUsername.trim())}&select=bank,net_worth,state`);
+      if (recipRows && recipRows.length > 0) {
+        const rRow = recipRows[0];
+        const rState = (typeof rRow.state === 'object' && rRow.state) ? { ...rRow.state } : {};
+        const newBank = (Number(rRow.bank) || 0) + amt;
+        const newNetWorth = (Number(rRow.net_worth) || 0) + amt;
+        rState.bank = newBank;
+        rState.netWorth = newNetWorth;
+
+        await _api(`players?username=eq.${encodeURIComponent(recipientUsername.trim())}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            bank: newBank,
+            net_worth: newNetWorth,
+            state: rState
+          })
+        });
+      }
+    } catch (reconcileErr) {
+      console.warn('[DB] Wire transfer bank deposit reconcile note:', reconcileErr.message);
+    }
 
     return true;
   }
@@ -1885,6 +1925,35 @@ var AppDB = (() => {
     });
 
     return req;
+  }
+
+  async function deleteTopupRequest(requestId) {
+    if (!requestId) throw new Error('معرف الطلب غير صالح.');
+    const ts = Date.now();
+    const rows = await _api(`globals?id=eq.topup_requests`);
+    if (!rows || rows.length === 0 || !rows[0].data || !Array.isArray(rows[0].data.requests)) {
+      throw new Error('لم يتم العثور على سجل طلبات الشحن.');
+    }
+
+    const requests = rows[0].data.requests;
+    const reqIndex = requests.findIndex(r => r.id === requestId);
+    if (reqIndex === -1) {
+      throw new Error('طلب الشحن غير موجود.');
+    }
+
+    requests.splice(reqIndex, 1);
+
+    await _api('globals', {
+      method:'POST',
+      headers: {'Prefer':'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        id:'topup_requests',
+        data: { requests, updatedAt: ts },
+        updated_at: ts
+      })
+    });
+
+    return true;
   }
 
   // ─────────────────────────────────────────────
@@ -3801,6 +3870,7 @@ var AppDB = (() => {
     submitTopupRequest,
     getTopupRequests,
     processTopupRequest,
+    deleteTopupRequest,
     getPlayerData
   };
 })();
