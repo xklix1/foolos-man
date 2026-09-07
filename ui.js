@@ -10911,11 +10911,9 @@ const UIController = (() => {
         if (glowType === 'gold_neon' || glowType === 'gold') {
           bubbleClass += ' chat-bubble-glow-gold';
           senderNameClass = 'chat-sender-gold-glow';
-          vipPillHtml = '<span class="chat-vip-badge-pill chat-vip-gold-pill"><i class="fa-solid fa-sparkles text-[8px] text-amber-300"></i> حوت الشات VIP</span>';
         } else if (glowType === 'cyber_rainbow' || glowType === 'rainbow') {
           bubbleClass += ' chat-bubble-glow-rainbow';
           senderNameClass = 'chat-sender-rainbow-glow';
-          vipPillHtml = '<span class="chat-vip-badge-pill chat-vip-rainbow-pill"><i class="fa-solid fa-crown text-[8px] text-purple-300"></i> ملكي أسطوري VIP</span>';
         }
       }
 
@@ -10961,11 +10959,10 @@ const UIController = (() => {
         msgDiv.innerHTML =`
           <div class="flex items-center gap-1.5 mb-0.5">
             <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
-            <span class="text-[10px] font-bold cursor-pointer hover:underline inline-flex items-center gap-1.5 flex-wrap" onclick="window.UI.openPlayerProfileCard('${safeSender}')">
+            <span class="text-[10px] font-bold cursor-pointer hover:underline inline-flex items-center gap-1.5" onclick="window.UI.openPlayerProfileCard('${safeSender}')">
               <span class="${senderNameClass || 'text-yellow-400'}">${safeSender}</span>
               ${verifiedBadgeHtml}
               ${fbIconHtml}
-              ${vipPillHtml}
               ${badgeIconHtml}
             </span>
             <span class="text-[8px] px-1 bg-slate-900 border border-slate-800 rounded-md text-slate-400">${safeTitle}</span>
