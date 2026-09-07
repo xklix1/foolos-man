@@ -1,0 +1,57 @@
+name: Strix AI Security Scan
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  strix-scan:
+    name: Strix Diff Pentest & Vulnerability Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # Required for diff-scope resolution
+
+      - name: Install Strix CLI
+        run: curl -sSL https://strix.ai/install | bash
+
+      - name: Run Strix Security Scan
+        env:
+          STRIX_LLM: ${{ secrets.STRIX_LLM || 'openai/gpt-4o' }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        run: |
+          # Fallback check if API key is configured
+          if [ -z "$LLM_API_KEY" ]; then
+            echo "::warning::LLM_API_KEY secret is not set. Please configure LLM_API_KEY in repository secrets to enable full AI security scanning."
+            exit 0
+          fi
+          strix -n -t ./ --scan-mode quick --max-budget 10
+
+      - name: Fail unless the scan completed
+        if: always()
+        run: |
+          if [ -d "strix_runs" ]; then
+            run_json=$(ls -t strix_runs/*/run.json 2>/dev/null | head -1)
+            if [ -n "$run_json" ] && [ -f "$run_json" ]; then
+              status=$(jq -r .status "$run_json")
+              if [ "$status" != "completed" ]; then
+                echo "::error::Strix run status is '$status' — the scan did not complete (likely budget exhausted). Raise --max-budget." >&2
+                exit 1
+              fi
+            fi
+          fi
+
+      - name: Upload SARIF to GitHub Code Scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: strix_runs
+        continue-on-error: true
