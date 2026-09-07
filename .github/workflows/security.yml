@@ -1,6 +1,8 @@
-name: Strix AI Security Scan
+name: Code Security & Strix Scan
 
 on:
+  push:
+    branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -8,12 +10,42 @@ on:
 permissions:
   contents: read
   security-events: write
+  actions: read
   pull-requests: write
 
 jobs:
-  strix-scan:
-    name: Strix Diff Pentest & Vulnerability Audit
+  codeql-analysis:
+    name: GitHub CodeQL Security Scan (JS/Web)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"
+
+  strix-scan:
+    name: Strix AI Pentest & Vulnerability Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+      pull-requests: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,9 +60,8 @@ jobs:
           STRIX_LLM: ${{ secrets.STRIX_LLM || 'openai/gpt-4o' }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
         run: |
-          # Fallback check if API key is configured
           if [ -z "$LLM_API_KEY" ]; then
-            echo "::warning::LLM_API_KEY secret is not set. Please configure LLM_API_KEY in repository secrets to enable full AI security scanning."
+            echo "::notice::LLM_API_KEY is not configured in repository secrets. To enable Strix AI-powered pentest, please add LLM_API_KEY to Settings > Secrets > Actions."
             exit 0
           fi
           strix -n -t ./ --scan-mode quick --max-budget 10
@@ -49,7 +80,7 @@ jobs:
             fi
           fi
 
-      - name: Upload SARIF to GitHub Code Scanning
+      - name: Upload Strix SARIF to GitHub Code Scanning
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
