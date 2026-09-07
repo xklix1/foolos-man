@@ -10890,6 +10890,9 @@ const UIController = (() => {
       let senderNameClass = '';
       let vipPillHtml = '';
 
+      let vipTagText = '';
+      const isEn = (window.currentLang === 'en' || document.documentElement.lang === 'en' || document.documentElement.dir === 'ltr');
+
       if (isSystem) {
         bubbleClass ='bg-red-950/40 border border-red-500/30 text-red-200 w-full text-center py-2 px-3 rounded-xl shadow-lg shadow-red-950/20';
         alignClass ='text-center flex flex-col items-center w-full';
@@ -10911,9 +10914,11 @@ const UIController = (() => {
         if (glowType === 'gold_neon' || glowType === 'gold') {
           bubbleClass += ' chat-bubble-glow-gold';
           senderNameClass = 'chat-sender-gold-glow';
+          vipTagText = isEn ? '✨ VIP PLAYER' : '✨ لاعب VIP';
         } else if (glowType === 'cyber_rainbow' || glowType === 'rainbow') {
           bubbleClass += ' chat-bubble-glow-rainbow';
           senderNameClass = 'chat-sender-rainbow-glow';
+          vipTagText = isEn ? '👑 ROYAL VIP' : '👑 لاعب ملكي VIP';
         }
       }
 
@@ -10967,7 +10972,7 @@ const UIController = (() => {
             </span>
             <span class="text-[8px] px-1 bg-slate-900 border border-slate-800 rounded-md text-slate-400">${safeTitle}</span>
           </div>
-          <div class="chat-message-bubble ${bubbleClass} ${hasProfanity ? 'border-rose-500/40 bg-rose-950/20' : ''}">
+          <div class="chat-message-bubble ${bubbleClass} ${hasProfanity ? 'border-rose-500/40 bg-rose-950/20' : ''}" ${vipTagText ? `data-vip-tag="${vipTagText}"` : ''}>
             ${finalMsgHtml}
           </div>`;
       }

@@ -1281,7 +1281,7 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.3); }
 }
 
 .chat-bubble-glow-gold::before {
-  content: '✨ حوت الشات • VIP GLOW';
+  content: attr(data-vip-tag);
   position: absolute;
   top: -11px;
   right: 8px;
@@ -1300,6 +1300,21 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.3); }
   white-space: nowrap;
 }
 
+html[dir="ltr"] .chat-bubble-glow-gold::before {
+  left: 8px;
+  right: auto;
+}
+
+html[dir="rtl"] .chat-bubble-glow-gold:not([data-vip-tag])::before,
+html[dir="rtl"] .chat-bubble-glow-gold[data-vip-tag=""]::before {
+  content: '✨ لاعب VIP';
+}
+
+html[dir="ltr"] .chat-bubble-glow-gold:not([data-vip-tag])::before,
+html[dir="ltr"] .chat-bubble-glow-gold[data-vip-tag=""]::before {
+  content: '✨ VIP PLAYER';
+}
+
 /* Rainbow Glowing Bubble */
 .chat-bubble-glow-rainbow {
   background: linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(6, 182, 212, 0.25), rgba(236, 72, 153, 0.28), rgba(15, 23, 42, 0.98), rgba(168, 85, 247, 0.3)) !important;
@@ -1315,7 +1330,7 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.3); }
 }
 
 .chat-bubble-glow-rainbow::before {
-  content: '👑 ملكي أسطوري • ROYAL VIP';
+  content: attr(data-vip-tag);
   position: absolute;
   top: -11px;
   right: 8px;
@@ -1332,6 +1347,21 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.3); }
   box-shadow: 0 0 14px rgba(168, 85, 247, 0.8), inset 0 0 6px rgba(192, 132, 252, 0.4);
   z-index: 2;
   white-space: nowrap;
+}
+
+html[dir="ltr"] .chat-bubble-glow-rainbow::before {
+  left: 8px;
+  right: auto;
+}
+
+html[dir="rtl"] .chat-bubble-glow-rainbow:not([data-vip-tag])::before,
+html[dir="rtl"] .chat-bubble-glow-rainbow[data-vip-tag=""]::before {
+  content: '👑 لاعب ملكي VIP';
+}
+
+html[dir="ltr"] .chat-bubble-glow-rainbow:not([data-vip-tag])::before,
+html[dir="ltr"] .chat-bubble-glow-rainbow[data-vip-tag=""]::before {
+  content: '👑 ROYAL VIP';
 }
 
 /* Sender Name Glows & Indicators */
