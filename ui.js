@@ -1755,11 +1755,36 @@ const UIController = (() => {
     // Setup tab focus/visibility listener for instant catch-up
     if (!visibilityListenerAttached) {
       visibilityListenerAttached = true;
+
+      // Track when the tab goes hidden so applyOfflineCatchup knows the exact anchor
+      let _tabHiddenAt = 0;
+
       document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && GameEngine.activeUsername) {
+        if (document.hidden) {
+          // Record the precise moment the tab was hidden.
+          // processTick will NOT update lastActiveTimestamp while hidden, so this
+          // timestamp stays as the offline anchor until the player returns.
+          _tabHiddenAt = (window.AppDB && AppDB.getTrustedNow) ? AppDB.getTrustedNow() : Date.now();
+          // Immediately flush so the cloud also has this as last_seen
+          if (GameEngine.activeUsername) {
+            GameEngine.forceSaveState(true);
+          }
+        } else if (GameEngine.activeUsername) {
+          // Tab becoming visible — run catch-up if away for 10+ seconds
+          if (_tabHiddenAt > 0) {
+            const hiddenMs = ((window.AppDB && AppDB.getTrustedNow) ? AppDB.getTrustedNow() : Date.now()) - _tabHiddenAt;
+            if (hiddenMs >= 10000) {
+              const report = GameEngine.applyOfflineCatchup(_tabHiddenAt);
+              if (report && (report.seconds >= 10 || report.expiredDuringAbsence || report.earnings > 0)) {
+                setTimeout(() => showOfflineReportModal(report), 800);
+              }
+            }
+            _tabHiddenAt = 0;
+          }
           renderAll();
         }
       });
+
       window.addEventListener('focus', () => {
         if (GameEngine.activeUsername) {
           renderAll();

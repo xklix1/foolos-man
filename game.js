@@ -2457,15 +2457,21 @@ const GameEngine = (() => {
     // Note: adjustAssetAppreciation() removed from tick loop — mutating shared ASSETS config caused
     // phantom net-worth inflation and price drift that reset on page reload (BUG-8 fix).
 
-    // Set last active timestamp for continuous profit tracking
-    state.lastActiveTimestamp = getTrustedNow();
+    // Only update the lastActiveTimestamp anchor when the tab is VISIBLE.
+    // If we update it while hidden, we erase the exact moment the player left,
+    // causing the offline catch-up to think elapsed time = 0 on return.
+    if (typeof document === 'undefined' || !document.hidden) {
+      state.lastActiveTimestamp = getTrustedNow();
+    }
 
     // Recalculate net worth and title
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
 
-    // Save synced data to Database
-    AppDB.savePlayerState(activeUsername, state);
+    // Only persist when tab is visible — avoids overwriting last_seen in the cloud while hidden
+    if (typeof document === 'undefined' || !document.hidden) {
+      AppDB.savePlayerState(activeUsername, state);
+    }
 
     return updates;
   }
@@ -5115,6 +5121,102 @@ const GameEngine = (() => {
     });
   }
 
+  // ─────────────────────────────────────────────────────────
+  //  OFFLINE CATCH-UP ENGINE (Tab Visibility Restore)
+  // ─────────────────────────────────────────────────────────
+  // Called by the visibilitychange handler in ui.js when the tab becomes visible
+  // after being hidden. Mirrors the offline block in loadUserSession so that
+  // supply depletion, earnings, and the AFK report always fire on tab-restore,
+  // not just on full page reload.
+  function applyOfflineCatchup(hiddenAtMs) {
+    if (!state || !hiddenAtMs || hiddenAtMs <= 0) return null;
+    const now = getTrustedNow();
+    const rawElapsed = Math.max(0, Math.floor((now - hiddenAtMs) / 1000));
+    const totalElapsedSeconds = Math.min(43200, rawElapsed);
+    if (totalElapsedSeconds < 10) return null;
+
+    const managerExpiry = state.afkManagerExpiresAt || 0;
+    const isManagerActive = managerExpiry > hiddenAtMs;
+    const managerActiveUntil = (isManagerActive && managerExpiry > 0)
+      ? Math.min(now, managerExpiry) : hiddenAtMs;
+    const elapsedSinceLastActive = isManagerActive
+      ? Math.max(0, Math.floor((managerActiveUntil - hiddenAtMs) / 1000)) : 0;
+
+    // Decrement jail timer by real elapsed time
+    if (state.jailTimer > 0) {
+      state.jailTimer = Math.max(0, state.jailTimer - totalElapsedSeconds);
+    }
+
+    let offlineBizEarnings = 0;
+    let nonBizOfflineEarnings = 0;
+    const bizBreakdown = [];
+
+    // BLOCK A: Manager-gated profits
+    if (elapsedSinceLastActive >= 10) {
+      if (state.businesses) {
+        Object.keys(state.businesses).forEach(bk => {
+          const b = state.businesses[bk];
+          if (b && b.level > 0 && typeof b.suppliesTicks === 'number' && b.suppliesTicks > 0) {
+            const activeSec = Math.min(b.suppliesTicks, elapsedSinceLastActive);
+            const bCalc = calculateSingleBusinessProfit(bk, { ...b, suppliesTicks: activeSec }, state);
+            const earned = Math.floor((bCalc.ownerProfit || 0) / 3600 * activeSec);
+            offlineBizEarnings += earned;
+            bizBreakdown.push({
+              name: BUSINESSES[bk] ? BUSINESSES[bk].name : bk,
+              consumedHours: Number((activeSec / 3600).toFixed(1)),
+              profit: earned
+            });
+          }
+        });
+      }
+      let nonBizHourly = 0;
+      if (state.assets) {
+        Object.keys(state.assets).forEach(ak => {
+          const owned = state.assets[ak] || 0;
+          if (owned > 0 && ASSETS[ak]) nonBizHourly += owned * Math.floor(ASSETS[ak].rent * 0.1);
+        });
+      }
+      if (state.ownedCars) {
+        state.ownedCars.forEach(carRef => {
+          const car = CAR_TEMPLATES[carRef.id];
+          if (car && carRef.rentStatus === 'rented') {
+            const netP = car.rentalIncomePerTick - car.maintenanceCostPerTick;
+            if (netP > 0) nonBizHourly += netP;
+          }
+        });
+      }
+      nonBizHourly += calculateBankInterestHourly(state);
+      nonBizOfflineEarnings = Math.floor((nonBizHourly / 3600) * elapsedSinceLastActive);
+      state.bank += offlineBizEarnings + nonBizOfflineEarnings;
+    }
+
+    // BLOCK B: Always deplete supplies
+    if (state.businesses) {
+      Object.keys(state.businesses).forEach(bk => {
+        const b = state.businesses[bk];
+        if (b && b.level > 0 && typeof b.suppliesTicks === 'number' && b.suppliesTicks > 0) {
+          b.suppliesTicks = Math.max(0, b.suppliesTicks - totalElapsedSeconds);
+        }
+      });
+    }
+
+    const report = {
+      seconds: totalElapsedSeconds,
+      earnings: offlineBizEarnings + nonBizOfflineEarnings,
+      bizEarnings: offlineBizEarnings,
+      nonBizEarnings: nonBizOfflineEarnings,
+      corpEarnings: 0,
+      suppliesHours: Number((totalElapsedSeconds / 3600).toFixed(1)),
+      breakdown: bizBreakdown,
+      wasManagerActive: isManagerActive,
+      expiredDuringAbsence: managerExpiry > 0 && now > managerExpiry
+    };
+    state.lastOfflineReport = report;
+    state.netWorth = calculateNetWorth();
+    forceSaveState(true);
+    return report;
+  }
+
   function forceSaveState(immediate = false) {
     sanitizeGameState();
     state.lastActiveTimestamp = getTrustedNow();
@@ -5196,6 +5298,7 @@ const GameEngine = (() => {
     getAppropriateTitle,
     renewAfkManager,
     forceSaveState,
+    applyOfflineCatchup,
 
     // Referral System Exports
     generateReferralCode,
