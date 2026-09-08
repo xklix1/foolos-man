@@ -16395,65 +16395,6 @@ const UIController = (() => {
     if (totalEl) totalEl.textContent = (report.totalInvited || 0).toLocaleString();
     if (qualEl) qualEl.textContent = (report.qualifiedCount || 0).toLocaleString();
     if (pendEl) pendEl.textContent = (report.pendingCount || 0).toLocaleString();
-
-    // Milestones Container
-    const milestonesCont = document.getElementById('ref-milestones-container');
-    if (milestonesCont && GameEngine.REFERRAL_MILESTONES) {
-      const claimed = GameEngine.state.claimedReferralTiers || [];
-      const qualCount = report.qualifiedCount || 0;
-
-      milestonesCont.innerHTML = Object.keys(GameEngine.REFERRAL_MILESTONES).map(key => {
-        const m = GameEngine.REFERRAL_MILESTONES[key];
-        const isClaimed = claimed.includes(m.id);
-        const canClaim = !isClaimed && qualCount >= m.count;
-
-        let btnHtml = '';
-        if (isClaimed) {
-          btnHtml = `<span class="px-3 py-1 bg-emerald-950/80 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-black">مستلمة ✅</span>`;
-        } else if (canClaim) {
-          btnHtml = `<button onclick="window.UI.claimReferralMilestone('${m.id}')" class="px-3 py-1 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-lg text-[10px] shadow active:scale-95 cursor-pointer">استلام المكافأة 💰</button>`;
-        } else {
-          btnHtml = `<span class="px-2.5 py-1 bg-slate-900 text-slate-500 rounded-lg text-[10px] font-bold">${qualCount}/${m.count} مؤهل</span>`;
-        }
-
-        return `
-          <div class="p-3 bg-slate-900/80 border ${isClaimed ? 'border-emerald-500/30' : (canClaim ? 'border-yellow-500/50 bg-yellow-500/5' : 'border-slate-800')} rounded-xl flex items-center justify-between">
-            <div>
-              <span class="text-xs font-black text-white block">${m.label}</span>
-              <span class="text-[10px] text-amber-400 font-bold numbers-font">+${m.reward.toLocaleString()} EGP</span>
-            </div>
-            <div>${btnHtml}</div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // Invitees Table Body
-    const tbody = document.getElementById('ref-invitees-table-body');
-    if (tbody) {
-      if (!report.invitees || report.invitees.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">لم يقم أي صديق باستخدام كودك بعد. انشر كودك الآن للمنافسة!</td></tr>`;
-      } else {
-        tbody.innerHTML = report.invitees.map(inv => {
-          const selfEarned = inv.selfEarned || 0;
-          const qualBadge = inv.isQualified
-            ? `<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 font-black text-[10px] border border-emerald-500/30">مؤهل ✅</span>`
-            : `<span class="px-2 py-0.5 rounded bg-amber-950 text-amber-400 font-bold text-[10px] border border-amber-500/30">قيد التجميع ⏳</span>`;
-
-          return `
-            <tr class="hover:bg-slate-900/50 transition">
-              <td class="p-2 font-bold text-white flex items-center gap-1">
-                <i class="fa-solid fa-user text-indigo-400 text-[10px]"></i>
-                <span>${inv.username}</span>
-              </td>
-              <td class="p-2 numbers-font font-bold text-amber-400">${selfEarned.toLocaleString()} EGP</td>
-              <td class="p-2">${qualBadge}</td>
-              <td class="p-2 text-slate-400 text-[10px]">${inv.accountAgeText || 'جديد'}</td>
-            </tr>
-          `;
-        }).join('');
-      }
-    }
   }
 
   function renderPlayerInventory() {
