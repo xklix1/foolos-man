@@ -2567,12 +2567,13 @@ const GameEngine = (() => {
         state.transfersReceivedTotal = Number(dbState.transfersReceivedTotal || 0);
       }
 
-      // Calculate offline idle earnings if returning after being away (Requires active 12-hour AFK Manager)
+      // Calculate offline idle earnings if returning after being away
+      // Supply depletion always happens; profits require an active AFK Manager
       const lastSeenServer = Number(dbState.lastActiveTimestamp || dbState.lastSeen || dbState.last_seen || (dbState.state && (dbState.state.lastActiveTimestamp || dbState.state.lastSeen)) || 0);
       if (lastSeenServer > 0) {
         const now = getTrustedNow();
 
-        // Anti-Time Travel Audit (Idea 3)
+        // Anti-Time Travel Audit
         let timeTravelFlagged = false;
         if (now < lastSeenServer - 30000) {
           console.warn('[Anti-Cheat] Time travel regression detected! trustedNow:', now, 'lastSeenServer:', lastSeenServer);
@@ -2580,12 +2581,19 @@ const GameEngine = (() => {
         }
 
         const managerExpiry = dbState.afkManagerExpiresAt || 0;
+        const isManagerActive = managerExpiry > lastSeenServer; // manager was active when player left
 
-        // Effective offline time is capped by when the 12-hour manager expired
-        const effectiveEnd = Math.min(now, managerExpiry);
-        const elapsedSinceLastActive = (timeTravelFlagged || now < lastSeenServer)
+        // Total real elapsed seconds since player was last seen (always computed, capped at 12h)
+        const rawElapsed = (timeTravelFlagged || now < lastSeenServer)
           ? 0
-          : Math.max(0, Math.floor((effectiveEnd - lastSeenServer) / 1000));
+          : Math.max(0, Math.floor((now - lastSeenServer) / 1000));
+        const totalElapsedSeconds = Math.min(43200, rawElapsed);
+
+        // For profit calculation: only count time while manager was still active
+        const managerActiveUntil = (isManagerActive && managerExpiry > 0) ? Math.min(now, managerExpiry) : lastSeenServer;
+        const elapsedSinceLastActive = (timeTravelFlagged || now < lastSeenServer || !isManagerActive)
+          ? 0
+          : Math.max(0, Math.floor((managerActiveUntil - lastSeenServer) / 1000));
 
         let offlineCorpEarnings = 0;
         if (typeof firebase !=='undefined' && AppDB.isFirebaseReady) {
@@ -2641,11 +2649,11 @@ const GameEngine = (() => {
           state.jailTimer = Math.max(0, state.jailTimer - elapsedSinceLastActive);
         }
 
+        // === BLOCK A: Manager-gated PROFIT calculation ===
         if (elapsedSinceLastActive >= 10) {
-          // Cap at 12 hours (43,200 seconds)
-          const cappedSeconds = Math.min(43200, elapsedSinceLastActive);
+          // Manager was active — calculate profits for the time manager was alive
+          const cappedSeconds = elapsedSinceLastActive; // already bounded by managerActiveUntil
 
-          // 1. Calculate business offline profits based strictly on supplies remaining
           let offlineBizEarnings = 0;
           let totalSuppliesConsumedSec = 0;
           const bizOfflineBreakdown = [];
@@ -2653,8 +2661,7 @@ const GameEngine = (() => {
           if (state.businesses) {
             Object.keys(state.businesses).forEach(bk => {
               const b = state.businesses[bk];
-              if (b && b.level > 0 && typeof b.suppliesTicks ==='number' && b.suppliesTicks > 0) {
-                // Business produced profit ONLY while supplies lasted!
+              if (b && b.level > 0 && typeof b.suppliesTicks === 'number' && b.suppliesTicks > 0) {
                 const activeSuppliesSec = Math.min(b.suppliesTicks, cappedSeconds);
                 const tempState = { ...b, suppliesTicks: activeSuppliesSec };
                 const bCalc = calculateSingleBusinessProfit(bk, tempState, state);
@@ -2662,20 +2669,15 @@ const GameEngine = (() => {
                 const earned = Math.floor(bizSecProfit * activeSuppliesSec);
                 offlineBizEarnings += earned;
                 totalSuppliesConsumedSec += activeSuppliesSec;
-
                 bizOfflineBreakdown.push({
                   name: BUSINESSES[bk] ? BUSINESSES[bk].name : bk,
                   consumedHours: Number((activeSuppliesSec / 3600).toFixed(1)),
                   profit: earned
                 });
-
-                // Deplete supplies by elapsed offline time
-                b.suppliesTicks = Math.max(0, b.suppliesTicks - elapsedSinceLastActive);
               }
             });
           }
 
-          // 2. Non-business passive income (Real estate, cars, bank interest, job) for full capped time
           let nonBizHourly = 0;
           if (state.assets) {
             Object.keys(state.assets).forEach(ak => {
@@ -2686,7 +2688,7 @@ const GameEngine = (() => {
           if (state.ownedCars && state.ownedCars.length > 0) {
             state.ownedCars.forEach(carRef => {
               const car = CAR_TEMPLATES[carRef.id];
-              if (car && carRef.rentStatus ==='rented') {
+              if (car && carRef.rentStatus === 'rented') {
                 const netP = car.rentalIncomePerTick - car.maintenanceCostPerTick;
                 if (netP > 0) nonBizHourly += netP;
               }
@@ -2697,45 +2699,55 @@ const GameEngine = (() => {
             nonBizHourly += (state.hiredJob.salary || 0);
           }
           const nonBizOfflineEarnings = Math.floor((nonBizHourly / 3600) * cappedSeconds);
-
           const totalOffline = offlineBizEarnings + nonBizOfflineEarnings;
-          if (totalOffline > 0 || offlineCorpEarnings > 0 || bizOfflineBreakdown.length > 0) {
-            state.bank += totalOffline;
-            state.offlineReport = {
-              seconds: cappedSeconds,
-              earnings: (totalOffline || 0) + (offlineCorpEarnings || 0),
-              corpEarnings: offlineCorpEarnings,
-              bizEarnings: offlineBizEarnings,
-              nonBizEarnings: nonBizOfflineEarnings,
-              suppliesHours: Number((totalSuppliesConsumedSec / 3600).toFixed(1)),
-              breakdown: bizOfflineBreakdown,
-              wasManagerActive: true,
-              expiredDuringAbsence: now > managerExpiry
-            };
-            state.lastOfflineReport = state.offlineReport;
-          }
-        } else if (elapsedSinceLastActive > 0 && state.businesses) {
-          Object.keys(state.businesses).forEach(bk => {
-            const b = state.businesses[bk];
-            if (b && b.level > 0 && typeof b.suppliesTicks ==='number' && b.suppliesTicks > 0) {
-              b.suppliesTicks = Math.max(0, b.suppliesTicks - elapsedSinceLastActive);
-            }
-          });
+          state.bank += totalOffline;
+          state.offlineReport = {
+            seconds: cappedSeconds,
+            earnings: (totalOffline || 0) + (offlineCorpEarnings || 0),
+            corpEarnings: offlineCorpEarnings,
+            bizEarnings: offlineBizEarnings,
+            nonBizEarnings: nonBizOfflineEarnings,
+            suppliesHours: Number((totalSuppliesConsumedSec / 3600).toFixed(1)),
+            breakdown: bizOfflineBreakdown,
+            wasManagerActive: true,
+            expiredDuringAbsence: now > managerExpiry
+          };
+          state.lastOfflineReport = state.offlineReport;
         } else if (offlineCorpEarnings > 0) {
           state.offlineReport = {
             seconds: 0,
             earnings: offlineCorpEarnings,
             corpEarnings: offlineCorpEarnings,
-            wasManagerActive: true,
+            wasManagerActive: isManagerActive,
             expiredDuringAbsence: false
           };
           state.lastOfflineReport = state.offlineReport;
-        } else if (now > managerExpiry && managerExpiry > 0) {
+        }
+
+        // === BLOCK B: ALWAYS deplete supplies using full real elapsed time ===
+        // Runs regardless of whether AFK manager is active or not
+        if (totalElapsedSeconds >= 10 && state.businesses) {
+          Object.keys(state.businesses).forEach(bk => {
+            const b = state.businesses[bk];
+            if (b && b.level > 0 && typeof b.suppliesTicks === 'number' && b.suppliesTicks > 0) {
+              b.suppliesTicks = Math.max(0, b.suppliesTicks - totalElapsedSeconds);
+            }
+          });
+        }
+
+        // === BLOCK C: Always show report if player was away 10+ seconds (even without manager) ===
+        if (!state.offlineReport && totalElapsedSeconds >= 10) {
+          const expiredDuringAbsence = managerExpiry > 0 && now > managerExpiry;
           state.offlineReport = {
-            seconds: 0,
+            seconds: totalElapsedSeconds,
             earnings: 0,
+            corpEarnings: 0,
+            bizEarnings: 0,
+            nonBizEarnings: 0,
+            suppliesHours: 0,
+            breakdown: [],
             wasManagerActive: false,
-            expiredDuringAbsence: true
+            expiredDuringAbsence
           };
           state.lastOfflineReport = state.offlineReport;
         }

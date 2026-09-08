@@ -1288,10 +1288,13 @@ const UIController = (() => {
       if (playerState && playerState.offlineReport) {
         const rep = playerState.offlineReport;
         setTimeout(() => {
-          if (rep.earnings > 0 || (rep.breakdown && rep.breakdown.length > 0)) {
+          // Always show modal if player was away and there's a report (earnings OR supply depletion OR manager status)
+          if (rep.seconds >= 10) {
             showOfflineReportModal(rep);
           } else if (rep.expiredDuringAbsence) {
             showToast('⚠️ تنبيه الإدارة الذاتية', 'انتهت صلاحية ترخيص الـ 12 ساعة أثناء غيابك! يرجى الضغط على زر التجديد لمواصلة جمع الأرباح عند الخروج.', 'warning');
+          } else if (rep.earnings > 0 || (rep.breakdown && rep.breakdown.length > 0)) {
+            showOfflineReportModal(rep);
           }
         }, 1000);
         delete playerState.offlineReport;
@@ -1554,10 +1557,13 @@ const UIController = (() => {
           if (playerState && playerState.offlineReport) {
             const rep = playerState.offlineReport;
             setTimeout(() => {
-              if (rep.earnings > 0 || (rep.breakdown && rep.breakdown.length > 0)) {
+              // Always show modal if player was away and there's a report
+              if (rep.seconds >= 10) {
                 showOfflineReportModal(rep);
               } else if (rep.expiredDuringAbsence) {
                 showToast('⚠️ تنبيه الإدارة الذاتية', 'انتهت صلاحية ترخيص الـ 12 ساعة أثناء غيابك! يرجى الضغط على زر التجديد لمواصلة جمع الأرباح عند الخروج.', 'warning');
+              } else if (rep.earnings > 0 || (rep.breakdown && rep.breakdown.length > 0)) {
+                showOfflineReportModal(rep);
               }
             }, 1000);
             delete playerState.offlineReport;
@@ -12720,9 +12726,12 @@ const UIController = (() => {
           listEl.appendChild(row);
         });
       } else {
+        const noMgrMsg = (!rep.wasManagerActive)
+          ? '⚠️ مدير الـ AFK لم يكن نشطاً أثناء غيابك — لم تُجمع أرباح تجارية. اضغط "تجديد الاشتراك" لتفعيله.'
+          : 'تم جمع الأرباح وتوريدها للبنك بنجاح.';
         listEl.innerHTML = `
           <div class="p-3 text-center text-slate-400 text-xs bg-slate-900/40 rounded-xl border border-slate-800/60">
-            تم جمع الأرباح وتوريدها للبنك بنجاح.
+            ${noMgrMsg}
           </div>
         `;
       }
