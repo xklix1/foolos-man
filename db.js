@@ -4252,6 +4252,7 @@ var AppDB = (() => {
 
     // Referral System
     getReferralReport,
+    bindReferralCode,
 
     // Backups
     checkAndCreateDailyBackup,
