@@ -493,14 +493,19 @@ var AppDB = (() => {
 
   function isGibberishName(name) {
     const n = (name || '').toLowerCase().trim();
-    if (n.length < 5) return false;
-    // 5+ consonants in a row (e.g. djgudinjsstg, xkcdstr)
-    if (/[bcdfghjklmnpqrstvwxyz]{5,}/i.test(n)) return true;
-    // Keyboard smash patterns (English & Arabic)
-    if (/(?:asdf|sdfg|dfgh|fghj|ghjk|hjkl|qwer|wert|erty|rtyu|tyui|yuio|uiop|zxcv|xcvb|cvbn|vbnm)/i.test(n)) return true;
-    if (/(?:شسيب|سيبل|يبلات|كمنت|ضصثق)/i.test(n)) return true;
-    // Repeated characters (4 or more, e.g. aaaaa, 1111)
-    if (/(.)\1{3,}/.test(n)) return true;
+    if (!n || n.length < 3) return false;
+    if (/^\d+$/.test(n)) return true;
+    if (/[bcdfghjklmnpqrstvwxyz]{3,}/i.test(n)) return true;
+    if (/^[a-z0-9_-]{3,}$/i.test(n) && !/[aeiouy]/i.test(n)) return true;
+    if (/(.)\1{2,}/.test(n)) return true;
+    const kb = ['qwe','wer','ert','rty','tyu','yui','uio','iop','asd','sdf','dfg','fgh','ghj','hjk','jkl','zxc','xcv','cvb','vbn','bnm','qaz','wsx','edc','rfv','tgb','yhn','ujm','123','234','345','456','567','678','789','987','876','765','654','543','432','321'];
+    for (let i = 0; i < kb.length; i++) {
+      if (n.includes(kb[i])) return true;
+    }
+    const arKb = ['شسب','سيب','يبل','بلا','لات','اتن','تنم','نمك','مكط','ضصث','صثق','ثقف','قفع','فعل','علف','خحه','حخه','عغب','غبا','باي'];
+    for (let i = 0; i < arKb.length; i++) {
+      if (n.includes(arKb[i])) return true;
+    }
     return false;
   }
 

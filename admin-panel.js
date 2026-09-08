@@ -5243,11 +5243,44 @@
       function isGibberishUsername(name) {
         const n = (name || '').toLowerCase().trim();
         if (!n || n.length < 3) return false;
-        if (/[bcdfghjklmnpqrstvwxyz]{5,}/i.test(n)) return true;
-        if (/(?:asdf|sdfg|dfgh|fghj|ghjk|hjkl|qwer|wert|erty|rtyu|tyui|yuio|uiop|zxcv|xcvb|cvbn|vbnm)/i.test(n)) return true;
-        if (/(?:شسيب|سيبل|يبلات|كمنت|ضصثق)/i.test(n)) return true;
-        if (/(.)\1{3,}/.test(n)) return true;
-        if (/^[a-z0-9]{8,}$/i.test(n) && !/[aeiouy]/i.test(n)) return true;
+
+        // 1. All Digits (e.g. 123, 999, 0000, 777)
+        if (/^\d+$/.test(n)) return true;
+
+        // 2. 3 or more consecutive consonants (e.g. qwx, zxc, vbn, fgh, jkl, bcdf, xqz, ghj, mnb, kjl, trv, bcz, xrq)
+        if (/[bcdfghjklmnpqrstvwxyz]{3,}/i.test(n)) return true;
+
+        // 3. No vowels at all in an English/alphanumeric username of length >= 3 (e.g. qwx, zxc, fgh)
+        if (/^[a-z0-9_-]{3,}$/i.test(n) && !/[aeiouy]/i.test(n)) return true;
+
+        // 4. Repeated characters (3 or more identical letters/digits in a row, e.g. aaa, fff, 999)
+        if (/(.)\1{2,}/.test(n)) return true;
+
+        // 5. English keyboard slide patterns (3+ chars)
+        const kbPatterns = [
+          'qwe','wer','ert','rty','tyu','yui','uio','iop',
+          'asd','sdf','dfg','fgh','ghj','hjk','jkl',
+          'zxc','xcv','cvb','vbn','bnm',
+          'qaz','wsx','edc','rfv','tgb','yhn','ujm',
+          'zaq','xsw','cde','vfr','bgt','nhy','mju',
+          '123','234','345','456','567','678','789','987','876','765','654','543','432','321'
+        ];
+        for (let i = 0; i < kbPatterns.length; i++) {
+          if (n.includes(kbPatterns[i])) return true;
+        }
+
+        // 6. Arabic keyboard slide patterns (3+ chars)
+        const arKbPatterns = [
+          'شسب','سيب','يبل','بلا','لات','اتن','تنم','نمك','مكط',
+          'ضصث','صثق','ثقف','قفع','فعل','علف','خحه','حخه','عغب','غبا','باي'
+        ];
+        for (let i = 0; i < arKbPatterns.length; i++) {
+          if (n.includes(arKbPatterns[i])) return true;
+        }
+
+        // 7. High consonant ratio for short names (4+ chars with 0 vowels)
+        if (n.length >= 4 && !/[aeiouy]/i.test(n)) return true;
+
         return false;
       }
 
