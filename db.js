@@ -811,12 +811,16 @@ var AppDB = (() => {
     }
 
     // Hardware check: verify device does not have other accounts
-    const fp = await DeviceFingerprint.getFingerprint();
-    const registry = await getDeviceRegistry();
-    if (registry.devices && registry.devices[fp]) {
-      const boundUser = registry.devices[fp];
-      if (boundUser && boundUser.toLowerCase() !== u.toLowerCase()) {
-        throw new Error(`🚫 لا يمكن إدخال كود دعوة! هذا الجهاز يحتوي على حساب آخر مسجل ("${boundUser}").`);
+    // Admins are exempt — they routinely test multiple accounts during development
+    const isAdmin = !!(s && s.isAdmin);
+    if (!isAdmin) {
+      const fp = await DeviceFingerprint.getFingerprint();
+      const registry = await getDeviceRegistry();
+      if (registry.devices && registry.devices[fp]) {
+        const boundUser = registry.devices[fp];
+        if (boundUser && boundUser.toLowerCase() !== u.toLowerCase()) {
+          throw new Error(`🚫 لا يمكن إدخال كود دعوة! هذا الجهاز يحتوي على حساب آخر مسجل ("${boundUser}").`);
+        }
       }
     }
 
@@ -840,6 +844,51 @@ var AppDB = (() => {
       referrer: referrer.username,
       code: code
     };
+  }
+
+  // ─────────────────────────────────────────────
+  //  ADMIN: CLEAR DEVICE REGISTRY ENTRY
+  // ─────────────────────────────────────────────
+  async function adminClearDeviceFromRegistry(fingerprintOrUsername) {
+    if (!fingerprintOrUsername) throw new Error('يرجى تحديد بصمة الجهاز أو اسم الحساب.');
+    const registry = await getDeviceRegistry();
+    const key = String(fingerprintOrUsername).trim();
+    let changed = false;
+
+    // If it looks like a fingerprint hash, delete it directly
+    if (key.startsWith('dev_hw_') || key.startsWith('dev_fallback_')) {
+      if (registry.devices && registry.devices[key]) {
+        delete registry.devices[key];
+        changed = true;
+      }
+    } else {
+      // Treat as username — remove all fingerprints mapped to this user
+      if (registry.devices) {
+        for (const [fp, user] of Object.entries(registry.devices)) {
+          if (user.toLowerCase() === key.toLowerCase()) {
+            delete registry.devices[fp];
+            changed = true;
+          }
+        }
+      }
+      if (registry.accounts && registry.accounts[key]) {
+        delete registry.accounts[key];
+        changed = true;
+      }
+      // Case-insensitive scan
+      if (registry.accounts) {
+        for (const acUser of Object.keys(registry.accounts)) {
+          if (acUser.toLowerCase() === key.toLowerCase()) {
+            delete registry.accounts[acUser];
+            changed = true;
+          }
+        }
+      }
+    }
+
+    if (!changed) throw new Error(`لم يُعثر على بيانات جهاز مرتبطة بـ "${key}" في السجل.`);
+    await saveDeviceRegistry(registry);
+    return true;
   }
 
   async function getReferralReport(username) {
@@ -4253,6 +4302,7 @@ var AppDB = (() => {
     // Referral System
     getReferralReport,
     bindReferralCode,
+    adminClearDeviceFromRegistry,
 
     // Backups
     checkAndCreateDailyBackup,

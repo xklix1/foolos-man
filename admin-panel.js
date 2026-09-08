@@ -1720,6 +1720,32 @@
       });
     }
 
+    // Clear Device Registry binding for selected player
+    const clearDeviceBtn = document.getElementById('btn-admin-clear-device');
+    if (clearDeviceBtn && !clearDeviceBtn.dataset.bound) {
+      clearDeviceBtn.dataset.bound = 'true';
+      clearDeviceBtn.addEventListener('click', async () => {
+        const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
+        if (!targetUser || targetUser === '...' || targetUser === '') {
+          showToast('فك الارتباط', 'يرجى اختيار لاعب أولاً من القائمة.', 'warning');
+          return;
+        }
+        const confirmed = confirm(`⚠️ تأكيد إداري:\n\nهل تريد حذف جميع بصمات الأجهزة المرتبطة بالحساب:\n"${targetUser}"\n\nمن سجل الحماية الأمني؟\n\nسيُسمح للاعب بعدها بإدخال كود دعوة من أي جهاز.`);
+        if (!confirmed) return;
+        try {
+          clearDeviceBtn.disabled = true;
+          clearDeviceBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-xs"></i><span>جاري المسح...</span>';
+          await AppDB.adminClearDeviceFromRegistry(targetUser);
+          showToast('تم بنجاح ✅', `تم فك ارتباط جميع الأجهزة المرتبطة بحساب "${targetUser}" من السجل الأمني.`, 'success');
+        } catch (err) {
+          showToast('خطأ', 'فشل فك الارتباط: ' + err.message, 'error');
+        } finally {
+          clearDeviceBtn.disabled = false;
+          clearDeviceBtn.innerHTML = '<i class="fa-solid fa-fingerprint text-xs"></i><span>🔓 فك ارتباط الجهاز بالسجل الأمني</span>';
+        }
+      });
+    }
+
     async function openAdminReferralModal(targetUsername) {
       if (typeof targetUsername !== 'string') targetUsername = '';
       targetUsername = (targetUsername || selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
