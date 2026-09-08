@@ -991,7 +991,7 @@ const GameEngine = (() => {
   function recordPlayerActivity(action, details, category ='info') {
     if (!state.activityLog) state.activityLog = [];
     state.activityLog.unshift({
-      timestamp: Date.now(),
+      timestamp: getTrustedNow(),
       action: action,
       details: details,
       category: category //'work' |'business' |'stock' |'investment' |'banking' |'casino' |'blackmarket' |'store' |'trade'
@@ -1049,7 +1049,7 @@ const GameEngine = (() => {
   ];
 
   function getTodayDateString() {
-    const d = new Date();
+    const d = new Date(getTrustedNow());
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
@@ -1057,7 +1057,7 @@ const GameEngine = (() => {
   }
 
   function getDailyResetRemainingSeconds() {
-    const now = new Date();
+    const now = new Date(getTrustedNow());
     const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     return Math.max(0, Math.floor((tomorrow.getTime() - now.getTime()) / 1000));
   }
@@ -1231,20 +1231,20 @@ const GameEngine = (() => {
   const STOCK_TICK_INTERVAL_MS = 15 * 60 * 1000; // 15-minute global synchronized candlestick
 
   function getUnifiedStockTick() {
-    return Math.floor(Date.now() / STOCK_TICK_INTERVAL_MS);
+    return Math.floor(getTrustedNow() / STOCK_TICK_INTERVAL_MS);
   }
 
   function getStockSessionTimeRemaining() {
-    const now = Date.now();
+    const now = getTrustedNow();
     return Math.max(0, STOCK_TICK_INTERVAL_MS - (now % STOCK_TICK_INTERVAL_MS));
   }
 
   function getCurrentMarketEvent() {
-    if (globalMarketEvent && (!globalMarketEvent.expiresAt || Date.now() < globalMarketEvent.expiresAt)) {
+    if (globalMarketEvent && (!globalMarketEvent.expiresAt || getTrustedNow() < globalMarketEvent.expiresAt)) {
       return globalMarketEvent;
     }
     // Synchronized 15-minute global cycle (1 event per 15-minute trading candle)
-    const cycleIndex = Math.floor(Date.now() / STOCK_TICK_INTERVAL_MS) % UNIFIED_SCHEDULED_EVENTS.length;
+    const cycleIndex = Math.floor(getTrustedNow() / STOCK_TICK_INTERVAL_MS) % UNIFIED_SCHEDULED_EVENTS.length;
     return UNIFIED_SCHEDULED_EVENTS[cycleIndex];
   }
 
@@ -1492,7 +1492,7 @@ const GameEngine = (() => {
         let solved = false;
         if (typeof window !=='undefined' && window.employeesCache && window.employeesCache[empUser]) {
           const empState = window.employeesCache[empUser];
-          if (empState.lastPuzzleSolved && (Date.now() - empState.lastPuzzleSolved < 86400000)) {
+          if (empState.lastPuzzleSolved && (getTrustedNow() - empState.lastPuzzleSolved < 86400000)) {
             solved = true;
           }
         }
@@ -1596,10 +1596,10 @@ const GameEngine = (() => {
 
   function ensureDailyEconomyReset(s = state) {
     if (!s) return;
-    const now = Date.now();
+    const now = getTrustedNow();
     if (!s.dailyBankInterestResetAt || now > s.dailyBankInterestResetAt) {
       s.dailyBankInterest = 0;
-      const nextMidnight = new Date();
+      const nextMidnight = new Date(now);
       nextMidnight.setHours(24, 0, 0, 0);
       s.dailyBankInterestResetAt = nextMidnight.getTime();
     }
@@ -1668,7 +1668,7 @@ const GameEngine = (() => {
     income += calculateCorpTickProfit(state);
 
     // 3. Hired Peer Job Salary (Hourly)
-    if (state.hiredJob && state.lastPuzzleSolved && (Date.now() - state.lastPuzzleSolved < 86400000)) {
+    if (state.hiredJob && state.lastPuzzleSolved && (getTrustedNow() - state.lastPuzzleSolved < 86400000)) {
       income += (state.hiredJob.salary || 0);
     }
 
@@ -1853,7 +1853,7 @@ const GameEngine = (() => {
 
     // 6. Hired Job
     if (s.hiredJob) {
-      const solved = Boolean(s.lastPuzzleSolved && (Date.now() - s.lastPuzzleSolved < 86400000));
+      const solved = Boolean(s.lastPuzzleSolved && (getTrustedNow() - s.lastPuzzleSolved < 86400000));
       breakdown.hiredJob.name = s.hiredJob.title ||'موظف تعاقدي';
       breakdown.hiredJob.salaryPerSec = s.hiredJob.salary || 0;
       breakdown.hiredJob.active = solved;
@@ -2057,7 +2057,7 @@ const GameEngine = (() => {
     }
 
     // 3. Peer-to-Peer Hired Job Salary (Hourly salary distributed per tick)
-    if (state.hiredJob && state.lastPuzzleSolved && (Date.now() - state.lastPuzzleSolved < 86400000)) {
+    if (state.hiredJob && state.lastPuzzleSolved && (getTrustedNow() - state.lastPuzzleSolved < 86400000)) {
       const hiredSalary = (state.hiredJob.salary || 0) / 3600;
       if (hiredSalary > 0) {
         state.bank += hiredSalary;
@@ -2076,7 +2076,7 @@ const GameEngine = (() => {
       if (bizState.marketingTicks && bizState.marketingTicks > 0) {
         bizState.marketingTicks--;
         if (bizState.marketingTicks === 0) {
-          bizState.marketingCooldownUntil = Date.now() + 60000; // 60s cooldown after campaign ends
+          bizState.marketingCooldownUntil = getTrustedNow() + 60000; // 60s cooldown after campaign ends
         }
       }
 
@@ -2680,7 +2680,7 @@ const GameEngine = (() => {
             });
           }
           nonBizHourly += calculateBankInterestPerTick(state);
-          if (state.hiredJob && state.lastPuzzleSolved && (Date.now() - state.lastPuzzleSolved < 86400000)) {
+          if (state.hiredJob && state.lastPuzzleSolved && (getTrustedNow() - state.lastPuzzleSolved < 86400000)) {
             nonBizHourly += (state.hiredJob.salary || 0);
           }
           const nonBizOfflineEarnings = Math.floor((nonBizHourly / 3600) * cappedSeconds);
@@ -3036,8 +3036,8 @@ const GameEngine = (() => {
     if (bizState.marketingTicks && bizState.marketingTicks > 0) {
       throw new Error("توجد حملة تسويقية نشطة بالفعل لهذا المشروع!");
     }
-    if (bizState.marketingCooldownUntil && Date.now() < bizState.marketingCooldownUntil) {
-      const remSec = Math.ceil((bizState.marketingCooldownUntil - Date.now()) / 1000);
+    if (bizState.marketingCooldownUntil && getTrustedNow() < bizState.marketingCooldownUntil) {
+      const remSec = Math.ceil((bizState.marketingCooldownUntil - getTrustedNow()) / 1000);
       throw new Error(`قسم التسويق: انتظر ${remSec} ثانية حتى ينتهي تأثير الحملة السابقة قبل إطلاق حملة جديدة.`);
     }
 
@@ -3143,8 +3143,8 @@ const GameEngine = (() => {
     if (shares <= 0 || !Number.isInteger(shares)) throw new Error("عدد الأسهم يجب أن يكون عدداً صحيحاً موجباً.");
 
     // Anti-Spam Trade Cooldown (3 seconds)
-    if (state.stockTradeCooldownUntil && Date.now() < state.stockTradeCooldownUntil) {
-      const remSec = Math.ceil((state.stockTradeCooldownUntil - Date.now()) / 1000);
+    if (state.stockTradeCooldownUntil && getTrustedNow() < state.stockTradeCooldownUntil) {
+      const remSec = Math.ceil((state.stockTradeCooldownUntil - getTrustedNow()) / 1000);
       throw new Error(`البورصة: نظام منع التداول فائق السرعة نشط. انتظر ${remSec} ثانية بين كل أمر تداول.`);
     }
 
@@ -3184,8 +3184,8 @@ const GameEngine = (() => {
 
     // Set 45-second holding cooldown on this stock and 3s global trade cooldown
     state.stockCooldowns = state.stockCooldowns || {};
-    state.stockCooldowns[sym] = Date.now() + 45000;
-    state.stockTradeCooldownUntil = Date.now() + 3000;
+    state.stockCooldowns[sym] = getTrustedNow() + 45000;
+    state.stockTradeCooldownUntil = getTrustedNow() + 3000;
 
     recordPlayerActivity('شراء أسهم',`شراء ${shares} سهم (${sym}) بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`,'stock');
     trackDailyQuestProgress('stock_trade', 1);
@@ -3200,8 +3200,8 @@ const GameEngine = (() => {
     if (shares <= 0 || !Number.isInteger(shares)) throw new Error("عدد الأسهم غير صالح.");
 
     // Anti-Spam Trade Cooldown (3 seconds)
-    if (state.stockTradeCooldownUntil && Date.now() < state.stockTradeCooldownUntil) {
-      const remSec = Math.ceil((state.stockTradeCooldownUntil - Date.now()) / 1000);
+    if (state.stockTradeCooldownUntil && getTrustedNow() < state.stockTradeCooldownUntil) {
+      const remSec = Math.ceil((state.stockTradeCooldownUntil - getTrustedNow()) / 1000);
       throw new Error(`البورصة: نظام منع التداول فائق السرعة نشط. انتظر ${remSec} ثانية بين كل أمر تداول.`);
     }
 
@@ -3216,8 +3216,8 @@ const GameEngine = (() => {
     }
 
     // 1. Enforce 45s holding cooldown
-    if (state.stockCooldowns && state.stockCooldowns[sym] && Date.now() < state.stockCooldowns[sym]) {
-      const remainingSec = Math.ceil((state.stockCooldowns[sym] - Date.now()) / 1000);
+    if (state.stockCooldowns && state.stockCooldowns[sym] && getTrustedNow() < state.stockCooldowns[sym]) {
+      const remainingSec = Math.ceil((state.stockCooldowns[sym] - getTrustedNow()) / 1000);
       throw new Error(`لوائح البورصة: يجب الاحتفاظ بالسهم لمدة 45 ثانية بعد الشراء قبل بيعه. متبقي: ${remainingSec} ثانية.`);
     }
 
@@ -3253,7 +3253,7 @@ const GameEngine = (() => {
       state.stocks[sym].avgPrice = 0;
     }
     state.cash += netReturn;
-    state.stockTradeCooldownUntil = Date.now() + 3000;
+    state.stockTradeCooldownUntil = getTrustedNow() + 3000;
 
     let logDetails =`بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} ج.م)`;
     if (capitalGainsTax > 0) {
@@ -3315,8 +3315,8 @@ const GameEngine = (() => {
     // 4. Check item cooldown
     if (!state.itemCooldowns) state.itemCooldowns = {};
     const cooldownExpiry = state.itemCooldowns[itemId] || 0;
-    if (Date.now() < cooldownExpiry) {
-      const remainingSec = Math.ceil((cooldownExpiry - Date.now()) / 1000);
+    if (getTrustedNow() < cooldownExpiry) {
+      const remainingSec = Math.ceil((cooldownExpiry - getTrustedNow()) / 1000);
       const mins = Math.floor(remainingSec / 60);
       const secs = remainingSec % 60;
       const timeStr = mins > 0 ?`${mins} دقيقة و${secs} ثانية` :`${secs} ثانية`;
@@ -3340,7 +3340,7 @@ const GameEngine = (() => {
 
     // Set cooldown so player cannot immediately re-purchase after effect expires
     if (item.cooldownSec) {
-      state.itemCooldowns[itemId] = Date.now() + (item.cooldownSec * 1000);
+      state.itemCooldowns[itemId] = getTrustedNow() + (item.cooldownSec * 1000);
     }
 
     recordPlayerActivity('شراء متجر',`شراء وتفعيل أداة"${item.name}" (الاستخدام ${usedToday + 1}/${maxUses} لليوم)`,'store');
@@ -3367,8 +3367,8 @@ const GameEngine = (() => {
     }
 
     // 1. Check Cooldown
-    if (state.blackMarketCooldowns && state.blackMarketCooldowns[dealId] > Date.now()) {
-      const remainingSec = Math.ceil((state.blackMarketCooldowns[dealId] - Date.now()) / 1000);
+    if (state.blackMarketCooldowns && state.blackMarketCooldowns[dealId] > getTrustedNow()) {
+      const remainingSec = Math.ceil((state.blackMarketCooldowns[dealId] - getTrustedNow()) / 1000);
       const mins = Math.floor(remainingSec / 60);
       const secs = remainingSec % 60;
       const timeStr = mins > 0 ?`${mins} دقيقة و ${secs} ثانية` :`${secs} ثانية`;
@@ -3424,7 +3424,7 @@ const GameEngine = (() => {
         state.dirtyCash = (state.dirtyCash || 0) + deal.payout;
       }
       state.underworldRep = (state.underworldRep || 0) + (deal.repGain || 0);
-      state.blackMarketCooldowns[dealId] = Date.now() + fullCdMs;
+      state.blackMarketCooldowns[dealId] = getTrustedNow() + fullCdMs;
 
       const payoutTypeStr = deal.cleanPayout ?'كاش نظيف' :'كاش مشبوه';
       recordPlayerActivity('سوق سوداء',`نجاح صفقة"${deal.name}" (+${deal.payout.toLocaleString()} ج.م ${payoutTypeStr})`,'blackmarket');
@@ -3440,7 +3440,7 @@ const GameEngine = (() => {
       };
     } else {
       // CAUGHT BY POLICE! Apply Half Cooldown on Failure
-      state.blackMarketCooldowns[dealId] = Date.now() + halfCdMs;
+      state.blackMarketCooldowns[dealId] = getTrustedNow() + halfCdMs;
 
       // 1. Lawyer Acquittal: 25% chance the lawyer dismisses charges immediately (rebalanced 50%)
       if (hasLawyer && Math.random() < 0.25) {
@@ -3689,15 +3689,15 @@ const GameEngine = (() => {
     const currency = isEn ?'EGP' :'ج.م';
 
     // 1. Anti-Spam Cooldown (6 seconds)
-    if (!skipCooldown && state.casinoCooldownUntil && Date.now() < state.casinoCooldownUntil) {
-      const remSec = Math.ceil((state.casinoCooldownUntil - Date.now()) / 1000);
+    if (!skipCooldown && state.casinoCooldownUntil && getTrustedNow() < state.casinoCooldownUntil) {
+      const remSec = Math.ceil((state.casinoCooldownUntil - getTrustedNow()) / 1000);
       throw new Error(isEn
         ?`Casino Cooldown: Please wait ${remSec}s before placing another bet.`
         :`الكازينو: يرجى التمهل! انتظر ${remSec} ثانية قبل وضع رهان جديد.`);
     }
 
     // 2. Daily Net Profit Cap Enforcement (Rolling 24-hour cycle)
-    const now = Date.now();
+    const now = getTrustedNow();
     if (!state.dailyCasinoResetAt || now >= state.dailyCasinoResetAt) {
       state.dailyCasinoNetProfit = 0;
       state.dailyCasinoResetAt = now + (24 * 60 * 60 * 1000);
@@ -3732,7 +3732,7 @@ const GameEngine = (() => {
 
     // 4. Set Cooldown & Deduct Immediately
     if (!skipCooldown) {
-      state.casinoCooldownUntil = Date.now() + CASINO_COOLDOWN_MS;
+      state.casinoCooldownUntil = getTrustedNow() + CASINO_COOLDOWN_MS;
     }
     state.cash -= betAmount;
 
@@ -3985,8 +3985,8 @@ const GameEngine = (() => {
     const job = JOBS[state.jobId] || JOBS.worker;
 
     // Enforce 20s overtime cooldown (reduced 15% if cronos_gear active)
-    if (state.overtimeCooldownUntil && Date.now() < state.overtimeCooldownUntil) {
-      const remSec = Math.ceil((state.overtimeCooldownUntil - Date.now()) / 1000);
+    if (state.overtimeCooldownUntil && getTrustedNow() < state.overtimeCooldownUntil) {
+      const remSec = Math.ceil((state.overtimeCooldownUntil - getTrustedNow()) / 1000);
       throw new Error(`أنت مجهد للغاية من العمل الإضافي! يرجى الانتظار ${remSec} ثانية قبل نوبة إضافية جديدة.`);
     }
 
@@ -4001,7 +4001,7 @@ const GameEngine = (() => {
 
     const hasCronos = Boolean(state.inventory && state.inventory.cronos_gear > 0);
     const overtimeCdMs = Math.floor(20000 * (hasCronos ? 0.85 : 1.0));
-    state.overtimeCooldownUntil = Date.now() + overtimeCdMs;
+    state.overtimeCooldownUntil = getTrustedNow() + overtimeCdMs;
     state.dailyWork.overtimeShifts = (state.dailyWork.overtimeShifts || 0) + 1;
 
     const isEnergyActive = (state.inventory && state.inventory.energy_drink > 0);
@@ -4168,10 +4168,10 @@ const GameEngine = (() => {
     }
 
     const job = {
-      id:'smug_' + Date.now() +'_' + Math.floor(Math.random() * 1000),
+      id:'smug_' + getTrustedNow() +'_' + Math.floor(Math.random() * 1000),
       routeId: routeId,
       vehicleType: vehicleType,
-      endTime: Date.now() + (route.durationTicks * 1000)
+      endTime: getTrustedNow() + (route.durationTicks * 1000)
     };
 
     if (!state.activeSmugglingJobs) state.activeSmugglingJobs = [];
@@ -4220,8 +4220,8 @@ const GameEngine = (() => {
       throw new Error(`لقد استنفدت الحد الأقصى للقروض اليومية (مرتان فقط كل 24 ساعة)! يتجدد الائتمان بعد ${remHours} ساعة و ${remMins} دقيقة.`);
     }
 
-    if (state.loanCooldownUntil && Date.now() < state.loanCooldownUntil) {
-      const remSec = Math.ceil((state.loanCooldownUntil - Date.now()) / 1000);
+    if (state.loanCooldownUntil && getTrustedNow() < state.loanCooldownUntil) {
+      const remSec = Math.ceil((state.loanCooldownUntil - getTrustedNow()) / 1000);
       throw new Error(`البنك: فترة التقييم الائتماني نشطة. لا يمكنك طلب قرض جديد إلا بعد مرور ${remSec} ثانية من سداد القرض السابق.`);
     }
     const maxLoan = Math.max(10000, Math.floor(state.netWorth * 0.35));
@@ -4265,7 +4265,7 @@ const GameEngine = (() => {
     }
     recordPlayerActivity('سداد قرض بنكي ️',`تم سداد القرض البنكي بالكامل بقيمة ${due.toLocaleString()} ج.م وفك أي حظر مصرفي`,'banking');
     state.activeLoan = null;
-    state.loanCooldownUntil = Date.now() + 180000; // 3 minutes credit cooldown before next loan
+    state.loanCooldownUntil = getTrustedNow() + 180000; // 3 minutes credit cooldown before next loan
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
     return { repaid: due };
@@ -4415,11 +4415,11 @@ const GameEngine = (() => {
         totalShipmentsCompleted: 0
       };
     }
-    const now = Date.now();
+    const now = getTrustedNow();
     if (!state.tradeCompany.dailyTradeResetAt || now > state.tradeCompany.dailyTradeResetAt) {
       state.tradeCompany.dailyTradeProfit = 0;
       state.tradeCompany.dailyExportsCount = {};
-      const nextMidnight = new Date();
+      const nextMidnight = new Date(now);
       nextMidnight.setHours(24, 0, 0, 0);
       state.tradeCompany.dailyTradeResetAt = nextMidnight.getTime();
     }
@@ -5044,7 +5044,7 @@ const GameEngine = (() => {
 
   function forceSaveState(immediate = false) {
     sanitizeGameState();
-    state.lastActiveTimestamp = Date.now();
+    state.lastActiveTimestamp = getTrustedNow();
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
     return AppDB.savePlayerState(activeUsername, state, immediate);

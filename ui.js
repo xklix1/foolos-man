@@ -10381,7 +10381,7 @@ const UIController = (() => {
           return;
         }
 
-        const timeSinceLast = Date.now() - lastChatSent;
+        const timeSinceLast = getTrustedNowUI() - lastChatSent;
         if (timeSinceLast < 800) {
           return;
         }
@@ -10393,7 +10393,7 @@ const UIController = (() => {
           chatSendBtn.disabled = true;
           chatInput.value ='';
           if (charCounter) charCounter.textContent ='0 / 200';
-          lastChatSent = Date.now();
+          lastChatSent = getTrustedNowUI();
           const isFb = Boolean(GameEngine.state && (GameEngine.state.facebookVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('facebook'))));
           
           let chatGlow = (GameEngine.state && (GameEngine.state.chatGlow || (GameEngine.state.hasChatGlow ? 'gold_neon' : ''))) || '';
@@ -10692,7 +10692,7 @@ const UIController = (() => {
         const answerInput = document.getElementById('riddle-answer-input');
         const typedVal = parseInt(answerInput.value ||'');
         if (typedVal === window.activeRiddleAnswer) {
-          GameEngine.state.lastPuzzleSolved = Date.now();
+          GameEngine.state.lastPuzzleSolved = getTrustedNowUI();
           AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
           document.getElementById('riddle-verification-modal').classList.add('hidden');
           showToast('تم التحقق بنجاح!','لقد أثبت وجودك البشري، تم صرف راتبك وتنشيط بونوص الشركة +30% لـ 24 ساعة القادمة.','success');
@@ -10828,7 +10828,7 @@ const UIController = (() => {
           adminCreateLiveAuctionBtn.disabled = true;
           let startVal = condVal;
           if (condType ==='time') {
-            startVal = Date.now() + (condVal * 60 * 1000);
+            startVal = getTrustedNowUI() + (condVal * 60 * 1000);
           }
 
           await AppDB.adminCreateLiveAuction(type,'live_' + Math.random().toString(36).substr(2, 9), name, basePrice, condType, startVal);
@@ -12045,7 +12045,7 @@ const UIController = (() => {
           role: mailDoc.payload.role,
           salary: mailDoc.payload.salary
         };
-        GameEngine.state.lastPuzzleSolved = Date.now();
+        GameEngine.state.lastPuzzleSolved = getTrustedNowUI();
 
         await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
         await AppDB.updateMailStatus(mailId,'accepted');
@@ -12205,7 +12205,7 @@ const UIController = (() => {
     if (!GameEngine.state.hiredJob) return;
 
     const lastSolved = GameEngine.state.lastPuzzleSolved || 0;
-    const timeElapsed = Date.now() - lastSolved;
+    const timeElapsed = getTrustedNowUI() - lastSolved;
 
     if (timeElapsed >= 86400000) {
       const numA = Math.floor(Math.random() * 40) + 10;
@@ -12228,7 +12228,7 @@ const UIController = (() => {
         shouldStart = true;
       }
     } else if (auc.startConditionType ==='time') {
-      if (Date.now() >= condVal && condVal > 0) {
+      if (getTrustedNowUI() >= condVal && condVal > 0) {
         shouldStart = true;
       }
     }
@@ -12243,7 +12243,7 @@ const UIController = (() => {
           const db = firebase.firestore();
           await db.collection('liveAuctions').doc(auc.id).update({
             status:'active',
-            timerResetTimestamp: Date.now() + 30000
+            timerResetTimestamp: getTrustedNowUI() + 30000
           });
           console.log(`[Auction] Activated auction ${auc.id}`);
         }
@@ -12299,7 +12299,7 @@ const UIController = (() => {
             ?`Auction starts once <strong>${auc.startConditionValue} players</strong> register (Registered: ${auc.registeredPlayers ? auc.registeredPlayers.length : 0})`
             :`يبدأ المزاد بمجرد تسجيل <strong>${auc.startConditionValue} لاعبين</strong> (المسجلون الآن: ${auc.registeredPlayers ? auc.registeredPlayers.length : 0})`;
         } else {
-          const diff = Math.max(0, Math.ceil((auc.startConditionValue - Date.now()) / 60000));
+          const diff = Math.max(0, Math.ceil((auc.startConditionValue - getTrustedNowUI()) / 60000));
           condText = window.currentLang ==='en'
             ?`Auction starts automatically in <strong>${diff} minutes</strong>`
             :`يبدأ المزاد تلقائياً بعد مرور <strong>${diff} دقيقة</strong>`;
@@ -12314,7 +12314,7 @@ const UIController = (() => {
       } else if (auc.status ==='active') {
         badgeHtml =`<span class="px-2 py-0.5 rounded bg-yellow-500/10 border border-yellow-500/20 text-[10px] text-yellow-400 font-bold animate-pulse">${window.currentLang ==='en' ?'Active Live Bidding' :'مزايدة نشطة حية'}</span>`;
 
-        const remSecs = Math.max(0, Math.ceil((auc.timerResetTimestamp - Date.now()) / 1000));
+        const remSecs = Math.max(0, Math.ceil((auc.timerResetTimestamp - getTrustedNowUI()) / 1000));
 
         if (remSecs === 0 && auc.timerResetTimestamp > 0) {
           triggerEndAuction(auc.id);
