@@ -5297,7 +5297,9 @@
           const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.force_reload', {
             headers: {
               'apikey': SUPABASE_ANON_KEY,
-              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache'
             }
           });
           if (!res.ok) return;
@@ -5455,7 +5457,8 @@
           try { overlay.remove(); } catch (e) {}
         }
       }
-      setInterval(checkForceReloadDirectly, 90000);
+      // Check force reload every 3 seconds for instant admin trigger
+      setInterval(checkForceReloadDirectly, 3000);
 
       if (typeof document !== 'undefined') {
         document.addEventListener('visibilitychange', function() {
@@ -5472,6 +5475,11 @@
               }
             }
           }
+        });
+      }
+      if (typeof window !== 'undefined') {
+        window.addEventListener('focus', function() {
+          checkForceReloadDirectly();
         });
       }
     })();

@@ -16469,9 +16469,9 @@ window.UI = UIController;
 window.playMenuSound = UIController.playMenuSound;
 window.playCasinoSound = UIController.playCasinoSound;
 
-// Global watchdog for mandatory reload (Egress-optimized: checks every 90s when active and not idle)
+// Global watchdog for mandatory reload (Instant trigger every 3s when active)
 if (typeof window !=='undefined' && !window.location.pathname.includes('ctrl-vault')) {
-  setInterval(async () => {
+  const checkForceReloadWatchdog = async () => {
     if (typeof AppDB !=='undefined' && typeof AppDB.isNetworkActive ==='function' && !AppDB.isNetworkActive()) return;
     if (typeof document !=='undefined' && document.hidden) return;
     try {
@@ -16484,5 +16484,17 @@ if (typeof window !=='undefined' && !window.location.pathname.includes('ctrl-vau
         }
       }
     } catch (e) {}
-  }, 90000);
+  };
+
+  setInterval(checkForceReloadWatchdog, 3000);
+  checkForceReloadWatchdog();
+
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) checkForceReloadWatchdog();
+    });
+  }
+  if (typeof window !== 'undefined') {
+    window.addEventListener('focus', checkForceReloadWatchdog);
+  }
 }
