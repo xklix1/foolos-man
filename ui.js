@@ -1470,6 +1470,8 @@ const UIController = (() => {
         if (authActionBtn) authActionBtn.textContent ='إنشاء حساب وبدء اللعب';
         authRegBtn.classList.add('border-yellow-500','text-yellow-500');
         authLoginBtn.classList.remove('border-yellow-500','text-yellow-500');
+        const refCont = document.getElementById('auth-referral-container');
+        if (refCont) refCont.classList.remove('hidden');
 
         // Check if device already has a registered account
         const existingDeviceAcc = (window.AppDB && window.AppDB.DeviceFingerprint && window.AppDB.DeviceFingerprint.getRegisteredAccountOnDevice()) || null;
@@ -1487,6 +1489,8 @@ const UIController = (() => {
         if (authActionBtn) authActionBtn.textContent ='دخول وتزامن الحساب';
         authLoginBtn.classList.add('border-yellow-500','text-yellow-500');
         authRegBtn.classList.remove('border-yellow-500','text-yellow-500');
+        const refCont = document.getElementById('auth-referral-container');
+        if (refCont) refCont.classList.add('hidden');
       });
     }
 
@@ -1515,7 +1519,8 @@ const UIController = (() => {
             if (registeredOnDevice && registeredOnDevice.toLowerCase() !== usernameInput.toLowerCase()) {
               throw new Error(`🚫 لا يمكن إنشاء حساب جديد! هذا الجهاز مسجل به حساب بالفعل ("${registeredOnDevice}"). تسمح قوانين اللعبة بحساب واحد فقط لكل جهاز.`);
             }
-            await AppDB.registerPlayer(usernameInput, pinInput);
+            const refCodeInput = document.getElementById('auth-referral-code')?.value?.trim() || '';
+            await AppDB.registerPlayer(usernameInput, pinInput, refCodeInput);
             playerState = await GameEngine.loadUserSession(usernameInput);
             localStorage.setItem('rasalmal_active_session_user', usernameInput);
             showToast('نجاح','تم تسجيل حسابك الجديد بنجاح! مرحباً بك.','success');
@@ -16242,6 +16247,215 @@ const UIController = (() => {
     }
   }
 
+  // --- Referral System Modal & Actions ---
+  async function openReferralModal() {
+    playMenuSound('modal_open');
+    const modal = document.getElementById('modal-referral-system');
+    if (modal) modal.classList.remove('hidden');
+    await refreshReferralData();
+  }
+
+  function closeReferralModal() {
+    playMenuSound('modal_close');
+    const modal = document.getElementById('modal-referral-system');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function copyReferralCode() {
+    const codeEl = document.getElementById('ref-modal-my-code');
+    if (!codeEl) return;
+    const codeText = codeEl.textContent.trim();
+    if (!codeText || codeText === 'REF-XXXX') return;
+
+    const copySuccess = () => {
+      showToast('تم النسخ 📋', `تم نسخ كود الدعوة "${codeText}"!`, 'success');
+      playMenuSound('click');
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(codeText).then(copySuccess).catch(() => fallbackCopy(codeText));
+    } else {
+      fallbackCopy(codeText);
+    }
+  }
+
+  function fallbackCopy(text) {
+    try {
+      const input = document.createElement('input');
+      input.value = text;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      showToast('تم النسخ 📋', `تم نسخ كود الدعوة "${text}"!`, 'success');
+      playMenuSound('click');
+    } catch(e) {
+      showToast('كود الدعوة', text, 'info');
+    }
+  }
+
+  async function submitFriendReferralCode() {
+    const activeUser = GameEngine.state.username;
+    if (!activeUser) {
+      showToast('خطأ', 'لا توجد جلسة لاعب نشطة.', 'error');
+      return;
+    }
+
+    const input = document.getElementById('input-friend-referral-code');
+    const btn = document.getElementById('btn-submit-friend-code');
+    if (!input) return;
+
+    const code = input.value.trim().toUpperCase();
+    if (!code) {
+      showToast('خطأ', 'يرجى إدخال كود الدعوة.', 'error');
+      return;
+    }
+
+    try {
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> جاري التحقق...';
+      }
+
+      // Execute bindReferralCode - validates, sets referredBy/referredByCode, and saves immediately to Supabase
+      const res = await AppDB.bindReferralCode(activeUser, code);
+
+      // Update active GameEngine state
+      GameEngine.state.referredBy = res.referrer;
+      GameEngine.state.referredByCode = res.code;
+      if (typeof GameEngine.forceSaveState === 'function') {
+        GameEngine.forceSaveState(true);
+      }
+
+      showToast('نجاح ربط الكود ✅', `تم ربط حسابك بكود الدعوة "${res.code}" (المُوصي: ${res.referrer}) وحفظ ذلك فوراً بالسيرفر!`, 'success');
+      playMenuSound('upgrade');
+
+      await refreshReferralData();
+    } catch (err) {
+      showToast('تعذر استخدام الكود', err.message || 'حدث خطأ أثناء الربط.', 'error');
+      playMenuSound('back');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'تأكيد الكود';
+      }
+    }
+  }
+
+  async function claimReferralMilestone(tierId) {
+    try {
+      playMenuSound('click');
+      const res = await GameEngine.claimReferralMilestone(tierId);
+      showToast('مبروك! 🎉', `تم استلام مكافأة المستوى بقيمة +${res.reward.toLocaleString()} EGP!`, 'success');
+      playMenuSound('upgrade');
+      updateHUD();
+      await refreshReferralData();
+    } catch (err) {
+      showToast('استلام المكافأة', err.message || 'تعذر استلام المكافأة.', 'error');
+      playMenuSound('back');
+    }
+  }
+
+  async function refreshReferralData() {
+    const activeUser = GameEngine.state.username;
+    if (!activeUser) return;
+
+    // Render my referral code
+    const myCode = GameEngine.state.referralCode || GameEngine.generateReferralCode(activeUser);
+    const codeEl = document.getElementById('ref-modal-my-code');
+    if (codeEl) codeEl.textContent = myCode;
+
+    // Render friend code binding state
+    const friendBox = document.getElementById('ref-friend-input-box');
+    const boundBox = document.getElementById('ref-friend-bound-box');
+    const boundText = document.getElementById('ref-bound-code-text');
+
+    if (GameEngine.state.referredByCode || GameEngine.state.referredBy) {
+      if (friendBox) friendBox.classList.add('hidden');
+      if (boundBox) boundBox.classList.remove('hidden');
+      if (boundText) boundText.textContent = `${GameEngine.state.referredByCode || 'مرتبط'} (${GameEngine.state.referredBy || 'صديق'})`;
+    } else {
+      if (friendBox) friendBox.classList.remove('hidden');
+      if (boundBox) boundBox.classList.add('hidden');
+    }
+
+    // Query referral report from DB
+    const report = await AppDB.getReferralReport(activeUser);
+    renderReferralModal(report);
+  }
+
+  function renderReferralModal(report) {
+    if (!report) report = { totalInvited: 0, qualifiedCount: 0, pendingCount: 0, invitees: [] };
+
+    // Stats
+    const totalEl = document.getElementById('ref-modal-stat-total');
+    const qualEl = document.getElementById('ref-modal-stat-qualified');
+    const pendEl = document.getElementById('ref-modal-stat-pending');
+
+    if (totalEl) totalEl.textContent = (report.totalInvited || 0).toLocaleString();
+    if (qualEl) qualEl.textContent = (report.qualifiedCount || 0).toLocaleString();
+    if (pendEl) pendEl.textContent = (report.pendingCount || 0).toLocaleString();
+
+    // Milestones Container
+    const milestonesCont = document.getElementById('ref-milestones-container');
+    if (milestonesCont && GameEngine.REFERRAL_MILESTONES) {
+      const claimed = GameEngine.state.claimedReferralTiers || [];
+      const qualCount = report.qualifiedCount || 0;
+
+      milestonesCont.innerHTML = Object.keys(GameEngine.REFERRAL_MILESTONES).map(key => {
+        const m = GameEngine.REFERRAL_MILESTONES[key];
+        const isClaimed = claimed.includes(m.id);
+        const canClaim = !isClaimed && qualCount >= m.count;
+
+        let btnHtml = '';
+        if (isClaimed) {
+          btnHtml = `<span class="px-3 py-1 bg-emerald-950/80 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-black">مستلمة ✅</span>`;
+        } else if (canClaim) {
+          btnHtml = `<button onclick="window.UI.claimReferralMilestone('${m.id}')" class="px-3 py-1 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-lg text-[10px] shadow active:scale-95 cursor-pointer">استلام المكافأة 💰</button>`;
+        } else {
+          btnHtml = `<span class="px-2.5 py-1 bg-slate-900 text-slate-500 rounded-lg text-[10px] font-bold">${qualCount}/${m.count} مؤهل</span>`;
+        }
+
+        return `
+          <div class="p-3 bg-slate-900/80 border ${isClaimed ? 'border-emerald-500/30' : (canClaim ? 'border-yellow-500/50 bg-yellow-500/5' : 'border-slate-800')} rounded-xl flex items-center justify-between">
+            <div>
+              <span class="text-xs font-black text-white block">${m.label}</span>
+              <span class="text-[10px] text-amber-400 font-bold numbers-font">+${m.reward.toLocaleString()} EGP</span>
+            </div>
+            <div>${btnHtml}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Invitees Table Body
+    const tbody = document.getElementById('ref-invitees-table-body');
+    if (tbody) {
+      if (!report.invitees || report.invitees.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">لم يقم أي صديق باستخدام كودك بعد. انشر كودك الآن للمنافسة!</td></tr>`;
+      } else {
+        tbody.innerHTML = report.invitees.map(inv => {
+          const selfEarned = inv.selfEarned || 0;
+          const qualBadge = inv.isQualified
+            ? `<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 font-black text-[10px] border border-emerald-500/30">مؤهل ✅</span>`
+            : `<span class="px-2 py-0.5 rounded bg-amber-950 text-amber-400 font-bold text-[10px] border border-amber-500/30">قيد التجميع ⏳</span>`;
+
+          return `
+            <tr class="hover:bg-slate-900/50 transition">
+              <td class="p-2 font-bold text-white flex items-center gap-1">
+                <i class="fa-solid fa-user text-indigo-400 text-[10px]"></i>
+                <span>${inv.username}</span>
+              </td>
+              <td class="p-2 numbers-font font-bold text-amber-400">${selfEarned.toLocaleString()} EGP</td>
+              <td class="p-2">${qualBadge}</td>
+              <td class="p-2 text-slate-400 text-[10px]">${inv.accountAgeText || 'جديد'}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+  }
+
   function renderPlayerInventory() {
     const grid = document.getElementById('player-inventory-grid');
     const totalBadge = document.getElementById('modal-inventory-total-badge');
@@ -16478,6 +16692,12 @@ const UIController = (() => {
     openGiftCodeModal,
     closeGiftCodeModal,
     redeemGiftCodeModal,
+    openReferralModal,
+    closeReferralModal,
+    copyReferralCode,
+    submitFriendReferralCode,
+    claimReferralMilestone,
+    refreshReferralData,
     renderPlayerInventory,
     useInventoryItem,
     showDirectAdminPopupModal

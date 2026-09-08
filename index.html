@@ -1204,6 +1204,12 @@
             class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold tracking-widest" placeholder="••••"
             required>
         </div>
+        <div id="auth-referral-container" class="hidden">
+          <label class="block text-xs text-indigo-300 mb-1.5 font-bold mr-1">كود الدعوة (اختياري)</label>
+          <input type="text" id="auth-referral-code"
+            class="glass-input w-full p-3 rounded-lg text-sm text-center font-mono font-bold uppercase tracking-wider text-indigo-400 border-indigo-500/30 focus:border-indigo-400 placeholder-slate-600"
+            placeholder="مثال: REF-AB12">
+        </div>
       </div>
 
       <!-- Submit button -->
@@ -1348,36 +1354,43 @@
               </button>
             </div>
 
-            <!-- Player Hub Action Bar (Notifications, Inventory, Gift Codes, Cloud) -->
-            <div class="grid grid-cols-4 gap-1.5 pt-1">
+            <!-- Player Hub Action Bar (Notifications, Inventory, Gift Codes, Referrals, Cloud) -->
+            <div class="grid grid-cols-5 gap-1 pt-1">
               <!-- Notifications Desktop Button -->
               <button id="btn-open-notifications-desktop" onclick="window.UI.openNotificationsModal()" title="صندوق الإشعارات والرسائل"
-                class="py-2 px-2 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-white transition-all font-bold text-[11px] flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 group">
+                class="py-2 px-1 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-white transition-all font-bold text-[11px] flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 group">
                 <i class="fa-solid fa-bell text-amber-400 text-sm group-hover:scale-110 transition-transform"></i>
-                <span class="text-[10px] leading-none">الإشعارات</span>
+                <span class="text-[9px] leading-none">الإشعارات</span>
                 <span id="mailbox-unread-badge" class="hidden absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-black text-[9px] shadow animate-pulse border border-slate-950">0</span>
               </button>
 
               <!-- Player Inventory Desktop Button -->
               <button id="btn-open-inventory-desktop" onclick="window.UI.openPlayerInventoryModal()" title="حقيبة الأدوات والمقتنيات"
-                class="py-2 px-2 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-sky-500/40 text-slate-300 hover:text-white transition-all font-bold text-[11px] flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 group">
+                class="py-2 px-1 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-sky-500/40 text-slate-300 hover:text-white transition-all font-bold text-[11px] flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 group">
                 <i class="fa-solid fa-briefcase text-sky-400 text-sm group-hover:scale-110 transition-transform"></i>
-                <span class="text-[10px] leading-none">الحقيبة</span>
+                <span class="text-[9px] leading-none">الحقيبة</span>
                 <span id="desktop-inventory-count-badge" class="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-sky-950 border border-sky-500/40 text-sky-300 font-black text-[9px]">0</span>
               </button>
 
               <!-- Gift Code Desktop Button -->
               <button id="btn-open-giftcode-desktop" onclick="window.UI.openGiftCodeModal()" title="استرداد أكواد الهدايا"
-                class="py-2 px-2 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-rose-500/40 text-slate-300 hover:text-white transition-all font-bold text-[11px] flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 group">
+                class="py-2 px-1 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-rose-500/40 text-slate-300 hover:text-white transition-all font-bold text-[11px] flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 group">
                 <i class="fa-solid fa-gift text-rose-400 text-sm group-hover:scale-110 transition-transform"></i>
-                <span class="text-[10px] leading-none">الهدايا</span>
+                <span class="text-[9px] leading-none">الهدايا</span>
+              </button>
+
+              <!-- Referral System Desktop Button -->
+              <button id="btn-open-referral-desktop" onclick="window.UI.openReferralModal()" title="دعوة الأصدقاء والمكافآت"
+                class="py-2 px-1 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-indigo-500/40 text-slate-300 hover:text-white transition-all font-bold text-[11px] flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 group">
+                <i class="fa-solid fa-users text-indigo-400 text-sm group-hover:scale-110 transition-transform"></i>
+                <span class="text-[9px] leading-none">الدعوات</span>
               </button>
 
               <!-- Cloud Save Desktop Button -->
               <button id="btn-save-progress-cloud-ingame" title="مزامنة وحفظ السحابة"
-                class="py-2 px-2 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-emerald-500/40 text-slate-300 hover:text-white transition-all font-bold text-[11px] flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 group">
+                class="py-2 px-1 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-emerald-500/40 text-slate-300 hover:text-white transition-all font-bold text-[11px] flex flex-col items-center justify-center gap-1 relative cursor-pointer active:scale-95 group">
                 <i class="fa-solid fa-cloud-arrow-up text-emerald-400 text-sm group-hover:scale-110 transition-transform"></i>
-                <span class="text-[10px] leading-none">حفظ سحابي</span>
+                <span class="text-[9px] leading-none">حفظ سحابي</span>
               </button>
             </div>
 
@@ -1616,6 +1629,11 @@
             <button id="btn-open-giftcode-mobile" onclick="window.UI.openGiftCodeModal()" title="استرداد أكواد الهدايا" type="button"
               class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-rose-400 border border-rose-500/30 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
               <i class="fa-solid fa-gift text-xs"></i>
+            </button>
+            <!-- Referral System Mobile -->
+            <button id="btn-open-referral-mobile" onclick="window.UI.openReferralModal()" title="دعوة الأصدقاء والمكافآت" type="button"
+              class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-indigo-400 border border-indigo-500/30 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
+              <i class="fa-solid fa-users text-xs"></i>
             </button>
             <!-- Player Tools / Inventory Mobile -->
             <button id="btn-open-inventory-mobile" onclick="window.UI.openPlayerInventoryModal()" title="حقيبة الأدوات والمقتنيات" type="button"
@@ -4715,6 +4733,147 @@
             <span>استرداد الهدية فوراً</span>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== REFERRAL SYSTEM MODAL (دعوة الأصدقاء) ==================== -->
+  <div id="modal-referral-system" dir="rtl"
+    class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-4 animate-fade-in text-right">
+    <div dir="rtl"
+      class="glass-panel w-full max-w-2xl max-h-[92vh] flex flex-col rounded-3xl border-2 border-indigo-500/40 p-4 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden space-y-4">
+      
+      <!-- Top Glowing Accent -->
+      <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-36 bg-indigo-500/20 blur-3xl rounded-full pointer-events-none"></div>
+
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800/80 shrink-0 relative z-10">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white flex items-center justify-center text-lg font-black shadow-lg shadow-indigo-500/20 shrink-0">
+            <i class="fa-solid fa-users"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-black text-white">👥 نظام دعوة الأصدقاء والمكافآت</h3>
+            <p class="text-[11px] text-slate-400">ادعُ أصدقاءك واحصل على جوائز مالية تصل إلى 1,000,000 EGP!</p>
+          </div>
+        </div>
+        <button onclick="window.UI.closeReferralModal()"
+          class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700/80 flex items-center justify-center transition cursor-pointer">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="flex-1 overflow-y-auto pr-1 space-y-4 custom-scrollbar relative z-10 text-xs text-slate-300">
+        
+        <!-- Card 1: Your Referral Code & Stats -->
+        <div class="bg-indigo-950/30 border border-indigo-500/30 rounded-2xl p-4 space-y-3">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div>
+              <span class="text-[11px] font-bold text-indigo-300 block mb-1">🔑 كود الدعوة الخاص بك</span>
+              <p class="text-[11px] text-slate-400">شارك هذا الكود مع أصدقائك الجدد ليكتبوه عند إدخال الكود أو التسجيل.</p>
+            </div>
+            <div class="flex items-center gap-2 bg-slate-950 p-2 rounded-xl border border-indigo-500/40 w-full sm:w-auto justify-between sm:justify-start">
+              <span id="ref-modal-my-code" class="text-base font-black font-mono tracking-wider text-indigo-400 px-2">REF-XXXX</span>
+              <button id="btn-copy-ref-code" onclick="window.UI.copyReferralCode()"
+                class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 cursor-pointer">
+                <i class="fa-solid fa-copy"></i>
+                <span>نسخ</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Stats Bar -->
+          <div class="grid grid-cols-3 gap-2 pt-2 border-t border-indigo-500/20 text-center">
+            <div class="p-2 bg-slate-900/80 rounded-xl border border-slate-800">
+              <span class="text-[10px] text-slate-400 font-bold block">إجمالي الدعوات</span>
+              <span id="ref-modal-stat-total" class="numbers-font text-sm font-black text-indigo-400">0</span>
+            </div>
+            <div class="p-2 bg-slate-900/80 rounded-xl border border-slate-800">
+              <span class="text-[10px] text-slate-400 font-bold block">دعوات مؤهلة (250k+)</span>
+              <span id="ref-modal-stat-qualified" class="numbers-font text-sm font-black text-emerald-400">0</span>
+            </div>
+            <div class="p-2 bg-slate-900/80 rounded-xl border border-slate-800">
+              <span class="text-[10px] text-slate-400 font-bold block">قيد التجميع</span>
+              <span id="ref-modal-stat-pending" class="numbers-font text-sm font-black text-amber-400">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Enter Friend Code (Once per account, locked permanently) -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-3">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-user-plus text-amber-400 text-sm"></i>
+            <h4 class="text-xs font-black text-white">إدخال كود صديق (كود واحد لكل حساب)</h4>
+          </div>
+          
+          <div id="ref-friend-input-box" class="space-y-2">
+            <p class="text-[11px] text-slate-400">إذا قمت بالتسجيل عن طريق صديق، أدخل كوده هنا ليتم ربطه فوراً بحسابك. (يمكن إدخال الكود مرة واحدة فقط ولا يمكن تغييره).</p>
+            <div class="flex gap-2">
+              <input type="text" id="input-friend-referral-code" placeholder="أدخل كود الدعوة (مثال: REF-AB12)"
+                class="flex-1 p-2.5 bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl text-xs font-mono font-bold text-center uppercase tracking-wider text-amber-300 outline-none">
+              <button id="btn-submit-friend-code" onclick="window.UI.submitFriendReferralCode()"
+                class="px-4 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-xl text-xs transition active:scale-95 shrink-0 cursor-pointer">
+                تأكيد الكود
+              </button>
+            </div>
+          </div>
+
+          <div id="ref-friend-bound-box" class="hidden p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2 text-emerald-400 font-bold">
+              <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+              <span>تم استخدام كود الدعوة بنجاح: <strong id="ref-bound-code-text" class="font-mono text-white">REF-XXXX</strong></span>
+            </div>
+            <span class="text-[10px] text-emerald-300/70 font-medium">محفوظ ومقفول</span>
+          </div>
+        </div>
+
+        <!-- Card 3: Milestone Reward Tiers -->
+        <div class="space-y-2">
+          <h4 class="text-xs font-black text-white flex items-center gap-1.5">
+            <i class="fa-solid fa-trophy text-yellow-400"></i>
+            <span>مكافآت مستويات الدعوة (المؤهلة فقط)</span>
+          </h4>
+          <p class="text-[11px] text-slate-400">تصبح الدعوة مؤهلة عندما يجمع صديقك 250,000 EGP على الأقل بجهده الشخصي (بدون تحويلات من لاعبين آخرين).</p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1" id="ref-milestones-container">
+            <!-- Rendered dynamically by UI -->
+          </div>
+        </div>
+
+        <!-- Card 4: Invited Friends Table -->
+        <div class="space-y-2 pt-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-black text-white flex items-center gap-1.5">
+              <i class="fa-solid fa-list-check text-indigo-400"></i>
+              <span>قائمة الأصدقاء المدعوين وتقدمهم</span>
+            </h4>
+            <button onclick="window.UI.refreshReferralData()" class="text-[10px] text-slate-400 hover:text-indigo-400 transition flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-rotate-right"></i> تحديث
+            </button>
+          </div>
+
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden">
+            <div class="overflow-x-auto max-h-48 custom-scrollbar">
+              <table class="w-full text-right text-[11px]">
+                <thead class="bg-slate-900/90 text-slate-400 border-b border-slate-800 sticky top-0">
+                  <tr>
+                    <th class="p-2">اللاعب</th>
+                    <th class="p-2">المال بجهده الشخصي</th>
+                    <th class="p-2">الحالة</th>
+                    <th class="p-2">عمر الحساب</th>
+                  </tr>
+                </thead>
+                <tbody id="ref-invitees-table-body" class="divide-y divide-slate-800/60">
+                  <tr>
+                    <td colspan="4" class="p-4 text-center text-slate-500">جاري تحميل القائمة...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

@@ -650,10 +650,11 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   //  REGISTRATION & STRICT SINGLE-ACCOUNT PER DEVICE
   // ─────────────────────────────────────────────
-  async function registerPlayer(username, pin) {
+  async function registerPlayer(username, pin, referralCodeInput = '') {
     if (!username || !pin) throw new Error('يرجى إدخال اسم المستخدم ورمز PIN.');
     const u = username.trim();
     const p = String(pin).trim();
+    const refCode = (typeof referralCodeInput === 'string' ? referralCodeInput.trim() : '').toUpperCase();
 
     // 1. Check local device anchor
     const localRegistered = DeviceFingerprint.getRegisteredAccountOnDevice();
@@ -677,6 +678,19 @@ var AppDB = (() => {
     const existing = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username`);
     if (existing && existing.length > 0) {
       throw new Error('اسم المستخدم مسجل بالفعل. يرجى اختيار اسم آخر.');
+    }
+
+    // 5. Validate optional referral code if provided at registration
+    let referrerUsername = '';
+    let referrerCodeValid = '';
+    if (refCode) {
+      const refRows = await _api(`players?state->>referralCode=eq.${encodeURIComponent(refCode)}&select=username,state`);
+      if (refRows && refRows.length > 0 && refRows[0].username.toLowerCase() !== u.toLowerCase()) {
+        referrerUsername = refRows[0].username;
+        referrerCodeValid = refCode;
+      } else {
+        throw new Error('كود الدعوة المدخل غير صحيح أو ينتمي لنفس الحساب.');
+      }
     }
 
     const hashed = await hashPin(p);
@@ -719,6 +733,13 @@ var AppDB = (() => {
         jobId:'worker',
         known_devices: [fp],
         initial_device: fp,
+        referralCode: (window.GameEngine && typeof window.GameEngine.generateReferralCode === 'function')
+          ? window.GameEngine.generateReferralCode(u)
+          : `REF-${u.substring(0, 3).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+        referredBy: referrerUsername,
+        referredByCode: referrerCodeValid,
+        transfersReceivedTotal: 0,
+        claimedReferralTiers: [],
         assets: { apartment: 0, office: 0, mansion: 0, skyline_tower: 0, luxury_resort: 0, mega_yacht: 0, private_island: 0, orbital_station: 0 },
         businesses: {
           kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
@@ -765,6 +786,139 @@ var AppDB = (() => {
 
     setEncryptedLocalState(`rasalmal_state_${u}`, newPlayerRow.state);
     return true;
+  }
+
+  // ─────────────────────────────────────────────
+  //  REFERRAL SYSTEM & ANTI-CHEAT ENGINE
+  // ─────────────────────────────────────────────
+  async function bindReferralCode(username, codeInput) {
+    if (!username || !codeInput) throw new Error("يرجى إدخال كود الدعوة.");
+    const u = username.trim();
+    const code = codeInput.trim().toUpperCase();
+
+    const s = (window.GameEngine && window.GameEngine.state && window.GameEngine.state.username === u)
+      ? window.GameEngine.state
+      : await getPlayerState(u);
+
+    if (!s) throw new Error("تعذر الوصول لبيانات اللاعب.");
+
+    if (s.referredBy) {
+      throw new Error(`لقد قمت بإدخال كود دعوة صديق من قبل ("${s.referredBy}"), ولا يمكن تغيير الكود.`);
+    }
+
+    if (s.referralCode && s.referralCode.toUpperCase() === code) {
+      throw new Error("لا يمكنك إدخال كود الدعوة الخاص بك!");
+    }
+
+    // Hardware check: verify device does not have other accounts
+    const fp = await DeviceFingerprint.getFingerprint();
+    const registry = await getDeviceRegistry();
+    if (registry.devices && registry.devices[fp]) {
+      const boundUser = registry.devices[fp];
+      if (boundUser && boundUser.toLowerCase() !== u.toLowerCase()) {
+        throw new Error(`🚫 لا يمكن إدخال كود دعوة! هذا الجهاز يحتوي على حساب آخر مسجل ("${boundUser}").`);
+      }
+    }
+
+    // Lookup referrer player in DB
+    const refRows = await _api(`players?state->>referralCode=eq.${encodeURIComponent(code)}&select=username,state`);
+    if (!refRows || refRows.length === 0) {
+      throw new Error("كود الدعوة المدخل غير موجود. يرجى التأكد من الرمز وإعادة المحاولة.");
+    }
+
+    const referrer = refRows[0];
+    if (referrer.username.toLowerCase() === u.toLowerCase()) {
+      throw new Error("لا يمكنك إدخال كود الدعوة الخاص بك!");
+    }
+
+    s.referredBy = referrer.username;
+    s.referredByCode = code;
+
+    await savePlayerState(u, s, true);
+    return {
+      success: true,
+      referrer: referrer.username,
+      code: code
+    };
+  }
+
+  async function getReferralReport(username) {
+    if (!username) return null;
+    const u = username.trim();
+
+    try {
+      const myState = (window.GameEngine && window.GameEngine.state && window.GameEngine.state.username === u)
+        ? window.GameEngine.state
+        : await getPlayerState(u);
+
+      const refCode = (myState && myState.referralCode) ? myState.referralCode : '';
+      if (!refCode) return { referralCode: '', totalInvited: 0, qualifiedCount: 0, pendingCount: 0, invitees: [] };
+
+      // Query all players where state->>referredByCode = refCode OR state->>referredBy = u
+      const rows = await _api(`players?or=(state->>referredByCode.eq.${encodeURIComponent(refCode)},state->>referredBy.eq.${encodeURIComponent(u)})&select=username,cash,bank,dirty_cash,net_worth,created_at,last_seen,state`);
+
+      const invitees = [];
+      let qualifiedCount = 0;
+
+      const ASSET_VALS = { apartment: 25000, office: 85000, mansion: 320000, skyline_tower: 1200000, luxury_resort: 4500000, mega_yacht: 15000000, private_island: 50000000, orbital_station: 250000000 };
+
+      (rows || []).forEach(r => {
+        if (r.username.toLowerCase() === u.toLowerCase()) return; // skip self
+        const s = (typeof r.state === 'object' && r.state) ? r.state : {};
+
+        const cash = Number(r.cash || 0);
+        const bank = Number(r.bank || 0);
+        const dirty = Number(r.dirty_cash || 0);
+        const transfersReceived = Number(s.transfersReceivedTotal || 0);
+
+        let assetsVal = 0;
+        if (s.assets && typeof s.assets === 'object') {
+          Object.keys(s.assets).forEach(ak => {
+            const count = Number(s.assets[ak] || 0);
+            if (count > 0 && ASSET_VALS[ak]) assetsVal += count * ASSET_VALS[ak];
+          });
+        }
+
+        const grossWealth = cash + bank + dirty + assetsVal;
+        const selfEarned = Math.max(0, grossWealth - transfersReceived);
+        const isQualified = selfEarned >= 250000;
+
+        if (isQualified) qualifiedCount++;
+
+        const createdMs = Number(r.created_at || s.createdAt || Date.now());
+        const ageMs = Math.max(0, Date.now() - createdMs);
+        const ageDays = Math.floor(ageMs / (86400 * 1000));
+        const ageHours = Math.floor((ageMs % (86400 * 1000)) / (3600 * 1000));
+        const ageText = ageDays > 0 ? `منذ ${ageDays} يوم و ${ageHours} ساعة` : `منذ ${ageHours} ساعة`;
+
+        const devices = Array.isArray(s.known_devices) ? s.known_devices : (s.initial_device ? [s.initial_device] : []);
+
+        invitees.push({
+          username: r.username,
+          cash,
+          bank,
+          dirty,
+          grossWealth,
+          transfersReceived,
+          selfEarned,
+          isQualified,
+          createdAt: createdMs,
+          accountAgeText: ageText,
+          devices
+        });
+      });
+
+      return {
+        referralCode: refCode,
+        totalInvited: invitees.length,
+        qualifiedCount,
+        pendingCount: invitees.length - qualifiedCount,
+        invitees
+      };
+    } catch (err) {
+      console.warn('[DB] getReferralReport error:', err.message);
+      return { referralCode: '', totalInvited: 0, qualifiedCount: 0, pendingCount: 0, invitees: [] };
+    }
   }
 
   async function verifyPin(username, inputPin) {

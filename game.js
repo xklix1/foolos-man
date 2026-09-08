@@ -937,8 +937,11 @@ const GameEngine = (() => {
     activeCar: null,
     smugglingFleet: { speedboat: 0, plane: 0, ship: 0 },
     activeSmugglingJobs: [],
-    stockCooldowns: {}, // Stores { SYMBOL: lockUntilTimestamp }
-    dailyQuests: null, // Stores { date:'YYYY-MM-DD', quests: [...], grandBonusClaimed: boolean }
+    referralCode: '',
+    referredBy: '',
+    referredByCode: '',
+    transfersReceivedTotal: 0,
+    claimedReferralTiers: [],
     tradeCompany: {
       warehouseCapacity: 10,
       warehouse: {},
@@ -2554,6 +2557,16 @@ const GameEngine = (() => {
         _loadedFromCloud: true
       };
 
+      if (!state.referralCode) {
+        state.referralCode = generateReferralCode(username);
+      }
+      if (!Array.isArray(state.claimedReferralTiers)) {
+        state.claimedReferralTiers = [];
+      }
+      if (typeof state.transfersReceivedTotal !== 'number') {
+        state.transfersReceivedTotal = Number(dbState.transfersReceivedTotal || 0);
+      }
+
       // Calculate offline idle earnings if returning after being away (Requires active 12-hour AFK Manager)
       if (dbState.lastActiveTimestamp && dbState.lastActiveTimestamp > 0) {
         const now = getTrustedNow();
@@ -2788,6 +2801,53 @@ const GameEngine = (() => {
     return {
       expiresAt: state.afkManagerExpiresAt,
       remainingMs: TWELVE_HOURS_MS
+    };
+  }
+
+  function generateReferralCode(username) {
+    if (!username) return 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const clean = username.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase();
+    const prefix = clean.length >= 2 ? clean : 'RF';
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `REF-${prefix}${rand}`;
+  }
+
+  const REFERRAL_MILESTONES = {
+    tier_10: { id: 'tier_10', count: 10, reward: 100000, label: '10 دعوات مؤهلة' },
+    tier_25: { id: 'tier_25', count: 25, reward: 200000, label: '25 دعوة مؤهلة' },
+    tier_50: { id: 'tier_50', count: 50, reward: 450000, label: '50 دعوة مؤهلة' },
+    tier_100: { id: 'tier_100', count: 100, reward: 1000000, label: '100 دعوة مؤهلة' }
+  };
+
+  async function claimReferralMilestone(tierId) {
+    if (!activeUsername) throw new Error("لا توجد جلسة لاعب نشطة.");
+    const tier = REFERRAL_MILESTONES[tierId];
+    if (!tier) throw new Error("المستوى التنافسي غير صالح.");
+
+    state.claimedReferralTiers = state.claimedReferralTiers || [];
+    if (state.claimedReferralTiers.includes(tierId)) {
+      throw new Error("لقد قمت باستلام مكافأة هذا المستوى من قبل.");
+    }
+
+    // Query referral report from server
+    const rep = await AppDB.getReferralReport(activeUsername);
+    const qualifiedCount = (rep && rep.qualifiedCount) || 0;
+
+    if (qualifiedCount < tier.count) {
+      throw new Error(`لم تصل بعد للعدد المطلوب. تحتاج: ${tier.count} دعوة مؤهلة (جمعوا 250k+ بالجهد الشخصي) — لديك الآن: ${qualifiedCount}`);
+    }
+
+    state.claimedReferralTiers.push(tierId);
+    state.cash += tier.reward;
+    state.netWorth = calculateNetWorth();
+    recordPlayerActivity('مكافأة دعوة الأصدقاء', `استلام مكافأة المستوى (${tier.label}) بقيمة +${tier.reward.toLocaleString()} EGP!`, 'reward');
+    forceSaveState(true);
+
+    return {
+      tierId,
+      reward: tier.reward,
+      totalCash: state.cash,
+      claimedTiers: state.claimedReferralTiers
     };
   }
 
@@ -5125,6 +5185,11 @@ const GameEngine = (() => {
     getAppropriateTitle,
     renewAfkManager,
     forceSaveState,
+
+    // Referral System Exports
+    generateReferralCode,
+    REFERRAL_MILESTONES,
+    claimReferralMilestone,
     
     // New V2: Cars and Smuggling Exports
     CAR_TEMPLATES,

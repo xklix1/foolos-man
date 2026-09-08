@@ -1705,6 +1705,83 @@
       });
     }
 
+    // Inspect Player Referral Report Action (👥 فحص دعوات ومكافآت اللاعب)
+    const inspectReferralsBtn = document.getElementById('btn-admin-inspect-referrals');
+    if (inspectReferralsBtn) {
+      inspectReferralsBtn.addEventListener('click', async () => {
+        if (!selectedPlayer) {
+          showToast('فحص الدعوات', 'يرجى اختيار لاعب أولاً من القائمة.', 'warning');
+          return;
+        }
+        await openAdminReferralModal(selectedPlayer);
+      });
+    }
+
+    async function openAdminReferralModal(targetUsername) {
+      const modal = document.getElementById('modal-admin-referrals');
+      if (!modal) return;
+
+      const targetEl = document.getElementById('adm-ref-target-user');
+      const codeEl = document.getElementById('adm-ref-code');
+      const totalEl = document.getElementById('adm-ref-total');
+      const qualEl = document.getElementById('adm-ref-qualified');
+      const pendEl = document.getElementById('adm-ref-pending');
+      const tbody = document.getElementById('adm-ref-table-body');
+
+      if (targetEl) targetEl.textContent = `@${targetUsername}`;
+      if (codeEl) codeEl.textContent = '...';
+      if (totalEl) totalEl.textContent = '0';
+      if (qualEl) qualEl.textContent = '0';
+      if (pendEl) pendEl.textContent = '0';
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400"><i class="fa-solid fa-spinner animate-spin"></i> جاري فحص سجل السيرفر ودعوات اللاعب...</td></tr>`;
+
+      modal.classList.remove('hidden');
+
+      try {
+        const report = await AppDB.getReferralReport(targetUsername);
+        if (!report) {
+          if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-rose-400">تعذر جلب تقرير الدعوات لهذا اللاعب.</td></tr>`;
+          return;
+        }
+
+        if (codeEl) codeEl.textContent = report.referralCode || 'لا يوجد';
+        if (totalEl) totalEl.textContent = (report.totalInvited || 0).toLocaleString();
+        if (qualEl) qualEl.textContent = (report.qualifiedCount || 0).toLocaleString();
+        if (pendEl) pendEl.textContent = (report.pendingCount || 0).toLocaleString();
+
+        if (tbody) {
+          if (!report.invitees || report.invitees.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">لم يقم أي لاعب باستخدام كود هذا اللاعب بعد.</td></tr>`;
+          } else {
+            tbody.innerHTML = report.invitees.map(inv => {
+              const gross = inv.grossWealth || 0;
+              const transfers = inv.transfersReceived || 0;
+              const selfEarned = inv.selfEarned || 0;
+              const qualBadge = inv.isQualified
+                ? `<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 font-black text-[10px] border border-emerald-500/30">مؤهل ✅ (250k+)</span>`
+                : `<span class="px-2 py-0.5 rounded bg-amber-950 text-amber-400 font-bold text-[10px] border border-amber-500/30">قيد التجميع ⏳</span>`;
+
+              const devList = (inv.devices && inv.devices.length > 0) ? inv.devices.join(', ') : 'غير مسجل';
+
+              return `
+                <tr class="hover:bg-slate-900/60 transition">
+                  <td class="p-2.5 font-bold text-white font-mono">@${inv.username}</td>
+                  <td class="p-2.5 numbers-font font-bold text-slate-200">${gross.toLocaleString()} EGP</td>
+                  <td class="p-2.5 numbers-font font-bold text-rose-400">-${transfers.toLocaleString()} EGP</td>
+                  <td class="p-2.5 numbers-font font-bold text-emerald-400">${selfEarned.toLocaleString()} EGP</td>
+                  <td class="p-2.5">${qualBadge}</td>
+                  <td class="p-2.5 text-slate-400 text-[10px]">${inv.accountAgeText || 'جديد'}</td>
+                  <td class="p-2.5 font-mono text-[9px] text-slate-500 truncate max-w-[120px]" title="${devList}">${devList}</td>
+                </tr>
+              `;
+            }).join('');
+          }
+        }
+      } catch (err) {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-rose-400">خطأ: ${err.message}</td></tr>`;
+      }
+    }
+
     // RESET SPECIFIC PLAYER ACCOUNT
     const resetPlayerAccountBtn = document.getElementById('btn-admin-reset-player-account');
     if (resetPlayerAccountBtn) {
