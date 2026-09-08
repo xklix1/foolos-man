@@ -2162,7 +2162,7 @@ const UIController = (() => {
     const timeEl = document.getElementById('afk-manager-time-left');
     const btnTextEl = document.getElementById('btn-renew-afk-text');
 
-    const now = Date.now();
+    const now = (window.AppDB && typeof window.AppDB.getTrustedNow === 'function') ? window.AppDB.getTrustedNow() : Date.now();
     const expiry = s.afkManagerExpiresAt || 0;
     const remainingMs = Math.max(0, expiry - now);
 
@@ -3183,7 +3183,11 @@ const UIController = (() => {
     // 12-Hour AFK Auto-Manager Renewal Button
     const renewAfkBtn = document.getElementById('btn-renew-afk-manager');
     if (renewAfkBtn) {
-      renewAfkBtn.addEventListener('click', () => {
+      const handleRenewAfk = (e) => {
+        if (e) {
+          if (typeof e.preventDefault === 'function') e.preventDefault();
+          if (typeof e.stopPropagation === 'function') e.stopPropagation();
+        }
         try {
           const res = GameEngine.renewAfkManager();
           playMenuSound('success');
@@ -3192,7 +3196,8 @@ const UIController = (() => {
         } catch (err) {
           showToast('خطأ التجديد', err.message,'error');
         }
-      });
+      };
+      renewAfkBtn.onclick = handleRenewAfk;
     }
 
     // Tax Authority Panel Buttons
