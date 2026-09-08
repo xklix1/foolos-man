@@ -4905,6 +4905,8 @@
 
       tbody.innerHTML ='';
       transfers.forEach(trf => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-slate-800/50 hover:bg-slate-800/40 transition';
         const rawTime = trf.created_at || trf.createdAt || trf.timestamp || Date.now();
         const dateObj = new Date(rawTime);
         const isValidDate = !isNaN(dateObj.getTime());
