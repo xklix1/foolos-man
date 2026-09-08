@@ -2568,9 +2568,9 @@ const GameEngine = (() => {
       }
 
       // Calculate offline idle earnings if returning after being away (Requires active 12-hour AFK Manager)
-      if (dbState.lastActiveTimestamp && dbState.lastActiveTimestamp > 0) {
+      const lastSeenServer = Number(dbState.lastActiveTimestamp || dbState.lastSeen || dbState.last_seen || (dbState.state && (dbState.state.lastActiveTimestamp || dbState.state.lastSeen)) || 0);
+      if (lastSeenServer > 0) {
         const now = getTrustedNow();
-        const lastSeenServer = Number(dbState.lastActiveTimestamp || dbState.lastSeen || 0);
 
         // Anti-Time Travel Audit (Idea 3)
         let timeTravelFlagged = false;

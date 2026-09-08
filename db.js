@@ -1037,8 +1037,8 @@ var AppDB = (() => {
       stateObj.jailTimer = Number(row.jail_timer || 0);
       stateObj.afkManagerExpiresAt = Number(row.afk_manager_expires_at || 0);
       stateObj.totalTaxesPaid = Number(row.total_taxes_paid || 0);
-      stateObj.pin = row.pin || stateObj.pin;
       stateObj.lastSeen = Number(row.last_seen || Date.now());
+      stateObj.lastActiveTimestamp = Number(row.last_seen || (row.state && (row.state.lastActiveTimestamp || row.state.lastSeen)) || stateObj.lastSeen || Date.now());
       stateObj.adminModifiedTimestamp = Number(row.admin_modified_timestamp || 0);
       stateObj._loadedFromCloud = true;
 
