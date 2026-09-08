@@ -2181,7 +2181,7 @@ const GameEngine = (() => {
     }
 
     // 6. Investments duration counters (Real-time and offline timestamp accurate)
-    const nowTimestamp = Date.now();
+    const nowTimestamp = getTrustedNow();
     const remainingInvestments = [];
     state.investments.forEach(inv => {
       if (inv.maturesAt) {
@@ -2212,7 +2212,7 @@ const GameEngine = (() => {
     // 6.5 Smuggling jobs counter & completion
     if (state.activeSmugglingJobs && state.activeSmugglingJobs.length > 0) {
       const remainingJobs = [];
-      const nowMs = Date.now();
+      const nowMs = getTrustedNow();
       state.activeSmugglingJobs.forEach(job => {
         if (nowMs >= job.endTime) {
           const route = SMUGGLING_ROUTES[job.routeId];
@@ -2779,7 +2779,7 @@ const GameEngine = (() => {
   function renewAfkManager() {
     if (!activeUsername) throw new Error("لا توجد جلسة لاعب نشطة.");
     const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
-    state.afkManagerExpiresAt = Date.now() + TWELVE_HOURS_MS;
+    state.afkManagerExpiresAt = getTrustedNow() + TWELVE_HOURS_MS;
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
     return {
@@ -2801,8 +2801,9 @@ const GameEngine = (() => {
     if (!job) throw new Error("الوظيفة غير صالحة.");
 
     // Enforce 2.5s shift cooldown (reduced 15% if cronos_gear active)
-    if (state.workCooldownUntil && Date.now() < state.workCooldownUntil) {
-      const remSec = ((state.workCooldownUntil - Date.now()) / 1000).toFixed(1);
+    const nowTrusted = getTrustedNow();
+    if (state.workCooldownUntil && nowTrusted < state.workCooldownUntil) {
+      const remSec = ((state.workCooldownUntil - nowTrusted) / 1000).toFixed(1);
       throw new Error(`أنت مرهق من نوبة العمل السابقة! يرجى أخذ استراحة (${remSec} ثانية).`);
     }
 
@@ -2817,7 +2818,7 @@ const GameEngine = (() => {
 
     const hasCronos = Boolean(state.inventory && state.inventory.cronos_gear > 0);
     const workCdMs = Math.floor(2500 * (hasCronos ? 0.85 : 1.0));
-    state.workCooldownUntil = Date.now() + workCdMs;
+    state.workCooldownUntil = nowTrusted + workCdMs;
     state.dailyWork.shifts = (state.dailyWork.shifts || 0) + 1;
 
     // Calculate XP boosters & energy drink salary multipliers
@@ -3659,7 +3660,7 @@ const GameEngine = (() => {
 
     state.cash -= amount;
     if (!state.investments) state.investments = [];
-    const nowTime = Date.now();
+    const nowTime = getTrustedNow();
     state.investments.push({
       id: plan.id,
       name: plan.name,
