@@ -5256,10 +5256,13 @@
         // 4. No vowels at all in an English/alphanumeric username of length >= 3 (e.g. qwx, zxc, fgh)
         if (/^[a-z0-9_-]{3,}$/i.test(n) && !/[aeiouy]/i.test(n)) return true;
 
-        // 5. Repeated characters (3 or more identical letters/digits in a row, e.g. aaa, fff, 999)
-        if (/(.)\1{2,}/.test(n)) return true;
+        // 5. Repeated characters (2 or more identical letters/digits in a row, e.g. aa, bb, cc, 11, aaa, fff, 999)
+        if (/(.)\1/.test(n)) return true;
 
-        // 6. English keyboard slide patterns (3+ chars)
+        // 6. 3-character username rule
+        if (n.length === 3) return true;
+
+        // 7. English keyboard slide patterns (3+ chars)
         const kbPatterns = [
           'qwe','wer','ert','rty','tyu','yui','uio','iop',
           'asd','sdf','dfg','fgh','ghj','hjk','jkl',
@@ -5272,7 +5275,7 @@
           if (n.includes(kbPatterns[i])) return true;
         }
 
-        // 7. Arabic keyboard slide patterns (3+ chars)
+        // 8. Arabic keyboard slide patterns (3+ chars)
         const arKbPatterns = [
           'شسب','سيب','يبل','بلا','لات','اتن','تنم','نمك','مكط',
           'ضصث','صثق','ثقف','قفع','فعل','علف','خحه','حخه','عغب','غبا','باي'
@@ -5281,7 +5284,7 @@
           if (n.includes(arKbPatterns[i])) return true;
         }
 
-        // 8. High consonant ratio for short names (4+ chars with 0 vowels)
+        // 9. High consonant ratio for short names (4+ chars with 0 vowels)
         if (n.length >= 4 && !/[aeiouy]/i.test(n)) return true;
 
         return false;
@@ -5290,7 +5293,7 @@
       // Filter feeder accounts based on exact criteria:
       // 1. Has ZERO businesses/projects/assets/cars/stocks.
       // 2. EXCEPTION: Exclude any account that has ever purchased a top-up package (UNCONDITIONAL).
-      // 3. Username is gibberish OR generated bot pattern (Qqd, Qqa, Nnn, Bbb, Vvv, Ccc) OR has redeemed gift code without projects.
+      // 3. Username is gibberish OR generated bot pattern (Qqd, Qqa, Nnn, Bbb, Vvv, Ccc) OR has redeemed gift code without projects OR length is 3 OR contains consecutive duplicate letters.
       const fakeAccounts = players.filter(p => {
         if (p.isAdmin || p.is_admin || p.isBanned || p.is_banned) return false;
         
@@ -5333,7 +5336,7 @@
           return false; // Has active projects! Not a 0-biz feeder.
         }
 
-        // --- RULE 3: GIBBERISH / BOT PATTERN USERNAME DETECTION ---
+        // --- RULE 3: GIBBERISH / BOT PATTERN / 3-CHAR / REPEATED CHAR USERNAME DETECTION ---
         const isGibberish = isGibberishUsername(uname);
 
         const nLower = uname.toLowerCase();
@@ -5353,7 +5356,10 @@
           (Array.isArray(pState.redeemedCodes) && pState.redeemedCodes.length > 0)
         );
 
-        return isGibberish || isShortBotPattern || hasRedeemedGiftCode;
+        const isThreeChars = (nLower.length === 3);
+        const hasDoubleRepeatedLetter = /(.)\1/.test(nLower);
+
+        return isGibberish || isShortBotPattern || hasRedeemedGiftCode || isThreeChars || hasDoubleRepeatedLetter;
       });
 
       if (fakeAccounts.length === 0) {

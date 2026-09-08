@@ -494,10 +494,11 @@ var AppDB = (() => {
   function isGibberishName(name) {
     const n = (name || '').toLowerCase().trim();
     if (!n || n.length < 3) return false;
+    if (n.length === 3) return true;
+    if (/(.)\1/.test(n)) return true;
     if (/^\d+$/.test(n)) return true;
     if (/[bcdfghjklmnpqrstvwxyz]{3,}/i.test(n)) return true;
     if (/^[a-z0-9_-]{3,}$/i.test(n) && !/[aeiouy]/i.test(n)) return true;
-    if (/(.)\1{2,}/.test(n)) return true;
     const kb = ['qwe','wer','ert','rty','tyu','yui','uio','iop','asd','sdf','dfg','fgh','ghj','hjk','jkl','zxc','xcv','cvb','vbn','bnm','qaz','wsx','edc','rfv','tgb','yhn','ujm','123','234','345','456','567','678','789','987','876','765','654','543','432','321'];
     for (let i = 0; i < kb.length; i++) {
       if (n.includes(kb[i])) return true;
