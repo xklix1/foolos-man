@@ -21,9 +21,11 @@ var AppDB = (() => {
   let _supabaseClient = null;
 
   // ─────────────────────────────────────────────
-  //  HTTP HELPER (POSTGREST DIRECT REST ENGINE)
+  //  SECURE SERVER-ANCHORED MONOTONIC TIME ENGINE
+  //  (IMMUNE TO SYSTEM CLOCK TAMPERING / TIME CHEATS)
   // ─────────────────────────────────────────────
-  let _serverTimeOffset = 0;
+  let _baseServerTime = Date.now();
+  let _basePerfTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : 0;
   let _hasServerTimeSynced = false;
 
   function _updateServerTimeFromHeader(dateHeader) {
@@ -31,14 +33,19 @@ var AppDB = (() => {
     try {
       const serverMs = new Date(dateHeader).getTime();
       if (!isNaN(serverMs) && serverMs > 0) {
-        _serverTimeOffset = serverMs - Date.now();
+        _baseServerTime = serverMs;
+        _basePerfTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : 0;
         _hasServerTimeSynced = true;
       }
     } catch (e) {}
   }
 
   function getTrustedNow() {
-    return Date.now() + _serverTimeOffset;
+    if (typeof performance !== 'undefined' && performance.now) {
+      const elapsed = performance.now() - _basePerfTime;
+      return _baseServerTime + Math.floor(elapsed);
+    }
+    return Date.now();
   }
 
   async function fetchServerTime() {

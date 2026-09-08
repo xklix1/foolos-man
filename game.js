@@ -4434,7 +4434,7 @@ const GameEngine = (() => {
     if (!state.tradeCompany.activeExports) state.tradeCompany.activeExports = [];
 
     // Auto-resolve any arrived imports and deliver exports
-    const nowMs = Date.now();
+    const nowMs = getTrustedNow();
     state.tradeCompany.activeImports.forEach(imp => {
       if (!imp.arrived && nowMs >= imp.arrivalTime) {
         imp.arrived = true;
@@ -4491,7 +4491,7 @@ const GameEngine = (() => {
     if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك إدارة عمليات الاستيراد والتصدير.");
     ensureDailyTradeReset();
 
-    const nowMs = Date.now();
+    const nowMs = getTrustedNow();
     (state.tradeCompany.activeImports || []).forEach(imp => {
       if (!imp.arrived && nowMs >= imp.arrivalTime) {
         imp.arrived = true;
@@ -4658,8 +4658,9 @@ const GameEngine = (() => {
     if (index === -1) throw new Error("عقد التصدير المحدد غير موجود.");
     const order = state.tradeCompany.activeExports[index];
 
-    if (Date.now() < order.deliveryTime && !order.delivered) {
-      const remSec = Math.ceil((order.deliveryTime - Date.now()) / 1000);
+    const currentNow = getTrustedNow();
+    if (currentNow < order.deliveryTime && !order.delivered) {
+      const remSec = Math.ceil((order.deliveryTime - currentNow) / 1000);
       throw new Error(`الشحنة ما زالت في طريقها للعميل! متبقي على الوصول والتسليم: ${remSec} ثانية.`);
     }
 

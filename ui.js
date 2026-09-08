@@ -14331,6 +14331,10 @@ const UIController = (() => {
   let activeTradeSubtab ='catalog';
   let preselectedExportCommodity = null;
 
+  function getTrustedNowUI() {
+    return (window.AppDB && typeof window.AppDB.getTrustedNow === 'function') ? window.AppDB.getTrustedNow() : Date.now();
+  }
+
   function switchTradeSubtab(subtabId) {
     activeTradeSubtab = subtabId;
     const subtabs = ['catalog','warehouse','buyers','shipments'];
@@ -14486,7 +14490,7 @@ const UIController = (() => {
 
     // Active Shipments Badge (Only count shipments currently in transit or waiting claim)
     const activeBadge = document.getElementById('trade-active-badge');
-    const nowTs = Date.now();
+    const nowTs = getTrustedNowUI();
     const activeCount = (tradeInfo.activeImports ? tradeInfo.activeImports.filter(e => !e.arrived && nowTs < e.arrivalTime).length : 0) 
                       + (tradeInfo.activeExports ? tradeInfo.activeExports.filter(e => !e.claimed).length : 0);
     if (activeBadge) {
@@ -14519,7 +14523,7 @@ const UIController = (() => {
     const tierMeta = {'air_cargo': { badge:'شحن جوي سريع (Air Express)', color:'border-sky-500/30 bg-sky-500/10 text-sky-300' },'regional_freight': { badge:'شحن إقليمي بحري/بري (Freight)', color:'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' },'ocean_shipping': { badge:'شحن بحري حاويات (Ocean Shipping)', color:'border-purple-500/30 bg-purple-500/10 text-purple-300' },'mega_oceanic': { badge:'سفن عابرة للمحيطات (Mega Trans-Oceanic)', color:'border-amber-500/30 bg-amber-500/10 text-amber-300' }
     };
 
-    const activeImportsCount = (tradeInfo.activeImports || []).filter(e => !e.arrived && Date.now() < e.arrivalTime).length;
+    const activeImportsCount = (tradeInfo.activeImports || []).filter(e => !e.arrived && getTrustedNowUI() < e.arrivalTime).length;
     const isImportFleetFull = activeImportsCount >= 2;
 
     Object.keys(commodities).forEach(key => {
@@ -14936,7 +14940,7 @@ const UIController = (() => {
     // Render Active Imports
     imports.forEach(order => {
       const comm = commodities[order.commodityId] || { name:'بضاعة استيراد', icon:'' };
-      const now = Date.now();
+      const now = getTrustedNowUI();
       const isArrived = order.arrived || (now >= order.arrivalTime);
       const totalDur = (order.arrivalTime - order.startTime) || 1;
       const progress = isArrived ? 100 : Math.min(100, Math.max(0, ((now - order.startTime) / totalDur) * 100));
@@ -14982,7 +14986,7 @@ const UIController = (() => {
     // Render Active Exports
     exports.forEach(order => {
       const comm = commodities[order.commodityId] || { name: order.commodityName ||'بضاعة تصدير', icon:'' };
-      const now = Date.now();
+      const now = getTrustedNowUI();
       const isDelivered = order.delivered || (now >= order.deliveryTime);
       const totalDur = (order.deliveryTime - order.startTime) || 1;
       const progress = isDelivered ? 100 : Math.min(100, Math.max(0, ((now - order.startTime) / totalDur) * 100));
@@ -15061,7 +15065,7 @@ const UIController = (() => {
 
     const imports = tradeInfo.activeImports || [];
     const exports = tradeInfo.activeExports || [];
-    const now = Date.now();
+    const now = getTrustedNowUI();
     let requiresFullReRender = false;
 
     imports.forEach(order => {
