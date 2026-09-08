@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تقرير التحديث الاقتصادي - رأس المال (تسهيل 15%)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-main: #0a0c10;
+      --bg-card: #12161f;
+      --bg-card-hover: #181e2b;
+      --gold-primary: #d4af37;
+      --gold-light: #f3e5ab;
+      --gold-dark: #aa820a;
+      --green-accent: #10b981;
+      --green-glow: rgba(16, 185, 129, 0.2);
+      --red-accent: #ef4444;
+      --border-color: rgba(212, 175, 55, 0.2);
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Cairo', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+        linear-gradient(180deg, #07090d 0%, #0d1117 100%);
+      color: #fff;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      position: relative;
+    }
+
+    .header-logo {
+      width: 140px;
+      height: auto;
+      margin-bottom: 15px;
+      filter: drop-shadow(0 0 25px rgba(212, 175, 55, 0.4));
+    }
+
+    .header h1 {
+      font-size: 34px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #fff 20%, var(--gold-light) 60%, var(--gold-primary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+      letter-spacing: -0.5px;
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(212, 175, 55, 0.12);
+      border: 1px solid var(--border-color);
+      padding: 6px 18px;
+      border-radius: 999px;
+      color: var(--gold-light);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    /* Grid Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 25px;
+      margin-bottom: 35px;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Section Card */
+    .section-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
+    }
+
+    .section-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--gold-primary), transparent);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .section-title-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--gold-light);
+    }
+
+    .section-title-left i {
+      color: var(--gold-primary);
+      font-size: 22px;
+    }
+
+    .tag {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--green-accent);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      font-weight: 700;
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: right;
+    }
+
+    th {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 700;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 6px;
+    }
+
+    td {
+      padding: 12px;
+      font-size: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: var(--bg-card-hover);
+    }
+
+    .item-name {
+      font-weight: 700;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .val-before {
+      color: #94a3b8;
+      text-decoration: line-through;
+      font-size: 13px;
+    }
+
+    .val-after {
+      color: var(--green-accent);
+      font-weight: 800;
+      font-size: 15px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .val-after i {
+      font-size: 10px;
+    }
+
+    /* Summary Highlights */
+    .highlight-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 35px;
+    }
+
+    @media (max-width: 768px) {
+      .highlight-bar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .highlight-box {
+      background: linear-gradient(145deg, rgba(26, 31, 44, 0.9), rgba(18, 22, 31, 0.9));
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .highlight-box .icon {
+      font-size: 24px;
+      color: var(--gold-primary);
+      margin-bottom: 8px;
+    }
+
+    .highlight-box .title {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .highlight-box .value {
+      font-size: 22px;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .highlight-box .sub {
+      font-size: 12px;
+      color: var(--green-accent);
+      font-weight: 700;
+    }
+
+    /* Footer Note */
+    .footer-note {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      padding: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <img src="logo.png" alt="شعار رأس المال" class="header-logo" style="width: 180px; height: auto; margin-bottom: 8px;">
+      <h1>تقرير الموازنة الاقتصادية: خطة تسهيل اللعبة بنسبة 15%</h1>
+      <div class="badge-pill">
+        <i class="fa-solid fa-chart-line"></i> لعبة رأس المال (Ra's Al-Mal Tycoon) - معاينة التعديلات المقترحة
+      </div>
+    </div>
+
+    <!-- Quick Highlights -->
+    <div class="highlight-bar">
+      <div class="highlight-box">
+        <div class="icon"><i class="fa-solid fa-briefcase"></i></div>
+        <div class="title">الرواتب والدخل</div>
+        <div class="value">+15%</div>
+        <div class="sub">زيادة فورية لكافة المهن</div>
+      </div>
+      <div class="highlight-box">
+        <div class="icon"><i class="fa-solid fa-award"></i></div>
+        <div class="title">ترقيات المهن</div>
+        <div class="value">-15% XP</div>
+        <div class="sub">ترقيات وظيفية أسرع</div>
+      </div>
+      <div class="highlight-box">
+        <div class="icon"><i class="fa-solid fa-shop"></i></div>
+        <div class="title">أسعار المشاريع</div>
+        <div class="value">-15%</div>
+        <div class="sub">خصم على تكلفة الشراء</div>
+      </div>
+      <div class="highlight-box">
+        <div class="icon"><i class="fa-solid fa-building-columns"></i></div>
+        <div class="title">عوائد الاستثمار</div>
+        <div class="value">+15%</div>
+        <div class="sub">أرباح أعلى للودائع</div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="dashboard-grid">
+
+      <!-- Panel 1: Jobs -->
+      <div class="section-card">
+        <div class="section-title">
+          <div class="section-title-left">
+            <i class="fa-solid fa-user-tie"></i>
+            <span>قطاع الوظائف والترقيات المهنية</span>
+          </div>
+          <span class="tag">10 مراتب وظيفية</span>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>المسمى الوظيفي</th>
+                <th>الراتب (قبل)</th>
+                <th>الراتب (بعد)</th>
+                <th>الخبرة المطلوبة للترقية</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-user"></i> عامل باليومية</td>
+                <td class="val-before">6 ج / تيك</td>
+                <td class="val-after">7 ج / تيك</td>
+                <td>0 XP</td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-cash-register"></i> محاسب صندوق (كاشير)</td>
+                <td class="val-before">12 ج / تيك</td>
+                <td class="val-after">14 ج / تيك</td>
+                <td><span class="val-before">180 XP</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--gold-light);">153 XP</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-calculator"></i> محاسب مالي قانوني</td>
+                <td class="val-before">24 ج / تيك</td>
+                <td class="val-after">28 ج / تيك</td>
+                <td><span class="val-before">600 XP</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--gold-light);">510 XP</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-user-gear"></i> مدير فرع وتطوير</td>
+                <td class="val-before">50 ج / تيك</td>
+                <td class="val-after">58 ج / تيك</td>
+                <td><span class="val-before">2,200 XP</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--gold-light);">1,870 XP</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-chess-knight"></i> مدير تنفيذي للمجموعة</td>
+                <td class="val-before">95 ج / تيك</td>
+                <td class="val-after">110 ج / تيك</td>
+                <td><span class="val-before">6,500 XP</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--gold-light);">5,525 XP</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-crown"></i> رئيس مجلس الإدارة</td>
+                <td class="val-before">180 ج / تيك</td>
+                <td class="val-after">210 ج / تيك</td>
+                <td><span class="val-before">18,000 XP</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--gold-light);">15,300 XP</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-scale-balanced"></i> مستشار اقتصادي ووزير سابق</td>
+                <td class="val-before">320 ج / تيك</td>
+                <td class="val-after">370 ج / تيك</td>
+                <td><span class="val-before">45,000 XP</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--gold-light);">38,250 XP</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-landmark"></i> محافظ البنك المركزي</td>
+                <td class="val-before">550 ج / تيك</td>
+                <td class="val-after">635 ج / تيك</td>
+                <td><span class="val-before">120,000 XP</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--gold-light);">102,000 XP</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-gem"></i> رئيس صندوق استثمار سيادي</td>
+                <td class="val-before">950 ج / تيك</td>
+                <td class="val-after">1,100 ج / تيك</td>
+                <td><span class="val-before">280,000 XP</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--gold-light);">238,000 XP</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-star"></i> إمبراطور كبار المستثمرين</td>
+                <td class="val-before">1,600 ج / تيك</td>
+                <td class="val-after">1,850 ج / تيك</td>
+                <td><span class="val-before">650,000 XP</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--gold-light);">552,500 XP</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Panel 2: Businesses -->
+      <div class="section-card">
+        <div class="section-title">
+          <div class="section-title-left">
+            <i class="fa-solid fa-city"></i>
+            <span>قطاع الشركات والمشاريع التجارية</span>
+          </div>
+          <span class="tag">11 مشروع استثماري</span>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>اسم المشروع</th>
+                <th>سعر الشراء (قبل)</th>
+                <th>سعر الشراء (بعد)</th>
+                <th>الطلب الأساسي (أرباح)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-store"></i> كشك حلوى وجرائد</td>
+                <td class="val-before">1,500 ج</td>
+                <td class="val-after">1,275 ج</td>
+                <td><span class="val-before">25</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--green-accent);">29</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-mug-hot"></i> عربة قهوة ومأكولات</td>
+                <td class="val-before">6,800 ج</td>
+                <td class="val-after">5,780 ج</td>
+                <td><span class="val-before">35</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--green-accent);">40</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-laptop-code"></i> شركة برمجيات وتطبيقات</td>
+                <td class="val-before">140,000 ج</td>
+                <td class="val-after">119,000 ج</td>
+                <td><span class="val-before">45</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--green-accent);">52</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-truck-fast"></i> مجمع خدمات لوجستية</td>
+                <td class="val-before">780,000 ج</td>
+                <td class="val-after">663,000 ج</td>
+                <td><span class="val-before">80</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--green-accent);">92</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-cart-shopping"></i> سلسلة سوبرماركت وتجزئة</td>
+                <td class="val-before">3,200,000 ج</td>
+                <td class="val-after">2,720,000 ج</td>
+                <td><span class="val-before">140</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--green-accent);">161</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-solar-panel"></i> مصنع ألواح الطاقة الشمسية</td>
+                <td class="val-before">14,000,000 ج</td>
+                <td class="val-after">11,900,000 ج</td>
+                <td><span class="val-before">220</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--green-accent);">253</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-hospital"></i> مستشفى ومجمع طبي تخصصي</td>
+                <td class="val-before">55,000,000 ج</td>
+                <td class="val-after">46,750,000 ج</td>
+                <td><span class="val-before">350</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--green-accent);">402</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-film"></i> مؤسسة إنتاج إعلامي وسينمائي</td>
+                <td class="val-before">160,000,000 ج</td>
+                <td class="val-after">136,000,000 ج</td>
+                <td><span class="val-before">500</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--green-accent);">575</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-building-columns"></i> بنك استثماري ووساطة مالية</td>
+                <td class="val-before">520,000,000 ج</td>
+                <td class="val-after">442,000,000 ج</td>
+                <td><span class="val-before">700</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--green-accent);">805</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-oil-well"></i> مجمع مصافي البترول والطاقة</td>
+                <td class="val-before">1.60 مليار ج</td>
+                <td class="val-after">1.36 مليار ج</td>
+                <td><span class="val-before">750</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--green-accent);">862</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-shuttle-space"></i> مؤسسة استكشاف الفضاء</td>
+                <td class="val-before">4.80 مليار ج</td>
+                <td class="val-after">4.08 مليار ج</td>
+                <td><span class="val-before">800</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong style="color:var(--green-accent);">920</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Panel 3: Assets & Real Estate -->
+      <div class="section-card">
+        <div class="section-title">
+          <div class="section-title-left">
+            <i class="fa-solid fa-hotel"></i>
+            <span>قطاع الأصول والعقارات الفاخرة</span>
+          </div>
+          <span class="tag">8 أصول عقارية</span>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>الأصل / العقار</th>
+                <th>سعر الشراء (قبل)</th>
+                <th>سعر الشراء (بعد)</th>
+                <th>عائد الإيجار (قبل ⬅ بعد)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-house"></i> شقة سكنية مؤجرة</td>
+                <td class="val-before">250,000 ج</td>
+                <td class="val-after">212,500 ج</td>
+                <td><span class="val-before">85 ج</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong class="val-after" style="font-size:14px;">98 ج / تيك</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-building"></i> مبنى مكاتب تجارية</td>
+                <td class="val-before">1,600,000 ج</td>
+                <td class="val-after">1,360,000 ج</td>
+                <td><span class="val-before">520 ج</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong class="val-after" style="font-size:14px;">598 ج / تيك</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-tree-city"></i> قصر ريفي فاخر</td>
+                <td class="val-before">7,200,000 ج</td>
+                <td class="val-after">6,120,000 ج</td>
+                <td><span class="val-before">2,400 ج</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong class="val-after" style="font-size:14px;">2,760 ج / تيك</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-tower-observation"></i> برج ناطحة سحاب</td>
+                <td class="val-before">35,000,000 ج</td>
+                <td class="val-after">29,750,000 ج</td>
+                <td><span class="val-before">11,500 ج</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong class="val-after" style="font-size:14px;">13,225 ج / تيك</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-umbrella-beach"></i> منتجع سياحي 5 نجوم</td>
+                <td class="val-before">160,000,000 ج</td>
+                <td class="val-after">136,000,000 ج</td>
+                <td><span class="val-before">52,000 ج</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong class="val-after" style="font-size:14px;">59,800 ج / تيك</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-ship"></i> يخت ملكي فاخر خاص</td>
+                <td class="val-before">650,000,000 ج</td>
+                <td class="val-after">552,500,000 ج</td>
+                <td><span class="val-before">210,000 ج</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong class="val-after" style="font-size:14px;">241,500 ج / تيك</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-volcano"></i> جزيرة استوائية خاصة</td>
+                <td class="val-before">2.40 مليار ج</td>
+                <td class="val-after">2.04 مليار ج</td>
+                <td><span class="val-before">750,000 ج</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong class="val-after" style="font-size:14px;">862,500 ج / تيك</strong></td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-satellite"></i> محطة مدارية فضائية</td>
+                <td class="val-before">9.20 مليار ج</td>
+                <td class="val-after">7.82 مليار ج</td>
+                <td><span class="val-before">3.0M ج</span> <i class="fa-solid fa-arrow-left" style="color:var(--gold-primary); font-size:10px; margin:0 4px;"></i> <strong class="val-after" style="font-size:14px;">3.45M ج / تيك</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Panel 4: Investments, Cooldowns & Black Market -->
+      <div class="section-card">
+        <div class="section-title">
+          <div class="section-title-left">
+            <i class="fa-solid fa-vault"></i>
+            <span>الودائع البنكية وفترات الانتظار</span>
+          </div>
+          <span class="tag">الاستثمار & الحماية</span>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>النوع / العملية</th>
+                <th>القيمة السابقة</th>
+                <th>القيمة بعد التسهيل</th>
+                <th>ملاحظة الأثر</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-clock"></i> وديعة بنكية سريعة (ساعة)</td>
+                <td class="val-before">+4.0% عائد</td>
+                <td class="val-after">+4.6% عائد</td>
+                <td>أرباح أسرع للسيولة اليومية</td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-hand-holding-dollar"></i> صندوق استثمار عقاري (3 ساعات)</td>
+                <td class="val-before">+12.0% عائد</td>
+                <td class="val-after">+13.8% عائد</td>
+                <td>عائد متوسط ممتاز</td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-chart-pie"></i> صندوق أسهم وتحوط (8 ساعات)</td>
+                <td class="val-before">+25.0% عائد</td>
+                <td class="val-after">+28.75% عائد</td>
+                <td>مثالي لفترات عدم التواجد</td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-rocket"></i> صندوق الاكتتابات (18 ساعة)</td>
+                <td class="val-before">+45.0% عائد</td>
+                <td class="val-after">+51.75% عائد</td>
+                <td>تضاعف رأس المال بمرونة</td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-crown"></i> صندوق الثروة الإمبراطوري (36 ساعة)</td>
+                <td class="val-before">+80.0% عائد</td>
+                <td class="val-after">+92.0% عائد</td>
+                <td>أعلى ربح استثماري في اللعبة</td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-handcuffs"></i> فترة سجن تهريب السيجار</td>
+                <td class="val-before">20 ثانية</td>
+                <td class="val-after">17 ثانية</td>
+                <td>تقليل وقت العقوبة عند الفشل</td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-bolt"></i> انتظار مشروب الطاقة</td>
+                <td class="val-before">8 دقائق</td>
+                <td class="val-after">6.8 دقائق</td>
+                <td>جاهزية أسرع للاستخدام</td>
+              </tr>
+              <tr>
+                <td class="item-name"><i class="fa-solid fa-magnifying-glass-chart"></i> انتظار ماسح البورصة</td>
+                <td class="val-before">20 دقيقة</td>
+                <td class="val-after">17 دقيقة</td>
+                <td>استجابة أسرع لتحركات السوق</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer Note -->
+    <div class="footer-note">
+      جميع الحقوق محفوظة &copy; لعبة رأس المال (Ra's Al-Mal Tycoon) &bull; تم إعداد هذا التقرير التفصيلي لمعاينة توازن الاقتصاد بدقة 100%.
+    </div>
+
+  </div>
+
+</body>
+</html>

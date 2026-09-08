@@ -19,24 +19,24 @@ const GameEngine = (() => {
   // --- Game Configurations & Data Tables ---
 
   const JOBS = {
-    worker: { id:'worker', name:'عامل باليومية', salary: 6, xpReward: 2, xpNeeded: 0 },
-    cashier: { id:'cashier', name:'محاسب صندوق', salary: 12, xpReward: 4, xpNeeded: 180 },
-    accountant: { id:'accountant', name:'محاسب مالي قانوني', salary: 24, xpReward: 8, xpNeeded: 600 },
-    manager: { id:'manager', name:'مدير فرع وتطوير', salary: 50, xpReward: 14, xpNeeded: 2200 },
-    director: { id:'director', name:'مدير تنفيذي للمجموعة', salary: 95, xpReward: 24, xpNeeded: 6500 },
-    ceo: { id:'ceo', name:'رئيس مجلس الإدارة', salary: 180, xpReward: 38, xpNeeded: 18000 },
-    consultant: { id:'consultant', name:'مستشار اقتصادي ووزير سابق', salary: 320, xpReward: 60, xpNeeded: 45000 },
-    bank_governor: { id:'bank_governor', name:'محافظ البنك المركزي', salary: 550, xpReward: 95, xpNeeded: 120000 },
-    sovereign_head: { id:'sovereign_head', name:'رئيس صندوق الاستثمار السيادي', salary: 950, xpReward: 140, xpNeeded: 280000 },
-    oligarch: { id:'oligarch', name:'إمبراطور كبار المستثمرين', salary: 1600, xpReward: 220, xpNeeded: 650000 }
+    worker: { id:'worker', name:'عامل باليومية', salary: 7, xpReward: 2, xpNeeded: 0 },
+    cashier: { id:'cashier', name:'محاسب صندوق', salary: 14, xpReward: 4, xpNeeded: 153 },
+    accountant: { id:'accountant', name:'محاسب مالي قانوني', salary: 28, xpReward: 8, xpNeeded: 510 },
+    manager: { id:'manager', name:'مدير فرع وتطوير', salary: 58, xpReward: 14, xpNeeded: 1870 },
+    director: { id:'director', name:'مدير تنفيذي للمجموعة', salary: 110, xpReward: 24, xpNeeded: 5525 },
+    ceo: { id:'ceo', name:'رئيس مجلس الإدارة', salary: 210, xpReward: 38, xpNeeded: 15300 },
+    consultant: { id:'consultant', name:'مستشار اقتصادي ووزير سابق', salary: 370, xpReward: 60, xpNeeded: 38250 },
+    bank_governor: { id:'bank_governor', name:'محافظ البنك المركزي', salary: 635, xpReward: 95, xpNeeded: 102000 },
+    sovereign_head: { id:'sovereign_head', name:'رئيس صندوق الاستثمار السيادي', salary: 1100, xpReward: 140, xpNeeded: 238000 },
+    oligarch: { id:'oligarch', name:'إمبراطور كبار المستثمرين', salary: 1850, xpReward: 220, xpNeeded: 552500 }
   };
 
   const BUSINESSES = {
     kiosk: {
       id:'kiosk',
       name:'كشك حلوى وجرائد ومشروبات',
-      cost: 1500,
-      baseDemand: 25,
+      cost: 1275,
+      baseDemand: 29,
       optimumPrice: 20,
       costOfGoods: 10,
       maxWorkers: 5,
@@ -46,8 +46,8 @@ const GameEngine = (() => {
     coffee: {
       id:'coffee',
       name:'عربة قهوة ومأكولات خفيفة',
-      cost: 6800,
-      baseDemand: 35,
+      cost: 5780,
+      baseDemand: 40,
       optimumPrice: 32,
       costOfGoods: 16,
       maxWorkers: 8,
@@ -57,8 +57,8 @@ const GameEngine = (() => {
     tech: {
       id:'tech',
       name:'شركة برمجيات وتطبيقات',
-      cost: 140000,
-      baseDemand: 45,
+      cost: 119000,
+      baseDemand: 52,
       optimumPrice: 120,
       costOfGoods: 45,
       maxWorkers: 10,
@@ -68,8 +68,8 @@ const GameEngine = (() => {
     logistics: {
       id:'logistics',
       name:'مجمع خدمات لوجستية وشحن',
-      cost: 780000,
-      baseDemand: 80,
+      cost: 663000,
+      baseDemand: 92,
       optimumPrice: 260,
       costOfGoods: 100,
       maxWorkers: 12,
@@ -79,8 +79,8 @@ const GameEngine = (() => {
     supermarket: {
       id:'supermarket',
       name:'سلسلة سوبرماركت وتجزئة',
-      cost: 3200000,
-      baseDemand: 140,
+      cost: 2720000,
+      baseDemand: 161,
       optimumPrice: 500,
       costOfGoods: 200,
       maxWorkers: 15,
@@ -90,8 +90,8 @@ const GameEngine = (() => {
     solar_factory: {
       id:'solar_factory',
       name:'مصنع ألواح الطاقة الشمسية ️',
-      cost: 14000000,
-      baseDemand: 220,
+      cost: 11900000,
+      baseDemand: 253,
       optimumPrice: 1100,
       costOfGoods: 450,
       maxWorkers: 18,
@@ -101,8 +101,8 @@ const GameEngine = (() => {
     private_hospital: {
       id:'private_hospital',
       name:'مستشفى ومجمع طبي تخصصي',
-      cost: 55000000,
-      baseDemand: 350,
+      cost: 46750000,
+      baseDemand: 402,
       optimumPrice: 2400,
       costOfGoods: 1000,
       maxWorkers: 20,
@@ -112,8 +112,8 @@ const GameEngine = (() => {
     media_studio: {
       id:'media_studio',
       name:'مؤسسة إنتاج إعلامي وسينمائي',
-      cost: 160000000,
-      baseDemand: 500,
+      cost: 136000000,
+      baseDemand: 575,
       optimumPrice: 4500,
       costOfGoods: 1900,
       maxWorkers: 22,
@@ -123,8 +123,8 @@ const GameEngine = (() => {
     private_bank: {
       id:'private_bank',
       name:'بنك استثماري وشركة وساطة مالية ️',
-      cost: 520000000,
-      baseDemand: 700,
+      cost: 442000000,
+      baseDemand: 805,
       optimumPrice: 8800,
       costOfGoods: 3600,
       maxWorkers: 25,
@@ -134,8 +134,8 @@ const GameEngine = (() => {
     oil_refinery: {
       id:'oil_refinery',
       name:'مجمع مصافي البترول والطاقة ️',
-      cost: 1600000000,
-      baseDemand: 750,
+      cost: 1360000000,
+      baseDemand: 862,
       optimumPrice: 16000,
       costOfGoods: 7000,
       maxWorkers: 28,
@@ -145,8 +145,8 @@ const GameEngine = (() => {
     space_tech: {
       id:'space_tech',
       name:'مؤسسة استكشاف الفضاء والأقمار الصناعية',
-      cost: 4800000000,
-      baseDemand: 800,
+      cost: 4080000000,
+      baseDemand: 920,
       optimumPrice: 28000,
       costOfGoods: 12000,
       maxWorkers: 30,
@@ -156,14 +156,14 @@ const GameEngine = (() => {
   };
 
   const ASSETS = {
-    apartment: { id:'apartment', name:'شقة سكنية مؤجرة', cost: 250000, rent: 85, appreciation: 0.0004 },
-    office: { id:'office', name:'مبنى مكاتب تجارية', cost: 1600000, rent: 520, appreciation: 0.0006 },
-    mansion: { id:'mansion', name:'قصر ريفي فاخر', cost: 7200000, rent: 2400, appreciation: 0.0008 },
-    skyline_tower: { id:'skyline_tower', name:'برج ناطحة سحاب تجاري', cost: 35000000, rent: 11500, appreciation: 0.0010 },
-    luxury_resort: { id:'luxury_resort', name:'منتجع وفندق سياحي 5 نجوم', cost: 160000000, rent: 52000, appreciation: 0.0012 },
-    mega_yacht: { id:'mega_yacht', name:'يخت ملكي فاخر خاص', cost: 650000000, rent: 210000, appreciation: 0.0014 },
-    private_island: { id:'private_island', name:'جزيرة استوائية خاصة', cost: 2400000000, rent: 750000, appreciation: 0.0016 },
-    orbital_station: { id:'orbital_station', name:'محطة مدارية فضائية خاصة', cost: 9200000000, rent: 3000000, appreciation: 0.0020 }
+    apartment: { id:'apartment', name:'شقة سكنية مؤجرة', cost: 212500, rent: 98, appreciation: 0.0004 },
+    office: { id:'office', name:'مبنى مكاتب تجارية', cost: 1360000, rent: 598, appreciation: 0.0006 },
+    mansion: { id:'mansion', name:'قصر ريفي فاخر', cost: 6120000, rent: 2760, appreciation: 0.0008 },
+    skyline_tower: { id:'skyline_tower', name:'برج ناطحة سحاب تجاري', cost: 29750000, rent: 13225, appreciation: 0.0010 },
+    luxury_resort: { id:'luxury_resort', name:'منتجع وفندق سياحي 5 نجوم', cost: 136000000, rent: 59800, appreciation: 0.0012 },
+    mega_yacht: { id:'mega_yacht', name:'يخت ملكي فاخر خاص', cost: 552500000, rent: 241500, appreciation: 0.0014 },
+    private_island: { id:'private_island', name:'جزيرة استوائية خاصة', cost: 2040000000, rent: 862500, appreciation: 0.0016 },
+    orbital_station: { id:'orbital_station', name:'محطة مدارية فضائية خاصة', cost: 7820000000, rent: 3450000, appreciation: 0.0020 }
   };
 
   const STOCKS = {
@@ -380,46 +380,46 @@ const GameEngine = (() => {
       id:'short',
       name:'وديعة بنكية سريعة',
       durationTicks: 3600, // 1 hour (3,600 seconds)
-      rate: 0.04, // +4%
+      rate: 0.046, // +4.6%
       minAmount: 5000,
       maxAmount: 50000,
-      desc:'تجميد السيولة لمدة ساعة واحدة لتوفير التمويل المصرفي مقابل عائد أرباح (+4%).'
+      desc:'تجميد السيولة لمدة ساعة واحدة لتوفير التمويل المصرفي مقابل عائد أرباح (+4.6%).'
     },
     medium: {
       id:'medium',
       name:'صندوق استثمار عقاري وسندات',
       durationTicks: 10800, // 3 hours (10,800 seconds)
-      rate: 0.12, // +12%
+      rate: 0.138, // +13.8%
       minAmount: 25000,
       maxAmount: 250000,
-      desc:'استثمار مضمون في أصول إنشائية وتجارية مدرة للدخل لمدة 3 ساعات (+12%).'
+      desc:'استثمار مضمون في أصول إنشائية وتجارية مدرة للدخل لمدة 3 ساعات (+13.8%).'
     },
     long: {
       id:'long',
       name:'صندوق أسهم وتحوط دولي خاص',
       durationTicks: 28800, // 8 hours (28,800 seconds)
-      rate: 0.25, // +25%
+      rate: 0.2875, // +28.75%
       minAmount: 100000,
       maxAmount: 1000000,
-      desc:'محفظة استثمارية مغلقة في أسواق المال العالمية لمدة 8 ساعات بعوائد استثنائية (+25%).'
+      desc:'محفظة استثمارية مغلقة في أسواق المال العالمية لمدة 8 ساعات بعوائد استثنائية (+28.75%).'
     },
     venture: {
       id:'venture',
       name:'صندوق الاكتتابات والشركات المليارية',
       durationTicks: 64800, // 18 hours (64,800 seconds)
-      rate: 0.45, // +45%
+      rate: 0.5175, // +51.75%
       minAmount: 500000,
       maxAmount: 4000000,
-      desc:'استثمار استراتيجي مغلق في شركات التكنولوجيا الصاعدة لمدة 18 ساعة بعوائد فائقة (+45%).'
+      desc:'استثمار استراتيجي مغلق في شركات التكنولوجيا الصاعدة لمدة 18 ساعة بعوائد فائقة (+51.75%).'
     },
     imperial: {
       id:'imperial',
       name:'صندوق الثروة الإمبراطوري الماسي',
       durationTicks: 129600, // 36 hours (129,600 seconds)
-      rate: 0.80, // +80%
+      rate: 0.92, // +92%
       minAmount: 2000000,
       maxAmount: 15000000,
-      desc:'خزينة مقفلة لكبار أثرياء اللعبة لمدة 36 ساعة تمنح عائداً استثمارياً كبيراً (+80%).'
+      desc:'خزينة مقفلة لكبار أثرياء اللعبة لمدة 36 ساعة تمنح عائداً استثمارياً كبيراً (+92%).'
     }
   };
 
@@ -431,7 +431,7 @@ const GameEngine = (() => {
       cost: 6000,
       payout: 9500,
       successChance: 0.68,
-      jailDuration: 20,
+      jailDuration: 17,
       repGain: 5,
       repLoss: 10,
       repNeeded: 0,
@@ -446,7 +446,7 @@ const GameEngine = (() => {
       cost: 35000,
       payout: 55000,
       successChance: 0.58,
-      jailDuration: 40,
+      jailDuration: 34,
       repGain: 10,
       repLoss: 20,
       repNeeded: 0,
