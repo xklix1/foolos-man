@@ -2201,9 +2201,17 @@ var AppDB = (() => {
   }
 
   async function adminGetAllPlayers() {
-    const rows = await _api('players?select=username,pin,cash,bank,dirty_cash,net_worth,xp,title,job_id,is_admin,is_banned,jail_timer,total_taxes_paid,afk_manager_expires_at,last_seen,created_at&order=net_worth.desc');
+    const rows = await _api('players?select=username,pin,cash,bank,dirty_cash,net_worth,xp,title,job_id,is_admin,is_banned,jail_timer,total_taxes_paid,afk_manager_expires_at,last_seen,created_at,state&order=net_worth.desc');
     return (rows || []).map(r => {
-      const p = {};
+      let stateObj = {};
+      if (r.state) {
+        if (typeof r.state === 'object') stateObj = r.state;
+        else if (typeof r.state === 'string') {
+          try { stateObj = JSON.parse(r.state); } catch(e) {}
+        }
+      }
+      const p = { ...stateObj };
+      p.state = stateObj;
       p.username = r.username;
       p.pin = r.pin;
       p.cash = Number(r.cash || 0);
