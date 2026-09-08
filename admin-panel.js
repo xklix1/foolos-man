@@ -5346,40 +5346,91 @@
       }
 
       const fakeUsernames = fakeAccounts.map(p => p.username);
+      const excludedUsernames = new Set();
       
-      // Auto-fill input console for manual review/editing
       const targetInput = document.getElementById('input-admin-target-fake-users');
-      if (targetInput) {
-        targetInput.value = fakeUsernames.join(', ');
-      }
-
-      // Populate preview modal list
       const modal = document.getElementById('admin-modal-purge-preview');
       const badge = document.getElementById('admin-purge-count-badge');
       const listContainer = document.getElementById('admin-purge-preview-list');
       const confirmBtn = document.getElementById('btn-admin-confirm-purge-all');
 
-      if (badge) badge.textContent = fakeAccounts.length;
-      if (listContainer) {
-        listContainer.innerHTML = fakeAccounts.map((p, idx) => {
-          const cash = Number(p.cash || 0).toLocaleString();
-          const rawCreated = p.created_at || (p.state && (p.state.createdAt || p.state.created_at));
-          const dateStr = rawCreated ? new Date(rawCreated).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' }) : 'حديث';
-          return `
-            <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-rose-500/40 transition text-xs">
-              <div class="flex items-center gap-2">
-                <span class="text-slate-500 font-mono text-[10px] w-5 text-center">${idx + 1}.</span>
-                <span class="font-bold text-rose-300 text-sm">${escapeHtml(p.username)}</span>
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-sans">0 مشاريع (Feeder)</span>
-              </div>
-              <div class="flex items-center gap-3 text-[11px]">
-                <span class="text-emerald-400 font-bold">${cash} EGP</span>
-                <span class="text-slate-500 text-[10px]">${dateStr}</span>
-              </div>
-            </div>
-          `;
-        }).join('');
+      function updatePurgePreviewUI() {
+        const activePurgeUsernames = fakeUsernames.filter(u => !excludedUsernames.has(u));
+        
+        if (badge) {
+          badge.innerHTML = `<span class="font-bold text-rose-400 font-mono text-sm">${activePurgeUsernames.length}</span> <span class="text-slate-400 text-xs">(من أصل ${fakeAccounts.length})</span>`;
+        }
+
+        if (targetInput) {
+          targetInput.value = activePurgeUsernames.join(', ');
+        }
+
+        if (confirmBtn) {
+          const btnLabel = confirmBtn.querySelector('span');
+          if (btnLabel) {
+            btnLabel.textContent = `تصفير وحظر ومسح ${activePurgeUsernames.length} حساب محدد`;
+          }
+          confirmBtn.disabled = (activePurgeUsernames.length === 0);
+          confirmBtn.style.opacity = activePurgeUsernames.length === 0 ? '0.5' : '1.0';
+        }
+
+        if (listContainer) {
+          listContainer.innerHTML = fakeAccounts.map((p, idx) => {
+            const isExcluded = excludedUsernames.has(p.username);
+            const cash = Number(p.cash || 0).toLocaleString();
+            const rawCreated = p.created_at || (p.state && (p.state.createdAt || p.state.created_at));
+            const dateStr = rawCreated ? new Date(rawCreated).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' }) : 'حديث';
+            const safeUname = escapeHtml(p.username);
+
+            if (isExcluded) {
+              return `
+                <div class="flex items-center justify-between p-2 rounded-lg bg-emerald-950/20 border border-emerald-500/30 transition text-xs opacity-75">
+                  <div class="flex items-center gap-2">
+                    <span class="text-slate-500 font-mono text-[10px] w-5 text-center">${idx + 1}.</span>
+                    <span class="font-bold text-emerald-300 text-sm line-through decoration-slate-500">${safeUname}</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-sans">🛡️ مستثنى (آمن)</span>
+                  </div>
+                  <div class="flex items-center gap-3 text-[11px]">
+                    <span class="text-slate-400 font-bold">${cash} EGP</span>
+                    <button onclick="window._toggleExcludePurgeUser('${safeUname}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-emerald-300 hover:text-white border border-emerald-500/40 rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer">
+                      <i class="fa-solid fa-rotate-left"></i> <span>إلغاء الاستثناء</span>
+                    </button>
+                  </div>
+                </div>
+              `;
+            } else {
+              return `
+                <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-rose-500/40 transition text-xs">
+                  <div class="flex items-center gap-2">
+                    <span class="text-slate-500 font-mono text-[10px] w-5 text-center">${idx + 1}.</span>
+                    <span class="font-bold text-rose-300 text-sm">${safeUname}</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-sans">0 مشاريع (Feeder)</span>
+                  </div>
+                  <div class="flex items-center gap-3 text-[11px]">
+                    <span class="text-emerald-400 font-bold">${cash} EGP</span>
+                    <span class="text-slate-500 text-[10px]">${dateStr}</span>
+                    <button onclick="window._toggleExcludePurgeUser('${safeUname}')" class="px-2.5 py-1 bg-slate-800 hover:bg-rose-950/60 text-rose-400 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500/60 rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer">
+                      <i class="fa-solid fa-shield-halved"></i> <span>استثناء</span>
+                    </button>
+                  </div>
+                </div>
+              `;
+            }
+          }).join('');
+        }
       }
+
+      window._toggleExcludePurgeUser = function(uname) {
+        if (excludedUsernames.has(uname)) {
+          excludedUsernames.delete(uname);
+        } else {
+          excludedUsernames.add(uname);
+        }
+        updatePurgePreviewUI();
+      };
+
+      // Initial render
+      updatePurgePreviewUI();
 
       // Show modal
       if (modal) modal.classList.remove('hidden');
@@ -5387,11 +5438,17 @@
       // Bind confirm action
       if (confirmBtn) {
         confirmBtn.onclick = async function() {
+          const targetsToPurge = fakeUsernames.filter(u => !excludedUsernames.has(u));
+          if (targetsToPurge.length === 0) {
+            alert('لم تقم بتحديد أي حسابات للتطهير (تم استثناء جميع الحسابات).');
+            return;
+          }
+
           modal.classList.add('hidden');
-          notify('جاري التطهير التلقائي...', `جاري مسح وحظر وتصفير ${fakeAccounts.length} حساب وهمي...`, 'info');
+          notify('جاري التطهير التلقائي...', `جاري مسح وحظر وتصفير ${targetsToPurge.length} حساب محدد...`, 'info');
 
           let purgedCount = 0;
-          for (const uname of fakeUsernames) {
+          for (const uname of targetsToPurge) {
             try {
               if (AppDB.adminResetPlayer) await AppDB.adminResetPlayer(uname);
               if (AppDB.adminBanPlayer) await AppDB.adminBanPlayer(uname);
