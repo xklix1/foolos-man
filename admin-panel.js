@@ -5247,16 +5247,19 @@
         // 1. All Digits (e.g. 123, 999, 0000, 777)
         if (/^\d+$/.test(n)) return true;
 
-        // 2. 3 or more consecutive consonants (e.g. qwx, zxc, vbn, fgh, jkl, bcdf, xqz, ghj, mnb, kjl, trv, bcz, xrq)
+        // 2. First two or last two letters identical in short names (e.g. Qqd, Qqa, Nnn, Bbb, Vvv, Ccc, Xxx, aQQ)
+        if (n.length <= 5 && (n[0] === n[1] || n[n.length - 1] === n[n.length - 2])) return true;
+
+        // 3. 3 or more consecutive consonants (e.g. qwx, zxc, vbn, fgh, jkl, bcdf, xqz, ghj, mnb, kjl, trv, bcz, xrq)
         if (/[bcdfghjklmnpqrstvwxyz]{3,}/i.test(n)) return true;
 
-        // 3. No vowels at all in an English/alphanumeric username of length >= 3 (e.g. qwx, zxc, fgh)
+        // 4. No vowels at all in an English/alphanumeric username of length >= 3 (e.g. qwx, zxc, fgh)
         if (/^[a-z0-9_-]{3,}$/i.test(n) && !/[aeiouy]/i.test(n)) return true;
 
-        // 4. Repeated characters (3 or more identical letters/digits in a row, e.g. aaa, fff, 999)
+        // 5. Repeated characters (3 or more identical letters/digits in a row, e.g. aaa, fff, 999)
         if (/(.)\1{2,}/.test(n)) return true;
 
-        // 5. English keyboard slide patterns (3+ chars)
+        // 6. English keyboard slide patterns (3+ chars)
         const kbPatterns = [
           'qwe','wer','ert','rty','tyu','yui','uio','iop',
           'asd','sdf','dfg','fgh','ghj','hjk','jkl',
@@ -5269,7 +5272,7 @@
           if (n.includes(kbPatterns[i])) return true;
         }
 
-        // 6. Arabic keyboard slide patterns (3+ chars)
+        // 7. Arabic keyboard slide patterns (3+ chars)
         const arKbPatterns = [
           'شسب','سيب','يبل','بلا','لات','اتن','تنم','نمك','مكط',
           'ضصث','صثق','ثقف','قفع','فعل','علف','خحه','حخه','عغب','غبا','باي'
@@ -5278,23 +5281,24 @@
           if (n.includes(arKbPatterns[i])) return true;
         }
 
-        // 7. High consonant ratio for short names (4+ chars with 0 vowels)
+        // 8. High consonant ratio for short names (4+ chars with 0 vowels)
         if (n.length >= 4 && !/[aeiouy]/i.test(n)) return true;
 
         return false;
       }
 
       // Filter feeder accounts based on exact criteria:
-      // 1. Username is gibberish/random characters (أن يكون الاسم حروف عشوائية).
-      // 2. Has ZERO businesses / projects (ولا يمتلك مشاريع أبداً).
-      // 3. EXCEPTION: Exclude any account that has ever purchased a top-up package (ويستثنى من هذه الشروط في حال كان قد قام بشراء حزمة شحن من قبل).
+      // 1. Has ZERO businesses/projects/assets/cars/stocks.
+      // 2. EXCEPTION: Exclude any account that has ever purchased a top-up package (UNCONDITIONAL).
+      // 3. Username is gibberish OR generated bot pattern (Qqd, Qqa, Nnn, Bbb, Vvv, Ccc) OR has redeemed gift code without projects.
       const fakeAccounts = players.filter(p => {
         if (p.isAdmin || p.is_admin || p.isBanned || p.is_banned) return false;
         
         const pState = (typeof p.state === 'object' && p.state) ? p.state : p;
-        const uname = p.username || pState.username || '';
+        const uname = (p.username || pState.username || '').trim();
+        if (!uname) return false;
 
-        // --- RULE 3: EXCEPTION FOR TOP-UP PURCHASERS ---
+        // --- RULE 1: EXCEPTION FOR TOP-UP PURCHASERS (UNCONDITIONAL) ---
         const hasPurchasedTopup = (
           pState.hasPurchasedTopup === true ||
           (pState.purchasedTopups || 0) > 0 ||
@@ -5310,10 +5314,7 @@
           return false; // Excluded! Purchased a top-up package before.
         }
 
-        // --- RULE 1: USERNAME MUST BE RANDOM GIBBERISH ---
-        const isGibberish = isGibberishUsername(uname);
-
-        // --- RULE 2: MUST HAVE ZERO PROJECTS / BUSINESSES ---
+        // --- RULE 2: MUST HAVE ZERO PROJECTS / BUSINESSES / ASSETS ---
         const bizObj = pState.businesses || p.businesses || {};
         const bizCount = Object.values(bizObj).filter(b => b && ((b.level || 0) > 0 || (b.workers || 0) > 0)).length;
 
@@ -5328,8 +5329,23 @@
 
         const hasZeroProjects = (bizCount === 0 && assetCount === 0 && carCount === 0 && stockShares === 0);
 
-        // --- RULE 3: HAS REDEEMED GIFT CODE(S) ---
-        // Feeder accounts rely on redeeming gift codes/promo codes without building projects.
+        if (!hasZeroProjects) {
+          return false; // Has active projects! Not a 0-biz feeder.
+        }
+
+        // --- RULE 3: GIBBERISH / BOT PATTERN USERNAME DETECTION ---
+        const isGibberish = isGibberishUsername(uname);
+
+        const nLower = uname.toLowerCase();
+        const isShortBotPattern = (
+          nLower.length <= 4 && (
+            nLower[0] === nLower[1] || // e.g. Qqd, Qqa, Nnn, Bbb, Vvv, Ccc, Xxx
+            nLower[1] === nLower[2] || // e.g. aQQ, bNN
+            !/[aeiouy]/i.test(nLower) || // e.g. qwx, zxc, fgh, jkl
+            (/^[a-z0-9]{3,4}$/i.test(nLower) && (pState.xp || p.xp || 0) <= 50) // Short 3-4 char name with 0 projects & <= 50 XP
+          )
+        );
+
         const hasRedeemedGiftCode = (
           pState.hasRedeemedGiftCode === true ||
           (pState.giftCodesRedeemed || 0) > 0 ||
@@ -5337,7 +5353,7 @@
           (Array.isArray(pState.redeemedCodes) && pState.redeemedCodes.length > 0)
         );
 
-        return isGibberish && hasZeroProjects && hasRedeemedGiftCode;
+        return isGibberish || isShortBotPattern || hasRedeemedGiftCode;
       });
 
       if (fakeAccounts.length === 0) {
