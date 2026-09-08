@@ -1277,6 +1277,7 @@ const UIController = (() => {
         mainLayout.classList.remove('hidden');
         mainLayout.classList.add('flex');
       }
+      setFloatingChatVisibility(true);
       setupRealTimeListeners(canonicalUser);
       AppDB.checkAndCreateDailyBackup(canonicalUser, GameEngine.state);
       startGameLoop();
@@ -1302,6 +1303,19 @@ const UIController = (() => {
     }
   }
 
+  function setFloatingChatVisibility(visible) {
+    const chatTrigger = document.getElementById('btn-floating-chat-trigger');
+    if (chatTrigger) {
+      if (visible) {
+        chatTrigger.classList.remove('hidden');
+      } else {
+        chatTrigger.classList.add('hidden');
+        const chatDrawer = document.getElementById('chat-drawer');
+        if (chatDrawer) chatDrawer.classList.remove('chat-drawer-open');
+      }
+    }
+  }
+
   function returnToStartMenu() {
     refreshStartMenuCard();
     document.getElementById('start-menu-screen').classList.remove('hidden');
@@ -1310,6 +1324,7 @@ const UIController = (() => {
       mainLayout.classList.add('hidden');
       mainLayout.classList.remove('flex');
     }
+    setFloatingChatVisibility(false);
     document.getElementById('auth-screen').classList.add('hidden');
   }
 
@@ -1523,6 +1538,7 @@ const UIController = (() => {
             mainLayout.classList.remove('hidden');
             mainLayout.classList.add('flex');
           }
+          setFloatingChatVisibility(true);
 
           setupRealTimeListeners(canonicalUser);
 
@@ -6567,6 +6583,7 @@ const UIController = (() => {
       mainLayout.classList.add('hidden');
       mainLayout.classList.remove('flex');
     }
+    setFloatingChatVisibility(false);
     document.getElementById('start-menu-screen').classList.remove('hidden');
     refreshStartMenuCard();
     if (showToastMsg) {
