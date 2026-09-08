@@ -1034,6 +1034,30 @@
             </div>
           </div>
 
+          <!-- Feeder Network Audit & Clawback Console -->
+          <div class="p-3.5 bg-slate-950/90 border border-amber-500/40 rounded-xl space-y-3 shadow-lg">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <h5 class="text-xs font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-diagram-project text-amber-400 text-sm"></i>
+                <span>فحص وتطهير شبكة التحويلات المجمّعة لاسم معين (Audit & Purge Feeder Network)</span>
+              </h5>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-center">
+              <div class="lg:col-span-8">
+                <input id="input-admin-target-feeder-recipient" type="text" placeholder="أدخل اسم المستلم المراد فحص الشبكة التي حولت له (مثال: Zoz)"
+                  class="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 outline-none" />
+              </div>
+              <div class="lg:col-span-4 flex items-center gap-1.5">
+                <button onclick="window.adminAuditFeederNetwork && window.adminAuditFeederNetwork()"
+                  class="w-full px-3 py-2 bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white text-xs font-black rounded-lg transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer">
+                  <i class="fa-solid fa-magnifying-glass-dollar"></i>
+                  <span>فحص وتطهير واسترداد</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Purge Preview Modal -->
           <div id="admin-modal-purge-preview" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 text-right">
             <div class="bg-slate-900 border-2 border-rose-500/50 rounded-2xl p-5 max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl space-y-4">

@@ -5486,6 +5486,166 @@
     }
   };
 
+  window.adminAuditFeederNetwork = async function() {
+    const notify = (title, msg, type = 'info') => {
+      if (typeof showToast === 'function') showToast(title, msg, type);
+      else alert(`${title}\n${msg}`);
+    };
+
+    const targetInput = document.getElementById('input-admin-target-feeder-recipient');
+    let recipientUser = targetInput ? targetInput.value.trim() : '';
+    if (!recipientUser) {
+      recipientUser = prompt('أدخل اسم المستلم المراد فحص واسترداد شبكة التحويلات المجمّعة له (مثال: Zoz):');
+    }
+    if (!recipientUser) return;
+    recipientUser = recipientUser.trim();
+
+    notify('جاري الفحص التحقيقي...', `جاري فحص جميع التحويلات المالية الواردة للحساب "${recipientUser}"...`, 'info');
+
+    try {
+      // 1. Fetch all transfers where recipient = recipientUser
+      let transfers = [];
+      try {
+        const rows = await AppDB._api(`transfers?recipient=eq.${encodeURIComponent(recipientUser)}&select=sender,amount,created_at`);
+        transfers = rows || [];
+      } catch (e) {
+        console.warn('[Feeder Network Audit] Transfers fetch note:', e.message);
+      }
+
+      // 2. Fetch all players to check sender states
+      const fetchFn = AppDB.adminGetAllPlayers || AppDB.getAllPlayersAdmin;
+      const players = fetchFn ? await fetchFn.call(AppDB) : [];
+      const playersMap = {};
+      (players || []).forEach(p => {
+        const uname = p.username || (p.state && p.state.username);
+        if (uname) playersMap[uname] = p;
+      });
+
+      // Group transfers by sender
+      const feederSenders = {};
+      let totalFunnelledCash = 0;
+
+      transfers.forEach(t => {
+        const senderName = t.sender;
+        const amt = Number(t.amount || 0);
+        const p = playersMap[senderName];
+        if (!p) return;
+
+        const pState = (typeof p.state === 'object' && p.state) ? p.state : p;
+        
+        // Check if sender has 0 projects and no topup
+        const bizObj = pState.businesses || p.businesses || {};
+        const bizCount = Object.values(bizObj).filter(b => b && ((b.level || 0) > 0 || (b.workers || 0) > 0)).length;
+
+        const assetObj = pState.assets || p.assets || {};
+        const assetCount = Object.values(assetObj).filter(v => (typeof v === 'number' ? v : (v && (v.level || v.count) || 0)) > 0).length;
+
+        const cars = pState.ownedCars || p.ownedCars || pState.cars || [];
+        const carCount = Array.isArray(cars) ? cars.length : Object.keys(cars).length;
+
+        const stockObj = pState.stocks || p.stocks || {};
+        const stockShares = Object.values(stockObj).reduce((sum, s) => sum + (s && (s.shares || s.count || 0) || (typeof s === 'number' ? s : 0)), 0);
+
+        const hasZeroProjects = (bizCount === 0 && assetCount === 0 && carCount === 0 && stockShares === 0);
+
+        if (hasZeroProjects && !pState.hasPurchasedTopup) {
+          if (!feederSenders[senderName]) {
+            feederSenders[senderName] = 0;
+          }
+          feederSenders[senderName] += amt;
+          totalFunnelledCash += amt;
+        }
+      });
+
+      // Also check all players directly in case transfers table had limits or logs
+      (players || []).forEach(p => {
+        const pState = (typeof p.state === 'object' && p.state) ? p.state : p;
+        const uname = p.username || pState.username;
+        if (!uname || uname.toLowerCase() === recipientUser.toLowerCase()) return;
+
+        const hasZeroProjects = (
+          Object.values(pState.businesses || {}).length === 0 &&
+          Object.values(pState.assets || {}).length === 0 &&
+          (pState.ownedCars || []).length === 0
+        );
+
+        if (hasZeroProjects && !pState.hasPurchasedTopup) {
+          const activity = pState.activityLog || [];
+          const transferredToTarget = activity.some(act => 
+            act.details && act.details.toLowerCase().includes(recipientUser.toLowerCase())
+          );
+          if (transferredToTarget && !feederSenders[uname]) {
+            feederSenders[uname] = 0;
+          }
+        }
+      });
+
+      const feederUsernames = Object.keys(feederSenders);
+      if (feederUsernames.length === 0) {
+        alert(`✅ لم يتم العثور على أي تحويلات مشبوهة من حسابات وهمية (0 مشاريع) إلى الحساب "${recipientUser}".`);
+        return;
+      }
+
+      const confirmMsg = `⚠️ نتائج التحقيق في شبكة الحسابات الوهمية لـ (${recipientUser}):\n\n` +
+        `• عدد حسابات التجميع (Feeders) المكتشفة: ${feederUsernames.length} حساب\n` +
+        `• إجمالي الأموال المجمّعة والمحولة: ${totalFunnelledCash.toLocaleString()} EGP\n\n` +
+        `قائمة الحسابات الوهمية المجمّعة:\n${feederUsernames.join(', ')}\n\n` +
+        `هل تريد تصفير وحظر ومسح جميع هذه الحسابات الوهمية (${feederUsernames.length}) واسترداد/خصم مبلغ (${totalFunnelledCash.toLocaleString()} EGP) من حساب (${recipientUser})؟`;
+
+      if (!confirm(confirmMsg)) return;
+
+      notify('جاري تطهير الشبكة واسترداد الأموال...', `جاري مسح ${feederUsernames.length} حساب وهمي واسترداد الأموال...`, 'info');
+
+      let purgedCount = 0;
+      for (const uname of feederUsernames) {
+        try {
+          if (AppDB.adminResetPlayer) await AppDB.adminResetPlayer(uname);
+          if (AppDB.adminBanPlayer) await AppDB.adminBanPlayer(uname);
+          if (AppDB.adminDeletePlayer) await AppDB.adminDeletePlayer(uname);
+          purgedCount++;
+        } catch (e) {}
+      }
+
+      // Deduct funnelled illegal cash from recipient's balance
+      try {
+        const recipState = await AppDB.getPlayerState(recipientUser);
+        if (recipState) {
+          const currentCash = Number(recipState.cash || 0);
+          const currentBank = Number(recipState.bank || 0);
+          
+          let remainingDeduct = totalFunnelledCash;
+          let newCash = currentCash;
+          let newBank = currentBank;
+
+          if (newCash >= remainingDeduct) {
+            newCash -= remainingDeduct;
+          } else {
+            remainingDeduct -= newCash;
+            newCash = 0;
+            newBank = Math.max(0, newBank - remainingDeduct);
+          }
+
+          recipState.cash = newCash;
+          recipState.bank = newBank;
+          recipState.netWorth = Math.max(0, (recipState.netWorth || 0) - totalFunnelledCash);
+
+          await AppDB.savePlayerState(recipientUser, recipState, true);
+        }
+      } catch (deductErr) {
+        console.error('[Feeder Network Audit] Deduction note:', deductErr.message);
+      }
+
+      notify('تم تطهير الشبكة واسترداد الأموال ✅', `تم مسح وحظر ${purgedCount} حساب وهمي بنجاح، وخصم ${totalFunnelledCash.toLocaleString()} EGP من حساب "${recipientUser}".`, 'success');
+
+      if (typeof renderAdminFraudMonitor === 'function') renderAdminFraudMonitor();
+      if (window._adminReloadPlayers) window._adminReloadPlayers(false);
+
+    } catch (err) {
+      console.error('[Feeder Network Audit Error]', err);
+      alert('فشل عملية فحص وتطهير الشبكة: ' + err.message);
+    }
+  };
+
   async function renderAdminFraudMonitor() {
     const tbody = document.getElementById('admin-fraud-table-body');
     const badge = document.getElementById('admin-fraud-badge');
