@@ -1034,6 +1034,44 @@
             </div>
           </div>
 
+          <!-- Purge Preview Modal -->
+          <div id="admin-modal-purge-preview" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 text-right">
+            <div class="bg-slate-900 border-2 border-rose-500/50 rounded-2xl p-5 max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h4 class="text-sm font-black text-rose-400 flex items-center gap-2">
+                  <i class="fa-solid fa-broom text-lg"></i>
+                  <span>معاينة الحسابات الوهمية المكتشفة للتطهير (Feeder Accounts Preview)</span>
+                </h4>
+                <button onclick="document.getElementById('admin-modal-purge-preview').classList.add('hidden')"
+                  class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer">
+                  <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+              </div>
+
+              <div class="text-xs text-slate-300 space-y-1">
+                <p>تم رصد <span id="admin-purge-count-badge" class="font-bold text-amber-400 font-mono text-sm">0</span> حساب وهمي بدون أي مشاريع أو أصول في السحابة:</p>
+                <p class="text-[11px] text-slate-400">راجع القائمة أدناه قبل التأكيد المباشر لتصفير وحظر ومسح الحسابات المحددة.</p>
+              </div>
+
+              <!-- List Container -->
+              <div id="admin-purge-preview-list" class="flex-1 overflow-y-auto max-h-64 border border-slate-800 bg-slate-950 p-3 rounded-xl font-mono text-xs text-slate-300 space-y-1.5 custom-scrollbar">
+                <!-- Dynamically populated with account rows -->
+              </div>
+
+              <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800 flex-wrap">
+                <button onclick="document.getElementById('admin-modal-purge-preview').classList.add('hidden')"
+                  class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition cursor-pointer">
+                  إلغاء
+                </button>
+                <button id="btn-admin-confirm-purge-all"
+                  class="px-5 py-2 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white text-xs font-black rounded-xl transition shadow-lg flex items-center gap-1.5 cursor-pointer">
+                  <i class="fa-solid fa-skull-crossbones"></i>
+                  <span>تصفير وحظر ومسح جميع الحسابات المعروضة أعلاه</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="overflow-x-auto border border-slate-800/80 rounded-lg">
             <table class="w-full text-right text-xs min-w-[850px]">
               <thead class="bg-slate-950 text-slate-400">

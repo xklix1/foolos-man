@@ -5256,30 +5256,67 @@
       }
 
       const fakeUsernames = fakeAccounts.map(p => p.username);
-      const userListStr = fakeUsernames.slice(0, 15).join(', ') + (fakeUsernames.length > 15 ? ` ...وغيرهم (${fakeUsernames.length} حساباً)` : '');
-
-      if (!confirm(`🧹 تم رصد (${fakeAccounts.length}) حساب وهمي بدون أي مشاريع في قاعدة البيانات!\n\n` +
-        `قائمة الحسابات:\n${userListStr}\n\n` +
-        `هل تريد مسح وتصفير وحظر جميع هذه الحسابات الوهمية الـ (${fakeAccounts.length}) دفعة واحدة لتنظيف القاعدة؟`)) {
-        return;
+      
+      // Auto-fill input console for manual review/editing
+      const targetInput = document.getElementById('input-admin-target-fake-users');
+      if (targetInput) {
+        targetInput.value = fakeUsernames.join(', ');
       }
 
-      notify('جاري التطهير التلقائي...', `جاري مسح وحظر ${fakeAccounts.length} حساب وهمي...`, 'info');
+      // Populate preview modal list
+      const modal = document.getElementById('admin-modal-purge-preview');
+      const badge = document.getElementById('admin-purge-count-badge');
+      const listContainer = document.getElementById('admin-purge-preview-list');
+      const confirmBtn = document.getElementById('btn-admin-confirm-purge-all');
 
-      let purgedCount = 0;
-      for (const uname of fakeUsernames) {
-        try {
-          if (AppDB.adminResetPlayer) await AppDB.adminResetPlayer(uname);
-          if (AppDB.adminBanPlayer) await AppDB.adminBanPlayer(uname);
-          if (AppDB.adminDeletePlayer) await AppDB.adminDeletePlayer(uname);
-          purgedCount++;
-        } catch (e) {}
+      if (badge) badge.textContent = fakeAccounts.length;
+      if (listContainer) {
+        listContainer.innerHTML = fakeAccounts.map((p, idx) => {
+          const cash = Number(p.cash || 0).toLocaleString();
+          const rawCreated = p.created_at || (p.state && (p.state.createdAt || p.state.created_at));
+          const dateStr = rawCreated ? new Date(rawCreated).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' }) : 'حديث';
+          return `
+            <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-rose-500/40 transition text-xs">
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 font-mono text-[10px] w-5 text-center">${idx + 1}.</span>
+                <span class="font-bold text-rose-300 text-sm">${escapeHtml(p.username)}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-sans">0 مشاريع (Feeder)</span>
+              </div>
+              <div class="flex items-center gap-3 text-[11px]">
+                <span class="text-emerald-400 font-bold">${cash} EGP</span>
+                <span class="text-slate-500 text-[10px]">${dateStr}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
       }
 
-      notify('تم التطهير التلقائي ✅', `تم مسح وحظر ${purgedCount} حساب وهمي بنجاح وتنظيف قاعدة البيانات.`, 'success');
+      // Show modal
+      if (modal) modal.classList.remove('hidden');
 
-      if (typeof renderAdminFraudMonitor === 'function') renderAdminFraudMonitor();
-      if (window._adminReloadPlayers) window._adminReloadPlayers(false);
+      // Bind confirm action
+      if (confirmBtn) {
+        confirmBtn.onclick = async function() {
+          modal.classList.add('hidden');
+          notify('جاري التطهير التلقائي...', `جاري مسح وحظر وتصفير ${fakeAccounts.length} حساب وهمي...`, 'info');
+
+          let purgedCount = 0;
+          for (const uname of fakeUsernames) {
+            try {
+              if (AppDB.adminResetPlayer) await AppDB.adminResetPlayer(uname);
+              if (AppDB.adminBanPlayer) await AppDB.adminBanPlayer(uname);
+              if (AppDB.adminDeletePlayer) await AppDB.adminDeletePlayer(uname);
+              purgedCount++;
+            } catch (e) {}
+          }
+
+          notify('تم التطهير التلقائي ✅', `تم مسح وحظر ${purgedCount} حساب وهمي بنجاح وتنظيف قاعدة البيانات.`, 'success');
+
+          if (typeof renderAdminFraudMonitor === 'function') renderAdminFraudMonitor();
+          if (window._adminReloadPlayers) window._adminReloadPlayers(false);
+        };
+      }
+
     } catch (err) {
       console.error('[Purge Feeder Error]', err);
       alert('فشل عملية التطهير: ' + err.message);
