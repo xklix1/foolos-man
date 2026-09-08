@@ -3200,6 +3200,18 @@ const UIController = (() => {
       renewAfkBtn.onclick = handleRenewAfk;
     }
 
+    // View Offline Report Button
+    const viewReportBtn = document.getElementById('btn-view-offline-report');
+    if (viewReportBtn) {
+      viewReportBtn.onclick = (e) => {
+        if (e) {
+          if (typeof e.preventDefault === 'function') e.preventDefault();
+          if (typeof e.stopPropagation === 'function') e.stopPropagation();
+        }
+        showOfflineReportModal(GameEngine.state ? GameEngine.state.lastOfflineReport : null);
+      };
+    }
+
     // Tax Authority Panel Buttons
     const buyTaxShieldBtn = document.getElementById('btn-tax-buy-shield');
     if (buyTaxShieldBtn) {
@@ -12656,7 +12668,13 @@ const UIController = (() => {
   // Offline Earnings & Supplies Report Modal Controller
   // =========================================================================
   function showOfflineReportModal(rep) {
-    if (!rep) return;
+    if (!rep && GameEngine.state) {
+      rep = GameEngine.state.lastOfflineReport;
+    }
+    if (!rep) {
+      showToast('تقرير الغياب', 'لا يتوفر تقرير غياب سابق للجلسة الحالية.', 'info');
+      return;
+    }
     const modal = document.getElementById('modal-offline-report');
     if (!modal) return;
 

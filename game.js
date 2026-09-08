@@ -2686,7 +2686,7 @@ const GameEngine = (() => {
           const nonBizOfflineEarnings = Math.floor((nonBizHourly / 3600) * cappedSeconds);
 
           const totalOffline = offlineBizEarnings + nonBizOfflineEarnings;
-          if (totalOffline > 0 || offlineCorpEarnings > 0) {
+          if (totalOffline > 0 || offlineCorpEarnings > 0 || bizOfflineBreakdown.length > 0) {
             state.bank += totalOffline;
             state.offlineReport = {
               seconds: cappedSeconds,
@@ -2699,6 +2699,7 @@ const GameEngine = (() => {
               wasManagerActive: true,
               expiredDuringAbsence: now > managerExpiry
             };
+            state.lastOfflineReport = state.offlineReport;
           }
         } else if (elapsedSinceLastActive > 0 && state.businesses) {
           Object.keys(state.businesses).forEach(bk => {
@@ -2715,6 +2716,7 @@ const GameEngine = (() => {
             wasManagerActive: true,
             expiredDuringAbsence: false
           };
+          state.lastOfflineReport = state.offlineReport;
         } else if (now > managerExpiry && managerExpiry > 0) {
           state.offlineReport = {
             seconds: 0,
@@ -2722,6 +2724,7 @@ const GameEngine = (() => {
             wasManagerActive: false,
             expiredDuringAbsence: true
           };
+          state.lastOfflineReport = state.offlineReport;
         }
       }
       // Ensure tradeCompany state integrity & resolve offline shipments
