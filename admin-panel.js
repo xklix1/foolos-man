@@ -1707,6 +1707,8 @@
 
     // Inspect Player Referral Report Action (👥 فحص دعوات ومكافآت اللاعب)
     const inspectReferralsBtn = document.getElementById('btn-admin-inspect-referrals');
+    let currentAdminRefTargetUser = '';
+
     if (inspectReferralsBtn) {
       inspectReferralsBtn.addEventListener('click', async () => {
         if (!selectedPlayer) {
@@ -1721,26 +1723,46 @@
       const modal = document.getElementById('modal-admin-referrals');
       if (!modal) return;
 
+      currentAdminRefTargetUser = targetUsername;
+
       const targetEl = document.getElementById('adm-ref-target-user');
       const codeEl = document.getElementById('adm-ref-code');
       const totalEl = document.getElementById('adm-ref-total');
       const qualEl = document.getElementById('adm-ref-qualified');
       const pendEl = document.getElementById('adm-ref-pending');
       const tbody = document.getElementById('adm-ref-table-body');
+      const inputCodeEl = document.getElementById('adm-ref-input-code');
+      const inputRefByEl = document.getElementById('adm-ref-input-referredby');
+      const boundInfoEl = document.getElementById('adm-ref-current-bound-info');
 
       if (targetEl) targetEl.textContent = `@${targetUsername}`;
       if (codeEl) codeEl.textContent = '...';
       if (totalEl) totalEl.textContent = '0';
       if (qualEl) qualEl.textContent = '0';
       if (pendEl) pendEl.textContent = '0';
-      if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400"><i class="fa-solid fa-spinner animate-spin"></i> جاري فحص سجل السيرفر ودعوات اللاعب...</td></tr>`;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400"><i class="fa-solid fa-spinner animate-spin"></i> جاري فحص سجل السيرفر ودعوات اللاعب...</td></tr>`;
 
       modal.classList.remove('hidden');
 
       try {
+        const targetState = (selectedPlayer === targetUsername && selectedPlayerState)
+          ? selectedPlayerState
+          : await AppDB.getPlayerState(targetUsername);
+
+        if (inputCodeEl) inputCodeEl.value = (targetState && targetState.referralCode) ? targetState.referralCode : '';
+        if (inputRefByEl) inputRefByEl.value = (targetState && (targetState.referredByCode || targetState.referredBy)) ? (targetState.referredByCode || targetState.referredBy) : '';
+
+        if (boundInfoEl) {
+          if (targetState && (targetState.referredByCode || targetState.referredBy)) {
+            boundInfoEl.textContent = `مرتبط بالصديق: ${targetState.referredByCode || targetState.referredBy} (${targetState.referredBy || 'موصي'})`;
+          } else {
+            boundInfoEl.textContent = `لم يقم بإدخال كود صديق`;
+          }
+        }
+
         const report = await AppDB.getReferralReport(targetUsername);
         if (!report) {
-          if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-rose-400">تعذر جلب تقرير الدعوات لهذا اللاعب.</td></tr>`;
+          if (tbody) tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-rose-400">تعذر جلب تقرير الدعوات لهذا اللاعب.</td></tr>`;
           return;
         }
 
@@ -1751,7 +1773,7 @@
 
         if (tbody) {
           if (!report.invitees || report.invitees.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">لم يقم أي لاعب باستخدام كود هذا اللاعب بعد.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-500">لم يقم أي لاعب باستخدام كود هذا اللاعب بعد.</td></tr>`;
           } else {
             tbody.innerHTML = report.invitees.map(inv => {
               const gross = inv.grossWealth || 0;
@@ -1759,7 +1781,7 @@
               const selfEarned = inv.selfEarned || 0;
               const qualBadge = inv.isQualified
                 ? `<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 font-black text-[10px] border border-emerald-500/30">مؤهل ✅ (250k+)</span>`
-                : `<span class="px-2 py-0.5 rounded bg-amber-950 text-amber-400 font-bold text-[10px] border border-amber-500/30">قيد التجميع ⏳</span>`;
+                : `<span class="px-2 py-0.5 rounded bg-amber-950 text-amber-400 font-bold text-[10px] border border-amber-500/30">قيد التأهيل ⏳</span>`;
 
               const devList = (inv.devices && inv.devices.length > 0) ? inv.devices.join(', ') : 'غير مسجل';
 
@@ -1771,16 +1793,182 @@
                   <td class="p-2.5 numbers-font font-bold text-emerald-400">${selfEarned.toLocaleString()} EGP</td>
                   <td class="p-2.5">${qualBadge}</td>
                   <td class="p-2.5 text-slate-400 text-[10px]">${inv.accountAgeText || 'جديد'}</td>
-                  <td class="p-2.5 font-mono text-[9px] text-slate-500 truncate max-w-[120px]" title="${devList}">${devList}</td>
+                  <td class="p-2.5 font-mono text-[9px] text-slate-500 truncate max-w-[110px]" title="${devList}">${devList}</td>
+                  <td class="p-2.5">
+                    <button onclick="window.adminUnlinkInvitee('${inv.username}', '${targetUsername}')"
+                      class="px-2 py-1 bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-500/30 rounded text-[10px] font-bold transition cursor-pointer active:scale-95" title="شطب فك ربط هذه الدعوة">
+                      فك الربط ❌
+                    </button>
+                  </td>
                 </tr>
               `;
             }).join('');
           }
         }
       } catch (err) {
-        if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-rose-400">خطأ: ${err.message}</td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-rose-400">خطأ: ${err.message}</td></tr>`;
       }
     }
+
+    // Admin Action 1: Save Custom Referral Code for Target Player
+    const saveRefCodeBtn = document.getElementById('btn-adm-save-ref-code');
+    if (saveRefCodeBtn) {
+      saveRefCodeBtn.addEventListener('click', async () => {
+        if (!currentAdminRefTargetUser) return;
+        const inputCode = document.getElementById('adm-ref-input-code')?.value?.trim().toUpperCase();
+        if (!inputCode) {
+          showToast('تعديل كود الدعوة', 'يرجى إدخال رمز كود الدعوة الجديد.', 'warning');
+          return;
+        }
+
+        try {
+          saveRefCodeBtn.disabled = true;
+          saveRefCodeBtn.textContent = 'جاري الحفظ...';
+
+          const targetState = await AppDB.getPlayerState(currentAdminRefTargetUser);
+          if (!targetState) throw new Error("تعذر جلب بيانات الحساب.");
+
+          targetState.referralCode = inputCode;
+          targetState.adminModifiedTimestamp = Date.now();
+
+          // Sync local session if same active user
+          if (GameEngine.activeUsername && GameEngine.activeUsername.toLowerCase() === currentAdminRefTargetUser.toLowerCase() && GameEngine.state) {
+            GameEngine.state.referralCode = inputCode;
+            if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
+          }
+
+          await AppDB.adminSavePlayer(currentAdminRefTargetUser, targetState);
+          await AppDB.savePlayerState(currentAdminRefTargetUser, targetState, true);
+
+          showToast('تعديل كود الدعوة 🔑', `تم تغيير كود دعوة اللاعب @${currentAdminRefTargetUser} إلى "${inputCode}" وحفظ السيرفر بنجاح!`, 'success');
+          logAdminAction(`تعديل كود دعوة اللاعب ${currentAdminRefTargetUser} إلى: ${inputCode}`);
+
+          await openAdminReferralModal(currentAdminRefTargetUser);
+        } catch (err) {
+          showToast('خطأ التعديل', err.message, 'error');
+        } finally {
+          saveRefCodeBtn.disabled = false;
+          saveRefCodeBtn.textContent = 'تعديل الكود 💾';
+        }
+      });
+    }
+
+    // Admin Action 2: Save Custom ReferredBy Code / Friend Link
+    const saveReferredByBtn = document.getElementById('btn-adm-save-referredby');
+    if (saveReferredByBtn) {
+      saveReferredByBtn.addEventListener('click', async () => {
+        if (!currentAdminRefTargetUser) return;
+        const inputRefBy = document.getElementById('adm-ref-input-referredby')?.value?.trim().toUpperCase();
+        if (!inputRefBy) {
+          showToast('ربط صديق', 'يرجى إدخال كود أو اسم الصديق.', 'warning');
+          return;
+        }
+
+        try {
+          saveReferredByBtn.disabled = true;
+          saveReferredByBtn.textContent = 'جاري الربط...';
+
+          const targetState = await AppDB.getPlayerState(currentAdminRefTargetUser);
+          if (!targetState) throw new Error("تعذر جلب بيانات الحساب.");
+
+          targetState.referredBy = inputRefBy;
+          targetState.referredByCode = inputRefBy;
+          targetState.adminModifiedTimestamp = Date.now();
+
+          if (GameEngine.activeUsername && GameEngine.activeUsername.toLowerCase() === currentAdminRefTargetUser.toLowerCase() && GameEngine.state) {
+            GameEngine.state.referredBy = inputRefBy;
+            GameEngine.state.referredByCode = inputRefBy;
+            if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
+          }
+
+          await AppDB.adminSavePlayer(currentAdminRefTargetUser, targetState);
+          await AppDB.savePlayerState(currentAdminRefTargetUser, targetState, true);
+
+          showToast('ربط صديق 🔗', `تم ربط حساب @${currentAdminRefTargetUser} بكود الصديق "${inputRefBy}" بنجاح!`, 'success');
+          logAdminAction(`ربط حساب ${currentAdminRefTargetUser} بكود الدعوة: ${inputRefBy}`);
+
+          await openAdminReferralModal(currentAdminRefTargetUser);
+        } catch (err) {
+          showToast('خطأ الربط', err.message, 'error');
+        } finally {
+          saveReferredByBtn.disabled = false;
+          saveReferredByBtn.textContent = 'ربط 🔗';
+        }
+      });
+    }
+
+    // Admin Action 3: Unbind ReferredBy Code
+    const unbindReferredByBtn = document.getElementById('btn-adm-unbind-referredby');
+    if (unbindReferredByBtn) {
+      unbindReferredByBtn.addEventListener('click', async () => {
+        if (!currentAdminRefTargetUser) return;
+        if (!confirm(`هل أنت متأكد من فك ربط كود الصديق لللاعب @${currentAdminRefTargetUser}؟ سيتمكن من إدخال كود جديد.`)) return;
+
+        try {
+          unbindReferredByBtn.disabled = true;
+          unbindReferredByBtn.textContent = 'جاري الفك...';
+
+          const targetState = await AppDB.getPlayerState(currentAdminRefTargetUser);
+          if (!targetState) throw new Error("تعذر جلب بيانات الحساب.");
+
+          targetState.referredBy = null;
+          targetState.referredByCode = null;
+          targetState.adminModifiedTimestamp = Date.now();
+
+          if (GameEngine.activeUsername && GameEngine.activeUsername.toLowerCase() === currentAdminRefTargetUser.toLowerCase() && GameEngine.state) {
+            GameEngine.state.referredBy = null;
+            GameEngine.state.referredByCode = null;
+            if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
+          }
+
+          await AppDB.adminSavePlayer(currentAdminRefTargetUser, targetState);
+          await AppDB.savePlayerState(currentAdminRefTargetUser, targetState, true);
+
+          showToast('فك الربط ❌', `تم فك ربط كود الصديق للاعب @${currentAdminRefTargetUser} بنجاح!`, 'success');
+          logAdminAction(`فك ربط كود الصديق للاعب: ${currentAdminRefTargetUser}`);
+
+          await openAdminReferralModal(currentAdminRefTargetUser);
+        } catch (err) {
+          showToast('خطأ فك الربط', err.message, 'error');
+        } finally {
+          unbindReferredByBtn.disabled = false;
+          unbindReferredByBtn.textContent = 'فك الربط ❌';
+        }
+      });
+    }
+
+    // Global Admin Action: Unlink Specific Invitee from Target Referrer
+    window.adminUnlinkInvitee = async function(inviteeUser, referrerUser) {
+      if (!inviteeUser) return;
+      if (!confirm(`🚫 تأكيد الإجراء الإداري:\nهل أنت متأكد من فك ربط وشطب الدعوة للاعب @${inviteeUser} من قائمة دعوات @${referrerUser}؟`)) return;
+
+      try {
+        showToast('فك ربط الدعوة', `جاري شطب ربط اللاعب @${inviteeUser}...`, 'info');
+
+        const inviteeState = await AppDB.getPlayerState(inviteeUser);
+        if (!inviteeState) throw new Error(`تعذر جلب بيانات اللاعب @${inviteeUser}.`);
+
+        inviteeState.referredBy = null;
+        inviteeState.referredByCode = null;
+        inviteeState.adminModifiedTimestamp = Date.now();
+
+        if (GameEngine.activeUsername && GameEngine.activeUsername.toLowerCase() === inviteeUser.toLowerCase() && GameEngine.state) {
+          GameEngine.state.referredBy = null;
+          GameEngine.state.referredByCode = null;
+          if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
+        }
+
+        await AppDB.adminSavePlayer(inviteeUser, inviteeState);
+        await AppDB.savePlayerState(inviteeUser, inviteeState, true);
+
+        showToast('شطب الدعوة ✂️', `تم فك ربط اللاعب @${inviteeUser} من دعوات @${referrerUser} بنجاح!`, 'success');
+        logAdminAction(`شطب وفك ربط دعوة اللاعب ${inviteeUser} من الموصي ${referrerUser}`);
+
+        await openAdminReferralModal(referrerUser);
+      } catch (err) {
+        showToast('خطأ الشطب', err.message, 'error');
+      }
+    };
 
     // RESET SPECIFIC PLAYER ACCOUNT
     const resetPlayerAccountBtn = document.getElementById('btn-admin-reset-player-account');
