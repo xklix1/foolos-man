@@ -5042,6 +5042,40 @@
         doBan = true;
         break;
 
+      case 'delete_sender':
+        if (!validSender) { alert('اسم الراسل غير صالح'); return; }
+        targetUsers = [validSender];
+        confirmMsg = `🗑️ هل أنت متأكد من [مسح حساب الراسل] (${validSender}) نهائياً من قاعدة البيانات؟`;
+        actionTitle = 'مسح الراسل';
+        doDelete = true;
+        break;
+
+      case 'delete_recipient':
+        if (!validRecipient) { alert('اسم المستلم غير صالح'); return; }
+        targetUsers = [validRecipient];
+        confirmMsg = `🗑️ هل أنت متأكد من [مسح حساب المستلم] (${validRecipient}) نهائياً من قاعدة البيانات؟`;
+        actionTitle = 'مسح المستلم';
+        doDelete = true;
+        break;
+
+      case 'delete_both':
+        targetUsers = [validSender, validRecipient].filter(Boolean);
+        if (targetUsers.length === 0) { alert('كلا الطرفين غير معروفين!'); return; }
+        confirmMsg = `🗑️ هل أنت متأكد من [مسح كلا الحسابين] (${targetUsers.join(' و ')}) نهائياً من قاعدة البيانات؟`;
+        actionTitle = 'مسح الطرفين';
+        doDelete = true;
+        break;
+
+      case 'reset_ban_delete_both':
+        targetUsers = [validSender, validRecipient].filter(Boolean);
+        if (targetUsers.length === 0) { alert('كلا الطرفين غير معروفين!'); return; }
+        confirmMsg = `💥 هل أنت متأكد من [تصفير وحظر ومسح كلا الطرفين] (${targetUsers.join(' و ')}) نهائياً؟`;
+        actionTitle = 'تصفير وحظر ومسح الطرفين';
+        doReset = true;
+        doBan = true;
+        doDelete = true;
+        break;
+
       default:
         return;
     }
@@ -5066,6 +5100,11 @@
         // 2. Ban player if requested (performed after reset so is_banned remains true)
         if (doBan && AppDB.adminBanPlayer) {
           await AppDB.adminBanPlayer(uname);
+        }
+
+        // 3. Delete player from DB if requested
+        if (doDelete && AppDB.adminDeletePlayer) {
+          await AppDB.adminDeletePlayer(uname);
         }
 
         // 3. Send direct in-game admin popup modal notification
@@ -5119,6 +5158,132 @@
 
   window.adminBanPlayer = function(username) {
     window.adminHandleFraudAction('ban_sender', username, '');
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ANTI-FEEDER DIRECT ACTION CONSOLE & AUTOMATED PURGE ENGINE
+  // ─────────────────────────────────────────────────────────────────────────────
+  window.adminExecuteAccountAction = async function(actionType) {
+    const input = document.getElementById('input-admin-target-fake-users');
+    if (!input || !input.value.trim()) {
+      alert('يرجى كتابة اسم الحساب أو الحسابات أولاً في الحقل (مثل: user1, user2).');
+      return;
+    }
+
+    const rawTargets = input.value.split(',').map(s => s.trim()).filter(Boolean);
+    if (rawTargets.length === 0) {
+      alert('لم يتم العثور على أسماء حسابات صالحة.');
+      return;
+    }
+
+    const actionNames = {
+      reset: 'تصفير أرصدة ومشاريع',
+      ban: 'حظر نهائي',
+      delete: 'مسح نهائي من قاعدة البيانات',
+      full_purge: 'تصفير + حظر + مسح نهائي شامل'
+    };
+
+    const label = actionNames[actionType] || actionType;
+    if (!confirm(`⚠️ هل أنت متأكد من تنفيذ [${label}] على الحسابات التالية (${rawTargets.length} حساب)؟\n\n${rawTargets.join(', ')}`)) {
+      return;
+    }
+
+    const notify = (title, msg, type = 'info') => {
+      if (typeof showToast === 'function') showToast(title, msg, type);
+      else if (typeof window.showToast === 'function') window.showToast(title, msg, type);
+      else alert(`${title}\n${msg}`);
+    };
+
+    notify('جاري المعالجة...', `جاري تنفيذ ${label} على ${rawTargets.length} حساب...`, 'info');
+
+    let successCount = 0;
+    for (const uname of rawTargets) {
+      try {
+        if (actionType === 'reset' || actionType === 'full_purge') {
+          if (AppDB.adminResetPlayer) await AppDB.adminResetPlayer(uname);
+        }
+        if (actionType === 'ban' || actionType === 'full_purge') {
+          if (AppDB.adminBanPlayer) await AppDB.adminBanPlayer(uname);
+        }
+        if (actionType === 'delete' || actionType === 'full_purge') {
+          if (AppDB.adminDeletePlayer) await AppDB.adminDeletePlayer(uname);
+        }
+        successCount++;
+      } catch (err) {
+        console.warn(`[Anti-Feeder Hub] Error executing ${actionType} on ${uname}:`, err);
+      }
+    }
+
+    input.value = '';
+    notify('تم بنجاح ✅', `تمت عملية [${label}] بنجاح لـ ${successCount} من أصل ${rawTargets.length} حساب.`, 'success');
+
+    if (typeof renderAdminFraudMonitor === 'function') renderAdminFraudMonitor();
+    if (window._adminReloadPlayers) window._adminReloadPlayers(false);
+  };
+
+  window.adminPurgeFeederAccounts = async function() {
+    const notify = (title, msg, type = 'info') => {
+      if (typeof showToast === 'function') showToast(title, msg, type);
+      else if (typeof window.showToast === 'function') window.showToast(title, msg, type);
+      else alert(`${title}\n${msg}`);
+    };
+
+    notify('جاري الفحص...', 'جاري فحص جميع الحسابات في السحابة لرصد الحسابات الوهمية والصفرية...', 'info');
+
+    try {
+      const players = await AppDB.getAllPlayersAdmin();
+      if (!Array.isArray(players) || players.length === 0) {
+        alert('لم يتم العثور على أي حسابات في السحابة.');
+        return;
+      }
+
+      // Filter suspicious 0-project feeder accounts
+      const fakeAccounts = players.filter(p => {
+        if (p.isAdmin || p.is_admin) return false;
+        const pState = (typeof p.state === 'object' && p.state) ? p.state : {};
+        const bizCount = Object.values(pState.businesses || {}).filter(b => (b.level || 0) > 0 || (b.workers || 0) > 0).length;
+        const assetCount = Object.values(pState.assets || {}).filter(v => (v || 0) > 0).length;
+        const carCount = (pState.ownedCars || []).length;
+        const stockShares = Object.values(pState.stocks || {}).reduce((sum, s) => sum + (s.shares || 0), 0);
+        const isZeroProgress = (bizCount === 0 && assetCount === 0 && carCount === 0 && stockShares === 0);
+        
+        return isZeroProgress;
+      });
+
+      if (fakeAccounts.length === 0) {
+        alert('✅ السيرفر نظيف بالكامل: لم يتم العثور على أي حسابات وهمية بدون مشاريع في السحابة!');
+        return;
+      }
+
+      const fakeUsernames = fakeAccounts.map(p => p.username);
+      const userListStr = fakeUsernames.slice(0, 15).join(', ') + (fakeUsernames.length > 15 ? ` ...وغيرهم (${fakeUsernames.length} حساباً)` : '');
+
+      if (!confirm(`🧹 تم رصد (${fakeAccounts.length}) حساب وهمي بدون أي مشاريع في قاعدة البيانات!\n\n` +
+        `قائمة الحسابات:\n${userListStr}\n\n` +
+        `هل تريد مسح وتصفير وحظر جميع هذه الحسابات الوهمية الـ (${fakeAccounts.length}) دفعة واحدة لتنظيف القاعدة؟`)) {
+        return;
+      }
+
+      notify('جاري التطهير التلقائي...', `جاري مسح وحظر ${fakeAccounts.length} حساب وهمي...`, 'info');
+
+      let purgedCount = 0;
+      for (const uname of fakeUsernames) {
+        try {
+          if (AppDB.adminResetPlayer) await AppDB.adminResetPlayer(uname);
+          if (AppDB.adminBanPlayer) await AppDB.adminBanPlayer(uname);
+          if (AppDB.adminDeletePlayer) await AppDB.adminDeletePlayer(uname);
+          purgedCount++;
+        } catch (e) {}
+      }
+
+      notify('تم التطهير التلقائي ✅', `تم مسح وحظر ${purgedCount} حساب وهمي بنجاح وتنظيف قاعدة البيانات.`, 'success');
+
+      if (typeof renderAdminFraudMonitor === 'function') renderAdminFraudMonitor();
+      if (window._adminReloadPlayers) window._adminReloadPlayers(false);
+    } catch (err) {
+      console.error('[Purge Feeder Error]', err);
+      alert('فشل عملية التطهير: ' + err.message);
+    }
   };
 
   async function renderAdminFraudMonitor() {
@@ -5217,10 +5382,14 @@
                   class="px-2 py-1 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold cursor-pointer transition focus:outline-none focus:border-cyan-400">
                   <option value="" disabled selected>المزيد ▾</option>
                   <option value="reset_ban_both">💥 تصفير + حظر الطرفين معاً</option>
+                  <option value="reset_ban_delete_both">💀 تصفير + حظر + مسح نهائي للطرفين</option>
+                  <option value="delete_both">🗑️ مسح كلا الحسابين نهائياً</option>
                   <option value="reset_sender">⚠️ تصفير الراسل (${sender})</option>
                   <option value="reset_recipient">⚠️ تصفير المستلم (${recipient})</option>
                   <option value="ban_sender">⛔ حظر الراسل (${sender})</option>
                   <option value="ban_recipient">⛔ حظر المستلم (${recipient})</option>
+                  <option value="delete_sender">🗑️ مسح الراسل نهائياً (${sender})</option>
+                  <option value="delete_recipient">🗑️ مسح المستلم نهائياً (${recipient})</option>
                 </select>
               </div>
             </td>

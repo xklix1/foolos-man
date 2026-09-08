@@ -990,6 +990,50 @@
             </div>
           </div>
 
+          <!-- Anti-Feeder Direct Action Console -->
+          <div class="p-3.5 bg-slate-950/90 border border-rose-500/40 rounded-xl space-y-3 shadow-lg">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <h5 class="text-xs font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-user-slash text-rose-500 text-sm"></i>
+                <span>مركز تصفير وحظر ومسح الحسابات الوهمية (Anti-Feeder Management Hub)</span>
+              </h5>
+              <button onclick="window.adminPurgeFeederAccounts && window.adminPurgeFeederAccounts()"
+                class="px-3 py-1.5 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white text-xs font-black rounded-lg transition flex items-center gap-1.5 shadow-md cursor-pointer">
+                <i class="fa-solid fa-broom"></i>
+                <span>تطهير تلقائي للحسابات الوهمية (Purge 0-Biz)</span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-center">
+              <div class="lg:col-span-6">
+                <input id="input-admin-target-fake-users" type="text" placeholder="أدخل اسم الحساب أو عدة حسابات بفاصلة (مثال: user1, user2)"
+                  class="w-full bg-slate-900 border border-slate-700 focus:border-rose-500 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 outline-none" />
+              </div>
+              <div class="lg:col-span-6 flex items-center gap-1.5 flex-wrap">
+                <button onclick="window.adminExecuteAccountAction && window.adminExecuteAccountAction('reset')"
+                  class="px-2.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer">
+                  <i class="fa-solid fa-rotate-left"></i>
+                  <span>تصفير</span>
+                </button>
+                <button onclick="window.adminExecuteAccountAction && window.adminExecuteAccountAction('ban')"
+                  class="px-2.5 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer">
+                  <i class="fa-solid fa-ban"></i>
+                  <span>حظر</span>
+                </button>
+                <button onclick="window.adminExecuteAccountAction && window.adminExecuteAccountAction('delete')"
+                  class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer">
+                  <i class="fa-solid fa-trash-can"></i>
+                  <span>مسح نهائي</span>
+                </button>
+                <button onclick="window.adminExecuteAccountAction && window.adminExecuteAccountAction('full_purge')"
+                  class="px-2.5 py-1.5 bg-rose-950 hover:bg-rose-900 border border-rose-500 text-rose-300 rounded-lg text-xs font-black transition flex items-center gap-1 cursor-pointer">
+                  <i class="fa-solid fa-skull-crossbones"></i>
+                  <span>تصفير + حظر + مسح</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="overflow-x-auto border border-slate-800/80 rounded-lg">
             <table class="w-full text-right text-xs min-w-[850px]">
               <thead class="bg-slate-950 text-slate-400">
