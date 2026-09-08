@@ -950,7 +950,7 @@ var AppDB = (() => {
 
   async function _pushStateToCloud(u, state) {
     if (!u || !state) return;
-    if (!state._loadedFromCloud && state.cash <= 300 && state.netWorth <= 400 && state.xp === 0) return;
+    state._loadedFromCloud = true;
 
     const payload = {
       username: u,
