@@ -4905,15 +4905,18 @@
 
       tbody.innerHTML ='';
       transfers.forEach(trf => {
-        const tr = document.createElement('tr');
-        tr.className ='hover:bg-slate-850 transition';
-        const dateStr = new Date(trf.timestamp).toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-        tr.innerHTML =`
-          <td class="p-2.5 font-bold text-white">${trf.sender}</td>
-          <td class="p-2.5 font-bold text-yellow-400">${trf.recipient}</td>
-          <td class="p-2.5 text-center numbers-font font-bold text-emerald-400">+${(trf.amount || 0).toLocaleString()} EGP</td>
+        const rawTime = trf.created_at || trf.createdAt || trf.timestamp || Date.now();
+        const dateObj = new Date(rawTime);
+        const isValidDate = !isNaN(dateObj.getTime());
+        const dateStr = isValidDate 
+          ? dateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          : 'مؤخراً';
+        tr.innerHTML = `
+          <td class="p-2.5 font-bold text-white">${escapeHtml(trf.sender)}</td>
+          <td class="p-2.5 font-bold text-yellow-400">${escapeHtml(trf.recipient)}</td>
+          <td class="p-2.5 text-center numbers-font font-bold text-emerald-400">+${(Number(trf.amount) || 0).toLocaleString()} EGP</td>
           <td class="p-2.5 text-center numbers-font text-slate-400 text-[11px]">${dateStr}</td>
-          <td class="p-2.5 text-left"><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-bold text-[10px]">${trf.status ||'مكتملة'}</span></td>`;
+          <td class="p-2.5 text-left"><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-bold text-[10px]">${escapeHtml(trf.status || 'مكتملة')}</span></td>`;
         tbody.appendChild(tr);
       });
     } catch (e) {

@@ -23,32 +23,65 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   //  HTTP HELPER (POSTGREST DIRECT REST ENGINE)
   // ─────────────────────────────────────────────
+  let _serverTimeOffset = 0;
+  let _hasServerTimeSynced = false;
+
+  function _updateServerTimeFromHeader(dateHeader) {
+    if (!dateHeader) return;
+    try {
+      const serverMs = new Date(dateHeader).getTime();
+      if (!isNaN(serverMs) && serverMs > 0) {
+        _serverTimeOffset = serverMs - Date.now();
+        _hasServerTimeSynced = true;
+      }
+    } catch (e) {}
+  }
+
+  function getTrustedNow() {
+    return Date.now() + _serverTimeOffset;
+  }
+
+  async function fetchServerTime() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/players?select=username&limit=1`, {
+        method: 'HEAD',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+      });
+      const dateHeader = res.headers.get('date');
+      if (dateHeader) _updateServerTimeFromHeader(dateHeader);
+    } catch (e) {}
+    return getTrustedNow();
+  }
+
   async function _api(endpoint, options = {}) {
-    const url =`${SUPABASE_URL}/rest/v1/${endpoint}`;
-    const method = (options.method ||'GET').toUpperCase();
-    const headers = {'apikey': SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json',
+    const url = `${SUPABASE_URL}/rest/v1/${endpoint}`;
+    const method = (options.method || 'GET').toUpperCase();
+    const headers = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json',
       ...(options.headers || {})
     };
 
     // Auto-inject Prefer: return=minimal for mutating queries to save Supabase Egress (HTTP 204)
-    if (method ==='POST' || method ==='PATCH' || method ==='DELETE') {
+    if (method === 'POST' || method === 'PATCH' || method === 'DELETE') {
       if (!headers['Prefer']) {
-        headers['Prefer'] ='return=minimal';
+        headers['Prefer'] = 'return=minimal';
       } else if (!headers['Prefer'].includes('return=')) {
-        headers['Prefer'] +=', return=minimal';
+        headers['Prefer'] += ', return=minimal';
       }
     }
 
     const res = await fetch(url, { ...options, headers });
+    const dateHeader = res.headers.get('date');
+    if (dateHeader) _updateServerTimeFromHeader(dateHeader);
+
     if (!res.ok) {
-      const errBody = await res.text().catch(() =>'');
+      const errBody = await res.text().catch(() => '');
       let parsed = null;
       try { parsed = JSON.parse(errBody); } catch (e) {}
-      const msg = (parsed && (parsed.message || parsed.hint || parsed.details)) || errBody ||`HTTP ${res.status}`;
+      const msg = (parsed && (parsed.message || parsed.hint || parsed.details)) || errBody || `HTTP ${res.status}`;
       throw new Error(msg);
     }
 
-    const contentType = res.headers.get('content-type') ||'';
+    const contentType = res.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
       return await res.json();
     }
@@ -299,14 +332,12 @@ var AppDB = (() => {
         const lang = (typeof navigator !== 'undefined' && ((navigator.languages && navigator.languages[0]) || navigator.language)) || '';
         const cores = (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 0;
         const tz = new Date().getTimezoneOffset();
-        const seed = _getPersistentSeed();
 
-        // Hardware profile components (consistent even in Incognito mode)
+        // Hardware profile components (consistent even in Incognito mode & across sessions)
         const hwProfile = [webgl, canvasHash, screen, lang, cores, tz].join('|');
         const hwHash = _simpleHash(hwProfile);
-        const fullHash = _simpleHash(`${hwHash}|${seed}`);
 
-        _cachedFp = `dev_${hwHash}_${fullHash.substring(0, 8)}`;
+        _cachedFp = `dev_hw_${hwHash}`;
         return _cachedFp;
       } catch (e) {
         return 'dev_fallback_' + Math.random().toString(36).substring(2, 10);
@@ -525,27 +556,40 @@ var AppDB = (() => {
     const stockShares = Object.values(sender.stocks || {}).reduce((sum, s) => sum + (s.shares || 0), 0);
     const isZeroProgress = (bizCount === 0 && assetCount === 0 && carCount === 0 && stockShares === 0);
 
-    const totalSenderFunds = Number(sender.cash || 0) + Number(sender.bank || 0);
-    const transferRatio = totalSenderFunds > 0 ? (amt / totalSenderFunds) : 1;
-    const senderAgeHours = (Date.now() - Number(sender.createdAt || sender.created_at || 0)) / (3600 * 1000);
-
-    if (isZeroProgress && (transferRatio >= 0.65 || senderAgeHours < 4)) {
+    // STRICT RULE: Absolute block on 0-progress / 0-project accounts from transferring money
+    if (isZeroProgress || bizCount === 0) {
       await logFraudAlert({
         type: 'FEEDER_EMPTY_ACCOUNT',
         sender: sUser,
         recipient: rUser,
         amount: amt,
         device: fp,
-        details: `حساب بدون أي نشاط تجاري (0 مشاريع) يحول ${Math.round(transferRatio * 100)}% من رصيده (${amt.toLocaleString()} EGP)`
+        details: `حساب بدون أي نشاط تجاري (0 مشاريع) يحاول تحويل ${amt.toLocaleString()} EGP إلى ${rUser}`
       });
-      throw new Error('🚫 مرفوض أمنياً: حسابك لم يقم بأي نشاط تجاري أو استثماري بعد (0 مشاريع). لا يمكن تفريغ رأس المال في حساب آخر فور التسجيل لمنع الحسابات الوهمية (Feeder Accounts). يرجى البدء بتشغيل مشاريعك أولاً!');
+      throw new Error('🚫 مرفوض أمنياً: حسابك لم يقم بأي نشاط تجاري أو استثماري بعد (0 مشاريع). تمنع قواعد اللعبة تحويل الأموال من حسابات فارغة لمنع الحسابات الوهمية (Feeder Accounts). يرجى تطوير مشاريعك أولاً!');
     }
 
-    // 4. Clone / Similar Name or Gibberish Name Heuristics
+    // 4. Sender Account Age Check
+    const rawCreatedAt = sender.createdAt || sender.created_at;
+    const createdMs = rawCreatedAt ? (typeof rawCreatedAt === 'string' ? new Date(rawCreatedAt).getTime() : Number(rawCreatedAt)) : getTrustedNow();
+    const senderAgeHours = Math.max(0, (getTrustedNow() - createdMs) / (3600 * 1000));
+    if (senderAgeHours < 2) {
+      await logFraudAlert({
+        type: 'NEW_ACCOUNT_TRANSFER_BLOCKED',
+        sender: sUser,
+        recipient: rUser,
+        amount: amt,
+        device: fp,
+        details: `حساب حديث (عمره ${senderAgeHours.toFixed(1)} ساعة) يحاول تحويل ${amt.toLocaleString()} EGP`
+      });
+      throw new Error('🚫 مرفوض أمنياً: يجب أن يمر ساعتان على الأقل على إنشاء الحساب وتطوير المشاريع قبل إمكانية إجراء تحويلات مالية.');
+    }
+
+    // 5. Clone / Similar Name or Gibberish Name Heuristics
     const similar = isSimilarName(sUser, rUser);
     const gibberish = isGibberishName(sUser);
 
-    if ((similar || gibberish) && bizCount === 0) {
+    if (similar || gibberish) {
       await logFraudAlert({
         type: similar ? 'SIMILAR_NAME_FEEDER' : 'GIBBERISH_NAME_FEEDER',
         sender: sUser,
@@ -553,32 +597,33 @@ var AppDB = (() => {
         amount: amt,
         device: fp,
         details: similar 
-          ? `تشابه كبير في أسماء الحسابات النمطية (${sUser} -> ${rUser}) مع انعدام المشاريع`
-          : `اسم حساب عشوائي (${sUser}) مع انعدام المشاريع`
+          ? `تشابه كبير في أسماء الحسابات النمطية (${sUser} -> ${rUser})`
+          : `اسم حساب عشوائي (${sUser})`
       });
       throw new Error('🚫 تم رفض التحويل أمنياً: تم رصد نمط حسابات وهمية متطابقة (Clone/Feeder Accounts). يرجى اللعب وتطوير المشاريع بشكل مستقل.');
     }
 
-    // 5. Rapid Multi-Account Feeders to Single Recipient
+    // 6. Rapid Multi-Account Feeders to Single Recipient
     try {
       const recentIncoming = await _api(`transfers?recipient=eq.${encodeURIComponent(rUser)}&order=created_at.desc&limit=15`);
-      const now = Date.now();
+      const now = getTrustedNow();
       const twelveHoursAgo = now - (12 * 3600 * 1000);
       const recentSenders = new Set();
       (recentIncoming || []).forEach(t => {
-        const tTime = Number(t.created_at || t.timestamp || 0);
+        const rawTime = t.created_at || t.timestamp || 0;
+        const tTime = typeof rawTime === 'string' ? new Date(rawTime).getTime() : Number(rawTime);
         if (tTime > twelveHoursAgo && t.sender && t.sender !== sUser) {
           recentSenders.add(t.sender);
         }
       });
-      if (recentSenders.size >= 3 && isZeroProgress) {
+      if (recentSenders.size >= 3) {
         await logFraudAlert({
           type: 'RAPID_MULTI_FEEDER_RECIPIENT',
           sender: sUser,
           recipient: rUser,
           amount: amt,
           device: fp,
-          details: `المستلم ${rUser} يتلقى تدفقات متكررة من ${recentSenders.size + 1} حسابات مختلفة، ومحاولة تحويل من حساب فارغ ${sUser}`
+          details: `المستلم ${rUser} يتلقى تدفقات متكررة من ${recentSenders.size + 1} حسابات مختلفة خلال 12 ساعة`
         });
         throw new Error('🚫 تم إيقاف التحويل أمنياً: يتلقى حساب المستلم تدفقات متكررة من عدة حسابات حديثة. تم حظر المعاملة وإحالتها للفحص الأمني.');
       }
@@ -1195,13 +1240,24 @@ var AppDB = (() => {
     const pRows = await _api(`players?username=eq.${encodeURIComponent(u)}&select=*`);
     if (!pRows || pRows.length === 0) throw new Error('حساب اللاعب غير موجود.');
     const p = pRows[0];
+    const pState = (typeof p.state === 'object' && p.state) ? { ...p.state } : {};
+
+    // Feeder / Multi-account promo code harvesting gate
+    const bizCount = Object.values(pState.businesses || {}).filter(b => (b.level || 0) > 0 || (b.workers || 0) > 0).length;
+    const rawCreatedAt = p.created_at || pState.createdAt || pState.created_at;
+    const createdMs = rawCreatedAt ? (typeof rawCreatedAt === 'string' ? new Date(rawCreatedAt).getTime() : Number(rawCreatedAt)) : getTrustedNow();
+    const ageHours = Math.max(0, (getTrustedNow() - createdMs) / (3600 * 1000));
+
+    if (bizCount === 0 && ageHours < 1) {
+      throw new Error('🚫 تنبيه أمني: لاسترداد هدايا وأكواد رأس المال، يجب تطوير مشروعك الأول على الأقل أو قضاء ساعة واحدة في بناء المشاريع لمنع الحسابات الوهمية.');
+    }
+
     const curCash = Number(p.cash || 0);
     const curWorth = Number(p.net_worth || 0);
     const reward = Number(gift.reward_cash || 100000);
     const newCash = curCash + reward;
     const newWorth = curWorth + reward;
 
-    const pState = (typeof p.state ==='object' && p.state) ? { ...p.state } : {};
     pState.cash = newCash;
     pState.netWorth = newWorth;
 
@@ -4008,6 +4064,8 @@ var AppDB = (() => {
     saveGlobalMarketEvent,
 
     // Security & Anti-Fraud Shield
+    getTrustedNow,
+    fetchServerTime,
     DeviceFingerprint,
     getDeviceRegistry,
     saveDeviceRegistry,

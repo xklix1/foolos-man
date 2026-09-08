@@ -7,7 +7,15 @@
 // Admin identity is determined at runtime from Firestore (isAdmin flag) — no hardcoded credentials.
 
 const GameEngine = (() => {
-  console.log('[GAME] Simulation Engine Loaded (v=107)');
+  console.log('[GAME] Simulation Engine Loaded (v=108)');
+  
+  function getTrustedNow() {
+    if (typeof window !== 'undefined' && window.AppDB && typeof window.AppDB.getTrustedNow === 'function') {
+      return window.AppDB.getTrustedNow();
+    }
+    return Date.now();
+  }
+
   // --- Game Configurations & Data Tables ---
 
   const JOBS = {
@@ -2294,7 +2302,7 @@ const GameEngine = (() => {
 
     // 6.8 Trade Company (الاستيراد والتصدير): Arrival of imports and delivery of exports
     if (state.tradeCompany) {
-      const nowMs = Date.now();
+      const nowMs = getTrustedNow();
       if (state.tradeCompany.activeImports && state.tradeCompany.activeImports.length > 0) {
         state.tradeCompany.activeImports.forEach(imp => {
           if (!imp.arrived && nowMs >= imp.arrivalTime) {
@@ -2548,12 +2556,23 @@ const GameEngine = (() => {
 
       // Calculate offline idle earnings if returning after being away (Requires active 12-hour AFK Manager)
       if (dbState.lastActiveTimestamp && dbState.lastActiveTimestamp > 0) {
-        const now = Date.now();
+        const now = getTrustedNow();
+        const lastSeenServer = Number(dbState.lastActiveTimestamp || dbState.lastSeen || 0);
+
+        // Anti-Time Travel Audit (Idea 3)
+        let timeTravelFlagged = false;
+        if (now < lastSeenServer - 30000) {
+          console.warn('[Anti-Cheat] Time travel regression detected! trustedNow:', now, 'lastSeenServer:', lastSeenServer);
+          timeTravelFlagged = true;
+        }
+
         const managerExpiry = dbState.afkManagerExpiresAt || 0;
 
         // Effective offline time is capped by when the 12-hour manager expired
         const effectiveEnd = Math.min(now, managerExpiry);
-        const elapsedSinceLastActive = Math.max(0, Math.floor((effectiveEnd - dbState.lastActiveTimestamp) / 1000));
+        const elapsedSinceLastActive = (timeTravelFlagged || now < lastSeenServer)
+          ? 0
+          : Math.max(0, Math.floor((effectiveEnd - lastSeenServer) / 1000));
 
         let offlineCorpEarnings = 0;
         if (typeof firebase !=='undefined' && AppDB.isFirebaseReady) {
@@ -2720,7 +2739,7 @@ const GameEngine = (() => {
       if (!state.tradeCompany.activeImports) state.tradeCompany.activeImports = [];
       if (!state.tradeCompany.activeExports) state.tradeCompany.activeExports = [];
 
-      const nowSessionMs = Date.now();
+      const nowSessionMs = getTrustedNow();
       state.tradeCompany.activeImports.forEach(imp => {
         if (!imp.arrived && nowSessionMs >= imp.arrivalTime) {
           imp.arrived = true;
@@ -2741,7 +2760,7 @@ const GameEngine = (() => {
         }
       });
 
-      state.lastActiveTimestamp = Date.now();
+      state.lastActiveTimestamp = getTrustedNow();
       state.netWorth = calculateNetWorth();
       await AppDB.savePlayerState(username, state);
     } else {
@@ -2749,8 +2768,8 @@ const GameEngine = (() => {
       console.warn('[GameEngine] No cloud dbState found for user:', username);
       state = JSON.parse(JSON.stringify(INITIAL_STATE));
       state.username = username;
-      state.afkManagerExpiresAt = Date.now() + (12 * 60 * 60 * 1000);
-      state.lastActiveTimestamp = Date.now();
+      state.afkManagerExpiresAt = getTrustedNow() + (12 * 60 * 60 * 1000);
+      state.lastActiveTimestamp = getTrustedNow();
     }
     ensureDailyQuests();
     initStocks();
@@ -4517,7 +4536,8 @@ const GameEngine = (() => {
       state.bank -= rem;
     }
 
-    const orderId ='imp_' + Date.now() +'_' + Math.random().toString(36).substring(2, 6);
+    const nowTrusted = getTrustedNow();
+    const orderId ='imp_' + nowTrusted +'_' + Math.random().toString(36).substring(2, 6);
     const importOrder = {
       id: orderId,
       commodityId,
@@ -4526,8 +4546,8 @@ const GameEngine = (() => {
       baseCost,
       customsAndFreightFee,
       totalCost,
-      startTime: Date.now(),
-      arrivalTime: Date.now() + (item.importDurationSec * 1000),
+      startTime: nowTrusted,
+      arrivalTime: nowTrusted + (item.importDurationSec * 1000),
       durationSec: item.importDurationSec,
       arrived: false
     };
@@ -4602,7 +4622,8 @@ const GameEngine = (() => {
       delete state.tradeCompany.warehouse[commodityId];
     }
 
-    const exportOrderId ='exp_' + Date.now() +'_' + Math.random().toString(36).substring(2, 6);
+    const nowTrustedExp = getTrustedNow();
+    const exportOrderId ='exp_' + nowTrustedExp +'_' + Math.random().toString(36).substring(2, 6);
     const exportOrder = {
       id: exportOrderId,
       commodityId,
@@ -4615,8 +4636,8 @@ const GameEngine = (() => {
       totalPayout,
       estProfit,
       saturationDiscountPct: Math.round(saturationDiscount * 100),
-      startTime: Date.now(),
-      deliveryTime: Date.now() + (item.exportDurationSec * 1000),
+      startTime: nowTrustedExp,
+      deliveryTime: nowTrustedExp + (item.exportDurationSec * 1000),
       durationSec: item.exportDurationSec,
       delivered: false,
       claimed: false
