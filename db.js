@@ -837,8 +837,14 @@ var AppDB = (() => {
       if (local && typeof local === 'object') {
         let shouldSyncCloud = false;
 
-        // 1. Business Levels & Workers Guard: NEVER downgrade business levels or worker counts
-        if (local.businesses && typeof local.businesses === 'object') {
+        const localTs = Number(local.lastSeen || local.lastActiveTimestamp || 0);
+        const serverTs = Number(row.last_seen || 0);
+        // Only reconcile local upgrades if local device was active recently (within 10 minutes of server timestamp or newer)
+        // This ensures switching devices loads newer server data without stale secondary device data interfering
+        const isLocalRecentOrNewer = (localTs >= serverTs - 600000);
+
+        // 1. Business Levels & Workers Guard: NEVER downgrade business levels or worker counts on same device
+        if (isLocalRecentOrNewer && local.businesses && typeof local.businesses === 'object') {
           Object.keys(local.businesses).forEach(bk => {
             const locBiz = local.businesses[bk];
             if (!locBiz || typeof locBiz !== 'object') return;
@@ -884,8 +890,6 @@ var AppDB = (() => {
 
         // 4. Loss & confiscation guard:
         // If local state was updated recently (within 5 minutes) and has a lower cash balance
-        const localTs = Number(local.lastSeen || local.lastActiveTimestamp || 0);
-        const serverTs = Number(row.last_seen || 0);
         if (localTs >= serverTs - 300000) {
           if (typeof local.cash === 'number' && local.cash < stateObj.cash) {
             stateObj.cash = local.cash;
