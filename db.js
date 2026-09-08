@@ -4250,6 +4250,9 @@ var AppDB = (() => {
     adminWipeLeaderboard,
     adminRebuildLeaderboard,
 
+    // Referral System
+    getReferralReport,
+
     // Backups
     checkAndCreateDailyBackup,
     getPlayerBackupDates: async () => [],
