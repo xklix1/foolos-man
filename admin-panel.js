@@ -1720,6 +1720,12 @@
     }
 
     async function openAdminReferralModal(targetUsername) {
+      targetUsername = targetUsername || selectedPlayer;
+      if (!targetUsername) {
+        showToast('فحص الدعوات', 'يرجى اختيار لاعب أولاً من القائمة.', 'warning');
+        return;
+      }
+
       const modal = document.getElementById('modal-admin-referrals');
       if (!modal) return;
 
@@ -1809,6 +1815,7 @@
         if (tbody) tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-rose-400">خطأ: ${err.message}</td></tr>`;
       }
     }
+    window.openAdminReferralModal = openAdminReferralModal;
 
     // Admin Action 1: Save Custom Referral Code for Target Player
     const saveRefCodeBtn = document.getElementById('btn-adm-save-ref-code');
