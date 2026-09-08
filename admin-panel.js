@@ -5240,43 +5240,62 @@
         return;
       }
 
-      // Filter suspicious 0-project feeder accounts with zero wealth/progress
+      function isGibberishUsername(name) {
+        const n = (name || '').toLowerCase().trim();
+        if (!n || n.length < 3) return false;
+        if (/[bcdfghjklmnpqrstvwxyz]{5,}/i.test(n)) return true;
+        if (/(?:asdf|sdfg|dfgh|fghj|ghjk|hjkl|qwer|wert|erty|rtyu|tyui|yuio|uiop|zxcv|xcvb|cvbn|vbnm)/i.test(n)) return true;
+        if (/(?:شسيب|سيبل|يبلات|كمنت|ضصثق)/i.test(n)) return true;
+        if (/(.)\1{3,}/.test(n)) return true;
+        if (/^[a-z0-9]{8,}$/i.test(n) && !/[aeiouy]/i.test(n)) return true;
+        return false;
+      }
+
+      // Filter feeder accounts based on exact criteria:
+      // 1. Username is gibberish/random characters (أن يكون الاسم حروف عشوائية).
+      // 2. Has ZERO businesses / projects (ولا يمتلك مشاريع أبداً).
+      // 3. EXCEPTION: Exclude any account that has ever purchased a top-up package (ويستثنى من هذه الشروط في حال كان قد قام بشراء حزمة شحن من قبل).
       const fakeAccounts = players.filter(p => {
         if (p.isAdmin || p.is_admin || p.isBanned || p.is_banned) return false;
         
         const pState = (typeof p.state === 'object' && p.state) ? p.state : p;
+        const uname = p.username || pState.username || '';
 
-        // Check businesses
+        // --- RULE 3: EXCEPTION FOR TOP-UP PURCHASERS ---
+        const hasPurchasedTopup = (
+          pState.hasPurchasedTopup === true ||
+          (pState.purchasedTopups || 0) > 0 ||
+          pState.isVerified === true ||
+          pState.vipVerified === true ||
+          pState.hasChatGlow === true ||
+          Boolean(pState.chatGlow) ||
+          (Array.isArray(pState.topupHistory) && pState.topupHistory.length > 0) ||
+          (Array.isArray(pState.topupReceipts) && pState.topupReceipts.length > 0)
+        );
+
+        if (hasPurchasedTopup) {
+          return false; // Excluded! Purchased a top-up package before.
+        }
+
+        // --- RULE 1: USERNAME MUST BE RANDOM GIBBERISH ---
+        const isGibberish = isGibberishUsername(uname);
+
+        // --- RULE 2: MUST HAVE ZERO PROJECTS / BUSINESSES ---
         const bizObj = pState.businesses || p.businesses || {};
         const bizCount = Object.values(bizObj).filter(b => b && ((b.level || 0) > 0 || (b.workers || 0) > 0)).length;
 
-        // Check assets
         const assetObj = pState.assets || p.assets || {};
         const assetCount = Object.values(assetObj).filter(v => (typeof v === 'number' ? v : (v && (v.level || v.count) || 0)) > 0).length;
 
-        // Check cars
         const cars = pState.ownedCars || p.ownedCars || pState.cars || [];
         const carCount = Array.isArray(cars) ? cars.length : Object.keys(cars).length;
 
-        // Check stocks
         const stockObj = pState.stocks || p.stocks || {};
         const stockShares = Object.values(stockObj).reduce((sum, s) => sum + (s && (s.shares || s.count || 0) || (typeof s === 'number' ? s : 0)), 0);
 
-        const isZeroProgress = (bizCount === 0 && assetCount === 0 && carCount === 0 && stockShares === 0);
+        const hasZeroProjects = (bizCount === 0 && assetCount === 0 && carCount === 0 && stockShares === 0);
 
-        // Strict Financial & Level Safeguards:
-        // Feeder accounts are empty shell accounts created with 0 projects and minimal money.
-        // If a player has total wealth > 50,000 EGP or XP > 500, they are NOT a feeder account!
-        const netWorth = Number(p.netWorth || p.net_worth || 0);
-        const cash = Number(p.cash || 0);
-        const bank = Number(p.bank || 0);
-        const xp = Number(p.xp || 0);
-
-        if (netWorth > 50000 || (cash + bank) > 50000 || xp > 500) {
-          return false;
-        }
-
-        return isZeroProgress;
+        return isGibberish && hasZeroProjects;
       });
 
       if (fakeAccounts.length === 0) {

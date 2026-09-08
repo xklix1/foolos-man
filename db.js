@@ -1978,6 +1978,9 @@ var AppDB = (() => {
         pState.activePackage = 'pkg_vip_verified';
       }
 
+      pState.hasPurchasedTopup = true;
+      pState.purchasedTopups = (pState.purchasedTopups || 0) + 1;
+
       if (rewards.features) {
         if (rewards.features.chatGlow) {
           pState.chatGlow = rewards.features.chatGlow;
