@@ -1118,6 +1118,25 @@ var AppDB = (() => {
           }
         }
 
+        // 5. Late-save recovery:
+        // If local is definitively NEWER than the cloud (localTs > serverTs), the cloud save
+        // was probably debounced or blocked (e.g. admin_modified_timestamp filter mismatch).
+        // Prefer local cash/bank/dirtyCash so offline earnings and gameplay aren't lost on reload.
+        if (localTs > serverTs) {
+          if (typeof local.cash === 'number' && local.cash > stateObj.cash) {
+            stateObj.cash = local.cash;
+            shouldSyncCloud = true;
+          }
+          if (typeof local.bank === 'number' && local.bank > stateObj.bank) {
+            stateObj.bank = local.bank;
+            shouldSyncCloud = true;
+          }
+          if (typeof local.dirtyCash === 'number' && local.dirtyCash > stateObj.dirtyCash) {
+            stateObj.dirtyCash = local.dirtyCash;
+            shouldSyncCloud = true;
+          }
+        }
+
         if (shouldSyncCloud) {
           stateObj.netWorth = Math.max(0, (stateObj.cash || 0) + (stateObj.bank || 0) + (stateObj.dirtyCash || 0));
           _pushStateToCloud(row.username, stateObj).catch(() => {});
@@ -1171,7 +1190,10 @@ var AppDB = (() => {
 
     try {
       const adminTs = Number(state.adminModifiedTimestamp || 0);
-      const tsFilter = `&admin_modified_timestamp=lte.${adminTs}`;
+      // Only apply the admin_modified_timestamp guard if we have a known admin modification.
+      // When adminTs=0 (never admin-modified), lte.0 would silently block all saves on accounts
+      // that have any non-zero admin_modified_timestamp from a previous admin action.
+      const tsFilter = adminTs > 0 ? `&admin_modified_timestamp=lte.${adminTs}` : '';
       const url =`${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}${tsFilter}`;
       fetch(url, {
         method:'PATCH',
@@ -1242,7 +1264,9 @@ var AppDB = (() => {
 
     try {
       const adminTs = Number(state.adminModifiedTimestamp || 0);
-      const tsFilter = `&admin_modified_timestamp=lte.${adminTs}`;
+      // Only apply admin_modified_timestamp guard when a known admin modification exists.
+      // lte.0 silently blocks saves for all accounts that have any non-zero admin timestamp.
+      const tsFilter = adminTs > 0 ? `&admin_modified_timestamp=lte.${adminTs}` : '';
       const res = await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
         method:'PATCH',
         headers: {'Prefer':'return=representation' },
