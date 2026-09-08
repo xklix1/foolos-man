@@ -932,17 +932,25 @@ var AppDB = (() => {
     } catch (e) {}
   }
 
-  // Attach exit listeners immediately
-  if (typeof window !=='undefined') {
+  // Attach exit and app-hide listeners immediately for bulletproof auto-save (Desktop & Mobile)
+  if (typeof window !== 'undefined') {
     const handleExitFlush = () => {
       const activeUser = (window.GameEngine && window.GameEngine.activeUsername);
       const activeState = (window.GameEngine && window.GameEngine.state);
       if (activeUser && activeState && activeState.username === activeUser && (activeState._loadedFromCloud || activeState.cash > 300 || activeState.netWorth > 400 || activeState.xp > 0)) {
+        try {
+          setEncryptedLocalState(`rasalmal_state_${activeUser}`, activeState);
+        } catch (e) {}
         flushStateToCloudOnExit(activeUser, activeState);
       }
     };
     window.addEventListener('beforeunload', handleExitFlush);
     window.addEventListener('pagehide', handleExitFlush);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) handleExitFlush();
+      });
+    }
   }
 
   let _cloudSyncDebounceTimer = null;
