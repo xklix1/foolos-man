@@ -2997,55 +2997,73 @@ const UIController = (() => {
     }
 
     // Gift Code Redeem Listener (Player)
+    async function doRedeemGiftCode(inputEl, btnEl) {
+      if (!inputEl) return;
+      const code = inputEl.value.trim();
+      if (!code) {
+        showToast('خطأ إدخال', 'يرجى إدخال رمز الكود أولاً.', 'error');
+        return;
+      }
+
+      const origText = btnEl ? btnEl.innerHTML : '';
+      try {
+        if (btnEl) {
+          btnEl.disabled = true;
+          btnEl.textContent = 'جاري التحقق...';
+        }
+
+        const result = await AppDB.redeemGiftCode(code, GameEngine.activeUsername);
+
+        const rText = (result && result.rewardText) ? result.rewardText : (result && result.amount ? `${Number(result.amount).toLocaleString()} EGP كاش` : (typeof result === 'number' ? `${result.toLocaleString()} EGP كاش` : 'مكافأة نقدية'));
+        showToast('تم استرداد الهدية! 🎁', `تهانينا! حصلت على: ${rText}`, 'success');
+        playMenuSound('success');
+
+        // Apply changes to local GameEngine.state immediately
+        if (result && result.playerUpdates && result.playerUpdates.cash !== undefined) {
+          GameEngine.state.cash = Number(result.playerUpdates.cash);
+          GameEngine.state.netWorth = Number(result.playerUpdates.netWorth);
+        } else if (result && result.amount) {
+          GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + Number(result.amount);
+          GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + Number(result.amount);
+        } else if (typeof result === 'number') {
+          GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + result;
+          GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + result;
+        }
+
+        // Persist immediately to local storage and queue cloud save
+        if (typeof AppDB.setEncryptedLocalState === 'function') {
+          AppDB.setEncryptedLocalState(GameEngine.activeUsername, GameEngine.state);
+        }
+        if (typeof AppDB.savePlayerState === 'function') {
+          AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        }
+
+        inputEl.value = '';
+        closeGiftCodeModal();
+        renderAll();
+      } catch (err) {
+        showToast('فشل استرداد الكود', err.message, 'error');
+      } finally {
+        if (btnEl) {
+          btnEl.disabled = false;
+          btnEl.innerHTML = origText || '<i class="fa-solid fa-gift"></i> <span>استرداد الهدية</span>';
+        }
+      }
+    }
+
     const btnPlayerRedeemGift = document.getElementById('btn-player-redeem-gift');
     if (btnPlayerRedeemGift) {
-      btnPlayerRedeemGift.addEventListener('click', async () => {
+      btnPlayerRedeemGift.addEventListener('click', () => {
         const codeInput = document.getElementById('player-gift-code-input');
-        if (!codeInput) return;
-        const code = codeInput.value.trim();
-        if (!code) {
-          showToast('خطأ إدخال','يرجى إدخال رمز الكود أولاً.','error');
-          return;
-        }
+        doRedeemGiftCode(codeInput, btnPlayerRedeemGift);
+      });
+    }
 
-        try {
-          btnPlayerRedeemGift.disabled = true;
-          btnPlayerRedeemGift.textContent ='جاري التحقق...';
-
-          const result = await AppDB.redeemGiftCode(code, GameEngine.activeUsername);
-
-          const rText = (result && result.rewardText) ? result.rewardText : (result && result.amount ?`${Number(result.amount).toLocaleString()} EGP كاش` : (typeof result ==='number' ?`${result.toLocaleString()} EGP كاش` :'مكافأة نقدية'));
-          showToast('تم استرداد الهدية!',`تهانينا! حصلت على: ${rText}`,'success');
-          playMenuSound('success');
-
-          // Apply changes to local GameEngine.state immediately
-          if (result && result.playerUpdates && result.playerUpdates.cash !== undefined) {
-            GameEngine.state.cash = Number(result.playerUpdates.cash);
-            GameEngine.state.netWorth = Number(result.playerUpdates.netWorth);
-          } else if (result && result.amount) {
-            GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + Number(result.amount);
-            GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + Number(result.amount);
-          } else if (typeof result ==='number') {
-            GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + result;
-            GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + result;
-          }
-
-          // Persist immediately to local storage and queue cloud save
-          if (typeof AppDB.setEncryptedLocalState ==='function') {
-            AppDB.setEncryptedLocalState(GameEngine.activeUsername, GameEngine.state);
-          }
-          if (typeof AppDB.savePlayerState ==='function') {
-            AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
-          }
-
-          codeInput.value ='';
-          renderAll();
-        } catch (err) {
-          showToast('فشل استرداد الكود', err.message,'error');
-        } finally {
-          btnPlayerRedeemGift.disabled = false;
-          btnPlayerRedeemGift.innerHTML ='<i class="fa-solid fa-gift"></i> <span>استرداد الهدية</span>';
-        }
+    const btnPlayerRedeemGiftModal = document.getElementById('btn-player-redeem-gift-modal');
+    if (btnPlayerRedeemGiftModal) {
+      btnPlayerRedeemGiftModal.addEventListener('click', () => {
+        const modalInput = document.getElementById('player-gift-code-modal-input');
+        doRedeemGiftCode(modalInput, btnPlayerRedeemGiftModal);
       });
     }
 
@@ -16149,6 +16167,23 @@ const UIController = (() => {
     if (modal) modal.classList.add('hidden');
   }
 
+  function openGiftCodeModal() {
+    playMenuSound('modal_open');
+    const modal = document.getElementById('modal-gift-code');
+    if (modal) modal.classList.remove('hidden');
+    const input = document.getElementById('player-gift-code-modal-input');
+    if (input) {
+      input.value = '';
+      setTimeout(() => input.focus(), 150);
+    }
+  }
+
+  function closeGiftCodeModal() {
+    playMenuSound('modal_close');
+    const modal = document.getElementById('modal-gift-code');
+    if (modal) modal.classList.add('hidden');
+  }
+
   function renderPlayerInventory() {
     const grid = document.getElementById('player-inventory-grid');
     const totalBadge = document.getElementById('modal-inventory-total-badge');
@@ -16382,6 +16417,8 @@ const UIController = (() => {
     // Player Tools & Inventory Exports
     openPlayerInventoryModal,
     closePlayerInventoryModal,
+    openGiftCodeModal,
+    closeGiftCodeModal,
     renderPlayerInventory,
     useInventoryItem,
     showDirectAdminPopupModal
