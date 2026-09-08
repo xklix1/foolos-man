@@ -5295,7 +5295,16 @@
 
         const hasZeroProjects = (bizCount === 0 && assetCount === 0 && carCount === 0 && stockShares === 0);
 
-        return isGibberish && hasZeroProjects;
+        // --- RULE 3: HAS REDEEMED GIFT CODE(S) ---
+        // Feeder accounts rely on redeeming gift codes/promo codes without building projects.
+        const hasRedeemedGiftCode = (
+          pState.hasRedeemedGiftCode === true ||
+          (pState.giftCodesRedeemed || 0) > 0 ||
+          (pState.totalGiftRewards || 0) > 0 ||
+          (Array.isArray(pState.redeemedCodes) && pState.redeemedCodes.length > 0)
+        );
+
+        return isGibberish && hasZeroProjects && hasRedeemedGiftCode;
       });
 
       if (fakeAccounts.length === 0) {

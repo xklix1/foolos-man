@@ -1267,6 +1267,9 @@ var AppDB = (() => {
 
     pState.cash = newCash;
     pState.netWorth = newWorth;
+    pState.hasRedeemedGiftCode = true;
+    pState.giftCodesRedeemed = (pState.giftCodesRedeemed || 0) + 1;
+    pState.totalGiftRewards = (pState.totalGiftRewards || 0) + reward;
 
     await _api(`players?username=eq.${encodeURIComponent(u)}`, {
       method:'PATCH',
