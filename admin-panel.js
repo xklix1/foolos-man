@@ -1755,6 +1755,10 @@
           ? selectedPlayerState
           : await AppDB.getPlayerState(targetUsername);
 
+        if (targetState && !targetState.referralCode && window.GameEngine && typeof window.GameEngine.generateReferralCode === 'function') {
+          targetState.referralCode = window.GameEngine.generateReferralCode(targetUsername);
+        }
+
         if (inputCodeEl) inputCodeEl.value = (targetState && targetState.referralCode) ? targetState.referralCode : '';
         if (inputRefByEl) inputRefByEl.value = (targetState && (targetState.referredByCode || targetState.referredBy)) ? (targetState.referredByCode || targetState.referredBy) : '';
 

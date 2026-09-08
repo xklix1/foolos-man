@@ -851,11 +851,20 @@ var AppDB = (() => {
         ? window.GameEngine.state
         : await getPlayerState(u);
 
-      const refCode = (myState && myState.referralCode) ? myState.referralCode : '';
-      if (!refCode) return { referralCode: '', totalInvited: 0, qualifiedCount: 0, pendingCount: 0, invitees: [] };
+      let refCode = (myState && myState.referralCode) ? myState.referralCode : '';
+      if (!refCode && window.GameEngine && typeof window.GameEngine.generateReferralCode === 'function') {
+        refCode = window.GameEngine.generateReferralCode(u);
+        if (myState) {
+          myState.referralCode = refCode;
+          try { await savePlayerState(u, myState, true); } catch (e) {}
+        }
+      }
 
-      // Query all players where state->>referredByCode = refCode OR state->>referredBy = u
-      const rows = await _api(`players?or=(state->>referredByCode.eq.${encodeURIComponent(refCode)},state->>referredBy.eq.${encodeURIComponent(u)})&select=username,cash,bank,dirty_cash,net_worth,created_at,last_seen,state`);
+      const queryUrl = refCode
+        ? `players?or=(state->>referredByCode.eq.${encodeURIComponent(refCode)},state->>referredBy.eq.${encodeURIComponent(u)})&select=username,cash,bank,dirty_cash,net_worth,created_at,last_seen,state`
+        : `players?state->>referredBy=eq.${encodeURIComponent(u)}&select=username,cash,bank,dirty_cash,net_worth,created_at,last_seen,state`;
+
+      const rows = await _api(queryUrl);
 
       const invitees = [];
       let qualifiedCount = 0;
