@@ -828,19 +828,53 @@ var AppDB = (() => {
       stateObj.adminModifiedTimestamp = Number(row.admin_modified_timestamp || 0);
       stateObj._loadedFromCloud = true;
 
-      // ── ANTI-SAVE-SCUMMING / RELOAD ROLLBACK GUARD ──
-      // If player lost money, got confiscated, or was sent to jail right before a reload/reconnect,
-      // prevent the reload from wiping out penalties!
+      if (!stateObj.businesses || typeof stateObj.businesses !== 'object') {
+        stateObj.businesses = {};
+      }
+
+      // ── ANTI-ROLLBACK & SMART RECONCILIATION GUARD ──
+      // Prevents data loss, business level downgrades, and worker loss when reloading or reconnecting
       if (local && typeof local === 'object') {
         let shouldSyncCloud = false;
 
-        // 1. Jail sentence guard: Reload cannot evade prison time
+        // 1. Business Levels & Workers Guard: NEVER downgrade business levels or worker counts
+        if (local.businesses && typeof local.businesses === 'object') {
+          Object.keys(local.businesses).forEach(bk => {
+            const locBiz = local.businesses[bk];
+            if (!locBiz || typeof locBiz !== 'object') return;
+            const srvBiz = stateObj.businesses[bk] || {};
+
+            const locLvl = Number(locBiz.level || 0);
+            const srvLvl = Number(srvBiz.level || 0);
+            const locWorkers = Number(locBiz.workers || 0);
+            const srvWorkers = Number(srvBiz.workers || 0);
+
+            if (locLvl > srvLvl) {
+              // Local device has a HIGHER business level (e.g. upgraded before reload/lag)
+              stateObj.businesses[bk] = { ...srvBiz, ...locBiz };
+              shouldSyncCloud = true;
+            } else if (locLvl === srvLvl && locLvl > 0) {
+              // Same level: preserve maximum workers and franchise state
+              const maxW = Math.max(locWorkers, srvWorkers);
+              if (maxW > srvWorkers || locBiz.isFranchise !== srvBiz.isFranchise) {
+                stateObj.businesses[bk] = {
+                  ...srvBiz,
+                  workers: maxW,
+                  isFranchise: Boolean(srvBiz.isFranchise || locBiz.isFranchise)
+                };
+                shouldSyncCloud = true;
+              }
+            }
+          });
+        }
+
+        // 2. Jail sentence guard: Reload cannot evade prison time
         if (typeof local.jailTimer === 'number' && local.jailTimer > 0 && local.jailTimer > stateObj.jailTimer) {
           stateObj.jailTimer = local.jailTimer;
           shouldSyncCloud = true;
         }
 
-        // 2. Active police raid guard: Reload cannot evade active raids
+        // 3. Active police raid guard: Reload cannot evade active raids
         if (local.raidActive && !stateObj.raidActive) {
           stateObj.raidActive = true;
           stateObj.raidBribeCost = local.raidBribeCost;
@@ -848,12 +882,11 @@ var AppDB = (() => {
           shouldSyncCloud = true;
         }
 
-        // 3. Loss & confiscation guard:
-        // If local state was updated recently (within 3 minutes) and has a lower cash balance
-        // due to an in-flight raid or penalty that hadn't finished syncing before the reload
+        // 4. Loss & confiscation guard:
+        // If local state was updated recently (within 5 minutes) and has a lower cash balance
         const localTs = Number(local.lastSeen || local.lastActiveTimestamp || 0);
         const serverTs = Number(row.last_seen || 0);
-        if (localTs >= serverTs - 180000) {
+        if (localTs >= serverTs - 300000) {
           if (typeof local.cash === 'number' && local.cash < stateObj.cash) {
             stateObj.cash = local.cash;
             shouldSyncCloud = true;
