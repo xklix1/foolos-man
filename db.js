@@ -860,10 +860,7 @@ var AppDB = (() => {
         }
       }
 
-      const queryUrl = refCode
-        ? `players?or=(state->>referredByCode.eq.${encodeURIComponent(refCode)},state->>referredBy.eq.${encodeURIComponent(u)})&select=username,cash,bank,dirty_cash,net_worth,created_at,last_seen,state`
-        : `players?state->>referredBy=eq.${encodeURIComponent(u)}&select=username,cash,bank,dirty_cash,net_worth,created_at,last_seen,state`;
-
+      const queryUrl = `players?select=username,cash,bank,dirty_cash,net_worth,created_at,last_seen,state`;
       const rows = await _api(queryUrl);
 
       const invitees = [];
@@ -872,8 +869,13 @@ var AppDB = (() => {
       const ASSET_VALS = { apartment: 25000, office: 85000, mansion: 320000, skyline_tower: 1200000, luxury_resort: 4500000, mega_yacht: 15000000, private_island: 50000000, orbital_station: 250000000 };
 
       (rows || []).forEach(r => {
-        if (r.username.toLowerCase() === u.toLowerCase()) return; // skip self
+        if (!r.username || r.username.toLowerCase() === u.toLowerCase()) return; // skip self
         const s = (typeof r.state === 'object' && r.state) ? r.state : {};
+
+        const matchCode = refCode && s.referredByCode && (s.referredByCode.toString().trim().toUpperCase() === refCode.toString().trim().toUpperCase());
+        const matchUser = (s.referredBy || s.referredByCode) && ((s.referredBy || s.referredByCode || '').toString().trim().toLowerCase() === u.toLowerCase());
+
+        if (!matchCode && !matchUser) return;
 
         const cash = Number(r.cash || 0);
         const bank = Number(r.bank || 0);

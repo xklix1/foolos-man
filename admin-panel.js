@@ -1711,17 +1711,19 @@
 
     if (inspectReferralsBtn) {
       inspectReferralsBtn.addEventListener('click', async () => {
-        if (!selectedPlayer) {
+        const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
+        if (!targetUser || targetUser === '...' || targetUser === '') {
           showToast('فحص الدعوات', 'يرجى اختيار لاعب أولاً من القائمة.', 'warning');
           return;
         }
-        await openAdminReferralModal(selectedPlayer);
+        await openAdminReferralModal(targetUser);
       });
     }
 
     async function openAdminReferralModal(targetUsername) {
-      targetUsername = targetUsername || selectedPlayer;
-      if (!targetUsername) {
+      if (typeof targetUsername !== 'string') targetUsername = '';
+      targetUsername = (targetUsername || selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
+      if (!targetUsername || targetUsername === '...' || targetUsername === '') {
         showToast('فحص الدعوات', 'يرجى اختيار لاعب أولاً من القائمة.', 'warning');
         return;
       }
