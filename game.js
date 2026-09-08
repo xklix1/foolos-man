@@ -1969,9 +1969,7 @@ const GameEngine = (() => {
     return { cost, xpGain: 250 };
   }
 
-  function calculatePassiveIncomePerSecond() {
-    return calculatePassiveIncomePerTick();
-  }
+  // NOTE: calculatePassiveIncomePerSecond is defined above (line ~1720) with excludeTax support. Removed duplicate.
 
   // Apply appreciation or depreciation to Assets Cost (Simulated over time)
   function adjustAssetAppreciation() {
@@ -2456,11 +2454,11 @@ const GameEngine = (() => {
       };
     }
 
-    // Adjust assets market rates
-    adjustAssetAppreciation();
+    // Note: adjustAssetAppreciation() removed from tick loop — mutating shared ASSETS config caused
+    // phantom net-worth inflation and price drift that reset on page reload (BUG-8 fix).
 
     // Set last active timestamp for continuous profit tracking
-    state.lastActiveTimestamp = Date.now();
+    state.lastActiveTimestamp = getTrustedNow();
 
     // Recalculate net worth and title
     state.netWorth = calculateNetWorth();
@@ -2629,7 +2627,7 @@ const GameEngine = (() => {
                 }
               }
               
-              const corpProfitPerSecond = totalCorpTickProfit / 3;
+              const corpProfitPerSecond = totalCorpTickProfit / 3600;
               const elapsedSeconds = Math.max(0, Math.floor((now - dbState.lastActiveTimestamp) / 1000));
               const cappedSecondsCorp = Math.min(elapsedSeconds, 43200);
               
@@ -2646,7 +2644,7 @@ const GameEngine = (() => {
 
         // Decrement jail timer while player was offline
         if (state.jailTimer && state.jailTimer > 0) {
-          state.jailTimer = Math.max(0, state.jailTimer - elapsedSinceLastActive);
+          state.jailTimer = Math.max(0, state.jailTimer - totalElapsedSeconds);
         }
 
         // === BLOCK A: Manager-gated PROFIT calculation ===
@@ -2694,7 +2692,7 @@ const GameEngine = (() => {
               }
             });
           }
-          nonBizHourly += calculateBankInterestPerTick(state);
+          nonBizHourly += calculateBankInterestHourly(state);
           if (state.hiredJob && state.lastPuzzleSolved && (getTrustedNow() - state.lastPuzzleSolved < 86400000)) {
             nonBizHourly += (state.hiredJob.salary || 0);
           }
@@ -3187,7 +3185,7 @@ const GameEngine = (() => {
 
     state.cash -= asset.cost;
     state.assets[key] = (state.assets[key] || 0) + 1;
-    recordPlayerActivity('شراء عقار/أصل',`شراء"${asset.name}" بقيمة ${asset.cost.toLocaleString()} ج.م (+${asset.income.toLocaleString()} ج.م/دورة)`,'investment');
+    recordPlayerActivity('شراء عقار/أصل',`شراء"${asset.name}" بقيمة ${asset.cost.toLocaleString()} ج.م (+${asset.rent.toLocaleString()} ج.م/دورة)`,'investment');
 
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
@@ -5172,6 +5170,7 @@ const GameEngine = (() => {
     bribePolice,
     launderMoney,
     resolveRaidBribe,
+    resolveRaidResist,
     MAX_CASINO_DAILY_PROFIT,
     CASINO_COOLDOWN_MS,
     CASINO_HOUSE_RAKE,
