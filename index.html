@@ -4666,6 +4666,7 @@
         <!-- Dynamically rendered -->
       </div>
 
+    </div>
   </div>
 
   <!-- ==================== GIFT CODE REDEEM MODAL ==================== -->
@@ -4702,7 +4703,7 @@
         <div class="space-y-2.5">
           <input type="text" id="player-gift-code-modal-input" placeholder="أدخل رمز الكود هنا (مثال: WELCOME)"
             class="w-full p-3 text-sm text-center font-black font-mono text-amber-300 bg-slate-950/90 border border-slate-700 focus:border-rose-500 rounded-xl uppercase outline-none shadow-inner tracking-widest placeholder-slate-600">
-          <button id="btn-player-redeem-gift-modal"
+          <button id="btn-player-redeem-gift-modal" onclick="if(window.UI && window.UI.redeemGiftCodeModal) window.UI.redeemGiftCodeModal()"
             class="w-full py-3 bg-gradient-to-r from-rose-500 via-amber-500 to-emerald-500 hover:from-rose-400 hover:to-emerald-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-98">
             <i class="fa-solid fa-gift text-sm"></i>
             <span>استرداد الهدية فوراً</span>

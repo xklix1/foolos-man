@@ -5231,7 +5231,8 @@
     notify('جاري الفحص...', 'جاري فحص جميع الحسابات في السحابة لرصد الحسابات الوهمية والصفرية...', 'info');
 
     try {
-      const players = await AppDB.getAllPlayersAdmin();
+      const fetchFn = AppDB.adminGetAllPlayers || AppDB.getAllPlayersAdmin;
+      const players = fetchFn ? await fetchFn.call(AppDB) : [];
       if (!Array.isArray(players) || players.length === 0) {
         alert('لم يتم العثور على أي حسابات في السحابة.');
         return;

@@ -16184,6 +16184,20 @@ const UIController = (() => {
     if (modal) modal.classList.add('hidden');
   }
 
+  function redeemGiftCodeModal() {
+    const modalInput = document.getElementById('player-gift-code-modal-input');
+    const btnPlayerRedeemGiftModal = document.getElementById('btn-player-redeem-gift-modal');
+    if (!modalInput) return;
+    const code = modalInput.value.trim();
+    if (!code) {
+      showToast('خطأ إدخال', 'يرجى إدخال رمز الكود أولاً.', 'error');
+      return;
+    }
+    if (typeof doRedeemGiftCode === 'function') {
+      doRedeemGiftCode(modalInput, btnPlayerRedeemGiftModal);
+    }
+  }
+
   function renderPlayerInventory() {
     const grid = document.getElementById('player-inventory-grid');
     const totalBadge = document.getElementById('modal-inventory-total-badge');
@@ -16419,6 +16433,7 @@ const UIController = (() => {
     closePlayerInventoryModal,
     openGiftCodeModal,
     closeGiftCodeModal,
+    redeemGiftCodeModal,
     renderPlayerInventory,
     useInventoryItem,
     showDirectAdminPopupModal
