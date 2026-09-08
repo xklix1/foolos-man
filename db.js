@@ -962,6 +962,15 @@ var AppDB = (() => {
         },
         body: JSON.stringify(payload)
       }).catch(() => {});
+
+      // Navigator sendBeacon fallback (Guarantees payload delivery on iOS Safari / Android Chrome page unload)
+      if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+        try {
+          const beaconUrl = `${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}&apikey=${SUPABASE_ANON_KEY}`;
+          const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+          navigator.sendBeacon(beaconUrl, blob);
+        } catch (bErr) {}
+      }
     } catch (e) {}
   }
 
