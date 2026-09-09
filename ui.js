@@ -6194,10 +6194,9 @@ const UIController = (() => {
           }
 
           try {
-            if (typeof AppDB.setEncryptedLocalState ==='function') {
+            if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
               AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, GameEngine.state);
             }
-            localStorage.setItem(`rasalmal_state_${GameEngine.activeUsername}`, JSON.stringify(GameEngine.state));
           } catch (e) { }
 
           showToast('إشعار إداري','تم تعديل وتحديث بيانات حسابك من قبل الإدارة فورياً.','info');
@@ -6282,7 +6281,9 @@ const UIController = (() => {
 
     if (username) {
       try {
-        localStorage.setItem(`rasalmal_state_${username}`, JSON.stringify(GameEngine.state));
+        if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+          AppDB.setEncryptedLocalState(`rasalmal_state_${username}`, GameEngine.state);
+        }
       } catch (e) { }
     }
   }
@@ -7356,7 +7357,9 @@ const UIController = (() => {
           GameEngine.state.stocks = JSON.parse(JSON.stringify(selectedPlayerState.stocks || {}));
           GameEngine.state.netWorth = worth;
           try {
-            localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+            if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+              AppDB.setEncryptedLocalState(`rasalmal_state_${selectedPlayer}`, GameEngine.state);
+            }
           } catch (e) { }
           renderAll();
         }
@@ -7681,7 +7684,9 @@ const UIController = (() => {
             GameEngine.state.bank = newBank;
             GameEngine.state.netWorth = worth;
             try {
-              localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+              if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+                AppDB.setEncryptedLocalState(`rasalmal_state_${selectedPlayer}`, GameEngine.state);
+              }
             } catch (e) { }
             renderAll();
           }
@@ -7772,7 +7777,9 @@ const UIController = (() => {
             GameEngine.state.businesses[bizKey] = { level, workers, price };
             GameEngine.state.netWorth = worth;
             try {
-              localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+              if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+                AppDB.setEncryptedLocalState(`rasalmal_state_${selectedPlayer}`, GameEngine.state);
+              }
             } catch (e) { }
             renderAll();
           }
@@ -13007,10 +13014,9 @@ const UIController = (() => {
         GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), grantTs);
 
         try {
-          if (typeof AppDB.setEncryptedLocalState === 'function') {
+          if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
             AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, GameEngine.state);
           }
-          localStorage.setItem(`rasalmal_state_${GameEngine.activeUsername}`, JSON.stringify(GameEngine.state));
         } catch (_) {}
 
         await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);

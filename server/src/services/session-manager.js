@@ -132,7 +132,7 @@ class SessionManager {
           session.dirty = false;
         }
       } catch (err) {
-        console.warn(`[SessionManager] Write-Behind warning for ${session.username}:`, err.message);
+        console.warn('[SessionManager] Write-Behind warning:', err.message);
       }
     }
   }

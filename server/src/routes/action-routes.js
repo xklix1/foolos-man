@@ -76,19 +76,28 @@ async function actionRoutes(fastify, options) {
     };
   });
 
-  // 2. POST /api/action/buy-business (Purchase or Upgrade Business Level)
+const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
+
+  // 2. POST /api/action/buy-business (Business Purchase / Upgrade)
   fastify.post('/api/action/buy-business', async (request, reply) => {
     const session = await resolveSession(request, reply);
     if (!session) return;
 
     const { businessId } = request.body || {};
-    if (!businessId || !BUSINESSES[businessId]) {
-      return reply.code(400).send({ error: 'Invalid business identifier: ' + businessId });
+    if (
+      !businessId ||
+      typeof businessId !== 'string' ||
+      !ALLOWED_BUSINESS_KEYS.has(businessId) ||
+      businessId === '__proto__' ||
+      businessId === 'constructor' ||
+      businessId === 'prototype'
+    ) {
+      return reply.code(400).send({ error: 'Invalid business identifier' });
     }
 
     const s = session.state;
-    if (!s.businesses) s.businesses = {};
-    if (!s.businesses[businessId]) {
+    if (!s.businesses || typeof s.businesses !== 'object') s.businesses = {};
+    if (!Object.prototype.hasOwnProperty.call(s.businesses, businessId) || !s.businesses[businessId]) {
       s.businesses[businessId] = {
         level: 0,
         workers: 0,
@@ -98,6 +107,9 @@ async function actionRoutes(fastify, options) {
     }
 
     const b = s.businesses[businessId];
+    if (!b || typeof b !== 'object') {
+      return reply.code(400).send({ error: 'Invalid business state' });
+    }
     const currentLevel = b.level || 0;
     const upgradeCost = getBusinessUpgradeCost(businessId, currentLevel);
 

@@ -98,21 +98,31 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   //  LOCAL ENCRYPTION CACHE
   // ─────────────────────────────────────────────
-  function _xorEncryptDecrypt(input, key ="FoolosMan_2026_SecureKey") {
-    let output ="";
-    for (let i = 0; i < input.length; i++) {
-      output += String.fromCharCode(input.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+  function _xorEncrypt(input, key = "FoolosMan_2026_SecureKey") {
+    const utf8Str = unescape(encodeURIComponent(input));
+    let output = "";
+    for (let i = 0; i < utf8Str.length; i++) {
+      output += String.fromCharCode(utf8Str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
     }
-    return output;
+    return btoa(output);
+  }
+
+  function _xorDecrypt(b64, key = "FoolosMan_2026_SecureKey") {
+    const rawStr = atob(b64);
+    let output = "";
+    for (let i = 0; i < rawStr.length; i++) {
+      output += String.fromCharCode(rawStr.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    }
+    return decodeURIComponent(escape(output));
   }
 
   function setEncryptedLocalState(key, data) {
     try {
       const json = JSON.stringify(data);
-      const enc = btoa(_xorEncryptDecrypt(json));
+      const enc = _xorEncrypt(json);
       localStorage.setItem(key, enc);
     } catch (e) {
-      try { localStorage.setItem(key, JSON.stringify(data)); } catch (err) {}
+      // Secure fallback: Never write sensitive information in plaintext
     }
   }
 
@@ -121,10 +131,21 @@ var AppDB = (() => {
       const raw = localStorage.getItem(key);
       if (!raw) return null;
       try {
-        const dec = _xorEncryptDecrypt(atob(raw));
+        const dec = _xorDecrypt(raw);
         return JSON.parse(dec);
       } catch (e) {
-        return JSON.parse(raw);
+        // Fallback for older legacy XOR strings
+        try {
+          const decoded = atob(raw);
+          const k = "FoolosMan_2026_SecureKey";
+          let legacy = "";
+          for (let i = 0; i < decoded.length; i++) {
+            legacy += String.fromCharCode(decoded.charCodeAt(i) ^ k.charCodeAt(i % k.length));
+          }
+          return JSON.parse(legacy);
+        } catch (e2) {
+          return JSON.parse(raw);
+        }
       }
     } catch (e) {
       return null;
@@ -4440,7 +4461,9 @@ var AppDB = (() => {
     getTopupRequests,
     processTopupRequest,
     deleteTopupRequest,
-    getPlayerData
+    getPlayerData,
+    setEncryptedLocalState,
+    getDecryptedLocalState
   };
 })();
 

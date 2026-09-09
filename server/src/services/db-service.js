@@ -39,7 +39,7 @@ class DbService {
       const rows = await res.json();
       return (Array.isArray(rows) && rows.length > 0) ? rows[0] : null;
     } catch (err) {
-      console.error(`[DbService] getPlayerByUsername error for '${u}':`, err.message);
+      console.error('[DbService] getPlayerByUsername error:', err.message);
       throw err;
     }
   }
@@ -87,7 +87,7 @@ class DbService {
       }
       return true;
     } catch (err) {
-      console.error(`[DbService] savePlayerState error for '${u}':`, err.message);
+      console.error('[DbService] savePlayerState error:', err.message);
       return false;
     }
   }

@@ -10,6 +10,17 @@
     }
   }
 
+  // HTML entity sanitizer to prevent DOM XSS
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   function setupAdminModal() {
     const triggerSide = document.getElementById('btn-admin-panel-trigger');
     const triggerMobile = document.getElementById('btn-admin-panel-trigger-mobile');
@@ -841,7 +852,9 @@
           GameEngine.state.stocks = JSON.parse(JSON.stringify(selectedPlayerState.stocks || {}));
           GameEngine.state.netWorth = worth;
           try {
-            localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+            if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+              AppDB.setEncryptedLocalState(`rasalmal_state_${selectedPlayer}`, GameEngine.state);
+            }
           } catch (e) { }
           renderAll();
         }
@@ -1202,7 +1215,9 @@
               GameEngine.state.title = GameEngine.getAppropriateTitle(worth, newXp);
             }
             try {
-              localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+              if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+                AppDB.setEncryptedLocalState(`rasalmal_state_${selectedPlayer}`, GameEngine.state);
+              }
             } catch (e) { }
             renderAll();
           }
@@ -1341,7 +1356,9 @@
             GameEngine.state.netWorth = newWorth;
             GameEngine.state.adminModifiedTimestamp = now;
             try {
-              localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+              if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+                AppDB.setEncryptedLocalState(`rasalmal_state_${selectedPlayer}`, GameEngine.state);
+              }
             } catch (e) {}
             renderAll();
           }
@@ -1457,7 +1474,9 @@
             GameEngine.state.businesses[bizKey] = { level, workers, price };
             GameEngine.state.netWorth = worth;
             try {
-              localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+              if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+                AppDB.setEncryptedLocalState(`rasalmal_state_${selectedPlayer}`, GameEngine.state);
+              }
             } catch (e) { }
             renderAll();
           }
@@ -1684,7 +1703,9 @@
             GameEngine.state.activeLoan = null;
             GameEngine.state.loanCooldownUntil = 0;
             try {
-              localStorage.setItem(`rasalmal_state_${selectedPlayer}`, JSON.stringify(GameEngine.state));
+              if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+                AppDB.setEncryptedLocalState(`rasalmal_state_${selectedPlayer}`, GameEngine.state);
+              }
             } catch (e) {}
             if (typeof renderAll === 'function') renderAll();
           }
@@ -1822,18 +1843,21 @@
                 : `<span class="px-2 py-0.5 rounded bg-amber-950 text-amber-400 font-bold text-[10px] border border-amber-500/30">قيد التأهيل ⏳</span>`;
 
               const devList = (inv.devices && inv.devices.length > 0) ? inv.devices.join(', ') : 'غير مسجل';
+              const safeUser = escapeHtml(inv.username);
+              const safeDevList = escapeHtml(devList);
+              const safeAge = escapeHtml(inv.accountAgeText || 'جديد');
 
               return `
                 <tr class="hover:bg-slate-900/60 transition">
-                  <td class="p-2.5 font-bold text-white font-mono">@${inv.username}</td>
+                  <td class="p-2.5 font-bold text-white font-mono">@${safeUser}</td>
                   <td class="p-2.5 numbers-font font-bold text-slate-200">${gross.toLocaleString()} EGP</td>
                   <td class="p-2.5 numbers-font font-bold text-rose-400">-${transfers.toLocaleString()} EGP</td>
                   <td class="p-2.5 numbers-font font-bold text-emerald-400">${selfEarned.toLocaleString()} EGP</td>
                   <td class="p-2.5">${qualBadge}</td>
-                  <td class="p-2.5 text-slate-400 text-[10px]">${inv.accountAgeText || 'جديد'}</td>
-                  <td class="p-2.5 font-mono text-[9px] text-slate-500 truncate max-w-[110px]" title="${devList}">${devList}</td>
+                  <td class="p-2.5 text-slate-400 text-[10px]">${safeAge}</td>
+                  <td class="p-2.5 font-mono text-[9px] text-slate-500 truncate max-w-[110px]" title="${safeDevList}">${safeDevList}</td>
                   <td class="p-2.5">
-                    <button onclick="window.adminUnlinkInvitee('${inv.username}', '${targetUsername}')"
+                    <button onclick="window.adminUnlinkInvitee('${encodeURIComponent(inv.username)}', '${encodeURIComponent(targetUsername)}')"
                       class="px-2 py-1 bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-500/30 rounded text-[10px] font-bold transition cursor-pointer active:scale-95" title="شطب فك ربط هذه الدعوة">
                       فك الربط ❌
                     </button>
@@ -2762,7 +2786,9 @@
           }
           GameEngine.state.adminModifiedTimestamp = ts;
           try {
-            localStorage.setItem(`rasalmal_state_${targetUser}`, JSON.stringify(GameEngine.state));
+            if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+              AppDB.setEncryptedLocalState(`rasalmal_state_${targetUser}`, GameEngine.state);
+            }
           } catch (e) {}
           renderAll();
         }
@@ -4432,7 +4458,9 @@
 
       if (username) {
         try {
-          localStorage.setItem(`rasalmal_state_${username}`, JSON.stringify(GameEngine.state));
+          if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+            AppDB.setEncryptedLocalState(`rasalmal_state_${username}`, GameEngine.state);
+          }
         } catch (e) { }
       }
     }
@@ -6813,12 +6841,13 @@
           // Header result row
           const headerRow = document.createElement('tr');
           headerRow.className = 'bg-slate-800/60';
+          const safeNote = escapeHtml(note);
           headerRow.innerHTML = `
             <th colspan="6" class="py-2 px-3 text-right text-[11px] font-black text-white">
               <i class="fa-solid fa-check-double text-emerald-400 mr-1"></i>
               نتائج الإرسال — ${successCount} نجاح
               ${failCount > 0 ? `<span class="text-rose-400 mr-2">/ ${failCount} فشل</span>` : ''}
-              <span class="text-slate-400 font-normal mr-2 text-[10px]">"${note}"</span>
+              <span class="text-slate-400 font-normal mr-2 text-[10px]">"${safeNote}"</span>
               <span class="text-amber-400 mr-2 text-[10px]">${amount.toLocaleString()} ${typeLabels[type]} لكل لاعب</span>
             </th>
           `;
@@ -6840,12 +6869,15 @@
           results.forEach((r, i) => {
             const tr = document.createElement('tr');
             tr.className = `border-b border-slate-800/40 text-xs ${r.status === 'ok' ? 'hover:bg-emerald-950/10' : 'hover:bg-rose-950/10'}`;
+            const safeRUser = escapeHtml(r.username);
+            const safeRTitle = escapeHtml(r.title);
+            const safeRErr = escapeHtml(r.error || '');
             tr.innerHTML = `
               <td class="py-2 px-2 text-slate-500 font-mono">${i + 1}</td>
               <td class="py-2 px-2">
-                <span class="font-black ${r.status === 'ok' ? 'text-white' : 'text-slate-500'}">${r.username}</span>
+                <span class="font-black ${r.status === 'ok' ? 'text-white' : 'text-slate-500'}">${safeRUser}</span>
               </td>
-              <td class="py-2 px-2 text-slate-400 text-[10px]">${r.title}</td>
+              <td class="py-2 px-2 text-slate-400 text-[10px]">${safeRTitle}</td>
               <td class="py-2 px-2 text-emerald-400 font-mono font-bold">${(r.netWorth || 0).toLocaleString()}</td>
               <td class="py-2 px-2 text-amber-300 font-mono font-black text-[11px]">
                 ${r.status === 'ok' ? `+${amount.toLocaleString()} ${typeLabels[type]}` : '—'}
@@ -6853,7 +6885,7 @@
               <td class="py-2 px-2">
                 ${r.status === 'ok'
                   ? '<span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1 w-fit"><i class="fa-solid fa-check text-[8px]"></i>تم</span>'
-                  : `<span class="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1 w-fit" title="${r.error || ''}"><i class="fa-solid fa-xmark text-[8px]"></i>فشل</span>`
+                  : `<span class="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1 w-fit" title="${safeRErr}"><i class="fa-solid fa-xmark text-[8px]"></i>فشل</span>`
                 }
               </td>
             `;
@@ -6865,18 +6897,19 @@
         const timestamp = new Date().toLocaleTimeString('ar-EG');
         const logEntry = document.createElement('div');
         logEntry.className = 'border border-slate-800 rounded-lg p-2 space-y-1';
+        const safeLogNote = escapeHtml(note);
         logEntry.innerHTML = `
           <div class="flex items-center gap-2 text-[11px]">
             <span class="text-slate-500">[${timestamp}]</span>
             <span class="${successCount > 0 ? 'text-emerald-400' : 'text-rose-400'} font-black">
               ${typeLabels[type]} ×${amount.toLocaleString()} → ${successCount}/${results.length} لاعب
             </span>
-            <span class="text-slate-500">— "${note}"</span>
+            <span class="text-slate-500">— "${safeLogNote}"</span>
           </div>
           <div class="flex flex-wrap gap-1 mt-1">
             ${results.map(r => `
               <span class="text-[9px] px-1.5 py-0.5 rounded font-bold ${r.status === 'ok' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'}">
-                ${r.username}
+                ${escapeHtml(r.username)}
               </span>
             `).join('')}
           </div>
