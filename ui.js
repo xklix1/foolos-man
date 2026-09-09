@@ -1960,6 +1960,9 @@ const UIController = (() => {
       else if (activeTab ==='trade') updateTradeShipmentsInDOM();
       else if (activeTab ==='industry') updateIndustryStockInDOM();
 
+      // Real-time live update for investment cards dynamic status & countdown
+      updateInvestmentCardsDOM(state);
+
       // Real-time live update for cashflow breakdown modal if open
       const cfModal = document.getElementById('cashflow-breakdown-modal');
       if (cfModal && !cfModal.classList.contains('hidden')) {
@@ -2809,7 +2812,12 @@ const UIController = (() => {
             payoutEl.textContent = `+${payout.toLocaleString()} EGP`;
           }
           if (timerEl) {
-            timerEl.textContent = `متبقي: ${formatInvestmentDuration(activeInv.ticksRemaining || 0)}`;
+            let remSec = activeInv.ticksRemaining || 0;
+            if (activeInv.maturesAt) {
+              const nowMs = (typeof getTrustedNow === 'function') ? getTrustedNow() : Date.now();
+              remSec = Math.max(0, Math.ceil((activeInv.maturesAt - nowMs) / 1000));
+            }
+            timerEl.textContent = `متبقي: ${formatInvestmentDuration(remSec)}`;
           }
         }
         if (card) {
@@ -3162,6 +3170,25 @@ const UIController = (() => {
   }
 
   function setupEventListeners() {
+    // Global Smart Debounced Auto-Save on any interactive button click
+    let clickAutosaveTimer = null;
+    document.addEventListener('click', (e) => {
+      const btn = e.target && e.target.closest && e.target.closest('button, [role="button"], .btn-action, input[type="button"], input[type="submit"]');
+      if (!btn) return;
+      if (!window.GameEngine || !window.GameEngine.activeUsername || !window.GameEngine.state) return;
+      const user = window.GameEngine.activeUsername;
+
+      if (window.AppDB && typeof window.AppDB.savePlayerState === 'function') {
+        if (clickAutosaveTimer) clearTimeout(clickAutosaveTimer);
+        clickAutosaveTimer = setTimeout(() => {
+          clickAutosaveTimer = null;
+          if (window.GameEngine && window.GameEngine.activeUsername === user && window.GameEngine.state) {
+            window.AppDB.savePlayerState(user, window.GameEngine.state, false).catch(() => {});
+          }
+        }, 1500);
+      }
+    }, true);
+
     // Maintenance Popup Modal Event Listeners (New)
     const maintPopup = document.getElementById('maintenance-popup-modal');
     const btnCloseMaintPopup = document.getElementById('btn-close-maintenance-popup');
@@ -5505,6 +5532,9 @@ const UIController = (() => {
     // 5. Setup Black Market static listeners once
     setupBlackMarketListeners();
     renderSmugglingSection();
+
+    // Update investment cards status & locked timers
+    updateInvestmentCardsDOM(s);
   }
 
   function updateBlackMarketCooldownsInDOM() {
@@ -5535,6 +5565,7 @@ const UIController = (() => {
     });
 
     updateActiveSmugglingJobsInDOM();
+    updateInvestmentCardsDOM(s);
   }
 
   function setupBlackMarketListeners() {

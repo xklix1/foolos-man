@@ -2590,6 +2590,26 @@ const GameEngine = (() => {
         } catch (e) {}
       }
 
+      // Safeguard: Recover active investments from local storage if cloud snapshot was missing them
+      try {
+        const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
+          ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
+          : null;
+        if (localS && Array.isArray(localS.investments) && localS.investments.length > 0) {
+          if (!Array.isArray(state.investments) || state.investments.length === 0) {
+            state.investments = localS.investments;
+            console.log('[GameEngine] Recovered active investments from local storage safeguard:', state.investments);
+          } else {
+            localS.investments.forEach(locInv => {
+              if (locInv && locInv.id && !state.investments.some(sInv => sInv && sInv.id === locInv.id)) {
+                state.investments.push(locInv);
+                console.log('[GameEngine] Reconciled missing local investment into active session:', locInv.id);
+              }
+            });
+          }
+        }
+      } catch (e) {}
+
       if (!state.referralCode) {
         state.referralCode = generateReferralCode(username);
       }

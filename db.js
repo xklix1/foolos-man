@@ -1203,6 +1203,21 @@ var AppDB = (() => {
           }
         }
 
+        // 4.5 Active Investments guard: Never lose active investments on reload or server lag
+        if (local && Array.isArray(local.investments) && local.investments.length > 0) {
+          if (!Array.isArray(stateObj.investments) || stateObj.investments.length === 0) {
+            stateObj.investments = local.investments;
+            shouldSyncCloud = true;
+          } else {
+            local.investments.forEach(locInv => {
+              if (locInv && locInv.id && !stateObj.investments.some(sInv => sInv && sInv.id === locInv.id)) {
+                stateObj.investments.push(locInv);
+                shouldSyncCloud = true;
+              }
+            });
+          }
+        }
+
         // 5. Late-save recovery:
         // If local is definitively NEWER than the cloud (localTs > serverTs), the cloud save
         // was probably debounced or blocked (e.g. admin_modified_timestamp filter mismatch).
@@ -1359,7 +1374,9 @@ var AppDB = (() => {
     // When Authoritative ServerBridge is online, server writes authoritatively via service_role
     if (typeof window !== 'undefined' && window.ServerBridge) {
       if (typeof window.ServerBridge.syncState === 'function') {
-        window.ServerBridge.syncState(state, true);
+        try {
+          await window.ServerBridge.syncState(state, true);
+        } catch (e) {}
         _lastCloudSyncTimestamp = Date.now();
         return;
       } else if (typeof window.ServerBridge.isServerOnline === 'function' && window.ServerBridge.isServerOnline() && typeof window.ServerBridge.sendHeartbeat === 'function') {
