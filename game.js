@@ -2577,8 +2577,14 @@ const GameEngine = (() => {
         _loadedFromCloud: true
       };
 
+      // If player was reset by admin, purge local cache and skip recovery
+      const isAccountReset = (dbState.isReset === true || (dbState.state && dbState.state.isReset === true));
+      if (isAccountReset) {
+        try { localStorage.removeItem(`rasalmal_state_${username}`); } catch (e) {}
+      }
+
       // Safeguard: Recover industry progress from local storage if cloud snapshot was missing it
-      if (!state.industry || Object.keys(state.industry).length === 0) {
+      if (!isAccountReset && (!state.industry || Object.keys(state.industry).length === 0)) {
         try {
           const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
             ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
@@ -2590,24 +2596,37 @@ const GameEngine = (() => {
       }
 
       // Safeguard: Recover active investments from local storage if cloud snapshot was missing them
-      try {
-        const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
-          ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
-          : null;
-        if (localS && Array.isArray(localS.investments) && localS.investments.length > 0) {
-          if (!Array.isArray(state.investments) || state.investments.length === 0) {
-            state.investments = localS.investments;
-            console.log('[GameEngine] Recovered active investments from local storage safeguard:', state.investments);
-          } else {
-            localS.investments.forEach(locInv => {
-              if (locInv && locInv.id && !state.investments.some(sInv => sInv && sInv.id === locInv.id)) {
-                state.investments.push(locInv);
-                console.log('[GameEngine] Reconciled missing local investment into active session:', locInv.id);
-              }
-            });
+      if (!isAccountReset) {
+        try {
+          const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
+            ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
+            : null;
+          if (localS && Array.isArray(localS.investments) && localS.investments.length > 0) {
+            if (!Array.isArray(state.investments) || state.investments.length === 0) {
+              state.investments = localS.investments;
+              console.log('[GameEngine] Recovered active investments from local storage safeguard:', state.investments);
+            } else {
+              localS.investments.forEach(locInv => {
+                if (locInv && locInv.id && !state.investments.some(sInv => sInv && sInv.id === locInv.id)) {
+                  state.investments.push(locInv);
+                  console.log('[GameEngine] Reconciled missing local investment into active session:', locInv.id);
+                }
+              });
+            }
           }
+        } catch (e) {}
+      }
+
+      // Check if unacknowledged admin reset modal should pop up
+      const resetTs = Number(dbState.resetTimestamp || (dbState.state && dbState.state.resetTimestamp) || (isAccountReset ? dbState.admin_modified_timestamp || dbState.adminModifiedTimestamp || Date.now() : 0));
+      const ackResetTs = (typeof localStorage !== 'undefined') ? Number(localStorage.getItem('rasalmal_ack_reset_' + username) || 0) : 0;
+      if (isAccountReset && resetTs > ackResetTs) {
+        if (typeof window !== 'undefined' && window.UI && typeof window.UI.triggerAccountResetModal === 'function') {
+          setTimeout(() => {
+            window.UI.triggerAccountResetModal(username, resetTs);
+          }, 100);
         }
-      } catch (e) {}
+      }
 
       if (!state.referralCode) {
         state.referralCode = generateReferralCode(username);

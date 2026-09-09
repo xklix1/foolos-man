@@ -4386,75 +4386,67 @@
     function applyCompleteZeroStateToGameEngine(username) {
       if (!GameEngine.state) return;
       const isAdmin = Boolean(GameEngine.state && GameEngine.state.isAdmin);
-      GameEngine.state.isAdmin = isAdmin;
-      GameEngine.state.cash = 300;
-      GameEngine.state.bank = 0;
-      GameEngine.state.dirtyCash = 0;
-      GameEngine.state.netWorth = 400;
-      GameEngine.state.xp = 0;
-      GameEngine.state.jobId ='worker';
-      GameEngine.state.title ='عامل مبتدئ';
-      GameEngine.state.underworldRep = 0;
-      GameEngine.state.heatLevel = 0;
-      GameEngine.state.jailTimer = 0;
-      GameEngine.state.afkManagerExpiresAt = 0;
-      GameEngine.state.activeLoan = null;
-      GameEngine.state.investments = [];
-      GameEngine.state.businesses = {
-        kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
-        coffee: { level: 0, price: 28, workers: 0, suppliesTicks: 0 },
-        tech: { level: 0, price: 75, workers: 0, suppliesTicks: 0 },
-        logistics: { level: 0, price: 120, workers: 0, suppliesTicks: 0 },
-        supermarket: { level: 0, price: 200, workers: 0, suppliesTicks: 0 },
-        solar_factory: { level: 0, price: 340, workers: 0, suppliesTicks: 0 },
-        private_hospital: { level: 0, price: 600, workers: 0, suppliesTicks: 0 },
-        media_studio: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
-        private_bank: { level: 0, price: 1800, workers: 0, suppliesTicks: 0 },
-        oil_refinery: { level: 0, price: 2800, workers: 0, suppliesTicks: 0 },
-        space_tech: { level: 0, price: 4800, workers: 0, suppliesTicks: 0 }
+      const cleanBusinesses = {
+        kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+        coffee: { level: 0, price: 28, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+        tech: { level: 0, price: 75, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+        logistics: { level: 0, price: 120, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+        supermarket: { level: 0, price: 200, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+        solar_factory: { level: 0, price: 340, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+        private_hospital: { level: 0, price: 600, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+        media_studio: { level: 0, price: 1100, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+        private_bank: { level: 0, price: 1800, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+        oil_refinery: { level: 0, price: 2800, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+        space_tech: { level: 0, price: 4800, workers: 0, suppliesTicks: 0, marketingTicks: 0 }
       };
-      GameEngine.state.assets = {
-        apartment: 0,
-        office: 0,
-        mansion: 0,
-        skyline_tower: 0,
-        luxury_resort: 0,
-        mega_yacht: 0,
-        private_island: 0,
-        orbital_station: 0
+      const cleanAssets = { apartment: 0, office: 0, mansion: 0, skyline_tower: 0, luxury_resort: 0, mega_yacht: 0, private_island: 0, orbital_station: 0 };
+      const cleanStocks = { COMI: { shares: 0, avgPrice: 0 }, EAST: { shares: 0, avgPrice: 0 }, ETEL: { shares: 0, avgPrice: 0 }, FWRY: { shares: 0, avgPrice: 0 }, CASH: { shares: 0, avgPrice: 0 }, BITC: { shares: 0, avgPrice: 0 }, GOLD: { shares: 0, avgPrice: 0 }, AIX: { shares: 0, avgPrice: 0 } };
+
+      GameEngine.state = {
+        username: username || GameEngine.state.username,
+        isAdmin,
+        cash: 0,
+        bank: 0,
+        dirtyCash: 0,
+        netWorth: 0,
+        xp: 0,
+        jobId: 'worker',
+        title: 'عامل مبتدئ',
+        underworldRep: 0,
+        heatLevel: 0,
+        jailTimer: 0,
+        afkManagerExpiresAt: 0,
+        activeLoan: null,
+        dailyLoans: { date: '', count: 0 },
+        dailyInvestments: { date: '', count: 0 },
+        dailyWork: { date: '', shifts: 0, overtimeShifts: 0 },
+        dailyToolUses: { date: '', uses: {} },
+        dailyMarketingCampaigns: { date: '', count: 0 },
+        dailyCasinoNetProfit: 0,
+        dailyCasinoResetAt: 0,
+        investments: [],
+        businesses: cleanBusinesses,
+        assets: cleanAssets,
+        stocks: cleanStocks,
+        crypto: {},
+        inventory: { suppliesHours: 0 },
+        ownedCars: [],
+        activeCar: null,
+        tradeCompany: null,
+        industry: {},
+        customItems: [],
+        itemDurations: {},
+        smugglingFleet: { speedboat: 0, plane: 0, ship: 0 },
+        activeSmugglingJobs: [],
+        workCooldownUntil: 0,
+        overtimeCooldownUntil: 0,
+        casinoCooldownUntil: 0,
+        loanCooldownUntil: 0,
+        stockTradeCooldownUntil: 0,
+        totalTaxesPaid: 0,
+        activityLog: [],
+        isReset: true
       };
-      GameEngine.state.stocks = {
-        COMI: { shares: 0, avgPrice: 0 },
-        EAST: { shares: 0, avgPrice: 0 },
-        ETEL: { shares: 0, avgPrice: 0 },
-        FWRY: { shares: 0, avgPrice: 0 },
-        CASH: { shares: 0, avgPrice: 0 },
-        BITC: { shares: 0, avgPrice: 0 },
-        GOLD: { shares: 0, avgPrice: 0 },
-        AIX: { shares: 0, avgPrice: 0 }
-      };
-      GameEngine.state.inventory = {
-        gold_pen: 0,
-        premium_lawyer: 0,
-        energy_drink: 0,
-        tax_shield: 0,
-        market_scanner: 0,
-        vip_casino_pass: 0,
-        radar_jammer: 0,
-        fake_passport: 0,
-        crypto_cleaner: 0,
-        diplomatic_bag: 0,
-        commissioner_wire: 0,
-        quantum_cpu: 0,
-        diamond_card: 0
-      };
-      GameEngine.state.ownedCars = [];
-      GameEngine.state.activeCar = null;
-      GameEngine.state.smugglingFleet = { speedboat: 0, plane: 0, ship: 0 };
-      GameEngine.state.activeSmugglingJobs = [];
-      GameEngine.state.itemDurations = {};
-      GameEngine.state.offlineReport = null;
-      GameEngine.state.activityLog = [];
 
       if (username) {
         try {

@@ -6446,9 +6446,19 @@ const UIController = (() => {
         }
 
         // Ban check
-        if (data.isBanned) {
+        if (data.isBanned || data.is_banned) {
           unsubUser();
           handleBannedUser();
+          return;
+        }
+
+        // Account Reset check: if admin reset this user, force reload modal
+        const resetTs = Number(data.resetTimestamp || (data.state && data.state.resetTimestamp) || (data.isReset || (data.state && data.state.isReset) ? data.admin_modified_timestamp || data.adminModifiedTimestamp || Date.now() : 0));
+        const ackResetTs = Number(localStorage.getItem('rasalmal_ack_reset_' + username) || 0);
+        if ((data.isReset === true || (data.state && data.state.isReset === true)) && resetTs > ackResetTs) {
+          unsubUser();
+          applyCompleteZeroStateToGameEngine(username);
+          triggerAccountResetModal(username, resetTs);
           return;
         }
 
@@ -6493,74 +6503,67 @@ const UIController = (() => {
   function applyCompleteZeroStateToGameEngine(username) {
     if (!GameEngine.state) return;
     const isAdmin = Boolean(GameEngine.state && GameEngine.state.isAdmin);
-    GameEngine.state.isAdmin = isAdmin;
-    GameEngine.state.cash = 0;
-    GameEngine.state.bank = 0;
-    GameEngine.state.dirtyCash = 0;
-    GameEngine.state.netWorth = 0;
-    GameEngine.state.xp = 0;
-    GameEngine.state.jobId ='worker';
-    GameEngine.state.title ='عامل مبتدئ';
-    GameEngine.state.underworldRep = 0;
-    GameEngine.state.heatLevel = 0;
-    GameEngine.state.jailTimer = 0;
-    GameEngine.state.afkManagerExpiresAt = 0;
-    GameEngine.state.activeLoan = null;
-    GameEngine.state.investments = [];
-    GameEngine.state.businesses = {
-      kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0 },
-      coffee: { level: 0, price: 28, workers: 0, suppliesTicks: 0 },
-      tech: { level: 0, price: 75, workers: 0, suppliesTicks: 0 },
-      logistics: { level: 0, price: 120, workers: 0, suppliesTicks: 0 },
-      supermarket: { level: 0, price: 200, workers: 0, suppliesTicks: 0 },
-      solar_factory: { level: 0, price: 340, workers: 0, suppliesTicks: 0 },
-      private_hospital: { level: 0, price: 600, workers: 0, suppliesTicks: 0 },
-      media_studio: { level: 0, price: 1100, workers: 0, suppliesTicks: 0 },
-      private_bank: { level: 0, price: 1800, workers: 0, suppliesTicks: 0 },
-      oil_refinery: { level: 0, price: 2800, workers: 0, suppliesTicks: 0 },
-      space_tech: { level: 0, price: 4800, workers: 0, suppliesTicks: 0 }
+    const cleanBusinesses = {
+      kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+      coffee: { level: 0, price: 28, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+      tech: { level: 0, price: 75, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+      logistics: { level: 0, price: 120, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+      supermarket: { level: 0, price: 200, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+      solar_factory: { level: 0, price: 340, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+      private_hospital: { level: 0, price: 600, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+      media_studio: { level: 0, price: 1100, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+      private_bank: { level: 0, price: 1800, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+      oil_refinery: { level: 0, price: 2800, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
+      space_tech: { level: 0, price: 4800, workers: 0, suppliesTicks: 0, marketingTicks: 0 }
     };
-    GameEngine.state.assets = {
-      apartment: 0,
-      office: 0,
-      mansion: 0,
-      skyline_tower: 0,
-      luxury_resort: 0,
-      mega_yacht: 0,
-      private_island: 0,
-      orbital_station: 0
+    const cleanAssets = { apartment: 0, office: 0, mansion: 0, skyline_tower: 0, luxury_resort: 0, mega_yacht: 0, private_island: 0, orbital_station: 0 };
+    const cleanStocks = { COMI: { shares: 0, avgPrice: 0 }, EAST: { shares: 0, avgPrice: 0 }, ETEL: { shares: 0, avgPrice: 0 }, FWRY: { shares: 0, avgPrice: 0 }, CASH: { shares: 0, avgPrice: 0 }, BITC: { shares: 0, avgPrice: 0 }, GOLD: { shares: 0, avgPrice: 0 }, AIX: { shares: 0, avgPrice: 0 } };
+
+    GameEngine.state = {
+      username: username || GameEngine.state.username,
+      isAdmin,
+      cash: 0,
+      bank: 0,
+      dirtyCash: 0,
+      netWorth: 0,
+      xp: 0,
+      jobId: 'worker',
+      title: 'عامل مبتدئ',
+      underworldRep: 0,
+      heatLevel: 0,
+      jailTimer: 0,
+      afkManagerExpiresAt: 0,
+      activeLoan: null,
+      dailyLoans: { date: '', count: 0 },
+      dailyInvestments: { date: '', count: 0 },
+      dailyWork: { date: '', shifts: 0, overtimeShifts: 0 },
+      dailyToolUses: { date: '', uses: {} },
+      dailyMarketingCampaigns: { date: '', count: 0 },
+      dailyCasinoNetProfit: 0,
+      dailyCasinoResetAt: 0,
+      investments: [],
+      businesses: cleanBusinesses,
+      assets: cleanAssets,
+      stocks: cleanStocks,
+      crypto: {},
+      inventory: { suppliesHours: 0 },
+      ownedCars: [],
+      activeCar: null,
+      tradeCompany: null,
+      industry: {},
+      customItems: [],
+      itemDurations: {},
+      smugglingFleet: { speedboat: 0, plane: 0, ship: 0 },
+      activeSmugglingJobs: [],
+      workCooldownUntil: 0,
+      overtimeCooldownUntil: 0,
+      casinoCooldownUntil: 0,
+      loanCooldownUntil: 0,
+      stockTradeCooldownUntil: 0,
+      totalTaxesPaid: 0,
+      activityLog: [],
+      isReset: true
     };
-    GameEngine.state.stocks = {
-      COMI: { shares: 0, avgPrice: 0 },
-      EAST: { shares: 0, avgPrice: 0 },
-      ETEL: { shares: 0, avgPrice: 0 },
-      FWRY: { shares: 0, avgPrice: 0 },
-      CASH: { shares: 0, avgPrice: 0 },
-      BITC: { shares: 0, avgPrice: 0 },
-      GOLD: { shares: 0, avgPrice: 0 },
-      AIX: { shares: 0, avgPrice: 0 }
-    };
-    GameEngine.state.inventory = {
-      gold_pen: 0,
-      premium_lawyer: 0,
-      energy_drink: 0,
-      tax_shield: 0,
-      market_scanner: 0,
-      vip_casino_pass: 0,
-      radar_jammer: 0,
-      fake_passport: 0,
-      crypto_cleaner: 0,
-      diplomatic_bag: 0,
-      commissioner_wire: 0,
-      quantum_cpu: 0,
-      diamond_card: 0
-    };
-    GameEngine.state.ownedCars = [];
-    GameEngine.state.activeCar = null;
-    GameEngine.state.smugglingFleet = { speedboat: 0, plane: 0, ship: 0 };
-    GameEngine.state.activeSmugglingJobs = [];
-    GameEngine.state.itemDurations = {};
-    GameEngine.state.offlineReport = null;
 
     if (username) {
       try {
@@ -6913,6 +6916,109 @@ const UIController = (() => {
     if (authScreen) authScreen.classList.add('hidden');
     if (startMenu) startMenu.classList.add('hidden');
     performLogout(false);
+  }
+
+  // ==================== MANDATORY ACCOUNT RESET RELOAD MODAL ====================
+  let isAccountResetActive = false;
+
+  function triggerAccountResetModal(username, resetTs) {
+    if (isAccountResetActive) return;
+    isAccountResetActive = true;
+
+    console.warn('[SYSTEM] Complete Account Reset detected for player:', username);
+
+    // 1. Halt game loop and pause engine
+    if (tickIntervalId) {
+      clearInterval(tickIntervalId);
+      tickIntervalId = null;
+    }
+    if (typeof GameEngine !== 'undefined' && typeof GameEngine.pauseEngine === 'function') {
+      try { GameEngine.pauseEngine(); } catch (e) {}
+    }
+
+    // 2. Play alert sound
+    try {
+      if (typeof playMenuSound === 'function') playMenuSound('danger');
+    } catch (e) {}
+
+    // 3. Find or inject overlay
+    let overlay = document.getElementById('account-reset-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'account-reset-overlay';
+      overlay.className = 'fixed inset-0 z-[99999999] bg-slate-950/98 backdrop-blur-2xl flex items-center justify-center p-4 select-none';
+      overlay.style.pointerEvents = 'auto';
+      overlay.innerHTML = `
+        <div class="glass-panel w-full max-w-md p-8 rounded-3xl border-2 border-rose-500/80 bg-slate-900 text-center shadow-2xl shadow-rose-500/30 animate-scale-in">
+          <div class="w-20 h-20 mx-auto mb-5 rounded-full bg-rose-500/20 border-2 border-rose-500/50 flex items-center justify-center text-rose-400 text-3xl shadow-lg shadow-rose-500/10">
+            <i class="fa-solid fa-arrows-rotate animate-spin" style="animation-duration: 4s;"></i>
+          </div>
+          <h2 class="text-2xl font-black text-white mb-1.5">تم تصفير حسابك بالكامل</h2>
+          <div class="inline-block px-3.5 py-1 bg-rose-500/20 text-rose-300 text-xs font-black rounded-full border border-rose-500/40 mb-4">
+            إشعار إداري رسمي • Account Reset
+          </div>
+          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6 font-medium">
+            لقد قامت إدارة اللعبة بإجراء تصفير شامل لجميع أرصدة وأصول ومشاريع وممتلكات واستثمارات حسابك للبدء من الصفر.
+            <br><br>
+            <strong class="text-rose-400 font-bold">يجب إعادة تحميل الصفحة الآن</strong> لتحديث ومزامنة الحساب والبدء من جديد.
+          </p>
+          <button id="btn-account-reset-reload-action"
+            class="w-full py-3.5 px-6 bg-gradient-to-r from-rose-600 via-red-500 to-rose-600 hover:from-rose-500 hover:to-red-400 text-white font-black text-sm sm:text-base rounded-xl shadow-xl shadow-rose-600/30 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-rotate-right text-lg"></i>
+            <span>إعادة تحميل الصفحة الآن (Reload)</span>
+          </button>
+          <p class="text-[11px] text-slate-400 mt-4">
+            ⚠️ لا يمكن إغلاق هذه النافذة أو متابعة اللعب إلا بعد إعادة تحميل الصفحة.
+          </p>
+        </div>`;
+      document.body.appendChild(overlay);
+    } else {
+      overlay.classList.remove('hidden');
+    }
+
+    const doResetReload = () => {
+      const u = username || (window.GameEngine && window.GameEngine.activeUsername) || '';
+      if (resetTs && u) {
+        try { localStorage.setItem('rasalmal_ack_reset_' + u, String(resetTs)); } catch (e) {}
+      }
+      if (u) {
+        try { localStorage.removeItem('rasalmal_state_' + u); } catch (e) {}
+      }
+      try {
+        window.location.reload(true);
+      } catch (err) {
+        window.location.href = window.location.href;
+      }
+    };
+
+    const actionBtn = document.getElementById('btn-account-reset-reload-action');
+    if (actionBtn) {
+      actionBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        doResetReload();
+      };
+    }
+
+    // Intercept clicks on overlay to force reload action
+    overlay.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    // Anti-tamper Observer for reset overlay
+    try {
+      const observer = new MutationObserver(() => {
+        if (!isAccountResetActive) return;
+        if (overlay.classList.contains('hidden')) {
+          overlay.classList.remove('hidden');
+        }
+        if (!document.body.contains(overlay)) {
+          document.body.appendChild(overlay);
+        }
+      });
+      observer.observe(overlay, { attributes: true, childList: true });
+      observer.observe(document.body, { childList: true });
+    } catch (e) {}
   }
 
   function performLogout(showToastMsg = true) {
@@ -16997,7 +17103,8 @@ const UIController = (() => {
     refreshReferralData,
     renderPlayerInventory,
     useInventoryItem,
-    showDirectAdminPopupModal
+    showDirectAdminPopupModal,
+    triggerAccountResetModal
   };
 
 })();
