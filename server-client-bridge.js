@@ -198,10 +198,17 @@ var ServerBridge = (() => {
     }
   }
 
-  // Attach exit listeners
+  // Attach exit and app-hide listeners (Desktop & Mobile)
   if (typeof window !== 'undefined') {
     window.addEventListener('beforeunload', sendExit);
     window.addEventListener('pagehide', sendExit);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          sendExit();
+        }
+      });
+    }
   }
 
   return {

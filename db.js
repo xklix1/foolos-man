@@ -1237,28 +1237,28 @@ var AppDB = (() => {
     };
     if (state.pin) payload.pin = state.pin;
 
-    try {
-      const adminTs = Number(state.adminModifiedTimestamp || 0);
-      // Only apply the admin_modified_timestamp guard if we have a known admin modification.
-      // When adminTs=0 (never admin-modified), lte.0 would silently block all saves on accounts
-      // that have any non-zero admin_modified_timestamp from a previous admin action.
-      const tsFilter = adminTs > 0 ? `&admin_modified_timestamp=lte.${adminTs}` : '';
-      const url =`${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}${tsFilter}`;
-      fetch(url, {
-        method:'PATCH',
-        keepalive: true,
-        headers: {'apikey': SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'
-        },
-        body: JSON.stringify(payload)
-      }).catch(() => {});
+    // When Authoritative ServerBridge is active, let the server handle persistence cleanly
+    if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.sendExit === 'function') {
+      window.ServerBridge.sendExit();
+      return;
+    }
 
-      // Navigator sendBeacon fallback (Guarantees payload delivery on iOS Safari / Android Chrome page unload)
+    try {
+      const serverExitUrl = (typeof window !== 'undefined' && window.SERVER_API_URL)
+        ? `${window.SERVER_API_URL.replace(/\/$/, '')}/api/session/exit`
+        : '/api/session/exit';
+      const exitPayload = JSON.stringify({ username: u });
+
       if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
-        try {
-          const beaconUrl = `${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}&apikey=${SUPABASE_ANON_KEY}`;
-          const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-          navigator.sendBeacon(beaconUrl, blob);
-        } catch (bErr) {}
+        const blob = new Blob([exitPayload], { type: 'application/json' });
+        navigator.sendBeacon(serverExitUrl, blob);
+      } else {
+        fetch(serverExitUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: exitPayload,
+          keepalive: true
+        }).catch(() => {});
       }
     } catch (e) {}
   }
@@ -1312,35 +1312,26 @@ var AppDB = (() => {
     };
     if (state.pin) payload.pin = state.pin;
 
+    // When Authoritative ServerBridge is online, server writes authoritatively via service_role
+    if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.isServerOnline === 'function' && window.ServerBridge.isServerOnline()) {
+      if (typeof window.ServerBridge.sendHeartbeat === 'function') {
+        window.ServerBridge.sendHeartbeat();
+      }
+      _lastCloudSyncTimestamp = Date.now();
+      return;
+    }
+
     try {
       const adminTs = Number(state.adminModifiedTimestamp || 0);
-      // Only apply admin_modified_timestamp guard when a known admin modification exists.
-      // lte.0 silently blocks saves for all accounts that have any non-zero admin timestamp.
       const tsFilter = adminTs > 0 ? `&admin_modified_timestamp=lte.${adminTs}` : '';
       const res = await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
         method:'PATCH',
         headers: {'Prefer':'return=representation' },
         body: JSON.stringify(payload)
       });
-      
-      // If 0 rows were updated due to server having a newer admin_modified_timestamp, sync the timestamp
-      if (Array.isArray(res) && res.length === 0) {
-        const checkRows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=admin_modified_timestamp,cash,bank,net_worth,xp`);
-        if (checkRows && checkRows.length > 0) {
-          const srv = checkRows[0];
-          state.adminModifiedTimestamp = Number(srv.admin_modified_timestamp || Date.now());
-          payload.admin_modified_timestamp = state.adminModifiedTimestamp;
-          // Retry save with updated timestamp
-          await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
-            method:'PATCH',
-            headers: {'Prefer':'return=minimal' },
-            body: JSON.stringify(payload)
-          });
-        }
-      }
       _lastCloudSyncTimestamp = Date.now();
     } catch (err) {
-      console.warn('[DB] Cloud save warning:', err.message);
+      // Direct client mutation is blocked by RLS in production
     }
   }
 
