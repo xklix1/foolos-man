@@ -3098,11 +3098,8 @@
           const text = isMaint
             ? 'إنهاء وضع الصيانة والعودة للتشغيل الطبيعي للجميع'
             : 'تفعيل وضع الصيانة الشامل وإغلاق الخوادم';
-          if (maintBtnText) {
-            maintBtnText.textContent = text;
-          } else {
-            maintToggleBtn.textContent = text;
-          }
+          const icon = isMaint ? 'fa-solid fa-play' : 'fa-solid fa-wrench';
+          maintToggleBtn.innerHTML = `<i class="${icon}"></i> <span id="admin-maintenance-btn-text">${text}</span>`;
           if (isMaint) {
             maintToggleBtn.className = 'w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer';
           } else {
@@ -3126,9 +3123,9 @@
       if (maintToggleBtn && !maintToggleBtn.dataset.boundDirect) {
         maintToggleBtn.dataset.boundDirect = 'true';
         maintToggleBtn.onclick = async () => {
+          let currentActive = false;
           try {
             maintToggleBtn.disabled = true;
-            let currentActive = false;
             try {
               const res = await fetch('https://rasalmal.online/rest/v1/globals?id=eq.maintenance', {
                 headers: {
@@ -3185,6 +3182,7 @@
               showToast('الخوادم مفتوحة ✅', 'تم إنهاء وضع الصيانة وإعادة فتح الخوادم للجميع بنجاح!', 'success');
             }
           } catch (err) {
+            syncMaintUI(currentActive);
             showToast('خطأ', 'فشل تغيير حالة الصيانة: ' + (err.message || err), 'error');
           } finally {
             maintToggleBtn.disabled = false;
@@ -3209,11 +3207,8 @@
         }
         if (stagingToggleBtn) {
           const text = isEnabled ? 'إيقاف وقفل صفحة الاختبار' : 'تفعيل وفتح صفحة الاختبار';
-          if (stagingBtnText) {
-            stagingBtnText.textContent = text;
-          } else {
-            stagingToggleBtn.textContent = text;
-          }
+          const icon = isEnabled ? 'fa-solid fa-lock' : 'fa-solid fa-flask';
+          stagingToggleBtn.innerHTML = `<i class="${icon}"></i> <span id="admin-staging-btn-text">${text}</span>`;
           if (isEnabled) {
             stagingToggleBtn.className = 'w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-rose-600/20 flex items-center justify-center gap-2 cursor-pointer';
           } else {

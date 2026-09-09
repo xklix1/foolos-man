@@ -88,11 +88,15 @@ async function adminRoutes(fastify, options) {
     const serviceKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
     const url = `${config.SUPABASE_URL}/rest/v1/${table}${query ? '?' + query.replace(/^\?/, '') : ''}`;
 
+    const preferHeader = cleanMethod === 'POST'
+      ? 'resolution=merge-duplicates, return=representation'
+      : 'return=representation';
+
     const headers = {
       'apikey': serviceKey,
       'Authorization': `Bearer ${serviceKey}`,
       'Content-Type': 'application/json',
-      'Prefer': 'return=representation'
+      'Prefer': preferHeader
     };
 
     try {
