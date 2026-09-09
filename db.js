@@ -1181,9 +1181,11 @@ var AppDB = (() => {
     state.username = u;
     // CRITICAL FIX: update lastActiveTimestamp to now so that offline earnings
     // are calculated correctly from this exact moment when the browser is closed.
-    // Without this, loadUserSession reads the old lastActiveTimestamp (last visible
-    // tick) and thinks the player was last active much earlier than they actually were.
-    const exitNow = Date.now();
+    // Use getTrustedNow() (server-anchored) instead of Date.now() (raw device clock)
+    // so that the saved timestamp stays consistent with what loadUserSession reads via
+    // getTrustedNow(). If the device clock is ahead of the server clock, Date.now() would
+    // produce a future timestamp that triggers the anti-time-travel guard and zeroes earnings.
+    const exitNow = getTrustedNow();
     state.lastActiveTimestamp = exitNow;
     state.lastSeen = exitNow;
 

@@ -1263,6 +1263,17 @@ const UIController = (() => {
       const isMaint = await checkMaintenanceMode();
       if (isMaint) return;
 
+      // CRITICAL: Sync server time BEFORE loading the session so that getTrustedNow()
+      // is server-anchored when loadUserSession computes offline elapsed time.
+      // Without this, getTrustedNow() falls back to the raw device clock (Date.now()),
+      // which may be slightly ahead of the server clock. If the saved lastActiveTimestamp
+      // was written with getTrustedNow() (server-anchored) at logout, it can appear
+      // "in the future" relative to the un-synced client clock → triggers the
+      // anti-time-travel guard → offline earnings = 0.
+      if (window.AppDB && typeof window.AppDB.fetchServerTime === 'function') {
+        try { await window.AppDB.fetchServerTime(); } catch (e) {}
+      }
+
       const playerState = await GameEngine.loadUserSession(username);
       const canonicalUser = (playerState && playerState.username) ? playerState.username : username;
       localStorage.setItem('rasalmal_active_session_user', canonicalUser);

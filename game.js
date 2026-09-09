@@ -2578,8 +2578,13 @@ const GameEngine = (() => {
         const now = getTrustedNow();
 
         // Anti-Time Travel Audit
+        // NOTE: Use a 120s tolerance (was 30s) to account for:
+        // 1. The server-anchored getTrustedNow() may not have synced yet on page load
+        //    (the first API response's Date header updates _baseServerTime asynchronously)
+        // 2. Small device clock drift vs server clock at save time (flushStateToCloudOnExit)
+        // A real time-cheat would be minutes/hours ahead, not a few seconds.
         let timeTravelFlagged = false;
-        if (now < lastSeenServer - 30000) {
+        if (now < lastSeenServer - 120000) {
           console.warn('[Anti-Cheat] Time travel regression detected! trustedNow:', now, 'lastSeenServer:', lastSeenServer);
           timeTravelFlagged = true;
         }
