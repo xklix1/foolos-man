@@ -786,7 +786,7 @@ const GameEngine = (() => {
         stage3: { id:'stage3', name:'مجمع التعبئة والصناعات الغذائية', baseCost: 950000, icon:'fa-solid fa-boxes-packing', desc:'خطوط إنتاج وتعليب السلع الجاهزة' },
         logistics: { id:'logistics', name:'أسطول شاحنات التوزيع المبردة', baseCost: 450000, icon:'fa-solid fa-truck-fast', desc:'تسريع دورة التوزيع وتوسيع صوامع التخزين' }
       },
-      product: { name:'سلع تموينية وغذائية فاخرة', baseValue: 35, icon:'fa-solid fa-box', tradeCommodityId:'espresso_coffee', unitsPerContainer: 20 }
+      product: { name:'سلع تموينية وغذائية فاخرة', baseValue: 500, icon:'fa-solid fa-box', tradeCommodityId:'espresso_coffee', unitsPerContainer: 20 }
     },
     auto: {
       id:'auto',
@@ -803,7 +803,7 @@ const GameEngine = (() => {
         stage3: { id:'stage3', name:'خط التجميع الروبوتي الذكي للسيارات', baseCost: 9500000, icon:'fa-solid fa-robot', desc:'تركيب الأنظمة الإلكترونية والتشطيب' },
         logistics: { id:'logistics', name:'أسطول ناقلات السيارات العملاقة', baseCost: 4200000, icon:'fa-solid fa-truck-moving', desc:'شحن أساطيل السيارات وتوسيع ساحات التخزين' }
       },
-      product: { name:'سيارات سيدان وتجارية حديثة', baseValue: 220, icon:'fa-solid fa-car', tradeCommodityId:'auto_spare_parts', unitsPerContainer: 8 }
+      product: { name:'سيارات سيدان وتجارية حديثة', baseValue: 3200, icon:'fa-solid fa-car', tradeCommodityId:'auto_spare_parts', unitsPerContainer: 8 }
     },
     semiconductor: {
       id:'semiconductor',
@@ -820,7 +820,7 @@ const GameEngine = (() => {
         stage3: { id:'stage3', name:'مجمع تصنيع معالجات وسيرفرات AI', baseCost: 65000000, icon:'fa-solid fa-server', desc:'تجميع وتغليف وحدات المعالجة الفائقة' },
         logistics: { id:'logistics', name:'طيران الشحن الدبلوماسي فائق الأمان', baseCost: 28000000, icon:'fa-solid fa-plane-departure', desc:'نقل سريع ومؤمن وتوسيع مستودعات الكوانتم' }
       },
-      product: { name:'معالجات كوانتم وسيرفرات ذكاء اصطناعي', baseValue: 950, icon:'fa-solid fa-microchip', tradeCommodityId:'ai_quantum_chips', unitsPerContainer: 18 }
+      product: { name:'معالجات كوانتم وسيرفرات ذكاء اصطناعي', baseValue: 12500, icon:'fa-solid fa-microchip', tradeCommodityId:'ai_quantum_chips', unitsPerContainer: 40 }
     },
     petrochemical: {
       id:'petrochemical',
@@ -837,7 +837,7 @@ const GameEngine = (() => {
         stage3: { id:'stage3', name:'مجمع صناعات البلمرة والبوليمرات', baseCost: 320000000, icon:'fa-solid fa-flask-vial', desc:'تحويل المشتقات إلى بوليمرات ووقود نفاث' },
         logistics: { id:'logistics', name:'خطوط الأنابيب وشبكات الناقلات البترولية', baseCost: 140000000, icon:'fa-solid fa-ship', desc:'ضخ المنتجات وتوسيع صهاريج التخزين الاستراتيجي' }
       },
-      product: { name:'بوليمرات ووقود طائرات عالي النقاوة', baseValue: 2800, icon:'fa-solid fa-gas-pump', tradeCommodityId:'industrial_turbines', unitsPerContainer: 3 }
+      product: { name:'بوليمرات ووقود طائرات عالي النقاوة', baseValue: 38000, icon:'fa-solid fa-gas-pump', tradeCommodityId:'industrial_turbines', unitsPerContainer: 8 }
     },
     aerospace: {
       id:'aerospace',
@@ -854,7 +854,7 @@ const GameEngine = (() => {
         stage3: { id:'stage3', name:'حوض تجميع الصواريخ والمكوك والأقمار', baseCost: 1400000000, icon:'fa-solid fa-satellite', desc:'تجميع المركبات الفضائية وأنظمة التوجيه' },
         logistics: { id:'logistics', name:'منصات الإطلاق وشبكة التوجيه المداري', baseCost: 650000000, icon:'fa-solid fa-satellite-dish', desc:'إطلاق وتوجيه وتوسيع هناجر الصواريخ' }
       },
-      product: { name:'مركبات فضائية ومحطات مدارية سيادية', baseValue: 8500, icon:'fa-solid fa-rocket', tradeCommodityId:'gold_bullion_bars', unitsPerContainer: 1 }
+      product: { name:'مركبات فضائية ومحطات مدارية سيادية', baseValue: 100000, icon:'fa-solid fa-rocket', tradeCommodityId:'gold_bullion_bars', unitsPerContainer: 12 }
     }
   };
 
@@ -2369,7 +2369,7 @@ const GameEngine = (() => {
             const logisticsBonus = 1 + (log * 0.15);
 
             // Silo capacity scales with logistics stage level
-            const siloCapacity = 400 + (log * 80);
+            const siloCapacity = 600 + (log * 100);
             const currentStock = Number(sec.readyStock || 0);
 
             if (currentStock < siloCapacity) {
@@ -4905,7 +4905,7 @@ const GameEngine = (() => {
     const maxStage = Math.max(s1, s2, s3);
     const balanceFactor = maxStage > 0 ? Math.max(0.65, bottleneck / maxStage) : 1;
     const logisticsMult = 1 + (log * 0.15);
-    const siloCapacity = 400 + (log * 80);
+    const siloCapacity = 600 + (log * 100);
     const currentStock = Number(secState.readyStock || 0);
     const isStorageFull = currentStock >= siloCapacity;
     const efficiencyPct = Math.round(balanceFactor * 100);
@@ -5086,7 +5086,7 @@ const GameEngine = (() => {
 
     const unitPrice = info.definition.product.baseValue;
     const grossPayout = units * unitPrice;
-    const overheadRate = 0.35; // 35% operational, energy & maintenance expenses
+    const overheadRate = 0.15; // 15% operational, energy & maintenance expenses
     const overheadCost = Math.floor(grossPayout * overheadRate);
     const netPayout = grossPayout - overheadCost;
 
@@ -5094,7 +5094,7 @@ const GameEngine = (() => {
     state.cash = (state.cash || 0) + netPayout;
     info.state.totalEarned = (info.state.totalEarned || 0) + netPayout;
 
-    recordPlayerActivity('بيع إنتاج صناعي',`بيع ${units.toLocaleString()} وحدة من"${info.definition.product.name}" بإجمالي ${grossPayout.toLocaleString()} EGP (مصاريف تشغيل 35%: -${overheadCost.toLocaleString()} EGP | صافي مودع: +${netPayout.toLocaleString()} EGP)`,'business');
+    recordPlayerActivity('بيع إنتاج صناعي',`بيع ${units.toLocaleString()} وحدة من"${info.definition.product.name}" بإجمالي ${grossPayout.toLocaleString()} EGP (مصاريف تشغيل 15%: -${overheadCost.toLocaleString()} EGP | صافي مودع: +${netPayout.toLocaleString()} EGP)`,'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(false);
 

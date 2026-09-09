@@ -15486,7 +15486,7 @@ const UIController = (() => {
     const flowRatePerSec = (activeInfo.outputRatePerSec || 0).toFixed(2);
     const readyUnits = Math.floor(secState.readyStock || 0);
     const grossRevenue = readyUnits * secDef.product.baseValue;
-    const overheadEst = Math.floor(grossRevenue * 0.35);
+    const overheadEst = Math.floor(grossRevenue * 0.15);
     const netRevenue = grossRevenue - overheadEst;
 
     // Check trade warehouse capacity
@@ -15626,7 +15626,7 @@ const UIController = (() => {
             <div id="industry-stock-full-badge" class="${activeInfo.isStorageFull ?'' :'hidden'} mb-1">
               <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">الصوامع ممتلئة ️ توقف الإنتاج</span>
             </div>
-            <span class="text-[10px] text-yellow-400 block numbers-font">صافي البيع: <strong id="industry-active-stock-rev">${netRevenue.toLocaleString()} EGP</strong> <span class="text-[9px] text-slate-400 font-normal">(بعد خصم 35% تشغيل)</span></span>
+            <span class="text-[10px] text-yellow-400 block numbers-font">صافي البيع: <strong id="industry-active-stock-rev">${netRevenue.toLocaleString()} EGP</strong> <span class="text-[9px] text-slate-400 font-normal">(بعد خصم 15% تشغيل)</span></span>
           </div>
 
           <div class="flex flex-col gap-2 flex-1 sm:flex-initial">
@@ -15746,7 +15746,7 @@ const UIController = (() => {
         try {
           playCasinoSound('win');
           const res = GameEngine.collectIndustryRevenue(currentIndustrySector);
-          showToast('تم البيع نقداً',`تم بيع ${res.units.toLocaleString()} وحدة بإجمالي ${res.grossPayout.toLocaleString()} EGP (مصاريف تشغيل وصيانة 35%: -${res.overheadCost.toLocaleString()} EGP | صافي أرباح مودعة: +${res.netPayout.toLocaleString()} EGP).`,'success');
+          showToast('تم البيع نقداً',`تم بيع ${res.units.toLocaleString()} وحدة بإجمالي ${res.grossPayout.toLocaleString()} EGP (مصاريف تشغيل وصيانة 15%: -${res.overheadCost.toLocaleString()} EGP | صافي أرباح مودعة: +${res.netPayout.toLocaleString()} EGP).`,'success');
           renderIndustryPanel();
           renderDashboard();
         } catch (err) {
