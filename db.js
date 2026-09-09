@@ -61,8 +61,52 @@ var AppDB = (() => {
   }
 
   async function _api(endpoint, options = {}) {
-    const url = `${SUPABASE_URL}/rest/v1/${endpoint}`;
     const method = (options.method || 'GET').toUpperCase();
+
+    // Route admin mutations securely through Authoritative Admin API if authenticated session token exists
+    const adminToken = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_admin_auth_token')) ||
+                       (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_admin_auth_token'));
+
+    if (adminToken && (method === 'POST' || method === 'PATCH' || method === 'DELETE')) {
+      try {
+        const [table, query] = endpoint.split('?');
+        let bodyData = null;
+        if (options.body) {
+          try { bodyData = typeof options.body === 'string' ? JSON.parse(options.body) : options.body; } catch (e) { bodyData = options.body; }
+        }
+
+        const adminRes = await fetch('/api/admin/mutate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-token': adminToken
+          },
+          body: JSON.stringify({
+            table,
+            method,
+            query: query || '',
+            body: bodyData
+          })
+        });
+
+        if (adminRes.ok) {
+          const resJson = await adminRes.json();
+          return resJson.data;
+        } else if (adminRes.status === 401) {
+          // Token rejected, fallback to direct query
+        } else {
+          const errData = await adminRes.json().catch(() => ({}));
+          throw new Error(errData.message || `Admin mutate failed: HTTP ${adminRes.status}`);
+        }
+      } catch (adminErr) {
+        if (adminErr.message && !adminErr.message.includes('401')) {
+          console.error('[Admin Mutate Bridge]:', adminErr.message);
+          throw adminErr;
+        }
+      }
+    }
+
+    const url = `${SUPABASE_URL}/rest/v1/${endpoint}`;
     const headers = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json',
       ...(options.headers || {})
     };

@@ -3154,24 +3154,28 @@
 
             maintToggleBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري تطبيق التعديل...</span>';
 
-            await fetch('https://rasalmal.online/rest/v1/globals', {
-              method: 'POST',
-              headers: {
-                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
-                'Content-Type': 'application/json',
-                'Prefer': 'resolution=merge-duplicates'
-              },
-              body: JSON.stringify({
-                id: 'maintenance',
-                data: {
-                  active: Boolean(nextState),
-                  message: nextState ? 'الخوادم رهن الصيانة الفنية والتحديث الإداري حالياً.' : '',
-                  timestamp: Date.now()
+            if (typeof AppDB !== 'undefined' && typeof AppDB.setMaintenanceMode === 'function') {
+              await AppDB.setMaintenanceMode(nextState, nextState ? 'الخوادم رهن الصيانة الفنية والتحديث الإداري حالياً.' : '');
+            } else {
+              await fetch('https://rasalmal.online/rest/v1/globals', {
+                method: 'POST',
+                headers: {
+                  'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
+                  'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
+                  'Content-Type': 'application/json',
+                  'Prefer': 'resolution=merge-duplicates'
                 },
-                updated_at: Date.now()
-              })
-            });
+                body: JSON.stringify({
+                  id: 'maintenance',
+                  data: {
+                    active: Boolean(nextState),
+                    message: nextState ? 'الخوادم رهن الصيانة الفنية والتحديث الإداري حالياً.' : '',
+                    timestamp: Date.now()
+                  },
+                  updated_at: Date.now()
+                })
+              });
+            }
 
             syncMaintUI(nextState);
 
@@ -3257,24 +3261,28 @@
               : 'هل أنت متأكد من رغبتك في إيقاف وقفل صفحة الاختبار التجريبية؟ سيُمنع أي شخص من فتحها.';
             if (!confirm(confirmMsg)) return;
 
-            await fetch('https://rasalmal.online/rest/v1/globals', {
-              method: 'POST',
-              headers: {
-                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
-                'Content-Type': 'application/json',
-                'Prefer': 'resolution=merge-duplicates'
-              },
-              body: JSON.stringify({
-                id: 'staging_status',
-                data: {
-                  enabled: Boolean(nextState),
-                  message: nextState ? '' : 'تم إيقاف رابط الاختبار مؤقتاً بواسطة الإدارة.',
-                  timestamp: Date.now()
+            if (typeof AppDB !== 'undefined' && typeof AppDB.setStagingStatus === 'function') {
+              await AppDB.setStagingStatus(nextState, nextState ? '' : 'تم إيقاف رابط الاختبار مؤقتاً بواسطة الإدارة.');
+            } else {
+              await fetch('https://rasalmal.online/rest/v1/globals', {
+                method: 'POST',
+                headers: {
+                  'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
+                  'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
+                  'Content-Type': 'application/json',
+                  'Prefer': 'resolution=merge-duplicates'
                 },
-                updated_at: Date.now()
-              })
-            });
+                body: JSON.stringify({
+                  id: 'staging_status',
+                  data: {
+                    enabled: Boolean(nextState),
+                    message: nextState ? '' : 'تم إيقاف رابط الاختبار مؤقتاً بواسطة الإدارة.',
+                    timestamp: Date.now()
+                  },
+                  updated_at: Date.now()
+                })
+              });
+            }
 
             syncStagingUI(nextState);
 

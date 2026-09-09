@@ -12,7 +12,8 @@ const config = {
   // Supabase connection
   SUPABASE_URL: process.env.SUPABASE_URL || 'https://rasalmal.online',
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08',
-  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3ODg1NTk3NTMsImV4cCI6MjEwMzkxOTc1M30.dCINbXRAdeGpSSSe1R2QQSfEThetkFyYZXeBXTf3AUo',
+  ADMIN_KEY_SHA256: process.env.ADMIN_KEY_SHA256 || '686e4c577d8bb01be2b93e8a0e8c44a20e690b56691971a968f5a3e3537938cb',
 
   // Game Engine Settings
   AUTOSAVE_INTERVAL_MS: 30000, // 30 seconds write-behind to DB
