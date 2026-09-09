@@ -248,6 +248,8 @@
           <i class="fa-solid fa-bullhorn text-sky-400 text-xs"></i><span>البث</span></button>
         <button id="mobtab-admin-giftcodes" onclick="window.switchAdminTab('giftcodes')" class="shrink-0 px-3 py-1.5 rounded-lg border border-transparent bg-slate-800/60 text-slate-300 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition">
           <i class="fa-solid fa-gift text-emerald-400 text-xs"></i><span>الأكواد</span></button>
+        <button id="mobtab-admin-onlinegift" onclick="window.switchAdminTab('onlinegift')" class="shrink-0 px-3 py-1.5 rounded-lg border border-transparent bg-slate-800/60 text-amber-300 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-hand-holding-dollar text-amber-400 text-xs"></i><span>هدايا المتصلين</span></button>
         <button id="mobtab-admin-system" onclick="window.switchAdminTab('system')" class="shrink-0 px-3 py-1.5 rounded-lg border border-transparent bg-slate-800/60 text-rose-300 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition">
           <i class="fa-solid fa-triangle-exclamation text-rose-500 text-xs"></i><span>النظام</span></button></div>
 
@@ -321,7 +323,12 @@
                 <i class="fa-solid fa-bullhorn text-sm text-sky-400"></i><span>البث والمكافآت العامة</span></button>
               <button id="tab-admin-giftcodes" onclick="window.switchAdminTab('giftcodes')"
                 class="admin-tab-btn w-full px-4 py-2.5 rounded-xl border border-transparent hover:bg-slate-900/60 text-slate-400 hover:text-white font-bold transition flex items-center gap-3">
-                <i class="fa-solid fa-gift text-sm text-emerald-400"></i><span>أكواد الهدايا</span></button></div></div>
+                <i class="fa-solid fa-gift text-sm text-emerald-400"></i><span>أكواد الهدايا</span></button>
+              <button id="tab-admin-onlinegift" onclick="window.switchAdminTab('onlinegift')"
+                class="admin-tab-btn w-full px-4 py-2.5 rounded-xl border border-transparent hover:bg-slate-900/60 text-slate-400 hover:text-white font-bold transition flex items-center gap-3">
+                <i class="fa-solid fa-hand-holding-dollar text-sm text-amber-400"></i><span>هدايا المتصلين الآن</span>
+                <span id="admin-online-gift-count" class="mr-auto text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-black">0</span>
+              </button></div></div>
 
           <div class="p-4 border-t border-slate-900 bg-slate-950/20 shrink-0">
             <button id="tab-admin-system" onclick="window.switchAdminTab('system')"
@@ -1852,6 +1859,113 @@
               <tbody id="admin-auctions-list" class="divide-y divide-slate-800/40">
                 <tr>
                   <td colspan="5" class="py-4 text-center text-slate-500">جاري تحميل الأغراض المعروضة...</td></tr></tbody></table></div></div></div>
+
+      <!-- PANEL ONLINE GIFT — Send gifts to currently online players -->
+      <div id="admin-subpanel-onlinegift" class="hidden space-y-4">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-black text-white flex items-center gap-2">
+              <i class="fa-solid fa-hand-holding-dollar text-amber-400"></i>
+              إرسال هدايا للمتصلين الآن
+            </h3>
+            <p class="text-[10px] text-slate-400 mt-0.5">الهدية تُرسل فوراً لجميع اللاعبين المتصلين حالياً فقط (نشطين خلال 2.5 دقيقة)</p>
+          </div>
+          <button id="btn-admin-refresh-online-gift" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg border border-slate-700 font-bold transition">
+            <i class="fa-solid fa-rotate-right"></i> تحديث القائمة
+          </button>
+        </div>
+
+        <!-- Gift Config Card -->
+        <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
+          <h4 class="text-xs font-bold text-amber-300 flex items-center gap-2">
+            <i class="fa-solid fa-sliders"></i> إعداد الهدية
+          </h4>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <!-- Gift Type -->
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">نوع الهدية</label>
+              <select id="admin-online-gift-type" class="glass-input w-full p-2 text-xs text-white bg-slate-950 border border-slate-800 rounded-lg font-bold">
+                <option value="cash">💵 نقود يد (Cash)</option>
+                <option value="bank">🏦 إيداع بنكي (Bank)</option>
+                <option value="xp">⭐ نقاط خبرة (XP)</option>
+                <option value="supplies">📦 إمدادات مشاريع (ساعات)</option>
+              </select>
+            </div>
+
+            <!-- Amount -->
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1" id="admin-online-gift-amount-label">المبلغ / الكمية</label>
+              <input type="number" id="admin-online-gift-amount" min="1" placeholder="مثال: 50000"
+                class="glass-input w-full p-2 text-xs text-center font-black text-white bg-slate-950 border border-slate-800 rounded-lg">
+            </div>
+
+            <!-- Reason / Note -->
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">رسالة / سبب الهدية</label>
+              <input type="text" id="admin-online-gift-note" placeholder="مثال: مكافأة نشاط المساء"
+                class="glass-input w-full p-2 text-xs text-white bg-slate-950 border border-slate-800 rounded-lg">
+            </div>
+          </div>
+
+          <!-- Preview Summary -->
+          <div class="flex items-center gap-3 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+            <i class="fa-solid fa-circle-info text-amber-400 text-sm"></i>
+            <div class="text-[11px] text-slate-300">
+              سيتم الإرسال لـ <span id="admin-online-gift-preview-count" class="text-amber-400 font-black">0</span> لاعب متصل الآن
+              — إجمالي الهدايا: <span id="admin-online-gift-preview-total" class="text-emerald-400 font-black">0</span>
+            </div>
+          </div>
+
+          <!-- Send Button -->
+          <button id="btn-admin-send-online-gift"
+            class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-black text-sm rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span id="btn-admin-send-online-gift-text">إرسال الهدية للمتصلين</span>
+          </button>
+        </div>
+
+        <!-- Online Players Preview Table -->
+        <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              اللاعبون المتصلون الآن
+            </h4>
+            <span class="text-[10px] text-slate-400">سيستقبلون الهدية جميعاً</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs">
+              <thead>
+                <tr class="text-[10px] text-slate-500 border-b border-slate-800">
+                  <th class="pb-2 font-bold">#</th>
+                  <th class="pb-2 font-bold">اللاعب</th>
+                  <th class="pb-2 font-bold">الرتبة</th>
+                  <th class="pb-2 font-bold">صافي الثروة</th>
+                  <th class="pb-2 font-bold">آخر نشاط</th>
+                </tr>
+              </thead>
+              <tbody id="admin-online-gift-players-list">
+                <tr><td colspan="5" class="py-4 text-center text-slate-500 text-[11px]">اضغط "تحديث القائمة" لعرض المتصلين</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2">
+          <h4 class="text-[10px] font-bold text-slate-400 flex items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left"></i> سجل آخر إرسال
+          </h4>
+          <div id="admin-online-gift-log" class="text-[10px] text-slate-500 space-y-1 max-h-28 overflow-y-auto">
+            <p>لم يتم الإرسال بعد في هذه الجلسة.</p>
+          </div>
+        </div>
+
+      </div>
 
       <!-- 8. PANEL GIFT CODES MANAGEMENT -->
       <div id="admin-subpanel-giftcodes" class="hidden space-y-4">

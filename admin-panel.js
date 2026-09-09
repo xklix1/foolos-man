@@ -6494,7 +6494,7 @@
 
   function switchAdminTab(tabId) {
     cleanupAdminListeners();
-    const subtabs = ['stats','players','transfers','fraud','chat','market','broadcast','auctions','giftcodes','system','corporations','topup'];
+    const subtabs = ['stats','players','transfers','fraud','chat','market','broadcast','auctions','giftcodes','onlinegift','system','corporations','topup'];
     subtabs.forEach(t => {
       const btn = document.getElementById(`tab-admin-${t}`);
       const mobPill = document.getElementById(`mobtab-admin-${t}`);
@@ -6550,6 +6550,8 @@
       fetchAndRenderAdminLiveAuctions();
     } else if (tabId ==='giftcodes') {
       fetchAndRenderAdminGiftCodes();
+    } else if (tabId ==='onlinegift') {
+      renderOnlineGiftPanel();
     } else if (tabId ==='corporations') {
       renderAdminCorporationsPanel();
     } else if (tabId ==='topup') {
@@ -6612,12 +6614,192 @@
       if (toggleBtn) {
         toggleBtn.disabled = true;
         toggleBtn.innerHTML ='<i class="fa-solid fa-spinner animate-spin"></i>';
-      }
       
       await AppDB.adminSaveServerConfig({
         boostMultiplier: newBoost
       });
-      
+
+  // ─────────────────────────────────────────────
+  //  ONLINE GIFT PANEL — Send gifts to online players
+  // ─────────────────────────────────────────────
+  const ONLINE_GIFT_THRESHOLD = 2.5 * 60 * 1000; // 2.5 minutes
+
+  function getOnlinePlayers() {
+    const now = Date.now();
+    return (cachedPlayers || []).filter(p => {
+      const lastActive = Number(p.lastActiveTimestamp || p.lastSeen || p.last_seen || 0);
+      return lastActive > 0 && (now - lastActive) < ONLINE_GIFT_THRESHOLD;
+    });
+  }
+
+  function renderOnlineGiftPanel() {
+    const tbody = document.getElementById('admin-online-gift-players-list');
+    const previewCount = document.getElementById('admin-online-gift-preview-count');
+    const previewTotal = document.getElementById('admin-online-gift-preview-total');
+    const countBadge = document.getElementById('admin-online-gift-count');
+    const amountInput = document.getElementById('admin-online-gift-amount');
+    const typeSelect = document.getElementById('admin-online-gift-type');
+    const amountLabel = document.getElementById('admin-online-gift-amount-label');
+    const typeLabels = { cash: 'نقود يد', bank: 'إيداع بنكي', xp: 'نقاط خبرة', supplies: 'ساعات إمداد' };
+
+    function refreshList() {
+      const online = getOnlinePlayers();
+      const count = online.length;
+      const amount = Number(amountInput ? amountInput.value : 0) || 0;
+      const type = typeSelect ? typeSelect.value : 'cash';
+
+      if (countBadge) countBadge.textContent = count;
+      if (previewCount) previewCount.textContent = count;
+
+      const totalVal = count * amount;
+      if (previewTotal) {
+        if (type === 'supplies') previewTotal.textContent = `${totalVal.toLocaleString()} ساعة × ${count} لاعب`;
+        else if (type === 'xp') previewTotal.textContent = `${totalVal.toLocaleString()} XP`;
+        else previewTotal.textContent = `${totalVal.toLocaleString()} ر.س`;
+      }
+      if (amountLabel) {
+        const lblMap = { cash: 'المبلغ (ر.س)', bank: 'المبلغ (ر.س)', xp: 'نقاط الخبرة (XP)', supplies: 'ساعات الإمداد' };
+        amountLabel.textContent = lblMap[type] || 'المبلغ / الكمية';
+      }
+
+      if (!tbody) return;
+      if (count === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-500 text-[11px]">لا يوجد لاعبون متصلون حالياً (نشطون خلال آخر 2.5 دقيقة)</td></tr>';
+        return;
+      }
+      tbody.innerHTML = '';
+      const now = Date.now();
+      online.forEach((p, i) => {
+        const lastActive = Number(p.lastActiveTimestamp || p.lastSeen || 0);
+        const secAgo = Math.max(0, Math.floor((now - lastActive) / 1000));
+        const agoLabel = secAgo < 60 ? `منذ ${secAgo}ث` : `منذ ${Math.floor(secAgo / 60)}د`;
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-slate-800/60 hover:bg-slate-900/30 text-xs';
+        tr.innerHTML = `
+          <td class="py-2 px-1 text-slate-500 font-mono">${i + 1}</td>
+          <td class="py-2 px-1">
+            <span class="font-black text-white">${p.username || '—'}</span>
+            ${p.isAdmin ? '<span class="text-[9px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded font-bold mr-1">أدمن</span>' : ''}
+          </td>
+          <td class="py-2 px-1 text-slate-400">${p.title || '—'}</td>
+          <td class="py-2 px-1 text-emerald-400 font-mono font-bold">${(p.netWorth || 0).toLocaleString()}</td>
+          <td class="py-2 px-1 text-sky-400 font-mono text-[10px]">${agoLabel}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    if (typeSelect) typeSelect.onchange = refreshList;
+    if (amountInput) amountInput.oninput = refreshList;
+
+    const refreshBtn = document.getElementById('btn-admin-refresh-online-gift');
+    if (refreshBtn) {
+      refreshBtn.onclick = async () => {
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري التحديث...';
+        try {
+          cachedPlayers = await AppDB.adminGetAllPlayers(true);
+          refreshList();
+          showToast('تحديث', `القائمة محدثة — ${getOnlinePlayers().length} متصل الآن`, 'success');
+        } catch (e) {
+          showToast('خطأ', e.message, 'error');
+        } finally {
+          refreshBtn.disabled = false;
+          refreshBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> تحديث القائمة';
+        }
+      };
+    }
+
+    const sendBtn = document.getElementById('btn-admin-send-online-gift');
+    const sendBtnText = document.getElementById('btn-admin-send-online-gift-text');
+    if (sendBtn) {
+      sendBtn.onclick = async () => {
+        const online = getOnlinePlayers();
+        if (online.length === 0) {
+          showToast('لا يوجد متصلون', 'لا يوجد لاعبون متصلون حالياً لإرسال الهدية إليهم.', 'info');
+          return;
+        }
+        const amount = Number(amountInput ? amountInput.value : 0);
+        if (!amount || amount <= 0) {
+          showToast('خطأ', 'يرجى إدخال مبلغ / كمية صحيحة أكبر من صفر.', 'error');
+          return;
+        }
+        const type = typeSelect ? typeSelect.value : 'cash';
+        const note = (document.getElementById('admin-online-gift-note') || {}).value || 'هدية من الإدارة';
+        const logEl = document.getElementById('admin-online-gift-log');
+
+        if (!confirm(`هل أنت متأكد من إرسال ${amount.toLocaleString()} ${typeLabels[type]} لـ ${online.length} لاعب متصل؟`)) return;
+
+        sendBtn.disabled = true;
+        if (sendBtnText) sendBtnText.textContent = `جاري الإرسال لـ ${online.length} لاعب...`;
+
+        let successCount = 0;
+        let failCount = 0;
+        const errors = [];
+
+        for (const player of online) {
+          try {
+            const freshState = await AppDB.adminGetPlayer(player.username);
+            if (!freshState) { failCount++; errors.push(player.username + ' (state null)'); continue; }
+
+            if (type === 'cash') {
+              freshState.cash = (Number(freshState.cash) || 0) + amount;
+              freshState.netWorth = (Number(freshState.netWorth) || 0) + amount;
+            } else if (type === 'bank') {
+              freshState.bank = (Number(freshState.bank) || 0) + amount;
+              freshState.netWorth = (Number(freshState.netWorth) || 0) + amount;
+            } else if (type === 'xp') {
+              freshState.xp = (Number(freshState.xp) || 0) + amount;
+            } else if (type === 'supplies') {
+              const supplyTicks = amount * 3600;
+              const MAX_TICKS = 43200;
+              if (freshState.businesses) {
+                Object.keys(freshState.businesses).forEach(bizId => {
+                  if (freshState.businesses[bizId] && freshState.businesses[bizId].level > 0) {
+                    freshState.businesses[bizId].suppliesTicks = Math.min(
+                      MAX_TICKS,
+                      (Number(freshState.businesses[bizId].suppliesTicks) || 0) + supplyTicks
+                    );
+                  }
+                });
+              }
+            }
+            freshState.adminModifiedTimestamp = Date.now();
+            freshState._lastAdminGift = { type, amount, note, sentAt: Date.now() };
+            await AppDB.savePlayerState(player.username, freshState, true);
+            successCount++;
+          } catch (e) {
+            failCount++;
+            errors.push(`${player.username}: ${e.message}`);
+          }
+        }
+
+        const timestamp = new Date().toLocaleTimeString('ar-EG');
+        const logEntry = document.createElement('p');
+        logEntry.className = successCount > 0 ? 'text-emerald-400' : 'text-rose-400';
+        logEntry.innerHTML = `<span class="text-slate-500">[${timestamp}]</span> ${typeLabels[type]} ${amount.toLocaleString()} → ${successCount} نجاح${failCount > 0 ? ` / ${failCount} فشل` : ''} — "${note}"`;
+        if (logEl) {
+          const placeholder = logEl.querySelector('p');
+          if (placeholder && placeholder.textContent.includes('لم يتم الإرسال')) placeholder.remove();
+          logEl.prepend(logEntry);
+        }
+
+        logAdminAction(`هدية للمتصلين: ${typeLabels[type]} ×${amount.toLocaleString()} لـ ${successCount}/${online.length} لاعب — "${note}"`);
+        if (successCount > 0) showToast('تم الإرسال!', `تم إرسال ${typeLabels[type]} (${amount.toLocaleString()}) لـ ${successCount} لاعب متصل!`, 'success');
+        if (failCount > 0) { console.warn('[AdminGift] Failures:', errors); showToast('تنبيه', `فشل الإرسال لـ ${failCount} لاعب — راجع الكونسول.`, 'warning'); }
+
+        sendBtn.disabled = false;
+        if (sendBtnText) sendBtnText.textContent = 'إرسال الهدية للمتصلين';
+      };
+    }
+
+    refreshList();
+  }
+
+  // ─────────────────────────────────────────────
+  //  V2 variables & handlers
+  // ─────────────────────────────────────────────
+
       showToast('مضاعف السيرفر', newBoost > 1.0 ?'تم تفعيل وضع مضاعف الأرباح والخبرة 2x للجميع!' :'تم إيقاف مضاعف السيرفر والعودة للوضع الاعتيادي.','success');
       logAdminAction(`تحديث مضاعف السيرفر: تم تعيين المضاعف على ${newBoost.toFixed(1)}x`);
       
