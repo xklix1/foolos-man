@@ -2638,11 +2638,36 @@ const GameEngine = (() => {
         state.transfersReceivedTotal = Number(dbState.transfersReceivedTotal || 0);
       }
 
-      // Calculate offline idle earnings if returning after being away
-      // Supply depletion always happens; profits require an active AFK Manager
-      const lastSeenServer = Number(dbState.lastActiveTimestamp || dbState.lastSeen || dbState.last_seen || (dbState.state && (dbState.state.lastActiveTimestamp || dbState.state.lastSeen)) || 0);
-      if (lastSeenServer > 0) {
-        const now = getTrustedNow();
+      // Ensure initial 12-hour AFK manager if missing or uninitialized
+      if (!state.afkManagerExpiresAt || state.afkManagerExpiresAt <= 0) {
+        state.afkManagerExpiresAt = getTrustedNow() + (12 * 60 * 60 * 1000);
+      }
+
+      // ── OFFLINE CALCULATION: Authoritative Server vs Client Fallback ──
+      if (serverOfflineReport && serverOfflineReport.applied) {
+        state.offlineReport = {
+          seconds: serverOfflineReport.elapsedSeconds,
+          earnings: serverOfflineReport.totalEarnings,
+          corpEarnings: 0,
+          bizEarnings: serverOfflineReport.bizEarnings,
+          nonBizEarnings: serverOfflineReport.passiveEarnings,
+          suppliesHours: Number(((serverOfflineReport.elapsedSeconds || 0) / 3600).toFixed(1)),
+          breakdown: (serverOfflineReport.breakdown || []).map(b => ({
+            name: b.name,
+            consumedHours: b.activeHours,
+            profit: b.profit
+          })),
+          wasManagerActive: serverOfflineReport.wasManagerActive,
+          expiredDuringAbsence: serverOfflineReport.managerExpiredDuringAbsence
+        };
+        state.lastOfflineReport = state.offlineReport;
+        console.log('[GameEngine] Applied authoritative server offline report:', state.offlineReport);
+      } else {
+        // Calculate offline idle earnings if returning after being away
+        // Supply depletion always happens; profits require an active AFK Manager
+        const lastSeenServer = Number(dbState.lastActiveTimestamp || dbState.lastSeen || dbState.last_seen || (dbState.state && (dbState.state.lastActiveTimestamp || dbState.state.lastSeen)) || 0);
+        if (lastSeenServer > 0) {
+          const now = getTrustedNow();
 
         // ── DEBUG: log key offline-earnings inputs so we can diagnose issues ──
         const _diffMs = now - lastSeenServer;
@@ -2834,6 +2859,7 @@ const GameEngine = (() => {
           };
           state.lastOfflineReport = state.offlineReport;
         }
+      }
       }
       // Ensure tradeCompany state integrity & resolve offline shipments
       if (!state.tradeCompany) {

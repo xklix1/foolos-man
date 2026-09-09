@@ -848,11 +848,13 @@
                   إلى 0 ج.م كبداية جديدة.</p></div>
               <div class="space-y-1.5 pt-2">
                 <button id="btn-admin-reset-player-account"
-                  class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 rounded-lg text-[11px] font-black transition flex items-center justify-center gap-1.5 shadow-md">
+                  onclick="window.adminResetPlayerAction ? window.adminResetPlayerAction() : null"
+                  class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 rounded-lg text-[11px] font-black transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer active:scale-95">
                   <i class="fa-solid fa-rotate-left"></i>
                   <span>تصفير حساب اللاعب بالكامل (Reset)</span></button>
                 <button id="btn-admin-delete-player-account"
-                  class="w-full py-2 bg-rose-700 hover:bg-rose-600 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5 shadow-md">
+                  onclick="window.adminDeletePlayerAction ? window.adminDeletePlayerAction() : null"
+                  class="w-full py-2 bg-rose-700 hover:bg-rose-600 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer active:scale-95">
                   <i class="fa-solid fa-trash-can"></i>
                   <span>حذف حساب اللاعب نهائياً</span></button></div></div></div>
 
@@ -3020,9 +3022,9 @@
   <div id="toast-container" class="fixed top-4 left-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Core Modules -->
-  <script src="game.js?v=10.8"></script>
-  <script src="db.js?v=10.8"></script>
-  <script src="admin-panel.js?v=10.8"></script>
+  <script src="game.js?v=11.5"></script>
+  <script src="db.js?v=11.5"></script>
+  <script src="admin-panel.js?v=11.5"></script>
 
   <!-- Standalone Admin Controller Script -->
   <script>
@@ -3376,6 +3378,27 @@
           if (keyInput) keyInput.value = '';
           showToast('تسجيل الخروج', 'تم قفل لوحة التحكم بنجاح.', 'info');
         };
+      }
+
+      // Direct fallback bindings for Reset & Delete Player Account buttons
+      const resetBtn = document.getElementById('btn-admin-reset-player-account');
+      if (resetBtn && !resetBtn.dataset.boundDirect) {
+        resetBtn.dataset.boundDirect = 'true';
+        resetBtn.addEventListener('click', () => {
+          if (typeof window.adminResetPlayerAction === 'function') {
+            window.adminResetPlayerAction();
+          }
+        });
+      }
+
+      const deleteBtn = document.getElementById('btn-admin-delete-player-account');
+      if (deleteBtn && !deleteBtn.dataset.boundDirect) {
+        deleteBtn.dataset.boundDirect = 'true';
+        deleteBtn.addEventListener('click', () => {
+          if (typeof window.adminDeletePlayerAction === 'function') {
+            window.adminDeletePlayerAction();
+          }
+        });
       }
     });
 

@@ -201,6 +201,13 @@ var ServerBridge = (() => {
     if (!_isServerOnline || !_activeUsername) return;
     const url = `${getApiBase()}/api/session/exit`;
     const st = customState || (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state ? window.GameEngine.state : null);
+    if (st) {
+      const exitTs = (typeof window !== 'undefined' && window.AppDB && typeof window.AppDB.getTrustedNow === 'function')
+        ? window.AppDB.getTrustedNow()
+        : Date.now();
+      st.lastActiveTimestamp = exitTs;
+      st.lastSeen = exitTs;
+    }
     const payload = JSON.stringify({
       username: _activeUsername,
       state: st

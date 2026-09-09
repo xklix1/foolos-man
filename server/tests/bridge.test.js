@@ -72,6 +72,41 @@ test('Client ServerBridge End-to-End Test', async () => {
     const updatedSession = sessionManager.sessions.get(testUsername.toLowerCase());
     assert.strictEqual(updatedSession.state.industry.food.unlocked, true);
     assert.strictEqual(updatedSession.state.industry.food.stage1, 2);
+
+    // 6. Test Offline Profit on Browser Close & Reopen
+    const exitSessionUser = 'offline_exit_player';
+    const now = Date.now();
+    const oneHourAgo = now - 3600000;
+    sessionManager.sessions.set(exitSessionUser.toLowerCase(), {
+      username: exitSessionUser,
+      pin: '1234',
+      state: {
+        username: exitSessionUser,
+        cash: 1000,
+        bank: 5000,
+        netWorth: 6000,
+        xp: 50,
+        lastActiveTimestamp: oneHourAgo,
+        lastSeen: oneHourAgo,
+        afkManagerExpiresAt: now + (10 * 3600 * 1000), // Active AFK Manager
+        jailTimer: 0,
+        businesses: {
+          kiosk: { level: 2, workers: 3, suppliesTicks: 7200 }
+        }
+      },
+      dirty: false,
+      lastActivity: oneHourAgo
+    });
+
+    // Start session as if player just reopened browser after 1 hour
+    const offlineStartRes = await ServerBridge.startSession(exitSessionUser, '1234');
+    assert.ok(offlineStartRes, 'Session started');
+    assert.ok(offlineStartRes.offlineReport, 'Offline report generated');
+    assert.strictEqual(offlineStartRes.offlineReport.applied, true, 'Offline progress applied');
+    assert.strictEqual(offlineStartRes.offlineReport.elapsedSeconds, 3600, '3600s elapsed');
+    assert.ok(offlineStartRes.offlineReport.totalEarnings > 0, 'Earned offline profit');
+    assert.strictEqual(offlineStartRes.state.bank, 5000 + offlineStartRes.offlineReport.totalEarnings, 'Bank credited');
+    assert.strictEqual(offlineStartRes.state.businesses.kiosk.suppliesTicks, 7200 - 3600, 'Supplies depleted by 1h');
   } finally {
     ServerBridge.destroy();
     await app.close();

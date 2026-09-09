@@ -2034,52 +2034,97 @@
     };
 
     // RESET SPECIFIC PLAYER ACCOUNT
-    const resetPlayerAccountBtn = document.getElementById('btn-admin-reset-player-account');
-    if (resetPlayerAccountBtn) {
-      resetPlayerAccountBtn.addEventListener('click', async () => {
-        if (!selectedPlayer) return;
-        const confirmMsg =`تحذير قاطع: هل أنت متأكد من تصفير حساب اللاعب"${selectedPlayer}" بالكامل من كل شيء؟\nسيتم تصفير الكاش والبنك والأموال المشبوهة، ومسح كافة الأصول والشركات والأسهم والاستثمارات والمخزون ونقاط الخبرة والرتبة والملاحقات (تصفير شامل 0 EGP).`;
-        if (!confirm(confirmMsg)) return;
+    async function handleAdminResetPlayerAccount() {
+      const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
+      if (!targetUser || targetUser === '...' || targetUser === '---' || targetUser === '') {
+        showToast('تنبيه الإدارة ⚠️', 'يرجى اختيار وتحديد لاعب أولاً من القائمة لتنفيذ عملية التصفير.', 'warning');
+        return;
+      }
+      const confirmMsg = `⚠️ تحذير قاطع ورادع:\n\nهل أنت متأكد من تصفير حساب اللاعب "${targetUser}" بالكامل من كل شيء؟\n\n• سيتم تصفير الكاش والبنك والأموال المشبوهة (0 EGP).\n• مسح كافة الشركات والمشاريع بالكامل.\n• مسح كافة الأصول العقارية والمخزون.\n• تصفير وإلغاء كافة محافظ الأسهم والاستثمارات.\n• إعادة الرتبة إلى (عامل مبتدئ) وتصفير نقاط الخبرة (0 XP).\n• شطب كافة الديون والملاحقات الأمنية.\n\nهل تريد تنفيذ التصفير الشامل الآن؟`;
+      if (!confirm(confirmMsg)) return;
 
-        try {
-          const freshData = await AppDB.adminResetPlayer(selectedPlayer);
-
-          // If active user is the reset user, sync immediately
-          if (selectedPlayer === GameEngine.activeUsername) {
-            applyCompleteZeroStateToGameEngine(selectedPlayer);
-            renderAll();
-          }
-
-          showToast('تصفير الحساب',`تم تصفير حساب اللاعب"${selectedPlayer}" بالكامل من كل شيء بنجاح (0 EGP).`,'success');
-          logAdminAction(`تصفير شامل ونهائي لكافة أرصدة وممتلكات حساب اللاعب: ${selectedPlayer}`);
-          selectPlayerForModeration(selectedPlayer);
-          loadAdminPlayersDirectory(false);
-        } catch (err) {
-          showToast('خطأ تصفير الحساب', err.message,'error');
+      const resetBtn = document.getElementById('btn-admin-reset-player-account');
+      const origHtml = resetBtn ? resetBtn.innerHTML : '';
+      try {
+        if (resetBtn) {
+          resetBtn.disabled = true;
+          resetBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري تصفير الحساب...</span>';
         }
-      });
+        await AppDB.adminResetPlayer(targetUser);
+
+        // If active user is the reset user, sync immediately
+        if (targetUser === GameEngine.activeUsername) {
+          applyCompleteZeroStateToGameEngine(targetUser);
+          renderAll();
+        }
+
+        showToast('تصفير الحساب ✅', `تم تصفير حساب اللاعب "${targetUser}" بالكامل من كل شيء بنجاح (0 EGP).`, 'success');
+        logAdminAction(`تصفير شامل ونهائي لكافة أرصدة وممتلكات حساب اللاعب: ${targetUser}`);
+        if (typeof selectPlayerForModeration === 'function') {
+          await selectPlayerForModeration(targetUser);
+        }
+        if (typeof loadAdminPlayersDirectory === 'function') {
+          await loadAdminPlayersDirectory(false, true);
+        }
+      } catch (err) {
+        showToast('خطأ تصفير الحساب ❌', err.message || err, 'error');
+      } finally {
+        if (resetBtn) {
+          resetBtn.disabled = false;
+          resetBtn.innerHTML = origHtml || '<i class="fa-solid fa-rotate-left"></i><span>تصفير حساب اللاعب بالكامل (Reset)</span>';
+        }
+      }
+    }
+    window.adminResetPlayerAction = handleAdminResetPlayerAccount;
+
+    const resetPlayerAccountBtn = document.getElementById('btn-admin-reset-player-account');
+    if (resetPlayerAccountBtn && !resetPlayerAccountBtn.dataset.bound) {
+      resetPlayerAccountBtn.dataset.bound = 'true';
+      resetPlayerAccountBtn.addEventListener('click', handleAdminResetPlayerAccount);
     }
 
     // DELETE SPECIFIC PLAYER ACCOUNT
-    const deletePlayerAccountBtn = document.getElementById('btn-admin-delete-player-account');
-    if (deletePlayerAccountBtn) {
-      deletePlayerAccountBtn.addEventListener('click', async () => {
-        if (!selectedPlayer) return;
-        if (!confirm(`️ تحذير نهائي: هل أنت متأكد من حذف وثيقة وحساب اللاعب"${selectedPlayer}" نهائياً من الخوادم؟`)) return;
+    async function handleAdminDeletePlayerAccount() {
+      const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
+      if (!targetUser || targetUser === '...' || targetUser === '---' || targetUser === '') {
+        showToast('تنبيه الإدارة ⚠️', 'يرجى اختيار وتحديد لاعب أولاً من القائمة لتنفيذ عملية الحذف.', 'warning');
+        return;
+      }
+      const confirmMsg = `🚨 تحذير أمني نهائي:\n\nهل أنت متأكد تماماً من حذف وثيقة وسجل وحساب اللاعب "${targetUser}" نهائياً من الخوادم؟\n\nلن يمكن استعادة هذا الحساب أو بياناته بعد الحذف.`;
+      if (!confirm(confirmMsg)) return;
 
-        try {
-          await AppDB.adminDeletePlayer(selectedPlayer);
-          showToast('حذف الحساب',`تم حذف حساب اللاعب ${selectedPlayer} نهائياً من قاعدة البيانات.`,'success');
-          logAdminAction(`حذف نهائي لوثيقة حساب اللاعب: ${selectedPlayer}`);
-
-          if (resultCard) resultCard.classList.add('hidden');
-          selectedPlayer = null;
-          selectedPlayerState = null;
-          loadAdminPlayersDirectory(false);
-        } catch (err) {
-          showToast('خطأ حذف الحساب', err.message,'error');
+      const deleteBtn = document.getElementById('btn-admin-delete-player-account');
+      const origHtml = deleteBtn ? deleteBtn.innerHTML : '';
+      try {
+        if (deleteBtn) {
+          deleteBtn.disabled = true;
+          deleteBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري حذف الحساب...</span>';
         }
-      });
+        await AppDB.adminDeletePlayer(targetUser);
+        showToast('حذف الحساب 🗑️', `تم حذف وثيقة وحساب اللاعب ${targetUser} نهائياً من قاعدة البيانات.`, 'success');
+        logAdminAction(`حذف نهائي لوثيقة حساب اللاعب: ${targetUser}`);
+
+        if (resultCard) resultCard.classList.add('hidden');
+        selectedPlayer = null;
+        selectedPlayerState = null;
+        if (typeof loadAdminPlayersDirectory === 'function') {
+          await loadAdminPlayersDirectory(false, true);
+        }
+      } catch (err) {
+        showToast('خطأ حذف الحساب ❌', err.message || err, 'error');
+      } finally {
+        if (deleteBtn) {
+          deleteBtn.disabled = false;
+          deleteBtn.innerHTML = origHtml || '<i class="fa-solid fa-trash-can"></i><span>حذف حساب اللاعب نهائياً</span>';
+        }
+      }
+    }
+    window.adminDeletePlayerAction = handleAdminDeletePlayerAccount;
+
+    const deletePlayerAccountBtn = document.getElementById('btn-admin-delete-player-account');
+    if (deletePlayerAccountBtn && !deletePlayerAccountBtn.dataset.bound) {
+      deletePlayerAccountBtn.dataset.bound = 'true';
+      deletePlayerAccountBtn.addEventListener('click', handleAdminDeletePlayerAccount);
     }
 
     // ─────────────────────────────────────────────

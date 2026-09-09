@@ -25,6 +25,7 @@ class SessionManager {
     if (this.flushIntervalTimer) clearInterval(this.flushIntervalTimer);
     this.flushIntervalTimer = setInterval(() => {
       this.flushDirtySessions();
+      this.pruneIdleSessions().catch(() => {});
     }, config.AUTOSAVE_INTERVAL_MS);
     // Unref so timer does not block process exit during tests
     if (this.flushIntervalTimer.unref) {
@@ -63,7 +64,7 @@ class SessionManager {
         username: state.username,
         pin: dbRow.pin,
         state: state,
-        dirty: triggerOfflineCatchup, // Dirty if offline earnings were added
+        dirty: Boolean(offlineReport && offlineReport.applied),
         lastActivity: Date.now(),
         lastClickAt: 0,
         clickBurstCounter: 0
@@ -72,9 +73,34 @@ class SessionManager {
       this.sessions.set(uKey, session);
     } else {
       session.lastActivity = Date.now();
+      // Execute authoritative offline calculation if requested, even if session was cached in RAM!
+      if (triggerOfflineCatchup) {
+        offlineReport = calculateAuthoritativeOfflineProgress(session.state, Date.now());
+        if (offlineReport && offlineReport.applied) {
+          session.dirty = true;
+        }
+      }
     }
 
     return { session, offlineReport };
+  }
+
+  /**
+   * Unloads a session on explicit client exit, ensuring dirty state is flushed to DB
+   * and next session start performs a clean offline catch-up.
+   */
+  async unloadSession(username) {
+    if (!username) return false;
+    const uKey = username.trim().toLowerCase();
+    const session = this.sessions.get(uKey);
+    if (session) {
+      if (session.dirty) {
+        await dbService.savePlayerState(session.username, session.state);
+      }
+      this.sessions.delete(uKey);
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -237,6 +263,22 @@ class SessionManager {
         this.sessions.delete(uKey);
       }
     }
+  }
+
+  /**
+   * Retrieves active session from memory if present
+   */
+  getSession(username) {
+    if (!username) return null;
+    return this.sessions.get(username.trim().toLowerCase()) || null;
+  }
+
+  /**
+   * Immediately unloads/evicts a session from memory
+   */
+  unloadSession(username) {
+    if (!username) return false;
+    return this.sessions.delete(username.trim().toLowerCase());
   }
 }
 

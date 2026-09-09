@@ -92,17 +92,15 @@ var AppDB = (() => {
         if (adminRes.ok) {
           const resJson = await adminRes.json();
           return resJson.data;
-        } else if (adminRes.status === 401) {
-          // Token rejected, fallback to direct query
+        } else if (adminRes.status === 401 || adminRes.status === 404 || adminRes.status === 405) {
+          // Token rejected or endpoint not available on this host, fallback to direct query
+          console.warn(`[Admin Mutate Bridge] HTTP ${adminRes.status} on /api/admin/mutate, falling back to direct database query.`);
         } else {
           const errData = await adminRes.json().catch(() => ({}));
           throw new Error(errData.message || `Admin mutate failed: HTTP ${adminRes.status}`);
         }
       } catch (adminErr) {
-        if (adminErr.message && !adminErr.message.includes('401')) {
-          console.error('[Admin Mutate Bridge]:', adminErr.message);
-          throw adminErr;
-        }
+        console.warn('[Admin Mutate Bridge] Falling back to direct database query:', adminErr.message || adminErr);
       }
     }
 
@@ -1110,10 +1108,9 @@ var AppDB = (() => {
       const _serverLastSeen = Number(row.last_seen || (row.state && (row.state.lastActiveTimestamp || row.state.lastSeen)) || 0);
       const _localLastActive = local ? Number(local.lastActiveTimestamp || local.lastSeen || 0) : 0;
       const _rawLastActive = Math.max(_serverLastSeen, _localLastActive) || _nowAtLoad;
-      // Sanity cap: clamp any timestamp more than 60s in the future to now.
-      // Old localStorage entries written before this fix may contain raw Date.now() values
-      // (device clock) that appear ahead of getTrustedNow() and cause elapsed = 0.
-      stateObj.lastActiveTimestamp = Math.min(_rawLastActive, _nowAtLoad + 60000);
+      // Sanity cap: clamp any timestamp in the future to now.
+      stateObj.lastActiveTimestamp = Math.min(_rawLastActive, _nowAtLoad);
+      stateObj.lastSeen = stateObj.lastActiveTimestamp;
       stateObj.adminModifiedTimestamp = Number(row.admin_modified_timestamp || 0);
       stateObj._loadedFromCloud = true;
 
@@ -1133,13 +1130,13 @@ var AppDB = (() => {
         const isLocalRecentOrNewer = (localTs >= serverTs - 600000);
 
         // OFFLINE EARNINGS FIX: If local lastActiveTimestamp is newer than the cloud last_seen,
-        // the cloud save hasn't landed yet — reconcile and push to cloud.
+        // use local exit timestamp as the authoritative anchor.
         const localLastActive = Number(local.lastActiveTimestamp || local.lastSeen || 0);
-        if (localLastActive > serverTs + 5000) {
-          // Local has a significantly newer timestamp — cloud save was delayed
+        if (localLastActive > serverTs) {
           stateObj.lastActiveTimestamp = localLastActive;
           stateObj.lastSeen = localLastActive;
-          shouldSyncCloud = true;
+          // Note: DO NOT set shouldSyncCloud = true here. Syncing before loadUserSession runs
+          // would overwrite last_seen in cloud with current time, killing offline earnings.
         }
 
         // 1. Business Levels & Workers Guard: NEVER downgrade business levels or worker counts on same device
@@ -1264,12 +1261,6 @@ var AppDB = (() => {
     if (!username || !state) return;
     const u = username.trim();
     state.username = u;
-    // CRITICAL FIX: update lastActiveTimestamp to now so that offline earnings
-    // are calculated correctly from this exact moment when the browser is closed.
-    // Use getTrustedNow() (server-anchored) instead of Date.now() (raw device clock)
-    // so that the saved timestamp stays consistent with what loadUserSession reads via
-    // getTrustedNow(). If the device clock is ahead of the server clock, Date.now() would
-    // produce a future timestamp that triggers the anti-time-travel guard and zeroes earnings.
     const exitNow = getTrustedNow();
     state.lastActiveTimestamp = exitNow;
     state.lastSeen = exitNow;
@@ -1277,31 +1268,14 @@ var AppDB = (() => {
     // Cache locally instantly
     setEncryptedLocalState(`rasalmal_state_${u}`, state);
 
-    const payload = {
-      username: u,
-      cash: Number(state.cash || 0),
-      bank: Number(state.bank || 0),
-      dirty_cash: Number(state.dirtyCash || 0),
-      net_worth: Number(state.netWorth || 0),
-      xp: Number(state.xp || 0),
-      title: state.title ||'عامل مبتدئ',
-      job_id: state.jobId ||'worker',
-      is_admin: state.isAdmin === true,
-      is_banned: state.isBanned === true,
-      jail_timer: Number(state.jailTimer || 0),
-      afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
-      total_taxes_paid: Number(state.totalTaxesPaid || 0),
-      state: state,
-      last_seen: exitNow
-    };
-    if (state.pin) payload.pin = state.pin;
-
-    // When Authoritative ServerBridge is active, let the server handle persistence cleanly
+    // 1. Authoritative ServerBridge dispatch
     if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.sendExit === 'function') {
-      window.ServerBridge.sendExit(state);
-      return;
+      try {
+        window.ServerBridge.sendExit(state);
+      } catch (e) {}
     }
 
+    // 2. Server API exit endpoint via sendBeacon / keepalive fetch
     try {
       const serverExitUrl = (typeof window !== 'undefined' && window.SERVER_API_URL)
         ? `${window.SERVER_API_URL.replace(/\/$/, '')}/api/session/exit`
@@ -1320,6 +1294,40 @@ var AppDB = (() => {
         }).catch(() => {});
       }
     } catch (e) {}
+
+    // 3. Directly sync exit state to Supabase via keepalive fetch
+    try {
+      const payload = {
+        username: u,
+        cash: Number(state.cash || 0),
+        bank: Number(state.bank || 0),
+        dirty_cash: Number(state.dirtyCash || 0),
+        net_worth: Number(state.netWorth || 0),
+        xp: Number(state.xp || 0),
+        title: state.title || 'عامل مبتدئ',
+        job_id: state.jobId || 'worker',
+        is_admin: state.isAdmin === true,
+        is_banned: state.isBanned === true,
+        jail_timer: Number(state.jailTimer || 0),
+        afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
+        total_taxes_paid: Number(state.totalTaxesPaid || 0),
+        state: state,
+        last_seen: exitNow
+      };
+      if (state.pin) payload.pin = state.pin;
+
+      fetch(`${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(payload),
+        keepalive: true
+      }).catch(() => {});
+    } catch (e) {}
   }
 
   // Attach exit and app-hide listeners immediately for bulletproof auto-save (Desktop & Mobile)
@@ -1327,11 +1335,13 @@ var AppDB = (() => {
     const handleExitFlush = () => {
       const activeUser = (window.GameEngine && window.GameEngine.activeUsername);
       const activeState = (window.GameEngine && window.GameEngine.state);
-      if (activeUser && activeState && activeState.username === activeUser && (activeState._loadedFromCloud || activeState.cash > 300 || activeState.netWorth > 400 || activeState.xp > 0)) {
+      if (activeUser && activeState && activeState.username === activeUser) {
+        const exitNow = getTrustedNow();
+        activeState.lastActiveTimestamp = exitNow;
+        activeState.lastSeen = exitNow;
         try {
           setEncryptedLocalState(`rasalmal_state_${activeUser}`, activeState);
         } catch (e) {}
-        // flushStateToCloudOnExit will update lastActiveTimestamp to now before sending
         flushStateToCloudOnExit(activeUser, activeState);
       }
     };
@@ -1367,7 +1377,7 @@ var AppDB = (() => {
       afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
       total_taxes_paid: Number(state.totalTaxesPaid || 0),
       state: state,
-      last_seen: getTrustedNow()
+      last_seen: Number(state.lastActiveTimestamp || state.lastSeen || getTrustedNow())
     };
     if (state.pin) payload.pin = state.pin;
 
@@ -1404,11 +1414,9 @@ var AppDB = (() => {
     if (!username || !state) return;
     const u = username.trim();
     state.username = u;
-    // Use getTrustedNow() so lastSeen is server-anchored, matching getTrustedNow() used in
-    // loadUserSession. Using Date.now() (device clock) here can produce a timestamp that
-    // appears 'in the future' relative to getTrustedNow() when the device clock is ahead of
-    // the server clock, causing now < lastSeenServer → rawElapsed = 0 → no offline earnings.
-    state.lastSeen = getTrustedNow();
+    const nowTs = getTrustedNow();
+    state.lastSeen = nowTs;
+    state.lastActiveTimestamp = nowTs;
 
     // Cache locally INSTANTLY (0 lag, 100% responsive)
     setEncryptedLocalState(`rasalmal_state_${u}`, state);
@@ -2663,7 +2671,9 @@ var AppDB = (() => {
   }
 
   async function adminGetPlayer(username) {
-    const rows = await _api(`players?username=eq.${encodeURIComponent(username)}&select=*`);
+    if (!username) return null;
+    const cleanUser = String(username).replace(/^@/, '').trim();
+    const rows = await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}&order=last_seen.desc&select=*`);
     if (!rows || rows.length === 0) return null;
     const r = rows[0];
     const p = (typeof r.state === 'object' && r.state) ? { ...r.state } : {};
@@ -2695,6 +2705,7 @@ var AppDB = (() => {
   }
 
   async function adminSavePlayer(username, updates) {
+    const cleanUser = String(username || '').replace(/^@/, '').trim();
     const payload = {};
     if (updates.cash !== undefined) payload.cash = Number(updates.cash);
     if (updates.bank !== undefined) payload.bank = Number(updates.bank);
@@ -2711,7 +2722,7 @@ var AppDB = (() => {
     else payload.state = updates;
     payload.admin_modified_timestamp = Date.now();
 
-    await _api(`players?username=eq.${encodeURIComponent(username)}`, {
+    await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}`, {
       method:'PATCH',
       body: JSON.stringify(payload)
     });
@@ -2719,15 +2730,22 @@ var AppDB = (() => {
   }
 
   async function adminDeletePlayer(username) {
-    await _api(`players?username=eq.${encodeURIComponent(username)}`, {
+    if (!username) return false;
+    const cleanUser = String(username).replace(/^@/, '').trim();
+    await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}`, {
       method:'DELETE'
     });
-    try { localStorage.removeItem(`rasalmal_state_${username}`); } catch (e) {}
+    try {
+      localStorage.removeItem(`rasalmal_state_${cleanUser}`);
+      sessionStorage.removeItem(`rasalmal_state_${cleanUser}`);
+      localStorage.removeItem(`rasalmal_backup_${cleanUser}`);
+    } catch (e) {}
     return true;
   }
 
   async function adminResetPlayer(username) {
     if (!username) return false;
+    const cleanUser = String(username).replace(/^@/, '').trim();
     const now = Date.now();
     const cleanBusinesses = {
       kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
@@ -2758,7 +2776,7 @@ var AppDB = (() => {
       total_taxes_paid: 0,
       afk_manager_expires_at: 0,
       state: {
-        username,
+        username: cleanUser,
         cash: 0,
         bank: 0,
         dirtyCash: 0,
@@ -2807,11 +2825,14 @@ var AppDB = (() => {
       last_seen: now,
       admin_modified_timestamp: now
     };
-    await _api(`players?username=ilike.${encodeURIComponent(username.trim())}`, {
+    await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}`, {
       method: 'PATCH',
       body: JSON.stringify(row)
     });
-    try { localStorage.removeItem(`rasalmal_state_${username}`); } catch (e) {}
+    try {
+      localStorage.removeItem(`rasalmal_state_${cleanUser}`);
+      sessionStorage.removeItem(`rasalmal_state_${cleanUser}`);
+    } catch (e) {}
     return true;
   }
 

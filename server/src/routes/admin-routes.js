@@ -121,23 +121,33 @@ async function adminRoutes(fastify, options) {
         });
       }
 
-      // If an active player was modified or banned, sync/evict in sessionManager
+      // If an active player was modified, reset, banned, or deleted, sync/evict in sessionManager
       if (table === 'players' && sessionManager) {
         try {
-          const matchUser = (query || '').match(/username=eq\.([^&]+)/);
+          const matchUser = (query || '').match(/username=(?:eq|ilike)\.([^&]+)/i);
           if (matchUser && matchUser[1]) {
-            const targetUsername = decodeURIComponent(matchUser[1]);
-            const session = sessionManager.getSession(targetUsername);
-            if (session) {
-              if (cleanBody && cleanBody.is_banned === true) {
-                sessionManager.unloadSession(targetUsername);
-              } else if (cleanBody) {
-                if (cleanBody.cash !== undefined) session.state.cash = Number(cleanBody.cash);
-                if (cleanBody.bank !== undefined) session.state.bank = Number(cleanBody.bank);
-                if (cleanBody.net_worth !== undefined) session.state.netWorth = Number(cleanBody.net_worth);
-                if (cleanBody.xp !== undefined) session.state.xp = Number(cleanBody.xp);
-                if (cleanBody.state) Object.assign(session.state, cleanBody.state);
-                session.dirty = false;
+            const targetUsername = decodeURIComponent(matchUser[1]).replace(/^@/, '').trim();
+            if (cleanMethod === 'DELETE') {
+              sessionManager.unloadSession(targetUsername);
+            } else {
+              const session = sessionManager.getSession(targetUsername);
+              if (session) {
+                if (cleanBody && cleanBody.is_banned === true) {
+                  sessionManager.unloadSession(targetUsername);
+                } else if (cleanBody) {
+                  if (cleanBody.cash !== undefined) session.state.cash = Number(cleanBody.cash);
+                  if (cleanBody.bank !== undefined) session.state.bank = Number(cleanBody.bank);
+                  if (cleanBody.net_worth !== undefined) session.state.netWorth = Number(cleanBody.net_worth);
+                  if (cleanBody.xp !== undefined) session.state.xp = Number(cleanBody.xp);
+                  if (cleanBody.state) {
+                    if (cleanBody.state.isReset === true) {
+                      session.state = JSON.parse(JSON.stringify(cleanBody.state));
+                    } else {
+                      Object.assign(session.state, cleanBody.state);
+                    }
+                  }
+                  session.dirty = false;
+                }
               }
             }
           }

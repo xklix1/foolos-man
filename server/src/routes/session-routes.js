@@ -94,6 +94,9 @@ async function sessionRoutes(fastify, options) {
       saved = await sessionManager.forceSaveSession(username);
     }
 
+    // Explicit exit: remove session from memory so next login triggers clean offline catchup
+    await sessionManager.unloadSession(username);
+
     return {
       success: true,
       saved: saved,
