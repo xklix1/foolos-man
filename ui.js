@@ -1389,7 +1389,10 @@ const UIController = (() => {
       </tr>`;
 
     try {
-      const players = await AppDB.getLeaderboard(forceRefresh);
+      let players = await AppDB.getLeaderboard(forceRefresh);
+      if (Array.isArray(players)) {
+        players = players.filter(p => p && String(p.username || '').trim().toLowerCase() !== 'newu');
+      }
       tbody.innerHTML ='';
       if (typeof updateHourlyLeaderboardTimerUI ==='function') updateHourlyLeaderboardTimerUI();
 
@@ -5734,6 +5737,9 @@ const UIController = (() => {
         players = cachedLeaderboard;
       } else {
         players = await AppDB.getLeaderboard(forceRefresh);
+        if (Array.isArray(players)) {
+          players = players.filter(p => p && String(p.username || '').trim().toLowerCase() !== 'newu');
+        }
         cachedLeaderboard = players;
         lastLeaderboardFetchTime = now;
       }

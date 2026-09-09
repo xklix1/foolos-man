@@ -3002,9 +3002,12 @@ var AppDB = (() => {
 
   async function adminRebuildLeaderboard() {
     const now = Date.now();
-    const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned,state&is_banned=eq.false&order=net_worth.desc&limit=25');
+    const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned,state&is_banned=eq.false&username=not.ilike.newu&order=net_worth.desc&limit=30');
 
-    const topPlayers = (rows || []).map(r => {
+    const topPlayers = (rows || [])
+      .filter(r => !isHiddenPlayer(r.username))
+      .slice(0, 25)
+      .map(r => {
       let pState = r.state;
       if (typeof pState === 'string') {
         try { pState = JSON.parse(pState); } catch(e) { pState = {}; }
@@ -3638,6 +3641,12 @@ var AppDB = (() => {
   }
 
   //  Unified Official Hourly Leaderboard Document Engine
+  const HIDDEN_TEST_USERS = new Set(['newu']);
+  function isHiddenPlayer(username) {
+    if (!username) return false;
+    return HIDDEN_TEST_USERS.has(String(username).trim().toLowerCase());
+  }
+
   let _leaderboardMeta = {
     updatedAt: Date.now(),
     nextUpdateAt: Date.now() + 3600000,
@@ -3653,18 +3662,21 @@ var AppDB = (() => {
   async function _rebuildAndSaveLeaderboard() {
     const now = Date.now();
     try {
-      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&order=net_worth.desc&limit=10');
-      const topPlayers = (rows || []).map(r => ({
-        username: r.username,
-        cash: Number(r.cash || 0),
-        bank: Number(r.bank || 0),
-        netWorth: Number(r.net_worth || 0),
-        net_worth: Number(r.net_worth || 0),
-        title: r.title ||'عامل مبتدئ',
-        jobId: r.job_id ||'worker',
-        isAdmin: r.is_admin === true,
-        facebookVerified: false
-      }));
+      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&username=not.ilike.newu&order=net_worth.desc&limit=15');
+      const topPlayers = (rows || [])
+        .filter(r => !isHiddenPlayer(r.username))
+        .slice(0, 10)
+        .map(r => ({
+          username: r.username,
+          cash: Number(r.cash || 0),
+          bank: Number(r.bank || 0),
+          netWorth: Number(r.net_worth || 0),
+          net_worth: Number(r.net_worth || 0),
+          title: r.title ||'عامل مبتدئ',
+          jobId: r.job_id ||'worker',
+          isAdmin: r.is_admin === true,
+          facebookVerified: false
+        }));
 
       _leaderboardMeta = {
         updatedAt: now,
@@ -3703,7 +3715,7 @@ var AppDB = (() => {
 
     // Fast in-memory cache for repeated calls within 10 seconds
     if (!forceRefresh && _leaderboardCache && (now - _lastLeaderboardFetchTime < 10000)) {
-      return _leaderboardCache;
+      return _leaderboardCache.filter(p => !isHiddenPlayer(p.username));
     }
 
     try {
@@ -3711,7 +3723,7 @@ var AppDB = (() => {
       if (gRows && gRows.length > 0 && gRows[0].data) {
         const d = gRows[0].data;
         const nextUpdate = Number(d.nextUpdateAt || 0);
-        const topList = Array.isArray(d.topPlayers) ? d.topPlayers : [];
+        const topList = (Array.isArray(d.topPlayers) ? d.topPlayers : []).filter(p => !isHiddenPlayer(p.username));
 
         _leaderboardMeta = {
           updatedAt: Number(d.updatedAt || now),
