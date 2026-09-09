@@ -87,8 +87,10 @@ class SessionManager {
     if (session) {
       session.dirty = true;
       session.lastActivity = Date.now();
+      // IMPORTANT: Only update lastSeen (server write time).
+      // Do NOT touch lastActiveTimestamp — that must reflect the player's real
+      // last-activity moment so the offline engine can compute correct elapsed time.
       session.state.lastSeen = Date.now();
-      session.state.lastActiveTimestamp = Date.now();
     }
   }
 
@@ -101,8 +103,10 @@ class SessionManager {
     const session = this.sessions.get(uKey);
     if (!session) return false;
 
+    // IMPORTANT: Only update lastSeen (server write time).
+    // Do NOT overwrite lastActiveTimestamp — it was set by the client to the actual
+    // exit moment and must stay intact for the offline earnings engine.
     session.state.lastSeen = Date.now();
-    session.state.lastActiveTimestamp = Date.now();
     const success = await dbService.savePlayerState(session.username, session.state);
     if (success) {
       session.dirty = false;
@@ -206,8 +210,10 @@ class SessionManager {
     console.log(`[SessionManager] Write-Behind: Flushing ${dirtyList.length} dirty sessions to database...`);
     for (const session of dirtyList) {
       try {
+        // IMPORTANT: Only update lastSeen (server write time).
+        // Do NOT touch lastActiveTimestamp — it must stay as the player's real
+        // last-activity anchor so offline earnings are computed correctly.
         session.state.lastSeen = Date.now();
-        session.state.lastActiveTimestamp = Date.now();
         const ok = await dbService.savePlayerState(session.username, session.state);
         if (ok) {
           session.dirty = false;

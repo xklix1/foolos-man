@@ -70,7 +70,11 @@ function sanitizePlayerState(dbRow) {
   cleanState.totalTaxesPaid = Number(dbRow.total_taxes_paid !== undefined ? dbRow.total_taxes_paid : cleanState.totalTaxesPaid) || 0;
   
   cleanState.lastSeen = Number(dbRow.last_seen || cleanState.lastSeen || Date.now());
-  cleanState.lastActiveTimestamp = cleanState.lastSeen;
+  // CRITICAL: Preserve lastActiveTimestamp from the state JSON blob (where the client
+  // stores the real exit moment). Only fall back to lastSeen if not found in state.
+  // Overwriting with lastSeen here would corrupt the offline earnings calculation.
+  const embeddedLastActive = Number(rawState.lastActiveTimestamp || 0);
+  cleanState.lastActiveTimestamp = embeddedLastActive > 0 ? embeddedLastActive : cleanState.lastSeen;
 
   // Ensure sub-objects are never null or primitive
   if (!cleanState.businesses || typeof cleanState.businesses !== 'object') cleanState.businesses = {};
