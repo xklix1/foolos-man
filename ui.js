@@ -1705,6 +1705,8 @@ const UIController = (() => {
       renderTradePanel();
     } else if (tabId ==='industry') {
       renderIndustryPanel();
+    } else if (tabId ==='investments') {
+      renderInvestmentsTab();
     }
 
     // Immediate toggle of jail-overlay based on selected tab
@@ -1959,6 +1961,7 @@ const UIController = (() => {
       else if (activeTab ==='blackmarket') updateBlackMarketCooldownsInDOM();
       else if (activeTab ==='trade') updateTradeShipmentsInDOM();
       else if (activeTab ==='industry') updateIndustryStockInDOM();
+      else if (activeTab ==='investments') renderInvestmentsTab();
 
       // Real-time live update for investment cards dynamic status & countdown
       updateInvestmentCardsDOM(state);
@@ -2156,6 +2159,9 @@ const UIController = (() => {
         break;
       case'industry':
         renderIndustryPanel();
+        break;
+      case'investments':
+        renderInvestmentsTab();
         break;
     }
     translateDOM(document.body);
@@ -2880,6 +2886,67 @@ const UIController = (() => {
     if (hrs > 0) return `${hrs}س ${mins}د ${secs}ث`;
     if (mins > 0) return `${mins}د ${secs}ث`;
     return `${secs} ثانية`;
+  }
+
+  // --- Dedicated Investments Tab Manager ---
+  function renderInvestmentsTab() {
+    const s = GameEngine.state;
+    if (!s) return;
+    const investments = s.investments || [];
+
+    // 1. Update KPI stats badges
+    const activeCountEl = document.getElementById('invest-stat-active-count');
+    const totalAmtEl = document.getElementById('invest-stat-total-amount');
+    const totalPayoutEl = document.getElementById('invest-stat-total-payout');
+    const nextMaturityEl = document.getElementById('invest-stat-next-maturity');
+
+    const count = investments.length;
+    if (activeCountEl) {
+      activeCountEl.textContent = `${count} / 2`;
+      activeCountEl.className = `numbers-font font-black px-2 py-0.5 rounded-md border ${count >= 2 ? 'text-rose-400 bg-rose-950/60 border-rose-500/30' : 'text-amber-300 bg-slate-950/80 border-amber-500/30'}`;
+    }
+
+    let totalInvested = 0;
+    let totalProjectedPayout = 0;
+    let minRemainingSec = Infinity;
+
+    investments.forEach(inv => {
+      const amt = Number(inv.investedAmount || 0);
+      const rate = Number(inv.rate || 0);
+      totalInvested += amt;
+      totalProjectedPayout += Math.floor(amt * (1 + rate));
+
+      let remSec = inv.ticksRemaining || 0;
+      if (inv.maturesAt) {
+        const nowMs = (typeof getTrustedNow === 'function') ? getTrustedNow() : Date.now();
+        remSec = Math.max(0, Math.ceil((inv.maturesAt - nowMs) / 1000));
+      }
+      if (remSec < minRemainingSec) {
+        minRemainingSec = remSec;
+      }
+    });
+
+    if (totalAmtEl) {
+      totalAmtEl.textContent = `${totalInvested.toLocaleString()} EGP`;
+    }
+    if (totalPayoutEl) {
+      totalPayoutEl.textContent = `${totalProjectedPayout.toLocaleString()} EGP`;
+    }
+    if (nextMaturityEl) {
+      if (count === 0) {
+        nextMaturityEl.textContent = 'لا يوجد استثمار نشط';
+        nextMaturityEl.className = 'numbers-font text-xs font-bold text-slate-400';
+      } else if (minRemainingSec <= 0) {
+        nextMaturityEl.textContent = 'جاهز للاستلام الآن!';
+        nextMaturityEl.className = 'numbers-font text-xs font-black text-emerald-400 animate-pulse';
+      } else {
+        nextMaturityEl.textContent = formatInvestmentDuration(minRemainingSec);
+        nextMaturityEl.className = 'numbers-font text-xs font-bold text-sky-300';
+      }
+    }
+
+    // 2. Update dynamic locking countdown on all 5 investment cards
+    updateInvestmentCardsDOM(s);
   }
 
   function renderBank() {
@@ -4444,6 +4511,12 @@ const UIController = (() => {
         <br>• <strong>فائدة الادخار</strong>: تنمو ودائعك البنكية تلقائياً بفائدة مركبة بنسبة 0.0005% لكل ثانية (+5% إضافية عند قيادة رولز رويس Phantom).
         <br>• <strong>التحويلات المالية</strong>: أرسل الأموال لأي لاعب متواجد بالسيرفر فوراً وبشكل مباشر.
         <br>• <strong>القروض البنكية</strong>: خذ قرضاً لتمويل مشاريعك وسدده تدريجياً لتفادي عقوبات السجن الاقتصادي.`
+      },'panel-investments': {
+        title:'الصناديق الاستثمارية ورأس المال',
+        desc:`تجميد السيولة في أوعية وصناديق استثمارية مصرفية بعوائد مضمونة:
+        <br>• <strong>5 باقات استثمارية</strong>: من الوديعة السريعة (ساعة واحدة، +4%) وحتى الصندوق الإمبراطوري الماسي (36 ساعة، +80%).
+        <br>• <strong>قفل رأس المال</strong>: يتم تجميد المبلغ طوال فترة الاستثمار، وعند اكتمال المؤقت الزمني يودع أصل المبلغ مع الأرباح مباشرة في حسابك.
+        <br>• <strong>الحد الأقصى</strong>: يسمح بتشغيل استثمارين كحد أقصى في نفس الوقت (2/2) لضمان توازن السيولة النقدية.`
       },'panel-assets': {
         title:'الأصول والعقارات والسيارات',
         desc:`تجميد الأرباح في أصول حقيقية:
