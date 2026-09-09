@@ -6171,8 +6171,15 @@
         const glowTag = m.chatGlow === 'cyber_rainbow'
           ? '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/25 text-purple-300 font-bold border border-purple-500/40">👑 رويال متوهج</span>'
           : (m.chatGlow ? '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/25 text-amber-300 font-bold border border-amber-500/40">✨ VIP متوهج</span>' : '');
-        const verifiedTag = (m.isVerified || m.facebookVerified) ? '<span class="text-sky-400 font-black text-xs" title="موثق">✔️</span>' : '';
-        const badgeTag = m.customBadge ? `<span class="text-xs">${escapeHtml(m.customBadge)}</span>` : '';
+        const verifiedTag = (m.isVerified)
+          ? '<span class="verified-glow-badge text-xs" title="موثق"><svg class="verified-glow-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" style="display:inline-block;vertical-align:-2px;"><path class="verified-star-bg" fill="#0ea5e9" d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.66-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.33 2.19c-1.4-.46-2.91-.2-3.92.81s-1.26 2.52-.8 3.91c-1.31.67-2.2 1.91-2.2 3.34s.89 2.67 2.2 3.34c-.46 1.39-.21 2.9.8 3.91s2.52 1.26 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.68-.88 3.34-2.19c1.39.45 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34z"/><path class="verified-check-fg" fill="#ffffff" d="M10.54 16.2L6.8 12.46l1.41-1.42 2.33 2.33 4.8-5.23 1.47 1.36-6.27 6.7z"/></svg></span>'
+          : '';
+        const customBadgeVal = m.customBadge ? String(m.customBadge) : '';
+        const badgeTag = customBadgeVal
+          ? (customBadgeVal.includes('✔️')
+              ? `<span class="text-xs">${escapeHtml(customBadgeVal.replace(/✔️/g, ''))} ${verifiedTag ? '' : '<span class="verified-glow-badge text-xs" title="موثق"><svg class="verified-glow-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" style="display:inline-block;vertical-align:-2px;"><path class="verified-star-bg" fill="#0ea5e9" d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.66-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.33 2.19c-1.4-.46-2.91-.2-3.92.81s-1.26 2.52-.8 3.91c-1.31.67-2.2 1.91-2.2 3.34s.89 2.67 2.2 3.34c-.46 1.39-.21 2.9.8 3.91s2.52 1.26 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.68-.88 3.34-2.19c1.39.45 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34z"/><path class="verified-check-fg" fill="#ffffff" d="M10.54 16.2L6.8 12.46l1.41-1.42 2.33 2.33 4.8-5.23 1.47 1.36-6.27 6.7z"/></svg></span>'}</span>`
+              : `<span class="text-xs">${escapeHtml(customBadgeVal)}</span>`)
+          : '';
 
         html +=`
           <div class="p-3 rounded-xl border ${isAdminMsg ?'bg-amber-950/25 border-amber-500/40 text-amber-200' : (hasGlow ? 'bg-amber-950/15 border-amber-500/30 text-amber-100 shadow-sm shadow-amber-500/10' : 'bg-slate-900/60 border-slate-800/80 text-slate-200')} flex items-start justify-between gap-3 text-xs transition hover:bg-slate-850">

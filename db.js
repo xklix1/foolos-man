@@ -2171,7 +2171,7 @@ var AppDB = (() => {
       badgeTitle:'حساب موثق رسمي',
       features: { verified: true, customAvatar: true, title:'شخصية موثقة' },
       items: { vip_casino_pass: 1, legalShield: 2 },
-      description:'علامة توثيق زرقاء رسمية بجانب اسمك ✔️ + صلاحية رفع صورة شخصية لحسابك + لقب حصري + 3 مليون كاش.',
+      description:'علامة توثيق زرقاء متوهجة بجانب اسمك + صلاحية رفع صورة شخصية لحسابك + لقب حصري + 3 مليون كاش.',
       hidden: true
     },
     {
@@ -2199,7 +2199,7 @@ var AppDB = (() => {
       badgeTitle:'الملك الأسطوري',
       features: { verified: true, customAvatar: true, chatGlow:'cyber_rainbow', stickersPack: true, title:'إمبراطور السيرفر' },
       items: { vip_casino_pass: 2, offshore_account: 2, swiss_safe: 2 },
-      description:'الباقة المتكاملة: علامة التوثيق ✔️ + رفع صورة شخصية + توهج ملكي في الشات + كافة الملصقات + 10 مليون كاش وخزائن سويسرية.',
+      description:'الباقة المتكاملة: علامة التوثيق المتوهجة + رفع صورة شخصية + توهج ملكي في الشات + كافة الملصقات + 10 مليون كاش وخزائن سويسرية.',
       hidden: true
     }
   ];

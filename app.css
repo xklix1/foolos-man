@@ -1577,3 +1577,45 @@ html[dir="ltr"] .chat-bubble-glow-rainbow[data-vip-tag=""]::before {
   box-shadow: 0 0 20px rgba(234, 179, 8, 0.15) !important;
 }
 
+/* ═══════════════════════════════════════════
+   VERIFIED GLOWING BADGE (.verified-glow-badge)
+═══════════════════════════════════════════ */
+.verified-glow-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  position: relative !important;
+  line-height: 1 !important;
+  user-select: none !important;
+  color: #38bdf8 !important;
+}
+
+.verified-glow-badge .verified-glow-icon {
+  display: inline-block !important;
+  vertical-align: middle !important;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.95)) drop-shadow(0 0 12px rgba(14, 165, 233, 0.7));
+  animation: verifiedGlowPulse 2.4s ease-in-out infinite alternate !important;
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.verified-glow-badge:hover .verified-glow-icon {
+  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 1)) drop-shadow(0 0 20px rgba(56, 189, 248, 0.9)) drop-shadow(0 0 30px rgba(99, 102, 241, 0.6)) !important;
+  transform: scale(1.15);
+}
+
+@keyframes verifiedGlowPulse {
+  0% {
+    filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.8)) drop-shadow(0 0 8px rgba(14, 165, 233, 0.5));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(56, 189, 248, 1)) drop-shadow(0 0 16px rgba(56, 189, 248, 0.85)) drop-shadow(0 0 24px rgba(99, 102, 241, 0.45));
+    transform: scale(1.08);
+  }
+  100% {
+    filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.85)) drop-shadow(0 0 10px rgba(14, 165, 233, 0.6));
+    transform: scale(1);
+  }
+}
+

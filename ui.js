@@ -1996,6 +1996,27 @@ const UIController = (() => {
     }, 1000);
   }
 
+  // --- Verified Badge & Custom Badge Rendering Helpers ---
+  function getVerifiedBadgeIconHtml(extraClass = '') {
+    return `<span class="verified-glow-badge ${extraClass}" title="حساب VIP موثق رسمياً">` +
+      `<svg class="verified-glow-icon" viewBox="0 0 24 24" width="1em" height="1em" fill="none" style="display:inline-block;vertical-align:-0.15em;" aria-hidden="true">` +
+        `<path class="verified-star-bg" fill="#0ea5e9" d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.66-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.33 2.19c-1.4-.46-2.91-.2-3.92.81s-1.26 2.52-.8 3.91c-1.31.67-2.2 1.91-2.2 3.34s.89 2.67 2.2 3.34c-.46 1.39-.21 2.9.8 3.91s2.52 1.26 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.68-.88 3.34-2.19c1.39.45 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34z"/>` +
+        `<path class="verified-check-fg" fill="#ffffff" d="M10.54 16.2L6.8 12.46l1.41-1.42 2.33 2.33 4.8-5.23 1.47 1.36-6.27 6.7z"/>` +
+      `</svg>` +
+    `</span>`;
+  }
+
+  function formatCustomBadgeHtml(badge, iconExtraClass = '') {
+    if (!badge) return '';
+    const str = String(badge);
+    if (str.includes('✔️')) {
+      const parts = str.split('✔️');
+      const iconHtml = getVerifiedBadgeIconHtml(iconExtraClass);
+      return parts.map(p => escapeHtml(p)).join(iconHtml);
+    }
+    return escapeHtml(str);
+  }
+
   // --- Dynamic Stats Bars Rendering ---
   function renderStatsBar() {
     const s = GameEngine.state;
@@ -2007,7 +2028,8 @@ const UIController = (() => {
     const isFb = Boolean(s.facebookVerified || (s.badges && s.badges.includes('facebook')));
 
     const customBadge = s.customBadge ||'';
-    const badgeHtml = customBadge ?`<span class="vip-custom-badge ml-1 inline-block drop-shadow-sm" title="${s.badgeTitle ||'عضو VIP'}">${customBadge}</span>` :'';
+    const badgeContentHtml = customBadge ? formatCustomBadgeHtml(customBadge, 'text-base') : '';
+    const badgeHtml = badgeContentHtml ?`<span class="vip-custom-badge ml-1 inline-flex items-center drop-shadow-sm" title="${s.badgeTitle ||'عضو VIP'}">${badgeContentHtml}</span>` :'';
 
     // Desktop stats
     const safeUsername = escapeHtml(username);
@@ -11535,10 +11557,13 @@ const UIController = (() => {
         const isVipVerified = Boolean(msg.isVerified || (cachedP && (cachedP.isVerified || cachedP.vipVerified)) || (isMyMsg && GameEngine.state && (GameEngine.state.isVerified || GameEngine.state.vipVerified)));
 
         const fbIconHtml = hasFb ? '<span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' : '';
-        const verifiedBadgeHtml = isVipVerified ? '<span class="inline-flex items-center justify-center text-sky-400 text-[11px] font-black mr-0.5 select-none" title="عضو VIP موثق رسمياً">✔️</span>' : '';
+        const verifiedBadgeHtml = isVipVerified ? getVerifiedBadgeIconHtml('text-[13px] mr-0.5 select-none') : '';
 
         let customBadgeVal = msg.customBadge || (cachedP && cachedP.customBadge) || (isMyMsg && GameEngine.state && GameEngine.state.customBadge) || '';
-        let badgeIconHtml = customBadgeVal ? `<span class="text-[11px] select-none" title="شارة خاصة">${customBadgeVal}</span>` : '';
+        if (isVipVerified && customBadgeVal === '✔️') {
+          customBadgeVal = '';
+        }
+        let badgeIconHtml = customBadgeVal ? `<span class="text-[11px] select-none inline-flex items-center" title="شارة خاصة">${formatCustomBadgeHtml(customBadgeVal, 'text-[12px]')}</span>` : '';
 
         msgDiv.innerHTML =`
           <div class="flex items-center gap-1.5 mb-0.5">
@@ -12340,10 +12365,12 @@ const UIController = (() => {
       }
 
       const hasFbVerified = Boolean(pState.facebookVerified === true || (pState.state && pState.state.facebookVerified) || (pState.badges && pState.badges.includes('facebook')));
+      const isVipVerified = Boolean(pState.isVerified || pState.vipVerified || (pState.state && (pState.state.isVerified || pState.state.vipVerified)) || (pState.badges && pState.badges.includes('verified')) || pState.activePackage === 'pkg_vip_verified' || pState.activePackage === 'pkg_vip_royal_ultimate' || (pState.customBadge && pState.customBadge.includes('✔️')));
       const uCardEl = document.getElementById('profile-card-username');
       if (uCardEl) {
         const fbIconHtml = hasFbVerified ?' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' :'';
-        uCardEl.innerHTML = (pState.username ||'---') + fbIconHtml;
+        const verifiedIconHtml = isVipVerified ? ` ${getVerifiedBadgeIconHtml('text-base')}` : '';
+        uCardEl.innerHTML = (pState.username ||'---') + verifiedIconHtml + fbIconHtml;
       }
       document.getElementById('profile-card-title').textContent = pState.title ||'عامل مبتدئ';
       const pwEl = document.getElementById('profile-card-networth');
@@ -12368,6 +12395,14 @@ const UIController = (() => {
         badgesListEl.innerHTML ='';
 
         let badgeCount = 0;
+
+        if (isVipVerified) {
+          badgeCount++;
+          const vBadge = document.createElement('div');
+          vBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sky-950/80 border-2 border-sky-400 text-sky-300 text-xs font-black shadow-md shadow-sky-950/60';
+          vBadge.innerHTML = `${getVerifiedBadgeIconHtml('text-base')}<span>حساب موثق رسمياً VIP في رأس المال</span>`;
+          badgesListEl.appendChild(vBadge);
+        }
 
         if (hasFbVerified) {
           badgeCount++;
@@ -16291,20 +16326,20 @@ const UIController = (() => {
           <!-- Header -->
           <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-800/80">
             <div class="flex items-center gap-2 min-w-0">
-              ${badge ?`<span class="text-xl shrink-0 drop-shadow-sm">${badge}</span>` :''}
+              ${badge ?`<span class="text-xl shrink-0 drop-shadow-sm inline-flex items-center justify-center">${formatCustomBadgeHtml(badge, 'text-2xl')}</span>` :''}
               <h3 class="font-black text-white text-xs sm:text-sm truncate">${pkg.name}</h3>
             </div>
             <span class="numbers-font text-amber-400 font-black text-sm shrink-0 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 shadow-sm">${Number(pkg.price).toLocaleString()} EGP</span>
           </div>
 
-          <p class="text-[11px] text-slate-300 leading-relaxed">${pkg.description ||'باقة استثنائية لدعم السيرفر وحصاد مزايا ومكافآت هائلة في اللعبة.'}</p>
+          <p class="text-[11px] text-slate-300 leading-relaxed">${(pkg.description ||'باقة استثنائية لدعم السيرفر وحصاد مزايا ومكافآت هائلة في اللعبة.').includes('✔️') ? formatCustomBadgeHtml(pkg.description, 'text-xs') : (pkg.description ||'باقة استثنائية لدعم السيرفر وحصاد مزايا ومكافآت هائلة في اللعبة.')}</p>
 
           <!-- Rewards Box -->
           <div class="p-2.5 bg-slate-950/90 rounded-2xl border border-slate-800 space-y-1.5 text-[11px]">
             ${pkg.cash ?`<div class="flex justify-between items-center text-emerald-400 font-black"><span>كاش فوري:</span><span class="numbers-font font-mono text-xs">+${Number(pkg.cash).toLocaleString()} EGP</span></div>` :''}
             ${pkg.bank ?`<div class="flex justify-between items-center text-sky-400 font-bold"><span>وديعة بالبنك:</span><span class="numbers-font font-mono text-xs">+${Number(pkg.bank).toLocaleString()} EGP</span></div>` :''}
             ${pkg.xp ?`<div class="flex justify-between items-center text-cyan-400 font-bold"><span>نقاط خبرة:</span><span class="numbers-font font-mono text-xs">+${Number(pkg.xp).toLocaleString()} XP</span></div>` :''}
-            ${badge ?`<div class="flex justify-between items-center text-yellow-400 font-bold"><span>وسام VIP:</span><span class="flex items-center gap-1">${badge} ${pkg.badgeTitle ||''}</span></div>` :''}
+            ${badge ?`<div class="flex justify-between items-center text-yellow-400 font-bold"><span>وسام VIP:</span><span class="flex items-center gap-1.5">${formatCustomBadgeHtml(badge, 'text-base')} ${pkg.badgeTitle ||''}</span></div>` :''}
             ${itemsList ?`<div class="flex justify-between items-center text-purple-300 font-bold"><span>معدات إضافية:</span><span class="text-[10px] truncate max-w-[140px]">${itemsList}</span></div>` :''}
           </div>
         </div>
@@ -16332,7 +16367,7 @@ const UIController = (() => {
       const badge = pkg.customBadge ||'';
       summaryEl.innerHTML =`
         <div class="flex items-center gap-2.5 min-w-0">
-          ${badge ?`<span class="text-2xl shrink-0">${badge}</span>` :''}
+          ${badge ?`<span class="text-2xl shrink-0 inline-flex items-center justify-center">${formatCustomBadgeHtml(badge, 'text-2xl')}</span>` :''}
           <div class="min-w-0">
             <h4 class="font-black text-white text-xs sm:text-sm truncate">${pkg.name}</h4>
             <span class="text-[10px] text-amber-300 block">المبلغ المطلوب تحويله: <strong class="numbers-font text-amber-400 font-black text-xs">${Number(pkg.price).toLocaleString()} EGP</strong></span>
@@ -17149,7 +17184,9 @@ const UIController = (() => {
     renderPlayerInventory,
     useInventoryItem,
     showDirectAdminPopupModal,
-    triggerAccountResetModal
+    triggerAccountResetModal,
+    getVerifiedBadgeIconHtml,
+    formatCustomBadgeHtml
   };
 
 })();
