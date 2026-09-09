@@ -6621,6 +6621,14 @@ const UIController = (() => {
   }
 
   function performLogout(showToastMsg = true) {
+    // CRITICAL FIX: Save lastActiveTimestamp to cloud BEFORE wiping state.
+    // Without this, when the player returns after logout/reload, loadUserSession
+    // reads an old lastActiveTimestamp and thinks no time has passed → zero offline earnings.
+    // This anchors the offline clock to the exact moment the player leaves.
+    if (GameEngine.activeUsername && GameEngine.state) {
+      try { GameEngine.forceSaveState(true); } catch (e) {}
+    }
+
     activeListeners.forEach(unsub => unsub());
     activeListeners = [];
     if (typeof AppDB !=='undefined') {
