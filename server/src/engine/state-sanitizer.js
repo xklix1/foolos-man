@@ -21,6 +21,7 @@ const DEFAULT_STATE = {
   stocks: {},
   crypto: {},
   investments: [],
+  dailyInvestments: { date: '', count: 0 },
   tradeCompany: null,
   activeLoan: null,
   loanCooldownUntil: 0,

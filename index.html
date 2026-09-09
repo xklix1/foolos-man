@@ -2166,11 +2166,20 @@
               </div>
             </div>
 
-            <!-- Global Cap Badge -->
-            <div class="inline-flex items-center gap-2 px-3.5 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-400 self-start sm:self-auto shadow-sm">
-              <i class="fa-solid fa-layer-group"></i>
-              <span>الاستثمارات النشطة:</span>
-              <span id="invest-stat-active-count" class="numbers-font text-amber-300 font-black px-2 py-0.5 bg-slate-950/80 rounded-md border border-amber-500/30">0 / 2</span>
+            <div class="flex items-center flex-wrap gap-2 self-start sm:self-auto">
+              <!-- Daily Quota Badge -->
+              <div class="inline-flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs font-bold text-emerald-400 shadow-sm">
+                <i class="fa-solid fa-calendar-day"></i>
+                <span>الحصة اليومية:</span>
+                <span id="invest-stat-daily-count" class="numbers-font text-emerald-300 font-black px-2 py-0.5 bg-slate-950/80 rounded-md border border-emerald-500/30">متبقي 5 / 5</span>
+              </div>
+
+              <!-- Global Concurrent Cap Badge -->
+              <div class="inline-flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-400 shadow-sm">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>النشطة معاً:</span>
+                <span id="invest-stat-active-count" class="numbers-font text-amber-300 font-black px-2 py-0.5 bg-slate-950/80 rounded-md border border-amber-500/30">0 / 2</span>
+              </div>
             </div>
           </div>
 
@@ -5134,10 +5143,10 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=11.1"></script>
+  <script src="db.js?v=11.2"></script>
   <script src="server-client-bridge.js?v=1.2"></script>
-  <script src="game.js?v=11.1"></script>
-  <script src="ui.js?v=11.1"></script>
+  <script src="game.js?v=11.2"></script>
+  <script src="ui.js?v=11.2"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

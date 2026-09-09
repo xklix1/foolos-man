@@ -883,6 +883,7 @@ const GameEngine = (() => {
       space_tech: { level: 0, price: 4800, workers: 0, suppliesTicks: 0 }
     },
     investments: [], // Array of { id, investedAmount, ticksRemaining, rate, name }
+    dailyInvestments: { date: '', count: 0 }, // Max 5 investments per 24 hours (calendar day)
     activeLoan: null, // Stores { amount, totalDue, ticksRemaining, initialTicks, isDefaulted, latePenaltyTicks, latePenaltyCount }
     dailyLoans: { date:'', count: 0 }, // Max 2 loans per 24 hours (calendar day)
     dailyWork: { date:'', shifts: 0, overtimeShifts: 0 }, // Max 100 regular shifts and 15 overtime shifts per 24h
@@ -2073,12 +2074,10 @@ const GameEngine = (() => {
 
       const breakdown = calculateSingleBusinessProfit(key, bizState, state);
 
-      // Decrement marketing campaign timer if active
+      // Decrement marketing campaign timer if active (1200 ticks = 1 hour)
       if (bizState.marketingTicks && bizState.marketingTicks > 0) {
         bizState.marketingTicks--;
-        if (bizState.marketingTicks === 0) {
-          bizState.marketingCooldownUntil = getTrustedNow() + 60000; // 60s cooldown after campaign ends
-        }
+        // No per-business cooldown — global daily cap of 5 is the throttle
       }
 
       const tickProfit = (breakdown.ownerProfit || 0) / 3600;
@@ -3188,33 +3187,43 @@ const GameEngine = (() => {
     AppDB.savePlayerState(activeUsername, state);
   }
 
-  // Launch Marketing Campaign (+40% demand boost for 30 ticks = 90 seconds, followed by 60s cooldown)
+  // Launch Marketing Campaign (+40% demand boost for 1200 ticks = 1 hour)
+  // Global daily cap: max 5 campaigns per day across ALL businesses
   function launchMarketingCampaign(key) {
     const biz = BUSINESSES[key];
     const bizState = state.businesses[key];
     if (!bizState || bizState.level === 0) throw new Error("المشروع مغلق حالياً.");
 
     if (bizState.marketingTicks && bizState.marketingTicks > 0) {
-      throw new Error("توجد حملة تسويقية نشطة بالفعل لهذا المشروع!");
+      throw new Error("توجد حملة إعلانية نشطة بالفعل لهذا المشروع!");
     }
-    if (bizState.marketingCooldownUntil && getTrustedNow() < bizState.marketingCooldownUntil) {
-      const remSec = Math.ceil((bizState.marketingCooldownUntil - getTrustedNow()) / 1000);
-      throw new Error(`قسم التسويق: انتظر ${remSec} ثانية حتى ينتهي تأثير الحملة السابقة قبل إطلاق حملة جديدة.`);
+
+    // --- Global daily cap check ---
+    const today = getTodayDateString();
+    if (!state.dailyMarketingCampaigns || state.dailyMarketingCampaigns.date !== today) {
+      state.dailyMarketingCampaigns = { date: today, count: 0 };
+    }
+    const DAILY_CAMPAIGN_LIMIT = 5;
+    if (state.dailyMarketingCampaigns.count >= DAILY_CAMPAIGN_LIMIT) {
+      throw new Error(`وصلت إلى الحد الأقصى اليومي من الحملات الإعلانية (${DAILY_CAMPAIGN_LIMIT} حملات/يوم لجميع المشاريع). تجدد الحصة بداية اليوم التالي.`);
     }
 
     const campaignCost = Math.floor(biz.cost * 0.25);
     if (state.cash < campaignCost) {
-      throw new Error(`تكلفة إطلاق الحملة الإعلانية المكثفة هي ${campaignCost.toLocaleString()} EGP. رصيدك غير كافٍ.`);
+      throw new Error(`تكلفة إطلاق الحملة الإعلانية هي ${campaignCost.toLocaleString()} EGP. رصيدك غير كافٍ.`);
     }
 
     state.cash -= campaignCost;
-    bizState.marketingTicks = 30; // 30 ticks = 90 seconds
+    bizState.marketingTicks = 1200; // 1200 ticks × 3 sec/tick = 3600 sec = 1 hour
+    state.dailyMarketingCampaigns.count++;
 
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
     return {
       cost: campaignCost,
-      durationSec: 90
+      durationSec: 3600,
+      campaignsUsed: state.dailyMarketingCampaigns.count,
+      campaignsLeft: DAILY_CAMPAIGN_LIMIT - state.dailyMarketingCampaigns.count
     };
   }
 
@@ -3809,6 +3818,19 @@ const GameEngine = (() => {
       throw new Error("لا يمكنك فتح أكثر من استثمارين مقفلين في نفس الوقت. انتظر حتى يكتمل أحدهما أو استثمر في عقاراتك ومصانعك.");
     }
 
+    // Daily Limit check: maximum 5 investments per calendar day
+    const today = new Date(getTrustedNow()).toISOString().slice(0, 10);
+    if (!state.dailyInvestments || state.dailyInvestments.date !== today) {
+      state.dailyInvestments = { date: today, count: 0 };
+    }
+    const DAILY_INVESTMENT_LIMIT = 5;
+    if (state.dailyInvestments.count >= DAILY_INVESTMENT_LIMIT) {
+      const isEn = (typeof window !== 'undefined' && window.currentLang === 'en');
+      throw new Error(isEn
+        ? `You have reached the daily investment limit (${DAILY_INVESTMENT_LIMIT}/5 investments today). Quota resets at midnight.`
+        : `وصلت إلى الحد الأقصى اليومي للاستثمارات (${DAILY_INVESTMENT_LIMIT}/5 استثمارات اليوم). تتجدد الحصة مع بداية اليوم التالي.`);
+    }
+
     // Prevent duplicate investment in the same fund while active
     const alreadyActive = (state.investments || []).find(inv => inv.id === plan.id);
     if (alreadyActive) {
@@ -3839,10 +3861,17 @@ const GameEngine = (() => {
       rate: plan.rate
     });
 
+    state.dailyInvestments.count++;
+
     recordPlayerActivity('استثمار مالي',`إيداع ${amount.toLocaleString()} ج.م في"${plan.name}"`,'investment');
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
-    return { plan, amount };
+    return {
+      plan,
+      amount,
+      dailyUsed: state.dailyInvestments.count,
+      dailyLeft: DAILY_INVESTMENT_LIMIT - state.dailyInvestments.count
+    };
   }
 
   // --- Secure Anti-Exploit Casino System Constants & Core Safeguards ---
@@ -5452,7 +5481,10 @@ const GameEngine = (() => {
     calculateStageMultiUpgrade,
     upgradeIndustryStage,
     collectIndustryRevenue,
-    transferIndustryGoodsToTradeExport
+    transferIndustryGoodsToTradeExport,
+
+    // State Reader (read-only snapshot for UI queries)
+    getState: () => state
   };
 })();
 

@@ -2422,7 +2422,20 @@ const UIController = (() => {
         const workerHireCost = Math.floor(biz.cost * 0.15 * (1 + (bizState.workers || 0)));
         const campaignCost = Math.floor(biz.cost * 0.25);
         const marketingActive = (bizState.marketingTicks && bizState.marketingTicks > 0);
+        // 1200 ticks × 3 sec/tick = 3600 sec = 1 hour
         const marketingSecRemaining = marketingActive ? bizState.marketingTicks * 3 : 0;
+        const mktgMins = Math.floor(marketingSecRemaining / 60);
+        const mktgSecs = marketingSecRemaining % 60;
+        const mktgTimeStr = marketingActive
+          ? `${Math.floor(mktgMins/60).toString().padStart(2,'0')}:${(mktgMins%60).toString().padStart(2,'0')}:${mktgSecs.toString().padStart(2,'0')}`
+          : '';
+        // Global daily cap
+        const today = new Date().toISOString().slice(0,10);
+        const dmk = (window.GameEngine && window.GameEngine.getState) ? null : null; // read via state directly
+        const dailyCampaigns = (typeof state !== 'undefined' && state.dailyMarketingCampaigns && state.dailyMarketingCampaigns.date === today)
+          ? state.dailyMarketingCampaigns.count : 0;
+        const campaignsLeft = Math.max(0, 5 - dailyCampaigns);
+        const dailyCapReached = (campaignsLeft === 0);
 
         const bizCalc = GameEngine.calculateSingleBusinessProfit ? GameEngine.calculateSingleBusinessProfit(key, bizState) : {
           opt: biz.optimumPrice,
@@ -2502,8 +2515,14 @@ const UIController = (() => {
 
           <!-- Marketing Campaign Trigger -->
           <div class="mb-3">
-            <button id="btn-marketing-${key}" class="w-full py-1.5 ${marketingActive ?'bg-yellow-500/20 text-yellow-400 border-yellow-500/40' :'bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-300 border-indigo-500/40'} border rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
-               <span id="biz-mktg-text-${key}">${marketingActive ? (window.currentLang ==='en' ?`Active Ad Campaign (${marketingSecRemaining}s remaining)` :`حملة إعلانية نشطة (متبقي ${marketingSecRemaining}ث)`) : (window.currentLang ==='en' ?`Launch promo campaign (+40% demand) — ${campaignCost.toLocaleString()} EGP` :`إطلاق حملة ترويجية مكثفة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP`)}</span>
+            <button id="btn-marketing-${key}" class="w-full py-1.5 ${marketingActive ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40' : dailyCapReached ? 'bg-slate-800/60 text-slate-500 border-slate-600/30 cursor-not-allowed' : 'bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-300 border-indigo-500/40'} border rounded-lg text-xs font-bold transition flex items-center justify-center gap-1" ${dailyCapReached && !marketingActive ? 'disabled' : ''}>
+               <span id="biz-mktg-text-${key}">${marketingActive
+                 ? (window.currentLang === 'en' ? `Active Ad Campaign (${mktgTimeStr} left)` : `حملة إعلانية نشطة (متبقي ${mktgTimeStr})`)
+                 : dailyCapReached
+                 ? (window.currentLang === 'en' ? '⛔ Daily ad campaign limit reached (5/5 — resets tomorrow)' : '⛔ تم استهلاك الحد اليومي للحملات (5/5 — تتجدد غداً)')
+                 : (window.currentLang === 'en'
+                   ? `Launch 1h Ad Campaign (+40% demand) — ${campaignCost.toLocaleString()} EGP  [${campaignsLeft}/5 left today]`
+                   : `إطلاق حملة إعلانية ساعة كاملة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP  [متبقي ${campaignsLeft}/5 اليوم]`)}</span>
             </button>
           </div>
 
@@ -2751,12 +2770,35 @@ const UIController = (() => {
       }
 
       const mktgTextEl = document.getElementById(`biz-mktg-text-${key}`);
+      const mktgBtnEl = document.getElementById(`btn-marketing-${key}`);
       if (mktgTextEl) {
         const campaignCost = Math.floor(biz.cost * 0.25);
-        const marketingSecRemaining = marketingActive ? bizState.marketingTicks * 3 : 0;
-        mktgTextEl.textContent = marketingActive
-          ?`حملة إعلانية نشطة (متبقي ${marketingSecRemaining}ث)`
-          :`إطلاق حملة ترويجية مكثفة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP`;
+        const marketingSecRem = marketingActive ? bizState.marketingTicks * 3 : 0;
+        const remMins = Math.floor(marketingSecRem / 60);
+        const remSecs = marketingSecRem % 60;
+        const mktgTime = `${Math.floor(remMins/60).toString().padStart(2,'0')}:${(remMins%60).toString().padStart(2,'0')}:${remSecs.toString().padStart(2,'0')}`;
+        // Global daily cap
+        const todayStr = new Date().toISOString().slice(0,10);
+        const s = window.GameEngine && window.GameEngine.getState ? window.GameEngine.getState() : null;
+        const dm = (s && s.dailyMarketingCampaigns && s.dailyMarketingCampaigns.date === todayStr) ? s.dailyMarketingCampaigns.count : 0;
+        const capLeft = Math.max(0, 5 - dm);
+        const capReached = (capLeft === 0);
+        if (marketingActive) {
+          mktgTextEl.textContent = `حملة إعلانية نشطة (متبقي ${mktgTime})`;
+          if (mktgBtnEl) {
+            mktgBtnEl.className = mktgBtnEl.className
+              .replace(/bg-indigo-\S+/g, '').replace(/text-indigo-\S+/g, '').replace(/border-indigo-\S+/g, '')
+              .replace(/bg-slate-\S+/g, '').replace(/text-slate-\S+/g, '').replace(/border-slate-\S+/g, '');
+            mktgBtnEl.classList.add('bg-yellow-500/20', 'text-yellow-400', 'border-yellow-500/40');
+            mktgBtnEl.removeAttribute('disabled');
+          }
+        } else if (capReached) {
+          mktgTextEl.textContent = '⛔ تم استهلاك الحد اليومي للحملات (5/5 — تتجدد غداً)';
+          if (mktgBtnEl) mktgBtnEl.setAttribute('disabled', 'true');
+        } else {
+          mktgTextEl.textContent = `إطلاق حملة إعلانية ساعة كاملة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP  [متبقي ${capLeft}/5 اليوم]`;
+          if (mktgBtnEl) mktgBtnEl.removeAttribute('disabled');
+        }
       }
     });
   }
@@ -2794,6 +2836,11 @@ const UIController = (() => {
     if (!s) return;
     const investments = s.investments || [];
     const isGlobalLimitReached = investments.length >= 2;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const dailyCount = (s.dailyInvestments && s.dailyInvestments.date === today) ? (s.dailyInvestments.count || 0) : 0;
+    const dailyLeft = Math.max(0, 5 - dailyCount);
+    const isDailyLimitReached = (dailyLeft <= 0);
 
     const planTypes = ['short', 'medium', 'long', 'venture', 'imperial'];
 
@@ -2842,16 +2889,31 @@ const UIController = (() => {
         const input = document.getElementById(`invest-amount-${type}`);
         const btn = document.querySelector(`.btn-invest-start[data-type="${type}"]`);
 
-        if (isGlobalLimitReached) {
-          // Global 2/2 cap reached: disable other cards
+        if (isDailyLimitReached) {
+          // Daily 5/5 cap reached
           if (input) {
             input.disabled = true;
-            input.placeholder = '🔒 الحد الأقصى نشط (2/2)';
+            input.placeholder = (window.currentLang === 'en') ? '🔒 Daily Limit Reached (5/5)' : '🔒 تم استهلاك الحد اليومي (5/5)';
             input.classList.add('opacity-50', 'cursor-not-allowed');
           }
           if (btn) {
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-ban text-rose-400 ml-1"></i> <span>الحد الأقصى نشط (2/2)</span>`;
+            btn.innerHTML = `<i class="fa-solid fa-ban text-rose-400 ml-1"></i> <span>${(window.currentLang === 'en') ? 'Daily Limit Reached (5/5)' : 'الحد اليومي مكتمل (5/5)'}</span>`;
+            btn.style.setProperty('background', '#0b0f19', 'important');
+            btn.style.setProperty('color', '#94a3b8', 'important');
+            btn.style.setProperty('cursor', 'not-allowed', 'important');
+            btn.style.setProperty('border', '1px solid rgba(148, 163, 184, 0.2)', 'important');
+          }
+        } else if (isGlobalLimitReached) {
+          // Global 2/2 cap reached: disable other cards
+          if (input) {
+            input.disabled = true;
+            input.placeholder = (window.currentLang === 'en') ? '🔒 Active Max Limit (2/2)' : '🔒 الحد الأقصى نشط (2/2)';
+            input.classList.add('opacity-50', 'cursor-not-allowed');
+          }
+          if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-ban text-rose-400 ml-1"></i> <span>${(window.currentLang === 'en') ? 'Active Max Limit (2/2)' : 'الحد الأقصى نشط (2/2)'}</span>`;
             btn.style.setProperty('background', '#0b0f19', 'important');
             btn.style.setProperty('color', '#94a3b8', 'important');
             btn.style.setProperty('cursor', 'not-allowed', 'important');
@@ -2896,6 +2958,7 @@ const UIController = (() => {
 
     // 1. Update KPI stats badges
     const activeCountEl = document.getElementById('invest-stat-active-count');
+    const dailyCountEl = document.getElementById('invest-stat-daily-count');
     const totalAmtEl = document.getElementById('invest-stat-total-amount');
     const totalPayoutEl = document.getElementById('invest-stat-total-payout');
     const nextMaturityEl = document.getElementById('invest-stat-next-maturity');
@@ -2904,6 +2967,14 @@ const UIController = (() => {
     if (activeCountEl) {
       activeCountEl.textContent = `${count} / 2`;
       activeCountEl.className = `numbers-font font-black px-2 py-0.5 rounded-md border ${count >= 2 ? 'text-rose-400 bg-rose-950/60 border-rose-500/30' : 'text-amber-300 bg-slate-950/80 border-amber-500/30'}`;
+    }
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const dCount = (s.dailyInvestments && s.dailyInvestments.date === todayStr) ? (s.dailyInvestments.count || 0) : 0;
+    const dLeft = Math.max(0, 5 - dCount);
+    if (dailyCountEl) {
+      dailyCountEl.textContent = (window.currentLang === 'en') ? `${dLeft} / 5 Left` : `متبقي ${dLeft} / 5`;
+      dailyCountEl.className = `numbers-font font-black px-2 py-0.5 rounded-md border ${dLeft === 0 ? 'text-rose-400 bg-rose-950/60 border-rose-500/30' : 'text-emerald-300 bg-slate-950/80 border-emerald-500/30'}`;
     }
 
     let totalInvested = 0;
@@ -4516,7 +4587,7 @@ const UIController = (() => {
         desc:`تجميد السيولة في أوعية وصناديق استثمارية مصرفية بعوائد مضمونة:
         <br>• <strong>5 باقات استثمارية</strong>: من الوديعة السريعة (ساعة واحدة، +4%) وحتى الصندوق الإمبراطوري الماسي (36 ساعة، +80%).
         <br>• <strong>قفل رأس المال</strong>: يتم تجميد المبلغ طوال فترة الاستثمار، وعند اكتمال المؤقت الزمني يودع أصل المبلغ مع الأرباح مباشرة في حسابك.
-        <br>• <strong>الحد الأقصى</strong>: يسمح بتشغيل استثمارين كحد أقصى في نفس الوقت (2/2) لضمان توازن السيولة النقدية.`
+        <br>• <strong>الحدود والقواعد</strong>: يسمح بتشغيل استثمارين كحد أقصى في نفس الوقت (2/2) وبحد أقصى 5 استثمارات إجمالاً في اليوم الواحد (5/يوم) تتجدد مع بداية كل يوم جديد.`
       },'panel-assets': {
         title:'الأصول والعقارات والسيارات',
         desc:`تجميد الأرباح في أصول حقيقية:
