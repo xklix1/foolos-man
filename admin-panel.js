@@ -6733,14 +6733,26 @@
         sendBtn.disabled = true;
         if (sendBtnText) sendBtnText.textContent = `جاري الإرسال لـ ${online.length} لاعب...`;
 
+        // Show progress in the players table while sending
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-amber-400 text-xs">
+            <i class="fa-solid fa-spinner fa-spin mr-2"></i>جاري إرسال الهدية لـ ${online.length} لاعب...
+          </td></tr>`;
+        }
+
         let successCount = 0;
         let failCount = 0;
-        const errors = [];
+        // Track per-player results
+        const results = []; // { username, title, netWorth, status: 'ok'|'fail', error? }
 
         for (const player of online) {
           try {
             const freshState = await AppDB.adminGetPlayer(player.username);
-            if (!freshState) { failCount++; errors.push(player.username + ' (state null)'); continue; }
+            if (!freshState) {
+              failCount++;
+              results.push({ username: player.username, title: player.title || '—', netWorth: player.netWorth || 0, status: 'fail', error: 'بيانات اللاعب غير موجودة' });
+              continue;
+            }
 
             if (type === 'cash') {
               freshState.cash = (Number(freshState.cash) || 0) + amount;
@@ -6768,16 +6780,88 @@
             freshState._lastAdminGift = { type, amount, note, sentAt: Date.now() };
             await AppDB.savePlayerState(player.username, freshState, true);
             successCount++;
+            results.push({ username: player.username, title: player.title || freshState.title || '—', netWorth: player.netWorth || 0, status: 'ok' });
           } catch (e) {
             failCount++;
-            errors.push(`${player.username}: ${e.message}`);
+            results.push({ username: player.username, title: player.title || '—', netWorth: player.netWorth || 0, status: 'fail', error: e.message });
           }
         }
 
+        // ── Render results table ──
+        if (tbody) {
+          tbody.innerHTML = '';
+
+          // Header result row
+          const headerRow = document.createElement('tr');
+          headerRow.className = 'bg-slate-800/60';
+          headerRow.innerHTML = `
+            <th colspan="6" class="py-2 px-3 text-right text-[11px] font-black text-white">
+              <i class="fa-solid fa-check-double text-emerald-400 mr-1"></i>
+              نتائج الإرسال — ${successCount} نجاح
+              ${failCount > 0 ? `<span class="text-rose-400 mr-2">/ ${failCount} فشل</span>` : ''}
+              <span class="text-slate-400 font-normal mr-2 text-[10px]">"${note}"</span>
+              <span class="text-amber-400 mr-2 text-[10px]">${amount.toLocaleString()} ${typeLabels[type]} لكل لاعب</span>
+            </th>
+          `;
+          tbody.appendChild(headerRow);
+
+          // Sub-header
+          const subHeader = document.createElement('tr');
+          subHeader.className = 'text-[10px] text-slate-500 border-b border-slate-800';
+          subHeader.innerHTML = `
+            <th class="pb-1.5 px-2 font-bold text-right">#</th>
+            <th class="pb-1.5 px-2 font-bold text-right">اللاعب</th>
+            <th class="pb-1.5 px-2 font-bold text-right">الرتبة</th>
+            <th class="pb-1.5 px-2 font-bold text-right">صافي الثروة</th>
+            <th class="pb-1.5 px-2 font-bold text-right">الهدية</th>
+            <th class="pb-1.5 px-2 font-bold text-right">الحالة</th>
+          `;
+          tbody.appendChild(subHeader);
+
+          results.forEach((r, i) => {
+            const tr = document.createElement('tr');
+            tr.className = `border-b border-slate-800/40 text-xs ${r.status === 'ok' ? 'hover:bg-emerald-950/10' : 'hover:bg-rose-950/10'}`;
+            tr.innerHTML = `
+              <td class="py-2 px-2 text-slate-500 font-mono">${i + 1}</td>
+              <td class="py-2 px-2">
+                <span class="font-black ${r.status === 'ok' ? 'text-white' : 'text-slate-500'}">${r.username}</span>
+              </td>
+              <td class="py-2 px-2 text-slate-400 text-[10px]">${r.title}</td>
+              <td class="py-2 px-2 text-emerald-400 font-mono font-bold">${(r.netWorth || 0).toLocaleString()}</td>
+              <td class="py-2 px-2 text-amber-300 font-mono font-black text-[11px]">
+                ${r.status === 'ok' ? `+${amount.toLocaleString()} ${typeLabels[type]}` : '—'}
+              </td>
+              <td class="py-2 px-2">
+                ${r.status === 'ok'
+                  ? '<span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1 w-fit"><i class="fa-solid fa-check text-[8px]"></i>تم</span>'
+                  : `<span class="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1 w-fit" title="${r.error || ''}"><i class="fa-solid fa-xmark text-[8px]"></i>فشل</span>`
+                }
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+
+        // ── Update activity log ──
         const timestamp = new Date().toLocaleTimeString('ar-EG');
-        const logEntry = document.createElement('p');
-        logEntry.className = successCount > 0 ? 'text-emerald-400' : 'text-rose-400';
-        logEntry.innerHTML = `<span class="text-slate-500">[${timestamp}]</span> ${typeLabels[type]} ${amount.toLocaleString()} → ${successCount} نجاح${failCount > 0 ? ` / ${failCount} فشل` : ''} — "${note}"`;
+        const logEntry = document.createElement('div');
+        logEntry.className = 'border border-slate-800 rounded-lg p-2 space-y-1';
+        logEntry.innerHTML = `
+          <div class="flex items-center gap-2 text-[11px]">
+            <span class="text-slate-500">[${timestamp}]</span>
+            <span class="${successCount > 0 ? 'text-emerald-400' : 'text-rose-400'} font-black">
+              ${typeLabels[type]} ×${amount.toLocaleString()} → ${successCount}/${results.length} لاعب
+            </span>
+            <span class="text-slate-500">— "${note}"</span>
+          </div>
+          <div class="flex flex-wrap gap-1 mt-1">
+            ${results.map(r => `
+              <span class="text-[9px] px-1.5 py-0.5 rounded font-bold ${r.status === 'ok' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'}">
+                ${r.username}
+              </span>
+            `).join('')}
+          </div>
+        `;
         if (logEl) {
           const placeholder = logEl.querySelector('p');
           if (placeholder && placeholder.textContent.includes('لم يتم الإرسال')) placeholder.remove();
@@ -6786,10 +6870,10 @@
 
         logAdminAction(`هدية للمتصلين: ${typeLabels[type]} ×${amount.toLocaleString()} لـ ${successCount}/${online.length} لاعب — "${note}"`);
         if (successCount > 0) showToast('تم الإرسال!', `تم إرسال ${typeLabels[type]} (${amount.toLocaleString()}) لـ ${successCount} لاعب متصل!`, 'success');
-        if (failCount > 0) { console.warn('[AdminGift] Failures:', errors); showToast('تنبيه', `فشل الإرسال لـ ${failCount} لاعب — راجع الكونسول.`, 'warning'); }
+        if (failCount > 0) { console.warn('[AdminGift] Failures:', results.filter(r=>r.status==='fail')); showToast('تنبيه', `فشل الإرسال لـ ${failCount} لاعب — راجع الجدول.`, 'warning'); }
 
         sendBtn.disabled = false;
-        if (sendBtnText) sendBtnText.textContent = 'إرسال الهدية للمتصلين';
+        if (sendBtnText) sendBtnText.textContent = 'إرسال هدية جديدة للمتصلين';
       };
     }
 
