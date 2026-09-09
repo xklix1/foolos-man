@@ -1038,7 +1038,12 @@ var AppDB = (() => {
       stateObj.afkManagerExpiresAt = Number(row.afk_manager_expires_at || 0);
       stateObj.totalTaxesPaid = Number(row.total_taxes_paid || 0);
       stateObj.lastSeen = Number(row.last_seen || Date.now());
-      stateObj.lastActiveTimestamp = Number(row.last_seen || (row.state && (row.state.lastActiveTimestamp || row.state.lastSeen)) || stateObj.lastSeen || Date.now());
+      // OFFLINE EARNINGS FIX: Take the MAX of server last_seen and local lastActiveTimestamp.
+      // When the cloud save hasn't landed yet (e.g. race between logout flush and getPlayerState),
+      // the synchronous localStorage write always has the correct exit timestamp — use it if newer.
+      const _serverLastSeen = Number(row.last_seen || (row.state && (row.state.lastActiveTimestamp || row.state.lastSeen)) || 0);
+      const _localLastActive = local ? Number(local.lastActiveTimestamp || local.lastSeen || 0) : 0;
+      stateObj.lastActiveTimestamp = Math.max(_serverLastSeen, _localLastActive) || Date.now();
       stateObj.adminModifiedTimestamp = Number(row.admin_modified_timestamp || 0);
       stateObj._loadedFromCloud = true;
 
@@ -1056,6 +1061,16 @@ var AppDB = (() => {
         // Only reconcile local upgrades if local device was active recently (within 10 minutes of server timestamp or newer)
         // This ensures switching devices loads newer server data without stale secondary device data interfering
         const isLocalRecentOrNewer = (localTs >= serverTs - 600000);
+
+        // OFFLINE EARNINGS FIX: If local lastActiveTimestamp is newer than the cloud last_seen,
+        // the cloud save hasn't landed yet — reconcile and push to cloud.
+        const localLastActive = Number(local.lastActiveTimestamp || local.lastSeen || 0);
+        if (localLastActive > serverTs + 5000) {
+          // Local has a significantly newer timestamp — cloud save was delayed
+          stateObj.lastActiveTimestamp = localLastActive;
+          stateObj.lastSeen = localLastActive;
+          shouldSyncCloud = true;
+        }
 
         // 1. Business Levels & Workers Guard: NEVER downgrade business levels or worker counts on same device
         if (isLocalRecentOrNewer && local.businesses && typeof local.businesses === 'object') {

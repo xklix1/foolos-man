@@ -6621,13 +6621,27 @@ const UIController = (() => {
   }
 
   function performLogout(showToastMsg = true) {
-    // CRITICAL FIX: Save lastActiveTimestamp to cloud BEFORE wiping state.
-    // Without this, when the player returns after logout/reload, loadUserSession
-    // reads an old lastActiveTimestamp and thinks no time has passed → zero offline earnings.
-    // This anchors the offline clock to the exact moment the player leaves.
+    // ── OFFLINE EARNINGS ANCHOR ──────────────────────────────────────────────
+    // We must save lastActiveTimestamp = NOW before wiping anything.
+    // forceSaveState() updates state.lastActiveTimestamp AND does a synchronous
+    // localStorage write (inside savePlayerState), so even if the cloud call
+    // races against the next getPlayerState call, the local value is correct
+    // and getPlayerState now uses MAX(server, local) for lastActiveTimestamp.
     if (GameEngine.activeUsername && GameEngine.state) {
-      try { GameEngine.forceSaveState(true); } catch (e) {}
+      try {
+        const exitTs = (window.AppDB && AppDB.getTrustedNow) ? AppDB.getTrustedNow() : Date.now();
+        // Directly stamp the state object so the synchronous localStorage write below is correct
+        GameEngine.state.lastActiveTimestamp = exitTs;
+        GameEngine.state.lastSeen = exitTs;
+        // forceSaveState: synchronous localStorage + async cloud save
+        GameEngine.forceSaveState(true);
+        // flushStateToCloudOnExit: keepalive fetch + sendBeacon as double guarantee
+        if (typeof AppDB !== 'undefined' && typeof AppDB.flushStateToCloudOnExit === 'function') {
+          AppDB.flushStateToCloudOnExit(GameEngine.activeUsername, GameEngine.state);
+        }
+      } catch (e) {}
     }
+    // ────────────────────────────────────────────────────────────────────────
 
     activeListeners.forEach(unsub => unsub());
     activeListeners = [];
