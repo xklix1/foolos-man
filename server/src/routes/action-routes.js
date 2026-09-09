@@ -26,8 +26,15 @@ async function actionRoutes(fastify, options) {
     return session;
   }
 
-  // 1. POST /api/action/click (Clicker / Tap Action)
-  fastify.post('/api/action/click', async (request, reply) => {
+  // 1. POST /api/action/click (Clicker / Tap Action — 10 requests/sec limit)
+  fastify.post('/api/action/click', {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: 1000
+      }
+    }
+  }, async (request, reply) => {
     const session = await resolveSession(request, reply);
     if (!session) return;
 
@@ -145,8 +152,15 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     };
   });
 
-  // 3. POST /api/action/renew-afk (12-Hour AFK Manager Extension)
-  fastify.post('/api/action/renew-afk', async (request, reply) => {
+  // 3. POST /api/action/renew-afk (12-Hour AFK Manager Extension — 10 requests/min limit)
+  fastify.post('/api/action/renew-afk', {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
     const session = await resolveSession(request, reply);
     if (!session) return;
 

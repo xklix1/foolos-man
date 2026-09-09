@@ -222,3 +222,33 @@ test('API Integration — AFK Renewal & Session Heartbeat', async () => {
   const hbData = JSON.parse(heartbeatRes.payload);
   assert.strictEqual(hbData.success, true);
 });
+
+test('API Integration — Rate Limiter Enforces HTTP 429 on Rapid Click Bursts', async () => {
+  const testUsername = 'test_spam_player';
+  sessionManager.sessions.set(testUsername.toLowerCase(), {
+    username: testUsername,
+    state: { username: testUsername, cash: 100, xp: 0, netWorth: 100, title: 'عامل مبتدئ' },
+    dirty: false,
+    lastActivity: Date.now()
+  });
+
+  const spamIp = '192.168.1.99';
+  const responses = [];
+
+  // Fire 15 rapid POST requests in parallel from same IP
+  for (let i = 0; i < 15; i++) {
+    responses.push(app.inject({
+      method: 'POST',
+      url: '/api/action/click',
+      remoteAddress: spamIp,
+      payload: { username: testUsername, count: 1 }
+    }));
+  }
+
+  const results = await Promise.all(responses);
+  const statusCodes = results.map(r => r.statusCode);
+  const rateLimited = statusCodes.filter(c => c === 429);
+
+  // At least some requests should hit the 10 req/sec limit and return 429
+  assert.ok(rateLimited.length > 0, 'Rate limiter must enforce HTTP 429 on rapid request bursts');
+});

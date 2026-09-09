@@ -6,8 +6,15 @@ const sessionManager = require('../services/session-manager');
 
 async function sessionRoutes(fastify, options) {
 
-  // POST /api/session/start
-  fastify.post('/api/session/start', async (request, reply) => {
+  // POST /api/session/start (Brute-Force Shield: 20 attempts/min)
+  fastify.post('/api/session/start', {
+    config: {
+      rateLimit: {
+        max: 20,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
     const { username, pin } = request.body || {};
     if (!username) {
       return reply.code(400).send({ error: 'Username is required' });

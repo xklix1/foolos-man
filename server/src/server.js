@@ -8,8 +8,25 @@ const config = require('./config/env');
 const { sanitizePlayerState } = require('./engine/state-sanitizer');
 
 const app = Fastify({
+  trustProxy: true,
   logger: {
     level: config.NODE_ENV === 'production' ? 'info' : 'info'
+  }
+});
+
+// Register Global Rate Limiting across all endpoints
+app.register(require('@fastify/rate-limit'), {
+  global: true,
+  max: 300, // 300 requests per minute per IP (5 requests/sec baseline)
+  timeWindow: 60 * 1000,
+  cache: 10000,
+  errorResponseBuilder: (request, context) => {
+    return {
+      statusCode: 429,
+      error: 'Too Many Requests',
+      message: `Rate limit exceeded. Maximum ${context.max} requests per ${Math.round(context.ttl / 1000)} seconds. Please slow down.`,
+      retryAfter: Math.ceil(context.ttl / 1000)
+    };
   }
 });
 
