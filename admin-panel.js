@@ -6613,11 +6613,30 @@
     try {
       if (toggleBtn) {
         toggleBtn.disabled = true;
-        toggleBtn.innerHTML ='<i class="fa-solid fa-spinner animate-spin"></i>';
+        toggleBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i>';
+      }
       
       await AppDB.adminSaveServerConfig({
         boostMultiplier: newBoost
       });
+
+      showToast('مضاعف السيرفر', newBoost > 1.0 ? 'تم تفعيل وضع مضاعف الأرباح والخبرة 2x للجميع!' : 'تم إيقاف مضاعف السيرفر والعودة للوضع الاعتيادي.', 'success');
+      logAdminAction(`تحديث مضاعف السيرفر: تم تعيين المضاعف على ${newBoost.toFixed(1)}x`);
+      
+      await AppDB.sendBroadcast(
+        newBoost > 1.0 ? '⚡ تفعيل مضاعف السيرفر (Server Boost)!' : 'ℹ️ انتهاء مضاعف السيرفر (Server Boost)',
+        newBoost > 1.0 ? 'قام الأدمن بتفعيل وضع مضاعف الأرباح والخبرة (Double XP & Cash) لجميع اللاعبين حياً!' : 'انتهى وضع مضاعف الأرباح والخبرة وعاد السيرفر للمعدل الطبيعي.'
+      );
+      
+    } catch (err) {
+      showToast('خطأ في تغيير المضاعف', err.message, 'error');
+    } finally {
+      if (toggleBtn) {
+        toggleBtn.disabled = false;
+        toggleBtn.innerHTML = '<i class="fa-solid fa-bolt text-sm"></i>';
+      }
+    }
+  }
 
   // ─────────────────────────────────────────────
   //  ONLINE GIFT PANEL — Send gifts to online players
@@ -6880,27 +6899,7 @@
     refreshList();
   }
 
-  // ─────────────────────────────────────────────
-  //  V2 variables & handlers
-  // ─────────────────────────────────────────────
 
-      showToast('مضاعف السيرفر', newBoost > 1.0 ?'تم تفعيل وضع مضاعف الأرباح والخبرة 2x للجميع!' :'تم إيقاف مضاعف السيرفر والعودة للوضع الاعتيادي.','success');
-      logAdminAction(`تحديث مضاعف السيرفر: تم تعيين المضاعف على ${newBoost.toFixed(1)}x`);
-      
-      await AppDB.sendBroadcast(
-        newBoost > 1.0 ?' تفعيل مضاعف السيرفر (Server Boost)!' :'ℹ️ انتهاء مضاعف السيرفر (Server Boost)',
-        newBoost > 1.0 ?'قام الأدمن بتفعيل وضع مضاعف الأرباح والخبرة (Double XP & Cash) لجميع اللاعبين حياً!' :'انتهى وضع مضاعف الأرباح والخبرة وعاد السيرفر للمعدل الطبيعي.'
-      );
-      
-    } catch (err) {
-      showToast('خطأ في تغيير المضاعف', err.message,'error');
-    } finally {
-      if (toggleBtn) {
-        toggleBtn.disabled = false;
-        toggleBtn.innerHTML ='<i class="fa-solid fa-bolt text-sm"></i>';
-      }
-    }
-  }
 
   function logAdminAction(msg) {
     const targets = [
