@@ -77,6 +77,9 @@ function sanitizePlayerState(dbRow) {
   if (!cleanState.crypto || typeof cleanState.crypto !== 'object') cleanState.crypto = {};
   if (!cleanState.assets || typeof cleanState.assets !== 'object') cleanState.assets = {};
 
+  // Security Hardening: Never leak PIN hash in client-facing state payloads
+  delete cleanState.pin;
+
   return cleanState;
 }
 
