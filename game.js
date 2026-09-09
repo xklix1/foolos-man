@@ -2500,7 +2500,24 @@ const GameEngine = (() => {
   async function loadUserSession(username, preloadedData = null) {
     activeUsername = username;
     syncItemsConfig().catch(() => {}); // Non-blocking background sync
-    const dbState = preloadedData || (await AppDB.getPlayerState(username));
+
+    let serverOfflineReport = null;
+    let dbState = preloadedData;
+    if (!dbState && typeof ServerBridge !== 'undefined') {
+      try {
+        const sRes = await ServerBridge.startSession(username);
+        if (sRes && sRes.state) {
+          dbState = sRes.state;
+          serverOfflineReport = sRes.offlineReport;
+          console.log('[GameEngine] Authoritative server session active. Offline report:', serverOfflineReport);
+        }
+      } catch (e) {
+        console.warn('[GameEngine] ServerBridge session init note:', e.message);
+      }
+    }
+    if (!dbState) {
+      dbState = await AppDB.getPlayerState(username);
+    }
     if (dbState) {
       // Deep-merge with defaults so new keys added later are always present
       const mergedBusinesses = {};
@@ -2825,6 +2842,12 @@ const GameEngine = (() => {
     const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
     state.afkManagerExpiresAt = getTrustedNow() + TWELVE_HOURS_MS;
     state.netWorth = calculateNetWorth();
+
+    // Dispatch to Authoritative Server if connected
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.renewAfkManager().catch(() => {});
+    }
+
     // Force immediate cloud push — if the player closes the browser right after renewing,
     // the debounced save might not fire in time. The new afkManagerExpiresAt MUST reach
     // the server so isManagerActive = true on next login and offline earnings are calculated.
@@ -2987,6 +3010,12 @@ const GameEngine = (() => {
     recordPlayerActivity('شراء مشروع',`شراء وتأسيس مشروع "${biz.name}" بسعر ${biz.cost.toLocaleString()} ج.م (يشمل مخزون تشغيل أولي لساعة كاملة)`,'business');
     state.netWorth = calculateNetWorth();
     trackDailyQuestProgress('biz_upgrade', 1);
+
+    // Dispatch to Authoritative Server
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.buyBusiness(key).catch(() => {});
+    }
+
     forceSaveState(true);
     return biz;
   }
@@ -3013,6 +3042,12 @@ const GameEngine = (() => {
     recordPlayerActivity('ترقية مشروع',`ترقية مشروع"${biz.name}" إلى المستوى ${bizState.level}`,'business');
     state.netWorth = calculateNetWorth();
     trackDailyQuestProgress('biz_upgrade', 1);
+
+    // Dispatch to Authoritative Server
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.buyBusiness(key).catch(() => {});
+    }
+
     forceSaveState(true);
     return {
       level: bizState.level,
@@ -4404,6 +4439,12 @@ const GameEngine = (() => {
     recordPlayerActivity('توريد بضاعة ومستلزمات',`توريد شحنة بضاعة لمشروع "${biz.name}" بتكلفة ${supplyCost.toLocaleString()} ج.م (+1 ساعة تشغيل، الإجمالي المكدس: ${totalHours} ساعة)`,'business');
     state.netWorth = calculateNetWorth();
     trackDailyQuestProgress('biz_upgrade', 1);
+
+    // Dispatch to Authoritative Server
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.buySupplies(1).catch(() => {});
+    }
+
     forceSaveState(true);
     return {
       cost: supplyCost,

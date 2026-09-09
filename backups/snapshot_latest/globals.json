@@ -1,0 +1,2826 @@
+[
+  {
+    "id": "config",
+    "data": {
+      "version": "V2.5"
+    },
+    "updated_at": 1788457266270
+  },
+  {
+    "id": "stats",
+    "data": {
+      "lastRegisteredAt": 1788451853912,
+      "lastWipeTimestamp": 1788437954655,
+      "lastRegisteredUser": "ABO_El4E5",
+      "totalPlayersRegistered": 39
+    },
+    "updated_at": 1788457266270
+  },
+  {
+    "id": "force_reload",
+    "data": {
+      "message": "تم إطلاق تحديث وتحسينات هامة للعبة بواسطة الإدارة. يجب إعادة تحميل الصفحة الآن لتطبيق التغييرات وضمان استقرار حسابك.",
+      "forcedBy": "admin",
+      "timestamp": 1788907366236
+    },
+    "updated_at": 1788907366236
+  },
+  {
+    "id": "maintenance",
+    "data": {
+      "active": true,
+      "message": "الخوادم رهن الصيانة الفنية والتحديث الإداري حالياً.",
+      "timestamp": 1788968599801
+    },
+    "updated_at": 1788968599801
+  },
+  {
+    "id": "leaderboard",
+    "data": {
+      "updatedAt": 1789039449532,
+      "topPlayers": [
+        {
+          "bank": 3015354.4399995506,
+          "cash": 45427.000833335915,
+          "jobId": "ceo",
+          "title": "سيد الأعمال",
+          "isAdmin": false,
+          "netWorth": 6943057.440832887,
+          "username": "S3DA",
+          "net_worth": 6943057.440832887,
+          "facebookVerified": false
+        },
+        {
+          "bank": 2675296.4158332273,
+          "cash": 262954.7641666662,
+          "jobId": "ceo",
+          "title": "سيد الأعمال",
+          "isAdmin": false,
+          "netWorth": 6938251.1799998935,
+          "username": "Dr jihad",
+          "net_worth": 6938251.1799998935,
+          "facebookVerified": false
+        },
+        {
+          "bank": 3129452.5700004804,
+          "cash": 153.86722218366432,
+          "jobId": "director",
+          "title": "سيد الأعمال",
+          "isAdmin": false,
+          "netWorth": 5182606.437222664,
+          "username": "marwan",
+          "net_worth": 5182606.437222664,
+          "facebookVerified": false
+        },
+        {
+          "bank": 1813240.0863894252,
+          "cash": 0.08722222317010164,
+          "jobId": "ceo",
+          "title": "مستثمر طموح",
+          "isAdmin": false,
+          "netWorth": 3813240.1736116484,
+          "username": "Mohamed Gamal",
+          "net_worth": 3813240.1736116484,
+          "facebookVerified": false
+        },
+        {
+          "bank": 12594.588888886758,
+          "cash": 1070163.736666659,
+          "jobId": "director",
+          "title": "مستثمر طموح",
+          "isAdmin": false,
+          "netWorth": 2683854.3255555457,
+          "username": "Abdo_123",
+          "net_worth": 2683854.3255555457,
+          "facebookVerified": false
+        },
+        {
+          "bank": 361.3880553383355,
+          "cash": 580,
+          "jobId": "director",
+          "title": "مستثمر طموح",
+          "isAdmin": false,
+          "netWorth": 1881941.3880553383,
+          "username": "Elergany",
+          "net_worth": 1881941.3880553383,
+          "facebookVerified": false
+        },
+        {
+          "bank": 1798.9691666662693,
+          "cash": 322770.9583333316,
+          "jobId": "manager",
+          "title": "مستثمر طموح",
+          "isAdmin": false,
+          "netWorth": 1574569.927499998,
+          "username": "Top 1",
+          "net_worth": 1574569.927499998,
+          "facebookVerified": false
+        },
+        {
+          "bank": 606067.6158328754,
+          "cash": 1649.5416666744277,
+          "jobId": "director",
+          "title": "تاجر صاعد",
+          "isAdmin": false,
+          "netWorth": 738397.1574995498,
+          "username": "Abogalia",
+          "net_worth": 738397.1574995498,
+          "facebookVerified": false
+        },
+        {
+          "bank": 401225.7175001259,
+          "cash": 40878.0441666672,
+          "jobId": "ceo",
+          "title": "تاجر صاعد",
+          "isAdmin": false,
+          "netWorth": 480840.3588890022,
+          "username": "Engineer_mo",
+          "net_worth": 480840.3588890022,
+          "facebookVerified": false
+        },
+        {
+          "bank": 34244.85083334996,
+          "cash": 351622,
+          "jobId": "manager",
+          "title": "تاجر صاعد",
+          "isAdmin": false,
+          "netWorth": 385866.85083335,
+          "username": "Khalid",
+          "net_worth": 385866.85083335,
+          "facebookVerified": false
+        }
+      ],
+      "cycleMinutes": 60,
+      "nextUpdateAt": 1789043049532
+    },
+    "updated_at": 1789039449532
+  },
+  {
+    "id": "airdrop",
+    "data": {
+      "amount": 50000,
+      "sender": "Admin",
+      "target": "ALL",
+      "airdropId": "airdrop_1788759260815_8146",
+      "timestamp": 1788759260815
+    },
+    "updated_at": 1788759260815
+  },
+  {
+    "id": "hourly_leaderboard",
+    "data": {
+      "timestamp": 1788835065201,
+      "topPlayers": [
+        {
+          "bank": 2949659.380001216,
+          "cash": 285247.7641666662,
+          "jobId": "ceo",
+          "title": "سيد الأعمال",
+          "isAdmin": false,
+          "netWorth": 6534907.144167882,
+          "username": "Dr jihad",
+          "net_worth": 6534907.144167882,
+          "facebookVerified": false
+        },
+        {
+          "bank": 760143.1319451568,
+          "cash": 239717.93833333557,
+          "jobId": "ceo",
+          "title": "سيد الأعمال",
+          "isAdmin": false,
+          "netWorth": 5156102.070278492,
+          "username": "S3DA",
+          "net_worth": 5156102.070278492,
+          "facebookVerified": false
+        },
+        {
+          "bank": 5260.8522226720315,
+          "cash": 557785.625000008,
+          "jobId": "director",
+          "title": "مستثمر طموح",
+          "isAdmin": false,
+          "netWorth": 2628653.9772226806,
+          "username": "marwan",
+          "net_worth": 2628653.9772226806,
+          "facebookVerified": false
+        },
+        {
+          "bank": 31.67611110838673,
+          "cash": 546.7088888813742,
+          "jobId": "director",
+          "title": "مستثمر طموح",
+          "isAdmin": false,
+          "netWorth": 2392075.3849999895,
+          "username": "Abdo_123",
+          "net_worth": 2392075.3849999895,
+          "facebookVerified": false
+        },
+        {
+          "bank": 0.9691666662693024,
+          "cash": 1736.9583333317423,
+          "jobId": "manager",
+          "title": "مستثمر طموح",
+          "isAdmin": false,
+          "netWorth": 1001737.927499998,
+          "username": "Top 1",
+          "net_worth": 1001737.927499998,
+          "facebookVerified": false
+        },
+        {
+          "bank": 714458.8086106962,
+          "cash": 11044.52777778171,
+          "jobId": "director",
+          "title": "تاجر صاعد",
+          "isAdmin": false,
+          "netWorth": 773603.3363884779,
+          "username": "Abogalia",
+          "net_worth": 773603.3363884779,
+          "facebookVerified": false
+        },
+        {
+          "bank": 4712.634722214611,
+          "cash": 66380,
+          "jobId": "ceo",
+          "title": "تاجر صاعد",
+          "isAdmin": false,
+          "netWorth": 617274.6347222147,
+          "username": "saad",
+          "net_worth": 617274.6347222147,
+          "facebookVerified": false
+        },
+        {
+          "bank": 524566.0108331282,
+          "cash": 0,
+          "jobId": "director",
+          "title": "تاجر صاعد",
+          "isAdmin": false,
+          "netWorth": 524566.0108331282,
+          "username": "Elergany",
+          "net_worth": 524566.0108331282,
+          "facebookVerified": true
+        },
+        {
+          "bank": 43831.617499997395,
+          "cash": 7458.1622222222095,
+          "jobId": "manager",
+          "title": "تاجر صاعد",
+          "isAdmin": false,
+          "netWorth": 352150.7797222196,
+          "username": "abu_zain",
+          "net_worth": 352150.7797222196,
+          "facebookVerified": false
+        },
+        {
+          "bank": 324033.4413889449,
+          "cash": 0.8511111122643342,
+          "jobId": "director",
+          "title": "مستثمر طموح",
+          "isAdmin": false,
+          "netWorth": 324034.2925000572,
+          "username": "Mohamed Gamal",
+          "net_worth": 324034.2925000572,
+          "facebookVerified": false
+        },
+        {
+          "bank": 298768,
+          "cash": 196,
+          "jobId": "worker",
+          "title": "عامل ماهر ️",
+          "isAdmin": false,
+          "netWorth": 299038,
+          "username": "Qqs",
+          "net_worth": 299038,
+          "facebookVerified": false
+        },
+        {
+          "bank": 17247.513888884394,
+          "cash": 160191.41666666663,
+          "jobId": "manager",
+          "title": "موظف متميز",
+          "isAdmin": false,
+          "netWorth": 277591.930555551,
+          "username": "Yb15",
+          "net_worth": 277591.930555551,
+          "facebookVerified": false
+        },
+        {
+          "bank": 264.3386111111106,
+          "cash": 58840.74999999871,
+          "jobId": "accountant",
+          "title": "موظف متميز",
+          "isAdmin": false,
+          "netWorth": 225216.33861111448,
+          "username": "Momoas",
+          "net_worth": 225216.33861111448,
+          "facebookVerified": false
+        },
+        {
+          "bank": 73740.29694443963,
+          "cash": 106926.0000000002,
+          "jobId": "director",
+          "title": "موظف متميز",
+          "isAdmin": false,
+          "netWorth": 181016.29694443982,
+          "username": "eslamfarag2010",
+          "net_worth": 181016.29694443982,
+          "facebookVerified": false
+        },
+        {
+          "bank": 4475.859444431112,
+          "cash": 425.8888888888888,
+          "jobId": "director",
+          "title": "موظف متميز",
+          "isAdmin": false,
+          "netWorth": 180200.35944442937,
+          "username": "Engineer_mo",
+          "net_worth": 180200.35944442937,
+          "facebookVerified": false
+        },
+        {
+          "bank": 51,
+          "cash": 152726,
+          "jobId": "worker",
+          "title": "موظف متميز",
+          "isAdmin": false,
+          "netWorth": 152777,
+          "username": "ABDO",
+          "net_worth": 152777,
+          "facebookVerified": false
+        },
+        {
+          "bank": 42422.340555556766,
+          "cash": 88876,
+          "jobId": "manager",
+          "title": "موظف متميز",
+          "isAdmin": false,
+          "netWorth": 146460.34055555676,
+          "username": "Elgamal",
+          "net_worth": 146460.34055555676,
+          "facebookVerified": false
+        },
+        {
+          "bank": 84719.82249999938,
+          "cash": 52044.999999999985,
+          "jobId": "accountant",
+          "title": "موظف متميز",
+          "isAdmin": false,
+          "netWorth": 136764.82249999937,
+          "username": "Shaimaa",
+          "net_worth": 136764.82249999937,
+          "facebookVerified": false
+        },
+        {
+          "bank": 55624.140277777246,
+          "cash": 70031,
+          "jobId": "manager",
+          "title": "موظف متميز",
+          "isAdmin": false,
+          "netWorth": 126967.14027777725,
+          "username": "Kero",
+          "net_worth": 126967.14027777725,
+          "facebookVerified": false
+        },
+        {
+          "bank": 83576.78472220573,
+          "cash": 411.66666666630044,
+          "jobId": "director",
+          "title": "موظف متميز",
+          "isAdmin": false,
+          "netWorth": 124498.45138887202,
+          "username": "ALDEEB",
+          "net_worth": 124498.45138887202,
+          "facebookVerified": false
+        },
+        {
+          "bank": 68601.75361112542,
+          "cash": 55021.986111110884,
+          "jobId": "accountant",
+          "title": "موظف متميز",
+          "isAdmin": false,
+          "netWorth": 123623.73972223629,
+          "username": "Mo3az@eid",
+          "net_worth": 123623.73972223629,
+          "facebookVerified": false
+        },
+        {
+          "bank": 84192.09722222314,
+          "cash": 26692.000000000015,
+          "jobId": "accountant",
+          "title": "موظف متميز",
+          "isAdmin": false,
+          "netWorth": 121823.09722222315,
+          "username": "Mohamed",
+          "net_worth": 121823.09722222315,
+          "facebookVerified": false
+        },
+        {
+          "bank": 110444.1680555609,
+          "cash": 384.6527777777865,
+          "jobId": "director",
+          "title": "موظف متميز",
+          "isAdmin": false,
+          "netWorth": 121744.16805556088,
+          "username": "mohamedm010",
+          "net_worth": 121744.16805556088,
+          "facebookVerified": false
+        },
+        {
+          "bank": 0,
+          "cash": 51246,
+          "jobId": "worker",
+          "title": "عامل ماهر ️",
+          "isAdmin": false,
+          "netWorth": 114521,
+          "username": "BODA",
+          "net_worth": 114521,
+          "facebookVerified": false
+        },
+        {
+          "bank": 40056,
+          "cash": 70827,
+          "jobId": "cashier",
+          "title": "موظف متميز 👔",
+          "isAdmin": false,
+          "netWorth": 110883,
+          "username": "3ssam_magdy",
+          "net_worth": 110883,
+          "facebookVerified": false
+        }
+      ]
+    },
+    "updated_at": 1788835065201
+  },
+  {
+    "id": "topup_packages",
+    "data": {
+      "packages": [
+        {
+          "id": "starter_pack",
+          "xp": 0,
+          "bank": 150000,
+          "cash": 100000,
+          "name": "حزمة المستثمر الصاعد",
+          "items": {},
+          "price": 40,
+          "badgeTitle": "مستثمر صاعد",
+          "customBadge": "",
+          "description": "انطلاقة قوية: 100 ألف كاش، 150 ألف بالبنك."
+        },
+        {
+          "id": "vip_silver_pack",
+          "xp": 1000,
+          "bank": 700000,
+          "cash": 300000,
+          "name": "حزمة رجل الأعمال VIP",
+          "items": {},
+          "price": 120,
+          "badgeTitle": "رجل أعمال VIP",
+          "customBadge": "",
+          "description": "300 ألف جنيه كاش، 700 ألف بالبنك، 1000 خبرة."
+        },
+        {
+          "id": "whale_gold_pack",
+          "xp": 2500,
+          "bank": 1500000,
+          "cash": 1000000,
+          "name": "حزمة الحوت الملكي",
+          "items": {},
+          "price": 200,
+          "badgeTitle": "الحوت الملكي",
+          "customBadge": "",
+          "description": "حزمة الدعم الملكية: 1 مليون كاش، مليون ونصف بالبنك، 2500 خبرة."
+        },
+        {
+          "id": "pack_2067",
+          "xp": 4000,
+          "bank": 5000000,
+          "cash": 1000000,
+          "name": "حزمة الحوت الإمراطوري",
+          "items": {},
+          "price": 450,
+          "badgeTitle": "عضو VIP",
+          "customBadge": "",
+          "description": "مليون كاش و 5 مليون بنك ,  4000 خبره ."
+        },
+        {
+          "id": "pack_2917",
+          "xp": 6000,
+          "bank": 7000000,
+          "cash": 1000000,
+          "name": "حزمة الأسد الملكي",
+          "items": {},
+          "price": 650,
+          "badgeTitle": "عضو VIP",
+          "customBadge": "",
+          "description": "1 مليون كاش و 7 مليون بنك, 6000 خبره."
+        },
+        {
+          "id": "pack_1127",
+          "xp": 8000,
+          "bank": 9000000,
+          "cash": 1000000,
+          "name": "حزمة الأسد الإمبراطوري",
+          "items": {},
+          "price": 850,
+          "badgeTitle": "عضو VIP",
+          "customBadge": "",
+          "description": "1 مليون كاش و 9 مليون بنك , 8000 خبره ."
+        },
+        {
+          "id": "pkg_vip_verified",
+          "xp": 5000,
+          "bank": 1000000,
+          "cash": 3000000,
+          "name": "حزمة توثيق المشاهير والحسابات VIP",
+          "items": {
+            "legalShield": 2,
+            "vip_casino_pass": 1
+          },
+          "price": 150,
+          "hidden": true,
+          "features": {
+            "title": "شخصية موثقة",
+            "verified": true,
+            "customAvatar": true
+          },
+          "badgeTitle": "حساب موثق رسمي",
+          "customBadge": "✔️",
+          "description": "علامة توثيق زرقاء رسمية بجانب اسمك ✔️ + صلاحية رفع صورة شخصية لحسابك + لقب حصري + 3 مليون كاش."
+        },
+        {
+          "id": "pkg_vip_chat_glow",
+          "xp": 1000,
+          "bank": 500000,
+          "cash": 500000,
+          "name": "حزمة لاعب VIP",
+          "items": {},
+          "price": 1000,
+          "hidden": false,
+          "features": {
+            "title": "حوت الشات",
+            "chatGlow": "gold_neon",
+            "stickersPack": true
+          },
+          "badgeTitle": "",
+          "customBadge": "🌟",
+          "description": "رسائل شات متوهجة ومميزة بلون نيون ذهبي 🌟 + 1مليون كاش و 1 مليون بنك + 1000 خبره"
+        },
+        {
+          "id": "pkg_vip_royal_ultimate",
+          "xp": 15000,
+          "bank": 3000000,
+          "cash": 10000000,
+          "name": "الباقة الملكية الأسطورية الشاملة",
+          "items": {
+            "swiss_safe": 2,
+            "vip_casino_pass": 2,
+            "offshore_account": 2
+          },
+          "price": 300,
+          "hidden": true,
+          "features": {
+            "title": "إمبراطور السيرفر",
+            "chatGlow": "cyber_rainbow",
+            "verified": true,
+            "customAvatar": true,
+            "stickersPack": true
+          },
+          "badgeTitle": "الملك الأسطوري",
+          "customBadge": "👑✔️",
+          "description": "الباقة المتكاملة: علامة التوثيق ✔️ + رفع صورة شخصية + توهج ملكي في الشات + كافة الملصقات + 10 مليون كاش وخزائن سويسرية."
+        }
+      ],
+      "updatedAt": 1788826493444
+    },
+    "updated_at": 1788826493444
+  },
+  {
+    "id": "device_registry",
+    "data": {
+      "devices": {
+        "dev_hw_0000315c6c30ac16": "Ahmed Mohammed frg",
+        "dev_hw_00007477367fabac": "sjsbhshsh",
+        "dev_hw_0000d04ca461e35d": "Ziyad",
+        "dev_hw_00013789f8b74dc7": "Gemy123",
+        "dev_hw_0001b8f339f69693": "Tarekmohamed18",
+        "dev_hw_0002653bffe9f19a": "Farha",
+        "dev_hw_000276e8427d13af": "MoElnadi98",
+        "dev_hw_0002e8bc1e244655": "aalpha.bbeta.1987",
+        "dev_hw_00032421395821a1": "shehabeldensalah90@gmail.com",
+        "dev_hw_00033725e984b103": "Mabdelalim73",
+        "dev_hw_00037a8c90615552": "Mohsen",
+        "dev_hw_00039c306f953c75": "Youssef15",
+        "dev_hw_0003aaaf93ac8370": "Mostafa27a",
+        "dev_hw_0003ba9c0aaf2cb2": "Khaled Hawary",
+        "dev_hw_0003c833347a019b": "saad",
+        "dev_hw_0004496e7e8ba8fc": "A7med 3laa",
+        "dev_hw_0004526be4ed3349": "melsawaf04",
+        "dev_hw_00045b85ee834f24": "Alkanzi",
+        "dev_hw_000466aec69c7dc7": "abdoooo",
+        "dev_hw_00047f21f0486811": "aymanalmalk",
+        "dev_hw_00050226df0afb6c": "SROR 55",
+        "dev_hw_000506a233c04600": "MODY87",
+        "dev_hw_0005991a09a44447": "Basem.s.ebeid",
+        "dev_hw_0006276c71297fda": "Minamerzek71",
+        "dev_hw_0006462049aa3264": "Abdala Tarek",
+        "dev_hw_00068363a0084fd1": "Agam",
+        "dev_hw_000711fcfdc6b4eb": "Mohamedpp",
+        "dev_hw_0007779204479add": "aalpha.bbeta.1987",
+        "dev_hw_0007882941ee2f04": "Hema",
+        "dev_hw_0007ee0e5e1ec17a": "Youssef-1-1-1-1",
+        "dev_hw_0008b6088731236f": "Moelnadi98",
+        "dev_hw_0009b99cb390f55c": "melsawaf04",
+        "dev_hw_000ab798f5c35d73": "Ebrahem11",
+        "dev_hw_000b0f11eab6e473": "Khaleel",
+        "dev_hw_000b20fa7c1beaa8": "Mo-ehaab",
+        "dev_hw_000b88835f9cce34": "kevin",
+        "dev_hw_000b9592c793437c": "a7med_al1",
+        "dev_hw_000c1d403bf539c9": "Tepoo",
+        "dev_hw_000c20a796634cf7": "basem.s.ebeid",
+        "dev_hw_000c37107679f4e8": "Ammar",
+        "dev_hw_000c52166cb85627": "Aass",
+        "dev_hw_000d4f00904e950e": "REF-MIN2W7C",
+        "dev_hw_000e1f8c8f099bdc": "Medo123",
+        "dev_hw_000ed297ba312270": "Yb15",
+        "dev_hw_000f24bb313fe607": "MiDoOo",
+        "dev_hw_000f546c2dc801ec": "Hema",
+        "dev_hw_000f833f782c2753": "Khalil33",
+        "dev_hw_000f8c1e9cf60cb8": "AbdoSabry19",
+        "dev_hw_00105b3286860b22": "eslam1",
+        "dev_hw_00108fde775d8a19": "Mody_Amr",
+        "dev_hw_001098a737bc65e3": "MINA MARZEK",
+        "dev_hw_0011941abeaf8f1d": "d.mahmoud",
+        "dev_hw_0011bb02bbe895cb": "TEPOO",
+        "dev_hw_0012b0c44baea553": "ahmed2008",
+        "dev_hw_0012e9e5360ace89": "Body",
+        "dev_hw_001306728abb55cd": "Ahmed Mohammed frg",
+        "dev_hw_0013973122c882d1": "magdysaleh",
+        "dev_hw_0013e1f132546c1a": "adam90",
+        "dev_hw_0014408c2a20a77c": "Ahmad Qatawneh",
+        "dev_hw_0014d44bb331625c": "Ammar_99",
+        "dev_hw_0014d99374e100a5": "marwan",
+        "dev_hw_0016895a10ab87c6": "Osama fayed",
+        "dev_hw_00168fdad50a6c7a": "aalpha.bbeta.1987",
+        "dev_hw_0016c5c0ee430227": "Mohamed80909080",
+        "dev_hw_00183d9a5f4fcf55": "Abdala2",
+        "dev_hw_0018c8075148a32a": "Pepsiiiii7",
+        "dev_hw_00192232c3c97276": "Zeyad yehia",
+        "dev_hw_00192ee5d56aeea8": "MODY87",
+        "dev_hw_001a31f7bb651c99": "MiDoOo",
+        "dev_hw_001a6ab32337a4c7": "aalpha.bbeta.1987",
+        "dev_hw_001b8279818a2f46": "Mody_Amr",
+        "dev_hw_001c2e76c3e48d5d": "Ziyad",
+        "dev_hw_001cca470fdaa044": "0MiDO",
+        "dev_hw_001ccbb4b64dbb2b": "Mohamed Gamal",
+        "dev_hw_001ce817d1d72256": "Lucifer morningstar",
+        "dev_hw_001cfe671e1d349d": "Om ghalia",
+        "dev_hw_001d0194b66f9b78": "aymanalmalkk",
+        "dev_hw_001d0c59a15d7fd4": "Hakim.lilwin",
+        "dev_hw_001d12b57d33cb93": "Cola",
+        "dev_hw_001d9fd7f27b4c7c": "Hema",
+        "dev_hw_001dac6324c99bed": "Kimo",
+        "dev_hw_001db1ad9ffbc863": "W0n",
+        "dev_hw_001e004ef4bae0b7": "Dolly_m3436",
+        "dev_hw_001e4a8dba8d902a": "Noury 25",
+        "dev_hw_001e75f028efcfd4": "basem.s.ebeid",
+        "dev_hw_001e8fc779ceac81": "Amgad",
+        "dev_hw_001e9ae91295b7a0": "PTusif",
+        "dev_hw_001f17b70085379f": "احمد",
+        "dev_hw_001f4583fe6f3d92": "الاسد",
+        "dev_hw_001f7aa96f3dea6f": "amrfathi100200@gmail.com",
+        "dev_000049507ccbc935_0012dcd6": "Ccc",
+        "dev_0000752852634a9b_00125cb0": "Sss",
+        "dev_0000c58ddd194e55_0012cf1f": "ابو جاستن",
+        "dev_0000d616709ed3ab_0009512d": "shalaby",
+        "dev_0000efc34e09aee7_00066a69": "Lll",
+        "dev_0001aa309a3ae4bf_0017083a": "Qqt",
+        "dev_0001b8f339f69693_0004a4f5": "M.shawky",
+        "dev_00028ede2d1c00b9_001adf66": "Uuu",
+        "dev_0002e20197158d30_001169b7": "Qqw",
+        "dev_00035d094280b80b_0018961d": "000000",
+        "dev_00035fe2f98a5d04_001cad9e": "Alkanzi",
+        "dev_00039c306f953c75_0000509b": "Khalid",
+        "dev_00039c306f953c75_00116392": "Abd_elghany",
+        "dev_0003d6a725d459b4_0007b124": "Mo.ali",
+        "dev_000466aec69c7dc7_000844d8": "Ziad.1",
+        "dev_000466aec69c7dc7_001f19b5": "abdoooo",
+        "dev_00047f21f0486811_0008685c": "aymanalmalk",
+        "dev_0004b7d88f3a0d41_0001ec0a": "Ahmed010",
+        "dev_00050773173187c9_00132adc": "anaeslam",
+        "dev_00054202449afc55_001085f4": "Ddd",
+        "dev_0005627fa7429325_0011b299": "shalaby",
+        "dev_000582f75ce58b1c_000876d7": "NewU",
+        "dev_0005ec8c0a76f86a_0004fbd1": "Magdysaleh",
+        "dev_0005ed0d43682f92_000761c9": "Uuu",
+        "dev_0005f1b2b5ad85b1_001cfe3c": "Qqp",
+        "dev_00067ce56efc3d79_0017b964": "Elzoz",
+        "dev_00067cee21fffffb_0006eea8": "abu_besan",
+        "dev_00068441f4c5a39f_001894f9": "yuossef",
+        "dev_0006ebe36a9593c2_001cd67f": "Ooo",
+        "dev_000701be9fc9c524_000806f3": "Qqi",
+        "dev_00072b099134833d_000d2701": "Eyad",
+        "dev_000758ee96185f51_001fdc00": "Shalaby",
+        "dev_0007cc047fd6a121_0000592c": "iibrrahem",
+        "dev_0007ee0e5e1ec17a_00131cbb": "أحمد",
+        "dev_00081409a3976b1a_00007868": "Qqs",
+        "dev_00081409a3976b1a_00037632": "Qqq",
+        "dev_00081409a3976b1a_0003fe67": "Www",
+        "dev_00081409a3976b1a_000437ee": "Mmm",
+        "dev_00081409a3976b1a_000b3ac3": "Zezo",
+        "dev_00081409a3976b1a_000b6448": "Mego",
+        "dev_00081409a3976b1a_000d783d": "Maged",
+        "dev_00081409a3976b1a_000ebbc6": "Zizo",
+        "dev_00081409a3976b1a_0016c129": "Zoz",
+        "dev_00081409a3976b1a_001b382e": "Zzz",
+        "dev_00081409a3976b1a_001bf1af": "Eee",
+        "dev_000822263120d44c_000afb98": "mado",
+        "dev_00084dd814d1b90c_0003baa5": "eslam",
+        "dev_0008c863abc0840d_000f76d3": "SemoEslam",
+        "dev_0009194901169c16_000c4ba1": "Qqy",
+        "dev_000929f5ee36543c_00030ae4": "Tarek",
+        "dev_00097c5910470a74_001520e0": "Sokar",
+        "dev_000998eac65ec5f1_0006f658": "YOUSEEF",
+        "dev_000a86c98877d096_0006762b": "Yazan",
+        "dev_000b0f11eab6e473_00172a61": "Khaleel",
+        "dev_000bd2249f22cf00_0004ce3b": "marwan",
+        "dev_000bf1a04b350127_0006842d": "Qqf",
+        "dev_000c53d27c24b01a_001c4e87": "Qqo",
+        "dev_000c5f9922576def_0019c67f": "Engineer_mo",
+        "dev_000dc78a958231bf_0017c774": "Gado",
+        "dev_000e211b84309e0a_00081ee1": "Uuu",
+        "dev_000ef326347ee5ce_000b2282": "Hhh",
+        "dev_000f0b39d122ed9d_00153845": "M.shawky",
+        "dev_000f4b117b040306_001d49d9": "EL_swasy",
+        "dev_000f70af55db07bd_0008031c": "Khalid",
+        "dev_000f833f782c2753_00092de6": "EL_swasy",
+        "dev_000f9625f6e8dda8_0013603f": "Bbb",
+        "dev_000fe871582f6212_0018ccaf": "Hema",
+        "dev_001025e2edde1f18_0006e9e1": "makamiko",
+        "dev_0010556250dd4f08_00182ad0": "xLolo",
+        "dev_00105b3286860b22_00160ddc": "GGGH",
+        "dev_00106d977e0fd433_001d1593": "١MahmoudAshraf",
+        "dev_00107992c39d3d5f_000a53c0": "Maha",
+        "dev_001098a737bc65e3_0000c23e": "MINA MARZEK",
+        "dev_0010f1a6a868a78f_001a0df4": "Kkk",
+        "dev_0011001dc024d814_001c063c": "Nnn",
+        "dev_00121c02c4190374_000c7db8": "Ahmed010",
+        "dev_0012b0c44baea553_0000ad4b": "ahmed2008",
+        "dev_0012b0ce45c56aa2_001d2732": "BODA",
+        "dev_0012e9e5360ace89_001b23e7": "Mojaman83",
+        "dev_00138319a3bb3d5f_00120f69": "Rrr",
+        "dev_00138deb946f9251_000be899": "Abdo pudge",
+        "dev_0013b80308e9a869_0014ae75": "Qqu",
+        "dev_0013e1f132546c1a_00074060": "adam90",
+        "dev_0014663979a22d93_00196958": "Iii",
+        "dev_0014d99374e100a5_0008e48b": "marwan",
+        "dev_0015157e3d89b27f_000280f8": "Fff",
+        "dev_00157f1fc0e7ef7d_0009a8fb": "Yyy",
+        "dev_0015c2527346c5ea_001fada3": "Abdala2",
+        "dev_0016895a10ab87c6_0018d593": "Osama fayed",
+        "dev_00170004faac2c33_000272e2": "Ttt",
+        "dev_00175de9a58334e3_000352e6": "Vvv",
+        "dev_0017d43e1100aa27_0004e53e": "Top 1",
+        "dev_0017f91beec25f1a_00095d06": "Basant44",
+        "dev_0018409753cf1d7b_001f5d24": "sjjsjjsdjdjd",
+        "dev_001940fb346efc94_000135f4": "Ppp",
+        "dev_0019752b7e27dc7e_0004bed2": "Aaa",
+        "dev_00199b69718c877a_000f415f": "Jjj",
+        "dev_0019b07d0843112f_000399f2": "Qqa",
+        "dev_001a7978132957dc_0012aa80": "slman",
+        "dev_001aac4780309e5d_0018fa3e": "Qqr",
+        "dev_001b02debacc63de_0009123c": "CAfE BUSINESS",
+        "dev_001ba5c4865c87b1_001459d9": "Mhhunter",
+        "dev_001be74825f2cfd3_0016d626": "MahmoudEssam",
+        "dev_001c7b690dc06361_000328e3": "konjy",
+        "dev_001c9316ff0cd1f5_00145019": "Xxx",
+        "dev_001cca470fdaa044_000dff5e": "0MiDO",
+        "dev_001cd314c4be402e_0014eb63": "ليثثثث",
+        "dev_001ce3cf32e0c41c_0015826a": "Hema",
+        "dev_001cf5e7e81fb731_001dbfd0": "Youssef_radwan",
+        "dev_001cfe671e1d349d_0010d3d3": "Youseff ghanem",
+        "dev_001cfe671e1d349d_001db40f": "Eslam999",
+        "dev_001d002f978c3b9f_0002b373": "Qqe",
+        "dev_001d1509ba118ee4_001910d2": "B2b",
+        "dev_001db1ad9ffbc863_00122e1e": "Try2BeGood",
+        "dev_001efc099a2d0059_00154009": "Ggg",
+        "dev_001f0d7f26b8f504_00082c62": "qwer",
+        "dev_001f1e4f6d97647d_00097c56": "Batman",
+        "dev_001f289c1634ec05_001a2f3a": "Qqd",
+        "dev_001f555474b31f62_00189d15": "mohamedm010",
+        "dev_001f6f65778067ae_0012a1a5": "Fhibvv",
+        "dev_001f72aa16188572_001833fb": "Ebrahem11",
+        "dev_001f7aa96f3dea6f_0000c6a8": "amrfathi100200@gmail.com",
+        "dev_001f7aa96f3dea6f_00171e49": "Anatito",
+        "dev_001fa5ac07305777_001e55f0": "LDEVIL"
+      },
+      "accounts": {
+        "Aaa": [
+          "dev_0019752b7e27dc7e_0004bed2"
+        ],
+        "B2b": [
+          "dev_001d1509ba118ee4_001910d2"
+        ],
+        "Bbb": [
+          "dev_000f9625f6e8dda8_0013603f"
+        ],
+        "Ccc": [
+          "dev_000049507ccbc935_0012dcd6"
+        ],
+        "Ddd": [
+          "dev_00054202449afc55_001085f4"
+        ],
+        "Eee": [
+          "dev_00081409a3976b1a_001bf1af"
+        ],
+        "Fff": [
+          "dev_0015157e3d89b27f_000280f8"
+        ],
+        "Ggg": [
+          "dev_001efc099a2d0059_00154009"
+        ],
+        "Hhh": [
+          "dev_000ef326347ee5ce_000b2282"
+        ],
+        "Iii": [
+          "dev_0014663979a22d93_00196958"
+        ],
+        "Jjj": [
+          "dev_00199b69718c877a_000f415f"
+        ],
+        "Kkk": [
+          "dev_0010f1a6a868a78f_001a0df4"
+        ],
+        "Lll": [
+          "dev_0000efc34e09aee7_00066a69"
+        ],
+        "Mmm": [
+          "dev_00081409a3976b1a_000437ee"
+        ],
+        "Nnn": [
+          "dev_0011001dc024d814_001c063c"
+        ],
+        "Ooo": [
+          "dev_0006ebe36a9593c2_001cd67f"
+        ],
+        "Ppp": [
+          "dev_001940fb346efc94_000135f4"
+        ],
+        "Qqa": [
+          "dev_0019b07d0843112f_000399f2"
+        ],
+        "Qqd": [
+          "dev_001f289c1634ec05_001a2f3a"
+        ],
+        "Qqe": [
+          "dev_001d002f978c3b9f_0002b373"
+        ],
+        "Qqf": [
+          "dev_000bf1a04b350127_0006842d"
+        ],
+        "Qqi": [
+          "dev_000701be9fc9c524_000806f3"
+        ],
+        "Qqo": [
+          "dev_000c53d27c24b01a_001c4e87"
+        ],
+        "Qqp": [
+          "dev_0005f1b2b5ad85b1_001cfe3c"
+        ],
+        "Qqq": [
+          "dev_00081409a3976b1a_00037632"
+        ],
+        "Qqr": [
+          "dev_001aac4780309e5d_0018fa3e"
+        ],
+        "Qqs": [
+          "dev_00081409a3976b1a_00007868",
+          "dev_00081409a3976b1a_0016c129"
+        ],
+        "Qqt": [
+          "dev_0001aa309a3ae4bf_0017083a"
+        ],
+        "Qqu": [
+          "dev_0013b80308e9a869_0014ae75"
+        ],
+        "Qqw": [
+          "dev_0002e20197158d30_001169b7"
+        ],
+        "Qqy": [
+          "dev_0009194901169c16_000c4ba1"
+        ],
+        "Rrr": [
+          "dev_00138319a3bb3d5f_00120f69"
+        ],
+        "Sss": [
+          "dev_0000752852634a9b_00125cb0"
+        ],
+        "Ttt": [
+          "dev_00170004faac2c33_000272e2"
+        ],
+        "Uuu": [
+          "dev_00028ede2d1c00b9_001adf66",
+          "dev_000e211b84309e0a_00081ee1",
+          "dev_0005ed0d43682f92_000761c9"
+        ],
+        "Vvv": [
+          "dev_00175de9a58334e3_000352e6"
+        ],
+        "W0N": [
+          "dev_001db1ad9ffbc863_00122e1e"
+        ],
+        "W0n": [
+          "dev_hw_001db1ad9ffbc863"
+        ],
+        "Www": [
+          "dev_00081409a3976b1a_0003fe67"
+        ],
+        "Xxx": [
+          "dev_001c9316ff0cd1f5_00145019"
+        ],
+        "Yyy": [
+          "dev_00157f1fc0e7ef7d_0009a8fb"
+        ],
+        "Zoz": [
+          "dev_00081409a3976b1a_0016c129",
+          "dev_00081409a3976b1a_000b3ac3"
+        ],
+        "Zzz": [
+          "dev_00081409a3976b1a_001b382e"
+        ],
+        "Aass": [
+          "dev_hw_000c52166cb85627"
+        ],
+        "Agam": [
+          "dev_hw_00068363a0084fd1"
+        ],
+        "BODA": [
+          "dev_0012b0ce45c56aa2_001d2732"
+        ],
+        "Body": [
+          "dev_hw_0012e9e5360ace89"
+        ],
+        "Cola": [
+          "dev_hw_001d12b57d33cb93"
+        ],
+        "Eyad": [
+          "dev_00072b099134833d_000d2701"
+        ],
+        "GGGH": [
+          "dev_00105b3286860b22_00160ddc"
+        ],
+        "Gado": [
+          "dev_000dc78a958231bf_0017c774"
+        ],
+        "Hema": [
+          "dev_000fe871582f6212_0018ccaf",
+          "dev_0007cc047fd6a121_0000592c",
+          "dev_001ce3cf32e0c41c_0015826a",
+          "dev_hw_000f546c2dc801ec",
+          "dev_hw_0007882941ee2f04",
+          "dev_hw_001d9fd7f27b4c7c"
+        ],
+        "Kimo": [
+          "dev_hw_001dac6324c99bed"
+        ],
+        "MAHA": [
+          "dev_00107992c39d3d5f_000a53c0"
+        ],
+        "Maha": [
+          "dev_00107992c39d3d5f_000a53c0"
+        ],
+        "Mego": [
+          "dev_00081409a3976b1a_000b6448"
+        ],
+        "NewU": [
+          "dev_000582f75ce58b1c_000876d7",
+          "dev_hw_00039c306f953c75"
+        ],
+        "Yb15": [
+          "dev_hw_000ed297ba312270"
+        ],
+        "Zezo": [
+          "dev_00081409a3976b1a_000b3ac3"
+        ],
+        "Zizo": [
+          "dev_00081409a3976b1a_000ebbc6"
+        ],
+        "mado": [
+          "dev_000822263120d44c_000afb98"
+        ],
+        "qwer": [
+          "dev_001f0d7f26b8f504_00082c62"
+        ],
+        "saad": [
+          "dev_hw_0003c833347a019b"
+        ],
+        "0MiDO": [
+          "dev_001cca470fdaa044_000dff5e",
+          "dev_hw_001cca470fdaa044"
+        ],
+        "Amgad": [
+          "dev_hw_001e8fc779ceac81"
+        ],
+        "Ammar": [
+          "dev_hw_000c37107679f4e8"
+        ],
+        "Elzoz": [
+          "dev_00067ce56efc3d79_0017b964"
+        ],
+        "Farha": [
+          "dev_hw_0002653bffe9f19a"
+        ],
+        "Maged": [
+          "dev_00081409a3976b1a_000d783d"
+        ],
+        "Sokar": [
+          "dev_00097c5910470a74_001520e0"
+        ],
+        "TEPOO": [
+          "dev_hw_0011bb02bbe895cb"
+        ],
+        "Tarek": [
+          "dev_000929f5ee36543c_00030ae4"
+        ],
+        "Tepoo": [
+          "dev_hw_000c1d403bf539c9"
+        ],
+        "Top 1": [
+          "dev_0017d43e1100aa27_0004e53e"
+        ],
+        "Yazan": [
+          "dev_000a86c98877d096_0006762b"
+        ],
+        "Ziyad": [
+          "dev_hw_0000d04ca461e35d",
+          "dev_hw_001c2e76c3e48d5d"
+        ],
+        "eslam": [
+          "dev_00084dd814d1b90c_0003baa5"
+        ],
+        "kevin": [
+          "dev_hw_000b88835f9cce34"
+        ],
+        "konjy": [
+          "dev_001c7b690dc06361_000328e3"
+        ],
+        "slman": [
+          "dev_001a7978132957dc_0012aa80"
+        ],
+        "xLolo": [
+          "dev_0010556250dd4f08_00182ad0"
+        ],
+        "000000": [
+          "dev_00035d094280b80b_0018961d"
+        ],
+        "Batman": [
+          "dev_001f1e4f6d97647d_00097c56"
+        ],
+        "Devill": [
+          "dev_001fa5ac07305777_001e55f0"
+        ],
+        "Fhibvv": [
+          "dev_001f6f65778067ae_0012a1a5"
+        ],
+        "HAMZ_A": [
+          "dev_001d1509ba118ee4_001910d2"
+        ],
+        "Khalid": [
+          "dev_000f70af55db07bd_0008031c",
+          "dev_00039c306f953c75_0000509b",
+          "dev_hw_00039c306f953c75"
+        ],
+        "LDEVIL": [
+          "dev_001fa5ac07305777_001e55f0"
+        ],
+        "MODY87": [
+          "dev_hw_00192ee5d56aeea8",
+          "dev_hw_000506a233c04600"
+        ],
+        "MiDoOo": [
+          "dev_hw_000f24bb313fe607",
+          "dev_hw_001a31f7bb651c99"
+        ],
+        "Mo.ali": [
+          "dev_0003d6a725d459b4_0007b124"
+        ],
+        "Mohsen": [
+          "dev_hw_00037a8c90615552"
+        ],
+        "PTusif": [
+          "dev_hw_001e9ae91295b7a0"
+        ],
+        "YOYO44": [
+          "dev_000a86c98877d096_0006762b"
+        ],
+        "Ziad.1": [
+          "dev_000466aec69c7dc7_000844d8"
+        ],
+        "adam90": [
+          "dev_0013e1f132546c1a_00074060",
+          "dev_hw_0013e1f132546c1a"
+        ],
+        "eslam1": [
+          "dev_hw_00105b3286860b22"
+        ],
+        "marwan": [
+          "dev_0014d99374e100a5_0008e48b",
+          "dev_000bd2249f22cf00_0004ce3b",
+          "dev_hw_0014d99374e100a5"
+        ],
+        "Abdala2": [
+          "dev_0015c2527346c5ea_001fada3",
+          "dev_hw_00183d9a5f4fcf55"
+        ],
+        "Alkanzi": [
+          "dev_00035fe2f98a5d04_001cad9e",
+          "dev_hw_00045b85ee834f24"
+        ],
+        "Anatito": [
+          "dev_001f7aa96f3dea6f_00171e49"
+        ],
+        "Gemy123": [
+          "dev_hw_00013789f8b74dc7"
+        ],
+        "Khaleel": [
+          "dev_000b0f11eab6e473_00172a61",
+          "dev_hw_000b0f11eab6e473"
+        ],
+        "Medo123": [
+          "dev_hw_000e1f8c8f099bdc"
+        ],
+        "SROR 55": [
+          "dev_hw_00050226df0afb6c"
+        ],
+        "Shalaby": [
+          "dev_0000d616709ed3ab_0009512d",
+          "dev_000758ee96185f51_001fdc00",
+          "dev_0005627fa7429325_0011b299"
+        ],
+        "YOUSEEF": [
+          "dev_000998eac65ec5f1_0006f658"
+        ],
+        "abdoooo": [
+          "dev_000466aec69c7dc7_001f19b5",
+          "dev_hw_000466aec69c7dc7"
+        ],
+        "shalaby": [
+          "dev_0000d616709ed3ab_0009512d",
+          "dev_0005627fa7429325_0011b299",
+          "dev_000758ee96185f51_001fdc00"
+        ],
+        "yuossef": [
+          "dev_00068441f4c5a39f_001894f9"
+        ],
+        "Abdo_123": [
+          "dev_hw_000c52166cb85627"
+        ],
+        "Ahmed010": [
+          "dev_00121c02c4190374_000c7db8",
+          "dev_0004b7d88f3a0d41_0001ec0a"
+        ],
+        "Ammar_99": [
+          "dev_hw_0014d44bb331625c"
+        ],
+        "Basant44": [
+          "dev_0017f91beec25f1a_00095d06"
+        ],
+        "EL_SWASY": [
+          "dev_000f4b117b040306_001d49d9"
+        ],
+        "EL_swasy": [
+          "dev_000f833f782c2753_00092de6",
+          "dev_000f4b117b040306_001d49d9"
+        ],
+        "Eslam999": [
+          "dev_001cfe671e1d349d_001db40f"
+        ],
+        "Khalil33": [
+          "dev_hw_000f833f782c2753"
+        ],
+        "M.shawky": [
+          "dev_0001b8f339f69693_0004a4f5",
+          "dev_000f0b39d122ed9d_00153845"
+        ],
+        "Mhhunter": [
+          "dev_001ba5c4865c87b1_001459d9"
+        ],
+        "Mo-ehaab": [
+          "dev_hw_000b20fa7c1beaa8"
+        ],
+        "Mody_Amr": [
+          "dev_hw_00108fde775d8a19",
+          "dev_hw_001b8279818a2f46"
+        ],
+        "Noury 25": [
+          "dev_hw_001e4a8dba8d902a"
+        ],
+        "anaeslam": [
+          "dev_00050773173187c9_00132adc"
+        ],
+        "makamiko": [
+          "dev_001025e2edde1f18_0006e9e1"
+        ],
+        "أحمد": [
+          "dev_0007ee0e5e1ec17a_00131cbb"
+        ],
+        "احمد": [
+          "dev_hw_001f17b70085379f"
+        ],
+        "حسين": [
+          "dev_0000c58ddd194e55_0012cf1f"
+        ],
+        "Ebrahem11": [
+          "dev_001f72aa16188572_001833fb",
+          "dev_hw_000ab798f5c35d73"
+        ],
+        "Mohamedpp": [
+          "dev_hw_000711fcfdc6b4eb"
+        ],
+        "Mojaman83": [
+          "dev_0012e9e5360ace89_001b23e7",
+          "dev_hw_0012e9e5360ace89"
+        ],
+        "Om ghalia": [
+          "dev_hw_001cfe671e1d349d"
+        ],
+        "SemoEslam": [
+          "dev_0008c863abc0840d_000f76d3"
+        ],
+        "Youssef15": [
+          "dev_hw_00039c306f953c75"
+        ],
+        "a7med_al1": [
+          "dev_hw_000b9592c793437c"
+        ],
+        "abu_besan": [
+          "dev_00067cee21fffffb_0006eea8"
+        ],
+        "ahmed2008": [
+          "dev_0012b0c44baea553_0000ad4b",
+          "dev_hw_0012b0c44baea553"
+        ],
+        "atyiatito": [
+          "dev_001f7aa96f3dea6f_00171e49"
+        ],
+        "d.mahmoud": [
+          "dev_hw_0011941abeaf8f1d"
+        ],
+        "iibrrahem": [
+          "dev_0007cc047fd6a121_0000592c"
+        ],
+        "sjsbhshsh": [
+          "dev_hw_00007477367fabac"
+        ],
+        "A7med 3laa": [
+          "dev_hw_0004496e7e8ba8fc"
+        ],
+        "Abdo pudge": [
+          "dev_00138deb946f9251_000be899"
+        ],
+        "Keroloes_g": [
+          "dev_hw_001dac6324c99bed"
+        ],
+        "Magdysaleh": [
+          "dev_0005ec8c0a76f86a_0004fbd1"
+        ],
+        "MoElnadi98": [
+          "dev_hw_000276e8427d13af"
+        ],
+        "Moelnadi98": [
+          "dev_hw_0008b6088731236f"
+        ],
+        "Mostafa27a": [
+          "dev_hw_0003aaaf93ac8370"
+        ],
+        "Pepsiiiii7": [
+          "dev_hw_0018c8075148a32a"
+        ],
+        "Try2BeGood": [
+          "dev_001db1ad9ffbc863_00122e1e"
+        ],
+        "magdysaleh": [
+          "dev_hw_0013973122c882d1"
+        ],
+        "melsawaf04": [
+          "dev_hw_0009b99cb390f55c",
+          "dev_hw_0004526be4ed3349"
+        ],
+        "الاسد": [
+          "dev_hw_001f4583fe6f3d92"
+        ],
+        "عماد27": [
+          "dev_0000c58ddd194e55_0012cf1f"
+        ],
+        "01284620233": [
+          "dev_001098a737bc65e3_0000c23e"
+        ],
+        "Abd_elghany": [
+          "dev_00039c306f953c75_00116392"
+        ],
+        "AbdoSabry19": [
+          "dev_hw_000f8c1e9cf60cb8"
+        ],
+        "Dolly_m3436": [
+          "dev_hw_001e004ef4bae0b7"
+        ],
+        "Engineer_mo": [
+          "dev_000c5f9922576def_0019c67f"
+        ],
+        "MINA MARZEK": [
+          "dev_001098a737bc65e3_0000c23e",
+          "dev_hw_001098a737bc65e3"
+        ],
+        "Osama fayed": [
+          "dev_0016895a10ab87c6_0018d593",
+          "dev_hw_0016895a10ab87c6"
+        ],
+        "REF-MIN2W7C": [
+          "dev_hw_000d4f00904e950e"
+        ],
+        "Zeyad yehia": [
+          "dev_hw_00192232c3c97276"
+        ],
+        "aymanalmalk": [
+          "dev_00047f21f0486811_0008685c",
+          "dev_hw_00047f21f0486811"
+        ],
+        "mohamedm010": [
+          "dev_001f555474b31f62_00189d15"
+        ],
+        "أحمد 27": [
+          "dev_0007ee0e5e1ec17a_00131cbb"
+        ],
+        "عماد 21": [
+          "dev_0000c58ddd194e55_0012cf1f"
+        ],
+        "Abdala Tarek": [
+          "dev_0015c2527346c5ea_001fada3",
+          "dev_hw_0006462049aa3264",
+          "dev_hw_00183d9a5f4fcf55"
+        ],
+        "Hakim.lilwin": [
+          "dev_hw_001d0c59a15d7fd4"
+        ],
+        "Mabdelalim73": [
+          "dev_hw_00033725e984b103"
+        ],
+        "MahmoudEssam": [
+          "dev_001be74825f2cfd3_0016d626"
+        ],
+        "Minamerzek71": [
+          "dev_hw_0006276c71297fda",
+          "dev_hw_001098a737bc65e3"
+        ],
+        "aymanalmalkk": [
+          "dev_hw_001d0194b66f9b78",
+          "dev_hw_00047f21f0486811"
+        ],
+        "sjjsjjsdjdjd": [
+          "dev_0018409753cf1d7b_001f5d24"
+        ],
+        "ليثثثث": [
+          "dev_001cd314c4be402e_0014eb63"
+        ],
+        "Basem.s.ebeid": [
+          "dev_hw_0005991a09a44447"
+        ],
+        "CAfE BUSINESS": [
+          "dev_001b02debacc63de_0009123c"
+        ],
+        "Khaled Hawary": [
+          "dev_hw_0003ba9c0aaf2cb2"
+        ],
+        "Mohamed Gamal": [
+          "dev_hw_001ccbb4b64dbb2b"
+        ],
+        "basem.s.ebeid": [
+          "dev_hw_000c20a796634cf7",
+          "dev_hw_001e75f028efcfd4"
+        ],
+        "Ahmad Qatawneh": [
+          "dev_hw_0014408c2a20a77c"
+        ],
+        "Tarekmohamed18": [
+          "dev_hw_0001b8f339f69693"
+        ],
+        "Youseff ghanem": [
+          "dev_001cfe671e1d349d_0010d3d3"
+        ],
+        "Youssef_radwan": [
+          "dev_001cf5e7e81fb731_001dbfd0"
+        ],
+        "eslamfarag2010": [
+          "dev_hw_0002e8bc1e244655",
+          "dev_hw_0007779204479add"
+        ],
+        "Keroloes_gerges": [
+          "dev_hw_001dac6324c99bed"
+        ],
+        "Mohamed80909080": [
+          "dev_hw_0016c5c0ee430227"
+        ],
+        "Youssef-1-1-1-1": [
+          "dev_hw_0007ee0e5e1ec17a"
+        ],
+        "١MahmoudAshraf": [
+          "dev_00106d977e0fd433_001d1593"
+        ],
+        "aalpha.bbeta.1987": [
+          "dev_hw_0007779204479add",
+          "dev_hw_00168fdad50a6c7a",
+          "dev_hw_0002e8bc1e244655",
+          "dev_hw_001a6ab32337a4c7"
+        ],
+        "ابو جاستن": [
+          "dev_0000c58ddd194e55_0012cf1f"
+        ],
+        "Ahmed Mohammed frg": [
+          "dev_hw_001306728abb55cd",
+          "dev_hw_0000315c6c30ac16"
+        ],
+        "Lucifer morningstar": [
+          "dev_hw_001ce817d1d72256"
+        ],
+        "amrfathi100200@gmail.com": [
+          "dev_001f7aa96f3dea6f_0000c6a8",
+          "dev_hw_001f7aa96f3dea6f"
+        ],
+        "shehabeldensalah90@gmail.com": [
+          "dev_hw_00032421395821a1"
+        ]
+      }
+    },
+    "updated_at": 1788970297725
+  },
+  {
+    "id": "chat_feed",
+    "data": {
+      "messages": [
+        {
+          "id": "msg_1788953893607_34ru",
+          "sender": "Osama.nasr",
+          "message": "اول ما فتحت قعدو يدوني في فلوس التدفق عادي",
+          "chatGlow": "",
+          "timestamp": 1788953893607,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788953911847_2vxc",
+          "sender": "Osama.nasr",
+          "message": "بس مجاليش اشعار ان عملت فلوس و انا اوفلاين",
+          "chatGlow": "",
+          "timestamp": 1788953911847,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788954760896_1weo",
+          "sender": "kevin",
+          "message": "وانا",
+          "chatGlow": "",
+          "timestamp": 1788954760896,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788954768298_73pw",
+          "sender": "kevin",
+          "message": "فيها مشكله الحوار ده",
+          "chatGlow": "",
+          "timestamp": 1788954768298,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788954865452_vur9",
+          "sender": "Elzoz",
+          "message": "انا عمل عندي كده بردك بس مافيش حاجه جتلي",
+          "chatGlow": "",
+          "timestamp": 1788954865452,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788954889805_775n",
+          "sender": "Elzoz",
+          "message": "وفي نقاط خبره نقصت مني",
+          "chatGlow": "",
+          "timestamp": 1788954889805,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788955849963_wv9q",
+          "sender": "eslamfarag2010",
+          "message": "اللى بيسال على ان مفيش فلوس اوفلاين",
+          "chatGlow": "",
+          "timestamp": 1788955849963,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "تاجر صاعد",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788955872745_x3cj",
+          "sender": "eslamfarag2010",
+          "message": "اتاكد انك سايب بضاعة وخامات متوفرة لفترة كافية",
+          "chatGlow": "",
+          "timestamp": 1788955872745,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "تاجر صاعد",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788955894810_i08e",
+          "sender": "eslamfarag2010",
+          "message": "واتاكد من تمديد وردية الادارة قبل ماتقفل على طول",
+          "chatGlow": "",
+          "timestamp": 1788955894810,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "تاجر صاعد",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788956411920_e1pt",
+          "sender": "Elzoz",
+          "message": "متاكد من الحاجات دي قبل ما اقفل",
+          "chatGlow": "",
+          "timestamp": 1788956411920,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788956856023_t19e",
+          "sender": "ahmed2008",
+          "message": "طب ي اسلام سعر الشقه مش بيزيد ليه",
+          "chatGlow": "",
+          "timestamp": 1788956856023,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "تاجر صاعد",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788957542894_1vsj",
+          "sender": "YOYO44",
+          "message": "انا جاني اشعار اول مافتحت عادي   والحين قفلت ساعتين وفتحت ما اجاني اشعار ابدا",
+          "chatGlow": "",
+          "timestamp": 1788957542894,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788959337075_csek",
+          "sender": "Tarek",
+          "message": "حد يبعتلي فلوس يا شباب مش عارف اجمع فلوس",
+          "chatGlow": "",
+          "timestamp": 1788959337075,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788959523849_4790",
+          "sender": "eslamfarag2010",
+          "message": "انا مش مشترى شقق ولا اى ممتلكات لان بعد الفترة التجريبية الربح بقى بطئ اوى وانا بستثمر الفلوس ف المشاريع",
+          "chatGlow": "",
+          "timestamp": 1788959523849,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "تاجر صاعد",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788959536239_p6zm",
+          "sender": "Abogalia",
+          "message": "وصلك ٢٠ الف يا طارق",
+          "chatGlow": "",
+          "timestamp": 1788959536239,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "تاجر صاعد",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788959557804_g6cb",
+          "sender": "Abogalia",
+          "message": "المشاريع أفضل شئ",
+          "chatGlow": "",
+          "timestamp": 1788959557804,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "تاجر صاعد",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788960019464_x3vr",
+          "sender": "YOYO44",
+          "message": "الي لعب النسخة الأولى من اللعبة يعتبر لعب افضل نسخة",
+          "chatGlow": "",
+          "timestamp": 1788960019469,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788960119420_fduc",
+          "sender": "Mody_Amr",
+          "message": "حد معاه 100 الف سلف أو هديه 😂",
+          "chatGlow": "",
+          "timestamp": 1788960119420,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788960452002_kkfk",
+          "sender": "eslamfarag2010",
+          "message": "بالظبط يا يويو. النسخة التجريبية كانت احسن بكتير",
+          "chatGlow": "",
+          "timestamp": 1788960452002,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "تاجر صاعد",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788960521600_9lay",
+          "sender": "eslamfarag2010",
+          "message": "دانا بقيت فى حيتان المال والمليارديرات فى الضرايب ف يوم",
+          "chatGlow": "",
+          "timestamp": 1788960521600,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "تاجر صاعد",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788960536032_2tha",
+          "sender": "eslamfarag2010",
+          "message": "عملت فوق ال60 مليون وقتها",
+          "chatGlow": "",
+          "timestamp": 1788960536032,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "تاجر صاعد",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788961877094_477i",
+          "sender": "kevin",
+          "message": "يادمن عايزين اوتو سيف",
+          "chatGlow": "",
+          "timestamp": 1788961877094,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1789048274189_himq",
+          "sender": "Khalid",
+          "message": "الاوتو سيڤ شغال",
+          "chatGlow": "gold_neon",
+          "timestamp": 1789048274189,
+          "isVerified": false,
+          "customBadge": "🌟",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1789048286782_od4n",
+          "sender": "Khalid",
+          "message": "كل ٤٥ ثانيه في اوتو سيڤ",
+          "chatGlow": "gold_neon",
+          "timestamp": 1789048286782,
+          "isVerified": false,
+          "customBadge": "🌟",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788961926770_6hh4",
+          "sender": "kevin",
+          "message": "انا كنت عامل ١٠ شحنات ملابس و قفلت فتحت راحو",
+          "chatGlow": "",
+          "timestamp": 1788961926770,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1789048309270_4gmq",
+          "sender": "Khalid",
+          "message": "ولما تشتري مشروع او اسهم او غيره في سيڤ بيحصل تلقائي",
+          "chatGlow": "gold_neon",
+          "timestamp": 1789048309270,
+          "isVerified": false,
+          "customBadge": "🌟",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788961968878_94f4",
+          "sender": "kevin",
+          "message": "شحناتي غرقو ولا اي",
+          "chatGlow": "",
+          "timestamp": 1788961968878,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1789048360131_rchy",
+          "sender": "Khalid",
+          "message": "الشحنات مش منضافه اوتو سيڤ عشان كده في زر سيڤ احتياطي",
+          "chatGlow": "gold_neon",
+          "timestamp": 1789048360131,
+          "isVerified": false,
+          "customBadge": "🌟",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788962048578_e2n3",
+          "sender": "kevin",
+          "message": "يمراري",
+          "chatGlow": "",
+          "timestamp": 1788962048578,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788962062496_chlu",
+          "sender": "kevin",
+          "message": "ده كان فاضلهم ١٠ دقايق 😢",
+          "chatGlow": "",
+          "timestamp": 1788962062496,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1789048676345_8ir6",
+          "sender": "Khalid",
+          "message": "هضيف لها اوتو سيڤ الابديت الجاي",
+          "chatGlow": "gold_neon",
+          "timestamp": 1789048676345,
+          "isVerified": false,
+          "customBadge": "🌟",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788962322090_rvs3",
+          "sender": "kevin",
+          "message": "تسلم",
+          "chatGlow": "",
+          "timestamp": 1788962322090,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788962345572_wv8v",
+          "sender": "Khaled Hawary",
+          "message": "انا لسا حاصل دلوقتي ف روحت اشترتها تاني",
+          "chatGlow": "",
+          "timestamp": 1788962345572,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788962353470_gd2x",
+          "sender": "kevin",
+          "message": "و ياريت تقلل وقت النوبات كتير ٢٤ ساعه",
+          "chatGlow": "",
+          "timestamp": 1788962353470,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788965263497_oaeq",
+          "sender": "kevin",
+          "message": "البوءت فين يادمننننن",
+          "chatGlow": "",
+          "timestamp": 1788965263497,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788965273698_qz0z",
+          "sender": "kevin",
+          "message": "نسيتنا من البوست",
+          "chatGlow": "",
+          "timestamp": 1788965273698,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788965514172_ap15",
+          "sender": "kevin",
+          "message": "يشباب اجيب ايه يكسب اكتر ملابس ولا بن ١٠ حاويات هنا او هنا",
+          "chatGlow": "",
+          "timestamp": 1788965514172,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788965531492_gpnf",
+          "sender": "Osama.nasr",
+          "message": "معاك كام",
+          "chatGlow": "",
+          "timestamp": 1788965531492,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788965541842_l6dg",
+          "sender": "kevin",
+          "message": "٦٠ الف",
+          "chatGlow": "",
+          "timestamp": 1788965541842,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788965645003_6awe",
+          "sender": "Osama.nasr",
+          "message": "البن اكتر بس وقت اطول",
+          "chatGlow": "",
+          "timestamp": 1788965645003,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788965645876_1jgc",
+          "sender": "kevin",
+          "message": "١٠ حاويات الملابس جابولي ١٤ الف مكسب اي حاجه من الباقي تجيب اكتر؟",
+          "chatGlow": "",
+          "timestamp": 1788965645876,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788965655597_c8cz",
+          "sender": "Osama.nasr",
+          "message": "يعني في فرق نص ساعه شحن و نص ساعه بيع",
+          "chatGlow": "",
+          "timestamp": 1788965655597,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788965660353_7nxp",
+          "sender": "Osama.nasr",
+          "message": "ساعه",
+          "chatGlow": "",
+          "timestamp": 1788965660353,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788965678941_y3tp",
+          "sender": "Osama.nasr",
+          "message": "ف انت احسب فرق الوقت و المكسب",
+          "chatGlow": "",
+          "timestamp": 1788965678941,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788965720270_c6s7",
+          "sender": "Osama.nasr",
+          "message": "لو اشتريت ٧ بن بال ٦٠ الف هيجيبولك مكسب حوالي ١٧ الف مثلا بس في فرق ساعه ممكن تعمل فيه شحنتين ملابس",
+          "chatGlow": "",
+          "timestamp": 1788965720270,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788965764252_koyb",
+          "sender": "kevin",
+          "message": "فلوس الملابس كويسه",
+          "chatGlow": "",
+          "timestamp": 1788965764252,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788965975153_sqg1",
+          "sender": "kevin",
+          "message": "يارب فوري و الشرقه يعلو",
+          "chatGlow": "",
+          "timestamp": 1788965975153,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788965978774_ztpg",
+          "sender": "kevin",
+          "message": "الشرقيه",
+          "chatGlow": "",
+          "timestamp": 1788965978774,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "موظف متميز",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788967879861_7smb",
+          "sender": "الإدارة",
+          "message": "نود إعلام حضراتكم أن اللعبه سوف تدخل في وضع الصيانة بعد 10 دقائق من الأن على أن يتم حل المشاكل التي تم الإبلاغ عنها.",
+          "chatGlow": "",
+          "timestamp": 1788967879861,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "مدير النظام",
+          "facebookVerified": false
+        },
+        {
+          "id": "msg_1788968325486_9bbo",
+          "sender": "Mohamed Gamal",
+          "message": "امتي يعني",
+          "chatGlow": "",
+          "timestamp": 1788968325486,
+          "isVerified": false,
+          "customBadge": "",
+          "senderTitle": "مستثمر طموح",
+          "facebookVerified": false
+        }
+      ]
+    },
+    "updated_at": 1788968325823
+  },
+  {
+    "id": "fraud_alerts",
+    "data": {
+      "alerts": [
+        {
+          "id": "fa_1788961965100_dmxyh",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 15000,
+          "device": "dev_hw_001a6ab32337a4c7",
+          "sender": "aalpha.bbeta.1987",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (aalpha.bbeta.1987 و eslamfarag2010)",
+          "recipient": "eslamfarag2010",
+          "timestamp": 1788961965100
+        },
+        {
+          "id": "fa_1788961865295_3accs",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 15000,
+          "device": "dev_hw_001a6ab32337a4c7",
+          "sender": "aalpha.bbeta.1987",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (aalpha.bbeta.1987 و eslamfarag2010)",
+          "recipient": "eslamfarag2010",
+          "timestamp": 1788961865295
+        },
+        {
+          "id": "fa_1788957159537_yeepg",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 50000,
+          "device": "dev_hw_0002e8bc1e244655",
+          "sender": "eslamfarag2010",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (eslamfarag2010 و aalpha.bbeta.1987)",
+          "recipient": "aalpha.bbeta.1987",
+          "timestamp": 1788957159537
+        },
+        {
+          "id": "fa_1788957148226_b5nly",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 50000,
+          "device": "dev_hw_0002e8bc1e244655",
+          "sender": "eslamfarag2010",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (eslamfarag2010 و aalpha.bbeta.1987)",
+          "recipient": "aalpha.bbeta.1987",
+          "timestamp": 1788957148226
+        },
+        {
+          "id": "fa_1788892257388_psrdo",
+          "type": "NEW_ACCOUNT_TRANSFER_BLOCKED",
+          "amount": 1000,
+          "device": "dev_hw_0006276c71297fda",
+          "sender": "Minamerzek71",
+          "details": "حساب حديث (عمره 1.5 ساعة) يحاول تحويل 1,000 EGP",
+          "recipient": "REF-MIN2W7C",
+          "timestamp": 1788892257388
+        },
+        {
+          "id": "fa_1788889105383_yondo",
+          "type": "NEW_ACCOUNT_TRANSFER_BLOCKED",
+          "amount": 1000,
+          "device": "dev_hw_0006276c71297fda",
+          "sender": "Minamerzek71",
+          "details": "حساب حديث (عمره 0.6 ساعة) يحاول تحويل 1,000 EGP",
+          "recipient": "REF-MIN2W7C",
+          "timestamp": 1788889105384
+        },
+        {
+          "id": "fa_1788889100899_j7huc",
+          "type": "NEW_ACCOUNT_TRANSFER_BLOCKED",
+          "amount": 1000,
+          "device": "dev_hw_0006276c71297fda",
+          "sender": "Minamerzek71",
+          "details": "حساب حديث (عمره 0.6 ساعة) يحاول تحويل 1,000 EGP",
+          "recipient": "REF-MIN2W7C",
+          "timestamp": 1788889100899
+        },
+        {
+          "id": "fa_1788889096399_iyd4r",
+          "type": "NEW_ACCOUNT_TRANSFER_BLOCKED",
+          "amount": 1000,
+          "device": "dev_hw_0006276c71297fda",
+          "sender": "Minamerzek71",
+          "details": "حساب حديث (عمره 0.6 ساعة) يحاول تحويل 1,000 EGP",
+          "recipient": "REF-MIN2W7C",
+          "timestamp": 1788889096399
+        },
+        {
+          "id": "fa_1788834385386_vmflo",
+          "type": "SIMILAR_NAME_FEEDER",
+          "amount": 100224,
+          "device": "dev_001f289c1634ec05_001a2f3a",
+          "sender": "Qqd",
+          "details": "تشابه كبير في أسماء الحسابات النمطية (Qqd -> Qqs) مع انعدام المشاريع",
+          "recipient": "Qqs",
+          "timestamp": 1788834385386
+        },
+        {
+          "id": "fa_1788834275025_xr3k2",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 100224,
+          "device": "dev_0019b07d0843112f_000399f2",
+          "sender": "Qqa",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 100% من رصيده (100,224 EGP)",
+          "recipient": "Qqs",
+          "timestamp": 1788834275025
+        },
+        {
+          "id": "fa_1788834256960_lrhch",
+          "type": "SIMILAR_NAME_FEEDER",
+          "amount": 100224,
+          "device": "dev_0019b07d0843112f_000399f2",
+          "sender": "Qqa",
+          "details": "تشابه كبير في أسماء الحسابات النمطية (Qqa -> Qqs) مع انعدام المشاريع",
+          "recipient": "Qqs",
+          "timestamp": 1788834256960
+        },
+        {
+          "id": "fa_1788834213012_d7vu5",
+          "type": "SIMILAR_NAME_FEEDER",
+          "amount": 100224,
+          "device": "dev_0019b07d0843112f_000399f2",
+          "sender": "Qqa",
+          "details": "تشابه كبير في أسماء الحسابات النمطية (Qqa -> Qqs) مع انعدام المشاريع",
+          "recipient": "Qqs",
+          "timestamp": 1788834213012
+        },
+        {
+          "id": "fa_1788834207455_q9qer",
+          "type": "SIMILAR_NAME_FEEDER",
+          "amount": 100224,
+          "device": "dev_0019b07d0843112f_000399f2",
+          "sender": "Qqa",
+          "details": "تشابه كبير في أسماء الحسابات النمطية (Qqa -> Qqs) مع انعدام المشاريع",
+          "recipient": "Qqs",
+          "timestamp": 1788834207455
+        },
+        {
+          "id": "fa_1788830451540_359st",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 100000,
+          "device": "dev_00028ede2d1c00b9_001adf66",
+          "sender": "Uuu",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 100% من رصيده (100,000 EGP)",
+          "recipient": "Zoz",
+          "timestamp": 1788830451540
+        },
+        {
+          "id": "fa_1788830447456_7uctf",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 100000,
+          "device": "dev_00028ede2d1c00b9_001adf66",
+          "sender": "Uuu",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 100% من رصيده (100,000 EGP)",
+          "recipient": "Zoz",
+          "timestamp": 1788830447456
+        },
+        {
+          "id": "fa_1788828974926_lh88o",
+          "type": "SIMILAR_NAME_FEEDER",
+          "amount": 99000,
+          "device": "dev_00081409a3976b1a_000ebbc6",
+          "sender": "Zizo",
+          "details": "تشابه كبير في أسماء الحسابات النمطية (Zizo -> Zoz) مع انعدام المشاريع",
+          "recipient": "Zoz",
+          "timestamp": 1788828974926
+        },
+        {
+          "id": "fa_1788828973888_9t32t",
+          "type": "SIMILAR_NAME_FEEDER",
+          "amount": 99000,
+          "device": "dev_00081409a3976b1a_000ebbc6",
+          "sender": "Zizo",
+          "details": "تشابه كبير في أسماء الحسابات النمطية (Zizo -> Zoz) مع انعدام المشاريع",
+          "recipient": "Zoz",
+          "timestamp": 1788828973888
+        },
+        {
+          "id": "fa_1788828973114_dnx6g",
+          "type": "SIMILAR_NAME_FEEDER",
+          "amount": 99000,
+          "device": "dev_00081409a3976b1a_000ebbc6",
+          "sender": "Zizo",
+          "details": "تشابه كبير في أسماء الحسابات النمطية (Zizo -> Zoz) مع انعدام المشاريع",
+          "recipient": "Zoz",
+          "timestamp": 1788828973114
+        },
+        {
+          "id": "fa_1788828969947_m8cuu",
+          "type": "SIMILAR_NAME_FEEDER",
+          "amount": 99000,
+          "device": "dev_00081409a3976b1a_000ebbc6",
+          "sender": "Zizo",
+          "details": "تشابه كبير في أسماء الحسابات النمطية (Zizo -> Zoz) مع انعدام المشاريع",
+          "recipient": "Zoz",
+          "timestamp": 1788828969947
+        },
+        {
+          "id": "fa_1788828964080_6eemc",
+          "type": "SIMILAR_NAME_FEEDER",
+          "amount": 99000,
+          "device": "dev_00081409a3976b1a_000ebbc6",
+          "sender": "Zizo",
+          "details": "تشابه كبير في أسماء الحسابات النمطية (Zizo -> Zoz) مع انعدام المشاريع",
+          "recipient": "Zoz",
+          "timestamp": 1788828964080
+        },
+        {
+          "id": "fa_1788828959015_hpg5p",
+          "type": "SIMILAR_NAME_FEEDER",
+          "amount": 99000,
+          "device": "dev_00081409a3976b1a_000ebbc6",
+          "sender": "Zizo",
+          "details": "تشابه كبير في أسماء الحسابات النمطية (Zizo -> Zoz) مع انعدام المشاريع",
+          "recipient": "Zoz",
+          "timestamp": 1788828959015
+        },
+        {
+          "id": "fa_1788828765344_tho1s",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 1000000,
+          "device": "dev_00081409a3976b1a_000b3ac3",
+          "sender": "Zezo",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 995% من رصيده (1,000,000 EGP)",
+          "recipient": "ZOZ",
+          "timestamp": 1788828765344
+        },
+        {
+          "id": "fa_1788828760879_6oxr2",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 1000000,
+          "device": "dev_00081409a3976b1a_000b3ac3",
+          "sender": "Zezo",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 995% من رصيده (1,000,000 EGP)",
+          "recipient": "ZOZ",
+          "timestamp": 1788828760879
+        },
+        {
+          "id": "fa_1788828756231_4kqb3",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 1000000,
+          "device": "dev_00081409a3976b1a_000b3ac3",
+          "sender": "Zezo",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 995% من رصيده (1,000,000 EGP)",
+          "recipient": "ZOZ",
+          "timestamp": 1788828756231
+        },
+        {
+          "id": "fa_1788828752418_d64mf",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 1000000,
+          "device": "dev_00081409a3976b1a_000b3ac3",
+          "sender": "Zezo",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 995% من رصيده (1,000,000 EGP)",
+          "recipient": "ZOZ",
+          "timestamp": 1788828752418
+        },
+        {
+          "id": "fa_1788826833894_8e3bf",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 50000,
+          "device": "dev_00107992c39d3d5f_000a53c0",
+          "sender": "Maha",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 49% من رصيده (50,000 EGP)",
+          "recipient": "Engineer_mo",
+          "timestamp": 1788826833894
+        },
+        {
+          "id": "fa_1788826822328_cmf7i",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 50000,
+          "device": "dev_00107992c39d3d5f_000a53c0",
+          "sender": "Maha",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 49% من رصيده (50,000 EGP)",
+          "recipient": "Engineer_mo",
+          "timestamp": 1788826822328
+        },
+        {
+          "id": "fa_1788826817420_pqv62",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 50000,
+          "device": "dev_00107992c39d3d5f_000a53c0",
+          "sender": "Maha",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 49% من رصيده (50,000 EGP)",
+          "recipient": "Engineer_mo",
+          "timestamp": 1788826817420
+        },
+        {
+          "id": "fa_1788822041219_rdh2v",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 90000,
+          "device": "dev_0000c58ddd194e55_0012cf1f",
+          "sender": "حسين",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (حسين و عماد 21)",
+          "recipient": "عماد 21",
+          "timestamp": 1788822041219
+        },
+        {
+          "id": "fa_1788822036441_kfjv9",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 90000,
+          "device": "dev_0000c58ddd194e55_0012cf1f",
+          "sender": "حسين",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (حسين و عماد 21)",
+          "recipient": "عماد 21",
+          "timestamp": 1788822036441
+        },
+        {
+          "id": "fa_1788821998817_ro05b",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 90000,
+          "device": "dev_0000c58ddd194e55_0012cf1f",
+          "sender": "حسين",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (حسين و عماد 21)",
+          "recipient": "عماد 21",
+          "timestamp": 1788821998817
+        },
+        {
+          "id": "fa_1788821997135_8mwnv",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 90000,
+          "device": "dev_0000c58ddd194e55_0012cf1f",
+          "sender": "حسين",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (حسين و عماد 21)",
+          "recipient": "عماد 21",
+          "timestamp": 1788821997135
+        },
+        {
+          "id": "fa_1788821992496_9qi22",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 90000,
+          "device": "dev_0000c58ddd194e55_0012cf1f",
+          "sender": "حسين",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (حسين و عماد 21)",
+          "recipient": "عماد 21",
+          "timestamp": 1788821992496
+        },
+        {
+          "id": "fa_1788816053073_ekzjk",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 100000,
+          "device": "dev_000a86c98877d096_0006762b",
+          "sender": "Yazan",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (Yazan و YOYO44)",
+          "recipient": "YOYO44",
+          "timestamp": 1788816053073
+        },
+        {
+          "id": "fa_1788816048390_j1jty",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 100000,
+          "device": "dev_000a86c98877d096_0006762b",
+          "sender": "Yazan",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (Yazan و YOYO44)",
+          "recipient": "YOYO44",
+          "timestamp": 1788816048390
+        },
+        {
+          "id": "fa_1788813375303_kupug",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 40000,
+          "device": "dev_0015c2527346c5ea_001fada3",
+          "sender": "Abdala Tarek",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (Abdala Tarek و abdala2)",
+          "recipient": "abdala2",
+          "timestamp": 1788813375303
+        },
+        {
+          "id": "fa_1788813371113_o7ko2",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 40000,
+          "device": "dev_0015c2527346c5ea_001fada3",
+          "sender": "Abdala Tarek",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (Abdala Tarek و abdala2)",
+          "recipient": "abdala2",
+          "timestamp": 1788813371113
+        },
+        {
+          "id": "fa_1788810805722_ct4oa",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 17000,
+          "device": "dev_0007ee0e5e1ec17a_00131cbb",
+          "sender": "أحمد",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (أحمد و أحمد 27)",
+          "recipient": "أحمد 27",
+          "timestamp": 1788810805722
+        },
+        {
+          "id": "fa_1788810802139_i9x3p",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 17000,
+          "device": "dev_0007ee0e5e1ec17a_00131cbb",
+          "sender": "أحمد",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (أحمد و أحمد 27)",
+          "recipient": "أحمد 27",
+          "timestamp": 1788810802139
+        },
+        {
+          "id": "fa_1788810798466_jzp3a",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 17000,
+          "device": "dev_0007ee0e5e1ec17a_00131cbb",
+          "sender": "أحمد",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (أحمد و أحمد 27)",
+          "recipient": "أحمد 27",
+          "timestamp": 1788810798466
+        },
+        {
+          "id": "fa_1788810352092_3w57f",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 130000,
+          "device": "dev_001d1509ba118ee4_001910d2",
+          "sender": "B2b",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 95% من رصيده (130,000 EGP)",
+          "recipient": "HAMZ_A",
+          "timestamp": 1788810352092
+        },
+        {
+          "id": "fa_1788810342602_d1s0j",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 130000,
+          "device": "dev_001d1509ba118ee4_001910d2",
+          "sender": "B2b",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 95% من رصيده (130,000 EGP)",
+          "recipient": "HAMZ_A",
+          "timestamp": 1788810342602
+        },
+        {
+          "id": "fa_1788750483394_q6vi4",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 17000,
+          "device": "dev_0007ee0e5e1ec17a_00131cbb",
+          "sender": "أحمد",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (أحمد و أحمد 27)",
+          "recipient": "أحمد 27",
+          "timestamp": 1788750483394
+        },
+        {
+          "id": "fa_1788750479123_pzc2e",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 17000,
+          "device": "dev_0007ee0e5e1ec17a_00131cbb",
+          "sender": "أحمد",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (أحمد و أحمد 27)",
+          "recipient": "أحمد 27",
+          "timestamp": 1788750479123
+        },
+        {
+          "id": "fa_1788750474424_wefsv",
+          "type": "MULTI_ACCOUNT_SAME_DEVICE",
+          "amount": 17000,
+          "device": "dev_0007ee0e5e1ec17a_00131cbb",
+          "sender": "أحمد",
+          "details": "رصد ارتباط واستخدام نفس الجهاز بين الحسابين (أحمد و أحمد 27)",
+          "recipient": "أحمد 27",
+          "timestamp": 1788750474424
+        },
+        {
+          "id": "fa_1788726639195_kpry1",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 10000,
+          "device": "dev_001f6f65778067ae_0012a1a5",
+          "sender": "Sksoxa",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 97% من رصيده (10,000 EGP)",
+          "recipient": "eslam",
+          "timestamp": 1788726639195
+        },
+        {
+          "id": "fa_1788726638023_ox0y5",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 10000,
+          "device": "dev_001f6f65778067ae_0012a1a5",
+          "sender": "Sksoxa",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 97% من رصيده (10,000 EGP)",
+          "recipient": "eslam",
+          "timestamp": 1788726638023
+        },
+        {
+          "id": "fa_1788726637383_r44sh",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 10000,
+          "device": "dev_001f6f65778067ae_0012a1a5",
+          "sender": "Sksoxa",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 97% من رصيده (10,000 EGP)",
+          "recipient": "eslam",
+          "timestamp": 1788726637383
+        },
+        {
+          "id": "fa_1788726636919_do45g",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 10000,
+          "device": "dev_001f6f65778067ae_0012a1a5",
+          "sender": "Sksoxa",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 97% من رصيده (10,000 EGP)",
+          "recipient": "eslam",
+          "timestamp": 1788726636919
+        },
+        {
+          "id": "fa_1788726636248_3rbiq",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 10000,
+          "device": "dev_001f6f65778067ae_0012a1a5",
+          "sender": "Sksoxa",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 97% من رصيده (10,000 EGP)",
+          "recipient": "eslam",
+          "timestamp": 1788726636249
+        },
+        {
+          "id": "fa_1788726635675_7k1ti",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 10000,
+          "device": "dev_001f6f65778067ae_0012a1a5",
+          "sender": "Sksoxa",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 97% من رصيده (10,000 EGP)",
+          "recipient": "eslam",
+          "timestamp": 1788726635675
+        },
+        {
+          "id": "fa_1788726635178_5t4h9",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 10000,
+          "device": "dev_001f6f65778067ae_0012a1a5",
+          "sender": "Sksoxa",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 97% من رصيده (10,000 EGP)",
+          "recipient": "eslam",
+          "timestamp": 1788726635178
+        },
+        {
+          "id": "fa_1788726633936_vktgt",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 10000,
+          "device": "dev_001f6f65778067ae_0012a1a5",
+          "sender": "Sksoxa",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 97% من رصيده (10,000 EGP)",
+          "recipient": "eslam",
+          "timestamp": 1788726633936
+        },
+        {
+          "id": "fa_1788726630296_d183e",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 10000,
+          "device": "dev_001f6f65778067ae_0012a1a5",
+          "sender": "Sksoxa",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 97% من رصيده (10,000 EGP)",
+          "recipient": "eslam",
+          "timestamp": 1788726630296
+        },
+        {
+          "id": "fa_1788725580268_h1jrf",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 890000,
+          "device": "dev_000ad193a7321dfc_0017fda9",
+          "sender": "moro",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 100% من رصيده (890,000 EGP)",
+          "recipient": "marwan",
+          "timestamp": 1788725580268
+        },
+        {
+          "id": "fa_1788725576523_n7ewu",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 890000,
+          "device": "dev_000ad193a7321dfc_0017fda9",
+          "sender": "moro",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 100% من رصيده (890,000 EGP)",
+          "recipient": "marwan",
+          "timestamp": 1788725576523
+        },
+        {
+          "id": "fa_1788725573036_1mu4q",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 890000,
+          "device": "dev_000ad193a7321dfc_0017fda9",
+          "sender": "moro",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 100% من رصيده (890,000 EGP)",
+          "recipient": "marwan",
+          "timestamp": 1788725573036
+        },
+        {
+          "id": "fa_1788722245241_6j0h5",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 880671,
+          "device": "dev_000ad193a7321dfc_0017fda9",
+          "sender": "moro",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 100% من رصيده (880,671 EGP)",
+          "recipient": "marwan",
+          "timestamp": 1788722245241
+        },
+        {
+          "id": "fa_1788722238126_5koic",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 880671,
+          "device": "dev_000ad193a7321dfc_0017fda9",
+          "sender": "moro",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 100% من رصيده (880,671 EGP)",
+          "recipient": "marwan",
+          "timestamp": 1788722238126
+        },
+        {
+          "id": "fa_1788722228215_wz7ne",
+          "type": "FEEDER_EMPTY_ACCOUNT",
+          "amount": 880671,
+          "device": "dev_000ad193a7321dfc_0017fda9",
+          "sender": "moro",
+          "details": "حساب بدون أي نشاط تجاري (0 مشاريع) يحول 100% من رصيده (880,671 EGP)",
+          "recipient": "marwan",
+          "timestamp": 1788722228215
+        }
+      ]
+    },
+    "updated_at": 1788961965100
+  },
+  {
+    "id": "staging_status",
+    "data": {
+      "enabled": true,
+      "message": "",
+      "timestamp": 1788899923857
+    },
+    "updated_at": 1788899923857
+  },
+  {
+    "id": "topup_requests",
+    "data": {
+      "requests": [
+        {
+          "id": "req_1788957546579_564i8",
+          "price": 200,
+          "status": "pending",
+          "rewards": {
+            "xp": 2500,
+            "bank": 1500000,
+            "cash": 1000000,
+            "items": {},
+            "badgeTitle": "الحوت الملكي",
+            "customBadge": ""
+          },
+          "username": "ahmed2008",
+          "createdAt": 1788957546579,
+          "packageId": "whale_gold_pack",
+          "reviewedAt": null,
+          "packageName": "حزمة الحوت الملكي",
+          "reviewerNote": "",
+          "receiptNumber": "48245674334",
+          "senderPhoneOrName": "01015813718"
+        },
+        {
+          "id": "req_1788890578912_blnep",
+          "price": 40,
+          "status": "rejected",
+          "rewards": {
+            "xp": 0,
+            "bank": 150000,
+            "cash": 100000,
+            "items": {},
+            "badgeTitle": "مستثمر صاعد",
+            "customBadge": ""
+          },
+          "username": "Minamerzek71",
+          "createdAt": 1788890578912,
+          "packageId": "starter_pack",
+          "reviewedAt": 1789039794056,
+          "packageName": "حزمة المستثمر الصاعد",
+          "reviewerNote": "يرجى مراعاة أن كثرة التحويلات الوهمية قد تعرضك للحظر",
+          "receiptNumber": "51916131821",
+          "senderPhoneOrName": "01284620233"
+        },
+        {
+          "id": "req_1788825990797_piqhs",
+          "price": 850,
+          "status": "rejected",
+          "rewards": {
+            "xp": 8000,
+            "bank": 9000000,
+            "cash": 1000000,
+            "items": {},
+            "badgeTitle": "عضو VIP",
+            "customBadge": ""
+          },
+          "username": "Elergany",
+          "createdAt": 1788825990797,
+          "packageId": "pack_1127",
+          "reviewedAt": 1788837383743,
+          "packageName": "حزمة الأسد الإمبراطوري",
+          "reviewerNote": "يرجى العلم ان طلبات الشحن العشوائيه تعرض حسابك للحظر",
+          "receiptNumber": "0000000",
+          "senderPhoneOrName": "01114575985"
+        },
+        {
+          "id": "req_1788810119329_orl65",
+          "price": 450,
+          "status": "approved",
+          "rewards": {
+            "xp": 4000,
+            "bank": 5000000,
+            "cash": 1000000,
+            "items": {},
+            "badgeTitle": "عضو VIP",
+            "customBadge": ""
+          },
+          "username": "Dr jihad",
+          "createdAt": 1788810119329,
+          "packageId": "pack_2067",
+          "reviewedAt": 1788810246147,
+          "packageName": "حزمة الحوت الإمراطوري",
+          "reviewerNote": "تم الاعتماد والشحن بنجاح بواسطة الإدارة",
+          "receiptNumber": "023480601479",
+          "senderPhoneOrName": "01008511311"
+        },
+        {
+          "id": "req_1788792215916_w953p",
+          "price": 200,
+          "status": "approved",
+          "rewards": {
+            "xp": 6000,
+            "bank": 1500000,
+            "cash": 1000000,
+            "items": {},
+            "badgeTitle": "الحوت الملكي",
+            "customBadge": ""
+          },
+          "username": "Dr jihad",
+          "createdAt": 1788792215916,
+          "packageId": "whale_gold_pack",
+          "reviewedAt": 1788793867481,
+          "packageName": "حزمة الحوت الملكي",
+          "reviewerNote": "تم الاعتماد والشحن بنجاح بواسطة الإدارة",
+          "receiptNumber": "023466897380",
+          "senderPhoneOrName": "01008511311"
+        },
+        {
+          "id": "req_1788789098475_cqfeo",
+          "price": 200,
+          "status": "approved",
+          "rewards": {
+            "xp": 6000,
+            "bank": 1500000,
+            "cash": 1000000,
+            "items": {},
+            "badgeTitle": "الحوت الملكي",
+            "customBadge": ""
+          },
+          "username": "Dr jihad",
+          "createdAt": 1788789098475,
+          "packageId": "whale_gold_pack",
+          "reviewedAt": 1788794257803,
+          "packageName": "حزمة الحوت الملكي",
+          "reviewerNote": "تم الاعتماد والشحن بنجاح بواسطة الإدارة",
+          "receiptNumber": "01008511311",
+          "senderPhoneOrName": "01008511311"
+        },
+        {
+          "id": "req_1788647863996_ta50r",
+          "price": 350,
+          "status": "approved",
+          "rewards": {
+            "xp": 6000,
+            "bank": 2000000,
+            "cash": 500000,
+            "items": {},
+            "badgeTitle": "الحوت الملكي",
+            "customBadge": ""
+          },
+          "username": "Abogalia",
+          "createdAt": 1788647863996,
+          "packageId": "whale_gold_pack",
+          "reviewedAt": 1788647969481,
+          "packageName": "حزمة الحوت الملكي",
+          "reviewerNote": "تم الاعتماد والشحن بنجاح بواسطة الإدارة",
+          "receiptNumber": "227166135386",
+          "senderPhoneOrName": "01004905148"
+        },
+        {
+          "id": "req_1788646096932_tyb02",
+          "price": 99,
+          "status": "approved",
+          "rewards": {
+            "xp": 6000,
+            "bank": 1000000,
+            "cash": 5000000,
+            "items": {},
+            "badgeTitle": "الحوت الملكي",
+            "customBadge": ""
+          },
+          "username": "S3DA",
+          "createdAt": 1788646096932,
+          "packageId": "whale_gold_pack",
+          "reviewedAt": 1788648232410,
+          "packageName": "حزمة الحوت الملكي",
+          "reviewerNote": "تم الاعتماد والشحن بنجاح بواسطة الإدارة",
+          "receiptNumber": "285547752189",
+          "senderPhoneOrName": "ibrahim.seada1010@instapay"
+        }
+      ],
+      "updatedAt": 1788957546579
+    },
+    "updated_at": 1788957546579
+  },
+  {
+    "id": "topup_payment_settings",
+    "data": {
+      "notes": "يرجى تحويل المبلغ بدقة وكتابة رقم الهاتف المحوّل منه أو اسم حسابك في انستاباي ورقم العملية/الوصل لتأكيد الشحن فوراً، في حال وجود مشكله او استفسار ما يمكنك التواصل معنا من خلال صفحتنا على فيسبوك.",
+      "instapay": "https://ipn.eg/S/khaledx010/instapay/4H8T4u",
+      "updatedAt": 1788759450619,
+      "vodafoneCash": "01044119920"
+    },
+    "updated_at": 1788759450619
+  },
+  {
+    "id": "broadcast",
+    "data": {
+      "title": "مكافأة عامة للجميع 🎁",
+      "message": "قامت إدارة اللعبة بتوزيع إيردروب مالي بقيمة +50,000 EGP لجميع المستثمرين!",
+      "timestamp": 1788759261062
+    },
+    "updated_at": 1788759261062
+  }
+]

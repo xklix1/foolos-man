@@ -1,0 +1,19 @@
+{
+  "name": "rasalmal-core-server",
+  "version": "1.0.0",
+  "description": "Server-Authoritative Game Engine & Action API for Ras ALmal Tycoon",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test tests/**/*.test.js"
+  },
+  "keywords": ["game-server", "server-authoritative", "tycoon"],
+  "author": "Ras ALmal Team",
+  "license": "ISC",
+  "dependencies": {
+    "fastify": "^4.26.2",
+    "@fastify/cors": "^8.5.0",
+    "@fastify/rate-limit": "^9.1.0"
+  }
+}

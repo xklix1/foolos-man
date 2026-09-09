@@ -1,0 +1,655 @@
+{
+  "totalPlayers": 356,
+  "validStates": 356,
+  "nullStates": 0,
+  "keyPresence": [
+    {
+      "key": "xp",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "bank",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "cash",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "jobId",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "string"
+      ]
+    },
+    {
+      "key": "title",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "string"
+      ]
+    },
+    {
+      "key": "assets",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "stocks",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "lastSeen",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "netWorth",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "activeCar",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "dirtyCash",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "inventory",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "ownedCars",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "businesses",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "smugglingFleet",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "activeSmugglingJobs",
+      "count": 356,
+      "percentage": 100,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "jailTimer",
+      "count": 354,
+      "percentage": 99,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "totalTaxesPaid",
+      "count": 354,
+      "percentage": 99,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "afkManagerExpiresAt",
+      "count": 354,
+      "percentage": 99,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "heatLevel",
+      "count": 353,
+      "percentage": 99,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "activeLoan",
+      "count": 353,
+      "percentage": 99,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "activityLog",
+      "count": 353,
+      "percentage": 99,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "customItems",
+      "count": 353,
+      "percentage": 99,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "investments",
+      "count": 353,
+      "percentage": 99,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "tradeCompany",
+      "count": 353,
+      "percentage": 99,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "itemDurations",
+      "count": 353,
+      "percentage": 99,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "underworldRep",
+      "count": 353,
+      "percentage": 99,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "loanCooldownUntil",
+      "count": 353,
+      "percentage": 99,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "workCooldownUntil",
+      "count": 353,
+      "percentage": 99,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "casinoCooldownUntil",
+      "count": 353,
+      "percentage": 99,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "overtimeCooldownUntil",
+      "count": 353,
+      "percentage": 99,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "stockTradeCooldownUntil",
+      "count": 353,
+      "percentage": 99,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "industry",
+      "count": 347,
+      "percentage": 97,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "adminModifiedTimestamp",
+      "count": 319,
+      "percentage": 90,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "claimedAirdrops",
+      "count": 317,
+      "percentage": 89,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "username",
+      "count": 287,
+      "percentage": 81,
+      "types": [
+        "string"
+      ]
+    },
+    {
+      "key": "pin",
+      "count": 283,
+      "percentage": 79,
+      "types": [
+        "string"
+      ]
+    },
+    {
+      "key": "isAdmin",
+      "count": 282,
+      "percentage": 79,
+      "types": [
+        "boolean"
+      ]
+    },
+    {
+      "key": "isBanned",
+      "count": 282,
+      "percentage": 79,
+      "types": [
+        "boolean"
+      ]
+    },
+    {
+      "key": "lastActiveTimestamp",
+      "count": 282,
+      "percentage": 79,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "blackMarketCooldowns",
+      "count": 278,
+      "percentage": 78,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "_loadedFromCloud",
+      "count": 275,
+      "percentage": 77,
+      "types": [
+        "boolean"
+      ]
+    },
+    {
+      "key": "dailyLoans",
+      "count": 273,
+      "percentage": 77,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "dailyQuests",
+      "count": 273,
+      "percentage": 77,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "dailyToolUses",
+      "count": 273,
+      "percentage": 77,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "itemCooldowns",
+      "count": 273,
+      "percentage": 77,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "dailyCasinoResetAt",
+      "count": 273,
+      "percentage": 77,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "dailyCasinoNetProfit",
+      "count": 273,
+      "percentage": 77,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "stockCooldowns",
+      "count": 268,
+      "percentage": 75,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "dailyWork",
+      "count": 267,
+      "percentage": 75,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "dailyBankInterest",
+      "count": 266,
+      "percentage": 75,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "dailyBankInterestResetAt",
+      "count": 266,
+      "percentage": 75,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "createdAt",
+      "count": 247,
+      "percentage": 69,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "known_devices",
+      "count": 162,
+      "percentage": 46,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "initial_device",
+      "count": 126,
+      "percentage": 35,
+      "types": [
+        "string"
+      ]
+    },
+    {
+      "key": "cloudSavedAt",
+      "count": 117,
+      "percentage": 33,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "referredBy",
+      "count": 99,
+      "percentage": 28,
+      "types": [
+        "string"
+      ]
+    },
+    {
+      "key": "referralCode",
+      "count": 99,
+      "percentage": 28,
+      "types": [
+        "string"
+      ]
+    },
+    {
+      "key": "referredByCode",
+      "count": 99,
+      "percentage": 28,
+      "types": [
+        "string"
+      ]
+    },
+    {
+      "key": "claimedReferralTiers",
+      "count": 99,
+      "percentage": 28,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "transfersReceivedTotal",
+      "count": 99,
+      "percentage": 28,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "lastOfflineReport",
+      "count": 88,
+      "percentage": 25,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "friends",
+      "count": 23,
+      "percentage": 6,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "raidActive",
+      "count": 12,
+      "percentage": 3,
+      "types": [
+        "boolean"
+      ]
+    },
+    {
+      "key": "raidBribeCost",
+      "count": 12,
+      "percentage": 3,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "raidEscapeChance",
+      "count": 12,
+      "percentage": 3,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "partnerships",
+      "count": 11,
+      "percentage": 3,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "is_admin",
+      "count": 11,
+      "percentage": 3,
+      "types": [
+        "boolean"
+      ]
+    },
+    {
+      "key": "is_banned",
+      "count": 11,
+      "percentage": 3,
+      "types": [
+        "boolean"
+      ]
+    },
+    {
+      "key": "last_seen",
+      "count": 11,
+      "percentage": 3,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "net_worth",
+      "count": 11,
+      "percentage": 3,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "dirty_cash",
+      "count": 11,
+      "percentage": 3,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "jail_timer",
+      "count": 11,
+      "percentage": 3,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "pendingAdminPopup",
+      "count": 8,
+      "percentage": 2,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "hiredJob",
+      "count": 8,
+      "percentage": 2,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "lastPuzzleSolved",
+      "count": 8,
+      "percentage": 2,
+      "types": [
+        "number"
+      ]
+    },
+    {
+      "key": "badges",
+      "count": 4,
+      "percentage": 1,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "facebookVerified",
+      "count": 4,
+      "percentage": 1,
+      "types": [
+        "boolean"
+      ]
+    },
+    {
+      "key": "blockedUsers",
+      "count": 4,
+      "percentage": 1,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "key": "badgeTitle",
+      "count": 1,
+      "percentage": 0,
+      "types": [
+        "string"
+      ]
+    },
+    {
+      "key": "customBadge",
+      "count": 1,
+      "percentage": 0,
+      "types": [
+        "string"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+# /etc/systemd/system/rasalmal-core.service
+# Hostinger VPS Native Systemd Service for Ras ALmal Core Server
+
+[Unit]
+Description=Ras ALmal Tycoon Authoritative Game Server Daemon
+After=network.target postgresql.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/rasalmal/server
+ExecStart=/usr/bin/node src/server.js
+Restart=always
+RestartSec=5
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=rasalmal-core
+
+# Environment
+Environment=NODE_ENV=production
+Environment=PORT=3001
+Environment=HOST=127.0.0.1
+Environment=SUPABASE_URL=https://rasalmal.online
+Environment=AUTOSAVE_INTERVAL_MS=30000
+
+# Resource Guards
+MemoryMax=1.5G
+CPUQuota=100%
+
+[Install]
+WantedBy=multi-user.target
