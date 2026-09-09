@@ -1164,7 +1164,13 @@ var AppDB = (() => {
     if (!username || !state) return;
     const u = username.trim();
     state.username = u;
-    state.lastSeen = Date.now();
+    // CRITICAL FIX: update lastActiveTimestamp to now so that offline earnings
+    // are calculated correctly from this exact moment when the browser is closed.
+    // Without this, loadUserSession reads the old lastActiveTimestamp (last visible
+    // tick) and thinks the player was last active much earlier than they actually were.
+    const exitNow = Date.now();
+    state.lastActiveTimestamp = exitNow;
+    state.lastSeen = exitNow;
 
     // Cache locally instantly
     setEncryptedLocalState(`rasalmal_state_${u}`, state);
@@ -1184,7 +1190,7 @@ var AppDB = (() => {
       afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
       total_taxes_paid: Number(state.totalTaxesPaid || 0),
       state: state,
-      last_seen: Date.now()
+      last_seen: exitNow
     };
     if (state.pin) payload.pin = state.pin;
 
@@ -1223,6 +1229,7 @@ var AppDB = (() => {
         try {
           setEncryptedLocalState(`rasalmal_state_${activeUser}`, activeState);
         } catch (e) {}
+        // flushStateToCloudOnExit will update lastActiveTimestamp to now before sending
         flushStateToCloudOnExit(activeUser, activeState);
       }
     };
