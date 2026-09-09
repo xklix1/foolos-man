@@ -3789,6 +3789,12 @@ const GameEngine = (() => {
       throw new Error("لا يمكنك فتح أكثر من استثمارين مقفلين في نفس الوقت. انتظر حتى يكتمل أحدهما أو استثمر في عقاراتك ومصانعك.");
     }
 
+    // Prevent duplicate investment in the same fund while active
+    const alreadyActive = (state.investments || []).find(inv => inv.id === plan.id);
+    if (alreadyActive) {
+      throw new Error(`أنت تستثمر بالفعل في "${plan.name}". تم إغلاق هذا الصندوق حتى انتهاء مدته وتصفية عوائده.`);
+    }
+
     if (!amount || isNaN(amount) || amount < plan.minAmount) {
       throw new Error(`الحد الأدنى للاستثمار في "${plan.name}" هو ${plan.minAmount.toLocaleString()} جنيه.`);
     }

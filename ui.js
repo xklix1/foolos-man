@@ -2753,14 +2753,118 @@ const UIController = (() => {
   }
 
   // --- Tab 4: Bank & Wire Transfers Panel ---
+  const INVESTMENT_CARDS_DEF = {
+    short: {
+      btnClass: 'btn-invest-start w-full py-2.5 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-black rounded-xl transition',
+      btnText: 'بدء الاستثمار',
+      placeholder: 'المبلغ (5K - 50K)'
+    },
+    medium: {
+      btnClass: 'btn-invest-start w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl transition',
+      btnText: 'بدء الاستثمار',
+      placeholder: 'المبلغ (25K - 250K)'
+    },
+    long: {
+      btnClass: 'btn-invest-start w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-black rounded-xl transition',
+      btnText: 'بدء الاستثمار',
+      placeholder: 'المبلغ (100K - 1M)'
+    },
+    venture: {
+      btnClass: 'btn-invest-start w-full py-2.5 bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-slate-950 text-xs font-black rounded-xl transition',
+      btnText: 'بدء الاستثمار',
+      placeholder: 'المبلغ (500K - 4M)'
+    },
+    imperial: {
+      btnClass: 'btn-invest-start w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-black rounded-xl transition',
+      btnText: 'بدء الاستثمار الماسي',
+      placeholder: 'المبلغ (2M - 15M)'
+    }
+  };
+
+  function updateInvestmentCardsDOM(s) {
+    if (!s) return;
+    const investments = s.investments || [];
+    const isGlobalLimitReached = investments.length >= 2;
+
+    Object.keys(INVESTMENT_CARDS_DEF).forEach(type => {
+      const def = INVESTMENT_CARDS_DEF[type];
+      const btn = document.querySelector(`.btn-invest-start[data-type="${type}"]`);
+      const input = document.getElementById(`invest-amount-${type}`);
+      const activeInv = investments.find(inv => inv.id === type);
+
+      if (activeInv) {
+        // This specific fund is currently invested and locked until maturity!
+        const remSec = activeInv.ticksRemaining || 0;
+        if (input) {
+          input.disabled = true;
+          input.value = '';
+          input.placeholder = `🔒 مستثمر: ${(activeInv.investedAmount || 0).toLocaleString()} EGP`;
+          input.classList.add('opacity-60', 'cursor-not-allowed', 'bg-slate-900/90', 'border-amber-500/40');
+        }
+        if (btn) {
+          btn.disabled = true;
+          btn.classList.remove('invest-locked-global');
+          btn.innerHTML = `<i class="fa-solid fa-lock text-amber-400 ml-1.5"></i> <span>مغلق - قيد التشغيل (${formatInvestmentDuration(remSec)})</span>`;
+          btn.className = 'btn-invest-start w-full py-2.5 bg-slate-900 text-amber-300 text-xs font-bold rounded-xl border border-amber-500/40 cursor-not-allowed transition flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(245,158,11,0.15)]';
+        }
+        if (btn) {
+          const card = btn.closest('.p-5');
+          if (card) {
+            card.dataset.locked = 'true';
+            card.classList.add('border-amber-500/50', 'ring-1', 'ring-amber-500/30');
+          }
+        }
+      } else {
+        // Not active for this plan
+        if (btn) {
+          const card = btn.closest('.p-5');
+          if (card && card.dataset.locked === 'true') {
+            delete card.dataset.locked;
+            card.classList.remove('border-amber-500/50', 'ring-1', 'ring-amber-500/30');
+          }
+        }
+
+        if (isGlobalLimitReached) {
+          // Global maximum concurrent investments reached (2/2)
+          if (input) {
+            input.disabled = true;
+            input.value = '';
+            input.placeholder = '🔒 الحد الأقصى نشط (2/2)';
+            input.classList.add('opacity-50', 'cursor-not-allowed');
+            input.classList.remove('opacity-60', 'bg-slate-900/90', 'border-amber-500/40');
+          }
+          if (btn) {
+            btn.disabled = true;
+            btn.classList.add('invest-locked-global');
+            btn.innerHTML = `<i class="fa-solid fa-ban text-rose-400 ml-1.5"></i> <span>الحد الأقصى نشط (2/2)</span>`;
+            btn.className = 'btn-invest-start invest-locked-global w-full py-2.5 bg-slate-900 text-slate-400 text-xs font-bold rounded-xl border border-slate-800 cursor-not-allowed transition flex items-center justify-center gap-1.5';
+          }
+        } else {
+          // Normal open state
+          if (input) {
+            input.disabled = false;
+            input.placeholder = def.placeholder;
+            input.classList.remove('opacity-50', 'opacity-60', 'cursor-not-allowed', 'bg-slate-900/90', 'border-amber-500/40');
+          }
+          if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('invest-locked-global');
+            btn.innerHTML = def.btnText;
+            btn.className = def.btnClass;
+          }
+        }
+      }
+    });
+  }
+
   function formatInvestmentDuration(totalSeconds) {
-    if (!totalSeconds || totalSeconds <= 0) return'جاهز للاستلام!';
+    if (!totalSeconds || totalSeconds <= 0) return 'جاهز للاستلام!';
     const hrs = Math.floor(totalSeconds / 3600);
     const mins = Math.floor((totalSeconds % 3600) / 60);
     const secs = totalSeconds % 60;
-    if (hrs > 0) return`${hrs}س ${mins}د ${secs}ث`;
-    if (mins > 0) return`${mins}د ${secs}ث`;
-    return`${secs} ثانية`;
+    if (hrs > 0) return `${hrs}س ${mins}د ${secs}ث`;
+    if (mins > 0) return `${mins}د ${secs}ث`;
+    return `${secs} ثانية`;
   }
 
   function renderBank() {
@@ -2807,6 +2911,9 @@ const UIController = (() => {
         invContainer.appendChild(row);
       });
     }
+    // Update dynamic locking state on all investment cards
+    updateInvestmentCardsDOM(s);
+
     // Fetch and render transfer requests & bank history
     fetchAndRenderTransferRequests();
     loadTransferHistory();
@@ -2904,6 +3011,9 @@ const UIController = (() => {
         }
       });
     }
+
+    // Live update dynamic locking countdown on all investment cards
+    updateInvestmentCardsDOM(s);
   }
 
   // --- Work Shift Cooldown Controller ---
@@ -3503,17 +3613,19 @@ const UIController = (() => {
     invButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         const type = btn.getAttribute('data-type');
-        const inputId =`invest-amount-${type}`;
-        const amount = parseInt(document.getElementById(inputId).value);
+        const inputId = `invest-amount-${type}`;
+        const inputEl = document.getElementById(inputId);
+        if (!inputEl) return;
+        const amount = parseInt(inputEl.value);
 
         try {
           if (isNaN(amount) || amount <= 0) throw new Error("يرجى إدخال مبلغ استثمار صحيح.");
-          GameEngine.startInvestment(type, amount);
-          document.getElementById(inputId).value ='';
-          showToast('استثمار مقفل',`تم قفل مبلغ الاستثمار في صندوق: ${GameEngine.INVESTMENTS[type].name}`,'success');
+          const res = GameEngine.startInvestment(type, amount);
+          inputEl.value = '';
+          showToast('بدء الاستثمار', `تم إيداع وقفل ${amount.toLocaleString()} EGP في "${res.plan.name}" بنجاح!`, 'success');
           renderAll();
         } catch (err) {
-          showToast('فشل الاستثمار', err.message,'error');
+          showToast('فشل الاستثمار', err.message, 'error');
         }
       });
     });
@@ -5467,24 +5579,6 @@ const UIController = (() => {
         }
       });
     }
-
-    // Term Investment Start Buttons
-    document.querySelectorAll('.btn-invest-start').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const type = btn.getAttribute('data-type');
-        const input = document.getElementById(`invest-amount-${type}`);
-        if (!input) return;
-        const amt = parseInt(input.value);
-        try {
-          const res = GameEngine.startInvestment(type, amt);
-          input.value ='';
-          showToast('بدء الاستثمار',`تم إيداع ${res.amount.toLocaleString()} EGP في"${res.plan.name}" بنجاح!`,'success');
-          renderAll();
-        } catch (err) {
-          showToast('فشل الاستثمار', err.message,'error');
-        }
-      });
-    });
   }
 
   // --- Tab 9: Casino Panel ---

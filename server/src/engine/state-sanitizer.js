@@ -20,7 +20,7 @@ const DEFAULT_STATE = {
   assets: {},
   stocks: {},
   crypto: {},
-  investments: {},
+  investments: [],
   tradeCompany: null,
   activeLoan: null,
   loanCooldownUntil: 0,
@@ -78,6 +78,7 @@ function sanitizePlayerState(dbRow) {
   if (!cleanState.stocks || typeof cleanState.stocks !== 'object') cleanState.stocks = {};
   if (!cleanState.crypto || typeof cleanState.crypto !== 'object') cleanState.crypto = {};
   if (!cleanState.assets || typeof cleanState.assets !== 'object') cleanState.assets = {};
+  if (!Array.isArray(cleanState.investments)) cleanState.investments = [];
 
   // Security Hardening: Never leak PIN hash in client-facing state payloads
   delete cleanState.pin;
