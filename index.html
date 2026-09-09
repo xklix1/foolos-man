@@ -76,7 +76,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=130">
+  <link rel="stylesheet" href="app.css?v=132">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -2903,7 +2903,7 @@
 
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <!-- Short deposit -->
-            <div
+            <div id="invest-card-short"
               class="p-5 bg-slate-950/50 border border-slate-800 rounded-xl flex flex-col justify-between hover:border-slate-700 transition">
               <div>
                 <div class="flex justify-between items-center mb-1">
@@ -2922,7 +2922,7 @@
                       class="numbers-font text-yellow-400 font-bold">50,000 جنيه</span></div>
                 </div>
               </div>
-              <div class="mt-2">
+              <div id="invest-action-open-short" class="mt-2">
                 <input type="number" id="invest-amount-short" min="5000" max="50000" placeholder="المبلغ (5K - 50K)"
                   class="glass-input w-full p-2.5 text-center text-xs rounded-xl mb-2 font-bold">
                 <button data-type="short"
@@ -2930,10 +2930,24 @@
                   بدء الاستثمار
                 </button>
               </div>
+              <div id="invest-action-locked-short" class="hidden mt-2 p-3 bg-slate-900/90 border border-amber-500/50 rounded-xl text-center shadow-lg space-y-2">
+                <div class="flex items-center justify-between text-xs font-bold text-amber-400 border-b border-slate-800 pb-1.5">
+                  <span class="flex items-center gap-1.5"><i class="fa-solid fa-lock text-amber-400"></i> استثمار مقفل ومجمد</span>
+                  <span class="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-full font-bold">قيد التشغيل</span>
+                </div>
+                <div class="text-[11px] text-slate-300 space-y-1 text-right">
+                  <div class="flex justify-between"><span>المبلغ المودع:</span><span id="invest-locked-amt-short" class="numbers-font font-bold text-white">0 EGP</span></div>
+                  <div class="flex justify-between"><span>العائد عند الانتهاء:</span><span id="invest-locked-payout-short" class="numbers-font font-bold text-emerald-400">0 EGP</span></div>
+                </div>
+                <div class="py-2 px-3 bg-slate-950/80 rounded-lg border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center justify-center gap-2">
+                  <i class="fa-regular fa-clock text-amber-400"></i>
+                  <span id="invest-locked-timer-short" class="numbers-font">متبقي: --</span>
+                </div>
+              </div>
             </div>
 
             <!-- Medium deposit -->
-            <div
+            <div id="invest-card-medium"
               class="p-5 bg-slate-950/50 border border-slate-800 rounded-xl flex flex-col justify-between hover:border-slate-700 transition">
               <div>
                 <div class="flex justify-between items-center mb-1">
@@ -2952,7 +2966,7 @@
                       class="numbers-font text-emerald-400 font-bold">250,000 جنيه</span></div>
                 </div>
               </div>
-              <div class="mt-2">
+              <div id="invest-action-open-medium" class="mt-2">
                 <input type="number" id="invest-amount-medium" min="25000" max="250000"
                   placeholder="المبلغ (25K - 250K)"
                   class="glass-input w-full p-2.5 text-center text-xs rounded-xl mb-2 font-bold">
@@ -2961,10 +2975,24 @@
                   بدء الاستثمار
                 </button>
               </div>
+              <div id="invest-action-locked-medium" class="hidden mt-2 p-3 bg-slate-900/90 border border-amber-500/50 rounded-xl text-center shadow-lg space-y-2">
+                <div class="flex items-center justify-between text-xs font-bold text-amber-400 border-b border-slate-800 pb-1.5">
+                  <span class="flex items-center gap-1.5"><i class="fa-solid fa-lock text-amber-400"></i> استثمار مقفل ومجمد</span>
+                  <span class="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-full font-bold">قيد التشغيل</span>
+                </div>
+                <div class="text-[11px] text-slate-300 space-y-1 text-right">
+                  <div class="flex justify-between"><span>المبلغ المودع:</span><span id="invest-locked-amt-medium" class="numbers-font font-bold text-white">0 EGP</span></div>
+                  <div class="flex justify-between"><span>العائد عند الانتهاء:</span><span id="invest-locked-payout-medium" class="numbers-font font-bold text-emerald-400">0 EGP</span></div>
+                </div>
+                <div class="py-2 px-3 bg-slate-950/80 rounded-lg border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center justify-center gap-2">
+                  <i class="fa-regular fa-clock text-amber-400"></i>
+                  <span id="invest-locked-timer-medium" class="numbers-font">متبقي: --</span>
+                </div>
+              </div>
             </div>
 
             <!-- Long deposit -->
-            <div
+            <div id="invest-card-long"
               class="p-5 bg-slate-950/50 border border-slate-800 rounded-xl flex flex-col justify-between hover:border-slate-700 transition">
               <div>
                 <div class="flex justify-between items-center mb-1">
@@ -2983,7 +3011,7 @@
                       class="numbers-font text-indigo-400 font-bold">1,000,000 جنيه</span></div>
                 </div>
               </div>
-              <div class="mt-2">
+              <div id="invest-action-open-long" class="mt-2">
                 <input type="number" id="invest-amount-long" min="100000" max="1000000" placeholder="المبلغ (100K - 1M)"
                   class="glass-input w-full p-2.5 text-center text-xs rounded-xl mb-2 font-bold">
                 <button data-type="long"
@@ -2991,10 +3019,24 @@
                   بدء الاستثمار
                 </button>
               </div>
+              <div id="invest-action-locked-long" class="hidden mt-2 p-3 bg-slate-900/90 border border-amber-500/50 rounded-xl text-center shadow-lg space-y-2">
+                <div class="flex items-center justify-between text-xs font-bold text-amber-400 border-b border-slate-800 pb-1.5">
+                  <span class="flex items-center gap-1.5"><i class="fa-solid fa-lock text-amber-400"></i> استثمار مقفل ومجمد</span>
+                  <span class="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-full font-bold">قيد التشغيل</span>
+                </div>
+                <div class="text-[11px] text-slate-300 space-y-1 text-right">
+                  <div class="flex justify-between"><span>المبلغ المودع:</span><span id="invest-locked-amt-long" class="numbers-font font-bold text-white">0 EGP</span></div>
+                  <div class="flex justify-between"><span>العائد عند الانتهاء:</span><span id="invest-locked-payout-long" class="numbers-font font-bold text-emerald-400">0 EGP</span></div>
+                </div>
+                <div class="py-2 px-3 bg-slate-950/80 rounded-lg border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center justify-center gap-2">
+                  <i class="fa-regular fa-clock text-amber-400"></i>
+                  <span id="invest-locked-timer-long" class="numbers-font">متبقي: --</span>
+                </div>
+              </div>
             </div>
 
             <!-- Venture Capital -->
-            <div
+            <div id="invest-card-venture"
               class="p-5 bg-slate-950/50 border border-amber-500/30 rounded-xl flex flex-col justify-between hover:border-amber-500/60 transition">
               <div>
                 <div class="flex justify-between items-center mb-1">
@@ -3013,7 +3055,7 @@
                       class="numbers-font text-amber-400 font-bold">4,000,000 جنيه</span></div>
                 </div>
               </div>
-              <div class="mt-2">
+              <div id="invest-action-open-venture" class="mt-2">
                 <input type="number" id="invest-amount-venture" min="500000" max="4000000"
                   placeholder="المبلغ (500K - 4M)"
                   class="glass-input w-full p-2.5 text-center text-xs rounded-xl mb-2 font-bold">
@@ -3022,10 +3064,24 @@
                   بدء الاستثمار
                 </button>
               </div>
+              <div id="invest-action-locked-venture" class="hidden mt-2 p-3 bg-slate-900/90 border border-amber-500/50 rounded-xl text-center shadow-lg space-y-2">
+                <div class="flex items-center justify-between text-xs font-bold text-amber-400 border-b border-slate-800 pb-1.5">
+                  <span class="flex items-center gap-1.5"><i class="fa-solid fa-lock text-amber-400"></i> استثمار مقفل ومجمد</span>
+                  <span class="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-full font-bold">قيد التشغيل</span>
+                </div>
+                <div class="text-[11px] text-slate-300 space-y-1 text-right">
+                  <div class="flex justify-between"><span>المبلغ المودع:</span><span id="invest-locked-amt-venture" class="numbers-font font-bold text-white">0 EGP</span></div>
+                  <div class="flex justify-between"><span>العائد عند الانتهاء:</span><span id="invest-locked-payout-venture" class="numbers-font font-bold text-emerald-400">0 EGP</span></div>
+                </div>
+                <div class="py-2 px-3 bg-slate-950/80 rounded-lg border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center justify-center gap-2">
+                  <i class="fa-regular fa-clock text-amber-400"></i>
+                  <span id="invest-locked-timer-venture" class="numbers-font">متبقي: --</span>
+                </div>
+              </div>
             </div>
 
             <!-- Imperial Diamond Vault -->
-            <div
+            <div id="invest-card-imperial"
               class="p-5 bg-slate-950/50 border border-cyan-500/30 rounded-xl flex flex-col justify-between hover:border-cyan-500/60 transition">
               <div>
                 <div class="flex justify-between items-center mb-1">
@@ -3044,7 +3100,7 @@
                       class="numbers-font text-cyan-300 font-bold">15,000,000 جنيه</span></div>
                 </div>
               </div>
-              <div class="mt-2">
+              <div id="invest-action-open-imperial" class="mt-2">
                 <input type="number" id="invest-amount-imperial" min="2000000" max="15000000"
                   placeholder="المبلغ (2M - 15M)"
                   class="glass-input w-full p-2.5 text-center text-xs rounded-xl mb-2 font-bold">
@@ -3052,6 +3108,20 @@
                   class="btn-invest-start w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-black rounded-xl transition">
                   بدء الاستثمار الماسي
                 </button>
+              </div>
+              <div id="invest-action-locked-imperial" class="hidden mt-2 p-3 bg-slate-900/90 border border-amber-500/50 rounded-xl text-center shadow-lg space-y-2">
+                <div class="flex items-center justify-between text-xs font-bold text-amber-400 border-b border-slate-800 pb-1.5">
+                  <span class="flex items-center gap-1.5"><i class="fa-solid fa-lock text-amber-400"></i> استثمار مقفل ومجمد</span>
+                  <span class="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-full font-bold">قيد التشغيل</span>
+                </div>
+                <div class="text-[11px] text-slate-300 space-y-1 text-right">
+                  <div class="flex justify-between"><span>المبلغ المودع:</span><span id="invest-locked-amt-imperial" class="numbers-font font-bold text-white">0 EGP</span></div>
+                  <div class="flex justify-between"><span>العائد عند الانتهاء:</span><span id="invest-locked-payout-imperial" class="numbers-font font-bold text-emerald-400">0 EGP</span></div>
+                </div>
+                <div class="py-2 px-3 bg-slate-950/80 rounded-lg border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center justify-center gap-2">
+                  <i class="fa-regular fa-clock text-amber-400"></i>
+                  <span id="invest-locked-timer-imperial" class="numbers-font">متبقي: --</span>
+                </div>
               </div>
             </div>
           </div>
@@ -4994,10 +5064,10 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=10.7"></script>
-  <script src="server-client-bridge.js?v=1.0"></script>
-  <script src="game.js?v=10.7"></script>
-  <script src="ui.js?v=10.7"></script>
+  <script src="db.js?v=10.9"></script>
+  <script src="server-client-bridge.js?v=1.1"></script>
+  <script src="game.js?v=10.9"></script>
+  <script src="ui.js?v=10.9"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

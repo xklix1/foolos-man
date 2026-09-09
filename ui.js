@@ -2786,71 +2786,78 @@ const UIController = (() => {
     const investments = s.investments || [];
     const isGlobalLimitReached = investments.length >= 2;
 
-    Object.keys(INVESTMENT_CARDS_DEF).forEach(type => {
-      const def = INVESTMENT_CARDS_DEF[type];
-      const btn = document.querySelector(`.btn-invest-start[data-type="${type}"]`);
-      const input = document.getElementById(`invest-amount-${type}`);
+    const planTypes = ['short', 'medium', 'long', 'venture', 'imperial'];
+
+    planTypes.forEach(type => {
+      const card = document.getElementById(`invest-card-${type}`) || (document.querySelector(`.btn-invest-start[data-type="${type}"]`) ? document.querySelector(`.btn-invest-start[data-type="${type}"]`).closest('.p-5') : null);
+      const openAction = document.getElementById(`invest-action-open-${type}`);
+      const lockedAction = document.getElementById(`invest-action-locked-${type}`);
       const activeInv = investments.find(inv => inv.id === type);
 
       if (activeInv) {
-        // This specific fund is currently invested and locked until maturity!
-        const remSec = activeInv.ticksRemaining || 0;
-        if (input) {
-          input.disabled = true;
-          input.value = '';
-          input.placeholder = `🔒 مستثمر: ${(activeInv.investedAmount || 0).toLocaleString()} EGP`;
-          input.classList.add('opacity-60', 'cursor-not-allowed', 'bg-slate-900/90', 'border-amber-500/40');
-        }
-        if (btn) {
-          btn.disabled = true;
-          btn.classList.remove('invest-locked-global');
-          btn.innerHTML = `<i class="fa-solid fa-lock text-amber-400 ml-1.5"></i> <span>مغلق - قيد التشغيل (${formatInvestmentDuration(remSec)})</span>`;
-          btn.className = 'btn-invest-start w-full py-2.5 bg-slate-900 text-amber-300 text-xs font-bold rounded-xl border border-amber-500/40 cursor-not-allowed transition flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(245,158,11,0.15)]';
-        }
-        if (btn) {
-          const card = btn.closest('.p-5');
-          if (card) {
-            card.dataset.locked = 'true';
-            card.classList.add('border-amber-500/50', 'ring-1', 'ring-amber-500/30');
+        // Active investment in this fund: HIDE FORM AND SHOW FULL LOCKED STATUS PANEL!
+        if (openAction) openAction.classList.add('hidden');
+        if (lockedAction) {
+          lockedAction.classList.remove('hidden');
+          const amtEl = document.getElementById(`invest-locked-amt-${type}`);
+          const payoutEl = document.getElementById(`invest-locked-payout-${type}`);
+          const timerEl = document.getElementById(`invest-locked-timer-${type}`);
+
+          if (amtEl) amtEl.textContent = `${(activeInv.investedAmount || 0).toLocaleString()} EGP`;
+          if (payoutEl) {
+            const payout = Math.floor((activeInv.investedAmount || 0) * (1 + (activeInv.rate || 0)));
+            payoutEl.textContent = `+${payout.toLocaleString()} EGP`;
           }
+          if (timerEl) {
+            timerEl.textContent = `متبقي: ${formatInvestmentDuration(activeInv.ticksRemaining || 0)}`;
+          }
+        }
+        if (card) {
+          card.classList.add('border-amber-500/80', 'ring-1', 'ring-amber-500/50', 'bg-slate-900/50');
+          card.classList.remove('border-slate-800');
         }
       } else {
-        // Not active for this plan
-        if (btn) {
-          const card = btn.closest('.p-5');
-          if (card && card.dataset.locked === 'true') {
-            delete card.dataset.locked;
-            card.classList.remove('border-amber-500/50', 'ring-1', 'ring-amber-500/30');
-          }
+        // Not active for this plan: SHOW FORM AND HIDE LOCKED PANEL
+        if (lockedAction) lockedAction.classList.add('hidden');
+        if (openAction) openAction.classList.remove('hidden');
+        if (card) {
+          card.classList.remove('border-amber-500/80', 'ring-1', 'ring-amber-500/50', 'bg-slate-900/50');
+          card.classList.add('border-slate-800');
         }
 
+        const input = document.getElementById(`invest-amount-${type}`);
+        const btn = document.querySelector(`.btn-invest-start[data-type="${type}"]`);
+
         if (isGlobalLimitReached) {
-          // Global maximum concurrent investments reached (2/2)
+          // Global 2/2 cap reached: disable other cards
           if (input) {
             input.disabled = true;
-            input.value = '';
             input.placeholder = '🔒 الحد الأقصى نشط (2/2)';
             input.classList.add('opacity-50', 'cursor-not-allowed');
-            input.classList.remove('opacity-60', 'bg-slate-900/90', 'border-amber-500/40');
           }
           if (btn) {
             btn.disabled = true;
-            btn.classList.add('invest-locked-global');
-            btn.innerHTML = `<i class="fa-solid fa-ban text-rose-400 ml-1.5"></i> <span>الحد الأقصى نشط (2/2)</span>`;
-            btn.className = 'btn-invest-start invest-locked-global w-full py-2.5 bg-slate-900 text-slate-400 text-xs font-bold rounded-xl border border-slate-800 cursor-not-allowed transition flex items-center justify-center gap-1.5';
+            btn.innerHTML = `<i class="fa-solid fa-ban text-rose-400 ml-1"></i> <span>الحد الأقصى نشط (2/2)</span>`;
+            btn.style.setProperty('background', '#0b0f19', 'important');
+            btn.style.setProperty('color', '#94a3b8', 'important');
+            btn.style.setProperty('cursor', 'not-allowed', 'important');
+            btn.style.setProperty('border', '1px solid rgba(148, 163, 184, 0.2)', 'important');
           }
         } else {
           // Normal open state
           if (input) {
             input.disabled = false;
-            input.placeholder = def.placeholder;
-            input.classList.remove('opacity-50', 'opacity-60', 'cursor-not-allowed', 'bg-slate-900/90', 'border-amber-500/40');
+            const def = INVESTMENT_CARDS_DEF[type];
+            if (def) input.placeholder = def.placeholder;
+            input.classList.remove('opacity-50', 'cursor-not-allowed');
           }
           if (btn) {
             btn.disabled = false;
-            btn.classList.remove('invest-locked-global');
-            btn.innerHTML = def.btnText;
-            btn.className = def.btnClass;
+            btn.innerHTML = (type === 'imperial') ? 'بدء الاستثمار الماسي' : 'بدء الاستثمار';
+            btn.style.removeProperty('background');
+            btn.style.removeProperty('color');
+            btn.style.removeProperty('cursor');
+            btn.style.removeProperty('border');
           }
         }
       }
@@ -3623,6 +3630,7 @@ const UIController = (() => {
           const res = GameEngine.startInvestment(type, amount);
           inputEl.value = '';
           showToast('بدء الاستثمار', `تم إيداع وقفل ${amount.toLocaleString()} EGP في "${res.plan.name}" بنجاح!`, 'success');
+          updateInvestmentCardsDOM(GameEngine.state);
           renderAll();
         } catch (err) {
           showToast('فشل الاستثمار', err.message, 'error');
