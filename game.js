@@ -2577,6 +2577,11 @@ const GameEngine = (() => {
       if (lastSeenServer > 0) {
         const now = getTrustedNow();
 
+        // ── DEBUG: log key offline-earnings inputs so we can diagnose issues ──
+        const _diffMs = now - lastSeenServer;
+        const _diffMin = Math.round(_diffMs / 60000);
+        console.log(`[Offline] lastSeenServer=${lastSeenServer} | now=${now} | diff=${_diffMs}ms (${_diffMin} min) | serverSynced=${AppDB.hasServerTimeSynced}`);
+
         // Anti-Time Travel Audit
         // NOTE: Use a 120s tolerance (was 30s) to account for:
         // 1. The server-anchored getTrustedNow() may not have synced yet on page load
@@ -2593,14 +2598,16 @@ const GameEngine = (() => {
         const isManagerActive = managerExpiry > lastSeenServer; // manager was active when player left
 
         // Total real elapsed seconds since player was last seen (always computed, capped at 12h)
-        const rawElapsed = (timeTravelFlagged || now < lastSeenServer)
+        // Math.max(0,...) safely handles tiny negative differences (clock drift < 120s)
+        // without zeroing earnings — only timeTravelFlagged resets to 0 (> 120s behind).
+        const rawElapsed = timeTravelFlagged
           ? 0
           : Math.max(0, Math.floor((now - lastSeenServer) / 1000));
         const totalElapsedSeconds = Math.min(43200, rawElapsed);
 
         // For profit calculation: only count time while manager was still active
         const managerActiveUntil = (isManagerActive && managerExpiry > 0) ? Math.min(now, managerExpiry) : lastSeenServer;
-        const elapsedSinceLastActive = (timeTravelFlagged || now < lastSeenServer || !isManagerActive)
+        const elapsedSinceLastActive = (timeTravelFlagged || !isManagerActive)
           ? 0
           : Math.max(0, Math.floor((managerActiveUntil - lastSeenServer) / 1000));
 
@@ -2818,7 +2825,10 @@ const GameEngine = (() => {
     const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
     state.afkManagerExpiresAt = getTrustedNow() + TWELVE_HOURS_MS;
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    // Force immediate cloud push — if the player closes the browser right after renewing,
+    // the debounced save might not fire in time. The new afkManagerExpiresAt MUST reach
+    // the server so isManagerActive = true on next login and offline earnings are calculated.
+    AppDB.savePlayerState(activeUsername, state, true);
     return {
       expiresAt: state.afkManagerExpiresAt,
       remainingMs: TWELVE_HOURS_MS

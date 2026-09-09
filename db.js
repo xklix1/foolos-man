@@ -1037,13 +1037,18 @@ var AppDB = (() => {
       stateObj.jailTimer = Number(row.jail_timer || 0);
       stateObj.afkManagerExpiresAt = Number(row.afk_manager_expires_at || 0);
       stateObj.totalTaxesPaid = Number(row.total_taxes_paid || 0);
-      stateObj.lastSeen = Number(row.last_seen || Date.now());
+      stateObj.lastSeen = Number(row.last_seen || getTrustedNow());
       // OFFLINE EARNINGS FIX: Take the MAX of server last_seen and local lastActiveTimestamp.
       // When the cloud save hasn't landed yet (e.g. race between logout flush and getPlayerState),
       // the synchronous localStorage write always has the correct exit timestamp — use it if newer.
+      const _nowAtLoad = getTrustedNow();
       const _serverLastSeen = Number(row.last_seen || (row.state && (row.state.lastActiveTimestamp || row.state.lastSeen)) || 0);
       const _localLastActive = local ? Number(local.lastActiveTimestamp || local.lastSeen || 0) : 0;
-      stateObj.lastActiveTimestamp = Math.max(_serverLastSeen, _localLastActive) || Date.now();
+      const _rawLastActive = Math.max(_serverLastSeen, _localLastActive) || _nowAtLoad;
+      // Sanity cap: clamp any timestamp more than 60s in the future to now.
+      // Old localStorage entries written before this fix may contain raw Date.now() values
+      // (device clock) that appear ahead of getTrustedNow() and cause elapsed = 0.
+      stateObj.lastActiveTimestamp = Math.min(_rawLastActive, _nowAtLoad + 60000);
       stateObj.adminModifiedTimestamp = Number(row.admin_modified_timestamp || 0);
       stateObj._loadedFromCloud = true;
 
@@ -1282,7 +1287,7 @@ var AppDB = (() => {
       afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
       total_taxes_paid: Number(state.totalTaxesPaid || 0),
       state: state,
-      last_seen: Date.now()
+      last_seen: getTrustedNow()
     };
     if (state.pin) payload.pin = state.pin;
 
@@ -1322,7 +1327,11 @@ var AppDB = (() => {
     if (!username || !state) return;
     const u = username.trim();
     state.username = u;
-    state.lastSeen = Date.now();
+    // Use getTrustedNow() so lastSeen is server-anchored, matching getTrustedNow() used in
+    // loadUserSession. Using Date.now() (device clock) here can produce a timestamp that
+    // appears 'in the future' relative to getTrustedNow() when the device clock is ahead of
+    // the server clock, causing now < lastSeenServer → rawElapsed = 0 → no offline earnings.
+    state.lastSeen = getTrustedNow();
 
     // Cache locally INSTANTLY (0 lag, 100% responsive)
     setEncryptedLocalState(`rasalmal_state_${u}`, state);
@@ -4414,6 +4423,7 @@ var AppDB = (() => {
     // Security & Anti-Fraud Shield
     getTrustedNow,
     fetchServerTime,
+    get hasServerTimeSynced() { return _hasServerTimeSynced; },
     DeviceFingerprint,
     getDeviceRegistry,
     saveDeviceRegistry,
