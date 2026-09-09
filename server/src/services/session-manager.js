@@ -12,6 +12,7 @@ const config = require('../config/env');
 const dbService = require('./db-service');
 const { sanitizePlayerState } = require('../engine/state-sanitizer');
 const { calculateAuthoritativeOfflineProgress } = require('../engine/offline-engine');
+const { calculateNetWorth } = require('../engine/net-worth-engine');
 
 class SessionManager {
   constructor() {
@@ -107,6 +108,86 @@ class SessionManager {
       session.dirty = false;
     }
     return success;
+  }
+
+  /**
+   * Synchronizes full player state from client, updating memory and persisting if requested
+   */
+  async updateSessionState(username, clientState, immediate = false) {
+    if (!username || !clientState || typeof clientState !== 'object') return false;
+    const { session } = await this.getOrCreateSession(username, false);
+    if (!session) return false;
+
+    const s = session.state;
+
+    // Synchronize monetary balances
+    if (clientState.cash !== undefined) s.cash = Number(clientState.cash) || 0;
+    if (clientState.bank !== undefined) s.bank = Number(clientState.bank) || 0;
+    if (clientState.dirtyCash !== undefined) s.dirtyCash = Number(clientState.dirtyCash) || 0;
+    if (clientState.xp !== undefined) s.xp = Number(clientState.xp) || 0;
+    if (clientState.title) s.title = String(clientState.title);
+    if (clientState.jobId) s.jobId = String(clientState.jobId);
+    if (clientState.jailTimer !== undefined) s.jailTimer = Number(clientState.jailTimer) || 0;
+    if (clientState.totalTaxesPaid !== undefined) s.totalTaxesPaid = Number(clientState.totalTaxesPaid) || 0;
+
+    // Synchronize modules
+    if (clientState.businesses && typeof clientState.businesses === 'object') {
+      s.businesses = clientState.businesses;
+    }
+    if (clientState.industry && typeof clientState.industry === 'object') {
+      s.industry = clientState.industry;
+    }
+    if (clientState.ownedCars && typeof clientState.ownedCars === 'object') {
+      s.ownedCars = clientState.ownedCars;
+    }
+    if (clientState.activeCar !== undefined) {
+      s.activeCar = clientState.activeCar;
+    }
+    if (clientState.assets && typeof clientState.assets === 'object') {
+      s.assets = clientState.assets;
+    }
+    if (clientState.stocks && typeof clientState.stocks === 'object') {
+      s.stocks = clientState.stocks;
+    }
+    if (clientState.crypto && typeof clientState.crypto === 'object') {
+      s.crypto = clientState.crypto;
+    }
+    if (Array.isArray(clientState.investments)) {
+      s.investments = clientState.investments;
+    }
+    if (clientState.tradeCompany !== undefined) {
+      s.tradeCompany = clientState.tradeCompany;
+    }
+    if (clientState.inventory && typeof clientState.inventory === 'object') {
+      s.inventory = clientState.inventory;
+    }
+    if (clientState.activityLog && Array.isArray(clientState.activityLog)) {
+      s.activityLog = clientState.activityLog.slice(-50);
+    }
+    if (clientState.customItems && typeof clientState.customItems === 'object') {
+      s.customItems = clientState.customItems;
+    }
+    if (clientState.itemDurations && typeof clientState.itemDurations === 'object') {
+      s.itemDurations = clientState.itemDurations;
+    }
+    if (clientState.smugglingFleet && typeof clientState.smugglingFleet === 'object') {
+      s.smugglingFleet = clientState.smugglingFleet;
+    }
+    if (clientState.activeSmugglingJobs && typeof clientState.activeSmugglingJobs === 'object') {
+      s.activeSmugglingJobs = clientState.activeSmugglingJobs;
+    }
+
+    s.netWorth = Number(clientState.netWorth) || calculateNetWorth(s);
+    s.lastActiveTimestamp = Number(clientState.lastActiveTimestamp || Date.now());
+    s.lastSeen = Date.now();
+    session.lastActivity = Date.now();
+
+    if (immediate) {
+      return await this.forceSaveSession(username);
+    } else {
+      this.markDirty(username);
+      return true;
+    }
   }
 
   /**

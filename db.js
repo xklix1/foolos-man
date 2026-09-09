@@ -1283,7 +1283,7 @@ var AppDB = (() => {
 
     // When Authoritative ServerBridge is active, let the server handle persistence cleanly
     if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.sendExit === 'function') {
-      window.ServerBridge.sendExit();
+      window.ServerBridge.sendExit(state);
       return;
     }
 
@@ -1291,7 +1291,7 @@ var AppDB = (() => {
       const serverExitUrl = (typeof window !== 'undefined' && window.SERVER_API_URL)
         ? `${window.SERVER_API_URL.replace(/\/$/, '')}/api/session/exit`
         : '/api/session/exit';
-      const exitPayload = JSON.stringify({ username: u });
+      const exitPayload = JSON.stringify({ username: u, state: state });
 
       if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
         const blob = new Blob([exitPayload], { type: 'application/json' });
@@ -1357,12 +1357,16 @@ var AppDB = (() => {
     if (state.pin) payload.pin = state.pin;
 
     // When Authoritative ServerBridge is online, server writes authoritatively via service_role
-    if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.isServerOnline === 'function' && window.ServerBridge.isServerOnline()) {
-      if (typeof window.ServerBridge.sendHeartbeat === 'function') {
+    if (typeof window !== 'undefined' && window.ServerBridge) {
+      if (typeof window.ServerBridge.syncState === 'function') {
+        window.ServerBridge.syncState(state, true);
+        _lastCloudSyncTimestamp = Date.now();
+        return;
+      } else if (typeof window.ServerBridge.isServerOnline === 'function' && window.ServerBridge.isServerOnline() && typeof window.ServerBridge.sendHeartbeat === 'function') {
         window.ServerBridge.sendHeartbeat();
+        _lastCloudSyncTimestamp = Date.now();
+        return;
       }
-      _lastCloudSyncTimestamp = Date.now();
-      return;
     }
 
     try {

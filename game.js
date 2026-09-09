@@ -2578,6 +2578,18 @@ const GameEngine = (() => {
         _loadedFromCloud: true
       };
 
+      // Safeguard: Recover industry progress from local storage if cloud snapshot was missing it
+      if (!state.industry || Object.keys(state.industry).length === 0) {
+        try {
+          const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
+            ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
+            : null;
+          if (localS && localS.industry && Object.keys(localS.industry).length > 0) {
+            state.industry = localS.industry;
+          }
+        } catch (e) {}
+      }
+
       if (!state.referralCode) {
         state.referralCode = generateReferralCode(username);
       }

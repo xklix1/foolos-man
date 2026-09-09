@@ -13,6 +13,7 @@ const DEFAULT_STATE = {
   title: 'عامل مبتدئ',
   jobId: 'worker',
   businesses: {},
+  industry: {},
   inventory: { suppliesHours: 12 },
   ownedCars: {},
   activeCar: null,
@@ -72,6 +73,7 @@ function sanitizePlayerState(dbRow) {
 
   // Ensure sub-objects are never null or primitive
   if (!cleanState.businesses || typeof cleanState.businesses !== 'object') cleanState.businesses = {};
+  if (!cleanState.industry || typeof cleanState.industry !== 'object') cleanState.industry = {};
   if (!cleanState.inventory || typeof cleanState.inventory !== 'object') cleanState.inventory = { suppliesHours: 12 };
   if (!cleanState.stocks || typeof cleanState.stocks !== 'object') cleanState.stocks = {};
   if (!cleanState.crypto || typeof cleanState.crypto !== 'object') cleanState.crypto = {};

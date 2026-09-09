@@ -178,12 +178,33 @@ var ServerBridge = (() => {
   }
 
   /**
-   * Sends exit notification on page unload
+   * Synchronizes full player state to the authoritative server
    */
-  function sendExit() {
+  async function syncState(state, immediate = false) {
+    if (!_isServerOnline || !_activeUsername || !state) return null;
+    try {
+      return await _post('/api/session/sync-state', {
+        username: _activeUsername,
+        state,
+        immediate
+      });
+    } catch (e) {
+      console.warn('[ServerBridge] syncState warning:', e.message);
+      return null;
+    }
+  }
+
+  /**
+   * Sends exit notification on page unload with latest state
+   */
+  function sendExit(customState = null) {
     if (!_isServerOnline || !_activeUsername) return;
     const url = `${getApiBase()}/api/session/exit`;
-    const payload = JSON.stringify({ username: _activeUsername });
+    const st = customState || (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state ? window.GameEngine.state : null);
+    const payload = JSON.stringify({
+      username: _activeUsername,
+      state: st
+    });
 
     if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
       const blob = new Blob([payload], { type: 'application/json' });
@@ -200,8 +221,8 @@ var ServerBridge = (() => {
 
   // Attach exit and app-hide listeners (Desktop & Mobile)
   if (typeof window !== 'undefined') {
-    window.addEventListener('beforeunload', sendExit);
-    window.addEventListener('pagehide', sendExit);
+    window.addEventListener('beforeunload', () => sendExit());
+    window.addEventListener('pagehide', () => sendExit());
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
@@ -218,6 +239,7 @@ var ServerBridge = (() => {
     renewAfkManager,
     buySupplies,
     bankAction,
+    syncState,
     sendHeartbeat,
     sendExit,
     destroy: () => {

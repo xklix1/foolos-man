@@ -58,6 +58,20 @@ test('Client ServerBridge End-to-End Test', async () => {
     const bankRes = await ServerBridge.bankAction('deposit', 1000);
     assert.ok(bankRes, 'Bank deposit succeeded');
     assert.strictEqual(bankRes.bank, 6000);
+
+    // 5. Sync State (e.g. industry and client progress)
+    const syncRes = await ServerBridge.syncState({
+      cash: 7000,
+      bank: 6000,
+      industry: {
+        food: { unlocked: true, stage1: 2, stage2: 1, stage3: 1, logistics: 1 }
+      }
+    }, false);
+    assert.ok(syncRes, 'State sync succeeded');
+    assert.strictEqual(syncRes.success, true);
+    const updatedSession = sessionManager.sessions.get(testUsername.toLowerCase());
+    assert.strictEqual(updatedSession.state.industry.food.unlocked, true);
+    assert.strictEqual(updatedSession.state.industry.food.stage1, 2);
   } finally {
     ServerBridge.destroy();
     await app.close();

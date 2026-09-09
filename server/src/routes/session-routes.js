@@ -62,12 +62,38 @@ async function sessionRoutes(fastify, options) {
     };
   });
 
+  // POST /api/session/sync-state (Synchronizes complete client state to authoritative session & DB)
+  fastify.post('/api/session/sync-state', async (request, reply) => {
+    const { username, state, immediate = false } = request.body || {};
+    if (!username || !state) {
+      return reply.code(400).send({ error: 'Username and state are required' });
+    }
+
+    try {
+      const saved = await sessionManager.updateSessionState(username, state, immediate === true);
+      return {
+        success: true,
+        saved,
+        serverTime: Date.now()
+      };
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.code(500).send({ error: 'Failed to sync state: ' + err.message });
+    }
+  });
+
   // POST /api/session/exit
   fastify.post('/api/session/exit', async (request, reply) => {
-    const { username } = request.body || {};
+    const { username, state } = request.body || {};
     if (!username) return reply.code(400).send({ error: 'Username is required' });
 
-    const saved = await sessionManager.forceSaveSession(username);
+    let saved = false;
+    if (state && typeof state === 'object') {
+      saved = await sessionManager.updateSessionState(username, state, true);
+    } else {
+      saved = await sessionManager.forceSaveSession(username);
+    }
+
     return {
       success: true,
       saved: saved,
