@@ -1889,12 +1889,6 @@ const UIController = (() => {
         authLoginBtn.classList.remove('border-yellow-500','text-yellow-500');
         const refCont = document.getElementById('auth-referral-container');
         if (refCont) refCont.classList.remove('hidden');
-
-        // Check if device already has a registered account
-        const existingDeviceAcc = (window.AppDB && window.AppDB.DeviceFingerprint && window.AppDB.DeviceFingerprint.getRegisteredAccountOnDevice()) || null;
-        if (existingDeviceAcc) {
-          showToast('تنبيه أمني', `هذا الجهاز مسجل به حساب بالفعل (${existingDeviceAcc}). تسمح اللعبة بحساب واحد فقط لكل جهاز.`, 'warning');
-        }
       });
     }
 
@@ -1932,10 +1926,6 @@ const UIController = (() => {
 
           let canonicalUser = usernameInput;
           if (currentAuthMode ==='register') {
-            const registeredOnDevice = (window.AppDB && window.AppDB.DeviceFingerprint && window.AppDB.DeviceFingerprint.getRegisteredAccountOnDevice()) || null;
-            if (registeredOnDevice && registeredOnDevice.toLowerCase() !== usernameInput.toLowerCase()) {
-              throw new Error(`🚫 لا يمكن إنشاء حساب جديد! هذا الجهاز مسجل به حساب بالفعل ("${registeredOnDevice}"). تسمح قوانين اللعبة بحساب واحد فقط لكل جهاز.`);
-            }
             const refCodeInput = document.getElementById('auth-referral-code')?.value?.trim() || '';
             await AppDB.registerPlayer(usernameInput, pinInput, refCodeInput);
             playerState = await GameEngine.loadUserSession(usernameInput);

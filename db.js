@@ -752,23 +752,8 @@ var AppDB = (() => {
     const p = String(pin).trim();
     const refCode = (typeof referralCodeInput === 'string' ? referralCodeInput.trim() : '').toUpperCase();
 
-    // 1. Check local device anchor
-    const localRegistered = DeviceFingerprint.getRegisteredAccountOnDevice();
-    if (localRegistered && localRegistered.toLowerCase() !== u.toLowerCase()) {
-      throw new Error(`🚫 لا يمكن إنشاء حساب جديد! هذا الجهاز مسجل به حساب بالفعل ("${localRegistered}"). تسمح قوانين اللعبة بحساب واحد فقط لكل جهاز لمنع التلاعب.`);
-    }
-
-    // 2. Obtain hardware device fingerprint
+    // 1. Obtain hardware device fingerprint for analytics and security tracking
     const fp = await DeviceFingerprint.getFingerprint();
-
-    // 3. Check cloud device registry
-    const registry = await getDeviceRegistry();
-    if (registry.devices && registry.devices[fp]) {
-      const boundUser = registry.devices[fp];
-      if (boundUser && boundUser.toLowerCase() !== u.toLowerCase()) {
-        throw new Error(`🚫 لا يمكن إنشاء حساب جديد! هذا الجهاز مسجل به حساب بالفعل ("${boundUser}"). تسمح قوانين اللعبة بحساب واحد فقط لكل جهاز لمنع التلاعب.`);
-      }
-    }
 
     // 4. Check if exists (case-insensitive)
     const existing = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username`);
@@ -870,9 +855,12 @@ var AppDB = (() => {
       body: JSON.stringify(newPlayerRow)
     });
 
-    // Bind device in cloud registry & locally
+    // Bind device in cloud registry & locally for device history
     try {
+      const registry = await getDeviceRegistry();
+      registry.devices = registry.devices || {};
       registry.devices[fp] = u;
+      registry.accounts = registry.accounts || {};
       if (!registry.accounts[u]) registry.accounts[u] = [];
       if (!registry.accounts[u].includes(fp)) registry.accounts[u].push(fp);
       await saveDeviceRegistry(registry);
