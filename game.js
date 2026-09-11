@@ -976,17 +976,17 @@ const GameEngine = (() => {
 
   let taxConfig = {
     rateMultiplier: 1.0,
-    silverRate: 0.000005,
-    majorRate: 0.000010,
-    whaleRate: 0.000018
+    bracket1Rate: 0.01, // < 1M (1%)
+    bracket2Rate: 0.05, // 1M - 5M (5%)
+    bracket3Rate: 0.15  // > 5M (15%)
   };
 
   function setTaxConfig(cfg) {
     if (cfg) {
       if (cfg.rateMultiplier !== undefined) taxConfig.rateMultiplier = Number(cfg.rateMultiplier);
-      if (cfg.silverRate !== undefined) taxConfig.silverRate = Number(cfg.silverRate);
-      if (cfg.majorRate !== undefined) taxConfig.majorRate = Number(cfg.majorRate);
-      if (cfg.whaleRate !== undefined) taxConfig.whaleRate = Number(cfg.whaleRate);
+      if (cfg.bracket1Rate !== undefined) taxConfig.bracket1Rate = Number(cfg.bracket1Rate);
+      if (cfg.bracket2Rate !== undefined) taxConfig.bracket2Rate = Number(cfg.bracket2Rate);
+      if (cfg.bracket3Rate !== undefined) taxConfig.bracket3Rate = Number(cfg.bracket3Rate);
       console.log('[GAME] Tax configuration updated dynamically:', taxConfig);
     }
   }
@@ -1702,13 +1702,10 @@ const GameEngine = (() => {
     // 6. Bank interest (Hourly)
     income += calculateBankInterestHourly(state);
 
-    // 7. Wealth Tax deduction for ultra-high net worth (5M+ EGP, with liquid safety buffer > 100k)
-    if (state.netWorth > 5000000 && !excludeTax) {
-      const liquidFunds = (state.bank || 0) + (state.cash || 0);
-      if (liquidFunds > 100000) {
-        const taxReport = calculateTaxReport();
-        income = Math.max(0, income - taxReport.taxPerSecond);
-      }
+    // 7. Cashflow Tax deduction based on Net Worth brackets (1% / 5% / 15%)
+    if (!excludeTax && income > 0) {
+      const taxReport = calculateTaxReport(income);
+      income = Math.max(0, income - taxReport.hourlyTax);
     }
 
     return Math.max(0, income);
@@ -1892,26 +1889,23 @@ const GameEngine = (() => {
       }
     }
 
-    // 7. Wealth Tax
-    let taxDeduction = 0;
-    if (s.netWorth > 5000000) {
-      const liquidFunds = (s.bank || 0) + (s.cash || 0);
-      if (liquidFunds > 100000) {
-        const taxReport = calculateTaxReport();
-        taxDeduction = taxReport.taxPerSecond || 0;
-        breakdown.tax.active = true;
-        breakdown.tax.taxPerSec = taxDeduction;
-        breakdown.tax.taxPerHour = taxDeduction * 3600;
-      } else {
-        breakdown.tax.active = false;
-        breakdown.tax.exemptReason ='محمي بحاجز السيولة (أقل من 100 ألف كاش/بنك)';
-      }
-    } else {
-      breakdown.tax.active = false;
-      breakdown.tax.exemptReason ='معفي (صافي الثروة أقل من 5 مليون EGP)';
-    }
+    // 7. Cashflow Tax
+    const taxReport = calculateTaxReport(grossIncome);
+    const hourlyTax = taxReport.hourlyTax || 0;
+    const taxDeduction = taxReport.taxPerSecond || 0;
 
-    const hourlyTax = taxDeduction * 3600;
+    breakdown.tax = {
+      active: hourlyTax > 0,
+      taxPerSec: taxDeduction,
+      taxPerHour: hourlyTax,
+      bracketName: taxReport.bracketName,
+      bracketId: taxReport.bracketId,
+      ratePct: taxReport.effectiveRatePct,
+      baseRatePct: taxReport.baseRatePct,
+      taxShieldActive: taxReport.taxShieldActive,
+      exemptReason: hourlyTax > 0 ? '' : 'لا توجد تدفقات نقدية خاضعة للضريبة'
+    };
+
     const netIncome = Math.max(0, grossIncome - hourlyTax);
 
     // Full Accounting Statement Totals
@@ -1942,58 +1936,62 @@ const GameEngine = (() => {
     return breakdown;
   }
 
-  // Tax Report & Bracket Engine (Rebalanced to prevent cash-drain while rewarding tax planning)
-  function calculateTaxReport() {
-    const netWorth = calculateNetWorth();
+  // Tax Report & Bracket Engine
+  // New System: Tax is a percentage of gross hourly cashflow based on player's total Net Worth:
+  // - Net Worth < 1,000,000 EGP: 1% of gross hourly cashflow
+  // - Net Worth 1,000,000 to 5,000,000 EGP: 5% of gross hourly cashflow
+  // - Net Worth > 5,000,000 EGP: 15% of gross hourly cashflow
+  // - Tax Shield: 50% legal deduction on tax rate
+  function calculateTaxReport(grossPerHourOverride) {
+    const netWorth = (typeof state.netWorth === 'number' && state.netWorth > 0) ? state.netWorth : calculateNetWorth();
     const taxShieldActive = Boolean(state.inventory && state.inventory.tax_shield > 0);
     const shieldDurationTicks = (state.itemDurations && state.itemDurations.tax_shield) || 0;
-    const EXEMPTION_THRESHOLD = 5000000; // Raised from 3M to 5M EGP
 
-    if (netWorth <= EXEMPTION_THRESHOLD) {
-      return {
-        taxableNetWorth: 0,
-        bracketName:'الشريحة الأولى (معفى تماماً حتى 5 مليون ج.م)',
-        bracketId: 1,
-        bracketColor:'text-emerald-400',
-        baseRatePct:'0.0000%',
-        effectiveRatePct:'0.0000%',
-        taxPerSecond: 0,
-        taxShieldActive,
-        shieldDurationTicks,
-        totalTaxesPaid: state.totalTaxesPaid || 0
-      };
+    let grossPerHour = 0;
+    if (typeof grossPerHourOverride === 'number') {
+      grossPerHour = Math.max(0, grossPerHourOverride);
+    } else {
+      grossPerHour = calculatePassiveIncomePerHour(true);
     }
 
-    const taxable = netWorth - EXEMPTION_THRESHOLD;
-    let baseRate = (taxConfig.silverRate || 0.000003) * (taxConfig.rateMultiplier || 1.0);
-    let bracketName ='الشريحة الفضية (5M - 20M ج.م)';
-    let bracketId = 2;
-    let bracketColor ='text-sky-400';
+    let baseRate = (taxConfig.bracket1Rate || 0.01) * (taxConfig.rateMultiplier || 1.0);
+    let bracketName = 'الشريحة الأولى (أقل من 1 مليون ج.م)';
+    let bracketId = 1;
+    let bracketColor = 'text-emerald-400';
+    let bracketRange = 'أقل من 1,000,000 جنيه';
 
-    if (netWorth > 60000000) {
-      baseRate = (taxConfig.whaleRate || 0.000010) * (taxConfig.rateMultiplier || 1.0);
-      bracketName ='شريحة كبار المستثمرين والمليارديرات (+60M ج.م)';
-      bracketId = 4;
-      bracketColor ='text-rose-400';
-    } else if (netWorth > 20000000) {
-      baseRate = (taxConfig.majorRate || 0.000006) * (taxConfig.rateMultiplier || 1.0);
-      bracketName ='شريحة الممولين المتقدمين (20M - 60M ج.م)';
+    if (netWorth > 5000000) {
+      baseRate = (taxConfig.bracket3Rate || 0.15) * (taxConfig.rateMultiplier || 1.0);
+      bracketName = 'شريحة كبار المستثمرين (+5 مليون ج.م)';
       bracketId = 3;
-      bracketColor ='text-amber-400';
+      bracketColor = 'text-rose-400';
+      bracketRange = 'أكثر من 5,000,000 جنيه';
+    } else if (netWorth >= 1000000) {
+      baseRate = (taxConfig.bracket2Rate || 0.05) * (taxConfig.rateMultiplier || 1.0);
+      bracketName = 'الشريحة المتوسطة (1 إلى 5 مليون ج.م)';
+      bracketId = 2;
+      bracketColor = 'text-sky-400';
+      bracketRange = '1,000,000 إلى 5,000,000 جنيه';
     }
 
-    const effectiveRate = taxShieldActive ? (baseRate * 0.70) : baseRate; // Tax shield gives 30% discount (rebalanced 50%)
-    // Max cap: Never drain more than 450 EGP/sec even for extreme billionaires
-    const calculatedTax = Math.floor(taxable * effectiveRate);
-    const taxPerSecond = Math.min(450, Math.max(0, calculatedTax));
+    const effectiveRate = taxShieldActive ? (baseRate * 0.50) : baseRate;
+    const hourlyTax = Math.round(grossPerHour * effectiveRate);
+    const taxPerSecond = hourlyTax / 3600;
 
     return {
-      taxableNetWorth: taxable,
+      netWorth,
+      taxableNetWorth: netWorth,
+      taxableCashflowPerHour: grossPerHour,
+      grossPerHour,
       bracketName,
       bracketId,
+      bracketRange,
       bracketColor,
-      baseRatePct: (baseRate * 100).toFixed(4) +'%',
-      effectiveRatePct: (effectiveRate * 100).toFixed(4) +'%',
+      baseRate,
+      effectiveRate,
+      baseRatePct: (baseRate * 100).toFixed(1) + '%',
+      effectiveRatePct: (effectiveRate * 100).toFixed(1) + '%',
+      hourlyTax,
       taxPerSecond,
       taxShieldActive,
       shieldDurationTicks,
@@ -2170,32 +2168,27 @@ const GameEngine = (() => {
       }
     }
 
-    // Progressive Wealth Tax on Ultra-High Net Worth (Hourly tax distributed per tick)
-    if (state.netWorth > 5000000) {
+    // Cashflow Tax deduction (Hourly tax distributed per second tick)
+    const taxReport = calculateTaxReport();
+    const taxThisTick = taxReport.taxPerSecond || 0;
+    if (taxThisTick > 0) {
       const liquidFunds = (state.bank || 0) + (state.cash || 0);
-      const safetyBuffer = 100000; // Never deduct taxes if liquid funds are under 100,000 EGP
-
-      if (liquidFunds > safetyBuffer) {
-        const taxReport = calculateTaxReport();
-        const tax = (taxReport.taxPerSecond || 0) / 3600;
-        if (tax > 0) {
-          let remainingTax = tax;
-          
-          // 1. Try to deduct from bank first
-          if (state.bank > 0) {
-            const bankDeducted = Math.min(state.bank, remainingTax);
-            state.bank -= bankDeducted;
-            remainingTax -= bankDeducted;
-            state.totalTaxesPaid = (state.totalTaxesPaid || 0) + bankDeducted;
-          }
-          
-          // 2. If there's still tax remaining, deduct from cash (keeping a 100k safety buffer)
-          if (remainingTax > 0) {
-            const taxableCash = Math.max(0, (state.cash || 0) - safetyBuffer);
-            const cashDeducted = Math.min(taxableCash, remainingTax);
-            state.cash -= cashDeducted;
-            state.totalTaxesPaid = (state.totalTaxesPaid || 0) + cashDeducted;
-          }
+      if (liquidFunds > 0) {
+        let remainingTax = taxThisTick;
+        
+        // 1. Try to deduct from bank first
+        if (state.bank > 0) {
+          const bankDeducted = Math.min(state.bank, remainingTax);
+          state.bank -= bankDeducted;
+          remainingTax -= bankDeducted;
+          state.totalTaxesPaid = (state.totalTaxesPaid || 0) + bankDeducted;
+        }
+        
+        // 2. If there's still tax remaining, deduct from cash
+        if (remainingTax > 0 && (state.cash || 0) > 0) {
+          const cashDeducted = Math.min(state.cash, remainingTax);
+          state.cash -= cashDeducted;
+          state.totalTaxesPaid = (state.totalTaxesPaid || 0) + cashDeducted;
         }
       }
     }

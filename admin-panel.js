@@ -440,7 +440,7 @@
             const tickIncome = GameEngine.calculatePassiveIncomePerTick ? GameEngine.calculatePassiveIncomePerTick(true) : 0;
             const taxReport = GameEngine.calculateTaxReport ? GameEngine.calculateTaxReport() : { taxPerSecond: 0 };
             grossIncomePerSecond = Math.max(0, tickIncome);
-            taxPerSecond = ((state.netWorth || 0) > 5000000 && (((state.bank || 0) + (state.cash || 0)) > 100000)) ? (taxReport.taxPerSecond || 0) : 0;
+            taxPerSecond = (taxReport && taxReport.taxPerSecond) || 0;
             netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
           }
         } catch (err) {
@@ -877,7 +877,7 @@
             const tickIncome = GameEngine.calculatePassiveIncomePerTick ? GameEngine.calculatePassiveIncomePerTick(true) : 0;
             const taxReport = GameEngine.calculateTaxReport ? GameEngine.calculateTaxReport() : { taxPerSecond: 0 };
             grossIncomePerSecond = Math.max(0, tickIncome);
-            taxPerSecond = ((selectedPlayerState.netWorth || 0) > 5000000 && (((selectedPlayerState.bank || 0) + (selectedPlayerState.cash || 0)) > 100000)) ? (taxReport.taxPerSecond || 0) : 0;
+            taxPerSecond = (taxReport && taxReport.taxPerSecond) || 0;
             netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
           }
         } catch (err) {
@@ -3039,13 +3039,13 @@
                   taxTierName +=' (️ درع ضريبي مفعل)';
                 }
               } else {
-                taxTierName = (breakdown.tax && breakdown.tax.exemptReason) ||'معفى من الضرائب (أقل من 5M EGP أو محمي بحاجز السيولة)';
+                taxTierName = (breakdown.tax && breakdown.tax.exemptReason) || 'معفى من الضرائب (لا توجد تدفقات إيجابية)';
               }
             } else {
               const tickIncome = GameEngine.calculatePassiveIncomePerTick ? GameEngine.calculatePassiveIncomePerTick(true) : 0;
               const taxReport = GameEngine.calculateTaxReport ? GameEngine.calculateTaxReport() : { taxPerSecond: 0 };
               grossPerSec = Math.max(0, tickIncome);
-              taxPerSec = ((pState.netWorth || 0) > 5000000 && (((pState.bank || 0) + (pState.cash || 0)) > 100000)) ? (taxReport.taxPerSecond || 0) : 0;
+              taxPerSec = (taxReport && taxReport.taxPerSecond) || 0;
               netPerSec = Math.max(0, grossPerSec - taxPerSec);
               if (taxPerSec > 0 && taxReport.bracketName) {
                 taxTierName = taxReport.bracketName;

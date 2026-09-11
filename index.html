@@ -2817,7 +2817,7 @@
                     <i class="fa-solid fa-circle-question text-sm"></i>
                   </button>
                 </h3>
-                <p class="text-xs text-slate-400">إدارة الوعاء الضريبي، نسب الاستقطاع للثروات الكبرى، وتفعيل الدروع
+                <p class="text-xs text-slate-400">إدارة الوعاء الضريبي، نسب الاستقطاع للتدفق الساعي حسب حجم الثروة، وتفعيل الدروع
                   الضريبية القانونية</p>
               </div>
             </div>
@@ -2832,17 +2832,17 @@
 
         <!-- 4 Live Telemetry KPI Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <!-- KPI 1: Taxable Net Worth -->
+          <!-- KPI 1: Taxable Net Worth / Cashflow -->
           <div
             class="glass-panel p-4 rounded-2xl border border-slate-800/80 bg-slate-950/60 flex flex-col justify-between">
             <div>
               <div class="flex justify-between items-center mb-1">
-                <span class="text-xs text-slate-400 font-bold">الوعاء الضريبي الخاضع</span>
+                <span class="text-xs text-slate-400 font-bold">الوعاء الضريبي (التدفق الساعي)</span>
                 <i class="fa-solid fa-coins text-amber-400 text-sm"></i>
               </div>
-              <span id="tax-kpi-taxable" class="numbers-font text-2xl font-black text-amber-400">0 جنيه</span>
+              <span id="tax-kpi-taxable" class="numbers-font text-2xl font-black text-amber-400">0 EGP/س</span>
             </div>
-            <p class="text-[10px] text-slate-500 mt-2">صافي الثروة الفائض عن حد الإعفاء (3,000,000 ج.م).</p>
+            <p class="text-[10px] text-slate-500 mt-2">إجمالي التدفقات النقدية الساعية الخاضعة للضريبة.</p>
           </div>
 
           <!-- KPI 2: Current Bracket -->
@@ -2853,10 +2853,10 @@
                 <span class="text-xs text-slate-400 font-bold">الشريحة الضريبية الحالية</span>
                 <i class="fa-solid fa-layer-group text-sky-400 text-sm"></i>
               </div>
-              <span id="tax-kpi-bracket" class="text-sm font-black text-emerald-400 block mt-1">معفى تماماً (أقل من
-                3M)</span>
+              <span id="tax-kpi-bracket" class="text-sm font-black text-emerald-400 block mt-1">الشريحة الأولى (أقل من
+                1M)</span>
             </div>
-            <p class="text-[10px] text-slate-500 mt-2">تُحدد الشريحة تصاعدياً وفق حجم الثروة الإجمالية.</p>
+            <p class="text-[10px] text-slate-500 mt-2">تُحدد الشريحة ونسبة الضريبة وفق إجمالي صافي ثروتك.</p>
           </div>
 
           <!-- KPI 3: Live Deduction Rate -->
@@ -2864,17 +2864,17 @@
             class="glass-panel p-4 rounded-2xl border border-slate-800/80 bg-slate-950/60 flex flex-col justify-between">
             <div>
               <div class="flex justify-between items-center mb-1">
-                <span class="text-xs text-slate-400 font-bold">الاستقطاع الدوري اللحظي</span>
+                <span class="text-xs text-slate-400 font-bold">الاستقطاع الضريبي الساعي</span>
                 <i class="fa-solid fa-receipt text-rose-400 text-sm"></i>
               </div>
               <div class="flex items-baseline gap-1">
                 <span id="tax-kpi-deduction" class="numbers-font text-2xl font-black text-rose-400">0</span>
-                <span class="text-xs text-slate-400 font-bold">جنيه/ثانية</span>
+                <span class="text-xs text-slate-400 font-bold">جنيه/ساعة</span>
               </div>
             </div>
             <div class="text-[10px] text-slate-400 mt-2 flex items-center justify-between">
               <span>النسبة الفعالة:</span>
-              <span id="tax-kpi-rate-pct" class="numbers-font font-bold text-yellow-400">0.0000%</span>
+              <span id="tax-kpi-rate-pct" class="numbers-font font-bold text-yellow-400">1.0%</span>
             </div>
           </div>
 
@@ -2908,14 +2908,14 @@
                     <span id="tax-shield-active-badge"
                       class="text-[10px] px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full font-bold">غير مفعل</span>
                   </h4>
-                  <p class="text-xs text-slate-300">تحوط قانوني متقدم يخفض ضريبة الثروة بنسبة 75% ويمنحك خصماً على توسعة
+                  <p class="text-xs text-slate-300">تحوط قانوني متقدم يخفض نسبة ضريبة التدفق الساعي بمقدار 50% ويمنحك خصماً على توسعة
                     الشركات.</p>
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs text-slate-300">
                 <div class="flex items-center gap-2 p-2.5 bg-slate-900/60 rounded-xl border border-slate-800">
                   <i class="fa-solid fa-percent text-emerald-400"></i>
-                  <span>تخفيض فوري بنسبة <strong class="text-emerald-400">75%</strong> من ضريبة الثروة المستقطعة.</span>
+                  <span>تخفيض فوري بنسبة <strong class="text-emerald-400">50%</strong> من نسبة الضريبة المفروضة.</span>
                 </div>
                 <div class="flex items-center gap-2 p-2.5 bg-slate-900/60 rounded-xl border border-slate-800">
                   <i class="fa-solid fa-building-circle-check text-cyan-400"></i>
@@ -2944,10 +2944,9 @@
             <div>
               <h4 class="text-sm font-bold text-white flex items-center gap-2">
                 <i class="fa-solid fa-scale-balanced text-yellow-400"></i>
-                <span>جدول الشرائح الضريبية الرسمية لثروات رأس المال</span>
+                <span>جدول شرائح ضريبة التدفق الساعي حسب صافي الثروة</span>
               </h4>
-              <p class="text-xs text-slate-400 mt-0.5">سلم تصاعدي عادل يحمي المبتدئين ويستقطع نسباً مدروسة من كبار
-                الممولين</p>
+              <p class="text-xs text-slate-400 mt-0.5">نظام تصاعدي عادل يستقطع نسبة من إجمالي التدفق بالساعة بناءً على إجمالي ثروة اللاعب</p>
             </div>
           </div>
 
@@ -2957,8 +2956,8 @@
                 <tr class="border-b border-slate-800 text-slate-400 font-bold bg-slate-900/40">
                   <th class="p-3">الشريحة</th>
                   <th class="p-3">نطاق صافي الثروة</th>
-                  <th class="p-3 text-center">النسبة الأساسية</th>
-                  <th class="p-3 text-center">مع الدرع الضريبي (-75%)</th>
+                  <th class="p-3 text-center">النسبة من التدفق الساعي</th>
+                  <th class="p-3 text-center">مع الدرع الضريبي (-50%)</th>
                   <th class="p-3 text-left">الحالة الحالية</th>
                 </tr>
               </thead>
@@ -2967,11 +2966,11 @@
                 <tr class="hover:bg-slate-900/30 transition">
                   <td class="p-3 font-bold text-white flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span>الشريحة الأولى (المبتدئين)</span>
+                    <span>الشريحة الأولى (المبتدئين والنمو السريع)</span>
                   </td>
-                  <td class="p-3 numbers-font text-slate-300 font-bold">0 إلى 3,000,000 جنيه</td>
-                  <td class="p-3 text-center font-bold text-emerald-400">0% (معفى تماماً)</td>
-                  <td class="p-3 text-center font-bold text-emerald-400">0% (معفى)</td>
+                  <td class="p-3 numbers-font text-slate-300 font-bold">أقل من 1,000,000 جنيه</td>
+                  <td class="p-3 text-center font-bold text-emerald-400">1% من التدفق بالساعة</td>
+                  <td class="p-3 text-center font-bold text-emerald-400">0.5% من التدفق</td>
                   <td class="p-3 text-left">
                     <span id="tax-badge-row-1"
                       class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">شريحتك
@@ -2982,11 +2981,11 @@
                 <tr class="hover:bg-slate-900/30 transition">
                   <td class="p-3 font-bold text-white flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-                    <span>الشريحة الفضية (المستثمر المتوسط)</span>
+                    <span>الشريحة المتوسطة (المستثمر الصاعد)</span>
                   </td>
-                  <td class="p-3 numbers-font text-slate-300 font-bold">3,000,000 إلى 15,000,000 جنيه</td>
-                  <td class="p-3 text-center font-bold text-sky-400">0.0020% / ث</td>
-                  <td class="p-3 text-center font-bold text-yellow-400">0.0005% / ث</td>
+                  <td class="p-3 numbers-font text-slate-300 font-bold">1,000,000 إلى 5,000,000 جنيه</td>
+                  <td class="p-3 text-center font-bold text-sky-400">5% من التدفق بالساعة</td>
+                  <td class="p-3 text-center font-bold text-yellow-400">2.5% من التدفق</td>
                   <td class="p-3 text-left">
                     <span id="tax-badge-row-2"
                       class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">غير خاضع</span>
@@ -2995,28 +2994,14 @@
                 <!-- Bracket 3 -->
                 <tr class="hover:bg-slate-900/30 transition">
                   <td class="p-3 font-bold text-white flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                    <span>شريحة كبار الممولين</span>
+                    <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                    <span>شريحة كبار المستثمرين وحيتان المال</span>
                   </td>
-                  <td class="p-3 numbers-font text-slate-300 font-bold">15,000,000 إلى 50,000,000 جنيه</td>
-                  <td class="p-3 text-center font-bold text-amber-400">0.0035% / ث</td>
-                  <td class="p-3 text-center font-bold text-yellow-400">0.0008% / ث</td>
+                  <td class="p-3 numbers-font text-slate-300 font-bold">أكثر من 5,000,000 جنيه</td>
+                  <td class="p-3 text-center font-bold text-rose-400">15% من التدفق بالساعة</td>
+                  <td class="p-3 text-center font-bold text-yellow-400">7.5% من التدفق</td>
                   <td class="p-3 text-left">
                     <span id="tax-badge-row-3"
-                      class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">غير خاضع</span>
-                  </td>
-                </tr>
-                <!-- Bracket 4 -->
-                <tr class="hover:bg-slate-900/30 transition">
-                  <td class="p-3 font-bold text-white flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-rose-400"></span>
-                    <span>شريحة حيتان المال والمليارديرات</span>
-                  </td>
-                  <td class="p-3 numbers-font text-slate-300 font-bold">أكثر من 50,000,000 جنيه</td>
-                  <td class="p-3 text-center font-bold text-rose-400">0.0050% / ث</td>
-                  <td class="p-3 text-center font-bold text-yellow-400">0.0012% / ث</td>
-                  <td class="p-3 text-left">
-                    <span id="tax-badge-row-4"
                       class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">غير خاضع</span>
                   </td>
                 </tr>
@@ -5451,10 +5436,10 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=11.7"></script>
+  <script src="db.js?v=11.8"></script>
   <script src="server-client-bridge.js?v=1.2"></script>
-  <script src="game.js?v=11.7"></script>
-  <script src="ui.js?v=11.7"></script>
+  <script src="game.js?v=11.8"></script>
+  <script src="ui.js?v=11.8"></script>
   <script src="pwa-manager.js?v=1.0.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────

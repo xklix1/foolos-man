@@ -159,29 +159,30 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
     });
   }
 
-  // 6. Wealth Tax Deductions (for players with > 5M net worth & > 100k liquid assets)
+  // 6. Cashflow Tax Deductions based on Net Worth Brackets (1% / 5% / 15%)
   let totalTaxDeducted = 0;
   const currentNetWorth = calculateNetWorth(playerState);
+  const taxShieldActive = Boolean(playerState.inventory && playerState.inventory.tax_shield > 0);
+  
+  let taxRate = 0.01; // < 1M: 1%
   if (currentNetWorth > 5000000) {
-    const liquid = (Number(playerState.bank) || 0) + (Number(playerState.cash) || 0);
-    if (liquid > 100000) {
-      const taxable = currentNetWorth - 5000000;
-      let baseRate = 0.000003;
-      if (currentNetWorth > 60000000) baseRate = 0.000010;
-      else if (currentNetWorth > 20000000) baseRate = 0.000006;
-      
-      const taxPerSec = Math.min(450, Math.floor(taxable * baseRate));
-      const fullTax = Math.floor((taxPerSec / 3600) * totalElapsedSeconds);
-      
-      // Safety: Never deduct below 100k liquid threshold
-      const maxDeductible = Math.max(0, (Number(playerState.bank) || 0) - 100000);
-      totalTaxDeducted = Math.min(fullTax, maxDeductible);
-      playerState.totalTaxesPaid = (Number(playerState.totalTaxesPaid) || 0) + totalTaxDeducted;
-    }
+    taxRate = 0.15; // > 5M: 15%
+  } else if (currentNetWorth >= 1000000) {
+    taxRate = 0.05; // 1M - 5M: 5%
   }
+  if (taxShieldActive) taxRate *= 0.50; // 50% discount
 
   // Total Gross and Net Calculations
   const nonBizProfits = totalAssetEarnings + totalCarNet + bankInterestEarned;
+
+  // Total gross offline cashflow earned before taxes
+  const grossOfflineCashflow = offlineBizEarnings + nonBizProfits;
+  if (grossOfflineCashflow > 0) {
+    const fullTax = Math.floor(grossOfflineCashflow * taxRate);
+    totalTaxDeducted = Math.min(fullTax, grossOfflineCashflow);
+    playerState.totalTaxesPaid = (Number(playerState.totalTaxesPaid) || 0) + totalTaxDeducted;
+  }
+
   const totalEarned = Math.max(0, offlineBizEarnings + nonBizProfits - totalTaxDeducted);
   const totalGross = totalBizGross + totalAssetEarnings + totalCarGross + bankInterestEarned;
   const totalDeductions = totalBizPayroll + totalCarMaintenance + totalTaxDeducted;
@@ -221,7 +222,7 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
     deductions: {
       payroll: { title: 'أجور ورواتب العمال والموظفين', amount: totalBizPayroll },
       carMaintenance: { title: 'صيانة وتشغيل أسطول السيارات', amount: totalCarMaintenance },
-      tax: { title: 'ضريبة الثروة الدورية', amount: totalTaxDeducted },
+      tax: { title: 'ضريبة التدفق الساعي', amount: totalTaxDeducted },
       suppliesConsumedHours: Number((totalSuppliesConsumedSec / 3600).toFixed(1))
     },
     breakdown: bizBreakdown

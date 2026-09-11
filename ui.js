@@ -98,23 +98,32 @@ const UIController = (() => {
 
     // Stocks"صالة تداول البورصة والأسهم الحية":"Live Stock Trading Hall","بورصة عالمية موحدة لجميع اللاعبين (جلسات M15 موحدة ومطابقة بدقة 100%).":"Global Unified Stock Market (100% Identical M15 Sessions for All Players).","إغلاق الشمعة وتحديث الأسعار:":"Candle Close & Price Update:","جلسة M15 موحدة":"Unified M15 Session","شريط الأخبار الاقتصادي:":"Economic News Ticker:","الأسهم المملوكة:":"Owned Shares:","متوسط سعر الشراء:":"Avg Buy Price:","قيمة الأسهم الكلية:":"Total Shares Value:","ربح/خسارة المحفظة:":"Portfolio Profit/Loss:","سقف تملك السهم:":"Max Holding Limit:","شراء أسهم":"Buy Shares","بيع أسهم":"Sell Shares","بيع كل الأسهم":"Sell All Shares","شراء 25%":"Buy 25%","شراء 50%":"Buy 50%","شراء أقصى":"Buy Max","بيع 25%":"Sell 25%","بيع 50%":"Sell 50%","بيع الكل":"Sell All",
 
-    // Taxes"مصلحة الضرائب والمالية العامة (Tax Authority)":"Tax Authority & Public Finance","إدارة الوعاء الضريبي، نسب الاستقطاع للثروات الكبرى، وتفعيل الدروع الضريبية القانونية":"Tax base management, wealth bracket deductions, and legal tax shields","الرقم الضريبي للممول:":"Taxpayer ID:","ممتثل ضريبياً":"Tax Compliant","متأخرات ضريبية ️":"Tax Arrears ️","الوعاء الضريبي للثروة":"Taxable Wealth Base","إجمالي الضرائب المسددة":"Total Taxes Paid","درع الإعفاء الضريبي (Shield)":"Tax Exemption Shield","شراء وتفعيل الدرع الضريبي":"Purchase Tax Exemption Shield","تجديد وتمديد الدرع الضريبي":"Renew Tax Exemption Shield","تقديم الإقرار والتسوية":"Submit Tax Return & Settle","دفع الضرائب المستحقة":"Pay Due Taxes",
+    // Taxes
+    "مصلحة الضرائب والمالية العامة (Tax Authority)":"Tax Authority & Public Finance","إدارة الوعاء الضريبي، نسب الاستقطاع للثروات الكبرى، وتفعيل الدروع الضريبية القانونية":"Tax base management, hourly cashflow tax rates by wealth brackets, and legal tax shields","الرقم الضريبي للممول:":"Taxpayer ID:","ممتثل ضريبياً":"Tax Compliant","متأخرات ضريبية ⚠️":"Tax Arrears ⚠️","الوعاء الضريبي للثروة":"Taxable Wealth Base","الوعاء الضريبي (التدفق الساعي)":"Taxable Base (Hourly Cashflow)","الاستقطاع الضريبي المقدر":"Estimated Tax Deduction","إجمالي الضرائب المسددة":"Total Taxes Paid","درع الإعفاء الضريبي (Shield)":"Tax Exemption Shield","شراء وتفعيل الدرع الضريبي":"Purchase Tax Exemption Shield","تجديد وتمديد الدرع الضريبي":"Renew Tax Exemption Shield","تقديم الإقرار والتسوية":"Submit Tax Return & Settle","دفع الضرائب المستحقة":"Pay Due Taxes",
 
-    // Leaderboard"عرش الأثرياء (توب 10)":"Wealthiest Billionaires (Top 10)","جدول الترتيب العام للمتصدرين (أفضل 10 مستثمرين)":"Overall Leaderboard Ranking (Top 10 Investors)","تحديث تلقائي كل ساعة موحد لجميع اللاعبين":"Hourly Unified Auto-Refresh for All Players","الترتيب":"Rank","اللاعب":"Player","اللقب":"Title","صافي الثروة":"Net Worth","أنت (حسابك)":"You (Your Account)",
+    // Leaderboard
+    "عرش الأثرياء (توب 10)":"Wealthiest Billionaires (Top 10)","جدول الترتيب العام للمتصدرين (أفضل 10 مستثمرين)":"Overall Leaderboard Ranking (Top 10 Investors)","تحديث تلقائي كل ساعة موحد لجميع اللاعبين":"Hourly Unified Auto-Refresh for All Players","الترتيب":"Rank","اللاعب":"Player","اللقب":"Title","صافي الثروة":"Net Worth","أنت (حسابك)":"You (Your Account)",
 
-    // Casino"رمي العملة الملكية":"Royal Coin Flip","صاروخ المضاعفات":"Multiplier Rocket Crash","آلة السلوتس الذهبية":"Golden Slots Machine","طاولة البلاك جاك 21":"Blackjack 21 Table","سباق الخيول الملكي":"Royal Horse Racing","رهان":"Bet","المبلغ:":"Amount:","سحب الأرباح":"Cash Out","تدوير":"Spin","طلب ورقة":"Hit","توقف":"Stand","مضاعفة":"Double","تقسيم":"Split","رمي العملة":"Coin Flip","الصاروخ":"Rocket Crash","السلوتس":"Slots","البلاك جاك":"Blackjack","عجلة الحظ":"Fortune Wheel","الروليت":"Roulette","تحديد الرهان":"Set Bet","بدء الجولة":"Start Round","سحب الأرباح فوراً":"Cash Out Now",
+    // Casino
+    "رمي العملة الملكية":"Royal Coin Flip","صاروخ المضاعفات":"Multiplier Rocket Crash","آلة السلوتس الذهبية":"Golden Slots Machine","طاولة البلاك جاك 21":"Blackjack 21 Table","سباق الخيول الملكي":"Royal Horse Racing","رهان":"Bet","المبلغ:":"Amount:","سحب الأرباح":"Cash Out","تدوير":"Spin","طلب ورقة":"Hit","توقف":"Stand","مضاعفة":"Double","تقسيم":"Split","رمي العملة":"Coin Flip","الصاروخ":"Rocket Crash","السلوتس":"Slots","البلاك جاك":"Blackjack","عجلة الحظ":"Fortune Wheel","الروليت":"Roulette","تحديد الرهان":"Set Bet","بدء الجولة":"Start Round","سحب الأرباح فوراً":"Cash Out Now",
 
-    // Common Actions & Measurements"إيداع":"Deposit","سحب":"Withdraw","تحويل":"Transfer","سداد":"Repay","شراء":"Buy","بيع":"Sell","ترقية":"Upgrade","توظيف":"Hire","تسريح":"Lay off","تأكيد":"Confirm","إلغاء":"Cancel","إغلاق":"Close","حفظ":"Save","تعديل":"Edit","حذف":"Delete","سهم":"shares","عمال":"workers","وحدة":"units","دورة":"cycle","ساعة":"hour","ثانية":"second","دقيقة":"minute","يوم":"day","جنيه":"EGP","ج.م":"EGP","جنيه/ساعة":"EGP/hr","جنيه/دورة":"EGP/cycle","جنيه/وحدة":"EGP/unit","جنيه/ثانية":"EGP/sec","جنيه/س":"EGP/hr",
+    // Common Actions & Measurements
+    "إيداع":"Deposit","سحب":"Withdraw","تحويل":"Transfer","سداد":"Repay","شراء":"Buy","بيع":"Sell","ترقية":"Upgrade","توظيف":"Hire","تسريح":"Lay off","تأكيد":"Confirm","إلغاء":"Cancel","إغلاق":"Close","حفظ":"Save","تعديل":"Edit","حذف":"Delete","سهم":"shares","عمال":"workers","وحدة":"units","دورة":"cycle","ساعة":"hour","ثانية":"second","دقيقة":"minute","يوم":"day","جنيه":"EGP","ج.م":"EGP","جنيه/ساعة":"EGP/hr","جنيه/دورة":"EGP/cycle","جنيه/وحدة":"EGP/unit","جنيه/ثانية":"EGP/sec","جنيه/س":"EGP/hr",
 
-    // Cars & Fleet"السيارات الفارهة والأسطول الملكي":"Luxury Fleet & Royal Garage","السيارات الفارهة":"Luxury Cars","تأجير":"Rent","إلغاء التأجير":"Cancel Rental","قيادة":"Drive","إلغاء القيادة":"Cancel Drive","مؤجرة":"Rented","نشطة":"Active","المرأب":"Garage","بدء تأجير السيارة":"Start Car Rental","إيقاف التأجير":"Stop Rental",
+    // Cars & Fleet
+    "السيارات الفارهة والأسطول الملكي":"Luxury Fleet & Royal Garage","السيارات الفارهة":"Luxury Cars","تأجير":"Rent","إلغاء التأجير":"Cancel Rental","قيادة":"Drive","إلغاء القيادة":"Cancel Drive","مؤجرة":"Rented","نشطة":"Active","المرأب":"Garage","بدء تأجير السيارة":"Start Car Rental","إيقاف التأجير":"Stop Rental",
 
-    // Real Estate"مملوك:":"Owned:","القيمة السوقية الحالية:":"Current Market Value:","عائد الإيجار السلبي:":"Passive Rental Yield:","قيمة التسييل الفوري (85%):":"Immediate Liquidation (85%):","شراء وحدة إضافية":"Buy Additional Unit","تسييل وبيع وحدة":"Liquidate & Sell Unit",
+    // Real Estate
+    "مملوك:":"Owned:","القيمة السوقية الحالية:":"Current Market Value:","عائد الإيجار السلبي:":"Passive Rental Yield:","قيمة التسييل الفوري (85%):":"Immediate Liquidation (85%):","شراء وحدة إضافية":"Buy Additional Unit","تسييل وبيع وحدة":"Liquidate & Sell Unit",
 
-    // Jobs"الوظيفة الحالية":"Current Job","الراتب الثابت:":"Base Salary:","العائد من الخبرة:":"XP Reward:","الخبرة المطلوبة:":"XP Required:","أنت تمارس هذه المهنة":"You hold this career","التحاق بهذه الوظيفة":"Apply for this job","مغلق (تحتاج لخبرة)":"Locked (XP needed)",
+    // Jobs
+    "الوظيفة الحالية":"Current Job","الراتب الثابت:":"Base Salary:","العائد من الخبرة:":"XP Reward:","الخبرة المطلوبة:":"XP Required:","أنت تمارس هذه المهنة":"You hold this career","التحاق بهذه الوظيفة":"Apply for this job","مغلق (تحتاج لخبرة)":"Locked (XP needed)",
 
-    // Businesses"تكلفة التأسيس:":"Establish Cost:","العائد التقريبي الأساسي:":"Approx. Base Yield:","تأسيس المشروع واستثمار رأس المال":"Establish Business & Invest Capital","سعر بيع الوحدة:":"Unit Selling Price:","العمال الحاليين:":"Current Workers:","ترقية المشروع":"Upgrade Business","توظيف عامل":"Hire Worker","تسريح عامل":"Fire Worker","شراء ترخيص الامتياز التجاري (Franchise)":"Buy Franchise License","إطلاق حملة تسويقية كبرى":"Launch Marketing Campaign",
+    // Businesses
+    "تكلفة التأسيس:":"Establish Cost:","العائد التقريبي الأساسي:":"Approx. Base Yield:","تأسيس المشروع واستثمار رأس المال":"Establish Business & Invest Capital","سعر بيع الوحدة:":"Unit Selling Price:","العمال الحاليين:":"Current Workers:","ترقية المشروع":"Upgrade Business","توظيف عامل":"Hire Worker","تسريح عامل":"Fire Worker","شراء ترخيص الامتياز التجاري (Franchise)":"Buy Franchise License","إطلاق حملة تسويقية كبرى":"Launch Marketing Campaign",
 
-    // Taxes"الشريحة الأولى (المبتدئين)":"First Bracket (Beginners)","الشريحة الفضية (المستثمر المتوسط)":"Silver Bracket (Mid Investor)","شريحة كبار الممولين":"Major Taxpayers Bracket","شريحة حيتان المال والمليارديرات":"Whales & Billionaires Bracket","شريحتك الحالية":"Current Bracket","شريحتك الحالية":"Current Bracket","غير خاضع":"Exempt","تقديم الإقرار الضريبي الطوعي السنوي":"Annual Voluntary Tax Return","تقديم الإقرار والتسوية":"Submit Tax Return & Settle",
+    // Taxes
+    "الشريحة الأولى (المبتدئين والنمو السريع)":"First Bracket (Beginners & Growth)","الشريحة المتوسطة (المستثمر الصاعد)":"Middle Bracket (Rising Investor)","شريحة كبار المستثمرين وحيتان المال":"High Wealth & Whales Bracket","شريحتك الحالية":"Current Bracket","غير خاضع":"Exempt","تقديم الإقرار الضريبي الطوعي السنوي":"Annual Voluntary Tax Return","تقديم الإقرار والتسوية":"Submit Tax Return & Settle","جدول شرائح ضريبة التدفق الساعي حسب صافي الثروة":"Hourly Cashflow Tax Brackets Table",
 
     // Auctions"تقديم عرض مزايدة أعلى":"Place Higher Bid","شراء فوري مباشر":"Instant Buyout","المزايد الحالي:":"Current Bidder:","العرض الحالي:":"Current Bid:","الشراء الفوري:":"Buyout Price:",
 
@@ -5011,9 +5020,12 @@ const UIController = (() => {
       },'panel-taxes': {
         title:'مصلحة الضرائب والوعاء الضريبي',
         desc:`النظام المالي والضرائب:
-        <br>• <strong>ضريبة الثروة</strong>: تفرض ضريبة تصاعدية إذا تخطت ثروتك 3 ملايين EGP.
-        <br>• <strong>الدروع الضريبية</strong>: يمكنك شراء درع ضريبي من المتجر لحماية جزء من ثروتك وتقليل المبالغ المستقطعة تلقائياً.
-        <br>• <strong>التهرب الضريبي</strong>: يؤدي لتصنيف حسابك غير ممتثل ويعرضك للغرامات الفورية.`
+        <br>• <strong>ضريبة التدفق الساعي</strong>: تُفرض ضريبة دورية كنسبة مئوية من إجمالي التدفق النقدي في الساعة بحسب إجمالي صافي ثروتك:
+        <br>— <strong>1%</strong> إذا كان إجمالي ثروتك أقل من 1,000,000 ج.م.
+        <br>— <strong>5%</strong> إذا كان إجمالي ثروتك بين 1,000,000 و 5,000,000 ج.م.
+        <br>— <strong>15%</strong> إذا كان إجمالي ثروتك أكثر من 5,000,000 ج.م.
+        <br>• <strong>الدرع الضريبي (Tax Shield)</strong>: يمنحك حماية قانونية تخفض نسبة الضريبة بنسبة 50%.
+        <br>• <strong>حماية السيولة</strong>: لا يتم استقطاع أي مبالغ إذا انعدمت السيولة لحمايتك من التعثر المالي.`
       },'panel-store': {
         title:'متجر كبار الشخصيات والحقيبة',
         desc:`المستلزمات ومقويات الكفاءة:
@@ -5640,30 +5652,29 @@ const UIController = (() => {
 
     // 4 KPI Cards
     const taxableEl = document.getElementById('tax-kpi-taxable');
-    if (taxableEl) taxableEl.textContent =`${taxReport.taxableNetWorth.toLocaleString()} EGP`;
+    if (taxableEl) taxableEl.textContent = `${Math.round(taxReport.taxableCashflowPerHour || 0).toLocaleString()} EGP/س`;
 
     let bracketName = taxReport.bracketName;
-    if (window.currentLang ==='en') {
-      if (bracketName.includes('الشريحة الأولى')) bracketName ='First Bracket (Fully Exempt)';
-      else if (bracketName.includes('الشريحة الفضية')) bracketName ='Silver Bracket (3M - 15M EGP)';
-      else if (bracketName.includes('شريحة كبار الممولين')) bracketName ='Major Taxpayer Bracket (15M - 50M EGP)';
-      else if (bracketName.includes('شريحة حيتان المال')) bracketName ='Whale & Billionaire Bracket (+50M EGP)';
+    if (window.currentLang === 'en') {
+      if (taxReport.bracketId === 1) bracketName = 'Bracket 1 (< 1M EGP - 1%)';
+      else if (taxReport.bracketId === 2) bracketName = 'Middle Bracket (1M - 5M EGP - 5%)';
+      else if (taxReport.bracketId === 3) bracketName = 'High Wealth Bracket (> 5M EGP - 15%)';
     }
 
     const bracketEl = document.getElementById('tax-kpi-bracket');
     if (bracketEl) {
       bracketEl.textContent = bracketName;
-      bracketEl.className =`text-sm font-black ${taxReport.bracketColor} block mt-1`;
+      bracketEl.className = `text-sm font-black ${taxReport.bracketColor} block mt-1`;
     }
 
     const deductionEl = document.getElementById('tax-kpi-deduction');
-    if (deductionEl) deductionEl.textContent = taxReport.taxPerSecond.toLocaleString();
+    if (deductionEl) deductionEl.textContent = Math.round(taxReport.hourlyTax || 0).toLocaleString();
 
     const ratePctEl = document.getElementById('tax-kpi-rate-pct');
-    if (ratePctEl) ratePctEl.textContent = taxReport.effectiveRatePct;
+    if (ratePctEl) ratePctEl.textContent = taxReport.effectiveRatePct + (taxReport.taxShieldActive ? ' (مع الدرع)' : '');
 
     const totalPaidEl = document.getElementById('tax-kpi-total-paid');
-    if (totalPaidEl) totalPaidEl.textContent =`${(taxReport.totalTaxesPaid || 0).toLocaleString()} EGP`;
+    if (totalPaidEl) totalPaidEl.textContent = `${(taxReport.totalTaxesPaid || 0).toLocaleString()} EGP`;
 
     // Tax Shield Status Card
     const shieldBadge = document.getElementById('tax-shield-active-badge');
@@ -5672,41 +5683,41 @@ const UIController = (() => {
 
     if (shieldBadge) {
       if (taxReport.taxShieldActive) {
-        shieldBadge.className ='text-[10px] px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full font-bold animate-pulse';
-        shieldBadge.textContent = window.currentLang ==='en' ?'Active ️ (-50%)' :'نشط وفعال ️ (-50%)';
+        shieldBadge.className = 'text-[10px] px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full font-bold animate-pulse';
+        shieldBadge.textContent = window.currentLang === 'en' ? 'Active 🛡️ (-50%)' : 'نشط وفعال 🛡️ (-50%)';
       } else {
-        shieldBadge.className ='text-[10px] px-2.5 py-0.5 bg-slate-800 text-slate-400 rounded-full font-bold';
-        shieldBadge.textContent = window.currentLang ==='en' ?'Inactive ️' :'غير مفعل ️';
+        shieldBadge.className = 'text-[10px] px-2.5 py-0.5 bg-slate-800 text-slate-400 rounded-full font-bold';
+        shieldBadge.textContent = window.currentLang === 'en' ? 'Inactive 🛡️' : 'غير مفعل 🛡️';
       }
     }
 
     if (shieldTimeLeft) {
       if (taxReport.taxShieldActive) {
         const sec = (taxReport.shieldDurationTicks || 0) * 3;
-        shieldTimeLeft.textContent = window.currentLang ==='en' ?`Validity remaining: ${sec} seconds` :`متبقي على الصلاحية: ${sec} ثانية`;
-        shieldTimeLeft.className ='text-[11px] text-emerald-400 font-mono font-bold';
+        shieldTimeLeft.textContent = window.currentLang === 'en' ? `Validity remaining: ${sec} seconds` : `متبقي على الصلاحية: ${sec} ثانية`;
+        shieldTimeLeft.className = 'text-[11px] text-emerald-400 font-mono font-bold';
       } else {
-        shieldTimeLeft.textContent = window.currentLang ==='en' ?'Duration: 12 hours (43,200 seconds)' :'المدة: 12 ساعة (43,200 ثانية)';
-        shieldTimeLeft.className ='text-[11px] text-slate-400 font-mono';
+        shieldTimeLeft.textContent = window.currentLang === 'en' ? 'Duration: 12 hours (43,200 seconds)' : 'المدة: 12 ساعة (43,200 ثانية)';
+        shieldTimeLeft.className = 'text-[11px] text-slate-400 font-mono';
       }
     }
 
     if (buyShieldLabel) {
       buyShieldLabel.textContent = taxReport.taxShieldActive 
-        ? (window.currentLang ==='en' ?'Renew Tax Shield (550,000 EGP)' :'تجديد وتمديد الدرع الضريبي (550,000 EGP)')
-        : (window.currentLang ==='en' ?'Purchase Tax Shield (550,000 EGP)' :'شراء وتفعيل الدرع الضريبي (550,000 EGP)');
+        ? (window.currentLang === 'en' ? 'Renew Tax Shield (550,000 EGP)' : 'تجديد وتمديد الدرع الضريبي (550,000 EGP)')
+        : (window.currentLang === 'en' ? 'Purchase Tax Shield (550,000 EGP)' : 'شراء وتفعيل الدرع الضريبي (550,000 EGP)');
     }
 
-    // Active row badges in table
-    for (let i = 1; i <= 4; i++) {
+    // Active row badges in table (3 Brackets)
+    for (let i = 1; i <= 3; i++) {
       const badge = document.getElementById(`tax-badge-row-${i}`);
       if (badge) {
         if (taxReport.bracketId === i) {
-          badge.className ='px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
-          badge.textContent = window.currentLang ==='en' ?'Current Bracket' :'شريحتك الحالية';
+          badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+          badge.textContent = window.currentLang === 'en' ? 'Current Bracket' : 'شريحتك الحالية';
         } else {
-          badge.className ='px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-500';
-          badge.textContent = window.currentLang ==='en' ?'Exempt' :'غير خاضع';
+          badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-500';
+          badge.textContent = window.currentLang === 'en' ? 'Inactive' : 'غير خاضع';
         }
       }
     }
@@ -7813,7 +7824,7 @@ const UIController = (() => {
             const tickIncome = GameEngine.calculatePassiveIncomePerTick ? GameEngine.calculatePassiveIncomePerTick(true) : 0;
             const taxReport = GameEngine.calculateTaxReport ? GameEngine.calculateTaxReport() : { taxPerSecond: 0 };
             grossIncomePerSecond = Math.max(0, tickIncome);
-            taxPerSecond = ((state.netWorth || 0) > 5000000 && (((state.bank || 0) + (state.cash || 0)) > 100000)) ? (taxReport.taxPerSecond || 0) : 0;
+            taxPerSecond = (taxReport && taxReport.taxPerSecond) || 0;
             netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
           }
         } catch (err) {
@@ -8179,7 +8190,7 @@ const UIController = (() => {
             const tickIncome = GameEngine.calculatePassiveIncomePerTick ? GameEngine.calculatePassiveIncomePerTick(true) : 0;
             const taxReport = GameEngine.calculateTaxReport ? GameEngine.calculateTaxReport() : { taxPerSecond: 0 };
             grossIncomePerSecond = Math.max(0, tickIncome);
-            taxPerSecond = ((selectedPlayerState.netWorth || 0) > 5000000 && (((selectedPlayerState.bank || 0) + (selectedPlayerState.cash || 0)) > 100000)) ? (taxReport.taxPerSecond || 0) : 0;
+            taxPerSecond = (taxReport && taxReport.taxPerSecond) || 0;
             netIncomePerSecond = Math.max(0, grossIncomePerSecond - taxPerSecond);
           }
         } catch (err) {
@@ -12535,18 +12546,19 @@ const UIController = (() => {
       }
     }
 
-    // 9. Wealth Tax Section
+    // 9. Cashflow Tax Section
     const taxSubtotalEl = document.getElementById('cf-subtotal-tax');
     const taxListEl = document.getElementById('cf-list-tax');
     if (taxListEl) {
       if (breakdown.tax.active) {
-        const taxVal = Number(breakdown.tax.taxPerHour !== undefined ? breakdown.tax.taxPerHour : breakdown.tax.taxPerSec);
+        const taxVal = Number(breakdown.tax.taxPerHour !== undefined ? breakdown.tax.taxPerHour : (breakdown.tax.taxPerSec * 3600));
         if (taxSubtotalEl) taxSubtotalEl.textContent = `-${Math.round(taxVal).toLocaleString()} EGP/س`;
+        const shieldNotice = breakdown.tax.taxShieldActive ? ' (مخفضة بنسبة 50% مع الدرع)' : '';
         taxListEl.innerHTML = `
           <div class="flex justify-between items-center bg-rose-950/20 p-2.5 rounded-xl border border-rose-900/40">
             <div>
-              <span class="text-rose-400 font-bold">ضريبة الثروة الدورية (5M+ EGP)</span>
-              <span class="text-[10px] text-slate-400 block">تُخصم دورياً للحسابات ذات الثروات والسيولة العالية</span>
+              <span class="text-rose-400 font-bold">ضريبة التدفق الساعي (${breakdown.tax.ratePct || ''})</span>
+              <span class="text-[10px] text-slate-400 block">${breakdown.tax.bracketName || 'حسب شريحة الثروة'}${shieldNotice}</span>
             </div>
             <span class="numbers-font font-black text-rose-400 text-xs sm:text-sm">-${Math.round(taxVal).toLocaleString()} EGP/س</span>
           </div>`;
