@@ -5336,6 +5336,48 @@ const GameEngine = (() => {
         state[k] = Number.MAX_SAFE_INTEGER;
       }
     });
+
+    // Anti-Cheat: Validate and clamp stock shares to official maximum caps
+    if (state.stocks && typeof state.stocks === 'object') {
+      Object.keys(STOCKS).forEach(sym => {
+        const stockConfig = STOCKS[sym];
+        const max = stockConfig ? (stockConfig.maxShares || 50000) : 50000;
+        if (state.stocks[sym]) {
+          if (typeof state.stocks[sym].shares !== 'number' || isNaN(state.stocks[sym].shares) || state.stocks[sym].shares < 0) {
+            state.stocks[sym].shares = 0;
+          }
+          if (state.stocks[sym].shares > max) {
+            console.warn(`[AntiCheat] Clamping excess stock shares for ${sym}: ${state.stocks[sym].shares} -> ${max}`);
+            state.stocks[sym].shares = max;
+          }
+          if (typeof state.stocks[sym].avgPrice !== 'number' || isNaN(state.stocks[sym].avgPrice) || state.stocks[sym].avgPrice < 0) {
+            state.stocks[sym].avgPrice = stockConfig ? (stockConfig.basePrice || 50) : 50;
+          }
+        }
+      });
+    }
+
+    // Anti-Cheat: Validate investments
+    if (state.investments && typeof state.investments === 'object') {
+      const maxInvCap = 50000000; // 50M cap per investment slot
+      Object.keys(state.investments).forEach(ik => {
+        const val = state.investments[ik];
+        if (typeof val === 'number') {
+          if (isNaN(val) || !isFinite(val) || val < 0) {
+            state.investments[ik] = 0;
+          } else if (val > maxInvCap) {
+            console.warn(`[AntiCheat] Clamping excess investment for ${ik}: ${val} -> ${maxInvCap}`);
+            state.investments[ik] = maxInvCap;
+          }
+        }
+      });
+    }
+
+    // Anti-Cheat: Protect admin flag from unauthorized client tampering
+    if (state.isAdmin === true && !window._isServerVerifiedAdmin) {
+      // If user was not verified as admin during login, do not permit client-side escalation
+      state.isAdmin = false;
+    }
   }
 
   // ─────────────────────────────────────────────────────────
@@ -5444,7 +5486,12 @@ const GameEngine = (() => {
 
   return {
     get state() { return state; },
-    set state(val) { state = val; },
+    set state(val) { 
+      if (val && typeof val === 'object') {
+        state = val;
+        sanitizeGameState();
+      }
+    },
     get stockPrices() { return stockPrices; },
     get activeUsername() { return activeUsername; },
 

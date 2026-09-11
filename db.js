@@ -1131,8 +1131,12 @@ var AppDB = (() => {
       stateObj.netWorth = Math.max(Number(row.net_worth || 0), Number((row.state && row.state.netWorth) || 0));
       stateObj.xp = Math.max(Number(row.xp || 0), Number((row.state && row.state.xp) || 0));
       stateObj.title = row.title || stateObj.title ||'عامل مبتدئ';
-      stateObj.jobId = row.job_id || stateObj.jobId ||'worker';
       stateObj.isAdmin = row.is_admin === true;
+      if (typeof window !== 'undefined') {
+        window._isServerVerifiedAdmin = row.is_admin === true;
+      }
+      _lastVerifiedCloudWealth = Math.max(0, Number(row.cash || 0)) + Math.max(0, Number(row.bank || 0));
+      _lastVerifiedCloudTime = Date.now();
       stateObj.isBanned = row.is_banned === true;
       stateObj.jailTimer = Number(row.jail_timer || 0);
       stateObj.afkManagerExpiresAt = Number(row.afk_manager_expires_at || 0);
@@ -1353,8 +1357,6 @@ var AppDB = (() => {
         xp: Number(state.xp || 0),
         title: state.title || 'عامل مبتدئ',
         job_id: state.jobId || 'worker',
-        is_admin: state.isAdmin === true,
-        is_banned: state.isBanned === true,
         jail_timer: Number(state.jailTimer || 0),
         afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
         total_taxes_paid: Number(state.totalTaxesPaid || 0),
@@ -1362,6 +1364,7 @@ var AppDB = (() => {
         last_seen: exitNow
       };
       if (state.pin) payload.pin = state.pin;
+      _sanitizePayloadBeforeCloudPush(payload, state);
 
       fetch(`${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}`, {
         method: 'PATCH',
@@ -1401,6 +1404,72 @@ var AppDB = (() => {
     }
   }
 
+  const STOCK_MAX_CAPS = {
+    COMI: 50000,
+    EAST: 30000,
+    ETEL: 40000,
+    FWRY: 25000,
+    CASH: 20000,
+    BITC: 5000,
+    GOLD: 10000,
+    AIX: 8000
+  };
+
+  function _sanitizePayloadBeforeCloudPush(payload, state) {
+    if (!payload || !state) return;
+
+    // 1. Admin escalation guard: NEVER allow untrusted client to promote self
+    if (!window._isServerVerifiedAdmin) {
+      delete payload.is_admin;
+      if (state.isAdmin) state.isAdmin = false;
+    } else {
+      payload.is_admin = true;
+    }
+
+    // 2. Unban guard: NEVER allow untrusted client to unban self
+    delete payload.is_banned;
+
+    // 3. Stock shares cap validation in both payload and inner state
+    if (state.stocks && typeof state.stocks === 'object') {
+      for (const [sym, max] of Object.entries(STOCK_MAX_CAPS)) {
+        if (state.stocks[sym]) {
+          if (typeof state.stocks[sym].shares !== 'number' || isNaN(state.stocks[sym].shares) || state.stocks[sym].shares < 0) {
+            state.stocks[sym].shares = 0;
+          }
+          if (state.stocks[sym].shares > max) {
+            console.warn(`[AntiCheat] Clamping excess shares for ${sym}: ${state.stocks[sym].shares} -> ${max}`);
+            state.stocks[sym].shares = max;
+          }
+        }
+      }
+    }
+
+    // 4. Wealth Velocity Limiter (Anti-F12 memory cash/bank injection)
+    const currentLiquid = Math.max(0, Number(state.cash || 0)) + Math.max(0, Number(state.bank || 0));
+    const now = Date.now();
+    if (_lastVerifiedCloudWealth !== null && !state._legitimateTransactionBypass) {
+      const elapsedSec = Math.max(1, (now - _lastVerifiedCloudTime) / 1000);
+      // Max possible legitimate passive/active earnings is ~15,000/s; min baseline 350,000 per 35s cycle
+      const maxAllowedGain = Math.max(350000, elapsedSec * 15000);
+      const gain = currentLiquid - _lastVerifiedCloudWealth;
+      if (gain > maxAllowedGain && !state.adminModifiedTimestamp) {
+        console.warn(`[AntiCheat] Abnormal wealth velocity jump: +${gain.toLocaleString()} in ${elapsedSec.toFixed(0)}s. Clamping to legitimate ceiling.`);
+        const excess = gain - maxAllowedGain;
+        if (state.cash >= excess) {
+          state.cash -= excess;
+        } else {
+          state.bank = Math.max(0, state.bank - (excess - state.cash));
+          state.cash = 0;
+        }
+        payload.cash = Number(state.cash || 0);
+        payload.bank = Number(state.bank || 0);
+      }
+    }
+    _lastVerifiedCloudWealth = Math.max(0, Number(state.cash || 0)) + Math.max(0, Number(state.bank || 0));
+    _lastVerifiedCloudTime = now;
+    delete state._legitimateTransactionBypass;
+  }
+
   let _cloudSyncDebounceTimer = null;
   let _lastCloudSyncTimestamp = 0;
   const SMART_SYNC_INTERVAL_MS = 35000; // 35 seconds max delay for background autosync
@@ -1418,8 +1487,6 @@ var AppDB = (() => {
       xp: Number(state.xp || 0),
       title: state.title ||'عامل مبتدئ',
       job_id: state.jobId ||'worker',
-      is_admin: state.isAdmin === true,
-      is_banned: state.isBanned === true,
       jail_timer: Number(state.jailTimer || 0),
       afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
       total_taxes_paid: Number(state.totalTaxesPaid || 0),
@@ -1427,6 +1494,7 @@ var AppDB = (() => {
       last_seen: Number(state.lastActiveTimestamp || state.lastSeen || getTrustedNow())
     };
     if (state.pin) payload.pin = state.pin;
+    _sanitizePayloadBeforeCloudPush(payload, state);
 
     // When Authoritative ServerBridge is online, server writes authoritatively via service_role
     if (typeof window !== 'undefined' && window.ServerBridge) {

@@ -801,6 +801,7 @@ const UIController = (() => {
 
   // UI Setup & Bindings
   async function init() {
+    setupSecurityProtections();
     applyGlowSetting(glowEnabled);
     setupStartMenu();
     setupAuthPanel();
@@ -819,6 +820,31 @@ const UIController = (() => {
 
     // Refresh Start Menu player prestige card
     await refreshStartMenuCard();
+  }
+
+  // --- Security & Integrity Shield ---
+  function setupSecurityProtections() {
+    window.addEventListener('keydown', (e) => {
+      const isDevKey =
+        e.key === 'F12' ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key)) ||
+        ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U'));
+
+      if (isDevKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        showToast('حماية النزاهة 🛡️', 'أدوات المطورين مغلقة لحماية توازن ونزاهة بيئة اللعبة.', 'warning', 2500);
+        return false;
+      }
+    }, true);
+
+    window.addEventListener('contextmenu', (e) => {
+      const tag = e.target && e.target.tagName ? e.target.tagName.toLowerCase() : '';
+      if (tag === 'input' || tag === 'textarea' || (e.target && e.target.isContentEditable)) {
+        return;
+      }
+      e.preventDefault();
+    }, true);
   }
 
   // --- Start Menu Controller & Particle Generator ---
