@@ -12879,7 +12879,19 @@ const UIController = (() => {
       } catch (_) {}
     }
 
-    window._localDMs = window._localDMs || [];
+    // Prune any local optimistic messages that already exist in DB
+    window._localDMs = (window._localDMs || []).filter(localM => {
+      const localText = ((localM.payload && localM.payload.message) || localM.message || '').trim();
+      const localTs = Number(localM.created_at || localM.timestamp || 0);
+      const alreadyInDb = msgs.some(dbM => {
+        if (dbM.sender !== localM.sender || dbM.recipient !== localM.recipient) return false;
+        const dbText = ((dbM.payload && dbM.payload.message) || dbM.message || '').trim();
+        const dbTs = Number(dbM.created_at || dbM.timestamp || 0);
+        return dbText === localText && Math.abs(dbTs - localTs) < 45000;
+      });
+      return !alreadyInDb;
+    });
+
     const relevantLocal = window._localDMs.filter(m => 
       (m.sender === myUser && m.recipient === partnerUsername) ||
       (m.sender === partnerUsername && m.recipient === myUser)
@@ -12887,10 +12899,29 @@ const UIController = (() => {
 
     const seen = new Set();
     const merged = [];
-    [...msgs, ...relevantLocal].forEach(m => {
-      const key = m.id || `${m.sender}_${m.recipient}_${m.created_at || m.timestamp}_${m.payload?.message || m.message}`;
-      if (!seen.has(key)) {
-        seen.add(key);
+
+    // 1. Authoritative DB messages first
+    msgs.forEach(m => {
+      const text = ((m.payload && m.payload.message) || m.message || '').trim();
+      const ts = Number(m.created_at || m.timestamp || 0);
+      const timeBucket = Math.floor(ts / 20000); // 20s window deduplication
+      const sig = `${m.sender}_${m.recipient}_${timeBucket}_${text}`;
+      if (!seen.has(m.id) && !seen.has(sig)) {
+        seen.add(m.id);
+        seen.add(sig);
+        merged.push(m);
+      }
+    });
+
+    // 2. Add local pending messages only if not already merged
+    relevantLocal.forEach(m => {
+      const text = ((m.payload && m.payload.message) || m.message || '').trim();
+      const ts = Number(m.created_at || m.timestamp || 0);
+      const timeBucket = Math.floor(ts / 20000);
+      const sig = `${m.sender}_${m.recipient}_${timeBucket}_${text}`;
+      if (!seen.has(m.id) && !seen.has(sig)) {
+        seen.add(m.id);
+        seen.add(sig);
         merged.push(m);
       }
     });
@@ -12933,7 +12964,9 @@ const UIController = (() => {
     container.scrollTop = container.scrollHeight;
   }
 
+  let _isSendingDM = false;
   async function sendDMMessage() {
+    if (_isSendingDM) return;
     const input = document.getElementById('dm-message-input');
     const btn = document.getElementById('btn-send-dm-message');
     const counter = document.getElementById('dm-char-counter');
@@ -12952,13 +12985,16 @@ const UIController = (() => {
       return;
     }
 
+    _isSendingDM = true;
+    const localMsgId = 'local_dm_' + Date.now();
+
     try {
       if (btn) btn.disabled = true;
       input.value = '';
       if (counter) counter.textContent = '0 / 200';
 
       const localMsg = {
-        id: 'local_dm_' + Date.now(),
+        id: localMsgId,
         sender: myUser,
         recipient: currentActiveDMUser,
         type: 'dm',
@@ -12974,6 +13010,7 @@ const UIController = (() => {
         if (container.querySelector('.fa-lock')) container.innerHTML = '';
         const msgDiv = document.createElement('div');
         msgDiv.className = 'flex flex-col items-end';
+        msgDiv.setAttribute('data-local-dm-id', localMsgId);
         const timeStr = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
         msgDiv.innerHTML = `
           <div class="bg-gradient-to-r from-sky-600 to-sky-500 text-white rounded-2xl rounded-bl-sm p-2.5 text-xs shadow-md shadow-sky-950/30 max-w-[85%] select-text">
@@ -12993,6 +13030,10 @@ const UIController = (() => {
         await AppDB.sendMail(myUser, currentActiveDMUser, 'dm', { message: text, timestamp: Date.now() });
       }
 
+      // Once confirmed in DB, clear optimistic record and re-render seamlessly
+      window._localDMs = (window._localDMs || []).filter(m => m.id !== localMsgId);
+      loadActivePrivateConversation(currentActiveDMUser);
+
       // Notify offline recipient via server web push
       try {
         const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) ? window.SERVER_API_URL.replace(/\/$/, '') : '';
@@ -13007,9 +13048,13 @@ const UIController = (() => {
         }).catch(() => {});
       } catch (_) {}
     } catch (err) {
+      window._localDMs = (window._localDMs || []).filter(m => m.id !== localMsgId);
+      const failedBubble = document.querySelector(`[data-local-dm-id="${localMsgId}"]`);
+      if (failedBubble) failedBubble.remove();
       showToast('فشل الإرسال', err.message, 'error');
       input.value = text;
     } finally {
+      _isSendingDM = false;
       if (btn) btn.disabled = false;
       setTimeout(() => { if (input) input.focus(); }, 50);
     }
