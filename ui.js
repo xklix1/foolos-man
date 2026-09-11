@@ -4692,6 +4692,7 @@ const UIController = (() => {
     let bjDealerHand = [];
     let bjBet = 0;
     let bjActive = false;
+    let bjSettling = false;
 
     function getCardSuitSymbol(suit) {
       if (suit ==='H') return'️';
@@ -4798,6 +4799,12 @@ const UIController = (() => {
           GameEngine.checkCasinoAllowedAndDeduct(bet);
           bjBet = bet;
           bjActive = true;
+          bjSettling = false;
+
+          // Enable action buttons
+          if (bjHitBtn) bjHitBtn.disabled = false;
+          if (bjStandBtn) bjStandBtn.disabled = false;
+          if (bjDoubleBtn) bjDoubleBtn.disabled = false;
 
           // Generate Deck and Deal
           bjDeck = shuffleDeck(createDeck());
@@ -4827,7 +4834,7 @@ const UIController = (() => {
 
     if (bjHitBtn) {
       bjHitBtn.addEventListener('click', () => {
-        if (!bjActive) return;
+        if (!bjActive || bjSettling) return;
         bjPlayerHand.push(bjDeck.pop());
         playCasinoSound('card');
         updateBlackjackUI(true);
@@ -4842,7 +4849,14 @@ const UIController = (() => {
     }
 
     function executeBjStand() {
-      if (!bjActive) return;
+      if (!bjActive || bjSettling) return;
+      bjActive = false;
+      bjSettling = true;
+
+      // Lock buttons immediately to block spam/rapid clicks
+      if (bjHitBtn) bjHitBtn.disabled = true;
+      if (bjStandBtn) bjStandBtn.disabled = true;
+      if (bjDoubleBtn) bjDoubleBtn.disabled = true;
 
       updateBlackjackUI(false);
       let dScore = calculateScore(bjDealerHand);
@@ -4866,7 +4880,8 @@ const UIController = (() => {
 
     if (bjDoubleBtn) {
       bjDoubleBtn.addEventListener('click', () => {
-        if (!bjActive) return;
+        if (!bjActive || bjSettling) return;
+        bjDoubleBtn.disabled = true;
         try {
           // Deduct matching bet for double down (skipCooldown=true since within active hand)
           GameEngine.checkCasinoAllowedAndDeduct(bjBet, true);
@@ -4882,6 +4897,7 @@ const UIController = (() => {
             executeBjStand();
           }
         } catch (e) {
+          bjDoubleBtn.disabled = false;
           showToast(window.currentLang ==='en' ?'Double Down' :'مضاعفة الرهان', e.message,'error');
         }
       });
@@ -4907,8 +4923,17 @@ const UIController = (() => {
       }
     }
 
+    let _bjEnding = false;
     function endBlackjackRound(result) {
+      if (_bjEnding) return;
+      _bjEnding = true;
       bjActive = false;
+      bjSettling = false;
+
+      if (bjHitBtn) bjHitBtn.disabled = true;
+      if (bjStandBtn) bjStandBtn.disabled = true;
+      if (bjDoubleBtn) bjDoubleBtn.disabled = true;
+      setTimeout(() => { _bjEnding = false; }, 300);
       let multiplier = 0;
       let winText ='';
       let toastType ='success';
