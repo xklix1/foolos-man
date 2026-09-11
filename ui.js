@@ -11381,6 +11381,99 @@ const UIController = (() => {
       });
     }
 
+    // Chat Drawer Tabs (Public vs Private DMs)
+    const tabPublicBtn = document.getElementById('chat-tab-btn-public');
+    const tabDmsBtn = document.getElementById('chat-tab-btn-dms');
+    if (tabPublicBtn) tabPublicBtn.addEventListener('click', () => switchChatDrawerTab('public'));
+    if (tabDmsBtn) tabDmsBtn.addEventListener('click', () => switchChatDrawerTab('dms'));
+
+    // Start DM with specific user
+    const btnStartDm = document.getElementById('btn-start-dm-with-user');
+    const dmStartInput = document.getElementById('dm-start-username-input');
+    if (btnStartDm && dmStartInput) {
+      const doStartDm = () => {
+        const target = dmStartInput.value.trim();
+        if (!target) return;
+        dmStartInput.value = '';
+        openPrivateChatWith(target);
+      };
+      btnStartDm.addEventListener('click', doStartDm);
+      dmStartInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') doStartDm();
+      });
+    }
+
+    // Back from active DM to list
+    const btnBackToDms = document.getElementById('btn-back-to-dms-list');
+    if (btnBackToDms) {
+      btnBackToDms.addEventListener('click', () => {
+        currentActiveDMUser = '';
+        const activeView = document.getElementById('dms-active-chat-view');
+        const listView = document.getElementById('dms-conversations-list-view');
+        if (activeView) activeView.classList.add('hidden');
+        if (listView) listView.classList.remove('hidden');
+        renderDMsConversationList(window.lastMailsCache || []);
+      });
+    }
+
+    // Open partner profile from active DM
+    const btnDmPartnerProfile = document.getElementById('btn-dm-open-partner-profile');
+    if (btnDmPartnerProfile) {
+      btnDmPartnerProfile.addEventListener('click', () => {
+        if (currentActiveDMUser) openPlayerProfileCard(currentActiveDMUser);
+      });
+    }
+
+    // Send DM message handlers
+    const btnSendDM = document.getElementById('btn-send-dm-message');
+    const dmMsgInput = document.getElementById('dm-message-input');
+    const dmCharCounter = document.getElementById('dm-char-counter');
+    if (dmMsgInput && dmCharCounter) {
+      dmMsgInput.addEventListener('input', () => {
+        dmCharCounter.textContent = `${dmMsgInput.value.length} / 200`;
+      });
+    }
+    if (btnSendDM && dmMsgInput) {
+      btnSendDM.addEventListener('click', sendDMMessage);
+      dmMsgInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          sendDMMessage();
+        }
+      });
+    }
+
+    // Direct Wire Modal listeners
+    const btnCloseDirectWire = document.getElementById('btn-close-direct-wire-modal');
+    const btnCancelDirectWire = document.getElementById('btn-cancel-direct-wire');
+    const directWireModal = document.getElementById('direct-wire-modal');
+    if (btnCloseDirectWire && directWireModal) {
+      btnCloseDirectWire.addEventListener('click', () => directWireModal.classList.add('hidden'));
+    }
+    if (btnCancelDirectWire && directWireModal) {
+      btnCancelDirectWire.addEventListener('click', () => directWireModal.classList.add('hidden'));
+    }
+
+    document.querySelectorAll('.direct-wire-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const amtType = chip.dataset.amount;
+        const inputEl = document.getElementById('direct-wire-amount-input');
+        if (!inputEl) return;
+        if (amtType === 'max') {
+          const curCash = Number(GameEngine.state.cash) || 0;
+          inputEl.value = Math.max(0, Math.floor(curCash));
+        } else {
+          inputEl.value = parseInt(amtType);
+        }
+        if (typeof playMenuSound === 'function') playMenuSound('click');
+      });
+    });
+
+    const btnConfirmDirectWire = document.getElementById('btn-confirm-direct-wire');
+    if (btnConfirmDirectWire) {
+      btnConfirmDirectWire.addEventListener('click', executeDirectWireFromModal);
+    }
+
     if (chatInput && charCounter) {
       chatInput.addEventListener('input', () => {
         charCounter.textContent =`${chatInput.value.length} / 200`;
@@ -11571,52 +11664,36 @@ const UIController = (() => {
       });
     }
 
-    const btnAddFriend = document.getElementById('btn-profile-add-friend');
-    const btnProfileDM = document.getElementById('btn-profile-dm');
-    const btnProfileJob = document.getElementById('btn-profile-job-offer');
-    const btnProfilePartnership = document.getElementById('btn-profile-partnership');
-    const btnProfileBlock = document.getElementById('btn-profile-block-player');
-
-    if (btnAddFriend) {
-      btnAddFriend.addEventListener('click', async () => {
-        const target = btnAddFriend.dataset.username;
+    const btnTransferMoney = document.getElementById('btn-profile-transfer-money');
+    if (btnTransferMoney) {
+      btnTransferMoney.addEventListener('click', () => {
+        const target = btnTransferMoney.dataset.username;
+        const title = btnTransferMoney.dataset.title || 'مستثمر طموح';
         if (!target) return;
-        try {
-          await AppDB.sendMail(GameEngine.state.username, target,'friend_request', {});
-          showToast('طلب صداقة',`تم إرسال طلب صداقة إلى ${target} بنجاح!`,'success');
-        } catch (err) {
-          showToast('خطأ طلب صداقة', err.message,'error');
-        }
+        openDirectWireModal(target, title);
       });
     }
 
-    if (btnProfileDM) {
-      btnProfileDM.addEventListener('click', () => {
-        const target = btnProfileDM.dataset.username;
+    const btnPrivateChat = document.getElementById('btn-profile-private-chat');
+    if (btnPrivateChat) {
+      btnPrivateChat.addEventListener('click', () => {
+        const target = btnPrivateChat.dataset.username;
         if (!target) return;
         document.getElementById('player-profile-modal').classList.add('hidden');
-        mailboxModal.classList.remove('hidden');
-        switchMailboxTab('dms');
-        openPrivateChat(target);
+        openChatDrawerWithDM(target);
       });
     }
 
-    if (btnProfileJob) {
-      btnProfileJob.addEventListener('click', () => {
-        const target = btnProfileJob.dataset.username;
+    const btnMutePlayer = document.getElementById('btn-profile-mute-player');
+    if (btnMutePlayer) {
+      btnMutePlayer.addEventListener('click', () => {
+        const target = btnMutePlayer.dataset.username;
         if (!target) return;
-        openJobOfferForm(target);
+        toggleMutePlayer(target);
       });
     }
 
-    if (btnProfilePartnership) {
-      btnProfilePartnership.addEventListener('click', () => {
-        const target = btnProfilePartnership.dataset.username;
-        if (!target) return;
-        openPartnershipForm(target);
-      });
-    }
-
+    const btnProfileBlock = document.getElementById('btn-profile-block-player');
     if (btnProfileBlock) {
       btnProfileBlock.addEventListener('click', () => {
         const target = btnProfileBlock.dataset.username;
@@ -11909,15 +11986,17 @@ const UIController = (() => {
     const container = document.getElementById('chat-messages-container');
     if (!container) return;
 
-    container.innerHTML ='';
+    window._lastChatMessagesCache = msgs || [];
+    container.innerHTML = '';
 
     if (!msgs || msgs.length === 0) {
-      container.innerHTML ='<div class="text-center text-slate-500 text-xs py-8">لا توجد رسائل سابقة. كن أول من يكتب! </div>';
+      container.innerHTML = '<div class="text-center text-slate-500 text-xs py-8">لا توجد رسائل سابقة. كن أول من يكتب! 💬</div>';
       return;
     }
 
     const curUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
     const blocked = (GameEngine.state && GameEngine.state.blockedUsers) || [];
+    const muted = (GameEngine.state && GameEngine.state.mutedUsers) || [];
 
     // Global registry of players with active chat glow
     window._knownVipGlowPlayers = window._knownVipGlowPlayers || new Map();
@@ -11952,6 +12031,7 @@ const UIController = (() => {
 
     msgs.forEach(msg => {
       if (blocked.includes(msg.sender)) return;
+      if (muted.includes(msg.sender)) return;
 
       const isSystem = msg.sender ==='الإدارة';
       const isMe = !isSystem && curUser && msg.sender === curUser;
@@ -12508,51 +12588,485 @@ const UIController = (() => {
     renderDMsConversationList(mails);
   }
 
-  function renderDMsConversationList(mails) {
-    const container = document.getElementById('dm-friends-list');
-    if (!container) return;
-    container.innerHTML ='';
+  // ─────────────────────────────────────────────
+  //  CHAT DRAWER TABS & PRIVATE DMs SYSTEM
+  // ─────────────────────────────────────────────
+  let _currentChatDrawerTab = 'public';
 
-    const chats = {};
-    const dms = mails.filter(m => m.type ==='dm');
+  function switchChatDrawerTab(tab) {
+    _currentChatDrawerTab = tab;
+    const tabPublicBtn = document.getElementById('chat-tab-btn-public');
+    const tabDmsBtn = document.getElementById('chat-tab-btn-dms');
+    const publicView = document.getElementById('chat-public-view');
+    const dmsView = document.getElementById('chat-dms-view');
 
-    if (GameEngine.state.friends) {
-      GameEngine.state.friends.forEach(f => {
-        chats[f] = { username: f, lastMsg:'اضغط لبدء المحادثة الخاصة...', timestamp: 0 };
-      });
-    }
-
-    dms.forEach(m => {
-      const partner = m.sender === GameEngine.state.username ? m.recipient : m.sender;
-      if (!chats[partner] || m.timestamp > chats[partner].timestamp) {
-        chats[partner] = {
-          username: partner,
-          lastMsg: m.payload.message,
-          timestamp: m.timestamp
-        };
+    if (tab === 'public') {
+      if (tabPublicBtn) {
+        tabPublicBtn.classList.add('active', 'bg-amber-500', 'text-slate-950', 'font-black', 'shadow');
+        tabPublicBtn.classList.remove('text-slate-400', 'bg-transparent', 'font-bold');
       }
-    });
-
-    const list = Object.values(chats);
-    if (list.length === 0) {
-      container.innerHTML ='<div class="text-[10px] text-slate-500 text-center py-6">قم بإضافة أصدقاء لبدء دردشة خاصة.</div>';
+      if (tabDmsBtn) {
+        tabDmsBtn.classList.remove('active', 'bg-amber-500', 'text-slate-950', 'font-black', 'shadow');
+        tabDmsBtn.classList.add('text-slate-400', 'bg-transparent', 'font-bold');
+      }
+      if (publicView) publicView.classList.remove('hidden');
+      if (dmsView) dmsView.classList.add('hidden');
     } else {
-      list.forEach(c => {
-        const item = document.createElement('div');
-        item.className =`p-2.5 rounded-lg border ${currentActiveDMUser === c.username ?'bg-emerald-500/10 border-emerald-500/30' :'bg-slate-900/40 border-slate-900'} cursor-pointer hover:bg-slate-800/40 transition`;
-        item.innerHTML =`
-          <div class="flex justify-between items-center mb-0.5">
-            <span class="font-bold text-white text-xs truncate">${c.username}</span>
-          </div>
-          <p class="text-[9px] text-slate-400 truncate">${c.lastMsg}</p>`;
-        item.addEventListener('click', () => openPrivateChat(c.username));
-        container.appendChild(item);
-      });
+      if (tabDmsBtn) {
+        tabDmsBtn.classList.add('active', 'bg-amber-500', 'text-slate-950', 'font-black', 'shadow');
+        tabDmsBtn.classList.remove('text-slate-400', 'bg-transparent', 'font-bold');
+      }
+      if (tabPublicBtn) {
+        tabPublicBtn.classList.remove('active', 'bg-amber-500', 'text-slate-950', 'font-black', 'shadow');
+        tabPublicBtn.classList.add('text-slate-400', 'bg-transparent', 'font-bold');
+      }
+      if (dmsView) dmsView.classList.remove('hidden');
+      if (publicView) publicView.classList.add('hidden');
+
+      if (currentActiveDMUser) {
+        const activeView = document.getElementById('dms-active-chat-view');
+        const listView = document.getElementById('dms-conversations-list-view');
+        if (activeView) activeView.classList.remove('hidden');
+        if (listView) listView.classList.add('hidden');
+        loadActivePrivateConversation(currentActiveDMUser);
+      } else {
+        const activeView = document.getElementById('dms-active-chat-view');
+        const listView = document.getElementById('dms-conversations-list-view');
+        if (activeView) activeView.classList.add('hidden');
+        if (listView) listView.classList.remove('hidden');
+        renderDMsConversationList(window.lastMailsCache || []);
+      }
     }
   }
 
-  function openPrivateChat() {}
+  function openChatDrawerWithDM(targetUsername) {
+    const chatDrawer = document.getElementById('chat-drawer');
+    if (chatDrawer) {
+      chatDrawer.classList.add('chat-drawer-open');
+      chatDrawer.classList.remove('translate-x-full');
+    }
+    switchChatDrawerTab('dms');
+    openPrivateChatWith(targetUsername);
+  }
+
+  async function renderDMsConversationList(mails) {
+    const container = document.getElementById('dms-conversations-list');
+    if (!container) return;
+
+    const myUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username) || '';
+    if (!myUser) return;
+
+    let allDMs = [];
+    if (mails && mails.length > 0) {
+      allDMs = mails.filter(m => m.type === 'dm');
+    }
+
+    window._localDMs = window._localDMs || [];
+    const combined = [...allDMs, ...window._localDMs];
+
+    if (combined.length === 0 && AppDB && typeof AppDB.getAllPrivateMessages === 'function') {
+      try {
+        const cloudDMs = await AppDB.getAllPrivateMessages(myUser);
+        if (cloudDMs && cloudDMs.length > 0) {
+          combined.push(...cloudDMs);
+        }
+      } catch (_) {}
+    }
+
+    const seen = new Set();
+    const uniqueDMs = [];
+    combined.forEach(m => {
+      const key = m.id || `${m.sender}_${m.recipient}_${m.created_at || m.timestamp}_${m.payload?.message || m.message}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueDMs.push(m);
+      }
+    });
+
+    const chats = {};
+    let totalUnread = 0;
+
+    uniqueDMs.forEach(m => {
+      const partner = (m.sender === myUser ? m.recipient : m.sender);
+      if (!partner) return;
+      const ts = Number(m.created_at || m.timestamp || 0);
+      const isUnread = (m.recipient === myUser && (m.status === 'unread' || m.status === 'pending'));
+      if (isUnread) totalUnread++;
+
+      const msgText = (m.payload && m.payload.message) || m.message || '';
+      if (!chats[partner] || ts > chats[partner].timestamp) {
+        chats[partner] = {
+          username: partner,
+          lastMsg: msgText,
+          timestamp: ts,
+          isSentByMe: m.sender === myUser,
+          unreadCount: (chats[partner]?.unreadCount || 0) + (isUnread ? 1 : 0)
+        };
+      } else if (isUnread) {
+        chats[partner].unreadCount = (chats[partner].unreadCount || 0) + 1;
+      }
+    });
+
+    const badgeEl = document.getElementById('chat-dms-unread-badge');
+    if (badgeEl) {
+      badgeEl.textContent = totalUnread > 9 ? '+9' : String(totalUnread);
+      badgeEl.classList.toggle('hidden', totalUnread === 0);
+    }
+
+    const chatList = Object.values(chats).sort((a, b) => b.timestamp - a.timestamp);
+
+    if (chatList.length === 0) {
+      container.innerHTML = `
+        <div class="text-center text-slate-500 text-xs py-10">
+          <i class="fa-solid fa-lock text-slate-600 text-2xl mb-2 block"></i>
+          <span>لا توجد محادثات خاصة بعد.</span>
+          <p class="text-[10px] text-slate-600 mt-1">اكتب اسم أي لاعب أعلاه لبدء محادثة مشفرة فوراً.</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = '';
+    chatList.forEach(c => {
+      const timeStr = c.timestamp > 0 ? new Date(c.timestamp).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '';
+      const prefix = c.isSentByMe ? '<span class="text-slate-500 font-normal">أنت: </span>' : '';
+      const isCurrentActive = currentActiveDMUser === c.username;
+
+      const item = document.createElement('div');
+      item.className = `p-3 rounded-2xl border ${isCurrentActive ? 'bg-sky-500/10 border-sky-500/40 shadow-sm' : 'bg-slate-900/60 border-slate-800/80'} hover:border-sky-500/30 transition cursor-pointer flex items-center justify-between gap-2.5`;
+      item.innerHTML = `
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <div class="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 text-sky-400 flex items-center justify-center text-xs font-black shrink-0">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-1">
+              <span class="font-bold text-white text-xs truncate">${c.username}</span>
+              <span class="text-[9px] text-slate-500 numbers-font shrink-0">${timeStr}</span>
+            </div>
+            <p class="text-[11px] text-slate-400 truncate mt-0.5">${prefix}${c.lastMsg || 'محادثة جديدة...'}</p>
+          </div>
+        </div>
+        ${c.unreadCount > 0 ? `
+          <span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black shrink-0 animate-pulse">
+            ${c.unreadCount}
+          </span>
+        ` : ''}
+      `;
+      item.addEventListener('click', () => openPrivateChatWith(c.username));
+      container.appendChild(item);
+    });
+  }
+
+  async function openPrivateChatWith(partnerUsername) {
+    if (!partnerUsername) return;
+    currentActiveDMUser = partnerUsername.trim();
+
+    const activeView = document.getElementById('dms-active-chat-view');
+    const listView = document.getElementById('dms-conversations-list-view');
+    const partnerNameEl = document.getElementById('dm-active-partner-name');
+    const partnerStatusEl = document.getElementById('dm-active-partner-status');
+    const msgInput = document.getElementById('dm-message-input');
+
+    if (listView) listView.classList.add('hidden');
+    if (activeView) activeView.classList.remove('hidden');
+
+    if (partnerNameEl) partnerNameEl.textContent = currentActiveDMUser;
+    if (partnerStatusEl) partnerStatusEl.textContent = 'جاري المزامنة...';
+
+    if (AppDB && typeof AppDB.getPlayerState === 'function') {
+      AppDB.getPlayerState(currentActiveDMUser).then(ps => {
+        if (partnerStatusEl) {
+          const isOnline = ps && ps.lastSeen && (Date.now() - ps.lastSeen < 120000);
+          if (isOnline) {
+            partnerStatusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block ml-1"></span> متصل الآن';
+            partnerStatusEl.className = 'text-[9px] text-emerald-400 font-bold';
+          } else {
+            partnerStatusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-slate-500 inline-block ml-1"></span> غير متصل';
+            partnerStatusEl.className = 'text-[9px] text-slate-400 font-medium';
+          }
+        }
+      }).catch(() => {});
+    }
+
+    if (msgInput) {
+      msgInput.value = '';
+      setTimeout(() => msgInput.focus(), 150);
+    }
+
+    await loadActivePrivateConversation(currentActiveDMUser);
+
+    const myUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username) || '';
+    if (myUser && AppDB && typeof AppDB.markDMsRead === 'function') {
+      AppDB.markDMsRead(myUser, currentActiveDMUser).catch(() => {});
+    }
+  }
+
+  async function loadActivePrivateConversation(partnerUsername) {
+    const container = document.getElementById('dm-active-messages-container');
+    if (!container || !partnerUsername) return;
+
+    const myUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username) || '';
+    if (!myUser) return;
+
+    let msgs = [];
+    if (AppDB && typeof AppDB.getPrivateConversation === 'function') {
+      try {
+        msgs = await AppDB.getPrivateConversation(myUser, partnerUsername);
+      } catch (_) {}
+    }
+
+    window._localDMs = window._localDMs || [];
+    const relevantLocal = window._localDMs.filter(m => 
+      (m.sender === myUser && m.recipient === partnerUsername) ||
+      (m.sender === partnerUsername && m.recipient === myUser)
+    );
+
+    const seen = new Set();
+    const merged = [];
+    [...msgs, ...relevantLocal].forEach(m => {
+      const key = m.id || `${m.sender}_${m.recipient}_${m.created_at || m.timestamp}_${m.payload?.message || m.message}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        merged.push(m);
+      }
+    });
+
+    merged.sort((a, b) => Number(a.created_at || a.timestamp || 0) - Number(b.created_at || b.timestamp || 0));
+
+    if (merged.length === 0) {
+      container.innerHTML = `
+        <div class="text-center text-slate-500 text-xs py-12">
+          <i class="fa-solid fa-lock text-sky-400/40 text-3xl mb-2 block"></i>
+          <span class="font-bold text-slate-400">بداية المحادثة الخاصة المشفرة مع "${partnerUsername}"</span>
+          <p class="text-[10px] text-slate-500 mt-1">الرسائل بينكما خاصة تماماً ولا يراها بقية اللاعبين.</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = '';
+    merged.forEach(m => {
+      const isMe = m.sender === myUser;
+      const text = (m.payload && m.payload.message) || m.message || '';
+      const ts = Number(m.created_at || m.timestamp || Date.now());
+      const timeStr = new Date(ts).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
+
+      const bubbleClass = isMe 
+        ? 'bg-gradient-to-r from-sky-600 to-sky-500 text-white rounded-2xl rounded-bl-sm p-2.5 text-xs shadow-md shadow-sky-950/30 max-w-[85%] select-text'
+        : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-2xl rounded-br-sm p-2.5 text-xs shadow-md max-w-[85%] select-text';
+
+      msgDiv.innerHTML = `
+        <div class="${bubbleClass}">
+          <p class="leading-relaxed whitespace-pre-line">${text}</p>
+        </div>
+        <span class="text-[9px] text-slate-500 numbers-font font-bold mt-1 px-1">${timeStr}</span>
+      `;
+      container.appendChild(msgDiv);
+    });
+
+    container.scrollTop = container.scrollHeight;
+  }
+
+  async function sendDMMessage() {
+    const input = document.getElementById('dm-message-input');
+    const btn = document.getElementById('btn-send-dm-message');
+    const counter = document.getElementById('dm-char-counter');
+    if (!input || !currentActiveDMUser) return;
+
+    const text = input.value.trim();
+    if (!text) return;
+
+    const myUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username) || '';
+    if (!myUser) return;
+
+    const filter = window.ProfanityFilter || (window.AppDB && window.AppDB.ProfanityFilter);
+    if (filter && filter.containsProfanity(text)) {
+      showToast('حجب الرسالة 🚫', 'لا يمكنك إرسال هذه الرسالة لاحتوائها على شتائم أو ألفاظ غير لائقة.', 'error');
+      if (typeof playMenuSound === 'function') playMenuSound('error');
+      return;
+    }
+
+    try {
+      if (btn) btn.disabled = true;
+      input.value = '';
+      if (counter) counter.textContent = '0 / 200';
+
+      const localMsg = {
+        id: 'local_dm_' + Date.now(),
+        sender: myUser,
+        recipient: currentActiveDMUser,
+        type: 'dm',
+        payload: { message: text },
+        created_at: Date.now(),
+        status: 'unread'
+      };
+      window._localDMs = window._localDMs || [];
+      window._localDMs.push(localMsg);
+
+      const container = document.getElementById('dm-active-messages-container');
+      if (container) {
+        if (container.querySelector('.fa-lock')) container.innerHTML = '';
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'flex flex-col items-end';
+        const timeStr = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        msgDiv.innerHTML = `
+          <div class="bg-gradient-to-r from-sky-600 to-sky-500 text-white rounded-2xl rounded-bl-sm p-2.5 text-xs shadow-md shadow-sky-950/30 max-w-[85%] select-text">
+            <p class="leading-relaxed whitespace-pre-line">${text}</p>
+          </div>
+          <span class="text-[9px] text-slate-500 numbers-font font-bold mt-1 px-1">${timeStr}</span>
+        `;
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+      }
+
+      if (typeof playMenuSound === 'function') playMenuSound('click');
+
+      if (AppDB && typeof AppDB.sendPrivateMessage === 'function') {
+        await AppDB.sendPrivateMessage(myUser, currentActiveDMUser, text);
+      } else if (AppDB && typeof AppDB.sendMail === 'function') {
+        await AppDB.sendMail(myUser, currentActiveDMUser, 'dm', { message: text, timestamp: Date.now() });
+      }
+    } catch (err) {
+      showToast('فشل الإرسال', err.message, 'error');
+      input.value = text;
+    } finally {
+      if (btn) btn.disabled = false;
+      setTimeout(() => { if (input) input.focus(); }, 50);
+    }
+  }
+
+  function openPrivateChat(partner) {
+    openChatDrawerWithDM(partner);
+  }
+
   function switchMailboxTab() {}
+
+  // ─────────────────────────────────────────────
+  //  DIRECT WIRE MODAL & MUTE CONTROLS
+  // ─────────────────────────────────────────────
+  function openDirectWireModal(targetUsername, targetTitle = 'مستثمر طموح') {
+    const modal = document.getElementById('direct-wire-modal');
+    if (!modal) return;
+
+    const profileModal = document.getElementById('player-profile-modal');
+    if (profileModal) profileModal.classList.add('hidden');
+
+    const nameEl = document.getElementById('direct-wire-recipient-name');
+    const titleEl = document.getElementById('direct-wire-recipient-title');
+    const balEl = document.getElementById('direct-wire-available-balance');
+    const inputEl = document.getElementById('direct-wire-amount-input');
+
+    if (nameEl) nameEl.textContent = targetUsername;
+    if (titleEl) titleEl.textContent = targetTitle;
+
+    const curCash = Number(GameEngine.state.cash) || 0;
+    const curBank = Number(GameEngine.state.bank) || 0;
+    const totalAvail = curCash + curBank;
+
+    if (balEl) balEl.textContent = `${totalAvail.toLocaleString()} EGP (كاش: ${curCash.toLocaleString()} | بنك: ${curBank.toLocaleString()})`;
+    if (inputEl) {
+      inputEl.value = '';
+      inputEl.dataset.target = targetUsername;
+    }
+
+    modal.classList.remove('hidden');
+    setTimeout(() => { if (inputEl) inputEl.focus(); }, 100);
+  }
+
+  async function executeDirectWireFromModal() {
+    const inputEl = document.getElementById('direct-wire-amount-input');
+    const modal = document.getElementById('direct-wire-modal');
+    const confirmBtn = document.getElementById('btn-confirm-direct-wire');
+    if (!inputEl) return;
+
+    const target = inputEl.dataset.target;
+    const amt = parseInt(inputEl.value);
+
+    if (!target || isNaN(amt) || amt <= 0) {
+      showToast('تنبيه', 'يرجى إدخال مبلغ صحيح للتحويل.', 'warning');
+      return;
+    }
+
+    const curCash = Number(GameEngine.state.cash) || 0;
+    const curBank = Number(GameEngine.state.bank) || 0;
+    const totalFunds = curCash + curBank;
+
+    if (totalFunds < amt) {
+      showToast('رصيد غير كافٍ', `إجمالي رصيدك المتاح (${totalFunds.toLocaleString()} EGP) غير كافٍ لإتمام التحويل.`, 'error');
+      return;
+    }
+
+    try {
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري التحويل...</span>';
+      }
+
+      if (curCash < amt) {
+        const diff = amt - curCash;
+        GameEngine.state.bank -= diff;
+        GameEngine.state.cash += diff;
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
+      }
+
+      await AppDB.executeWireTransfer(GameEngine.activeUsername, target, amt);
+
+      if (GameEngine.state) {
+        GameEngine.state.cash = Math.max(0, GameEngine.state.cash - amt);
+        GameEngine.state.netWorth = Math.max(0, (GameEngine.state.cash || 0) + (GameEngine.state.bank || 0) + (GameEngine.state.dirtyCash || 0));
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
+      }
+
+      showToast('تم التحويل بنجاح! 💸', `تم تحويل مبلغ ${amt.toLocaleString()} EGP إلى اللاعب "${target}" بنجاح!`, 'success');
+      if (typeof playMenuSound === 'function') playMenuSound('cash');
+      if (modal) modal.classList.add('hidden');
+      renderAll();
+    } catch (err) {
+      showToast('فشل التحويل', err.message, 'error');
+    } finally {
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fa-solid fa-paper-plane text-xs"></i> <span>تأكيد التحويل الآن</span>';
+      }
+    }
+  }
+
+  async function toggleMutePlayer(username) {
+    if (!username || !GameEngine.state) return;
+    GameEngine.state.mutedUsers = GameEngine.state.mutedUsers || [];
+    const idx = GameEngine.state.mutedUsers.indexOf(username);
+    const muteIcon = document.getElementById('profile-mute-btn-icon');
+    const muteText = document.getElementById('profile-mute-btn-text');
+    const btnMutePlayer = document.getElementById('btn-profile-mute-player');
+
+    if (idx >= 0) {
+      GameEngine.state.mutedUsers.splice(idx, 1);
+      showToast('إلغاء الكتم 🔊', `تم إلغاء كتم رسائل اللاعب "${username}". ستظهر رسائله مجدداً في الشات.`, 'info');
+      if (btnMutePlayer) {
+        btnMutePlayer.className = 'py-2.5 bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer';
+      }
+      if (muteIcon) muteIcon.className = 'fa-solid fa-volume-xmark text-xs';
+      if (muteText) muteText.textContent = 'كتم في الشات';
+    } else {
+      GameEngine.state.mutedUsers.push(username);
+      showToast('تم الكتم 🔇', `تم كتم رسائل اللاعب "${username}" بنجاح! لن تظهر أي من رسائله في الشات العام.`, 'warning');
+      if (btnMutePlayer) {
+        btnMutePlayer.className = 'py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer';
+      }
+      if (muteIcon) muteIcon.className = 'fa-solid fa-volume-high text-xs';
+      if (muteText) muteText.textContent = 'إلغاء كتم اللاعب';
+    }
+
+    try {
+      await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
+    } catch (_) {}
+
+    if (window._lastChatMessagesCache) {
+      renderChatMessages(window._lastChatMessagesCache);
+    }
+  }
 
   // --- Real-Time Live Cashflow Breakdown & Projections Modal ---
   function renderCashflowBreakdown() {
@@ -13185,43 +13699,49 @@ const UIController = (() => {
 
       const isMe = pState.username === GameEngine.state.username;
 
-      const btnAddFriend = document.getElementById('btn-profile-add-friend');
-      const btnProfileJob = document.getElementById('btn-profile-job-offer');
-      const btnProfilePartnership = document.getElementById('btn-profile-partnership');
+      const btnTransferMoney = document.getElementById('btn-profile-transfer-money');
+      const btnPrivateChat = document.getElementById('btn-profile-private-chat');
+      const btnMutePlayer = document.getElementById('btn-profile-mute-player');
       const btnProfileBlock = document.getElementById('btn-profile-block-player');
 
       if (isMe) {
-        if (btnAddFriend) btnAddFriend.classList.add('hidden');
-        if (btnProfileJob) btnProfileJob.classList.add('hidden');
-        if (btnProfilePartnership) btnProfilePartnership.classList.add('hidden');
+        if (btnTransferMoney) btnTransferMoney.classList.add('hidden');
+        if (btnPrivateChat) btnPrivateChat.classList.add('hidden');
+        if (btnMutePlayer) btnMutePlayer.classList.add('hidden');
         if (btnProfileBlock) btnProfileBlock.classList.add('hidden');
       } else {
-        if (btnAddFriend) {
-          btnAddFriend.classList.remove('hidden');
-          btnAddFriend.dataset.username = username;
-          if (GameEngine.state.friends && GameEngine.state.friends.includes(username)) {
-            btnAddFriend.disabled = true;
-            btnAddFriend.innerHTML ='<i class="fa-solid fa-check"></i> <span>صديق بالفعل</span>';
+        if (btnTransferMoney) {
+          btnTransferMoney.classList.remove('hidden');
+          btnTransferMoney.dataset.username = username;
+          btnTransferMoney.dataset.title = pState.title || 'مستثمر طموح';
+        }
+        if (btnPrivateChat) {
+          btnPrivateChat.classList.remove('hidden');
+          btnPrivateChat.dataset.username = username;
+        }
+        if (btnMutePlayer) {
+          btnMutePlayer.classList.remove('hidden');
+          btnMutePlayer.dataset.username = username;
+          const isMuted = (GameEngine.state.mutedUsers || []).includes(username);
+          const muteIcon = document.getElementById('profile-mute-btn-icon');
+          const muteText = document.getElementById('profile-mute-btn-text');
+          if (isMuted) {
+            btnMutePlayer.className = 'py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer';
+            if (muteIcon) muteIcon.className = 'fa-solid fa-volume-high text-xs';
+            if (muteText) muteText.textContent = 'إلغاء كتم اللاعب';
           } else {
-            btnAddFriend.disabled = false;
-            btnAddFriend.innerHTML ='<i class="fa-solid fa-user-plus"></i> <span>إضافة صديق</span>';
+            btnMutePlayer.className = 'py-2.5 bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer';
+            if (muteIcon) muteIcon.className = 'fa-solid fa-volume-xmark text-xs';
+            if (muteText) muteText.textContent = 'كتم في الشات';
           }
-        }
-        if (btnProfileJob) {
-          btnProfileJob.classList.remove('hidden');
-          btnProfileJob.dataset.username = username;
-        }
-        if (btnProfilePartnership) {
-          btnProfilePartnership.classList.remove('hidden');
-          btnProfilePartnership.dataset.username = username;
         }
         if (btnProfileBlock) {
           btnProfileBlock.classList.remove('hidden');
           btnProfileBlock.dataset.username = username;
           if (GameEngine.state.blockedUsers && GameEngine.state.blockedUsers.includes(username)) {
-            btnProfileBlock.innerHTML ='<i class="fa-solid fa-ban"></i> <span class="text-rose-500">إلغاء الحظر</span>';
+            btnProfileBlock.innerHTML = '<i class="fa-solid fa-ban"></i> <span class="text-rose-500">إلغاء الحظر</span>';
           } else {
-            btnProfileBlock.innerHTML ='<i class="fa-solid fa-ban"></i> <span>حظر اللاعب</span>';
+            btnProfileBlock.innerHTML = '<i class="fa-solid fa-ban"></i> <span>حظر اللاعب</span>';
           }
         }
       }
@@ -18052,7 +18572,12 @@ const UIController = (() => {
     showDirectAdminPopupModal,
     triggerAccountResetModal,
     getVerifiedBadgeIconHtml,
-    formatCustomBadgeHtml
+    formatCustomBadgeHtml,
+    openDirectWireModal,
+    openPrivateChatWith,
+    openChatDrawerWithDM,
+    switchChatDrawerTab,
+    toggleMutePlayer
   };
 
 })();

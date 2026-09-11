@@ -1815,6 +1815,51 @@ var AppDB = (() => {
     return true;
   }
 
+  async function getPrivateConversation(user1, user2) {
+    if (!user1 || !user2) return [];
+    try {
+      const u1 = encodeURIComponent(user1.trim());
+      const u2 = encodeURIComponent(user2.trim());
+      const rows = await _api(`mailbox?or=(and(recipient.eq.${u1},sender.eq.${u2}),and(recipient.eq.${u2},sender.eq.${u1}))&type=eq.dm&order=created_at.asc&limit=100`);
+      return Array.isArray(rows) ? rows : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async function getAllPrivateMessages(username) {
+    if (!username) return [];
+    try {
+      const u = encodeURIComponent(username.trim());
+      const rows = await _api(`mailbox?or=(recipient.eq.${u},sender.eq.${u})&type=eq.dm&order=created_at.desc&limit=150`);
+      return Array.isArray(rows) ? rows : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async function sendPrivateMessage(sender, recipient, message) {
+    if (!message || !message.trim() || !sender || !recipient) return false;
+    const trimmed = String(message).trim().substring(0, 200);
+    if (ProfanityFilter && ProfanityFilter.containsProfanity(trimmed)) {
+      throw new Error("لا يمكنك إرسال هذه الرسالة لاحتوائها على ألفاظ غير لائقة ومخالفة لقواعد اللعبة.");
+    }
+    await sendMail(sender, recipient, 'dm', { message: trimmed, timestamp: Date.now() });
+    return true;
+  }
+
+  async function markDMsRead(recipient, sender) {
+    if (!recipient || !sender) return;
+    try {
+      const u1 = encodeURIComponent(recipient.trim());
+      const u2 = encodeURIComponent(sender.trim());
+      await _api(`mailbox?recipient=eq.${u1}&sender=eq.${u2}&type=eq.dm&status=eq.unread`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'read' })
+      });
+    } catch (_) {}
+  }
+
   function listenToMailbox(username, callback) {
     if (!username || typeof callback !=='function') return () => {};
     let isSubscribed = true;
@@ -4789,7 +4834,10 @@ var AppDB = (() => {
     clearChatMessages,
     triggerImmediateChatSync,
     stopListeningToChat,
-    listenToPrivateChat: () => (() => {}),
+    getPrivateConversation,
+    getAllPrivateMessages,
+    sendPrivateMessage,
+    markDMsRead,
 
     // Idle & Egress Control
     isNetworkActive,

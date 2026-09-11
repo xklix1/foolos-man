@@ -4869,28 +4869,115 @@
       <!-- Sticky Action Buttons Footer -->
       <div class="shrink-0 p-3 sm:p-4 border-t border-slate-800/80 bg-slate-950/95 space-y-2">
         <div>
-          <button id="btn-profile-add-friend"
-            class="w-full py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow">
-            <i class="fa-solid fa-user-plus text-[11px]"></i>
-            <span>إضافة صديق</span>
+          <button id="btn-profile-transfer-money"
+            class="w-full py-2.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-money-bill-transfer text-sm"></i>
+            <span>تحويل أموال لهذا اللاعب</span>
           </button>
         </div>
         <div class="grid grid-cols-2 gap-2">
-          <button id="btn-profile-job-offer"
-            class="py-2 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-briefcase text-[11px]"></i>
-            <span>عرض عمل</span>
+          <button id="btn-profile-private-chat"
+            class="py-2.5 bg-sky-500/15 hover:bg-sky-500/25 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-comments text-xs"></i>
+            <span>محادثة خاصة</span>
           </button>
-          <button id="btn-profile-partnership"
-            class="py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-handshake text-[11px]"></i>
-            <span>دعوة شراكة</span>
+          <button id="btn-profile-mute-player"
+            class="py-2.5 bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-volume-xmark text-xs" id="profile-mute-btn-icon"></i>
+            <span id="profile-mute-btn-text">كتم في الشات</span>
           </button>
         </div>
         <button id="btn-profile-block-player"
-          class="w-full py-1.5 bg-rose-950/20 hover:bg-rose-950/40 text-rose-400 border border-rose-500/20 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5">
+          class="w-full py-1.5 bg-rose-950/20 hover:bg-rose-950/40 text-rose-400 border border-rose-500/20 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
           <i class="fa-solid fa-ban text-[10px]"></i>
           <span>حظر اللاعب</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== DIRECT PLAYER WIRE MODAL ==================== -->
+  <div id="direct-wire-modal" dir="rtl"
+    class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 animate-fade-in select-none">
+    <div
+      class="glass-panel w-full max-w-sm rounded-3xl border border-amber-500/40 bg-slate-950/95 overflow-hidden shadow-2xl flex flex-col relative text-right">
+      
+      <!-- Modal Header -->
+      <div class="p-4 border-b border-slate-800/80 bg-slate-900/60 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center text-sm font-black shadow-inner">
+            <i class="fa-solid fa-money-bill-transfer"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-black text-white">تحويل أموال مباشر</h3>
+            <p class="text-[10px] text-slate-400">إرسال كاش فوري لحساب اللاعب</p>
+          </div>
+        </div>
+        <button id="btn-close-direct-wire-modal"
+          class="w-8 h-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-800 cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-4 space-y-4">
+        <!-- Target Player Info -->
+        <div class="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 text-base font-black">
+              <i class="fa-solid fa-user"></i>
+            </div>
+            <div>
+              <span id="direct-wire-recipient-name" class="font-black text-sm text-white block">لاعب</span>
+              <span id="direct-wire-recipient-title" class="text-[10px] text-slate-400">مستثمر طموح</span>
+            </div>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/30 text-emerald-400 font-bold">المستلم</span>
+        </div>
+
+        <!-- Available Balance Indicator -->
+        <div class="p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/80 flex items-center justify-between text-xs">
+          <span class="text-slate-400 text-[11px] font-medium">رصيدك المتاح (كاش + بنك):</span>
+          <span id="direct-wire-available-balance" class="font-black text-amber-400 numbers-font text-xs">0 EGP</span>
+        </div>
+
+        <!-- Amount Input -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold text-slate-300">مبلغ التحويل (EGP):</label>
+          <div class="relative">
+            <input type="number" id="direct-wire-amount-input" min="1" step="1000"
+              class="w-full p-3 pl-12 bg-slate-900/90 border border-slate-700/80 rounded-xl text-center text-base font-black text-white focus:outline-none focus:border-amber-500/70 numbers-font"
+              placeholder="0">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 font-bold">EGP</span>
+          </div>
+        </div>
+
+        <!-- Quick Shortcut Chips -->
+        <div class="space-y-1">
+          <span class="text-[10px] text-slate-400 font-bold block">اختصارات سريعة:</span>
+          <div class="grid grid-cols-3 gap-1.5 text-center">
+            <button type="button" class="direct-wire-chip py-1.5 px-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-bold numbers-font transition cursor-pointer" data-amount="100000">+100,000</button>
+            <button type="button" class="direct-wire-chip py-1.5 px-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-bold numbers-font transition cursor-pointer" data-amount="500000">+500,000</button>
+            <button type="button" class="direct-wire-chip py-1.5 px-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-bold numbers-font transition cursor-pointer" data-amount="1000000">+1,000,000</button>
+            <button type="button" class="direct-wire-chip py-1.5 px-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-bold numbers-font transition cursor-pointer" data-amount="5000000">+5,000,000</button>
+            <button type="button" class="direct-wire-chip py-1.5 px-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-bold numbers-font transition cursor-pointer" data-amount="10000000">+10,000,000</button>
+            <button type="button" class="direct-wire-chip py-1.5 px-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-[10px] text-amber-300 font-bold transition cursor-pointer" data-amount="max">كامل الكاش</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-800/80 bg-slate-900/60 flex items-center gap-2">
+        <button id="btn-confirm-direct-wire"
+          class="flex-1 py-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer">
+          <i class="fa-solid fa-paper-plane text-xs"></i>
+          <span>تأكيد التحويل الآن</span>
+        </button>
+        <button id="btn-cancel-direct-wire"
+          class="px-4 py-3 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-bold transition border border-slate-800 cursor-pointer">
+          إلغاء
         </button>
       </div>
 
@@ -5441,10 +5528,10 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=12.1"></script>
+  <script src="db.js?v=12.2"></script>
   <script src="server-client-bridge.js?v=1.2"></script>
   <script src="game.js?v=12.1"></script>
-  <script src="ui.js?v=12.3"></script>
+  <script src="ui.js?v=12.4"></script>
   <script src="pwa-manager.js?v=1.0.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
@@ -5813,46 +5900,130 @@
 
   <!-- ==================== V2: CHAT SIDEBAR DRAWER ==================== -->
   <div id="chat-drawer"
-    class="fixed top-0 bottom-0 right-0 z-[100] w-[360px] max-w-full bg-slate-950/98 border-l border-slate-800/80 shadow-2xl transition-all duration-300 translate-x-full flex flex-col backdrop-blur-xl overflow-x-hidden">
-    <!-- Chat Header -->
-    <div class="p-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/40">
-      <div class="flex items-center gap-2">
-        <i class="fa-solid fa-comments text-yellow-500"></i>
-        <span class="font-black text-white text-sm">الدردشة العامة المباشرة</span>
+    class="fixed top-0 bottom-0 right-0 z-[100] w-[370px] max-w-full bg-slate-950/98 border-l border-slate-800/80 shadow-2xl transition-all duration-300 translate-x-full flex flex-col backdrop-blur-xl overflow-x-hidden">
+    
+    <!-- Chat Header with Divided 2 Tabs (Right: Public Chat | Left: Private Chats) -->
+    <div class="p-2.5 border-b border-slate-800/80 bg-slate-900/50 flex items-center justify-between gap-2 shrink-0">
+      <div class="flex-1 grid grid-cols-2 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800/80">
+        <!-- Right Tab: Public Chat -->
+        <button id="chat-tab-btn-public" type="button"
+          class="chat-tab-switcher active py-1.5 px-2 rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 bg-amber-500 text-slate-950 cursor-pointer shadow">
+          <i class="fa-solid fa-comments text-xs"></i>
+          <span>الدردشة العامة</span>
+        </button>
+        <!-- Left Tab: Private Chats -->
+        <button id="chat-tab-btn-dms" type="button"
+          class="chat-tab-switcher py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white bg-transparent cursor-pointer relative">
+          <i class="fa-solid fa-lock text-xs"></i>
+          <span>الدردشات الخاصة</span>
+          <span id="chat-dms-unread-badge" class="hidden px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9px] font-black leading-none">0</span>
+        </button>
       </div>
-      <button id="btn-close-chat-drawer"
-        class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-800 cursor-pointer">
+      <button id="btn-close-chat-drawer" title="إغلاق الدردشة"
+        class="w-8 h-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-800 cursor-pointer shrink-0">
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
-    <!-- Messages Container -->
-    <div id="chat-messages-container" class="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3 scrollbar-thin">
-      <!-- Dyn Messages -->
+
+    <!-- ================= VIEW 1: PUBLIC CHAT ================= -->
+    <div id="chat-public-view" class="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <!-- Messages Container -->
+      <div id="chat-messages-container" class="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3 scrollbar-thin">
+        <!-- Dyn Messages -->
+      </div>
+      <!-- Chat Input Area -->
+      <div class="p-4 border-t border-slate-800/80 bg-slate-900/20 shrink-0">
+        <div class="flex gap-2">
+          <input type="text" id="chat-message-input" placeholder="اكتب رسالتك هنا... (الحد الأقصى 200 حرف)"
+            maxlength="200"
+            class="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-yellow-500/50">
+          <button id="btn-send-chat-message"
+            class="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center cursor-pointer">
+            <i class="fa-solid fa-paper-plane text-sm"></i>
+          </button>
+        </div>
+        <div class="flex justify-between items-center mt-2 text-[10px] text-slate-500 px-1">
+          <span id="chat-char-counter">0 / 200</span>
+          <span id="chat-cooldown-timer" class="text-yellow-500 font-bold hidden">الرجاء الانتظار ثانية واحدة...</span>
+        </div>
+        <!-- زر إرسال تنبيه مراقبة الإدارة -->
+        <div id="admin-chat-controls" class="hidden mt-2 border-t border-slate-800/50 pt-2">
+          <button id="btn-admin-send-monitoring-msg" 
+            class="w-full py-2 bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white rounded-xl text-[10px] font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-red-500/10 active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-eye text-xs"></i>
+            <span><i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1"></i> تنبيه: الإدارة تراقب الشات حالياً</span>
+          </button>
+        </div>
+      </div>
     </div>
-    <!-- Chat Input Area -->
-    <div class="p-4 border-t border-slate-800/80 bg-slate-900/20">
-      <div class="flex gap-2">
-        <input type="text" id="chat-message-input" placeholder="اكتب رسالتك هنا... (الحد الأقصى 200 حرف)"
-          maxlength="200"
-          class="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-yellow-500/50">
-        <button id="btn-send-chat-message"
-          class="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center cursor-pointer">
-          <i class="fa-solid fa-paper-plane text-sm"></i>
-        </button>
+
+    <!-- ================= VIEW 2: PRIVATE DMs ================= -->
+    <div id="chat-dms-view" class="hidden flex-1 flex flex-col min-h-0 overflow-hidden">
+      
+      <!-- SUBVIEW 2A: CONVERSATIONS LIST -->
+      <div id="dms-conversations-list-view" class="flex-1 flex flex-col min-h-0">
+        <!-- Start New DM Bar -->
+        <div class="p-3 border-b border-slate-800/80 bg-slate-900/30 shrink-0">
+          <div class="flex gap-1.5">
+            <input type="text" id="dm-start-username-input" placeholder="اسم اللاعب لبدء محادثة..."
+              class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500/50 text-right">
+            <button id="btn-start-dm-with-user"
+              class="px-3 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-xs rounded-xl transition flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-plus text-[10px]"></i>
+              <span>محادثة</span>
+            </button>
+          </div>
+        </div>
+        <!-- Conversations List -->
+        <div id="dms-conversations-list" class="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin">
+          <div class="text-center text-slate-500 text-xs py-10">
+            <i class="fa-solid fa-lock text-slate-600 text-2xl mb-2 block"></i>
+            لا توجد محادثات خاصة حتى الآن.
+          </div>
+        </div>
       </div>
-      <div class="flex justify-between items-center mt-2 text-[10px] text-slate-500 px-1">
-        <span id="chat-char-counter">0 / 200</span>
-        <span id="chat-cooldown-timer" class="text-yellow-500 font-bold hidden">الرجاء الانتظار ثانية واحدة...</span>
+
+      <!-- SUBVIEW 2B: ACTIVE CHAT CONVERSATION -->
+      <div id="dms-active-chat-view" class="hidden flex-1 flex flex-col min-h-0">
+        <!-- Active Chat Header -->
+        <div class="p-3 border-b border-slate-800/80 bg-slate-900/60 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-2">
+            <button id="btn-back-to-dms-list" title="رجوع للقائمة"
+              class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs transition cursor-pointer">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+            <div>
+              <span id="dm-active-partner-name" class="font-black text-xs text-white block cursor-pointer hover:underline">اسم اللاعب</span>
+              <span id="dm-active-partner-status" class="text-[9px] text-slate-400 font-medium">غير متصل</span>
+            </div>
+          </div>
+          <button id="btn-dm-open-partner-profile" class="text-[10px] text-sky-400 hover:underline cursor-pointer">
+            عرض الملف
+          </button>
+        </div>
+        <!-- Active DM Messages Stream -->
+        <div id="dm-active-messages-container" class="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-2 scrollbar-thin">
+          <!-- Messages rendered here -->
+        </div>
+        <!-- DM Input Area -->
+        <div class="p-3 border-t border-slate-800/80 bg-slate-900/30 shrink-0">
+          <div class="flex gap-2">
+            <input type="text" id="dm-message-input" placeholder="اكتب رسالة خاصة... (الحد 200 حرف)" maxlength="200"
+              class="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500/50">
+            <button id="btn-send-dm-message"
+              class="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center cursor-pointer">
+              <i class="fa-solid fa-paper-plane text-xs"></i>
+            </button>
+          </div>
+          <div class="flex justify-between items-center mt-1.5 text-[9px] text-slate-500 px-1">
+            <span id="dm-char-counter">0 / 200</span>
+            <span class="text-slate-500"><i class="fa-solid fa-shield-halved mr-0.5"></i> محادثة خاصة مشفرة</span>
+          </div>
+        </div>
       </div>
-      <!-- زر إرسال تنبيه مراقبة الإدارة -->
-      <div id="admin-chat-controls" class="hidden mt-2 border-t border-slate-800/50 pt-2">
-        <button id="btn-admin-send-monitoring-msg" 
-          class="w-full py-2 bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white rounded-xl text-[10px] font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-red-500/10 active:scale-95 cursor-pointer">
-          <i class="fa-solid fa-eye text-xs"></i>
-          <span><i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1"></i> تنبيه: الإدارة تراقب الشات حالياً</span>
-        </button>
-      </div>
+
     </div>
+
   </div>
 
   <!-- ==================== MANDATORY FORCE RELOAD MODAL ==================== -->
