@@ -166,15 +166,17 @@ const GameEngine = (() => {
     orbital_station: { id:'orbital_station', name:'محطة مدارية فضائية خاصة', cost: 7820000000, rent: 3450000, appreciation: 0.0020 }
   };
 
+  const DAILY_STOCK_PROFIT_CAP = 1000000; // سقف الأرباح الرأسمالية اليومية من البورصة (1,000,000 ج.م)
+
   const STOCKS = {
-    COMI: { name:'البنك التجاري الدولي', symbol:'COMI', basePrice: 38, volatility: 0.015, reversion: 0.01, floor: 18, ceiling: 85, dividend: 0.00015, maxShares: 50000, seed: 101 },
-    EAST: { name:'الشرقية للدخان', symbol:'EAST', basePrice: 85, volatility: 0.02, reversion: 0.015, floor: 35, ceiling: 190, dividend: 0.00025, maxShares: 30000, seed: 202 },
-    ETEL: { name:'المصرية للاتصالات', symbol:'ETEL', basePrice: 48, volatility: 0.018, reversion: 0.012, floor: 22, ceiling: 110, dividend: 0.00018, maxShares: 40000, seed: 303 },
-    FWRY: { name:'فوري للمدفوعات الإلكترونية', symbol:'FWRY', basePrice: 92, volatility: 0.025, reversion: 0.02, floor: 42, ceiling: 215, dividend: 0.00015, maxShares: 25000, seed: 404 },
-    CASH: { name:'صندوق الاستثمار التقني البديل', symbol:'CASH', basePrice: 125, volatility: 0.03, reversion: 0.025, floor: 45, ceiling: 290, dividend: 0.00035, maxShares: 20000, seed: 505 },
-    BITC: { name:'مؤشر البيتكوين والأصول الرقمية', symbol:'BITC', basePrice: 310, volatility: 0.05, reversion: 0.03, floor: 90, ceiling: 780, dividend: 0, maxShares: 5000, seed: 606 },
-    GOLD: { name:'صندوق سبائك الذهب الخالص', symbol:'GOLD', basePrice: 220, volatility: 0.01, reversion: 0.008, floor: 130, ceiling: 480, dividend: 0.0003, maxShares: 10000, seed: 707 },
-    AIX: { name:'صندوق الذكاء الاصطناعي العالمي', symbol:'AIX', basePrice: 380, volatility: 0.035, reversion: 0.022, floor: 120, ceiling: 890, dividend: 0.00025, maxShares: 8000, seed: 808 }
+    COMI: { name:'البنك التجاري الدولي', symbol:'COMI', basePrice: 38, volatility: 0.012, reversion: 0.015, floor: 32, ceiling: 44, dividend: 0.00015, maxShares: 50000, seed: 101 },
+    EAST: { name:'الشرقية للدخان', symbol:'EAST', basePrice: 85, volatility: 0.015, reversion: 0.015, floor: 72, ceiling: 98, dividend: 0.00025, maxShares: 30000, seed: 202 },
+    ETEL: { name:'المصرية للاتصالات', symbol:'ETEL', basePrice: 48, volatility: 0.014, reversion: 0.015, floor: 40, ceiling: 55, dividend: 0.00018, maxShares: 40000, seed: 303 },
+    FWRY: { name:'فوري للمدفوعات الإلكترونية', symbol:'FWRY', basePrice: 92, volatility: 0.018, reversion: 0.02, floor: 78, ceiling: 106, dividend: 0.00015, maxShares: 25000, seed: 404 },
+    CASH: { name:'صندوق الاستثمار التقني البديل', symbol:'CASH', basePrice: 125, volatility: 0.02, reversion: 0.022, floor: 105, ceiling: 145, dividend: 0.00035, maxShares: 20000, seed: 505 },
+    BITC: { name:'مؤشر البيتكوين والأصول الرقمية', symbol:'BITC', basePrice: 310, volatility: 0.035, reversion: 0.025, floor: 240, ceiling: 380, dividend: 0, maxShares: 5000, seed: 606 },
+    GOLD: { name:'صندوق سبائك الذهب الخالص', symbol:'GOLD', basePrice: 220, volatility: 0.008, reversion: 0.01, floor: 195, ceiling: 245, dividend: 0.0003, maxShares: 10000, seed: 707 },
+    AIX: { name:'صندوق الذكاء الاصطناعي العالمي', symbol:'AIX', basePrice: 380, volatility: 0.025, reversion: 0.02, floor: 310, ceiling: 450, dividend: 0.00025, maxShares: 8000, seed: 808 }
   };
 
   const CORP_PROJECTS = {
@@ -1280,8 +1282,8 @@ const GameEngine = (() => {
     // 4. Intraday Brownian Noise for this 15-minute period
     const noise = getDeterministicNoise(seed, tick);
 
-    // Weighted Cycle Factor
-    const cycleFactor = 1 + (wave1 * 0.22) + (wave2 * 0.12) + (wave3 * 0.06) + (noise * stock.volatility * 1.8);
+    // Weighted Cycle Factor (calibrated for smooth ±12% to ±16% natural swing within tight bounds)
+    const cycleFactor = 1 + (wave1 * 0.08) + (wave2 * 0.04) + (wave3 * 0.02) + (noise * stock.volatility * 1.2);
     let price = Math.round(stock.basePrice * cycleFactor);
 
     // Apply Active Market Event Multiplier (Admin or Synchronized 15-min Cycle)
@@ -3491,17 +3493,43 @@ const GameEngine = (() => {
     const grossReturn = currentPrice * shares;
     const fee = Math.max(10, Math.floor(grossReturn * 0.03)); // 3.0% عمولة سمسرة
 
-    // 2. 10% Capital Gains Tax on net profit
+    // 2. Daily Realized Profit Cap (1,000,000 EGP per day) & 10% Capital Gains Tax
     const avgPrice = state.stocks[sym].avgPrice || 0;
     const costBasis = avgPrice * shares;
     let capitalGainsTax = 0;
+    let rawProfit = 0;
+    let allowedProfit = 0;
+    let capHit = false;
+    let cappedSurplus = 0;
+
+    ensureDailyStockTracking();
+    const todayProfits = Number(state.dailyStockProfit.realizedProfit || 0);
+    const remainingDailyCap = Math.max(0, DAILY_STOCK_PROFIT_CAP - todayProfits);
+
     if (grossReturn > costBasis) {
-      const profit = grossReturn - costBasis;
-      capitalGainsTax = Math.floor(profit * 0.10); // 10% ضريبة أرباح رأسمالية
-      state.totalTaxesPaid = (state.totalTaxesPaid || 0) + capitalGainsTax;
+      rawProfit = grossReturn - costBasis;
+      if (rawProfit > remainingDailyCap) {
+        allowedProfit = remainingDailyCap;
+        capHit = true;
+        cappedSurplus = rawProfit - remainingDailyCap;
+      } else {
+        allowedProfit = rawProfit;
+      }
+
+      if (allowedProfit > 0) {
+        capitalGainsTax = Math.floor(allowedProfit * 0.10); // 10% ضريبة أرباح رأسمالية على الربح المسموح
+        state.totalTaxesPaid = (state.totalTaxesPaid || 0) + capitalGainsTax;
+        state.dailyStockProfit.realizedProfit += allowedProfit;
+      }
     }
 
-    let netReturn = Math.max(0, grossReturn - fee - capitalGainsTax);
+    // Principal (costBasis) is 100% protected and refunded!
+    let netReturn = 0;
+    if (grossReturn > costBasis) {
+      netReturn = Math.max(0, costBasis + allowedProfit - fee - capitalGainsTax);
+    } else {
+      netReturn = Math.max(0, grossReturn - fee);
+    }
 
     // 3. Market Scanner Loss Shield (10% loss protection if trade was at a loss)
     let scannerCompensation = 0;
@@ -3519,18 +3547,50 @@ const GameEngine = (() => {
     state.cash += netReturn;
     state.stockTradeCooldownUntil = getTrustedNow() + 3000;
 
-    let logDetails =`بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} ج.م)`;
+    let logDetails = `بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} ج.م)`;
     if (capitalGainsTax > 0) {
-      logDetails +=` [ضريبة أرباح: ${capitalGainsTax.toLocaleString()} ج.م]`;
+      logDetails += ` [ضريبة أرباح: ${capitalGainsTax.toLocaleString()} ج.م]`;
+    }
+    if (capHit) {
+      logDetails += ` [سقف الأرباح اليومي: تم احتساب ${allowedProfit.toLocaleString()} ج.م واسترداد رأس المال بالكامل]`;
     }
     if (scannerCompensation > 0) {
-      logDetails +=` [حماية الماسح الذكي عوّضت: +${scannerCompensation.toLocaleString()} ج.م]`;
+      logDetails += ` [حماية الماسح الذكي عوّضت: +${scannerCompensation.toLocaleString()} ج.م]`;
     }
 
-    recordPlayerActivity('بيع أسهم', logDetails,'stock');
+    recordPlayerActivity('بيع أسهم', logDetails, 'stock');
     trackDailyQuestProgress('stock_trade', 1);
     forceSaveState(true);
-    return { shares, price: currentPrice, grossReturn, fee, capitalGainsTax, scannerCompensation, totalReturn: netReturn };
+    return {
+      shares,
+      price: currentPrice,
+      grossReturn,
+      fee,
+      capitalGainsTax,
+      scannerCompensation,
+      totalReturn: netReturn,
+      rawProfit,
+      allowedProfit,
+      capHit,
+      cappedSurplus,
+      dailyProfitUsed: state.dailyStockProfit.realizedProfit,
+      dailyProfitCap: DAILY_STOCK_PROFIT_CAP
+    };
+  }
+
+  // Helper: Ensure daily stock profit tracking (enforces DAILY_STOCK_PROFIT_CAP per day)
+  function ensureDailyStockTracking() {
+    if (!state) return;
+    const today = getTodayDateString();
+    if (!state.dailyStockProfit || state.dailyStockProfit.date !== today) {
+      state.dailyStockProfit = {
+        date: today,
+        realizedProfit: 0
+      };
+    }
+    if (typeof state.dailyStockProfit.realizedProfit !== 'number' || isNaN(state.dailyStockProfit.realizedProfit) || state.dailyStockProfit.realizedProfit < 0) {
+      state.dailyStockProfit.realizedProfit = 0;
+    }
   }
 
   // Helper: Ensure daily tool tracking (limits abuse and spam per 24 hours)
@@ -5337,6 +5397,8 @@ const GameEngine = (() => {
       }
     });
 
+    ensureDailyStockTracking();
+
     // Anti-Cheat: Validate and clamp stock shares to official maximum caps
     if (state.stocks && typeof state.stocks === 'object') {
       Object.keys(STOCKS).forEach(sym => {
@@ -5499,6 +5561,7 @@ const GameEngine = (() => {
     BUSINESSES,
     ASSETS,
     STOCKS,
+    DAILY_STOCK_PROFIT_CAP,
     CORP_PROJECTS,
     INVESTMENTS,
     STORE_ITEMS,

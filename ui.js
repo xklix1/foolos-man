@@ -5392,6 +5392,8 @@ const UIController = (() => {
     const container = document.getElementById('stocks-list');
     if (!container) return;
 
+    updateDailyStockProfitBadge();
+
     if (!force && lastStocksBuilt && container.children.length > 0) {
       updateStockPricesInDOM();
       return;
@@ -5504,6 +5506,11 @@ const UIController = (() => {
               profitOrLoss >= 0 ?'بيع كلي رابح!' :'بيع وتسييل كلي',`تم بيع كامل الأسهم (${res.shares} سهم) بقيمة +${totalPayout.toLocaleString()} EGP ${prevAvgPrice > 0 ? pnlText :''}`,
               profitOrLoss >= 0 ?'success' :'info'
             );
+            if (res.capHit) {
+              setTimeout(() => {
+                showToast('سقف أرباح البورصة اليومي', `تم تطبيق سقف الأرباح اليومي (1,000,000 ج.م). تم استرداد رأس مالك بالكامل وسيتجدد السقف غداً.`, 'warning');
+              }, 400);
+            }
             renderStocks(true);
             renderStatsBar();
           } catch (err) {
@@ -5549,6 +5556,11 @@ const UIController = (() => {
             profitOrLoss >= 0 ?'بيع أسهم رابح!' :'بيع أسهم',`تم بيع عدد ${res.shares} سهم بقيمة +${totalPayout.toLocaleString()} EGP ${prevAvgPrice > 0 ? pnlText :''}`,
             profitOrLoss >= 0 ?'success' :'info'
           );
+          if (res.capHit) {
+            setTimeout(() => {
+              showToast('سقف أرباح البورصة اليومي', `تم تطبيق سقف الأرباح اليومي (1,000,000 ج.م). تم استرداد رأس مالك بالكامل وسيتجدد السقف غداً.`, 'warning');
+            }, 400);
+          }
           renderStocks(true);
           renderStatsBar();
         } catch (err) {
@@ -5560,7 +5572,31 @@ const UIController = (() => {
     });
   }
 
+  function updateDailyStockProfitBadge() {
+    const s = GameEngine.state;
+    const badgeText = document.getElementById('stock-daily-profit-text');
+    if (!badgeText || !s) return;
+    const today = GameEngine.getTodayDateString ? GameEngine.getTodayDateString() : new Date().toISOString().slice(0, 10);
+    let todayProfit = 0;
+    if (s.dailyStockProfit && s.dailyStockProfit.date === today) {
+      todayProfit = Number(s.dailyStockProfit.realizedProfit || 0);
+    }
+    const cap = GameEngine.DAILY_STOCK_PROFIT_CAP || 1000000;
+    const pct = Math.min(100, Math.round((todayProfit / cap) * 100));
+
+    badgeText.textContent = `${todayProfit.toLocaleString()} / ${cap.toLocaleString()} ج.م (${pct}%)`;
+
+    if (todayProfit >= cap) {
+      badgeText.className = 'numbers-font font-black text-rose-400 text-xs';
+    } else if (todayProfit >= cap * 0.75) {
+      badgeText.className = 'numbers-font font-black text-amber-400 text-xs';
+    } else {
+      badgeText.className = 'numbers-font font-black text-emerald-400 text-xs';
+    }
+  }
+
   function updateStockPricesInDOM() {
+    updateDailyStockProfitBadge();
     const s = GameEngine.state;
     Object.keys(GameEngine.STOCKS).forEach(sym => {
       const stock = GameEngine.STOCKS[sym];

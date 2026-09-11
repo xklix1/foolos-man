@@ -2773,6 +2773,11 @@
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span>جلسة M15 موحدة</span>
             </div>
+            <div id="stock-daily-cap-container" class="bg-slate-950/80 border border-emerald-500/30 rounded-lg px-3 py-1.5 text-xs flex items-center gap-2" title="الحد الأقصى لصافي الأرباح الرأسمالية المسموح بها من البورصة خلال اليوم">
+              <i class="fa-solid fa-scale-balanced text-emerald-400"></i>
+              <span class="text-slate-400">سقف أرباح اليوم:</span>
+              <span id="stock-daily-profit-text" class="numbers-font font-black text-emerald-400 text-xs">0 / 1,000,000 ج.م</span>
+            </div>
           </div>
         </div>
 
@@ -5438,8 +5443,8 @@
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
   <script src="db.js?v=12.0"></script>
   <script src="server-client-bridge.js?v=1.2"></script>
-  <script src="game.js?v=12.0"></script>
-  <script src="ui.js?v=12.0"></script>
+  <script src="game.js?v=12.1"></script>
+  <script src="ui.js?v=12.1"></script>
   <script src="pwa-manager.js?v=1.0.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
