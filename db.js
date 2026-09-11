@@ -1101,7 +1101,7 @@ var AppDB = (() => {
     if (!username) return null;
     const u = username.trim();
 
-    const curActive = (activeUsername || (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || '').trim();
+    const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
     const isCurrentPlayer = Boolean(curActive && u.toLowerCase() === curActive.toLowerCase());
 
     try {
