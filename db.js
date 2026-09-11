@@ -1982,15 +1982,15 @@ var AppDB = (() => {
 
     checkMailbox();
     
-    // Fast responsive polling: 3.5 seconds when active, 12 seconds when hidden
-    let pollIntervalMs = (typeof document !== 'undefined' && document.hidden) ? 12000 : 3500;
+    // Fast responsive polling: 2 seconds when active, 12 seconds when hidden
+    let pollIntervalMs = (typeof document !== 'undefined' && document.hidden) ? 12000 : 2000;
     let timerId = setInterval(checkMailbox, pollIntervalMs);
     const pollId = registerPollingInterval(timerId);
 
     const onVisibility = () => {
       if (!isSubscribed) return;
       clearInterval(timerId);
-      pollIntervalMs = (typeof document !== 'undefined' && document.hidden) ? 12000 : 3500;
+      pollIntervalMs = (typeof document !== 'undefined' && document.hidden) ? 12000 : 2000;
       timerId = setInterval(checkMailbox, pollIntervalMs);
       if (typeof document !== 'undefined' && !document.hidden) checkMailbox();
     };
@@ -4538,8 +4538,8 @@ var AppDB = (() => {
     const isDrawerOpen = _isChatDrawerOpen();
     const now = Date.now();
 
-    // When drawer is closed, only poll updated_at once every 60s for unread badge!
-    if (!isDrawerOpen && (now - _lastChatPollTime < 60000)) {
+    // When drawer is closed, only poll updated_at once every 25s for unread badge!
+    if (!isDrawerOpen && (now - _lastChatPollTime < 25000)) {
       return;
     }
 
@@ -4573,9 +4573,9 @@ var AppDB = (() => {
       getChatMessages(true).then(msgs => callback(msgs));
     }
 
-    // Start polling tick (5 seconds when drawer open, 60s when closed, 0 when idle/hidden)
+    // Ultra-fast live chat polling: 1.5 seconds when drawer open, 25s when closed, 0 when idle/hidden
     if (!_chatPollInterval) {
-      _chatPollInterval = registerPollingInterval(setInterval(_pollChatTick, 5000));
+      _chatPollInterval = registerPollingInterval(setInterval(_pollChatTick, 1500));
     }
 
     return () => {

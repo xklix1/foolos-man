@@ -11493,6 +11493,10 @@ const UIController = (() => {
     const btnBackToDms = document.getElementById('btn-back-to-dms-list');
     if (btnBackToDms) {
       btnBackToDms.addEventListener('click', () => {
+        if (window._activeDMPollTimer) {
+          clearInterval(window._activeDMPollTimer);
+          window._activeDMPollTimer = null;
+        }
         currentActiveDMUser = '';
         const activeView = document.getElementById('dms-active-chat-view');
         const listView = document.getElementById('dms-conversations-list-view');
@@ -11608,6 +11612,7 @@ const UIController = (() => {
           const customBadge = (GameEngine.state && GameEngine.state.customBadge) || '';
 
           await AppDB.sendChatMessage(username, userTitle, text, isFb, { chatGlow, isVerified, customBadge });
+          if (typeof AppDB.triggerImmediateChatSync === 'function') AppDB.triggerImmediateChatSync();
         } catch (err) {
           showToast('خطأ إرسال', err.message,'error');
           chatInput.value = text;
@@ -12888,6 +12893,21 @@ const UIController = (() => {
     }
 
     await loadActivePrivateConversation(currentActiveDMUser);
+
+    // Active Live DM Fast Polling: 1.5 seconds while chatting in this view
+    if (window._activeDMPollTimer) clearInterval(window._activeDMPollTimer);
+    window._activeDMPollTimer = setInterval(() => {
+      if (!currentActiveDMUser || (typeof document !== 'undefined' && document.hidden)) return;
+      const activeView = document.getElementById('dms-active-chat-view');
+      const drawer = document.getElementById('chat-drawer');
+      const isDrawerOpen = drawer && drawer.classList.contains('chat-drawer-open');
+      if (!isDrawerOpen || !activeView || activeView.classList.contains('hidden')) {
+        clearInterval(window._activeDMPollTimer);
+        window._activeDMPollTimer = null;
+        return;
+      }
+      loadActivePrivateConversation(currentActiveDMUser);
+    }, 1500);
 
     const myUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username) || '';
     if (myUser && AppDB && typeof AppDB.markDMsRead === 'function') {
