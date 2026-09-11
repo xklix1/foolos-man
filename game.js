@@ -4093,7 +4093,18 @@ const GameEngine = (() => {
   }
 
   // Unified Casino Settlement: Applies House Rake (3%), VIP Bonus (+20% on net profit), net profit tracking & immediate persistence
+  let _lastCasinoSettlement = { time: 0, game: '', bet: 0 };
   function settleCasinoRound(betAmount, grossPayout, gameName ='الكازينو') {
+    const now = getTrustedNow();
+    // Anti-Rapid/Duplicate Settlement Guard for asynchronous casino games (Blackjack, Crash)
+    if (gameName.includes('Blackjack') || gameName.includes('Crash') || gameName.includes('بلاك جاك') || gameName.includes('صاروخ')) {
+      if (_lastCasinoSettlement.game === gameName && (now - _lastCasinoSettlement.time < 500)) {
+        console.warn(`[Casino Security] Blocked duplicate rapid settlement for ${gameName}`);
+        return { payout: 0, profit: 0, rake: 0, vipBonus: 0, won: false };
+      }
+      _lastCasinoSettlement = { time: now, game: gameName, bet: betAmount };
+    }
+
     const isEn = (typeof window !=='undefined' && window.currentLang ==='en');
     const currency = isEn ?'EGP' :'ج.م';
     const hasVIP = Boolean(state.inventory && state.inventory.vip_casino_pass > 0);

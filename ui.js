@@ -6453,9 +6453,12 @@ const UIController = (() => {
 
   function cashoutCrash() {
     if (crashState !=='running') return;
+    crashState ='cashed_out';
+
+    const cashoutBtn = document.getElementById('btn-crash-cashout');
+    if (cashoutBtn) cashoutBtn.disabled = true;
 
     cancelAnimationFrame(crashAnimationId);
-    crashState ='cashed_out';
 
     const grossPayout = Math.floor(crashBetAmount * crashMultiplier);
     const settlement = GameEngine.settleCasinoRound(crashBetAmount, grossPayout,'صاروخ الحظ (Crash)');
