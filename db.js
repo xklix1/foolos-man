@@ -606,15 +606,22 @@ var AppDB = (() => {
       throw new Error('لا يمكنك التحويل لنفسك!');
     }
 
-    // 1. Fetch sender and recipient devices without contaminating local storage
+    // 1. Fetch sender and recipient data without contaminating local storage
     const [senderRows, recipientRows] = await Promise.all([
-      _api(`players?username=ilike.${encodeURIComponent(sUser)}&select=known_devices,initial_device`),
-      _api(`players?username=ilike.${encodeURIComponent(rUser)}&select=known_devices,initial_device`)
+      _api(`players?username=ilike.${encodeURIComponent(sUser)}&select=username,state,created_at,cash,bank,net_worth,xp,is_admin`),
+      _api(`players?username=ilike.${encodeURIComponent(rUser)}&select=username,state,created_at,cash,bank,net_worth,xp,is_admin`)
     ]);
     if (!senderRows || senderRows.length === 0) throw new Error('تعذر العثور على بيانات الحساب المحول.');
     if (!recipientRows || recipientRows.length === 0) throw new Error('تعذر العثور على بيانات الحساب المستلم.');
-    const sender = senderRows[0];
-    const recipient = recipientRows[0];
+    const senderRow = senderRows[0];
+    const recipientRow = recipientRows[0];
+    const sender = { ...(senderRow.state || {}), ...senderRow };
+    const recipient = { ...(recipientRow.state || {}), ...recipientRow };
+
+    // Admin accounts bypass transfer fraud checks
+    if (sender.is_admin || senderRow.is_admin) {
+      return true;
+    }
 
     const fp = await DeviceFingerprint.getFingerprint();
     const registry = await getDeviceRegistry();
@@ -655,19 +662,20 @@ var AppDB = (() => {
     const assetCount = Object.values(sender.assets || {}).filter(v => (v || 0) > 0).length;
     const carCount = (sender.ownedCars || []).length;
     const stockShares = Object.values(sender.stocks || {}).reduce((sum, s) => sum + (s.shares || 0), 0);
-    const isZeroProgress = (bizCount === 0 && assetCount === 0 && carCount === 0 && stockShares === 0);
+    const totalFunds = Number(sender.cash || 0) + Number(sender.bank || 0);
+    const hasActiveProgression = bizCount > 0 || assetCount > 0 || carCount > 0 || stockShares > 0 || Number(sender.xp || 0) >= 20 || totalFunds >= 1000;
 
-    // STRICT RULE: Absolute block on 0-progress / 0-project accounts from transferring money
-    if (isZeroProgress || bizCount === 0) {
+    // STRICT RULE: Absolute block on 0-progress / 0-effort empty feeder accounts from transferring money
+    if (!hasActiveProgression) {
       await logFraudAlert({
         type: 'FEEDER_EMPTY_ACCOUNT',
         sender: sUser,
         recipient: rUser,
         amount: amt,
         device: fp,
-        details: `حساب بدون أي نشاط تجاري (0 مشاريع) يحاول تحويل ${amt.toLocaleString()} EGP إلى ${rUser}`
+        details: `حساب بدون أي نشاط أو تقدم في اللعبة يحاول تحويل ${amt.toLocaleString()} EGP إلى ${rUser}`
       });
-      throw new Error('🚫 مرفوض أمنياً: حسابك لم يقم بأي نشاط تجاري أو استثماري بعد (0 مشاريع). تمنع قواعد اللعبة تحويل الأموال من حسابات فارغة لمنع الحسابات الوهمية (Feeder Accounts). يرجى تطوير مشاريعك أولاً!');
+      throw new Error('🚫 مرفوض أمنياً: حسابك لم يقم بأي نشاط أو تقدم تجاري في اللعبة بعد. تمنع قواعد اللعبة تحويل الأموال من حسابات فارغة لمنع الحسابات الوهمية (Feeder Accounts). يرجى اللعب وتطوير مشاريعك أولاً!');
     }
 
     // 4. Sender Account Age Check
