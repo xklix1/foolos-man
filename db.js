@@ -1366,7 +1366,9 @@ var AppDB = (() => {
       if (state.pin) payload.pin = state.pin;
       _sanitizePayloadBeforeCloudPush(payload, state);
 
-      fetch(`${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}`, {
+      const adminTs = Number(state.adminModifiedTimestamp || 0);
+      const tsFilter = adminTs > 0 ? `&admin_modified_timestamp=lte.${adminTs}` : '';
+      fetch(`${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

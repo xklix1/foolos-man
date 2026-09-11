@@ -7307,6 +7307,11 @@ const UIController = (() => {
 
     // 4. Force Reload Action
     const doReload = () => {
+      try {
+        const u = (window.GameEngine && window.GameEngine.activeUsername) || localStorage.getItem('rasalmal_active_session_user');
+        if (u) localStorage.removeItem(`rasalmal_state_${u}`);
+      } catch (e) {}
+
       if (reloadTs) {
         sessionStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
       }
