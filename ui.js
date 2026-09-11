@@ -7216,8 +7216,24 @@ const UIController = (() => {
   function handleIncomingForceReload(data) {
     if (!data || !data.timestamp) return;
 
+    // Targeted force reload: if targetUser is specified, only trigger for that specific user
+    if (data.targetUser && typeof data.targetUser === 'string') {
+      const curUser = (window.GameEngine && window.GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '';
+      if (!curUser || curUser.trim().toLowerCase() !== data.targetUser.trim().toLowerCase()) {
+        return;
+      }
+    }
+
     const reloadTs = Number(data.timestamp);
     const storedAck = Number(sessionStorage.getItem('rasalmal_acknowledged_reload') || 0);
+
+    // If targeted specifically to this user, trigger immediately if newer than acknowledged
+    if (data.targetUser) {
+      if (reloadTs > storedAck) {
+        triggerMandatoryReloadModal(data.message, reloadTs);
+      }
+      return;
+    }
 
     // Initial session baseline: record existing timestamp so fresh loads aren't blocked
     if (!sessionStorage.getItem('rasalmal_acknowledged_reload')) {
