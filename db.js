@@ -1914,13 +1914,6 @@ var AppDB = (() => {
                     'cash'
                   );
 
-                  // Live Bank Balance Sync in GameEngine immediately
-                  if (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state) {
-                    window.GameEngine.state.bank = (Number(window.GameEngine.state.bank) || 0) + amt;
-                    window.GameEngine.state.netWorth = (Number(window.GameEngine.state.netWorth) || 0) + amt;
-                    if (typeof window.renderAll === 'function') window.renderAll();
-                  }
-
                   // Native OS / Browser Push Notification
                   if (typeof window !== 'undefined' && window.PWAManager && typeof window.PWAManager.sendNotification === 'function') {
                     window.PWAManager.sendNotification(`💸 استلام حوالة بنكية (${amtStr})`, {
