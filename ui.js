@@ -12091,11 +12091,28 @@ const UIController = (() => {
 
     // Apply Filter
     let filteredList = allRequests;
-    if (_currentMailboxFilter ==='topup') {
-      filteredList = allRequests.filter(m => m.type ==='topup_receipt' || (m.payload && m.payload.topupDetails));
-    } else if (_currentMailboxFilter ==='system') {
-      filteredList = allRequests.filter(m => m.type ==='system_announcement' || m.type ==='system_notification' || m.sender ==='SYSTEM' || m.sender ==='SYSTEM_ACQUISITION' || m.sender ==='SYSTEM_DIVIDEND');
-    } else if (_currentMailboxFilter ==='requests') {
+    if (_currentMailboxFilter === 'topup') {
+      filteredList = allRequests.filter(m => 
+        m.type === 'topup_receipt' || 
+        (m.payload && m.payload.topupDetails) ||
+        m.type === 'admin_balance_grant' ||
+        m.type === 'admin_gift'
+      );
+    } else if (_currentMailboxFilter === 'system') {
+      filteredList = allRequests.filter(m => 
+        m.type === 'system_announcement' || 
+        m.type === 'system_notification' || 
+        m.type === 'admin_popup' || 
+        m.type === 'urgent_alert' || 
+        m.type === 'admin_balance_grant' || 
+        m.type === 'admin_gift' || 
+        m.type === 'dividend_claim' ||
+        m.sender === 'SYSTEM' || 
+        m.sender === 'SYSTEM_ACQUISITION' || 
+        m.sender === 'SYSTEM_DIVIDEND' ||
+        (m.sender && (m.sender.includes('إدارة') || m.sender.includes('Admin')))
+      );
+    } else if (_currentMailboxFilter === 'requests') {
       filteredList = allRequests.filter(m => ['friend_request','job_offer','partnership_invite','transfer_request','transfer_received'].includes(m.type));
     }
 
@@ -12227,16 +12244,16 @@ const UIController = (() => {
       }
 
       // 2. System Announcement Card
-      if (mail.type ==='system_announcement' || mail.type ==='system_notification') {
-        const title = (mail.payload && mail.payload.title) ||'إشعار من إدارة رأس المال';
-        const message = (mail.payload && mail.payload.message) ||'';
+      if (mail.type === 'system_announcement' || mail.type === 'system_notification') {
+        const title = (mail.payload && mail.payload.title) || 'إشعار من إدارة رأس المال';
+        const message = (mail.payload && mail.payload.message) || '';
         
-        mailDiv.className =`p-4 rounded-2xl border ${isUnread ?'bg-slate-900/80 border-sky-500/40' :'bg-slate-900/30 border-slate-800'} text-xs text-slate-200 space-y-3`;
-        mailDiv.innerHTML =`
+        mailDiv.className = `p-4 rounded-2xl border ${isUnread ? 'bg-slate-900/80 border-sky-500/40' : 'bg-slate-900/30 border-slate-800'} text-xs text-slate-200 space-y-3`;
+        mailDiv.innerHTML = `
           <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
             <div class="flex items-center gap-2">
               <div class="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-500/40 text-sky-400 flex items-center justify-center text-xs font-black">
-                
+                📢
               </div>
               <h4 class="font-black text-sky-300 text-xs sm:text-sm">${title}</h4>
             </div>
@@ -12252,75 +12269,196 @@ const UIController = (() => {
         return;
       }
 
-      // 3. Interactive Social / Wire / Job Requests
-      mailDiv.className =`p-4 rounded-xl border ${isUnread ?'bg-slate-900/60 border-emerald-500/20' :'bg-slate-900/20 border-slate-800'} text-xs text-slate-300 space-y-3`;
+      // 2.1 Direct Admin Popup / Urgent Alert Card
+      if (mail.type === 'admin_popup' || mail.type === 'urgent_alert') {
+        const title = (mail.payload && mail.payload.title) || mail.title || 'تنبيه إداري مباشر 📢';
+        const message = (mail.payload && (mail.payload.message || mail.payload.text)) || mail.message || '';
+        const style = (mail.payload && mail.payload.style) || 'warning';
+        const isReward = style === 'reward' || title.includes('💎') || title.includes('إيداع') || title.includes('استعادة') || title.includes('رصيد');
+        
+        const borderClass = isReward 
+          ? (isUnread ? 'bg-slate-900/80 border-emerald-500/50 shadow-lg shadow-emerald-500/5' : 'bg-slate-900/30 border-slate-800')
+          : (isUnread ? 'bg-slate-900/80 border-amber-500/50 shadow-lg shadow-amber-500/5' : 'bg-slate-900/30 border-slate-800');
+        const iconBg = isReward ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-amber-500/20 border-amber-500/40 text-amber-400';
+        const iconSymbol = isReward ? '💎' : '📢';
+        const titleColor = isReward ? 'text-emerald-300' : 'text-amber-300';
+        const badgeTag = isReward ? 'مكافأة / استعادة 💎' : 'تنبيه إداري ⚠️';
 
-      let contentHtml ='';
-      let actionsHtml ='';
+        mailDiv.className = `p-4 rounded-2xl border ${borderClass} text-xs text-slate-200 space-y-3`;
+        mailDiv.innerHTML = `
+          <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg ${iconBg} border flex items-center justify-center text-xs font-black">
+                ${iconSymbol}
+              </div>
+              <div>
+                <h4 class="font-black ${titleColor} text-xs sm:text-sm">${title}</h4>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span class="text-[9px] text-slate-400 font-bold">${mail.sender || 'إدارة اللعبة (Admin)'}</span>
+                  <span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-950 border border-slate-800 text-slate-400 font-bold">${badgeTag}</span>
+                </div>
+              </div>
+            </div>
+            <span class="text-[10px] text-slate-400 numbers-font font-bold">${timeStr}</span>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed whitespace-pre-line select-text">${message}</p>
+          <div class="flex justify-end items-center pt-1 border-t border-slate-800/60">
+            <button onclick="window.UI.deleteMail('${mail.id}')" class="text-[10px] text-rose-400 hover:underline cursor-pointer">
+              <i class="fa-solid fa-trash mr-1"></i> حذف الرسالة
+            </button>
+          </div>`;
+        inboxPanel.appendChild(mailDiv);
+        return;
+      }
+
+      // 2.2 Direct Admin Balance Grant Card
+      if (mail.type === 'admin_balance_grant' || mail.type === 'admin_gift') {
+        const addedCash = Number((mail.payload && mail.payload.addedCash) || 0);
+        const addedBank = Number((mail.payload && mail.payload.addedBank) || 0);
+        const totalAmount = Number((mail.payload && (mail.payload.totalAmount || mail.payload.amount)) || (addedCash + addedBank));
+
+        mailDiv.className = `p-4 rounded-2xl border ${isUnread ? 'bg-gradient-to-r from-emerald-500/10 via-slate-900/90 to-slate-900 border-emerald-500/50 shadow-lg shadow-emerald-500/5' : 'bg-slate-900/40 border-slate-800'} text-xs text-slate-200 space-y-3`;
+        mailDiv.innerHTML = `
+          <div class="flex justify-between items-center border-b border-slate-800/80 pb-2.5">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-xs font-black">
+                💰
+              </div>
+              <div>
+                <h4 class="font-black text-emerald-300 text-xs sm:text-sm">إيداع مالي مباشر من الإدارة</h4>
+                <span class="text-[10px] text-emerald-400 font-bold">تم إيداع الرصيد بحسابك بنجاح ✅</span>
+              </div>
+            </div>
+            <span class="text-[10px] text-slate-400 numbers-font font-bold">${timeStr}</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-center pt-1">
+            ${addedCash > 0 ? `
+              <div class="p-2 rounded-xl bg-slate-950/80 border border-emerald-500/20">
+                <span class="text-[10px] text-slate-400 block font-bold">💵 كاش مالي مضاف</span>
+                <span class="text-xs font-black text-yellow-400 numbers-font">+${addedCash.toLocaleString()} EGP</span>
+              </div>
+            ` : ''}
+            ${addedBank > 0 ? `
+              <div class="p-2 rounded-xl bg-slate-950/80 border border-emerald-500/20">
+                <span class="text-[10px] text-slate-400 block font-bold">🏦 إيداع بنكي مضاف</span>
+                <span class="text-xs font-black text-emerald-400 numbers-font">+${addedBank.toLocaleString()} EGP</span>
+              </div>
+            ` : ''}
+            ${totalAmount > 0 && addedCash === 0 && addedBank === 0 ? `
+              <div class="p-2 rounded-xl bg-slate-950/80 border border-emerald-500/20 col-span-2">
+                <span class="text-[10px] text-slate-400 block font-bold">إجمالي المنحة المالية</span>
+                <span class="text-xs font-black text-emerald-400 numbers-font">+${totalAmount.toLocaleString()} EGP</span>
+              </div>
+            ` : ''}
+          </div>
+
+          <div class="flex justify-between items-center pt-1 border-t border-slate-800/60">
+            <button onclick="window.switchTab('bank')" class="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-building-columns"></i> فتح البنك
+            </button>
+            <button onclick="window.UI.deleteMail('${mail.id}')" class="text-[10px] text-rose-400 hover:underline cursor-pointer">
+              <i class="fa-solid fa-trash mr-1"></i> حذف الإشعار
+            </button>
+          </div>`;
+        inboxPanel.appendChild(mailDiv);
+        return;
+      }
+
+      // 2.3 Dividend Claim Card
+      if (mail.type === 'dividend_claim') {
+        const amt = Number((mail.payload && mail.payload.amount) || 0);
+        const bizName = (mail.payload && mail.payload.businessName) || 'المشروع الاستثماري';
+        mailDiv.className = `p-4 rounded-2xl border ${isUnread ? 'bg-slate-900/80 border-emerald-500/40' : 'bg-slate-900/30 border-slate-800'} text-xs text-slate-200 space-y-3`;
+        mailDiv.innerHTML = `
+          <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-xs font-black">
+                📈
+              </div>
+              <h4 class="font-black text-emerald-300 text-xs sm:text-sm">أرباح شراكة استثمارية [${bizName}]</h4>
+            </div>
+            <span class="text-[10px] text-slate-400 numbers-font font-bold">${timeStr}</span>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">وصلتك أرباح حصتك الاستثمارية بقيمة <strong class="text-emerald-400 numbers-font font-black">+${amt.toLocaleString()} EGP</strong> تم إيداعها مباشرة في رصيدك.</p>
+          <div class="flex justify-end items-center pt-1 border-t border-slate-800/60">
+            <button onclick="window.UI.deleteMail('${mail.id}')" class="text-[10px] text-rose-400 hover:underline cursor-pointer">
+              <i class="fa-solid fa-trash mr-1"></i> حذف الإشعار
+            </button>
+          </div>`;
+        inboxPanel.appendChild(mailDiv);
+        return;
+      }
+
+      // 3. Interactive Social / Wire / Job Requests
+      mailDiv.className = `p-4 rounded-xl border ${isUnread ? 'bg-slate-900/60 border-emerald-500/20' : 'bg-slate-900/20 border-slate-800'} text-xs text-slate-300 space-y-3`;
+
+      let contentHtml = '';
+      let actionsHtml = '';
       const isActionPending = isUnread;
 
-      if (mail.type ==='friend_request') {
-        contentHtml =`يريد اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> إضافتك كصديق في اللعبة.`;
+      if (mail.type === 'friend_request') {
+        contentHtml = `يريد اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> إضافتك كصديق في اللعبة.`;
         if (isActionPending) {
-          actionsHtml =`
+          actionsHtml = `
             <div class="flex gap-2">
               <button onclick="window.UI.handleMailAction('${mail.id}','friend_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول الصداقة</button>
               <button onclick="window.UI.handleMailAction('${mail.id}','reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
             </div>`;
-        } else if (mail.status ==='accepted') {
-          actionsHtml =`<span class="text-[10px] text-emerald-400 font-bold">تم قبول الصداقة </span>`;
+        } else if (mail.status === 'accepted') {
+          actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول الصداقة </span>`;
         } else {
-          actionsHtml =`<span class="text-[10px] text-rose-400 font-bold">تم الرفض </span>`;
+          actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم الرفض </span>`;
         }
-      } else if (mail.type ==='job_offer') {
-        contentHtml =`يعرض عليك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> العمل كمساعد في شركته: (<span class="text-sky-400 font-bold">${mail.payload && mail.payload.businessName ? mail.payload.businessName :'مشروع'}</span>) براتب دوري قدره <strong class="text-yellow-500 numbers-font font-bold">${(mail.payload && mail.payload.salary ? mail.payload.salary : 0).toLocaleString()} EGP</strong> لكل ثانية عمل.`;
+      } else if (mail.type === 'job_offer') {
+        contentHtml = `يعرض عليك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> العمل كمساعد في شركته: (<span class="text-sky-400 font-bold">${mail.payload && mail.payload.businessName ? mail.payload.businessName : 'مشروع'}</span>) براتب دوري قدره <strong class="text-yellow-500 numbers-font font-bold">${(mail.payload && mail.payload.salary ? mail.payload.salary : 0).toLocaleString()} EGP</strong> لكل ثانية عمل.`;
         if (isActionPending) {
-          actionsHtml =`
+          actionsHtml = `
             <div class="flex gap-2">
               <button onclick="window.UI.handleMailAction('${mail.id}','job_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول عقد العمل</button>
               <button onclick="window.UI.handleMailAction('${mail.id}','reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
             </div>`;
-        } else if (mail.status ==='accepted') {
-          actionsHtml =`<span class="text-[10px] text-emerald-400 font-bold">تم قبول عقد العمل </span>`;
+        } else if (mail.status === 'accepted') {
+          actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول عقد العمل </span>`;
         } else {
-          actionsHtml =`<span class="text-[10px] text-rose-400 font-bold">تم الرفض </span>`;
+          actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم الرفض </span>`;
         }
-      } else if (mail.type ==='partnership_invite') {
+      } else if (mail.type === 'partnership_invite') {
         const pct = Math.round(((mail.payload && mail.payload.sharePct) || 0) * 100);
-        contentHtml =`يدعوك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> لتكون شريكاً استثمارياً مساهماً في شركته: (<span class="text-emerald-400 font-bold">${mail.payload && mail.payload.businessName ? mail.payload.businessName :'مشروع'}</span>) مقابل نسبة توزيع أرباح قدرها <strong class="text-emerald-400 font-bold">${pct}%</strong> من صافي العائد.`;
+        contentHtml = `يدعوك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> لتكون شريكاً استثمارياً مساهماً في شركته: (<span class="text-emerald-400 font-bold">${mail.payload && mail.payload.businessName ? mail.payload.businessName : 'مشروع'}</span>) مقابل نسبة توزيع أرباح قدرها <strong class="text-emerald-400 font-bold">${pct}%</strong> من صافي العائد.`;
         if (isActionPending) {
-          actionsHtml =`
+          actionsHtml = `
             <div class="flex gap-2">
               <button onclick="window.UI.handleMailAction('${mail.id}','partnership_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول الشراكة</button>
               <button onclick="window.UI.handleMailAction('${mail.id}','reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
             </div>`;
-        } else if (mail.status ==='accepted') {
-          actionsHtml =`<span class="text-[10px] text-emerald-400 font-bold">تم قبول الشراكة </span>`;
+        } else if (mail.status === 'accepted') {
+          actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول الشراكة </span>`;
         } else {
-          actionsHtml =`<span class="text-[10px] text-rose-400 font-bold">تم الرفض </span>`;
+          actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم الرفض </span>`;
         }
-      } else if (mail.type ==='transfer_request') {
+      } else if (mail.type === 'transfer_request') {
         const amt = Number(mail.payload && mail.payload.amount ? mail.payload.amount : 0);
-        contentHtml =`
+        contentHtml = `
           <div class="space-y-1.5">
             <div class="text-slate-200">
               يطلب منك اللاعب <strong class="text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong> تحويل مبلغ مالي كاش قدره: <strong class="text-yellow-400 font-black numbers-font text-sm">${amt.toLocaleString()} EGP</strong>.
             </div>
           </div>`;
         if (isActionPending) {
-          actionsHtml =`
+          actionsHtml = `
             <div class="flex gap-2">
               <button onclick="window.UI.handleMailAction('${mail.id}','transfer_request_accept')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-black transition">قبول ودفع المبلغ</button>
               <button onclick="window.UI.handleMailAction('${mail.id}','transfer_request_reject')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition">رفض</button>
             </div>`;
-        } else if (mail.status ==='accepted') {
-          actionsHtml =`<span class="text-[10px] text-emerald-400 font-bold">تم قبول ودفع الطلب بنجاح </span>`;
+        } else if (mail.status === 'accepted') {
+          actionsHtml = `<span class="text-[10px] text-emerald-400 font-bold">تم قبول ودفع الطلب بنجاح </span>`;
         } else {
-          actionsHtml =`<span class="text-[10px] text-rose-400 font-bold">تم رفض الطلب </span>`;
+          actionsHtml = `<span class="text-[10px] text-rose-400 font-bold">تم رفض الطلب </span>`;
         }
-      } else if (mail.type ==='transfer_received') {
+      } else if (mail.type === 'transfer_received') {
         const amt = Number(mail.payload && mail.payload.amount ? mail.payload.amount : 0);
-        contentHtml =`
+        contentHtml = `
           <div class="space-y-1">
             <div class="text-slate-200">
               وصلتك حوالة مالية بقيمة <strong class="text-emerald-400 font-black numbers-font text-sm">+${amt.toLocaleString()} EGP</strong> من اللاعب <strong class="text-white hover:underline cursor-pointer" onclick="window.UI.openPlayerProfileCard('${mail.sender}')">${mail.sender}</strong>.
@@ -12329,19 +12467,32 @@ const UIController = (() => {
               <i class="fa-solid fa-circle-check text-xs"></i> تم إيداع المبلغ بنجاح في حسابك البنكي.
             </div>
           </div>`;
-        actionsHtml =`
+        actionsHtml = `
           <button onclick="window.switchTab('bank')" class="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-bold transition flex items-center gap-1">
             <i class="fa-solid fa-building-columns"></i> فتح البنك
           </button>`;
       }
 
-      const badgeText = mail.type ==='friend_request' ?'طلب صداقة' :
-                        mail.type ==='job_offer' ?'عقد عمل' :
-                        mail.type ==='partnership_invite' ?'دعوة شراكة' :
-                        mail.type ==='transfer_request' ?'طلب تحويل أموال' :
-                        mail.type ==='transfer_received' ?'حوالة بنكية' :'رسالة';
+      // Smart Fallback for any unknown / custom mail types so it NEVER renders blank!
+      if (!contentHtml) {
+        const fallbackTitle = (mail.payload && mail.payload.title) || mail.title || 'إشعار من النظام';
+        const fallbackMsg = (mail.payload && (mail.payload.message || mail.payload.text)) || mail.message || (typeof mail.payload === 'string' ? mail.payload : '');
+        contentHtml = `
+          <div class="space-y-1">
+            <div class="font-bold text-white text-xs">${fallbackTitle}</div>
+            <p class="text-slate-300 text-xs leading-relaxed whitespace-pre-line">${fallbackMsg || 'تم استلام هذا الإشعار من النظام.'}</p>
+          </div>`;
+      }
 
-      mailDiv.innerHTML =`
+      const badgeText = mail.type === 'friend_request' ? 'طلب صداقة' :
+                        mail.type === 'job_offer' ? 'عقد عمل' :
+                        mail.type === 'partnership_invite' ? 'دعوة شراكة' :
+                        mail.type === 'transfer_request' ? 'طلب تحويل أموال' :
+                        mail.type === 'transfer_received' ? 'حوالة بنكية' :
+                        mail.type === 'admin_popup' ? 'تنبيه إداري' :
+                        mail.type === 'admin_balance_grant' ? 'إيداع إداري' : 'رسالة';
+
+      mailDiv.innerHTML = `
         <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
           <span class="text-[10px] text-slate-500 font-bold numbers-font">${timeStr}</span>
           <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[9px] text-slate-400 font-bold">${badgeText}</span>
