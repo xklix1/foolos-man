@@ -1860,6 +1860,27 @@ var AppDB = (() => {
     } catch (_) {}
   }
 
+  function _notifyUser(title, msg, type = 'info', sound = 'success') {
+    try {
+      if (typeof window !== 'undefined') {
+        if (typeof window.showToast === 'function') {
+          window.showToast(title, msg, type);
+        } else if (window.UI && typeof window.UI.showToast === 'function') {
+          window.UI.showToast(title, msg, type);
+        }
+        if (sound) {
+          if (typeof window.playMenuSound === 'function') {
+            window.playMenuSound(sound);
+          } else if (window.UI && typeof window.UI.playMenuSound === 'function') {
+            window.UI.playMenuSound(sound);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[DB] Notification dispatch error:', e);
+    }
+  }
+
   function listenToMailbox(username, callback) {
     if (!username || typeof callback !=='function') return () => {};
     let isSubscribed = true;
@@ -1884,16 +1905,12 @@ var AppDB = (() => {
                   const amt = Number(payload.amount || 0);
                   const amtStr = amt > 0 ? `${amt.toLocaleString()} EGP` : '';
                   
-                  if (typeof showToast === 'function') {
-                    showToast(
-                      '💸 حوالة بنكية واردة!',
-                      `قام اللاعب "${sender}" بتحويل ${amtStr} إلى حسابك البنكي!`,
-                      'success'
-                    );
-                  }
-                  if (typeof playMenuSound === 'function') {
-                    playMenuSound('cash');
-                  }
+                  _notifyUser(
+                    '💸 حوالة بنكية واردة!',
+                    `قام اللاعب "${sender}" بتحويل ${amtStr} إلى حسابك البنكي!`,
+                    'success',
+                    'cash'
+                  );
 
                   // Live Bank Balance Sync in GameEngine immediately
                   if (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state) {
@@ -1919,16 +1936,12 @@ var AppDB = (() => {
 
                   // In-app toast if player is not actively viewing this conversation
                   if (!isViewingThisSender || !isDrawerOpen) {
-                    if (typeof showToast === 'function') {
-                      showToast(
-                        `💬 رسالة خاصة من ${sender}`,
-                        `"${msgText.length > 60 ? msgText.substring(0, 60) + '...' : msgText}"`,
-                        'info'
-                      );
-                    }
-                    if (typeof playMenuSound === 'function') {
-                      playMenuSound('success');
-                    }
+                    _notifyUser(
+                      `💬 رسالة خاصة من ${sender}`,
+                      `"${msgText.length > 60 ? msgText.substring(0, 60) + '...' : msgText}"`,
+                      'info',
+                      'success'
+                    );
                   }
 
                   // Update floating chat badge
@@ -1953,12 +1966,7 @@ var AppDB = (() => {
                 else {
                   const title = payload.title || m.title || '📬 إشعار جديد';
                   const msg = payload.message || m.message || 'وصلك إشعار جديد في صندوق الرسائل.';
-                  if (typeof showToast === 'function') {
-                    showToast(title, msg, 'info');
-                  }
-                  if (typeof playMenuSound === 'function') {
-                    playMenuSound('success');
-                  }
+                  _notifyUser(title, msg, 'info', 'success');
                 }
               }
             }
@@ -2002,6 +2010,16 @@ var AppDB = (() => {
       }
       unsubResume();
     };
+  }
+
+  async function getMailbox(username, limit = 50) {
+    if (!username) return [];
+    try {
+      const rows = await _api(`mailbox?recipient=eq.${encodeURIComponent(username.trim())}&order=created_at.desc&limit=${limit}`);
+      return Array.isArray(rows) ? rows : [];
+    } catch (e) {
+      return [];
+    }
   }
 
   async function updateMailStatus(mailId, status) {
@@ -4841,6 +4859,7 @@ var AppDB = (() => {
     // Mailbox
     sendMail,
     listenToMailbox,
+    getMailbox,
     updateMailStatus,
     deleteMail,
     markAllMailsRead,

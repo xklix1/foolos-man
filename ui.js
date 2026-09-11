@@ -377,9 +377,17 @@ const UIController = (() => {
   //  TOP NOTIFICATIONS (TOAST ENGINE)
   // ─────────────────────────────────────────────
   function showToast(title, message, type ='info', duration = 2400, action = null) {
+    const rawTitle = String(title || '');
+    const rawMsg = String(message || '');
     if (typeof title ==='string') title = title.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/gu,'').trim();
     if (typeof message ==='string') message = message.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/gu,'').trim();
-    if (!notificationsEnabled && type !=='error') return;
+    
+    // Allow critical notifications (transfers, DMs, success, errors) even if toggle is muted
+    const isCritical = type === 'error' || type === 'success' || type === 'warning' || 
+                       rawTitle.includes('حوالة') || rawTitle.includes('رسالة') || 
+                       rawTitle.includes('إداري') || rawMsg.includes('حوالة') || rawMsg.includes('رسالة');
+    if (!notificationsEnabled && !isCritical) return;
+
     const container = document.getElementById('toast-container');
     if (!container) return;
 
@@ -513,6 +521,9 @@ const UIController = (() => {
       toast.style.transform ='translateY(0)';
       toast.style.opacity ='1';
     });
+  }
+  if (typeof window !== 'undefined') {
+    window.showToast = showToast;
   }
 
   function playMenuSound(type) {
@@ -6677,8 +6688,11 @@ const UIController = (() => {
   let activeListeners = [];
 
   function setupRealTimeListeners(username) {
+    if (!username) return;
     // Clean up existing listeners
-    activeListeners.forEach(unsub => unsub());
+    activeListeners.forEach(unsub => {
+      try { if (typeof unsub === 'function') unsub(); } catch (_) {}
+    });
     activeListeners = [];
 
     // Show/Hide Admin Trigger Button
@@ -6692,6 +6706,20 @@ const UIController = (() => {
       }
     }
 
+    // 1. Live Incoming Mailbox & Wire Transfers Listener (Supabase REST - Always Runs)
+    try {
+      if (typeof AppDB !== 'undefined' && typeof AppDB.listenToMailbox === 'function') {
+        const unsubMail = AppDB.listenToMailbox(username, (mails) => {
+          if (typeof renderMailbox === 'function') {
+            renderMailbox(mails);
+          }
+        });
+        if (typeof unsubMail === 'function') activeListeners.push(unsubMail);
+      }
+    } catch (err) {
+      console.warn('[Realtime] Mailbox listener start error:', err);
+    }
+
     // Check if player has an incoming pending admin popup stored in state
     if (GameEngine.state && GameEngine.state.pendingAdminPopup) {
       setTimeout(() => {
@@ -6701,24 +6729,28 @@ const UIController = (() => {
       }, 1200);
     }
 
-    if (!AppDB.isFirebaseReady) return;
+    // 2. Optional Firebase Services (Safely guarded against blocked CDN/quota)
+    if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length || !AppDB.isFirebaseReady) {
+      return;
+    }
 
-    const db = firebase.firestore();
+    try {
+      const db = firebase.firestore();
 
-    // 1. Broadcast Listener
-    let lastBroadcastTime = Date.now();
-    const unsubBroadcast = db.collection('globals').doc('broadcast')
-      .onSnapshot((doc) => {
-        if (!doc.exists) return;
-        const data = doc.data();
-        if (!data || !data.message) return;
-        if (data.timestamp > lastBroadcastTime) {
-          lastBroadcastTime = data.timestamp;
-          showToast(data.title ||' إعلان إداري عاجل', data.message,'info');
-          playMenuSound('success');
-        }
-      }, (err) => console.error("Broadcast listen err:", err));
-    activeListeners.push(unsubBroadcast);
+      // 1. Broadcast Listener
+      let lastBroadcastTime = Date.now();
+      const unsubBroadcast = db.collection('globals').doc('broadcast')
+        .onSnapshot((doc) => {
+          if (!doc.exists) return;
+          const data = doc.data();
+          if (!data || !data.message) return;
+          if (data.timestamp > lastBroadcastTime) {
+            lastBroadcastTime = data.timestamp;
+            showToast(data.title ||' إعلان إداري عاجل', data.message,'info');
+            playMenuSound('success');
+          }
+        }, (err) => console.warn("Broadcast listen err:", err));
+      activeListeners.push(unsubBroadcast);
 
     // 1.2 Mandatory Force Page Reload Listener
     const unsubForceReload = db.collection('globals').doc('force_reload')
@@ -6781,6 +6813,9 @@ const UIController = (() => {
           updateStatsBarServerBoostIndicator();
         }
       }).catch((err) => console.warn("ServerConfig fetch err:", err));
+    } catch (fbErr) {
+      console.warn("[Realtime] Firebase listeners error:", fbErr);
+    }
 
     // Public Chat listener removed to conserve Firebase read/write quota (replaced with Facebook Community)
 
@@ -6792,16 +6827,6 @@ const UIController = (() => {
           AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
         }
       }, 45 * 1000);
-    }
-
-    // 2.5. Live Incoming Mailbox & Wire Transfers Listener
-    if (typeof AppDB.listenToMailbox ==='function') {
-      const unsubMail = AppDB.listenToMailbox(username, (mails) => {
-        if (typeof renderMailbox ==='function') {
-          renderMailbox(mails);
-        }
-      });
-      activeListeners.push(unsubMail);
     }
 
     // 3. Reliable Global Airdrop Synchronization (Supabase REST)
@@ -17898,13 +17923,26 @@ const UIController = (() => {
     if (markAllBtn) markAllBtn.addEventListener('click', markAllMailsReadAction);
   }
 
-  function openNotificationsModal() {
+  async function openNotificationsModal() {
     playMenuSound('modal_open');
     bindNotificationsModalEvents();
     const modal = document.getElementById('modal-notifications-center');
     if (modal) modal.classList.remove('hidden');
-    if (window.lastMailsCache) {
+    
+    if (window.lastMailsCache && window.lastMailsCache.length > 0) {
       renderMailbox(window.lastMailsCache);
+    }
+
+    const myUser = (typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || 
+                   (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username) || 
+                   localStorage.getItem('rasalmal_active_session_user');
+    if (myUser && typeof AppDB !== 'undefined' && typeof AppDB.getMailbox === 'function') {
+      try {
+        const mails = await AppDB.getMailbox(myUser);
+        if (mails && Array.isArray(mails)) {
+          renderMailbox(mails);
+        }
+      } catch (_) {}
     }
   }
 
@@ -18583,7 +18621,10 @@ const UIController = (() => {
     openPrivateChatWith,
     openChatDrawerWithDM,
     switchChatDrawerTab,
-    toggleMutePlayer
+    toggleMutePlayer,
+    showToast,
+    openNotificationsModal,
+    closeNotificationsModal
   };
 
 })();
@@ -18592,6 +18633,9 @@ const UIController = (() => {
 // Export globally
 window.UIController = UIController;
 window.UI = UIController;
+window.showToast = showToast;
+window.openNotificationsModal = openNotificationsModal;
+window.closeNotificationsModal = closeNotificationsModal;
 window.playMenuSound = UIController.playMenuSound;
 window.playCasinoSound = UIController.playCasinoSound;
 
