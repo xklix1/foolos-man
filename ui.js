@@ -967,6 +967,32 @@ const UIController = (() => {
       if (musicToggle) musicToggle.checked = musicEnabled;
       if (glowToggle) glowToggle.checked = glowEnabled;
       if (notificationsToggle) notificationsToggle.checked = notificationsEnabled;
+
+      // Update PIN Change Card state based on active login
+      const currentActive = (GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username) || '').trim();
+      const pinLoggedOutMsg = document.getElementById('settings-pin-logged-out-msg');
+      const pinToggleBtn = document.getElementById('btn-toggle-change-pin-section');
+      const pinForm = document.getElementById('settings-change-pin-form');
+      const curPinInput = document.getElementById('input-settings-current-pin');
+      const newPinInput = document.getElementById('input-settings-new-pin');
+      const confirmPinInput = document.getElementById('input-settings-confirm-pin');
+      const labelTogglePin = document.getElementById('label-toggle-pin-form');
+      const iconTogglePin = document.getElementById('icon-toggle-pin-form');
+
+      if (curPinInput) curPinInput.value = '';
+      if (newPinInput) newPinInput.value = '';
+      if (confirmPinInput) confirmPinInput.value = '';
+      if (pinForm) pinForm.classList.add('hidden');
+      if (labelTogglePin) labelTogglePin.textContent = 'تغيير';
+      if (iconTogglePin) iconTogglePin.classList.remove('rotate-180');
+
+      if (currentActive) {
+        if (pinLoggedOutMsg) pinLoggedOutMsg.classList.add('hidden');
+        if (pinToggleBtn) pinToggleBtn.classList.remove('hidden');
+      } else {
+        if (pinLoggedOutMsg) pinLoggedOutMsg.classList.remove('hidden');
+      }
+
       if (startSettingsModal) startSettingsModal.classList.remove('hidden');
     };
 
@@ -1027,6 +1053,103 @@ const UIController = (() => {
         localStorage.setItem('rasalmal_notifications_enabled', notificationsEnabled ?'true' :'false');
         if (notificationsEnabled) {
           showToast('تنبيهات النظام','تم تفعيل الإشعارات بنجاح.','info', 1800);
+        }
+      });
+    }
+
+    // Account Security: Change PIN Handlers
+    const togglePinBtn = document.getElementById('btn-toggle-change-pin-section');
+    const pinForm = document.getElementById('settings-change-pin-form');
+    const labelTogglePin = document.getElementById('label-toggle-pin-form');
+    const iconTogglePin = document.getElementById('icon-toggle-pin-form');
+    const submitPinBtn = document.getElementById('btn-submit-change-pin');
+    const textSubmitPin = document.getElementById('text-submit-change-pin');
+    const spinnerSubmitPin = document.getElementById('spinner-submit-change-pin');
+
+    if (togglePinBtn && pinForm) {
+      togglePinBtn.addEventListener('click', () => {
+        const currentActive = (GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username) || '').trim();
+        if (!currentActive) {
+          showToast('تنبيه', 'يرجى تسجيل الدخول أولاً لتتمكن من تغيير كلمة السر.', 'warning');
+          return;
+        }
+        const isHidden = pinForm.classList.contains('hidden');
+        if (isHidden) {
+          pinForm.classList.remove('hidden');
+          if (labelTogglePin) labelTogglePin.textContent = 'إلغاء';
+          if (iconTogglePin) iconTogglePin.classList.add('rotate-180');
+          const curInput = document.getElementById('input-settings-current-pin');
+          if (curInput) setTimeout(() => curInput.focus(), 100);
+        } else {
+          pinForm.classList.add('hidden');
+          if (labelTogglePin) labelTogglePin.textContent = 'تغيير';
+          if (iconTogglePin) iconTogglePin.classList.remove('rotate-180');
+        }
+      });
+    }
+
+    if (submitPinBtn) {
+      submitPinBtn.addEventListener('click', async () => {
+        const currentActive = (GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username) || '').trim();
+        if (!currentActive) {
+          showToast('تنبيه', 'يرجى تسجيل الدخول أولاً لتتمكن من تغيير كلمة السر.', 'warning');
+          return;
+        }
+
+        const curPinInput = document.getElementById('input-settings-current-pin');
+        const newPinInput = document.getElementById('input-settings-new-pin');
+        const confirmPinInput = document.getElementById('input-settings-confirm-pin');
+
+        const curVal = curPinInput ? curPinInput.value.trim() : '';
+        const newVal = newPinInput ? newPinInput.value.trim() : '';
+        const confirmVal = confirmPinInput ? confirmPinInput.value.trim() : '';
+
+        if (!curVal) {
+          showToast('خطأ', 'يرجى إدخال كلمة السر الحالية.', 'error');
+          if (curPinInput) curPinInput.focus();
+          return;
+        }
+
+        if (!newVal || newVal.length < 4) {
+          showToast('خطأ', 'كلمة السر الجديدة يجب ألا تقل عن 4 خانات.', 'error');
+          if (newPinInput) newPinInput.focus();
+          return;
+        }
+
+        if (newVal === curVal) {
+          showToast('خطأ', 'كلمة السر الجديدة مطابقة للكلمة الحالية.', 'error');
+          return;
+        }
+
+        if (newVal !== confirmVal) {
+          showToast('خطأ', 'تأكيد كلمة السر غير متطابق مع الكلمة الجديدة.', 'error');
+          if (confirmPinInput) confirmPinInput.focus();
+          return;
+        }
+
+        try {
+          submitPinBtn.disabled = true;
+          if (textSubmitPin) textSubmitPin.textContent = 'جارٍ الحفظ...';
+          if (spinnerSubmitPin) spinnerSubmitPin.classList.remove('hidden');
+
+          await AppDB.changePlayerPin(currentActive, curVal, newVal);
+
+          showToast('أمان الحساب', 'تم تغيير كلمة السر بنجاح! احتفظ بها لتسجيل الدخول لاحقاً.', 'success');
+          playMenuSound('success');
+
+          if (curPinInput) curPinInput.value = '';
+          if (newPinInput) newPinInput.value = '';
+          if (confirmPinInput) confirmPinInput.value = '';
+
+          if (pinForm) pinForm.classList.add('hidden');
+          if (labelTogglePin) labelTogglePin.textContent = 'تغيير';
+          if (iconTogglePin) iconTogglePin.classList.remove('rotate-180');
+        } catch (err) {
+          showToast('فشل التغيير', err.message || 'حدث خطأ أثناء تغيير كلمة السر.', 'error');
+        } finally {
+          submitPinBtn.disabled = false;
+          if (textSubmitPin) textSubmitPin.textContent = 'حفظ كلمة السر الجديدة';
+          if (spinnerSubmitPin) spinnerSubmitPin.classList.add('hidden');
         }
       });
     }

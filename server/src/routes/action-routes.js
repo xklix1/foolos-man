@@ -262,6 +262,67 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       netWorth: s.netWorth
     };
   });
+
+  // 6. POST /api/action/change-pin (Player Account Password / PIN Change)
+  fastify.post('/api/action/change-pin', {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+
+    const { currentPin, newPin } = request.body || {};
+    if (!currentPin || !newPin) {
+      return reply.code(400).send({ error: 'يرجى إدخال كلمة السر الحالية والجديدة' });
+    }
+
+    const curP = String(currentPin).trim();
+    const newP = String(newPin).trim();
+
+    if (newP.length < 4) {
+      return reply.code(400).send({ error: 'كلمة السر الجديدة يجب ألا تقل عن 4 خانات' });
+    }
+
+    if (curP === newP) {
+      return reply.code(400).send({ error: 'كلمة السر الجديدة مطابقة للكلمة الحالية' });
+    }
+
+    const crypto = require('crypto');
+    const hashedCurrent = crypto.createHash('sha256').update(curP).digest('hex');
+    const storedPin = String(session.pin || (session.state && session.state.pin) || '').trim();
+
+    if (storedPin !== curP && storedPin !== hashedCurrent) {
+      return reply.code(401).send({ error: 'كلمة السر الحالية غير صحيحة' });
+    }
+
+    const hashedNew = crypto.createHash('sha256').update(newP).digest('hex');
+    session.pin = hashedNew;
+    if (session.state) session.state.pin = hashedNew;
+
+    const dbService = require('../services/db-service');
+    await dbService.savePlayerState(session.username, session.state);
+
+    // Also persist directly to players.pin column
+    try {
+      const endpoint = `${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(session.username)}`;
+      await fetch(endpoint, {
+        method: 'PATCH',
+        headers: dbService.getHeaders(),
+        body: JSON.stringify({ pin: hashedNew })
+      });
+    } catch (err) {
+      fastify.log.warn(`Direct pin column patch warning: ${err.message}`);
+    }
+
+    return {
+      success: true,
+      message: 'تم تغيير كلمة السر بنجاح'
+    };
+  });
 }
 
 module.exports = actionRoutes;

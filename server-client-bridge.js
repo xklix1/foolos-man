@@ -267,6 +267,18 @@ var ServerBridge = (() => {
     }
   }
 
+  /**
+   * Authoritatively changes player PIN
+   */
+  async function changePin(currentPin, newPin) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    return await _post('/api/action/change-pin', {
+      username: _activeUsername,
+      currentPin,
+      newPin
+    });
+  }
+
   return {
     startSession,
     dispatchClick,
@@ -274,6 +286,7 @@ var ServerBridge = (() => {
     renewAfkManager,
     buySupplies,
     bankAction,
+    changePin,
     syncState,
     sendHeartbeat,
     sendExit,

@@ -59,6 +59,11 @@ test('Client ServerBridge End-to-End Test', async () => {
     assert.ok(bankRes, 'Bank deposit succeeded');
     assert.strictEqual(bankRes.bank, 6000);
 
+    // 4.5 Change PIN
+    const pinRes = await ServerBridge.changePin('1234', '98765');
+    assert.ok(pinRes, 'Change pin succeeded');
+    assert.strictEqual(pinRes.success, true);
+
     // 5. Sync State (e.g. industry and client progress)
     const syncRes = await ServerBridge.syncState({
       cash: 7000,

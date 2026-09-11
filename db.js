@@ -2846,6 +2846,68 @@ var AppDB = (() => {
     return true;
   }
 
+  async function changePlayerPin(username, currentPin, newPin) {
+    if (!username || !currentPin || !newPin) throw new Error('يرجى إدخال كلمة السر الحالية والجديدة.');
+    const u = username.trim();
+    const curP = String(currentPin).trim();
+    const newP = String(newPin).trim();
+
+    if (newP.length < 4) {
+      throw new Error('كلمة السر الجديدة يجب ألا تقل عن 4 خانات.');
+    }
+
+    if (curP === newP) {
+      throw new Error('كلمة السر الجديدة مطابقة للكلمة الحالية.');
+    }
+
+    // Try via Authoritative ServerBridge if online
+    if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.changePin === 'function' && window.ServerBridge.isServerOnline()) {
+      try {
+        const res = await window.ServerBridge.changePin(curP, newP);
+        if (res && res.success) {
+          const hashedNew = await hashPin(newP);
+          if (window.GameEngine && window.GameEngine.state) {
+            window.GameEngine.state.pin = hashedNew;
+            setEncryptedLocalState(`rasalmal_state_${u}`, window.GameEngine.state);
+          }
+          return true;
+        }
+      } catch (e) {
+        throw e;
+      }
+    }
+
+    const hashedCurrent = await hashPin(curP);
+    const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=pin,state`);
+    if (!rows || rows.length === 0) throw new Error('تعذر العثور على بيانات الحساب.');
+
+    const playerRow = rows[0];
+    const storedPin = String(playerRow.pin || '').trim();
+
+    if (storedPin !== curP && storedPin !== hashedCurrent) {
+      throw new Error('كلمة السر الحالية غير صحيحة.');
+    }
+
+    const hashedNew = await hashPin(newP);
+    const patchBody = { pin: hashedNew };
+    if (playerRow.state && typeof playerRow.state === 'object') {
+      patchBody.state = { ...playerRow.state, pin: hashedNew };
+    }
+
+    await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patchBody)
+    });
+
+    // Update in-memory state and local storage
+    if (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state) {
+      window.GameEngine.state.pin = hashedNew;
+      setEncryptedLocalState(`rasalmal_state_${u}`, window.GameEngine.state);
+    }
+
+    return true;
+  }
+
   async function adminReleaseJail(username) {
     await _api(`players?username=eq.${encodeURIComponent(username)}`, {
       method:'PATCH',
@@ -4394,6 +4456,7 @@ var AppDB = (() => {
     // Auth & Player
     registerPlayer,
     verifyPin,
+    changePlayerPin,
     getPlayerState,
     savePlayerState,
     syncProgressToCloud,
