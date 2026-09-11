@@ -1840,6 +1840,7 @@ var AppDB = (() => {
 
   async function sendPrivateMessage(sender, recipient, message) {
     if (!message || !message.trim() || !sender || !recipient) return false;
+    const trimmed = message.trim();
     const blockedWord = ProfanityFilter.findBlockedWord ? ProfanityFilter.findBlockedWord(trimmed) : null;
     if (blockedWord || (ProfanityFilter && ProfanityFilter.containsProfanity(trimmed))) {
       const wordReason = blockedWord ? ` (بسبب كلمة: "${blockedWord}")` : '';
