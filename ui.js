@@ -12586,6 +12586,12 @@ const UIController = (() => {
     });
 
     renderDMsConversationList(mails);
+    if (currentActiveDMUser) {
+      const activeView = document.getElementById('dms-active-chat-view');
+      if (activeView && !activeView.classList.contains('hidden')) {
+        loadActivePrivateConversation(currentActiveDMUser);
+      }
+    }
   }
 
   // ─────────────────────────────────────────────

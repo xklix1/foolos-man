@@ -1870,16 +1870,96 @@ var AppDB = (() => {
       if (!isSubscribed) return;
       if (!isNetworkActive()) return;
       try {
-        const rows = await _api(`mailbox?recipient=eq.${encodeURIComponent(username.trim())}&order=created_at.desc&limit=25`);
+        const rows = await _api(`mailbox?recipient=eq.${encodeURIComponent(username.trim())}&order=created_at.desc&limit=30`);
         if (rows && isSubscribed) {
           if (!isFirstRun) {
             for (const m of rows) {
-              if (!lastKnownMailIds.has(m.id) && m.status !=='read' && m.status !=='accepted' && m.status !=='rejected') {
-                if (typeof showToast ==='function') {
-                  showToast(m.title ||' بريد جديد', m.message ||'وصلتك رسالة أو حوالة جديدة في صندوق البريد!','info');
-                  if (typeof playMenuSound ==='function') playMenuSound('success');
+              if (!lastKnownMailIds.has(m.id) && m.status !== 'read' && m.status !== 'accepted' && m.status !== 'rejected') {
+                const type = m.type;
+                const sender = m.sender || 'مجهول';
+                const payload = m.payload || {};
+                
+                // 1. Bank Wire Transfer Received
+                if (type === 'transfer_received') {
+                  const amt = Number(payload.amount || 0);
+                  const amtStr = amt > 0 ? `${amt.toLocaleString()} EGP` : '';
+                  
+                  if (typeof showToast === 'function') {
+                    showToast(
+                      '💸 حوالة بنكية واردة!',
+                      `قام اللاعب "${sender}" بتحويل ${amtStr} إلى حسابك البنكي!`,
+                      'success'
+                    );
+                  }
+                  if (typeof playMenuSound === 'function') {
+                    playMenuSound('cash');
+                  }
+
+                  // Live Bank Balance Sync in GameEngine immediately
+                  if (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state) {
+                    window.GameEngine.state.bank = (Number(window.GameEngine.state.bank) || 0) + amt;
+                    window.GameEngine.state.netWorth = (Number(window.GameEngine.state.netWorth) || 0) + amt;
+                    if (typeof window.renderAll === 'function') window.renderAll();
+                  }
+
+                  // Native OS / Browser Push Notification
+                  if (typeof window !== 'undefined' && window.PWAManager && typeof window.PWAManager.sendNotification === 'function') {
+                    window.PWAManager.sendNotification(`💸 استلام حوالة بنكية (${amtStr})`, {
+                      body: `قام اللاعب "${sender}" بتحويل ${amtStr} إلى حسابك البنكي الآن!`,
+                      tag: `transfer_${m.id || Date.now()}`
+                    });
+                  }
                 }
-                break;
+                // 2. Private Direct Message (DM) Received
+                else if (type === 'dm') {
+                  const msgText = payload.message || m.message || 'أرسل لك رسالة خاصة جديدة.';
+                  const isViewingThisSender = (typeof currentActiveDMUser !== 'undefined' && currentActiveDMUser === sender);
+                  const chatDrawer = typeof document !== 'undefined' ? document.getElementById('chat-drawer') : null;
+                  const isDrawerOpen = chatDrawer && chatDrawer.classList.contains('chat-drawer-open');
+
+                  // In-app toast if player is not actively viewing this conversation
+                  if (!isViewingThisSender || !isDrawerOpen) {
+                    if (typeof showToast === 'function') {
+                      showToast(
+                        `💬 رسالة خاصة من ${sender}`,
+                        `"${msgText.length > 60 ? msgText.substring(0, 60) + '...' : msgText}"`,
+                        'info'
+                      );
+                    }
+                    if (typeof playMenuSound === 'function') {
+                      playMenuSound('success');
+                    }
+                  }
+
+                  // Update floating chat badge
+                  const unreadDot = typeof document !== 'undefined' ? document.getElementById('chat-unread-dot') : null;
+                  if (unreadDot && (!isDrawerOpen || !isViewingThisSender)) {
+                    unreadDot.classList.remove('hidden');
+                    const curCount = parseInt(unreadDot.textContent) || 0;
+                    unreadDot.textContent = String(curCount + 1);
+                  }
+
+                  // Native OS / Browser Push Notification (when window is blurred or backgrounded)
+                  if (typeof window !== 'undefined' && window.PWAManager && typeof window.PWAManager.sendNotification === 'function') {
+                    if (document.hidden || !isDrawerOpen || !isViewingThisSender) {
+                      window.PWAManager.sendNotification(`💬 رسالة خاصة من ${sender}`, {
+                        body: msgText,
+                        tag: `dm_${sender}_${Date.now()}`
+                      });
+                    }
+                  }
+                }
+                // 3. Other System/Player Notifications
+                else {
+                  const title = payload.title || m.title || '📬 إشعار جديد';
+                  const msg = payload.message || m.message || 'وصلك إشعار جديد في صندوق الرسائل.';
+                  if (typeof showToast === 'function') {
+                    showToast(title, msg, 'info');
+                  }
+                  if (typeof playMenuSound === 'function') {
+                    playMenuSound('success');
+                  }
+                }
               }
             }
           }
@@ -1891,14 +1971,35 @@ var AppDB = (() => {
     };
 
     checkMailbox();
-    const pollId = registerPollingInterval(setInterval(checkMailbox, 12000));
+    
+    // Fast responsive polling: 3.5 seconds when active, 12 seconds when hidden
+    let pollIntervalMs = (typeof document !== 'undefined' && document.hidden) ? 12000 : 3500;
+    let timerId = setInterval(checkMailbox, pollIntervalMs);
+    const pollId = registerPollingInterval(timerId);
+
+    const onVisibility = () => {
+      if (!isSubscribed) return;
+      clearInterval(timerId);
+      pollIntervalMs = (typeof document !== 'undefined' && document.hidden) ? 12000 : 3500;
+      timerId = setInterval(checkMailbox, pollIntervalMs);
+      if (typeof document !== 'undefined' && !document.hidden) checkMailbox();
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibility);
+    }
+
     const unsubResume = onActiveResume(() => {
       if (isSubscribed) checkMailbox();
     });
 
     return () => {
       isSubscribed = false;
+      clearInterval(timerId);
       unregisterPollingInterval(pollId);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisibility);
+      }
       unsubResume();
     };
   }
