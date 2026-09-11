@@ -78,6 +78,9 @@ var PWAManager = (() => {
       updateInstallUI(!isStandalone && (deferredPrompt !== null || isIOS));
       updateNotificationUI();
       bindUIEvents();
+      if ('Notification' in window && Notification.permission === 'granted') {
+        subscribeToPushServer();
+      }
     }, 1200);
 
     // 5. Start background game-event notification check loop
@@ -232,6 +235,71 @@ var PWAManager = (() => {
     }
   }
 
+  const DEFAULT_VAPID_PUBLIC_KEY = 'BFCoBjyfI8ZbwNPv2jbU4vBF6TVAmT3zRlbBtJyq7jYYzLcXlrFTmTQmcLJahYZLMW9lcZv-el-HQEOUC54Ds80';
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  async function subscribeToPushServer() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      return;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      let pubKey = DEFAULT_VAPID_PUBLIC_KEY;
+
+      try {
+        const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
+          ? window.SERVER_API_URL.replace(/\/$/, '') 
+          : '';
+        const r = await fetch(`${apiBase}/api/push/public-key`);
+        if (r.ok) {
+          const kJson = await r.json();
+          if (kJson && kJson.publicKey) pubKey = kJson.publicKey;
+        }
+      } catch (e) {}
+
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(pubKey)
+        });
+      }
+
+      const username = (window.GameEngine && window.GameEngine.getState && window.GameEngine.getState().username) || 
+                       (typeof player !== 'undefined' && player.username) || 
+                       localStorage.getItem('saved_username') || 
+                       'guest';
+
+      const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
+        ? window.SERVER_API_URL.replace(/\/$/, '') 
+        : '';
+        
+      await fetch(`${apiBase}/api/push/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, subscription: sub })
+      });
+      console.log('[PWAManager] Push subscription synchronized with server for:', username);
+    } catch (err) {
+      console.warn('[PWAManager] Failed to synchronize push subscription:', err.message);
+    }
+  }
+
   // Request browser notification permissions
   async function requestNotificationPermission() {
     if (!('Notification' in window)) {
@@ -245,6 +313,8 @@ var PWAManager = (() => {
       updateNotificationUI();
 
       if (permission === 'granted') {
+        subscribeToPushServer();
+
         sendNotification('👑 مرحباً بك في نظام التنبيهات الذكي!', {
           body: 'ستتلقى إشعارات فورية عند نفاد بضائع مشاريعك أو اكتمال مؤقتات الأرباح.',
           icon: '/assets/icon-192.png'

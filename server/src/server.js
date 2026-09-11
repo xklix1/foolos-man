@@ -68,9 +68,10 @@ app.get('/api/status', async (request, reply) => {
   };
 });
 
-// Register Action, Session, and Admin API routes
+// Register Action, Session, Admin, and Push API routes
 app.register(require('./routes/session-routes'));
 app.register(require('./routes/action-routes'));
+app.register(require('./routes/push-routes'));
 app.register(require('./routes/admin-routes'), { 
   prefix: '/api/admin',
   sessionManager: require('./services/session-manager')

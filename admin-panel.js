@@ -4193,6 +4193,35 @@
           showToast('نجاح البث','تم إرسال البث لجميع المشتركين بنجاح.','success');
           document.getElementById('admin-broadcast-msg').value ='';
           logAdminAction(`إرسال إشعار عام:"${msg}"`);
+
+          // Trigger Web Push to all player devices (phones/desktops) via server
+          try {
+            const adminToken = sessionStorage.getItem('rasalmal_admin_auth_token') || 
+                               localStorage.getItem('rasalmal_admin_auth_token') || '';
+            if (adminToken) {
+              const apiBase = (typeof window.ServerBridge !== 'undefined' && window.SERVER_API_URL) 
+                ? window.SERVER_API_URL.replace(/\/$/, '') 
+                : '';
+              const pushRes = await fetch(`${apiBase}/api/push/broadcast`, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'x-admin-token': adminToken
+                },
+                body: JSON.stringify({
+                  title: '📢 بيان رسمي من إدارة رأس المال',
+                  body: msg,
+                  url: '/'
+                })
+              });
+              if (pushRes.ok) {
+                const pushData = await pushRes.json();
+                console.log('[Admin] Web Push broadcast delivered:', pushData);
+              }
+            }
+          } catch (pushErr) {
+            console.warn('[Admin] Web Push broadcast warning:', pushErr);
+          }
         } catch (err) {
           showToast('فشل البث', err.message,'error');
         }
