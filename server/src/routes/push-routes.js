@@ -92,6 +92,63 @@ async function pushRoutes(fastify, options) {
       return { error: err.message };
     }
   });
+
+  // 5. POST /api/push/test-delayed (Test receiving a push notification after closing the app)
+  fastify.post('/api/push/test-delayed', async (request, reply) => {
+    const { username, delaySeconds } = request.body || {};
+    if (!username) {
+      reply.code(400);
+      return { error: 'Username is required' };
+    }
+
+    const waitSec = Math.min(30, Math.max(3, Number(delaySeconds) || 6));
+    const u = String(username).trim();
+
+    setTimeout(async () => {
+      try {
+        const payload = {
+          title: '👑 تجربة إشعار بالخلفية (Offline Push)',
+          body: `مرحباً بك يا ${u}! وصلك هذا الإشعار بنجاح وتطبيق اللعبة مغلق تماماً عبر خادم الـ Web Push.`,
+          url: '/'
+        };
+        await pushService.sendToUser(u, payload);
+      } catch (err) {
+        console.warn(`[PushRoutes] Delayed test push failed for ${u}:`, err.message);
+      }
+    }, waitSec * 1000);
+
+    return {
+      success: true,
+      message: `Delayed push scheduled for ${u} in ${waitSec} seconds. Close the app or lock screen now!`,
+      delaySeconds: waitSec
+    };
+  });
+
+  // 6. POST /api/push/notify-player (Push alert to specific player on wire/dm/admin events)
+  fastify.post('/api/push/notify-player', async (request, reply) => {
+    const { recipient, title, body, url } = request.body || {};
+    if (!recipient || !title || !body) {
+      reply.code(400);
+      return { error: 'Recipient, title, and body are required' };
+    }
+
+    try {
+      const payload = {
+        title: String(title).slice(0, 100),
+        body: String(body).slice(0, 250),
+        url: url || '/'
+      };
+      const result = await pushService.sendToUser(recipient, payload);
+      return {
+        success: true,
+        sent: result.sent,
+        total: result.total
+      };
+    } catch (err) {
+      reply.code(500);
+      return { error: err.message };
+    }
+  });
 }
 
 module.exports = pushRoutes;

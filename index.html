@@ -1193,9 +1193,13 @@
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <button id="btn-settings-test-notification" type="button" class="hidden px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-bold text-xs transition flex items-center gap-1.5" title="إرسال إشعار تجريبي لاختبار التنبيهات على جهازك">
+              <button id="btn-settings-test-offline-push" type="button" class="hidden px-2.5 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 font-bold text-xs transition flex items-center gap-1" title="اختبار وصول الإشعار لهاتفك بعد إغلاق التطبيق بالكامل">
+                <i class="fa-solid fa-moon"></i>
+                <span>تجربة عند الإغلاق</span>
+              </button>
+              <button id="btn-settings-test-notification" type="button" class="hidden px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-bold text-xs transition flex items-center gap-1" title="إرسال إشعار تجريبي فوري">
                 <i class="fa-solid fa-paper-plane"></i>
-                <span>تجربة</span>
+                <span>تجربة فورية</span>
               </button>
               <button id="btn-settings-request-notifications" type="button" class="px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 font-bold text-xs transition flex items-center gap-1.5">
                 <i class="fa-solid fa-bell"></i>
@@ -5537,8 +5541,8 @@
   <script src="db.js?v=12.4"></script>
   <script src="server-client-bridge.js?v=1.2"></script>
   <script src="game.js?v=12.1"></script>
-  <script src="ui.js?v=12.7"></script>
-  <script src="pwa-manager.js?v=1.0.1"></script>
+  <script src="ui.js?v=12.8"></script>
+  <script src="pwa-manager.js?v=1.0.2"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

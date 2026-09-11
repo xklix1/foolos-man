@@ -91,6 +91,29 @@ class DbService {
       return false;
     }
   }
+
+  /**
+   * Fetches unread mailbox messages for an offline player
+   * @param {string} username 
+   * @returns {Promise<Array>}
+   */
+  async getUnreadMailboxForUser(username) {
+    if (!username) return [];
+    const u = username.trim();
+    const endpoint = `${this.url}/rest/v1/mailbox?recipient=eq.${encodeURIComponent(u)}&status=eq.unread&order=created_at.desc&limit=10`;
+    
+    try {
+      const res = await fetch(endpoint, {
+        headers: this.getHeaders()
+      });
+      if (!res.ok) return [];
+      const rows = await res.json();
+      return Array.isArray(rows) ? rows : [];
+    } catch (err) {
+      console.warn('[DbService] getUnreadMailboxForUser error:', err.message);
+      return [];
+    }
+  }
 }
 
 module.exports = new DbService();

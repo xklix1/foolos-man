@@ -245,6 +245,48 @@ class PushService {
           tracker.lastAfkAlertTime = 0;
         }
 
+        // 3. UNREAD MAILBOX MESSAGES (Transfers, Admin Alerts, DMs while offline):
+        if (dbService && typeof dbService.getUnreadMailboxForUser === 'function') {
+          try {
+            const unreadMails = await dbService.getUnreadMailboxForUser(username);
+            if (!tracker.pushedMailIds) tracker.pushedMailIds = new Set();
+
+            for (const mail of unreadMails) {
+              if (tracker.pushedMailIds.has(mail.id)) continue;
+              tracker.pushedMailIds.add(mail.id);
+
+              let notifTitle = '📬 إشعار جديد في حسابك';
+              let notifBody = 'لديك رسالة أو تنبيه جديد في صندوق الرسائل.';
+
+              if (mail.type === 'transfer_received') {
+                const amt = Number((mail.payload && mail.payload.amount) || 0);
+                notifTitle = '💸 حوالة بنكية واردة!';
+                notifBody = `قام اللاعب "${mail.sender || 'مجهول'}" بتحويل ${amt > 0 ? amt.toLocaleString() + ' EGP' : 'مبلغ مالي'} إلى حسابك البنكي!`;
+              } else if (mail.type === 'admin_popup' || mail.type === 'urgent_alert') {
+                notifTitle = (mail.payload && mail.payload.title) || '📢 تنبيه إداري مباشر';
+                notifBody = (mail.payload && mail.payload.message) || 'وصلك تنبيه إداري جديد من إدارة اللعبة.';
+              } else if (mail.type === 'admin_balance_grant') {
+                notifTitle = '💰 منحة مالية إدارية!';
+                notifBody = 'أودعت إدارة اللعبة منحة مالية جديدة في رصيدك مباشرة.';
+              } else if (mail.type === 'dm') {
+                notifTitle = `💬 رسالة خاصة من ${mail.sender || 'لاعب'}`;
+                notifBody = (mail.payload && mail.payload.message) || mail.message || 'أرسل لك رسالة خاصة جديدة.';
+              }
+
+              const payload = {
+                title: notifTitle,
+                body: notifBody,
+                url: '/'
+              };
+
+              await Promise.allSettled(userSubs.map(s => this.sendToEndpoint(s.subscription, payload)));
+              alertsSent++;
+            }
+          } catch (mErr) {
+            console.warn(`[PushService] Mail check err for ${username}:`, mErr.message);
+          }
+        }
+
         this.alertTracker.set(username, tracker);
       } catch (err) {
         console.warn(`[PushService] Error in offline check for ${username}:`, err.message);

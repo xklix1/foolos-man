@@ -133,6 +133,11 @@ var PWAManager = (() => {
     if (testBtn) {
       testBtn.onclick = () => testNotification();
     }
+
+    const testOfflineBtn = document.getElementById('btn-settings-test-offline-push');
+    if (testOfflineBtn) {
+      testOfflineBtn.onclick = () => testDelayedPush(6);
+    }
   }
 
   // Update visibility of install buttons across UI
@@ -162,12 +167,14 @@ var PWAManager = (() => {
     const statusText = document.getElementById('pwa-notification-status');
     const notifBtn = document.getElementById('btn-settings-request-notifications');
     const testBtn = document.getElementById('btn-settings-test-notification');
+    const testOfflineBtn = document.getElementById('btn-settings-test-offline-push');
     const notificationsToggle = document.getElementById('setting-notifications-toggle');
 
     if (!('Notification' in window)) {
       if (statusText) statusText.textContent = 'غير مدعوم في هذا المتصفح';
       if (notifBtn) notifBtn.disabled = true;
       if (testBtn) testBtn.classList.add('hidden');
+      if (testOfflineBtn) testOfflineBtn.classList.add('hidden');
       return;
     }
 
@@ -180,6 +187,9 @@ var PWAManager = (() => {
       }
       if (testBtn) {
         testBtn.classList.remove('hidden');
+      }
+      if (testOfflineBtn) {
+        testOfflineBtn.classList.remove('hidden');
       }
       if (notificationsToggle) {
         notificationsToggle.checked = true;
@@ -196,6 +206,9 @@ var PWAManager = (() => {
       if (testBtn) {
         testBtn.classList.add('hidden');
       }
+      if (testOfflineBtn) {
+        testOfflineBtn.classList.add('hidden');
+      }
     } else {
       if (statusText) {
         statusText.innerHTML = '<span class="text-slate-400 font-bold">غير مفعلة بعد</span>';
@@ -207,6 +220,9 @@ var PWAManager = (() => {
       }
       if (testBtn) {
         testBtn.classList.add('hidden');
+      }
+      if (testOfflineBtn) {
+        testOfflineBtn.classList.add('hidden');
       }
     }
   }
@@ -300,7 +316,7 @@ var PWAManager = (() => {
     return outputArray;
   }
 
-  async function subscribeToPushServer() {
+  async function subscribeToPushServer(customUsername = null) {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       return;
     }
@@ -309,10 +325,11 @@ var PWAManager = (() => {
       const reg = await navigator.serviceWorker.ready;
       let pubKey = DEFAULT_VAPID_PUBLIC_KEY;
 
+      const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
+        ? window.SERVER_API_URL.replace(/\/$/, '') 
+        : '';
+
       try {
-        const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
-          ? window.SERVER_API_URL.replace(/\/$/, '') 
-          : '';
         const r = await fetch(`${apiBase}/api/push/public-key`);
         if (r.ok) {
           const kJson = await r.json();
@@ -328,18 +345,18 @@ var PWAManager = (() => {
         });
       }
 
-      const username = getActiveUser();
+      const username = (customUsername && typeof customUsername === 'string' && customUsername.trim())
+        ? customUsername.trim()
+        : getActiveUser();
 
-      const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
-        ? window.SERVER_API_URL.replace(/\/$/, '') 
-        : '';
-        
-      await fetch(`${apiBase}/api/push/subscribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, subscription: sub })
-      });
-      console.log('[PWAManager] Push subscription synchronized with server for:', username);
+      if (sub && username && username !== 'guest') {
+        await fetch(`${apiBase}/api/push/subscribe`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, subscription: sub })
+        });
+        console.log('[PWAManager] Push subscription synchronized with server for:', username);
+      }
     } catch (err) {
       console.warn('[PWAManager] Failed to synchronize push subscription:', err.message);
     }
@@ -457,6 +474,61 @@ var PWAManager = (() => {
     }
   }
 
+  // Schedule a delayed push notification via server so the player can test closing the app and receiving the push
+  async function testDelayedPush(delaySeconds = 6) {
+    if (!('Notification' in window)) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('تنبيه', 'متصفحك لا يدعم إشعارات الويب.', 'warning');
+      }
+      return;
+    }
+
+    if (Notification.permission !== 'granted') {
+      const ok = await requestNotificationPermission();
+      if (!ok) return;
+    }
+
+    const username = getActiveUser();
+    if (!username || username === 'guest') {
+      if (typeof window.showToast === 'function') {
+        window.showToast('تنبيه', 'يرجى تسجيل الدخول أولاً لتتمكن من تجربة إشعارات الخلفية لحسابك.', 'warning');
+      }
+      return;
+    }
+
+    // Ensure subscription is mapped to this username on the server first
+    await subscribeToPushServer(username);
+
+    const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
+      ? window.SERVER_API_URL.replace(/\/$/, '') 
+      : '';
+
+    try {
+      const res = await fetch(`${apiBase}/api/push/test-delayed`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, delaySeconds })
+      });
+
+      if (res.ok) {
+        if (typeof window.showToast === 'function') {
+          window.showToast(
+            '🚀 تم جدولة إشعار الخلفية!',
+            `أغلق اللعبة أو اقفل شاشة هاتفك الآن! سيصلك الإشعار بعد ${delaySeconds} ثوانٍ.`,
+            'info',
+            8000
+          );
+        }
+      } else {
+        throw new Error('فشل جدولة الإشعار من الخادم.');
+      }
+    } catch (err) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('تنبيه', err.message, 'warning');
+      }
+    }
+  }
+
   // Check in-game state for notification opportunities
   function checkGameTriggersForNotifications() {
     if (!('Notification' in window) || Notification.permission !== 'granted') {
@@ -513,6 +585,8 @@ var PWAManager = (() => {
     requestNotificationPermission,
     sendNotification,
     testNotification,
+    testDelayedPush,
+    subscribeToPushServer,
     updateNotificationUI,
     checkGameTriggersForNotifications,
     isStandaloneApp: () => isStandalone

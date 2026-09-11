@@ -1706,6 +1706,9 @@ const UIController = (() => {
       setFloatingChatVisibility(true);
       setupRealTimeListeners(canonicalUser);
       AppDB.checkAndCreateDailyBackup(canonicalUser, GameEngine.state);
+      if (typeof window !== 'undefined' && window.PWAManager && typeof window.PWAManager.subscribeToPushServer === 'function') {
+        window.PWAManager.subscribeToPushServer(canonicalUser);
+      }
       startGameLoop();
       renderAll();
       showToast('أهلاً بعودتك',`تم استئناف جلسة الإمبراطور: ${canonicalUser}`,'success');
@@ -12989,6 +12992,20 @@ const UIController = (() => {
       } else if (AppDB && typeof AppDB.sendMail === 'function') {
         await AppDB.sendMail(myUser, currentActiveDMUser, 'dm', { message: text, timestamp: Date.now() });
       }
+
+      // Notify offline recipient via server web push
+      try {
+        const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) ? window.SERVER_API_URL.replace(/\/$/, '') : '';
+        fetch(`${apiBase}/api/push/notify-player`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipient: currentActiveDMUser,
+            title: `💬 رسالة خاصة من ${myUser}`,
+            body: text.length > 70 ? text.substring(0, 70) + '...' : text
+          })
+        }).catch(() => {});
+      } catch (_) {}
     } catch (err) {
       showToast('فشل الإرسال', err.message, 'error');
       input.value = text;
@@ -13073,6 +13090,20 @@ const UIController = (() => {
       }
 
       await AppDB.executeWireTransfer(GameEngine.activeUsername, target, amt);
+
+      // Notify offline recipient via server web push immediately
+      try {
+        const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) ? window.SERVER_API_URL.replace(/\/$/, '') : '';
+        fetch(`${apiBase}/api/push/notify-player`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipient: target,
+            title: '💸 حوالة بنكية واردة!',
+            body: `قام اللاعب "${GameEngine.activeUsername}" بتحويل ${amt.toLocaleString()} EGP إلى حسابك البنكي الآن!`
+          })
+        }).catch(() => {});
+      } catch (_) {}
 
       if (GameEngine.state) {
         GameEngine.state.cash = Math.max(0, GameEngine.state.cash - amt);
