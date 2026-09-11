@@ -87,6 +87,7 @@ function calculateSingleBusinessProfit(key, bizState, playerState = {}) {
 
   return {
     grossProfit,
+    payroll: cappedPayroll,
     netProfit,
     ownerProfit: finalNetProfit,
     demand,

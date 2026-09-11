@@ -1765,6 +1765,10 @@ const GameEngine = (() => {
       totalNetPerDay: 0
     };
 
+    let totalBizGross = 0;
+    let totalBizPayroll = 0;
+    let totalCarGross = 0;
+    let totalCarMaintenance = 0;
     let grossIncome = 0;
 
     // 1. Businesses
@@ -1774,6 +1778,12 @@ const GameEngine = (() => {
         const cfg = BUSINESSES[key];
         if (b && b.level > 0 && cfg) {
           const res = calculateSingleBusinessProfit(key, b, s);
+          const bizGross = res.grossProfit || 0;
+          const bizPayroll = (res.cappedPayroll || 0) + (res.employeePayrollDeduction || 0);
+
+          totalBizGross += bizGross;
+          totalBizPayroll += bizPayroll;
+
           breakdown.businesses.push({
             id: key,
             name: cfg.name,
@@ -1784,11 +1794,14 @@ const GameEngine = (() => {
             actualCostOfGoods: res.actualCostOfGoods,
             demand: res.demand,
             margin: res.margin,
+            grossProfit: bizGross,
+            payroll: bizPayroll,
             isFranchise: Boolean(b.isFranchise),
             marketingActive: res.marketingActive,
             synergyMultiplier: res.synergyMultiplier,
             employeeBoost: res.employeeBoost,
-            profitPerSec: res.ownerProfit
+            profitPerSec: res.ownerProfit,
+            profitPerHour: res.ownerProfit
           });
           grossIncome += res.ownerProfit;
         }
@@ -1796,18 +1809,21 @@ const GameEngine = (() => {
     }
 
     // 2. Assets
+    let totalAssetRent = 0;
     if (s.assets) {
       Object.keys(s.assets).forEach(key => {
         const count = s.assets[key] || 0;
         const cfg = ASSETS[key];
         if (count > 0 && cfg) {
           const rentPerSec = count * Math.floor(cfg.rent * 0.1);
+          totalAssetRent += rentPerSec;
           breakdown.assets.push({
             id: key,
             name: cfg.name,
             count: count,
             rentPerUnit: Math.floor(cfg.rent * 0.1),
-            rentPerSec: rentPerSec
+            rentPerSec: rentPerSec,
+            rentPerHour: rentPerSec
           });
           grossIncome += rentPerSec;
         }
@@ -1819,17 +1835,22 @@ const GameEngine = (() => {
       s.ownedCars.forEach(carRef => {
         const carCfg = CAR_TEMPLATES[carRef.id];
         if (carCfg && carRef.rentStatus ==='rented') {
-          const netProfit = carCfg.rentalIncomePerTick - carCfg.maintenanceCostPerTick;
-          if (netProfit > 0) {
-            breakdown.cars.push({
-              id: carRef.id,
-              name: carCfg.name,
-              grossRent: carCfg.rentalIncomePerTick,
-              maintenance: carCfg.maintenanceCostPerTick,
-              netProfitPerSec: netProfit
-            });
-            grossIncome += netProfit;
-          }
+          const cGross = carCfg.rentalIncomePerTick || 0;
+          const cMaint = carCfg.maintenanceCostPerTick || 0;
+          const netProfit = Math.max(0, cGross - cMaint);
+
+          totalCarGross += cGross;
+          totalCarMaintenance += cMaint;
+
+          breakdown.cars.push({
+            id: carRef.id,
+            name: carCfg.name,
+            grossRent: cGross,
+            maintenance: cMaint,
+            netProfitPerSec: netProfit,
+            netProfitPerHour: netProfit
+          });
+          grossIncome += netProfit;
         }
       });
     }
@@ -1838,6 +1859,7 @@ const GameEngine = (() => {
     grossIncome += breakdown.bank.profitPerSec;
 
     // 5. Joint Corp
+    let corpTickProfit = 0;
     if (typeof window !=='undefined' && window.activeCorporationState) {
       const corp = window.activeCorporationState;
       const username = s.username;
@@ -1845,24 +1867,28 @@ const GameEngine = (() => {
         let totalCont = corp.totalContributions || 0;
         let myCont = corp.contributions ? (corp.contributions[username] || 0) : 0;
         let sharePct = (totalCont > 0) ? (myCont / totalCont) : (username === corp.founder ? 1.0 : 0);
-        const corpTickProfit = calculateCorpTickProfit(s);
+        corpTickProfit = calculateCorpTickProfit(s);
         breakdown.corp.active = true;
         breakdown.corp.name = corp.name ||'تحالف مشترك';
         breakdown.corp.level = corp.level || 1;
         breakdown.corp.sharePct = Math.round(sharePct * 100);
         breakdown.corp.profitPerSec = corpTickProfit;
+        breakdown.corp.profitPerHour = corpTickProfit;
         grossIncome += corpTickProfit;
       }
     }
 
     // 6. Hired Job
+    let hiredSalary = 0;
     if (s.hiredJob) {
       const solved = Boolean(s.lastPuzzleSolved && (getTrustedNow() - s.lastPuzzleSolved < 86400000));
+      hiredSalary = s.hiredJob.salary || 0;
       breakdown.hiredJob.name = s.hiredJob.title ||'موظف تعاقدي';
-      breakdown.hiredJob.salaryPerSec = s.hiredJob.salary || 0;
+      breakdown.hiredJob.salaryPerSec = hiredSalary;
+      breakdown.hiredJob.salaryPerHour = hiredSalary;
       breakdown.hiredJob.active = solved;
-      if (solved && (s.hiredJob.salary || 0) > 0) {
-        grossIncome += s.hiredJob.salary;
+      if (solved && hiredSalary > 0) {
+        grossIncome += hiredSalary;
       }
     }
 
@@ -1875,6 +1901,7 @@ const GameEngine = (() => {
         taxDeduction = taxReport.taxPerSecond || 0;
         breakdown.tax.active = true;
         breakdown.tax.taxPerSec = taxDeduction;
+        breakdown.tax.taxPerHour = taxDeduction * 3600;
       } else {
         breakdown.tax.active = false;
         breakdown.tax.exemptReason ='محمي بحاجز السيولة (أقل من 100 ألف كاش/بنك)';
@@ -1887,12 +1914,30 @@ const GameEngine = (() => {
     const hourlyTax = taxDeduction * 3600;
     const netIncome = Math.max(0, grossIncome - hourlyTax);
 
-    breakdown.totalGrossPerHour = grossIncome;
+    // Full Accounting Statement Totals
+    const fullGrossPerHour = totalBizGross + totalAssetRent + totalCarGross + breakdown.bank.profitPerHour + corpTickProfit + (breakdown.hiredJob.active ? hiredSalary : 0);
+    const fullDeductionsPerHour = totalBizPayroll + totalCarMaintenance + hourlyTax;
+
+    breakdown.summary = {
+      grossPerHour: fullGrossPerHour,
+      deductionsPerHour: fullDeductionsPerHour,
+      netPerHour: netIncome
+    };
+
+    breakdown.deductions = {
+      totalDeductionsPerHour: fullDeductionsPerHour,
+      workerPayrollPerHour: totalBizPayroll,
+      carMaintenancePerHour: totalCarMaintenance,
+      taxPerHour: hourlyTax
+    };
+
+    breakdown.totalGrossPerHour = fullGrossPerHour;
+    breakdown.totalDeductionsPerHour = fullDeductionsPerHour;
     breakdown.totalNetPerHour = netIncome;
-    breakdown.totalGrossPerSec = grossIncome / 3600;
-    breakdown.totalNetPerSec = Math.max(0, breakdown.totalGrossPerSec - taxDeduction);
-    breakdown.totalNetPerMinute = Math.round(breakdown.totalNetPerSec * 60);
-    breakdown.totalNetPerDay = Math.round(breakdown.totalNetPerSec * 86400);
+    breakdown.totalGrossPerSec = fullGrossPerHour / 3600;
+    breakdown.totalNetPerSec = netIncome / 3600;
+    breakdown.totalNetPerMinute = Math.round((netIncome / 3600) * 60);
+    breakdown.totalNetPerDay = Math.round(netIncome * 24);
 
     return breakdown;
   }
@@ -2648,20 +2693,28 @@ const GameEngine = (() => {
         state.offlineReport = {
           seconds: serverOfflineReport.elapsedSeconds,
           earnings: serverOfflineReport.totalEarnings,
+          totalEarnings: serverOfflineReport.totalEarnings,
+          grossEarnings: serverOfflineReport.grossEarnings !== undefined ? serverOfflineReport.grossEarnings : serverOfflineReport.totalEarnings,
+          totalDeductions: serverOfflineReport.totalDeductions !== undefined ? serverOfflineReport.totalDeductions : 0,
           corpEarnings: 0,
           bizEarnings: serverOfflineReport.bizEarnings,
           nonBizEarnings: serverOfflineReport.passiveEarnings,
-          suppliesHours: Number(((serverOfflineReport.elapsedSeconds || 0) / 3600).toFixed(1)),
+          suppliesHours: serverOfflineReport.suppliesHours !== undefined ? serverOfflineReport.suppliesHours : Number(((serverOfflineReport.elapsedSeconds || 0) / 3600).toFixed(1)),
           breakdown: (serverOfflineReport.breakdown || []).map(b => ({
+            id: b.id,
             name: b.name,
-            consumedHours: b.activeHours,
+            consumedHours: b.consumedHours !== undefined ? b.consumedHours : b.activeHours,
+            grossProfit: b.grossProfit,
+            payroll: b.payroll,
             profit: b.profit
           })),
+          earnings: serverOfflineReport.earnings || null,
+          deductions: serverOfflineReport.deductions || null,
           wasManagerActive: serverOfflineReport.wasManagerActive,
           expiredDuringAbsence: serverOfflineReport.managerExpiredDuringAbsence
         };
         state.lastOfflineReport = state.offlineReport;
-        console.log('[GameEngine] Applied authoritative server offline report:', state.offlineReport);
+        console.log('[GameEngine] Applied authoritative server offline report with rich financial breakdown:', state.offlineReport);
       } else {
         // Calculate offline idle earnings if returning after being away
         // Supply depletion always happens; profits require an active AFK Manager

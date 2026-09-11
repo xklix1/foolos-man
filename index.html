@@ -4476,6 +4476,25 @@
           </div>
         </div>
 
+        <!-- Financial Statement Summary Trio (Gross - Deductions = Net) -->
+        <div class="grid grid-cols-3 gap-2 p-2.5 rounded-2xl bg-slate-900/90 border border-slate-800">
+          <div class="text-center">
+            <span class="text-[10px] text-emerald-400/90 font-bold block mb-0.5"><i class="fa-solid fa-arrow-up mr-0.5"></i> الإيراد الإجمالي</span>
+            <span id="cf-summary-gross" class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+0 EGP</span>
+            <span class="text-[8px] text-slate-400 block">قبل الخصم</span>
+          </div>
+          <div class="text-center border-x border-slate-800">
+            <span class="text-[10px] text-rose-400/90 font-bold block mb-0.5"><i class="fa-solid fa-arrow-down mr-0.5"></i> المصاريف والخصم</span>
+            <span id="cf-summary-deductions" class="numbers-font font-black text-rose-400 text-xs sm:text-sm">-0 EGP</span>
+            <span class="text-[8px] text-slate-400 block">رواتب وضرائب</span>
+          </div>
+          <div class="text-center">
+            <span class="text-[10px] text-yellow-400/90 font-bold block mb-0.5"><i class="fa-solid fa-wallet mr-0.5"></i> الصافي المحصل</span>
+            <span id="cf-summary-net" class="numbers-font font-black text-yellow-400 text-xs sm:text-sm">+0 EGP</span>
+            <span class="text-[8px] text-emerald-400/80 block font-bold">للبنك/ساعة</span>
+          </div>
+        </div>
+
         <!-- Section 1: Businesses -->
         <div class="space-y-2">
           <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 border-b border-slate-800 pb-1">
@@ -4542,7 +4561,18 @@
           </div>
         </div>
 
-        <!-- Section 7: Wealth Tax -->
+        <!-- Section 7: Payroll & Operational Deductions -->
+        <div id="cf-section-payroll" class="space-y-2">
+          <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 border-b border-slate-800 pb-1">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-users-gear text-rose-400"></i> استقطاعات رواتب وأجور عمال المشاريع</span>
+            <span id="cf-subtotal-payroll" class="numbers-font text-rose-400 font-bold">-0 جنيه/س</span>
+          </div>
+          <div id="cf-list-payroll" class="space-y-1.5">
+            <!-- Dynamic payroll info injected here -->
+          </div>
+        </div>
+
+        <!-- Section 8: Wealth Tax -->
         <div id="cf-section-tax" class="space-y-2">
           <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 border-b border-slate-800 pb-1">
             <span class="flex items-center gap-1.5"><i class="fa-solid fa-scale-balanced text-rose-400"></i> استقطاع ضريبة الثروة الدورية</span>
@@ -5461,63 +5491,95 @@
     </div>
   </div>
 
-  <!-- ==================== OFFLINE EARNINGS REPORT MODAL (تقرير الأرباح واستهلاك البضاعة أثناء الغياب) ==================== -->
+  <!-- ==================== OFFLINE FINANCIAL AUDIT REPORT MODAL (كشف حساب وتقرير أرباح وخصومات الغياب) ==================== -->
   <div id="modal-offline-report" dir="rtl"
-    class="hidden fixed inset-0 z-[99998] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in text-right">
-    <div class="glass-panel w-full max-w-lg rounded-3xl border-2 border-emerald-500/50 p-5 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden space-y-4">
+    class="hidden fixed inset-0 z-[99998] flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in text-right">
+    <div class="glass-panel w-full max-w-lg max-h-[92vh] flex flex-col rounded-3xl border-2 border-emerald-500/50 bg-slate-950/98 shadow-2xl text-right relative overflow-hidden">
       
       <!-- Ambient Glow -->
       <div class="absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-32 bg-emerald-500/20 blur-3xl rounded-full pointer-events-none"></div>
 
       <!-- Header -->
-      <div class="flex items-center gap-3 border-b border-slate-800 pb-3.5 relative z-10">
+      <div class="flex items-center gap-3 border-b border-slate-800 p-4 sm:p-5 relative z-10 shrink-0">
         <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 text-slate-950 flex items-center justify-center text-xl font-black shadow-lg shadow-emerald-500/25 shrink-0">
-          <i class="fa-solid fa-briefcase"></i>
+          <i class="fa-solid fa-file-invoice-dollar"></i>
         </div>
-        <div class="flex-1">
-          <div class="flex items-center gap-2">
-            <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-[10px]">تقرير أرباح الغياب 💰</span>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-[10px]">كشف حساب فترة الغياب 📑</span>
             <span id="offline-report-duration" class="text-[10px] text-slate-400 font-mono">-- دقيقة</span>
           </div>
-          <h3 class="text-base sm:text-lg font-black text-white mt-0.5">أهلاً بعودتك، يا إمبراطور!</h3>
+          <h3 class="text-base sm:text-lg font-black text-white mt-0.5 truncate">بيان الأرباح والاستقطاعات المالية</h3>
         </div>
       </div>
 
-      <!-- Earnings Banner -->
-      <div class="relative z-10 p-4 rounded-2xl bg-gradient-to-r from-emerald-950/60 to-slate-900 border border-emerald-500/30 flex items-center justify-between">
-        <div>
-          <span class="text-[11px] text-slate-400 block font-medium">إجمالي الأرباح المحققة أثناء غيابك</span>
-          <span id="offline-report-total-amount" class="text-xl sm:text-2xl font-black text-emerald-400 numbers-font">+0 EGP</span>
-        </div>
-        <div class="px-3 py-1 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold flex items-center gap-1.5">
-          <i class="fa-solid fa-building-columns"></i>
-          <span>أودعت في البنك</span>
-        </div>
-      </div>
+      <!-- Scrollable Body -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-xs relative z-10">
 
-      <!-- Supplies & Production Breakdown -->
-      <div class="relative z-10 space-y-2">
-        <div class="text-[11px] font-bold text-slate-400 flex items-center justify-between">
-          <span class="flex items-center gap-1.5">
-            <i class="fa-solid fa-boxes-stacked text-amber-400"></i>
+        <!-- 3-Way Financial Statement Overview -->
+        <div class="grid grid-cols-3 gap-2">
+          <!-- Gross -->
+          <div class="p-2.5 sm:p-3 rounded-2xl bg-slate-900/90 border border-emerald-500/30 text-center">
+            <span class="text-[10px] text-emerald-300 font-bold block mb-0.5"><i class="fa-solid fa-arrow-up text-emerald-400 mr-1"></i> إجمالي الإيراد</span>
+            <span id="offline-report-gross-amount" class="text-xs sm:text-sm font-black text-emerald-400 numbers-font">+0 EGP</span>
+            <span class="text-[9px] text-slate-400 block mt-0.5">قبل الخصومات</span>
+          </div>
+          <!-- Deductions -->
+          <div class="p-2.5 sm:p-3 rounded-2xl bg-slate-900/90 border border-rose-500/30 text-center">
+            <span class="text-[10px] text-rose-300 font-bold block mb-0.5"><i class="fa-solid fa-arrow-down text-rose-400 mr-1"></i> إجمالي الخصم</span>
+            <span id="offline-report-deductions-amount" class="text-xs sm:text-sm font-black text-rose-400 numbers-font">-0 EGP</span>
+            <span class="text-[9px] text-slate-400 block mt-0.5">رواتب ومصاريف</span>
+          </div>
+          <!-- Net -->
+          <div class="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-emerald-950/60 to-slate-900 border border-yellow-500/40 text-center shadow-lg">
+            <span class="text-[10px] text-yellow-300 font-bold block mb-0.5"><i class="fa-solid fa-wallet text-yellow-400 mr-1"></i> الصافي المودع</span>
+            <span id="offline-report-total-amount" class="text-xs sm:text-sm font-black text-yellow-400 numbers-font">+0 EGP</span>
+            <span class="text-[9px] text-emerald-400/90 font-bold block mt-0.5">في حساب البنك</span>
+          </div>
+        </div>
+
+        <!-- Section 1: Detailed Earnings Breakdown -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 border-b border-slate-800 pb-1">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-arrow-trend-up text-emerald-400"></i> تفاصيل الإيرادات ومصادر الأرباح</span>
+            <span id="offline-report-earnings-subtotal" class="numbers-font text-emerald-400 font-bold">+0 EGP</span>
+          </div>
+          <div id="offline-report-projects-list" class="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+            <!-- Dyn rows injected here -->
+          </div>
+        </div>
+
+        <!-- Section 2: Detailed Deductions Breakdown -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 border-b border-slate-800 pb-1">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-receipt text-rose-400"></i> بيان الخصومات والمصروفات (أين ذهبت الأموال؟)</span>
+            <span id="offline-report-deductions-subtotal" class="numbers-font text-rose-400 font-bold">-0 EGP</span>
+          </div>
+          <div id="offline-report-deductions-list" class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+            <!-- Dyn deductions injected here -->
+          </div>
+        </div>
+
+        <!-- Section 3: Supplies Status -->
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs">
+          <span class="flex items-center gap-2 text-slate-300">
+            <i class="fa-solid fa-boxes-stacked text-amber-400 text-sm"></i>
             <span>حالة تشغيل المشروعات واستهلاك البضاعة:</span>
           </span>
           <span id="offline-report-supplies-summary" class="text-amber-300 font-black numbers-font">استهلاك -- ساعة</span>
         </div>
-        
-        <div id="offline-report-projects-list" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-          <!-- Dyn rows injected here -->
-        </div>
+
       </div>
 
       <!-- Footer / Action Button -->
-      <div class="pt-2 relative z-10">
+      <div class="p-4 border-t border-slate-800/80 bg-slate-950/95 shrink-0 relative z-10">
         <button id="btn-close-offline-report" type="button"
           class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-sm transition shadow-lg shadow-emerald-500/20 cursor-pointer flex items-center justify-center gap-2">
           <i class="fa-solid fa-circle-check"></i>
-          <span>استلام الأرباح ومتابعة الإمبراطورية</span>
+          <span>تأكيد واستلام الأرباح في البنك</span>
         </button>
       </div>
+
     </div>
   </div>
 

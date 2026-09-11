@@ -158,9 +158,35 @@ const TITLES = [
   { minWorth: 0, minXp: 0, title: 'عامل مبتدئ' }
 ];
 
+const CAR_TEMPLATES = {
+  lambo: {
+    id: 'lambo',
+    name: 'Lamborghini Aventador',
+    cost: 15000000,
+    rentalIncomePerTick: 2200,
+    maintenanceCostPerTick: 800
+  },
+  rolls: {
+    id: 'rolls',
+    name: 'Rolls-Royce Phantom',
+    cost: 40000000,
+    rentalIncomePerTick: 5000,
+    maintenanceCostPerTick: 1800
+  },
+  shelby: {
+    id: 'shelby',
+    name: 'Shelby Cobra 1965',
+    cost: 120000000,
+    rentalIncomePerTick: 12000,
+    maintenanceCostPerTick: 4000
+  }
+};
+
 module.exports = {
   BUSINESSES,
   ASSETS,
   STOCKS,
-  TITLES
+  TITLES,
+  CAR_TEMPLATES
 };
+

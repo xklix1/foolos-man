@@ -11939,18 +11939,30 @@ const UIController = (() => {
     const breakdown = GameEngine.getDetailedCashflowBreakdown();
     if (!breakdown) return;
 
-    // 1. Time Projections Cards
+    // 1. Time Projections Cards & Financial Statement Summary
     const secEl = document.getElementById('cf-proj-sec');
     const minEl = document.getElementById('cf-proj-min');
     const hourEl = document.getElementById('cf-proj-hour');
     const dayEl = document.getElementById('cf-proj-day');
     const totalNetEl = document.getElementById('cf-modal-total-net');
 
-    if (secEl) secEl.textContent =`+${(breakdown.totalNetPerHour / 3600).toFixed(2)} EGP`;
-    if (minEl) minEl.textContent =`+${Math.round(breakdown.totalNetPerHour / 60).toLocaleString()} EGP`;
-    if (hourEl) hourEl.textContent =`+${Math.round(breakdown.totalNetPerHour).toLocaleString()} EGP`;
-    if (dayEl) dayEl.textContent =`+${Math.round(breakdown.totalNetPerHour * 24).toLocaleString()} EGP`;
-    if (totalNetEl) totalNetEl.textContent =`+${Math.round(breakdown.totalNetPerHour).toLocaleString()}`;
+    const grossSummaryEl = document.getElementById('cf-summary-gross');
+    const deductionsSummaryEl = document.getElementById('cf-summary-deductions');
+    const netSummaryEl = document.getElementById('cf-summary-net');
+
+    const totalGross = breakdown.totalGrossPerHour || (breakdown.summary && breakdown.summary.grossPerHour) || 0;
+    const totalDeductions = breakdown.totalDeductionsPerHour || (breakdown.summary && breakdown.summary.deductionsPerHour) || 0;
+    const totalNet = breakdown.totalNetPerHour || (breakdown.summary && breakdown.summary.netPerHour) || 0;
+
+    if (secEl) secEl.textContent = `+${(totalNet / 3600).toFixed(2)} EGP`;
+    if (minEl) minEl.textContent = `+${Math.round(totalNet / 60).toLocaleString()} EGP`;
+    if (hourEl) hourEl.textContent = `+${Math.round(totalNet).toLocaleString()} EGP`;
+    if (dayEl) dayEl.textContent = `+${Math.round(totalNet * 24).toLocaleString()} EGP`;
+    if (totalNetEl) totalNetEl.textContent = `+${Math.round(totalNet).toLocaleString()}`;
+
+    if (grossSummaryEl) grossSummaryEl.textContent = `+${Math.round(totalGross).toLocaleString()} EGP`;
+    if (deductionsSummaryEl) deductionsSummaryEl.textContent = `-${Math.round(totalDeductions).toLocaleString()} EGP`;
+    if (netSummaryEl) netSummaryEl.textContent = `+${Math.round(totalNet).toLocaleString()} EGP`;
 
     // 2. Businesses Section
     const bizSubtotalEl = document.getElementById('cf-subtotal-businesses');
@@ -11958,9 +11970,9 @@ const UIController = (() => {
     if (bizListEl) {
       let bizTotal = 0;
       if (breakdown.businesses.length === 0) {
-        bizListEl.innerHTML =`<div class="text-[11px] text-slate-500 py-1">لا توجد مشاريع نشطة حالياً. يمكنك تأسيس مشاريعك الحرة من قسم الأعمال لجني تدفقات ضخمة!</div>`;
+        bizListEl.innerHTML = `<div class="text-[11px] text-slate-500 py-1">لا توجد مشاريع نشطة حالياً. يمكنك تأسيس مشاريعك الحرة من قسم الأعمال لجني تدفقات ضخمة!</div>`;
       } else {
-        let html ='';
+        let html = '';
         breakdown.businesses.forEach(b => {
           const pVal = Number(b.profitPerHour !== undefined ? b.profitPerHour : b.profitPerSec);
           bizTotal += pVal;
@@ -11970,7 +11982,7 @@ const UIController = (() => {
           if (b.synergyMultiplier > 1) badges.push(`<span class="text-[9px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded border border-cyan-500/30">سلاسل إمداد x${b.synergyMultiplier}</span>`);
           if (b.employeeBoost > 1) badges.push(`<span class="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30">موظفين x${b.employeeBoost.toFixed(1)}</span>`);
 
-          html +=`
+          html += `
             <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
               <div>
                 <div class="font-bold text-white flex items-center gap-1.5">
@@ -11978,13 +11990,20 @@ const UIController = (() => {
                   <span class="text-[10px] text-slate-400 font-normal">(مستوى ${b.level} • ${b.workers} عمال)</span>
                 </div>
                 <div class="flex gap-1 flex-wrap mt-1">${badges.join('')}</div>
+                <div class="text-[10px] text-slate-400 mt-1 flex items-center gap-2">
+                  <span class="text-emerald-400/90 font-mono">إجمالي: +${Math.round(b.grossProfit || pVal).toLocaleString()}</span>
+                  ${(b.payroll > 0) ? `<span class="text-rose-400/90 font-mono">رواتب: -${Math.round(b.payroll).toLocaleString()}</span>` : ''}
+                </div>
               </div>
-              <span class="numbers-font font-black text-emerald-400 text-xs sm:text-sm">+${pVal.toLocaleString()} EGP/س</span>
+              <div class="text-left">
+                <span class="numbers-font font-black text-emerald-400 text-xs sm:text-sm block">+${pVal.toLocaleString()} EGP/س</span>
+                <span class="text-[9px] text-slate-400">صافي المالك</span>
+              </div>
             </div>`;
         });
         bizListEl.innerHTML = html;
       }
-      if (bizSubtotalEl) bizSubtotalEl.textContent =`+${bizTotal.toLocaleString()} EGP/س`;
+      if (bizSubtotalEl) bizSubtotalEl.textContent = `+${bizTotal.toLocaleString()} EGP/س`;
     }
 
     // 3. Real Estate Assets Section
@@ -11993,13 +12012,13 @@ const UIController = (() => {
     if (assetListEl) {
       let assetTotal = 0;
       if (breakdown.assets.length === 0) {
-        assetListEl.innerHTML =`<div class="text-[11px] text-slate-500 py-1">لا توجد عقارات مؤجرة حالياً. اشترِ العقارات لجني إيجارات لحظية مستقرة تنمي ثروتك!</div>`;
+        assetListEl.innerHTML = `<div class="text-[11px] text-slate-500 py-1">لا توجد عقارات مؤجرة حالياً. اشترِ العقارات لجني إيجارات لحظية مستقرة تنمي ثروتك!</div>`;
       } else {
-        let html ='';
+        let html = '';
         breakdown.assets.forEach(a => {
           const rVal = Number(a.rentPerHour !== undefined ? a.rentPerHour : a.rentPerSec);
           assetTotal += rVal;
-          html +=`
+          html += `
             <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
               <div class="text-white font-bold">
                 <span>${a.name}</span>
@@ -12010,7 +12029,7 @@ const UIController = (() => {
         });
         assetListEl.innerHTML = html;
       }
-      if (assetSubtotalEl) assetSubtotalEl.textContent =`+${assetTotal.toLocaleString()} EGP/س`;
+      if (assetSubtotalEl) assetSubtotalEl.textContent = `+${assetTotal.toLocaleString()} EGP/س`;
     }
 
     // 4. Rented Cars Section
@@ -12019,13 +12038,13 @@ const UIController = (() => {
     if (carsListEl) {
       let carsTotal = 0;
       if (breakdown.cars.length === 0) {
-        carsListEl.innerHTML =`<div class="text-[11px] text-slate-500 py-1">لا توجد سيارات بحالة الإيجار. اشترِ سيارات فارهة وقم بتأجيرها من قسم الأصول!</div>`;
+        carsListEl.innerHTML = `<div class="text-[11px] text-slate-500 py-1">لا توجد سيارات بحالة الإيجار. اشترِ سيارات فارهة وقم بتأجيرها من قسم الأصول!</div>`;
       } else {
-        let html ='';
+        let html = '';
         breakdown.cars.forEach(c => {
           const cVal = Number(c.netProfitPerHour !== undefined ? c.netProfitPerHour : c.netProfitPerSec);
           carsTotal += cVal;
-          html +=`
+          html += `
             <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
               <div>
                 <span class="text-white font-bold">${c.name}</span>
@@ -12036,7 +12055,7 @@ const UIController = (() => {
         });
         carsListEl.innerHTML = html;
       }
-      if (carsSubtotalEl) carsSubtotalEl.textContent =`+${carsTotal.toLocaleString()} EGP/س`;
+      if (carsSubtotalEl) carsSubtotalEl.textContent = `+${carsTotal.toLocaleString()} EGP/س`;
     }
 
     // 5. Bank Interest Section
@@ -12045,9 +12064,9 @@ const UIController = (() => {
     if (bankListEl) {
       const b = breakdown.bank;
       const bankVal = Number(b.profitPerHour !== undefined ? b.profitPerHour : b.profitPerSec);
-      if (bankSubtotalEl) bankSubtotalEl.textContent =`+${bankVal.toLocaleString()} EGP/س`;
-      const rollsBadge = b.hasRollsBonus ?' <span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 font-bold">+5% بونص رولز رويس</span>' :'';
-      bankListEl.innerHTML =`
+      if (bankSubtotalEl) bankSubtotalEl.textContent = `+${bankVal.toLocaleString()} EGP/س`;
+      const rollsBadge = b.hasRollsBonus ? ' <span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 font-bold">+5% بونص رولز رويس</span>' : '';
+      bankListEl.innerHTML = `
         <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
           <div>
             <span class="text-white font-bold">عائد الفائدة المركبة على الودائع</span>
@@ -12065,8 +12084,8 @@ const UIController = (() => {
       if (breakdown.corp.active) {
         corpSection.classList.remove('hidden');
         const corpVal = Number(breakdown.corp.profitPerHour !== undefined ? breakdown.corp.profitPerHour : breakdown.corp.profitPerSec);
-        if (corpSubtotalEl) corpSubtotalEl.textContent =`+${corpVal.toLocaleString()} EGP/س`;
-        corpListEl.innerHTML =`
+        if (corpSubtotalEl) corpSubtotalEl.textContent = `+${corpVal.toLocaleString()} EGP/س`;
+        corpListEl.innerHTML = `
           <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
             <div>
               <span class="text-white font-bold">${breakdown.corp.name}</span>
@@ -12087,8 +12106,8 @@ const UIController = (() => {
       if (breakdown.hiredJob.active) {
         hiredSection.classList.remove('hidden');
         const hiredVal = Number(breakdown.hiredJob.salaryPerHour !== undefined ? breakdown.hiredJob.salaryPerHour : breakdown.hiredJob.salaryPerSec);
-        if (hiredSubtotalEl) hiredSubtotalEl.textContent =`+${hiredVal.toLocaleString()} EGP/س`;
-        hiredListEl.innerHTML =`
+        if (hiredSubtotalEl) hiredSubtotalEl.textContent = `+${hiredVal.toLocaleString()} EGP/س`;
+        hiredListEl.innerHTML = `
           <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
             <div>
               <span class="text-white font-bold">${breakdown.hiredJob.name}</span>
@@ -12101,27 +12120,56 @@ const UIController = (() => {
       }
     }
 
-    // 8. Wealth Tax Section
+    // 8. Payroll Deductions Section
+    const payrollSubtotalEl = document.getElementById('cf-subtotal-payroll');
+    const payrollListEl = document.getElementById('cf-list-payroll');
+    if (payrollListEl) {
+      const payrollTotal = (breakdown.deductions && breakdown.deductions.workerPayrollPerHour !== undefined)
+        ? breakdown.deductions.workerPayrollPerHour
+        : breakdown.businesses.reduce((sum, b) => sum + (b.payroll || 0), 0);
+
+      if (payrollSubtotalEl) payrollSubtotalEl.textContent = `-${Math.round(payrollTotal).toLocaleString()} EGP/س`;
+
+      const businessesWithPayroll = breakdown.businesses.filter(b => (b.payroll || 0) > 0);
+      if (businessesWithPayroll.length === 0) {
+        payrollListEl.innerHTML = `<div class="text-[11px] text-slate-500 py-1">لا توجد استقطاعات رواتب للعمال حالياً.</div>`;
+      } else {
+        let phtml = '';
+        businessesWithPayroll.forEach(b => {
+          phtml += `
+            <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
+              <div>
+                <span class="text-white font-bold">${b.name}</span>
+                <span class="text-[10px] text-slate-400 block">${b.workers} عمال • رواتب تشغيلية مسددة</span>
+              </div>
+              <span class="numbers-font font-black text-rose-400 text-xs sm:text-sm">-${Math.round(b.payroll).toLocaleString()} EGP/س</span>
+            </div>`;
+        });
+        payrollListEl.innerHTML = phtml;
+      }
+    }
+
+    // 9. Wealth Tax Section
     const taxSubtotalEl = document.getElementById('cf-subtotal-tax');
     const taxListEl = document.getElementById('cf-list-tax');
     if (taxListEl) {
       if (breakdown.tax.active) {
         const taxVal = Number(breakdown.tax.taxPerHour !== undefined ? breakdown.tax.taxPerHour : breakdown.tax.taxPerSec);
-        if (taxSubtotalEl) taxSubtotalEl.textContent =`-${taxVal.toLocaleString()} EGP/س`;
-        taxListEl.innerHTML =`
+        if (taxSubtotalEl) taxSubtotalEl.textContent = `-${Math.round(taxVal).toLocaleString()} EGP/س`;
+        taxListEl.innerHTML = `
           <div class="flex justify-between items-center bg-rose-950/20 p-2.5 rounded-xl border border-rose-900/40">
             <div>
               <span class="text-rose-400 font-bold">ضريبة الثروة الدورية (5M+ EGP)</span>
               <span class="text-[10px] text-slate-400 block">تُخصم دورياً للحسابات ذات الثروات والسيولة العالية</span>
             </div>
-            <span class="numbers-font font-black text-rose-400 text-xs sm:text-sm">-${taxVal.toLocaleString()} EGP/س</span>
+            <span class="numbers-font font-black text-rose-400 text-xs sm:text-sm">-${Math.round(taxVal).toLocaleString()} EGP/س</span>
           </div>`;
       } else {
-        if (taxSubtotalEl) taxSubtotalEl.textContent ='0 EGP/س (معفي)';
-        taxListEl.innerHTML =`
+        if (taxSubtotalEl) taxSubtotalEl.textContent = '0 EGP/س (معفي)';
+        taxListEl.innerHTML = `
           <div class="text-[11px] text-emerald-400/90 bg-emerald-950/20 p-2.5 rounded-xl border border-emerald-900/30 flex items-center gap-1.5">
             <i class="fa-solid fa-shield-halved text-emerald-400 text-xs"></i>
-            <span>${breakdown.tax.exemptReason ||'لا توجد ضرائب مطبقة حالياً.'}</span>
+            <span>${breakdown.tax.exemptReason || 'لا توجد ضرائب مطبقة حالياً.'}</span>
           </div>`;
       }
     }
@@ -13230,8 +13278,47 @@ const UIController = (() => {
     const durEl = document.getElementById('offline-report-duration');
     if (durEl) durEl.textContent = durationText;
 
+    // Financial Statement Totals (Gross - Deductions = Net)
+    const eData = (rep.earnings && typeof rep.earnings === 'object') ? rep.earnings : null;
+    const dData = rep.deductions || {};
+
+    const payrollDeduction = (dData.payroll && typeof dData.payroll.amount === 'number')
+      ? dData.payroll.amount
+      : (dData.workerPayroll || 0);
+
+    const carMaintDeduction = (dData.carMaintenance && typeof dData.carMaintenance.amount === 'number')
+      ? dData.carMaintenance.amount
+      : (typeof dData.carMaintenance === 'number' ? dData.carMaintenance : 0);
+
+    const taxDeduction = (dData.tax && typeof dData.tax.amount === 'number')
+      ? dData.tax.amount
+      : (dData.wealthTax || 0);
+
+    const calcDeductions = payrollDeduction + carMaintDeduction + taxDeduction;
+
+    const grossAmount = (rep.grossEarnings !== undefined)
+      ? rep.grossEarnings
+      : (typeof rep.earnings === 'number' ? rep.earnings : 0);
+    const deductionsAmount = (rep.totalDeductions !== undefined)
+      ? rep.totalDeductions
+      : calcDeductions;
+    const netAmount = (rep.totalEarnings !== undefined)
+      ? rep.totalEarnings
+      : (typeof rep.earnings === 'number' ? rep.earnings : Math.max(0, grossAmount - deductionsAmount));
+
+    const grossEl = document.getElementById('offline-report-gross-amount');
+    const deductionsEl = document.getElementById('offline-report-deductions-amount');
     const totalEl = document.getElementById('offline-report-total-amount');
-    if (totalEl) totalEl.textContent = `+${(rep.earnings || 0).toLocaleString()} EGP`;
+
+    if (grossEl) grossEl.textContent = `+${Math.round(grossAmount).toLocaleString()} EGP`;
+    if (deductionsEl) deductionsEl.textContent = `-${Math.round(deductionsAmount).toLocaleString()} EGP`;
+    if (totalEl) totalEl.textContent = `+${Math.round(netAmount).toLocaleString()} EGP`;
+
+    const earningsSubtotalEl = document.getElementById('offline-report-earnings-subtotal');
+    if (earningsSubtotalEl) earningsSubtotalEl.textContent = `+${Math.round(grossAmount).toLocaleString()} EGP`;
+
+    const deductionsSubtotalEl = document.getElementById('offline-report-deductions-subtotal');
+    if (deductionsSubtotalEl) deductionsSubtotalEl.textContent = `-${Math.round(deductionsAmount).toLocaleString()} EGP`;
 
     const suppliesSummEl = document.getElementById('offline-report-supplies-summary');
     if (suppliesSummEl) {
@@ -13242,30 +13329,169 @@ const UIController = (() => {
       }
     }
 
+    // 1. Detailed Earnings List
     const listEl = document.getElementById('offline-report-projects-list');
     if (listEl) {
       listEl.innerHTML = '';
-      if (rep.breakdown && rep.breakdown.length > 0) {
-        rep.breakdown.forEach(item => {
+      let hasEarningsEntries = false;
+
+      const companiesList = (eData && eData.businesses && Array.isArray(eData.businesses.items))
+        ? eData.businesses.items
+        : ((eData && Array.isArray(eData.companies)) ? eData.companies : (rep.breakdown || []));
+
+      if (companiesList && companiesList.length > 0) {
+        hasEarningsEntries = true;
+        companiesList.forEach(item => {
           const row = document.createElement('div');
           row.className = 'flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs';
+          const pGross = item.grossProfit !== undefined ? item.grossProfit : item.profit;
+          const pNet = item.netProfit !== undefined ? item.netProfit : item.profit;
+          const consumedHours = item.consumedHours !== undefined ? item.consumedHours : (item.activeHours || 0);
           row.innerHTML = `
             <div class="flex items-center gap-2">
               <i class="fa-solid fa-store text-emerald-400"></i>
-              <span class="font-bold text-white">${item.name}</span>
-              <span class="text-[10px] text-amber-400/90 font-mono">(استهلك ${item.consumedHours} س بضاعة)</span>
+              <div>
+                <span class="font-bold text-white">${item.name}</span>
+                <span class="text-[10px] text-slate-400 block">(استهلك ${consumedHours} س بضاعة • إجمالي: +${Math.round(pGross).toLocaleString()})</span>
+              </div>
             </div>
-            <span class="font-black text-emerald-400 numbers-font">+${item.profit.toLocaleString()} EGP</span>
+            <div class="text-left">
+              <span class="font-black text-emerald-400 numbers-font text-xs sm:text-sm block">+${Math.round(pNet).toLocaleString()} EGP</span>
+              <span class="text-[9px] text-slate-400">صافي المالك</span>
+            </div>
           `;
           listEl.appendChild(row);
         });
-      } else {
+      }
+
+      // Real estate rent
+      const assetsRent = (eData && eData.assets && typeof eData.assets.amount === 'number')
+        ? eData.assets.amount
+        : (eData ? (eData.assetsRent || 0) : 0);
+      if (assetsRent > 0) {
+        hasEarningsEntries = true;
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs';
+        row.innerHTML = `
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-city text-cyan-400"></i>
+            <span class="font-bold text-white">إيجارات العقارات والأصول</span>
+          </div>
+          <span class="font-black text-emerald-400 numbers-font">+${Math.round(assetsRent).toLocaleString()} EGP</span>
+        `;
+        listEl.appendChild(row);
+      }
+
+      // Car rent
+      const carRent = (eData && eData.cars && typeof eData.cars.amount === 'number')
+        ? eData.cars.amount
+        : (eData ? (eData.carRent || 0) : 0);
+      if (carRent > 0) {
+        hasEarningsEntries = true;
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs';
+        row.innerHTML = `
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-car text-indigo-400"></i>
+            <span class="font-bold text-white">عوائد تأجير أسطول السيارات</span>
+          </div>
+          <span class="font-black text-emerald-400 numbers-font">+${Math.round(carRent).toLocaleString()} EGP</span>
+        `;
+        listEl.appendChild(row);
+      }
+
+      // Bank interest
+      const bankInterest = (eData && eData.bank && typeof eData.bank.amount === 'number')
+        ? eData.bank.amount
+        : (eData ? (eData.bankInterest || 0) : 0);
+      if (bankInterest > 0) {
+        hasEarningsEntries = true;
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs';
+        row.innerHTML = `
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-building-columns text-emerald-400"></i>
+            <span class="font-bold text-white">عوائد الفوائد البنكية المركبة</span>
+          </div>
+          <span class="font-black text-emerald-400 numbers-font">+${Math.round(bankInterest).toLocaleString()} EGP</span>
+        `;
+        listEl.appendChild(row);
+      }
+
+      if (!hasEarningsEntries) {
         const noMgrMsg = (!rep.wasManagerActive)
           ? '⚠️ مدير الـ AFK لم يكن نشطاً أثناء غيابك — لم تُجمع أرباح تجارية. اضغط "تجديد الاشتراك" لتفعيله.'
           : 'تم جمع الأرباح وتوريدها للبنك بنجاح.';
         listEl.innerHTML = `
           <div class="p-3 text-center text-slate-400 text-xs bg-slate-900/40 rounded-xl border border-slate-800/60">
             ${noMgrMsg}
+          </div>
+        `;
+      }
+    }
+
+    // 2. Detailed Deductions List
+    const deductionsListEl = document.getElementById('offline-report-deductions-list');
+    if (deductionsListEl) {
+      deductionsListEl.innerHTML = '';
+      let hasDeductionEntries = false;
+
+      if (payrollDeduction > 0) {
+        hasDeductionEntries = true;
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-2 rounded-xl bg-rose-950/20 border border-rose-900/40 text-xs';
+        row.innerHTML = `
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-users-gear text-rose-400"></i>
+            <div>
+              <span class="font-bold text-white">رواتب وأجور عمال المشاريع</span>
+              <span class="text-[10px] text-slate-400 block">تكاليف التشغيل المباشرة أثناء فترة الغياب</span>
+            </div>
+          </div>
+          <span class="font-black text-rose-400 numbers-font">-${Math.round(payrollDeduction).toLocaleString()} EGP</span>
+        `;
+        deductionsListEl.appendChild(row);
+      }
+
+      if (carMaintDeduction > 0) {
+        hasDeductionEntries = true;
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-2 rounded-xl bg-rose-950/20 border border-rose-900/40 text-xs';
+        row.innerHTML = `
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-wrench text-rose-400"></i>
+            <div>
+              <span class="font-bold text-white">صيانة أسطول السيارات المؤجرة</span>
+              <span class="text-[10px] text-slate-400 block">مصاريف الصيانة الدورية المعتمدة</span>
+            </div>
+          </div>
+          <span class="font-black text-rose-400 numbers-font">-${Math.round(carMaintDeduction).toLocaleString()} EGP</span>
+        `;
+        deductionsListEl.appendChild(row);
+      }
+
+      if (taxDeduction > 0) {
+        hasDeductionEntries = true;
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-2 rounded-xl bg-rose-950/20 border border-rose-900/40 text-xs';
+        row.innerHTML = `
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-scale-balanced text-rose-400"></i>
+            <div>
+              <span class="font-bold text-white">استقطاع ضريبة الثروة الدورية</span>
+              <span class="text-[10px] text-slate-400 block">استقطاع دوري للثروات والسيولة العالية</span>
+            </div>
+          </div>
+          <span class="font-black text-rose-400 numbers-font">-${Math.round(taxDeduction).toLocaleString()} EGP</span>
+        `;
+        deductionsListEl.appendChild(row);
+      }
+
+      if (!hasDeductionEntries) {
+        deductionsListEl.innerHTML = `
+          <div class="p-2.5 text-center text-slate-400 text-xs bg-slate-900/40 rounded-xl border border-slate-800/60 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+            <span>لم تسجل أي استقطاعات أو مصاريف خلال فترة غيابك.</span>
           </div>
         `;
       }
