@@ -1115,13 +1115,13 @@ var AppDB = (() => {
       const row = rows[0];
       const stateObj = (typeof row.state ==='object' && row.state) ? { ...row.state } : {};
 
-      // Overwrite critical authoritative server fields using canonical database username
+      // Reconcile SQL columns and state keys: pick the richer authoritative value to prevent accidental zeroing
       stateObj.username = row.username;
-      stateObj.cash = Number(row.cash || 0);
-      stateObj.bank = Number(row.bank || 0);
-      stateObj.dirtyCash = Number(row.dirty_cash || 0);
-      stateObj.netWorth = Number(row.net_worth || 0);
-      stateObj.xp = Number(row.xp || 0);
+      stateObj.cash = Math.max(Number(row.cash || 0), Number((row.state && row.state.cash) || 0));
+      stateObj.bank = Math.max(Number(row.bank || 0), Number((row.state && row.state.bank) || 0));
+      stateObj.dirtyCash = Math.max(Number(row.dirty_cash || 0), Number((row.state && row.state.dirtyCash) || 0));
+      stateObj.netWorth = Math.max(Number(row.net_worth || 0), Number((row.state && row.state.netWorth) || 0));
+      stateObj.xp = Math.max(Number(row.xp || 0), Number((row.state && row.state.xp) || 0));
       stateObj.title = row.title || stateObj.title ||'عامل مبتدئ';
       stateObj.jobId = row.job_id || stateObj.jobId ||'worker';
       stateObj.isAdmin = row.is_admin === true;
@@ -1149,10 +1149,18 @@ var AppDB = (() => {
 
       // ── ANTI-ROLLBACK & SMART RECONCILIATION GUARD ──
       // Prevents data loss, business level downgrades, and worker loss when reloading or reconnecting
-      if (local && typeof local === 'object') {
+      const adminTs = Number(row.admin_modified_timestamp || (row.state && row.state.adminModifiedTimestamp) || 0);
+      const isAccountReset = (row.isReset === true || (row.state && row.state.isReset === true));
+      const localTs = local ? Number(local.lastSeen || local.lastActiveTimestamp || 0) : 0;
+      const isStaleLocalDueToAdmin = (adminTs > 0 && adminTs > localTs) || isAccountReset;
+
+      if (isStaleLocalDueToAdmin && isCurrentPlayer) {
+        try { localStorage.removeItem(`rasalmal_state_${u}`); } catch (e) {}
+      }
+
+      if (local && typeof local === 'object' && !isStaleLocalDueToAdmin) {
         let shouldSyncCloud = false;
 
-        const localTs = Number(local.lastSeen || local.lastActiveTimestamp || 0);
         const serverTs = Number(row.last_seen || 0);
         // Only reconcile local upgrades if local device was active recently (within 10 minutes of server timestamp or newer)
         // This ensures switching devices loads newer server data without stale secondary device data interfering
