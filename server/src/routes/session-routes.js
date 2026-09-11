@@ -69,6 +69,12 @@ async function sessionRoutes(fastify, options) {
       return reply.code(400).send({ error: 'Username and state are required' });
     }
 
+    // Strict identity validation: state.username MUST match username to prevent account overwriting
+    if (state.username && state.username.trim().toLowerCase() !== username.trim().toLowerCase()) {
+      fastify.log.warn(`Cross-account sync rejected: endpoint username="${username}", state.username="${state.username}"`);
+      return reply.code(400).send({ error: 'State username mismatch' });
+    }
+
     try {
       const saved = await sessionManager.updateSessionState(username, state, immediate === true);
       return {
@@ -86,6 +92,12 @@ async function sessionRoutes(fastify, options) {
   fastify.post('/api/session/exit', async (request, reply) => {
     const { username, state } = request.body || {};
     if (!username) return reply.code(400).send({ error: 'Username is required' });
+
+    // Strict identity validation on exit
+    if (state && state.username && state.username.trim().toLowerCase() !== username.trim().toLowerCase()) {
+      fastify.log.warn(`Cross-account exit sync rejected: endpoint username="${username}", state.username="${state.username}"`);
+      return reply.code(400).send({ error: 'State username mismatch' });
+    }
 
     let saved = false;
     if (state && typeof state === 'object') {

@@ -2547,10 +2547,10 @@ const GameEngine = (() => {
 
     let serverOfflineReport = null;
     let dbState = preloadedData;
-    if (!dbState && typeof ServerBridge !== 'undefined') {
+    if (typeof ServerBridge !== 'undefined') {
       try {
         const sRes = await ServerBridge.startSession(username);
-        if (sRes && sRes.state) {
+        if (sRes && sRes.state && !dbState) {
           dbState = sRes.state;
           serverOfflineReport = sRes.offlineReport;
           console.log('[GameEngine] Authoritative server session active. Offline report:', serverOfflineReport);
@@ -3037,6 +3037,9 @@ const GameEngine = (() => {
   function logoutUser() {
     activeUsername ="";
     state = { ...INITIAL_STATE };
+    if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.clearSession === 'function') {
+      ServerBridge.clearSession();
+    }
   }
 
   // --- Interaction Actions (Strict Financial Logic Validation) ---

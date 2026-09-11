@@ -145,6 +145,13 @@ class SessionManager {
    */
   async updateSessionState(username, clientState, immediate = false) {
     if (!username || !clientState || typeof clientState !== 'object') return false;
+
+    // Security & Anti-Duplication Guard: Block any sync attempt if clientState claims to be a different user
+    if (clientState.username && clientState.username.trim().toLowerCase() !== username.trim().toLowerCase()) {
+      console.warn(`[SessionManager] Blocked cross-user state sync attempt: target="${username}", state.username="${clientState.username}"`);
+      return false;
+    }
+
     const { session } = await this.getOrCreateSession(username, false);
     if (!session) return false;
 
@@ -162,7 +169,10 @@ class SessionManager {
 
     // Synchronize modules
     if (clientState.businesses && typeof clientState.businesses === 'object') {
-      s.businesses = clientState.businesses;
+      // Don't overwrite existing non-empty businesses with an empty object
+      if (Object.keys(clientState.businesses).length > 0 || !s.businesses || Object.keys(s.businesses).length === 0) {
+        s.businesses = clientState.businesses;
+      }
     }
     if (clientState.industry && typeof clientState.industry === 'object') {
       s.industry = clientState.industry;

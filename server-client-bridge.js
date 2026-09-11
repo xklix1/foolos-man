@@ -180,11 +180,19 @@ var ServerBridge = (() => {
   /**
    * Synchronizes full player state to the authoritative server
    */
-  async function syncState(state, immediate = false) {
-    if (!_isServerOnline || !_activeUsername || !state) return null;
+  async function syncState(state, immediate = false, targetUsername = null) {
+    const user = targetUsername || (state && state.username) || _activeUsername;
+    if (!_isServerOnline || !user || !state) return null;
+
+    // Identity integrity guard: NEVER sync if state belongs to a different username
+    if (state.username && user && state.username.trim().toLowerCase() !== user.trim().toLowerCase()) {
+      console.warn('[ServerBridge] syncState blocked: state.username mismatch with target user:', state.username, 'vs', user);
+      return null;
+    }
+
     try {
       return await _post('/api/session/sync-state', {
-        username: _activeUsername,
+        username: user,
         state,
         immediate
       });
@@ -198,9 +206,15 @@ var ServerBridge = (() => {
    * Sends exit notification on page unload with latest state
    */
   function sendExit(customState = null) {
-    if (!_isServerOnline || !_activeUsername) return;
-    const url = `${getApiBase()}/api/session/exit`;
     const st = customState || (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state ? window.GameEngine.state : null);
+    const user = (st && st.username) || _activeUsername;
+    if (!_isServerOnline || !user) return;
+
+    if (st && st.username && _activeUsername && st.username.trim().toLowerCase() !== _activeUsername.trim().toLowerCase()) {
+      return; // Skip exit sync if state does not match active session user
+    }
+
+    const url = `${getApiBase()}/api/session/exit`;
     if (st) {
       const exitTs = (typeof window !== 'undefined' && window.AppDB && typeof window.AppDB.getTrustedNow === 'function')
         ? window.AppDB.getTrustedNow()
@@ -209,7 +223,7 @@ var ServerBridge = (() => {
       st.lastSeen = exitTs;
     }
     const payload = JSON.stringify({
-      username: _activeUsername,
+      username: user,
       state: st
     });
 
@@ -224,6 +238,20 @@ var ServerBridge = (() => {
         keepalive: true
       }).catch(() => {});
     }
+  }
+
+  /**
+   * Clears the current session and stops all background timers on user logout
+   */
+  function clearSession() {
+    if (_heartbeatTimer) clearInterval(_heartbeatTimer);
+    if (_clickBatchTimer) clearTimeout(_clickBatchTimer);
+    _heartbeatTimer = null;
+    _clickBatchTimer = null;
+    _clickBatchQueue = 0;
+    _activeUsername = null;
+    _isServerOnline = false;
+    console.log('[ServerBridge] Session completely cleared.');
   }
 
   // Attach exit and app-hide listeners (Desktop & Mobile)
@@ -249,12 +277,9 @@ var ServerBridge = (() => {
     syncState,
     sendHeartbeat,
     sendExit,
-    destroy: () => {
-      if (_heartbeatTimer) clearInterval(_heartbeatTimer);
-      if (_clickBatchTimer) clearTimeout(_clickBatchTimer);
-      _heartbeatTimer = null;
-      _clickBatchTimer = null;
-    },
+    clearSession,
+    logout: clearSession,
+    destroy: clearSession,
     isServerOnline: () => _isServerOnline,
     getActiveUsername: () => _activeUsername
   };

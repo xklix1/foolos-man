@@ -135,7 +135,12 @@ CREATE OR REPLACE FUNCTION public.execute_wire_transfer(
 ) RETURNS boolean AS $$
 DECLARE
   sender_cash numeric;
+  sender_bank numeric;
   sender_net_worth numeric;
+  deduct_from_cash numeric := 0;
+  deduct_from_bank numeric := 0;
+  new_sender_cash numeric;
+  new_sender_bank numeric;
 BEGIN
   IF sender_username = recipient_username THEN
     RAISE EXCEPTION 'لا يمكنك التحويل لنفسك!';
@@ -146,30 +151,55 @@ BEGIN
   END IF;
 
   -- إغلاق صف المرسل للتحقق من الرصيد ومنع التكرار (Row Lock)
-  SELECT cash, net_worth INTO sender_cash, sender_net_worth
+  SELECT cash, bank, net_worth INTO sender_cash, sender_bank, sender_net_worth
   FROM public.players WHERE username = sender_username FOR UPDATE;
 
-  IF sender_cash IS NULL OR sender_cash < transfer_amount THEN
-    RAISE EXCEPTION 'رصيدك غير كافٍ لإتمام الحوالة.';
+  sender_cash := COALESCE(sender_cash, 0);
+  sender_bank := COALESCE(sender_bank, 0);
+
+  IF (sender_cash + sender_bank) < transfer_amount THEN
+    RAISE EXCEPTION 'رصيدك الإجمالي (الكاش والبنك) غير كافٍ لإتمام الحوالة.';
   END IF;
 
-  -- التأكد من وجود المستلم
+  -- التأكد من وجود المستلم وإغلاق صفه لمنع التضارب
   IF NOT EXISTS (SELECT 1 FROM public.players WHERE username = recipient_username FOR UPDATE) THEN
     RAISE EXCEPTION 'المستلم غير موجود. تأكد من صحة الاسم.';
   END IF;
 
-  -- خصم المبلغ من المرسل
+  -- خصم المبلغ الذكي: يُخصم من الكاش أولاً حتى ينفد، ثم يُخصم المتبقي من البنك
+  IF sender_cash >= transfer_amount THEN
+    deduct_from_cash := transfer_amount;
+    deduct_from_bank := 0;
+  ELSE
+    deduct_from_cash := sender_cash;
+    deduct_from_bank := transfer_amount - sender_cash;
+  END IF;
+
+  new_sender_cash := sender_cash - deduct_from_cash;
+  new_sender_bank := sender_bank - deduct_from_bank;
+
+  -- خصم المبلغ من المرسل وتحديث عمودي cash و bank مع كائن state بشكل ذري تام
   UPDATE public.players
-  SET cash = cash - transfer_amount,
-      net_worth = GREATEST(0, net_worth - transfer_amount)
+  SET cash = new_sender_cash,
+      bank = new_sender_bank,
+      net_worth = GREATEST(0, net_worth - transfer_amount),
+      state = CASE 
+        WHEN state IS NOT NULL THEN 
+          jsonb_set(
+            jsonb_set(state, '{cash}', to_jsonb(new_sender_cash)),
+            '{bank}', to_jsonb(new_sender_bank)
+          )
+        ELSE state 
+      END
   WHERE username = sender_username;
 
-  -- إضافة المبلغ للمستلم في البنك (Bank) بدلاً من الكاش
+  -- إضافة المبلغ للمستلم في البنك وتحديث عمود bank وكائن state بشكل ذري تام
   UPDATE public.players
   SET bank = bank + transfer_amount,
       net_worth = net_worth + transfer_amount,
       state = CASE 
-        WHEN state IS NOT NULL THEN jsonb_set(state, '{bank}', to_jsonb(COALESCE((state->>'bank')::numeric, 0) + transfer_amount))
+        WHEN state IS NOT NULL THEN 
+          jsonb_set(state, '{bank}', to_jsonb(COALESCE((state->>'bank')::numeric, 0) + transfer_amount))
         ELSE state 
       END
   WHERE username = recipient_username;
@@ -196,3 +226,4 @@ BEGIN
   RETURN true;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+

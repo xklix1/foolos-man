@@ -107,6 +107,20 @@ test('Client ServerBridge End-to-End Test', async () => {
     assert.ok(offlineStartRes.offlineReport.totalEarnings > 0, 'Earned offline profit');
     assert.strictEqual(offlineStartRes.state.bank, 5000 + offlineStartRes.offlineReport.totalEarnings, 'Bank credited');
     assert.strictEqual(offlineStartRes.state.businesses.kiosk.suppliesTicks, 7200 - 3600, 'Supplies depleted by 1h');
+    // Verify ServerBridge.clearSession clears active state
+    ServerBridge.clearSession();
+    assert.strictEqual(ServerBridge.getActiveUsername(), null, 'clearSession resets active username');
+
+    // Verify cross-account sync protection: sending state of another user returns 400
+    const spoofRes = await fetch(`http://127.0.0.1:3999/api/session/sync-state`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: exitSessionUser,
+        state: { username: 'DifferentHacker', cash: 999999 }
+      })
+    });
+    assert.strictEqual(spoofRes.status, 400, 'Server rejects cross-account state synchronization');
   } finally {
     ServerBridge.destroy();
     await app.close();

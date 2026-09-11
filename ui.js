@@ -3678,8 +3678,10 @@ const UIController = (() => {
       });
     });
 
-    // Wire Transfer Form Actions
+    // Wire Transfer Form Actions with Strict Anti-Spam Lock & Total Balance Support
+    let _wireTransferInProgress = false;
     document.getElementById('btn-wire-submit').addEventListener('click', async () => {
+      if (_wireTransferInProgress) return;
       const recipient = document.getElementById('wire-recipient-input').value.trim();
       const amount = parseInt(document.getElementById('wire-amount-input').value);
       const wireSubmitBtn = document.getElementById('btn-wire-submit');
@@ -3691,17 +3693,35 @@ const UIController = (() => {
           throw new Error("يرجى تعبئة حقل المستلم ومبلغ التحويل بشكل صحيح.");
         }
 
-        // Show spinner
+        const curCash = Number(GameEngine.state.cash) || 0;
+        const curBank = Number(GameEngine.state.bank) || 0;
+        const totalFunds = curCash + curBank;
+
+        if (totalFunds < amount) {
+          throw new Error(`رصيدك الإجمالي (${totalFunds.toLocaleString()} EGP) غير كافٍ لإتمام حوالة بقيمة ${amount.toLocaleString()} EGP.`);
+        }
+
+        // Show spinner & lock
+        _wireTransferInProgress = true;
         wireSubmitBtn.disabled = true;
         btnText.classList.add('hidden');
         btnSpinner.classList.remove('hidden');
 
+        // Auto top-up cash from bank if cash is lower than transfer amount
+        if (curCash < amount) {
+          const diff = amount - curCash;
+          GameEngine.state.bank -= diff;
+          GameEngine.state.cash += diff;
+          await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
+        }
+
         await AppDB.executeWireTransfer(GameEngine.activeUsername, recipient, amount);
 
-        // Update local state immediately to prevent overwriting during auto-saves
+        // Update local state immediately and persist to local storage before fetching from cloud
         if (GameEngine.state) {
           GameEngine.state.cash = Math.max(0, GameEngine.state.cash - amount);
-          GameEngine.state.netWorth = Math.max(0, GameEngine.state.netWorth - amount);
+          GameEngine.state.netWorth = Math.max(0, (GameEngine.state.cash || 0) + (GameEngine.state.bank || 0) + (GameEngine.state.dirtyCash || 0));
+          await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
         }
 
         // Fetch latest state to ensure 100% synchronization
@@ -3716,7 +3736,7 @@ const UIController = (() => {
         document.getElementById('wire-recipient-input').value ='';
         document.getElementById('wire-amount-input').value ='';
 
-        showToast('حوالة صادرة',`تم تحويل مبلغ ${amount.toLocaleString()} EGP بنجاح إلى"${recipient}".`,'success');
+        showToast('حوالة صادرة',`تم تحويل مبلغ ${amount.toLocaleString()} EGP بنجاح إلى "${recipient}".`,'success');
 
         // Log transaction locally
         addTransferHistoryRow(recipient, amount);
@@ -3725,6 +3745,7 @@ const UIController = (() => {
       } catch (err) {
         showToast('فشل التحويل', err.message,'error');
       } finally {
+        _wireTransferInProgress = false;
         wireSubmitBtn.disabled = false;
         btnText.classList.remove('hidden');
         btnSpinner.classList.add('hidden');
@@ -13771,9 +13792,17 @@ const UIController = (() => {
           // Only add to in-memory cash if this transfer occurred during the active session.
           // If it was sent while offline before this session, getPlayerState already loaded the updated balance on login.
           if (mailTime >= sessionStart) {
-            GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
-            GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
-            await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
+            // Authoritative server balance refresh to prevent double-credit or desync
+            const refreshed = await AppDB.getPlayerState(GameEngine.activeUsername);
+            if (refreshed) {
+              GameEngine.state.bank = refreshed.bank;
+              GameEngine.state.cash = refreshed.cash;
+              GameEngine.state.netWorth = refreshed.netWorth;
+            } else {
+              GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
+              GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
+              await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
+            }
           }
 
           showToast('حوالة بنكية واردة',`وصلتك حوالة مالية بقيمة ${amount.toLocaleString()} EGP من اللاعب "${tr.sender}" أودعت في البنك.`,'success');

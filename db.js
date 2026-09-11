@@ -585,11 +585,15 @@ var AppDB = (() => {
       throw new Error('لا يمكنك التحويل لنفسك!');
     }
 
-    // 1. Fetch sender and recipient states
-    const sender = await getPlayerState(sUser);
-    const recipient = await getPlayerState(rUser);
-    if (!sender) throw new Error('تعذر العثور على بيانات الحساب المحول.');
-    if (!recipient) throw new Error('تعذر العثور على بيانات الحساب المستلم.');
+    // 1. Fetch sender and recipient devices without contaminating local storage
+    const [senderRows, recipientRows] = await Promise.all([
+      _api(`players?username=ilike.${encodeURIComponent(sUser)}&select=known_devices,initial_device`),
+      _api(`players?username=ilike.${encodeURIComponent(rUser)}&select=known_devices,initial_device`)
+    ]);
+    if (!senderRows || senderRows.length === 0) throw new Error('تعذر العثور على بيانات الحساب المحول.');
+    if (!recipientRows || recipientRows.length === 0) throw new Error('تعذر العثور على بيانات الحساب المستلم.');
+    const sender = senderRows[0];
+    const recipient = recipientRows[0];
 
     const fp = await DeviceFingerprint.getFingerprint();
     const registry = await getDeviceRegistry();
@@ -1075,8 +1079,11 @@ var AppDB = (() => {
     if (!username) return null;
     const u = username.trim();
 
+    const curActive = (activeUsername || (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || '').trim();
+    const isCurrentPlayer = Boolean(curActive && u.toLowerCase() === curActive.toLowerCase());
+
     try {
-      const local = getDecryptedLocalState(`rasalmal_state_${u}`);
+      const local = isCurrentPlayer ? getDecryptedLocalState(`rasalmal_state_${u}`) : null;
       // Order by last_seen desc to always prioritize the most recently active state
       const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&order=last_seen.desc&select=*`);
       if (!rows || rows.length === 0) {
@@ -1246,9 +1253,11 @@ var AppDB = (() => {
         }
       }
 
-      setEncryptedLocalState(`rasalmal_state_${row.username}`, stateObj);
-      if (row.username.toLowerCase() !== u.toLowerCase()) {
-        setEncryptedLocalState(`rasalmal_state_${u}`, stateObj);
+      if (isCurrentPlayer) {
+        setEncryptedLocalState(`rasalmal_state_${row.username}`, stateObj);
+        if (row.username.toLowerCase() !== u.toLowerCase()) {
+          setEncryptedLocalState(`rasalmal_state_${u}`, stateObj);
+        }
       }
       return stateObj;
     } catch (err) {
@@ -1385,7 +1394,7 @@ var AppDB = (() => {
     if (typeof window !== 'undefined' && window.ServerBridge) {
       if (typeof window.ServerBridge.syncState === 'function') {
         try {
-          await window.ServerBridge.syncState(state, true);
+          await window.ServerBridge.syncState(state, true, u);
         } catch (e) {}
         _lastCloudSyncTimestamp = Date.now();
         return;
@@ -1467,7 +1476,7 @@ var AppDB = (() => {
     // Security & Anti-Feeder / Multi-Account Gatekeeper
     await checkWireTransferFraud(senderUsername, recipientUsername, amt);
 
-    // Execute the atomic SQL Stored Procedure
+    // Execute the atomic SQL Stored Procedure (handles row locking, balance deduction & bank deposit atomically)
     await _api('rpc/execute_wire_transfer', {
       method:'POST',
       body: JSON.stringify({
@@ -1476,30 +1485,6 @@ var AppDB = (() => {
         transfer_amount: amt
       })
     });
-
-    // Ensure recipient receives the funds in the Bank (reconcile bank balance on server)
-    try {
-      const recipRows = await _api(`players?username=eq.${encodeURIComponent(recipientUsername.trim())}&select=bank,net_worth,state`);
-      if (recipRows && recipRows.length > 0) {
-        const rRow = recipRows[0];
-        const rState = (typeof rRow.state === 'object' && rRow.state) ? { ...rRow.state } : {};
-        const newBank = (Number(rRow.bank) || 0) + amt;
-        const newNetWorth = (Number(rRow.net_worth) || 0) + amt;
-        rState.bank = newBank;
-        rState.netWorth = newNetWorth;
-
-        await _api(`players?username=eq.${encodeURIComponent(recipientUsername.trim())}`, {
-          method: 'PATCH',
-          body: JSON.stringify({
-            bank: newBank,
-            net_worth: newNetWorth,
-            state: rState
-          })
-        });
-      }
-    } catch (reconcileErr) {
-      console.warn('[DB] Wire transfer bank deposit reconcile note:', reconcileErr.message);
-    }
 
     return true;
   }
