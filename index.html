@@ -1249,6 +1249,23 @@
                 <i id="spinner-submit-change-pin" class="fa-solid fa-spinner fa-spin hidden"></i>
               </button>
             </div>
+        <!-- Security Backup Codes Card -->
+        <div id="settings-security-codes-card" class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                <i class="fa-solid fa-shield-halved text-xs"></i>
+              </div>
+              <div>
+                <span class="font-bold text-white block">رموز الأمان الاحتياطية (6 رموز)</span>
+                <span class="text-[10px] text-slate-400">لاستعادة الحساب في حال نسيان كلمة السر (PIN)</span>
+              </div>
+            </div>
+            <button type="button" id="btn-open-security-codes-modal"
+              class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-indigo-900/20">
+              <i class="fa-solid fa-eye text-[11px]"></i>
+              <span>عرض الرموز</span>
+            </button>
           </div>
         </div>
 
@@ -1311,6 +1328,12 @@
           <input type="password" id="auth-pin"
             class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold tracking-widest" placeholder="••••"
             required>
+          <div id="auth-forgot-pin-container" class="mt-1.5 flex justify-end">
+            <button type="button" id="btn-open-forgot-pin-modal" class="text-[11px] text-yellow-400/90 hover:text-yellow-300 transition hover:underline font-bold flex items-center gap-1">
+              <i class="fa-solid fa-key text-[10px]"></i>
+              <span>نسيت كلمة السر (PIN)؟</span>
+            </button>
+          </div>
         </div>
         <div id="auth-referral-container" class="hidden">
           <label class="block text-xs text-indigo-300 mb-1.5 font-bold mr-1">كود الدعوة (اختياري)</label>
@@ -1331,6 +1354,122 @@
       <button id="btn-auth-cancel-bottom" class="mt-4 text-xs text-slate-400 hover:text-white transition font-medium">
         ← العودة للقائمة الرئيسية
       </button>
+    </div>
+  </div>
+
+  <!-- ==================== SECURITY CODES MODAL (6 CODES POPUP) ==================== -->
+  <div id="modal-security-codes"
+    class="hidden fixed inset-0 z-[360] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+    <div class="glass-panel w-full max-w-lg flex flex-col rounded-3xl border border-indigo-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+            <i class="fa-solid fa-shield-halved text-lg"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-black text-white">رموز الأمان الاحتياطية 🛡️</h2>
+            <p class="text-xs text-slate-400">احفظ هذه الرموز في مكان آمن لاستعادة حسابك</p>
+          </div>
+        </div>
+        <button id="btn-close-security-codes-modal"
+          class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Warning & Instructions -->
+      <div class="p-3 my-4 bg-indigo-950/40 border border-indigo-500/20 rounded-xl text-xs text-indigo-200 flex items-start gap-2.5 leading-relaxed">
+        <i class="fa-solid fa-triangle-exclamation text-yellow-400 text-sm mt-0.5 shrink-0"></i>
+        <span>
+          هذه الرموز هي وسيلتك الوحيدة لاسترجاع حسابك وتعيين كلمة سر جديدة في حال نسيان رمز PIN. كل رمز صالح للاستخدام <strong>مرة واحدة</strong> فقط. لا تشاركها مع أي شخص!
+        </span>
+      </div>
+
+      <!-- Codes Grid Container -->
+      <div id="security-codes-container" class="grid grid-cols-2 gap-2.5 my-2">
+        <!-- Dynamically injected via JS -->
+      </div>
+
+      <!-- Actions Footer -->
+      <div class="pt-4 border-t border-slate-800 mt-4 flex flex-wrap justify-between items-center gap-2">
+        <button id="btn-regenerate-security-codes" type="button" class="text-xs text-rose-400 hover:text-rose-300 font-bold transition flex items-center gap-1.5">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          <span>توليد 6 رموز جديدة</span>
+        </button>
+        <div class="flex items-center gap-2">
+          <button id="btn-copy-all-security-codes" type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-lg shadow-indigo-900/30">
+            <i class="fa-solid fa-copy"></i>
+            <span>نسخ جميع الرموز</span>
+          </button>
+          <button id="btn-done-security-codes" type="button" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition">
+            إغلاق
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== FORGOT PIN / RECOVERY MODAL ==================== -->
+  <div id="modal-forgot-pin"
+    class="hidden fixed inset-0 z-[360] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+    <div class="glass-panel w-full max-w-md flex flex-col rounded-3xl border border-yellow-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-400">
+            <i class="fa-solid fa-key text-lg"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-black text-white">استعادة كلمة السر (PIN) 🔑</h2>
+            <p class="text-xs text-slate-400">باستخدام أحد رموز الأمان الاحتياطية الستة</p>
+          </div>
+        </div>
+        <button id="btn-close-forgot-pin-modal"
+          class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Recovery Form -->
+      <div class="space-y-3.5 my-4 text-xs text-slate-300">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1 font-bold mr-1">اسم المستخدم</label>
+          <input type="text" id="input-forgot-username" class="glass-input w-full p-2.5 rounded-lg text-xs text-center font-bold"
+            placeholder="اسم حسابك في اللعبة">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1 font-bold mr-1">أحد رموز الأمان الاحتياطية</label>
+          <input type="text" id="input-forgot-security-code" class="glass-input w-full p-2.5 rounded-lg text-xs text-center font-mono font-bold uppercase tracking-wider text-yellow-400 border-yellow-500/30 placeholder-slate-600"
+            placeholder="مثال: A8X2-9K4M">
+          <span class="text-[10px] text-slate-500 mt-1 block mr-1">أدخل أي رمز غير مستخدم من رموز الأمان الستة المسجلة لحسابك.</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1 font-bold mr-1">كلمة السر الجديدة</label>
+            <input type="password" id="input-forgot-new-pin" class="glass-input w-full p-2.5 rounded-lg text-xs text-center font-bold tracking-widest font-numbers"
+              placeholder="الرمز الجديد (4+ خانات)">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1 font-bold mr-1">تأكيد الرمز</label>
+            <input type="password" id="input-forgot-confirm-pin" class="glass-input w-full p-2.5 rounded-lg text-xs text-center font-bold tracking-widest font-numbers"
+              placeholder="أعد إدخال الرمز">
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="pt-4 border-t border-slate-800 flex justify-between items-center gap-2">
+        <button id="btn-cancel-forgot-pin" type="button" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">
+          إلغاء
+        </button>
+        <button id="btn-submit-forgot-pin" type="button"
+          class="px-5 py-2.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black text-xs transition flex items-center gap-1.5 shadow-lg shadow-yellow-500/20">
+          <i class="fa-solid fa-check"></i>
+          <span id="text-submit-forgot-pin">استعادة الحساب وتعيين الرمز</span>
+          <i id="spinner-submit-forgot-pin" class="fa-solid fa-spinner fa-spin hidden"></i>
+        </button>
+      </div>
     </div>
   </div>
 

@@ -306,6 +306,27 @@ var AppDB = (() => {
     return String(pin);
   }
 
+  function generateSecurityCodes(count = 6) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const codes = [];
+    while (codes.length < count) {
+      let p1 = '', p2 = '';
+      for (let i = 0; i < 4; i++) {
+        p1 += chars.charAt(Math.floor(Math.random() * chars.length));
+        p2 += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      const full = `${p1}-${p2}`;
+      if (!codes.some(c => (typeof c === 'string' ? c : c.code) === full)) {
+        codes.push({
+          code: full,
+          used: false,
+          usedAt: null
+        });
+      }
+    }
+    return codes;
+  }
+
   // ─────────────────────────────────────────────
   //  DEVICE FINGERPRINTING & HARDWARE INTEGRITY
   // ─────────────────────────────────────────────
@@ -828,6 +849,7 @@ var AppDB = (() => {
         smugglingFleet: { speedboat: 0, plane: 0, ship: 0 },
         activeSmugglingJobs: [],
         claimedAirdrops: initialClaimedAirdrops,
+        securityCodes: generateSecurityCodes(6),
         createdAt: now,
         lastSeen: now
       },
@@ -2908,6 +2930,124 @@ var AppDB = (() => {
     return true;
   }
 
+  async function getPlayerSecurityCodes(username, forceRegenerate = false) {
+    if (!username) return [];
+    const u = username.trim();
+
+    const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=state`);
+    if (!rows || rows.length === 0) throw new Error('تعذر العثور على الحساب.');
+
+    const playerRow = rows[0];
+    const s = (playerRow.state && typeof playerRow.state === 'object') ? { ...playerRow.state } : {};
+
+    let codes = Array.isArray(s.securityCodes) ? s.securityCodes : [];
+    codes = codes.map(c => typeof c === 'string' ? { code: c, used: false, usedAt: null } : c);
+
+    if (codes.length === 0 || forceRegenerate) {
+      codes = generateSecurityCodes(6);
+      s.securityCodes = codes;
+      await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ state: s })
+      });
+
+      if (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state && window.GameEngine.state.username && window.GameEngine.state.username.toLowerCase() === u.toLowerCase()) {
+        window.GameEngine.state.securityCodes = codes;
+        setEncryptedLocalState(`rasalmal_state_${u}`, window.GameEngine.state);
+      }
+    }
+
+    return codes;
+  }
+
+  async function recoverAccountWithSecurityCode(username, securityCode, newPin) {
+    if (!username || !securityCode || !newPin) {
+      throw new Error('يرجى إدخال اسم المستخدم، رمز الأمان، وكلمة السر الجديدة.');
+    }
+
+    const u = username.trim();
+    const cleanCode = String(securityCode).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    const newP = String(newPin).trim();
+
+    if (newP.length < 4) {
+      throw new Error('كلمة السر الجديدة يجب ألا تقل عن 4 خانات.');
+    }
+
+    // Try via Server API if online
+    if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.isServerOnline === 'function' && window.ServerBridge.isServerOnline()) {
+      try {
+        const base = (window.SERVER_API_URL || '').replace(/\/$/, '') || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : '');
+        if (base) {
+          const res = await fetch(`${base}/api/action/recover-account`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: u, securityCode: cleanCode, newPin: newP })
+          });
+          if (res.ok) {
+            return await res.json();
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || 'فشلت استعادة الحساب.');
+          }
+        }
+      } catch (e) {
+        if (!e.message.includes('Failed to fetch') && !e.message.includes('NetworkError')) {
+          throw e;
+        }
+      }
+    }
+
+    const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=pin,state`);
+    if (!rows || rows.length === 0) {
+      throw new Error('اسم المستخدم غير مسجل في النظام.');
+    }
+
+    const playerRow = rows[0];
+    const s = (playerRow.state && typeof playerRow.state === 'object') ? { ...playerRow.state } : {};
+    let codes = Array.isArray(s.securityCodes) ? s.securityCodes : [];
+    codes = codes.map(c => typeof c === 'string' ? { code: c, used: false, usedAt: null } : c);
+
+    if (codes.length === 0) {
+      throw new Error('لم يتم تعيين رموز أمان لهذا الحساب سابقاً. يرجى التواصل مع الإدارة.');
+    }
+
+    const matchIdx = codes.findIndex(c => {
+      if (c.used) return false;
+      const norm = String(c.code).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      return norm === cleanCode;
+    });
+
+    if (matchIdx === -1) {
+      throw new Error('رمز الأمان المدخل غير صحيح أو تم استخدامه مسبقاً.');
+    }
+
+    codes[matchIdx].used = true;
+    codes[matchIdx].usedAt = Date.now();
+    s.securityCodes = codes;
+
+    const hashedNewPin = await hashPin(newP);
+    s.pin = hashedNewPin;
+
+    await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        pin: hashedNewPin,
+        state: s
+      })
+    });
+
+    if (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state && window.GameEngine.activeUsername && window.GameEngine.activeUsername.toLowerCase() === u.toLowerCase()) {
+      window.GameEngine.state.pin = hashedNewPin;
+      window.GameEngine.state.securityCodes = codes;
+      setEncryptedLocalState(`rasalmal_state_${u}`, window.GameEngine.state);
+    }
+
+    return {
+      success: true,
+      message: 'تمت استعادة الحساب وتعيين كلمة السر الجديدة بنجاح!'
+    };
+  }
+
   async function adminReleaseJail(username) {
     await _api(`players?username=eq.${encodeURIComponent(username)}`, {
       method:'PATCH',
@@ -4457,6 +4597,9 @@ var AppDB = (() => {
     registerPlayer,
     verifyPin,
     changePlayerPin,
+    getPlayerSecurityCodes,
+    recoverAccountWithSecurityCode,
+    generateSecurityCodes,
     getPlayerState,
     savePlayerState,
     syncProgressToCloud,

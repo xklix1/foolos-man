@@ -323,6 +323,87 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       message: 'تم تغيير كلمة السر بنجاح'
     };
   });
+
+  // 7. POST /api/action/recover-account (Forgot PIN via Security Code)
+  fastify.post('/api/action/recover-account', {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
+    const { username, securityCode, newPin } = request.body || {};
+    if (!username || !securityCode || !newPin) {
+      return reply.code(400).send({ error: 'اسم المستخدم ورمز الأمان وكلمة السر الجديدة مطلوبة' });
+    }
+
+    const u = String(username).trim();
+    const cleanCode = String(securityCode).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    const newP = String(newPin).trim();
+
+    if (newP.length < 4) {
+      return reply.code(400).send({ error: 'كلمة السر الجديدة يجب ألا تقل عن 4 خانات' });
+    }
+
+    const dbService = require('../services/db-service');
+    const activeSession = sessionManager.sessions.get(u.toLowerCase());
+    let playerRow = activeSession ? { username: activeSession.username, pin: activeSession.pin, state: activeSession.state } : await dbService.getPlayerByUsername(u);
+    if (!playerRow) {
+      return reply.code(404).send({ error: 'اسم المستخدم غير مسجل في اللعبة' });
+    }
+
+    const s = (playerRow.state && typeof playerRow.state === 'object') ? { ...playerRow.state } : {};
+    let codes = Array.isArray(s.securityCodes) ? s.securityCodes : [];
+    codes = codes.map(c => typeof c === 'string' ? { code: c, used: false, usedAt: null } : c);
+
+    if (codes.length === 0) {
+      return reply.code(400).send({ error: 'لم يتم تفعيل رموز الأمان لهذا الحساب سابقاً. يرجى التواصل مع الإدارة.' });
+    }
+
+    const matchIdx = codes.findIndex(c => {
+      if (c.used) return false;
+      const norm = String(c.code).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      return norm === cleanCode;
+    });
+
+    if (matchIdx === -1) {
+      return reply.code(401).send({ error: 'رمز الأمان المدخل غير صحيح أو تم استخدامه مسبقاً' });
+    }
+
+    const crypto = require('crypto');
+    const hashedNew = crypto.createHash('sha256').update(newP).digest('hex');
+
+    codes[matchIdx].used = true;
+    codes[matchIdx].usedAt = Date.now();
+    s.securityCodes = codes;
+    s.pin = hashedNew;
+
+    // If active session exists in memory, update it
+    if (activeSession) {
+      activeSession.pin = hashedNew;
+      activeSession.state.pin = hashedNew;
+      activeSession.state.securityCodes = codes;
+    }
+
+    await dbService.savePlayerState(playerRow.username, s);
+
+    try {
+      const endpoint = `${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(playerRow.username)}`;
+      await fetch(endpoint, {
+        method: 'PATCH',
+        headers: dbService.getHeaders(),
+        body: JSON.stringify({ pin: hashedNew, state: s })
+      });
+    } catch (err) {
+      fastify.log.warn(`Direct recovery patch warning: ${err.message}`);
+    }
+
+    return {
+      success: true,
+      message: 'تم استعادة الحساب وتعيين كلمة السر الجديدة بنجاح!'
+    };
+  });
 }
 
 module.exports = actionRoutes;

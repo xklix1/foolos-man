@@ -1154,6 +1154,210 @@ const UIController = (() => {
       });
     }
 
+    // ─────────────────────────────────────────────
+    // 🛡️ Security Codes & Account Recovery Handlers
+    // ─────────────────────────────────────────────
+    const securityCodesModal = document.getElementById('modal-security-codes');
+    const openSecurityCodesBtn = document.getElementById('btn-open-security-codes-modal');
+    const closeSecurityCodesBtn = document.getElementById('btn-close-security-codes-modal');
+    const doneSecurityCodesBtn = document.getElementById('btn-done-security-codes');
+    const copyAllSecurityCodesBtn = document.getElementById('btn-copy-all-security-codes');
+    const regenerateSecurityCodesBtn = document.getElementById('btn-regenerate-security-codes');
+    const securityCodesContainer = document.getElementById('security-codes-container');
+
+    let _currentSecurityCodes = [];
+
+    async function loadAndRenderSecurityCodes(forceRegenerate = false) {
+      const currentActive = (GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username) || '').trim();
+      if (!currentActive) {
+        showToast('تنبيه', 'يرجى تسجيل الدخول أولاً لعرض رموز الأمان.', 'warning');
+        return;
+      }
+
+      if (!securityCodesContainer) return;
+      securityCodesContainer.innerHTML = '<div class="col-span-2 text-center py-6 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin text-indigo-400 text-lg mb-2 block"></i>جارٍ تحميل رموز الأمان...</div>';
+
+      try {
+        const codes = await AppDB.getPlayerSecurityCodes(currentActive, forceRegenerate);
+        _currentSecurityCodes = codes;
+
+        if (!codes || codes.length === 0) {
+          securityCodesContainer.innerHTML = '<div class="col-span-2 text-center py-4 text-xs text-rose-400">تعذر العثور على رموز الأمان.</div>';
+          return;
+        }
+
+        securityCodesContainer.innerHTML = codes.map((c, idx) => {
+          const codeVal = typeof c === 'string' ? c : c.code;
+          const isUsed = typeof c === 'object' && Boolean(c.used);
+          return `
+            <div class="p-3 rounded-2xl border ${isUsed ? 'bg-slate-900/40 border-slate-800/80 opacity-50' : 'bg-slate-900/90 border-indigo-500/30 hover:border-indigo-500/60'} transition flex items-center justify-between shadow-md">
+              <div class="space-y-0.5">
+                <span class="text-[10px] text-slate-400 font-bold block">رمز #${idx + 1}</span>
+                <div class="font-mono text-sm font-black tracking-wider ${isUsed ? 'line-through text-slate-500' : 'text-indigo-300 font-numbers'}">${codeVal}</div>
+                <span class="text-[9px] font-bold ${isUsed ? 'text-rose-400' : 'text-emerald-400'}">${isUsed ? 'مُستخدم مسبقاً' : 'صالح للاستخدام ✓'}</span>
+              </div>
+              ${!isUsed ? `
+                <button type="button" onclick="window.UI.copySecurityCode('${codeVal}')" class="px-2.5 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/30 border border-indigo-500/30 text-indigo-300 hover:text-white rounded-lg text-xs font-bold transition flex items-center gap-1">
+                  <i class="fa-solid fa-copy text-[11px]"></i>
+                  <span>نسخ</span>
+                </button>
+              ` : '<i class="fa-solid fa-check-double text-slate-600 text-sm ml-2"></i>'}
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        securityCodesContainer.innerHTML = `<div class="col-span-2 text-center py-4 text-xs text-rose-400">${err.message || 'حدث خطأ أثناء تحميل الرموز.'}</div>`;
+      }
+    }
+
+    function copySecurityCode(code) {
+      if (!code) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code);
+        showToast('تم النسخ', `تم نسخ رمز الأمان: ${code}`, 'success');
+      } else {
+        showToast('رمز الأمان', code, 'info');
+      }
+      playMenuSound('click');
+    }
+
+    if (openSecurityCodesBtn) {
+      openSecurityCodesBtn.addEventListener('click', () => {
+        const currentActive = (GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username) || '').trim();
+        if (!currentActive) {
+          showToast('تنبيه', 'يرجى تسجيل الدخول أولاً لتتمكن من استعراض رموز الأمان.', 'warning');
+          return;
+        }
+        playMenuSound('modal_open');
+        if (securityCodesModal) securityCodesModal.classList.remove('hidden');
+        loadAndRenderSecurityCodes(false);
+      });
+    }
+
+    function closeSecurityCodesModal() {
+      playMenuSound('modal_close');
+      if (securityCodesModal) securityCodesModal.classList.add('hidden');
+    }
+
+    if (closeSecurityCodesBtn) closeSecurityCodesBtn.addEventListener('click', closeSecurityCodesModal);
+    if (doneSecurityCodesBtn) doneSecurityCodesBtn.addEventListener('click', closeSecurityCodesModal);
+
+    if (copyAllSecurityCodesBtn) {
+      copyAllSecurityCodesBtn.addEventListener('click', () => {
+        if (!_currentSecurityCodes || _currentSecurityCodes.length === 0) return;
+        const text = _currentSecurityCodes.map((c, i) => {
+          const val = typeof c === 'string' ? c : c.code;
+          const status = (typeof c === 'object' && c.used) ? '(مستخدم)' : '';
+          return `${i + 1}. ${val} ${status}`.trim();
+        }).join('\n');
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text);
+          showToast('تم النسخ', 'تم نسخ جميع رموز الأمان الستة بنجاح.', 'success');
+        } else {
+          showToast('تم النسخ', text, 'info');
+        }
+        playMenuSound('success');
+      });
+    }
+
+    if (regenerateSecurityCodesBtn) {
+      regenerateSecurityCodesBtn.addEventListener('click', async () => {
+        const ok = confirm('تحذير: هل أنت متأكد من رغبتك في توليد 6 رموز أمان جديدة؟ سيتم إلغاء صلاحية الرموز السابقة بالكامل فوراً!');
+        if (!ok) return;
+        await loadAndRenderSecurityCodes(true);
+        showToast('تم التوليد', 'تم توليد 6 رموز أمان احتياطية جديدة لحسابك بنجاح!', 'success');
+        playMenuSound('success');
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // 🔑 Forgot PIN Recovery Modal Handlers
+    // ─────────────────────────────────────────────
+    const forgotPinModal = document.getElementById('modal-forgot-pin');
+    const openForgotPinBtn = document.getElementById('btn-open-forgot-pin-modal');
+    const closeForgotPinBtn = document.getElementById('btn-close-forgot-pin-modal');
+    const cancelForgotPinBtn = document.getElementById('btn-cancel-forgot-pin');
+    const submitForgotPinBtn = document.getElementById('btn-submit-forgot-pin');
+    const textSubmitForgotPin = document.getElementById('text-submit-forgot-pin');
+    const spinnerSubmitForgotPin = document.getElementById('spinner-submit-forgot-pin');
+
+    function openForgotPinModal() {
+      playMenuSound('modal_open');
+      const authUserVal = document.getElementById('auth-username') ? document.getElementById('auth-username').value.trim() : '';
+      const forgotUserInput = document.getElementById('input-forgot-username');
+      const forgotCodeInput = document.getElementById('input-forgot-security-code');
+      const forgotNewPinInput = document.getElementById('input-forgot-new-pin');
+      const forgotConfirmPinInput = document.getElementById('input-forgot-confirm-pin');
+
+      if (forgotUserInput) forgotUserInput.value = authUserVal;
+      if (forgotCodeInput) forgotCodeInput.value = '';
+      if (forgotNewPinInput) forgotNewPinInput.value = '';
+      if (forgotConfirmPinInput) forgotConfirmPinInput.value = '';
+
+      if (forgotPinModal) forgotPinModal.classList.remove('hidden');
+    }
+
+    function closeForgotPinModal() {
+      playMenuSound('modal_close');
+      if (forgotPinModal) forgotPinModal.classList.add('hidden');
+    }
+
+    if (openForgotPinBtn) openForgotPinBtn.addEventListener('click', openForgotPinModal);
+    if (closeForgotPinBtn) closeForgotPinBtn.addEventListener('click', closeForgotPinModal);
+    if (cancelForgotPinBtn) cancelForgotPinBtn.addEventListener('click', closeForgotPinModal);
+
+    if (submitForgotPinBtn) {
+      submitForgotPinBtn.addEventListener('click', async () => {
+        const u = document.getElementById('input-forgot-username') ? document.getElementById('input-forgot-username').value.trim() : '';
+        const code = document.getElementById('input-forgot-security-code') ? document.getElementById('input-forgot-security-code').value.trim() : '';
+        const newPin = document.getElementById('input-forgot-new-pin') ? document.getElementById('input-forgot-new-pin').value.trim() : '';
+        const confirmPin = document.getElementById('input-forgot-confirm-pin') ? document.getElementById('input-forgot-confirm-pin').value.trim() : '';
+
+        if (!u) {
+          showToast('خطأ', 'يرجى إدخال اسم المستخدم.', 'error');
+          return;
+        }
+        if (!code) {
+          showToast('خطأ', 'يرجى إدخال أحد رموز الأمان الستة المسجلة لحسابك.', 'error');
+          return;
+        }
+        if (!newPin || newPin.length < 4) {
+          showToast('خطأ', 'كلمة السر الجديدة يجب ألا تقل عن 4 خانات.', 'error');
+          return;
+        }
+        if (newPin !== confirmPin) {
+          showToast('خطأ', 'تأكيد كلمة السر غير متطابق مع الرمز الجديد.', 'error');
+          return;
+        }
+
+        try {
+          submitForgotPinBtn.disabled = true;
+          if (textSubmitForgotPin) textSubmitForgotPin.textContent = 'جارٍ التحقق والاستعادة...';
+          if (spinnerSubmitForgotPin) spinnerSubmitForgotPin.classList.remove('hidden');
+
+          const res = await AppDB.recoverAccountWithSecurityCode(u, code, newPin);
+
+          showToast('نجاح الاستعادة 🔑', res.message || 'تم تعيين كلمة السر الجديدة بنجاح! يمكنك تسجيل الدخول الآن.', 'success', 4000);
+          playMenuSound('success');
+
+          // Pre-fill login screen inputs so the player can log in immediately
+          const authUser = document.getElementById('auth-username');
+          const authPin = document.getElementById('auth-pin');
+          if (authUser) authUser.value = u;
+          if (authPin) authPin.value = newPin;
+
+          closeForgotPinModal();
+        } catch (err) {
+          showToast('فشل الاستعادة', err.message || 'تعذر استعادة الحساب. تأكد من صحة البيانات.', 'error');
+        } finally {
+          submitForgotPinBtn.disabled = false;
+          if (textSubmitForgotPin) textSubmitForgotPin.textContent = 'استعادة الحساب وتعيين الرمز';
+          if (spinnerSubmitForgotPin) spinnerSubmitForgotPin.classList.add('hidden');
+        }
+      });
+    }
+
     if (saveSettingsBtn && startSettingsModal) {
       saveSettingsBtn.addEventListener('click', () => {
         playMenuSound('click');
@@ -17546,6 +17750,9 @@ const UIController = (() => {
     // Settings Modal Exports
     openSettingsModal: () => openSettingsModal(),
     closeSettingsModal: () => closeSettingsModal(),
+    copySecurityCode: (code) => copySecurityCode(code),
+    openSecurityCodesModal: () => loadAndRenderSecurityCodes(false),
+    openForgotPinModal: () => openForgotPinModal(),
 
     // Player Tools & Inventory Exports
     openPlayerInventoryModal,

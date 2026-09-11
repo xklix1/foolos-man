@@ -126,6 +126,78 @@ test('Client ServerBridge End-to-End Test', async () => {
       })
     });
     assert.strictEqual(spoofRes.status, 400, 'Server rejects cross-account state synchronization');
+
+    // 7. Test Account Recovery with Security Code
+    const recoveryUser = 'recovery_tester';
+    sessionManager.sessions.set(recoveryUser.toLowerCase(), {
+      username: recoveryUser,
+      pin: 'old123',
+      state: {
+        username: recoveryUser,
+        securityCodes: [
+          { code: 'SEC1-AAAA', used: false, usedAt: null },
+          { code: 'SEC2-BBBB', used: true, usedAt: Date.now() - 1000 }
+        ]
+      },
+      dirty: false,
+      lastActivity: Date.now()
+    });
+
+    // Test: non-existent user fails with 404
+    const notFoundRes = await fetch(`http://127.0.0.1:3999/api/action/recover-account`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: 'non_existent_ghost_player_99999',
+        securityCode: 'SEC1-AAAA',
+        newPin: '555666'
+      })
+    });
+    assert.strictEqual(notFoundRes.status, 404, 'Rejects non-existent username with 404');
+
+    // Test: invalid security code fails
+    const badCodeRes = await fetch(`http://127.0.0.1:3999/api/action/recover-account`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: recoveryUser,
+        securityCode: 'WRONG-CODE',
+        newPin: '555666'
+      })
+    });
+    assert.strictEqual(badCodeRes.status, 401, 'Rejects invalid security code with 401');
+
+    // Test: already used code fails
+    const usedCodeRes = await fetch(`http://127.0.0.1:3999/api/action/recover-account`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: recoveryUser,
+        securityCode: 'SEC2-BBBB',
+        newPin: '555666'
+      })
+    });
+    assert.strictEqual(usedCodeRes.status, 401, 'Rejects already used security code with 401');
+
+    // Test: valid unused code succeeds (case-insensitive and hyphen-tolerant)
+    const goodCodeRes = await fetch(`http://127.0.0.1:3999/api/action/recover-account`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: recoveryUser,
+        securityCode: 'sec1aaaa',
+        newPin: '555666'
+      })
+    });
+    assert.strictEqual(goodCodeRes.status, 200, 'Accepts valid security code');
+    const goodJson = await goodCodeRes.json();
+    assert.strictEqual(goodJson.success, true);
+
+    const crypto = require('crypto');
+    const expectedHash = crypto.createHash('sha256').update('555666').digest('hex');
+    const recSession = sessionManager.sessions.get(recoveryUser.toLowerCase());
+    assert.strictEqual(recSession.pin, expectedHash, 'Session PIN updated to new hashed PIN');
+    assert.strictEqual(recSession.state.securityCodes[0].used, true, 'Code marked as used in state');
   } finally {
     ServerBridge.destroy();
     await app.close();
