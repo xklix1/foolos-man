@@ -1201,7 +1201,7 @@
 
         <!-- Account Security / Change PIN Card -->
         <div id="settings-account-security-card" class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 space-y-3">
-          <div class="flex items-center justify-between cursor-pointer" id="btn-toggle-change-pin-section">
+          <div class="flex items-center justify-between cursor-pointer" id="btn-toggle-change-pin-section" onclick="window.UI?.toggleChangePinForm?.()">
             <div class="flex items-center gap-3">
               <div class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                 <i class="fa-solid fa-key text-xs"></i>
@@ -1211,7 +1211,7 @@
                 <span class="text-[10px] text-slate-400">تغيير رمز المرور الخاص بحسابك في أي وقت</span>
               </div>
             </div>
-            <button type="button" class="text-slate-400 hover:text-white transition text-xs flex items-center gap-1 font-bold">
+            <button type="button" id="btn-toggle-pin-action" onclick="event.stopPropagation(); window.UI?.toggleChangePinForm?.()" class="text-slate-400 hover:text-white transition text-xs flex items-center gap-1 font-bold">
               <span id="label-toggle-pin-form">تغيير</span>
               <i id="icon-toggle-pin-form" class="fa-solid fa-chevron-down text-[10px] transition-transform"></i>
             </button>
@@ -1242,7 +1242,7 @@
               </div>
             </div>
             <div class="flex justify-end pt-1">
-              <button id="btn-submit-change-pin" type="button"
+              <button id="btn-submit-change-pin" type="button" onclick="window.UI?.submitChangePinForm?.()"
                 class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-lg shadow-emerald-900/30">
                 <i class="fa-solid fa-shield-halved"></i>
                 <span id="text-submit-change-pin">حفظ كلمة السر الجديدة</span>
@@ -1264,7 +1264,7 @@
                 <span class="text-[10px] text-slate-400">لاستعادة الحساب في حال نسيان كلمة السر (PIN)</span>
               </div>
             </div>
-            <button type="button" id="btn-open-security-codes-modal"
+            <button type="button" id="btn-open-security-codes-modal" onclick="window.UI?.openSecurityCodesModal?.()"
               class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-indigo-900/20">
               <i class="fa-solid fa-eye text-[11px]"></i>
               <span>عرض الرموز</span>
@@ -1375,7 +1375,7 @@
             <p class="text-xs text-slate-400">احفظ هذه الرموز في مكان آمن لاستعادة حسابك</p>
           </div>
         </div>
-        <button id="btn-close-security-codes-modal"
+        <button id="btn-close-security-codes-modal" onclick="window.UI?.closeSecurityCodesModal?.()"
           class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
           <i class="fa-solid fa-xmark"></i>
         </button>
@@ -1396,16 +1396,16 @@
 
       <!-- Actions Footer -->
       <div class="pt-4 border-t border-slate-800 mt-4 flex flex-wrap justify-between items-center gap-2">
-        <button id="btn-regenerate-security-codes" type="button" class="text-xs text-rose-400 hover:text-rose-300 font-bold transition flex items-center gap-1.5">
+        <button id="btn-regenerate-security-codes" type="button" onclick="window.UI?.regenerateSecurityCodes?.()" class="text-xs text-rose-400 hover:text-rose-300 font-bold transition flex items-center gap-1.5">
           <i class="fa-solid fa-arrows-rotate"></i>
           <span>توليد 6 رموز جديدة</span>
         </button>
         <div class="flex items-center gap-2">
-          <button id="btn-copy-all-security-codes" type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-lg shadow-indigo-900/30">
+          <button id="btn-copy-all-security-codes" type="button" onclick="window.UI?.copyAllSecurityCodes?.()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-lg shadow-indigo-900/30">
             <i class="fa-solid fa-copy"></i>
             <span>نسخ جميع الرموز</span>
           </button>
-          <button id="btn-done-security-codes" type="button" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition">
+          <button id="btn-done-security-codes" type="button" onclick="window.UI?.closeSecurityCodesModal?.()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition">
             إغلاق
           </button>
         </div>
@@ -1428,7 +1428,7 @@
             <p class="text-xs text-slate-400">باستخدام أحد رموز الأمان الاحتياطية الستة</p>
           </div>
         </div>
-        <button id="btn-close-forgot-pin-modal"
+        <button id="btn-close-forgot-pin-modal" onclick="window.UI?.closeForgotPinModal?.()"
           class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
           <i class="fa-solid fa-xmark"></i>
         </button>
@@ -1463,10 +1463,10 @@
 
       <!-- Footer Buttons -->
       <div class="pt-4 border-t border-slate-800 flex justify-between items-center gap-2">
-        <button id="btn-cancel-forgot-pin" type="button" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">
+        <button id="btn-cancel-forgot-pin" type="button" onclick="window.UI?.closeForgotPinModal?.()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">
           إلغاء
         </button>
-        <button id="btn-submit-forgot-pin" type="button"
+        <button id="btn-submit-forgot-pin" type="button" onclick="window.UI?.submitForgotPinForm?.()"
           class="px-5 py-2.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black text-xs transition flex items-center gap-1.5 shadow-lg shadow-yellow-500/20">
           <i class="fa-solid fa-check"></i>
           <span id="text-submit-forgot-pin">استعادة الحساب وتعيين الرمز</span>
@@ -5451,10 +5451,10 @@
 
   <!-- Script Initializers -->
   <!-- Admin identity loaded from Firestore at runtime — no credentials in client code -->
-  <script src="db.js?v=11.5"></script>
+  <script src="db.js?v=11.6"></script>
   <script src="server-client-bridge.js?v=1.2"></script>
-  <script src="game.js?v=11.5"></script>
-  <script src="ui.js?v=11.5"></script>
+  <script src="game.js?v=11.6"></script>
+  <script src="ui.js?v=11.6"></script>
   <script src="pwa-manager.js?v=1.0.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
