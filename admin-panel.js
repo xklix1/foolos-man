@@ -2177,7 +2177,7 @@
 
       // 3. Casino Daily Profit Check
       const casinoProfit = Number(pState.dailyCasinoNetProfit || 0);
-      if (casinoProfit > 18000000) {
+      if (casinoProfit > 5000000) {
         if (riskLevel !=='critical') riskLevel ='warning';
         issues.push(`أرباح كازينو مرتفعة جداً اليوم (+${(casinoProfit / 1000000).toFixed(1)}M ج.م)`);
       }

@@ -3920,7 +3920,7 @@ const GameEngine = (() => {
   }
 
   // --- Secure Anti-Exploit Casino System Constants & Core Safeguards ---
-  const MAX_CASINO_DAILY_PROFIT = 15000000; // 15,000,000 EGP / 24h net profit cap
+  const MAX_CASINO_DAILY_PROFIT = 5000000; // 5,000,000 EGP / 24h net profit cap
   const CASINO_COOLDOWN_MS = 6000;          // 6 seconds cooldown across all games
   const CASINO_HOUSE_RAKE = 0.03;           // 3% house rake on winning net profits
 
