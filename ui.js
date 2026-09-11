@@ -15097,19 +15097,12 @@ const UIController = (() => {
         const amount = Number(tr.payload && tr.payload.amount ? tr.payload.amount : 0);
 
         if (amount > 0) {
-          // Authoritative balance sync: The SQL stored procedure execute_wire_transfer has ALREADY
-          // credited the recipient's bank in PostgreSQL. We synchronize the exact balance from the cloud
-          // to update the recipient's in-memory state and UI accurately (exact 1x, zero double-credit).
-          const refreshed = await AppDB.getPlayerState(GameEngine.activeUsername);
-          if (refreshed && refreshed.bank !== undefined) {
-            GameEngine.state.bank = refreshed.bank;
-            GameEngine.state.cash = refreshed.cash;
-            GameEngine.state.netWorth = refreshed.netWorth;
-          } else {
-            GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
-            GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
-            await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
-          }
+          // Guaranteed single credit: Deposit transfer directly into recipient's Bank (1x, zero duplicate)
+          GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
+          GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
+
+          // Immediately persist credited bank balance to cloud
+          await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
 
           showToast('حوالة بنكية واردة', `وصلتك حوالة مالية بقيمة ${amount.toLocaleString()} EGP من اللاعب "${tr.sender}" أودعت في البنك بنجاح.`, 'success');
           playMenuSound('cash');
