@@ -15095,32 +15095,21 @@ const UIController = (() => {
 
       try {
         const amount = Number(tr.payload && tr.payload.amount ? tr.payload.amount : 0);
-        const mailTime = Number(tr.created_at || tr.timestamp || 0);
-        const sessionStart = window._sessionInitTimestamp || 0;
 
         if (amount > 0) {
-          // Only add to in-memory cash if this transfer occurred during the active session.
-          // If it was sent while offline before this session, getPlayerState already loaded the updated balance on login.
-          if (mailTime >= sessionStart) {
-            // Authoritative server balance refresh to prevent double-credit or desync
-            const refreshed = await AppDB.getPlayerState(GameEngine.activeUsername);
-            if (refreshed) {
-              GameEngine.state.bank = refreshed.bank;
-              GameEngine.state.cash = refreshed.cash;
-              GameEngine.state.netWorth = refreshed.netWorth;
-            } else {
-              GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
-              GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
-              await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
-            }
-          }
+          // Guaranteed instant credit into recipient's active bank balance
+          GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
+          GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
 
-          showToast('حوالة بنكية واردة',`وصلتك حوالة مالية بقيمة ${amount.toLocaleString()} EGP من اللاعب "${tr.sender}" أودعت في البنك.`,'success');
-          playMenuSound('success');
+          // Immediately force-persist updated state to cloud
+          await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
 
-          await AppDB.updateMailStatus(tr.id,'read');
+          showToast('حوالة بنكية واردة', `وصلتك حوالة مالية بقيمة ${amount.toLocaleString()} EGP من اللاعب "${tr.sender}" أودعت في البنك بنجاح.`, 'success');
+          playMenuSound('cash');
 
-          if (typeof loadTransferHistory ==='function') {
+          await AppDB.updateMailStatus(tr.id, 'read');
+
+          if (typeof loadTransferHistory === 'function') {
             loadTransferHistory(true);
           }
           renderAll();
