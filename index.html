@@ -21,7 +21,12 @@
     content="رأس المال (Ras ALmal) - محاكي الاستثمار وإمبراطورية الأعمال الرقمية من الصفر إلى عرش المليارات.">
   <link rel="canonical" href="https://rasalmal.online">
   <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
-  <link rel="apple-touch-icon" href="assets/logo.jpg">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f19">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="رأس المال">
 
   <!-- Open Graph / Social Media Preview -->
   <meta property="og:type" content="website">
@@ -244,6 +249,22 @@
 
       <!-- Action Buttons Navigation Matrix -->
       <div class="w-full max-w-md space-y-3">
+
+        <!-- Install App Button (PWA) -->
+        <button id="btn-menu-pwa-install"
+          class="hidden menu-btn-game w-full py-3 px-5 rounded-2xl flex items-center justify-between text-yellow-300 bg-gradient-to-r from-yellow-500/20 via-amber-500/10 to-transparent border border-yellow-500/40 hover:border-yellow-400 hover:bg-yellow-500/25 transition duration-300 shadow-lg group">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-9 h-9 rounded-xl bg-yellow-500/20 border border-yellow-500/30 flex items-center justify-center text-yellow-400 group-hover:scale-110 transition">
+              <i class="fa-solid fa-mobile-screen-button text-base"></i>
+            </div>
+            <div class="text-right">
+              <span class="block leading-tight text-sm font-black text-white">تثبيت اللعبة كتطبيق (PWA)</span>
+              <span class="block text-[10px] text-yellow-400/80 font-bold mt-0.5">شاشة كاملة وبدون متصفح وسرعة فائقة</span>
+            </div>
+          </div>
+          <i class="fa-solid fa-download text-yellow-400 text-sm group-hover:translate-y-0.5 transition"></i>
+        </button>
 
         <!-- Continue Empire Button (Visible when session exists) -->
         <button id="btn-menu-continue"
@@ -1142,6 +1163,40 @@
               class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500">
             </div>
           </label>
+        </div>
+
+        <!-- PWA App & Browser Notifications Card -->
+        <div class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-mobile-screen text-yellow-400 text-base"></i>
+              <div>
+                <span class="font-bold text-white block">تطبيق اللعبة (PWA)</span>
+                <span class="text-[10px] text-slate-400">تثبيت اللعبة على الشاشة الرئيسية بدون متصفح</span>
+              </div>
+            </div>
+            <button id="btn-settings-pwa-install" class="hidden px-3 py-1.5 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black text-xs transition flex items-center gap-1.5">
+              <i class="fa-solid fa-download"></i>
+              <span>تثبيت</span>
+            </button>
+            <span id="settings-pwa-installed-badge" class="hidden text-[10px] px-2.5 py-1 bg-emerald-500/20 text-emerald-300 rounded-full border border-emerald-500/30 font-bold">
+              <i class="fa-solid fa-check ml-1"></i> مثبت بالفعل
+            </span>
+          </div>
+
+          <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-bell text-sky-400 text-base"></i>
+              <div>
+                <span class="font-bold text-white block">إشعارات المتصفح الذكية</span>
+                <span id="pwa-notification-status" class="text-[10px] text-slate-400">جارٍ التحقق...</span>
+              </div>
+            </div>
+            <button id="btn-settings-request-notifications" class="px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 font-bold text-xs transition flex items-center gap-1.5">
+              <i class="fa-solid fa-bell"></i>
+              <span>تفعيل</span>
+            </button>
+          </div>
         </div>
 
       </div>
@@ -5175,6 +5230,7 @@
   <script src="server-client-bridge.js?v=1.2"></script>
   <script src="game.js?v=11.5"></script>
   <script src="ui.js?v=11.5"></script>
+  <script src="pwa-manager.js?v=1.0.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
