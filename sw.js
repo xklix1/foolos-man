@@ -57,13 +57,17 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Authoritative server API endpoints, auth routes, and database connections
-  const isApi = url.pathname.includes('/api/') || 
-                url.pathname.includes('/auth/') ||
+  const hostname = url.hostname.toLowerCase();
+  const isExternalApiHost = 
+    hostname === 'supabase.co' || hostname.endsWith('.supabase.co') ||
+    hostname === 'googleapis.com' || hostname.endsWith('.googleapis.com') ||
+    hostname === 'firebaseio.com' || hostname.endsWith('.firebaseio.com');
+
+  const isApi = url.pathname.startsWith('/api/') || 
+                url.pathname.startsWith('/auth/') ||
                 url.port === '3999' ||
                 url.port === '3001' ||
-                url.hostname.includes('supabase.co') ||
-                url.hostname.includes('googleapis.com') ||
-                url.hostname.includes('firebaseio.com');
+                isExternalApiHost;
 
   if (isApi) {
     // Network-Only: Direct fetch, zero caching intervention
@@ -139,7 +143,7 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
           return client.focus();
         }
       }
