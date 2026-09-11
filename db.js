@@ -1840,9 +1840,10 @@ var AppDB = (() => {
 
   async function sendPrivateMessage(sender, recipient, message) {
     if (!message || !message.trim() || !sender || !recipient) return false;
-    const trimmed = String(message).trim().substring(0, 200);
-    if (ProfanityFilter && ProfanityFilter.containsProfanity(trimmed)) {
-      throw new Error("لا يمكنك إرسال هذه الرسالة لاحتوائها على ألفاظ غير لائقة ومخالفة لقواعد اللعبة.");
+    const blockedWord = ProfanityFilter.findBlockedWord ? ProfanityFilter.findBlockedWord(trimmed) : null;
+    if (blockedWord || (ProfanityFilter && ProfanityFilter.containsProfanity(trimmed))) {
+      const wordReason = blockedWord ? ` (بسبب كلمة: "${blockedWord}")` : '';
+      throw new Error(`لا يمكنك إرسال هذه الرسالة لاحتوائها على لفظ محظور ومخالف لقواعد اللعبة${wordReason}.`);
     }
     await sendMail(sender, recipient, 'dm', { message: trimmed, timestamp: Date.now() });
     return true;
@@ -4308,9 +4309,81 @@ var AppDB = (() => {
       return false;
     }
 
+    function findBlockedWord(rawText) {
+      if (!rawText || typeof rawText !== 'string') return null;
+
+      // Extract individual words while preserving original casing/characters
+      const rawWords = rawText.match(/[\p{L}\p{N}]+/gu) || [];
+
+      // 1. Check each single word first
+      for (const word of rawWords) {
+        const normW = normalizeArabic(word);
+        const collapsedW = normW.replace(/(.)\1+/g, '$1');
+
+        for (const p of SEVERE_PATTERNS) {
+          if (p.test(normW) || p.test(collapsedW)) return word;
+        }
+
+        for (const p of BOUNDARY_PATTERNS) {
+          if (p.test(normW) || p.test(collapsedW) || p.test(' ' + normW + ' ') || p.test(' ' + collapsedW + ' ')) return word;
+        }
+
+        if (/(fuck|fucking|fucker|fuk|fck|shit|bitch|asshole|pussy|cunt|dick|cock|bastard|slut|whore|motherfucker|nigger|nigga|porn|blowjob)/i.test(word)) {
+          return word;
+        }
+      }
+
+      // 2. Check 2-word and 3-word n-grams (for compound phrases like "ابن الكلب", "يا عرص", "تبا لك")
+      for (let i = 0; i < rawWords.length - 1; i++) {
+        const p2 = `${rawWords[i]} ${rawWords[i + 1]}`;
+        const normP2 = normalizeArabic(p2);
+        for (const p of BOUNDARY_PATTERNS) {
+          if (p.test(' ' + normP2 + ' ')) return p2;
+        }
+        if (i < rawWords.length - 2) {
+          const p3 = `${rawWords[i]} ${rawWords[i + 1]} ${rawWords[i + 2]}`;
+          const normP3 = normalizeArabic(p3);
+          for (const p of BOUNDARY_PATTERNS) {
+            if (p.test(' ' + normP3 + ' ')) return p3;
+          }
+        }
+      }
+
+      // 3. Fallback: match against full normalized string
+      const norm = normalizeArabic(rawText);
+      const collapsed = norm.replace(/(.)\1+/g, '$1');
+
+      for (const p of BOUNDARY_PATTERNS) {
+        const match = p.exec(norm) || p.exec(collapsed);
+        if (match) {
+          return (match[1] || match[0]).trim();
+        }
+      }
+
+      for (const p of SEVERE_PATTERNS) {
+        const match = p.exec(norm) || p.exec(collapsed);
+        if (match) {
+          return match[0].trim();
+        }
+      }
+
+      const stripped = norm.replace(/[^\p{L}\p{N}]/gu, '');
+      const engMatch = /(fuck|shit|bitch|asshole|pussy|dick|cunt|slut|whore|nigger|nigga)/i.exec(stripped);
+      if (engMatch) {
+        return engMatch[0];
+      }
+
+      if (containsProfanity(rawText)) {
+        return rawWords.find(w => containsProfanity(w)) || 'لفظ محظور';
+      }
+
+      return null;
+    }
+
     return {
       normalizeArabic,
-      containsProfanity
+      containsProfanity,
+      findBlockedWord
     };
   })();
 
@@ -4323,8 +4396,12 @@ var AppDB = (() => {
     const trimmedMsg = String(message).trim().substring(0, 200);
 
     // Enforce anti-profanity shield (except official administration broadcasts)
-    if (sender !== 'الإدارة' && ProfanityFilter.containsProfanity(trimmedMsg)) {
-      throw new Error("تم حظر إرسال الرسالة! تحتوي الرسالة على ألفاظ غير لائقة أو شتائم مخالفة لقواعد اللعبة.");
+    if (sender !== 'الإدارة') {
+      const blockedWord = ProfanityFilter.findBlockedWord(trimmedMsg);
+      if (blockedWord || ProfanityFilter.containsProfanity(trimmedMsg)) {
+        const wordReason = blockedWord ? ` (بسبب كلمة: "${blockedWord}")` : '';
+        throw new Error(`تم حظر إرسال الرسالة لاحتوائها على لفظ محظور ومخالف لقواعد اللعبة${wordReason}.`);
+      }
     }
 
     const msgObj = {

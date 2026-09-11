@@ -11545,8 +11545,10 @@ const UIController = (() => {
 
         // Immediate Client-Side Anti-Profanity / Anti-Cursing Check
         const filter = window.ProfanityFilter || (window.AppDB && window.AppDB.ProfanityFilter);
-        if (filter && filter.containsProfanity(text)) {
-          showToast('تم حجب الرسالة 🚫', 'لا يمكنك إرسال هذه الرسالة لاحتوائها على شتائم أو ألفاظ غير لائقة ومخالفة للآداب العامة.', 'error');
+        const blockedWord = filter?.findBlockedWord ? filter.findBlockedWord(text) : null;
+        if (blockedWord || (filter && filter.containsProfanity(text))) {
+          const wordReason = blockedWord ? ` (بسبب كلمة: "${blockedWord}")` : '';
+          showToast('تم حجب الرسالة 🚫', `تم حظر الرسالة لاحتوائها على لفظ محظور${wordReason}. يرجى تعديلها قبل الإرسال.`, 'error');
           playMenuSound('error');
           return;
         }
@@ -12979,8 +12981,10 @@ const UIController = (() => {
     if (!myUser) return;
 
     const filter = window.ProfanityFilter || (window.AppDB && window.AppDB.ProfanityFilter);
-    if (filter && filter.containsProfanity(text)) {
-      showToast('حجب الرسالة 🚫', 'لا يمكنك إرسال هذه الرسالة لاحتوائها على شتائم أو ألفاظ غير لائقة.', 'error');
+    const blockedWord = filter?.findBlockedWord ? filter.findBlockedWord(text) : null;
+    if (blockedWord || (filter && filter.containsProfanity(text))) {
+      const wordReason = blockedWord ? ` (بسبب كلمة: "${blockedWord}")` : '';
+      showToast('حجب الرسالة 🚫', `تم حظر الرسالة لاحتوائها على لفظ محظور${wordReason}. يرجى تعديلها قبل الإرسال.`, 'error');
       if (typeof playMenuSound === 'function') playMenuSound('error');
       return;
     }
