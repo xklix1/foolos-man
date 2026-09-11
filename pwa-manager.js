@@ -368,21 +368,25 @@ var PWAManager = (() => {
 
     // Trigger 1: Supplies depletion check
     const bizList = state.businesses ? Object.values(state.businesses) : [];
-    const hasBusinesses = bizList.some(b => (b && (b.count > 0 || b.level > 0)) || (typeof b === 'number' && b > 0));
-    const suppliesHours = state.inventory ? (state.inventory.suppliesHours || 0) : 0;
-    const hasZeroTicks = bizList.some(b => b && typeof b.suppliesTicks === 'number' && b.suppliesTicks <= 0 && (b.count > 0 || b.level > 0));
+    const ownedBusinesses = bizList.filter(b => b && (Number(b.level) > 0 || Number(b.count) > 0));
 
-    if (hasBusinesses && (suppliesHours <= 0 || hasZeroTicks)) {
-      if (!notificationFlags.suppliesWarned) {
-        notificationFlags.suppliesWarned = true;
-        sendNotification('⚠️ تنبيه الإمدادات: توقفت أرباح مشاريعك!', {
-          body: 'نفدت بضائع الشركات والمشاريع. قم بشراء شحنة إمدادات جديدة لاستئناف الإنتاج وضخ الأرباح!',
-          tag: 'supplies_depleted'
-        });
+    if (ownedBusinesses.length > 0) {
+      // Find the maximum remaining supplies ticks among all owned businesses
+      const maxRemainingTicks = Math.max(...ownedBusinesses.map(b => Number(b.suppliesTicks) || 0));
+
+      // Supplies are depleted ONLY if ALL owned businesses have 0 seconds left!
+      if (maxRemainingTicks <= 0) {
+        if (!notificationFlags.suppliesWarned) {
+          notificationFlags.suppliesWarned = true;
+          sendNotification('⚠️ تنبيه الإمدادات: توقفت أرباح مشاريعك!', {
+            body: 'نفدت بضائع الشركات والمشاريع بالكامل. قم بتوريد شحنة بضائع جديدة لاستئناف الإنتاج وضخ الأرباح!',
+            tag: 'supplies_depleted'
+          });
+        }
+      } else if (maxRemainingTicks > 300) {
+        // More than 5 minutes of supplies available: reset warned flag
+        notificationFlags.suppliesWarned = false;
       }
-    } else if (suppliesHours > 1 || !hasZeroTicks) {
-      // Reset flag once player restocks
-      notificationFlags.suppliesWarned = false;
     }
 
     // Trigger 2: AFK Manager expiry warning (< 30 minutes remaining)

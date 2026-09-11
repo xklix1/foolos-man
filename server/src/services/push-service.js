@@ -21,6 +21,7 @@ class PushService {
     webpush.setVapidDetails(this.subject, this.publicKey, this.privateKey);
 
     this.subscriptions = new Map(); // endpoint -> { username, subscription, createdAt }
+    this.alertTracker = new Map(); // username -> { lastSuppliesAlertTime, lastAfkAlertTime }
     this._loadSubscriptionsFromFile();
   }
 
@@ -135,6 +136,122 @@ class PushService {
     const sent = results.filter(r => r.success).length;
     console.log(`[PushService] Broadcast complete: ${sent}/${allSubs.length} devices reached.`);
     return { sent, total: allSubs.length };
+  }
+
+  async checkOfflineSubscribersAndNotify(dbService, sessionManager) {
+    if (this.subscriptions.size === 0) return { checked: 0, alertsSent: 0 };
+
+    const userSubsMap = new Map();
+    for (const record of this.subscriptions.values()) {
+      const u = (record.username || '').trim().toLowerCase();
+      if (!u || u === 'guest') continue;
+      if (!userSubsMap.has(u)) {
+        userSubsMap.set(u, []);
+      }
+      userSubsMap.get(u).push(record);
+    }
+
+    if (userSubsMap.size === 0) return { checked: 0, alertsSent: 0 };
+
+    const now = Date.now();
+    let alertsSent = 0;
+
+    for (const [username, userSubs] of userSubsMap.entries()) {
+      try {
+        let state = null;
+        let isCurrentlyOnline = false;
+
+        if (sessionManager && typeof sessionManager.getSession === 'function') {
+          const session = sessionManager.getSession(username);
+          if (session && session.state) {
+            state = session.state;
+            if (now - (session.lastActivity || 0) < 120_000) {
+              isCurrentlyOnline = true;
+            }
+          }
+        }
+
+        if (!state && dbService && typeof dbService.getPlayerByUsername === 'function') {
+          const dbRow = await dbService.getPlayerByUsername(username);
+          if (dbRow) {
+            state = (typeof dbRow.state === 'object' && dbRow.state) ? dbRow.state : null;
+          }
+        }
+
+        if (!state || isCurrentlyOnline) continue;
+
+        const bizList = state.businesses ? Object.values(state.businesses) : [];
+        const ownedBusinesses = bizList.filter(b => b && (Number(b.level) > 0 || Number(b.count) > 0));
+
+        if (ownedBusinesses.length === 0) continue;
+
+        const lastActive = Number(state.lastActiveTimestamp || state.lastSeen || now);
+        const elapsedSeconds = Math.max(0, Math.floor((now - lastActive) / 1000));
+
+        // Don't alert if the player was active less than 3 minutes ago
+        if (elapsedSeconds < 180) continue;
+
+        const maxInitialTicks = Math.max(...ownedBusinesses.map(b => Number(b.suppliesTicks) || 0));
+        const remainingTicks = Math.max(0, maxInitialTicks - elapsedSeconds);
+
+        const tracker = this.alertTracker.get(username) || {
+          lastSuppliesAlertTime: 0,
+          lastAfkAlertTime: 0
+        };
+
+        // Reset supplies alert tracker if the player restocked (has > 30 minutes of supplies)
+        if (remainingTicks > 1800 && tracker.lastSuppliesAlertTime > 0) {
+          tracker.lastSuppliesAlertTime = 0;
+        }
+
+        // 1. SUPPLIES DEPLETED:
+        // Only alert if remaining supplies have reached 0 AND 6 hours elapsed since last alert
+        const SIX_HOURS = 6 * 3600 * 1000;
+        if (remainingTicks <= 0) {
+          if (now - tracker.lastSuppliesAlertTime > SIX_HOURS) {
+            tracker.lastSuppliesAlertTime = now;
+            this.alertTracker.set(username, tracker);
+
+            const payload = {
+              title: '⚠️ تنبيه الإمدادات: توقفت أرباح مشاريعك!',
+              body: 'نفدت بضائع الشركات والمشاريع بالكامل أثناء غيابك. ادخل لتوريد شحنة جديدة واستئناف ضخ الأرباح!',
+              url: '/'
+            };
+
+            await Promise.allSettled(userSubs.map(s => this.sendToEndpoint(s.subscription, payload)));
+            alertsSent++;
+          }
+        }
+
+        // 2. AFK MANAGER EXPIRING (< 20 minutes remaining):
+        const afkExpires = Number(state.afkManagerExpiresAt || 0);
+        const FOUR_HOURS = 4 * 3600 * 1000;
+        if (afkExpires > now && (afkExpires - now) < (20 * 60 * 1000)) {
+          if (now - tracker.lastAfkAlertTime > FOUR_HOURS) {
+            tracker.lastAfkAlertTime = now;
+            this.alertTracker.set(username, tracker);
+
+            const remMinutes = Math.max(1, Math.ceil((afkExpires - now) / 60000));
+            const payload = {
+              title: '⏳ ترخيص الإدارة الذاتية (AFK) شارف على الانتهاء!',
+              body: `يتبقى ${remMinutes} دقيقة فقط على انتهاء ترخيص الإدارة الذاتية 12-Hour. جدده الآن لضمان استمرار الأرباح!`,
+              url: '/'
+            };
+
+            await Promise.allSettled(userSubs.map(s => this.sendToEndpoint(s.subscription, payload)));
+            alertsSent++;
+          }
+        } else if (afkExpires > now + (2 * 3600 * 1000)) {
+          tracker.lastAfkAlertTime = 0;
+        }
+
+        this.alertTracker.set(username, tracker);
+      } catch (err) {
+        console.warn(`[PushService] Error in offline check for ${username}:`, err.message);
+      }
+    }
+
+    return { checked: userSubsMap.size, alertsSent };
   }
 
   getStats() {

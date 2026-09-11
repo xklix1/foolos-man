@@ -77,6 +77,24 @@ app.register(require('./routes/admin-routes'), {
   sessionManager: require('./services/session-manager')
 });
 
+// Background offline push notification checker (runs every 60 seconds)
+const pushService = require('./services/push-service');
+const dbService = require('./services/db-service');
+const sessionManager = require('./services/session-manager');
+
+const OFFLINE_PUSH_CHECK_INTERVAL_MS = 60 * 1000;
+const pushCheckerTimer = setInterval(async () => {
+  try {
+    await pushService.checkOfflineSubscribersAndNotify(dbService, sessionManager);
+  } catch (err) {
+    // Non-fatal background check
+  }
+}, OFFLINE_PUSH_CHECK_INTERVAL_MS);
+
+if (pushCheckerTimer.unref) {
+  pushCheckerTimer.unref(); // Prevents timer from keeping Node process alive during test runs
+}
+
 async function start() {
   try {
     await app.listen({ port: config.PORT, host: config.HOST });
