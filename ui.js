@@ -1114,11 +1114,15 @@ const UIController = (() => {
     }
 
     if (notificationsToggle) {
-      notificationsToggle.addEventListener('change', () => {
+      notificationsToggle.addEventListener('change', async () => {
         notificationsEnabled = notificationsToggle.checked;
         localStorage.setItem('rasalmal_notifications_enabled', notificationsEnabled ?'true' :'false');
         if (notificationsEnabled) {
-          showToast('تنبيهات النظام','تم تفعيل الإشعارات بنجاح.','info', 1800);
+          if (typeof window.PWAManager !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted') {
+            await window.PWAManager.requestNotificationPermission();
+          } else {
+            showToast('تنبيهات النظام','تم تفعيل الإشعارات بنجاح.','info', 1800);
+          }
         }
       });
     }
@@ -1705,6 +1709,32 @@ const UIController = (() => {
       startGameLoop();
       renderAll();
       showToast('أهلاً بعودتك',`تم استئناف جلسة الإمبراطور: ${canonicalUser}`,'success');
+ 
+      // Check if user has not yet granted notification permission and offer quick enable action
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+        const notifAsked = sessionStorage.getItem('rasalmal_notif_prompt_shown');
+        if (!notifAsked) {
+          sessionStorage.setItem('rasalmal_notif_prompt_shown', 'true');
+          setTimeout(() => {
+            if ('Notification' in window && Notification.permission === 'default') {
+              showToast(
+                '🔔 إشعارات اللعبة',
+                'فعّل إشعارات اللعبة لتصلك تنبيهات الأرباح ونفاد البضائع والحوالات فوراً.',
+                'info',
+                9000,
+                {
+                  text: 'تفعيل الآن',
+                  onClick: () => {
+                    if (window.PWAManager && typeof window.PWAManager.requestNotificationPermission === 'function') {
+                      window.PWAManager.requestNotificationPermission();
+                    }
+                  }
+                }
+              );
+            }
+          }, 4500);
+        }
+      }
 
       // Check and display offline idle earnings with detailed report modal
       if (playerState && playerState.offlineReport) {

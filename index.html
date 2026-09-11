@@ -1192,10 +1192,16 @@
                 <span id="pwa-notification-status" class="text-[10px] text-slate-400">جارٍ التحقق...</span>
               </div>
             </div>
-            <button id="btn-settings-request-notifications" class="px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 font-bold text-xs transition flex items-center gap-1.5">
-              <i class="fa-solid fa-bell"></i>
-              <span>تفعيل</span>
-            </button>
+            <div class="flex items-center gap-2">
+              <button id="btn-settings-test-notification" type="button" class="hidden px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-bold text-xs transition flex items-center gap-1.5" title="إرسال إشعار تجريبي لاختبار التنبيهات على جهازك">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span>تجربة</span>
+              </button>
+              <button id="btn-settings-request-notifications" type="button" class="px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 font-bold text-xs transition flex items-center gap-1.5">
+                <i class="fa-solid fa-bell"></i>
+                <span>تفعيل</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -5531,8 +5537,8 @@
   <script src="db.js?v=12.4"></script>
   <script src="server-client-bridge.js?v=1.2"></script>
   <script src="game.js?v=12.1"></script>
-  <script src="ui.js?v=12.6"></script>
-  <script src="pwa-manager.js?v=1.0.0"></script>
+  <script src="ui.js?v=12.7"></script>
+  <script src="pwa-manager.js?v=1.0.1"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

@@ -15,8 +15,24 @@ var PWAManager = (() => {
     dailyWheelWarned: false
   };
 
+  function getEngineState() {
+    if (typeof window !== 'undefined' && window.GameEngine) {
+      if (typeof window.GameEngine.getState === 'function') return window.GameEngine.getState();
+      if (window.GameEngine.state) return window.GameEngine.state;
+    }
+    return null;
+  }
+
+  function getActiveUser() {
+    if (typeof window !== 'undefined' && window.GameEngine) {
+      if (window.GameEngine.activeUsername) return window.GameEngine.activeUsername;
+      if (window.GameEngine.state && window.GameEngine.state.username) return window.GameEngine.state.username;
+    }
+    return (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || 'guest';
+  }
+
   function init() {
-    console.log('[AppManager] Initializing App & Notification Manager...');
+    console.log('[PWAManager] Initializing PWA & Notification Manager...');
 
     // Detect environment
     isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
@@ -62,14 +78,14 @@ var PWAManager = (() => {
     // 3. Listen for App Installed
     window.addEventListener('appinstalled', () => {
       deferredPrompt = null;
-      console.log('[AppManager] Game successfully installed as standalone app!');
+      console.log('[PWAManager] Game successfully installed as standalone app!');
       updateInstallUI(false);
       try {
         localStorage.setItem('rasalmal_pwa_installed', 'true');
       } catch (e) {}
 
-      if (typeof window.showNotification === 'function') {
-        window.showNotification('🎉 مبارك! تم تثبيت رأس المال كتطبيق رسمي على جهازك.', 'success');
+      if (typeof window.showToast === 'function') {
+        window.showToast('تطبيق رأس المال', '🎉 مبارك! تم تثبيت رأس المال كتطبيق رسمي على جهازك.', 'success');
       }
     });
 
@@ -81,13 +97,22 @@ var PWAManager = (() => {
       if ('Notification' in window && Notification.permission === 'granted') {
         subscribeToPushServer();
       }
-    }, 1200);
+    }, 1000);
 
-    // 5. Start background game-event notification check loop
-    setInterval(checkGameTriggersForNotifications, 45000);
+    // 5. Start background game-event notification check loop (every 30s)
+    setInterval(checkGameTriggersForNotifications, 30000);
+
+    // 6. Check triggers immediately when user switches away from the tab or minimizes PWA
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          checkGameTriggersForNotifications();
+        }
+      });
+    }
   }
 
-  // Bind click handlers to install buttons
+  // Bind click handlers to install and notification buttons
   function bindUIEvents() {
     const startMenuBtn = document.getElementById('btn-menu-pwa-install');
     if (startMenuBtn) {
@@ -101,7 +126,12 @@ var PWAManager = (() => {
 
     const notifBtn = document.getElementById('btn-settings-request-notifications');
     if (notifBtn) {
-      notifBtn.addEventListener('click', requestNotificationPermission);
+      notifBtn.onclick = () => requestNotificationPermission();
+    }
+
+    const testBtn = document.getElementById('btn-settings-test-notification');
+    if (testBtn) {
+      testBtn.onclick = () => testNotification();
     }
   }
 
@@ -131,10 +161,13 @@ var PWAManager = (() => {
   function updateNotificationUI() {
     const statusText = document.getElementById('pwa-notification-status');
     const notifBtn = document.getElementById('btn-settings-request-notifications');
+    const testBtn = document.getElementById('btn-settings-test-notification');
+    const notificationsToggle = document.getElementById('setting-notifications-toggle');
 
     if (!('Notification' in window)) {
       if (statusText) statusText.textContent = 'غير مدعوم في هذا المتصفح';
       if (notifBtn) notifBtn.disabled = true;
+      if (testBtn) testBtn.classList.add('hidden');
       return;
     }
 
@@ -145,13 +178,23 @@ var PWAManager = (() => {
       if (notifBtn) {
         notifBtn.classList.add('hidden');
       }
+      if (testBtn) {
+        testBtn.classList.remove('hidden');
+      }
+      if (notificationsToggle) {
+        notificationsToggle.checked = true;
+      }
     } else if (Notification.permission === 'denied') {
       if (statusText) {
-        statusText.innerHTML = '<span class="text-rose-400 font-bold"><i class="fa-solid fa-circle-xmark ml-1"></i> محظورة من إعدادات المتصفح</span>';
+        statusText.innerHTML = '<span class="text-rose-400 font-bold"><i class="fa-solid fa-circle-xmark ml-1"></i> محظورة في المتصفح</span>';
       }
       if (notifBtn) {
-        notifBtn.textContent = 'الإشعارات محظورة';
-        notifBtn.disabled = true;
+        notifBtn.classList.remove('hidden');
+        notifBtn.disabled = false;
+        notifBtn.innerHTML = '<i class="fa-solid fa-gear ml-1"></i><span>إعدادات الإذن</span>';
+      }
+      if (testBtn) {
+        testBtn.classList.add('hidden');
       }
     } else {
       if (statusText) {
@@ -159,6 +202,11 @@ var PWAManager = (() => {
       }
       if (notifBtn) {
         notifBtn.classList.remove('hidden');
+        notifBtn.disabled = false;
+        notifBtn.innerHTML = '<i class="fa-solid fa-bell ml-1"></i><span>تفعيل الآن</span>';
+      }
+      if (testBtn) {
+        testBtn.classList.add('hidden');
       }
     }
   }
@@ -172,8 +220,8 @@ var PWAManager = (() => {
     }
 
     if (!deferredPrompt) {
-      if (typeof window.showNotification === 'function') {
-        window.showNotification('اللعبة مثبتة بالفعل أو يمكنك إضافتها من قائمة المتصفح (Add to Home Screen).', 'info');
+      if (typeof window.showToast === 'function') {
+        window.showToast('تطبيق رأس المال', 'اللعبة مثبتة بالفعل أو يمكنك إضافتها من قائمة المتصفح (Add to Home Screen).', 'info');
       }
       return;
     }
@@ -280,10 +328,7 @@ var PWAManager = (() => {
         });
       }
 
-      const username = (window.GameEngine && window.GameEngine.getState && window.GameEngine.getState().username) || 
-                       (typeof player !== 'undefined' && player.username) || 
-                       localStorage.getItem('saved_username') || 
-                       'guest';
+      const username = getActiveUser();
 
       const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
         ? window.SERVER_API_URL.replace(/\/$/, '') 
@@ -303,8 +348,12 @@ var PWAManager = (() => {
   // Request browser notification permissions
   async function requestNotificationPermission() {
     if (!('Notification' in window)) {
-      alert('متصفحك لا يدعم خاصية إشعارات الويب.');
-      return;
+      if (typeof window.showToast === 'function') {
+        window.showToast('تنبيه', 'متصفحك لا يدعم خاصية إشعارات الويب.', 'warning');
+      } else {
+        alert('متصفحك لا يدعم خاصية إشعارات الويب.');
+      }
+      return false;
     }
 
     try {
@@ -316,40 +365,95 @@ var PWAManager = (() => {
         subscribeToPushServer();
 
         sendNotification('👑 مرحباً بك في نظام التنبيهات الذكي!', {
-          body: 'ستتلقى إشعارات فورية عند نفاد بضائع مشاريعك أو اكتمال مؤقتات الأرباح.',
-          icon: '/assets/icon-192.png'
+          body: 'ستتلقى إشعارات فورية عند نفاد بضائع مشاريعك أو اكتمال مؤقتات الأرباح والحوالات الواردة.',
+          icon: '/assets/icon-192.png',
+          tag: 'welcome_notification'
         });
 
-        if (typeof window.showNotification === 'function') {
-          window.showNotification('تم تفعيل إشعارات اللعبة بنجاح! 🔔', 'success');
+        if (typeof window.showToast === 'function') {
+          window.showToast('نظام الإشعارات', 'تم تفعيل إشعارات اللعبة بنجاح! 🔔', 'success');
         }
+        return true;
+      } else if (permission === 'denied') {
+        if (typeof window.showToast === 'function') {
+          window.showToast('إذن الإشعارات', 'تم حظر الإشعارات من إعدادات المتصفح أو الجهاز.', 'warning');
+        }
+        return false;
       }
     } catch (err) {
       console.warn('[PWAManager] Error requesting notification permission:', err);
+      return false;
     }
   }
 
-  // Send or display a notification safely
+  // Send or display a notification safely across Mobile Android, iOS Safari PWA, and Desktop
   function sendNotification(title, options = {}) {
     if (!('Notification' in window) || Notification.permission !== 'granted') {
-      return;
+      return Promise.resolve(false);
     }
 
     const defaultOptions = {
       icon: '/assets/icon-192.png',
       badge: '/assets/icon-192.png',
       vibrate: [200, 100, 200],
+      tag: options.tag || `rasalmal_${Date.now()}`,
+      renotify: true,
+      data: {
+        url: '/'
+      },
       ...options
     };
 
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.ready.then((registration) => {
-        registration.showNotification(title, defaultOptions);
-      }).catch(() => {
-        new Notification(title, defaultOptions);
-      });
+    // On Android Chrome and modern iOS Safari PWAs, ServiceWorkerRegistration.showNotification MUST be used.
+    // Calling 'new Notification()' in window scope causes TypeError: Illegal constructor.
+    if ('serviceWorker' in navigator) {
+      return navigator.serviceWorker.ready
+        .then((registration) => {
+          return registration.showNotification(title, defaultOptions);
+        })
+        .catch((err) => {
+          console.warn('[PWAManager] SW showNotification failed, trying window fallback:', err);
+          try {
+            new Notification(title, defaultOptions);
+            return true;
+          } catch (e) {
+            console.warn('[PWAManager] Fallback Notification failed:', e);
+            return false;
+          }
+        });
     } else {
-      new Notification(title, defaultOptions);
+      try {
+        new Notification(title, defaultOptions);
+        return Promise.resolve(true);
+      } catch (e) {
+        console.warn('[PWAManager] Notification constructor failed:', e);
+        return Promise.resolve(false);
+      }
+    }
+  }
+
+  // Send a test notification immediately so the user can verify it works
+  async function testNotification() {
+    if (!('Notification' in window)) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('تنبيه', 'متصفحك لا يدعم إشعارات النظام.', 'warning');
+      }
+      return;
+    }
+
+    if (Notification.permission !== 'granted') {
+      const ok = await requestNotificationPermission();
+      if (!ok) return;
+    }
+
+    await sendNotification('🔔 تجربة إشعار رأس المال', {
+      body: 'تهانينا! نظام الإشعارات يعمل بكفاءة تامة على جهازك وتطبيق PWA.',
+      icon: '/assets/icon-192.png',
+      tag: 'test_notification'
+    });
+
+    if (typeof window.showToast === 'function') {
+      window.showToast('نجاح', 'تم إرسال إشعار تجريبي إلى جهازك الآن!', 'success');
     }
   }
 
@@ -359,11 +463,7 @@ var PWAManager = (() => {
       return;
     }
 
-    if (typeof window.GameEngine === 'undefined' || !window.GameEngine.getState) {
-      return;
-    }
-
-    const state = window.GameEngine.getState();
+    const state = getEngineState();
     if (!state) return;
 
     // Trigger 1: Supplies depletion check
@@ -371,20 +471,20 @@ var PWAManager = (() => {
     const ownedBusinesses = bizList.filter(b => b && (Number(b.level) > 0 || Number(b.count) > 0));
 
     if (ownedBusinesses.length > 0) {
-      // Find the maximum remaining supplies ticks among all owned businesses
-      const maxRemainingTicks = Math.max(...ownedBusinesses.map(b => Number(b.suppliesTicks) || 0));
+      const depletedBiz = ownedBusinesses.filter(b => (Number(b.suppliesTicks) || 0) <= 0);
+      const minRemainingTicks = Math.min(...ownedBusinesses.map(b => Number(b.suppliesTicks) || 0));
 
-      // Supplies are depleted ONLY if ALL owned businesses have 0 seconds left!
-      if (maxRemainingTicks <= 0) {
+      if (depletedBiz.length > 0) {
         if (!notificationFlags.suppliesWarned) {
           notificationFlags.suppliesWarned = true;
+          const bizNames = depletedBiz.map(b => b.name).filter(Boolean).slice(0, 2).join(' و');
           sendNotification('⚠️ تنبيه الإمدادات: توقفت أرباح مشاريعك!', {
-            body: 'نفدت بضائع الشركات والمشاريع بالكامل. قم بتوريد شحنة بضائع جديدة لاستئناف الإنتاج وضخ الأرباح!',
+            body: `نفدت بضائع (${depletedBiz.length}) من مشاريعك${bizNames ? ': ' + bizNames : ''}. قم بتوريد شحنة بضائع جديدة لاستئناف الإنتاج وضخ الأرباح!`,
             tag: 'supplies_depleted'
           });
         }
-      } else if (maxRemainingTicks > 300) {
-        // More than 5 minutes of supplies available: reset warned flag
+      } else if (minRemainingTicks > 180) {
+        // More than 3 minutes of supplies available: reset warned flag
         notificationFlags.suppliesWarned = false;
       }
     }
@@ -412,13 +512,23 @@ var PWAManager = (() => {
     promptInstall,
     requestNotificationPermission,
     sendNotification,
+    testNotification,
+    updateNotificationUI,
+    checkGameTriggersForNotifications,
     isStandaloneApp: () => isStandalone
   };
 })();
 
+// Assign globally
+if (typeof window !== 'undefined') {
+  window.PWAManager = PWAManager;
+}
+
 // Auto-boot on DOM readiness
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', PWAManager.init);
-} else {
-  PWAManager.init();
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', PWAManager.init);
+  } else {
+    PWAManager.init();
+  }
 }
