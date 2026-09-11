@@ -35,17 +35,18 @@ DECLARE
 BEGIN
   -- تحديد الصلاحية المنفذة للطلب (anon vs service_role / postgres)
   BEGIN
-    v_role := current_setting('request.jwt.claim.role', true);
+    v_role := COALESCE(
+      nullif(current_setting('request.jwt.claims', true), '')::jsonb->>'role',
+      nullif(current_setting('request.jwt.claim.role', true), ''),
+      session_user
+    );
   EXCEPTION WHEN OTHERS THEN
     v_role := session_user;
   END;
-  
-  IF v_role IS NULL THEN
-    v_role := session_user;
-  END IF;
 
-  -- المشرفون وسيرفر الباك إند (service_role و postgres) معفيون من القيود
-  IF v_role IN ('service_role', 'postgres', 'supabase_admin') THEN
+  -- المشرفون وسيرفر الباك إند (service_role و postgres) أو التعديل الإداري المباشر معفيون من القيود
+  IF v_role IN ('service_role', 'postgres', 'supabase_admin') 
+     OR (NEW.admin_modified_timestamp IS DISTINCT FROM OLD.admin_modified_timestamp) THEN
     RETURN NEW;
   END IF;
 
@@ -108,10 +109,6 @@ BEGIN
   END IF;
 
   -- ── هـ) كابح قفزات الثروة المفاجئة (Wealth Velocity Limiter) ──
-  -- إذا تم التعديل بواسطة لوحة الإدارة (تغير admin_modified_timestamp)، يتم قبول العملية
-  IF NEW.admin_modified_timestamp IS DISTINCT FROM OLD.admin_modified_timestamp THEN
-    RETURN NEW;
-  END IF;
 
   v_cash_diff := COALESCE(NEW.cash, 0) - COALESCE(OLD.cash, 0);
   v_bank_diff := COALESCE(NEW.bank, 0) - COALESCE(OLD.bank, 0);
