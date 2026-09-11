@@ -16,7 +16,7 @@ var PWAManager = (() => {
   };
 
   function init() {
-    console.log('[PWAManager] Initializing PWA & Notification Manager...');
+    console.log('[AppManager] Initializing App & Notification Manager...');
 
     // Detect environment
     isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
@@ -62,7 +62,7 @@ var PWAManager = (() => {
     // 3. Listen for App Installed
     window.addEventListener('appinstalled', () => {
       deferredPrompt = null;
-      console.log('[PWAManager] Game successfully installed as PWA!');
+      console.log('[AppManager] Game successfully installed as standalone app!');
       updateInstallUI(false);
       try {
         localStorage.setItem('rasalmal_pwa_installed', 'true');
