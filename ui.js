@@ -15618,26 +15618,53 @@ const UIController = (() => {
             GameEngine.state.badgeTitle = details.badgeTitle || pkgName;
           }
 
-          if (details.chatGlow) {
-            GameEngine.state.chatGlow = details.chatGlow;
+          GameEngine.state.unlockedChatGlows = Array.isArray(GameEngine.state.unlockedChatGlows) ? GameEngine.state.unlockedChatGlows : ['none'];
+          if (Array.isArray(details.unlockedChatGlows)) {
+            details.unlockedChatGlows.forEach(g => {
+              if (g && !GameEngine.state.unlockedChatGlows.includes(g)) {
+                GameEngine.state.unlockedChatGlows.push(g);
+              }
+            });
+          }
+
+          let incomingGlow = details.chatGlow;
+          if (!incomingGlow) {
+            if (details.packageId === 'pkg_vip_crimson_flame' || (details.packageName && details.packageName.includes('اللهب القرمزي'))) {
+              incomingGlow = 'crimson_flame';
+            } else if (details.packageId === 'pkg_vip_chat_glow' || (details.packageName && details.packageName.includes('الشات المتوهج'))) {
+              incomingGlow = 'gold_neon';
+            } else if (details.packageId === 'pkg_vip_royal_ultimate' || (details.packageName && details.packageName.includes('الملكية'))) {
+              incomingGlow = 'cyber_rainbow';
+            }
+          }
+
+          if (incomingGlow && incomingGlow !== 'none') {
+            GameEngine.state.chatGlow = incomingGlow;
             GameEngine.state.hasChatGlow = true;
-          } else if (details.packageId === 'pkg_vip_crimson_flame' || (details.packageName && details.packageName.includes('اللهب القرمزي'))) {
-            GameEngine.state.chatGlow = 'crimson_flame';
-            GameEngine.state.hasChatGlow = true;
+            if (!GameEngine.state.unlockedChatGlows.includes(incomingGlow)) {
+              GameEngine.state.unlockedChatGlows.push(incomingGlow);
+            }
+          }
+
+          if (details.packageId === 'pkg_vip_crimson_flame' || incomingGlow === 'crimson_flame') {
             GameEngine.state.activePackage = 'pkg_vip_crimson_flame';
-          } else if (details.packageId === 'pkg_vip_chat_glow' || (details.packageName && details.packageName.includes('الشات المتوهج'))) {
-            GameEngine.state.chatGlow = 'gold_neon';
-            GameEngine.state.hasChatGlow = true;
+            GameEngine.state.stickersPack = true;
+          } else if (details.packageId === 'pkg_vip_chat_glow' || incomingGlow === 'gold_neon') {
             GameEngine.state.activePackage = 'pkg_vip_chat_glow';
-          } else if (details.packageId === 'pkg_vip_royal_ultimate' || (details.packageName && details.packageName.includes('الملكية'))) {
-            GameEngine.state.chatGlow = 'cyber_rainbow';
-            GameEngine.state.hasChatGlow = true;
+          } else if (details.packageId === 'pkg_vip_royal_ultimate' || incomingGlow === 'cyber_rainbow') {
             GameEngine.state.activePackage = 'pkg_vip_royal_ultimate';
             GameEngine.state.isVerified = true;
             GameEngine.state.vipVerified = true;
+            GameEngine.state.stickersPack = true;
+            GameEngine.state.canUploadAvatar = true;
           } else if (details.packageId === 'pkg_vip_verified' || (details.packageName && details.packageName.includes('التوثيق'))) {
             GameEngine.state.isVerified = true;
             GameEngine.state.vipVerified = true;
+            GameEngine.state.activePackage = 'pkg_vip_verified';
+          }
+
+          if (typeof updateCurrentChatFrameBadge === 'function') {
+            updateCurrentChatFrameBadge();
           }
 
           if (!details.isPreApplied && details.items && typeof details.items === 'object') {

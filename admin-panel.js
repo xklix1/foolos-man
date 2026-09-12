@@ -2622,6 +2622,21 @@
               if (itemServerInp) itemServerInp.value = Number(items.offshoreServer || items.offshore_account || 0);
               if (itemMinerInp) itemMinerInp.value = Number(items.cryptoMiner || 0);
               if (itemDronesInp) itemDronesInp.value = Number(items.securityDrones || items.vip_casino_pass || 0);
+
+              const glowSelect = document.getElementById('adm-send-pkg-chat-glow');
+              if (glowSelect) {
+                if (found.features && found.features.chatGlow) {
+                  glowSelect.value = found.features.chatGlow;
+                } else if (found.id === 'pkg_vip_crimson_flame' || (found.name && found.name.includes('اللهب القرمزي'))) {
+                  glowSelect.value = 'crimson_flame';
+                } else if (found.id === 'pkg_vip_royal_ultimate' || (found.name && found.name.includes('الملكية'))) {
+                  glowSelect.value = 'cyber_rainbow';
+                } else if (found.id === 'pkg_vip_chat_glow' || (found.name && found.name.includes('الشات المتوهج'))) {
+                  glowSelect.value = 'gold_neon';
+                } else {
+                  glowSelect.value = 'auto';
+                }
+              }
             });
           }
         }
@@ -2736,27 +2751,53 @@
         }
 
         // Apply VIP package features (Chat Glow, Verification Badge, Profile customization)
-        const templateSelect = document.getElementById('adm-send-pkg-template');
+        const templateSelect = document.getElementById('adm-send-pkg-template-select') || document.getElementById('adm-send-pkg-template');
         const selectedPkgId = templateSelect ? templateSelect.value : '';
         const foundPkg = Array.isArray(_currentTopupPackagesCache) ? _currentTopupPackagesCache.find(p => p.id === selectedPkgId) : null;
+        const glowSelect = document.getElementById('adm-send-pkg-chat-glow');
+        const explicitGlow = glowSelect ? glowSelect.value : 'auto';
 
-        if (selectedPkgId === 'pkg_vip_crimson_flame' || (foundPkg && foundPkg.features && foundPkg.features.chatGlow === 'crimson_flame')) {
-          freshPlayer.chatGlow = 'crimson_flame';
+        let appliedGlow = null;
+        if (explicitGlow && explicitGlow !== 'auto' && explicitGlow !== 'none') {
+          appliedGlow = explicitGlow;
+        } else if (explicitGlow === 'none') {
+          appliedGlow = null;
+        } else {
+          // Auto-detect based on selected package or package name
+          if (selectedPkgId === 'pkg_vip_crimson_flame' || (foundPkg && foundPkg.features && foundPkg.features.chatGlow === 'crimson_flame') || (pkgName && pkgName.includes('اللهب القرمزي'))) {
+            appliedGlow = 'crimson_flame';
+          } else if (selectedPkgId === 'pkg_vip_royal_ultimate' || (foundPkg && foundPkg.features && foundPkg.features.chatGlow === 'cyber_rainbow') || (pkgName && pkgName.includes('الملكية'))) {
+            appliedGlow = 'cyber_rainbow';
+          } else if (selectedPkgId === 'pkg_vip_chat_glow' || (foundPkg && foundPkg.features && foundPkg.features.chatGlow === 'gold_neon') || (pkgName && pkgName.includes('الشات المتوهج'))) {
+            appliedGlow = 'gold_neon';
+          }
+        }
+
+        freshPlayer.unlockedChatGlows = Array.isArray(freshPlayer.unlockedChatGlows) ? freshPlayer.unlockedChatGlows : ['none'];
+        if (!freshPlayer.unlockedChatGlows.includes('none')) freshPlayer.unlockedChatGlows.unshift('none');
+
+        if (appliedGlow) {
+          freshPlayer.chatGlow = appliedGlow;
           freshPlayer.hasChatGlow = true;
-          freshPlayer.stickersPack = true;
+          if (!freshPlayer.unlockedChatGlows.includes(appliedGlow)) {
+            freshPlayer.unlockedChatGlows.push(appliedGlow);
+          }
+        }
+
+        if (selectedPkgId === 'pkg_vip_crimson_flame' || appliedGlow === 'crimson_flame') {
           freshPlayer.activePackage = 'pkg_vip_crimson_flame';
-        } else if (selectedPkgId === 'pkg_vip_chat_glow' || (foundPkg && foundPkg.features && foundPkg.features.chatGlow === 'gold_neon')) {
-          freshPlayer.chatGlow = 'gold_neon';
+          freshPlayer.stickersPack = true;
           freshPlayer.hasChatGlow = true;
-          freshPlayer.activePackage = 'pkg_vip_chat_glow';
-        } else if (selectedPkgId === 'pkg_vip_royal_ultimate' || (foundPkg && foundPkg.features && foundPkg.features.chatGlow === 'cyber_rainbow')) {
-          freshPlayer.chatGlow = 'cyber_rainbow';
-          freshPlayer.hasChatGlow = true;
+        } else if (selectedPkgId === 'pkg_vip_royal_ultimate' || appliedGlow === 'cyber_rainbow') {
+          freshPlayer.activePackage = 'pkg_vip_royal_ultimate';
           freshPlayer.isVerified = true;
           freshPlayer.vipVerified = true;
           freshPlayer.canUploadAvatar = true;
           freshPlayer.stickersPack = true;
-          freshPlayer.activePackage = 'pkg_vip_royal_ultimate';
+          freshPlayer.hasChatGlow = true;
+        } else if (selectedPkgId === 'pkg_vip_chat_glow' || appliedGlow === 'gold_neon') {
+          freshPlayer.activePackage = 'pkg_vip_chat_glow';
+          freshPlayer.hasChatGlow = true;
         } else if (selectedPkgId === 'pkg_vip_verified' || (foundPkg && foundPkg.features && foundPkg.features.verified)) {
           freshPlayer.isVerified = true;
           freshPlayer.vipVerified = true;
@@ -2782,7 +2823,7 @@
 
         // 3. Dispatch official topup_receipt mail with pre-applied sync data
         const topupReceiptData = {
-          packageId: 'admin_bundle_' + ts,
+          packageId: selectedPkgId || ('admin_bundle_' + ts),
           packageName: pkgName,
           price: 0,
           cash: addCash,
@@ -2791,6 +2832,13 @@
           customBadge: customBadge,
           badgeTitle: customBadge || pkgName,
           items: items,
+          chatGlow: appliedGlow || freshPlayer.chatGlow,
+          unlockedChatGlows: freshPlayer.unlockedChatGlows,
+          activePackage: freshPlayer.activePackage,
+          isVerified: freshPlayer.isVerified,
+          vipVerified: freshPlayer.vipVerified,
+          stickersPack: freshPlayer.stickersPack,
+          canUploadAvatar: freshPlayer.canUploadAvatar,
           status: 'approved',
           isPreApplied: true,
           newCash: newCash,
@@ -8417,6 +8465,7 @@
     const swissSafeInput = document.getElementById('adm-pkg-item-swiss-safe');
     const offshoreInput = document.getElementById('adm-pkg-item-offshore');
     const lotteryInput = document.getElementById('adm-pkg-item-lottery');
+    const chatGlowInput = document.getElementById('adm-pkg-chat-glow');
 
     if (pkg) {
       titleEl.textContent = `تعديل باقة: ${pkg.name}`;
@@ -8432,6 +8481,7 @@
       badgeTitleInput.value = pkg.badgeTitle || '';
       descInput.value = pkg.description || '';
       if (visibleCheck) visibleCheck.checked = (pkg.hidden !== true && pkg.visible !== false);
+      if (chatGlowInput) chatGlowInput.value = (pkg.features && pkg.features.chatGlow) || pkg.chatGlow || 'none';
 
       const items = pkg.items || {};
       vipPassInput.value = items.vip_casino_pass || '';
@@ -8452,6 +8502,7 @@
       badgeTitleInput.value = 'عضو VIP';
       descInput.value = '';
       if (visibleCheck) visibleCheck.checked = true;
+      if (chatGlowInput) chatGlowInput.value = 'none';
 
       vipPassInput.value = '';
       swissSafeInput.value = '';
@@ -8474,6 +8525,7 @@
     const badgeTitle = (document.getElementById('adm-pkg-badgetitle')?.value || '').trim();
     const description = (document.getElementById('adm-pkg-desc')?.value || '').trim();
     const isVisible = document.getElementById('adm-pkg-visible') ? document.getElementById('adm-pkg-visible').checked : true;
+    const selectedChatGlow = document.getElementById('adm-pkg-chat-glow')?.value || 'none';
 
     if (!id || !name || price <= 0) {
       showToast('بيانات غير مكتملة', 'يرجى إدخال اسم الباقة، المعرف وسعر صحيح أكبر من صفر.', 'error');
@@ -8492,6 +8544,12 @@
     if (lottery > 0) items.lottery_ticket = lottery;
 
     const existingPkg = _currentTopupPackagesCache.find(p => p.id === id);
+    const pkgFeatures = Object.assign({}, (existingPkg && existingPkg.features) ? existingPkg.features : {});
+    if (selectedChatGlow && selectedChatGlow !== 'none') {
+      pkgFeatures.chatGlow = selectedChatGlow;
+    } else {
+      delete pkgFeatures.chatGlow;
+    }
 
     const pkgData = {
       id,
@@ -8505,7 +8563,7 @@
       items,
       description,
       hidden: !isVisible,
-      features: (existingPkg && existingPkg.features) ? existingPkg.features : undefined
+      features: Object.keys(pkgFeatures).length > 0 ? pkgFeatures : undefined
     };
 
     try {
