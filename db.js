@@ -1136,7 +1136,21 @@ var AppDB = (() => {
       const _nowAtLoad = getTrustedNow();
       const _serverLastSeen = Number(row.last_seen || (row.state && (row.state.lastActiveTimestamp || row.state.lastSeen)) || 0);
       const _localLastActive = local ? Number(local.lastActiveTimestamp || local.lastSeen || 0) : 0;
-      const _rawLastActive = Math.max(_serverLastSeen, _localLastActive) || _nowAtLoad;
+      
+      // MULTI-DEVICE PROTECTION:
+      // If server timestamp is noticeably newer than local device (server was active on phone while laptop was off > 60 seconds),
+      // the server is 100% authoritative! The local device cache is STALE and MUST NOT overwrite or pull backward.
+      const isStaleLocalDueToSecondaryDevice = local && (_serverLastSeen > _localLastActive + 60000);
+      if (isStaleLocalDueToSecondaryDevice && isCurrentPlayer) {
+        console.warn(`[Sync] Stale local device detected (Server was active on another device ${( (_serverLastSeen - _localLastActive)/1000 ).toFixed(0)}s later). Discarding stale local state to protect progression.`);
+        try { localStorage.removeItem(`rasalmal_state_${u}`); } catch (e) {}
+        local = null;
+      }
+
+      const _rawLastActive = (local && !isStaleLocalDueToSecondaryDevice) 
+        ? Math.max(_serverLastSeen, _localLastActive) 
+        : (_serverLastSeen || _nowAtLoad);
+
       // Sanity cap: clamp any timestamp in the future to now.
       stateObj.lastActiveTimestamp = Math.min(_rawLastActive, _nowAtLoad);
       stateObj.lastSeen = stateObj.lastActiveTimestamp;
@@ -1158,13 +1172,13 @@ var AppDB = (() => {
         try { localStorage.removeItem(`rasalmal_state_${u}`); } catch (e) {}
       }
 
-      if (local && typeof local === 'object' && !isStaleLocalDueToAdmin) {
+      if (local && typeof local === 'object' && !isStaleLocalDueToAdmin && !isStaleLocalDueToSecondaryDevice) {
         let shouldSyncCloud = false;
 
         const serverTs = Number(row.last_seen || 0);
         // Only reconcile local upgrades if local device was active recently (within 10 minutes of server timestamp or newer)
         // This ensures switching devices loads newer server data without stale secondary device data interfering
-        const isLocalRecentOrNewer = (localTs >= serverTs - 600000);
+        const isLocalRecentOrNewer = (localTs >= serverTs - 60000);
 
         // OFFLINE EARNINGS FIX: If local lastActiveTimestamp is newer than the cloud last_seen,
         // use local exit timestamp as the authoritative anchor.
@@ -1525,6 +1539,12 @@ var AppDB = (() => {
 
     // Cache locally INSTANTLY (0 lag, 100% responsive)
     setEncryptedLocalState(`rasalmal_state_${u}`, state);
+
+    // Boot safety: Never push to cloud if this state wasn't successfully verified/loaded from the authoritative cloud first
+    if (!state._loadedFromCloud && !forceCloud) {
+      console.warn(`[Sync] Skipping background cloud push for ${u}: session has not completed initial authoritative cloud pull.`);
+      return;
+    }
 
     if (forceCloud) {
       if (_cloudSyncDebounceTimer) {
