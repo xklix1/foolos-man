@@ -1407,7 +1407,124 @@ html[dir="ltr"] .chat-bubble-glow-rainbow[data-vip-tag=""]::before {
   content: '👑 ROYAL VIP';
 }
 
+/* ═══════════════════════════════════════════
+   CRIMSON FLAME VIP CHAT GLOW (حزمة اللهب القرمزي الملتهب)
+   ═══════════════════════════════════════════ */
+@keyframes moving-gradient-flame {
+  0% {
+    background-position: 0% 70%;
+  }
+  50% {
+    background-position: 100% 30%;
+  }
+  100% {
+    background-position: 0% 70%;
+  }
+}
+
+@keyframes calm-flame-blaze {
+  0%, 100% {
+    box-shadow: 
+      0 0 10px rgba(225, 29, 72, 0.55),
+      0 0 22px rgba(190, 18, 60, 0.35),
+      0 0 38px rgba(159, 18, 57, 0.18),
+      inset 0 0 10px rgba(225, 29, 72, 0.2);
+    border-color: #be123c;
+  }
+  30% {
+    box-shadow: 
+      0 0 15px rgba(244, 63, 94, 0.65),
+      0 0 28px rgba(225, 29, 72, 0.42),
+      0 0 46px rgba(159, 18, 57, 0.25),
+      inset 0 0 14px rgba(244, 63, 94, 0.25);
+    border-color: #e11d48;
+  }
+  60% {
+    box-shadow: 
+      0 0 12px rgba(225, 29, 72, 0.5),
+      0 0 24px rgba(159, 18, 57, 0.32),
+      0 0 40px rgba(136, 19, 55, 0.18),
+      inset 0 0 11px rgba(225, 29, 72, 0.18);
+    border-color: #9f1239;
+  }
+  85% {
+    box-shadow: 
+      0 0 16px rgba(244, 63, 94, 0.7),
+      0 0 32px rgba(225, 29, 72, 0.48),
+      0 0 52px rgba(190, 18, 60, 0.28),
+      inset 0 0 15px rgba(244, 63, 94, 0.28);
+    border-color: #f43f5e;
+  }
+}
+
+/* Crimson Flame Glowing Bubble - Calm Red, Lively Blazing */
+.chat-bubble-glow-flame {
+  background: linear-gradient(135deg, rgba(190, 18, 60, 0.28), rgba(35, 10, 15, 0.96), rgba(159, 18, 57, 0.22), rgba(15, 23, 42, 0.98), rgba(225, 29, 72, 0.22)) !important;
+  background-size: 300% 300% !important;
+  animation: moving-gradient-flame 4.2s ease infinite, calm-flame-blaze 2.2s ease-in-out infinite !important;
+  border: 1.5px solid #be123c !important;
+  color: #fff1f2 !important;
+  position: relative !important;
+  margin-top: 10px !important;
+  margin-bottom: 6px !important;
+  text-shadow: 0 0 8px rgba(225, 29, 72, 0.45);
+  font-weight: 500;
+  min-width: 100px;
+  overflow: visible;
+}
+
+.chat-bubble-glow-flame::before {
+  content: attr(data-vip-tag);
+  position: absolute;
+  top: -11px;
+  right: 8px;
+  font-size: 8px;
+  font-weight: 900;
+  color: #ffe4e6;
+  background: linear-gradient(90deg, #1c0508, #4c0519, #9f1239, #be123c, #4c0519, #1c0508);
+  background-size: 200% auto;
+  animation: shimmer-badge-glow 2.8s linear infinite;
+  border: 1px solid rgba(244, 63, 94, 0.85);
+  border-radius: 999px;
+  padding: 1px 7px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 12px rgba(225, 29, 72, 0.75), inset 0 0 6px rgba(251, 113, 133, 0.35);
+  z-index: 2;
+  white-space: nowrap;
+}
+
+/* RTL / LTR direction adjustments */
+html[dir="rtl"] .chat-bubble-sent.chat-bubble-glow-flame::before {
+  left: 8px;
+  right: auto;
+}
+
+html[dir="ltr"] .chat-bubble-glow-flame::before {
+  left: 8px;
+  right: auto;
+}
+
+html[dir="rtl"] .chat-bubble-glow-flame:not([data-vip-tag])::before,
+html[dir="rtl"] .chat-bubble-glow-flame[data-vip-tag=""]::before {
+  content: '🔥 لهيب VIP';
+}
+
+html[dir="ltr"] .chat-bubble-glow-flame:not([data-vip-tag])::before,
+html[dir="ltr"] .chat-bubble-glow-flame[data-vip-tag=""]::before {
+  content: '🔥 FLAME VIP';
+}
+
 /* Sender Name Glows & Indicators */
+.chat-sender-flame-glow {
+  background: linear-gradient(90deg, #f43f5e, #fda4af, #e11d48, #fb7185);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-badge-glow 3.5s linear infinite;
+  font-weight: 900 !important;
+  filter: drop-shadow(0 0 6px rgba(225, 29, 72, 0.65));
+}
+
 .chat-sender-gold-glow {
   background: linear-gradient(90deg, #fbbf24, #fef08a, #f59e0b, #fde047);
   background-size: 200% auto;

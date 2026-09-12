@@ -11817,7 +11817,9 @@ const UIController = (() => {
           
           let chatGlow = (GameEngine.state && (GameEngine.state.chatGlow || (GameEngine.state.hasChatGlow ? 'gold_neon' : ''))) || '';
           if (!chatGlow && GameEngine.state) {
-            if (GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.customBadge === '🌟' || (GameEngine.state.badgeTitle && GameEngine.state.badgeTitle.includes('حوت الشات'))) {
+            if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.customBadge === '🔥' || (GameEngine.state.badgeTitle && GameEngine.state.badgeTitle.includes('لهيب'))) {
+              chatGlow = 'crimson_flame';
+            } else if (GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.customBadge === '🌟' || (GameEngine.state.badgeTitle && GameEngine.state.badgeTitle.includes('حوت الشات'))) {
               chatGlow = 'gold_neon';
             } else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' || GameEngine.state.customBadge === '👑✔️' || (GameEngine.state.customBadge && GameEngine.state.customBadge.includes('👑'))) {
               chatGlow = 'cyber_rainbow';
@@ -12308,8 +12310,8 @@ const UIController = (() => {
 
     // Global registry of players with active chat glow
     window._knownVipGlowPlayers = window._knownVipGlowPlayers || new Map();
-    if (curUser && GameEngine.state && (GameEngine.state.chatGlow || GameEngine.state.hasChatGlow || GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.activePackage === 'pkg_vip_royal_ultimate')) {
-      const myGlow = GameEngine.state.chatGlow || (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' ? 'cyber_rainbow' : 'gold_neon');
+    if (curUser && GameEngine.state && (GameEngine.state.chatGlow || GameEngine.state.hasChatGlow || GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.activePackage === 'pkg_vip_royal_ultimate')) {
+      const myGlow = GameEngine.state.chatGlow || (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' ? 'crimson_flame' : (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' ? 'cyber_rainbow' : 'gold_neon'));
       window._knownVipGlowPlayers.set(curUser, myGlow);
     }
 
@@ -12318,6 +12320,8 @@ const UIController = (() => {
       if (m.type === 'money_drop') return;
       if (m.chatGlow && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, m.chatGlow);
+      } else if (m.customBadge === '🔥' && m.sender) {
+        window._knownVipGlowPlayers.set(m.sender, 'crimson_flame');
       } else if (m.customBadge === '🌟' && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, 'gold_neon');
       } else if ((m.customBadge === '👑✔️' || (m.customBadge && m.customBadge.includes('👑'))) && m.sender) {
@@ -12329,8 +12333,8 @@ const UIController = (() => {
     const lbCache = window.cachedLeaderboard || (typeof cachedLeaderboard !== 'undefined' ? cachedLeaderboard : null);
     if (Array.isArray(lbCache)) {
       lbCache.forEach(p => {
-        if (p.chatGlow || p.hasChatGlow || p.activePackage === 'pkg_vip_chat_glow' || p.customBadge === '🌟') {
-          const g = p.chatGlow || (p.activePackage === 'pkg_vip_royal_ultimate' ? 'cyber_rainbow' : 'gold_neon');
+        if (p.chatGlow || p.hasChatGlow || p.activePackage === 'pkg_vip_crimson_flame' || p.activePackage === 'pkg_vip_chat_glow' || p.customBadge === '🔥' || p.customBadge === '🌟') {
+          const g = p.chatGlow || (p.activePackage === 'pkg_vip_crimson_flame' || p.customBadge === '🔥' ? 'crimson_flame' : (p.activePackage === 'pkg_vip_royal_ultimate' ? 'cyber_rainbow' : 'gold_neon'));
           window._knownVipGlowPlayers.set(p.username, g);
         } else if (p.customBadge === '👑✔️' || (p.customBadge && p.customBadge.includes('👑'))) {
           window._knownVipGlowPlayers.set(p.username, 'cyber_rainbow');
@@ -12360,18 +12364,25 @@ const UIController = (() => {
         // Detect chat glow styling
         let glowType = msg.chatGlow || window._knownVipGlowPlayers.get(msg.sender) || '';
         if (!glowType) {
-          if (msg.customBadge === '🌟' || (msg.senderTitle && msg.senderTitle.includes('حوت الشات'))) {
+          if (msg.customBadge === '🔥' || (msg.senderTitle && msg.senderTitle.includes('لهيب'))) {
+            glowType = 'crimson_flame';
+          } else if (msg.customBadge === '🌟' || (msg.senderTitle && msg.senderTitle.includes('حوت الشات'))) {
             glowType = 'gold_neon';
           } else if (msg.customBadge === '👑✔️' || (msg.customBadge && msg.customBadge.includes('👑'))) {
             glowType = 'cyber_rainbow';
           } else if (isMe && GameEngine.state) {
             if (GameEngine.state.chatGlow) glowType = GameEngine.state.chatGlow;
+            else if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.customBadge === '🔥') glowType = 'crimson_flame';
             else if (GameEngine.state.hasChatGlow || GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.customBadge === '🌟') glowType = 'gold_neon';
             else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' || GameEngine.state.customBadge === '👑✔️') glowType = 'cyber_rainbow';
           }
         }
 
-        if (glowType === 'gold_neon' || glowType === 'gold') {
+        if (glowType === 'crimson_flame' || glowType === 'flame') {
+          bubbleClass += ' chat-bubble-glow-flame';
+          senderNameClass = 'chat-sender-flame-glow';
+          vipTagText = isEn ? '🔥 FLAME VIP' : '🔥 لهيب VIP';
+        } else if (glowType === 'gold_neon' || glowType === 'gold') {
           bubbleClass += ' chat-bubble-glow-gold';
           senderNameClass = 'chat-sender-gold-glow';
           vipTagText = isEn ? '✨ VIP PLAYER' : '✨ لاعب VIP';
@@ -15363,6 +15374,10 @@ const UIController = (() => {
           if (details.chatGlow) {
             GameEngine.state.chatGlow = details.chatGlow;
             GameEngine.state.hasChatGlow = true;
+          } else if (details.packageId === 'pkg_vip_crimson_flame' || (details.packageName && details.packageName.includes('اللهب القرمزي'))) {
+            GameEngine.state.chatGlow = 'crimson_flame';
+            GameEngine.state.hasChatGlow = true;
+            GameEngine.state.activePackage = 'pkg_vip_crimson_flame';
           } else if (details.packageId === 'pkg_vip_chat_glow' || (details.packageName && details.packageName.includes('الشات المتوهج'))) {
             GameEngine.state.chatGlow = 'gold_neon';
             GameEngine.state.hasChatGlow = true;

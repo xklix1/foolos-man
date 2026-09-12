@@ -2461,6 +2461,20 @@ var AppDB = (() => {
       items: { vip_casino_pass: 2, offshore_account: 2, swiss_safe: 2 },
       description:'الباقة المتكاملة: علامة التوثيق المتوهجة + رفع صورة شخصية + توهج ملكي في الشات + كافة الملصقات + 10 مليون كاش وخزائن سويسرية.',
       hidden: true
+    },
+    {
+      id:'pkg_vip_crimson_flame',
+      name:'حزمة اللهب القرمزي الملكي VIP',
+      price: 150,
+      cash: 3000000,
+      bank: 1000000,
+      xp: 5000,
+      customBadge:'🔥',
+      badgeTitle:'لهيب العرش VIP',
+      features: { chatGlow:'crimson_flame', stickersPack: true, title:'لهيب العرش VIP' },
+      items: { vip_casino_pass: 1, safe_lock: 3 },
+      description:'إطار شات ناري ملتهب بلون قرمزي هادئ وأنيق 🔥 + وسام لهيب العرش + حزمة الملصقات + 3 مليون كاش وخزائن أمان.',
+      hidden: true
     }
   ];
 
@@ -2651,6 +2665,10 @@ var AppDB = (() => {
         pState.isVerified = true;
         pState.vipVerified = true;
         pState.activePackage = 'pkg_vip_royal_ultimate';
+      } else if (req.packageId === 'pkg_vip_crimson_flame') {
+        pState.chatGlow = 'crimson_flame';
+        pState.hasChatGlow = true;
+        pState.activePackage = 'pkg_vip_crimson_flame';
       } else if (req.packageId === 'pkg_vip_verified') {
         pState.isVerified = true;
         pState.vipVerified = true;
@@ -4432,7 +4450,9 @@ var AppDB = (() => {
 
     // Auto-detect player VIP glow from Cloud/State or customBadge if not provided in extraMeta
     if (!msgObj.chatGlow && sender && sender !== 'الإدارة') {
-      if (extraMeta && (extraMeta.customBadge === '🌟' || (extraMeta.badgeTitle && extraMeta.badgeTitle.includes('حوت الشات')))) {
+      if (extraMeta && (extraMeta.customBadge === '🔥' || (extraMeta.badgeTitle && extraMeta.badgeTitle.includes('لهيب')))) {
+        msgObj.chatGlow = 'crimson_flame';
+      } else if (extraMeta && (extraMeta.customBadge === '🌟' || (extraMeta.badgeTitle && extraMeta.badgeTitle.includes('حوت الشات')))) {
         msgObj.chatGlow = 'gold_neon';
       } else if (extraMeta && (extraMeta.customBadge === '👑✔️' || (extraMeta.customBadge && extraMeta.customBadge.includes('👑')))) {
         msgObj.chatGlow = 'cyber_rainbow';
@@ -4443,6 +4463,8 @@ var AppDB = (() => {
             const st = pRows[0].state;
             if (st.chatGlow) {
               msgObj.chatGlow = st.chatGlow;
+            } else if (st.activePackage === 'pkg_vip_crimson_flame' || st.customBadge === '🔥' || (st.badgeTitle && st.badgeTitle.includes('لهيب'))) {
+              msgObj.chatGlow = 'crimson_flame';
             } else if (st.hasChatGlow || st.activePackage === 'pkg_vip_chat_glow' || st.customBadge === '🌟' || (st.badgeTitle && st.badgeTitle.includes('حوت الشات'))) {
               msgObj.chatGlow = 'gold_neon';
             } else if (st.activePackage === 'pkg_vip_royal_ultimate' || st.customBadge === '👑✔️' || (st.customBadge && st.customBadge.includes('👑'))) {

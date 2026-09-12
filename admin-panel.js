@@ -2740,7 +2740,12 @@
         const selectedPkgId = templateSelect ? templateSelect.value : '';
         const foundPkg = Array.isArray(_currentTopupPackagesCache) ? _currentTopupPackagesCache.find(p => p.id === selectedPkgId) : null;
 
-        if (selectedPkgId === 'pkg_vip_chat_glow' || (foundPkg && foundPkg.features && foundPkg.features.chatGlow === 'gold_neon')) {
+        if (selectedPkgId === 'pkg_vip_crimson_flame' || (foundPkg && foundPkg.features && foundPkg.features.chatGlow === 'crimson_flame')) {
+          freshPlayer.chatGlow = 'crimson_flame';
+          freshPlayer.hasChatGlow = true;
+          freshPlayer.stickersPack = true;
+          freshPlayer.activePackage = 'pkg_vip_crimson_flame';
+        } else if (selectedPkgId === 'pkg_vip_chat_glow' || (foundPkg && foundPkg.features && foundPkg.features.chatGlow === 'gold_neon')) {
           freshPlayer.chatGlow = 'gold_neon';
           freshPlayer.hasChatGlow = true;
           freshPlayer.activePackage = 'pkg_vip_chat_glow';
@@ -7672,7 +7677,8 @@
           const isFb = Boolean(GameEngine.state && (GameEngine.state.facebookVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('facebook'))));
           let chatGlow = (GameEngine.state && (GameEngine.state.chatGlow || (GameEngine.state.hasChatGlow ? 'gold_neon' : ''))) || '';
           if (!chatGlow && GameEngine.state) {
-            if (GameEngine.state.activePackage === 'pkg_vip_chat_glow') chatGlow = 'gold_neon';
+            if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.chatGlow === 'crimson_flame') chatGlow = 'crimson_flame';
+            else if (GameEngine.state.activePackage === 'pkg_vip_chat_glow') chatGlow = 'gold_neon';
             else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate') chatGlow = 'cyber_rainbow';
           }
           const isVerified = Boolean(GameEngine.state && (GameEngine.state.isVerified || GameEngine.state.vipVerified));
