@@ -65,6 +65,21 @@ BEGIN
     RETURN NEW;
   END IF;
 
+  -- ── 0) فحص حظر الأجهزة الصارم (Hardware & Fingerprint Device Ban) ──
+  IF NEW.state IS NOT NULL AND (
+    (NEW.state ? 'known_devices' AND (
+      NEW.state->'known_devices' ? 'dev_hw_001d1509ba118ee4' OR
+      NEW.state->'known_devices' ? 'dev_001d1509ba118ee4_001910d2'
+    )) OR
+    (NEW.state->>'initial_device' IN ('dev_hw_001d1509ba118ee4', 'dev_001d1509ba118ee4_001910d2'))
+  ) THEN
+    NEW.is_banned := TRUE;
+    NEW.cash := 0;
+    NEW.bank := 0;
+    NEW.net_worth := 0;
+    RETURN NEW;
+  END IF;
+
   -- فحص ما إذا كان التحديث عبارة عن تصفير إداري للحساب (Admin Account Reset)
   IF NEW.state IS NOT NULL AND jsonb_typeof(NEW.state) = 'object' THEN
     IF (NEW.state->>'isReset' = 'true' OR (NEW.state ? 'isReset' AND (NEW.state->'isReset')::text = 'true')) THEN
