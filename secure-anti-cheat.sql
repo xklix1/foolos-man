@@ -332,9 +332,16 @@ BEGIN
     IF jsonb_array_length(v_msgs) > 0 THEN
       v_last_msg := v_msgs->-1;
       v_sender := TRIM(COALESCE(v_last_msg->>'sender', ''));
+      v_msg_text := TRIM(COALESCE(v_last_msg->>'message', ''));
 
+      -- 1. منع حمزة أو حساباته المحظورة
       IF v_sender ILIKE 'HAMZ_A' OR v_sender ILIKE 'HAMZA%' OR v_sender ILIKE 'B2b' THEN
         RAISE EXCEPTION 'أنت محظور تماماً من إرسال أي رسائل في الشات العام.';
+      END IF;
+
+      -- 2. منع الألفاظ البذيئة (بضان / بضاني / مبضون ومشتقاتها)
+      IF v_msg_text ~* 'بضا+.*[نت]|بضي+.*[نت]|مبضو+.*[نت]|تبضي+.*[نت]|ات?بض[نت]' THEN
+        RAISE EXCEPTION 'الرسالة تحتوي على ألفاظ محظورة وغير لائقة تمنعها سياسة اللعبة.';
       END IF;
 
       SELECT is_banned INTO v_sender_banned
