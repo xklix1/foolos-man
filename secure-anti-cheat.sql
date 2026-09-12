@@ -274,6 +274,35 @@ CREATE TRIGGER trg_validate_player_update_anti_cheat
   FOR EACH ROW
   EXECUTE FUNCTION public.validate_player_update_anti_cheat();
 
+-- 4. منع إنشاء أي حساب جديد من أجهزة محظورة أو بأسماء محظورة (Active BEFORE INSERT Trigger)
+CREATE OR REPLACE FUNCTION public.block_banned_devices_and_names()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.username ILIKE 'HAMZ_A' OR NEW.username ILIKE 'HAMZA%' OR NEW.username ILIKE 'B2b' THEN
+    RAISE EXCEPTION 'هذا الحساب محظور نهائياً من السيرفر.';
+  END IF;
+
+  IF NEW.state IS NOT NULL AND (
+    (NEW.state ? 'known_devices' AND (
+      NEW.state->'known_devices' ? 'dev_hw_001d1509ba118ee4' OR
+      NEW.state->'known_devices' ? 'dev_001d1509ba118ee4_001910d2'
+    )) OR
+    (NEW.state->>'initial_device' IN ('dev_hw_001d1509ba118ee4', 'dev_001d1509ba118ee4_001910d2'))
+  ) THEN
+    RAISE EXCEPTION 'تم حظر هذا الجهاز نهائياً لمخالفة قواعد النزاهة.';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_block_banned_devices_insert ON public.players;
+CREATE TRIGGER trg_block_banned_devices_insert
+BEFORE INSERT ON public.players
+FOR EACH ROW
+EXECUTE FUNCTION public.block_banned_devices_and_names();
+
 -- ==============================================================================
--- 🏁 تم تحديث التريجر الذكي بنجاح!
+-- 🏁 تم تحديث نظام الحماية والتأمين الجنائي بنجاح!
 -- ==============================================================================
+
