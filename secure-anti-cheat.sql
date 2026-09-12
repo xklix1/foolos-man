@@ -44,11 +44,31 @@ BEGIN
     v_role := session_user;
   END;
 
-  -- المشرفون وسيرفر الباك إند (service_role و postgres) أو التعديل الإداري المباشر معفيون من القيود
-  IF v_role IN ('service_role', 'postgres', 'supabase_admin') 
-     OR (NEW.admin_modified_timestamp IS DISTINCT FROM OLD.admin_modified_timestamp) THEN
+  -- المشرفون وسيرفر الباك إند فقط معفيون من القيود عبر مفتاح service_role أو postgres
+  -- ملاحظة حاسمة: لا يجوز إعفاء العميل لمجرد اختلاف admin_modified_timestamp لأن المتصفح يمكنه التلاعب به
+  IF v_role IN ('service_role', 'postgres', 'supabase_admin') THEN
     RETURN NEW;
   END IF;
+
+  -- ── 0) حماية السجلات المعدلة إدارياً من الكتابة فوقها بكاش المتصفح القديم (Stale Client Shield) ──
+  IF OLD.admin_modified_timestamp > 0 AND COALESCE(NEW.admin_modified_timestamp, 0) < OLD.admin_modified_timestamp THEN
+    -- العميل يحمل نسخة كاش محلية قديمة ولم يقم بتحديث بياناته بعد التدخل الإداري
+    -- نمنعه تماماً من استرجاع الأصول المحذوفة أو الثروة الملغاة
+    NEW.state := OLD.state;
+    NEW.cash := OLD.cash;
+    NEW.bank := OLD.bank;
+    NEW.dirty_cash := OLD.dirty_cash;
+    NEW.net_worth := OLD.net_worth;
+    NEW.title := OLD.title;
+    NEW.job_id := OLD.job_id;
+    NEW.total_taxes_paid := OLD.total_taxes_paid;
+    NEW.is_banned := OLD.is_banned;
+    NEW.admin_modified_timestamp := OLD.admin_modified_timestamp;
+    RETURN NEW;
+  END IF;
+
+  -- منع أي عميل عادي من تغيير قيمة admin_modified_timestamp
+  NEW.admin_modified_timestamp := OLD.admin_modified_timestamp;
 
   -- ── أ) منع ترقية الحساب إلى مشرف (Admin Escalation Shield) ──
   -- إذا لم يكن الحساب مشرفاً مسبقاً، يمنع منعاً باتاً منحه رتبة المشرف
@@ -108,35 +128,32 @@ BEGIN
     END LOOP;
   END IF;
 
-  -- ── هـ) كابح قفزات الثروة المفاجئة (Wealth Velocity Limiter) ──
-
+  -- ── هـ) كابح قفزات الثروة المفاجئة الصارم (Strict Wealth Velocity Guard) ──
+  -- سد الثغرة نهائياً: أي قفزة مشبوهة يتم رفضها بالكامل وإرجاع الرصيد القديم (Revert) بدلاً من منح المتلاعب مبالغ مجانية
   v_cash_diff := COALESCE(NEW.cash, 0) - COALESCE(OLD.cash, 0);
   v_bank_diff := COALESCE(NEW.bank, 0) - COALESCE(OLD.bank, 0);
   v_total_diff := v_cash_diff + v_bank_diff;
 
-  -- في دورة الحفظ السحابي العادية (كل 35 ثانية)، لا يمكن للاعب قانوني تحصيل قفزة سائلة تتجاوز 400,000 ج.م
-  -- إذا قفزت أمواله فجأة بملايين عبر F12، يتم كبح القفزة تلقائياً للحد الأقصى المعقول وحماية قاعدة البيانات
-  IF v_total_diff > 400000 THEN
-    IF v_cash_diff > 250000 THEN
-      NEW.cash := OLD.cash + 250000;
-    END IF;
-    IF v_bank_diff > 250000 THEN
-      NEW.bank := OLD.bank + 250000;
-    END IF;
+  IF v_total_diff > 200000 OR v_cash_diff > 150000 OR v_bank_diff > 150000 THEN
+    -- إحباط التلاعب فوراً وإعادة الرصيد لما كان عليه دون أي زيادة
+    NEW.cash := OLD.cash;
+    NEW.bank := OLD.bank;
 
     -- مزامنة التعديل داخل كائن state الداخلي
-    IF NEW.state ? 'cash' THEN
-      NEW.state := jsonb_set(NEW.state, '{cash}', to_jsonb(NEW.cash));
-    END IF;
-    IF NEW.state ? 'bank' THEN
-      NEW.state := jsonb_set(NEW.state, '{bank}', to_jsonb(NEW.bank));
+    IF NEW.state IS NOT NULL AND jsonb_typeof(NEW.state) = 'object' THEN
+      IF NEW.state ? 'cash' THEN
+        NEW.state := jsonb_set(NEW.state, '{cash}', to_jsonb(OLD.cash));
+      END IF;
+      IF NEW.state ? 'bank' THEN
+        NEW.state := jsonb_set(NEW.state, '{bank}', to_jsonb(OLD.bank));
+      END IF;
     END IF;
 
     INSERT INTO public.security_audit_logs (username, incident_type, details)
-    VALUES (NEW.username, 'ABNORMAL_WEALTH_VELOCITY_CLAMPED', jsonb_build_object(
+    VALUES (NEW.username, 'ABNORMAL_WEALTH_VELOCITY_BLOCKED', jsonb_build_object(
       'attempted_gain', v_total_diff,
-      'old_liquid', (COALESCE(OLD.cash,0) + COALESCE(OLD.bank,0)),
-      'new_liquid_clamped', (NEW.cash + NEW.bank)
+      'old_liquid', (COALESCE(OLD.cash, 0) + COALESCE(OLD.bank, 0)),
+      'action', 'REVERTED_TO_OLD_BALANCE'
     ));
   END IF;
 

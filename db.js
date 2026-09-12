@@ -4610,6 +4610,68 @@ var AppDB = (() => {
     }
   }
 
+  // ─────────────────────────────────────────────
+  //  MONEY DROP & LIVE CHAT TIPPING (نظام النقطة والفشخرة)
+  // ─────────────────────────────────────────────
+  async function createMoneyDrop(sender, senderTitle, message, amount, bags) {
+    if (!sender) throw new Error('يرجى تسجيل الدخول أولاً.');
+    const amt = Math.floor(Number(amount));
+    const bg = parseInt(bags, 10);
+    if (isNaN(amt) || amt < 10000) throw new Error('الحد الأدنى لرمي النقطة هو 10,000 ج.م.');
+    if (amt > 50000000) throw new Error('الحد الأقصى للنقطة هو 50,000,000 ج.م.');
+    if (isNaN(bg) || bg < 2 || bg > 25) throw new Error('عدد الأكياس يجب أن يكون بين 2 و 25 كيساً.');
+
+    const res = await _api('rpc/execute_create_money_drop', {
+      method: 'POST',
+      body: JSON.stringify({
+        p_sender: sender.trim(),
+        p_sender_title: senderTitle || 'سيد الأعمال',
+        p_message: message || 'نُقطة حلاوة لرجالة السيرفر! 💸',
+        p_amount: amt,
+        p_bags: bg
+      })
+    });
+
+    if (res && res.success === false) {
+      throw new Error(res.error || 'فشل في رمي النقطة.');
+    }
+
+    if (typeof triggerImmediateChatSync === 'function') {
+      triggerImmediateChatSync();
+    }
+    return res;
+  }
+
+  async function claimMoneyDrop(dropId, claimer) {
+    if (!dropId || !claimer) throw new Error('بيانات غير مكتملة.');
+    const res = await _api('rpc/execute_claim_money_drop', {
+      method: 'POST',
+      body: JSON.stringify({
+        p_drop_id: dropId,
+        p_claimer: claimer.trim()
+      })
+    });
+
+    if (res && res.success === false) {
+      throw new Error(res.error || 'تعذر التقاط النقطة.');
+    }
+
+    if (typeof triggerImmediateChatSync === 'function') {
+      triggerImmediateChatSync();
+    }
+    return res;
+  }
+
+  async function getMoneyDropDetails(dropId) {
+    if (!dropId) return null;
+    try {
+      const rows = await _api(`money_drops?id=eq.${encodeURIComponent(dropId)}&select=*`);
+      return (rows && rows.length > 0) ? rows[0] : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   // ── Unified Stock Market Global Events ──
   async function getGlobalMarketEvent() {
     try {
@@ -5029,6 +5091,11 @@ var AppDB = (() => {
     getAllPrivateMessages,
     sendPrivateMessage,
     markDMsRead,
+
+    // Money Drops (نظام النقطة والفشخرة)
+    createMoneyDrop,
+    claimMoneyDrop,
+    getMoneyDropDetails,
 
     // Idle & Egress Control
     isNetworkActive,

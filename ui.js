@@ -11564,6 +11564,161 @@ const UIController = (() => {
       btnConfirmDirectWire.addEventListener('click', executeDirectWireFromModal);
     }
 
+    // ─────────────────────────────────────────────
+    //  MONEY DROP (رمي نُقطة في الشات) LISTENERS & HANDLERS
+    // ─────────────────────────────────────────────
+    const moneyDropModal = document.getElementById('money-drop-modal');
+    const btnOpenMoneyDrop = document.getElementById('btn-open-money-drop-modal');
+    const btnCloseMoneyDrop = document.getElementById('btn-close-money-drop-modal');
+    const btnCancelMoneyDrop = document.getElementById('btn-cancel-money-drop');
+    const btnConfirmMoneyDrop = document.getElementById('btn-confirm-money-drop');
+    const moneyDropAmtInput = document.getElementById('money-drop-amount-input');
+    const moneyDropBagsLabel = document.getElementById('money-drop-bags-label');
+    const moneyDropSummaryText = document.getElementById('money-drop-summary-text');
+    const moneyDropMsgInput = document.getElementById('money-drop-message-input');
+    let selectedDropBags = 5;
+
+    function updateMoneyDropSummary() {
+      const amt = Math.floor(Number(moneyDropAmtInput?.value) || 0);
+      const bg = selectedDropBags || 5;
+      if (moneyDropBagsLabel) moneyDropBagsLabel.textContent = `${bg} أكياس`;
+      if (moneyDropSummaryText) {
+        const avg = bg > 0 ? Math.floor(amt / bg) : 0;
+        moneyDropSummaryText.textContent = `سيتم خصم ${amt.toLocaleString()} ج.م وتوزيعها عشوائياً على ${bg} أكياس (متوسط ${avg.toLocaleString()} ج.م للكيس).`;
+      }
+    }
+
+    if (btnOpenMoneyDrop && moneyDropModal) {
+      btnOpenMoneyDrop.addEventListener('click', () => {
+        const myCash = Number(GameEngine.state?.cash) || 0;
+        const myBank = Number(GameEngine.state?.bank) || 0;
+        const totalAvail = myCash + myBank;
+        const availEl = document.getElementById('money-drop-available-balance');
+        if (availEl) availEl.textContent = `${Math.floor(totalAvail).toLocaleString()} EGP`;
+        selectedDropBags = 5;
+        if (moneyDropAmtInput) moneyDropAmtInput.value = '100000';
+        updateMoneyDropSummary();
+        moneyDropModal.classList.remove('hidden');
+        if (typeof playMenuSound === 'function') playMenuSound('click');
+      });
+    }
+
+    if (btnCloseMoneyDrop && moneyDropModal) {
+      btnCloseMoneyDrop.addEventListener('click', () => moneyDropModal.classList.add('hidden'));
+    }
+    if (btnCancelMoneyDrop && moneyDropModal) {
+      btnCancelMoneyDrop.addEventListener('click', () => moneyDropModal.classList.add('hidden'));
+    }
+
+    // Quick Amount chips
+    document.querySelectorAll('.money-drop-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.money-drop-chip').forEach(c => c.classList.remove('active', 'text-amber-300'));
+        chip.classList.add('active', 'text-amber-300');
+        const val = chip.dataset.amount;
+        if (val === 'max') {
+          const myCash = Number(GameEngine.state?.cash) || 0;
+          const myBank = Number(GameEngine.state?.bank) || 0;
+          if (moneyDropAmtInput) moneyDropAmtInput.value = Math.max(10000, Math.floor(myCash + myBank));
+        } else {
+          if (moneyDropAmtInput) moneyDropAmtInput.value = parseInt(val, 10);
+        }
+        updateMoneyDropSummary();
+        if (typeof playMenuSound === 'function') playMenuSound('click');
+      });
+    });
+
+    if (moneyDropAmtInput) {
+      moneyDropAmtInput.addEventListener('input', updateMoneyDropSummary);
+    }
+
+    // Bags chips
+    document.querySelectorAll('.money-drop-bags-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.money-drop-bags-chip').forEach(c => {
+          c.classList.remove('bg-amber-500', 'text-slate-950', 'border-amber-400', 'font-black');
+          c.classList.add('bg-slate-900', 'text-slate-300');
+        });
+        chip.classList.remove('bg-slate-900', 'text-slate-300');
+        chip.classList.add('bg-amber-500', 'text-slate-950', 'border-amber-400', 'font-black');
+        selectedDropBags = parseInt(chip.dataset.bags, 10) || 5;
+        updateMoneyDropSummary();
+        if (typeof playMenuSound === 'function') playMenuSound('click');
+      });
+    });
+
+    // Quick message buttons
+    document.querySelectorAll('.money-drop-quick-msg').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (moneyDropMsgInput) moneyDropMsgInput.value = btn.textContent.trim();
+        if (typeof playMenuSound === 'function') playMenuSound('click');
+      });
+    });
+
+    // Confirm Create Money Drop
+    if (btnConfirmMoneyDrop) {
+      btnConfirmMoneyDrop.addEventListener('click', async () => {
+        const amt = Math.floor(Number(moneyDropAmtInput?.value) || 0);
+        const bags = selectedDropBags || 5;
+        const msg = (moneyDropMsgInput?.value || '').trim() || 'نُقطة حلاوة لرجالة السيرفر! 💸';
+
+        if (amt < 10000) {
+          showToast('تنبيه', 'الحد الأدنى لرمي النقطة هو 10,000 ج.م.', 'warning');
+          return;
+        }
+
+        const myCash = Number(GameEngine.state?.cash) || 0;
+        const myBank = Number(GameEngine.state?.bank) || 0;
+        if ((myCash + myBank) < amt) {
+          showToast('رصيد غير كافٍ', 'رصيدك الإجمالي لا يكفي لرمي هذه النُقطة.', 'error');
+          if (typeof playMenuSound === 'function') playMenuSound('error');
+          return;
+        }
+
+        btnConfirmMoneyDrop.disabled = true;
+        btnConfirmMoneyDrop.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> جاري الإطلاق...';
+
+        try {
+          const username = GameEngine.activeUsername || GameEngine.state?.username;
+          const userTitle = GameEngine.state?.title || 'سيد الأعمال';
+          await AppDB.createMoneyDrop(username, userTitle, msg, amt, bags);
+          
+          // Deduct locally and sync UI immediately
+          if (myCash >= amt) {
+            GameEngine.state.cash -= amt;
+          } else {
+            const rem = amt - myCash;
+            GameEngine.state.cash = 0;
+            GameEngine.state.bank = Math.max(0, myBank - rem);
+          }
+          GameEngine.state.netWorth = Math.max(0, (GameEngine.state.netWorth || 0) - amt);
+          updateUI();
+
+          moneyDropModal.classList.add('hidden');
+          showToast('تم رمي النُقطة! 💸', `تم إطلاق نُقطة بقيمة ${amt.toLocaleString()} ج.م على ${bags} أكياس في الشات بنجاح!`, 'success');
+          if (typeof playMenuSound === 'function') playMenuSound('purchase');
+        } catch (err) {
+          showToast('خطأ في إطلاق النُقطة', err.message, 'error');
+          if (typeof playMenuSound === 'function') playMenuSound('error');
+        } finally {
+          btnConfirmMoneyDrop.disabled = false;
+          btnConfirmMoneyDrop.innerHTML = '<i class="fa-solid fa-gift text-sm"></i><span>إطلاق النُقطة في الشات الآن!</span>';
+        }
+      });
+    }
+
+    // Modal Winners Close
+    const modalWinners = document.getElementById('money-drop-winners-modal');
+    const btnCloseWinners = document.getElementById('btn-close-money-drop-winners');
+    const btnDoneWinners = document.getElementById('btn-done-money-drop-winners');
+    if (btnCloseWinners && modalWinners) btnCloseWinners.addEventListener('click', () => modalWinners.classList.add('hidden'));
+    if (btnDoneWinners && modalWinners) btnDoneWinners.addEventListener('click', () => modalWinners.classList.add('hidden'));
+
+    // Modal Celebrate Close
+    const modalCelebrate = document.getElementById('money-drop-celebrate-modal');
+    const btnCloseCelebrate = document.getElementById('btn-close-money-drop-celebrate');
+    if (btnCloseCelebrate && modalCelebrate) btnCloseCelebrate.addEventListener('click', () => modalCelebrate.classList.add('hidden'));
+
     if (chatInput && charCounter) {
       chatInput.addEventListener('input', () => {
         charCounter.textContent =`${chatInput.value.length} / 200`;
@@ -12100,6 +12255,7 @@ const UIController = (() => {
 
     // Register any glowing sender in this batch
     msgs.forEach(m => {
+      if (m.type === 'money_drop') return;
       if (m.chatGlow && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, m.chatGlow);
       } else if (m.customBadge === '🌟' && m.sender) {
@@ -12191,6 +12347,77 @@ const UIController = (() => {
           <div class="chat-message-bubble ${bubbleClass}">
             ${safeMsg}
           </div>`;
+      } else if (msg.type === 'money_drop') {
+        const isMyDrop = curUser && msg.sender === curUser;
+        const totalAmt = Number(msg.totalAmount || 0);
+        const totalBags = Number(msg.totalBags || 1);
+        const claimedBags = Number(msg.claimedBags || 0);
+        const remainingBags = Math.max(0, totalBags - claimedBags);
+        const isCompleted = (msg.status === 'completed' || remainingBags === 0);
+        const dropId = msg.dropId || (msg.id ? String(msg.id).replace('drop_', '') : '');
+
+        msgDiv.className = 'w-full my-2 select-none';
+        msgDiv.innerHTML = `
+          <div class="money-drop-card relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-950/90 via-amber-950/70 to-slate-950 border-2 border-amber-500/60 p-3 shadow-xl shadow-amber-500/10">
+            <!-- Top Badges & Sender -->
+            <div class="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-amber-500/20">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-400 to-yellow-500 text-slate-950 flex items-center justify-center text-sm font-black shadow-md shadow-amber-500/30 animate-pulse">
+                  <i class="fa-solid fa-gift"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-black text-amber-300 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${safeSender}')">${safeSender}</span>
+                    <span class="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-200 border border-amber-500/30">${safeTitle}</span>
+                  </div>
+                  <span class="text-[9px] text-slate-400 font-medium">${timeStr}</span>
+                </div>
+              </div>
+              <span class="text-[9px] px-2 py-0.5 rounded-full font-black ${isCompleted ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-red-500/20 text-red-300 border border-red-500/40 animate-pulse'}">
+                ${isCompleted ? 'اكتملت 🏁' : 'نُقطة حية 💸'}
+              </span>
+            </div>
+
+            <!-- Message Text -->
+            <div class="mb-2.5 text-xs text-white font-bold bg-black/40 p-2 rounded-xl border border-amber-500/20">
+              <i class="fa-solid fa-quote-right text-amber-400/60 ml-1 text-[10px]"></i>
+              <span>${safeMsg}</span>
+            </div>
+
+            <!-- Stats & Progress -->
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <div>
+                <span class="text-[9px] text-slate-400 block font-medium">إجمالي النُقطة:</span>
+                <span class="text-sm font-black text-amber-400 numbers-font">${totalAmt.toLocaleString()} EGP</span>
+              </div>
+              <div class="text-left">
+                <span class="text-[9px] text-slate-400 block font-medium">الأكياس المستلمة:</span>
+                <span class="text-xs font-black text-slate-200 numbers-font">${claimedBags} / ${totalBags}</span>
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full h-2 rounded-full bg-slate-900 border border-slate-800 overflow-hidden mb-2.5">
+              <div class="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full transition-all duration-500" style="width: ${Math.min(100, Math.round((claimedBags / totalBags) * 100))}%"></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-2">
+              ${!isCompleted ? `
+                <button type="button" onclick="window.UI.claimMoneyDrop('${dropId}', this)" class="btn-claim-money-drop flex-1 py-2 px-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer">
+                  <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
+                  <span>التقط نصيبك! 🧧</span>
+                </button>
+              ` : `
+                <div class="flex-1 py-2 text-center text-xs font-bold text-slate-400 bg-slate-900/60 rounded-xl border border-slate-800">
+                  نفدت جميع الأكياس 🏁
+                </div>
+              `}
+              <button type="button" onclick="window.UI.viewMoneyDropWinners('${dropId}')" class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition border border-slate-800 shrink-0 cursor-pointer" title="عرض قائمة المحظوظين">
+                <i class="fa-solid fa-trophy text-amber-400"></i>
+              </button>
+            </div>
+          </div>`;
       } else {
         const isMyMsg = curUser && msg.sender === curUser;
         const lb = window.cachedLeaderboard || (typeof cachedLeaderboard !== 'undefined' ? cachedLeaderboard : null);
@@ -12227,6 +12454,120 @@ const UIController = (() => {
     });
 
     container.scrollTop = container.scrollHeight;
+  }
+
+  async function claimMoneyDrop(dropId, btnEl) {
+    const curUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
+    if (!curUser) {
+      showToast('تنبيه', 'يجب تسجيل الدخول أولاً للمشاركة في النُقطة!', 'warning');
+      return;
+    }
+
+    if (btnEl) {
+      btnEl.disabled = true;
+      btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i> <span>جاري الالتقاط...</span>';
+    }
+
+    try {
+      const res = await AppDB.claimMoneyDrop(dropId, curUser);
+      if (res && res.success) {
+        const amt = Number(res.claimedAmount || 0);
+        
+        // Deposit into bank authoritative local state
+        if (GameEngine.state) {
+          GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amt;
+          GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amt;
+          GameEngine.forceSaveState();
+          updateUI();
+        }
+
+        // Play sounds
+        if (typeof playCasinoSound === 'function') playCasinoSound('win');
+        if (typeof playMenuSound === 'function') playMenuSound('purchase');
+
+        // Show celebrate modal
+        const celebrateModal = document.getElementById('money-drop-celebrate-modal');
+        const winAmtEl = document.getElementById('money-drop-win-amount');
+        const winSenderEl = document.getElementById('money-drop-win-sender-text');
+        if (winAmtEl) winAmtEl.textContent = `+${amt.toLocaleString()} EGP`;
+        if (winSenderEl && res.sender) winSenderEl.textContent = `نُقطة حلاوة أطلقها المعلم [${res.sender}]`;
+        if (celebrateModal) celebrateModal.classList.remove('hidden');
+
+        showToast('مبروك يا وحش! 🧧', `التقطت كيس نُقطة بقيمة ${amt.toLocaleString()} ج.م تم إيداعها بحسابك البنكي!`, 'success');
+
+        // Immediately trigger chat sync to update cards
+        if (typeof triggerImmediateChatSync === 'function') {
+          triggerImmediateChatSync();
+        }
+      }
+    } catch (err) {
+      const errMsg = err.message || 'تعذر التقاط النُقطة.';
+      showToast('عذراً', errMsg, 'info');
+      if (typeof playMenuSound === 'function') playMenuSound('error');
+      if (btnEl) {
+        btnEl.disabled = false;
+        btnEl.innerHTML = '<i class="fa-solid fa-hand-holding-dollar text-sm"></i><span>التقط نصيبك! 🧧</span>';
+      }
+    }
+  }
+
+  async function viewMoneyDropWinners(dropId) {
+    const modal = document.getElementById('money-drop-winners-modal');
+    const listEl = document.getElementById('money-drop-winners-list');
+    const subtitleEl = document.getElementById('money-drop-winners-subtitle');
+    if (!modal || !listEl) return;
+
+    modal.classList.remove('hidden');
+    listEl.innerHTML = `
+      <div class="text-center py-6 text-slate-400 text-xs">
+        <i class="fa-solid fa-spinner fa-spin text-lg mb-2 block text-amber-400"></i>
+        <span>جاري جلب قائمة المحظوظين...</span>
+      </div>`;
+
+    try {
+      const drop = await AppDB.getMoneyDropDetails(dropId);
+      if (!drop) {
+        listEl.innerHTML = '<div class="text-center py-4 text-slate-500 text-xs">لم يتم العثور على بيانات هذه النُقطة.</div>';
+        return;
+      }
+
+      if (subtitleEl) {
+        subtitleEl.textContent = `إجمالي: ${(Number(drop.total_amount) || 0).toLocaleString()} ج.م (${drop.claimed_bags || 0}/${drop.total_bags || 0} كيس) - من: ${drop.sender}`;
+      }
+
+      const claims = drop.claims || [];
+      if (claims.length === 0) {
+        listEl.innerHTML = `
+          <div class="text-center py-6 text-slate-400 text-xs">
+            <i class="fa-solid fa-gift-open text-2xl text-amber-400/50 mb-2 block"></i>
+            <span>لم يلتقط أحد من هذه النُقطة بعد! كن أول الفائزين 💸</span>
+          </div>`;
+        return;
+      }
+
+      let html = '';
+      claims.forEach((c, idx) => {
+        const amt = Number(c.amount || 0);
+        const timeStr = c.claimed_at ? new Date(c.claimed_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '';
+        const rankMedal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `#${idx + 1}`));
+
+        html += `
+          <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/80 border border-slate-800/90 text-xs hover:border-amber-500/30 transition">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-black text-amber-400 w-5 text-center">${rankMedal}</span>
+              <div>
+                <span class="font-bold text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${c.username}')">${c.username}</span>
+                <span class="text-[9px] text-slate-400 block">${timeStr}</span>
+              </div>
+            </div>
+            <span class="text-xs font-black text-amber-400 numbers-font">+${amt.toLocaleString()} EGP</span>
+          </div>`;
+      });
+
+      listEl.innerHTML = html;
+    } catch (err) {
+      listEl.innerHTML = `<div class="text-center py-4 text-red-400 text-xs">حدث خطأ في تحميل القائمة: ${err.message}</div>`;
+    }
   }
 
   let _currentMailboxFilter ='all';
@@ -18771,7 +19112,9 @@ const UIController = (() => {
     toggleMutePlayer,
     showToast,
     openNotificationsModal,
-    closeNotificationsModal
+    closeNotificationsModal,
+    claimMoneyDrop,
+    viewMoneyDropWinners
   };
 
 })();

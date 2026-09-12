@@ -4994,6 +4994,180 @@
     </div>
   </div>
 
+  <!-- ==================== MONEY DROP (رمي نُقطة) MODAL ==================== -->
+  <div id="money-drop-modal" dir="rtl"
+    class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 animate-fade-in select-none">
+    <div
+      class="glass-panel w-full max-w-sm rounded-3xl border border-amber-500/40 bg-slate-950/95 overflow-hidden shadow-2xl flex flex-col relative text-right">
+      
+      <!-- Modal Header -->
+      <div class="p-4 border-b border-slate-800/80 bg-gradient-to-r from-red-950/60 via-amber-950/40 to-slate-900/60 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 text-slate-950 flex items-center justify-center text-lg font-black shadow-lg shadow-amber-500/20 animate-pulse">
+            <i class="fa-solid fa-gift"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-black text-white flex items-center gap-1.5">
+              <span>رمي نُقطة في الشات</span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">فشخرة 💸</span>
+            </h3>
+            <p class="text-[10px] text-slate-400">وزّع كاش على رجالة السيرفر في الشات العام</p>
+          </div>
+        </div>
+        <button id="btn-close-money-drop-modal"
+          class="w-8 h-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-800 cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-4 space-y-3.5 max-h-[75vh] overflow-y-auto scrollbar-thin">
+        <!-- Available Balance -->
+        <div class="p-2.5 rounded-xl bg-slate-900/50 border border-slate-800/80 flex items-center justify-between text-xs">
+          <span class="text-slate-400 text-[11px] font-medium">رصيدك الإجمالي المتاح:</span>
+          <span id="money-drop-available-balance" class="font-black text-amber-400 numbers-font text-xs">0 EGP</span>
+        </div>
+
+        <!-- Amount Input -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold text-slate-300">المبلغ الإجمالي للنُقطة (EGP):</label>
+          <div class="relative">
+            <input type="number" id="money-drop-amount-input" min="10000" step="5000"
+              class="w-full p-2.5 pl-12 bg-slate-900/90 border border-slate-700/80 rounded-xl text-center text-base font-black text-white focus:outline-none focus:border-amber-500/70 numbers-font"
+              placeholder="100000" value="100000">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 font-bold">EGP</span>
+          </div>
+        </div>
+
+        <!-- Quick Amount Chips -->
+        <div class="grid grid-cols-4 gap-1 text-center">
+          <button type="button" class="money-drop-chip py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-bold numbers-font transition cursor-pointer" data-amount="25000">25k</button>
+          <button type="button" class="money-drop-chip py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-bold numbers-font transition cursor-pointer" data-amount="50000">50k</button>
+          <button type="button" class="money-drop-chip py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-amber-300 font-bold numbers-font transition cursor-pointer active" data-amount="100000">100k</button>
+          <button type="button" class="money-drop-chip py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-bold numbers-font transition cursor-pointer" data-amount="250000">250k</button>
+          <button type="button" class="money-drop-chip py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-bold numbers-font transition cursor-pointer" data-amount="500000">500k</button>
+          <button type="button" class="money-drop-chip py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-bold numbers-font transition cursor-pointer" data-amount="1000000">1M</button>
+          <button type="button" class="money-drop-chip py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-bold numbers-font transition cursor-pointer" data-amount="5000000">5M</button>
+          <button type="button" class="money-drop-chip py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-yellow-400 font-bold transition cursor-pointer" data-amount="max">الكل</button>
+        </div>
+
+        <!-- Number of Bags Selection -->
+        <div class="space-y-1.5">
+          <div class="flex justify-between items-center text-xs">
+            <label class="font-bold text-slate-300">عدد الأكياس / المحظوظين:</label>
+            <span id="money-drop-bags-label" class="text-amber-400 font-black numbers-font text-xs">5 أكياس</span>
+          </div>
+          <div class="grid grid-cols-5 gap-1 text-center">
+            <button type="button" class="money-drop-bags-chip py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-300 font-bold transition cursor-pointer" data-bags="3">3</button>
+            <button type="button" class="money-drop-bags-chip py-1 rounded-lg bg-amber-500 text-slate-950 font-black border border-amber-400 text-[11px] transition cursor-pointer active" data-bags="5">5</button>
+            <button type="button" class="money-drop-bags-chip py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-300 font-bold transition cursor-pointer" data-bags="10">10</button>
+            <button type="button" class="money-drop-bags-chip py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-300 font-bold transition cursor-pointer" data-bags="15">15</button>
+            <button type="button" class="money-drop-bags-chip py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-300 font-bold transition cursor-pointer" data-bags="20">20</button>
+          </div>
+        </div>
+
+        <!-- Message / Dedication -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold text-slate-300">رسالة الإهداء / الفشخرة:</label>
+          <input type="text" id="money-drop-message-input" maxlength="70"
+            class="w-full p-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500/70"
+            placeholder="نُقطة حلاوة لرجالة السيرفر! 💸" value="نُقطة حلاوة لرجالة السيرفر! 💸">
+          <div class="flex gap-1 overflow-x-auto pb-1 scrollbar-none text-[10px]">
+            <button type="button" class="money-drop-quick-msg px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white shrink-0">حلاوة التوب 1 👑</button>
+            <button type="button" class="money-drop-quick-msg px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white shrink-0">عشان عين الحبايب ❤️</button>
+            <button type="button" class="money-drop-quick-msg px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white shrink-0">أحلى مسا على السيرفر ✨</button>
+          </div>
+        </div>
+
+        <!-- Summary Note -->
+        <div class="p-2 rounded-xl bg-amber-950/30 border border-amber-500/20 flex items-center gap-2 text-[10px] text-amber-200">
+          <i class="fa-solid fa-sparkles text-amber-400 shrink-0"></i>
+          <span id="money-drop-summary-text">سيتم خصم 100,000 ج.م وتوزيعها عشوائياً على 5 أكياس.</span>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-800/80 bg-slate-900/60 flex items-center gap-2">
+        <button id="btn-confirm-money-drop"
+          class="flex-1 py-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer">
+          <i class="fa-solid fa-gift text-sm"></i>
+          <span>إطلاق النُقطة في الشات الآن!</span>
+        </button>
+        <button id="btn-cancel-money-drop"
+          class="px-4 py-3 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-bold transition border border-slate-800 cursor-pointer">
+          إلغاء
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== MONEY DROP WINNERS MODAL ==================== -->
+  <div id="money-drop-winners-modal" dir="rtl"
+    class="hidden fixed inset-0 z-[160] flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 animate-fade-in select-none">
+    <div
+      class="glass-panel w-full max-w-sm rounded-3xl border border-amber-500/40 bg-slate-950/95 overflow-hidden shadow-2xl flex flex-col relative text-right">
+      
+      <div class="p-4 border-b border-slate-800/80 bg-gradient-to-r from-red-950/60 via-amber-950/40 to-slate-900/60 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center text-sm font-black">
+            <i class="fa-solid fa-trophy"></i>
+          </div>
+          <div>
+            <h3 class="text-xs font-black text-white">قائمة محظوظين النُقطة</h3>
+            <p id="money-drop-winners-subtitle" class="text-[10px] text-slate-400">نُقطة من المعلم فلان</p>
+          </div>
+        </div>
+        <button id="btn-close-money-drop-winners"
+          class="w-7 h-7 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-800 cursor-pointer">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+
+      <div id="money-drop-winners-list" class="p-4 space-y-2 max-h-[60vh] overflow-y-auto scrollbar-thin">
+        <!-- Dynamic Winners -->
+      </div>
+
+      <div class="p-3 border-t border-slate-800/80 bg-slate-900/50 text-center">
+        <button id="btn-done-money-drop-winners"
+          class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition border border-slate-800 cursor-pointer">
+          إغلاق
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MONEY DROP CELEBRATE / WIN MODAL ==================== -->
+  <div id="money-drop-celebrate-modal" dir="rtl"
+    class="hidden fixed inset-0 z-[170] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in select-none">
+    <div
+      class="glass-panel w-full max-w-xs rounded-3xl border border-amber-400/60 bg-gradient-to-b from-red-950/90 via-slate-950/95 to-slate-950/98 p-6 text-center shadow-2xl relative overflow-hidden">
+      
+      <!-- Glowing Animated Envelope / Gift -->
+      <div class="w-20 h-20 mx-auto mb-3 rounded-full bg-gradient-to-tr from-amber-500 via-yellow-300 to-amber-600 text-slate-950 flex items-center justify-center text-3xl font-black shadow-xl shadow-amber-500/30 animate-bounce">
+        <i class="fa-solid fa-gift"></i>
+      </div>
+
+      <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold uppercase tracking-wider inline-block mb-1">
+        مبروك يا وحش! 🥳
+      </span>
+      
+      <h3 class="text-base font-black text-white mb-1">التقطت كيس نُقطة بنجاح!</h3>
+      <p id="money-drop-win-sender-text" class="text-xs text-slate-400 mb-4">من نُقطة المعلم فلان</p>
+
+      <div class="p-4 rounded-2xl bg-slate-900/90 border border-amber-500/30 mb-4">
+        <span class="text-[10px] text-slate-400 block mb-1">المبلغ الذي كسبته:</span>
+        <span id="money-drop-win-amount" class="text-2xl font-black text-amber-400 numbers-font block">+0 EGP</span>
+        <span class="text-[9px] text-emerald-400 font-bold block mt-1"><i class="fa-solid fa-check-circle"></i> تم إيداعه في حسابك البنكي فوراً</span>
+      </div>
+
+      <button id="btn-close-money-drop-celebrate"
+        class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer">
+        تسلم يا كبير! 🤝
+      </button>
+    </div>
+  </div>
+
   <!-- ==================== V2: EMPLOYEE MATH RIDDLE MODAL ==================== -->
   <div id="riddle-verification-modal"
     class="hidden fixed inset-0 z-[140] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in">
@@ -5943,6 +6117,11 @@
       <!-- Chat Input Area -->
       <div class="p-4 border-t border-slate-800/80 bg-slate-900/20 shrink-0">
         <div class="flex gap-2">
+          <button id="btn-open-money-drop-modal" type="button" title="رمي نُقطة في الشات 💸"
+            class="px-3 py-2 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer shrink-0">
+            <i class="fa-solid fa-gift text-sm text-red-700 animate-bounce"></i>
+            <span class="text-[11px] font-black">نُقطة</span>
+          </button>
           <input type="text" id="chat-message-input" placeholder="اكتب رسالتك هنا... (الحد الأقصى 200 حرف)"
             maxlength="200"
             class="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-yellow-500/50">
