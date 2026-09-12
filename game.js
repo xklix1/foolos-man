@@ -665,6 +665,7 @@ const GameEngine = (() => {
       exportDurationSec: 2700, // 45 minutes
       baseSellMin: 5900,       // +18%
       baseSellMax: 6250,       // +25%
+      dailyExportQuota: null,  // مفتوحة حسب سعة المستودع
       icon:'fa-shirt',
       color:'sky'
     },
@@ -678,6 +679,7 @@ const GameEngine = (() => {
       exportDurationSec: 4500, // 75 minutes
       baseSellMin: 9500,       // +18.75%
       baseSellMax: 10200,      // +27.5%
+      dailyExportQuota: null,  // مفتوحة حسب سعة المستودع
       icon:'fa-mug-hot',
       color:'amber'
     },
@@ -691,6 +693,7 @@ const GameEngine = (() => {
       exportDurationSec: 10800, // 3 hours
       baseSellMin: 29500,      // +18%
       baseSellMax: 32000,      // +28%
+      dailyExportQuota: 15,    // أقصى 15 حاوية يومياً
       icon:'fa-gears',
       color:'indigo'
     },
@@ -704,6 +707,7 @@ const GameEngine = (() => {
       exportDurationSec: 18000, // 5 hours
       baseSellMin: 60000,      // +20%
       baseSellMax: 65000,      // +30%
+      dailyExportQuota: 10,    // أقصى 10 حاويات يومياً
       icon:'fa-solar-panel',
       color:'emerald'
     },
@@ -717,6 +721,7 @@ const GameEngine = (() => {
       exportDurationSec: 28800, // 8 hours
       baseSellMin: 145000,     // +20.8%
       baseSellMax: 156000,     // +30%
+      dailyExportQuota: 6,     // أقصى 6 حاويات يومياً
       icon:'fa-car-side',
       color:'violet'
     },
@@ -730,6 +735,7 @@ const GameEngine = (() => {
       exportDurationSec: 43200, // 12 hours
       baseSellMin: 305000,     // +22%
       baseSellMax: 335000,     // +34%
+      dailyExportQuota: 4,     // أقصى 4 حاويات يومياً
       icon:'fa-industry',
       color:'rose'
     },
@@ -743,6 +749,7 @@ const GameEngine = (() => {
       exportDurationSec: 64800, // 18 hours
       baseSellMin: 610000,     // +22%
       baseSellMax: 670000,     // +34%
+      dailyExportQuota: 3,     // أقصى 3 حاويات يومياً
       icon:'fa-microchip',
       color:'cyan'
     },
@@ -756,6 +763,7 @@ const GameEngine = (() => {
       exportDurationSec: 86400, // 24 hours
       baseSellMin: 1220000,    // +22%
       baseSellMax: 1350000,    // +35%
+      dailyExportQuota: 2,     // أقصى 2 حاوية يومياً
       icon:'fa-cubes-stacked',
       color:'yellow'
     }
@@ -4786,12 +4794,14 @@ const GameEngine = (() => {
     if (!state.tradeCompany.dailyTradeResetAt || now > state.tradeCompany.dailyTradeResetAt) {
       state.tradeCompany.dailyTradeProfit = 0;
       state.tradeCompany.dailyExportsCount = {};
+      state.tradeCompany.dailyExportedContainers = 0;
       const nextMidnight = new Date(now);
       nextMidnight.setHours(24, 0, 0, 0);
       state.tradeCompany.dailyTradeResetAt = nextMidnight.getTime();
     }
     if (!state.tradeCompany.dailyExportsCount) state.tradeCompany.dailyExportsCount = {};
     if (typeof state.tradeCompany.dailyTradeProfit !=='number') state.tradeCompany.dailyTradeProfit = 0;
+    if (typeof state.tradeCompany.dailyExportedContainers !=='number') state.tradeCompany.dailyExportedContainers = 0;
   }
 
   function getTradeCompanyState() {
@@ -4832,6 +4842,10 @@ const GameEngine = (() => {
     const isMaxCapacity = capacity >= 50;
     const upgradeCost = isMaxCapacity ? 0 : Math.floor(50000 * Math.pow(1.8, Math.max(0, (capacity - 10) / 10)));
 
+    const dailyExportedContainers = Number(state.tradeCompany.dailyExportedContainers || 0);
+    const maxDailyContainers = capacity; // اللمت اليومي يساوي سعة المستودع
+    const remainingDailyContainers = Math.max(0, maxDailyContainers - dailyExportedContainers);
+
     return {
       warehouseCapacity: capacity,
       isMaxCapacity,
@@ -4847,6 +4861,9 @@ const GameEngine = (() => {
       totalShipmentsCompleted: state.tradeCompany.totalShipmentsCompleted || 0,
       dailyTradeProfit: state.tradeCompany.dailyTradeProfit || 0,
       dailyTradeMaxProfit: 500000,
+      dailyExportedContainers,
+      maxDailyContainers,
+      remainingDailyContainers,
       dailyExportsCount: state.tradeCompany.dailyExportsCount || {},
       dailyTradeResetAt: state.tradeCompany.dailyTradeResetAt,
       upgradeCost,
@@ -4931,12 +4948,6 @@ const GameEngine = (() => {
     if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك إبرام عقود التصدير.");
     ensureDailyTradeReset();
 
-    const DAILY_TRADE_MAX_PROFIT = 500000;
-    const currentDailyProfit = Number(state.tradeCompany.dailyTradeProfit || 0);
-    if (currentDailyProfit >= DAILY_TRADE_MAX_PROFIT) {
-      throw new Error(`وصلت شركتك إلى سقف الأرباح اليومية للتصدير (500,000 EGP) المحدد من هيئة الرقابة الجمركية . تتجدد الحصص الليلة الساعة 12:00 منتصف الليل.`);
-    }
-
     const item = TRADE_COMMODITIES[commodityId];
     if (!item) throw new Error("نوع البضاعة غير صالح.");
     const buyer = TRADE_BUYERS.find(b => b.id === buyerId);
@@ -4945,6 +4956,31 @@ const GameEngine = (() => {
     if (!quantity || quantity <= 0) throw new Error("يرجى تحديد كمية صالحة للتصدير.");
     if (quantity > 10) {
       throw new Error("أقصى حمولة لسفينة التصدير الواحدة هي 10 حاويات في الرحلة البحرية الواحدة لمنع الاختناق المينائي.");
+    }
+
+    // 1. التحقق من لِمت الحاويات اليومية الإجمالي (حسب سعة المستودع)
+    const warehouseCap = Math.min(50, state.tradeCompany.warehouseCapacity || 10);
+    const dailyExportedContainers = Number(state.tradeCompany.dailyExportedContainers || 0);
+    const remainingContainers = Math.max(0, warehouseCap - dailyExportedContainers);
+
+    if (remainingContainers <= 0) {
+      throw new Error(`وصلت شركتك إلى الحد الأقصى لتصدير الحاويات اليوم (${dailyExportedContainers}/${warehouseCap} حاوية) المسموح به لسعة مستودعك! قم بتوسيع المستودع لزيادة حصتك، أو انتظر تجدد التصاريح الليلة الساعة 12:00 منتصف الليل.`);
+    }
+
+    if (quantity > remainingContainers) {
+      throw new Error(`الكمية المطلوبة (${quantity} حاوية) تتجاوز المتبقي من حصتك اليومية المصرح بها (${remainingContainers} حاوية متبقية من أصل ${warehouseCap} حاوية).`);
+    }
+
+    // 2. التحقق من كوتة السلعة الفردية اليومية (للحد من احتكار وتكرار السلع الفاخرة)
+    if (item.dailyExportQuota) {
+      const todayCommExported = Number(state.tradeCompany.dailyExportsCount[commodityId] || 0);
+      const remainingCommQuota = Math.max(0, item.dailyExportQuota - todayCommExported);
+      if (remainingCommQuota <= 0) {
+        throw new Error(`وصلت إلى الحد الأقصى المسموح بتصديره اليوم من "${item.name}" (${item.dailyExportQuota} حاويات يومياً)! اختر بضائع أخرى لتصديرها أو انتظر للغد.`);
+      }
+      if (quantity > remainingCommQuota) {
+        throw new Error(`المتبقي من كوتة تصدير "${item.name}" لليوم هو ${remainingCommQuota} حاوية فقط (أقصى حد: ${item.dailyExportQuota} حاويات/يوم).`);
+      }
     }
 
     const activeExportsCount = (state.tradeCompany.activeExports || []).filter(e => !e.claimed).length;
@@ -5011,6 +5047,11 @@ const GameEngine = (() => {
       claimed: false
     };
 
+    // Update daily container count and commodity count immediately upon dispatching export
+    state.tradeCompany.dailyExportedContainers = (Number(state.tradeCompany.dailyExportedContainers) || 0) + quantity;
+    if (!state.tradeCompany.dailyExportsCount) state.tradeCompany.dailyExportsCount = {};
+    state.tradeCompany.dailyExportsCount[commodityId] = (Number(state.tradeCompany.dailyExportsCount[commodityId]) || 0) + quantity;
+
     state.tradeCompany.activeExports.push(exportOrder);
     recordPlayerActivity('تصدير بضاعة',`شحن وتصدير ${quantity} وحدة من"${item.name}" إلى ${buyer.name} بقيمة تعاقد ${totalPayout.toLocaleString()} ج.م (ربح تقديري: +${estProfit.toLocaleString()} ج.م)${saturationDiscount > 0 ?` [تشبع سوق: -${Math.round(saturationDiscount * 100)}%]` :''}.`,'trade');
     forceSaveState(true);
@@ -5043,7 +5084,6 @@ const GameEngine = (() => {
 
     ensureDailyTradeReset();
     state.tradeCompany.dailyTradeProfit = (state.tradeCompany.dailyTradeProfit || 0) + Math.max(0, order.estProfit || 0);
-    state.tradeCompany.dailyExportsCount[order.commodityId] = (state.tradeCompany.dailyExportsCount[order.commodityId] || 0) + (order.quantity || 1);
 
     // Remove from activeExports
     state.tradeCompany.activeExports.splice(index, 1);

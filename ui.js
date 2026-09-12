@@ -5119,10 +5119,11 @@ const UIController = (() => {
       },'panel-trade': {
         title:'شركة الاستيراد والتصدير الدولية',
         desc:`التجارة العالمية والخدمات اللوجستية:
-        <br>• <strong>الاستيراد</strong>: تعاقد على استيراد بضائع عالمية بأسعار الجملة وانتظر وصول الشحنة بحراً أو جواً (من 30 دقيقة إلى 24 ساعة).
-        <br>• <strong>المستودع الجمركي</strong>: قم بتخزين الحاويات وتوسعة الطاقة الاستيعابية لمستودعك كلما كبرت أعمالك.
-        <br>• <strong>مجلس المشترين والأسواق</strong>: اختر أفضل مشترٍ دولي يقدم أعلى هامش ربح (+35% إلى +313%) ووقع عقد التصدير.
-        <br>• <strong>الشحن وتحصيل الأرباح</strong>: تتبع شحنة التصدير حتى تصل للمشتري، ثم حصّل أرباح الصفقة ومكاسب التجارة الدولية.`
+        <br>• <strong>الاستيراد</strong>: تعاقد على استيراد بضائع عالمية بأسعار الجملة وانتظر وصول الشحنة بحراً أو جواً (من 45 دقيقة إلى 24 ساعة).
+        <br>• <strong>المستودع وحصص التصدير</strong>: طاقتك الاستيعابية هي رخصتك اليومية! عدد الحاويات المصرح بتصديرها يومياً يعادل سعة مستودعك (تتجدد 12 منتصف الليل).
+        <br>• <strong>كوتة السلع الفاخرة</strong>: للسلع الاستراتيجية الثقيلة (التوربينات، رقائق الذكاء الاصطناعي، الذهب) كوتة يومية محددة لمنع احتكار الأسواق.
+        <br>• <strong>مجلس المشترين والأسواق</strong>: اختر أفضل مشترٍ دولي يقدم أعلى هامش ربح ووقع عقد التصدير.
+        <br>• <strong>تحصيل الأرباح</strong>: تتبع شحنة التصدير حتى تصل للمشتري، ثم حصّل أرباح الصفقة ومكاسب التجارة الدولية.`
       },'panel-industry': {
         title:'مجمع الصناعات وسلاسل الإمداد',
         desc:`سلاسل الإمداد والتصنيع المحلي:
@@ -16902,24 +16903,24 @@ const UIController = (() => {
     const quotaPctEl = document.getElementById('trade-daily-quota-pct');
     const quotaBarEl = document.getElementById('trade-daily-quota-bar');
     if (quotaEl) {
-      const dailyProfit = tradeInfo.dailyTradeProfit || 0;
-      const maxDaily = tradeInfo.dailyTradeMaxProfit || 500000;
-      const quotaPct = Math.min(100, Math.round((dailyProfit / maxDaily) * 100));
-      quotaEl.textContent = `${dailyProfit.toLocaleString()} / ${maxDaily.toLocaleString()} EGP`;
-      if (dailyProfit >= maxDaily) {
+      const dailyContainers = Number(tradeInfo.dailyExportedContainers || 0);
+      const maxDailyContainers = Number(tradeInfo.maxDailyContainers || tradeInfo.warehouseCapacity || 10);
+      const quotaPct = Math.min(100, Math.round((dailyContainers / maxDailyContainers) * 100));
+      quotaEl.textContent = `${dailyContainers} / ${maxDailyContainers} حاوية`;
+      if (dailyContainers >= maxDailyContainers) {
         quotaEl.className = 'text-xs sm:text-sm font-black text-rose-400 numbers-font mt-1.5 truncate';
       } else {
         quotaEl.className = 'text-xs sm:text-sm font-black text-amber-300 numbers-font mt-1.5 truncate';
       }
       if (quotaPctEl) {
         quotaPctEl.textContent = `${quotaPct}%`;
-        quotaPctEl.className = dailyProfit >= maxDaily 
+        quotaPctEl.className = dailyContainers >= maxDailyContainers 
           ? 'text-[10px] font-black numbers-font px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30'
           : 'text-[10px] font-black numbers-font px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30';
       }
       if (quotaBarEl) {
         quotaBarEl.style.width = `${quotaPct}%`;
-        quotaBarEl.className = dailyProfit >= maxDaily 
+        quotaBarEl.className = dailyContainers >= maxDailyContainers 
           ? 'bg-gradient-to-r from-rose-500 to-red-400 h-full rounded-full transition-all duration-300'
           : 'bg-gradient-to-r from-amber-500 to-yellow-400 h-full rounded-full transition-all duration-300';
       }
@@ -17205,15 +17206,26 @@ const UIController = (() => {
         return`<span class="px-2 py-0.5 rounded-md text-[10px] font-bold border ${hasStock ?'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse' :'bg-slate-800/80 text-slate-400 border-slate-700'}">${item ? item.name : commId}</span>`;
       }).join('');
 
-      // Build commodity options
+      // Build commodity options with stock and quota status
       let optionsHtml ='';
+      const remainingTotalDaily = tradeInfo.remainingDailyContainers !== undefined ? tradeInfo.remainingDailyContainers : 10;
+
       Object.keys(commodities).forEach(k => {
         const item = commodities[k];
         const inStock = warehouse[k] || 0;
         const isDemanded = buyer.demands.includes(k);
         const selected = (preselectedExportCommodity === k) || (inStock > 0 && !preselectedExportCommodity);
-        const demandMark = isDemanded ? ` (+${bonusPct}% علاوة طلب)` : ' (-15% خصم عدم توفر طلب)';
-        optionsHtml +=`<option value="${k}" ${selected ?'selected' :''}>${item.name} [متوفر: ${inStock}]${demandMark}</option>`;
+        const demandMark = isDemanded ? ` (+${bonusPct}% طلب)` : '';
+        
+        // Check commodity quota
+        let quotaInfo = '';
+        if (item.dailyExportQuota) {
+          const todayComm = tradeInfo.dailyExportsCount ? Number(tradeInfo.dailyExportsCount[k] || 0) : 0;
+          const leftComm = Math.max(0, item.dailyExportQuota - todayComm);
+          quotaInfo = ` [كوتة اليوم: ${leftComm}/${item.dailyExportQuota}]`;
+        }
+
+        optionsHtml +=`<option value="${k}" ${selected ?'selected' :''}>${item.name} (متوفر: ${inStock})${quotaInfo}${demandMark}</option>`;
       });
 
       card.innerHTML =`
@@ -17296,6 +17308,17 @@ const UIController = (() => {
         if (!comm) return;
         let qty = parseInt(qtyEl.value, 10) || 1;
         if (qty < 1) qty = 1;
+        // Max containers allowed considering: 10 max per ship, stock, remaining daily quota, and remaining commodity quota
+        const leftDailyQuota = tradeInfo.remainingDailyContainers !== undefined ? tradeInfo.remainingDailyContainers : 10;
+        let leftCommQuota = 10;
+        if (comm.dailyExportQuota) {
+          const commExportedToday = tradeInfo.dailyExportsCount ? Number(tradeInfo.dailyExportsCount[commKey] || 0) : 0;
+          leftCommQuota = Math.max(0, comm.dailyExportQuota - commExportedToday);
+        }
+
+        const maxPossibleQty = Math.max(1, Math.min(10, leftDailyQuota, leftCommQuota));
+        qtyEl.max = maxPossibleQty;
+
         if (qty > 10) {
           qty = 10;
           qtyEl.value = 10;
