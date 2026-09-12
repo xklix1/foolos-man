@@ -1763,13 +1763,21 @@ const UIController = (() => {
 
   function setFloatingChatVisibility(visible) {
     const chatTrigger = document.getElementById('btn-floating-chat-trigger');
+    const chatDrawer = document.getElementById('chat-drawer');
     if (chatTrigger) {
       if (visible) {
-        chatTrigger.classList.remove('hidden');
+        if (chatDrawer && chatDrawer.classList.contains('chat-drawer-open')) {
+          chatTrigger.classList.add('hidden');
+        } else {
+          chatTrigger.classList.remove('hidden');
+        }
       } else {
         chatTrigger.classList.add('hidden');
-        const chatDrawer = document.getElementById('chat-drawer');
-        if (chatDrawer) chatDrawer.classList.remove('chat-drawer-open');
+        if (chatDrawer) {
+          chatDrawer.classList.remove('chat-drawer-open');
+          chatDrawer.classList.add('translate-x-full');
+          document.body.classList.remove('chat-open');
+        }
       }
     }
   }
@@ -11434,6 +11442,58 @@ const UIController = (() => {
   let selectedRestoreFileContent = null;
   window.employeesCache = {};
 
+  function openChatDrawerFunc() {
+    const chatDrawer = document.getElementById('chat-drawer');
+    const chatTrigger = document.getElementById('btn-floating-chat-trigger');
+    const connBadge = document.getElementById('connectivity-badge');
+    const chatInput = document.getElementById('chat-message-input');
+    const unreadDot = document.getElementById('chat-unread-dot');
+
+    if (chatDrawer) {
+      chatDrawer.classList.add('chat-drawer-open');
+      chatDrawer.classList.remove('translate-x-full');
+    }
+    document.body.classList.add('chat-open');
+    if (chatTrigger) chatTrigger.classList.add('hidden');
+    if (connBadge) {
+      connBadge.classList.add('hidden');
+      connBadge.classList.remove('flex');
+    }
+    if (unreadDot) {
+      unreadDot.classList.add('hidden');
+      unreadDot.textContent = '0';
+    }
+
+    if (typeof AppDB !== 'undefined' && typeof AppDB.triggerImmediateChatSync === 'function') {
+      AppDB.triggerImmediateChatSync();
+    }
+    setTimeout(() => {
+      if (chatInput) chatInput.focus();
+    }, 100);
+  }
+
+  function closeChatDrawerFunc() {
+    const chatDrawer = document.getElementById('chat-drawer');
+    const chatTrigger = document.getElementById('btn-floating-chat-trigger');
+    const connBadge = document.getElementById('connectivity-badge');
+
+    if (chatDrawer) {
+      chatDrawer.classList.remove('chat-drawer-open');
+      chatDrawer.classList.add('translate-x-full');
+    }
+    document.body.classList.remove('chat-open');
+
+    const mainLayout = document.getElementById('main-game-layout');
+    const isLoggedIn = mainLayout && !mainLayout.classList.contains('hidden');
+    if (chatTrigger && isLoggedIn) {
+      chatTrigger.classList.remove('hidden');
+    }
+    if (connBadge && isLoggedIn) {
+      connBadge.classList.remove('hidden');
+      connBadge.classList.add('flex');
+    }
+  }
+
   function setupV2UIHandlers() {
     const chatTrigger = document.getElementById('btn-floating-chat-trigger');
     const closeChatDrawer = document.getElementById('btn-close-chat-drawer');
@@ -11444,29 +11504,28 @@ const UIController = (() => {
 
     if (chatTrigger && chatDrawer) {
       chatTrigger.addEventListener('click', () => {
-        chatDrawer.classList.toggle('chat-drawer-open');
-        chatDrawer.classList.toggle('translate-x-full');
-        const unreadDot = document.getElementById('chat-unread-dot');
-        if (unreadDot) {
-          unreadDot.classList.add('hidden');
-          unreadDot.textContent ='0';
-        }
         if (chatDrawer.classList.contains('chat-drawer-open')) {
-          if (typeof AppDB !=='undefined' && typeof AppDB.triggerImmediateChatSync ==='function') {
-            AppDB.triggerImmediateChatSync();
-          }
-          setTimeout(() => {
-            if (chatInput) chatInput.focus();
-          }, 100);
+          closeChatDrawerFunc();
+        } else {
+          openChatDrawerFunc();
         }
       });
     }
     if (closeChatDrawer && chatDrawer) {
       closeChatDrawer.addEventListener('click', () => {
-        chatDrawer.classList.remove('chat-drawer-open');
-        chatDrawer.classList.add('translate-x-full');
+        closeChatDrawerFunc();
       });
     }
+
+    // Close chat drawer on ESC key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const cd = document.getElementById('chat-drawer');
+        if (cd && cd.classList.contains('chat-drawer-open')) {
+          closeChatDrawerFunc();
+        }
+      }
+    });
 
     // Chat Drawer Tabs (Public vs Private DMs)
     const tabPublicBtn = document.getElementById('chat-tab-btn-public');
@@ -13082,11 +13141,7 @@ const UIController = (() => {
   }
 
   function openChatDrawerWithDM(targetUsername) {
-    const chatDrawer = document.getElementById('chat-drawer');
-    if (chatDrawer) {
-      chatDrawer.classList.add('chat-drawer-open');
-      chatDrawer.classList.remove('translate-x-full');
-    }
+    openChatDrawerFunc();
     switchChatDrawerTab('dms');
     openPrivateChatWith(targetUsername);
   }

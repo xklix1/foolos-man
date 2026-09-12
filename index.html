@@ -139,7 +139,7 @@
   <!-- ==================== CONNECTIVITY STATUS BADGE ==================== -->
   <!-- Small floating badge showing online/offline + sync state -->
   <div id="connectivity-badge"
-    class="fixed bottom-4 left-4 z-[150] hidden items-center gap-1.5 bg-slate-900/90 border border-slate-700 rounded-full px-3 py-1.5 text-[10px] backdrop-blur-md shadow-lg transition-all duration-500 pointer-events-none">
+    class="fixed bottom-20 left-4 z-[40] hidden items-center gap-1.5 bg-slate-900/90 border border-slate-700 rounded-full px-3 py-1.5 text-[10px] backdrop-blur-md shadow-lg transition-all duration-500 pointer-events-none">
     <span id="conn-dot" class="w-2 h-2 rounded-full bg-slate-500 inline-block"></span>
     <span id="conn-label" class="text-slate-400 font-medium">...</span>
   </div>
@@ -5821,6 +5821,13 @@
       const label = document.getElementById('conn-label');
 
       function update() {
+        const isChatOpen = document.body.classList.contains('chat-open') || 
+          (document.getElementById('chat-drawer') && document.getElementById('chat-drawer').classList.contains('chat-drawer-open'));
+        if (isChatOpen) {
+          badge.classList.add('hidden');
+          badge.classList.remove('flex');
+          return;
+        }
         badge.classList.remove('hidden');
         badge.classList.add('flex');
         if (navigator.onLine && AppDB.isFirebaseReady) {
