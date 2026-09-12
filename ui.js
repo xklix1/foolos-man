@@ -12329,7 +12329,7 @@ const UIController = (() => {
       
       const safeSender = String(msg.sender ||'لاعب').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
       const safeTitle = String(msg.senderTitle ||'مبتدئ').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
-      const safeMsg = String(msg.message ||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+      const safeMsg = String(msg.message || msg.text || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
 
       const filter = window.ProfanityFilter || (window.AppDB && window.AppDB.ProfanityFilter);
       const hasProfanity = !isSystem && filter && filter.containsProfanity(msg.message);
@@ -12471,7 +12471,7 @@ const UIController = (() => {
     try {
       const res = await AppDB.claimMoneyDrop(dropId, curUser);
       if (res && res.success) {
-        const amt = Number(res.claimedAmount || 0);
+        const amt = Number(res.reward || res.claimedAmount || 0);
         
         // Deposit into bank authoritative local state
         if (GameEngine.state) {
@@ -12532,7 +12532,8 @@ const UIController = (() => {
       }
 
       if (subtitleEl) {
-        subtitleEl.textContent = `إجمالي: ${(Number(drop.total_amount) || 0).toLocaleString()} ج.م (${drop.claimed_bags || 0}/${drop.total_bags || 0} كيس) - من: ${drop.sender}`;
+        const cCount = (drop.claimed_count !== undefined) ? drop.claimed_count : (drop.claimed_bags || 0);
+        subtitleEl.textContent = `إجمالي: ${(Number(drop.total_amount) || 0).toLocaleString()} ج.م (${cCount}/${drop.total_bags || 0} كيس) - من: ${drop.sender}`;
       }
 
       const claims = drop.claims || [];
