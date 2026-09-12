@@ -384,7 +384,7 @@ const GameEngine = (() => {
       durationTicks: 3600, // 1 hour (3,600 seconds)
       rate: 0.015, // +1.5%
       minAmount: 5000,
-      maxAmount: 50000,
+      maxAmount: 100000,
       desc:'تجميد السيولة لمدة ساعة واحدة لتوفير التمويل المصرفي مقابل عائد أرباح (+1.5%).'
     },
     medium: {
@@ -393,7 +393,7 @@ const GameEngine = (() => {
       durationTicks: 10800, // 3 hours (10,800 seconds)
       rate: 0.035, // +3.5%
       minAmount: 25000,
-      maxAmount: 200000,
+      maxAmount: 350000,
       desc:'استثمار مضمون في أصول إنشائية وتجارية مدرة للدخل لمدة 3 ساعات (+3.5%).'
     },
     long: {
@@ -402,7 +402,7 @@ const GameEngine = (() => {
       durationTicks: 28800, // 8 hours (28,800 seconds)
       rate: 0.07, // +7.0%
       minAmount: 100000,
-      maxAmount: 800000,
+      maxAmount: 1200000,
       desc:'محفظة استثمارية مغلقة في أسواق المال العالمية لمدة 8 ساعات بعوائد استثنائية (+7.0%).'
     },
     venture: {
@@ -411,7 +411,7 @@ const GameEngine = (() => {
       durationTicks: 64800, // 18 hours (64,800 seconds)
       rate: 0.12, // +12.0%
       minAmount: 500000,
-      maxAmount: 2500000,
+      maxAmount: 4000000,
       desc:'استثمار استراتيجي مغلق في شركات التكنولوجيا الصاعدة لمدة 18 ساعة بعوائد فائقة (+12.0%).'
     },
     imperial: {
@@ -420,7 +420,7 @@ const GameEngine = (() => {
       durationTicks: 129600, // 36 hours (129,600 seconds)
       rate: 0.18, // +18.0%
       minAmount: 2000000,
-      maxAmount: 6000000,
+      maxAmount: 10000000,
       desc:'خزينة مقفلة لكبار أثرياء اللعبة لمدة 36 ساعة تمنح عائداً استثمارياً كبيراً (+18.0%).'
     }
   };

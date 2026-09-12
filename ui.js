@@ -3264,27 +3264,27 @@ const UIController = (() => {
     short: {
       btnClass: 'btn-invest-start w-full py-2.5 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-black rounded-xl transition',
       btnText: 'بدء الاستثمار',
-      placeholder: 'المبلغ (5K - 50K)'
+      placeholder: 'المبلغ (5K - 100K)'
     },
     medium: {
       btnClass: 'btn-invest-start w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl transition',
       btnText: 'بدء الاستثمار',
-      placeholder: 'المبلغ (25K - 200K)'
+      placeholder: 'المبلغ (25K - 350K)'
     },
     long: {
       btnClass: 'btn-invest-start w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-black rounded-xl transition',
       btnText: 'بدء الاستثمار',
-      placeholder: 'المبلغ (100K - 800K)'
+      placeholder: 'المبلغ (100K - 1.2M)'
     },
     venture: {
       btnClass: 'btn-invest-start w-full py-2.5 bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-slate-950 text-xs font-black rounded-xl transition',
       btnText: 'بدء الاستثمار',
-      placeholder: 'المبلغ (500K - 2.5M)'
+      placeholder: 'المبلغ (500K - 4M)'
     },
     imperial: {
       btnClass: 'btn-invest-start w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-black rounded-xl transition',
       btnText: 'بدء الاستثمار الماسي',
-      placeholder: 'المبلغ (2M - 6M)'
+      placeholder: 'المبلغ (2M - 10M)'
     }
   };
 
