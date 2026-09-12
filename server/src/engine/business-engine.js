@@ -50,7 +50,7 @@ function calculateSingleBusinessProfit(key, bizState, playerState = {}) {
   const upgradeFactor = 1 + (lvl - 1) * 0.25;
 
   // Cap effective workers to maxWorkers defined for this business
-  const maxW = bizConfig.maxWorkers || 20;
+  const maxW = bizConfig.maxWorkers || 50;
   const effectiveWorkers = Math.min(maxW, Math.max(0, bizState.workers || 0));
   const workerEff = (bizConfig.workerMultiplier || 1.08) - 1.0;
   const workerFactor = 1 + (effectiveWorkers * workerEff);

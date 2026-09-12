@@ -11,7 +11,7 @@ const BUSINESSES = {
     baseDemand: 29,
     optimumPrice: 20,
     costOfGoods: 10,
-    maxWorkers: 5,
+    maxWorkers: 50,
     workerMultiplier: 1.08,
     workerWage: 4
   },
@@ -22,7 +22,7 @@ const BUSINESSES = {
     baseDemand: 40,
     optimumPrice: 32,
     costOfGoods: 16,
-    maxWorkers: 8,
+    maxWorkers: 50,
     workerMultiplier: 1.08,
     workerWage: 10
   },
@@ -33,7 +33,7 @@ const BUSINESSES = {
     baseDemand: 52,
     optimumPrice: 120,
     costOfGoods: 45,
-    maxWorkers: 10,
+    maxWorkers: 50,
     workerMultiplier: 1.08,
     workerWage: 60
   },
@@ -44,7 +44,7 @@ const BUSINESSES = {
     baseDemand: 92,
     optimumPrice: 260,
     costOfGoods: 100,
-    maxWorkers: 12,
+    maxWorkers: 50,
     workerMultiplier: 1.08,
     workerWage: 200
   },
@@ -55,7 +55,7 @@ const BUSINESSES = {
     baseDemand: 161,
     optimumPrice: 500,
     costOfGoods: 200,
-    maxWorkers: 15,
+    maxWorkers: 50,
     workerMultiplier: 1.08,
     workerWage: 500
   },
@@ -66,7 +66,7 @@ const BUSINESSES = {
     baseDemand: 253,
     optimumPrice: 1100,
     costOfGoods: 450,
-    maxWorkers: 18,
+    maxWorkers: 50,
     workerMultiplier: 1.08,
     workerWage: 1500
   },
@@ -77,7 +77,7 @@ const BUSINESSES = {
     baseDemand: 402,
     optimumPrice: 2400,
     costOfGoods: 1000,
-    maxWorkers: 20,
+    maxWorkers: 50,
     workerMultiplier: 1.08,
     workerWage: 4000
   },
@@ -88,7 +88,7 @@ const BUSINESSES = {
     baseDemand: 575,
     optimumPrice: 4500,
     costOfGoods: 1900,
-    maxWorkers: 22,
+    maxWorkers: 50,
     workerMultiplier: 1.08,
     workerWage: 10000
   },
@@ -99,7 +99,7 @@ const BUSINESSES = {
     baseDemand: 805,
     optimumPrice: 8800,
     costOfGoods: 3600,
-    maxWorkers: 25,
+    maxWorkers: 50,
     workerMultiplier: 1.08,
     workerWage: 25000
   },
@@ -110,7 +110,7 @@ const BUSINESSES = {
     baseDemand: 862,
     optimumPrice: 16000,
     costOfGoods: 7000,
-    maxWorkers: 28,
+    maxWorkers: 50,
     workerMultiplier: 1.08,
     workerWage: 45000
   },
@@ -121,7 +121,7 @@ const BUSINESSES = {
     baseDemand: 920,
     optimumPrice: 28000,
     costOfGoods: 12000,
-    maxWorkers: 30,
+    maxWorkers: 50,
     workerMultiplier: 1.08,
     workerWage: 90000
   }

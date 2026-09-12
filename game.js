@@ -39,7 +39,7 @@ const GameEngine = (() => {
       baseDemand: 29,
       optimumPrice: 20,
       costOfGoods: 10,
-      maxWorkers: 5,
+      maxWorkers: 50,
       workerMultiplier: 1.08,
       workerWage: 4
     },
@@ -50,7 +50,7 @@ const GameEngine = (() => {
       baseDemand: 40,
       optimumPrice: 32,
       costOfGoods: 16,
-      maxWorkers: 8,
+      maxWorkers: 50,
       workerMultiplier: 1.08,
       workerWage: 10
     },
@@ -61,7 +61,7 @@ const GameEngine = (() => {
       baseDemand: 52,
       optimumPrice: 120,
       costOfGoods: 45,
-      maxWorkers: 10,
+      maxWorkers: 50,
       workerMultiplier: 1.08,
       workerWage: 60
     },
@@ -72,7 +72,7 @@ const GameEngine = (() => {
       baseDemand: 92,
       optimumPrice: 260,
       costOfGoods: 100,
-      maxWorkers: 12,
+      maxWorkers: 50,
       workerMultiplier: 1.08,
       workerWage: 200
     },
@@ -83,7 +83,7 @@ const GameEngine = (() => {
       baseDemand: 161,
       optimumPrice: 500,
       costOfGoods: 200,
-      maxWorkers: 15,
+      maxWorkers: 50,
       workerMultiplier: 1.08,
       workerWage: 500
     },
@@ -94,7 +94,7 @@ const GameEngine = (() => {
       baseDemand: 253,
       optimumPrice: 1100,
       costOfGoods: 450,
-      maxWorkers: 18,
+      maxWorkers: 50,
       workerMultiplier: 1.08,
       workerWage: 1500
     },
@@ -105,7 +105,7 @@ const GameEngine = (() => {
       baseDemand: 402,
       optimumPrice: 2400,
       costOfGoods: 1000,
-      maxWorkers: 20,
+      maxWorkers: 50,
       workerMultiplier: 1.08,
       workerWage: 4000
     },
@@ -116,7 +116,7 @@ const GameEngine = (() => {
       baseDemand: 575,
       optimumPrice: 4500,
       costOfGoods: 1900,
-      maxWorkers: 22,
+      maxWorkers: 50,
       workerMultiplier: 1.08,
       workerWage: 10000
     },
@@ -127,7 +127,7 @@ const GameEngine = (() => {
       baseDemand: 805,
       optimumPrice: 8800,
       costOfGoods: 3600,
-      maxWorkers: 25,
+      maxWorkers: 50,
       workerMultiplier: 1.08,
       workerWage: 25000
     },
@@ -138,7 +138,7 @@ const GameEngine = (() => {
       baseDemand: 862,
       optimumPrice: 16000,
       costOfGoods: 7000,
-      maxWorkers: 28,
+      maxWorkers: 50,
       workerMultiplier: 1.08,
       workerWage: 45000
     },
@@ -149,7 +149,7 @@ const GameEngine = (() => {
       baseDemand: 920,
       optimumPrice: 28000,
       costOfGoods: 12000,
-      maxWorkers: 30,
+      maxWorkers: 50,
       workerMultiplier: 1.08,
       workerWage: 90000
     }
@@ -1461,7 +1461,7 @@ const GameEngine = (() => {
     const upgradeFactor = 1 + (lvl - 1) * 0.25;
     
     // Cap effective workers to maxWorkers defined for this business
-    const maxW = bizConfig.maxWorkers || 20;
+    const maxW = bizConfig.maxWorkers || 50;
     const effectiveWorkers = Math.min(maxW, Math.max(0, bizState.workers || 0));
     const workerEff = (bizConfig.workerMultiplier || 1.08) - 1.0;
     const workerFactor = 1 + (effectiveWorkers * workerEff);
@@ -3236,7 +3236,7 @@ const GameEngine = (() => {
     const bizState = state.businesses[key];
     if (!bizState || bizState.level === 0) throw new Error("يجب شراء المشروع أولاً.");
 
-    const maxAllowed = biz.maxWorkers || 20;
+    const maxAllowed = biz.maxWorkers || 50;
     const maxWorkersForLvl = Math.min(maxAllowed, Math.max(1, Math.ceil((bizState.level / 10) * maxAllowed)));
     if (bizState.workers >= maxWorkersForLvl) {
       if (bizState.workers >= maxAllowed) {
