@@ -4660,7 +4660,7 @@ var AppDB = (() => {
     const amt = Math.floor(Number(amount));
     const bg = parseInt(bags, 10);
     if (isNaN(amt) || amt < 10000) throw new Error('الحد الأدنى لرمي النقطة هو 10,000 ج.م.');
-    if (amt > 50000000) throw new Error('الحد الأقصى للنقطة هو 50,000,000 ج.م.');
+    if (amt > 150000) throw new Error('الحد الأقصى للنقطة الواحدة هو 150,000 ج.م لحماية توازن الاقتصاد.');
     if (isNaN(bg) || bg < 2 || bg > 25) throw new Error('عدد الأكياس يجب أن يكون بين 2 و 25 كيساً.');
 
     const res = await _api('rpc/execute_create_money_drop', {

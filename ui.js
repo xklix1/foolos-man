@@ -11962,6 +11962,11 @@ const UIController = (() => {
           return;
         }
 
+        if (amt > 150000) {
+          showToast('سقف النُقطة', 'الحد الأقصى للنقطة الواحدة هو 150,000 ج.م لحماية توازن الاقتصاد.', 'warning');
+          return;
+        }
+
         const myCash = Number(GameEngine.state?.cash) || 0;
         const myBank = Number(GameEngine.state?.bank) || 0;
         if ((myCash + myBank) < amt) {
