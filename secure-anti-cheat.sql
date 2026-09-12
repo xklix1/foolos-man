@@ -302,7 +302,66 @@ BEFORE INSERT ON public.players
 FOR EACH ROW
 EXECUTE FUNCTION public.block_banned_devices_and_names();
 
+-- 5. حماية الشات العام (globals -> chat_feed) ومنع الحسابات المحذوفة أو المحظورة من الكتابة
+CREATE OR REPLACE FUNCTION public.validate_chat_feed_anti_cheat()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_role text;
+  v_msgs jsonb;
+  v_last_msg jsonb;
+  v_sender text;
+  v_sender_banned boolean;
+BEGIN
+  BEGIN
+    v_role := COALESCE(
+      nullif(current_setting('request.jwt.claims', true), '')::jsonb->>'role',
+      nullif(current_setting('request.jwt.claim.role', true), ''),
+      session_user
+    );
+  EXCEPTION WHEN OTHERS THEN
+    v_role := session_user;
+  END;
+
+  IF v_role IN ('service_role', 'postgres', 'supabase_admin') THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.id = 'chat_feed' AND NEW.data IS NOT NULL AND NEW.data ? 'messages' THEN
+    v_msgs := NEW.data->'messages';
+    
+    IF jsonb_array_length(v_msgs) > 0 THEN
+      v_last_msg := v_msgs->-1;
+      v_sender := TRIM(COALESCE(v_last_msg->>'sender', ''));
+
+      IF v_sender ILIKE 'HAMZ_A' OR v_sender ILIKE 'HAMZA%' OR v_sender ILIKE 'B2b' THEN
+        RAISE EXCEPTION 'أنت محظور تماماً من إرسال أي رسائل في الشات العام.';
+      END IF;
+
+      SELECT is_banned INTO v_sender_banned
+      FROM public.players
+      WHERE username = v_sender;
+
+      IF v_sender_banned IS NULL THEN
+        RAISE EXCEPTION 'يجب أن يكون لديك حساب صالح داخل اللعبة للمشاركة في الشات.';
+      END IF;
+
+      IF v_sender_banned IS TRUE THEN
+        RAISE EXCEPTION 'حسابك محظور من الدردشة العامة.';
+      END IF;
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_validate_chat_feed ON public.globals;
+CREATE TRIGGER trg_validate_chat_feed
+BEFORE INSERT OR UPDATE ON public.globals
+FOR EACH ROW
+EXECUTE FUNCTION public.validate_chat_feed_anti_cheat();
+
 -- ==============================================================================
--- 🏁 تم تحديث نظام الحماية والتأمين الجنائي بنجاح!
+-- 🏁 تم تحديث نظام الحماية والتأمين الجنائي وتأمين الشات العام بنجاح!
 -- ==============================================================================
 
