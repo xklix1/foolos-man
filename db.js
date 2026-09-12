@@ -460,6 +460,29 @@ var AppDB = (() => {
   })();
 
   // ─────────────────────────────────────────────
+  //  DEVICE BAN VERIFICATION
+  // ─────────────────────────────────────────────
+  async function checkDeviceBan() {
+    try {
+      const fp = await DeviceFingerprint.getFingerprint();
+      const rows = await _api(`banned_devices?device_id=eq.${encodeURIComponent(fp)}&select=device_id,reason`);
+      if (rows && rows.length > 0) {
+        return { isBanned: true, reason: rows[0].reason || 'تم حظر جهازك نهائياً لمخالفة قواعد النزاهة والتلاعب باللعبة.', deviceId: fp };
+      }
+      const seed = (typeof localStorage !== 'undefined') ? localStorage.getItem('rasalmal_device_seed') : null;
+      if (seed) {
+        const seedRows = await _api(`banned_devices?device_id=like.*${encodeURIComponent(seed)}*&select=device_id,reason`);
+        if (seedRows && seedRows.length > 0) {
+          return { isBanned: true, reason: seedRows[0].reason || 'تم حظر جهازك نهائياً لمخالفة قواعد النزاهة.', deviceId: seed };
+        }
+      }
+      return { isBanned: false };
+    } catch (e) {
+      console.warn('[DB] checkDeviceBan note:', e.message);
+      return { isBanned: false };
+    }
+  }
+
   //  DEVICE REGISTRY & FRAUD AUDITING
   // ─────────────────────────────────────────────
   async function getDeviceRegistry() {
@@ -752,8 +775,15 @@ var AppDB = (() => {
     const p = String(pin).trim();
     const refCode = (typeof referralCodeInput === 'string' ? referralCodeInput.trim() : '').toUpperCase();
 
-    // 1. Obtain hardware device fingerprint for analytics and security tracking
+    // 1. Obtain hardware device fingerprint and enforce device ban
     const fp = await DeviceFingerprint.getFingerprint();
+    const devBan = await checkDeviceBan();
+    if (devBan && devBan.isBanned) {
+      if (typeof window !== 'undefined' && typeof window.handleBannedUser === 'function') {
+        window.handleBannedUser(devBan.reason);
+      }
+      throw new Error(devBan.reason || 'تم حظر هذا الجهاز نهائياً من تسجيل أي حسابات جديدة.');
+    }
 
     // 4. Check if exists (case-insensitive)
     const existing = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username`);
@@ -1126,6 +1156,11 @@ var AppDB = (() => {
       _lastVerifiedCloudWealth = Math.max(0, Number(row.cash || 0)) + Math.max(0, Number(row.bank || 0));
       _lastVerifiedCloudTime = Date.now();
       stateObj.isBanned = row.is_banned === true;
+      if (stateObj.isBanned && isCurrentPlayer) {
+        if (typeof window !== 'undefined' && typeof window.handleBannedUser === 'function') {
+          window.handleBannedUser('تم حظر هذا الحساب نهائياً من اللعبة لمخالفة قواعد النزاهة.');
+        }
+      }
       stateObj.jailTimer = Number(row.jail_timer || 0);
       stateObj.afkManagerExpiresAt = Number(row.afk_manager_expires_at || 0);
       stateObj.totalTaxesPaid = Number(row.total_taxes_paid || 0);
@@ -4870,6 +4905,16 @@ var AppDB = (() => {
   async function loginPlayer(username, pin) {
     if (!username || !pin) throw new Error('يرجى إدخال اسم المستخدم والرقم السري.');
     const u = username.trim();
+
+    // 1. Hardware device ban check
+    const devBan = await checkDeviceBan();
+    if (devBan && devBan.isBanned) {
+      if (typeof window !== 'undefined' && typeof window.handleBannedUser === 'function') {
+        window.handleBannedUser(devBan.reason);
+      }
+      throw new Error(devBan.reason || 'تم حظر هذا الجهاز نهائياً من دخول اللعبة.');
+    }
+
     const ok = await verifyPin(u, pin);
     if (!ok) {
       try {
@@ -4885,6 +4930,14 @@ var AppDB = (() => {
     const state = await getPlayerState(u);
     if (!state) {
       throw new Error('تعذر تحميل بيانات الحساب من السحابة، يرجى المحاولة مرة أخرى.');
+    }
+
+    // 2. Player account ban check
+    if (state.isBanned || state.is_banned) {
+      if (typeof window !== 'undefined' && typeof window.handleBannedUser === 'function') {
+        window.handleBannedUser('تم حظر هذا الحساب نهائياً من اللعبة لمخالفة قواعد النزاهة.');
+      }
+      throw new Error('تم حظر هذا الحساب نهائياً من اللعبة.');
     }
 
     // Track device linkage asynchronously without blocking login
@@ -4995,6 +5048,7 @@ var AppDB = (() => {
 
     
     loginPlayer,
+    checkDeviceBan,
     getItemsConfig: async () => ({}),
     adminGetGiftCodes,
     adminCreateGiftCode,

@@ -1654,6 +1654,10 @@ const UIController = (() => {
         state = await AppDB.getPlayerState(savedUser);
       }
       if (state) {
+        if (state.isBanned || state.is_banned) {
+          handleBannedUser('تم حظر هذا الحساب نهائياً لمخالفة قواعد النزاهة.');
+          return;
+        }
         const nameEl = document.getElementById('start-card-username');
         const titleEl = document.getElementById('start-card-title');
         const worthEl = document.getElementById('start-card-worth');
@@ -1674,22 +1678,30 @@ const UIController = (() => {
 
   async function launchGameSession(username) {
     try {
+      // 0. Enforce device ban check
+      if (window.AppDB && typeof window.AppDB.checkDeviceBan === 'function') {
+        const devBan = await window.AppDB.checkDeviceBan();
+        if (devBan && devBan.isBanned) {
+          handleBannedUser(devBan.reason);
+          return;
+        }
+      }
+
       // Check maintenance mode on session launch
       const isMaint = await checkMaintenanceMode();
       if (isMaint) return;
 
       // CRITICAL: Sync server time BEFORE loading the session so that getTrustedNow()
       // is server-anchored when loadUserSession computes offline elapsed time.
-      // Without this, getTrustedNow() falls back to the raw device clock (Date.now()),
-      // which may be slightly ahead of the server clock. If the saved lastActiveTimestamp
-      // was written with getTrustedNow() (server-anchored) at logout, it can appear
-      // "in the future" relative to the un-synced client clock → triggers the
-      // anti-time-travel guard → offline earnings = 0.
       if (window.AppDB && typeof window.AppDB.fetchServerTime === 'function') {
         try { await window.AppDB.fetchServerTime(); } catch (e) {}
       }
 
       const playerState = await GameEngine.loadUserSession(username);
+      if (!playerState || playerState.isBanned || playerState.is_banned) {
+        handleBannedUser('تم حظر هذا الحساب نهائياً من اللعبة لمخالفة قواعد النزاهة.');
+        return;
+      }
       const canonicalUser = (playerState && playerState.username) ? playerState.username : username;
       localStorage.setItem('rasalmal_active_session_user', canonicalUser);
 
@@ -7490,20 +7502,84 @@ const UIController = (() => {
     } catch (e) {}
   }
 
-  function handleBannedUser() {
-    const banOverlay = document.getElementById('ban-overlay');
+  function handleBannedUser(reason) {
+    console.warn('[Security] Access blocked: User or Device is permanently banned.');
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (e) {}
+
+    // Halt game engine & tick loop
+    if (tickIntervalId) {
+      clearInterval(tickIntervalId);
+      tickIntervalId = null;
+    }
+    if (typeof GameEngine !== 'undefined') {
+      try { GameEngine.logoutUser(); } catch (e) {}
+      try { if (typeof GameEngine.pauseEngine === 'function') GameEngine.pauseEngine(); } catch (e) {}
+    }
+    activeListeners.forEach(unsub => { try { unsub(); } catch (e) {} });
+    activeListeners = [];
+
+    if (typeof AppDB !== 'undefined') {
+      try { if (typeof AppDB.stopListeningToChat === 'function') AppDB.stopListeningToChat(); } catch (e) {}
+      try { if (typeof AppDB.cleanupAllNetworkPolling === 'function') AppDB.cleanupAllNetworkPolling(); } catch (e) {}
+    }
+
+    // Hide all normal game screens completely
     const mainGameLayout = document.getElementById('main-game-layout');
     const authScreen = document.getElementById('auth-screen');
     const startMenu = document.getElementById('start-menu-screen');
-    if (banOverlay) banOverlay.classList.remove('hidden');
+    const chatDrawer = document.getElementById('chat-drawer');
+    const chatTrigger = document.getElementById('btn-floating-chat-trigger');
+
     if (mainGameLayout) {
       mainGameLayout.classList.add('hidden');
       mainGameLayout.classList.remove('flex');
     }
     if (authScreen) authScreen.classList.add('hidden');
     if (startMenu) startMenu.classList.add('hidden');
-    performLogout(false);
+    if (chatDrawer) chatDrawer.classList.add('hidden');
+    if (chatTrigger) chatTrigger.classList.add('hidden');
+
+    // Show ban overlay
+    let banOverlay = document.getElementById('ban-overlay');
+    if (!banOverlay) {
+      banOverlay = document.createElement('div');
+      banOverlay.id = 'ban-overlay';
+      banOverlay.className = 'fixed inset-0 z-[999999999] flex items-center justify-center bg-slate-950/98 backdrop-blur-2xl p-4 select-none pointer-events-auto';
+      banOverlay.innerHTML = `
+        <div class="relative w-full max-w-md bg-slate-900 border-2 border-rose-500/80 rounded-3xl p-8 text-center shadow-2xl shadow-rose-500/30 animate-scale-in">
+          <div class="w-20 h-20 mx-auto mb-5 rounded-full bg-rose-500/20 border-2 border-rose-500/50 flex items-center justify-center text-rose-400 text-4xl shadow-lg shadow-rose-500/20">
+            <i class="fa-solid fa-ban animate-pulse"></i>
+          </div>
+          <div class="inline-block px-3.5 py-1 bg-rose-500/20 text-rose-300 text-xs font-black rounded-full border border-rose-500/40 mb-3 uppercase tracking-wider">
+            ⛔ تم حظر الوصول نهائياً
+          </div>
+          <h3 class="text-2xl font-black text-white mb-2">وصول محظور إلى اللعبة</h3>
+          <p id="ban-overlay-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6 font-medium">
+            ${reason || 'تم حظر هذا الجهاز أو الحساب نهائياً من دخول لعبة رأس المال بسبب مخالفة قواعد النزاهة والتلاعب بالسيرفر.'}
+          </p>
+          <div class="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-400 mb-6 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-shield-halved text-rose-400 text-base"></i>
+            <span>القرار نهائي من نظام الحماية الفيدرالي.</span>
+          </div>
+          <a href="https://www.facebook.com/share/1V5sfNkvC9/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
+            class="w-full py-3.5 px-6 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 hover:text-white font-bold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer no-underline">
+            <i class="fa-brands fa-facebook text-base text-blue-400"></i>
+            <span>التواصل مع الدعم الفني للإدارة</span>
+          </a>
+        </div>
+      `;
+      document.body.appendChild(banOverlay);
+    } else {
+      const reasonEl = document.getElementById('ban-overlay-reason');
+      if (reasonEl && reason) reasonEl.textContent = reason;
+      banOverlay.classList.remove('hidden');
+      banOverlay.classList.add('flex');
+    }
   }
+  window.handleBannedUser = handleBannedUser;
 
   // ==================== MANDATORY ACCOUNT RESET RELOAD MODAL ====================
   let isAccountResetActive = false;
