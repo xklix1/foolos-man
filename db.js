@@ -4782,7 +4782,7 @@ var AppDB = (() => {
               if (!isSubscribed) return;
               if (!isNetworkActive()) return; // Gated by IdleManager
               try {
-                const rows = await _api(`players?username=eq.${encodeURIComponent(docId)}&select=username,cash,bank,dirty_cash,net_worth,xp,title,job_id,is_admin,is_banned,jail_timer,admin_modified_timestamp`);
+                const rows = await _api(`players?username=eq.${encodeURIComponent(docId)}&select=username,cash,bank,dirty_cash,net_worth,xp,title,job_id,is_admin,is_banned,jail_timer,admin_modified_timestamp,state`);
                 if (rows && rows.length > 0 && isSubscribed) {
                   const r = rows[0];
                   const d = {};
@@ -4798,6 +4798,9 @@ var AppDB = (() => {
                   d.isBanned = r.is_banned === true;
                   d.jailTimer = Number(r.jail_timer || 0);
                   d.adminModifiedTimestamp = Number(r.admin_modified_timestamp || 0);
+                  d.state = r.state || {};
+                  d.isReset = Boolean(r.state && (r.state.isReset === true || r.state.isReset === 'true'));
+                  d.resetTimestamp = Number((r.state && r.state.resetTimestamp) || r.admin_modified_timestamp || 0);
                   cb({ exists: true, data: () => d });
                 }
               } catch (e) {}
