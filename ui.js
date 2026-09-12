@@ -11442,6 +11442,216 @@ const UIController = (() => {
   let selectedRestoreFileContent = null;
   window.employeesCache = {};
 
+  const CHAT_FRAMES_CATALOG = [
+    {
+      id: 'none',
+      name: 'المظهر الافتراضي (بدون إطار)',
+      badge: 'كلاسيكي',
+      badgeClass: 'bg-slate-800 text-slate-400 border-slate-700',
+      description: 'المظهر الكلاسيكي العادي لفقاعة الرسالة بدون أي توهج أو أطر إضافية.',
+      previewBubbleClass: 'bg-slate-800/90 border border-slate-700/80 text-slate-200',
+      previewTag: '',
+      senderGlowClass: 'text-yellow-400 font-bold',
+      isFree: true
+    },
+    {
+      id: 'crimson_flame',
+      name: 'لهيب العرش القرمزي VIP 🔥',
+      badge: 'لهيب هادئ ملتهب',
+      badgeClass: 'bg-rose-950/80 text-rose-300 border-rose-500/40',
+      description: 'إطار ناري ملتهب بلون قرمزي هادئ وجمر متقد مع وسم VIP الناري.',
+      previewBubbleClass: 'chat-bubble-glow-flame',
+      previewTag: '🔥 لهيب VIP',
+      senderGlowClass: 'chat-sender-flame-glow',
+      pkgId: 'pkg_vip_crimson_flame',
+      isFree: false
+    },
+    {
+      id: 'gold_neon',
+      name: 'حوت الشات الذهبي النيون 🌟',
+      badge: 'ذهب نيون متوهج',
+      badgeClass: 'bg-amber-950/80 text-amber-300 border-yellow-500/40',
+      description: 'إطار ذهبي نيون براق ومتحرك مع وسم حوت الشات VIP.',
+      previewBubbleClass: 'chat-bubble-glow-gold',
+      previewTag: '✨ لاعب VIP',
+      senderGlowClass: 'chat-sender-gold-glow',
+      pkgId: 'pkg_vip_chat_glow',
+      isFree: false
+    },
+    {
+      id: 'cyber_rainbow',
+      name: 'الملك الأسطوري الملكي 👑',
+      badge: 'سايبر رينبو ملكي',
+      badgeClass: 'bg-purple-950/80 text-purple-300 border-purple-500/40',
+      description: 'إطار نيون بألوان الطيف المتدرجة المتحركة مع وسم الملك الأسطوري.',
+      previewBubbleClass: 'chat-bubble-glow-rainbow',
+      previewTag: '👑 ROYAL VIP',
+      senderGlowClass: 'chat-sender-rainbow-glow',
+      pkgId: 'pkg_vip_royal_ultimate',
+      isFree: false
+    }
+  ];
+
+  function getPlayerUnlockedChatGlows() {
+    const st = (typeof GameEngine !== 'undefined' && GameEngine.state) ? GameEngine.state : {};
+    const unlocked = new Set(Array.isArray(st.unlockedChatGlows) ? st.unlockedChatGlows : []);
+
+    // Always include 'none'
+    unlocked.add('none');
+
+    // Currently active glow
+    if (st.chatGlow && st.chatGlow !== 'none') {
+      unlocked.add(st.chatGlow);
+    }
+    if (st.hasChatGlow) {
+      unlocked.add('gold_neon');
+    }
+
+    // Active VIP packages
+    if (st.activePackage === 'pkg_vip_chat_glow') unlocked.add('gold_neon');
+    if (st.activePackage === 'pkg_vip_crimson_flame') unlocked.add('crimson_flame');
+    if (st.activePackage === 'pkg_vip_royal_ultimate') unlocked.add('cyber_rainbow');
+
+    // Badges & Titles
+    if (st.customBadge === '🌟' || (st.badgeTitle && st.badgeTitle.includes('حوت الشات'))) {
+      unlocked.add('gold_neon');
+    }
+    if (st.customBadge === '🔥' || (st.badgeTitle && st.badgeTitle.includes('لهيب'))) {
+      unlocked.add('crimson_flame');
+    }
+    if (st.customBadge === '👑✔️' || (st.badgeTitle && (st.badgeTitle.includes('الملك الأسطوري') || st.badgeTitle.includes('إمبراطور')))) {
+      unlocked.add('cyber_rainbow');
+    }
+
+    // Ensure array is synced back on state
+    if (GameEngine.state) {
+      GameEngine.state.unlockedChatGlows = Array.from(unlocked);
+    }
+    return Array.from(unlocked);
+  }
+
+  function updateCurrentChatFrameBadge() {
+    const labelEl = document.getElementById('chat-current-frame-label');
+    if (!labelEl) return;
+    const st = (typeof GameEngine !== 'undefined' && GameEngine.state) ? GameEngine.state : null;
+    const activeGlow = (st && st.chatGlow) || 'none';
+    if (activeGlow === 'none' || !activeGlow) {
+      labelEl.textContent = 'الإطار: الافتراضي';
+    } else if (activeGlow === 'crimson_flame') {
+      labelEl.textContent = 'الإطار: لهيب العرش 🔥';
+    } else if (activeGlow === 'gold_neon') {
+      labelEl.textContent = 'الإطار: حوت الشات 🌟';
+    } else if (activeGlow === 'cyber_rainbow') {
+      labelEl.textContent = 'الإطار: الملك الأسطوري 👑';
+    } else {
+      labelEl.textContent = 'تغيير إطار الرسائل';
+    }
+  }
+
+  function openChatFrameSelectorModal() {
+    const modal = document.getElementById('chat-frame-selector-modal');
+    const container = document.getElementById('chat-frames-list-container');
+    if (!modal || !container) return;
+
+    const st = (typeof GameEngine !== 'undefined' && GameEngine.state) ? GameEngine.state : {};
+    const curUser = GameEngine.activeUsername || st.username || 'أنت';
+    const activeGlow = st.chatGlow || 'none';
+    const unlockedList = getPlayerUnlockedChatGlows();
+
+    container.innerHTML = '';
+
+    CHAT_FRAMES_CATALOG.forEach(frame => {
+      const isCurrent = (activeGlow === frame.id) || (frame.id === 'none' && (!activeGlow || activeGlow === 'none'));
+      const isOwned = frame.isFree || unlockedList.includes(frame.id);
+
+      const card = document.createElement('div');
+      card.className = `p-3.5 rounded-2xl bg-slate-950/80 border-2 ${isCurrent ? 'border-amber-400 shadow-lg shadow-amber-500/15' : (isOwned ? 'border-slate-800 hover:border-slate-700' : 'border-slate-800/60 opacity-80')} flex flex-col space-y-2.5 transition`;
+
+      const statusBadgeHtml = isCurrent
+        ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1 shrink-0"><i class="fa-solid fa-check"></i> مفعل حالياً</span>`
+        : (isOwned
+          ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40 shrink-0">متاح لديك</span>`
+          : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-500 border border-slate-700 flex items-center gap-1 shrink-0"><i class="fa-solid fa-lock text-[9px]"></i> غير مملوك</span>`);
+
+      let actionBtnHtml = '';
+      if (isCurrent) {
+        actionBtnHtml = `<button type="button" disabled class="w-full py-2 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-black cursor-default flex items-center justify-center gap-1.5"><i class="fa-solid fa-check"></i> تم التفعيل (الإطار النشط)</button>`;
+      } else if (isOwned) {
+        actionBtnHtml = `<button type="button" onclick="window.UI.selectChatFrame('${frame.id}')" class="w-full py-2 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 cursor-pointer"><i class="fa-solid fa-wand-magic-sparkles"></i> اختيار هذا الإطار</button>`;
+      } else {
+        actionBtnHtml = `<button type="button" disabled class="w-full py-2 bg-slate-800/40 border border-slate-800 text-slate-500 rounded-xl text-xs font-bold cursor-not-allowed flex items-center justify-center gap-1.5"><i class="fa-solid fa-lock text-xs"></i> غير متاح بحسابك (يتطلب باقة VIP)</button>`;
+      }
+
+      card.innerHTML = `
+        <div class="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-800/70">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-xs sm:text-sm font-black text-white truncate">${frame.name}</span>
+            <span class="text-[9px] px-2 py-0.5 rounded-full border font-bold ${frame.badgeClass} shrink-0">${frame.badge}</span>
+          </div>
+          ${statusBadgeHtml}
+        </div>
+
+        <p class="text-[11px] text-slate-400 leading-relaxed">${frame.description}</p>
+
+        <!-- Live Bubble Preview -->
+        <div class="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800/70 flex flex-col items-end my-1 overflow-visible">
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="text-[9px] text-slate-500 font-bold">الآن</span>
+            <span class="text-[10px] ${frame.senderGlowClass}">${curUser}</span>
+          </div>
+          <div class="chat-message-bubble ${frame.previewBubbleClass} text-xs" ${frame.previewTag ? `data-vip-tag="${frame.previewTag}"` : ''}>
+            هكذا ستبدو رسائلك بهذا الإطار!
+          </div>
+        </div>
+
+        <div class="pt-1">
+          ${actionBtnHtml}
+        </div>
+      `;
+
+      container.appendChild(card);
+    });
+
+    modal.classList.remove('hidden');
+  }
+
+  function closeChatFrameSelectorModal() {
+    const modal = document.getElementById('chat-frame-selector-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function selectChatFrame(frameId) {
+    if (!GameEngine.state) return;
+    const curUser = GameEngine.activeUsername || GameEngine.state.username;
+    const unlocked = getPlayerUnlockedChatGlows();
+
+    if (frameId !== 'none' && !unlocked.includes(frameId)) {
+      showToast('تنبيه', 'أنت لا تملك هذا الإطار بعد!', 'warning');
+      return;
+    }
+
+    GameEngine.state.chatGlow = (frameId === 'none') ? 'none' : frameId;
+    if (curUser && window._knownVipGlowPlayers) {
+      window._knownVipGlowPlayers.set(curUser, (frameId === 'none' ? '' : frameId));
+    }
+
+    if (typeof GameEngine.forceSaveState === 'function') {
+      GameEngine.forceSaveState(true);
+    }
+
+    const frameDef = CHAT_FRAMES_CATALOG.find(f => f.id === frameId);
+    const frameName = frameDef ? frameDef.name : 'الإطار الافتراضي';
+
+    showToast('تخصيص الشات', `تم تفعيل ${frameName} بنجاح! ✨`, 'success');
+    updateCurrentChatFrameBadge();
+    openChatFrameSelectorModal(); // Refresh modal active card
+
+    // Refresh chat messages display if visible
+    if (typeof AppDB !== 'undefined' && typeof AppDB.triggerImmediateChatSync === 'function') {
+      AppDB.triggerImmediateChatSync();
+    }
+  }
+
   function openChatDrawerFunc() {
     const chatDrawer = document.getElementById('chat-drawer');
     const chatTrigger = document.getElementById('btn-floating-chat-trigger');
@@ -11463,6 +11673,8 @@ const UIController = (() => {
       unreadDot.classList.add('hidden');
       unreadDot.textContent = '0';
     }
+
+    updateCurrentChatFrameBadge();
 
     if (typeof AppDB !== 'undefined' && typeof AppDB.triggerImmediateChatSync === 'function') {
       AppDB.triggerImmediateChatSync();
@@ -11502,6 +11714,24 @@ const UIController = (() => {
     const chatSendBtn = document.getElementById('btn-send-chat-message');
     const charCounter = document.getElementById('chat-char-counter');
 
+    const btnOpenFramesModal = document.getElementById('btn-open-chat-frames-modal');
+    const btnQuickChangeFrame = document.getElementById('btn-quick-change-frame');
+    const btnCloseFramesModal = document.getElementById('btn-close-chat-frame-modal');
+    const btnConfirmCloseFrames = document.getElementById('btn-confirm-close-chat-frame-modal');
+
+    if (btnOpenFramesModal) {
+      btnOpenFramesModal.addEventListener('click', openChatFrameSelectorModal);
+    }
+    if (btnQuickChangeFrame) {
+      btnQuickChangeFrame.addEventListener('click', openChatFrameSelectorModal);
+    }
+    if (btnCloseFramesModal) {
+      btnCloseFramesModal.addEventListener('click', closeChatFrameSelectorModal);
+    }
+    if (btnConfirmCloseFrames) {
+      btnConfirmCloseFrames.addEventListener('click', closeChatFrameSelectorModal);
+    }
+
     if (chatTrigger && chatDrawer) {
       chatTrigger.addEventListener('click', () => {
         if (chatDrawer.classList.contains('chat-drawer-open')) {
@@ -11517,9 +11747,14 @@ const UIController = (() => {
       });
     }
 
-    // Close chat drawer on ESC key
+    // Close chat drawer or frame modal on ESC key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        const frameModal = document.getElementById('chat-frame-selector-modal');
+        if (frameModal && !frameModal.classList.contains('hidden')) {
+          closeChatFrameSelectorModal();
+          return;
+        }
         const cd = document.getElementById('chat-drawer');
         if (cd && cd.classList.contains('chat-drawer-open')) {
           closeChatDrawerFunc();
@@ -11815,8 +12050,10 @@ const UIController = (() => {
           lastChatSent = getTrustedNowUI();
           const isFb = Boolean(GameEngine.state && (GameEngine.state.facebookVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('facebook'))));
           
-          let chatGlow = (GameEngine.state && (GameEngine.state.chatGlow || (GameEngine.state.hasChatGlow ? 'gold_neon' : ''))) || '';
-          if (!chatGlow && GameEngine.state) {
+          let chatGlow = (GameEngine.state && GameEngine.state.chatGlow);
+          if (chatGlow === 'none') {
+            chatGlow = '';
+          } else if (!chatGlow && GameEngine.state) {
             if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.customBadge === '🔥' || (GameEngine.state.badgeTitle && GameEngine.state.badgeTitle.includes('لهيب'))) {
               chatGlow = 'crimson_flame';
             } else if (GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.customBadge === '🌟' || (GameEngine.state.badgeTitle && GameEngine.state.badgeTitle.includes('حوت الشات'))) {
@@ -12310,16 +12547,22 @@ const UIController = (() => {
 
     // Global registry of players with active chat glow
     window._knownVipGlowPlayers = window._knownVipGlowPlayers || new Map();
-    if (curUser && GameEngine.state && (GameEngine.state.chatGlow || GameEngine.state.hasChatGlow || GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.activePackage === 'pkg_vip_royal_ultimate')) {
-      const myGlow = GameEngine.state.chatGlow || (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' ? 'crimson_flame' : (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' ? 'cyber_rainbow' : 'gold_neon'));
-      window._knownVipGlowPlayers.set(curUser, myGlow);
+    if (curUser && GameEngine.state) {
+      if (GameEngine.state.chatGlow === 'none') {
+        window._knownVipGlowPlayers.set(curUser, '');
+      } else if (GameEngine.state.chatGlow) {
+        window._knownVipGlowPlayers.set(curUser, GameEngine.state.chatGlow);
+      } else if (GameEngine.state.hasChatGlow || GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.activePackage === 'pkg_vip_royal_ultimate') {
+        const myGlow = (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' ? 'crimson_flame' : (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' ? 'cyber_rainbow' : 'gold_neon'));
+        window._knownVipGlowPlayers.set(curUser, myGlow);
+      }
     }
 
     // Register any glowing sender in this batch
     msgs.forEach(m => {
       if (m.type === 'money_drop') return;
       if (m.chatGlow && m.sender) {
-        window._knownVipGlowPlayers.set(m.sender, m.chatGlow);
+        window._knownVipGlowPlayers.set(m.sender, m.chatGlow === 'none' ? '' : m.chatGlow);
       } else if (m.customBadge === '🔥' && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, 'crimson_flame');
       } else if (m.customBadge === '🌟' && m.sender) {
@@ -12335,7 +12578,7 @@ const UIController = (() => {
       lbCache.forEach(p => {
         if (p.chatGlow || p.hasChatGlow || p.activePackage === 'pkg_vip_crimson_flame' || p.activePackage === 'pkg_vip_chat_glow' || p.customBadge === '🔥' || p.customBadge === '🌟') {
           const g = p.chatGlow || (p.activePackage === 'pkg_vip_crimson_flame' || p.customBadge === '🔥' ? 'crimson_flame' : (p.activePackage === 'pkg_vip_royal_ultimate' ? 'cyber_rainbow' : 'gold_neon'));
-          window._knownVipGlowPlayers.set(p.username, g);
+          window._knownVipGlowPlayers.set(p.username, g === 'none' ? '' : g);
         } else if (p.customBadge === '👑✔️' || (p.customBadge && p.customBadge.includes('👑'))) {
           window._knownVipGlowPlayers.set(p.username, 'cyber_rainbow');
         }
@@ -12363,16 +12606,20 @@ const UIController = (() => {
       } else {
         // Detect chat glow styling
         let glowType = msg.chatGlow || window._knownVipGlowPlayers.get(msg.sender) || '';
+        if (glowType === 'none') glowType = '';
         if (!glowType) {
-          if (msg.customBadge === '🔥' || (msg.senderTitle && msg.senderTitle.includes('لهيب'))) {
+          if (isMe && GameEngine.state && GameEngine.state.chatGlow === 'none') {
+            glowType = '';
+          } else if (isMe && GameEngine.state && GameEngine.state.chatGlow && GameEngine.state.chatGlow !== 'none') {
+            glowType = GameEngine.state.chatGlow;
+          } else if (msg.customBadge === '🔥' || (msg.senderTitle && msg.senderTitle.includes('لهيب'))) {
             glowType = 'crimson_flame';
           } else if (msg.customBadge === '🌟' || (msg.senderTitle && msg.senderTitle.includes('حوت الشات'))) {
             glowType = 'gold_neon';
           } else if (msg.customBadge === '👑✔️' || (msg.customBadge && msg.customBadge.includes('👑'))) {
             glowType = 'cyber_rainbow';
-          } else if (isMe && GameEngine.state) {
-            if (GameEngine.state.chatGlow) glowType = GameEngine.state.chatGlow;
-            else if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.customBadge === '🔥') glowType = 'crimson_flame';
+          } else if (isMe && GameEngine.state && GameEngine.state.chatGlow === undefined) {
+            if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.customBadge === '🔥') glowType = 'crimson_flame';
             else if (GameEngine.state.hasChatGlow || GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.customBadge === '🌟') glowType = 'gold_neon';
             else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' || GameEngine.state.customBadge === '👑✔️') glowType = 'cyber_rainbow';
           }
@@ -19208,7 +19455,11 @@ const UIController = (() => {
     openNotificationsModal,
     closeNotificationsModal,
     claimMoneyDrop,
-    viewMoneyDropWinners
+    viewMoneyDropWinners,
+    openChatFrameSelectorModal,
+    closeChatFrameSelectorModal,
+    selectChatFrame,
+    updateCurrentChatFrameBadge
   };
 
 })();

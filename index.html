@@ -6109,6 +6109,10 @@
           <span id="chat-dms-unread-badge" class="hidden px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9px] font-black leading-none">0</span>
         </button>
       </div>
+      <button id="btn-open-chat-frames-modal" type="button" title="تخصيص إطار رسائل الشات 🎨"
+        class="w-8 h-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 hover:text-amber-300 flex items-center justify-center transition border border-amber-500/30 hover:border-amber-400 shadow cursor-pointer shrink-0">
+        <i class="fa-solid fa-palette text-xs"></i>
+      </button>
       <button id="btn-close-chat-drawer" title="إغلاق الدردشة"
         class="w-8 h-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-800 cursor-pointer shrink-0">
         <i class="fa-solid fa-xmark"></i>
@@ -6138,7 +6142,15 @@
           </button>
         </div>
         <div class="flex justify-between items-center mt-2 text-[10px] text-slate-500 px-1">
-          <span id="chat-char-counter">0 / 200</span>
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span id="chat-char-counter">0 / 200</span>
+            <span class="text-slate-700">|</span>
+            <button id="btn-quick-change-frame" type="button"
+              class="text-[10px] text-amber-400 hover:text-amber-300 flex items-center gap-1 font-bold transition hover:underline cursor-pointer truncate">
+              <i class="fa-solid fa-palette text-[9px]"></i>
+              <span id="chat-current-frame-label">تغيير إطار الرسائل</span>
+            </button>
+          </div>
           <span id="chat-cooldown-timer" class="text-yellow-500 font-bold hidden">الرجاء الانتظار ثانية واحدة...</span>
         </div>
         <!-- زر إرسال تنبيه مراقبة الإدارة -->
@@ -6219,6 +6231,43 @@
 
     </div>
 
+  </div>
+
+  <!-- ==================== CHAT FRAME SELECTOR MODAL ==================== -->
+  <div id="chat-frame-selector-modal"
+    class="hidden fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 select-none">
+    <div class="relative w-full max-w-md bg-slate-900 border-2 border-amber-500/40 rounded-3xl p-5 shadow-2xl shadow-amber-500/10 flex flex-col max-h-[90vh] overflow-hidden">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 text-slate-950 flex items-center justify-center font-black shadow-md shadow-amber-500/20">
+            <i class="fa-solid fa-palette text-base"></i>
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-black text-white">تخصيص إطار رسائل الشات</h3>
+            <p class="text-[10px] text-slate-400">اختر مظهر وتوهج فقاعة رسائلك في الدردشة</p>
+          </div>
+        </div>
+        <button id="btn-close-chat-frame-modal" type="button"
+          class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Frames List (Scrollable) -->
+      <div id="chat-frames-list-container" class="flex-1 overflow-y-auto py-3 space-y-3 scrollbar-thin">
+        <!-- Dyn Cards rendered by UIController -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+        <span><i class="fa-solid fa-circle-info text-amber-400 ml-1"></i> يتم حفظ الإطار تلقائياً لحسابك.</span>
+        <button id="btn-confirm-close-chat-frame-modal" type="button"
+          class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition cursor-pointer text-xs">
+          إغلاق
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- ==================== MANDATORY FORCE RELOAD MODAL ==================== -->
