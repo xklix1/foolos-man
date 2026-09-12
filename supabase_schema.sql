@@ -227,3 +227,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- ==============================================================================
+-- 🚀 فهارس الأداء العالي (High Performance Indexes)
+-- ==============================================================================
+CREATE INDEX IF NOT EXISTS idx_mailbox_recipient ON public.mailbox (recipient);
+CREATE INDEX IF NOT EXISTS idx_mailbox_recipient_created ON public.mailbox (recipient, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_mailbox_recipient_status ON public.mailbox (recipient, status);
+CREATE INDEX IF NOT EXISTS idx_players_leaderboard ON public.players (is_banned, net_worth DESC);
+CREATE INDEX IF NOT EXISTS idx_transfers_recipient ON public.transfers (recipient);
+CREATE INDEX IF NOT EXISTS idx_transfers_sender ON public.transfers (sender);
+
