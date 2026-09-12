@@ -3269,22 +3269,22 @@ const UIController = (() => {
     medium: {
       btnClass: 'btn-invest-start w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl transition',
       btnText: 'بدء الاستثمار',
-      placeholder: 'المبلغ (25K - 250K)'
+      placeholder: 'المبلغ (25K - 200K)'
     },
     long: {
       btnClass: 'btn-invest-start w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-black rounded-xl transition',
       btnText: 'بدء الاستثمار',
-      placeholder: 'المبلغ (100K - 1M)'
+      placeholder: 'المبلغ (100K - 800K)'
     },
     venture: {
       btnClass: 'btn-invest-start w-full py-2.5 bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-slate-950 text-xs font-black rounded-xl transition',
       btnText: 'بدء الاستثمار',
-      placeholder: 'المبلغ (500K - 4M)'
+      placeholder: 'المبلغ (500K - 2.5M)'
     },
     imperial: {
       btnClass: 'btn-invest-start w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-black rounded-xl transition',
       btnText: 'بدء الاستثمار الماسي',
-      placeholder: 'المبلغ (2M - 15M)'
+      placeholder: 'المبلغ (2M - 6M)'
     }
   };
 
