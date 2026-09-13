@@ -838,7 +838,11 @@
         if (selectedPlayerState.investments && Array.isArray(selectedPlayerState.investments)) {
           selectedPlayerState.investments.forEach(inv => worth += (inv.investedAmount || 0));
         }
-        selectedPlayerState.netWorth = worth;
+        if (selectedPlayerState.activeLoan) {
+          const loanDebt = Number(selectedPlayerState.activeLoan.totalDue || selectedPlayerState.activeLoan.amount || 0);
+          if (loanDebt > 0) worth -= loanDebt;
+        }
+        selectedPlayerState.netWorth = Math.max(0, Math.floor(worth));
 
         // Save to DB
         await AppDB.adminSavePlayer(selectedPlayer, selectedPlayerState);
@@ -1195,7 +1199,11 @@
           if (selectedPlayerState.investments && Array.isArray(selectedPlayerState.investments)) {
             selectedPlayerState.investments.forEach(inv => worth += (inv.investedAmount || 0));
           }
-          selectedPlayerState.netWorth = worth;
+          if (selectedPlayerState.activeLoan) {
+            const loanDebt = Number(selectedPlayerState.activeLoan.totalDue || selectedPlayerState.activeLoan.amount || 0);
+            if (loanDebt > 0) worth -= loanDebt;
+          }
+          selectedPlayerState.netWorth = Math.max(0, Math.floor(worth));
 
           // Recalculate title if GameEngine has getAppropriateTitle
           if (typeof GameEngine.getAppropriateTitle ==='function') {
@@ -1466,7 +1474,11 @@
           if (selectedPlayerState.investments && Array.isArray(selectedPlayerState.investments)) {
             selectedPlayerState.investments.forEach(inv => worth += (inv.investedAmount || 0));
           }
-          selectedPlayerState.netWorth = worth;
+          if (selectedPlayerState.activeLoan) {
+            const loanDebt = Number(selectedPlayerState.activeLoan.totalDue || selectedPlayerState.activeLoan.amount || 0);
+            if (loanDebt > 0) worth -= loanDebt;
+          }
+          selectedPlayerState.netWorth = Math.max(0, Math.floor(worth));
 
           await AppDB.adminSavePlayer(selectedPlayer, selectedPlayerState);
 

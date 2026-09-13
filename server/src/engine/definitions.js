@@ -182,11 +182,63 @@ const CAR_TEMPLATES = {
   }
 };
 
+const INDUSTRIAL_SECTORS = {
+  food: {
+    id: 'food',
+    name: 'الصناعات الغذائية وسلاسل الإمداد الزراعي',
+    unlockCost: 1500000,
+    stages: {
+      stage1: { baseCost: 120000 },
+      stage2: { baseCost: 350000 },
+      stage3: { baseCost: 950000 },
+      logistics: { baseCost: 450000 }
+    },
+    product: { baseValue: 500 }
+  },
+  auto: {
+    id: 'auto',
+    name: 'تجميع وتصنيع السيارات والمركبات',
+    unlockCost: 15000000,
+    stages: {
+      stage1: { baseCost: 1200000 },
+      stage2: { baseCost: 3500000 },
+      stage3: { baseCost: 9500000 },
+      logistics: { baseCost: 4200000 }
+    },
+    product: { baseValue: 3200 }
+  },
+  semiconductor: {
+    id: 'semiconductor',
+    name: 'الرقائق وأشباه الموصلات وسيرفرات AI',
+    unlockCost: 80000000,
+    stages: {
+      stage1: { baseCost: 8500000 },
+      stage2: { baseCost: 24000000 },
+      stage3: { baseCost: 65000000 },
+      logistics: { baseCost: 28000000 }
+    },
+    product: { baseValue: 12500 }
+  },
+  petrochemical: {
+    id: 'petrochemical',
+    name: 'الطاقة ومجمعات البتروكيماويات والبلمرة',
+    unlockCost: 350000000,
+    stages: {
+      stage1: { baseCost: 45000000 },
+      stage2: { baseCost: 120000000 },
+      stage3: { baseCost: 320000000 },
+      logistics: { baseCost: 140000000 }
+    },
+    product: { baseValue: 38000 }
+  }
+};
+
 module.exports = {
   BUSINESSES,
   ASSETS,
   STOCKS,
   TITLES,
-  CAR_TEMPLATES
+  CAR_TEMPLATES,
+  INDUSTRIAL_SECTORS
 };
 

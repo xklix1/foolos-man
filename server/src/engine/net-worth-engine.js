@@ -2,10 +2,10 @@
  * Ras ALmal Tycoon — Authoritative Net Worth & Rank Engine
  */
 
-const { ASSETS, STOCKS, TITLES } = require('./definitions');
+const { ASSETS, STOCKS, TITLES, INDUSTRIAL_SECTORS } = require('./definitions');
 
 /**
- * Calculates accurate total net worth of a player
+ * Calculates accurate total net worth of a player (Assets - Liabilities)
  * @param {Object} playerState - Sanitized player state
  * @param {Object} stockPrices - Current live/market stock price map (optional)
  * @returns {number} Integer net worth
@@ -44,7 +44,35 @@ function calculateNetWorth(playerState, stockPrices = {}) {
     });
   }
 
-  return Math.floor(worth);
+  // Add industrial supply chain infrastructure & inventory value
+  if (playerState.industry && INDUSTRIAL_SECTORS && typeof INDUSTRIAL_SECTORS === 'object') {
+    Object.keys(INDUSTRIAL_SECTORS).forEach(secKey => {
+      const secDef = INDUSTRIAL_SECTORS[secKey];
+      const sec = playerState.industry[secKey];
+      if (sec && sec.unlocked) {
+        worth += Number(secDef.unlockCost || 0);
+        ['stage1', 'stage2', 'stage3', 'logistics'].forEach(stKey => {
+          const lvl = Number(sec[stKey] || 0);
+          if (lvl > 0 && secDef.stages && secDef.stages[stKey]) {
+            worth += Math.floor((secDef.stages[stKey].baseCost || 0) * lvl * 1.15);
+          }
+        });
+        if (sec.readyStock > 0 && secDef.product) {
+          worth += Math.floor(Number(sec.readyStock || 0) * (secDef.product.baseValue || 0));
+        }
+      }
+    });
+  }
+
+  // Deduct active bank loan liabilities (True Net Worth = Assets - Liabilities)
+  if (playerState.activeLoan) {
+    const loanDebt = Number(playerState.activeLoan.totalDue || playerState.activeLoan.amount || 0);
+    if (loanDebt > 0) {
+      worth -= loanDebt;
+    }
+  }
+
+  return Math.max(0, Math.floor(worth));
 }
 
 /**

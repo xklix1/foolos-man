@@ -1387,8 +1387,15 @@ const GameEngine = (() => {
         }
       });
     }
+    // Deduct active bank loan liabilities (True Net Worth = Assets - Liabilities)
+    if (state.activeLoan) {
+      const loanDebt = Number(state.activeLoan.totalDue || state.activeLoan.amount || 0);
+      if (loanDebt > 0) {
+        worth -= loanDebt;
+      }
+    }
 
-    return worth;
+    return Math.max(0, Math.floor(worth));
   }
 
   // Update Player Title based on Net Worth and XP

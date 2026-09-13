@@ -63,6 +63,17 @@ test('Net Worth Calculation & Rank Progression', () => {
   const expected = 50000 + 100000 + 10000 + (2 * 212500) + (100 * 32);
   assert.strictEqual(netWorth, expected, 'Net worth accurately tallies cash, bank, assets and stocks');
 
+  // Verify liabilities (active bank loan) deduction
+  const playerWithLoan = {
+    ...player,
+    activeLoan: {
+      amount: 100000,
+      totalDue: 115000
+    }
+  };
+  const netWorthWithLoan = calculateNetWorth(playerWithLoan);
+  assert.strictEqual(netWorthWithLoan, expected - 115000, 'Net worth subtracts totalDue liabilities of active loan');
+
   assert.strictEqual(getAppropriateTitle(1500000, 700), 'مستثمر طموح');
   assert.strictEqual(getAppropriateTitle(100, 0), 'عامل مبتدئ');
 });
