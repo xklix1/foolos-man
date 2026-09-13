@@ -2166,26 +2166,6 @@ const GameEngine = (() => {
       updates.businessProfitGained += corpProfitGained;
     }
 
-    // 4.5 Passive Business Front Laundering (واجهات الشركات لغسيل الأموال بضريبة 25% كحد أدنى)
-    if ((state.dirtyCash || 0) > 0 && state.businesses) {
-      let bizFrontCapacity = 0;
-      Object.keys(state.businesses).forEach(k => {
-        const b = state.businesses[k];
-        if (b && b.level > 0) {
-          bizFrontCapacity += (b.level * 250) / 3600; // Scaled per tick
-        }
-      });
-      if (bizFrontCapacity > 0) {
-        const autoAmount = Math.min(state.dirtyCash, bizFrontCapacity);
-        const autoFeeRate = 0.18; // Business front auto-laundering tax (18%)
-        const autoFee = Math.floor(autoAmount * autoFeeRate);
-        const autoCleaned = autoAmount - autoFee;
-        state.dirtyCash -= autoAmount;
-        state.cash += autoCleaned; // Added as clean legitimate cash
-        state.totalTaxesPaid = (state.totalTaxesPaid || 0) + autoFee;
-      }
-    }
-
     // Cashflow Tax deduction (Hourly tax distributed per second tick)
     const taxReport = calculateTaxReport();
     const taxThisTick = taxReport.taxPerSecond || 0;
