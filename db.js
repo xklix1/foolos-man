@@ -1349,6 +1349,22 @@ var AppDB = (() => {
           }
         }
 
+        // 4.8 Daily Black Market Deals Guard:
+        // NEVER allow page reloading or reconnecting to roll back today's black market deal count
+        if (local && local.dailyBlackMarket && local.dailyBlackMarket.date === todayStr) {
+          if (!stateObj.dailyBlackMarket || stateObj.dailyBlackMarket.date !== todayStr) {
+            stateObj.dailyBlackMarket = { ...local.dailyBlackMarket };
+            shouldSyncCloud = true;
+          } else {
+            const locCount = Number(local.dailyBlackMarket.count || 0);
+            const srvCount = Number(stateObj.dailyBlackMarket.count || 0);
+            if (locCount > srvCount) {
+              stateObj.dailyBlackMarket.count = Math.min(15, Math.max(locCount, srvCount));
+              shouldSyncCloud = true;
+            }
+          }
+        }
+
         // 5. Late-save recovery:
         // If local is definitively NEWER than the cloud (localTs > serverTs), the cloud save
         // was probably debounced or blocked (e.g. admin_modified_timestamp filter mismatch).
@@ -3168,6 +3184,7 @@ var AppDB = (() => {
         dailyLoans: { date: '', count: 0 },
         dailyInvestments: { date: '', count: 0 },
         dailyWork: { date: '', shifts: 0, overtimeShifts: 0 },
+        dailyBlackMarket: { date: '', count: 0 },
         dailyToolUses: { date: '', uses: {} },
         dailyMarketingCampaigns: { date: '', count: 0 },
         dailyCasinoNetProfit: 0,

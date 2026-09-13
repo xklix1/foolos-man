@@ -6022,6 +6022,25 @@ const UIController = (() => {
     if (dealsContainer) {
       dealsContainer.innerHTML ='';
 
+      if (typeof GameEngine.ensureDailyBlackMarketTracking === 'function') {
+        GameEngine.ensureDailyBlackMarketTracking();
+      }
+      const dailyCount = (s.dailyBlackMarket && s.dailyBlackMarket.count) || 0;
+      const maxDaily = GameEngine.MAX_DAILY_BLACK_MARKET_DEALS || 15;
+      const isDailyLimitReached = dailyCount >= maxDaily;
+      const dailyBadgeCountEl = document.getElementById('blackmarket-daily-count');
+      if (dailyBadgeCountEl) {
+        dailyBadgeCountEl.textContent = dailyCount;
+      }
+      const dailyBadgeEl = document.getElementById('blackmarket-daily-badge');
+      if (dailyBadgeEl) {
+        if (isDailyLimitReached) {
+          dailyBadgeEl.className = 'text-xs px-2.5 py-1 bg-red-500/20 border border-red-500/40 text-red-400 rounded-lg font-bold flex items-center gap-1.5 animate-pulse';
+        } else {
+          dailyBadgeEl.className = 'text-xs px-2.5 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-lg font-bold flex items-center gap-1.5';
+        }
+      }
+
       const hasLawyer = s.inventory && s.inventory.premium_lawyer > 0;
       const hasJammer = s.inventory && s.inventory.radar_jammer > 0;
       const hasPassport = s.inventory && s.inventory.fake_passport > 0;
@@ -6114,6 +6133,25 @@ const UIController = (() => {
         const translatedDealDesc = window.currentLang ==='en' ? (translationDict[deal.desc] || deal.desc) : deal.desc;
         const translatedDealTier = window.currentLang ==='en' ? (translationDict[deal.tier] || deal.tier) : deal.tier;
 
+        const isBtnDisabled = isLockedByRep || isOnCooldown || isDailyLimitReached;
+        let btnBgClass = 'bg-gradient-to-r from-rose-900/60 to-rose-800/60 hover:from-rose-800 hover:to-rose-700 border border-rose-500/40 text-rose-100';
+        let btnIconHtml = '<i class="fa-solid fa-handshake"></i>';
+        let btnText = window.currentLang === 'en' ? 'Sign & Execute Operation' : 'توقيع وتنفيذ العملية';
+
+        if (isLockedByRep) {
+          btnBgClass = 'bg-slate-900 border border-slate-700 text-slate-500 cursor-not-allowed opacity-90';
+          btnIconHtml = '<i class="fa-solid fa-lock"></i>';
+          btnText = window.currentLang === 'en' ? 'Locked (Insufficient Rep)' : 'مغلق (سمعة غير كافية)';
+        } else if (isOnCooldown) {
+          btnBgClass = 'bg-slate-900 border border-amber-500/30 text-amber-400 cursor-not-allowed opacity-90';
+          btnIconHtml = '<i class="fa-solid fa-hourglass-half text-amber-400 animate-spin"></i>';
+          btnText = window.currentLang === 'en' ? `Police Cooldown (${cdFormatted})` : `تهدئة أمنية (${cdFormatted})`;
+        } else if (isDailyLimitReached) {
+          btnBgClass = 'bg-slate-900 border border-red-500/30 text-red-400 cursor-not-allowed opacity-80';
+          btnIconHtml = '<i class="fa-solid fa-ban text-red-400"></i>';
+          btnText = window.currentLang === 'en' ? 'Daily Limit Reached (15/15)' : 'استنفدت الحد اليومي (15/15)';
+        }
+
         card.innerHTML =`
           ${lockOverlay}
           <div>
@@ -6137,23 +6175,23 @@ const UIController = (() => {
               <div class="flex justify-between"><span>${netProfitLabel}</span><span class="numbers-font ${netProfitColor} font-semibold">${netProfitSign}${netProfitVal.toLocaleString()} EGP</span></div>
               <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Est. Success Rate:' :'نسبة النجاح المقدرة:'}</span><span class="numbers-font ${successPct >= 70 ?'text-emerald-400' : successPct >= 50 ?'text-yellow-400' :'text-rose-400'} font-black">${successPct}%</span></div>
               <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Cooldown Period:' :'فترة التهدئة (كول داون):'}</span><span class="numbers-font text-amber-400 font-bold">${cdSuccessStr} (${cdFailStr} ${window.currentLang ==='en' ?'on failure' :'عند الفشل'})</span></div>
-              <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Raid Penalty:' :'عقوبة المداهمة:'}</span><span class="numbers-font text-rose-400">${deal.jailDuration * 3} ${window.currentLang ==='en' ?'seconds' :'ثانية'} (${window.currentLang ==='en' ?'confiscate dirty + 20%' :'مصادرة المشبوه + 20%'})</span></div>
+              <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Raid Penalty:' :'عقوبة المداهمة:'}</span><span class="numbers-font text-rose-400">${deal.jailDuration} ${window.currentLang ==='en' ?'seconds' :'ثانية'} (${window.currentLang ==='en' ?'confiscate dirty + 15% clean' :'مصادرة المشبوه + 15% نظيف'})</span></div>
               <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Reputation Gain:' :'زيادة السمعة:'}</span><span class="numbers-font text-rose-300 font-bold">${repGainStr}</span></div>
               <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Reputation Penalty:' :'عقوبة خسارة السمعة:'}</span><span class="numbers-font text-rose-500 font-bold">${repLossStr}</span></div>
             </div>
 
             ${(hasLawyer || hasJammer || hasPassport) ?`
               <div class="flex flex-wrap gap-1 mb-3">
-                ${hasLawyer ?`<span class="text-[10px] px-1.5 py-0.5 bg-sky-500/20 text-sky-300 rounded border border-sky-500/30">${window.currentLang ==='en' ?'Lawyer (+22% success / acquittal 50%)' :'محامي (+22% نجاح / براءة 50%)'}</span>` :''}
-                ${hasJammer ?`<span class="text-[10px] px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">${window.currentLang ==='en' ?'Jammer (+15% success)' :'تشويش (+15% نجاح)'}</span>` :''}
-                ${hasPassport ?`<span class="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">${window.currentLang ==='en' ?'Fake Passport (Secured Smuggler)' :'جواز مزور (مهرب مؤمن)'}</span>` :''}
+                ${hasLawyer ?`<span class="text-[10px] px-1.5 py-0.5 bg-sky-500/20 text-sky-300 rounded border border-sky-500/30">${window.currentLang ==='en' ?'Lawyer (+4% success / acquittal 25%)' :'محامي (+4% نجاح / براءة 25%)'}</span>` :''}
+                ${hasJammer ?`<span class="text-[10px] px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">${window.currentLang ==='en' ?'Jammer (+2.5% success)' :'تشويش (+2.5% نجاح)'}</span>` :''}
+                ${hasPassport ?`<span class="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">${window.currentLang ==='en' ?'Fake Passport (Secured Escape)' :'جواز مزور (مهرب مؤمن)'}</span>` :''}
               </div>` :''}
           </div>
 
           <div id="bm-deal-btn-wrapper-${id}">
-            <button id="btn-run-deal-${id}" ${(isOnCooldown || isLockedByRep) ?'disabled' :''} class="w-full py-2.5 ${(isOnCooldown || isLockedByRep) ?'bg-slate-900 border border-amber-500/30 text-amber-400 cursor-not-allowed opacity-90' :'bg-gradient-to-r from-rose-900/60 to-rose-800/60 hover:from-rose-800 hover:to-rose-700 border border-rose-500/40 text-rose-100'} rounded-xl text-xs font-black transition shadow-md flex items-center justify-center gap-2">
-              <i class="fa-solid ${(isOnCooldown && !isLockedByRep) ?'fa-hourglass-half text-amber-400 animate-spin' :'fa-handshake'}"></i>
-              <span>${isLockedByRep ? (window.currentLang ==='en' ?'Locked (Insufficient Rep)' :'مغلق (سمعة غير كافية)') : (isOnCooldown ? (window.currentLang ==='en' ?`Police Cooldown (${cdFormatted})` :`تهدئة أمنية (${cdFormatted})`) : (window.currentLang ==='en' ?'Sign & Execute Operation' :'توقيع وتنفيذ العملية'))}</span>
+            <button id="btn-run-deal-${id}" ${isBtnDisabled ?'disabled' :''} class="w-full py-2.5 ${btnBgClass} rounded-xl text-xs font-black transition shadow-md flex items-center justify-center gap-2">
+              ${btnIconHtml}
+              <span>${btnText}</span>
             </button>
           </div>`;
 
@@ -6164,14 +6202,14 @@ const UIController = (() => {
               if (res.success) {
                 const payoutText = deal.cleanPayout ?'كاش نظيف' :'ربح مشبوه';
                 const repText = res.repGain > 0 ?` (+${res.repGain} سمعة)` :'';
-                showToast('ضربة معلم!',`نجحت العملية السرية! ${payoutText} قدره +${res.payout.toLocaleString()} EGP أضيف لخزينتك${repText}. كول داون: ${Math.round((res.cooldownSec || 60) / 60)}د`,'success');
+                showToast('ضربة معلم!',`نجحت العملية السرية! ${payoutText} قدره +${res.payout.toLocaleString()} EGP أضيف لخزينتك${repText}. كول داون: ${Math.round((res.cooldownSec || 60) / 60)}د (المتبقي اليوم: ${res.dailyRemaining})`,'success');
                 playMenuSound('success');
               } else if (res.escaped) {
-                showToast('هروب دبلوماسي!',`تمت المداهمة ولكنك استخدمت جواز السفر المزور وهربت فوراً دون سجن أو غرامات! (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30) / 60)}د)`,'warning');
+                showToast('هروب دبلوماسي!',`تمت المداهمة ولكنك هربت فوراً دون سجن أو غرامات! (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30) / 60)}د - المتبقي اليوم: ${res.dailyRemaining})`,'warning');
                 playMenuSound('click');
               } else {
                 const repLossText = res.repLoss > 0 ?` وفقدان -${res.repLoss} سمعة` :'';
-                showToast('مداهمة الشرطة!',`تم ضبط عمليتك! مصادرة كافة الأموال المشبوهة وغرامة ${res.confiscation.toLocaleString()} EGP وسجن ${res.jailDuration * 3} ثانية${repLossText}. (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30) / 60)}د)`,'error');
+                showToast('مداهمة الشرطة!',`تم ضبط عمليتك! مصادرة كافة الأموال المشبوهة وغرامة ${res.confiscation.toLocaleString()} EGP وسجن ${res.jailDuration} ثانية${repLossText}. (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30) / 60)}د - المتبقي اليوم: ${res.dailyRemaining})`,'error');
                 playMenuSound('error');
               }
               renderAll();
@@ -6254,6 +6292,8 @@ const UIController = (() => {
       const remainingMs = Math.max(0, cdExpiresAt - now);
       const isOnCooldown = remainingMs > 0;
 
+      const isDailyLimitReached = (s.dailyBlackMarket && (s.dailyBlackMarket.count || 0) >= (GameEngine.MAX_DAILY_BLACK_MARKET_DEALS || 15));
+
       if (isOnCooldown) {
         const remSec = Math.ceil(remainingMs / 1000);
         const remMins = Math.floor(remSec / 60);
@@ -6262,6 +6302,10 @@ const UIController = (() => {
         btn.disabled = true;
         btn.className ='w-full py-2.5 bg-slate-900 border border-amber-500/30 text-amber-400 rounded-xl text-xs font-black transition shadow-md flex items-center justify-center gap-2 cursor-not-allowed opacity-90';
         btn.innerHTML =`<i class="fa-solid fa-hourglass-half text-amber-400 animate-spin"></i><span>تهدئة أمنية (${cdFormatted})</span>`;
+      } else if (isDailyLimitReached) {
+        btn.disabled = true;
+        btn.className ='w-full py-2.5 bg-slate-900 border border-red-500/30 text-red-400 rounded-xl text-xs font-black transition shadow-md flex items-center justify-center gap-2 cursor-not-allowed opacity-80';
+        btn.innerHTML =`<i class="fa-solid fa-ban text-red-400"></i><span>استنفدت الحد اليومي (15/15)</span>`;
       } else if (btn.disabled) {
         btn.disabled = false;
         btn.className ='w-full py-2.5 bg-gradient-to-r from-rose-900/60 to-rose-800/60 hover:from-rose-800 hover:to-rose-700 border border-rose-500/40 text-rose-100 rounded-xl text-xs font-black transition shadow-md flex items-center justify-center gap-2';

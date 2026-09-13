@@ -431,9 +431,9 @@ const GameEngine = (() => {
       name: 'تهريب بضائع وسيجار جمركي فاخر',
       desc: 'إدخال شحنة بضائع حصرية عبر الميناء بدون دفع رسوم جمركية.',
       cost: 6000,
-      payout: 9500,
-      successChance: 0.68,
-      jailDuration: 17,
+      payout: 8500,
+      successChance: 0.70,
+      jailDuration: 15,
       repGain: 5,
       repLoss: 10,
       repNeeded: 0,
@@ -446,13 +446,13 @@ const GameEngine = (() => {
       name: 'تهريب حاوية أجهزة إلكترونية حديثة',
       desc: 'استيراد غير رسمي لأجهزة هواتف ومعدات حاسوبية من وراء الجمارك.',
       cost: 35000,
-      payout: 55000,
-      successChance: 0.58,
-      jailDuration: 34,
+      payout: 48000,
+      successChance: 0.60,
+      jailDuration: 30,
       repGain: 10,
       repLoss: 20,
       repNeeded: 0,
-      cooldownSec: 240,
+      cooldownSec: 180,
       icon: 'fa-laptop-code',
       tier: 'متوسط'
     },
@@ -461,13 +461,13 @@ const GameEngine = (() => {
       name: 'صفقة تسريب سيرفرات وبيانات استخباراتية',
       desc: 'بيع وثائق حساسة وشفرات سرية لجهات استثمارية عالمية.',
       cost: 120000,
-      payout: 195000,
-      successChance: 0.48,
-      jailDuration: 60,
+      payout: 165000,
+      successChance: 0.50,
+      jailDuration: 50,
       repGain: 25,
       repLoss: 50,
       repNeeded: 0,
-      cooldownSec: 480,
+      cooldownSec: 360,
       icon: 'fa-user-secret',
       tier: 'متقدم'
     },
@@ -493,13 +493,13 @@ const GameEngine = (() => {
       name: 'اختراق منصات رقمية وغسيل عملات مشفرة',
       desc: 'هجوم سيبراني معقد على محافظ العملات المشفرة مع تحويل الأصول لخوادم خارجية.',
       cost: 400000,
-      payout: 660000,
-      successChance: 0.35,
-      jailDuration: 90,
+      payout: 540000,
+      successChance: 0.42,
+      jailDuration: 80,
       repGain: 50,
       repLoss: 100,
       repNeeded: 120,
-      cooldownSec: 900, // 15 mins
+      cooldownSec: 600, // 10 mins
       icon: 'fa-network-wired',
       tier: 'محترف'
     },
@@ -508,13 +508,13 @@ const GameEngine = (() => {
       name: 'تهريب آثار ومخطوطات نادرة لمزادات سرية',
       desc: 'صفقة كبرى لبيع قطع أثرية نادرة لكبار هواة الجمع في السوق السوداء الدولية.',
       cost: 1500000,
-      payout: 2500000,
-      successChance: 0.26,
-      jailDuration: 130,
+      payout: 2050000,
+      successChance: 0.35,
+      jailDuration: 110,
       repGain: 100,
       repLoss: 200,
       repNeeded: 500,
-      cooldownSec: 1800, // 30 mins
+      cooldownSec: 1200, // 20 mins
       icon: 'fa-gem',
       tier: 'خطر جداً'
     },
@@ -523,13 +523,13 @@ const GameEngine = (() => {
       name: 'عملية السطو الكبرى على خزائن الماس الدولية',
       desc: 'أضخم عملية سرقة منظمة في التاريخ لخزينة الماس والسبائك البنكية.',
       cost: 5000000,
-      payout: 8500000,
-      successChance: 0.19,
-      jailDuration: 180,
+      payout: 6750000,
+      successChance: 0.30,
+      jailDuration: 150,
       repGain: 250,
       repLoss: 500,
       repNeeded: 1500,
-      cooldownSec: 2700, // 45 mins
+      cooldownSec: 1800, // 30 mins
       icon: 'fa-shield-halved',
       tier: 'أسطوري'
     },
@@ -538,13 +538,13 @@ const GameEngine = (() => {
       name: 'صفقة تكنولوجيا دفاعية وشفرات رادار مسربة',
       desc: 'بيع شفرات منظومات دفاع جوي فائقة التطور لجهات أجنبية خاصة.',
       cost: 18000000,
-      payout: 30000000,
-      successChance: 0.15,
-      jailDuration: 240,
+      payout: 24000000,
+      successChance: 0.25,
+      jailDuration: 200,
       repGain: 500,
       repLoss: 1000,
       repNeeded: 4500,
-      cooldownSec: 4500, // 75 mins
+      cooldownSec: 3000, // 50 mins
       icon: 'fa-jet-fighter',
       tier: 'أسطوري'
     },
@@ -553,13 +553,13 @@ const GameEngine = (() => {
       name: 'تهريب اليورانيوم المخصب الدولي',
       desc: 'صفقة تهريب وتوريد شحنة يورانيوم مخصب لتشغيل مفاعلات طاقة خاصة تابعة لمنظمات دولية سرية.',
       cost: 35000000,
-      payout: 60000000,
-      successChance: 0.13,
+      payout: 46000000,
+      successChance: 0.22,
       jailDuration: 220,
       repGain: 800,
-      repLoss: 2000,
+      repLoss: 1600,
       repNeeded: 3200,
-      cooldownSec: 7200, // 2 hours
+      cooldownSec: 4500, // 75 mins
       icon: 'fa-radiation',
       tier: 'عملية خاصة'
     },
@@ -567,14 +567,14 @@ const GameEngine = (() => {
       id: 'satellite_hack',
       name: 'السيطرة على شبكة أقمار صناعية وتشفيرها',
       desc: 'اختراق منظومة البث الفضائي العالمية وطلب فدية بمبالغ طائلة.',
-      cost: 70000000,
-      payout: 120000000,
-      successChance: 0.10,
-      jailDuration: 300,
+      cost: 60000000,
+      payout: 78000000,
+      successChance: 0.20,
+      jailDuration: 260,
       repGain: 1000,
       repLoss: 2000,
       repNeeded: 4500,
-      cooldownSec: 10800, // 3 hours
+      cooldownSec: 7200, // 2 hours
       icon: 'fa-satellite',
       tier: 'خطر مطلق'
     },
@@ -582,14 +582,14 @@ const GameEngine = (() => {
       id: 'central_bank_hack',
       name: 'قرصنة واختراق البنوك المركزية',
       desc: 'فرض السيطرة والقرصنة السيبرانية على خوادم بنوك مركزية كبرى وسحب احتياطيات رقمية.',
-      cost: 120000000,
-      payout: 210000000,
-      successChance: 0.08,
-      jailDuration: 320,
-      repGain: 2000,
-      repLoss: 6000,
+      cost: 80000000,
+      payout: 104000000,
+      successChance: 0.18,
+      jailDuration: 300,
+      repGain: 1500,
+      repLoss: 3000,
       repNeeded: 6500,
-      cooldownSec: 14400, // 4 hours
+      cooldownSec: 10800, // 3 hours
       icon: 'fa-terminal',
       tier: 'عملية خاصة'
     },
@@ -597,14 +597,14 @@ const GameEngine = (() => {
       id: 'godfather',
       name: 'عملية العراب: السيطرة على كارتيل التجارة العالمي',
       desc: 'الانقلاب الشامل والسيطرة على مقاليد إمبراطورية السوق السوداء العالمية.',
-      cost: 250000000,
-      payout: 440000000,
-      successChance: 0.06,
-      jailDuration: 420,
-      repGain: 3000,
-      repLoss: 6000,
+      cost: 100000000,
+      payout: 130000000,
+      successChance: 0.16,
+      jailDuration: 360,
+      repGain: 2500,
+      repLoss: 5000,
       repNeeded: 10000,
-      cooldownSec: 21600, // 6 hours
+      cooldownSec: 14400, // 4 hours
       icon: 'fa-crown',
       tier: 'سيد الظلال'
     }
@@ -897,6 +897,7 @@ const GameEngine = (() => {
     activeLoan: null, // Stores { amount, totalDue, ticksRemaining, initialTicks, isDefaulted, latePenaltyTicks, latePenaltyCount }
     dailyLoans: { date:'', count: 0 }, // Max 2 loans per 24 hours (calendar day)
     dailyWork: { date:'', shifts: 0, overtimeShifts: 0 }, // Max 100 regular shifts and 15 overtime shifts per 24h
+    dailyBlackMarket: { date: '', count: 0 }, // Max 15 black market deals per 24 hours (calendar day)
     dailyToolUses: { date:'', uses: {} }, // Max daily uses per tool (calendar day)
     assets: {
       apartment: 0,
@@ -2701,6 +2702,13 @@ const GameEngine = (() => {
               state.dailyWork.overtimeShifts = Math.min(15, Math.max(Number(state.dailyWork.overtimeShifts || 0), Number(localS.dailyWork.overtimeShifts || 0)));
             }
           }
+          if (localS && localS.dailyBlackMarket && localS.dailyBlackMarket.date === todayStr) {
+            if (!state.dailyBlackMarket || state.dailyBlackMarket.date !== todayStr) {
+              state.dailyBlackMarket = { ...localS.dailyBlackMarket };
+            } else {
+              state.dailyBlackMarket.count = Math.min(15, Math.max(Number(state.dailyBlackMarket.count || 0), Number(localS.dailyBlackMarket.count || 0)));
+            }
+          }
         } catch (e) {}
       }
 
@@ -3725,9 +3733,30 @@ const GameEngine = (() => {
     throw new Error("هذا العنصر يعطي مفعولاً تلقائياً مستمراً بمجرد الاحتفاظ به بمحفظتك ولا يمكن استهلاكه يدوياً.");
   }
 
+  const MAX_DAILY_BLACK_MARKET_DEALS = 15;
+
+  // Helper: Ensure daily black market tracking (max 15 deals per 24 hours)
+  function ensureDailyBlackMarketTracking() {
+    if (!state) return;
+    const today = getTodayDateString();
+    if (!state.dailyBlackMarket || state.dailyBlackMarket.date !== today) {
+      state.dailyBlackMarket = {
+        date: today,
+        count: 0
+      };
+    }
+  }
+
   // Black Market Trade Deals (Illegal High Risk Deals)
   function runBlackMarketDeal(dealId) {
     if (state.jailTimer > 0) throw new Error("أنت خلف القضبان! لا يمكنك ارتكاب جرائم جديدة.");
+    ensureDailyBlackMarketTracking();
+    if ((state.dailyBlackMarket.count || 0) >= MAX_DAILY_BLACK_MARKET_DEALS) {
+      const remSec = (typeof getDailyResetRemainingSeconds === 'function') ? getDailyResetRemainingSeconds() : 3600;
+      const remH = Math.floor(remSec / 3600);
+      const remM = Math.floor((remSec % 3600) / 60);
+      throw new Error(`لقد استنفدت الحد الأقصى لصفقات السوق السوداء اليوم (${MAX_DAILY_BLACK_MARKET_DEALS}/15 صفقة)! تتجدد الصفقات بعد ${remH} س و ${remM} د.`);
+    }
     const deal = BLACK_MARKET[dealId];
     if (!deal) throw new Error("الصفقة غير متوفرة.");
 
@@ -3764,6 +3793,9 @@ const GameEngine = (() => {
       state.dirtyCash = 0;
       state.cash -= remainingCost;
     }
+
+    // Count this deal towards today's daily limit
+    state.dailyBlackMarket.count = (state.dailyBlackMarket.count || 0) + 1;
 
     // Calculate risk & success modifiers (rebalanced)
     let successBonus = 0;
@@ -3807,7 +3839,9 @@ const GameEngine = (() => {
         repGain: deal.repGain || 0,
         lawyerAssisted: hasLawyer,
         cooldownSec: Math.floor((deal.cooldownSec || 120) * cdMultiplier),
-        finalChancePct: Math.round(finalSuccessChance * 100)
+        finalChancePct: Math.round(finalSuccessChance * 100),
+        dailyRemaining: Math.max(0, MAX_DAILY_BLACK_MARKET_DEALS - state.dailyBlackMarket.count),
+        dailyCount: state.dailyBlackMarket.count
       };
     } else {
       // CAUGHT BY POLICE! Apply Half Cooldown on Failure
@@ -3824,6 +3858,8 @@ const GameEngine = (() => {
           confiscation: 0,
           jailDuration: 0,
           cooldownSec: Math.floor((deal.cooldownSec || 120) / 2 * cdMultiplier),
+          dailyRemaining: Math.max(0, MAX_DAILY_BLACK_MARKET_DEALS - state.dailyBlackMarket.count),
+          dailyCount: state.dailyBlackMarket.count,
           message:'تدخل المحامي الدولي وأسقط القضية وأثبت براءتك دون سجن أو غرامات!'
         };
       }
@@ -3840,6 +3876,8 @@ const GameEngine = (() => {
           confiscation: 0,
           jailDuration: 0,
           cooldownSec: Math.floor((deal.cooldownSec || 120) / 2 * cdMultiplier),
+          dailyRemaining: Math.max(0, MAX_DAILY_BLACK_MARKET_DEALS - state.dailyBlackMarket.count),
+          dailyCount: state.dailyBlackMarket.count,
           message:'تمكنت من الهروب الفوري باستخدام جواز السفر الدبلوماسي المزور!'
         };
       }
@@ -3869,7 +3907,9 @@ const GameEngine = (() => {
         confiscatedClean,
         jailDuration: deal.jailDuration,
         repLoss: repLoss,
-        cooldownSec: Math.floor((deal.cooldownSec || 120) / 2 * cdMultiplier)
+        cooldownSec: Math.floor((deal.cooldownSec || 120) / 2 * cdMultiplier),
+        dailyRemaining: Math.max(0, MAX_DAILY_BLACK_MARKET_DEALS - state.dailyBlackMarket.count),
+        dailyCount: state.dailyBlackMarket.count
       };
     }
   }
@@ -5747,6 +5787,8 @@ const GameEngine = (() => {
     getTodayDateString,
     getDailyResetRemainingSeconds,
     ensureDailyLoanTracking,
+    ensureDailyBlackMarketTracking,
+    MAX_DAILY_BLACK_MARKET_DEALS,
     ensureDailyToolTracking,
     trackDailyQuestProgress,
     claimDailyQuestReward,

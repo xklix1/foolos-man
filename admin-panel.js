@@ -4547,6 +4547,7 @@
         dailyLoans: { date: '', count: 0 },
         dailyInvestments: { date: '', count: 0 },
         dailyWork: { date: '', shifts: 0, overtimeShifts: 0 },
+        dailyBlackMarket: { date: '', count: 0 },
         dailyToolUses: { date: '', uses: {} },
         dailyMarketingCampaigns: { date: '', count: 0 },
         dailyCasinoNetProfit: 0,

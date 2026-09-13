@@ -261,6 +261,21 @@ class SessionManager {
         };
       }
     }
+    if (clientState.dailyBlackMarket && typeof clientState.dailyBlackMarket === 'object') {
+      const cDate = String(clientState.dailyBlackMarket.date || '');
+      const sDate = s.dailyBlackMarket ? String(s.dailyBlackMarket.date || '') : '';
+      if (cDate && cDate === sDate) {
+        s.dailyBlackMarket = {
+          date: cDate,
+          count: Math.min(15, Math.max(Number(s.dailyBlackMarket.count || 0), Number(clientState.dailyBlackMarket.count || 0)))
+        };
+      } else {
+        s.dailyBlackMarket = {
+          date: cDate,
+          count: Math.min(15, Math.max(0, Number(clientState.dailyBlackMarket.count || 0)))
+        };
+      }
+    }
     if (clientState.dailyToolUses && typeof clientState.dailyToolUses === 'object') {
       s.dailyToolUses = clientState.dailyToolUses;
     }

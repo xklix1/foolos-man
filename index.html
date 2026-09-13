@@ -3400,13 +3400,20 @@
 
         <!-- SECTION 1: صفقات التهريب والعمليات السرية -->
         <div class="space-y-3">
-          <div class="flex justify-between items-center px-1">
+          <div class="flex flex-wrap justify-between items-center gap-2 px-1">
             <h4 class="text-md font-bold text-white flex items-center gap-2">
               <i class="fa-solid fa-box-open text-rose-400"></i>
               <span>عمليات وصفقات السوق السوداء المتاحة</span>
             </h4>
-            <span class="text-[11px] text-slate-400">تتجدد الفرص وتتضاعف الأرباح غير المشروعة مع زيادة رتبتك
-              الإجرامية</span>
+            <div class="flex items-center gap-3">
+              <span id="blackmarket-daily-badge" class="text-xs px-2.5 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-lg font-bold flex items-center gap-1.5">
+                <i class="fa-solid fa-clock-rotate-left text-rose-400 text-[11px]"></i>
+                <span>الصفقات اليومية:</span>
+                <span id="blackmarket-daily-count" class="numbers-font font-black text-rose-200">0</span>
+                <span>/ 15</span>
+              </span>
+              <span class="text-[11px] text-slate-400 hidden sm:inline">تتجدد الصفقات يومياً</span>
+            </div>
           </div>
           <div id="blackmarket-deals" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <!-- Rendered dynamically by ui.js -->

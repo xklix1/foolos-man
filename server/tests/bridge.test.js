@@ -106,6 +106,34 @@ test('Client ServerBridge End-to-End Test', async () => {
     assert.strictEqual(updatedSession.state.activeLoan, null, 'Session activeLoan must be null after repayment');
     assert.ok(updatedSession.state.loanCooldownUntil > 0, 'Session loanCooldownUntil must be preserved');
 
+    // 5.6 Test Daily Black Market Deals Sync & Clamping (Max 15 deals per calendar day)
+    const bmSyncRes = await ServerBridge.syncState({
+      dailyBlackMarket: {
+        date: '2026-09-13',
+        count: 5
+      }
+    }, false);
+    assert.ok(bmSyncRes, 'Black market state sync succeeded');
+    assert.strictEqual(updatedSession.state.dailyBlackMarket.count, 5, 'Daily black market count synced to 5');
+
+    // Test: rollback attempt on same date is rejected
+    await ServerBridge.syncState({
+      dailyBlackMarket: {
+        date: '2026-09-13',
+        count: 2
+      }
+    }, false);
+    assert.strictEqual(updatedSession.state.dailyBlackMarket.count, 5, 'Cannot roll back daily black market count on same date');
+
+    // Test: count is clamped to max 15
+    await ServerBridge.syncState({
+      dailyBlackMarket: {
+        date: '2026-09-13',
+        count: 99
+      }
+    }, false);
+    assert.strictEqual(updatedSession.state.dailyBlackMarket.count, 15, 'Daily black market count is clamped to max 15');
+
     // 6. Test Offline Profit on Browser Close & Reopen
     const exitSessionUser = 'offline_exit_player';
     const now = Date.now();
