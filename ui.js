@@ -15432,10 +15432,15 @@ const UIController = (() => {
     const deductionsSubtotalEl = document.getElementById('offline-report-deductions-subtotal');
     if (deductionsSubtotalEl) deductionsSubtotalEl.textContent = `-${Math.round(deductionsAmount).toLocaleString()} EGP`;
 
+    const companiesList = (eData && eData.businesses && Array.isArray(eData.businesses.items))
+      ? eData.businesses.items
+      : ((eData && Array.isArray(eData.companies)) ? eData.companies : (rep.breakdown || []));
+
     const suppliesSummEl = document.getElementById('offline-report-supplies-summary');
     if (suppliesSummEl) {
       if (rep.suppliesHours && rep.suppliesHours > 0) {
-        suppliesSummEl.textContent = `تم استهلاك ${rep.suppliesHours} ساعة بضاعة`;
+        const perProjectHours = rep.elapsedHours !== undefined ? Number(rep.elapsedHours).toFixed(1) : (rep.suppliesHours > 0 ? (rep.suppliesHours / Math.max(1, (companiesList ? companiesList.length : 1))).toFixed(1) : 0);
+        suppliesSummEl.textContent = `استهلاك ${perProjectHours} س لكل مشروع (إجمالي: ${rep.suppliesHours} س بضاعة)`;
       } else {
         suppliesSummEl.textContent = 'مخزون البضائع مكتمل';
       }
@@ -15446,10 +15451,6 @@ const UIController = (() => {
     if (listEl) {
       listEl.innerHTML = '';
       let hasEarningsEntries = false;
-
-      const companiesList = (eData && eData.businesses && Array.isArray(eData.businesses.items))
-        ? eData.businesses.items
-        : ((eData && Array.isArray(eData.companies)) ? eData.companies : (rep.breakdown || []));
 
       if (companiesList && companiesList.length > 0) {
         hasEarningsEntries = true;
