@@ -217,6 +217,73 @@ class SessionManager {
       s.activeSmugglingJobs = clientState.activeSmugglingJobs;
     }
 
+    // Synchronize Banking Loans & Credit
+    if (clientState.activeLoan !== undefined) {
+      if (clientState.activeLoan && typeof clientState.activeLoan === 'object') {
+        s.activeLoan = {
+          amount: Math.max(0, Number(clientState.activeLoan.amount) || 0),
+          totalDue: Math.max(0, Number(clientState.activeLoan.totalDue) || 0),
+          ticksRemaining: Math.max(0, Number(clientState.activeLoan.ticksRemaining) || 0),
+          initialTicks: Math.max(0, Number(clientState.activeLoan.initialTicks) || 3600),
+          isDefaulted: Boolean(clientState.activeLoan.isDefaulted),
+          latePenaltyTicks: Math.max(0, Number(clientState.activeLoan.latePenaltyTicks) || 0),
+          latePenaltyCount: Math.max(0, Number(clientState.activeLoan.latePenaltyCount) || 0)
+        };
+      } else {
+        s.activeLoan = null;
+      }
+    }
+    if (clientState.loanCooldownUntil !== undefined) {
+      s.loanCooldownUntil = Number(clientState.loanCooldownUntil) || 0;
+    }
+    if (clientState.dailyLoans && typeof clientState.dailyLoans === 'object') {
+      s.dailyLoans = clientState.dailyLoans;
+    }
+
+    // Synchronize daily activities & cooldowns
+    if (clientState.dailyInvestments && typeof clientState.dailyInvestments === 'object') {
+      s.dailyInvestments = clientState.dailyInvestments;
+    }
+    if (clientState.dailyWork && typeof clientState.dailyWork === 'object') {
+      s.dailyWork = clientState.dailyWork;
+    }
+    if (clientState.dailyToolUses && typeof clientState.dailyToolUses === 'object') {
+      s.dailyToolUses = clientState.dailyToolUses;
+    }
+    if (clientState.dailyCasinoNetProfit !== undefined) {
+      s.dailyCasinoNetProfit = Number(clientState.dailyCasinoNetProfit) || 0;
+    }
+    if (clientState.dailyCasinoResetAt !== undefined) {
+      s.dailyCasinoResetAt = Number(clientState.dailyCasinoResetAt) || 0;
+    }
+    if (clientState.workCooldownUntil !== undefined) {
+      s.workCooldownUntil = Number(clientState.workCooldownUntil) || 0;
+    }
+    if (clientState.overtimeCooldownUntil !== undefined) {
+      s.overtimeCooldownUntil = Number(clientState.overtimeCooldownUntil) || 0;
+    }
+    if (clientState.casinoCooldownUntil !== undefined) {
+      s.casinoCooldownUntil = Number(clientState.casinoCooldownUntil) || 0;
+    }
+    if (clientState.stockTradeCooldownUntil !== undefined) {
+      s.stockTradeCooldownUntil = Number(clientState.stockTradeCooldownUntil) || 0;
+    }
+    if (clientState.itemCooldowns && typeof clientState.itemCooldowns === 'object') {
+      s.itemCooldowns = clientState.itemCooldowns;
+    }
+    if (clientState.blackMarketCooldowns && typeof clientState.blackMarketCooldowns === 'object') {
+      s.blackMarketCooldowns = clientState.blackMarketCooldowns;
+    }
+    if (clientState.underworldRep !== undefined) {
+      s.underworldRep = Number(clientState.underworldRep) || 0;
+    }
+    if (clientState.heatLevel !== undefined) {
+      s.heatLevel = Number(clientState.heatLevel) || 0;
+    }
+    if (clientState.afkManagerExpiresAt !== undefined) {
+      s.afkManagerExpiresAt = Number(clientState.afkManagerExpiresAt) || 0;
+    }
+
     s.netWorth = Number(clientState.netWorth) || calculateNetWorth(s);
     s.lastActiveTimestamp = Number(clientState.lastActiveTimestamp || Date.now());
     s.lastSeen = Date.now();

@@ -2665,6 +2665,27 @@ const GameEngine = (() => {
         } catch (e) {}
       }
 
+      // Safeguard: Prevent resurrection of settled bank loans if local session had already settled it
+      if (!isAccountReset && state.activeLoan) {
+        try {
+          const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
+            ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
+            : null;
+          if (localS && !localS.activeLoan) {
+            const locTs = Number(localS.lastActiveTimestamp || localS.lastSeen || 0);
+            const srvTs = Number(dbState.lastActiveTimestamp || dbState.lastSeen || 0);
+            if (locTs >= srvTs - 300000) {
+              console.log('[GameEngine] Reconciled loan repayment: local session settled loan. Clearing resurrected loan.');
+              state.activeLoan = null;
+              if (localS.loanCooldownUntil) {
+                state.loanCooldownUntil = Math.max(state.loanCooldownUntil || 0, localS.loanCooldownUntil);
+              }
+              forceSaveState(true);
+            }
+          }
+        } catch (e) {}
+      }
+
       // Check if unacknowledged admin reset modal should pop up
       const resetTs = Number(dbState.resetTimestamp || (dbState.state && dbState.state.resetTimestamp) || (isAccountReset ? dbState.admin_modified_timestamp || dbState.adminModifiedTimestamp || Date.now() : 0));
       const ackResetTs = (typeof localStorage !== 'undefined') ? Number(localStorage.getItem('rasalmal_ack_reset_' + username) || 0) : 0;

@@ -78,6 +78,34 @@ test('Client ServerBridge End-to-End Test', async () => {
     assert.strictEqual(updatedSession.state.industry.food.unlocked, true);
     assert.strictEqual(updatedSession.state.industry.food.stage1, 2);
 
+    // 5.5 Test Bank Loan Sync & Repayment (Ensuring repaid loans never resurrect)
+    const loanSyncRes = await ServerBridge.syncState({
+      cash: 17000,
+      bank: 6000,
+      activeLoan: {
+        amount: 10000,
+        totalDue: 11500,
+        ticksRemaining: 3600,
+        initialTicks: 3600,
+        isDefaulted: false
+      }
+    }, false);
+    assert.ok(loanSyncRes, 'Loan state sync succeeded');
+    assert.ok(updatedSession.state.activeLoan, 'Session has active loan');
+    assert.strictEqual(updatedSession.state.activeLoan.amount, 10000);
+    assert.strictEqual(updatedSession.state.activeLoan.totalDue, 11500);
+
+    // Now player repays the loan: activeLoan is set to null
+    const repaySyncRes = await ServerBridge.syncState({
+      cash: 5500,
+      bank: 6000,
+      activeLoan: null,
+      loanCooldownUntil: Date.now() + 180000
+    }, true);
+    assert.ok(repaySyncRes, 'Loan repayment sync succeeded');
+    assert.strictEqual(updatedSession.state.activeLoan, null, 'Session activeLoan must be null after repayment');
+    assert.ok(updatedSession.state.loanCooldownUntil > 0, 'Session loanCooldownUntil must be preserved');
+
     // 6. Test Offline Profit on Browser Close & Reopen
     const exitSessionUser = 'offline_exit_player';
     const now = Date.now();

@@ -1301,6 +1301,28 @@ var AppDB = (() => {
           }
         }
 
+        // 4.6 Bank Loan Repayment Guard:
+        // If player settled their loan locally (local.activeLoan === null) recently or local is newer,
+        // NEVER resurrect the loan from a delayed or stale cloud snapshot!
+        if (localTs >= serverTs - 300000) {
+          if (!local.activeLoan && stateObj.activeLoan) {
+            console.log(`[Sync] Local loan repayment detected for ${u} (loan settled locally). Discarding resurrected cloud loan.`);
+            stateObj.activeLoan = null;
+            if (local.loanCooldownUntil) {
+              stateObj.loanCooldownUntil = Math.max(Number(stateObj.loanCooldownUntil || 0), Number(local.loanCooldownUntil || 0));
+            }
+            shouldSyncCloud = true;
+          } else if (local.activeLoan && stateObj.activeLoan) {
+            // If both have active loans, ensure partial repayments aren't reverted
+            const localDue = Number(local.activeLoan.totalDue || local.activeLoan.amount || 0);
+            const serverDue = Number(stateObj.activeLoan.totalDue || stateObj.activeLoan.amount || 0);
+            if (localDue < serverDue) {
+              stateObj.activeLoan = local.activeLoan;
+              shouldSyncCloud = true;
+            }
+          }
+        }
+
         // 5. Late-save recovery:
         // If local is definitively NEWER than the cloud (localTs > serverTs), the cloud save
         // was probably debounced or blocked (e.g. admin_modified_timestamp filter mismatch).
