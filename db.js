@@ -4348,6 +4348,22 @@ var AppDB = (() => {
       /(?:^|[^\p{L}\p{N}])(fuck|fucking|fucker|fuk|fck|shit|bitch|asshole|pussy|cunt|dick|cock|bastard|slut|whore|motherfucker|nigger|nigga|porn|blowjob)(?:[^\p{L}\p{N}]|$)/iu
     ];
 
+    // Franco-Arabic / Franco profanity patterns (e.g. khwl, 5wl, 3ars, kosom, sharmouta, etc.)
+    const FRANCO_PATTERNS = [
+      /\b(?:kh+w+l+[a-z]*|k+h+o+l+[a-z]*|5+w+l+[a-z]*|5+a+w+a+l+[a-z]*|k+h+a+w+a+l+[a-z]*|5+o+l+[a-z]*)\b/i,
+      /\b(?:3+a*r+s+[a-z]*|3+a*r+a+s+[a-z]*|3+r+s+[a-z]*)\b/i,
+      /\b(?:k+o*s+o*m+[a-z]*|k+s+m+[a-z]*|5+o*s+o*m+[a-z]*)\b/i,
+      /\b(?:s+h+a*r+m+o*u*t+[a-z]*|c+h+e*r+m+o*u*t+[a-z]*)\b/i,
+      /\b(?:m+[a-z]*n+y+o*u*k+[a-z]*|m+[a-z]*n+y+a+k+[a-z]*)\b/i,
+      /\b(?:m+[eia]*t+n+a+[kq]+[a-z]*|y+t+n+a+[kq]+[a-z]*)\b/i,
+      /\b(?:t+e*i*z+[a-z]*|t+e*z+[a-z]*)\b/i,
+      /\b(?:z+o*b+[a-z]*|z+b+[a-z]*)\b/i,
+      /\b(?:b+e*d+a*n+[a-z]*|m+b+d+o*u*n+[a-z]*)\b/i,
+      /\b(?:d+[a-z]*y+o*u*[st]+)\b/i,
+      /\b(?:[29qk]+a*7*h+b+[a-z]*)\b/i,
+      /\b(?:[ayb]*n+e+e*k+[a-z]*|n+a+y+e+k+[a-z]*|n+y+e+k+[a-z]*)\b/i
+    ];
+
     function normalizeArabic(text) {
       return String(text || '')
         .toLowerCase()
@@ -4376,7 +4392,12 @@ var AppDB = (() => {
         if (p.test(norm) || p.test(collapsed)) return true;
       }
 
-      // 3. Check stripped English profanity
+      // 3. Check Franco-Arabic profanity patterns
+      for (const p of FRANCO_PATTERNS) {
+        if (p.test(rawText) || p.test(collapsed)) return true;
+      }
+
+      // 4. Check stripped English profanity
       if (/(fuck|shit|bitch|asshole|pussy|dick|cunt|slut|whore|nigger|nigga)/i.test(stripped)) return true;
 
       return false;
@@ -4399,6 +4420,10 @@ var AppDB = (() => {
 
         for (const p of BOUNDARY_PATTERNS) {
           if (p.test(normW) || p.test(collapsedW) || p.test(' ' + normW + ' ') || p.test(' ' + collapsedW + ' ')) return word;
+        }
+
+        for (const p of FRANCO_PATTERNS) {
+          if (p.test(word) || p.test(collapsedW) || p.test(' ' + word + ' ')) return word;
         }
 
         if (/(fuck|fucking|fucker|fuk|fck|shit|bitch|asshole|pussy|cunt|dick|cock|bastard|slut|whore|motherfucker|nigger|nigga|porn|blowjob)/i.test(word)) {

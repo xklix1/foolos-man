@@ -344,6 +344,11 @@ BEGIN
         RAISE EXCEPTION 'الرسالة تحتوي على ألفاظ محظورة وغير لائقة تمنعها سياسة اللعبة.';
       END IF;
 
+      -- 3. منع الألفاظ الإنجليزية المعربة والفرانكو (khwl / 5wl / 3ars / kosom / etc.)
+      IF v_msg_text ~* '\m(kh+w+l+[a-z]*|k+h+o+l+[a-z]*|5+w+l+[a-z]*|5+a*w+a*l+[a-z]*|k+h+a*w+a*l+[a-z]*|3+a*r+s+[a-z]*|3+a*r+a+s+[a-z]*|k+o*s+o*m+[a-z]*|k+s+m+[a-z]*|5+o*s+o*m+[a-z]*|s+h+a*r+m+o*u*t+[a-z]*|c+h+e*r+m+o*u*t+[a-z]*|m+[a-z]*n+y+o*u*k+[a-z]*|m+[eia]*t+n+a+[kq]+[a-z]*|t+e*i*z+[a-z]*|z+o*b+[a-z]*|b+e*d+a*n+[a-z]*|[29qk]+a*7*h+b+[a-z]*|n+e+e*k+[a-z]*)\M' THEN
+        RAISE EXCEPTION 'الرسالة تحتوي على ألفاظ محظورة ومسيئة (فرانكو/معرب).';
+      END IF;
+
       SELECT is_banned INTO v_sender_banned
       FROM public.players
       WHERE username = v_sender;
