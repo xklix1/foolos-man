@@ -13757,7 +13757,27 @@ const UIController = (() => {
       }
     });
 
-    merged.sort((a, b) => Number(a.created_at || a.timestamp || 0) - Number(b.created_at || b.timestamp || 0));
+    merged.sort((a, b) => {
+      // 1. Authoritative database sequence (if both exist)
+      const seqA = Number(a.seq || 0);
+      const seqB = Number(b.seq || 0);
+      if (seqA && seqB) return seqA - seqB;
+
+      // 2. Pending optimistic messages always go to the bottom (after confirmed DB messages)
+      const isLocalA = String(a.id || '').startsWith('local_');
+      const isLocalB = String(b.id || '').startsWith('local_');
+      if (!isLocalA && isLocalB) return -1;
+      if (isLocalA && !isLocalB) return 1;
+
+      // 3. Fallback to monotonic timestamp
+      const tsA = Number(a.created_at || a.timestamp || 0);
+      const tsB = Number(b.created_at || b.timestamp || 0);
+      if (tsA !== tsB) return tsA - tsB;
+
+      return String(a.id || '').localeCompare(String(b.id || ''));
+    });
+
+    window._lastDMsCache = merged;
 
     if (merged.length === 0) {
       container.innerHTML = `
@@ -13793,6 +13813,9 @@ const UIController = (() => {
     });
 
     container.scrollTop = container.scrollHeight;
+    setTimeout(() => {
+      if (container) container.scrollTop = container.scrollHeight;
+    }, 60);
   }
 
   let _isSendingDM = false;
@@ -13826,13 +13849,22 @@ const UIController = (() => {
       input.value = '';
       if (counter) counter.textContent = '0 / 200';
 
+      const lastMsg = (window._lastDMsCache && window._lastDMsCache.length > 0)
+        ? window._lastDMsCache[window._lastDMsCache.length - 1]
+        : null;
+      const lastTs = lastMsg ? Number(lastMsg.created_at || lastMsg.timestamp || 0) : 0;
+      const trustedNow = (typeof AppDB !== 'undefined' && typeof AppDB.getTrustedNow === 'function')
+        ? AppDB.getTrustedNow()
+        : Date.now();
+      const localTs = Math.max(trustedNow, lastTs + 1);
+
       const localMsg = {
         id: localMsgId,
         sender: myUser,
         recipient: currentActiveDMUser,
         type: 'dm',
         payload: { message: text },
-        created_at: Date.now(),
+        created_at: localTs,
         status: 'unread'
       };
       window._localDMs = window._localDMs || [];
@@ -13844,7 +13876,7 @@ const UIController = (() => {
         const msgDiv = document.createElement('div');
         msgDiv.className = 'flex flex-col items-end';
         msgDiv.setAttribute('data-local-dm-id', localMsgId);
-        const timeStr = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        const timeStr = new Date(localTs).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
         msgDiv.innerHTML = `
           <div class="bg-gradient-to-r from-sky-600 to-sky-500 text-white rounded-2xl rounded-bl-sm p-2.5 text-xs shadow-md shadow-sky-950/30 max-w-[85%] select-text">
             <p class="leading-relaxed whitespace-pre-line">${text}</p>
@@ -13853,6 +13885,9 @@ const UIController = (() => {
         `;
         container.appendChild(msgDiv);
         container.scrollTop = container.scrollHeight;
+        setTimeout(() => {
+          if (container) container.scrollTop = container.scrollHeight;
+        }, 60);
       }
 
       if (typeof playMenuSound === 'function') playMenuSound('click');
@@ -13860,7 +13895,7 @@ const UIController = (() => {
       if (AppDB && typeof AppDB.sendPrivateMessage === 'function') {
         await AppDB.sendPrivateMessage(myUser, currentActiveDMUser, text);
       } else if (AppDB && typeof AppDB.sendMail === 'function') {
-        await AppDB.sendMail(myUser, currentActiveDMUser, 'dm', { message: text, timestamp: Date.now() });
+        await AppDB.sendMail(myUser, currentActiveDMUser, 'dm', { message: text, timestamp: localTs });
       }
 
       // Once confirmed in DB, clear optimistic record and re-render seamlessly

@@ -1941,8 +1941,8 @@ var AppDB = (() => {
         recipient: recipient.trim(),
         type,
         payload: payload || {},
-        status: isInteractive ?'pending' :'unread',
-        created_at: Date.now()
+        status: isInteractive ? 'pending' : 'unread',
+        created_at: (typeof getTrustedNow === 'function' ? getTrustedNow() : Date.now())
       })
     });
     return true;
@@ -1953,8 +1953,9 @@ var AppDB = (() => {
     try {
       const u1 = encodeURIComponent(user1.trim());
       const u2 = encodeURIComponent(user2.trim());
-      const rows = await _api(`mailbox?or=(and(recipient.eq.${u1},sender.eq.${u2}),and(recipient.eq.${u2},sender.eq.${u1}))&type=eq.dm&order=created_at.asc&limit=100`);
-      return Array.isArray(rows) ? rows : [];
+      const rows = await _api(`mailbox?or=(and(recipient.eq.${u1},sender.eq.${u2}),and(recipient.eq.${u2},sender.eq.${u1}))&type=eq.dm&order=seq.desc.nullslast,created_at.desc&limit=150`);
+      if (!Array.isArray(rows)) return [];
+      return rows.reverse();
     } catch (e) {
       return [];
     }
@@ -1964,7 +1965,7 @@ var AppDB = (() => {
     if (!username) return [];
     try {
       const u = encodeURIComponent(username.trim());
-      const rows = await _api(`mailbox?or=(recipient.eq.${u},sender.eq.${u})&type=eq.dm&order=created_at.desc&limit=150`);
+      const rows = await _api(`mailbox?or=(recipient.eq.${u},sender.eq.${u})&type=eq.dm&order=seq.desc.nullslast,created_at.desc&limit=150`);
       return Array.isArray(rows) ? rows : [];
     } catch (e) {
       return [];
