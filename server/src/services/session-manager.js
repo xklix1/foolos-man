@@ -245,7 +245,21 @@ class SessionManager {
       s.dailyInvestments = clientState.dailyInvestments;
     }
     if (clientState.dailyWork && typeof clientState.dailyWork === 'object') {
-      s.dailyWork = clientState.dailyWork;
+      const cDate = String(clientState.dailyWork.date || '');
+      const sDate = s.dailyWork ? String(s.dailyWork.date || '') : '';
+      if (cDate && cDate === sDate) {
+        s.dailyWork = {
+          date: cDate,
+          shifts: Math.min(100, Math.max(Number(s.dailyWork.shifts || 0), Number(clientState.dailyWork.shifts || 0))),
+          overtimeShifts: Math.min(15, Math.max(Number(s.dailyWork.overtimeShifts || 0), Number(clientState.dailyWork.overtimeShifts || 0)))
+        };
+      } else {
+        s.dailyWork = {
+          date: cDate,
+          shifts: Math.min(100, Math.max(0, Number(clientState.dailyWork.shifts || 0))),
+          overtimeShifts: Math.min(15, Math.max(0, Number(clientState.dailyWork.overtimeShifts || 0)))
+        };
+      }
     }
     if (clientState.dailyToolUses && typeof clientState.dailyToolUses === 'object') {
       s.dailyToolUses = clientState.dailyToolUses;

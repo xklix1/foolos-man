@@ -2686,6 +2686,24 @@ const GameEngine = (() => {
         } catch (e) {}
       }
 
+      // Safeguard: Prevent reload from resetting today's shift limit
+      const todayStr = getTodayDateString();
+      if (!isAccountReset) {
+        try {
+          const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
+            ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
+            : null;
+          if (localS && localS.dailyWork && localS.dailyWork.date === todayStr) {
+            if (!state.dailyWork || state.dailyWork.date !== todayStr) {
+              state.dailyWork = { ...localS.dailyWork };
+            } else {
+              state.dailyWork.shifts = Math.min(100, Math.max(Number(state.dailyWork.shifts || 0), Number(localS.dailyWork.shifts || 0)));
+              state.dailyWork.overtimeShifts = Math.min(15, Math.max(Number(state.dailyWork.overtimeShifts || 0), Number(localS.dailyWork.overtimeShifts || 0)));
+            }
+          }
+        } catch (e) {}
+      }
+
       // Check if unacknowledged admin reset modal should pop up
       const resetTs = Number(dbState.resetTimestamp || (dbState.state && dbState.state.resetTimestamp) || (isAccountReset ? dbState.admin_modified_timestamp || dbState.adminModifiedTimestamp || Date.now() : 0));
       const ackResetTs = (typeof localStorage !== 'undefined') ? Number(localStorage.getItem('rasalmal_ack_reset_' + username) || 0) : 0;
@@ -3101,7 +3119,7 @@ const GameEngine = (() => {
     const xpBoost = isPenActive ? (1 + (STORE_ITEMS.gold_pen ? STORE_ITEMS.gold_pen.value : 0.08)) : 1.0;
     const salaryMultiplier = isEnergyActive ? (STORE_ITEMS.energy_drink ? STORE_ITEMS.energy_drink.value : 1.125) : 1.0;
 
-    const boost = window.serverBoostMultiplier || 1.0;
+    const boost = Math.min(3.0, Math.max(1.0, Number(window.serverBoostMultiplier) || 1.0));
     const finalXpReward = Math.ceil(job.xpReward * xpBoost * boost);
     const finalSalary = Math.floor(job.salary * salaryMultiplier * boost);
 
@@ -3114,7 +3132,7 @@ const GameEngine = (() => {
     state.title = getAppropriateTitle(state.netWorth, state.xp);
     recordPlayerActivity('نوبة عمل',`إتمام وردية عمل كـ"${job.name}" (+${finalSalary.toLocaleString()} ج.م للبنك و +${finalXpReward} XP)`,'work');
     trackDailyQuestProgress('work_shifts', 1);
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(state.dailyWork.shifts >= MAX_DAILY_SHIFTS);
 
     return {
       salary: finalSalary,
@@ -4401,7 +4419,7 @@ const GameEngine = (() => {
     const energyMult = isEnergyActive ? (STORE_ITEMS.energy_drink ? STORE_ITEMS.energy_drink.value : 1.125) : 1.0;
 
     // Overtime gives 2.5x base salary and 3x XP
-    const boost = window.serverBoostMultiplier || 1.0;
+    const boost = Math.min(3.0, Math.max(1.0, Number(window.serverBoostMultiplier) || 1.0));
     const earnedSalary = Math.floor(job.salary * 2.5 * energyMult * boost);
     const earnedXp = Math.ceil(job.xpReward * 3 * xpBonus * boost);
 

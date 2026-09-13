@@ -19,6 +19,9 @@ var AppDB = (() => {
 
   let firebaseReady = true; // Kept for backward compatibility checks across UI
   let _supabaseClient = null;
+  let _lastVerifiedCloudWealth = null;
+  let _lastVerifiedCloudXp = null;
+  let _lastVerifiedCloudTime = 0;
 
   // ─────────────────────────────────────────────
   //  SECURE SERVER-ANCHORED MONOTONIC TIME ENGINE
@@ -1154,6 +1157,7 @@ var AppDB = (() => {
         window._isServerVerifiedAdmin = row.is_admin === true;
       }
       _lastVerifiedCloudWealth = Math.max(0, Number(row.cash || 0)) + Math.max(0, Number(row.bank || 0));
+      _lastVerifiedCloudXp = Number(row.xp || 0);
       _lastVerifiedCloudTime = Date.now();
       stateObj.isBanned = row.is_banned === true;
       if (stateObj.isBanned && isCurrentPlayer) {
@@ -1318,6 +1322,28 @@ var AppDB = (() => {
             const serverDue = Number(stateObj.activeLoan.totalDue || stateObj.activeLoan.amount || 0);
             if (localDue < serverDue) {
               stateObj.activeLoan = local.activeLoan;
+              shouldSyncCloud = true;
+            }
+          }
+        }
+
+        // 4.7 Daily Work Shifts Guard:
+        // NEVER allow page reloading or reconnecting to roll back today's shift count or bypass the 100-shift limit
+        const todayStr = (typeof getTodayDateString === 'function')
+          ? getTodayDateString()
+          : new Date(typeof getTrustedNow === 'function' ? getTrustedNow() : Date.now()).toISOString().slice(0, 10);
+        if (local && local.dailyWork && local.dailyWork.date === todayStr) {
+          if (!stateObj.dailyWork || stateObj.dailyWork.date !== todayStr) {
+            stateObj.dailyWork = { ...local.dailyWork };
+            shouldSyncCloud = true;
+          } else {
+            const locShifts = Number(local.dailyWork.shifts || 0);
+            const srvShifts = Number(stateObj.dailyWork.shifts || 0);
+            const locOt = Number(local.dailyWork.overtimeShifts || 0);
+            const srvOt = Number(stateObj.dailyWork.overtimeShifts || 0);
+            if (locShifts > srvShifts || locOt > srvOt) {
+              stateObj.dailyWork.shifts = Math.min(100, Math.max(locShifts, srvShifts));
+              stateObj.dailyWork.overtimeShifts = Math.min(15, Math.max(locOt, srvOt));
               shouldSyncCloud = true;
             }
           }
@@ -1527,6 +1553,20 @@ var AppDB = (() => {
       }
     }
     _lastVerifiedCloudWealth = Math.max(0, Number(state.cash || 0)) + Math.max(0, Number(state.bank || 0));
+
+    // 4.1 XP Velocity Guard (Anti-F12 memory XP injection / shift spam)
+    if (_lastVerifiedCloudXp !== null && !state._legitimateTransactionBypass) {
+      const elapsedSec = Math.max(1, (now - _lastVerifiedCloudTime) / 1000);
+      // Max possible XP gain is ~200 XP/s (overtime shift); min baseline 3,500 per 35s cycle
+      const maxAllowedXpGain = Math.max(3500, elapsedSec * 200);
+      const xpGain = (Number(state.xp || 0)) - _lastVerifiedCloudXp;
+      if (xpGain > maxAllowedXpGain && !state.adminModifiedTimestamp) {
+        console.warn(`[AntiCheat] Abnormal XP velocity jump: +${xpGain} in ${elapsedSec.toFixed(0)}s. Clamping to legitimate ceiling.`);
+        state.xp = _lastVerifiedCloudXp + maxAllowedXpGain;
+        payload.xp = state.xp;
+      }
+    }
+    _lastVerifiedCloudXp = Number(state.xp || 0);
     _lastVerifiedCloudTime = now;
     delete state._legitimateTransactionBypass;
   }
