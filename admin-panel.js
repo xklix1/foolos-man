@@ -150,6 +150,29 @@
     const playersTableBody = document.getElementById('admin-players-table-body');
     const resultCard = document.getElementById('admin-player-result');
 
+    function switchPlayerSubTab(subtabId) {
+      const tabs = ['finances', 'assets', 'security', 'logs'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`btn-player-subtab-${t}`);
+        const panel = document.getElementById(`player-subtab-panel-${t}`);
+        if (!panel) return;
+        if (t === subtabId) {
+          panel.classList.remove('hidden');
+          if (btn) {
+            btn.classList.add('active-player-subtab');
+            btn.classList.remove('text-slate-400', 'hover:bg-slate-900/60');
+          }
+        } else {
+          panel.classList.add('hidden');
+          if (btn) {
+            btn.classList.remove('active-player-subtab');
+            btn.classList.add('text-slate-400', 'hover:bg-slate-900/60');
+          }
+        }
+      });
+    }
+    window.switchPlayerSubTab = switchPlayerSubTab;
+
     async function loadAdminPlayersDirectory(showToastNotice = false, forceRefresh = false) {
       if (!playersTableBody) return;
       playersTableBody.innerHTML ='<tr><td colspan="5" class="py-4 text-center text-slate-400">جاري فحص وتحديث بيانات اللاعبين...</td></tr>';
@@ -541,6 +564,9 @@
 
         if (resultCard) {
           resultCard.classList.remove('hidden');
+          if (typeof switchPlayerSubTab === 'function') {
+            switchPlayerSubTab('finances');
+          }
           resultCard.scrollIntoView({ behavior:'smooth', block:'nearest' });
         }
         const fbText = document.getElementById('admin-toggle-fb-text');
