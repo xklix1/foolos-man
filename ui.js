@@ -16114,37 +16114,58 @@ const UIController = (() => {
       }
     }
 
-    const divs = mails.filter(m => m.type ==='dividend_claim' && (m.status ==='pending' || m.status ==='unread'));
-    for (const div of divs) {
-      try {
-        const amt = div.payload.amount;
-        GameEngine.state.cash += amt;
+    const divs = mails.filter(m => m.type === 'dividend_claim' && (m.status === 'pending' || m.status === 'unread'));
+    if (divs.length > 0) {
+      let totalClaimed = 0;
+      for (const div of divs) {
+        try {
+          const amt = Number(div.payload && div.payload.amount) || 0;
+          if (amt > 0) totalClaimed += amt;
+          await AppDB.updateMailStatus(div.id, 'accepted');
+        } catch (err) {
+          console.error('Failed to process dividend claim:', err);
+        }
+      }
+      if (totalClaimed > 0) {
+        GameEngine.state.cash += totalClaimed;
         GameEngine.state.netWorth = GameEngine.calculateNetWorth();
         await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
-        await AppDB.updateMailStatus(div.id,'accepted');
-        showToast(' أرباح شراكة استثمارية',`تمت إضافة +${amt.toLocaleString()} EGP من أرباحك في شراكة مشروع (${div.payload.businessId})!`,'success');
+        showToast('أرباح شراكة استثمارية', `تمت إضافة +${Math.round(totalClaimed).toLocaleString()} EGP من أرباحك في شراكات المشاريع!`, 'success');
         renderAll();
-      } catch (err) {
-        console.error('Failed to process dividend claim:', err);
       }
     }
   }
 
   async function checkAndClaimDividends() {
     if (!GameEngine.state || !AppDB.isFirebaseReady) return;
-    if (window.pendingDividends) {
-      const keys = Object.keys(window.pendingDividends);
-      for (const bizId of keys) {
-        const partners = window.pendingDividends[bizId];
-        for (const partner of Object.keys(partners)) {
-          const amt = partners[partner];
-          if (amt > 0) {
+    const now = Date.now();
+    if (window._lastDividendCheck && now - window._lastDividendCheck < 30000) return;
+    window._lastDividendCheck = now;
+
+    if (!window.pendingDividends) return;
+    window._lastPartnerDividendSent = window._lastPartnerDividendSent || {};
+
+    const keys = Object.keys(window.pendingDividends);
+    for (const bizId of keys) {
+      const partners = window.pendingDividends[bizId];
+      if (!partners) continue;
+      for (const partner of Object.keys(partners)) {
+        const amt = partners[partner] || 0;
+        const partnerKey = `${bizId}_${partner}`;
+        const lastSent = window._lastPartnerDividendSent[partnerKey] || 0;
+        const timeSinceLast = now - lastSent;
+
+        // Payout threshold: accumulate until >= 500 EGP, or >= 50 EGP after 30 mins
+        if (amt >= 500 || (amt >= 50 && timeSinceLast >= 1800000)) {
+          const payout = Math.floor(amt);
+          if (payout > 0) {
             try {
-              await AppDB.sendMail('SYSTEM_DIVIDEND', partner,'dividend_claim', {
+              await AppDB.sendMail('SYSTEM_DIVIDEND', partner, 'dividend_claim', {
                 businessId: bizId,
-                amount: amt
+                amount: payout
               });
-              partners[partner] = 0;
+              partners[partner] = amt - payout; // Keep remainder fraction
+              window._lastPartnerDividendSent[partnerKey] = now;
             } catch (e) {
               console.error('Failed to send dividend mail:', e);
             }

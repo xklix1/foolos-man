@@ -2170,15 +2170,15 @@ var AppDB = (() => {
 
     checkMailbox();
     
-    // Fast responsive polling: 2 seconds when active, 12 seconds when hidden
-    let pollIntervalMs = (typeof document !== 'undefined' && document.hidden) ? 12000 : 2000;
+    // Responsive polling: 4 seconds when active, 15 seconds when hidden
+    let pollIntervalMs = (typeof document !== 'undefined' && document.hidden) ? 15000 : 4000;
     let timerId = setInterval(checkMailbox, pollIntervalMs);
     const pollId = registerPollingInterval(timerId);
 
     const onVisibility = () => {
       if (!isSubscribed) return;
       clearInterval(timerId);
-      pollIntervalMs = (typeof document !== 'undefined' && document.hidden) ? 12000 : 2000;
+      pollIntervalMs = (typeof document !== 'undefined' && document.hidden) ? 15000 : 4000;
       timerId = setInterval(checkMailbox, pollIntervalMs);
       if (typeof document !== 'undefined' && !document.hidden) checkMailbox();
     };
