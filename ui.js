@@ -3565,12 +3565,21 @@ const UIController = (() => {
       balEl.title =`${s.bank.toLocaleString()} EGP`;
     }
 
-    // Update Loan Info
-    const maxLoan = Math.max(10000, Math.floor(s.netWorth * 0.35));
+    // Update Loan Info & Eligibility
+    const activeBizCount = Object.values(s.businesses || {}).filter(b => (b.level || 0) > 0).length;
+    const isLoanEligible = ((s.netWorth || 0) >= 50000) && (activeBizCount > 0);
+    const maxLoan = isLoanEligible ? Math.max(5000, Math.floor(s.netWorth * 0.35)) : 0;
     const maxLoanEl = document.getElementById('loan-max-limit');
     if (maxLoanEl) {
-      maxLoanEl.textContent =`${formatCompactNumber(maxLoan)} EGP`;
-      maxLoanEl.title =`${maxLoan.toLocaleString()} EGP`;
+      if (isLoanEligible) {
+        maxLoanEl.textContent = `${formatCompactNumber(maxLoan)} EGP`;
+        maxLoanEl.title = `${maxLoan.toLocaleString()} EGP`;
+        maxLoanEl.className = 'numbers-font font-black text-yellow-400';
+      } else {
+        maxLoanEl.textContent = 'غير متاح (يشترط ثروة 50k+ ومشروع)';
+        maxLoanEl.title = 'تشترط السياسة الائتمانية للبنك بلوغ صافي ثروة 50,000 ج.م على الأقل وامتلاك مشروع تجاري كضمان.';
+        maxLoanEl.className = 'numbers-font font-bold text-slate-400 text-xs';
+      }
     }
 
     const activeLoanEl = document.getElementById('loan-active-amount');
@@ -3629,10 +3638,24 @@ const UIController = (() => {
         if (remainingLoans <= 0) {
           loanBadgeEl.textContent ='استُنفد الحد اليومي (2/2)';
           loanBadgeEl.className ='text-[10px] px-2.5 py-0.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full font-bold';
+        } else if (!isLoanEligible) {
+          loanBadgeEl.textContent ='غير مؤهل (يشترط ثروة 50k+ ومشروع)';
+          loanBadgeEl.className ='text-[10px] px-2.5 py-0.5 bg-slate-700/50 text-slate-400 border border-slate-600 rounded-full font-bold';
         } else {
           loanBadgeEl.textContent ='مؤهل للاقتراض';
           loanBadgeEl.className ='text-[10px] px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full font-bold';
         }
+      }
+    }
+
+    // Wire Transfer Active Loan Lock
+    const wireWarningEl = document.getElementById('wire-loan-warning');
+    const hasActiveLoan = Boolean(s.activeLoan && (Number(s.activeLoan.amount || 0) > 0 || Number(s.activeLoan.totalDue || 0) > 0));
+    if (wireWarningEl) {
+      if (hasActiveLoan) {
+        wireWarningEl.classList.remove('hidden');
+      } else {
+        wireWarningEl.classList.add('hidden');
       }
     }
 
@@ -4149,6 +4172,11 @@ const UIController = (() => {
       try {
         if (!recipient || isNaN(amount) || amount <= 0) {
           throw new Error("يرجى تعبئة حقل المستلم ومبلغ التحويل بشكل صحيح.");
+        }
+
+        if (GameEngine.state && GameEngine.state.activeLoan && (Number(GameEngine.state.activeLoan.amount || 0) > 0 || Number(GameEngine.state.activeLoan.totalDue || 0) > 0)) {
+          const dueAmt = Number(GameEngine.state.activeLoan.totalDue || GameEngine.state.activeLoan.amount || 0);
+          throw new Error(`🚫 مرفوض مصرفياً: لا يمكنك إجراء أي حوالات مالية أثناء وجود قرض بنكي نشط (${dueAmt.toLocaleString('ar-EG')} ج.م)! يرجى سداد القرض أولاً لفك قيد التحويلات.`);
         }
 
         const curCash = Number(GameEngine.state.cash) || 0;
@@ -13981,6 +14009,12 @@ const UIController = (() => {
 
     if (!target || isNaN(amt) || amt <= 0) {
       showToast('تنبيه', 'يرجى إدخال مبلغ صحيح للتحويل.', 'warning');
+      return;
+    }
+
+    if (GameEngine.state && GameEngine.state.activeLoan && (Number(GameEngine.state.activeLoan.amount || 0) > 0 || Number(GameEngine.state.activeLoan.totalDue || 0) > 0)) {
+      const dueAmt = Number(GameEngine.state.activeLoan.totalDue || GameEngine.state.activeLoan.amount || 0);
+      showToast('حساب مقيد مصرفياً', `🚫 لا يمكنك إجراء حوالات مالية أثناء وجود قرض بنكي نشط (${dueAmt.toLocaleString('ar-EG')} ج.م)! يرجى سداد القرض أولاً.`, 'error');
       return;
     }
 

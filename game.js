@@ -4687,6 +4687,18 @@ const GameEngine = (() => {
       throw new Error(`لديك قرض قائم بالفعل بقيمة ${state.activeLoan.totalDue.toLocaleString()} EGP يجب سداده أولاً!`);
     }
 
+    // 1. Minimum Net Worth Requirement (50,000 EGP)
+    const currentNetWorth = Number(state.netWorth || 0);
+    if (currentNetWorth < 50000) {
+      throw new Error(`البنك: تشترط السياسة المصرفية ألا يقل صافي ثروتك عن 50,000 ج.م للتأهل لطلب القروض البنكية (صافي ثروتك الحالي: ${currentNetWorth.toLocaleString('ar-EG')} ج.م).`);
+    }
+
+    // 2. Active Business Collateral Requirement (at least 1 developed business)
+    const activeBizCount = Object.values(state.businesses || {}).filter(b => (b.level || 0) > 0).length;
+    if (activeBizCount < 1) {
+      throw new Error("البنك: تشترط إدارة الائتمان امتلاك وتشغيل مشروع تجاري واحد على الأقل كضمان ائتماني لمنح القرض.");
+    }
+
     ensureDailyLoanTracking();
     if (state.dailyLoans.count >= 2) {
       const remSec = getDailyResetRemainingSeconds();
@@ -4699,7 +4711,7 @@ const GameEngine = (() => {
       const remSec = Math.ceil((state.loanCooldownUntil - getTrustedNow()) / 1000);
       throw new Error(`البنك: فترة التقييم الائتماني نشطة. لا يمكنك طلب قرض جديد إلا بعد مرور ${remSec} ثانية من سداد القرض السابق.`);
     }
-    const maxLoan = Math.max(10000, Math.floor(state.netWorth * 0.35));
+    const maxLoan = Math.max(5000, Math.floor(currentNetWorth * 0.35));
     if (amount <= 0 || amount > maxLoan) {
       throw new Error(`الحد الأقصى للقرض المسموح لك هو ${maxLoan.toLocaleString()} جنيه.`);
     }

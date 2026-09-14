@@ -652,6 +652,21 @@ var AppDB = (() => {
     const fp = await DeviceFingerprint.getFingerprint();
     const registry = await getDeviceRegistry();
 
+    // 1.5 Active Bank Loan Freeze: Block all outgoing transfers while an active loan is outstanding
+    const activeLoan = sender.activeLoan || (senderRow.state && senderRow.state.activeLoan);
+    if (activeLoan && (Number(activeLoan.amount || 0) > 0 || Number(activeLoan.totalDue || 0) > 0)) {
+      const dueAmt = Number(activeLoan.totalDue || activeLoan.amount || 0);
+      await logFraudAlert({
+        type: 'ACTIVE_LOAN_TRANSFER_BLOCKED',
+        sender: sUser,
+        recipient: rUser,
+        amount: amt,
+        device: fp,
+        details: `محاولة تحويل مالي أثناء وجود قرض بنكي نشط غير مسدد (${dueAmt.toLocaleString()} EGP)`
+      });
+      throw new Error(`🚫 مرفوض مصرفياً: لا يمكنك إجراء أي حوالات مالية أثناء وجود قرض بنكي نشط (${dueAmt.toLocaleString()} ج.م)! يرجى سداد القرض المستحق أولاً لفك تجميد التحويلات.`);
+    }
+
     // 2. Multi-Account / Same Device Intersection Check
     const senderDevs = Array.isArray(sender.known_devices) ? sender.known_devices : (sender.initial_device ? [sender.initial_device] : []);
     const recipientDevs = Array.isArray(recipient.known_devices) ? recipient.known_devices : (recipient.initial_device ? [recipient.initial_device] : []);
@@ -688,8 +703,7 @@ var AppDB = (() => {
     const assetCount = Object.values(sender.assets || {}).filter(v => (v || 0) > 0).length;
     const carCount = (sender.ownedCars || []).length;
     const stockShares = Object.values(sender.stocks || {}).reduce((sum, s) => sum + (s.shares || 0), 0);
-    const totalFunds = Number(sender.cash || 0) + Number(sender.bank || 0);
-    const hasActiveProgression = bizCount > 0 || assetCount > 0 || carCount > 0 || stockShares > 0 || Number(sender.xp || 0) >= 20 || totalFunds >= 1000;
+    const hasActiveProgression = bizCount > 0 || assetCount > 0 || carCount > 0 || stockShares > 0 || Number(sender.xp || 0) >= 100;
 
     // STRICT RULE: Absolute block on 0-progress / 0-effort empty feeder accounts from transferring money
     if (!hasActiveProgression) {

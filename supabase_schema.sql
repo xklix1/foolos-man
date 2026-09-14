@@ -134,15 +134,23 @@ CREATE OR REPLACE FUNCTION public.execute_wire_transfer(
   transfer_amount numeric
 ) RETURNS boolean AS $$
 DECLARE
+  v_sender_user text;
+  v_recipient_user text;
   sender_cash numeric;
   sender_bank numeric;
   sender_net_worth numeric;
+  sender_state jsonb;
+  recipient_state jsonb;
+  recipient_bank numeric;
+  recipient_net_worth numeric;
   deduct_from_cash numeric := 0;
   deduct_from_bank numeric := 0;
   new_sender_cash numeric;
   new_sender_bank numeric;
+  new_recipient_bank numeric;
+  v_now_ms bigint;
 BEGIN
-  IF sender_username = recipient_username THEN
+  IF sender_username ILIKE recipient_username THEN
     RAISE EXCEPTION 'لا يمكنك التحويل لنفسك!';
   END IF;
 
@@ -150,23 +158,54 @@ BEGIN
     RAISE EXCEPTION 'مبلغ التحويل غير صالح.';
   END IF;
 
-  -- إغلاق صف المرسل للتحقق من الرصيد ومنع التكرار (Row Lock)
-  SELECT cash, bank, net_worth INTO sender_cash, sender_bank, sender_net_worth
-  FROM public.players WHERE username = sender_username FOR UPDATE;
+  v_now_ms := (extract(epoch from now()) * 1000)::bigint;
+
+  -- 1. إغلاق صف المرسل للتحقق من الرصيد والديون (Row Lock)
+  SELECT username, cash, bank, net_worth, state 
+  INTO v_sender_user, sender_cash, sender_bank, sender_net_worth, sender_state
+  FROM public.players 
+  WHERE username ILIKE sender_username 
+  FOR UPDATE;
+
+  IF v_sender_user IS NULL THEN
+    RAISE EXCEPTION 'تعذر العثور على بيانات حساب المرسل.';
+  END IF;
 
   sender_cash := COALESCE(sender_cash, 0);
   sender_bank := COALESCE(sender_bank, 0);
 
+  -- 2. التحقق الصارم من عدم وجود قرض بنكي نشط على المرسل
+  IF sender_state IS NOT NULL AND (
+    (sender_state->'activeLoan') IS NOT NULL 
+    AND sender_state->'activeLoan' != 'null'::jsonb
+    AND (
+      COALESCE((sender_state->'activeLoan'->>'amount')::numeric, 0) > 0 
+      OR COALESCE((sender_state->'activeLoan'->>'totalDue')::numeric, 0) > 0
+    )
+  ) THEN
+    RAISE EXCEPTION '🚫 مرفوض مصرفياً: لا يمكنك إجراء أي حوالات مالية أثناء وجود قرض بنكي نشط! يرجى سداد القرض المستحق أولاً لفك تجميد التحويلات.';
+  END IF;
+
+  -- 3. التحقق من كفاية الرصيد الإجمالي
   IF (sender_cash + sender_bank) < transfer_amount THEN
     RAISE EXCEPTION 'رصيدك الإجمالي (الكاش والبنك) غير كافٍ لإتمام الحوالة.';
   END IF;
 
-  -- التأكد من وجود المستلم وإغلاق صفه لمنع التضارب
-  IF NOT EXISTS (SELECT 1 FROM public.players WHERE username = recipient_username FOR UPDATE) THEN
+  -- 4. إغلاق صف المستلم للتأكد من وجوده واستلام الرصيد
+  SELECT username, bank, net_worth, state
+  INTO v_recipient_user, recipient_bank, recipient_net_worth, recipient_state
+  FROM public.players 
+  WHERE username ILIKE recipient_username 
+  FOR UPDATE;
+
+  IF v_recipient_user IS NULL THEN
     RAISE EXCEPTION 'المستلم غير موجود. تأكد من صحة الاسم.';
   END IF;
 
-  -- خصم المبلغ الذكي: يُخصم من الكاش أولاً حتى ينفد، ثم يُخصم المتبقي من البنك
+  recipient_bank := COALESCE(recipient_bank, 0);
+  recipient_net_worth := COALESCE(recipient_net_worth, 0);
+
+  -- 5. خصم المبلغ من المرسل (الكاش أولاً ثم البنك)
   IF sender_cash >= transfer_amount THEN
     deduct_from_cash := transfer_amount;
     deduct_from_bank := 0;
@@ -178,49 +217,58 @@ BEGIN
   new_sender_cash := sender_cash - deduct_from_cash;
   new_sender_bank := sender_bank - deduct_from_bank;
 
-  -- خصم المبلغ من المرسل وتحديث عمودي cash و bank مع كائن state بشكل ذري تام
   UPDATE public.players
   SET cash = new_sender_cash,
       bank = new_sender_bank,
       net_worth = GREATEST(0, net_worth - transfer_amount),
+      admin_modified_timestamp = v_now_ms,
       state = CASE 
         WHEN state IS NOT NULL THEN 
           jsonb_set(
-            jsonb_set(state, '{cash}', to_jsonb(new_sender_cash)),
-            '{bank}', to_jsonb(new_sender_bank)
+            jsonb_set(
+              jsonb_set(state, '{cash}', to_jsonb(new_sender_cash)),
+              '{bank}', to_jsonb(new_sender_bank)
+            ),
+            '{adminModifiedTimestamp}', to_jsonb(v_now_ms)
           )
         ELSE state 
       END
-  WHERE username = sender_username;
+  WHERE username = v_sender_user;
 
-  -- إضافة المبلغ للمستلم في البنك وتحديث عمود bank وكائن state بشكل ذري تام
+  -- 6. إضافة المبلغ للمستلم في البنك وتحديث state
+  new_recipient_bank := recipient_bank + transfer_amount;
+
   UPDATE public.players
-  SET bank = bank + transfer_amount,
-      net_worth = net_worth + transfer_amount,
+  SET bank = new_recipient_bank,
+      net_worth = recipient_net_worth + transfer_amount,
+      admin_modified_timestamp = v_now_ms,
       state = CASE 
         WHEN state IS NOT NULL THEN 
-          jsonb_set(state, '{bank}', to_jsonb(COALESCE((state->>'bank')::numeric, 0) + transfer_amount))
+          jsonb_set(
+            jsonb_set(state, '{bank}', to_jsonb(new_recipient_bank)),
+            '{adminModifiedTimestamp}', to_jsonb(v_now_ms)
+          )
         ELSE state 
       END
-  WHERE username = recipient_username;
+  WHERE username = v_recipient_user;
 
-  -- تسجيل إيصال التحويل
+  -- 7. تسجيل إيصال التحويل
   INSERT INTO public.transfers (sender, recipient, amount, created_at)
-  VALUES (sender_username, recipient_username, transfer_amount, (extract(epoch from now()) * 1000)::bigint);
+  VALUES (v_sender_user, v_recipient_user, transfer_amount, v_now_ms);
 
-  -- إرسال إشعار لصندوق بريد المستلم
+  -- 8. إرسال إشعار لصندوق بريد المستلم
   INSERT INTO public.mailbox (sender, recipient, type, payload, status, created_at)
   VALUES (
-    sender_username,
-    recipient_username,
+    v_sender_user,
+    v_recipient_user,
     'transfer_received',
     jsonb_build_object(
       'title', 'حوالة بنكية واردة 💸',
       'amount', transfer_amount,
-      'message', 'تم استلام حوالة مالية بقيمة ' || transfer_amount || ' EGP من اللاعب "' || sender_username || '".'
+      'message', 'تم استلام حوالة مالية بقيمة ' || transfer_amount || ' EGP من اللاعب "' || v_sender_user || '".'
     ),
     'unread',
-    (extract(epoch from now()) * 1000)::bigint
+    v_now_ms
   );
 
   RETURN true;
