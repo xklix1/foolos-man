@@ -899,6 +899,7 @@ const GameEngine = (() => {
     dailyWork: { date:'', shifts: 0, overtimeShifts: 0 }, // Max 100 regular shifts and 15 overtime shifts per 24h
     dailyBlackMarket: { date: '', count: 0 }, // Max 15 black market deals per 24 hours (calendar day)
     dailyToolUses: { date:'', uses: {} }, // Max daily uses per tool (calendar day)
+    dailyQuests: null,
     assets: {
       apartment: 0,
       office: 0,
@@ -1081,6 +1082,17 @@ const GameEngine = (() => {
     if (!state) return;
     const today = getTodayDateString();
     if (!state.dailyQuests || state.dailyQuests.date !== today || !Array.isArray(state.dailyQuests.quests)) {
+      // Check if local cache has today's quests before generating brand new ones
+      if (activeUsername && typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState) {
+        try {
+          const cached = AppDB.getDecryptedLocalState(`rasalmal_state_${activeUsername}`);
+          if (cached && cached.dailyQuests && cached.dailyQuests.date === today && Array.isArray(cached.dailyQuests.quests)) {
+            state.dailyQuests = JSON.parse(JSON.stringify(cached.dailyQuests));
+            return;
+          }
+        } catch (e) {}
+      }
+
       const netWorth = (typeof calculateNetWorth === 'function') ? calculateNetWorth() : (state.netWorth || 400);
       // Balanced reward scaling: Starts at ~350 EGP, scales gradually with sqrt of wealth, capped at 35,000 EGP per quest
       const baseCash = Math.max(350, Math.round(350 + Math.min(35000, Math.sqrt(Math.max(0, netWorth)) * 1.2)));
@@ -2695,6 +2707,34 @@ const GameEngine = (() => {
             } else {
               state.dailyBlackMarket.count = Math.min(15, Math.max(Number(state.dailyBlackMarket.count || 0), Number(localS.dailyBlackMarket.count || 0)));
             }
+          }
+          // Safeguard: Prevent reload, re-login, or cloud race from resetting today's daily quests
+          const candidateQuests = (state.dailyQuests && state.dailyQuests.date === todayStr && Array.isArray(state.dailyQuests.quests))
+            ? state.dailyQuests
+            : ((dbState && dbState.dailyQuests && dbState.dailyQuests.date === todayStr && Array.isArray(dbState.dailyQuests.quests))
+                ? dbState.dailyQuests
+                : null);
+
+          if (localS && localS.dailyQuests && localS.dailyQuests.date === todayStr && Array.isArray(localS.dailyQuests.quests)) {
+            if (!candidateQuests) {
+              state.dailyQuests = JSON.parse(JSON.stringify(localS.dailyQuests));
+            } else {
+              state.dailyQuests = candidateQuests;
+              if (localS.dailyQuests.grandBonusClaimed) {
+                state.dailyQuests.grandBonusClaimed = true;
+              }
+              localS.dailyQuests.quests.forEach(lq => {
+                if (!lq || !lq.id) return;
+                const sq = state.dailyQuests.quests.find(q => q && q.id === lq.id);
+                if (sq) {
+                  if (lq.claimed) sq.claimed = true;
+                  if (lq.completed) sq.completed = true;
+                  sq.progress = Math.max(Number(sq.progress || 0), Number(lq.progress || 0));
+                }
+              });
+            }
+          } else if (candidateQuests) {
+            state.dailyQuests = candidateQuests;
           }
         } catch (e) {}
       }

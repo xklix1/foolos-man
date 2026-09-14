@@ -279,6 +279,29 @@ class SessionManager {
     if (clientState.dailyToolUses && typeof clientState.dailyToolUses === 'object') {
       s.dailyToolUses = clientState.dailyToolUses;
     }
+    // Synchronize Daily Quests (Prevent quest resets & rollbacks on reconnect / logout)
+    if (clientState.dailyQuests && typeof clientState.dailyQuests === 'object') {
+      const cDate = String(clientState.dailyQuests.date || '');
+      const sDate = s.dailyQuests ? String(s.dailyQuests.date || '') : '';
+      if (cDate && cDate === sDate && Array.isArray(clientState.dailyQuests.quests) && Array.isArray(s.dailyQuests.quests)) {
+        if (clientState.dailyQuests.grandBonusClaimed) {
+          s.dailyQuests.grandBonusClaimed = true;
+        }
+        clientState.dailyQuests.quests.forEach(cq => {
+          if (!cq || !cq.id) return;
+          const sq = s.dailyQuests.quests.find(q => q && q.id === cq.id);
+          if (sq) {
+            if (cq.claimed) sq.claimed = true;
+            if (cq.completed) sq.completed = true;
+            sq.progress = Math.max(Number(sq.progress || 0), Number(cq.progress || 0));
+          } else {
+            s.dailyQuests.quests.push(cq);
+          }
+        });
+      } else {
+        s.dailyQuests = clientState.dailyQuests;
+      }
+    }
     if (clientState.dailyCasinoNetProfit !== undefined) {
       s.dailyCasinoNetProfit = Number(clientState.dailyCasinoNetProfit) || 0;
     }

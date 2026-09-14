@@ -134,6 +134,36 @@ test('Client ServerBridge End-to-End Test', async () => {
     }, false);
     assert.strictEqual(updatedSession.state.dailyBlackMarket.count, 15, 'Daily black market count is clamped to max 15');
 
+    // 5.7 Test Daily Quests Sync & Anti-Reset Guard
+    const dqSyncRes = await ServerBridge.syncState({
+      dailyQuests: {
+        date: '2026-09-14',
+        grandBonusClaimed: false,
+        quests: [
+          { id: 'work_shift', target: 20, progress: 15, completed: false, claimed: false },
+          { id: 'biz_upgrade', target: 2, progress: 2, completed: true, claimed: true }
+        ]
+      }
+    }, false);
+    assert.ok(dqSyncRes, 'Daily quests state sync succeeded');
+    assert.strictEqual(updatedSession.state.dailyQuests.date, '2026-09-14');
+    assert.strictEqual(updatedSession.state.dailyQuests.quests[0].progress, 15);
+    assert.strictEqual(updatedSession.state.dailyQuests.quests[1].claimed, true);
+
+    // Attempt to roll back progress and claimed status on same date
+    await ServerBridge.syncState({
+      dailyQuests: {
+        date: '2026-09-14',
+        grandBonusClaimed: false,
+        quests: [
+          { id: 'work_shift', target: 20, progress: 5, completed: false, claimed: false },
+          { id: 'biz_upgrade', target: 2, progress: 0, completed: false, claimed: false }
+        ]
+      }
+    }, false);
+    assert.strictEqual(updatedSession.state.dailyQuests.quests[0].progress, 15, 'Progress must not roll back');
+    assert.strictEqual(updatedSession.state.dailyQuests.quests[1].claimed, true, 'Claimed status must not roll back');
+
     // 6. Test Offline Profit on Browser Close & Reopen
     const exitSessionUser = 'offline_exit_player';
     const now = Date.now();

@@ -1358,6 +1358,44 @@ var AppDB = (() => {
           }
         }
 
+        // 4.9 Daily Quests Guard:
+        // NEVER allow page reloading, reconnecting, or logout/login to reset today's daily quest progress or claimed rewards
+        if (local && local.dailyQuests && local.dailyQuests.date === todayStr && Array.isArray(local.dailyQuests.quests)) {
+          if (!stateObj.dailyQuests || stateObj.dailyQuests.date !== todayStr || !Array.isArray(stateObj.dailyQuests.quests)) {
+            stateObj.dailyQuests = JSON.parse(JSON.stringify(local.dailyQuests));
+            shouldSyncCloud = true;
+          } else {
+            let questChanged = false;
+            if (local.dailyQuests.grandBonusClaimed && !stateObj.dailyQuests.grandBonusClaimed) {
+              stateObj.dailyQuests.grandBonusClaimed = true;
+              questChanged = true;
+            }
+            local.dailyQuests.quests.forEach(lq => {
+              if (!lq || !lq.id) return;
+              const sq = stateObj.dailyQuests.quests.find(q => q && q.id === lq.id);
+              if (sq) {
+                if (lq.claimed && !sq.claimed) {
+                  sq.claimed = true;
+                  questChanged = true;
+                }
+                if (lq.completed && !sq.completed) {
+                  sq.completed = true;
+                  questChanged = true;
+                }
+                const lProg = Number(lq.progress || 0);
+                const sProg = Number(sq.progress || 0);
+                if (lProg > sProg) {
+                  sq.progress = lProg;
+                  questChanged = true;
+                }
+              }
+            });
+            if (questChanged) {
+              shouldSyncCloud = true;
+            }
+          }
+        }
+
         // 5. Late-save recovery:
         // If local is definitively NEWER than the cloud (localTs > serverTs), the cloud save
         // was probably debounced or blocked (e.g. admin_modified_timestamp filter mismatch).
