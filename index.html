@@ -2015,6 +2015,12 @@
               <span>سلاسل الإمداد</span>
               <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold ml-auto">مصانع</span>
             </button>
+            <button id="nav-tab-farm" data-tab="farm"
+              class="nav-tab-btn hidden w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+              <i class="fa-solid fa-wheat-awn w-4 text-center text-amber-400 text-sm"></i>
+              <span>المزرعة الاستثمارية</span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold ml-auto">VIP تجريبي</span>
+            </button>
           </div>
 
           <!-- Entertainment & Shadow Economy -->
@@ -3533,6 +3539,185 @@
         </div>
       </section>
 
+      <!-- ==================== TAB: المزرعة الاستثمارية (AGRO FARM TYCOON) ==================== -->
+      <section id="panel-farm" class="game-panel hidden space-y-6">
+
+        <!-- 1. Farm Header & Status Hero Card -->
+        <div class="glass-panel p-6 rounded-3xl border border-amber-500/30 relative overflow-hidden shadow-2xl"
+          style="background: radial-gradient(ellipse at top right, rgba(245, 158, 11, 0.15), rgba(16, 185, 129, 0.08), rgba(15, 23, 42, 0.95)) !important;">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-2.5 flex-wrap">
+                <span class="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xl shadow-lg shadow-amber-500/10">
+                  <i class="fa-solid fa-wheat-awn"></i>
+                </span>
+                <h2 class="text-xl font-black text-white">المزرعة الاستثمارية وسلاسل المحاصيل 🌾</h2>
+                <span class="text-[10px] px-2.5 py-0.5 rounded-full font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">نسخة تجريبية حصرية</span>
+              </div>
+              <p class="text-xs text-slate-400 max-w-2xl leading-relaxed">
+                استصلح الأراضي الزراعية، ازرع مختلف المحاصيل من القمح إلى الزعفران الإمبراطوري، طوّر شبكات الري الحديثة، ووظف عمال الحصاد الآلي لجني أرباح طائلة!
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+              <button id="btn-farm-harvest-all" type="button"
+                class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs transition duration-200 shadow-lg shadow-emerald-500/20 flex items-center gap-2 cursor-pointer active:scale-95">
+                <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
+                <span>حصاد الكل</span>
+              </button>
+              <button id="btn-farm-sell-all" type="button"
+                class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs transition duration-200 shadow-lg shadow-yellow-500/20 flex items-center gap-2 cursor-pointer active:scale-95">
+                <i class="fa-solid fa-sack-dollar text-sm"></i>
+                <span>بيع كامل المخزون</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Farm Key Stat Badges -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-800/80">
+            <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+              <span class="text-[10px] text-slate-400 font-bold block mb-1 flex items-center gap-1.5">
+                <i class="fa-solid fa-layer-group text-amber-400 text-xs"></i>
+                <span>رقعة الأرض والأحواض</span>
+              </span>
+              <span id="farm-stat-plots" class="numbers-font text-base font-black text-white">4 أحواض</span>
+            </div>
+            <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+              <span class="text-[10px] text-slate-400 font-bold block mb-1 flex items-center gap-1.5">
+                <i class="fa-solid fa-faucet-drip text-cyan-400 text-xs"></i>
+                <span>شبكة الري والمياه</span>
+              </span>
+              <span id="farm-stat-irrigation" class="text-xs font-black text-cyan-400 truncate block">ري تقليدي</span>
+            </div>
+            <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+              <span class="text-[10px] text-slate-400 font-bold block mb-1 flex items-center gap-1.5">
+                <i class="fa-solid fa-flask-vial text-emerald-400 text-xs"></i>
+                <span>جودة التربة والأسمدة</span>
+              </span>
+              <span id="farm-stat-fertilizer" class="text-xs font-black text-emerald-400 truncate block">تربة اعتيادية</span>
+            </div>
+            <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+              <span class="text-[10px] text-slate-400 font-bold block mb-1 flex items-center gap-1.5">
+                <i class="fa-solid fa-robot text-purple-400 text-xs"></i>
+                <span>عمال وأتمتة الحصاد</span>
+              </span>
+              <span id="farm-stat-workers" class="numbers-font text-base font-black text-purple-300">0 عمال</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Locked State Banner (If farm not yet purchased) -->
+        <div id="farm-unlocked-banner" class="hidden glass-panel p-8 rounded-3xl border border-amber-500/40 text-center shadow-2xl bg-gradient-to-b from-slate-950 via-amber-950/20 to-slate-950 space-y-4">
+          <div class="w-16 h-16 mx-auto rounded-3xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-3xl shadow-lg">
+            <i class="fa-solid fa-tractor"></i>
+          </div>
+          <h3 class="text-xl font-black text-white">استصلاح وتملك المزرعة الاستثمارية الأولى</h3>
+          <p class="text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
+            اشترِ رقعة الأرض الزراعية الأولى المزودة بـ 4 أحواض زراعية وابدأ فوراً في إنتاج المحاصيل وإدارتها لجني السيولة النقدية وتنمية ثروتك الاستثمارية.
+          </p>
+          <div class="pt-2">
+            <button id="btn-farm-unlock" type="button"
+              class="px-8 py-3.5 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-2xl text-sm transition-all duration-300 shadow-xl shadow-yellow-500/20 hover:scale-[1.02] active:scale-95 cursor-pointer">
+              <i class="fa-solid fa-key mr-1.5"></i>
+              <span>شراء وتملك المزرعة (25,000 ج.م)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. Active Farm Main Area (Plots, Seeds Shop, Upgrades, Warehouse) -->
+        <div id="farm-active-area" class="space-y-6">
+
+          <!-- Section 3A: Interactive Plots Field Grid -->
+          <div class="glass-panel p-6 rounded-3xl border border-slate-800/80 shadow-xl space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800/80 pb-3">
+              <div>
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                  <i class="fa-solid fa-seedling text-emerald-400"></i>
+                  <span>أحواض المزرعة الزراعية (Field Plots)</span>
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">تابع نمو المحاصيل في الوقت الفعلي، أو احصد المحاصيل الناضجة بضغطة واحدة.</p>
+              </div>
+
+              <!-- Quick Plant All Dropdown & Button -->
+              <div class="flex items-center gap-2 w-full sm:w-auto">
+                <select id="farm-quick-crop-select" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2 font-bold focus:outline-none focus:border-amber-500">
+                  <option value="wheat">القمح الذهبي (50 ج.م - 1 د)</option>
+                  <option value="tomato">طماطم وخضار (250 ج.م - 3 د)</option>
+                  <option value="strawberry">فراولة فاخرة (1,000 ج.م - 8 د)</option>
+                  <option value="coffee">حبوب البن (5,000 ج.م - 20 د)</option>
+                  <option value="dates">تمور المجدول (25,000 ج.م - 1 س)</option>
+                  <option value="saffron">الزعفران (150,000 ج.م - 3 س)</option>
+                </select>
+                <button id="btn-farm-plant-all" type="button"
+                  class="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer shrink-0 shadow-md">
+                  <i class="fa-solid fa-wheat-awn mr-1"></i>
+                  <span>زرع كل الأحواض الفارغة</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Plots Dynamic Grid Container -->
+            <div id="farm-plots-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <!-- Rendered cleanly by ui.js -->
+            </div>
+          </div>
+
+          <!-- Section 3B: Crops & Seeds Catalog -->
+          <div class="glass-panel p-6 rounded-3xl border border-slate-800/80 shadow-xl space-y-4">
+            <div class="border-b border-slate-800/80 pb-3">
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-store text-amber-400"></i>
+                <span>متجر البذور والمحاصيل الزراعية</span>
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">اختر المحصول الأنسب لاستراتيجيتك الاستثمارية من حيث سرعة النمو ومعدل الربح الصافي.</p>
+            </div>
+
+            <div id="farm-crops-catalog" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <!-- Rendered by ui.js -->
+            </div>
+          </div>
+
+          <!-- Section 3C: Upgrades & Infrastructure (Land, Irrigation, Fertilizer, Workers) -->
+          <div class="glass-panel p-6 rounded-3xl border border-slate-800/80 shadow-xl space-y-4">
+            <div class="border-b border-slate-800/80 pb-3">
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-wrench text-cyan-400"></i>
+                <span>تطوير البنية التحتية والمكننة الزراعية</span>
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">طوّر شبكات الري لتسريع النمو، استصلح أراضٍ جديدة، واستخدم أحدث الأسمدة النانوية لمضاعفة المحصول.</p>
+            </div>
+
+            <div id="farm-upgrades-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <!-- Rendered by ui.js -->
+            </div>
+          </div>
+
+          <!-- Section 3D: Farm Warehouse & Crop Market -->
+          <div class="glass-panel p-6 rounded-3xl border border-slate-800/80 shadow-xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800/80 pb-3">
+              <div>
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                  <i class="fa-solid fa-boxes-stacked text-yellow-400"></i>
+                  <span>مستودع المزرعة وبورصة تصريف المحاصيل</span>
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">المحاصيل التي تم حصادها والمخزنة في مستودع المزرعة والجاهزة للبيع الفوري نقداً.</p>
+              </div>
+
+              <div class="text-left">
+                <span class="text-[10px] text-slate-400 block">إجمالي أرباح المبيعات التاريخية</span>
+                <span id="farm-total-revenue-stat" class="numbers-font text-sm font-black text-emerald-400">0 ج.م</span>
+              </div>
+            </div>
+
+            <div id="farm-warehouse-container" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <!-- Rendered by ui.js -->
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
       <!-- TAB 8: السوق السوداء (BLACK MARKET & UNDERWORLD HUB) -->
       <section id="panel-blackmarket" class="game-panel hidden space-y-6">
 
@@ -4643,6 +4828,13 @@
           class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
           <i class="fa-solid fa-industry w-5 text-center text-emerald-400 text-sm"></i>
           <span>مجمع الصناعات</span>
+        </button>
+
+        <button id="nav-tab-farm-mobile" data-tab="farm"
+          class="nav-tab-btn hidden w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-wheat-awn w-5 text-center text-amber-400 text-sm"></i>
+          <span>المزرعة الاستثمارية</span>
+          <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold mr-auto">VIP</span>
         </button>
 
         <!-- Group 3: المخاطر والتسلية -->

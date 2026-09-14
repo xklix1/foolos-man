@@ -309,6 +309,27 @@ const UIController = (() => {
     ).trim();
   }
 
+  function isFarmTesterAccount() {
+    const u = (getActiveUsernameSafe() || '').trim().toLowerCase();
+    return u === 'khaled' || u.startsWith('khaled');
+  }
+
+  function updateFarmTabVisibility() {
+    const isTester = isFarmTesterAccount();
+    const farmTabDesktop = document.getElementById('nav-tab-farm');
+    const farmTabMobile = document.getElementById('nav-tab-farm-mobile');
+    if (farmTabDesktop) {
+      farmTabDesktop.classList.toggle('hidden', !isTester);
+      if (isTester) farmTabDesktop.classList.add('flex');
+      else farmTabDesktop.classList.remove('flex');
+    }
+    if (farmTabMobile) {
+      farmTabMobile.classList.toggle('hidden', !isTester);
+      if (isTester) farmTabMobile.classList.add('flex');
+      else farmTabMobile.classList.remove('flex');
+    }
+  }
+
   function applyGlowSetting(enabled) {
     if (typeof document !=='undefined' && document.body) {
       if (enabled) {
@@ -2135,6 +2156,9 @@ const UIController = (() => {
   }
 
   function switchTab(tabId) {
+    if (tabId === 'farm' && !isFarmTesterAccount()) {
+      tabId = 'dashboard';
+    }
     if (activeTab !== tabId) {
       playMenuSound('click');
     }
@@ -2159,6 +2183,8 @@ const UIController = (() => {
       renderTradePanel();
     } else if (tabId ==='industry') {
       renderIndustryPanel();
+    } else if (tabId ==='farm') {
+      renderFarmPanel();
     } else if (tabId ==='investments') {
       renderInvestmentsTab();
     }
@@ -2615,6 +2641,7 @@ const UIController = (() => {
   // --- General Render Manager ---
   function renderAll() {
     renderStatsBar();
+    updateFarmTabVisibility();
     switch (activeTab) {
       case'dashboard':
         renderDashboard();
@@ -2657,6 +2684,13 @@ const UIController = (() => {
         break;
       case'industry':
         renderIndustryPanel();
+        break;
+      case'farm':
+        if (isFarmTesterAccount()) {
+          renderFarmPanel();
+        } else {
+          switchTab('dashboard');
+        }
         break;
       case'investments':
         renderInvestmentsTab();
@@ -18946,6 +18980,545 @@ const UIController = (() => {
   }
 
   // ─────────────────────────────────────────────
+  // 🌾 TAB: AGRO FARM TYCOON (المزرعة الاستثمارية)
+  // ─────────────────────────────────────────────
+  function renderFarmPanel() {
+    if (!isFarmTesterAccount()) return;
+    if (!GameEngine || typeof GameEngine.getFarmState !== 'function') return;
+
+    const farmInfo = GameEngine.getFarmState();
+    if (!farmInfo || !farmInfo.farm) return;
+
+    const farm = farmInfo.farm;
+    const config = farmInfo.config;
+    const crops = farmInfo.crops;
+    const plots = farmInfo.plots;
+
+    const lockedBanner = document.getElementById('farm-unlocked-banner');
+    const activeArea = document.getElementById('farm-active-area');
+
+    // 1. Check Unlocked vs Locked
+    if (!farm.unlocked) {
+      if (lockedBanner) lockedBanner.classList.remove('hidden');
+      if (activeArea) activeArea.classList.add('hidden');
+
+      const btnUnlock = document.getElementById('btn-farm-unlock');
+      if (btnUnlock) {
+        btnUnlock.onclick = () => {
+          try {
+            GameEngine.unlockFarm();
+            playMenuSound('success');
+            showToast('استصلاح ناجح 🌾', 'مبروك! تم استصلاح وتملك المزرعة الاستثمارية بنجاح.', 'success');
+            renderFarmPanel();
+            renderStatsBar();
+          } catch (e) {
+            playMenuSound('error');
+            showToast('تعذر الشراء', e.message, 'error');
+          }
+        };
+      }
+      return;
+    }
+
+    // Farm is Unlocked!
+    if (lockedBanner) lockedBanner.classList.add('hidden');
+    if (activeArea) activeArea.classList.remove('hidden');
+
+    // 2. Update Header Stat Badges
+    const statPlots = document.getElementById('farm-stat-plots');
+    if (statPlots) statPlots.textContent = `${farm.maxPlots} أحواض (مستوى ${farm.landLevel})`;
+
+    const statIrrigation = document.getElementById('farm-stat-irrigation');
+    if (statIrrigation) {
+      const irDef = config.irrigation[farm.waterLevel] || config.irrigation[1];
+      statIrrigation.textContent = irDef ? irDef.name : 'ري تقليدي';
+    }
+
+    const statFertilizer = document.getElementById('farm-stat-fertilizer');
+    if (statFertilizer) {
+      const fertDef = config.fertilizers[farm.fertilizerLevel] || config.fertilizers[1];
+      statFertilizer.textContent = fertDef ? fertDef.name : 'تربة اعتيادية';
+    }
+
+    const statWorkers = document.getElementById('farm-stat-workers');
+    if (statWorkers) {
+      statWorkers.textContent = `${farm.workers} عمال (${farm.workers * 4} أحواض مؤتمتة)`;
+    }
+
+    const totalRevEl = document.getElementById('farm-total-revenue-stat');
+    if (totalRevEl) {
+      totalRevEl.textContent = `${(farm.stats?.totalRevenue || 0).toLocaleString()} ج.م`;
+    }
+
+    // 3. Render Field Plots Grid
+    const plotsGrid = document.getElementById('farm-plots-grid');
+    if (plotsGrid) {
+      let plotsHtml = '';
+      plots.forEach((p, idx) => {
+        const isWorkerCovered = idx < (farm.workers * 4);
+        const autoBadge = isWorkerCovered ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30 ml-auto" title="مغطى بالحصاد الآلي للعمال"><i class="fa-solid fa-robot mr-1"></i>آلي</span>' : '';
+
+        if (!p || !p.crop) {
+          // Empty Plot
+          plotsHtml += `
+            <div class="p-4 rounded-2xl bg-slate-950/60 border-2 border-dashed border-slate-800 hover:border-amber-500/50 transition flex flex-col justify-between items-center text-center gap-3 group min-h-[190px]">
+              <div class="w-full flex items-center justify-between text-[11px] font-bold text-slate-500">
+                <span>حوض #${idx + 1}</span>
+                ${autoBadge}
+              </div>
+              <div class="space-y-1">
+                <div class="w-12 h-12 mx-auto rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-600 group-hover:text-amber-400 group-hover:scale-110 transition">
+                  <i class="fa-solid fa-mound text-xl"></i>
+                </div>
+                <span class="text-xs font-bold text-slate-400 block">حوض زراعي فارغ</span>
+                <span class="text-[10px] text-slate-500 block">جاهز للغرس والبذر</span>
+              </div>
+              <button onclick="window.UI?.quickPlantSinglePlot(${idx})" type="button"
+                class="w-full py-2 px-3 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 font-black rounded-xl text-xs border border-amber-500/40 transition flex items-center justify-center gap-1 cursor-pointer active:scale-95">
+                <i class="fa-solid fa-seedling text-xs"></i>
+                <span>ازرع الآن</span>
+              </button>
+            </div>
+          `;
+        } else {
+          // Active Crop Plot
+          const c = p.crop;
+          const isReady = p.isReady;
+          const progress = p.progress || 0;
+          const remainingSec = Math.ceil((p.remainingMs || 0) / 1000);
+          const mins = Math.floor(remainingSec / 60);
+          const secs = remainingSec % 60;
+          const timeFormatted = mins > 0 ? `${mins}:${String(secs).padStart(2, '0')}` : `${secs} ث`;
+
+          const fertDef = config.fertilizers[farm.fertilizerLevel] || config.fertilizers[1];
+          const yieldBonus = fertDef ? (fertDef.yieldBonus || 0) : 0;
+          const estimatedYield = Math.round(c.baseYield * (1 + yieldBonus));
+
+          plotsHtml += `
+            <div class="p-4 rounded-2xl bg-slate-950/80 border ${isReady ? 'border-emerald-500/60 shadow-lg shadow-emerald-500/10' : 'border-slate-800/90'} flex flex-col justify-between gap-3 min-h-[190px] relative overflow-hidden">
+              <div class="flex items-center justify-between text-[11px] font-bold">
+                <span class="text-slate-400">حوض #${idx + 1}</span>
+                ${autoBadge}
+              </div>
+
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-${c.color}-500/20 border border-${c.color}-500/40 flex items-center justify-center text-${c.color}-400 text-xl shrink-0 shadow-inner">
+                  <i class="${c.icon}"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <h4 class="text-xs font-black text-white truncate">${c.name}</h4>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">محصول متوقع: <b class="text-emerald-400 numbers-font">+${estimatedYield}</b></span>
+                </div>
+              </div>
+
+              <!-- Progress / Time Status -->
+              <div class="space-y-1.5">
+                <div class="flex justify-between text-[10px] font-bold">
+                  <span class="${isReady ? 'text-emerald-400 font-black' : 'text-slate-400'}">${isReady ? 'مكتمل النضج!' : 'قيد النمو...'}</span>
+                  <span class="numbers-font ${isReady ? 'text-emerald-400 font-black' : 'text-amber-400'}">${isReady ? '100%' : timeFormatted}</span>
+                </div>
+                <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                  <div class="h-full bg-gradient-to-r ${isReady ? 'from-emerald-500 to-teal-400' : 'from-amber-500 to-yellow-400'} transition-all duration-300" style="width: ${progress}%"></div>
+                </div>
+              </div>
+
+              <!-- Harvest / Growing Button -->
+              <div>
+                ${isReady ? `
+                  <button onclick="window.UI?.harvestSinglePlot(${idx})" type="button"
+                    class="w-full py-2 px-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 animate-pulse cursor-pointer active:scale-95">
+                    <i class="fa-solid fa-hand-holding-dollar text-xs"></i>
+                    <span>حصاد المحصول (+${estimatedYield})</span>
+                  </button>
+                ` : `
+                  <div class="w-full py-2 px-3 bg-slate-900/80 rounded-xl text-[10px] font-bold text-slate-400 border border-slate-800 text-center flex items-center justify-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                    <span>قيد الري والنمو...</span>
+                  </div>
+                `}
+              </div>
+            </div>
+          `;
+        }
+      });
+      plotsGrid.innerHTML = plotsHtml;
+    }
+
+    // 4. Quick Actions (Harvest All, Sell All, Plant All)
+    const btnHarvestAll = document.getElementById('btn-farm-harvest-all');
+    if (btnHarvestAll) {
+      btnHarvestAll.onclick = () => {
+        try {
+          const res = GameEngine.harvestAllFarmPlots();
+          playMenuSound('success');
+          showToast('حصاد شامل 🌾', `تم حصاد ${res.totalHarvestedPlots} حوض زراعي بنجاح وتخزينها بالمستودع!`, 'success');
+          renderFarmPanel();
+          renderStatsBar();
+        } catch (e) {
+          playMenuSound('error');
+          showToast('تعذر الحصاد', e.message, 'error');
+        }
+      };
+    }
+
+    const btnSellAll = document.getElementById('btn-farm-sell-all');
+    if (btnSellAll) {
+      btnSellAll.onclick = () => {
+        try {
+          const res = GameEngine.sellAllFarmCrops();
+          playCasinoSound('win');
+          showToast('بيع كامل المحصول 💰', `تم بيع كافة محاصيل المزرعة بإجمالي +${res.grandTotal.toLocaleString()} EGP نقداً!`, 'success');
+          renderFarmPanel();
+          renderStatsBar();
+        } catch (e) {
+          playMenuSound('error');
+          showToast('تعذر البيع', e.message, 'error');
+        }
+      };
+    }
+
+    const btnPlantAll = document.getElementById('btn-farm-plant-all');
+    if (btnPlantAll) {
+      btnPlantAll.onclick = () => {
+        const cropSelect = document.getElementById('farm-quick-crop-select');
+        const cropId = cropSelect ? cropSelect.value : 'wheat';
+        try {
+          const res = GameEngine.plantAllFarmPlots(cropId);
+          playMenuSound('click');
+          showToast('تمت الزراعة 🌱', `تم غرس ${res.plantedCount} حوض بمحصول "${res.crop.name}" بنجاح!`, 'success');
+          renderFarmPanel();
+          renderStatsBar();
+        } catch (e) {
+          playMenuSound('error');
+          showToast('تعذر الزراعة', e.message, 'error');
+        }
+      };
+    }
+
+    // 5. Render Crops Catalog
+    const cropsCatalog = document.getElementById('farm-crops-catalog');
+    if (cropsCatalog) {
+      let catalogHtml = '';
+      Object.keys(crops).forEach(cId => {
+        const c = crops[cId];
+        const mins = Math.floor(c.growSeconds / 60);
+        const timeText = mins > 0 ? (mins >= 60 ? `${(mins / 60).toFixed(1)} ساعة` : `${mins} دقيقة`) : `${c.growSeconds} ثانية`;
+        const netProfit = (c.baseYield * c.sellPrice) - c.seedCost;
+
+        catalogHtml += `
+          <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/90 hover:border-${c.color}-500/40 transition flex flex-col justify-between gap-3 shadow-md">
+            <div class="flex items-center gap-3">
+              <span class="w-12 h-12 rounded-2xl bg-${c.color}-500/20 border border-${c.color}-500/40 flex items-center justify-center text-${c.color}-400 text-2xl shadow-inner shrink-0">
+                <i class="${c.icon}"></i>
+              </span>
+              <div class="min-w-0 flex-1">
+                <h4 class="text-sm font-black text-white truncate">${c.name}</h4>
+                <p class="text-[10px] text-slate-400 mt-0.5 leading-snug">${c.desc}</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-center text-[10px] pt-2 border-t border-slate-800/80">
+              <div class="p-1.5 rounded-lg bg-slate-900 border border-slate-800">
+                <span class="text-slate-400 block">سعر البذرة</span>
+                <span class="numbers-font font-black text-yellow-400 text-xs">${c.seedCost.toLocaleString()} ج.م</span>
+              </div>
+              <div class="p-1.5 rounded-lg bg-slate-900 border border-slate-800">
+                <span class="text-slate-400 block">مدة النضج</span>
+                <span class="numbers-font font-black text-cyan-400 text-xs">${timeText}</span>
+              </div>
+              <div class="p-1.5 rounded-lg bg-slate-900 border border-slate-800">
+                <span class="text-slate-400 block">سعر بيع الوحدة</span>
+                <span class="numbers-font font-black text-emerald-400 text-xs">${c.sellPrice.toLocaleString()} ج.م</span>
+              </div>
+              <div class="p-1.5 rounded-lg bg-slate-900 border border-slate-800">
+                <span class="text-slate-400 block">صافي الربح/حوض</span>
+                <span class="numbers-font font-black text-emerald-300 text-xs">+${netProfit.toLocaleString()} ج.م</span>
+              </div>
+            </div>
+
+            <button onclick="window.UI?.plantFirstEmptyPlot('${c.id}')" type="button"
+              class="w-full py-2 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 hover:from-amber-500 hover:to-yellow-500 text-amber-300 hover:text-slate-950 font-black rounded-xl text-xs border border-amber-500/40 transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-seedling text-xs"></i>
+              <span>زرع في أول حوض فارغ</span>
+            </button>
+          </div>
+        `;
+      });
+      cropsCatalog.innerHTML = catalogHtml;
+    }
+
+    // 6. Render Upgrades Grid (Land, Irrigation, Fertilizer, Workers)
+    const upgradesGrid = document.getElementById('farm-upgrades-grid');
+    if (upgradesGrid) {
+      const nextLandLvl = (farm.landLevel || 1) + 1;
+      const landExp = config.landExpansions[nextLandLvl];
+
+      const nextIrrLvl = (farm.waterLevel || 1) + 1;
+      const irrDef = config.irrigation[nextIrrLvl];
+      const curIrr = config.irrigation[farm.waterLevel] || config.irrigation[1];
+
+      const nextFertLvl = (farm.fertilizerLevel || 1) + 1;
+      const fertDef = config.fertilizers[nextFertLvl];
+      const curFert = config.fertilizers[farm.fertilizerLevel] || config.fertilizers[1];
+
+      const canHireWorker = farm.workers < config.maxWorkers;
+
+      upgradesGrid.innerHTML = `
+        <!-- Land Card -->
+        <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-lg shrink-0">
+              <i class="fa-solid fa-layer-group"></i>
+            </span>
+            <div>
+              <h4 class="text-xs font-black text-white">توسيع واستصلاح الأرض</h4>
+              <span class="text-[10px] text-slate-400">الحالي: <b class="text-white numbers-font">${farm.maxPlots} أحواض</b></span>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-400 leading-snug">
+            ${landExp ? `توسيع المزرعة إلى ${landExp.plots} حوضاً لزيادة سعة المحاصيل بالتوازي.` : 'وصلت المزرعة للحد الأقصى من التوسعة (16 حوضاً).'}
+          </p>
+          ${landExp ? `
+            <button onclick="window.UI?.upgradeFarmLand()" type="button"
+              class="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer active:scale-95">
+              ترقية (${landExp.cost.toLocaleString()} ج.م)
+            </button>
+          ` : `
+            <div class="w-full py-2 rounded-xl bg-slate-900 text-slate-500 text-[10px] font-bold text-center border border-slate-800">
+              أقصى توسعة مكتملة ✓
+            </div>
+          `}
+        </div>
+
+        <!-- Irrigation Card -->
+        <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-lg shrink-0">
+              <i class="fa-solid fa-faucet-drip"></i>
+            </span>
+            <div>
+              <h4 class="text-xs font-black text-white">شبكة الري والمياه</h4>
+              <span class="text-[10px] text-cyan-400 font-bold">${curIrr.name}</span>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-400 leading-snug">
+            ${irrDef ? `ترقية إلى "${irrDef.name}" لتسريع نمو المحاصيل بنسبة ${((irrDef.speedBonus || 0) * 100).toFixed(0)}%.` : 'تم تركيب أحدث شبكة ري هيدروبونيك فائقة.'}
+          </p>
+          ${irrDef ? `
+            <button onclick="window.UI?.upgradeFarmIrrigation()" type="button"
+              class="w-full py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer active:scale-95">
+              ترقية (${irrDef.cost.toLocaleString()} ج.م)
+            </button>
+          ` : `
+            <div class="w-full py-2 rounded-xl bg-slate-900 text-slate-500 text-[10px] font-bold text-center border border-slate-800">
+              أحدث شبكة ري نشطة ✓
+            </div>
+          `}
+        </div>
+
+        <!-- Fertilizer Card -->
+        <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-lg shrink-0">
+              <i class="fa-solid fa-flask-vial"></i>
+            </span>
+            <div>
+              <h4 class="text-xs font-black text-white">جودة التربة والأسمدة</h4>
+              <span class="text-[10px] text-emerald-400 font-bold">${curFert.name}</span>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-400 leading-snug">
+            ${fertDef ? `ترقية إلى "${fertDef.name}" لزيادة كمية المحصول بنسبة +${((fertDef.yieldBonus || 0) * 100).toFixed(0)}%.` : 'تم اعتماد أحدث مخصبات النانو بيوتكنولوجي.'}
+          </p>
+          ${fertDef ? `
+            <button onclick="window.UI?.upgradeFarmFertilizer()" type="button"
+              class="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer active:scale-95">
+              ترقية (${fertDef.cost.toLocaleString()} ج.م)
+            </button>
+          ` : `
+            <div class="w-full py-2 rounded-xl bg-slate-900 text-slate-500 text-[10px] font-bold text-center border border-slate-800">
+              أعلى جودة أسمدة ✓
+            </div>
+          `}
+        </div>
+
+        <!-- Workers Card -->
+        <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 text-lg shrink-0">
+              <i class="fa-solid fa-robot"></i>
+            </span>
+            <div>
+              <h4 class="text-xs font-black text-white">عمال وأتمتة الحصاد</h4>
+              <span class="text-[10px] text-purple-300 font-bold">${farm.workers} / ${config.maxWorkers} عمال</span>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-400 leading-snug">
+            يقوم كل عامل بحصاد 4 أحواض زراعية آلياً فور اكتمال النضج ونقلها إلى مستودع المزرعة.
+          </p>
+          ${canHireWorker ? `
+            <button onclick="window.UI?.hireFarmWorker()" type="button"
+              class="w-full py-2 bg-purple-500 hover:bg-purple-400 text-white font-black rounded-xl text-xs transition cursor-pointer active:scale-95">
+              توظيف عامل (${config.workerCost.toLocaleString()} ج.م)
+            </button>
+          ` : `
+            <div class="w-full py-2 rounded-xl bg-slate-900 text-slate-500 text-[10px] font-bold text-center border border-slate-800">
+              الحد الأقصى للعمال مكتمل ✓
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    // 7. Render Warehouse & Stored Harvest
+    const warehouseGrid = document.getElementById('farm-warehouse-container');
+    if (warehouseGrid) {
+      let whHtml = '';
+      const inv = farm.inventory || {};
+      Object.keys(crops).forEach(cId => {
+        const c = crops[cId];
+        const qty = Number(inv[cId] || 0);
+        const totalVal = qty * c.sellPrice;
+
+        whHtml += `
+          <div class="p-3 rounded-2xl bg-slate-950/60 border ${qty > 0 ? 'border-amber-500/30' : 'border-slate-800/80'} flex flex-col justify-between text-center gap-2">
+            <div>
+              <span class="w-9 h-9 mx-auto rounded-xl bg-${c.color}-500/20 border border-${c.color}-500/40 flex items-center justify-center text-${c.color}-400 text-sm shadow-inner mb-1.5">
+                <i class="${c.icon}"></i>
+              </span>
+              <h5 class="text-[11px] font-bold text-white truncate">${c.name}</h5>
+              <span class="text-[10px] text-slate-400 block mt-0.5">المخزون: <b class="numbers-font ${qty > 0 ? 'text-amber-400 font-black' : 'text-slate-500'}">${qty.toLocaleString()}</b></span>
+              <span class="text-[9px] text-slate-500 block">القيمة: <b class="numbers-font text-emerald-400">${totalVal.toLocaleString()} ج.م</b></span>
+            </div>
+
+            <button ${qty <= 0 ? 'disabled' : `onclick="window.UI?.sellSingleFarmCrop('${c.id}')"`} type="button"
+              class="w-full py-1.5 rounded-lg text-[10px] font-black transition cursor-pointer ${qty > 0 ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+              بيع المحصول
+            </button>
+          </div>
+        `;
+      });
+      warehouseGrid.innerHTML = whHtml;
+    }
+  }
+
+  function quickPlantSinglePlot(plotIndex) {
+    const cropSelect = document.getElementById('farm-quick-crop-select');
+    const cropId = cropSelect ? cropSelect.value : 'wheat';
+    try {
+      playMenuSound('click');
+      const res = GameEngine.plantFarmCrop(plotIndex, cropId);
+      showToast('تمت الزراعة 🌱', `تم غرس الحوض #${plotIndex + 1} بمحصول "${res.crop.name}" بنجاح!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر الزراعة', e.message, 'error');
+    }
+  }
+
+  function harvestSinglePlot(plotIndex) {
+    try {
+      playMenuSound('success');
+      const res = GameEngine.harvestFarmCrop(plotIndex);
+      showToast('حصاد ناجح 🌾', `تم حصاد ${res.yield} وحدة من "${res.crop.name}" وتخزينها بنجاح!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر الحصاد', e.message, 'error');
+    }
+  }
+
+  function plantFirstEmptyPlot(cropId) {
+    const farmInfo = GameEngine.getFarmState();
+    if (!farmInfo || !farmInfo.farm || !farmInfo.farm.unlocked) {
+      showToast('المزرعة غير مفعلة', 'يجب تملك المزرعة واستصلاحها أولاً للبدء بالزراعة.', 'warning');
+      return;
+    }
+    const emptyIdx = farmInfo.farm.plots.findIndex(p => p === null);
+    if (emptyIdx === -1) {
+      showToast('الأحواض ممتلئة', 'جميع الأحواض مشغولة بمحاصيل حالياً! احصد أو وسّع الأرض أولاً.', 'warning');
+      return;
+    }
+    try {
+      playMenuSound('click');
+      const res = GameEngine.plantFarmCrop(emptyIdx, cropId);
+      showToast('تمت الزراعة 🌱', `تم غرس الحوض #${emptyIdx + 1} بمحصول "${res.crop.name}" بنجاح!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر الزراعة', e.message, 'error');
+    }
+  }
+
+  function sellSingleFarmCrop(cropId) {
+    try {
+      playCasinoSound('win');
+      const res = GameEngine.sellFarmCrop(cropId);
+      showToast('تم البيع 💰', `تم بيع ${res.qty.toLocaleString()} وحدة من "${res.crop.name}" بقيمة +${res.totalPrice.toLocaleString()} EGP نقداً!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر البيع', e.message, 'error');
+    }
+  }
+
+  function upgradeFarmLand() {
+    try {
+      playMenuSound('click');
+      const res = GameEngine.upgradeFarmLand();
+      showToast('توسيع واستصلاح 🏞️', `مبروك! تم استصلاح وتوسيع رقعة المزرعة بنجاح إلى (${res.maxPlots} أحواض)!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر التوسيع', e.message, 'error');
+    }
+  }
+
+  function upgradeFarmIrrigation() {
+    try {
+      playMenuSound('click');
+      const res = GameEngine.upgradeFarmIrrigation();
+      showToast('ترقية شبكة الري 💧', `تم تركيب "${res.name}" لتسريع نمو المحاصيل بنسبة ${(res.speedBonus * 100).toFixed(0)}%!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر الترقية', e.message, 'error');
+    }
+  }
+
+  function upgradeFarmFertilizer() {
+    try {
+      playMenuSound('click');
+      const res = GameEngine.upgradeFarmFertilizer();
+      showToast('ترقية المخصبات 🌱', `تم اعتماد "${res.name}" لزيادة إنتاج المحاصيل بنسبة +${(res.yieldBonus * 100).toFixed(0)}%!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر الترقية', e.message, 'error');
+    }
+  }
+
+  function hireFarmWorker() {
+    try {
+      playMenuSound('click');
+      const res = GameEngine.hireFarmWorker();
+      showToast('توظيف عامل 👨‍🌾', `تم توظيف العامل #${res.workers} لمراقبة وحصاد المحاصيل آلياً فور نضوجها!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر التوظيف', e.message, 'error');
+    }
+  }
+
+  // ─────────────────────────────────────────────
   //  TOP-UP & SUPPORT STORE CONTROLLER (متجر الشحن والدعم)
   // ─────────────────────────────────────────────
   let _activeSelectedTopupPkg = null;
@@ -19940,7 +20513,16 @@ const UIController = (() => {
     openChatFrameSelectorModal,
     closeChatFrameSelectorModal,
     selectChatFrame,
-    updateCurrentChatFrameBadge
+    updateCurrentChatFrameBadge,
+    renderFarmPanel,
+    quickPlantSinglePlot,
+    harvestSinglePlot,
+    plantFirstEmptyPlot,
+    sellSingleFarmCrop,
+    upgradeFarmLand,
+    upgradeFarmIrrigation,
+    upgradeFarmFertilizer,
+    hireFarmWorker
   };
 
 })();

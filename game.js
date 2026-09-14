@@ -868,6 +868,100 @@ const GameEngine = (() => {
     }
   };
 
+  // --- مجمع المزرعة الاستثمارية والإنتاج الزراعي (Agro Farm Tycoon) ---
+  const FARM_CONFIG = {
+    unlockCost: 25000,
+    basePlots: 4,
+    landExpansions: {
+      2: { plots: 8, cost: 100000, name: 'استصلاح القطعة الشرقية (8 أحواض)' },
+      3: { plots: 12, cost: 500000, name: 'ضم بساتين الواحة (12 حوضاً)' },
+      4: { plots: 16, cost: 2000000, name: 'المجمع الزراعي العملاق (16 حوضاً)' }
+    },
+    irrigation: {
+      1: { name: 'ري تقليدي يدوي', cost: 0, speedBonus: 0, icon: 'fa-solid fa-bucket', desc: 'الزمن الاعتيادي لنمو المحاصيل' },
+      2: { name: 'شبكة رشاشات مائية', cost: 50000, speedBonus: 0.15, icon: 'fa-solid fa-shower', desc: 'تسريع نمو المحاصيل بنسبة 15%' },
+      3: { name: 'ري بالتنقيط المحوسب', cost: 250000, speedBonus: 0.35, icon: 'fa-solid fa-faucet-drip', desc: 'تسريع نمو المحاصيل بنسبة 35%' },
+      4: { name: 'محطة هيدروبونيك رقمية فائقة', cost: 1000000, speedBonus: 0.55, icon: 'fa-solid fa-water', desc: 'تسريع نمو المحاصيل بنسبة 55%' }
+    },
+    fertilizers: {
+      1: { name: 'تربة اعتيادية', cost: 0, yieldBonus: 0, icon: 'fa-solid fa-mound', desc: 'الإنتاج الطبيعي للمحصول' },
+      2: { name: 'سماد عضوي نباتي', cost: 40000, yieldBonus: 0.25, icon: 'fa-solid fa-leaf', desc: 'زيادة كمية المحصول بنسبة +25%' },
+      3: { name: 'سماد نيتروجيني فائق NPK', cost: 200000, yieldBonus: 0.60, icon: 'fa-solid fa-flask-vial', desc: 'زيادة كمية المحصول بنسبة +60%' },
+      4: { name: 'مخصبات نانو بيوتكنولوجي', cost: 800000, yieldBonus: 1.20, icon: 'fa-solid fa-dna', desc: 'مضاعفة كمية المحصول بنسبة +120%' }
+    },
+    workerCost: 30000,
+    maxWorkers: 4
+  };
+
+  const FARM_CROPS = {
+    wheat: {
+      id: 'wheat',
+      name: 'القمح الذهبي',
+      icon: 'fa-solid fa-wheat-awn',
+      color: 'amber',
+      seedCost: 50,
+      growSeconds: 60,
+      baseYield: 10,
+      sellPrice: 10,
+      desc: 'محصول سريع النمو يوفر سيولة نقدية لحظية وسريعة للمزرعة.'
+    },
+    tomato: {
+      id: 'tomato',
+      name: 'طماطم وخضار طازجة',
+      icon: 'fa-solid fa-carrot',
+      color: 'rose',
+      seedCost: 250,
+      growSeconds: 180,
+      baseYield: 15,
+      sellPrice: 35,
+      desc: 'سلة خضراوات طازجة ذات طلب عالي في أسواق التجزئة.'
+    },
+    strawberry: {
+      id: 'strawberry',
+      name: 'فراولة عضوية فاخرة',
+      icon: 'fa-solid fa-apple-whole',
+      color: 'red',
+      seedCost: 1000,
+      growSeconds: 480,
+      baseYield: 20,
+      sellPrice: 120,
+      desc: 'محصول صيفي فاخر يباع بأسعار مرتفعة للفنادق والمطاعم.'
+    },
+    coffee: {
+      id: 'coffee',
+      name: 'حبوب البن العربي',
+      icon: 'fa-solid fa-mug-hot',
+      color: 'yellow',
+      seedCost: 5000,
+      growSeconds: 1200,
+      baseYield: 25,
+      sellPrice: 500,
+      desc: 'بن يمني وأثيوبي أصيل ذو عائد استثماري مجزٍ لكبار المستثمرين.'
+    },
+    dates: {
+      id: 'dates',
+      name: 'نخيل تمور المجدول',
+      icon: 'fa-solid fa-tree',
+      color: 'emerald',
+      seedCost: 25000,
+      growSeconds: 3600,
+      baseYield: 30,
+      sellPrice: 2500,
+      desc: 'تمور المجدول الملكية الفاخرة المخصصة للتصدير الخارجي.'
+    },
+    saffron: {
+      id: 'saffron',
+      name: 'الزعفران الإمبراطوري',
+      icon: 'fa-solid fa-spa',
+      color: 'purple',
+      seedCost: 150000,
+      growSeconds: 10800,
+      baseYield: 40,
+      sellPrice: 12000,
+      desc: 'الذهب الأحمر وأغلى توابل الأرض، أرباح خيالية واستثنائية.'
+    }
+  };
+
   // --- Initial Default Player State ---
   const INITIAL_STATE = {
     cash: 300,
@@ -969,6 +1063,17 @@ const GameEngine = (() => {
       semiconductor: { unlocked: false, stage1: 0, stage2: 0, stage3: 0, logistics: 0, readyStock: 0, totalEarned: 0, totalExported: 0 },
       petrochemical: { unlocked: false, stage1: 0, stage2: 0, stage3: 0, logistics: 0, readyStock: 0, totalEarned: 0, totalExported: 0 },
       aerospace: { unlocked: false, stage1: 0, stage2: 0, stage3: 0, logistics: 0, readyStock: 0, totalEarned: 0, totalExported: 0 }
+    },
+    farm: {
+      unlocked: false,
+      landLevel: 1,
+      maxPlots: 4,
+      waterLevel: 1,
+      fertilizerLevel: 1,
+      workers: 0,
+      plots: [null, null, null, null],
+      inventory: {},
+      stats: { totalHarvested: 0, totalRevenue: 0 }
     },
     workCooldownUntil: 0,
     overtimeCooldownUntil: 0,
@@ -1444,13 +1549,30 @@ const GameEngine = (() => {
       }
     }
 
+    // 5.5 Agro Farm Tycoon (المزرعة الاستثمارية)
+    let farmTotal = 0;
+    if (playerState.farm && playerState.farm.unlocked && typeof FARM_CONFIG !== 'undefined') {
+      farmTotal += (playerState.farm.maxPlots || 4) * 25000;
+      farmTotal += (playerState.farm.waterLevel || 1) * 40000;
+      farmTotal += (playerState.farm.fertilizerLevel || 1) * 35000;
+      farmTotal += (playerState.farm.workers || 0) * 30000;
+      if (playerState.farm.inventory && typeof FARM_CROPS !== 'undefined') {
+        Object.keys(playerState.farm.inventory).forEach(cId => {
+          const qty = Number(playerState.farm.inventory[cId] || 0);
+          if (qty > 0 && FARM_CROPS[cId]) {
+            farmTotal += qty * (FARM_CROPS[cId].sellPrice || 10);
+          }
+        });
+      }
+    }
+
     // 6. Liabilities: Active bank loan liabilities (True Net Worth = Assets - Liabilities)
     let loanDebt = 0;
     if (playerState.activeLoan) {
       loanDebt = Number(playerState.activeLoan.totalDue || playerState.activeLoan.amount || 0);
     }
 
-    const total = Math.max(0, Math.floor(liquidTotal + assetsTotal + stocksTotal + investmentsTotal + industryTotal + tradeTotal - loanDebt));
+    const total = Math.max(0, Math.floor(liquidTotal + assetsTotal + stocksTotal + investmentsTotal + industryTotal + tradeTotal + farmTotal - loanDebt));
 
     return {
       cash,
@@ -1462,6 +1584,7 @@ const GameEngine = (() => {
       investmentsTotal,
       industryTotal,
       tradeTotal,
+      farmTotal,
       loanDebt,
       total
     };
@@ -2503,6 +2626,41 @@ const GameEngine = (() => {
           }
         }
       });
+    }
+
+    // 6.10 Agro Farm Tycoon (المزرعة الاستثمارية): Real-time crop growth & auto-harvesters
+    if (state.farm && state.farm.unlocked && Array.isArray(state.farm.plots)) {
+      const nowMs = getTrustedNow();
+      let farmHarvestedAuto = 0;
+      const workers = Number(state.farm.workers || 0);
+      const maxAutoPlots = workers * 4; // Each worker automates up to 4 plots
+
+      for (let i = 0; i < state.farm.plots.length; i++) {
+        const plot = state.farm.plots[i];
+        if (plot && !plot.ready && nowMs >= (plot.readyAt || 0)) {
+          plot.ready = true;
+        }
+        // If ready and covered by workers automation
+        if (plot && plot.ready && i < maxAutoPlots) {
+          const crop = FARM_CROPS[plot.cropId];
+          if (crop) {
+            const fertDef = FARM_CONFIG.fertilizers[state.farm.fertilizerLevel] || FARM_CONFIG.fertilizers[1];
+            const yieldBonus = fertDef ? (fertDef.yieldBonus || 0) : 0;
+            const finalYield = Math.round(crop.baseYield * (1 + yieldBonus));
+
+            if (!state.farm.inventory) state.farm.inventory = {};
+            state.farm.inventory[crop.id] = (state.farm.inventory[crop.id] || 0) + finalYield;
+            if (!state.farm.stats) state.farm.stats = { totalHarvested: 0, totalRevenue: 0 };
+            state.farm.stats.totalHarvested = (state.farm.stats.totalHarvested || 0) + finalYield;
+            farmHarvestedAuto += finalYield;
+          }
+          state.farm.plots[i] = null; // Auto-harvested!
+        }
+      }
+
+      if (farmHarvestedAuto > 0) {
+        updates.farmHarvestedAuto = farmHarvestedAuto;
+      }
     }
 
     // 7. Unified Stock Market Synchronization (Deterministic & Global for all players)
@@ -5627,6 +5785,436 @@ const GameEngine = (() => {
     };
   }
 
+  // ─────────────────────────────────────────────────────────
+  // 🌾 AGRO FARM TYCOON (المزرعة الاستثمارية) METHODS
+  // ─────────────────────────────────────────────────────────
+  function ensureFarmState() {
+    if (!state) return null;
+    if (!state.farm || typeof state.farm !== 'object') {
+      state.farm = {
+        unlocked: false,
+        landLevel: 1,
+        maxPlots: 4,
+        waterLevel: 1,
+        fertilizerLevel: 1,
+        workers: 0,
+        plots: [null, null, null, null],
+        inventory: {},
+        stats: { totalHarvested: 0, totalRevenue: 0 }
+      };
+    }
+    const f = state.farm;
+    if (typeof f.landLevel !== 'number' || f.landLevel < 1) f.landLevel = 1;
+    if (typeof f.maxPlots !== 'number' || f.maxPlots < 4) f.maxPlots = 4;
+    if (typeof f.waterLevel !== 'number' || f.waterLevel < 1) f.waterLevel = 1;
+    if (typeof f.fertilizerLevel !== 'number' || f.fertilizerLevel < 1) f.fertilizerLevel = 1;
+    if (typeof f.workers !== 'number' || f.workers < 0) f.workers = 0;
+    if (!Array.isArray(f.plots)) f.plots = [];
+    while (f.plots.length < f.maxPlots) f.plots.push(null);
+    if (f.plots.length > f.maxPlots) f.plots = f.plots.slice(0, f.maxPlots);
+    if (!f.inventory || typeof f.inventory !== 'object') f.inventory = {};
+    if (!f.stats || typeof f.stats !== 'object') f.stats = { totalHarvested: 0, totalRevenue: 0 };
+    return f;
+  }
+
+  function getFarmState() {
+    const f = ensureFarmState();
+    if (!f) return null;
+    const now = getTrustedNow();
+
+    const plotsInfo = (f.plots || []).map((plot, idx) => {
+      if (!plot) return null;
+      const remainingMs = Math.max(0, (plot.readyAt || 0) - now);
+      const isReady = remainingMs <= 0;
+      const progress = plot.durationMs > 0 ? Math.min(100, Math.max(0, Math.round(((plot.durationMs - remainingMs) / plot.durationMs) * 100))) : 100;
+      return {
+        ...plot,
+        index: idx,
+        isReady,
+        remainingMs,
+        progress,
+        crop: FARM_CROPS[plot.cropId] || null
+      };
+    });
+
+    return {
+      farm: f,
+      plots: plotsInfo,
+      config: FARM_CONFIG,
+      crops: FARM_CROPS,
+      now
+    };
+  }
+
+  function unlockFarm() {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك استصلاح مزرعة الآن.");
+    const f = ensureFarmState();
+    if (f.unlocked) throw new Error("المزرعة الاستثمارية مفتوحة ومرخصة بالفعل.");
+
+    const cost = FARM_CONFIG.unlockCost;
+    const totalFunds = (state.cash || 0) + (state.bank || 0);
+    if (totalFunds < cost) {
+      throw new Error(`كلفة استصلاح وتملك المزرعة الأولى (4 أحواض زراعية) هي ${cost.toLocaleString()} EGP. رصيدك لا يكفي.`);
+    }
+
+    if ((state.cash || 0) >= cost) {
+      state.cash -= cost;
+    } else {
+      const rem = cost - (state.cash || 0);
+      state.cash = 0;
+      state.bank -= rem;
+    }
+
+    f.unlocked = true;
+    recordPlayerActivity('استصلاح مزرعة استثمارية 🌾', `شراء وتملك المزرعة الاستثمارية الأولى (4 أحواض) بتكلفة ${cost.toLocaleString()} EGP!`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+    return f;
+  }
+
+  function plantFarmCrop(plotIndex, cropId) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك الزراعة الآن.");
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("يجب تملك المزرعة واستصلاحها أولاً قبل بدء الزراعة.");
+    if (plotIndex < 0 || plotIndex >= f.maxPlots) throw new Error("رقم الحوض الزراعي غير صالح.");
+    if (f.plots[plotIndex] !== null) throw new Error("هذا الحوض مشغول بمحصول بالفعل.");
+
+    const crop = FARM_CROPS[cropId];
+    if (!crop) throw new Error("نوع المحصول أو البذرة غير صالح.");
+
+    const cost = crop.seedCost;
+    const totalFunds = (state.cash || 0) + (state.bank || 0);
+    if (totalFunds < cost) {
+      throw new Error(`كلفة بذور "${crop.name}" هي ${cost.toLocaleString()} EGP. رصيدك لا يكفي.`);
+    }
+
+    if ((state.cash || 0) >= cost) {
+      state.cash -= cost;
+    } else {
+      const rem = cost - (state.cash || 0);
+      state.cash = 0;
+      state.bank -= rem;
+    }
+
+    const irrigationDef = FARM_CONFIG.irrigation[f.waterLevel] || FARM_CONFIG.irrigation[1];
+    const speedBonus = irrigationDef ? (irrigationDef.speedBonus || 0) : 0;
+    const durationMs = Math.max(5000, Math.round(crop.growSeconds * (1 - speedBonus) * 1000));
+    const now = getTrustedNow();
+
+    f.plots[plotIndex] = {
+      cropId,
+      plantedAt: now,
+      readyAt: now + durationMs,
+      durationMs,
+      ready: false
+    };
+
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+    return {
+      plotIndex,
+      crop,
+      readyAt: f.plots[plotIndex].readyAt,
+      durationMs
+    };
+  }
+
+  function plantAllFarmPlots(cropId) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("يجب تملك المزرعة أولاً.");
+    const crop = FARM_CROPS[cropId];
+    if (!crop) throw new Error("نوع المحصول غير صالح.");
+
+    let plantedCount = 0;
+    for (let i = 0; i < f.maxPlots; i++) {
+      if (f.plots[i] === null) {
+        const totalFunds = (state.cash || 0) + (state.bank || 0);
+        if (totalFunds < crop.seedCost) break;
+        plantFarmCrop(i, cropId);
+        plantedCount++;
+      }
+    }
+
+    if (plantedCount === 0) {
+      throw new Error("لا توجد أحواض زراعية فارغة أو رصيدك لا يكفي لشراء البذور.");
+    }
+
+    return { plantedCount, crop };
+  }
+
+  function harvestFarmCrop(plotIndex) {
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
+    if (plotIndex < 0 || plotIndex >= f.maxPlots) throw new Error("رقم الحوض غير صالح.");
+    const plot = f.plots[plotIndex];
+    if (!plot) throw new Error("الحوض الزراعي فارغ.");
+
+    const now = getTrustedNow();
+    if (now < (plot.readyAt || 0)) {
+      const remainingSec = Math.ceil(((plot.readyAt || 0) - now) / 1000);
+      throw new Error(`المحصول لا يزال قيد النمو! يتبقى ${remainingSec} ثانية على اكتمال النضج.`);
+    }
+
+    const crop = FARM_CROPS[plot.cropId];
+    if (!crop) {
+      f.plots[plotIndex] = null;
+      throw new Error("بيانات المحصول تالفة، تم تفريغ الحوض.");
+    }
+
+    const fertDef = FARM_CONFIG.fertilizers[f.fertilizerLevel] || FARM_CONFIG.fertilizers[1];
+    const yieldBonus = fertDef ? (fertDef.yieldBonus || 0) : 0;
+    const finalYield = Math.round(crop.baseYield * (1 + yieldBonus));
+
+    if (!f.inventory) f.inventory = {};
+    f.inventory[crop.id] = (f.inventory[crop.id] || 0) + finalYield;
+    f.stats.totalHarvested = (f.stats.totalHarvested || 0) + finalYield;
+
+    f.plots[plotIndex] = null;
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+
+    return {
+      plotIndex,
+      crop,
+      yield: finalYield,
+      inventoryTotal: f.inventory[crop.id]
+    };
+  }
+
+  function harvestAllFarmPlots() {
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
+    const now = getTrustedNow();
+    let totalHarvestedCount = 0;
+    const harvestedSummary = {};
+
+    for (let i = 0; i < f.maxPlots; i++) {
+      const plot = f.plots[i];
+      if (plot && now >= (plot.readyAt || 0)) {
+        const crop = FARM_CROPS[plot.cropId];
+        if (crop) {
+          const fertDef = FARM_CONFIG.fertilizers[f.fertilizerLevel] || FARM_CONFIG.fertilizers[1];
+          const yieldBonus = fertDef ? (fertDef.yieldBonus || 0) : 0;
+          const finalYield = Math.round(crop.baseYield * (1 + yieldBonus));
+
+          f.inventory[crop.id] = (f.inventory[crop.id] || 0) + finalYield;
+          f.stats.totalHarvested = (f.stats.totalHarvested || 0) + finalYield;
+          harvestedSummary[crop.name] = (harvestedSummary[crop.name] || 0) + finalYield;
+          totalHarvestedCount++;
+        }
+        f.plots[i] = null;
+      }
+    }
+
+    if (totalHarvestedCount === 0) {
+      throw new Error("لا توجد أي محاصيل جاهزة ومكتملة النضج للحصاد حالياً.");
+    }
+
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+    return {
+      totalHarvestedPlots: totalHarvestedCount,
+      summary: harvestedSummary
+    };
+  }
+
+  function upgradeFarmLand() {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("يجب تملك المزرعة أولاً.");
+    const nextLvl = (f.landLevel || 1) + 1;
+    const expansion = FARM_CONFIG.landExpansions[nextLvl];
+    if (!expansion) throw new Error("وصلت المزرعة إلى الحد الأقصى من التوسعة والاستصلاح (16 حوضاً).");
+
+    const cost = expansion.cost;
+    const totalFunds = (state.cash || 0) + (state.bank || 0);
+    if (totalFunds < cost) {
+      throw new Error(`كلفة ${expansion.name} هي ${cost.toLocaleString()} EGP. رصيدك لا يكفي.`);
+    }
+
+    if ((state.cash || 0) >= cost) {
+      state.cash -= cost;
+    } else {
+      const rem = cost - (state.cash || 0);
+      state.cash = 0;
+      state.bank -= rem;
+    }
+
+    f.landLevel = nextLvl;
+    f.maxPlots = expansion.plots;
+    while (f.plots.length < f.maxPlots) f.plots.push(null);
+
+    recordPlayerActivity('توسيع واستصلاح مزرعة 🏞️', `توسيع رقعة المزرعة إلى (${f.maxPlots} أحواض) بتكلفة ${cost.toLocaleString()} EGP`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+    return {
+      landLevel: f.landLevel,
+      maxPlots: f.maxPlots,
+      name: expansion.name
+    };
+  }
+
+  function upgradeFarmIrrigation() {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("يجب تملك المزرعة أولاً.");
+    const nextLvl = (f.waterLevel || 1) + 1;
+    const irDef = FARM_CONFIG.irrigation[nextLvl];
+    if (!irDef) throw new Error("وصلت شبكة الري إلى أحدث مستوى تكنولوجي متاح.");
+
+    const cost = irDef.cost;
+    const totalFunds = (state.cash || 0) + (state.bank || 0);
+    if (totalFunds < cost) {
+      throw new Error(`كلفة ترقية شبكة الري إلى "${irDef.name}" هي ${cost.toLocaleString()} EGP. رصيدك لا يكفي.`);
+    }
+
+    if ((state.cash || 0) >= cost) {
+      state.cash -= cost;
+    } else {
+      const rem = cost - (state.cash || 0);
+      state.cash = 0;
+      state.bank -= rem;
+    }
+
+    f.waterLevel = nextLvl;
+    recordPlayerActivity('ترقية شبكة الري 💧', `تركيب وتطوير "${irDef.name}" لتسريع نمو المحاصيل بنسبة ${(irDef.speedBonus * 100).toFixed(0)}%! بتكلفة ${cost.toLocaleString()} EGP`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+    return {
+      waterLevel: f.waterLevel,
+      name: irDef.name,
+      speedBonus: irDef.speedBonus
+    };
+  }
+
+  function upgradeFarmFertilizer() {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("يجب تملك المزرعة أولاً.");
+    const nextLvl = (f.fertilizerLevel || 1) + 1;
+    const fertDef = FARM_CONFIG.fertilizers[nextLvl];
+    if (!fertDef) throw new Error("وصلت تربة ومخصبات المزرعة لأعلى مستوى جودة علمي.");
+
+    const cost = fertDef.cost;
+    const totalFunds = (state.cash || 0) + (state.bank || 0);
+    if (totalFunds < cost) {
+      throw new Error(`كلفة استخدام "${fertDef.name}" هي ${cost.toLocaleString()} EGP. رصيدك لا يكفي.`);
+    }
+
+    if ((state.cash || 0) >= cost) {
+      state.cash -= cost;
+    } else {
+      const rem = cost - (state.cash || 0);
+      state.cash = 0;
+      state.bank -= rem;
+    }
+
+    f.fertilizerLevel = nextLvl;
+    recordPlayerActivity('ترقية مخصبات المزرعة 🌱', `اعتماد "${fertDef.name}" لمضاعفة المحصول بنسبة +${(fertDef.yieldBonus * 100).toFixed(0)}%! بتكلفة ${cost.toLocaleString()} EGP`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+    return {
+      fertilizerLevel: f.fertilizerLevel,
+      name: fertDef.name,
+      yieldBonus: fertDef.yieldBonus
+    };
+  }
+
+  function hireFarmWorker() {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("يجب تملك المزرعة أولاً.");
+    if (f.workers >= FARM_CONFIG.maxWorkers) {
+      throw new Error("وصلت إلى الحد الأقصى المسموح من عمال المزرعة (4 عمال).");
+    }
+
+    const cost = FARM_CONFIG.workerCost;
+    const totalFunds = (state.cash || 0) + (state.bank || 0);
+    if (totalFunds < cost) {
+      throw new Error(`كلفة توظيف وتجهيز عامل مزرعة آلي هي ${cost.toLocaleString()} EGP. رصيدك لا يكفي.`);
+    }
+
+    if ((state.cash || 0) >= cost) {
+      state.cash -= cost;
+    } else {
+      const rem = cost - (state.cash || 0);
+      state.cash = 0;
+      state.bank -= rem;
+    }
+
+    f.workers++;
+    recordPlayerActivity('توظيف عامل مزرعة 👨‍🌾', `توظيف عامل للمزرعة لمراقبة وحصاد المحاصيل تلقائياً بتكلفة ${cost.toLocaleString()} EGP`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+    return {
+      workers: f.workers
+    };
+  }
+
+  function sellFarmCrop(cropId) {
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
+    const crop = FARM_CROPS[cropId];
+    if (!crop) throw new Error("نوع المحصول غير صالح.");
+
+    const qty = Number((f.inventory && f.inventory[cropId]) || 0);
+    if (qty <= 0) {
+      throw new Error(`مستودع المزرعة لا يحتوي على أي مخزون من "${crop.name}".`);
+    }
+
+    const totalPrice = qty * crop.sellPrice;
+    f.inventory[cropId] = 0;
+    state.cash = (state.cash || 0) + totalPrice;
+    f.stats.totalRevenue = (f.stats.totalRevenue || 0) + totalPrice;
+
+    recordPlayerActivity('بيع محصول زراعي 💰', `بيع ${qty.toLocaleString()} وحدة من "${crop.name}" بسعر ${totalPrice.toLocaleString()} EGP نقداً!`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+    return {
+      crop,
+      qty,
+      totalPrice
+    };
+  }
+
+  function sellAllFarmCrops() {
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
+    if (!f.inventory) f.inventory = {};
+
+    let grandTotal = 0;
+    let itemsSold = 0;
+    const soldBreakdown = [];
+
+    Object.keys(f.inventory).forEach(cId => {
+      const qty = Number(f.inventory[cId] || 0);
+      if (qty > 0 && FARM_CROPS[cId]) {
+        const p = qty * FARM_CROPS[cId].sellPrice;
+        grandTotal += p;
+        itemsSold += qty;
+        soldBreakdown.push({ crop: FARM_CROPS[cId], qty, price: p });
+        f.inventory[cId] = 0;
+      }
+    });
+
+    if (grandTotal <= 0) {
+      throw new Error("لا توجد محاصيل مخزنة في مستودع المزرعة لبيعها حالياً.");
+    }
+
+    state.cash = (state.cash || 0) + grandTotal;
+    f.stats.totalRevenue = (f.stats.totalRevenue || 0) + grandTotal;
+
+    recordPlayerActivity('بيع كافة محاصيل المزرعة 💰', `بيع كامل محصول المزرعة المخزن (${itemsSold.toLocaleString()} وحدة) بإجمالي عائد +${grandTotal.toLocaleString()} EGP نقداً!`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+    return {
+      grandTotal,
+      itemsSold,
+      soldBreakdown
+    };
+  }
+
   function sanitizeGameState() {
     if (!state) return;
     const numFields = ['cash','bank','dirtyCash','netWorth','xp','dailyCasinoNetProfit','dailyCasinoResetAt'];
@@ -5931,6 +6519,23 @@ const GameEngine = (() => {
     upgradeIndustryStage,
     collectIndustryRevenue,
     transferIndustryGoodsToTradeExport,
+
+    // Agro Farm Tycoon (المزرعة الاستثمارية) Exports
+    FARM_CONFIG,
+    FARM_CROPS,
+    ensureFarmState,
+    getFarmState,
+    unlockFarm,
+    plantFarmCrop,
+    plantAllFarmPlots,
+    harvestFarmCrop,
+    harvestAllFarmPlots,
+    upgradeFarmLand,
+    upgradeFarmIrrigation,
+    upgradeFarmFertilizer,
+    hireFarmWorker,
+    sellFarmCrop,
+    sellAllFarmCrops,
 
     // State Reader (read-only snapshot for UI queries)
     getState: () => state
