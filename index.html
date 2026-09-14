@@ -390,23 +390,67 @@
 
     </main>
 
-    <!-- Bottom Footer Credits & Server Status -->
+    <!-- Bottom Footer Credits, Compliance & Egyptian Address -->
     <footer
-      class="relative z-10 flex flex-col sm:flex-row items-center justify-between w-full max-w-6xl mx-auto py-3 text-slate-500 text-[11px] border-t border-slate-900/60 gap-2">
-      <div class="flex items-center gap-2">
-        <span>© 2026 مؤسسة رأس المال (Ras ALmal) المحدودة</span>
-        <span>•</span>
-        <span class="text-yellow-500/80">جميع الحقوق محفوظة</span>
+      class="relative z-10 w-full max-w-6xl mx-auto py-5 text-slate-500 text-[11px] border-t border-slate-900/80 space-y-3">
+      
+      <!-- Top Row: Legal & Policy Quick Links -->
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-900/60 pb-3">
+        <div class="flex flex-wrap items-center gap-3 text-slate-400">
+          <button type="button" onclick="window.UI?.openLegalModal?.('terms')"
+            class="hover:text-yellow-400 transition cursor-pointer flex items-center gap-1 font-bold">
+            <i class="fa-solid fa-file-contract text-yellow-500/80 text-xs"></i>
+            <span>الشروط والأحكام (Terms & Conditions)</span>
+          </button>
+          <span>•</span>
+          <button type="button" onclick="window.UI?.openLegalModal?.('refund')"
+            class="hover:text-yellow-400 transition cursor-pointer flex items-center gap-1 font-bold">
+            <i class="fa-solid fa-arrow-rotate-left text-yellow-500/80 text-xs"></i>
+            <span>سياسة الاسترجاع (Refund Policy)</span>
+          </button>
+          <span>•</span>
+          <button type="button" onclick="window.UI?.openLegalModal?.('privacy')"
+            class="hover:text-yellow-400 transition cursor-pointer flex items-center gap-1 font-bold">
+            <i class="fa-solid fa-user-shield text-yellow-500/80 text-xs"></i>
+            <span>سياسة الخصوصية (Privacy Policy)</span>
+          </button>
+          <span>•</span>
+          <button type="button" onclick="window.UI?.openLegalModal?.('contact')"
+            class="hover:text-yellow-400 transition cursor-pointer flex items-center gap-1 font-bold">
+            <i class="fa-solid fa-headset text-yellow-500/80 text-xs"></i>
+            <span>اتصل بنا (Contact Us)</span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2 text-slate-400 font-medium">
+          <i class="fa-solid fa-shield-check text-emerald-400 text-xs"></i>
+          <span>جميع المعاملات تتم بالجنيه المصري (EGP) ومعتمدة</span>
+        </div>
       </div>
-      <div class="flex items-center gap-3">
-        <span class="flex items-center gap-1">
-          <i class="fa-solid fa-shield-halved text-emerald-400 text-[10px]"></i>
-          حفظ سحابي مشفر
-        </span>
-        <span>•</span>
-        <span class="text-slate-400">Press <kbd
-            class="px-1.5 py-0.5 bg-slate-900 border border-slate-800 rounded text-[10px] text-yellow-400 font-mono">ESC</kbd>
-          للقائمة</span>
+
+      <!-- Bottom Row: Company Info & Egyptian Address & Phone -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-400 text-[11px]">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="font-bold text-slate-300">© 2026 مؤسسة رأس المال (Ras ALmal) المحدودة.</span>
+          <span>جميع الحقوق محفوظة.</span>
+          <span>•</span>
+          <span class="flex items-center gap-1 text-slate-300">
+            <i class="fa-solid fa-location-dot text-rose-400 text-xs"></i>
+            <span>جمهورية مصر العربية - محافظة الدقهلية - المنصورة</span>
+          </span>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <a href="tel:+201044119920" class="hover:text-amber-400 transition flex items-center gap-1 text-slate-300">
+            <i class="fa-solid fa-phone text-emerald-400 text-xs"></i>
+            <span dir="ltr">+20 104 411 9920</span>
+          </a>
+          <span>•</span>
+          <a href="mailto:rasalmal.support@gmail.com" class="hover:text-amber-400 transition flex items-center gap-1 text-slate-300">
+            <i class="fa-solid fa-envelope text-sky-400 text-xs"></i>
+            <span>rasalmal.support@gmail.com</span>
+          </a>
+        </div>
       </div>
     </footer>
 
@@ -2005,8 +2049,19 @@
         </nav>
       </div>
 
-      <div class="text-[10px] text-slate-500 border-t border-slate-800 pt-4 text-center">
-        الإصدار 2.5.0 &copy; 2026<br>مؤسسة رأس المال (Ras ALmal) المحدودة
+      <div class="text-[10px] text-slate-500 border-t border-slate-800 pt-3 text-center space-y-1.5">
+        <div class="flex flex-wrap items-center justify-center gap-2 text-[10px] text-slate-400">
+          <button type="button" onclick="window.UI?.openLegalModal?.('terms')" class="hover:text-yellow-400 transition cursor-pointer">الشروط</button>
+          <span>•</span>
+          <button type="button" onclick="window.UI?.openLegalModal?.('refund')" class="hover:text-yellow-400 transition cursor-pointer">الاسترجاع</button>
+          <span>•</span>
+          <button type="button" onclick="window.UI?.openLegalModal?.('privacy')" class="hover:text-yellow-400 transition cursor-pointer">الخصوصية</button>
+          <span>•</span>
+          <button type="button" onclick="window.UI?.openLegalModal?.('contact')" class="hover:text-yellow-400 transition cursor-pointer">اتصل بنا</button>
+        </div>
+        <div>
+          الإصدار 2.5.0 &copy; 2026<br>مؤسسة رأس المال (Ras ALmal) المحدودة
+        </div>
       </div>
     </aside>
 
@@ -4628,6 +4683,30 @@
           <i class="fa-solid fa-book-open w-5 text-center text-sky-400 text-sm"></i>
           <span>دليل الملياردير الشامل</span>
         </button>
+
+        <!-- Compliance & Legal Mobile Links -->
+        <div class="pt-2 border-t border-slate-800/70 space-y-1 text-slate-400 text-xs">
+          <button type="button" onclick="window.UI?.closeMobileNav?.(); window.UI?.openLegalModal?.('terms');"
+            class="w-full flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg hover:bg-slate-800/40 hover:text-yellow-400 transition cursor-pointer text-right">
+            <i class="fa-solid fa-file-contract text-yellow-500/80 text-xs w-4 text-center"></i>
+            <span>الشروط والأحكام</span>
+          </button>
+          <button type="button" onclick="window.UI?.closeMobileNav?.(); window.UI?.openLegalModal?.('refund');"
+            class="w-full flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg hover:bg-slate-800/40 hover:text-yellow-400 transition cursor-pointer text-right">
+            <i class="fa-solid fa-arrow-rotate-left text-yellow-500/80 text-xs w-4 text-center"></i>
+            <span>سياسة الاسترجاع</span>
+          </button>
+          <button type="button" onclick="window.UI?.closeMobileNav?.(); window.UI?.openLegalModal?.('privacy');"
+            class="w-full flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg hover:bg-slate-800/40 hover:text-yellow-400 transition cursor-pointer text-right">
+            <i class="fa-solid fa-user-shield text-yellow-500/80 text-xs w-4 text-center"></i>
+            <span>سياسة الخصوصية</span>
+          </button>
+          <button type="button" onclick="window.UI?.closeMobileNav?.(); window.UI?.openLegalModal?.('contact');"
+            class="w-full flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg hover:bg-slate-800/40 hover:text-yellow-400 transition cursor-pointer text-right">
+            <i class="fa-solid fa-headset text-yellow-500/80 text-xs w-4 text-center"></i>
+            <span>اتصل بنا والمعلومات</span>
+          </button>
+        </div>
       </div>
 
       <!-- Drawer Footer Utilities -->
@@ -5919,9 +5998,29 @@
             <!-- Dynamically populated from AppDB.getTopupPackages() -->
           </div>
 
-          <!-- Footer Help Note -->
-          <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 text-center text-slate-400 text-[11px]">
-            <i class="fa-solid fa-circle-info text-amber-400 mr-1"></i> إذا واجهتك أي مشكلة أثناء أو بعد التحويل، يمكنك التواصل فوراً مع الإدارة من خلال الشات المباشر أو البريد.
+          <!-- Footer Help Note & Legal Compliance -->
+          <div class="p-3 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2 text-center text-slate-400 text-[11px]">
+            <div class="flex flex-wrap items-center justify-center gap-3 font-medium text-slate-300">
+              <span class="flex items-center gap-1.5 text-amber-300 font-bold">
+                <i class="fa-solid fa-coins"></i>
+                <span>جميع الأسعار بالجنيه المصري (EGP) وشاملة الرسوم</span>
+              </span>
+              <span>•</span>
+              <span class="flex items-center gap-1.5 text-emerald-400">
+                <i class="fa-solid fa-shield-check"></i>
+                <span>بوابة دفع مرخصة ومشفرة 100%</span>
+              </span>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-3 pt-1 border-t border-slate-800/60 text-[10px] text-slate-400">
+              <button type="button" onclick="window.UI?.openLegalModal?.('refund')" class="hover:text-yellow-400 underline transition cursor-pointer">سياسة الاسترجاع والاستبدال الرقمي</button>
+              <span>•</span>
+              <button type="button" onclick="window.UI?.openLegalModal?.('terms')" class="hover:text-yellow-400 underline transition cursor-pointer">الشروط والأحكام</button>
+              <span>•</span>
+              <button type="button" onclick="window.UI?.openLegalModal?.('privacy')" class="hover:text-yellow-400 underline transition cursor-pointer">سياسة الخصوصية</button>
+              <span>•</span>
+              <button type="button" onclick="window.UI?.openLegalModal?.('contact')" class="hover:text-yellow-400 underline transition cursor-pointer">بيانات التواصل والدعم</button>
+            </div>
           </div>
         </div>
 
@@ -6022,6 +6121,290 @@
         </div>
 
       </div>
+    </div>
+  </div>
+
+  <!-- ==================== LEGAL, COMPLIANCE & POLICIES MODAL (الشروط، الاسترجاع، الخصوصية، التواصل) ==================== -->
+  <div id="modal-legal-compliance" dir="rtl"
+    class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-4 animate-fade-in text-right">
+    <div dir="rtl"
+      class="glass-panel w-full max-w-2xl max-h-[92vh] flex flex-col rounded-3xl border-2 border-yellow-500/40 p-4 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden space-y-4">
+
+      <!-- Top Glow Accent -->
+      <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-36 bg-yellow-500/15 blur-3xl rounded-full pointer-events-none"></div>
+
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800/80 shrink-0 relative z-10">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-600 text-slate-950 flex items-center justify-center text-lg font-black shadow-lg shadow-yellow-500/20 shrink-0">
+            <i class="fa-solid fa-scale-balanced"></i>
+          </div>
+          <div>
+            <h3 id="legal-modal-title" class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+              <span>السياسات والامتثال التجاري والقانوني</span>
+            </h3>
+            <p class="text-xs text-slate-400">مؤسسة رأس المال (Ras ALmal) المحدودة • مرخص ومعتمد وفق القانون المصري</p>
+          </div>
+        </div>
+
+        <button id="btn-close-legal-modal" type="button"
+          class="w-9 h-9 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer border border-slate-700/60 shrink-0">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Tabs Inside Modal -->
+      <div class="flex items-center gap-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800/80 shrink-0 relative z-10 overflow-x-auto custom-scrollbar">
+        <button type="button" id="tab-legal-terms" onclick="window.UI?.switchLegalTab?.('terms')"
+          class="legal-tab-btn flex-1 min-w-[100px] py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer bg-yellow-500 text-slate-950 shadow">
+          <i class="fa-solid fa-file-contract text-xs"></i>
+          <span>الشروط والأحكام</span>
+        </button>
+        <button type="button" id="tab-legal-refund" onclick="window.UI?.switchLegalTab?.('refund')"
+          class="legal-tab-btn flex-1 min-w-[100px] py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-slate-400 hover:text-white hover:bg-slate-900">
+          <i class="fa-solid fa-arrow-rotate-left text-xs"></i>
+          <span>سياسة الاسترجاع</span>
+        </button>
+        <button type="button" id="tab-legal-privacy" onclick="window.UI?.switchLegalTab?.('privacy')"
+          class="legal-tab-btn flex-1 min-w-[100px] py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-slate-400 hover:text-white hover:bg-slate-900">
+          <i class="fa-solid fa-user-shield text-xs"></i>
+          <span>سياسة الخصوصية</span>
+        </button>
+        <button type="button" id="tab-legal-contact" onclick="window.UI?.switchLegalTab?.('contact')"
+          class="legal-tab-btn flex-1 min-w-[100px] py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-slate-400 hover:text-white hover:bg-slate-900">
+          <i class="fa-solid fa-headset text-xs"></i>
+          <span>اتصل بنا والمعلومات</span>
+        </button>
+      </div>
+
+      <!-- Modal Content Body (Scrollable) -->
+      <div id="legal-modal-body" class="flex-1 overflow-y-auto space-y-4 pr-1 text-xs text-slate-300 leading-relaxed custom-scrollbar relative z-10">
+
+        <!-- 1. TERMS & CONDITIONS VIEW -->
+        <div id="legal-view-terms" class="legal-view space-y-3.5">
+          <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation text-amber-400 text-lg shrink-0"></i>
+            <p class="text-[11px] text-amber-200">
+              باستخدامك لمنصة ولعبة <strong>رأس المال (Ras ALmal)</strong>، فإنك تقر وتوافق على الالتزام الكامل بهذه الشروط والأحكام.
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <h4 class="font-black text-sm text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+              <span>1. طبيعة المنصة والألعاب الافتراضية:</span>
+            </h4>
+            <p class="text-slate-300 pl-4 border-r-2 border-slate-800 pr-2">
+              منصة رأس المال هي لعبة محاكاة اقتصادية وإدارية تفاعلية قائمة على الترفيه والتعليم المالي. كافة العملات، الأرباح، الأموال، والأسهم المتداولة داخل اللعبة هي <strong>عملات ترفيهية افتراضية بحتة</strong> ولا تمثل أي قيمة نقدية حقيقية خارج النظام، ولا يمكن استبدالها بأموال حقيقية أو سحبها نقداً (No Real Cashout / No Real Gambling).
+            </p>
+
+            <h4 class="font-black text-sm text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+              <span>2. الأهلية والاستخدام المشروع:</span>
+            </h4>
+            <p class="text-slate-300 pl-4 border-r-2 border-slate-800 pr-2">
+              الخدمة مخصصة للاستخدام الشخصي الترفيهي. يلتزم المستخدم بتقديم بيانات صحيحة في حال الشحن، ويتحمل مسؤولية المحافظة على سرية حسابه ورمز الدخول الخاص به (PIN Code).
+            </p>
+
+            <h4 class="font-black text-sm text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+              <span>3. قواعد اللعب النظيف ومكافحة التلاعب:</span>
+            </h4>
+            <p class="text-slate-300 pl-4 border-r-2 border-slate-800 pr-2">
+              يُحظر استخدام أي برمجيات آلية (Bots)، أدوات اختراق، ثغرات برمجية غير معلنة، أو إنشاء حسابات وهمية للإضرار بنزاهة التنافس. يحق لإدارة اللعبة إيقاف أو حظر أي حساب ينتهك هذه القواعد دون إشعار مسبق.
+            </p>
+
+            <h4 class="font-black text-sm text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+              <span>4. عمليات الدفع والعملة المعتمدة:</span>
+            </h4>
+            <p class="text-slate-300 pl-4 border-r-2 border-slate-800 pr-2">
+              تتم جميع عمليات شراء الباقات والاشتراكات بالعملة الرسمية: <strong>الجنيه المصري (EGP)</strong> عبر قنوات وبوابات دفع إلكترونية معتمدة ومرخصة من البنك المركزي المصري (مثل XPAY والمحافظ البنكية).
+            </p>
+
+            <h4 class="font-black text-sm text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+              <span>5. القانون الحاكم وفض النزاعات:</span>
+            </h4>
+            <p class="text-slate-300 pl-4 border-r-2 border-slate-800 pr-2">
+              تخضع هذه الاتفاقية وتُفسر وفقاً للقوانين والتشريعات السارية في <strong>جمهورية مصر العربية</strong>، وتختص المحاكم المصرية بنظر أي نزاع ينشأ بشأنها.
+            </p>
+          </div>
+        </div>
+
+        <!-- 2. REFUND POLICY VIEW -->
+        <div id="legal-view-refund" class="legal-view hidden space-y-3.5">
+          <div class="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center gap-3">
+            <i class="fa-solid fa-shield-halved text-emerald-400 text-lg shrink-0"></i>
+            <p class="text-[11px] text-emerald-200">
+              سياسة واضحة وعادلة تحمي حقوق العميل وفقاً لقانون حماية المستهلك المصري للسلع والخدمات الرقمية.
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <h4 class="font-black text-sm text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span>1. طبيعة الخدمات والمنتجات المباعة:</span>
+            </h4>
+            <p class="text-slate-300 pl-4 border-r-2 border-slate-800 pr-2">
+              جميع المنتجات المتاحة للشراء في المتجر (شحن رصيد افتراضي، باقات VIP، أوسمة ومقتنيات) هي <strong>منتجات رقمية غير ملموسة (Digital Goods)</strong> يتم تسليمها وتفعيلها فورياً على حساب المستخدم بعد إتمام عملية الدفع.
+            </p>
+
+            <h4 class="font-black text-sm text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span>2. حالات استحقاق استرداد الأموال (Eligible for Refund):</span>
+            </h4>
+            <ul class="list-disc list-inside space-y-1.5 text-slate-300 pl-4 border-r-2 border-slate-800 pr-2">
+              <li><strong>الخصم المكرر (Duplicate Charge):</strong> في حال خصم قيمة المعاملة أكثر من مرة عن طريق الخطأ التقني أو البنكي، يتم استرداد المبلغ المكرر كاملاً.</li>
+              <li><strong>عدم وصول الرصيد (Delivery Failure):</strong> في حال خصم المبلغ من العميل ولم يُضف الرصيد إلى حسابه باللعبة وتعذر على الدعم الفني معالجة وتفعيل الطلب خلال 24 ساعة.</li>
+              <li><strong>طلب الاسترجاع قبل الاستهلاك (Unused Balance):</strong> يحق للعميل طلب إلغاء العملية واسترداد أمواله خلال <strong>14 يوماً</strong> من تاريخ الشراء، بشرط عدم استهلاك أو إنفاق أي جزء من الرصيد أو المزايا المشتراة.</li>
+            </ul>
+
+            <h4 class="font-black text-sm text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span>3. الحالات غير القابلة للاسترداد:</span>
+            </h4>
+            <ul class="list-disc list-inside space-y-1.5 text-slate-300 pl-4 border-r-2 border-slate-800 pr-2">
+              <li>بعد استخدام الرصيد المالي أو إنفاق العملات داخل اللعبة (شراء مشاريع، تداول أسهم، كازينو، عقارات).</li>
+              <li>باقات وتصاريح VIP بعد تفعيلها وبدء سريان مفعولها الزمني.</li>
+              <li>الحسابات التي تم حظرها بسبب ارتكاب مخالفات جسيمة لشروط الاستخدام أو الغش والتهكير.</li>
+            </ul>
+
+            <h4 class="font-black text-sm text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span>4. طريقة وزمن رد المبالغ:</span>
+            </h4>
+            <p class="text-slate-300 pl-4 border-r-2 border-slate-800 pr-2">
+              يتم استرداد الأموال حصراً إلى <strong>نفس وسيلة الدفع الأصلية</strong> التي استخدمها العميل (نفس البطاقة البنكية أو المحفظة الإلكترونية). وتستغرق المعاملة البنكية من 5 إلى 14 يوم عمل وفقاً للسياسات المعتمدة لدى البنوك المصرية ومزود خدمة الدفع (XPAY).
+            </p>
+          </div>
+        </div>
+
+        <!-- 3. PRIVACY POLICY VIEW -->
+        <div id="legal-view-privacy" class="legal-view hidden space-y-3.5">
+          <div class="p-3.5 rounded-2xl bg-sky-950/40 border border-sky-500/30 flex items-center gap-3">
+            <i class="fa-solid fa-lock text-sky-400 text-lg shrink-0"></i>
+            <p class="text-[11px] text-sky-200">
+              نلتزم بأعلى معايير حماية وخصوصية البيانات وتشفير المدفوعات وفقاً للتشريعات المصرية لتنظيم الاتصالات وحماية البيانات الشخصية.
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <h4 class="font-black text-sm text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+              <span>1. البيانات التي يتم جمعها:</span>
+            </h4>
+            <p class="text-slate-300 pl-4 border-r-2 border-slate-800 pr-2">
+              نقوم فقط بجمع البيانات الأساسية اللازمة لإنشاء الحساب وتوثيقه وتقديم الدعم الفني: مثل اسم المستخدم، رقم الهاتف المستخدم في التحويل، البريد الإلكتروني وسجل المعاملات داخل اللعبة.
+            </p>
+
+            <h4 class="font-black text-sm text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+              <span>2. أمان المدفوعات والبطاقات البنكية:</span>
+            </h4>
+            <p class="text-slate-300 pl-4 border-r-2 border-slate-800 pr-2">
+              <strong>نحن لا نقوم مطلقاً بتخزين أو حفظ أرقام البطاقات الائتمانية أو الرموز السرية (CVV) أو كلمات المرور البنكية</strong> على خوادمنا. تتم جميع العمليات البنكية عبر قنوات مشفرة بمعيار (PCI-DSS) عبر بوابة الدفع الإلكتروني المعتمدة (XPAY) وشركات الاتصالات المصرية مباشرة.
+            </p>
+
+            <h4 class="font-black text-sm text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+              <span>3. عدم مشاركة البيانات:</span>
+            </h4>
+            <p class="text-slate-300 pl-4 border-r-2 border-slate-800 pr-2">
+              نؤكد عدم بيع أو تأجير أو مشاركة أي بيانات شخصية للمستخدمين مع أي جهات خارجية أو معلنين، وتقتصر الاستعانة بالبيانات على أداء الخدمة وتوثيق الطلبات والالتزام بالمتطلبات القانونية والتنظيمية.
+            </p>
+
+            <h4 class="font-black text-sm text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+              <span>4. حقوق المستخدم وحذف البيانات:</span>
+            </h4>
+            <p class="text-slate-300 pl-4 border-r-2 border-slate-800 pr-2">
+              يحق لكل مستخدم في أي وقت طلب تصحيح أو تحديث أو حذف بيانات حسابه عبر مراسلة بريد الدعم المعتمد: <strong>rasalmal.support@gmail.com</strong>.
+            </p>
+          </div>
+        </div>
+
+        <!-- 4. CONTACT US & EGYPTIAN DETAILS VIEW -->
+        <div id="legal-view-contact" class="legal-view hidden space-y-3.5">
+          <div class="p-3.5 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-3">
+            <i class="fa-solid fa-headset text-yellow-400 text-lg shrink-0"></i>
+            <p class="text-[11px] text-yellow-200">
+              قنوات التواصل الرسمية والمقر المسجل لمؤسسة رأس المال لتلقي الاستفسارات وطلبات الدعم والشكاوى.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Egyptian Address Card -->
+            <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+              <div class="flex items-center gap-2 text-rose-400 font-black text-xs">
+                <i class="fa-solid fa-location-dot"></i>
+                <span>المقر والعنوان المسجل في مصر:</span>
+              </div>
+              <p class="text-white font-bold text-xs leading-relaxed">
+                جمهورية مصر العربية<br>
+                محافظة الدقهلية - مدينة المنصورة
+              </p>
+              <span class="text-[10px] text-slate-400 block">مقر إدارة وتشغيل منصة رأس المال (Ras ALmal)</span>
+            </div>
+
+            <!-- Egyptian Phone Card -->
+            <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+              <div class="flex items-center gap-2 text-emerald-400 font-black text-xs">
+                <i class="fa-solid fa-phone"></i>
+                <span>رقم الهاتف المعتمد وواتساب:</span>
+              </div>
+              <a href="tel:+201044119920" class="text-white font-mono font-black text-sm block hover:text-emerald-400 transition" dir="ltr">
+                +20 104 411 9920
+              </a>
+              <div class="flex items-center gap-2 pt-1">
+                <a href="https://wa.me/201044119920" target="_blank" rel="noopener noreferrer"
+                  class="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1">
+                  <i class="fa-brands fa-whatsapp"></i>
+                  <span>محادثة واتساب فوري</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Email Support Card -->
+            <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+              <div class="flex items-center gap-2 text-sky-400 font-black text-xs">
+                <i class="fa-solid fa-envelope"></i>
+                <span>البريد الإلكتروني المعتمد:</span>
+              </div>
+              <a href="mailto:rasalmal.support@gmail.com" class="text-white font-mono font-bold text-xs block hover:text-sky-400 transition select-all">
+                rasalmal.support@gmail.com
+              </a>
+              <span class="text-[10px] text-slate-400 block">يتم الرد على استفسارات ومشاكل الدفع خلال 24 ساعة.</span>
+            </div>
+
+            <!-- Currency & Working Hours Card -->
+            <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+              <div class="flex items-center gap-2 text-amber-400 font-black text-xs">
+                <i class="fa-solid fa-clock"></i>
+                <span>مواعيد العمل والعملة:</span>
+              </div>
+              <p class="text-white font-bold text-xs">
+                فريق الدعم الفني: طوال أيام الأسبوع 24/7
+              </p>
+              <span class="text-[10px] text-amber-300 block font-bold">العملة المعتمدة لكافة المعاملات: الجنيه المصري (EGP)</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 relative z-10 shrink-0">
+        <span class="flex items-center gap-1.5">
+          <i class="fa-solid fa-shield-check text-emerald-400"></i>
+          <span>متوافق مع معايير وتشريعات التجارة الإلكترونية المصرية</span>
+        </span>
+        <button id="btn-close-legal-modal-bottom" type="button"
+          class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold transition cursor-pointer">
+          إغلاق النافذة
+        </button>
+      </div>
+
     </div>
   </div>
 

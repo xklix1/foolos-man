@@ -12414,6 +12414,24 @@ const UIController = (() => {
       });
     }
 
+    // Legal Compliance & Policies Modal Listeners
+    const btnCloseLegal = document.getElementById('btn-close-legal-modal');
+    if (btnCloseLegal) {
+      btnCloseLegal.addEventListener('click', closeLegalModal);
+    }
+    const btnCloseLegalBottom = document.getElementById('btn-close-legal-modal-bottom');
+    if (btnCloseLegalBottom) {
+      btnCloseLegalBottom.addEventListener('click', closeLegalModal);
+    }
+    const legalModalEl = document.getElementById('modal-legal-compliance');
+    if (legalModalEl) {
+      legalModalEl.addEventListener('click', (e) => {
+        if (e.target === legalModalEl) {
+          closeLegalModal();
+        }
+      });
+    }
+
     // Daily Quests Modal Listeners
     const btnOpenDq = document.getElementById('btn-open-daily-quests');
     if (btnOpenDq) {
@@ -14510,6 +14528,66 @@ const UIController = (() => {
       modal.classList.add('hidden');
       if (typeof playMenuSound === 'function') playMenuSound('modal_close');
     }
+  }
+
+  // --- Legal, Compliance & Policies Modal Functions (xpay & Consumer Protection) ---
+  function openLegalModal(targetTab = 'terms') {
+    const modal = document.getElementById('modal-legal-compliance');
+    if (!modal) return;
+    switchLegalTab(targetTab);
+    modal.classList.remove('hidden');
+    if (typeof playMenuSound === 'function') playMenuSound('modal_open');
+  }
+
+  function closeLegalModal() {
+    const modal = document.getElementById('modal-legal-compliance');
+    if (modal) {
+      modal.classList.add('hidden');
+      if (typeof playMenuSound === 'function') playMenuSound('modal_close');
+    }
+  }
+
+  function switchLegalTab(tabId) {
+    if (typeof playMenuSound === 'function') playMenuSound('click');
+
+    const tabs = ['terms', 'refund', 'privacy', 'contact'];
+    const activeTab = tabs.includes(tabId) ? tabId : 'terms';
+
+    // Toggle views
+    tabs.forEach(t => {
+      const viewEl = document.getElementById(`legal-view-${t}`);
+      const btnEl = document.getElementById(`tab-legal-${t}`);
+      if (viewEl) {
+        if (t === activeTab) {
+          viewEl.classList.remove('hidden');
+        } else {
+          viewEl.classList.add('hidden');
+        }
+      }
+      if (btnEl) {
+        if (t === activeTab) {
+          btnEl.className = 'legal-tab-btn flex-1 min-w-[100px] py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer bg-yellow-500 text-slate-950 shadow';
+        } else {
+          btnEl.className = 'legal-tab-btn flex-1 min-w-[100px] py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-slate-400 hover:text-white hover:bg-slate-900';
+        }
+      }
+    });
+
+    // Update title description
+    const titleEl = document.getElementById('legal-modal-title');
+    if (titleEl) {
+      const titles = {
+        terms: 'الشروط والأحكام (Terms & Conditions)',
+        refund: 'سياسة الاسترجاع والاستبدال (Refund Policy)',
+        privacy: 'سياسة الخصوصية والأمان (Privacy Policy)',
+        contact: 'اتصل بنا والعنوان المسجل (Contact Us)'
+      };
+      titleEl.innerHTML = `<span>${titles[activeTab] || 'السياسات والامتثال التجاري'}</span>`;
+    }
+
+    // Scroll to top of body
+    const bodyEl = document.getElementById('legal-modal-body');
+    if (bodyEl) bodyEl.scrollTop = 0;
   }
 
   // --- Daily Quests System Rendering & Handlers ---
@@ -19791,6 +19869,9 @@ const UIController = (() => {
     openNetWorthBreakdownModal,
     closeNetWorthBreakdownModal,
     renderNetWorthBreakdown,
+    openLegalModal,
+    closeLegalModal,
+    switchLegalTab,
     triggerMandatoryReloadModal,
     handleIncomingForceReload,
 
@@ -19871,6 +19952,9 @@ window.UI = UIController;
 window.showToast = showToast;
 window.openNetWorthBreakdownModal = UIController.openNetWorthBreakdownModal;
 window.closeNetWorthBreakdownModal = UIController.closeNetWorthBreakdownModal;
+window.openLegalModal = UIController.openLegalModal;
+window.closeLegalModal = UIController.closeLegalModal;
+window.switchLegalTab = UIController.switchLegalTab;
 window.openNotificationsModal = openNotificationsModal;
 window.closeNotificationsModal = closeNotificationsModal;
 window.playMenuSound = UIController.playMenuSound;
