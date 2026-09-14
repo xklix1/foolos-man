@@ -2558,6 +2558,28 @@ const UIController = (() => {
       nmEl.title = formatFullCurrency(s.netWorth);
     }
 
+    // Comprehensive Net Worth Tooltip with Breakdown
+    if (typeof GameEngine.getNetWorthBreakdown === 'function') {
+      const b = GameEngine.getNetWorthBreakdown();
+      const nwTooltip = `صافي الثروة الشامل: ${formatFullCurrency(b.total)}\n` +
+        `• سيولة نقدية (كاش + بنك): ${formatCompactNumber(b.liquidTotal)} EGP\n` +
+        `• محفظة البورصة: ${formatCompactNumber(b.stocksTotal)} EGP\n` +
+        `• شهادات وصناديق الاستثمار: ${formatCompactNumber(b.investmentsTotal)} EGP\n` +
+        `• العقارات والأسطول: ${formatCompactNumber(b.assetsTotal)} EGP` +
+        (b.industryTotal > 0 ? `\n• مجمع الصناعات: ${formatCompactNumber(b.industryTotal)} EGP` : '') +
+        (b.tradeTotal > 0 ? `\n• المستودع الجمركي: ${formatCompactNumber(b.tradeTotal)} EGP` : '') +
+        (b.loanDebt > 0 ? `\n• قروض بنكية مستحقة: -${formatCompactNumber(b.loanDebt)} EGP` : '') +
+        `\n(اضغط لعرض التفصيل الشامل)`;
+      if (nEl) nEl.title = nwTooltip;
+      if (nmEl) nmEl.title = nwTooltip;
+    }
+
+    // Live update Net Worth Breakdown modal if currently open
+    const nwModal = document.getElementById('modal-networth-breakdown');
+    if (nwModal && !nwModal.classList.contains('hidden')) {
+      renderNetWorthBreakdown();
+    }
+
     const cfmEl = document.getElementById('stat-cashflow-mobile');
     if (cfmEl) {
       cfmEl.textContent =`+${formatCompactNumber(cashflow)}`;
@@ -2688,6 +2710,17 @@ const UIController = (() => {
         dashWorthEl.innerHTML =`<span class="break-all">${s.netWorth.toLocaleString()} ${sym}</span> <span class="text-xs text-amber-300 font-bold ml-1 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20 inline-block numbers-font">(${formatCompactNumber(s.netWorth)})</span>`;
       } else {
         dashWorthEl.textContent = s.netWorth.toLocaleString() +'' + sym;
+      }
+      if (typeof GameEngine.getNetWorthBreakdown === 'function') {
+        const b = GameEngine.getNetWorthBreakdown();
+        dashWorthEl.title = `اضغط لعرض التفصيل الشامل\nصافي الثروة: ${formatFullCurrency(b.total)}\n` +
+          `• سيولة (كاش + بنك): ${formatCompactNumber(b.liquidTotal)} EGP\n` +
+          `• محفظة البورصة: ${formatCompactNumber(b.stocksTotal)} EGP\n` +
+          `• شهادات الاستثمار: ${formatCompactNumber(b.investmentsTotal)} EGP\n` +
+          `• العقارات والأسطول: ${formatCompactNumber(b.assetsTotal)} EGP` +
+          (b.industryTotal > 0 ? `\n• مجمع الصناعات: ${formatCompactNumber(b.industryTotal)} EGP` : '') +
+          (b.tradeTotal > 0 ? `\n• بضائع المستودع: ${formatCompactNumber(b.tradeTotal)} EGP` : '') +
+          (b.loanDebt > 0 ? `\n• قروض مستحقة: -${formatCompactNumber(b.loanDebt)} EGP` : '');
       }
     }
 
@@ -12351,6 +12384,36 @@ const UIController = (() => {
       });
     }
 
+    // Net Worth Breakdown Modal Listeners
+    const btnNwDesktop = document.getElementById('btn-show-networth-breakdown');
+    if (btnNwDesktop) {
+      btnNwDesktop.addEventListener('click', openNetWorthBreakdownModal);
+    }
+    const btnNwMobile = document.getElementById('btn-networth-breakdown-mobile');
+    if (btnNwMobile) {
+      btnNwMobile.addEventListener('click', openNetWorthBreakdownModal);
+    }
+    const cardDashWorth = document.getElementById('card-dash-worth');
+    if (cardDashWorth) {
+      cardDashWorth.addEventListener('click', openNetWorthBreakdownModal);
+    }
+    const btnCloseNw = document.getElementById('btn-close-networth-modal');
+    if (btnCloseNw) {
+      btnCloseNw.addEventListener('click', closeNetWorthBreakdownModal);
+    }
+    const btnCloseNwBottom = document.getElementById('btn-close-networth-modal-bottom');
+    if (btnCloseNwBottom) {
+      btnCloseNwBottom.addEventListener('click', closeNetWorthBreakdownModal);
+    }
+    const nwModalEl = document.getElementById('modal-networth-breakdown');
+    if (nwModalEl) {
+      nwModalEl.addEventListener('click', (e) => {
+        if (e.target === nwModalEl) {
+          closeNetWorthBreakdownModal();
+        }
+      });
+    }
+
     // Daily Quests Modal Listeners
     const btnOpenDq = document.getElementById('btn-open-daily-quests');
     if (btnOpenDq) {
@@ -14387,6 +14450,65 @@ const UIController = (() => {
     const modal = document.getElementById('cashflow-breakdown-modal');
     if (modal) {
       modal.classList.add('hidden');
+    }
+  }
+
+  // --- Comprehensive Net Worth Breakdown Modal & Functions ---
+  function renderNetWorthBreakdown() {
+    if (!window.GameEngine || typeof window.GameEngine.getNetWorthBreakdown !== 'function') return;
+    const b = window.GameEngine.getNetWorthBreakdown();
+    const s = window.GameEngine.state || {};
+
+    const totalEl = document.getElementById('nw-modal-total');
+    if (totalEl) totalEl.textContent = `${b.total.toLocaleString()} EGP`;
+
+    const titleEl = document.getElementById('nw-modal-title');
+    if (titleEl) titleEl.textContent = s.title || 'عامل مبتدئ';
+
+    const liquidEl = document.getElementById('nw-modal-liquid');
+    if (liquidEl) liquidEl.textContent = `${b.liquidTotal.toLocaleString()} EGP`;
+
+    const stocksEl = document.getElementById('nw-modal-stocks');
+    if (stocksEl) stocksEl.textContent = `${b.stocksTotal.toLocaleString()} EGP`;
+
+    const invEl = document.getElementById('nw-modal-investments');
+    if (invEl) invEl.textContent = `${b.investmentsTotal.toLocaleString()} EGP`;
+
+    const assetsEl = document.getElementById('nw-modal-assets');
+    if (assetsEl) assetsEl.textContent = `${b.assetsTotal.toLocaleString()} EGP`;
+
+    const indEl = document.getElementById('nw-modal-industry');
+    if (indEl) indEl.textContent = `${b.industryTotal.toLocaleString()} EGP`;
+
+    const tradeEl = document.getElementById('nw-modal-trade');
+    if (tradeEl) tradeEl.textContent = `${b.tradeTotal.toLocaleString()} EGP`;
+
+    const debtRow = document.getElementById('nw-modal-debt-row');
+    const debtEl = document.getElementById('nw-modal-debt');
+    if (debtRow && debtEl) {
+      if (b.loanDebt > 0) {
+        debtEl.textContent = `-${b.loanDebt.toLocaleString()} EGP`;
+        debtRow.classList.remove('hidden');
+      } else {
+        debtRow.classList.add('hidden');
+      }
+    }
+  }
+
+  function openNetWorthBreakdownModal() {
+    renderNetWorthBreakdown();
+    const modal = document.getElementById('modal-networth-breakdown');
+    if (modal) {
+      modal.classList.remove('hidden');
+      if (typeof playMenuSound === 'function') playMenuSound('modal_open');
+    }
+  }
+
+  function closeNetWorthBreakdownModal() {
+    const modal = document.getElementById('modal-networth-breakdown');
+    if (modal) {
+      modal.classList.add('hidden');
+      if (typeof playMenuSound === 'function') playMenuSound('modal_close');
     }
   }
 
@@ -19666,6 +19788,9 @@ const UIController = (() => {
     openCashflowBreakdownModal,
     closeCashflowBreakdownModal,
     renderCashflowBreakdown,
+    openNetWorthBreakdownModal,
+    closeNetWorthBreakdownModal,
+    renderNetWorthBreakdown,
     triggerMandatoryReloadModal,
     handleIncomingForceReload,
 
@@ -19744,6 +19869,8 @@ const UIController = (() => {
 window.UIController = UIController;
 window.UI = UIController;
 window.showToast = showToast;
+window.openNetWorthBreakdownModal = UIController.openNetWorthBreakdownModal;
+window.closeNetWorthBreakdownModal = UIController.closeNetWorthBreakdownModal;
 window.openNotificationsModal = openNotificationsModal;
 window.closeNotificationsModal = closeNotificationsModal;
 window.playMenuSound = UIController.playMenuSound;

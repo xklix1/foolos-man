@@ -64,6 +64,32 @@ function calculateNetWorth(playerState, stockPrices = {}) {
     });
   }
 
+  // Add trade warehouse inventory and active imports
+  if (playerState.tradeCompany && typeof playerState.tradeCompany === 'object') {
+    const COMMODITY_UNIT_COSTS = {
+      fashion_brands: 5000,
+      espresso_coffee: 8000,
+      luxury_perfumes: 12000,
+      medical_devices: 22000,
+      smart_electronics: 45000,
+      ev_cars: 85000
+    };
+    if (playerState.tradeCompany.warehouse && typeof playerState.tradeCompany.warehouse === 'object') {
+      Object.keys(playerState.tradeCompany.warehouse).forEach(commId => {
+        const qty = Number(playerState.tradeCompany.warehouse[commId] || 0);
+        const cost = COMMODITY_UNIT_COSTS[commId] || 5000;
+        if (qty > 0) {
+          worth += qty * cost;
+        }
+      });
+    }
+    if (Array.isArray(playerState.tradeCompany.activeImports)) {
+      playerState.tradeCompany.activeImports.forEach(imp => {
+        worth += Number(imp.totalCost || ((imp.quantity || 0) * (COMMODITY_UNIT_COSTS[imp.commodityId] || 5000)) || 0);
+      });
+    }
+  }
+
   // Deduct active bank loan liabilities (True Net Worth = Assets - Liabilities)
   if (playerState.activeLoan) {
     const loanDebt = Number(playerState.activeLoan.totalDue || playerState.activeLoan.amount || 0);

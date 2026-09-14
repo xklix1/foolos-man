@@ -1355,59 +1355,120 @@ const GameEngine = (() => {
         changed = true;
       }
     });
+    if (changed) {
+      state.netWorth = calculateNetWorth();
+      state.title = getAppropriateTitle(state.netWorth, state.xp);
+    }
     return changed;
   }
 
-  // Calculate Net Worth: Cash + Bank + DirtyCash + (Real Estate * Cost) + (Stocks * currentPrice) + Locked Investments
-  function calculateNetWorth() {
-    let worth = (state.cash || 0) + (state.bank || 0) + (state.dirtyCash || 0);
+  // Calculate Net Worth: Cash + Bank + DirtyCash + (Real Estate * Cost) + (Stocks * currentPrice) + Locked Investments + Industry + Trade - Liabilities
+  function getNetWorthBreakdown(playerState = state) {
+    if (!playerState) {
+      return { cash: 0, bank: 0, dirtyCash: 0, liquidTotal: 0, assetsTotal: 0, stocksTotal: 0, investmentsTotal: 0, industryTotal: 0, tradeTotal: 0, loanDebt: 0, total: 0 };
+    }
 
-    // Add real estate assets value
-    Object.keys(state.assets).forEach(key => {
-      worth += state.assets[key] * ASSETS[key].cost;
-    });
+    const cash = Number(playerState.cash || 0);
+    const bank = Number(playerState.bank || 0);
+    const dirtyCash = Number(playerState.dirtyCash || 0);
+    const liquidTotal = cash + bank + dirtyCash;
 
-    // Add stock shares value
-    Object.keys(state.stocks).forEach(sym => {
-      const shares = state.stocks[sym].shares || 0;
-      const history = stockPrices[sym];
-      const currentPrice = history ? history[history.length - 1] : STOCKS[sym].basePrice;
-      worth += shares * currentPrice;
-    });
+    // 1. Real estate assets value
+    let assetsTotal = 0;
+    if (playerState.assets && typeof playerState.assets === 'object') {
+      Object.keys(playerState.assets).forEach(key => {
+        if (ASSETS[key]) {
+          assetsTotal += Number(playerState.assets[key] || 0) * (ASSETS[key].cost || 0);
+        }
+      });
+    }
 
-    // Add locked investments capital
-    state.investments.forEach(inv => {
-      worth += inv.investedAmount;
-    });
+    // 2. Stock shares valuation (live market price)
+    let stocksTotal = 0;
+    if (playerState.stocks && typeof playerState.stocks === 'object') {
+      Object.keys(playerState.stocks).forEach(sym => {
+        const shares = Number((playerState.stocks[sym] && playerState.stocks[sym].shares) || 0);
+        if (shares > 0) {
+          const history = stockPrices[sym];
+          const currentPrice = (history && history.length > 0) ? history[history.length - 1] : (STOCKS[sym] ? STOCKS[sym].basePrice : 50);
+          stocksTotal += shares * currentPrice;
+        }
+      });
+    }
 
-    // Add industrial supply chain infrastructure & inventory value
-    if (state.industry && typeof INDUSTRIAL_SECTORS !=='undefined') {
+    // 3. Locked investment funds & banking certificates
+    let investmentsTotal = 0;
+    if (Array.isArray(playerState.investments)) {
+      playerState.investments.forEach(inv => {
+        investmentsTotal += Number((inv && inv.investedAmount) || 0);
+      });
+    }
+
+    // 4. Industrial supply chain infrastructure & inventory
+    let industryTotal = 0;
+    if (playerState.industry && typeof INDUSTRIAL_SECTORS !== 'undefined') {
       Object.keys(INDUSTRIAL_SECTORS).forEach(secKey => {
         const secDef = INDUSTRIAL_SECTORS[secKey];
-        const sec = state.industry[secKey];
+        const sec = playerState.industry[secKey];
         if (sec && sec.unlocked) {
-          worth += secDef.unlockCost;
-          ['stage1','stage2','stage3','logistics'].forEach(stKey => {
+          industryTotal += Number(secDef.unlockCost || 0);
+          ['stage1', 'stage2', 'stage3', 'logistics'].forEach(stKey => {
             const lvl = Number(sec[stKey] || 0);
-            if (lvl > 0 && secDef.stages[stKey]) {
-              worth += Math.floor(secDef.stages[stKey].baseCost * lvl * 1.15);
+            if (lvl > 0 && secDef.stages && secDef.stages[stKey]) {
+              industryTotal += Math.floor((secDef.stages[stKey].baseCost || 0) * lvl * 1.15);
             }
           });
-          if (sec.readyStock > 0) {
-            worth += Math.floor(sec.readyStock * secDef.product.baseValue);
+          if (sec.readyStock > 0 && secDef.product) {
+            industryTotal += Math.floor(Number(sec.readyStock || 0) * (secDef.product.baseValue || 0));
           }
         }
       });
     }
-    // Deduct active bank loan liabilities (True Net Worth = Assets - Liabilities)
-    if (state.activeLoan) {
-      const loanDebt = Number(state.activeLoan.totalDue || state.activeLoan.amount || 0);
-      if (loanDebt > 0) {
-        worth -= loanDebt;
+
+    // 5. Trade & customs warehouse inventory + active shipments
+    let tradeTotal = 0;
+    if (playerState.tradeCompany && typeof TRADE_COMMODITIES !== 'undefined') {
+      if (playerState.tradeCompany.warehouse && typeof playerState.tradeCompany.warehouse === 'object') {
+        Object.keys(playerState.tradeCompany.warehouse).forEach(commId => {
+          const qty = Number(playerState.tradeCompany.warehouse[commId] || 0);
+          const comm = TRADE_COMMODITIES[commId];
+          if (qty > 0 && comm) {
+            tradeTotal += qty * (comm.unitCost || 0);
+          }
+        });
+      }
+      if (Array.isArray(playerState.tradeCompany.activeImports)) {
+        playerState.tradeCompany.activeImports.forEach(imp => {
+          tradeTotal += Number(imp.totalCost || ((imp.quantity || 0) * (TRADE_COMMODITIES[imp.commodityId]?.unitCost || 0)) || 0);
+        });
       }
     }
 
-    return Math.max(0, Math.floor(worth));
+    // 6. Liabilities: Active bank loan liabilities (True Net Worth = Assets - Liabilities)
+    let loanDebt = 0;
+    if (playerState.activeLoan) {
+      loanDebt = Number(playerState.activeLoan.totalDue || playerState.activeLoan.amount || 0);
+    }
+
+    const total = Math.max(0, Math.floor(liquidTotal + assetsTotal + stocksTotal + investmentsTotal + industryTotal + tradeTotal - loanDebt));
+
+    return {
+      cash,
+      bank,
+      dirtyCash,
+      liquidTotal,
+      assetsTotal,
+      stocksTotal,
+      investmentsTotal,
+      industryTotal,
+      tradeTotal,
+      loanDebt,
+      total
+    };
+  }
+
+  function calculateNetWorth(playerState = state) {
+    return getNetWorthBreakdown(playerState).total;
   }
 
   // Update Player Title based on Net Worth and XP
@@ -3537,6 +3598,8 @@ const GameEngine = (() => {
 
     recordPlayerActivity('شراء أسهم',`شراء ${shares} سهم (${sym}) بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`,'stock');
     trackDailyQuestProgress('stock_trade', 1);
+    state.netWorth = calculateNetWorth();
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
     forceSaveState(true);
     return { shares, price: currentPrice, grossCost, fee, totalCost };
   }
@@ -3642,6 +3705,8 @@ const GameEngine = (() => {
 
     recordPlayerActivity('بيع أسهم', logDetails, 'stock');
     trackDailyQuestProgress('stock_trade', 1);
+    state.netWorth = calculateNetWorth();
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
     forceSaveState(true);
     return {
       shares,
@@ -5057,6 +5122,8 @@ const GameEngine = (() => {
 
     state.tradeCompany.activeImports.push(importOrder);
     recordPlayerActivity('استيراد بضاعة',`بدء استيراد ${quantity} وحدة من"${item.name}" بتكلفة ${baseCost.toLocaleString()} EGP + ${customsAndFreightFee.toLocaleString()} EGP رسوم جمركية وشحن دولي (تصل خلال ${Math.round(item.importDurationSec / 60)} دقيقة).`,'trade');
+    state.netWorth = calculateNetWorth();
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
     forceSaveState(true);
 
     return importOrder;
@@ -5172,6 +5239,8 @@ const GameEngine = (() => {
 
     state.tradeCompany.activeExports.push(exportOrder);
     recordPlayerActivity('تصدير بضاعة',`شحن وتصدير ${quantity} وحدة من"${item.name}" إلى ${buyer.name} بقيمة تعاقد ${totalPayout.toLocaleString()} ج.م (ربح تقديري: +${estProfit.toLocaleString()} ج.م)${saturationDiscount > 0 ?` [تشبع سوق: -${Math.round(saturationDiscount * 100)}%]` :''}.`,'trade');
+    state.netWorth = calculateNetWorth();
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
     forceSaveState(true);
 
     return exportOrder;
@@ -5207,6 +5276,8 @@ const GameEngine = (() => {
     state.tradeCompany.activeExports.splice(index, 1);
 
     recordPlayerActivity('تحصيل أرباح تصدير',`تم تحصيل عائد تصدير شحنة"${order.commodityName}" من ${order.buyerName} بمبلغ +${order.totalPayout.toLocaleString()} EGP (صافي ربح: +${order.estProfit.toLocaleString()} EGP).`,'trade');
+    state.netWorth = calculateNetWorth();
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
     forceSaveState(true);
 
     return {
@@ -5240,6 +5311,8 @@ const GameEngine = (() => {
 
     state.tradeCompany.warehouseCapacity = Math.min(50, (state.tradeCompany.warehouseCapacity || 10) + 10);
     recordPlayerActivity('توسعة مستودع الاستيراد',`توسعة المستودع الرئيسي (+10 حاويات) لتصبح السعة الإجمالية ${state.tradeCompany.warehouseCapacity} حاوية.`,'trade');
+    state.netWorth = calculateNetWorth();
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
     forceSaveState(true);
 
     return {
@@ -5791,6 +5864,7 @@ const GameEngine = (() => {
     calculateBankInterestPerTick,
     getDetailedCashflowBreakdown,
     calculateNetWorth,
+    getNetWorthBreakdown,
     getAppropriateTitle,
     renewAfkManager,
     forceSaveState,

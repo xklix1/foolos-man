@@ -1873,12 +1873,12 @@
               </span>
             </div>
 
-            <div class="flex items-center justify-between pt-1">
+            <div id="btn-show-networth-breakdown" class="flex items-center justify-between pt-1 cursor-pointer hover:bg-slate-800/40 p-1.5 rounded-lg transition group" title="اضغط لعرض تفصيل محفظة الثروة الشاملة">
               <div class="flex items-center gap-2">
-                <span class="w-5 h-5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-[10px]">
+                <span class="w-5 h-5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-[10px] group-hover:scale-110 transition">
                   <i class="fa-solid fa-gem"></i>
                 </span>
-                <span class="text-xs font-bold text-white">إجمالي الثروة</span>
+                <span class="text-xs font-bold text-white group-hover:text-yellow-400 transition">إجمالي الثروة</span>
               </div>
               <span class="numbers-font text-sm font-black text-yellow-400"><span id="stat-networth">0</span> جنيه</span>
             </div>
@@ -2084,7 +2084,7 @@
             <span class="numbers-font text-xs font-bold text-emerald-400 truncate"><span
                 id="stat-bank-mobile">0</span></span>
           </div>
-          <div class="p-1.5 bg-slate-950/70 rounded-lg border border-slate-800/80 flex flex-col">
+          <div id="btn-networth-breakdown-mobile" class="p-1.5 bg-slate-950/70 rounded-lg border border-slate-800/80 flex flex-col cursor-pointer active:scale-95 transition hover:border-yellow-500/40" title="اضغط لعرض تفصيل محفظة الثروة">
             <span class="text-[9px] text-slate-400 font-bold flex items-center justify-center gap-1">الثروة <i
                 class="fa-solid fa-gem text-cyan-400 text-[10px]"></i></span>
             <span class="numbers-font text-xs font-bold text-yellow-400 truncate"><span
@@ -2170,10 +2170,16 @@
               <p class="text-[10px] text-rose-300/70 mt-2">أرباح السوق السوداء التي تحتاج لغسيل مالي لإيداعها بالبنك.
               </p>
             </div>
-            <div class="p-4 bg-slate-950/50 rounded-xl border border-slate-800/80">
-              <span class="text-xs text-slate-400 block mb-2">القيمة الصافية للثروة</span>
+            <div id="card-dash-worth" class="p-4 bg-slate-950/50 rounded-xl border border-slate-800/80 cursor-pointer hover:border-yellow-500/50 hover:bg-slate-900/60 transition duration-200 group" title="اضغط لعرض تفصيل محفظة الثروة الكاملة">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-slate-400 font-bold group-hover:text-yellow-400 transition">القيمة الصافية للثروة</span>
+                <span class="text-[10px] text-yellow-400/80 bg-yellow-500/10 px-2 py-0.5 rounded-md border border-yellow-500/20 flex items-center gap-1 group-hover:border-yellow-500/40">
+                  <span>تفصيل</span>
+                  <i class="fa-solid fa-chart-pie text-[9px]"></i>
+                </span>
+              </div>
               <span id="dash-worth" class="numbers-font text-2xl font-black text-white">0 جنيه</span>
-              <p class="text-[10px] text-slate-500 mt-2">المجموع الكلي: كاش + بنك + أموال مشبوهة + عقارات + أسهم.</p>
+              <p class="text-[10px] text-slate-500 mt-2">كاش وبنك + أسهم البورصة + شهادات الاستثمار + العقارات والصناعة والمستودع.</p>
             </div>
           </div>
         </div>
@@ -5563,6 +5569,164 @@
       <!-- Items Grid -->
       <div id="player-inventory-grid" class="flex-1 overflow-y-auto py-3 pr-1 grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10 custom-scrollbar">
         <!-- Dynamically rendered -->
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== NET WORTH BREAKDOWN MODAL ==================== -->
+  <div id="modal-networth-breakdown" dir="rtl"
+    class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-4 animate-fade-in text-right">
+    <div dir="rtl"
+      class="glass-panel w-full max-w-xl max-h-[92vh] flex flex-col rounded-3xl border-2 border-yellow-500/40 p-4 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden space-y-4">
+      
+      <!-- Top Glowing Accent -->
+      <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-36 bg-yellow-500/20 blur-3xl rounded-full pointer-events-none"></div>
+
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800/80 shrink-0 relative z-10">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-600 text-slate-950 flex items-center justify-center text-lg font-black shadow-lg shadow-yellow-500/20 shrink-0">
+            <i class="fa-solid fa-gem"></i>
+          </div>
+          <div>
+            <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+              <span>تفصيل صافي الثروة الشامل</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 font-bold">محدث لحظياً</span>
+            </h3>
+            <p class="text-xs text-slate-400">تقييم دقيق وشامل لجميع أصولك ومحافظك المالية والاستثمارية</p>
+          </div>
+        </div>
+        <button id="btn-close-networth-modal"
+          class="w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-700/50">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Main Net Worth Showcase -->
+      <div class="p-4 rounded-2xl bg-gradient-to-r from-yellow-500/10 via-amber-500/10 to-yellow-500/5 border border-yellow-500/30 flex items-center justify-between relative z-10">
+        <div>
+          <span class="text-xs text-yellow-400 font-bold block mb-1">إجمالي صافي الثروة (Net Worth)</span>
+          <span id="nw-modal-total" class="numbers-font text-2xl sm:text-3xl font-black text-white glow-gold">0 EGP</span>
+        </div>
+        <div class="text-left">
+          <span class="text-[10px] text-slate-400 block mb-1">اللقب الاقتصادي</span>
+          <span id="nw-modal-title" class="text-xs font-black px-2.5 py-1 rounded-xl bg-slate-900/90 text-amber-300 border border-amber-500/30">عامل مبتدئ</span>
+        </div>
+      </div>
+
+      <!-- Categories Grid -->
+      <div class="flex-1 overflow-y-auto space-y-2.5 custom-scrollbar pr-1 relative z-10 text-xs">
+        
+        <!-- 1. Liquid Assets -->
+        <div class="p-3 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-wallet"></i>
+            </span>
+            <div>
+              <span class="font-bold text-white block">السيولة النقدية والمصرفية</span>
+              <span class="text-[10px] text-slate-400">كاش الجيب + الحساب البنكي + الأموال المشبوهة</span>
+            </div>
+          </div>
+          <span id="nw-modal-liquid" class="numbers-font font-black text-emerald-400 text-sm">0 EGP</span>
+        </div>
+
+        <!-- 2. Stock Portfolio -->
+        <div class="p-3 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-chart-line"></i>
+            </span>
+            <div>
+              <span class="font-bold text-white block">محفظة الأسهم بالبورصة</span>
+              <span class="text-[10px] text-slate-400">القيمة السوقية اللحظية لكافة الأسهم المملوكة</span>
+            </div>
+          </div>
+          <span id="nw-modal-stocks" class="numbers-font font-black text-sky-400 text-sm">0 EGP</span>
+        </div>
+
+        <!-- 3. Investment Funds / Certificates -->
+        <div class="p-3 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-vault"></i>
+            </span>
+            <div>
+              <span class="font-bold text-white block">شهادات وصناديق الاستثمار</span>
+              <span class="text-[10px] text-slate-400">رؤوس الأموال المودعة في الصناديق المصرفية النشطة</span>
+            </div>
+          </div>
+          <span id="nw-modal-investments" class="numbers-font font-black text-indigo-400 text-sm">0 EGP</span>
+        </div>
+
+        <!-- 4. Real Estate & Fleet -->
+        <div class="p-3 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-building"></i>
+            </span>
+            <div>
+              <span class="font-bold text-white block">العقارات والأسطول الفاخر</span>
+              <span class="text-[10px] text-slate-400">الشقق، الأبراج، اليخوت، والمحطة المدارية الفضائية</span>
+            </div>
+          </div>
+          <span id="nw-modal-assets" class="numbers-font font-black text-cyan-400 text-sm">0 EGP</span>
+        </div>
+
+        <!-- 5. Industrial Conglomerate -->
+        <div class="p-3 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-industry"></i>
+            </span>
+            <div>
+              <span class="font-bold text-white block">مجمع الصناعات وسلاسل الإمداد</span>
+              <span class="text-[10px] text-slate-400">قيمة المصانع وخطوط الإنتاج ومخزون المنتجات الجاهزة</span>
+            </div>
+          </div>
+          <span id="nw-modal-industry" class="numbers-font font-black text-orange-400 text-sm">0 EGP</span>
+        </div>
+
+        <!-- 6. Trade & Customs Warehouse -->
+        <div class="p-3 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-ship"></i>
+            </span>
+            <div>
+              <span class="font-bold text-white block">المستودع الجمركي والتجارة</span>
+              <span class="text-[10px] text-slate-400">بضائع المستودع وشحنات الاستيراد قيد الشحن</span>
+            </div>
+          </div>
+          <span id="nw-modal-trade" class="numbers-font font-black text-teal-400 text-sm">0 EGP</span>
+        </div>
+
+        <!-- 7. Liabilities / Loans (if any) -->
+        <div id="nw-modal-debt-row" class="p-3 rounded-xl bg-rose-950/30 border border-rose-500/30 flex items-center justify-between hidden">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-file-invoice-dollar"></i>
+            </span>
+            <div>
+              <span class="font-bold text-rose-300 block">الالتزامات والديون المصرفية</span>
+              <span class="text-[10px] text-rose-400/80">قروض بنكية قائمة تُطرح من إجمالي الأصول</span>
+            </div>
+          </div>
+          <span id="nw-modal-debt" class="numbers-font font-black text-rose-400 text-sm">-0 EGP</span>
+        </div>
+
+      </div>
+
+      <!-- Footer Note -->
+      <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 relative z-10">
+        <span class="flex items-center gap-1.5">
+          <i class="fa-solid fa-shield-check text-emerald-400"></i>
+          <span>جميع الأصول والمحافظ المالية مسجلة ومعتمدة مركزياً</span>
+        </span>
+        <button id="btn-close-networth-modal-bottom" class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold transition">
+          إغلاق
+        </button>
       </div>
 
     </div>
