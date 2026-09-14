@@ -19056,7 +19056,7 @@ const UIController = (() => {
     if (!farmInfo || !farmInfo.farm) return;
 
     const farm = farmInfo.farm;
-    const config = farmInfo.config;
+    const config = farmInfo.config || {};
 
     const lockedBanner = document.getElementById('farm-unlocked-banner');
     const activeArea = document.getElementById('farm-active-area');
@@ -19095,34 +19095,34 @@ const UIController = (() => {
     switchFarmSubtab(_activeFarmSubtab);
 
     // Top Stats Bar
-    const currIrr = config.irrigationLevels.find(l => l.level === farm.irrigationLevel) || config.irrigationLevels[0];
-    const currFert = config.fertilizerLevels.find(l => l.level === farm.fertilizerLevel) || config.fertilizerLevels[0];
+    const currIrr = (config.irrigation && config.irrigation[farm.irrigationLevel]) || { name: 'ري تقليدي', speedBonus: 0 };
+    const currFert = (config.fertilizers && config.fertilizers[farm.fertilizerLevel]) || { name: 'تربة اعتيادية', yieldBonus: 0 };
 
     const statPlots = document.getElementById('farm-stat-plots');
-    if (statPlots) statPlots.textContent = `${farm.plots.length} أحواض (مستوى ${farm.landLevel})`;
+    if (statPlots) statPlots.textContent = `${farm.maxPlots || 4} أحواض (مستوى ${farm.landLevel || 1})`;
 
     const statIrr = document.getElementById('farm-stat-irrigation');
-    if (statIrr) statIrr.textContent = `${currIrr.name} (+${(currIrr.speedBonus * 100).toFixed(0)}% سرعة)`;
+    if (statIrr) statIrr.textContent = `${currIrr.name} (+${Math.round((currIrr.speedBonus || 0) * 100)}% سرعة)`;
 
     const statFert = document.getElementById('farm-stat-fertilizer');
-    if (statFert) statFert.textContent = `${currFert.name} (+${(currFert.yieldBonus * 100).toFixed(0)}% حصاد)`;
+    if (statFert) statFert.textContent = `${currFert.name} (+${Math.round((currFert.yieldBonus || 0) * 100)}% حصاد)`;
 
     const statWorkers = document.getElementById('farm-stat-workers');
-    if (statWorkers) statWorkers.textContent = `${farm.workers} عمال (تغطية ${farm.workers * 4} أحواض)`;
+    if (statWorkers) statWorkers.textContent = `${farm.workers || 0} عمال (تغطية ${(farm.workers || 0) * 4} أحواض)`;
 
-    // Render Sub-panels
-    renderFarmFields(farmInfo);
-    renderFarmProcessing(farmInfo);
-    renderFarmLivestock(farmInfo);
-    renderFarmContracts(farmInfo);
+    // Render Sub-panels safely
+    try { renderFarmFields(farmInfo); } catch (err) { console.error('[Farm UI] renderFarmFields error:', err); }
+    try { renderFarmProcessing(farmInfo); } catch (err) { console.error('[Farm UI] renderFarmProcessing error:', err); }
+    try { renderFarmLivestock(farmInfo); } catch (err) { console.error('[Farm UI] renderFarmLivestock error:', err); }
+    try { renderFarmContracts(farmInfo); } catch (err) { console.error('[Farm UI] renderFarmContracts error:', err); }
   }
 
   // ── SUB-PANEL 1: Fields & Crops ──
   function renderFarmFields(farmInfo) {
     const farm = farmInfo.farm;
-    const config = farmInfo.config;
-    const crops = farmInfo.crops;
-    const plots = farmInfo.plots;
+    const config = farmInfo.config || {};
+    const crops = farmInfo.crops || {};
+    const plots = farmInfo.plots || [];
 
     // Header Global Buttons
     const btnHarvestAll = document.getElementById('btn-farm-harvest-all');
@@ -19177,18 +19177,16 @@ const UIController = (() => {
 
     // Quick Crop Select Dropdown
     const cropSelect = document.getElementById('farm-quick-crop-select');
-    if (cropSelect && cropSelect.children.length <= 1) {
+    if (cropSelect) {
       const currentVal = cropSelect.value;
       cropSelect.innerHTML = '';
       Object.values(crops).forEach(c => {
-        if (c.reqLevel <= farm.landLevel) {
-          const opt = document.createElement('option');
-          opt.value = c.id;
-          opt.textContent = `${c.name} (${c.seedPrice} ج.م - ${c.growTimeSec} ثانية)`;
-          cropSelect.appendChild(opt);
-        }
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = `${c.name} (${(c.seedCost || 50).toLocaleString()} ج.م - ${c.growSeconds || 60}ث)`;
+        cropSelect.appendChild(opt);
       });
-      if (currentVal) cropSelect.value = currentVal;
+      if (currentVal && crops[currentVal]) cropSelect.value = currentVal;
     }
 
     // Plots Grid
@@ -19196,10 +19194,10 @@ const UIController = (() => {
     if (plotsGrid) {
       let plotsHtml = '';
       plots.forEach((p, idx) => {
-        const isWorkerCovered = idx < (farm.workers * 4);
+        const isWorkerCovered = idx < ((farm.workers || 0) * 4);
         const autoBadge = isWorkerCovered ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30 ml-auto" title="مغطى بالحصاد الآلي"><i class="fa-solid fa-robot mr-1"></i>آلي</span>' : '';
 
-        if (!p || !p.crop) {
+        if (!p || !p.cropId) {
           plotsHtml += `
             <div class="p-4 rounded-2xl bg-slate-950/60 border-2 border-dashed border-slate-800 hover:border-amber-500/50 transition flex flex-col justify-between items-center text-center gap-3 group min-h-[190px]">
               <div class="w-full flex items-center justify-between text-[11px] font-bold text-slate-500">
@@ -19221,9 +19219,11 @@ const UIController = (() => {
             </div>
           `;
         } else {
-          const progress = Math.min(100, Math.max(0, p.progressPercent || 0));
+          const crop = p.crop || crops[p.cropId] || { name: 'محصول زراعي', icon: 'fa-solid fa-wheat-awn', baseYield: 10 };
+          const progress = Math.min(100, Math.max(0, p.progress || 0));
           const isReady = p.isReady;
-          const remSec = Math.max(0, p.remainingSec || 0);
+          const remSec = Math.max(0, Math.ceil((p.remainingMs || 0) / 1000));
+          const expectedYield = p.cropYield || crop.baseYield || 10;
 
           plotsHtml += `
             <div class="p-4 rounded-2xl bg-slate-900/80 border ${isReady ? 'border-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-slate-800'} transition flex flex-col justify-between gap-3 min-h-[190px]">
@@ -19240,11 +19240,11 @@ const UIController = (() => {
 
               <div class="flex items-center gap-3 my-1">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-emerald-500/20 border border-amber-500/30 flex items-center justify-center text-2xl shrink-0">
-                  <i class="${p.crop.icon}"></i>
+                  <i class="${crop.icon}"></i>
                 </div>
                 <div class="min-w-0">
-                  <h4 class="font-black text-white text-sm truncate">${p.crop.name}</h4>
-                  <p class="text-[11px] text-slate-400 mt-0.5">إنتاج متوقع: <span class="numbers-font font-bold text-emerald-400">+${p.crop.yield} وحدة</span></p>
+                  <h4 class="font-black text-white text-sm truncate">${crop.name}</h4>
+                  <p class="text-[11px] text-slate-400 mt-0.5">إنتاج متوقع: <span class="numbers-font font-bold text-emerald-400">+${expectedYield} وحدة</span></p>
                 </div>
               </div>
 
@@ -19263,7 +19263,7 @@ const UIController = (() => {
                   <button onclick="window.UI?.harvestSinglePlot(${idx})" type="button"
                     class="w-full py-2 px-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs transition shadow flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 animate-bounce">
                     <i class="fa-solid fa-scythe text-sm"></i>
-                    <span>احصد المحصول (+${p.crop.yield} وحدة)</span>
+                    <span>احصد المحصول (+${expectedYield} وحدة)</span>
                   </button>
                 ` : `
                   <button disabled type="button"
@@ -19285,9 +19285,8 @@ const UIController = (() => {
     if (cropsCatalog) {
       let catalogHtml = '';
       Object.values(crops).forEach(c => {
-        const isUnlocked = farm.landLevel >= c.reqLevel;
         catalogHtml += `
-          <div class="p-4 rounded-2xl bg-slate-900/60 border ${isUnlocked ? 'border-slate-800 hover:border-amber-500/40' : 'border-slate-800/40 opacity-60'} transition flex flex-col justify-between gap-3 shadow-lg">
+          <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-amber-500/40 transition flex flex-col justify-between gap-3 shadow-lg">
             <div class="flex items-start justify-between gap-2">
               <div class="flex items-center gap-2.5">
                 <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-xl shrink-0">
@@ -19295,31 +19294,32 @@ const UIController = (() => {
                 </div>
                 <div>
                   <h4 class="font-black text-white text-xs">${c.name}</h4>
-                  <span class="text-[10px] text-amber-400 font-mono font-bold">${c.seedPrice.toLocaleString()} EGP للبذرة</span>
+                  <span class="text-[10px] text-amber-400 font-mono font-bold">${(c.seedCost || 50).toLocaleString()} EGP للبذرة</span>
                 </div>
               </div>
-              ${!isUnlocked ? `<span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold text-[9px] border border-rose-500/30">مستوى ${c.reqLevel}</span>` : ''}
             </div>
+
+            <p class="text-[11px] text-slate-400 leading-snug">${c.desc || ''}</p>
 
             <div class="grid grid-cols-3 gap-1.5 p-2 bg-slate-950/60 rounded-xl border border-slate-800/80 text-[10px] text-center font-medium text-slate-300">
               <div>
                 <span class="text-slate-500 block text-[9px]">المدة</span>
-                <span class="font-mono font-bold text-amber-300">${c.growTimeSec} ثانية</span>
+                <span class="font-mono font-bold text-amber-300">${c.growSeconds} ثانية</span>
               </div>
               <div>
                 <span class="text-slate-500 block text-[9px]">الحصاد</span>
-                <span class="font-mono font-bold text-emerald-400">+${c.yield} وحدة</span>
+                <span class="font-mono font-bold text-emerald-400">+${c.baseYield} وحدة</span>
               </div>
               <div>
                 <span class="text-slate-500 block text-[9px]">سعر البيع</span>
-                <span class="font-mono font-bold text-yellow-400">${c.basePrice} EGP</span>
+                <span class="font-mono font-bold text-yellow-400">${c.sellPrice} EGP</span>
               </div>
             </div>
 
-            <button ${!isUnlocked ? 'disabled' : `onclick="window.UI?.plantFirstEmptyPlot('${c.id}')"`} type="button"
-              class="w-full py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${isUnlocked ? 'bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 border border-amber-500/40 active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+            <button onclick="window.UI?.plantFirstEmptyPlot('${c.id}')" type="button"
+              class="w-full py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 border border-amber-500/40 active:scale-95">
               <i class="fa-solid fa-seedling text-xs"></i>
-              <span>${isUnlocked ? 'غرس في حوض فارغ' : 'يتطلب رقعة مستوى ' + c.reqLevel}</span>
+              <span>غرس في أول حوض فارغ</span>
             </button>
           </div>
         `;
@@ -19330,17 +19330,21 @@ const UIController = (() => {
     // Upgrades Grid
     const upgradesGrid = document.getElementById('farm-upgrades-grid');
     if (upgradesGrid) {
-      const nextLandCost = config.landUpgradeBaseCost * Math.pow(config.landUpgradeCostMultiplier, farm.landLevel);
-      const isMaxLand = farm.landLevel >= config.maxLandLevel;
+      const nextLandLevel = (farm.landLevel || 1) + 1;
+      const nextLand = config.landExpansions && config.landExpansions[nextLandLevel];
+      const isMaxLand = !nextLand;
 
-      const nextIrrLevel = farm.irrigationLevel + 1;
-      const nextIrr = config.irrigationLevels.find(l => l.level === nextIrrLevel);
+      const nextIrrLevel = (farm.irrigationLevel || 1) + 1;
+      const nextIrr = config.irrigation && config.irrigation[nextIrrLevel];
+      const currIrr = (config.irrigation && config.irrigation[farm.irrigationLevel || 1]) || { name: 'ري تقليدي' };
 
-      const nextFertLevel = farm.fertilizerLevel + 1;
-      const nextFert = config.fertilizerLevels.find(l => l.level === nextFertLevel);
+      const nextFertLevel = (farm.fertilizerLevel || 1) + 1;
+      const nextFert = config.fertilizers && config.fertilizers[nextFertLevel];
+      const currFert = (config.fertilizers && config.fertilizers[farm.fertilizerLevel || 1]) || { name: 'تربة اعتيادية' };
 
-      const nextWorkerCost = config.workerBaseCost * Math.pow(config.workerCostMultiplier, farm.workers);
-      const isMaxWorkers = farm.workers >= 12;
+      const workerCost = config.workerCost || 30000;
+      const maxWorkers = config.maxWorkers || 4;
+      const isMaxWorkers = (farm.workers || 0) >= maxWorkers;
 
       upgradesGrid.innerHTML = `
         <!-- 1. Land Expansion -->
@@ -19351,16 +19355,16 @@ const UIController = (() => {
             </div>
             <div>
               <h4 class="font-black text-white text-xs">استصلاح رقعة الأرض</h4>
-              <p class="text-[10px] text-slate-400 mt-0.5">+${config.plotsPerLevel} أحواض إضافية جديدة</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">${nextLand ? nextLand.name : 'أقصى مساحة متاحة'}</p>
             </div>
           </div>
           <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
             <span class="text-slate-400">المستوى:</span>
-            <span class="numbers-font text-amber-400">${farm.landLevel} / ${config.maxLandLevel}</span>
+            <span class="numbers-font text-amber-400">${farm.landLevel || 1} / 4</span>
           </div>
           <button ${isMaxLand ? 'disabled' : 'onclick="window.UI?.upgradeFarmLand()"'} type="button"
             class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${!isMaxLand ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
-            ${isMaxLand ? 'أقصى استصلاح' : 'توسيع (' + nextLandCost.toLocaleString() + ' EGP)'}
+            ${isMaxLand ? 'أقصى استصلاح' : 'توسيع (' + nextLand.cost.toLocaleString() + ' EGP)'}
           </button>
         </div>
 
@@ -19419,11 +19423,11 @@ const UIController = (() => {
           </div>
           <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
             <span class="text-slate-400">العمال:</span>
-            <span class="numbers-font text-purple-300">${farm.workers} عمال (${farm.workers * 4} أحواض)</span>
+            <span class="numbers-font text-purple-300">${farm.workers || 0} / ${maxWorkers}</span>
           </div>
           <button ${isMaxWorkers ? 'disabled' : 'onclick="window.UI?.hireFarmWorker()"'} type="button"
             class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${!isMaxWorkers ? 'bg-purple-500 hover:bg-purple-400 text-white shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
-            ${isMaxWorkers ? 'فريق الحصاد مكتمل' : 'توظيف (' + nextWorkerCost.toLocaleString() + ' EGP)'}
+            ${isMaxWorkers ? 'فريق الحصاد مكتمل' : 'توظيف (' + workerCost.toLocaleString() + ' EGP)'}
           </button>
         </div>
       `;
@@ -19438,7 +19442,7 @@ const UIController = (() => {
       let whHtml = '';
       Object.values(crops).forEach(c => {
         const qty = Number((farm.inventory && farm.inventory[c.id]) || 0);
-        const val = qty * c.basePrice;
+        const val = qty * (c.sellPrice || 10);
         whHtml += `
           <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between gap-2 shadow-md">
             <div class="flex items-center gap-2">
@@ -19470,8 +19474,8 @@ const UIController = (() => {
   // ── SUB-PANEL 2: Agro-Processing Workshop ──
   function renderFarmProcessing(farmInfo) {
     const farm = farmInfo.farm;
-    const crops = farmInfo.crops;
-    const recipes = (GameEngine && GameEngine.FARM_RECIPES) || {};
+    const crops = farmInfo.crops || {};
+    const recipes = farmInfo.recipes || (GameEngine && GameEngine.FARM_RECIPES) || {};
 
     const btnSellAllProcessed = document.getElementById('btn-farm-sell-all-processed');
     if (btnSellAllProcessed) {
@@ -19493,11 +19497,11 @@ const UIController = (() => {
     if (recipesGrid) {
       let rHtml = '';
       Object.values(recipes).forEach(r => {
-        const inputCrop = crops[r.inputCropId] || { name: 'محصول خام', basePrice: 10, icon: 'fa-solid fa-wheat-awn' };
-        const availableCrop = Number((farm.inventory && farm.inventory[r.inputCropId]) || 0);
-        const craftableBatches = Math.floor(availableCrop / r.inputCount);
-        const rawWorth = r.inputCount * inputCrop.basePrice;
-        const profitMargin = Math.round(((r.outputValue - rawWorth) / rawWorth) * 100);
+        const inputCrop = crops[r.inputCrop] || { name: 'محصول خام', sellPrice: 10, icon: 'fa-solid fa-wheat-awn' };
+        const availableCrop = Number((farm.inventory && farm.inventory[r.inputCrop]) || 0);
+        const craftableBatches = Math.floor(availableCrop / r.inputQty);
+        const rawWorth = r.inputQty * (inputCrop.sellPrice || 10);
+        const profitMargin = rawWorth > 0 ? Math.round(((r.baseValue - rawWorth) / rawWorth) * 100) : 100;
 
         rHtml += `
           <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-yellow-500/40 transition flex flex-col justify-between gap-3 shadow-lg group">
@@ -19509,12 +19513,12 @@ const UIController = (() => {
                   </div>
                   <div>
                     <h4 class="font-black text-white text-xs">${r.name}</h4>
-                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 font-bold border border-yellow-500/30 mt-0.5 inline-block">${r.category}</span>
+                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 font-bold border border-yellow-500/30 mt-0.5 inline-block">قيمة مضافة</span>
                   </div>
                 </div>
                 <span class="text-[10px] font-black text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-500/30">+${profitMargin}% قيمة</span>
               </div>
-              <p class="text-[11px] text-slate-400 leading-relaxed">${r.description}</p>
+              <p class="text-[11px] text-slate-400 leading-relaxed">${r.desc || ''}</p>
             </div>
 
             <div class="p-2.5 bg-slate-950/70 rounded-xl border border-slate-800 space-y-1 text-[11px]">
@@ -19522,16 +19526,16 @@ const UIController = (() => {
                 <span class="text-slate-400">المواد المطلوبة:</span>
                 <span class="font-bold text-white flex items-center gap-1">
                   <i class="${inputCrop.icon} text-amber-400 text-xs"></i>
-                  <span>${r.inputCount} وحدة ${inputCrop.name}</span>
+                  <span>${r.inputQty} وحدة ${inputCrop.name}</span>
                 </span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-slate-400">المتوفر بالمخزن:</span>
-                <span class="numbers-font font-bold ${availableCrop >= r.inputCount ? 'text-emerald-400' : 'text-rose-400'}">${availableCrop.toLocaleString()} وحدة</span>
+                <span class="numbers-font font-bold ${availableCrop >= r.inputQty ? 'text-emerald-400' : 'text-rose-400'}">${availableCrop.toLocaleString()} وحدة</span>
               </div>
               <div class="flex justify-between items-center border-t border-slate-800/80 pt-1">
                 <span class="text-slate-400">سعر البيع المصنّع:</span>
-                <span class="numbers-font font-black text-yellow-400">${r.outputValue.toLocaleString()} EGP</span>
+                <span class="numbers-font font-black text-yellow-400">${r.baseValue.toLocaleString()} EGP</span>
               </div>
             </div>
 
@@ -19555,14 +19559,14 @@ const UIController = (() => {
 
     // Processed Goods Storage Grid
     const procRevStat = document.getElementById('farm-processed-revenue-stat');
-    if (procRevStat) procRevStat.textContent = ((farm.processing && farm.processing.totalRevenue) || 0).toLocaleString() + ' ج.م';
+    if (procRevStat) procRevStat.textContent = `${((farm.processing && farm.processing.stats && farm.processing.stats.totalRevenue) || 0).toLocaleString()} ج.م`;
 
     const procWhGrid = document.getElementById('farm-processed-warehouse-grid');
     if (procWhGrid) {
       let pwhHtml = '';
       Object.values(recipes).forEach(r => {
         const qty = Number((farm.processing && farm.processing.storage && farm.processing.storage[r.id]) || 0);
-        const totalVal = qty * r.outputValue;
+        const totalVal = qty * r.baseValue;
 
         pwhHtml += `
           <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between gap-2 shadow-md">
@@ -19595,7 +19599,7 @@ const UIController = (() => {
   // ── SUB-PANEL 3: Livestock & Poultry Ranch ──
   function renderFarmLivestock(farmInfo) {
     const farm = farmInfo.farm;
-    const lConfig = (GameEngine && GameEngine.FARM_LIVESTOCK_CONFIG) || {};
+    const lConfig = farmInfo.livestockConfig || (GameEngine && GameEngine.FARM_LIVESTOCK_CONFIG) || {};
 
     const btnApplyCompost = document.getElementById('btn-farm-apply-compost');
     if (btnApplyCompost) {
@@ -19619,7 +19623,7 @@ const UIController = (() => {
         try {
           const res = GameEngine.sellAllLivestockProduce();
           playCasinoSound('win');
-          showToast('بيع منتجات المزرعة 🥛🥚', `تم بيع ${res.milkSold.toLocaleString()} لتر حليب و ${res.eggsSold.toLocaleString()} كرتونة بيض بقيمة +${res.totalRevenue.toLocaleString()} EGP نقداً!`, 'success');
+          showToast('بيع منتجات المزرعة 🥛🥚', `تم بيع كافة المنتجات الحيوانية بقيمة +${res.totalRevenue.toLocaleString()} EGP نقداً!`, 'success');
           renderFarmPanel();
           renderStatsBar();
         } catch (e) {
@@ -19632,13 +19636,16 @@ const UIController = (() => {
     // Livestock Facilities Cards Grid
     const facilitiesGrid = document.getElementById('farm-livestock-facilities-grid');
     if (facilitiesGrid) {
+      const cowDef = lConfig.cow || { cost: 25000, maxCount: 8, name: 'أبقار هولشتاين الحلوب' };
+      const chkDef = lConfig.chicken || { cost: 8000, maxCount: 10, name: 'عنابر الدجاج البياض' };
+
       const cowsOwned = Number((farm.livestock && farm.livestock.cows) || 0);
-      const maxCows = (farm.landLevel || 1) * (lConfig.dairyCows ? lConfig.dairyCows.capacityPerLevel : 10);
-      const cowCost = (lConfig.dairyCows && lConfig.dairyCows.cost) || 15000;
+      const maxCows = cowDef.maxCount || 8;
+      const cowCost = cowDef.cost || 25000;
 
       const chickensOwned = Number((farm.livestock && farm.livestock.chickens) || 0);
-      const maxChickens = (farm.landLevel || 1) * (lConfig.poultryChickens ? lConfig.poultryChickens.capacityPerLevel : 50);
-      const chickenCost = (lConfig.poultryChickens && lConfig.poultryChickens.cost) || 2500;
+      const maxChickens = chkDef.maxCount || 10;
+      const chickenCost = chkDef.cost || 8000;
 
       facilitiesGrid.innerHTML = `
         <!-- 1. Dairy Cows Ranch -->
@@ -19649,7 +19656,7 @@ const UIController = (() => {
                 <i class="fa-solid fa-cow"></i>
               </div>
               <div>
-                <h4 class="font-black text-white text-sm">حظائر الأبقار الحلوب الهولندية</h4>
+                <h4 class="font-black text-white text-sm">${cowDef.name}</h4>
                 <p class="text-[11px] text-slate-400 mt-0.5">إنتاج دوري للحليب الطازج والسماد العضوي الثمين للأحواض.</p>
               </div>
             </div>
@@ -19660,8 +19667,8 @@ const UIController = (() => {
 
           <div class="grid grid-cols-2 gap-2 p-3 bg-slate-950/70 rounded-xl border border-slate-800 text-[11px]">
             <div>
-              <span class="text-slate-400 block text-[10px]">الإنتاج الدوري (كل 25ث)</span>
-              <span class="font-bold text-emerald-400">+1 حليب و +1 سماد / بقرة</span>
+              <span class="text-slate-400 block text-[10px]">الإنتاج الدوري (كل 30ث)</span>
+              <span class="font-bold text-emerald-400">+2 حليب و +1 سماد / بقرة</span>
             </div>
             <div>
               <span class="text-slate-400 block text-[10px]">سعر شراء الرأس</span>
@@ -19670,12 +19677,12 @@ const UIController = (() => {
           </div>
 
           <div class="grid grid-cols-2 gap-2">
-            <button ${cowsOwned >= maxCows ? 'disabled' : 'onclick="window.UI?.buyLivestock(\'dairyCows\', 1)"'} type="button"
+            <button ${cowsOwned >= maxCows ? 'disabled' : 'onclick="window.UI?.buyLivestock(\'cow\', 1)"'} type="button"
               class="py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${cowsOwned < maxCows ? 'bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 border border-emerald-500/40 active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
               <i class="fa-solid fa-plus text-xs"></i>
               <span>+1 بقرة (${cowCost.toLocaleString()})</span>
             </button>
-            <button ${cowsOwned + 5 > maxCows ? 'disabled' : 'onclick="window.UI?.buyLivestock(\'dairyCows\', 5)"'} type="button"
+            <button ${cowsOwned + 5 > maxCows ? 'disabled' : 'onclick="window.UI?.buyLivestock(\'cow\', 5)"'} type="button"
               class="py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${cowsOwned + 5 <= maxCows ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
               <i class="fa-solid fa-bolt text-xs"></i>
               <span>+5 أبقار (${(cowCost * 5).toLocaleString()})</span>
@@ -19691,36 +19698,36 @@ const UIController = (() => {
                 <i class="fa-solid fa-egg"></i>
               </div>
               <div>
-                <h4 class="font-black text-white text-sm">عنابر الدواجن ومزارع البيض</h4>
+                <h4 class="font-black text-white text-sm">${chkDef.name}</h4>
                 <p class="text-[11px] text-slate-400 mt-0.5">إنتاج كراتين بيض المائدة الطازج عالي الطلب في عقود التوريد والمطاعم.</p>
               </div>
             </div>
             <span class="px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs border border-cyan-500/30 shrink-0">
-              ${chickensOwned} / ${maxChickens} دجاجة
+              ${chickensOwned} / ${maxChickens} عنابر
             </span>
           </div>
 
           <div class="grid grid-cols-2 gap-2 p-3 bg-slate-950/70 rounded-xl border border-slate-800 text-[11px]">
             <div>
-              <span class="text-slate-400 block text-[10px]">الإنتاج الدوري (كل 25ث)</span>
-              <span class="font-bold text-cyan-400">+2 كرتونة بيض / دجاجة</span>
+              <span class="text-slate-400 block text-[10px]">الإنتاج الدوري (كل 20ث)</span>
+              <span class="font-bold text-cyan-400">+3 كرتونة بيض / عنبر</span>
             </div>
             <div>
-              <span class="text-slate-400 block text-[10px]">سعر شراء الدجاجة</span>
+              <span class="text-slate-400 block text-[10px]">سعر شراء العنبر</span>
               <span class="font-mono font-bold text-yellow-400">${chickenCost.toLocaleString()} EGP</span>
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
-            <button ${chickensOwned >= maxChickens ? 'disabled' : 'onclick="window.UI?.buyLivestock(\'poultryChickens\', 1)"'} type="button"
+            <button ${chickensOwned >= maxChickens ? 'disabled' : 'onclick="window.UI?.buyLivestock(\'chicken\', 1)"'} type="button"
               class="py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${chickensOwned < maxChickens ? 'bg-cyan-500/20 hover:bg-cyan-500 text-cyan-300 hover:text-slate-950 border border-cyan-500/40 active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
               <i class="fa-solid fa-plus text-xs"></i>
-              <span>+1 دجاجة (${chickenCost.toLocaleString()})</span>
+              <span>+1 عنبر (${chickenCost.toLocaleString()})</span>
             </button>
-            <button ${chickensOwned + 10 > maxChickens ? 'disabled' : 'onclick="window.UI?.buyLivestock(\'poultryChickens\', 10)"'} type="button"
-              class="py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${chickensOwned + 10 <= maxChickens ? 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+            <button ${chickensOwned + 5 > maxChickens ? 'disabled' : 'onclick="window.UI?.buyLivestock(\'chicken\', 5)"'} type="button"
+              class="py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${chickensOwned + 5 <= maxChickens ? 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
               <i class="fa-solid fa-bolt text-xs"></i>
-              <span>+10 دجاجات (${(chickenCost * 10).toLocaleString()})</span>
+              <span>+5 عنابر (${(chickenCost * 5).toLocaleString()})</span>
             </button>
           </div>
         </div>
@@ -19730,6 +19737,9 @@ const UIController = (() => {
     // Livestock Produce Grid
     const produceGrid = document.getElementById('farm-livestock-produce-grid');
     if (produceGrid) {
+      const cowDef = lConfig.cow || { sellPrice: 150 };
+      const chkDef = lConfig.chicken || { sellPrice: 40 };
+
       const milk = Number((farm.livestock && farm.livestock.milk) || 0);
       const eggs = Number((farm.livestock && farm.livestock.eggs) || 0);
       const compost = Number((farm.livestock && farm.livestock.compost) || 0);
@@ -19743,7 +19753,7 @@ const UIController = (() => {
             </div>
             <div>
               <h4 class="font-black text-white text-xs">حليب أبقار طازج</h4>
-              <p class="text-[10px] text-slate-400 mt-0.5">150 EGP / لتر</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">${cowDef.sellPrice} EGP / لتر</p>
             </div>
           </div>
           <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
@@ -19752,7 +19762,7 @@ const UIController = (() => {
           </div>
           <button ${milk <= 0 ? 'disabled' : `onclick="window.UI?.sellLivestockProduce('milk', ${milk})"`} type="button"
             class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${milk > 0 ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
-            ${milk > 0 ? 'بيع الحليب (+' + (milk * 150).toLocaleString() + ' EGP)' : 'المخزون فارغ'}
+            ${milk > 0 ? 'بيع الحليب (+' + (milk * cowDef.sellPrice).toLocaleString() + ' EGP)' : 'المخزون فارغ'}
           </button>
         </div>
 
@@ -19764,7 +19774,7 @@ const UIController = (() => {
             </div>
             <div>
               <h4 class="font-black text-white text-xs">كراتين بيض مائدة</h4>
-              <p class="text-[10px] text-slate-400 mt-0.5">40 EGP / كرتونة</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">${chkDef.sellPrice} EGP / كرتونة</p>
             </div>
           </div>
           <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
@@ -19773,7 +19783,7 @@ const UIController = (() => {
           </div>
           <button ${eggs <= 0 ? 'disabled' : `onclick="window.UI?.sellLivestockProduce('eggs', ${eggs})"`} type="button"
             class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${eggs > 0 ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
-            ${eggs > 0 ? 'بيع البيض (+' + (eggs * 40).toLocaleString() + ' EGP)' : 'المخزون فارغ'}
+            ${eggs > 0 ? 'بيع البيض (+' + (eggs * chkDef.sellPrice).toLocaleString() + ' EGP)' : 'المخزون فارغ'}
           </button>
         </div>
 
@@ -19811,8 +19821,8 @@ const UIController = (() => {
 
     const contractsGrid = document.getElementById('farm-contracts-grid');
     if (contractsGrid) {
-      const activeContracts = (farm.contracts && farm.contracts.active) || [];
-      const now = getTrustedNowUI();
+      const activeContracts = (farmInfo.contracts) || (farm.contracts && farm.contracts.active) || [];
+      const now = (typeof getTrustedNowUI === 'function') ? getTrustedNowUI() : Date.now();
 
       if (activeContracts.length === 0) {
         contractsGrid.innerHTML = `
@@ -20087,7 +20097,7 @@ const UIController = (() => {
     try {
       playCasinoSound('win');
       const res = GameEngine.sellAllLivestockProduce();
-      showToast('بيع منتجات المزرعة 🥛🥚', `تم بيع ${res.milkSold.toLocaleString()} لتر حليب و ${res.eggsSold.toLocaleString()} كرتونة بيض بقيمة +${res.totalRevenue.toLocaleString()} EGP نقداً!`, 'success');
+      showToast('بيع منتجات المزرعة 🥛🥚', `تم بيع كافة المنتجات الحيوانية بقيمة +${res.totalRevenue.toLocaleString()} EGP نقداً!`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
