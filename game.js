@@ -4047,7 +4047,7 @@ const GameEngine = (() => {
     }
 
     // Daily Limit check: maximum 5 investments per calendar day
-    const today = new Date(getTrustedNow()).toISOString().slice(0, 10);
+    const today = getTodayDateString();
     if (!state.dailyInvestments || state.dailyInvestments.date !== today) {
       state.dailyInvestments = { date: today, count: 0 };
     }

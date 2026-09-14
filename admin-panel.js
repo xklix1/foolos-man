@@ -1327,8 +1327,10 @@
             selectedPlayerState.adminModifiedTimestamp = now;
           }
 
+          const canonicalUsername = freshPlayer.username || selectedPlayer;
+
           // 2. Save directly to Supabase with latest adminModifiedTimestamp
-          await AppDB.adminSavePlayer(selectedPlayer, freshPlayer);
+          await AppDB.adminSavePlayer(canonicalUsername, freshPlayer);
 
           // 3. Dispatch high-priority real-time balance grant mail to player's client
           const grantPayload = {
@@ -1341,7 +1343,7 @@
             timestamp: now
           };
 
-          await AppDB.sendMail('إدارة اللعبة (Admin)', selectedPlayer, 'admin_balance_grant', grantPayload);
+          await AppDB.sendMail('إدارة اللعبة (Admin)', canonicalUsername, 'admin_balance_grant', grantPayload);
 
           // 4. Inject pendingAdminPopup into state
           try {
@@ -1354,7 +1356,7 @@
               sentAt: now
             };
             freshPlayer.adminModifiedTimestamp = now;
-            await AppDB.adminSavePlayer(selectedPlayer, freshPlayer);
+            await AppDB.adminSavePlayer(canonicalUsername, freshPlayer);
           } catch (_) {}
 
           // 5. If this admin is the active player locally, immediately update in-memory GameEngine

@@ -3313,7 +3313,9 @@ const UIController = (() => {
     const investments = s.investments || [];
     const isGlobalLimitReached = investments.length >= 2;
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = (typeof GameEngine !== 'undefined' && typeof GameEngine.getTodayDateString === 'function') 
+      ? GameEngine.getTodayDateString() 
+      : (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
     const dailyCount = (s.dailyInvestments && s.dailyInvestments.date === today) ? (s.dailyInvestments.count || 0) : 0;
     const dailyLeft = Math.max(0, 5 - dailyCount);
     const isDailyLimitReached = (dailyLeft <= 0);
@@ -3445,7 +3447,9 @@ const UIController = (() => {
       activeCountEl.className = `numbers-font font-black px-2 py-0.5 rounded-md border ${count >= 2 ? 'text-rose-400 bg-rose-950/60 border-rose-500/30' : 'text-amber-300 bg-slate-950/80 border-amber-500/30'}`;
     }
 
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = (typeof GameEngine !== 'undefined' && typeof GameEngine.getTodayDateString === 'function') 
+      ? GameEngine.getTodayDateString() 
+      : (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
     const dCount = (s.dailyInvestments && s.dailyInvestments.date === todayStr) ? (s.dailyInvestments.count || 0) : 0;
     const dLeft = Math.max(0, 5 - dCount);
     if (dailyCountEl) {
@@ -15948,6 +15952,14 @@ const UIController = (() => {
           // Guaranteed single credit: Deposit transfer directly into recipient's Bank (1x, zero duplicate)
           GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
           GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
+          const trTs = Number((tr.payload && tr.payload.timestamp) || tr.created_at || Date.now());
+          GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), trTs);
+
+          try {
+            if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+              AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, GameEngine.state);
+            }
+          } catch (_) {}
 
           // Immediately persist credited bank balance to cloud
           await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);

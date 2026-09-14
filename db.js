@@ -1275,16 +1275,8 @@ var AppDB = (() => {
         }
 
         // 4. Loss & confiscation guard:
-        // If local state was updated recently (within 5 minutes) and has a lower cash balance
+        // Protect black market cooldowns without overwriting server cash
         if (localTs >= serverTs - 300000) {
-          if (typeof local.cash === 'number' && local.cash < stateObj.cash) {
-            stateObj.cash = local.cash;
-            shouldSyncCloud = true;
-          }
-          if (typeof local.dirtyCash === 'number' && local.dirtyCash < stateObj.dirtyCash) {
-            stateObj.dirtyCash = local.dirtyCash;
-            shouldSyncCloud = true;
-          }
           if (local.blackMarketCooldowns && Object.keys(local.blackMarketCooldowns).length > 0) {
             stateObj.blackMarketCooldowns = { ...(stateObj.blackMarketCooldowns || {}), ...local.blackMarketCooldowns };
           }
@@ -1329,9 +1321,10 @@ var AppDB = (() => {
 
         // 4.7 Daily Work Shifts Guard:
         // NEVER allow page reloading or reconnecting to roll back today's shift count or bypass the 100-shift limit
-        const todayStr = (typeof getTodayDateString === 'function')
-          ? getTodayDateString()
-          : new Date(typeof getTrustedNow === 'function' ? getTrustedNow() : Date.now()).toISOString().slice(0, 10);
+        const todayStr = (() => {
+          const d = new Date(typeof getTrustedNow === 'function' ? getTrustedNow() : Date.now());
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        })();
         if (local && local.dailyWork && local.dailyWork.date === todayStr) {
           if (!stateObj.dailyWork || stateObj.dailyWork.date !== todayStr) {
             stateObj.dailyWork = { ...local.dailyWork };
@@ -1630,13 +1623,29 @@ var AppDB = (() => {
 
     try {
       const adminTs = Number(state.adminModifiedTimestamp || 0);
-      const tsFilter = adminTs > 0 ? `&admin_modified_timestamp=lte.${adminTs}` : '';
+      const tsFilter = adminTs > 0 
+        ? `&admin_modified_timestamp=lte.${adminTs}` 
+        : `&or=(admin_modified_timestamp.is.null,admin_modified_timestamp.eq.0)`;
       const res = await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
         method:'PATCH',
         headers: {'Prefer':'return=representation' },
         body: JSON.stringify(payload)
       });
       _lastCloudSyncTimestamp = Date.now();
+
+      // If 0 rows were updated, the server has a newer admin/wire-transfer timestamp!
+      if (Array.isArray(res) && res.length === 0) {
+        console.warn(`[Sync] Cloud save rejected for ${u}: server has a newer administrative or wire transfer balance. Refreshing...`);
+        getPlayerState(u).then(freshState => {
+          if (freshState && typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername === u) {
+            window.GameEngine.state.cash = freshState.cash;
+            window.GameEngine.state.bank = freshState.bank;
+            window.GameEngine.state.netWorth = freshState.netWorth;
+            window.GameEngine.state.adminModifiedTimestamp = freshState.adminModifiedTimestamp;
+            if (typeof renderAll === 'function') renderAll();
+          }
+        }).catch(() => {});
+      }
     } catch (err) {
       // Direct client mutation is blocked by RLS in production
     }
@@ -2027,7 +2036,7 @@ var AppDB = (() => {
       if (!isSubscribed) return;
       if (!isNetworkActive()) return;
       try {
-        const rows = await _api(`mailbox?recipient=eq.${encodeURIComponent(username.trim())}&order=created_at.desc&limit=30`);
+        const rows = await _api(`mailbox?recipient=ilike.${encodeURIComponent(username.trim())}&order=created_at.desc&limit=30`);
         if (rows && isSubscribed) {
           if (!isFirstRun) {
             for (const m of rows) {
@@ -2144,7 +2153,7 @@ var AppDB = (() => {
   async function getMailbox(username, limit = 50) {
     if (!username) return [];
     try {
-      const rows = await _api(`mailbox?recipient=eq.${encodeURIComponent(username.trim())}&order=created_at.desc&limit=${limit}`);
+      const rows = await _api(`mailbox?recipient=ilike.${encodeURIComponent(username.trim())}&order=created_at.desc&limit=${limit}`);
       return Array.isArray(rows) ? rows : [];
     } catch (e) {
       return [];
@@ -2169,11 +2178,11 @@ var AppDB = (() => {
   async function markAllMailsRead(username) {
     if (!username) return true;
     try {
-      await _api(`mailbox?recipient=eq.${encodeURIComponent(username.trim())}&status=eq.unread`, {
+      await _api(`mailbox?recipient=ilike.${encodeURIComponent(username.trim())}&status=eq.unread`, {
         method:'PATCH',
         body: JSON.stringify({ status:'read' })
       });
-      await _api(`mailbox?recipient=eq.${encodeURIComponent(username.trim())}&status=eq.pending`, {
+      await _api(`mailbox?recipient=ilike.${encodeURIComponent(username.trim())}&status=eq.pending`, {
         method:'PATCH',
         body: JSON.stringify({ status:'read' })
       });
