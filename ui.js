@@ -19007,8 +19007,47 @@ const UIController = (() => {
   }
 
   // ─────────────────────────────────────────────
-  // 🌾 TAB: AGRO FARM TYCOON (المزرعة الاستثمارية)
+    // ─────────────────────────────────────────────
+  // 🌾 TAB: AGRO FARM TYCOON 2.0 (المزرعة الاستثمارية المتطورة)
   // ─────────────────────────────────────────────
+  let _activeFarmSubtab = 'fields'; // 'fields' | 'processing' | 'livestock' | 'contracts'
+
+  function switchFarmSubtab(subtabId) {
+    _activeFarmSubtab = subtabId;
+    const subtabs = ['fields', 'processing', 'livestock', 'contracts'];
+    subtabs.forEach(tab => {
+      const panel = document.getElementById('farm-subpanel-' + tab);
+      const btn = document.querySelector('.farm-subtab-btn[data-farm-subtab="' + tab + '"]');
+      if (panel) {
+        if (tab === subtabId) panel.classList.remove('hidden');
+        else panel.classList.add('hidden');
+      }
+      if (btn) {
+        if (tab === subtabId) {
+          btn.className = 'farm-subtab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm';
+        } else {
+          btn.className = 'farm-subtab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800';
+        }
+      }
+    });
+  }
+
+  function initFarmSubtabListeners() {
+    const nav = document.getElementById('farm-subtabs-nav');
+    if (nav && !nav.dataset.bound) {
+      nav.dataset.bound = 'true';
+      nav.querySelectorAll('.farm-subtab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tab = btn.getAttribute('data-farm-subtab');
+          if (tab) {
+            playMenuSound('click');
+            switchFarmSubtab(tab);
+          }
+        });
+      });
+    }
+  }
+
   function renderFarmPanel() {
     if (!isFarmTesterAccount()) return;
     if (!GameEngine || typeof GameEngine.getFarmState !== 'function') return;
@@ -19018,16 +19057,16 @@ const UIController = (() => {
 
     const farm = farmInfo.farm;
     const config = farmInfo.config;
-    const crops = farmInfo.crops;
-    const plots = farmInfo.plots;
 
     const lockedBanner = document.getElementById('farm-unlocked-banner');
     const activeArea = document.getElementById('farm-active-area');
+    const subtabsNav = document.getElementById('farm-subtabs-nav');
 
     // 1. Check Unlocked vs Locked
     if (!farm.unlocked) {
       if (lockedBanner) lockedBanner.classList.remove('hidden');
       if (activeArea) activeArea.classList.add('hidden');
+      if (subtabsNav) subtabsNav.classList.add('hidden');
 
       const btnUnlock = document.getElementById('btn-farm-unlock');
       if (btnUnlock) {
@@ -19047,46 +19086,120 @@ const UIController = (() => {
       return;
     }
 
-    // Farm is Unlocked!
+    // Active
     if (lockedBanner) lockedBanner.classList.add('hidden');
     if (activeArea) activeArea.classList.remove('hidden');
+    if (subtabsNav) subtabsNav.classList.remove('hidden');
 
-    // 2. Update Header Stat Badges
+    initFarmSubtabListeners();
+    switchFarmSubtab(_activeFarmSubtab);
+
+    // Top Stats Bar
+    const currIrr = config.irrigationLevels.find(l => l.level === farm.irrigationLevel) || config.irrigationLevels[0];
+    const currFert = config.fertilizerLevels.find(l => l.level === farm.fertilizerLevel) || config.fertilizerLevels[0];
+
     const statPlots = document.getElementById('farm-stat-plots');
-    if (statPlots) statPlots.textContent = `${farm.maxPlots} أحواض (مستوى ${farm.landLevel})`;
+    if (statPlots) statPlots.textContent = `${farm.plots.length} أحواض (مستوى ${farm.landLevel})`;
 
-    const statIrrigation = document.getElementById('farm-stat-irrigation');
-    if (statIrrigation) {
-      const irDef = config.irrigation[farm.waterLevel] || config.irrigation[1];
-      statIrrigation.textContent = irDef ? irDef.name : 'ري تقليدي';
-    }
+    const statIrr = document.getElementById('farm-stat-irrigation');
+    if (statIrr) statIrr.textContent = `${currIrr.name} (+${(currIrr.speedBonus * 100).toFixed(0)}% سرعة)`;
 
-    const statFertilizer = document.getElementById('farm-stat-fertilizer');
-    if (statFertilizer) {
-      const fertDef = config.fertilizers[farm.fertilizerLevel] || config.fertilizers[1];
-      statFertilizer.textContent = fertDef ? fertDef.name : 'تربة اعتيادية';
-    }
+    const statFert = document.getElementById('farm-stat-fertilizer');
+    if (statFert) statFert.textContent = `${currFert.name} (+${(currFert.yieldBonus * 100).toFixed(0)}% حصاد)`;
 
     const statWorkers = document.getElementById('farm-stat-workers');
-    if (statWorkers) {
-      statWorkers.textContent = `${farm.workers} عمال (${farm.workers * 4} أحواض مؤتمتة)`;
+    if (statWorkers) statWorkers.textContent = `${farm.workers} عمال (تغطية ${farm.workers * 4} أحواض)`;
+
+    // Render Sub-panels
+    renderFarmFields(farmInfo);
+    renderFarmProcessing(farmInfo);
+    renderFarmLivestock(farmInfo);
+    renderFarmContracts(farmInfo);
+  }
+
+  // ── SUB-PANEL 1: Fields & Crops ──
+  function renderFarmFields(farmInfo) {
+    const farm = farmInfo.farm;
+    const config = farmInfo.config;
+    const crops = farmInfo.crops;
+    const plots = farmInfo.plots;
+
+    // Header Global Buttons
+    const btnHarvestAll = document.getElementById('btn-farm-harvest-all');
+    if (btnHarvestAll) {
+      btnHarvestAll.onclick = () => {
+        try {
+          const res = GameEngine.harvestAllFarmPlots();
+          playMenuSound('success');
+          showToast('حصاد شامل 🌾', `تم حصد ${res.harvestedCount} حوض بنجاح! تم تخزين ${res.totalYield} وحدة بالمستودع.`, 'success');
+          renderFarmPanel();
+          renderStatsBar();
+        } catch (e) {
+          playMenuSound('error');
+          showToast('تعذر الحصاد', e.message, 'error');
+        }
+      };
     }
 
-    const totalRevEl = document.getElementById('farm-total-revenue-stat');
-    if (totalRevEl) {
-      totalRevEl.textContent = `${(farm.stats?.totalRevenue || 0).toLocaleString()} ج.م`;
+    const btnSellAll = document.getElementById('btn-farm-sell-all');
+    if (btnSellAll) {
+      btnSellAll.onclick = () => {
+        try {
+          const res = GameEngine.sellAllFarmCrops();
+          playCasinoSound('win');
+          showToast('تصفية المحاصيل 💰', `تم بيع ${res.totalUnits.toLocaleString()} وحدة محاصيل بقيمة +${res.totalRevenue.toLocaleString()} EGP نقداً!`, 'success');
+          renderFarmPanel();
+          renderStatsBar();
+        } catch (e) {
+          playMenuSound('error');
+          showToast('تعذر البيع', e.message, 'error');
+        }
+      };
     }
 
-    // 3. Render Field Plots Grid
+    const btnPlantAll = document.getElementById('btn-farm-plant-all');
+    if (btnPlantAll) {
+      btnPlantAll.onclick = () => {
+        const cropSelect = document.getElementById('farm-quick-crop-select');
+        const cropId = cropSelect ? cropSelect.value : 'wheat';
+        try {
+          const res = GameEngine.plantAllPlots(cropId);
+          playMenuSound('click');
+          showToast('غرس شامل 🌱', `تم غرس ${res.plantedCount} حوض بنجاح بمحصول "${res.crop.name}"!`, 'success');
+          renderFarmPanel();
+          renderStatsBar();
+        } catch (e) {
+          playMenuSound('error');
+          showToast('تعذر الزراعة', e.message, 'error');
+        }
+      };
+    }
+
+    // Quick Crop Select Dropdown
+    const cropSelect = document.getElementById('farm-quick-crop-select');
+    if (cropSelect && cropSelect.children.length <= 1) {
+      const currentVal = cropSelect.value;
+      cropSelect.innerHTML = '';
+      Object.values(crops).forEach(c => {
+        if (c.reqLevel <= farm.landLevel) {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = `${c.name} (${c.seedPrice} ج.م - ${c.growTimeSec} ثانية)`;
+          cropSelect.appendChild(opt);
+        }
+      });
+      if (currentVal) cropSelect.value = currentVal;
+    }
+
+    // Plots Grid
     const plotsGrid = document.getElementById('farm-plots-grid');
     if (plotsGrid) {
       let plotsHtml = '';
       plots.forEach((p, idx) => {
         const isWorkerCovered = idx < (farm.workers * 4);
-        const autoBadge = isWorkerCovered ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30 ml-auto" title="مغطى بالحصاد الآلي للعمال"><i class="fa-solid fa-robot mr-1"></i>آلي</span>' : '';
+        const autoBadge = isWorkerCovered ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30 ml-auto" title="مغطى بالحصاد الآلي"><i class="fa-solid fa-robot mr-1"></i>آلي</span>' : '';
 
         if (!p || !p.crop) {
-          // Empty Plot
           plotsHtml += `
             <div class="p-4 rounded-2xl bg-slate-950/60 border-2 border-dashed border-slate-800 hover:border-amber-500/50 transition flex flex-col justify-between items-center text-center gap-3 group min-h-[190px]">
               <div class="w-full flex items-center justify-between text-[11px] font-bold text-slate-500">
@@ -19108,60 +19221,56 @@ const UIController = (() => {
             </div>
           `;
         } else {
-          // Active Crop Plot
-          const c = p.crop;
+          const progress = Math.min(100, Math.max(0, p.progressPercent || 0));
           const isReady = p.isReady;
-          const progress = p.progress || 0;
-          const remainingSec = Math.ceil((p.remainingMs || 0) / 1000);
-          const mins = Math.floor(remainingSec / 60);
-          const secs = remainingSec % 60;
-          const timeFormatted = mins > 0 ? `${mins}:${String(secs).padStart(2, '0')}` : `${secs} ث`;
-
-          const fertDef = config.fertilizers[farm.fertilizerLevel] || config.fertilizers[1];
-          const yieldBonus = fertDef ? (fertDef.yieldBonus || 0) : 0;
-          const estimatedYield = Math.round(c.baseYield * (1 + yieldBonus));
+          const remSec = Math.max(0, p.remainingSec || 0);
 
           plotsHtml += `
-            <div class="p-4 rounded-2xl bg-slate-950/80 border ${isReady ? 'border-emerald-500/60 shadow-lg shadow-emerald-500/10' : 'border-slate-800/90'} flex flex-col justify-between gap-3 min-h-[190px] relative overflow-hidden">
-              <div class="flex items-center justify-between text-[11px] font-bold">
-                <span class="text-slate-400">حوض #${idx + 1}</span>
-                ${autoBadge}
-              </div>
-
-              <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-${c.color}-500/20 border border-${c.color}-500/40 flex items-center justify-center text-${c.color}-400 text-xl shrink-0 shadow-inner">
-                  <i class="${c.icon}"></i>
-                </div>
-                <div class="min-w-0 flex-1">
-                  <h4 class="text-xs font-black text-white truncate">${c.name}</h4>
-                  <span class="text-[10px] text-slate-400 block mt-0.5">محصول متوقع: <b class="text-emerald-400 numbers-font">+${estimatedYield}</b></span>
+            <div class="p-4 rounded-2xl bg-slate-900/80 border ${isReady ? 'border-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-slate-800'} transition flex flex-col justify-between gap-3 min-h-[190px]">
+              <div class="flex items-center justify-between text-[11px] font-bold text-slate-400">
+                <span class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-seedling text-amber-400"></i>
+                  <span>حوض #${idx + 1}</span>
+                </span>
+                <div class="flex items-center gap-1">
+                  ${autoBadge}
+                  ${isReady ? '<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black animate-pulse border border-emerald-500/40">جاهز للحصاد</span>' : '<span class="text-[10px] text-slate-400 font-mono">' + formatCountdownHMS(remSec) + '</span>'}
                 </div>
               </div>
 
-              <!-- Progress / Time Status -->
+              <div class="flex items-center gap-3 my-1">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-emerald-500/20 border border-amber-500/30 flex items-center justify-center text-2xl shrink-0">
+                  <i class="${p.crop.icon}"></i>
+                </div>
+                <div class="min-w-0">
+                  <h4 class="font-black text-white text-sm truncate">${p.crop.name}</h4>
+                  <p class="text-[11px] text-slate-400 mt-0.5">إنتاج متوقع: <span class="numbers-font font-bold text-emerald-400">+${p.crop.yield} وحدة</span></p>
+                </div>
+              </div>
+
               <div class="space-y-1.5">
                 <div class="flex justify-between text-[10px] font-bold">
-                  <span class="${isReady ? 'text-emerald-400 font-black' : 'text-slate-400'}">${isReady ? 'مكتمل النضج!' : 'قيد النمو...'}</span>
-                  <span class="numbers-font ${isReady ? 'text-emerald-400 font-black' : 'text-amber-400'}">${isReady ? '100%' : timeFormatted}</span>
+                  <span class="text-slate-400">مرحلة النمو</span>
+                  <span class="numbers-font text-amber-400">${progress.toFixed(0)}%</span>
                 </div>
-                <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
-                  <div class="h-full bg-gradient-to-r ${isReady ? 'from-emerald-500 to-teal-400' : 'from-amber-500 to-yellow-400'} transition-all duration-300" style="width: ${progress}%"></div>
+                <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                  <div class="h-full rounded-full transition-all duration-300 ${isReady ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-amber-500 to-emerald-500'}" style="width: ${progress}%"></div>
                 </div>
               </div>
 
-              <!-- Harvest / Growing Button -->
-              <div>
+              <div class="pt-1">
                 ${isReady ? `
                   <button onclick="window.UI?.harvestSinglePlot(${idx})" type="button"
-                    class="w-full py-2 px-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 animate-pulse cursor-pointer active:scale-95">
-                    <i class="fa-solid fa-hand-holding-dollar text-xs"></i>
-                    <span>حصاد المحصول (+${estimatedYield})</span>
+                    class="w-full py-2 px-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs transition shadow flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 animate-bounce">
+                    <i class="fa-solid fa-scythe text-sm"></i>
+                    <span>احصد المحصول (+${p.crop.yield} وحدة)</span>
                   </button>
                 ` : `
-                  <div class="w-full py-2 px-3 bg-slate-900/80 rounded-xl text-[10px] font-bold text-slate-400 border border-slate-800 text-center flex items-center justify-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
-                    <span>قيد الري والنمو...</span>
-                  </div>
+                  <button disabled type="button"
+                    class="w-full py-2 px-3 bg-slate-950/80 text-slate-500 font-bold rounded-xl text-xs border border-slate-800 flex items-center justify-center gap-1.5 cursor-not-allowed">
+                    <i class="fa-solid fa-clock text-xs"></i>
+                    <span>ينمو بالتربة (${formatCountdownHMS(remSec)})</span>
+                  </button>
                 `}
               </div>
             </div>
@@ -19171,102 +19280,46 @@ const UIController = (() => {
       plotsGrid.innerHTML = plotsHtml;
     }
 
-    // 4. Quick Actions (Harvest All, Sell All, Plant All)
-    const btnHarvestAll = document.getElementById('btn-farm-harvest-all');
-    if (btnHarvestAll) {
-      btnHarvestAll.onclick = () => {
-        try {
-          const res = GameEngine.harvestAllFarmPlots();
-          playMenuSound('success');
-          showToast('حصاد شامل 🌾', `تم حصاد ${res.totalHarvestedPlots} حوض زراعي بنجاح وتخزينها بالمستودع!`, 'success');
-          renderFarmPanel();
-          renderStatsBar();
-        } catch (e) {
-          playMenuSound('error');
-          showToast('تعذر الحصاد', e.message, 'error');
-        }
-      };
-    }
-
-    const btnSellAll = document.getElementById('btn-farm-sell-all');
-    if (btnSellAll) {
-      btnSellAll.onclick = () => {
-        try {
-          const res = GameEngine.sellAllFarmCrops();
-          playCasinoSound('win');
-          showToast('بيع كامل المحصول 💰', `تم بيع كافة محاصيل المزرعة بإجمالي +${res.grandTotal.toLocaleString()} EGP نقداً!`, 'success');
-          renderFarmPanel();
-          renderStatsBar();
-        } catch (e) {
-          playMenuSound('error');
-          showToast('تعذر البيع', e.message, 'error');
-        }
-      };
-    }
-
-    const btnPlantAll = document.getElementById('btn-farm-plant-all');
-    if (btnPlantAll) {
-      btnPlantAll.onclick = () => {
-        const cropSelect = document.getElementById('farm-quick-crop-select');
-        const cropId = cropSelect ? cropSelect.value : 'wheat';
-        try {
-          const res = GameEngine.plantAllFarmPlots(cropId);
-          playMenuSound('click');
-          showToast('تمت الزراعة 🌱', `تم غرس ${res.plantedCount} حوض بمحصول "${res.crop.name}" بنجاح!`, 'success');
-          renderFarmPanel();
-          renderStatsBar();
-        } catch (e) {
-          playMenuSound('error');
-          showToast('تعذر الزراعة', e.message, 'error');
-        }
-      };
-    }
-
-    // 5. Render Crops Catalog
+    // Crops Catalog
     const cropsCatalog = document.getElementById('farm-crops-catalog');
     if (cropsCatalog) {
       let catalogHtml = '';
-      Object.keys(crops).forEach(cId => {
-        const c = crops[cId];
-        const mins = Math.floor(c.growSeconds / 60);
-        const timeText = mins > 0 ? (mins >= 60 ? `${(mins / 60).toFixed(1)} ساعة` : `${mins} دقيقة`) : `${c.growSeconds} ثانية`;
-        const netProfit = (c.baseYield * c.sellPrice) - c.seedCost;
-
+      Object.values(crops).forEach(c => {
+        const isUnlocked = farm.landLevel >= c.reqLevel;
         catalogHtml += `
-          <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/90 hover:border-${c.color}-500/40 transition flex flex-col justify-between gap-3 shadow-md">
-            <div class="flex items-center gap-3">
-              <span class="w-12 h-12 rounded-2xl bg-${c.color}-500/20 border border-${c.color}-500/40 flex items-center justify-center text-${c.color}-400 text-2xl shadow-inner shrink-0">
-                <i class="${c.icon}"></i>
-              </span>
-              <div class="min-w-0 flex-1">
-                <h4 class="text-sm font-black text-white truncate">${c.name}</h4>
-                <p class="text-[10px] text-slate-400 mt-0.5 leading-snug">${c.desc}</p>
+          <div class="p-4 rounded-2xl bg-slate-900/60 border ${isUnlocked ? 'border-slate-800 hover:border-amber-500/40' : 'border-slate-800/40 opacity-60'} transition flex flex-col justify-between gap-3 shadow-lg">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-xl shrink-0">
+                  <i class="${c.icon}"></i>
+                </div>
+                <div>
+                  <h4 class="font-black text-white text-xs">${c.name}</h4>
+                  <span class="text-[10px] text-amber-400 font-mono font-bold">${c.seedPrice.toLocaleString()} EGP للبذرة</span>
+                </div>
+              </div>
+              ${!isUnlocked ? `<span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold text-[9px] border border-rose-500/30">مستوى ${c.reqLevel}</span>` : ''}
+            </div>
+
+            <div class="grid grid-cols-3 gap-1.5 p-2 bg-slate-950/60 rounded-xl border border-slate-800/80 text-[10px] text-center font-medium text-slate-300">
+              <div>
+                <span class="text-slate-500 block text-[9px]">المدة</span>
+                <span class="font-mono font-bold text-amber-300">${c.growTimeSec} ثانية</span>
+              </div>
+              <div>
+                <span class="text-slate-500 block text-[9px]">الحصاد</span>
+                <span class="font-mono font-bold text-emerald-400">+${c.yield} وحدة</span>
+              </div>
+              <div>
+                <span class="text-slate-500 block text-[9px]">سعر البيع</span>
+                <span class="font-mono font-bold text-yellow-400">${c.basePrice} EGP</span>
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-2 text-center text-[10px] pt-2 border-t border-slate-800/80">
-              <div class="p-1.5 rounded-lg bg-slate-900 border border-slate-800">
-                <span class="text-slate-400 block">سعر البذرة</span>
-                <span class="numbers-font font-black text-yellow-400 text-xs">${c.seedCost.toLocaleString()} ج.م</span>
-              </div>
-              <div class="p-1.5 rounded-lg bg-slate-900 border border-slate-800">
-                <span class="text-slate-400 block">مدة النضج</span>
-                <span class="numbers-font font-black text-cyan-400 text-xs">${timeText}</span>
-              </div>
-              <div class="p-1.5 rounded-lg bg-slate-900 border border-slate-800">
-                <span class="text-slate-400 block">سعر بيع الوحدة</span>
-                <span class="numbers-font font-black text-emerald-400 text-xs">${c.sellPrice.toLocaleString()} ج.م</span>
-              </div>
-              <div class="p-1.5 rounded-lg bg-slate-900 border border-slate-800">
-                <span class="text-slate-400 block">صافي الربح/حوض</span>
-                <span class="numbers-font font-black text-emerald-300 text-xs">+${netProfit.toLocaleString()} ج.م</span>
-              </div>
-            </div>
-
-            <button onclick="window.UI?.plantFirstEmptyPlot('${c.id}')" type="button"
-              class="w-full py-2 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 hover:from-amber-500 hover:to-yellow-500 text-amber-300 hover:text-slate-950 font-black rounded-xl text-xs border border-amber-500/40 transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5">
+            <button ${!isUnlocked ? 'disabled' : `onclick="window.UI?.plantFirstEmptyPlot('${c.id}')"`} type="button"
+              class="w-full py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${isUnlocked ? 'bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 border border-amber-500/40 active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
               <i class="fa-solid fa-seedling text-xs"></i>
-              <span>زرع في أول حوض فارغ</span>
+              <span>${isUnlocked ? 'غرس في حوض فارغ' : 'يتطلب رقعة مستوى ' + c.reqLevel}</span>
             </button>
           </div>
         `;
@@ -19274,148 +19327,133 @@ const UIController = (() => {
       cropsCatalog.innerHTML = catalogHtml;
     }
 
-    // 6. Render Upgrades Grid (Land, Irrigation, Fertilizer, Workers)
+    // Upgrades Grid
     const upgradesGrid = document.getElementById('farm-upgrades-grid');
     if (upgradesGrid) {
-      const nextLandLvl = (farm.landLevel || 1) + 1;
-      const landExp = config.landExpansions[nextLandLvl];
+      const nextLandCost = config.landUpgradeBaseCost * Math.pow(config.landUpgradeCostMultiplier, farm.landLevel);
+      const isMaxLand = farm.landLevel >= config.maxLandLevel;
 
-      const nextIrrLvl = (farm.waterLevel || 1) + 1;
-      const irrDef = config.irrigation[nextIrrLvl];
-      const curIrr = config.irrigation[farm.waterLevel] || config.irrigation[1];
+      const nextIrrLevel = farm.irrigationLevel + 1;
+      const nextIrr = config.irrigationLevels.find(l => l.level === nextIrrLevel);
 
-      const nextFertLvl = (farm.fertilizerLevel || 1) + 1;
-      const fertDef = config.fertilizers[nextFertLvl];
-      const curFert = config.fertilizers[farm.fertilizerLevel] || config.fertilizers[1];
+      const nextFertLevel = farm.fertilizerLevel + 1;
+      const nextFert = config.fertilizerLevels.find(l => l.level === nextFertLevel);
 
-      const canHireWorker = farm.workers < config.maxWorkers;
+      const nextWorkerCost = config.workerBaseCost * Math.pow(config.workerCostMultiplier, farm.workers);
+      const isMaxWorkers = farm.workers >= 12;
 
       upgradesGrid.innerHTML = `
-        <!-- Land Card -->
-        <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between gap-3">
+        <!-- 1. Land Expansion -->
+        <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-amber-500/30 transition flex flex-col justify-between gap-3 shadow">
           <div class="flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-lg shrink-0">
-              <i class="fa-solid fa-layer-group"></i>
-            </span>
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-lg shrink-0">
+              <i class="fa-solid fa-expand"></i>
+            </div>
             <div>
-              <h4 class="text-xs font-black text-white">توسيع واستصلاح الأرض</h4>
-              <span class="text-[10px] text-slate-400">الحالي: <b class="text-white numbers-font">${farm.maxPlots} أحواض</b></span>
+              <h4 class="font-black text-white text-xs">استصلاح رقعة الأرض</h4>
+              <p class="text-[10px] text-slate-400 mt-0.5">+${config.plotsPerLevel} أحواض إضافية جديدة</p>
             </div>
           </div>
-          <p class="text-[10px] text-slate-400 leading-snug">
-            ${landExp ? `توسيع المزرعة إلى ${landExp.plots} حوضاً لزيادة سعة المحاصيل بالتوازي.` : 'وصلت المزرعة للحد الأقصى من التوسعة (16 حوضاً).'}
-          </p>
-          ${landExp ? `
-            <button onclick="window.UI?.upgradeFarmLand()" type="button"
-              class="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer active:scale-95">
-              ترقية (${landExp.cost.toLocaleString()} ج.م)
-            </button>
-          ` : `
-            <div class="w-full py-2 rounded-xl bg-slate-900 text-slate-500 text-[10px] font-bold text-center border border-slate-800">
-              أقصى توسعة مكتملة ✓
-            </div>
-          `}
+          <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
+            <span class="text-slate-400">المستوى:</span>
+            <span class="numbers-font text-amber-400">${farm.landLevel} / ${config.maxLandLevel}</span>
+          </div>
+          <button ${isMaxLand ? 'disabled' : 'onclick="window.UI?.upgradeFarmLand()"'} type="button"
+            class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${!isMaxLand ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+            ${isMaxLand ? 'أقصى استصلاح' : 'توسيع (' + nextLandCost.toLocaleString() + ' EGP)'}
+          </button>
         </div>
 
-        <!-- Irrigation Card -->
-        <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between gap-3">
+        <!-- 2. Irrigation Upgrade -->
+        <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-cyan-500/30 transition flex flex-col justify-between gap-3 shadow">
           <div class="flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-lg shrink-0">
-              <i class="fa-solid fa-faucet-drip"></i>
-            </span>
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-lg shrink-0">
+              <i class="fa-solid fa-droplet"></i>
+            </div>
             <div>
-              <h4 class="text-xs font-black text-white">شبكة الري والمياه</h4>
-              <span class="text-[10px] text-cyan-400 font-bold">${curIrr.name}</span>
+              <h4 class="font-black text-white text-xs">شبكات الري الحديث</h4>
+              <p class="text-[10px] text-slate-400 mt-0.5">تسريع نمو المحاصيل بالتربة</p>
             </div>
           </div>
-          <p class="text-[10px] text-slate-400 leading-snug">
-            ${irrDef ? `ترقية إلى "${irrDef.name}" لتسريع نمو المحاصيل بنسبة ${((irrDef.speedBonus || 0) * 100).toFixed(0)}%.` : 'تم تركيب أحدث شبكة ري هيدروبونيك فائقة.'}
-          </p>
-          ${irrDef ? `
-            <button onclick="window.UI?.upgradeFarmIrrigation()" type="button"
-              class="w-full py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer active:scale-95">
-              ترقية (${irrDef.cost.toLocaleString()} ج.م)
-            </button>
-          ` : `
-            <div class="w-full py-2 rounded-xl bg-slate-900 text-slate-500 text-[10px] font-bold text-center border border-slate-800">
-              أحدث شبكة ري نشطة ✓
-            </div>
-          `}
+          <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
+            <span class="text-slate-400">النوع الحالي:</span>
+            <span class="text-cyan-400 text-[11px]">${currIrr.name}</span>
+          </div>
+          <button ${!nextIrr ? 'disabled' : 'onclick="window.UI?.upgradeFarmIrrigation()"'} type="button"
+            class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${nextIrr ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+            ${!nextIrr ? 'أقصى شبكة ري' : 'ترقية (' + nextIrr.cost.toLocaleString() + ' EGP)'}
+          </button>
         </div>
 
-        <!-- Fertilizer Card -->
-        <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between gap-3">
+        <!-- 3. Fertilizer Upgrade -->
+        <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-emerald-500/30 transition flex flex-col justify-between gap-3 shadow">
           <div class="flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-lg shrink-0">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-lg shrink-0">
               <i class="fa-solid fa-flask-vial"></i>
-            </span>
+            </div>
             <div>
-              <h4 class="text-xs font-black text-white">جودة التربة والأسمدة</h4>
-              <span class="text-[10px] text-emerald-400 font-bold">${curFert.name}</span>
+              <h4 class="font-black text-white text-xs">الأسمدة والمخصبات</h4>
+              <p class="text-[10px] text-slate-400 mt-0.5">مضاعفة كمية المحصول عند الحصاد</p>
             </div>
           </div>
-          <p class="text-[10px] text-slate-400 leading-snug">
-            ${fertDef ? `ترقية إلى "${fertDef.name}" لزيادة كمية المحصول بنسبة +${((fertDef.yieldBonus || 0) * 100).toFixed(0)}%.` : 'تم اعتماد أحدث مخصبات النانو بيوتكنولوجي.'}
-          </p>
-          ${fertDef ? `
-            <button onclick="window.UI?.upgradeFarmFertilizer()" type="button"
-              class="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer active:scale-95">
-              ترقية (${fertDef.cost.toLocaleString()} ج.م)
-            </button>
-          ` : `
-            <div class="w-full py-2 rounded-xl bg-slate-900 text-slate-500 text-[10px] font-bold text-center border border-slate-800">
-              أعلى جودة أسمدة ✓
-            </div>
-          `}
+          <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
+            <span class="text-slate-400">المعتمد:</span>
+            <span class="text-emerald-400 text-[11px]">${currFert.name}</span>
+          </div>
+          <button ${!nextFert ? 'disabled' : 'onclick="window.UI?.upgradeFarmFertilizer()"'} type="button"
+            class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${nextFert ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+            ${!nextFert ? 'أعلى مخصب' : 'ترقية (' + nextFert.cost.toLocaleString() + ' EGP)'}
+          </button>
         </div>
 
-        <!-- Workers Card -->
-        <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between gap-3">
+        <!-- 4. Automation Workers -->
+        <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-purple-500/30 transition flex flex-col justify-between gap-3 shadow">
           <div class="flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 text-lg shrink-0">
-              <i class="fa-solid fa-robot"></i>
-            </span>
+            <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 text-lg shrink-0">
+              <i class="fa-solid fa-person-digging"></i>
+            </div>
             <div>
-              <h4 class="text-xs font-black text-white">عمال وأتمتة الحصاد</h4>
-              <span class="text-[10px] text-purple-300 font-bold">${farm.workers} / ${config.maxWorkers} عمال</span>
+              <h4 class="font-black text-white text-xs">توظيف عمال حصاد</h4>
+              <p class="text-[10px] text-slate-400 mt-0.5">حصاد آلي فوري (4 أحواض/عامل)</p>
             </div>
           </div>
-          <p class="text-[10px] text-slate-400 leading-snug">
-            يقوم كل عامل بحصاد 4 أحواض زراعية آلياً فور اكتمال النضج ونقلها إلى مستودع المزرعة.
-          </p>
-          ${canHireWorker ? `
-            <button onclick="window.UI?.hireFarmWorker()" type="button"
-              class="w-full py-2 bg-purple-500 hover:bg-purple-400 text-white font-black rounded-xl text-xs transition cursor-pointer active:scale-95">
-              توظيف عامل (${config.workerCost.toLocaleString()} ج.م)
-            </button>
-          ` : `
-            <div class="w-full py-2 rounded-xl bg-slate-900 text-slate-500 text-[10px] font-bold text-center border border-slate-800">
-              الحد الأقصى للعمال مكتمل ✓
-            </div>
-          `}
+          <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
+            <span class="text-slate-400">العمال:</span>
+            <span class="numbers-font text-purple-300">${farm.workers} عمال (${farm.workers * 4} أحواض)</span>
+          </div>
+          <button ${isMaxWorkers ? 'disabled' : 'onclick="window.UI?.hireFarmWorker()"'} type="button"
+            class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${!isMaxWorkers ? 'bg-purple-500 hover:bg-purple-400 text-white shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+            ${isMaxWorkers ? 'فريق الحصاد مكتمل' : 'توظيف (' + nextWorkerCost.toLocaleString() + ' EGP)'}
+          </button>
         </div>
       `;
     }
 
-    // 7. Render Warehouse & Stored Harvest
+    // Farm Raw Warehouse
+    const totalRevStat = document.getElementById('farm-total-revenue-stat');
+    if (totalRevStat) totalRevStat.textContent = (farm.totalRevenue || 0).toLocaleString() + ' ج.م';
+
     const warehouseGrid = document.getElementById('farm-warehouse-container');
     if (warehouseGrid) {
       let whHtml = '';
-      const inv = farm.inventory || {};
-      Object.keys(crops).forEach(cId => {
-        const c = crops[cId];
-        const qty = Number(inv[cId] || 0);
-        const totalVal = qty * c.sellPrice;
-
+      Object.values(crops).forEach(c => {
+        const qty = Number((farm.inventory && farm.inventory[c.id]) || 0);
+        const val = qty * c.basePrice;
         whHtml += `
-          <div class="p-3 rounded-2xl bg-slate-950/60 border ${qty > 0 ? 'border-amber-500/30' : 'border-slate-800/80'} flex flex-col justify-between text-center gap-2">
-            <div>
-              <span class="w-9 h-9 mx-auto rounded-xl bg-${c.color}-500/20 border border-${c.color}-500/40 flex items-center justify-center text-${c.color}-400 text-sm shadow-inner mb-1.5">
+          <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between gap-2 shadow-md">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-base shrink-0">
                 <i class="${c.icon}"></i>
-              </span>
-              <h5 class="text-[11px] font-bold text-white truncate">${c.name}</h5>
-              <span class="text-[10px] text-slate-400 block mt-0.5">المخزون: <b class="numbers-font ${qty > 0 ? 'text-amber-400 font-black' : 'text-slate-500'}">${qty.toLocaleString()}</b></span>
-              <span class="text-[9px] text-slate-500 block">القيمة: <b class="numbers-font text-emerald-400">${totalVal.toLocaleString()} ج.م</b></span>
+              </div>
+              <div class="min-w-0">
+                <h5 class="text-xs font-black text-white truncate">${c.name}</h5>
+                <span class="numbers-font text-[10px] text-amber-400 font-bold">${qty.toLocaleString()} وحدة</span>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 border-t border-slate-800/80 pt-1.5">
+              <span>القيمة:</span>
+              <span class="numbers-font text-emerald-400">${val.toLocaleString()} EGP</span>
             </div>
 
             <button ${qty <= 0 ? 'disabled' : `onclick="window.UI?.sellSingleFarmCrop('${c.id}')"`} type="button"
@@ -19429,6 +19467,441 @@ const UIController = (() => {
     }
   }
 
+  // ── SUB-PANEL 2: Agro-Processing Workshop ──
+  function renderFarmProcessing(farmInfo) {
+    const farm = farmInfo.farm;
+    const crops = farmInfo.crops;
+    const recipes = (GameEngine && GameEngine.FARM_RECIPES) || {};
+
+    const btnSellAllProcessed = document.getElementById('btn-farm-sell-all-processed');
+    if (btnSellAllProcessed) {
+      btnSellAllProcessed.onclick = () => {
+        try {
+          const res = GameEngine.sellAllProcessedGoods();
+          playCasinoSound('win');
+          showToast('بيع المنتجات الغذائية 🥫', `تم تصريف ${res.totalUnits.toLocaleString()} وحدة منتجات مصنعة بقيمة +${res.totalRevenue.toLocaleString()} EGP نقداً!`, 'success');
+          renderFarmPanel();
+          renderStatsBar();
+        } catch (e) {
+          playMenuSound('error');
+          showToast('تعذر البيع', e.message, 'error');
+        }
+      };
+    }
+
+    const recipesGrid = document.getElementById('farm-recipes-grid');
+    if (recipesGrid) {
+      let rHtml = '';
+      Object.values(recipes).forEach(r => {
+        const inputCrop = crops[r.inputCropId] || { name: 'محصول خام', basePrice: 10, icon: 'fa-solid fa-wheat-awn' };
+        const availableCrop = Number((farm.inventory && farm.inventory[r.inputCropId]) || 0);
+        const craftableBatches = Math.floor(availableCrop / r.inputCount);
+        const rawWorth = r.inputCount * inputCrop.basePrice;
+        const profitMargin = Math.round(((r.outputValue - rawWorth) / rawWorth) * 100);
+
+        rHtml += `
+          <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-yellow-500/40 transition flex flex-col justify-between gap-3 shadow-lg group">
+            <div>
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-11 h-11 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-2xl group-hover:scale-110 transition shrink-0">
+                    <i class="${r.icon}"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-black text-white text-xs">${r.name}</h4>
+                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 font-bold border border-yellow-500/30 mt-0.5 inline-block">${r.category}</span>
+                  </div>
+                </div>
+                <span class="text-[10px] font-black text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-500/30">+${profitMargin}% قيمة</span>
+              </div>
+              <p class="text-[11px] text-slate-400 leading-relaxed">${r.description}</p>
+            </div>
+
+            <div class="p-2.5 bg-slate-950/70 rounded-xl border border-slate-800 space-y-1 text-[11px]">
+              <div class="flex justify-between items-center">
+                <span class="text-slate-400">المواد المطلوبة:</span>
+                <span class="font-bold text-white flex items-center gap-1">
+                  <i class="${inputCrop.icon} text-amber-400 text-xs"></i>
+                  <span>${r.inputCount} وحدة ${inputCrop.name}</span>
+                </span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-slate-400">المتوفر بالمخزن:</span>
+                <span class="numbers-font font-bold ${availableCrop >= r.inputCount ? 'text-emerald-400' : 'text-rose-400'}">${availableCrop.toLocaleString()} وحدة</span>
+              </div>
+              <div class="flex justify-between items-center border-t border-slate-800/80 pt-1">
+                <span class="text-slate-400">سعر البيع المصنّع:</span>
+                <span class="numbers-font font-black text-yellow-400">${r.outputValue.toLocaleString()} EGP</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <button ${craftableBatches < 1 ? 'disabled' : `onclick="window.UI?.processFarmCrop('${r.id}', 1)"`} type="button"
+                class="py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer ${craftableBatches >= 1 ? 'bg-yellow-500/20 hover:bg-yellow-500 text-yellow-300 hover:text-slate-950 border border-yellow-500/40 active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+                <i class="fa-solid fa-gear text-xs"></i>
+                <span>تصنيع 1 دفعة</span>
+              </button>
+              <button ${craftableBatches < 1 ? 'disabled' : `onclick="window.UI?.processFarmCrop('${r.id}', ${craftableBatches})"`} type="button"
+                class="py-2 px-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1 cursor-pointer ${craftableBatches >= 1 ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+                <i class="fa-solid fa-bolt text-xs"></i>
+                <span>تصنيع الكل (${craftableBatches})</span>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      recipesGrid.innerHTML = rHtml;
+    }
+
+    // Processed Goods Storage Grid
+    const procRevStat = document.getElementById('farm-processed-revenue-stat');
+    if (procRevStat) procRevStat.textContent = ((farm.processing && farm.processing.totalRevenue) || 0).toLocaleString() + ' ج.م';
+
+    const procWhGrid = document.getElementById('farm-processed-warehouse-grid');
+    if (procWhGrid) {
+      let pwhHtml = '';
+      Object.values(recipes).forEach(r => {
+        const qty = Number((farm.processing && farm.processing.storage && farm.processing.storage[r.id]) || 0);
+        const totalVal = qty * r.outputValue;
+
+        pwhHtml += `
+          <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between gap-2 shadow-md">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-base shrink-0">
+                <i class="${r.icon}"></i>
+              </div>
+              <div class="min-w-0">
+                <h5 class="text-xs font-black text-white truncate">${r.name}</h5>
+                <span class="numbers-font text-[10px] text-yellow-400 font-bold">${qty.toLocaleString()} عبوة</span>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 border-t border-slate-800/80 pt-1.5">
+              <span>القيمة:</span>
+              <span class="numbers-font text-emerald-400">${totalVal.toLocaleString()} EGP</span>
+            </div>
+
+            <button ${qty <= 0 ? 'disabled' : `onclick="window.UI?.sellProcessedGood('${r.id}', ${qty})"`} type="button"
+              class="w-full py-1.5 rounded-lg text-[10px] font-black transition cursor-pointer ${qty > 0 ? 'bg-yellow-500 hover:bg-yellow-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+              بيع للمتاجر
+            </button>
+          </div>
+        `;
+      });
+      procWhGrid.innerHTML = pwhHtml;
+    }
+  }
+
+  // ── SUB-PANEL 3: Livestock & Poultry Ranch ──
+  function renderFarmLivestock(farmInfo) {
+    const farm = farmInfo.farm;
+    const lConfig = (GameEngine && GameEngine.FARM_LIVESTOCK_CONFIG) || {};
+
+    const btnApplyCompost = document.getElementById('btn-farm-apply-compost');
+    if (btnApplyCompost) {
+      btnApplyCompost.onclick = () => {
+        try {
+          const res = GameEngine.applyCompostFertilizer();
+          playMenuSound('success');
+          showToast('تسميد عضوي مكثف 🌿', `تم تسريع نمو ${res.plotsBoosted} أحواض زراعية بنسبة 35% فوراً! المتبقي: ${res.remainingCompost} سماد.`, 'success');
+          renderFarmPanel();
+          renderStatsBar();
+        } catch (e) {
+          playMenuSound('error');
+          showToast('تعذر التسميد', e.message, 'error');
+        }
+      };
+    }
+
+    const btnSellAllLivestock = document.getElementById('btn-farm-sell-all-livestock');
+    if (btnSellAllLivestock) {
+      btnSellAllLivestock.onclick = () => {
+        try {
+          const res = GameEngine.sellAllLivestockProduce();
+          playCasinoSound('win');
+          showToast('بيع منتجات المزرعة 🥛🥚', `تم بيع ${res.milkSold.toLocaleString()} لتر حليب و ${res.eggsSold.toLocaleString()} كرتونة بيض بقيمة +${res.totalRevenue.toLocaleString()} EGP نقداً!`, 'success');
+          renderFarmPanel();
+          renderStatsBar();
+        } catch (e) {
+          playMenuSound('error');
+          showToast('تعذر البيع', e.message, 'error');
+        }
+      };
+    }
+
+    // Livestock Facilities Cards Grid
+    const facilitiesGrid = document.getElementById('farm-livestock-facilities-grid');
+    if (facilitiesGrid) {
+      const cowsOwned = Number((farm.livestock && farm.livestock.cows) || 0);
+      const maxCows = (farm.landLevel || 1) * (lConfig.dairyCows ? lConfig.dairyCows.capacityPerLevel : 10);
+      const cowCost = (lConfig.dairyCows && lConfig.dairyCows.cost) || 15000;
+
+      const chickensOwned = Number((farm.livestock && farm.livestock.chickens) || 0);
+      const maxChickens = (farm.landLevel || 1) * (lConfig.poultryChickens ? lConfig.poultryChickens.capacityPerLevel : 50);
+      const chickenCost = (lConfig.poultryChickens && lConfig.poultryChickens.cost) || 2500;
+
+      facilitiesGrid.innerHTML = `
+        <!-- 1. Dairy Cows Ranch -->
+        <div class="p-5 rounded-2xl bg-slate-900/80 border border-emerald-500/30 hover:border-emerald-500/60 transition flex flex-col justify-between gap-4 shadow-xl">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-2xl text-emerald-400 shrink-0">
+                <i class="fa-solid fa-cow"></i>
+              </div>
+              <div>
+                <h4 class="font-black text-white text-sm">حظائر الأبقار الحلوب الهولندية</h4>
+                <p class="text-[11px] text-slate-400 mt-0.5">إنتاج دوري للحليب الطازج والسماد العضوي الثمين للأحواض.</p>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs border border-emerald-500/30 shrink-0">
+              ${cowsOwned} / ${maxCows} بقرة
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 p-3 bg-slate-950/70 rounded-xl border border-slate-800 text-[11px]">
+            <div>
+              <span class="text-slate-400 block text-[10px]">الإنتاج الدوري (كل 25ث)</span>
+              <span class="font-bold text-emerald-400">+1 حليب و +1 سماد / بقرة</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block text-[10px]">سعر شراء الرأس</span>
+              <span class="font-mono font-bold text-yellow-400">${cowCost.toLocaleString()} EGP</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button ${cowsOwned >= maxCows ? 'disabled' : 'onclick="window.UI?.buyLivestock(\'dairyCows\', 1)"'} type="button"
+              class="py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${cowsOwned < maxCows ? 'bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 border border-emerald-500/40 active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+              <i class="fa-solid fa-plus text-xs"></i>
+              <span>+1 بقرة (${cowCost.toLocaleString()})</span>
+            </button>
+            <button ${cowsOwned + 5 > maxCows ? 'disabled' : 'onclick="window.UI?.buyLivestock(\'dairyCows\', 5)"'} type="button"
+              class="py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${cowsOwned + 5 <= maxCows ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+              <i class="fa-solid fa-bolt text-xs"></i>
+              <span>+5 أبقار (${(cowCost * 5).toLocaleString()})</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Poultry Chickens Farm -->
+        <div class="p-5 rounded-2xl bg-slate-900/80 border border-cyan-500/30 hover:border-cyan-500/60 transition flex flex-col justify-between gap-4 shadow-xl">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-2xl text-cyan-400 shrink-0">
+                <i class="fa-solid fa-egg"></i>
+              </div>
+              <div>
+                <h4 class="font-black text-white text-sm">عنابر الدواجن ومزارع البيض</h4>
+                <p class="text-[11px] text-slate-400 mt-0.5">إنتاج كراتين بيض المائدة الطازج عالي الطلب في عقود التوريد والمطاعم.</p>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs border border-cyan-500/30 shrink-0">
+              ${chickensOwned} / ${maxChickens} دجاجة
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 p-3 bg-slate-950/70 rounded-xl border border-slate-800 text-[11px]">
+            <div>
+              <span class="text-slate-400 block text-[10px]">الإنتاج الدوري (كل 25ث)</span>
+              <span class="font-bold text-cyan-400">+2 كرتونة بيض / دجاجة</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block text-[10px]">سعر شراء الدجاجة</span>
+              <span class="font-mono font-bold text-yellow-400">${chickenCost.toLocaleString()} EGP</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button ${chickensOwned >= maxChickens ? 'disabled' : 'onclick="window.UI?.buyLivestock(\'poultryChickens\', 1)"'} type="button"
+              class="py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${chickensOwned < maxChickens ? 'bg-cyan-500/20 hover:bg-cyan-500 text-cyan-300 hover:text-slate-950 border border-cyan-500/40 active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+              <i class="fa-solid fa-plus text-xs"></i>
+              <span>+1 دجاجة (${chickenCost.toLocaleString()})</span>
+            </button>
+            <button ${chickensOwned + 10 > maxChickens ? 'disabled' : 'onclick="window.UI?.buyLivestock(\'poultryChickens\', 10)"'} type="button"
+              class="py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${chickensOwned + 10 <= maxChickens ? 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+              <i class="fa-solid fa-bolt text-xs"></i>
+              <span>+10 دجاجات (${(chickenCost * 10).toLocaleString()})</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Livestock Produce Grid
+    const produceGrid = document.getElementById('farm-livestock-produce-grid');
+    if (produceGrid) {
+      const milk = Number((farm.livestock && farm.livestock.milk) || 0);
+      const eggs = Number((farm.livestock && farm.livestock.eggs) || 0);
+      const compost = Number((farm.livestock && farm.livestock.compost) || 0);
+
+      produceGrid.innerHTML = `
+        <!-- Milk -->
+        <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 flex flex-col justify-between gap-3 shadow">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-300 text-lg shrink-0">
+              <i class="fa-solid fa-bottle-water"></i>
+            </div>
+            <div>
+              <h4 class="font-black text-white text-xs">حليب أبقار طازج</h4>
+              <p class="text-[10px] text-slate-400 mt-0.5">150 EGP / لتر</p>
+            </div>
+          </div>
+          <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
+            <span class="text-slate-400">المخزون المتوفر:</span>
+            <span class="numbers-font text-cyan-300 font-black text-sm">${milk.toLocaleString()} لتر</span>
+          </div>
+          <button ${milk <= 0 ? 'disabled' : `onclick="window.UI?.sellLivestockProduce('milk', ${milk})"`} type="button"
+            class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${milk > 0 ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+            ${milk > 0 ? 'بيع الحليب (+' + (milk * 150).toLocaleString() + ' EGP)' : 'المخزون فارغ'}
+          </button>
+        </div>
+
+        <!-- Eggs -->
+        <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 flex flex-col justify-between gap-3 shadow">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 text-lg shrink-0">
+              <i class="fa-solid fa-egg"></i>
+            </div>
+            <div>
+              <h4 class="font-black text-white text-xs">كراتين بيض مائدة</h4>
+              <p class="text-[10px] text-slate-400 mt-0.5">40 EGP / كرتونة</p>
+            </div>
+          </div>
+          <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
+            <span class="text-slate-400">المخزون المتوفر:</span>
+            <span class="numbers-font text-amber-300 font-black text-sm">${eggs.toLocaleString()} كرتونة</span>
+          </div>
+          <button ${eggs <= 0 ? 'disabled' : `onclick="window.UI?.sellLivestockProduce('eggs', ${eggs})"`} type="button"
+            class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${eggs > 0 ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+            ${eggs > 0 ? 'بيع البيض (+' + (eggs * 40).toLocaleString() + ' EGP)' : 'المخزون فارغ'}
+          </button>
+        </div>
+
+        <!-- Compost Booster -->
+        <div class="p-4 rounded-2xl bg-slate-900/70 border border-emerald-500/30 flex flex-col justify-between gap-3 shadow">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-lg shrink-0">
+              <i class="fa-solid fa-leaf"></i>
+            </div>
+            <div>
+              <h4 class="font-black text-white text-xs">سماد عضوي طبيعي</h4>
+              <p class="text-[10px] text-emerald-300 mt-0.5">تسريع نمو الأحواض 35% فوراً!</p>
+            </div>
+          </div>
+          <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
+            <span class="text-slate-400">الكمية المتوفرة:</span>
+            <span class="numbers-font text-emerald-300 font-black text-sm">${compost.toLocaleString()} سماد</span>
+          </div>
+          <button ${compost < 5 ? 'disabled' : 'onclick="window.UI?.applyCompostFertilizer()"'} type="button"
+            class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${compost >= 5 ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+            ${compost >= 5 ? 'استخدام السماد (خصم 5 وحدات)' : 'يلزم 5 وحدات سماد'}
+          </button>
+        </div>
+      `;
+    }
+  }
+
+  // ── SUB-PANEL 4: B2B Supply Contracts Board ──
+  function renderFarmContracts(farmInfo) {
+    const farm = farmInfo.farm;
+    const repStat = document.getElementById('farm-contracts-rep-stat');
+    if (repStat) {
+      repStat.textContent = `${((farm.contracts && farm.contracts.reputation) || 0).toLocaleString()} XP (${((farm.contracts && farm.contracts.completedCount) || 0)} عقود منجزة)`;
+    }
+
+    const contractsGrid = document.getElementById('farm-contracts-grid');
+    if (contractsGrid) {
+      const activeContracts = (farm.contracts && farm.contracts.active) || [];
+      const now = getTrustedNowUI();
+
+      if (activeContracts.length === 0) {
+        contractsGrid.innerHTML = `
+          <div class="col-span-full py-8 text-center space-y-2 text-slate-500">
+            <i class="fa-solid fa-file-circle-question text-3xl"></i>
+            <p class="text-xs font-bold">لا توجد عقود معروضة حالياً! انتظر قليلاً أو حدّث اللوحة.</p>
+          </div>
+        `;
+        return;
+      }
+
+      let cHtml = '';
+      activeContracts.forEach(c => {
+        const remMs = Math.max(0, c.expiresAt - now);
+        const remSec = Math.ceil(remMs / 1000);
+
+        let available = 0;
+        if (c.itemType === 'crop') {
+          available = Number((farm.inventory && farm.inventory[c.itemId]) || 0);
+        } else if (c.itemType === 'processed') {
+          available = Number((farm.processing && farm.processing.storage && farm.processing.storage[c.itemId]) || 0);
+        } else if (c.itemType === 'livestock') {
+          available = Number((farm.livestock && farm.livestock[c.itemId]) || 0);
+        }
+
+        const canFulfill = available >= c.quantityNeeded;
+        const progressPct = Math.min(100, Math.round((available / c.quantityNeeded) * 100));
+
+        cHtml += `
+          <div class="p-5 rounded-2xl bg-slate-900/80 border ${canFulfill ? 'border-purple-500/60 shadow-lg shadow-purple-500/10' : 'border-slate-800'} transition flex flex-col justify-between gap-4">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-11 h-11 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-xl text-purple-300 shrink-0">
+                  <i class="${c.clientIcon}"></i>
+                </div>
+                <div>
+                  <h4 class="font-black text-white text-xs">${c.clientName}</h4>
+                  <span class="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30 inline-block mt-0.5">عقد توريد معتمد</span>
+                </div>
+              </div>
+              <span class="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
+                <i class="fa-solid fa-clock text-[9px] ml-1"></i>${formatCountdownHMS(remSec)}
+              </span>
+            </div>
+
+            <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800 space-y-2">
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-slate-400">المطلوب توريده:</span>
+                <span class="font-bold text-white flex items-center gap-1.5">
+                  <i class="${c.itemIcon} text-amber-400 text-xs"></i>
+                  <span>${c.quantityNeeded.toLocaleString()} وحدة ${c.itemName}</span>
+                </span>
+              </div>
+              <div class="space-y-1">
+                <div class="flex justify-between text-[10px] font-bold">
+                  <span class="text-slate-400">المتوفر لديك:</span>
+                  <span class="numbers-font ${canFulfill ? 'text-emerald-400' : 'text-rose-400'}">${available.toLocaleString()} / ${c.quantityNeeded.toLocaleString()}</span>
+                </div>
+                <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                  <div class="h-full rounded-full transition-all duration-300 ${canFulfill ? 'bg-emerald-500' : 'bg-purple-500'}" style="width: ${progressPct}%"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between p-2.5 bg-purple-950/30 rounded-xl border border-purple-500/20 text-xs">
+              <div>
+                <span class="text-[10px] text-purple-300 block">المكافأة المالية والبونص</span>
+                <span class="numbers-font font-black text-amber-400">${c.payout.toLocaleString()} EGP</span>
+                <span class="text-[9px] text-emerald-400 font-bold mr-1">(+${c.bonusPercent}%)</span>
+              </div>
+              <div class="text-left">
+                <span class="text-[10px] text-purple-300 block">سمعة المزرعة</span>
+                <span class="numbers-font font-bold text-white">+${c.repReward} XP</span>
+              </div>
+            </div>
+
+            <button ${!canFulfill ? 'disabled' : `onclick="window.UI?.fulfillFarmContract('${c.id}')"`} type="button"
+              class="w-full py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-2 ${canFulfill ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-500/20 active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+              <i class="fa-solid fa-truck-fast text-sm"></i>
+              <span>${canFulfill ? 'تسليم الشحنة وتحصيل ' + c.payout.toLocaleString() + ' EGP' : 'المخزون غير كافٍ (ناقص ' + (c.quantityNeeded - available).toLocaleString() + ')'}</span>
+            </button>
+          </div>
+        `;
+      });
+      contractsGrid.innerHTML = cHtml;
+    }
+  }
+
+  // ── FARM 2.0 USER ACTIONS & HANDLERS ──
   function quickPlantSinglePlot(plotIndex) {
     const cropSelect = document.getElementById('farm-quick-crop-select');
     const cropId = cropSelect ? cropSelect.value : 'wheat';
@@ -19544,6 +20017,121 @@ const UIController = (() => {
       showToast('تعذر التوظيف', e.message, 'error');
     }
   }
+
+  function processFarmCrop(recipeId, batches) {
+    try {
+      playMenuSound('click');
+      const res = GameEngine.processFarmCrop(recipeId, batches);
+      showToast('تصنيع غذائي ناجح 🥫', `تم تصنيع ${res.batches} دفعة من "${res.recipe.name}" بقيمة +${res.totalValueAdded.toLocaleString()} EGP!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر التصنيع', e.message, 'error');
+    }
+  }
+
+  function sellProcessedGood(recipeId, qty) {
+    try {
+      playCasinoSound('win');
+      const res = GameEngine.sellProcessedGood(recipeId, qty);
+      showToast('تم بيع المنتج 💰', `تم بيع ${res.qty.toLocaleString()} عبوة من "${res.recipe.name}" بقيمة +${res.totalPrice.toLocaleString()} EGP نقداً!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر البيع', e.message, 'error');
+    }
+  }
+
+  function sellAllProcessedGoods() {
+    try {
+      playCasinoSound('win');
+      const res = GameEngine.sellAllProcessedGoods();
+      showToast('بيع المنتجات الغذائية 🥫', `تم تصريف ${res.totalUnits.toLocaleString()} وحدة منتجات مصنعة بقيمة +${res.totalRevenue.toLocaleString()} EGP نقداً!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر البيع', e.message, 'error');
+    }
+  }
+
+  function buyLivestock(type, count) {
+    try {
+      playMenuSound('click');
+      const res = GameEngine.buyLivestock(type, count);
+      showToast('شراء مواشي ودواجن 🐄', `تم شراء ${res.purchasedCount} من ${res.facility.name} بنجاح! الإجمالي لديك الآن: ${res.currentCount}`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر الشراء', e.message, 'error');
+    }
+  }
+
+  function sellLivestockProduce(produceKey, qty) {
+    try {
+      playCasinoSound('win');
+      const res = GameEngine.sellLivestockProduce(produceKey, qty);
+      showToast('تم البيع 💰', `تم بيع ${res.qty.toLocaleString()} وحدة بقيمة +${res.revenue.toLocaleString()} EGP نقداً!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر البيع', e.message, 'error');
+    }
+  }
+
+  function sellAllLivestockProduce() {
+    try {
+      playCasinoSound('win');
+      const res = GameEngine.sellAllLivestockProduce();
+      showToast('بيع منتجات المزرعة 🥛🥚', `تم بيع ${res.milkSold.toLocaleString()} لتر حليب و ${res.eggsSold.toLocaleString()} كرتونة بيض بقيمة +${res.totalRevenue.toLocaleString()} EGP نقداً!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر البيع', e.message, 'error');
+    }
+  }
+
+  function applyCompostFertilizer() {
+    try {
+      playMenuSound('success');
+      const res = GameEngine.applyCompostFertilizer();
+      showToast('تسميد عضوي مكثف 🌿', `تم تسريع نمو ${res.plotsBoosted} أحواض زراعية بنسبة 35% فوراً! المتبقي: ${res.remainingCompost} سماد.`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر التسميد', e.message, 'error');
+    }
+  }
+
+  function fulfillFarmContract(contractId) {
+    try {
+      playCasinoSound('jackpot');
+      const res = GameEngine.fulfillFarmContract(contractId);
+      showToast('توريد صفقة B2B ناجحة 📜🤝', `مبروك! تم توريد طلبية ${res.contract.clientName} بنجاح وقبض +${res.payout.toLocaleString()} EGP (+ ${res.repReward} سمعة)!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر إنجاز العقد', e.message, 'error');
+    }
+  }
+
+  function refreshFarmContracts() {
+    try {
+      GameEngine.refreshFarmContracts(true);
+      renderFarmPanel();
+      showToast('تحديث العقود 📜', 'تم تجديد قائمة عقود التوريد بنجاح.', 'info');
+    } catch (e) {
+      showToast('تعذر التحديث', e.message, 'error');
+    }
+  }
+
 
   // ─────────────────────────────────────────────
   //  TOP-UP & SUPPORT STORE CONTROLLER (متجر الشحن والدعم)
@@ -20549,7 +21137,17 @@ const UIController = (() => {
     upgradeFarmLand,
     upgradeFarmIrrigation,
     upgradeFarmFertilizer,
-    hireFarmWorker
+    hireFarmWorker,
+    switchFarmSubtab,
+    processFarmCrop,
+    sellProcessedGood,
+    sellAllProcessedGoods,
+    buyLivestock,
+    sellLivestockProduce,
+    sellAllLivestockProduce,
+    applyCompostFertilizer,
+    fulfillFarmContract,
+    refreshFarmContracts
   };
 
 })();

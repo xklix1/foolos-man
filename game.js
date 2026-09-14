@@ -962,6 +962,113 @@ const GameEngine = (() => {
     }
   };
 
+  // --- سلاسل التصنيع الغذائي الزراعي (Value-Add Agro-Processing Recipes) ---
+  const FARM_RECIPES = {
+    flour_bread: {
+      id: 'flour_bread',
+      name: 'سلة مخبوزات ودقيق فاخر',
+      icon: 'fa-solid fa-bread-slice',
+      color: 'amber',
+      inputCrop: 'wheat',
+      inputQty: 5,
+      outputQty: 1,
+      baseValue: 90, // Raw 5 wheat * 10 = 50 -> bread value 90 (+80% value add)
+      desc: 'دقيق أبيض نقي ومخبوزات هشة تطلبها المخابز الكبرى.'
+    },
+    tomato_paste: {
+      id: 'tomato_paste',
+      name: 'صلصة معلبة وكاتشب تصدير',
+      icon: 'fa-solid fa-jar',
+      color: 'rose',
+      inputCrop: 'tomato',
+      inputQty: 5,
+      outputQty: 1,
+      baseValue: 300, // Raw 5 tomato * 35 = 175 -> paste value 300 (+71% value add)
+      desc: 'معجون طماطم مركز معبأ وفق مواصفات الجودة العالمية.'
+    },
+    strawberry_jam: {
+      id: 'strawberry_jam',
+      name: 'مربى فراولة طبيعية فاخرة',
+      icon: 'fa-solid fa-wine-bottle',
+      color: 'red',
+      inputCrop: 'strawberry',
+      inputQty: 4,
+      outputQty: 1,
+      baseValue: 920, // Raw 4 strawberry * 120 = 480 -> jam value 920 (+91% value add)
+      desc: 'مربى فواكه طبيعية نقية بدون مواد حافظة للفنادق الراقية.'
+    },
+    premium_coffee: {
+      id: 'premium_coffee',
+      name: 'عبوة بن مختص Specialty Coffee',
+      icon: 'fa-solid fa-box-open',
+      color: 'yellow',
+      inputCrop: 'coffee',
+      inputQty: 4,
+      outputQty: 1,
+      baseValue: 4200, // Raw 4 coffee * 500 = 2000 -> coffee bag 4200 (+110% value add)
+      desc: 'بن محمص بعناية فائقة وتعبئة مفرغة من الهواء لرواد المقاهي الفخمة.'
+    },
+    stuffed_dates: {
+      id: 'stuffed_dates',
+      name: 'صندوق تمور ملكية بالمكسرات',
+      icon: 'fa-solid fa-gift',
+      color: 'emerald',
+      inputCrop: 'dates',
+      inputQty: 4,
+      outputQty: 1,
+      baseValue: 22000, // Raw 4 dates * 2500 = 10000 -> gourmet box 22000 (+120% value add)
+      desc: 'تمور مجدول مختارة حبة بحبة ومحشوة بأفخر أنواع الفستق واللوز.'
+    },
+    saffron_essence: {
+      id: 'saffron_essence',
+      name: 'مستخلص الزعفران الصافي (قطرات الذهب)',
+      icon: 'fa-solid fa-vial',
+      color: 'purple',
+      inputCrop: 'saffron',
+      inputQty: 3,
+      outputQty: 1,
+      baseValue: 110000, // Raw 3 saffron * 12000 = 36000 -> essence vial 110000 (+205% value add)
+      desc: 'إكسير وزيت نقي مستخلص لمصنعي العطور الملكية ومستحضرات التجميل العالمية.'
+    }
+  };
+
+  // --- قسم الإنتاج الحيواني والدواجن (Livestock & Ranch Config) ---
+  const FARM_LIVESTOCK_CONFIG = {
+    cow: {
+      id: 'cow',
+      name: 'أبقار هولشتاين الحلوب',
+      icon: 'fa-solid fa-cow',
+      cost: 25000,
+      maxCount: 8,
+      produceIntervalSeconds: 30,
+      milkYield: 2,
+      compostYield: 1,
+      sellPrice: 150, // Per bottle of fresh milk
+      compostPrice: 80,
+      desc: 'أبقار أوروبية عالية الإدرار تنتج حليباً طازجاً وسماداً عضويًا ثميناً للأراضي.'
+    },
+    chicken: {
+      id: 'chicken',
+      name: 'عنابر الدجاج البياض',
+      icon: 'fa-solid fa-egg',
+      cost: 8000,
+      maxCount: 10,
+      produceIntervalSeconds: 20,
+      eggYield: 3,
+      sellPrice: 40, // Per carton of fresh eggs
+      desc: 'سلالات دواجن عالية الإنتاجية للبيض الطازج السريع.'
+    }
+  };
+
+  // --- عملاء عقود التوريد للشركات والفنادق (B2B Supply Contract Clients) ---
+  const FARM_CONTRACT_CLIENTS = [
+    { name: 'فنادق فور سيزونز الفاخرة', type: 'luxury_hotel', icon: 'fa-solid fa-hotel', repBonus: 20, payoutMultiplier: 1.55 },
+    { name: 'سلسلة كافيهات وكاريبو بريميوم', type: 'cafe_chain', icon: 'fa-solid fa-mug-saucer', repBonus: 15, payoutMultiplier: 1.50 },
+    { name: 'هايبر ماركت كارفور وسعودي', type: 'hypermarket', icon: 'fa-solid fa-cart-shopping', repBonus: 15, payoutMultiplier: 1.45 },
+    { name: 'سلسلة مطاعم قصر الكبابجي والريف', type: 'restaurant_chain', icon: 'fa-solid fa-utensils', repBonus: 15, payoutMultiplier: 1.45 },
+    { name: 'مختبرات الأدوية ومستحضرات التجميل الملكية', type: 'pharma_cosmetics', icon: 'fa-solid fa-flask', repBonus: 30, payoutMultiplier: 1.70 }
+  ];
+
   // --- Initial Default Player State ---
   const INITIAL_STATE = {
     cash: 300,
@@ -1073,7 +1180,26 @@ const GameEngine = (() => {
       workers: 0,
       plots: [null, null, null, null],
       inventory: {},
-      stats: { totalHarvested: 0, totalRevenue: 0 }
+      stats: { totalHarvested: 0, totalRevenue: 0 },
+      processing: {
+        storage: { flour_bread: 0, tomato_paste: 0, strawberry_jam: 0, premium_coffee: 0, stuffed_dates: 0, saffron_essence: 0 },
+        stats: { totalProcessed: 0, totalRevenue: 0 }
+      },
+      livestock: {
+        cows: 0,
+        chickens: 0,
+        milk: 0,
+        eggs: 0,
+        compost: 0,
+        lastProduceAt: 0,
+        stats: { totalMilk: 0, totalEggs: 0, totalRevenue: 0 }
+      },
+      contracts: {
+        reputation: 0,
+        completedCount: 0,
+        totalBonusEarned: 0,
+        active: []
+      }
     },
     workCooldownUntil: 0,
     overtimeCooldownUntil: 0,
@@ -1556,11 +1682,29 @@ const GameEngine = (() => {
       farmTotal += (playerState.farm.waterLevel || 1) * 40000;
       farmTotal += (playerState.farm.fertilizerLevel || 1) * 35000;
       farmTotal += (playerState.farm.workers || 0) * 30000;
+      // Livestock valuation
+      if (playerState.farm.livestock) {
+        farmTotal += (Number(playerState.farm.livestock.cows || 0)) * 25000;
+        farmTotal += (Number(playerState.farm.livestock.chickens || 0)) * 8000;
+        farmTotal += (Number(playerState.farm.livestock.milk || 0)) * 150;
+        farmTotal += (Number(playerState.farm.livestock.eggs || 0)) * 40;
+        farmTotal += (Number(playerState.farm.livestock.compost || 0)) * 80;
+      }
+      // Raw crops inventory
       if (playerState.farm.inventory && typeof FARM_CROPS !== 'undefined') {
         Object.keys(playerState.farm.inventory).forEach(cId => {
           const qty = Number(playerState.farm.inventory[cId] || 0);
           if (qty > 0 && FARM_CROPS[cId]) {
             farmTotal += qty * (FARM_CROPS[cId].sellPrice || 10);
+          }
+        });
+      }
+      // Processed food inventory
+      if (playerState.farm.processing && playerState.farm.processing.storage && typeof FARM_RECIPES !== 'undefined') {
+        Object.keys(playerState.farm.processing.storage).forEach(rId => {
+          const qty = Number(playerState.farm.processing.storage[rId] || 0);
+          if (qty > 0 && FARM_RECIPES[rId]) {
+            farmTotal += qty * (FARM_RECIPES[rId].baseValue || 50);
           }
         });
       }
@@ -2660,6 +2804,49 @@ const GameEngine = (() => {
 
       if (farmHarvestedAuto > 0) {
         updates.farmHarvestedAuto = farmHarvestedAuto;
+      }
+
+      // Livestock Periodic Produce (Milk, Eggs, Compost)
+      if (state.farm.livestock) {
+        const ls = state.farm.livestock;
+        if (!ls.lastProduceAt) ls.lastProduceAt = nowMs;
+        const elapsedSec = (nowMs - ls.lastProduceAt) / 1000;
+        
+        if (elapsedSec >= 25) {
+          ls.lastProduceAt = nowMs;
+          const cows = Number(ls.cows || 0);
+          const chickens = Number(ls.chickens || 0);
+          if (cows > 0) {
+            const milkGain = cows * (FARM_LIVESTOCK_CONFIG.cow.milkYield || 2);
+            const compostGain = cows * (FARM_LIVESTOCK_CONFIG.cow.compostYield || 1);
+            ls.milk = (ls.milk || 0) + milkGain;
+            ls.compost = (ls.compost || 0) + compostGain;
+            if (!ls.stats) ls.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
+            ls.stats.totalMilk = (ls.stats.totalMilk || 0) + milkGain;
+          }
+          if (chickens > 0) {
+            const eggsGain = chickens * (FARM_LIVESTOCK_CONFIG.chicken.eggYield || 3);
+            ls.eggs = (ls.eggs || 0) + eggsGain;
+            if (!ls.stats) ls.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
+            ls.stats.totalEggs = (ls.stats.totalEggs || 0) + eggsGain;
+          }
+        }
+      }
+
+      // Contracts Expiry & Refresh Check
+      if (state.farm.contracts && Array.isArray(state.farm.contracts.active)) {
+        let expiredFound = false;
+        state.farm.contracts.active.forEach(contract => {
+          if (contract && !contract.fulfilled && nowMs >= contract.expiresAt) {
+            expiredFound = true;
+          }
+        });
+        if (expiredFound) {
+          state.farm.contracts.active = state.farm.contracts.active.filter(c => c && !c.fulfilled && nowMs < c.expiresAt);
+          while (state.farm.contracts.active.length < 3) {
+            state.farm.contracts.active.push(generateSingleContract(state.farm.contracts.active.length + 1, state.farm));
+          }
+        }
       }
     }
 
@@ -5800,7 +5987,26 @@ const GameEngine = (() => {
         workers: 0,
         plots: [null, null, null, null],
         inventory: {},
-        stats: { totalHarvested: 0, totalRevenue: 0 }
+        stats: { totalHarvested: 0, totalRevenue: 0 },
+        processing: {
+          storage: { flour_bread: 0, tomato_paste: 0, strawberry_jam: 0, premium_coffee: 0, stuffed_dates: 0, saffron_essence: 0 },
+          stats: { totalProcessed: 0, totalRevenue: 0 }
+        },
+        livestock: {
+          cows: 0,
+          chickens: 0,
+          milk: 0,
+          eggs: 0,
+          compost: 0,
+          lastProduceAt: getTrustedNow(),
+          stats: { totalMilk: 0, totalEggs: 0, totalRevenue: 0 }
+        },
+        contracts: {
+          reputation: 0,
+          completedCount: 0,
+          totalBonusEarned: 0,
+          active: []
+        }
       };
     }
     const f = state.farm;
@@ -5814,6 +6020,39 @@ const GameEngine = (() => {
     if (f.plots.length > f.maxPlots) f.plots = f.plots.slice(0, f.maxPlots);
     if (!f.inventory || typeof f.inventory !== 'object') f.inventory = {};
     if (!f.stats || typeof f.stats !== 'object') f.stats = { totalHarvested: 0, totalRevenue: 0 };
+
+    if (!f.processing || typeof f.processing !== 'object') {
+      f.processing = {
+        storage: { flour_bread: 0, tomato_paste: 0, strawberry_jam: 0, premium_coffee: 0, stuffed_dates: 0, saffron_essence: 0 },
+        stats: { totalProcessed: 0, totalRevenue: 0 }
+      };
+    }
+    if (!f.processing.storage || typeof f.processing.storage !== 'object') f.processing.storage = {};
+    if (!f.processing.stats) f.processing.stats = { totalProcessed: 0, totalRevenue: 0 };
+
+    if (!f.livestock || typeof f.livestock !== 'object') {
+      f.livestock = {
+        cows: 0,
+        chickens: 0,
+        milk: 0,
+        eggs: 0,
+        compost: 0,
+        lastProduceAt: getTrustedNow(),
+        stats: { totalMilk: 0, totalEggs: 0, totalRevenue: 0 }
+      };
+    }
+    if (!f.livestock.stats) f.livestock.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
+
+    if (!f.contracts || typeof f.contracts !== 'object') {
+      f.contracts = {
+        reputation: 0,
+        completedCount: 0,
+        totalBonusEarned: 0,
+        active: []
+      };
+    }
+    if (!Array.isArray(f.contracts.active)) f.contracts.active = [];
+
     return f;
   }
 
@@ -5821,6 +6060,10 @@ const GameEngine = (() => {
     const f = ensureFarmState();
     if (!f) return null;
     const now = getTrustedNow();
+
+    if (f.unlocked) {
+      ensureFarmContracts();
+    }
 
     const plotsInfo = (f.plots || []).map((plot, idx) => {
       if (!plot) return null;
@@ -5842,6 +6085,10 @@ const GameEngine = (() => {
       plots: plotsInfo,
       config: FARM_CONFIG,
       crops: FARM_CROPS,
+      recipes: FARM_RECIPES,
+      livestockConfig: FARM_LIVESTOCK_CONFIG,
+      contractClients: FARM_CONTRACT_CLIENTS,
+      contracts: f.contracts.active || [],
       now
     };
   }
@@ -6215,6 +6462,425 @@ const GameEngine = (() => {
     };
   }
 
+  // ─── Agro-Processing Workshop (معمل التصنيع الغذائي) ───
+  function processFarmCrop(recipeId, batches = 1) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إدارة معمل التصنيع.");
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("يجب تفعيل المزرعة أولاً.");
+    const recipe = FARM_RECIPES[recipeId];
+    if (!recipe) throw new Error("وصفة التصنيع غير صالحة.");
+
+    batches = Math.max(1, Math.floor(Number(batches) || 1));
+    const inputCropId = recipe.inputCrop;
+    const requiredCrops = recipe.inputQty * batches;
+    const currentCropQty = Number((f.inventory && f.inventory[inputCropId]) || 0);
+
+    if (currentCropQty < requiredCrops) {
+      const cropName = (FARM_CROPS[inputCropId] && FARM_CROPS[inputCropId].name) || inputCropId;
+      throw new Error(`المخزون المتوفر (${currentCropQty.toLocaleString()}) لا يكفي لتشغيل ${batches} دفعة! يلزم ${requiredCrops.toLocaleString()} وحدة من ${cropName}.`);
+    }
+
+    f.inventory[inputCropId] -= requiredCrops;
+    const producedQty = recipe.outputQty * batches;
+    if (!f.processing.storage) f.processing.storage = {};
+    f.processing.storage[recipeId] = (f.processing.storage[recipeId] || 0) + producedQty;
+
+    if (!f.processing.stats) f.processing.stats = { totalProcessed: 0, totalRevenue: 0 };
+    f.processing.stats.totalProcessed = (f.processing.stats.totalProcessed || 0) + producedQty;
+
+    recordPlayerActivity('تصنيع زراعي غذائي 🏭', `تم تشغيل معمل التصنيع وإنتاج ${producedQty.toLocaleString()} وحدة من "${recipe.name}" بقيمة مضافة ممتازة!`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+
+    const totalValueAdded = recipe.baseValue * producedQty;
+    return {
+      recipe,
+      batches,
+      requiredCrops,
+      producedQty,
+      outputProduced: producedQty,
+      totalValueAdded,
+      storageTotal: f.processing.storage[recipeId]
+    };
+  }
+
+  function sellProcessedGood(recipeId, qty = null) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
+    const recipe = FARM_RECIPES[recipeId];
+    if (!recipe) throw new Error("المنتج غير صالح.");
+
+    const available = Number((f.processing && f.processing.storage && f.processing.storage[recipeId]) || 0);
+    if (available <= 0) {
+      throw new Error(`مستودع التصنيع لا يحتوي على أي كميات جاهزة من "${recipe.name}".`);
+    }
+
+    const sellQty = (qty === null || qty <= 0 || qty > available) ? available : Math.floor(Number(qty));
+    const totalPrice = sellQty * recipe.baseValue;
+
+    f.processing.storage[recipeId] -= sellQty;
+    state.cash = (state.cash || 0) + totalPrice;
+    if (!f.processing.stats) f.processing.stats = { totalProcessed: 0, totalRevenue: 0 };
+    f.processing.stats.totalRevenue = (f.processing.stats.totalRevenue || 0) + totalPrice;
+
+    recordPlayerActivity('بيع منتج غذائي مصنّع 💰', `بيع ${sellQty.toLocaleString()} وحدة من "${recipe.name}" بسعر ${totalPrice.toLocaleString()} EGP نقداً!`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+
+    return {
+      recipe,
+      sellQty,
+      totalPrice,
+      remaining: f.processing.storage[recipeId]
+    };
+  }
+
+  function sellAllProcessedGoods() {
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
+    if (!f.processing || !f.processing.storage) throw new Error("لا توجد منتجات مصنعة.");
+
+    let grandTotal = 0;
+    let itemsSold = 0;
+    Object.keys(f.processing.storage).forEach(rId => {
+      const qty = Number(f.processing.storage[rId] || 0);
+      if (qty > 0 && FARM_RECIPES[rId]) {
+        const p = qty * FARM_RECIPES[rId].baseValue;
+        grandTotal += p;
+        itemsSold += qty;
+        f.processing.storage[rId] = 0;
+      }
+    });
+
+    if (grandTotal <= 0) {
+      throw new Error("مستودع المنتجات المصنعة فارغ حالياً.");
+    }
+
+    state.cash = (state.cash || 0) + grandTotal;
+    if (!f.processing.stats) f.processing.stats = { totalProcessed: 0, totalRevenue: 0 };
+    f.processing.stats.totalRevenue = (f.processing.stats.totalRevenue || 0) + grandTotal;
+
+    recordPlayerActivity('بيع كامل المنتجات الغذائية المصنعة 💰', `بيع إجمالي ${itemsSold.toLocaleString()} عبوة مصنعة بعائد قياسي +${grandTotal.toLocaleString()} EGP نقداً!`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+
+    return {
+      itemsSold,
+      grandTotal,
+      totalUnits: itemsSold,
+      totalRevenue: grandTotal
+    };
+  }
+
+  // ─── Livestock & Ranch (قسم الإنتاج الحيواني والدواجن) ───
+  function buyLivestock(type, count = 1) {
+    if (type === 'dairyCows' || type === 'cows') type = 'cow';
+    if (type === 'poultryChickens' || type === 'chickens') type = 'chicken';
+    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("يجب استصلاح وتفعيل المزرعة أولاً.");
+    const def = FARM_LIVESTOCK_CONFIG[type];
+    if (!def) throw new Error("نوع الحيوانات أو الدواجن غير صالح.");
+
+    count = Math.max(1, Math.floor(Number(count) || 1));
+    const current = Number(f.livestock[type === 'cow' ? 'cows' : 'chickens'] || 0);
+    if (current + count > def.maxCount) {
+      throw new Error(`الحد الأقصى المسموح لحظائر ${def.name} هو ${def.maxCount} رؤوس/عنابر. لديك حالياً ${current}.`);
+    }
+
+    const totalCost = def.cost * count;
+    const totalFunds = (state.cash || 0) + (state.bank || 0);
+    if (totalFunds < totalCost) {
+      throw new Error(`كلفة شراء ${count} من "${def.name}" هي ${totalCost.toLocaleString()} EGP. رصيدك لا يكفي.`);
+    }
+
+    if ((state.cash || 0) >= totalCost) {
+      state.cash -= totalCost;
+    } else {
+      const rem = totalCost - (state.cash || 0);
+      state.cash = 0;
+      state.bank -= rem;
+    }
+
+    if (type === 'cow') {
+      f.livestock.cows = current + count;
+    } else {
+      f.livestock.chickens = current + count;
+    }
+
+    recordPlayerActivity('توسعة الثروة الحيوانية 🐄', `شراء ${count} من "${def.name}" بتكلفة ${totalCost.toLocaleString()} EGP. إجمالي القطيع: ${(current + count)}`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+
+    return {
+      type,
+      facility: def,
+      purchasedCount: count,
+      count,
+      totalCost,
+      newTotal: current + count,
+      currentCount: current + count
+    };
+  }
+
+  function sellLivestockProduce(produceKey, qty = null) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
+    if (!['milk', 'eggs', 'compost'].includes(produceKey)) throw new Error("نوع الإنتاج غير صالح.");
+
+    const available = Number((f.livestock && f.livestock[produceKey]) || 0);
+    if (available <= 0) {
+      const label = produceKey === 'milk' ? 'الحليب الطازج' : (produceKey === 'eggs' ? 'البيض' : 'السماد العضوي');
+      throw new Error(`لا يوجد مخزون متوفر من "${label}" لبيعه حالياً.`);
+    }
+
+    const sellQty = (qty === null || qty <= 0 || qty > available) ? available : Math.floor(Number(qty));
+    const pricePerUnit = produceKey === 'milk' ? FARM_LIVESTOCK_CONFIG.cow.sellPrice : (produceKey === 'eggs' ? FARM_LIVESTOCK_CONFIG.chicken.sellPrice : (FARM_LIVESTOCK_CONFIG.cow.compostPrice || 80));
+    const totalPrice = sellQty * pricePerUnit;
+
+    f.livestock[produceKey] -= sellQty;
+    state.cash = (state.cash || 0) + totalPrice;
+    if (!f.livestock.stats) f.livestock.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
+    f.livestock.stats.totalRevenue = (f.livestock.stats.totalRevenue || 0) + totalPrice;
+
+    const names = { milk: 'حليب أبقار طازج', eggs: 'كراتين بيض مائدة', compost: 'سماد عضوي حيواني' };
+    recordPlayerActivity('بيع إنتاج حيواني 🥛', `بيع ${sellQty.toLocaleString()} وحدة من ${names[produceKey]} بسعر ${totalPrice.toLocaleString()} EGP نقداً!`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+
+    return {
+      produceKey,
+      sellQty,
+      qty: sellQty,
+      totalPrice,
+      revenue: totalPrice,
+      remaining: f.livestock[produceKey]
+    };
+  }
+
+  function sellAllLivestockProduce() {
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
+    const ls = f.livestock;
+    if (!ls) throw new Error("لا توجد مواشي.");
+
+    const milk = Number(ls.milk || 0);
+    const eggs = Number(ls.eggs || 0);
+    const compost = Number(ls.compost || 0);
+
+    const milkPrice = milk * FARM_LIVESTOCK_CONFIG.cow.sellPrice;
+    const eggsPrice = eggs * FARM_LIVESTOCK_CONFIG.chicken.sellPrice;
+    const compostPrice = compost * (FARM_LIVESTOCK_CONFIG.cow.compostPrice || 80);
+    const grandTotal = milkPrice + eggsPrice + compostPrice;
+
+    if (grandTotal <= 0) {
+      throw new Error("لا يوجد إنتاج حيواني أو بيض أو سماد جاهز للبيع حالياً.");
+    }
+
+    ls.milk = 0;
+    ls.eggs = 0;
+    ls.compost = 0;
+    state.cash = (state.cash || 0) + grandTotal;
+    if (!ls.stats) ls.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
+    ls.stats.totalRevenue = (ls.stats.totalRevenue || 0) + grandTotal;
+
+    recordPlayerActivity('بيع كامل الإنتاج الحيواني 💰', `بيع كافة منتجات المزرعة الحيوانية بإجمالي +${grandTotal.toLocaleString()} EGP نقداً!`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+
+    return {
+      grandTotal,
+      milk,
+      eggs,
+      compost
+    };
+  }
+
+  function applyCompostFertilizer() {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
+    const compostQty = Number((f.livestock && f.livestock.compost) || 0);
+    const cost = 5;
+    if (compostQty < cost) {
+      throw new Error(`يلزم توفر ${cost} وحدات من السماد العضوي الحيواني (لديك ${compostQty}). قم بتربية الأبقار لإنتاجه مجاناً!`);
+    }
+
+    const now = getTrustedNow();
+    let plotsBoosted = 0;
+    (f.plots || []).forEach(plot => {
+      if (plot && !plot.ready) {
+        const boostMs = Math.max(30000, Math.floor((plot.durationMs || 60000) * 0.35));
+        plot.readyAt = Math.max(now, (plot.readyAt || now) - boostMs);
+        if (now >= plot.readyAt) {
+          plot.ready = true;
+        }
+        plotsBoosted++;
+      }
+    });
+
+    if (plotsBoosted === 0) {
+      throw new Error("لا توجد محاصيل قيد النمو في الأحواض حالياً لتسميدها بالسماد العضوي!");
+    }
+
+    f.livestock.compost -= cost;
+    recordPlayerActivity('تسميد عضوي مكثف 🌿', `استخدام ${cost} وحدات سماد حيواني عضوي لتسريع نضج ${plotsBoosted} أحواض زراعية فورياً!`, 'business');
+    forceSaveState(false);
+
+    return {
+      plotsBoosted,
+      remainingCompost: f.livestock.compost
+    };
+  }
+
+  // ─── B2B Supply Contracts (عقود التوريد للشركات والمطاعم) ───
+  function generateSingleContract(slotIndex, farmState) {
+    const client = FARM_CONTRACT_CLIENTS[Math.floor(Math.random() * FARM_CONTRACT_CLIENTS.length)];
+    const landLvl = Number(farmState.landLevel || 1);
+
+    const candidates = [];
+    candidates.push({ type: 'crop', id: 'wheat', basePrice: 10, min: 20, max: 80 });
+    candidates.push({ type: 'crop', id: 'tomato', basePrice: 35, min: 15, max: 60 });
+    if (landLvl >= 2) candidates.push({ type: 'crop', id: 'strawberry', basePrice: 120, min: 10, max: 40 });
+    if (landLvl >= 3) candidates.push({ type: 'crop', id: 'coffee', basePrice: 500, min: 8, max: 25 });
+    if (landLvl >= 4) candidates.push({ type: 'crop', id: 'dates', basePrice: 2500, min: 5, max: 15 });
+
+    candidates.push({ type: 'processed', id: 'flour_bread', basePrice: 90, min: 5, max: 20 });
+    candidates.push({ type: 'processed', id: 'tomato_paste', basePrice: 300, min: 4, max: 15 });
+    if (landLvl >= 2) candidates.push({ type: 'processed', id: 'strawberry_jam', basePrice: 920, min: 3, max: 10 });
+    if (landLvl >= 3) candidates.push({ type: 'processed', id: 'premium_coffee', basePrice: 4200, min: 2, max: 6 });
+
+    if (farmState.livestock && farmState.livestock.cows > 0) {
+      candidates.push({ type: 'livestock', id: 'milk', basePrice: 150, min: 10, max: 30 });
+    }
+    if (farmState.livestock && farmState.livestock.chickens > 0) {
+      candidates.push({ type: 'livestock', id: 'eggs', basePrice: 40, min: 20, max: 60 });
+    }
+
+    const choice = candidates[Math.floor(Math.random() * candidates.length)];
+    const qty = Math.floor(choice.min + Math.random() * (choice.max - choice.min + 1));
+    const baseValue = qty * choice.basePrice;
+    const bonusMultiplier = client.payoutMultiplier || 1.5;
+    const totalPayout = Math.floor(baseValue * bonusMultiplier);
+    const durationMinutes = Math.floor(25 + Math.random() * 20); // 25 to 45 mins
+    const now = getTrustedNow();
+
+    let itemName = '';
+    let itemIcon = '';
+    if (choice.type === 'crop') {
+      itemName = FARM_CROPS[choice.id].name;
+      itemIcon = FARM_CROPS[choice.id].icon;
+    } else if (choice.type === 'processed') {
+      itemName = FARM_RECIPES[choice.id].name;
+      itemIcon = FARM_RECIPES[choice.id].icon;
+    } else {
+      itemName = choice.id === 'milk' ? 'حليب أبقار طازج' : 'كراتين بيض مائدة';
+      itemIcon = choice.id === 'milk' ? 'fa-solid fa-bottle-water' : 'fa-solid fa-egg';
+    }
+
+    return {
+      id: 'cnt_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+      clientName: client.name,
+      clientIcon: client.icon,
+      itemType: choice.type,
+      itemId: choice.id,
+      itemName,
+      itemIcon,
+      quantityNeeded: qty,
+      payout: totalPayout,
+      bonusPercent: Math.round((bonusMultiplier - 1) * 100),
+      repReward: client.repBonus || 15,
+      createdAt: now,
+      expiresAt: now + (durationMinutes * 60 * 1000),
+      fulfilled: false
+    };
+  }
+
+  function ensureFarmContracts() {
+    const f = ensureFarmState();
+    if (!f.unlocked) return [];
+    if (!f.contracts) f.contracts = { reputation: 0, completedCount: 0, totalBonusEarned: 0, active: [] };
+    if (!Array.isArray(f.contracts.active)) f.contracts.active = [];
+
+    const now = getTrustedNow();
+    f.contracts.active = f.contracts.active.filter(c => c && !c.fulfilled && now < c.expiresAt);
+
+    while (f.contracts.active.length < 3) {
+      f.contracts.active.push(generateSingleContract(f.contracts.active.length + 1, f));
+    }
+    return f.contracts.active;
+  }
+
+  function fulfillFarmContract(contractId) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
+    ensureFarmContracts();
+
+    const contractIndex = (f.contracts.active || []).findIndex(c => c.id === contractId);
+    if (contractIndex === -1) throw new Error("العقد غير موجود أو انتهت صلاحيته.");
+
+    const contract = f.contracts.active[contractIndex];
+    const now = getTrustedNow();
+    if (now >= contract.expiresAt) {
+      f.contracts.active.splice(contractIndex, 1);
+      ensureFarmContracts();
+      throw new Error("انتهت المدة الزمنية لهذا العقد للأسف! تم إرسال عقد جديد للوحة.");
+    }
+
+    let availableQty = 0;
+    if (contract.itemType === 'crop') {
+      availableQty = Number((f.inventory && f.inventory[contract.itemId]) || 0);
+    } else if (contract.itemType === 'processed') {
+      availableQty = Number((f.processing && f.processing.storage && f.processing.storage[contract.itemId]) || 0);
+    } else if (contract.itemType === 'livestock') {
+      availableQty = Number((f.livestock && f.livestock[contract.itemId]) || 0);
+    }
+
+    if (availableQty < contract.quantityNeeded) {
+      throw new Error(`المخزون المتوفر لديك (${availableQty.toLocaleString()}) لا يكفي لتوريد طلبية "${contract.itemName}" (يلزم ${contract.quantityNeeded.toLocaleString()} وحدة).`);
+    }
+
+    if (contract.itemType === 'crop') {
+      f.inventory[contract.itemId] -= contract.quantityNeeded;
+    } else if (contract.itemType === 'processed') {
+      f.processing.storage[contract.itemId] -= contract.quantityNeeded;
+    } else if (contract.itemType === 'livestock') {
+      f.livestock[contract.itemId] -= contract.quantityNeeded;
+    }
+
+    state.cash = (state.cash || 0) + contract.payout;
+    f.contracts.reputation = (f.contracts.reputation || 0) + contract.repReward;
+    f.contracts.completedCount = (f.contracts.completedCount || 0) + 1;
+    f.contracts.totalBonusEarned = (f.contracts.totalBonusEarned || 0) + contract.payout;
+
+    recordPlayerActivity('إنجاز عقد توريد تجاري 📜🤝', `تم توريد طلبية (${contract.quantityNeeded} وحدة ${contract.itemName}) لـ "${contract.clientName}" وقبض ${contract.payout.toLocaleString()} EGP (+${contract.bonusPercent}% بونص | +${contract.repReward} سمعة)!`, 'business');
+
+    f.contracts.active.splice(contractIndex, 1);
+    ensureFarmContracts();
+
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+
+    return {
+      contract,
+      payout: contract.payout,
+      repReward: contract.repReward,
+      newReputation: f.contracts.reputation
+    };
+  }
+
+  function refreshFarmContracts(manual = false) {
+    const f = ensureFarmState();
+    if (!f.unlocked) return [];
+    if (manual) {
+      f.contracts.active = [];
+    }
+    return ensureFarmContracts();
+  }
+
   function sanitizeGameState() {
     if (!state) return;
     const numFields = ['cash','bank','dirtyCash','netWorth','xp','dailyCasinoNetProfit','dailyCasinoResetAt'];
@@ -6523,6 +7189,9 @@ const GameEngine = (() => {
     // Agro Farm Tycoon (المزرعة الاستثمارية) Exports
     FARM_CONFIG,
     FARM_CROPS,
+    FARM_RECIPES,
+    FARM_LIVESTOCK_CONFIG,
+    FARM_CONTRACT_CLIENTS,
     ensureFarmState,
     getFarmState,
     unlockFarm,
@@ -6536,6 +7205,16 @@ const GameEngine = (() => {
     hireFarmWorker,
     sellFarmCrop,
     sellAllFarmCrops,
+    processFarmCrop,
+    sellProcessedGood,
+    sellAllProcessedGoods,
+    buyLivestock,
+    sellLivestockProduce,
+    sellAllLivestockProduce,
+    applyCompostFertilizer,
+    ensureFarmContracts,
+    fulfillFarmContract,
+    refreshFarmContracts,
 
     // State Reader (read-only snapshot for UI queries)
     getState: () => state
