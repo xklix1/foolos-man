@@ -734,20 +734,17 @@ var AppDB = (() => {
       throw new Error('🚫 مرفوض أمنياً: يجب أن يمر ساعتان على الأقل على إنشاء الحساب وتطوير المشاريع قبل إمكانية إجراء تحويلات مالية.');
     }
 
-    // 5. Clone / Similar Name or Gibberish Name Heuristics
+    // 5. Clone / Similar Name Heuristics
     const similar = isSimilarName(sUser, rUser);
-    const gibberish = isGibberishName(sUser);
 
-    if (similar || gibberish) {
+    if (similar) {
       await logFraudAlert({
-        type: similar ? 'SIMILAR_NAME_FEEDER' : 'GIBBERISH_NAME_FEEDER',
+        type: 'SIMILAR_NAME_FEEDER',
         sender: sUser,
         recipient: rUser,
         amount: amt,
         device: fp,
-        details: similar 
-          ? `تشابه كبير في أسماء الحسابات النمطية (${sUser} -> ${rUser})`
-          : `اسم حساب عشوائي (${sUser})`
+        details: `تشابه كبير في أسماء الحسابات النمطية (${sUser} -> ${rUser})`
       });
       throw new Error('🚫 تم رفض التحويل أمنياً: تم رصد نمط حسابات وهمية متطابقة (Clone/Feeder Accounts). يرجى اللعب وتطوير المشاريع بشكل مستقل.');
     }
