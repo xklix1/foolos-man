@@ -29,117 +29,201 @@
 
 
   <style>
+    /* ====================================================================
+       PREMIUM CYBER-FINTECH DESIGN SYSTEM — Admin Panel v3.0
+       Palette: Gold #f59e0b | Cyan #06b6d4 | Emerald #10b981 | Violet #8b5cf6 | Rose #f43f5e
+    ==================================================================== */
     :root {
-      --cyber-bg: #030712;
-      --panel-bg: rgba(11, 19, 38, 0.85);
-      --panel-border: rgba(51, 65, 85, 0.65);
+      --cyber-bg: #020409;
+      --panel-bg: rgba(6, 10, 22, 0.88);
+      --panel-bg-hover: rgba(9, 15, 33, 0.92);
+      --panel-border: rgba(40, 54, 78, 0.7);
+      --panel-border-hover: rgba(65, 85, 115, 0.9);
       --gold-primary: #f59e0b;
-      --gold-glow: rgba(245, 158, 11, 0.25);
+      --gold-light: #fbbf24;
+      --gold-glow: rgba(245, 158, 11, 0.3);
+      --gold-glow-sm: rgba(245, 158, 11, 0.15);
+      --cyan-primary: #06b6d4;
+      --emerald-primary: #10b981;
+      --violet-primary: #8b5cf6;
+      --rose-primary: #f43f5e;
+      --surface-0: rgba(3, 6, 16, 0.95);
+      --surface-1: rgba(8, 14, 28, 0.9);
+      --surface-2: rgba(12, 20, 38, 0.85);
+      --surface-3: rgba(16, 26, 46, 0.8);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #4b5563;
     }
+
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; }
     body {
       font-family: 'Cairo', sans-serif;
-      background-color: #030712;
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(245, 158, 11, 0.04) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.03) 0px, transparent 50%),
-        radial-gradient(at 50% 50%, rgba(14, 165, 233, 0.02) 0px, transparent 50%);
-      color: #f8fafc;
+      background-color: var(--cyber-bg);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 0% 0%, rgba(245, 158, 11, 0.055) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 60% at 100% 100%, rgba(16, 185, 129, 0.04) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 70% at 60% 20%, rgba(6, 182, 212, 0.03) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 80% at 20% 80%, rgba(139, 92, 246, 0.025) 0%, transparent 50%),
+        linear-gradient(180deg, #020409 0%, #030712 100%);
+      background-attachment: fixed;
+      color: var(--text-primary);
       overflow-x: hidden;
       min-height: 100vh;
     }
+
+    /* ── Typography ── */
     .numbers-font {
-      font-family: 'Inter', sans-serif;
+      font-family: 'JetBrains Mono', 'Inter', monospace;
       font-feature-settings: "tnum" 1;
+      font-variant-numeric: tabular-nums;
     }
+    .mono-font { font-family: 'JetBrains Mono', monospace; }
+
+    /* ── Glassmorphism Core ── */
     .glass-panel {
-      background: rgba(11, 19, 38, 0.82);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(51, 65, 85, 0.6);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      background: linear-gradient(145deg, rgba(8, 14, 30, 0.9) 0%, rgba(5, 9, 22, 0.85) 100%);
+      backdrop-filter: blur(28px) saturate(150%);
+      -webkit-backdrop-filter: blur(28px) saturate(150%);
+      border: 1px solid rgba(45, 65, 95, 0.65);
+      box-shadow:
+        0 4px 6px -1px rgba(0,0,0,0.4),
+        0 10px 40px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.05),
+        inset 0 -1px 0 rgba(0,0,0,0.3);
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
     }
     .glass-panel:hover {
-      border-color: rgba(71, 85, 105, 0.8);
+      border-color: rgba(70, 95, 130, 0.85);
+      box-shadow:
+        0 4px 6px -1px rgba(0,0,0,0.4),
+        0 15px 50px rgba(0,0,0,0.55),
+        inset 0 1px 0 rgba(255,255,255,0.07),
+        inset 0 -1px 0 rgba(0,0,0,0.3);
     }
     .glass-panel-gold {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(11, 19, 38, 0.95) 100%);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(245, 158, 11, 0.35);
-      box-shadow: 0 8px 32px 0 rgba(245, 158, 11, 0.08), inset 0 1px 0 rgba(245, 158, 11, 0.15);
+      background: linear-gradient(145deg, rgba(30, 20, 5, 0.92) 0%, rgba(8, 14, 30, 0.9) 60%, rgba(5, 9, 22, 0.88) 100%);
+      backdrop-filter: blur(28px) saturate(160%);
+      -webkit-backdrop-filter: blur(28px) saturate(160%);
+      border: 1px solid rgba(245, 158, 11, 0.38);
+      box-shadow:
+        0 4px 6px -1px rgba(0,0,0,0.4),
+        0 10px 40px rgba(0,0,0,0.45),
+        0 0 0 1px rgba(245, 158, 11, 0.06),
+        inset 0 1px 0 rgba(245, 158, 11, 0.18),
+        inset 0 -1px 0 rgba(0,0,0,0.3);
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
     }
+    .glass-panel-gold:hover {
+      border-color: rgba(245, 158, 11, 0.55);
+      box-shadow:
+        0 0 0 1px rgba(245, 158, 11, 0.1),
+        0 15px 50px rgba(245, 158, 11, 0.08),
+        inset 0 1px 0 rgba(245, 158, 11, 0.22),
+        inset 0 -1px 0 rgba(0,0,0,0.3);
+    }
+
+    /* ── Inputs ── */
     .glass-input {
-      background: rgba(3, 7, 18, 0.85);
-      border: 1px solid rgba(51, 65, 85, 0.8);
-      color: #fff;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      background: rgba(2, 4, 14, 0.9);
+      border: 1px solid rgba(45, 62, 88, 0.85);
+      color: var(--text-primary);
+      border-radius: 0.625rem;
+      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     }
+    .glass-input::placeholder { color: rgba(100, 116, 139, 0.6); }
     .glass-input:focus {
-      border-color: #f59e0b;
-      box-shadow: 0 0 16px rgba(245, 158, 11, 0.25), inset 0 0 4px rgba(245, 158, 11, 0.1);
+      border-color: rgba(245, 158, 11, 0.7);
+      box-shadow:
+        0 0 0 3px rgba(245, 158, 11, 0.1),
+        0 0 20px rgba(245, 158, 11, 0.15),
+        inset 0 0 6px rgba(245, 158, 11, 0.06);
       outline: none;
     }
+
+    /* ── Sidebar Navigation Tabs ── */
     .active-admin-tab {
-      background: linear-gradient(270deg, rgba(245, 158, 11, 0.16) 0%, rgba(245, 158, 11, 0.03) 100%) !important;
-      border-color: rgba(245, 158, 11, 0.65) !important;
+      background: linear-gradient(270deg, rgba(245, 158, 11, 0.18) 0%, rgba(245, 158, 11, 0.04) 100%) !important;
+      border: 1px solid rgba(245, 158, 11, 0.5) !important;
       color: #fbbf24 !important;
-      box-shadow: inset -3px 0 0 #f59e0b, 0 4px 16px rgba(245, 158, 11, 0.12) !important;
+      box-shadow:
+        inset -3px 0 0 #f59e0b,
+        0 0 20px rgba(245, 158, 11, 0.1),
+        0 2px 8px rgba(0,0,0,0.3) !important;
     }
     .active-admin-tab i {
       color: #fbbf24 !important;
-      filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.5));
+      filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.6));
     }
+    .active-admin-tab .admin-nav-icon {
+      background: rgba(245, 158, 11, 0.2) !important;
+      border-color: rgba(245, 158, 11, 0.4) !important;
+    }
+
+    /* ── Mobile Pill Tabs ── */
     .active-admin-mob-pill {
-      background: rgba(245, 158, 11, 0.22) !important;
-      border-color: rgba(245, 158, 11, 0.7) !important;
+      background: rgba(245, 158, 11, 0.2) !important;
+      border-color: rgba(245, 158, 11, 0.65) !important;
       color: #fbbf24 !important;
-      box-shadow: 0 0 12px rgba(245, 158, 11, 0.25) !important;
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.25), 0 2px 8px rgba(0,0,0,0.4) !important;
     }
+
+    /* ── Sub-tabs ── */
     .active-player-subtab {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.05)) !important;
-      border-color: rgba(245, 158, 11, 0.5) !important;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(245, 158, 11, 0.05)) !important;
+      border-color: rgba(245, 158, 11, 0.55) !important;
       color: #fbbf24 !important;
-      box-shadow: 0 2px 10px rgba(245, 158, 11, 0.15) !important;
+      box-shadow: 0 2px 12px rgba(245, 158, 11, 0.18) !important;
     }
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-    /* Custom Sleek Scrollbars */
-    ::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(3, 7, 18, 0.6);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(71, 85, 105, 0.7);
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(245, 158, 11, 0.7);
-    }
+
+    /* ── Scrollbars ── */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: rgba(2, 4, 14, 0.5); }
+    ::-webkit-scrollbar-thumb { background: rgba(55, 72, 100, 0.8); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.65); }
+
+    /* ── Glow Text Utilities ── */
+    .glow-gold  { text-shadow: 0 0 18px rgba(245, 158, 11, 0.55), 0 0 40px rgba(245, 158, 11, 0.2); }
+    .glow-cyan  { text-shadow: 0 0 18px rgba(6, 182, 212, 0.55), 0 0 40px rgba(6, 182, 212, 0.2); }
+    .glow-emerald { text-shadow: 0 0 18px rgba(16, 185, 129, 0.55), 0 0 40px rgba(16, 185, 129, 0.2); }
+    .glow-violet { text-shadow: 0 0 18px rgba(139, 92, 246, 0.55); }
+    .glow-rose  { text-shadow: 0 0 18px rgba(244, 63, 94, 0.55); }
+
+    /* ── Animations ── */
     @keyframes pulse-slow {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.85; transform: scale(1.015); }
+      50% { opacity: 0.82; transform: scale(1.012); }
     }
-    .glow-gold {
-      text-shadow: 0 0 14px rgba(245, 158, 11, 0.5);
+    @keyframes shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
     }
-    .glow-cyan {
-      text-shadow: 0 0 14px rgba(6, 182, 212, 0.5);
+    @keyframes glow-pulse {
+      0%, 100% { box-shadow: 0 0 8px rgba(245, 158, 11, 0.25); }
+      50% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.5), 0 0 40px rgba(245, 158, 11, 0.15); }
     }
-    .glow-emerald {
-      text-shadow: 0 0 14px rgba(16, 185, 129, 0.5);
+    @keyframes slide-in-right {
+      from { transform: translateX(16px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
     }
+    @keyframes fade-in-up {
+      from { transform: translateY(8px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-slide-in { animation: slide-in-right 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+    .animate-fade-up  { animation: fade-in-up 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+
+    /* ── Header ── */
     .command-header {
-      background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(10, 16, 31, 0.92) 100%);
-      border-bottom: 1px solid rgba(51, 65, 85, 0.7);
+      background: linear-gradient(180deg, rgba(5, 9, 22, 0.98) 0%, rgba(4, 7, 18, 0.96) 100%);
+      border-bottom: 1px solid rgba(35, 50, 75, 0.8);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.6), 0 1px 0 rgba(245, 158, 11, 0.04);
     }
+
+    /* ── Category Labels ── */
     .category-divider {
       position: relative;
       display: flex;
@@ -153,17 +237,347 @@
       content: '';
       flex: 1;
       height: 1px;
-      background: linear-gradient(90deg, rgba(51, 65, 85, 0.6), transparent);
+      background: linear-gradient(90deg, rgba(40, 55, 80, 0.8), transparent);
     }
-    .btn-action-primary {
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+
+    /* ── Button Lift Animation ── */
+    .btn-action-primary { transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1); }
     .btn-action-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
     }
-    .btn-action-primary:active {
-      transform: translateY(0);
+    .btn-action-primary:active { transform: translateY(0); }
+
+    /* ── HEADER PREMIUM OVERRIDE ── */
+    header#admin-main-header {
+      background: linear-gradient(180deg, rgba(5, 9, 22, 0.99) 0%, rgba(4, 7, 18, 0.97) 100%) !important;
+      border-bottom: 1px solid rgba(35, 52, 80, 0.9) !important;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.7), 0 1px 0 rgba(245,158,11,0.05) !important;
+    }
+
+    /* ── SIDEBAR PREMIUM OVERRIDE ── */
+    #admin-sidebar {
+      background: linear-gradient(180deg, rgba(4, 7, 18, 0.98) 0%, rgba(3, 6, 16, 0.97) 100%) !important;
+      border-left: 1px solid rgba(30, 45, 70, 0.85) !important;
+      box-shadow: -8px 0 40px rgba(0,0,0,0.5) !important;
+    }
+    .admin-tab-btn {
+      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .admin-tab-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .admin-tab-btn:hover::before { opacity: 1; }
+    .admin-tab-btn:hover {
+      background: rgba(15, 24, 48, 0.85);
+      border-color: rgba(55, 75, 110, 0.6) !important;
+    }
+
+    /* ── NAV ICON BADGES ── */
+    .admin-nav-icon {
+      border-radius: 0.5rem;
+      width: 1.6rem;
+      height: 1.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+    .admin-tab-btn:hover .admin-nav-icon {
+      transform: scale(1.1);
+    }
+
+    /* ── MOBILE TAB BAR PREMIUM ── */
+    #admin-mobile-tab-bar {
+      background: linear-gradient(180deg, rgba(4, 7, 18, 0.99) 0%, rgba(3, 6, 16, 0.97) 100%) !important;
+      border-bottom: 1px solid rgba(30, 45, 70, 0.8) !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+    }
+    #admin-mobile-tab-bar button {
+      background: rgba(10, 16, 32, 0.7) !important;
+      border: 1px solid rgba(30, 45, 70, 0.6) !important;
+      transition: all 0.2s ease;
+    }
+    #admin-mobile-tab-bar button:hover {
+      background: rgba(15, 24, 48, 0.9) !important;
+      border-color: rgba(55, 78, 115, 0.8) !important;
+    }
+
+    /* ── TELEMETRY HUD CARDS ── */
+    .hud-card {
+      background: linear-gradient(145deg, rgba(8, 14, 30, 0.92) 0%, rgba(5, 9, 22, 0.88) 100%);
+      backdrop-filter: blur(32px) saturate(160%);
+      -webkit-backdrop-filter: blur(32px) saturate(160%);
+      border: 1px solid rgba(40, 58, 88, 0.7);
+      border-radius: 1rem;
+      padding: 0.85rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .hud-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+    }
+    .hud-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+    }
+    .hud-icon {
+      width: 2.4rem;
+      height: 2.4rem;
+      border-radius: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+    .hud-card:hover .hud-icon { transform: scale(1.1) rotate(-3deg); }
+    .hud-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      letter-spacing: 0.04em;
+    }
+    .hud-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    /* ── STAT CARDS ── */
+    .stat-card {
+      background: linear-gradient(145deg, rgba(8, 14, 30, 0.9) 0%, rgba(5, 9, 22, 0.86) 100%);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(38, 55, 82, 0.65);
+      border-radius: 1rem;
+      padding: 1rem 1.1rem;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.055), transparent);
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(65, 90, 130, 0.85);
+      box-shadow: 0 12px 36px rgba(0,0,0,0.4);
+    }
+
+    /* ── PREMIUM TABLE OVERRIDE ── */
+    .adm-table-premium {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    .adm-table-premium thead tr {
+      background: rgba(4, 7, 18, 0.98);
+    }
+    .adm-table-premium thead th {
+      padding: 0.6rem 0.85rem;
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: rgba(148, 163, 184, 0.85);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(35, 52, 80, 0.8);
+      white-space: nowrap;
+    }
+    .adm-table-premium tbody tr {
+      transition: background 0.18s ease;
+      border-bottom: 1px solid rgba(25, 38, 58, 0.6);
+    }
+    .adm-table-premium tbody tr:hover {
+      background: rgba(15, 25, 50, 0.7);
+    }
+    .adm-table-premium tbody td {
+      padding: 0.65rem 0.85rem;
+      font-size: 0.72rem;
+      color: var(--text-primary);
+    }
+
+    /* ── BADGE PILLS ── */
+    .badge-emerald { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 9999px; padding: 2px 8px; font-size: 0.62rem; font-weight: 800; }
+    .badge-rose    { background: rgba(244, 63, 94, 0.12);  color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3);  border-radius: 9999px; padding: 2px 8px; font-size: 0.62rem; font-weight: 800; }
+    .badge-amber   { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 9999px; padding: 2px 8px; font-size: 0.62rem; font-weight: 800; }
+    .badge-cyan    { background: rgba(6, 182, 212, 0.12);  color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3);  border-radius: 9999px; padding: 2px 8px; font-size: 0.62rem; font-weight: 800; }
+    .badge-violet  { background: rgba(139, 92, 246, 0.12); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 9999px; padding: 2px 8px; font-size: 0.62rem; font-weight: 800; }
+
+    /* ── LOGIN SCREEN PREMIUM ── */
+    #admin-auth-screen {
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245, 158, 11, 0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 50% at 0% 100%, rgba(6, 182, 212, 0.04) 0%, transparent 60%),
+        linear-gradient(180deg, #020409 0%, #030712 100%) !important;
+    }
+    #admin-auth-screen .glass-panel {
+      background: linear-gradient(145deg, rgba(8, 14, 30, 0.96) 0%, rgba(5, 9, 22, 0.94) 100%) !important;
+      border-color: rgba(245, 158, 11, 0.35) !important;
+      box-shadow:
+        0 0 0 1px rgba(245, 158, 11, 0.08),
+        0 25px 80px rgba(0,0,0,0.7),
+        0 0 60px rgba(245, 158, 11, 0.05),
+        inset 0 1px 0 rgba(245, 158, 11, 0.15) !important;
+    }
+
+    /* ── SIDEBAR LIVE STATUS WIDGET ── */
+    .sidebar-status-widget {
+      background: rgba(4, 8, 22, 0.7);
+      border: 1px solid rgba(30, 45, 70, 0.8);
+      border-radius: 0.85rem;
+      padding: 0.65rem 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    /* ── SECTION HEADERS ── */
+    .section-heading {
+      font-size: 0.8rem;
+      font-weight: 900;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding-bottom: 0.7rem;
+      border-bottom: 1px solid rgba(30, 46, 72, 0.7);
+      margin-bottom: 1rem;
+    }
+    .section-heading-icon {
+      width: 1.9rem;
+      height: 1.9rem;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── MAIN WORKSPACE AREA ── */
+    #admin-panel-modal {
+      background:
+        radial-gradient(ellipse 70% 40% at 80% 10%, rgba(245,158,11,0.028) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 50% at 10% 90%, rgba(16,185,129,0.02) 0%, transparent 50%),
+        #020409 !important;
+    }
+
+    /* ── SIDEBAR NAV GROUP LABELS ── */
+    .nav-group-label {
+      font-size: 0.6rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(100, 116, 139, 0.75);
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0 0.5rem;
+      margin-bottom: 0.35rem;
+    }
+    .nav-group-dot {
+      width: 0.35rem;
+      height: 0.35rem;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+
+    /* ── SIDEBAR FOOTER ── */
+    #admin-sidebar > div:last-child {
+      background: rgba(3, 6, 16, 0.6);
+      border-top: 1px solid rgba(28, 42, 65, 0.8);
+    }
+
+    /* ── SEARCH FILTER BAR ── */
+    .search-bar-container {
+      background: linear-gradient(145deg, rgba(6, 10, 24, 0.92) 0%, rgba(4, 8, 20, 0.9) 100%);
+      border: 1px solid rgba(35, 52, 80, 0.75);
+      border-radius: 0.85rem;
+      padding: 0.85rem 1rem;
+      backdrop-filter: blur(20px);
+    }
+
+    /* ── ACTION BUTTONS ── */
+    .btn-primary-gold {
+      background: linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #fbbf24 100%);
+      color: #0a0500;
+      font-weight: 900;
+      border: none;
+      border-radius: 0.6rem;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .btn-primary-gold:hover {
+      background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #fcd34d 100%);
+      box-shadow: 0 6px 24px rgba(245, 158, 11, 0.5);
+      transform: translateY(-1px);
+    }
+    .btn-primary-gold:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: rgba(15, 24, 48, 0.8);
+      border: 1px solid rgba(40, 60, 90, 0.8);
+      color: rgba(148, 163, 184, 0.9);
+      border-radius: 0.6rem;
+      cursor: pointer;
+      transition: all 0.22s ease;
+    }
+    .btn-secondary:hover {
+      background: rgba(20, 32, 60, 0.9);
+      border-color: rgba(65, 90, 130, 0.9);
+      color: #f1f5f9;
+    }
+
+    /* ── MISC OVERRIDES ── */
+    select.glass-input option { background: #07101e; }
+
+    /* Auth screen grid overlay */
+    #admin-auth-screen::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(35, 52, 80, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(35, 52, 80, 0.06) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    /* Glow pulse on telemetry active dot */
+    .telemetry-live-dot {
+      animation: glow-pulse 2.5s ease-in-out infinite;
+      border-radius: 9999px;
+    }
+
+    @media (max-width: 640px) {
+      .hud-value { font-size: 0.85rem; }
     }
   </style></head>
 <body class="bg-slate-950 text-slate-100 flex flex-col min-h-screen select-none">
@@ -220,56 +634,85 @@
       class="flex-1 flex flex-col w-full h-full min-h-[100dvh] max-h-[100dvh] overflow-hidden bg-slate-950 text-slate-100 select-none">
 
       <!-- Top Full-Screen Navigation Bar -->
-      <header
-        class="bg-slate-900/95 backdrop-blur-md border-b border-slate-800/60 px-3 sm:px-6 py-2 sm:py-2.5 flex items-center justify-between gap-2 shadow-2xl shrink-0 flex-nowrap">
-        <div class="flex items-center gap-2 sm:gap-3 truncate">
+      <header id="admin-main-header"
+        class="command-header px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 shrink-0 flex-nowrap">
+        <div class="flex items-center gap-2 sm:gap-3.5 truncate">
           <!-- Mobile Sidebar Toggle -->
-          <button id="btn-admin-sidebar-toggle" onclick="window.UI.toggleAdminSidebarAction()" class="md:hidden w-9 h-9 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 hover:text-white flex items-center justify-center transition" title="فتح القائمة الكاملة">
-            <i class="fa-solid fa-bars text-sm"></i></button>
-          
-          <div
-            class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-yellow-600 to-amber-400 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-yellow-500/20 shrink-0">
-            <i class="fa-solid fa-shield-halved text-base sm:text-lg"></i></div>
-          <div>
-            <div class="flex items-center gap-1.5 sm:gap-2">
-              <h2 class="text-sm sm:text-lg font-black text-white flex items-center gap-1.5 sm:gap-2">
-                <span class="hidden sm:inline">مركز القيادة والرقابة الإدارية المركزية</span>
-                <span class="sm:hidden font-black">لوحة القيادة</span>
-                <button class="btn-panel-help text-slate-400 hover:text-yellow-400 transition ml-1" data-help="panel-admin" title="شرح الصفحة">
-                  <i class="fa-solid fa-circle-question text-xs sm:text-sm"></i></button></h2>
-              <span
-                class="hidden sm:inline-block text-[10px] px-2 py-0.5 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full font-bold">Admin Root Terminal</span></div>
-            <p class="text-[11px] text-slate-400 hidden sm:block">إدارة ومراقبة حركة الاقتصاد، اللاعبين، سجل الأنشطة، التحويلات، البورصة، والبث المباشر</p></div></div>
+          <button id="btn-admin-sidebar-toggle" onclick="window.UI.toggleAdminSidebarAction()"
+            class="md:hidden w-9 h-9 rounded-xl border border-slate-700/50 text-slate-400 hover:text-white flex items-center justify-center transition-all hover:border-amber-500/40 hover:bg-amber-500/10"
+            style="background:rgba(10,16,32,0.7)" title="فتح القائمة الكاملة">
+            <i class="fa-solid fa-bars-staggered text-sm"></i></button>
 
-        <div class="flex items-center gap-1.5 sm:gap-3 text-xs font-mono">
-          <!-- Live Online Players Interactive Button -->
+          <!-- Logo Badge -->
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl shrink-0 flex items-center justify-center text-slate-950 font-black shadow-lg relative"
+            style="background:linear-gradient(135deg,#d97706,#f59e0b,#fbbf24);box-shadow:0 4px 16px rgba(245,158,11,0.4),inset 0 1px 0 rgba(255,255,255,0.3)">
+            <i class="fa-solid fa-shield-halved text-base sm:text-lg"></i>
+            <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 rounded-full" style="border-color:#020409"></span>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-sm sm:text-base font-black text-white tracking-tight flex items-center gap-2">
+                <span class="hidden sm:inline">مركز القيادة والرقابة الإدارية</span>
+                <span class="sm:hidden font-black">لوحة القيادة</span>
+                <button class="btn-panel-help text-slate-500 hover:text-amber-400 transition-colors" data-help="panel-admin" title="شرح الصفحة">
+                  <i class="fa-solid fa-circle-question text-xs"></i></button>
+              </h2>
+              <span class="hidden sm:inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-black tracking-wider"
+                style="background:rgba(245,158,11,0.12);color:#fbbf24;border:1px solid rgba(245,158,11,0.3)">
+                <span class="w-1 h-1 rounded-full bg-amber-400 animate-pulse"></span>
+                ROOT TERMINAL
+              </span>
+            </div>
+            <p class="text-[10px] text-slate-500 hidden sm:block mt-0.5 font-medium">إدارة اللاعبين · الاقتصاد · التحويلات · البورصة · البث المباشر</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <!-- Live Online Players -->
           <button id="btn-admin-header-online"
             onclick="window.switchAdminTab('players'); if(typeof window.filterAdminOnline === 'function') window.filterAdminOnline();"
-            class="p-2 sm:px-3 sm:py-1.5 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-400 font-bold rounded-xl transition flex items-center gap-2 text-xs shadow-lg cursor-pointer group"
-            title="انقر لعرض قائمة اللاعبين المتصلين حالياً">
+            class="group flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer text-xs font-bold"
+            style="background:rgba(6,24,18,0.9);border:1px solid rgba(16,185,129,0.35);color:#34d399"
+            title="انقر لعرض المتصلين">
             <span class="relative flex h-2 w-2">
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span class="hidden sm:inline">المتواجدين الآن:</span>
-            <span id="adm-header-online-count" class="numbers-font font-black text-white text-xs sm:text-sm bg-emerald-500/20 px-1.5 py-0.5 rounded border border-emerald-500/30 group-hover:bg-emerald-500/30 transition">0</span>
+            <span class="hidden sm:inline font-bold">متصل:</span>
+            <span id="adm-header-online-count" class="numbers-font font-black text-white">0</span>
           </button>
-          <div
-            class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-950/80 border border-slate-800 rounded-lg text-slate-300">
-            <i class="fa-regular fa-clock text-yellow-500"></i>
-            <span id="adm-live-clock">--:--:--</span></div>
-          <!-- Manual Refresh Button -->
+
+          <!-- Live Clock -->
+          <div class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono"
+            style="background:rgba(4,8,22,0.8);border:1px solid rgba(32,48,72,0.8);color:#94a3b8">
+            <i class="fa-regular fa-clock text-amber-500/70 text-xs"></i>
+            <span id="adm-live-clock" class="numbers-font text-slate-300">--:--:--</span>
+          </div>
+
+          <!-- Manual Refresh -->
           <button id="btn-admin-manual-refresh"
-            class="p-2 sm:px-4 sm:py-2 bg-yellow-500/20 hover:bg-yellow-500 text-yellow-400 hover:text-slate-950 border border-yellow-500/40 font-bold rounded-xl transition flex items-center gap-1.5 text-xs shadow-lg cursor-pointer"
+            class="flex items-center gap-1.5 px-2 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+            style="background:rgba(20,15,5,0.8);border:1px solid rgba(245,158,11,0.4);color:#fbbf24"
+            onmouseover="this.style.background='rgba(245,158,11,0.15)'"
+            onmouseout="this.style.background='rgba(20,15,5,0.8)'"
             title="تحديث البيانات">
             <i class="fa-solid fa-rotate-right text-xs"></i>
-            <span class="hidden sm:inline">تحديث البيانات</span></button>
-          <!-- Exit to Game Button -->
+            <span class="hidden sm:inline">تحديث</span>
+          </button>
+
+          <!-- Exit -->
           <button id="btn-admin-modal-close"
-            class="p-2 sm:px-4 sm:py-2 bg-rose-950/70 hover:bg-rose-900/90 border border-rose-500/40 text-rose-300 font-bold rounded-xl transition flex items-center gap-1.5 text-xs shadow-lg"
+            class="flex items-center gap-1.5 px-2 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all"
+            style="background:rgba(25,5,8,0.8);border:1px solid rgba(244,63,94,0.35);color:#fb7185"
+            onmouseover="this.style.background='rgba(244,63,94,0.12)'"
+            onmouseout="this.style.background='rgba(25,5,8,0.8)'"
             title="العودة للعبة">
             <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
-            <span class="hidden sm:inline">العودة للعبة</span></button></div></header>
+            <span class="hidden sm:inline">خروج</span>
+          </button>
+        </div>
+      </header>
 
       <!-- Mobile Horizontal Quick Tab Carousel (md:hidden) -->
       <div id="admin-mobile-tab-bar" class="md:hidden flex items-center gap-2 overflow-x-auto px-3 py-2.5 bg-slate-950/95 border-b border-slate-800/80 no-scrollbar shrink-0 shadow-lg">
@@ -440,59 +883,68 @@
         <div class="flex-1 flex flex-col overflow-hidden bg-slate-950">
           
           <!-- Persistent Telemetry HUD (Command Cockpit) -->
-          <div class="p-2.5 sm:p-4 md:p-6 pb-2 shrink-0 max-w-7xl w-full mx-auto">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3.5">
+          <div class="p-2.5 sm:p-4 md:px-6 md:pt-5 pb-2 shrink-0 max-w-7xl w-full mx-auto">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+
               <!-- CPU Telemetry -->
-              <div class="glass-panel p-3 sm:p-4 rounded-2xl border border-slate-800/80 hover:border-emerald-500/40 flex justify-between items-center transition-all duration-300 group">
-                <div class="truncate pl-1 text-right">
-                  <span class="text-[10px] text-slate-400 block font-bold truncate">استهلاك المعالج (CPU)</span>
+              <div class="hud-card hover:border-emerald-500/40 group" style="border-color:rgba(16,185,129,0.25)">
+                <div class="text-right flex-1 min-w-0">
+                  <span class="hud-label block truncate">CPU Load</span>
                   <div class="flex items-baseline gap-1.5 mt-0.5">
-                    <span id="adm-telemetry-cpu" class="numbers-font text-white font-black text-xs sm:text-base tracking-tight">1.2%</span>
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="adm-telemetry-cpu" class="hud-value">1.2%</span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
                   </div>
+                  <span class="text-[9px] font-mono text-emerald-500/70 mt-0.5 block">المعالج</span>
                 </div>
-                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 group-hover:scale-105 transition shadow-lg shadow-emerald-500/10">
-                  <i class="fa-solid fa-microchip text-xs sm:text-sm"></i>
+                <div class="hud-icon shrink-0" style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);box-shadow:0 0 16px rgba(16,185,129,0.1)">
+                  <i class="fa-solid fa-microchip text-emerald-400 text-sm"></i>
                 </div>
               </div>
 
               <!-- RAM Telemetry -->
-              <div class="glass-panel p-3 sm:p-4 rounded-2xl border border-slate-800/80 hover:border-cyan-500/40 flex justify-between items-center transition-all duration-300 group">
-                <div class="truncate pl-1 text-right">
-                  <span class="text-[10px] text-slate-400 block font-bold truncate">استهلاك الذاكرة (RAM)</span>
+              <div class="hud-card hover:border-cyan-500/40 group" style="border-color:rgba(6,182,212,0.25)">
+                <div class="text-right flex-1 min-w-0">
+                  <span class="hud-label block truncate">RAM Usage</span>
                   <div class="flex items-baseline gap-1.5 mt-0.5">
-                    <span id="adm-telemetry-ram" class="numbers-font text-white font-black text-xs sm:text-base tracking-tight">48 MB</span>
-                    <span class="text-[9px] text-cyan-400/80 font-mono">OK</span>
+                    <span id="adm-telemetry-ram" class="hud-value">48 MB</span>
+                    <span class="text-[8px] text-cyan-400/80 font-mono font-bold">OK</span>
                   </div>
+                  <span class="text-[9px] font-mono text-cyan-500/70 mt-0.5 block">الذاكرة</span>
                 </div>
-                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 group-hover:scale-105 transition shadow-lg shadow-cyan-500/10">
-                  <i class="fa-solid fa-memory text-xs sm:text-sm"></i>
+                <div class="hud-icon shrink-0" style="background:rgba(6,182,212,0.12);border:1px solid rgba(6,182,212,0.3);box-shadow:0 0 16px rgba(6,182,212,0.1)">
+                  <i class="fa-solid fa-memory text-cyan-400 text-sm"></i>
                 </div>
               </div>
 
               <!-- Latency Telemetry -->
-              <div class="glass-panel p-3 sm:p-4 rounded-2xl border border-slate-800/80 hover:border-amber-500/40 flex justify-between items-center transition-all duration-300 group">
-                <div class="truncate pl-1 text-right">
-                  <span class="text-[10px] text-slate-400 block font-bold truncate">زمن الاستجابة (Ping)</span>
+              <div class="hud-card hover:border-amber-500/40 group" style="border-color:rgba(245,158,11,0.25)">
+                <div class="text-right flex-1 min-w-0">
+                  <span class="hud-label block truncate">Ping / Latency</span>
                   <div class="flex items-baseline gap-1.5 mt-0.5">
-                    <span id="adm-telemetry-latency" class="numbers-font text-white font-black text-xs sm:text-base tracking-tight">42ms</span>
-                    <span class="text-[9px] text-amber-400 font-mono">Live</span>
+                    <span id="adm-telemetry-latency" class="hud-value">42ms</span>
+                    <span class="text-[8px] text-amber-400 font-mono font-bold animate-pulse">●</span>
                   </div>
+                  <span class="text-[9px] font-mono text-amber-500/70 mt-0.5 block">الاستجابة</span>
                 </div>
-                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 group-hover:scale-105 transition shadow-lg shadow-amber-500/10">
-                  <i class="fa-solid fa-wifi text-xs sm:text-sm animate-pulse"></i>
+                <div class="hud-icon shrink-0" style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);box-shadow:0 0 16px rgba(245,158,11,0.1)">
+                  <i class="fa-solid fa-wifi text-amber-400 text-sm"></i>
                 </div>
               </div>
 
               <!-- Server Boost Status -->
-              <div id="adm-server-boost-card" class="glass-panel p-3 sm:p-4 rounded-2xl border border-slate-800/80 hover:border-amber-500/50 flex justify-between items-center transition-all duration-300 text-right">
-                <div class="truncate pl-1">
-                  <span class="text-[10px] text-slate-400 block font-bold truncate">مضاعف السيرفر العالمي</span>
-                  <span id="adm-telemetry-boost-label" class="numbers-font text-amber-400 font-black text-xs sm:text-sm mt-0.5 block">1.0x (عادي)</span>
+              <div id="adm-server-boost-card" class="hud-card group" style="border-color:rgba(245,158,11,0.28)">
+                <div class="text-right flex-1 min-w-0">
+                  <span class="hud-label block truncate">Server Boost</span>
+                  <span id="adm-telemetry-boost-label" class="hud-value text-amber-400 glow-gold block mt-0.5">1.0x (عادي)</span>
+                  <span class="text-[9px] font-mono text-amber-500/70 mt-0.5 block">المضاعف</span>
                 </div>
-                <button onclick="window.UI.toggleServerBoostAction()" id="btn-adm-toggle-boost" title="تفعيل / إيقاف مضاعف السيرفر العالمي"
-                  class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-500/15 hover:bg-amber-500 border border-amber-500/30 text-amber-400 hover:text-slate-950 flex items-center justify-center transition shrink-0 cursor-pointer shadow-lg shadow-amber-500/10 active:scale-95">
-                  <i class="fa-solid fa-bolt text-xs sm:text-sm"></i>
+                <button onclick="window.UI.toggleServerBoostAction()" id="btn-adm-toggle-boost"
+                  title="تفعيل / إيقاف مضاعف السيرفر العالمي"
+                  class="hud-icon shrink-0 cursor-pointer active:scale-90 transition-all"
+                  style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);box-shadow:0 0 16px rgba(245,158,11,0.12)"
+                  onmouseover="this.style.background='rgba(245,158,11,0.9)';this.style.color='#000'"
+                  onmouseout="this.style.background='rgba(245,158,11,0.15)';this.style.color=''">
+                  <i class="fa-solid fa-bolt text-amber-400 text-sm"></i>
                 </button>
               </div>
             </div>
