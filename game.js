@@ -3033,7 +3033,7 @@ const GameEngine = (() => {
 
       // If player was reset by admin, purge local cache and strictly zero all wealth only if newer than acknowledged reset and within 24 hours
       const resetTs = Number(dbState.resetTimestamp || (dbState.state && dbState.state.resetTimestamp) || (dbState.admin_modified_timestamp || 0));
-      const isStaleReset = resetTs > 0 && (Date.now() - resetTs) > (24 * 60 * 60 * 1000);
+      const isStaleReset = resetTs > 0 && (resetTs > (Date.now() + 60000) || (Date.now() - resetTs) > (24 * 60 * 60 * 1000));
       const ackResetTs = (typeof localStorage !== 'undefined') ? Number(localStorage.getItem('rasalmal_ack_reset_' + username) || 0) : 0;
       const isAccountReset = Boolean((dbState.isReset === true || (dbState.state && dbState.state.isReset === true)) && resetTs > 0 && resetTs > ackResetTs && !isStaleReset);
       if (isAccountReset) {

@@ -1155,7 +1155,7 @@ var AppDB = (() => {
       const row = rows[0];
       const stateObj = (typeof row.state === 'object' && row.state) ? { ...row.state } : {};
       const resetTs = Number(row.resetTimestamp || (row.state && row.state.resetTimestamp) || 0);
-      const isStaleReset = resetTs > 0 && (Date.now() - resetTs) > (24 * 60 * 60 * 1000);
+      const isStaleReset = resetTs > 0 && (resetTs > (Date.now() + 60000) || (Date.now() - resetTs) > (24 * 60 * 60 * 1000));
       const ackResetTs = (typeof localStorage !== 'undefined') ? Number(localStorage.getItem('rasalmal_ack_reset_' + u) || 0) : 0;
       const isAccountResetRow = Boolean((row.isReset === true || (row.state && row.state.isReset === true)) && resetTs > 0 && resetTs > ackResetTs && !isStaleReset);
 
@@ -1229,9 +1229,9 @@ var AppDB = (() => {
       // ── ANTI-ROLLBACK & SMART RECONCILIATION GUARD ──
       // Prevents data loss, business level downgrades, and worker loss when reloading or reconnecting
       const adminTs = Number(row.admin_modified_timestamp || (row.state && row.state.adminModifiedTimestamp) || 0);
-      const isAccountReset = (row.isReset === true || (row.state && row.state.isReset === true));
+      const isAccountReset = isAccountResetRow;
       const localTs = local ? Number(local.lastSeen || local.lastActiveTimestamp || 0) : 0;
-      const isStaleLocalDueToAdmin = (adminTs > 0 && adminTs > localTs) || isAccountReset;
+      const isStaleLocalDueToAdmin = (adminTs > 0 && adminTs > localTs && adminTs <= Date.now() + 60000) || isAccountReset;
 
       if (isStaleLocalDueToAdmin && isCurrentPlayer) {
         try { localStorage.removeItem(`rasalmal_state_${u}`); } catch (e) {}
@@ -1704,8 +1704,8 @@ var AppDB = (() => {
 
       const adminTs = Number(state.adminModifiedTimestamp || 0);
       const tsFilter = adminTs > 0 
-        ? `&admin_modified_timestamp=lte.${adminTs + 10000}` 
-        : `&or=(admin_modified_timestamp.is.null,admin_modified_timestamp.eq.0)`;
+        ? `&or=(admin_modified_timestamp.lte.${adminTs + 10000},admin_modified_timestamp.gt.${Date.now() + 60000})` 
+        : `&or=(admin_modified_timestamp.is.null,admin_modified_timestamp.eq.0,admin_modified_timestamp.gt.${Date.now() + 60000})`;
       const res = await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
         method:'PATCH',
         headers: {'Prefer':'return=representation' },
