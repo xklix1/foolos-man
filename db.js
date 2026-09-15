@@ -336,15 +336,15 @@ var AppDB = (() => {
     }
   }
 
-  function initSessionTracker(username, explicitToken = null) {
+  function initSessionTracker(username, forceNew = false) {
     if (!username) return null;
     const u = username.trim().toLowerCase();
     _activeSessionUser = u;
     _isSessionInvalidated = false;
 
     // Check if this specific tab already has a persistent session token
-    let tabToken = explicitToken;
-    if (!tabToken && typeof sessionStorage !== 'undefined') {
+    let tabToken = null;
+    if (!forceNew && typeof sessionStorage !== 'undefined') {
       tabToken = sessionStorage.getItem('rasalmal_tab_session_token');
     }
 
@@ -360,6 +360,7 @@ var AppDB = (() => {
       }
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(`rasalmal_session_token_${u}`, tabToken);
+        localStorage.setItem(`rasalmal_session_claim_${u}`, JSON.stringify({ token: tabToken, ts: Date.now() }));
       }
     } catch (e) {}
 
@@ -378,28 +379,59 @@ var AppDB = (() => {
     return tabToken;
   }
 
+  async function claimActiveSession(username, sessionToken) {
+    if (!username || !sessionToken) return false;
+    const u = username.trim();
+    try {
+      const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username,state`);
+      if (!rows || rows.length === 0) return false;
+      const player = rows[0];
+      const currentState = (player.state && typeof player.state === 'object') ? player.state : {};
+      currentState.activeSessionId = sessionToken;
+
+      await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
+        method: 'PATCH',
+        headers: { 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          state: currentState,
+          last_seen: getTrustedNow()
+        })
+      });
+      console.log(`[SessionManager] Successfully claimed active session for ${u}: ${sessionToken}`);
+      return true;
+    } catch (err) {
+      console.warn(`[SessionManager] Failed to claim session for ${u}:`, err.message);
+      return false;
+    }
+  }
+
+  async function checkSessionStatus(username) {
+    if (_isSessionInvalidated || !isNetworkActive() || !_currentSessionToken || !username) return;
+    const u = username.trim().toLowerCase();
+    try {
+      const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username,state->activeSessionId`);
+      if (rows && rows.length > 0) {
+        const cloudToken = rows[0].activeSessionId;
+        // If cloud has an activeSessionId and it does NOT match our current token:
+        if (cloudToken && _currentSessionToken && cloudToken !== _currentSessionToken) {
+          console.warn(`[SessionManager] Session revoked! Cloud token (${cloudToken}) does not match local token (${_currentSessionToken}).`);
+          triggerSessionInvalidation('another_device');
+        }
+      }
+    } catch (err) {
+      // Network or transient errors should not invalidate session
+    }
+  }
+
   function startSessionHeartbeat(username) {
     if (!username) return;
     const u = username.trim().toLowerCase();
     if (_sessionHeartbeatTimer) clearInterval(_sessionHeartbeatTimer);
 
-    // Lightweight heartbeat every 10 seconds while network is active
-    _sessionHeartbeatTimer = setInterval(async () => {
-      if (_isSessionInvalidated || !isNetworkActive()) return;
-      try {
-        const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username,state->activeSessionId`);
-        if (rows && rows.length > 0) {
-          const cloudToken = rows[0].activeSessionId;
-          // If cloud has an activeSessionId and it does NOT match our current token:
-          if (cloudToken && _currentSessionToken && cloudToken !== _currentSessionToken) {
-            console.warn(`[SessionManager] Session revoked! Cloud token (${cloudToken}) does not match local token (${_currentSessionToken}).`);
-            triggerSessionInvalidation('another_device');
-          }
-        }
-      } catch (err) {
-        // Network or transient errors should not invalidate session
-      }
-    }, 10000);
+    // Fast, lightweight heartbeat every 3.5 seconds while network is active
+    _sessionHeartbeatTimer = setInterval(() => {
+      checkSessionStatus(u);
+    }, 3500);
 
     if (_sessionHeartbeatTimer && typeof _sessionHeartbeatTimer.unref === 'function') {
       _sessionHeartbeatTimer.unref();
@@ -424,11 +456,31 @@ var AppDB = (() => {
 
   if (typeof window !== 'undefined') {
     window.addEventListener('storage', (e) => {
-      if (_activeSessionUser && e.key === `rasalmal_session_token_${_activeSessionUser.toLowerCase()}`) {
-        if (e.newValue && _currentSessionToken && e.newValue !== _currentSessionToken) {
+      if (!_activeSessionUser) return;
+      const u = _activeSessionUser.toLowerCase();
+      if (e.key === `rasalmal_session_token_${u}` || e.key === `rasalmal_session_claim_${u}`) {
+        let incomingToken = e.newValue;
+        if (e.key.startsWith('rasalmal_session_claim_') && e.newValue) {
+          try {
+            const parsed = JSON.parse(e.newValue);
+            if (parsed && parsed.token) incomingToken = parsed.token;
+          } catch (err) {}
+        }
+        if (incomingToken && _currentSessionToken && incomingToken !== _currentSessionToken) {
           console.warn('[SessionManager] Concurrent session token detected via localStorage. Terminating this tab.');
           triggerSessionInvalidation('another_tab');
         }
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && _activeSessionUser && !_isSessionInvalidated) {
+        checkSessionStatus(_activeSessionUser);
+      }
+    });
+    window.addEventListener('focus', () => {
+      if (_activeSessionUser && !_isSessionInvalidated) {
+        checkSessionStatus(_activeSessionUser);
       }
     });
   }
@@ -1915,6 +1967,10 @@ var AppDB = (() => {
 
   async function savePlayerState(username, state, forceCloud = false) {
     if (!username || !state) return;
+    if (_isSessionInvalidated) {
+      console.warn(`[Sync] Blocked save for ${username}: local session has been terminated.`);
+      return;
+    }
     const u = username.trim();
     state.username = u;
     const nowTs = getTrustedNow();
@@ -5415,9 +5471,9 @@ var AppDB = (() => {
     }
 
     // 2. Strict Single-Session: Issue fresh unique session token for this login
-    const sessToken = initSessionTracker(u, generateSessionToken());
+    const sessToken = initSessionTracker(u, true);
     state.activeSessionId = sessToken;
-    savePlayerState(u, state, true).catch(() => {});
+    await claimActiveSession(u, sessToken);
 
     // 3. Player account ban check
     if (state.isBanned || state.is_banned) {
@@ -5552,6 +5608,7 @@ var AppDB = (() => {
 
     // Strict Single-Session
     initSessionTracker,
+    claimActiveSession,
     getActiveSessionToken,
     isSessionValid,
     isSessionTerminated,

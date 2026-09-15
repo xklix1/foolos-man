@@ -3041,9 +3041,13 @@ const GameEngine = (() => {
 
       // Strict Single-Session Tracker initialization
       if (typeof AppDB !== 'undefined' && typeof AppDB.initSessionTracker === 'function') {
-        const sessToken = AppDB.initSessionTracker(username, dbState ? (dbState.activeSessionId || (dbState.state && dbState.state.activeSessionId)) : null);
+        const sessToken = AppDB.initSessionTracker(username, false);
         if (sessToken) {
           state.activeSessionId = sessToken;
+          const cloudToken = dbState ? (dbState.activeSessionId || (dbState.state && dbState.state.activeSessionId)) : null;
+          if (cloudToken !== sessToken && typeof AppDB.claimActiveSession === 'function') {
+            AppDB.claimActiveSession(username, sessToken).catch(() => {});
+          }
         }
       }
 
