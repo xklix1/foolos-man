@@ -7001,8 +7001,8 @@ const UIController = (() => {
       }, 1200);
     }
 
-    // 2. Optional Firebase Services (Safely guarded against blocked CDN/quota)
-    if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length || !AppDB.isFirebaseReady) {
+    // 2. Real-time Firebase / Supabase Services
+    if (typeof firebase === 'undefined' || !AppDB.isFirebaseReady) {
       return;
     }
 
@@ -7220,37 +7220,78 @@ const UIController = (() => {
           return;
         }
 
-        // Account Reset check: if admin reset this user, force reload modal
+        // Account Reset check: applied seamlessly in-place WITHOUT forced reload popup
         const resetTs = Number(data.resetTimestamp || (data.state && data.state.resetTimestamp) || (data.isReset || (data.state && data.state.isReset) ? data.admin_modified_timestamp || data.adminModifiedTimestamp || Date.now() : 0));
         const ackResetTs = Number(localStorage.getItem('rasalmal_ack_reset_' + username) || 0);
         if ((data.isReset === true || (data.state && data.state.isReset === true)) && resetTs > ackResetTs) {
-          unsubUser();
+          try { localStorage.setItem('rasalmal_ack_reset_' + username, String(resetTs)); } catch (e) {}
           applyCompleteZeroStateToGameEngine(username);
-          triggerAccountResetModal(username, resetTs);
+          if (typeof GameEngine.calculateTotalNetWorth === 'function') GameEngine.calculateTotalNetWorth();
+          try {
+            if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+              AppDB.setEncryptedLocalState(`rasalmal_state_${username}`, GameEngine.state);
+            }
+          } catch (e) {}
+          renderAll();
+          showToast('إشعار إداري', 'تم تصفير وإعادة ضبط حسابك بنجاح من قبل الإدارة للبدء من جديد.', 'info');
           return;
         }
 
-        // Only process external admin modifications if explicitly timestamped
+        // Process all external admin modifications instantly in real-time (NO RELOAD NEEDED)
         if (data.adminModifiedTimestamp && data.adminModifiedTimestamp > lastAdminActionTimestamp) {
           lastAdminActionTimestamp = data.adminModifiedTimestamp;
 
-          // Jail check strictly from explicit admin modification
-          if (typeof data.jailTimer ==='number' && data.jailTimer !== GameEngine.state.jailTimer) {
+          // Jail update
+          if (typeof data.jailTimer === 'number' && data.jailTimer !== GameEngine.state.jailTimer) {
             GameEngine.state.jailTimer = data.jailTimer;
-            if (data.jailTimer > 0 && typeof handleJailedUser ==='function') {
+            if (data.jailTimer > 0 && typeof handleJailedUser === 'function') {
               handleJailedUser(data.jailTimer);
             }
           }
 
-          GameEngine.state.cash = typeof data.cash ==='number' ? data.cash : 0;
-          GameEngine.state.bank = typeof data.bank ==='number' ? data.bank : 0;
-          GameEngine.state.dirtyCash = typeof data.dirtyCash ==='number' ? data.dirtyCash : 0;
-          GameEngine.state.netWorth = typeof data.netWorth ==='number' ? data.netWorth : 0;
-          GameEngine.state.xp = typeof data.xp ==='number' ? data.xp : 0;
-          GameEngine.state.jobId = data.jobId ||'worker';
-          GameEngine.state.title = data.title ||'عامل مبتدئ';
+          if (typeof data.cash === 'number') GameEngine.state.cash = data.cash;
+          if (typeof data.bank === 'number') GameEngine.state.bank = data.bank;
+          if (typeof data.dirtyCash === 'number') GameEngine.state.dirtyCash = data.dirtyCash;
+          if (typeof data.netWorth === 'number') GameEngine.state.netWorth = data.netWorth;
+          if (typeof data.xp === 'number') GameEngine.state.xp = data.xp;
+          if (data.jobId) GameEngine.state.jobId = data.jobId;
+          if (data.title) GameEngine.state.title = data.title;
+          if (data.isAdmin !== undefined) GameEngine.state.isAdmin = Boolean(data.isAdmin);
 
-          if (typeof GameEngine.calculateTotalNetWorth ==='function') {
+          // Deep merge all possessions, businesses, assets, cars, items and perks from state
+          if (data.state && typeof data.state === 'object') {
+            const st = data.state;
+            if (st.businesses) GameEngine.state.businesses = JSON.parse(JSON.stringify(st.businesses));
+            if (st.assets) GameEngine.state.assets = JSON.parse(JSON.stringify(st.assets));
+            if (st.stocks) GameEngine.state.stocks = JSON.parse(JSON.stringify(st.stocks));
+            if (st.crypto) GameEngine.state.crypto = JSON.parse(JSON.stringify(st.crypto));
+            if (st.inventory) GameEngine.state.inventory = JSON.parse(JSON.stringify(st.inventory));
+            if (st.ownedCars) GameEngine.state.ownedCars = JSON.parse(JSON.stringify(st.ownedCars));
+            if (st.activeCar !== undefined) GameEngine.state.activeCar = st.activeCar;
+            if (st.customItems) GameEngine.state.customItems = JSON.parse(JSON.stringify(st.customItems));
+            if (st.itemDurations) GameEngine.state.itemDurations = JSON.parse(JSON.stringify(st.itemDurations));
+            if (st.tradeCompany) GameEngine.state.tradeCompany = JSON.parse(JSON.stringify(st.tradeCompany));
+            if (st.industry) GameEngine.state.industry = JSON.parse(JSON.stringify(st.industry));
+            if (st.smugglingFleet) GameEngine.state.smugglingFleet = JSON.parse(JSON.stringify(st.smugglingFleet));
+            if (st.underworldRep !== undefined) GameEngine.state.underworldRep = st.underworldRep;
+            if (st.heatLevel !== undefined) GameEngine.state.heatLevel = st.heatLevel;
+            if (st.afkManagerExpiresAt !== undefined) GameEngine.state.afkManagerExpiresAt = st.afkManagerExpiresAt;
+            if (st.chatGlow !== undefined) GameEngine.state.chatGlow = st.chatGlow;
+            if (st.hasChatGlow !== undefined) GameEngine.state.hasChatGlow = st.hasChatGlow;
+            if (st.unlockedChatGlows) GameEngine.state.unlockedChatGlows = JSON.parse(JSON.stringify(st.unlockedChatGlows));
+            if (st.isVerified !== undefined) GameEngine.state.isVerified = st.isVerified;
+            if (st.vipVerified !== undefined) GameEngine.state.vipVerified = st.vipVerified;
+            if (st.activePackage !== undefined) GameEngine.state.activePackage = st.activePackage;
+            if (st.customBadge !== undefined) GameEngine.state.customBadge = st.customBadge;
+            if (st.badgeTitle !== undefined) GameEngine.state.badgeTitle = st.badgeTitle;
+            if (st.badges) GameEngine.state.badges = JSON.parse(JSON.stringify(st.badges));
+            if (st.activeLoan !== undefined) GameEngine.state.activeLoan = st.activeLoan;
+            if (st.investments) GameEngine.state.investments = JSON.parse(JSON.stringify(st.investments));
+          }
+
+          GameEngine.state.adminModifiedTimestamp = data.adminModifiedTimestamp;
+
+          if (typeof GameEngine.calculateTotalNetWorth === 'function') {
             GameEngine.calculateTotalNetWorth();
           }
 
@@ -7260,9 +7301,19 @@ const UIController = (() => {
             }
           } catch (e) { }
 
-          showToast('إشعار إداري','تم تعديل وتحديث بيانات حسابك من قبل الإدارة فورياً.','info');
-          if (typeof playMenuSound ==='function') playMenuSound('success');
+          // Clean toast notice and instant dynamic UI re-render (NO RELOAD POPUP)
+          showToast('إشعار إداري', 'تم استلام وتحديث بيانات وممتلكات حسابك فورياً من قبل الإدارة.', 'success');
+          if (typeof playMenuSound === 'function') playMenuSound('success');
           renderAll();
+
+          // Also trigger active sub-tab renders if user has open drawers or tabs
+          try {
+            if (typeof renderBusinesses === 'function') renderBusinesses();
+            if (typeof renderAssets === 'function') renderAssets();
+            if (typeof renderInventory === 'function') renderInventory();
+            if (typeof renderCars === 'function') renderCars();
+            if (typeof renderHeader === 'function') renderHeader();
+          } catch (_) {}
         }
       }, (err) => console.error("User doc listen err:", err));
     activeListeners.push(unsubUser);
@@ -7771,134 +7822,32 @@ const UIController = (() => {
   }
   window.handleBannedUser = handleBannedUser;
 
-  // ==================== MANDATORY ACCOUNT RESET RELOAD MODAL ====================
-  let isAccountResetActive = false;
-
+  // ==================== SEAMLESS ACCOUNT RESET (NO RELOAD NEEDED) ====================
   function triggerAccountResetModal(username, resetTs) {
-    if (isAccountResetActive) return;
-    isAccountResetActive = true;
-    window._isAccountResetActive = true;
-    window._blockExitFlush = true;
-
     const u = username || (window.GameEngine && window.GameEngine.activeUsername) || '';
-    if (window.GameEngine && window.GameEngine.state) {
-      window.GameEngine.state.isReset = true;
-      window.GameEngine.state.cash = 0;
-      window.GameEngine.state.bank = 0;
-      window.GameEngine.state.dirtyCash = 0;
-      window.GameEngine.state.netWorth = 0;
+    if (u && resetTs) {
+      try { localStorage.setItem('rasalmal_ack_reset_' + u, String(resetTs)); } catch (e) {}
     }
-    if (u) {
-      try {
-        localStorage.removeItem('rasalmal_state_' + u);
-        sessionStorage.removeItem('rasalmal_state_' + u);
-        localStorage.removeItem('rasalmal_backup_' + u);
-        if (resetTs) {
-          localStorage.setItem('rasalmal_ack_reset_' + u, String(resetTs));
-        }
-      } catch (e) {}
+    applyCompleteZeroStateToGameEngine(u);
+    if (window.GameEngine && typeof window.GameEngine.calculateTotalNetWorth === 'function') {
+      window.GameEngine.calculateTotalNetWorth();
     }
-
-    console.warn('[SYSTEM] Complete Account Reset detected for player:', username);
-
-    // 1. Halt game loop and pause engine
-    if (tickIntervalId) {
-      clearInterval(tickIntervalId);
-      tickIntervalId = null;
-    }
-    if (typeof GameEngine !== 'undefined' && typeof GameEngine.pauseEngine === 'function') {
-      try { GameEngine.pauseEngine(); } catch (e) {}
-    }
-
-    // 2. Play alert sound
     try {
-      if (typeof playMenuSound === 'function') playMenuSound('danger');
+      if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+        AppDB.setEncryptedLocalState(`rasalmal_state_${u}`, window.GameEngine.state);
+      }
     } catch (e) {}
+    renderAll();
 
-    // 3. Find or inject overlay
-    let overlay = document.getElementById('account-reset-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'account-reset-overlay';
-      overlay.className = 'fixed inset-0 z-[99999999] bg-slate-950/98 backdrop-blur-2xl flex items-center justify-center p-4 select-none';
-      overlay.style.pointerEvents = 'auto';
-      overlay.innerHTML = `
-        <div class="glass-panel w-full max-w-md p-8 rounded-3xl border-2 border-rose-500/80 bg-slate-900 text-center shadow-2xl shadow-rose-500/30 animate-scale-in">
-          <div class="w-20 h-20 mx-auto mb-5 rounded-full bg-rose-500/20 border-2 border-rose-500/50 flex items-center justify-center text-rose-400 text-3xl shadow-lg shadow-rose-500/10">
-            <i class="fa-solid fa-arrows-rotate animate-spin" style="animation-duration: 4s;"></i>
-          </div>
-          <h2 class="text-2xl font-black text-white mb-1.5">تم تصفير حسابك بالكامل</h2>
-          <div class="inline-block px-3.5 py-1 bg-rose-500/20 text-rose-300 text-xs font-black rounded-full border border-rose-500/40 mb-4">
-            إشعار إداري رسمي • Account Reset
-          </div>
-          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6 font-medium">
-            لقد قامت إدارة اللعبة بإجراء تصفير شامل لجميع أرصدة وأصول ومشاريع وممتلكات واستثمارات حسابك للبدء من الصفر.
-            <br><br>
-            <strong class="text-rose-400 font-bold">يجب إعادة تحميل الصفحة الآن</strong> لتحديث ومزامنة الحساب والبدء من جديد.
-          </p>
-          <button id="btn-account-reset-reload-action"
-            class="w-full py-3.5 px-6 bg-gradient-to-r from-rose-600 via-red-500 to-rose-600 hover:from-rose-500 hover:to-red-400 text-white font-black text-sm sm:text-base rounded-xl shadow-xl shadow-rose-600/30 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
-            <i class="fa-solid fa-rotate-right text-lg"></i>
-            <span>إعادة تحميل الصفحة الآن (Reload)</span>
-          </button>
-          <p class="text-[11px] text-slate-400 mt-4">
-            ⚠️ لا يمكن إغلاق هذه النافذة أو متابعة اللعب إلا بعد إعادة تحميل الصفحة.
-          </p>
-        </div>`;
-      document.body.appendChild(overlay);
-    } else {
-      overlay.classList.remove('hidden');
+    // Ensure any reset overlay is hidden/removed so player can play immediately
+    const overlay = document.getElementById('account-reset-overlay');
+    if (overlay) {
+      overlay.classList.add('hidden');
+      try { overlay.remove(); } catch (_) {}
     }
 
-    const doResetReload = () => {
-      window._isAccountResetActive = true;
-      window._blockExitFlush = true;
-      const u = username || (window.GameEngine && window.GameEngine.activeUsername) || '';
-      if (resetTs && u) {
-        try { localStorage.setItem('rasalmal_ack_reset_' + u, String(resetTs)); } catch (e) {}
-      }
-      if (u) {
-        try {
-          localStorage.removeItem('rasalmal_state_' + u);
-          sessionStorage.removeItem('rasalmal_state_' + u);
-          localStorage.removeItem('rasalmal_backup_' + u);
-        } catch (e) {}
-      }
-      try {
-        window.location.reload(true);
-      } catch (err) {
-        window.location.href = window.location.href;
-      }
-    };
-
-    const actionBtn = document.getElementById('btn-account-reset-reload-action');
-    if (actionBtn) {
-      actionBtn.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        doResetReload();
-      };
-    }
-
-    // Intercept clicks on overlay to force reload action
-    overlay.addEventListener('click', (e) => {
-      e.stopPropagation();
-    });
-
-    // Anti-tamper Observer for reset overlay
-    try {
-      const observer = new MutationObserver(() => {
-        if (!isAccountResetActive) return;
-        if (overlay.classList.contains('hidden')) {
-          overlay.classList.remove('hidden');
-        }
-        if (!document.body.contains(overlay)) {
-          document.body.appendChild(overlay);
-        }
-      });
-      observer.observe(overlay, { attributes: true, childList: true });
-      observer.observe(document.body, { childList: true });
-    } catch (e) {}
+    showToast('إشعار إداري', 'تم تصفير وإعادة ضبط حسابك بنجاح من قبل الإدارة للبدء من جديد.', 'info');
+    if (typeof playMenuSound === 'function') playMenuSound('warning');
   }
 
   function performLogout(showToastMsg = true) {
@@ -16262,18 +16211,14 @@ const UIController = (() => {
         if (typeof playMenuSound === 'function') playMenuSound('cash');
         renderAll();
 
-        // Show instant floating modal
-        showDirectAdminPopupModal({
-          id: bm.id,
-          title: '💰 إيداع مالي إداري مباشر!',
-          message: `تم تحويل وإضافة مبلغ [${totalAmount.toLocaleString()} EGP] إلى حسابك فوراً من قبل الإدارة.` +
-            (addCash > 0 ? `\n💵 كاش مالي: +${addCash.toLocaleString()} EGP` : '') +
-            (addBank > 0 ? `\n🏦 إيداع بنكي: +${addBank.toLocaleString()} EGP` : '') +
-            `\n\nالرصيد متاح الآن في حسابك وجاهز للاستخدام مباشرة!`,
-          sender: 'إدارة اللعبة (Admin)',
-          timestamp: grantTs,
-          style: 'reward'
-        });
+        // Show toast notification and update HUD immediately without modal
+        showToast(
+          '💰 إيداع مالي إداري مباشر!',
+          `تم تحويل وإضافة +${totalAmount.toLocaleString()} EGP إلى حسابك فوراً من قبل الإدارة.` +
+            (addCash > 0 ? ` (كاش: +${addCash.toLocaleString()})` : '') +
+            (addBank > 0 ? ` (بنك: +${addBank.toLocaleString()})` : ''),
+          'success'
+        );
         break;
       }
     }

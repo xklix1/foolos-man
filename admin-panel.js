@@ -1372,19 +1372,8 @@
 
           await AppDB.sendMail('إدارة اللعبة (Admin)', canonicalUsername, 'admin_balance_grant', grantPayload);
 
-          // 4. Inject pendingAdminPopup into state
-          try {
-            freshPlayer.pendingAdminPopup = {
-              title: '💰 تم استلام إيداع مالي مباشر!',
-              message: `تم تحويل وإضافة مبلغ +${amount.toLocaleString()} EGP إلى حسابك بنجاح من قبل الإدارة.` +
-                (addCash > 0 ? `\n💵 كاش: +${addCash.toLocaleString()} EGP` : '') +
-                (addBank > 0 ? `\n🏦 بنك: +${addBank.toLocaleString()} EGP` : ''),
-              style: 'reward',
-              sentAt: now
-            };
-            freshPlayer.adminModifiedTimestamp = now;
-            await AppDB.adminSavePlayer(canonicalUsername, freshPlayer);
-          } catch (_) {}
+          // 4. Ensure pendingAdminPopup is null so no disruptive modal appears to the player
+          if (freshPlayer.pendingAdminPopup) delete freshPlayer.pendingAdminPopup;
 
           // 5. If this admin is the active player locally, immediately update in-memory GameEngine
           if (selectedPlayer === GameEngine.activeUsername) {
@@ -7001,7 +6990,7 @@
             }
             freshState.adminModifiedTimestamp = Date.now();
             freshState._lastAdminGift = { type, amount, note, sentAt: Date.now() };
-            await AppDB.savePlayerState(player.username, freshState, true);
+            await AppDB.adminSavePlayer(player.username, freshState);
             successCount++;
             results.push({ username: player.username, title: player.title || freshState.title || '—', netWorth: player.netWorth || 0, status: 'ok' });
           } catch (e) {

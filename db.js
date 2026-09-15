@@ -2181,6 +2181,11 @@ var AppDB = (() => {
           }
           lastKnownMailIds = new Set(rows.map(r => r.id));
           isFirstRun = false;
+          if (rows && rows.some(r => r.type === 'admin_sync' || r.type === 'admin_balance_grant' || r.type === 'topup_receipt')) {
+            if (typeof window !== 'undefined' && typeof window._triggerPlayerDocCheck === 'function') {
+              window._triggerPlayerDocCheck();
+            }
+          }
           callback(rows);
         }
       } catch (e) {}
@@ -3189,14 +3194,41 @@ var AppDB = (() => {
     if (updates.isBanned !== undefined) payload.is_banned = Boolean(updates.isBanned);
     if (updates.jailTimer !== undefined) payload.jail_timer = Number(updates.jailTimer);
     if (updates.pin !== undefined) payload.pin = updates.pin;
-    if (updates.state !== undefined) payload.state = updates.state;
-    else payload.state = updates;
-    payload.admin_modified_timestamp = Date.now();
+
+    // Prepare comprehensive state payload ensuring all player assets, businesses, cars and inventory are preserved
+    const stateObj = (updates.state && typeof updates.state === 'object') ? { ...updates.state } : { ...updates };
+    // Clear any past reset flags so previous resets never interfere with active gameplay
+    stateObj.isReset = false;
+    delete stateObj.resetTimestamp;
+    stateObj.username = cleanUser;
+    if (payload.cash !== undefined) stateObj.cash = payload.cash;
+    if (payload.bank !== undefined) stateObj.bank = payload.bank;
+    if (payload.dirty_cash !== undefined) stateObj.dirtyCash = payload.dirty_cash;
+    if (payload.net_worth !== undefined) stateObj.netWorth = payload.net_worth;
+    if (payload.xp !== undefined) stateObj.xp = payload.xp;
+    if (payload.title !== undefined) stateObj.title = payload.title;
+    if (payload.job_id !== undefined) stateObj.jobId = payload.job_id;
+    if (payload.is_admin !== undefined) stateObj.isAdmin = payload.is_admin;
+    if (payload.jail_timer !== undefined) stateObj.jailTimer = payload.jail_timer;
+
+    const now = Date.now();
+    stateObj.adminModifiedTimestamp = now;
+    payload.state = stateObj;
+    payload.admin_modified_timestamp = now;
 
     await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}`, {
       method:'PATCH',
       body: JSON.stringify(payload)
     });
+
+    // Dispatch instant real-time sync notification via mailbox so player receives update immediately (< 1s)
+    try {
+      await sendMail('إدارة اللعبة (Admin)', cleanUser, 'admin_sync', {
+        timestamp: now,
+        reason: 'admin_state_saved'
+      });
+    } catch (_) {}
+
     return true;
   }
 
@@ -5074,14 +5106,36 @@ var AppDB = (() => {
               } catch (e) {}
             };
             checkPlayer();
-            const pollId = registerPollingInterval(setInterval(checkPlayer, 10000));
+            window._triggerPlayerDocCheck = () => {
+              if (isSubscribed && isNetworkActive()) checkPlayer();
+            };
+            let pollMs = (typeof document !== 'undefined' && document.hidden) ? 10000 : 2500;
+            let currentPollTimer = setInterval(checkPlayer, pollMs);
+            let pollId = registerPollingInterval(currentPollTimer);
+
+            const onVis = () => {
+              if (!isSubscribed) return;
+              clearInterval(currentPollTimer);
+              pollMs = (typeof document !== 'undefined' && document.hidden) ? 10000 : 2500;
+              currentPollTimer = setInterval(checkPlayer, pollMs);
+              if (typeof document !== 'undefined' && !document.hidden) checkPlayer();
+            };
+            if (typeof document !== 'undefined') {
+              document.addEventListener('visibilitychange', onVis);
+            }
+
             const unsubResume = onActiveResume(() => {
               if (isSubscribed) checkPlayer();
             });
             return () => {
               isSubscribed = false;
+              clearInterval(currentPollTimer);
               unregisterPollingInterval(pollId);
+              if (typeof document !== 'undefined') {
+                document.removeEventListener('visibilitychange', onVis);
+              }
               unsubResume();
+              if (window._triggerPlayerDocCheck) delete window._triggerPlayerDocCheck;
             };
           }
 
@@ -5122,6 +5176,9 @@ var AppDB = (() => {
 
     if (!window.firebase) {
       window.firebase = {};
+    }
+    if (!window.firebase.apps) {
+      window.firebase.apps = [{ name: '[DEFAULT]' }];
     }
     window.firebase.firestore = () => ({
       collection: mockCollection,
