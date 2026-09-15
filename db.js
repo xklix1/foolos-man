@@ -336,11 +336,14 @@ var AppDB = (() => {
     }
   }
 
+  let _sessionStartTime = 0;
+
   function initSessionTracker(username, forceNew = false) {
     if (!username) return null;
     const u = username.trim().toLowerCase();
     _activeSessionUser = u;
     _isSessionInvalidated = false;
+    _sessionStartTime = Date.now();
 
     // Check if this specific tab already has a persistent session token
     let tabToken = null;
@@ -407,6 +410,9 @@ var AppDB = (() => {
 
   async function checkSessionStatus(username) {
     if (_isSessionInvalidated || !isNetworkActive() || !_currentSessionToken || !username) return;
+    // Grace period: allow 12 seconds after tab initialization before checking cloud to prevent false positives during load
+    if (Date.now() - _sessionStartTime < 12000) return;
+
     const u = username.trim().toLowerCase();
     try {
       const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username,state->activeSessionId`);
@@ -428,10 +434,10 @@ var AppDB = (() => {
     const u = username.trim().toLowerCase();
     if (_sessionHeartbeatTimer) clearInterval(_sessionHeartbeatTimer);
 
-    // Fast, lightweight heartbeat every 3.5 seconds while network is active
+    // Fast, lightweight heartbeat every 4 seconds while network is active
     _sessionHeartbeatTimer = setInterval(() => {
       checkSessionStatus(u);
-    }, 3500);
+    }, 4000);
 
     if (_sessionHeartbeatTimer && typeof _sessionHeartbeatTimer.unref === 'function') {
       _sessionHeartbeatTimer.unref();
@@ -456,7 +462,7 @@ var AppDB = (() => {
 
   if (typeof window !== 'undefined') {
     window.addEventListener('storage', (e) => {
-      if (!_activeSessionUser) return;
+      if (!_activeSessionUser || (Date.now() - _sessionStartTime < 5000)) return;
       const u = _activeSessionUser.toLowerCase();
       if (e.key === `rasalmal_session_token_${u}` || e.key === `rasalmal_session_claim_${u}`) {
         let incomingToken = e.newValue;
@@ -474,12 +480,12 @@ var AppDB = (() => {
     });
 
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && _activeSessionUser && !_isSessionInvalidated) {
+      if (!document.hidden && _activeSessionUser && !_isSessionInvalidated && (Date.now() - _sessionStartTime > 12000)) {
         checkSessionStatus(_activeSessionUser);
       }
     });
     window.addEventListener('focus', () => {
-      if (_activeSessionUser && !_isSessionInvalidated) {
+      if (_activeSessionUser && !_isSessionInvalidated && (Date.now() - _sessionStartTime > 12000)) {
         checkSessionStatus(_activeSessionUser);
       }
     });
@@ -1920,30 +1926,15 @@ var AppDB = (() => {
         ? `&or=(admin_modified_timestamp.lte.${adminTs + 10000},admin_modified_timestamp.gt.${Date.now() + 60000})` 
         : `&or=(admin_modified_timestamp.is.null,admin_modified_timestamp.eq.0,admin_modified_timestamp.gt.${Date.now() + 60000})`;
       
-      const sessionFilter = _currentSessionToken 
-        ? `&or=(state->>activeSessionId.is.null,state->>activeSessionId.eq.${encodeURIComponent(_currentSessionToken)})` 
-        : '';
-
-      const res = await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}${sessionFilter}`, {
+      const res = await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
         method:'PATCH',
         headers: {'Prefer':'return=representation' },
         body: JSON.stringify(payload)
       });
       _lastCloudSyncTimestamp = Date.now();
 
-      // If 0 rows were updated, check whether another device logged in or admin/wire-transfer timestamp bumped
+      // If 0 rows were updated, check if admin modified balance or wire transfer occurred
       if (Array.isArray(res) && res.length === 0) {
-        try {
-          const checkRows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=state->activeSessionId,admin_modified_timestamp`);
-          if (checkRows && checkRows.length > 0) {
-            const cloudSess = checkRows[0].activeSessionId;
-            if (cloudSess && _currentSessionToken && cloudSess !== _currentSessionToken) {
-              console.warn(`[Sync] Cloud save REJECTED for ${u}: another device/session (${cloudSess}) is active. Terminating this session.`);
-              triggerSessionInvalidation('another_device');
-              return;
-            }
-          }
-        } catch (sessErr) {}
 
         console.warn(`[Sync] Cloud save rejected for ${u}: server has a newer administrative or wire transfer balance. Refreshing...`);
         getPlayerState(u).then(freshState => {
