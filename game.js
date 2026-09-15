@@ -3031,8 +3031,10 @@ const GameEngine = (() => {
         _loadedFromCloud: true
       };
 
-      // If player was reset by admin, purge local cache and strictly zero all wealth
-      const isAccountReset = (dbState.isReset === true || (dbState.state && dbState.state.isReset === true));
+      // If player was reset by admin, purge local cache and strictly zero all wealth only if newer than acknowledged reset
+      const resetTs = Number(dbState.resetTimestamp || (dbState.state && dbState.state.resetTimestamp) || (dbState.admin_modified_timestamp || 0));
+      const ackResetTs = (typeof localStorage !== 'undefined') ? Number(localStorage.getItem('rasalmal_ack_reset_' + username) || 0) : 0;
+      const isAccountReset = Boolean((dbState.isReset === true || (dbState.state && dbState.state.isReset === true)) && resetTs > 0 && resetTs > ackResetTs);
       if (isAccountReset) {
         state.cash = 0;
         state.bank = 0;
@@ -3055,8 +3057,16 @@ const GameEngine = (() => {
           localStorage.removeItem('rasalmal_state_' + username);
           sessionStorage.removeItem('rasalmal_state_' + username);
           localStorage.removeItem('rasalmal_backup_' + username);
+          if (resetTs > 0) {
+            localStorage.setItem('rasalmal_ack_reset_' + username, String(resetTs));
+          }
         } catch (e) {}
       }
+      // Once loaded, never allow stale isReset flag to linger in active state
+      state.isReset = false;
+      if (state.state) state.state.isReset = false;
+      delete state.resetTimestamp;
+      if (state.state && state.state.resetTimestamp) delete state.state.resetTimestamp;
 
       // Safeguard: Recover industry progress from local storage if cloud snapshot was missing it
       if (!isAccountReset && (!state.industry || Object.keys(state.industry).length === 0)) {
@@ -3167,15 +3177,13 @@ const GameEngine = (() => {
       }
 
       // Check if unacknowledged admin reset modal should pop up
-      const resetTs = Number(dbState.resetTimestamp || (dbState.state && dbState.state.resetTimestamp) || (isAccountReset ? dbState.admin_modified_timestamp || dbState.adminModifiedTimestamp || Date.now() : 0));
-      const ackResetTs = (typeof localStorage !== 'undefined') ? Number(localStorage.getItem('rasalmal_ack_reset_' + username) || 0) : 0;
       if (isAccountReset && resetTs > ackResetTs) {
         if (typeof window !== 'undefined' && window.UI && typeof window.UI.triggerAccountResetModal === 'function') {
           setTimeout(() => {
             window.UI.triggerAccountResetModal(username, resetTs);
           }, 100);
         }
-      } else if (isAccountReset && ackResetTs >= resetTs) {
+      } else {
         state.isReset = false;
         if (state.state) state.state.isReset = false;
       }

@@ -1153,8 +1153,10 @@ var AppDB = (() => {
       }
 
       const row = rows[0];
-      const stateObj = (typeof row.state ==='object' && row.state) ? { ...row.state } : {};
-      const isAccountResetRow = Boolean(row.isReset === true || (row.state && row.state.isReset === true));
+      const stateObj = (typeof row.state === 'object' && row.state) ? { ...row.state } : {};
+      const resetTs = Number(row.resetTimestamp || (row.state && row.state.resetTimestamp) || 0);
+      const ackResetTs = (typeof localStorage !== 'undefined') ? Number(localStorage.getItem('rasalmal_ack_reset_' + u) || 0) : 0;
+      const isAccountResetRow = Boolean((row.isReset === true || (row.state && row.state.isReset === true)) && resetTs > ackResetTs);
 
       // Reconcile SQL columns and state keys: pick the authoritative value (strictly 0 if account was reset)
       stateObj.username = row.username;
@@ -1164,7 +1166,10 @@ var AppDB = (() => {
         stateObj.dirtyCash = 0;
         stateObj.netWorth = 0;
         stateObj.xp = 0;
+        stateObj.isReset = true;
       } else {
+        stateObj.isReset = false;
+        if (stateObj.resetTimestamp) delete stateObj.resetTimestamp;
         stateObj.cash = Math.max(Number(row.cash || 0), Number((row.state && row.state.cash) || 0));
         stateObj.bank = Math.max(Number(row.bank || 0), Number((row.state && row.state.bank) || 0));
         stateObj.dirtyCash = Math.max(Number(row.dirty_cash || 0), Number((row.state && row.state.dirtyCash) || 0));
@@ -1462,7 +1467,7 @@ var AppDB = (() => {
 
   function flushStateToCloudOnExit(username, state) {
     if (!username || !state) return;
-    if (window._isAccountResetActive || window._blockExitFlush || state.isReset === true) {
+    if (window._isAccountResetActive || window._blockExitFlush) {
       console.warn('[DB] flushStateToCloudOnExit aborted: account reset is active for this session.');
       return;
     }
@@ -1548,10 +1553,8 @@ var AppDB = (() => {
       const activeUser = (window.GameEngine && window.GameEngine.activeUsername);
       const activeState = (window.GameEngine && window.GameEngine.state);
       if (activeUser && activeState && activeState.username === activeUser) {
-        if (activeState.isReset) {
-          console.warn('[DB] Exit flush aborted: state is marked as reset.');
-          return;
-        }
+        activeState.isReset = false;
+        if (activeState.state) activeState.state.isReset = false;
         const exitNow = getTrustedNow();
         activeState.lastActiveTimestamp = exitNow;
         activeState.lastSeen = exitNow;
@@ -1690,11 +1693,17 @@ var AppDB = (() => {
         return;
       }
     }
-
     try {
+      state.isReset = false;
+      if (state.state) state.state.isReset = false;
+      if (payload.state) {
+        payload.state.isReset = false;
+        delete payload.state.resetTimestamp;
+      }
+
       const adminTs = Number(state.adminModifiedTimestamp || 0);
       const tsFilter = adminTs > 0 
-        ? `&admin_modified_timestamp=lte.${adminTs}` 
+        ? `&admin_modified_timestamp=lte.${adminTs + 10000}` 
         : `&or=(admin_modified_timestamp.is.null,admin_modified_timestamp.eq.0)`;
       const res = await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
         method:'PATCH',
@@ -1708,11 +1717,15 @@ var AppDB = (() => {
         console.warn(`[Sync] Cloud save rejected for ${u}: server has a newer administrative or wire transfer balance. Refreshing...`);
         getPlayerState(u).then(freshState => {
           if (freshState && typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername === u) {
-            window.GameEngine.state.cash = freshState.cash;
-            window.GameEngine.state.bank = freshState.bank;
-            window.GameEngine.state.netWorth = freshState.netWorth;
-            window.GameEngine.state.adminModifiedTimestamp = freshState.adminModifiedTimestamp;
-            if (typeof renderAll === 'function') renderAll();
+            const freshAdminTs = Number(freshState.adminModifiedTimestamp || 0);
+            const currentAdminTs = Number(window.GameEngine.state.adminModifiedTimestamp || 0);
+            if (freshAdminTs > currentAdminTs) {
+              window.GameEngine.state.cash = Math.max(Number(window.GameEngine.state.cash || 0), Number(freshState.cash || 0));
+              window.GameEngine.state.bank = Math.max(Number(window.GameEngine.state.bank || 0), Number(freshState.bank || 0));
+              window.GameEngine.state.netWorth = Math.max(Number(window.GameEngine.state.netWorth || 0), Number(freshState.netWorth || 0));
+              window.GameEngine.state.adminModifiedTimestamp = freshAdminTs;
+              if (typeof renderAll === 'function') renderAll();
+            }
           }
         }).catch(() => {});
       }
@@ -3211,7 +3224,7 @@ var AppDB = (() => {
     if (payload.is_admin !== undefined) stateObj.isAdmin = payload.is_admin;
     if (payload.jail_timer !== undefined) stateObj.jailTimer = payload.jail_timer;
 
-    const now = Date.now();
+    const now = Number(updates.adminModifiedTimestamp) || Date.now();
     stateObj.adminModifiedTimestamp = now;
     payload.state = stateObj;
     payload.admin_modified_timestamp = now;

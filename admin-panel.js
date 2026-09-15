@@ -1345,12 +1345,24 @@
           freshPlayer.bank = newBank;
           freshPlayer.netWorth = newWorth;
           freshPlayer.adminModifiedTimestamp = now;
+          freshPlayer.isReset = false;
+          delete freshPlayer.resetTimestamp;
+          if (freshPlayer.state && typeof freshPlayer.state === 'object') {
+            freshPlayer.state.isReset = false;
+            delete freshPlayer.state.resetTimestamp;
+          }
 
           if (selectedPlayerState) {
             selectedPlayerState.cash = newCash;
             selectedPlayerState.bank = newBank;
             selectedPlayerState.netWorth = newWorth;
             selectedPlayerState.adminModifiedTimestamp = now;
+            selectedPlayerState.isReset = false;
+            delete selectedPlayerState.resetTimestamp;
+            if (selectedPlayerState.state && typeof selectedPlayerState.state === 'object') {
+              selectedPlayerState.state.isReset = false;
+              delete selectedPlayerState.state.resetTimestamp;
+            }
           }
 
           const canonicalUsername = freshPlayer.username || selectedPlayer;
