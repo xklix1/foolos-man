@@ -1155,8 +1155,9 @@ var AppDB = (() => {
       const row = rows[0];
       const stateObj = (typeof row.state === 'object' && row.state) ? { ...row.state } : {};
       const resetTs = Number(row.resetTimestamp || (row.state && row.state.resetTimestamp) || 0);
+      const isStaleReset = resetTs > 0 && (Date.now() - resetTs) > (24 * 60 * 60 * 1000);
       const ackResetTs = (typeof localStorage !== 'undefined') ? Number(localStorage.getItem('rasalmal_ack_reset_' + u) || 0) : 0;
-      const isAccountResetRow = Boolean((row.isReset === true || (row.state && row.state.isReset === true)) && resetTs > ackResetTs);
+      const isAccountResetRow = Boolean((row.isReset === true || (row.state && row.state.isReset === true)) && resetTs > 0 && resetTs > ackResetTs && !isStaleReset);
 
       // Reconcile SQL columns and state keys: pick the authoritative value (strictly 0 if account was reset)
       stateObj.username = row.username;
