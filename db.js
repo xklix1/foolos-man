@@ -282,16 +282,14 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  STRICT SINGLE-SESSION & CONCURRENT LOGIN GATEWAY
+  //  STRICT SINGLE-SESSION (DISABLED)
   // ─────────────────────────────────────────────
   let _currentSessionToken = null;
   let _activeSessionUser = null;
   let _isSessionInvalidated = false;
-  let _sessionHeartbeatTimer = null;
-  const _sessionBroadcastChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('rasalmal_session_bus') : null;
 
   function generateSessionToken() {
-    return 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+    return 'sess_default';
   }
 
   function getActiveSessionToken() {
@@ -299,196 +297,36 @@ var AppDB = (() => {
   }
 
   function isSessionValid() {
-    return !_isSessionInvalidated && Boolean(_currentSessionToken);
+    return true;
   }
 
   function isSessionTerminated() {
-    return _isSessionInvalidated;
+    return false;
   }
 
   function invalidateLocalSession() {
-    _isSessionInvalidated = true;
-    if (_sessionHeartbeatTimer) {
-      clearInterval(_sessionHeartbeatTimer);
-      _sessionHeartbeatTimer = null;
-    }
-    try {
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.removeItem('rasalmal_tab_session_token');
-      }
-      if (_activeSessionUser && typeof localStorage !== 'undefined') {
-        localStorage.removeItem(`rasalmal_state_${_activeSessionUser.toLowerCase()}`);
-      }
-    } catch (e) {}
+    return;
   }
 
   function triggerSessionInvalidation(reasonCode = 'another_device') {
-    if (_isSessionInvalidated) return;
-    _isSessionInvalidated = true;
-    invalidateLocalSession();
-
-    const reasonMsg = reasonCode === 'another_tab'
-      ? 'تم فتح الحساب في نافذة أو تبويب آخر في المتصفح. لمنع تضارب البيانات تم إيقاف هذه الجلسة.'
-      : 'تم تسجيل الدخول إلى هذا الحساب من جهاز أو نافذة أخرى. لحماية أمان حسابك ومنع التلاعب تم إيقاف هذه الجلسة تلقائياً.';
-
-    if (typeof window !== 'undefined' && typeof window.handleDuplicateSession === 'function') {
-      window.handleDuplicateSession(reasonMsg);
-    }
+    // Feature completely disabled
+    return;
   }
 
-  let _sessionStartTime = 0;
-
   function initSessionTracker(username, forceNew = false) {
-    if (!username) return null;
-    const u = username.trim().toLowerCase();
-    _activeSessionUser = u;
-    _isSessionInvalidated = false;
-    _sessionStartTime = Date.now();
-
-    // Check if this specific tab already has a persistent session token
-    let tabToken = null;
-    if (!forceNew && typeof sessionStorage !== 'undefined') {
-      tabToken = sessionStorage.getItem('rasalmal_tab_session_token');
-    }
-
-    if (!tabToken) {
-      tabToken = generateSessionToken();
-    }
-
-    _currentSessionToken = tabToken;
-
-    try {
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem('rasalmal_tab_session_token', tabToken);
-      }
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(`rasalmal_session_token_${u}`, tabToken);
-        localStorage.setItem(`rasalmal_session_claim_${u}`, JSON.stringify({ token: tabToken, ts: Date.now() }));
-      }
-    } catch (e) {}
-
-    // Broadcast across same-browser tabs so any other tab of this user is terminated immediately
-    if (_sessionBroadcastChannel) {
-      try {
-        _sessionBroadcastChannel.postMessage({
-          type: 'SESSION_ACQUIRED',
-          username: u,
-          token: tabToken
-        });
-      } catch (e) {}
-    }
-
-    startSessionHeartbeat(u);
-    return tabToken;
+    return null;
   }
 
   async function claimActiveSession(username, sessionToken) {
-    if (!username || !sessionToken) return false;
-    const u = username.trim();
-    try {
-      const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username,state`);
-      if (!rows || rows.length === 0) return false;
-      const player = rows[0];
-      const currentState = (player.state && typeof player.state === 'object') ? player.state : {};
-      currentState.activeSessionId = sessionToken;
-
-      await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
-        method: 'PATCH',
-        headers: { 'Prefer': 'return=minimal' },
-        body: JSON.stringify({
-          state: currentState,
-          last_seen: getTrustedNow()
-        })
-      });
-      console.log(`[SessionManager] Successfully claimed active session for ${u}: ${sessionToken}`);
-      return true;
-    } catch (err) {
-      console.warn(`[SessionManager] Failed to claim session for ${u}:`, err.message);
-      return false;
-    }
+    return true;
   }
 
   async function checkSessionStatus(username) {
-    if (_isSessionInvalidated || !isNetworkActive() || !_currentSessionToken || !username) return;
-    // Grace period: allow 12 seconds after tab initialization before checking cloud to prevent false positives during load
-    if (Date.now() - _sessionStartTime < 12000) return;
-
-    const u = username.trim().toLowerCase();
-    try {
-      const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username,state->activeSessionId`);
-      if (rows && rows.length > 0) {
-        const cloudToken = rows[0].activeSessionId;
-        // If cloud has an activeSessionId and it does NOT match our current token:
-        if (cloudToken && _currentSessionToken && cloudToken !== _currentSessionToken) {
-          console.warn(`[SessionManager] Session revoked! Cloud token (${cloudToken}) does not match local token (${_currentSessionToken}).`);
-          triggerSessionInvalidation('another_device');
-        }
-      }
-    } catch (err) {
-      // Network or transient errors should not invalidate session
-    }
+    return;
   }
 
   function startSessionHeartbeat(username) {
-    if (!username) return;
-    const u = username.trim().toLowerCase();
-    if (_sessionHeartbeatTimer) clearInterval(_sessionHeartbeatTimer);
-
-    // Fast, lightweight heartbeat every 4 seconds while network is active
-    _sessionHeartbeatTimer = setInterval(() => {
-      checkSessionStatus(u);
-    }, 4000);
-
-    if (_sessionHeartbeatTimer && typeof _sessionHeartbeatTimer.unref === 'function') {
-      _sessionHeartbeatTimer.unref();
-    }
-  }
-
-  // Cross-tab inter-process communication listeners
-  if (_sessionBroadcastChannel) {
-    _sessionBroadcastChannel.onmessage = (event) => {
-      if (!event || !event.data) return;
-      const { type, username, token } = event.data;
-      if (type === 'SESSION_ACQUIRED' && _activeSessionUser && username) {
-        if (username.toLowerCase() === _activeSessionUser.toLowerCase()) {
-          if (token && _currentSessionToken && token !== _currentSessionToken) {
-            console.warn('[SessionManager] Concurrent tab opened with same account. Terminating this tab.');
-            triggerSessionInvalidation('another_tab');
-          }
-        }
-      }
-    };
-  }
-
-  if (typeof window !== 'undefined') {
-    window.addEventListener('storage', (e) => {
-      if (!_activeSessionUser || (Date.now() - _sessionStartTime < 5000)) return;
-      const u = _activeSessionUser.toLowerCase();
-      if (e.key === `rasalmal_session_token_${u}` || e.key === `rasalmal_session_claim_${u}`) {
-        let incomingToken = e.newValue;
-        if (e.key.startsWith('rasalmal_session_claim_') && e.newValue) {
-          try {
-            const parsed = JSON.parse(e.newValue);
-            if (parsed && parsed.token) incomingToken = parsed.token;
-          } catch (err) {}
-        }
-        if (incomingToken && _currentSessionToken && incomingToken !== _currentSessionToken) {
-          console.warn('[SessionManager] Concurrent session token detected via localStorage. Terminating this tab.');
-          triggerSessionInvalidation('another_tab');
-        }
-      }
-    });
-
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && _activeSessionUser && !_isSessionInvalidated && (Date.now() - _sessionStartTime > 12000)) {
-        checkSessionStatus(_activeSessionUser);
-      }
-    });
-    window.addEventListener('focus', () => {
-      if (_activeSessionUser && !_isSessionInvalidated && (Date.now() - _sessionStartTime > 12000)) {
-        checkSessionStatus(_activeSessionUser);
-      }
-    });
+    return;
   }
 
   // ─────────────────────────────────────────────
@@ -1958,10 +1796,6 @@ var AppDB = (() => {
 
   async function savePlayerState(username, state, forceCloud = false) {
     if (!username || !state) return;
-    if (_isSessionInvalidated) {
-      console.warn(`[Sync] Blocked save for ${username}: local session has been terminated.`);
-      return;
-    }
     const u = username.trim();
     state.username = u;
     const nowTs = getTrustedNow();
@@ -5461,10 +5295,7 @@ var AppDB = (() => {
       throw new Error('تعذر تحميل بيانات الحساب من السحابة، يرجى المحاولة مرة أخرى.');
     }
 
-    // 2. Strict Single-Session: Issue fresh unique session token for this login
-    const sessToken = initSessionTracker(u, true);
-    state.activeSessionId = sessToken;
-    await claimActiveSession(u, sessToken);
+
 
     // 3. Player account ban check
     if (state.isBanned || state.is_banned) {

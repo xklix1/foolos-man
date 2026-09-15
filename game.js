@@ -3039,17 +3039,7 @@ const GameEngine = (() => {
         _loadedFromCloud: true
       };
 
-      // Strict Single-Session Tracker initialization
-      if (typeof AppDB !== 'undefined' && typeof AppDB.initSessionTracker === 'function') {
-        const sessToken = AppDB.initSessionTracker(username, false);
-        if (sessToken) {
-          state.activeSessionId = sessToken;
-          const cloudToken = dbState ? (dbState.activeSessionId || (dbState.state && dbState.state.activeSessionId)) : null;
-          if (cloudToken !== sessToken && typeof AppDB.claimActiveSession === 'function') {
-            AppDB.claimActiveSession(username, sessToken).catch(() => {});
-          }
-        }
-      }
+
 
       // If player was reset by admin, purge local cache and strictly zero all wealth only if newer than acknowledged reset and within 24 hours
       const resetTs = Number(dbState.resetTimestamp || (dbState.state && dbState.state.resetTimestamp) || (dbState.admin_modified_timestamp || 0));

@@ -7847,69 +7847,11 @@ const UIController = (() => {
   }
   window.handleBannedUser = handleBannedUser;
 
-  // ==================== STRICT CONCURRENT SESSION TERMINATION ====================
+  // ==================== STRICT CONCURRENT SESSION TERMINATION (DISABLED) ====================
   function handleDuplicateSession(reason) {
-    console.warn('[Security] Concurrent session detected: Account active on another device or tab.');
-
-    // Halt game engine & tick loop immediately
-    if (tickIntervalId) {
-      clearInterval(tickIntervalId);
-      tickIntervalId = null;
-    }
-    if (typeof GameEngine !== 'undefined') {
-      try { if (typeof GameEngine.pauseEngine === 'function') GameEngine.pauseEngine(); } catch (e) {}
-    }
-    activeListeners.forEach(unsub => { try { unsub(); } catch (e) {} });
-    activeListeners = [];
-
-    if (typeof AppDB !== 'undefined') {
-      try { if (typeof AppDB.stopListeningToChat === 'function') AppDB.stopListeningToChat(); } catch (e) {}
-      try { if (typeof AppDB.cleanupAllNetworkPolling === 'function') AppDB.cleanupAllNetworkPolling(); } catch (e) {}
-      try { if (typeof AppDB.invalidateLocalSession === 'function') AppDB.invalidateLocalSession(); } catch (e) {}
-    }
-
-    // Hide chat drawer if open
-    const chatDrawer = document.getElementById('chat-drawer');
-    const chatTrigger = document.getElementById('btn-floating-chat-trigger');
-    if (chatDrawer) chatDrawer.classList.add('hidden');
-    if (chatTrigger) chatTrigger.classList.add('hidden');
-
-    // Show duplicate session overlay
-    let dupOverlay = document.getElementById('duplicate-session-overlay');
-    if (!dupOverlay) {
-      dupOverlay = document.createElement('div');
-      dupOverlay.id = 'duplicate-session-overlay';
-      dupOverlay.className = 'fixed inset-0 z-[999999999] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4 select-none pointer-events-auto';
-      dupOverlay.innerHTML = `
-        <div class="relative w-full max-w-md bg-slate-900 border-2 border-amber-500/80 rounded-3xl p-8 text-center shadow-2xl shadow-amber-500/20 animate-scale-in">
-          <div class="w-20 h-20 mx-auto mb-5 rounded-full bg-amber-500/20 border-2 border-amber-500/50 flex items-center justify-center text-amber-400 text-4xl shadow-lg shadow-amber-500/20">
-            <i class="fa-solid fa-mobile-screen-button animate-bounce"></i>
-          </div>
-          <div class="inline-block px-3.5 py-1 bg-amber-500/20 text-amber-300 text-xs font-black rounded-full border border-amber-500/40 mb-3 uppercase tracking-wider">
-            ⚠️ تم فتح الحساب على جهاز آخر
-          </div>
-          <h3 class="text-2xl font-black text-white mb-2">تم إنهاء هذه الجلسة</h3>
-          <p id="dup-session-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6 font-medium">
-            ${reason || 'تم تسجيل الدخول إلى هذا الحساب من جهاز أو نافذة أخرى. لمنع تضارب البيانات والحفاظ على أمان حسابك لا يمكن تشغيل اللعبة في جهازين في وقت واحد.'}
-          </p>
-          <div class="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-400 mb-6 flex items-center justify-center gap-2">
-            <i class="fa-solid fa-shield-halved text-amber-400 text-base"></i>
-            <span>تم حفظ تقدمك وجلستك النشطة على الجهاز الجديد بأمان.</span>
-          </div>
-          <button onclick="sessionStorage.removeItem('rasalmal_tab_session_token'); window.location.reload();"
-            class="w-full py-3.5 px-6 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-slate-950 font-black text-sm rounded-xl shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2 cursor-pointer border-none">
-            <i class="fa-solid fa-rotate-right text-base"></i>
-            <span>تسجيل الدخول من هذا الجهاز مجدداً</span>
-          </button>
-        </div>
-      `;
-      document.body.appendChild(dupOverlay);
-    } else {
-      const reasonEl = document.getElementById('dup-session-reason');
-      if (reasonEl && reason) reasonEl.textContent = reason;
-      dupOverlay.classList.remove('hidden');
-      dupOverlay.classList.add('flex');
-    }
+    const dupOverlay = document.getElementById('duplicate-session-overlay');
+    if (dupOverlay) dupOverlay.remove();
+    return;
   }
   window.handleDuplicateSession = handleDuplicateSession;
 
