@@ -1673,6 +1673,14 @@ const GameEngine = (() => {
           tradeTotal += Number(imp.totalCost || ((imp.quantity || 0) * (TRADE_COMMODITIES[imp.commodityId]?.unitCost || 0)) || 0);
         });
       }
+      if (Array.isArray(playerState.tradeCompany.activeExports)) {
+        playerState.tradeCompany.activeExports.forEach(exp => {
+          if (!exp.claimed) {
+            const comm = TRADE_COMMODITIES[exp.commodityId];
+            tradeTotal += Number(exp.quantity || 0) * (comm ? (comm.unitCost || 0) : 0);
+          }
+        });
+      }
     }
 
     // 5.5 Agro Farm Tycoon (المزرعة الاستثمارية)

@@ -233,12 +233,27 @@ const INDUSTRIAL_SECTORS = {
   }
 };
 
+const TRADE_COMMODITIES = {
+  fashion_brands: { id: 'fashion_brands', name: 'أزياء وملابس ماركات عالمية', unitCost: 5000 },
+  espresso_coffee: { id: 'espresso_coffee', name: 'بن إسبريسو كولومبي فاخر', unitCost: 8000 },
+  auto_spare_parts: { id: 'auto_spare_parts', name: 'قطع غيار سيارات أوروبية أصلية', unitCost: 25000 },
+  solar_panels: { id: 'solar_panels', name: 'ألواح وخلايا طاقة شمسية ألمانية', unitCost: 50000 },
+  luxury_cars: { id: 'luxury_cars', name: 'سيارات فارهة ومدرعة مستوردة', unitCost: 120000 },
+  industrial_turbines: { id: 'industrial_turbines', name: 'توربينات وخطوط إنتاج صناعية ثقيلة', unitCost: 250000 },
+  ai_quantum_chips: { id: 'ai_quantum_chips', name: 'رقائق ومعالجات ذكاء اصطناعي سيليكونية', unitCost: 500000 },
+  luxury_perfumes: { id: 'luxury_perfumes', name: 'عطور فرنسية فاخرة', unitCost: 12000 },
+  medical_devices: { id: 'medical_devices', name: 'أجهزة ومعدات طبية متقدمة', unitCost: 22000 },
+  smart_electronics: { id: 'smart_electronics', name: 'أجهزة وإلكترونيات ذكية', unitCost: 45000 },
+  ev_cars: { id: 'ev_cars', name: 'سيارات كهربائية متطورة', unitCost: 85000 }
+};
+
 module.exports = {
   BUSINESSES,
   ASSETS,
   STOCKS,
   TITLES,
   CAR_TEMPLATES,
-  INDUSTRIAL_SECTORS
+  INDUSTRIAL_SECTORS,
+  TRADE_COMMODITIES
 };
 

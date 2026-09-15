@@ -2,7 +2,7 @@
  * Ras ALmal Tycoon — Authoritative Net Worth & Rank Engine
  */
 
-const { ASSETS, STOCKS, TITLES, INDUSTRIAL_SECTORS } = require('./definitions');
+const { ASSETS, STOCKS, TITLES, INDUSTRIAL_SECTORS, TRADE_COMMODITIES } = require('./definitions');
 
 /**
  * Calculates accurate total net worth of a player (Assets - Liabilities)
@@ -64,28 +64,48 @@ function calculateNetWorth(playerState, stockPrices = {}) {
     });
   }
 
-  // Add trade warehouse inventory and active imports
+  // Add trade warehouse inventory, active imports, and active exports in transit
   if (playerState.tradeCompany && typeof playerState.tradeCompany === 'object') {
-    const COMMODITY_UNIT_COSTS = {
+    const commodities = (typeof TRADE_COMMODITIES === 'object' && TRADE_COMMODITIES) ? TRADE_COMMODITIES : {};
+    const COMMODITY_FALLBACK_COSTS = {
       fashion_brands: 5000,
       espresso_coffee: 8000,
+      auto_spare_parts: 25000,
+      solar_panels: 50000,
+      luxury_cars: 120000,
+      industrial_turbines: 250000,
+      ai_quantum_chips: 500000,
       luxury_perfumes: 12000,
       medical_devices: 22000,
       smart_electronics: 45000,
       ev_cars: 85000
     };
+
+    const getUnitCost = (cId) => {
+      if (commodities[cId] && typeof commodities[cId].unitCost === 'number') {
+        return commodities[cId].unitCost;
+      }
+      return COMMODITY_FALLBACK_COSTS[cId] || 5000;
+    };
+
     if (playerState.tradeCompany.warehouse && typeof playerState.tradeCompany.warehouse === 'object') {
       Object.keys(playerState.tradeCompany.warehouse).forEach(commId => {
         const qty = Number(playerState.tradeCompany.warehouse[commId] || 0);
-        const cost = COMMODITY_UNIT_COSTS[commId] || 5000;
         if (qty > 0) {
-          worth += qty * cost;
+          worth += qty * getUnitCost(commId);
         }
       });
     }
     if (Array.isArray(playerState.tradeCompany.activeImports)) {
       playerState.tradeCompany.activeImports.forEach(imp => {
-        worth += Number(imp.totalCost || ((imp.quantity || 0) * (COMMODITY_UNIT_COSTS[imp.commodityId] || 5000)) || 0);
+        worth += Number(imp.totalCost || ((imp.quantity || 0) * getUnitCost(imp.commodityId)) || 0);
+      });
+    }
+    if (Array.isArray(playerState.tradeCompany.activeExports)) {
+      playerState.tradeCompany.activeExports.forEach(exp => {
+        if (!exp.claimed) {
+          worth += Number(exp.quantity || 0) * getUnitCost(exp.commodityId);
+        }
       });
     }
   }
