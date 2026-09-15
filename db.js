@@ -5527,4 +5527,15 @@ if (typeof module !=='undefined' && module.exports) {
 
 if (typeof window !=="undefined") {
   window.AppDB = AppDB;
+  if (!window.db) {
+    try {
+      if (window.firebase && typeof window.firebase.firestore === 'function') {
+        window.db = window.firebase.firestore();
+      } else {
+        window.db = AppDB;
+      }
+    } catch (_) {
+      window.db = AppDB;
+    }
+  }
 }

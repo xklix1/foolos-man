@@ -1761,10 +1761,18 @@ const UIController = (() => {
         mainLayout.classList.add('flex');
       }
       setFloatingChatVisibility(true);
-      setupRealTimeListeners(canonicalUser);
-      AppDB.checkAndCreateDailyBackup(canonicalUser, GameEngine.state);
+      try {
+        setupRealTimeListeners(canonicalUser);
+      } catch (listenerErr) {
+        console.warn('[Session] setupRealTimeListeners non-fatal error:', listenerErr);
+      }
+      try {
+        AppDB.checkAndCreateDailyBackup(canonicalUser, GameEngine.state);
+      } catch (backupErr) {
+        console.warn('[Session] Daily backup non-fatal error:', backupErr);
+      }
       if (typeof window !== 'undefined' && window.PWAManager && typeof window.PWAManager.subscribeToPushServer === 'function') {
-        window.PWAManager.subscribeToPushServer(canonicalUser);
+        try { window.PWAManager.subscribeToPushServer(canonicalUser); } catch (_) {}
       }
       startGameLoop();
       renderAll();
@@ -7002,12 +7010,22 @@ const UIController = (() => {
     }
 
     // 2. Real-time Firebase / Supabase Services
-    if (typeof firebase === 'undefined' || !AppDB.isFirebaseReady) {
-      return;
+    let db = null;
+    try {
+      if (typeof firebase !== 'undefined' && typeof firebase.firestore === 'function') {
+        db = firebase.firestore();
+      } else if (typeof window !== 'undefined' && window.firebase && typeof window.firebase.firestore === 'function') {
+        db = window.firebase.firestore();
+      }
+      if (db && typeof window !== 'undefined' && !window.db) {
+        window.db = db;
+      }
+    } catch (e) {
+      console.warn('[Realtime] Firestore init warning:', e);
     }
 
-    try {
-      const db = firebase.firestore();
+    if (db) {
+      try {
 
       // 1. Broadcast Listener
       let lastBroadcastTime = Date.now();
@@ -7088,6 +7106,7 @@ const UIController = (() => {
     } catch (fbErr) {
       console.warn("[Realtime] Firebase listeners error:", fbErr);
     }
+  }
 
     // Public Chat listener removed to conserve Firebase read/write quota (replaced with Facebook Community)
 
@@ -7197,126 +7216,132 @@ const UIController = (() => {
     });
 
     // 3. User document listener for ban & external edits (Live Real-Time Sync)
-    let lastAdminActionTimestamp = null;
-    const unsubUser = db.collection('players').doc(username)
-      .onSnapshot((doc) => {
-        if (!doc.exists) return;
-        const data = doc.data();
+    if (db && typeof db.collection === 'function') {
+      try {
+        let lastAdminActionTimestamp = null;
+        const unsubUser = db.collection('players').doc(username)
+          .onSnapshot((doc) => {
+            if (!doc.exists) return;
+            const data = doc.data();
 
-        // Initial snapshot: record the current timestamp
-        if (lastAdminActionTimestamp === null) {
-          lastAdminActionTimestamp = Number(data.adminModifiedTimestamp || 0);
-          if (data.isBanned) {
-            unsubUser();
-            handleBannedUser();
-          }
-          return;
-        }
-
-        // Ban check
-        if (data.isBanned || data.is_banned) {
-          unsubUser();
-          handleBannedUser();
-          return;
-        }
-
-        // Account Reset check: applied seamlessly in-place WITHOUT forced reload popup
-        const resetTs = Number(data.resetTimestamp || (data.state && data.state.resetTimestamp) || (data.isReset || (data.state && data.state.isReset) ? data.admin_modified_timestamp || data.adminModifiedTimestamp || Date.now() : 0));
-        const ackResetTs = Number(localStorage.getItem('rasalmal_ack_reset_' + username) || 0);
-        if ((data.isReset === true || (data.state && data.state.isReset === true)) && resetTs > ackResetTs) {
-          try { localStorage.setItem('rasalmal_ack_reset_' + username, String(resetTs)); } catch (e) {}
-          applyCompleteZeroStateToGameEngine(username);
-          if (typeof GameEngine.calculateTotalNetWorth === 'function') GameEngine.calculateTotalNetWorth();
-          try {
-            if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
-              AppDB.setEncryptedLocalState(`rasalmal_state_${username}`, GameEngine.state);
+            // Initial snapshot: record the current timestamp
+            if (lastAdminActionTimestamp === null) {
+              lastAdminActionTimestamp = Number(data.adminModifiedTimestamp || 0);
+              if (data.isBanned) {
+                unsubUser();
+                handleBannedUser();
+              }
+              return;
             }
-          } catch (e) {}
-          renderAll();
-          showToast('إشعار إداري', 'تم تصفير وإعادة ضبط حسابك بنجاح من قبل الإدارة للبدء من جديد.', 'info');
-          return;
-        }
 
-        // Process all external admin modifications instantly in real-time (NO RELOAD NEEDED)
-        if (data.adminModifiedTimestamp && data.adminModifiedTimestamp > lastAdminActionTimestamp) {
-          lastAdminActionTimestamp = data.adminModifiedTimestamp;
-
-          // Jail update
-          if (typeof data.jailTimer === 'number' && data.jailTimer !== GameEngine.state.jailTimer) {
-            GameEngine.state.jailTimer = data.jailTimer;
-            if (data.jailTimer > 0 && typeof handleJailedUser === 'function') {
-              handleJailedUser(data.jailTimer);
+            // Ban check
+            if (data.isBanned || data.is_banned) {
+              unsubUser();
+              handleBannedUser();
+              return;
             }
-          }
 
-          if (typeof data.cash === 'number') GameEngine.state.cash = data.cash;
-          if (typeof data.bank === 'number') GameEngine.state.bank = data.bank;
-          if (typeof data.dirtyCash === 'number') GameEngine.state.dirtyCash = data.dirtyCash;
-          if (typeof data.netWorth === 'number') GameEngine.state.netWorth = data.netWorth;
-          if (typeof data.xp === 'number') GameEngine.state.xp = data.xp;
-          if (data.jobId) GameEngine.state.jobId = data.jobId;
-          if (data.title) GameEngine.state.title = data.title;
-          if (data.isAdmin !== undefined) GameEngine.state.isAdmin = Boolean(data.isAdmin);
-
-          // Deep merge all possessions, businesses, assets, cars, items and perks from state
-          if (data.state && typeof data.state === 'object') {
-            const st = data.state;
-            if (st.businesses) GameEngine.state.businesses = JSON.parse(JSON.stringify(st.businesses));
-            if (st.assets) GameEngine.state.assets = JSON.parse(JSON.stringify(st.assets));
-            if (st.stocks) GameEngine.state.stocks = JSON.parse(JSON.stringify(st.stocks));
-            if (st.crypto) GameEngine.state.crypto = JSON.parse(JSON.stringify(st.crypto));
-            if (st.inventory) GameEngine.state.inventory = JSON.parse(JSON.stringify(st.inventory));
-            if (st.ownedCars) GameEngine.state.ownedCars = JSON.parse(JSON.stringify(st.ownedCars));
-            if (st.activeCar !== undefined) GameEngine.state.activeCar = st.activeCar;
-            if (st.customItems) GameEngine.state.customItems = JSON.parse(JSON.stringify(st.customItems));
-            if (st.itemDurations) GameEngine.state.itemDurations = JSON.parse(JSON.stringify(st.itemDurations));
-            if (st.tradeCompany) GameEngine.state.tradeCompany = JSON.parse(JSON.stringify(st.tradeCompany));
-            if (st.industry) GameEngine.state.industry = JSON.parse(JSON.stringify(st.industry));
-            if (st.smugglingFleet) GameEngine.state.smugglingFleet = JSON.parse(JSON.stringify(st.smugglingFleet));
-            if (st.underworldRep !== undefined) GameEngine.state.underworldRep = st.underworldRep;
-            if (st.heatLevel !== undefined) GameEngine.state.heatLevel = st.heatLevel;
-            if (st.afkManagerExpiresAt !== undefined) GameEngine.state.afkManagerExpiresAt = st.afkManagerExpiresAt;
-            if (st.chatGlow !== undefined) GameEngine.state.chatGlow = st.chatGlow;
-            if (st.hasChatGlow !== undefined) GameEngine.state.hasChatGlow = st.hasChatGlow;
-            if (st.unlockedChatGlows) GameEngine.state.unlockedChatGlows = JSON.parse(JSON.stringify(st.unlockedChatGlows));
-            if (st.isVerified !== undefined) GameEngine.state.isVerified = st.isVerified;
-            if (st.vipVerified !== undefined) GameEngine.state.vipVerified = st.vipVerified;
-            if (st.activePackage !== undefined) GameEngine.state.activePackage = st.activePackage;
-            if (st.customBadge !== undefined) GameEngine.state.customBadge = st.customBadge;
-            if (st.badgeTitle !== undefined) GameEngine.state.badgeTitle = st.badgeTitle;
-            if (st.badges) GameEngine.state.badges = JSON.parse(JSON.stringify(st.badges));
-            if (st.activeLoan !== undefined) GameEngine.state.activeLoan = st.activeLoan;
-            if (st.investments) GameEngine.state.investments = JSON.parse(JSON.stringify(st.investments));
-          }
-
-          GameEngine.state.adminModifiedTimestamp = data.adminModifiedTimestamp;
-
-          if (typeof GameEngine.calculateTotalNetWorth === 'function') {
-            GameEngine.calculateTotalNetWorth();
-          }
-
-          try {
-            if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
-              AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, GameEngine.state);
+            // Account Reset check: applied seamlessly in-place WITHOUT forced reload popup
+            const resetTs = Number(data.resetTimestamp || (data.state && data.state.resetTimestamp) || (data.isReset || (data.state && data.state.isReset) ? data.admin_modified_timestamp || data.adminModifiedTimestamp || Date.now() : 0));
+            const ackResetTs = Number(localStorage.getItem('rasalmal_ack_reset_' + username) || 0);
+            if ((data.isReset === true || (data.state && data.state.isReset === true)) && resetTs > ackResetTs) {
+              try { localStorage.setItem('rasalmal_ack_reset_' + username, String(resetTs)); } catch (e) {}
+              applyCompleteZeroStateToGameEngine(username);
+              if (typeof GameEngine.calculateTotalNetWorth === 'function') GameEngine.calculateTotalNetWorth();
+              try {
+                if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+                  AppDB.setEncryptedLocalState(`rasalmal_state_${username}`, GameEngine.state);
+                }
+              } catch (e) {}
+              renderAll();
+              showToast('إشعار إداري', 'تم تصفير وإعادة ضبط حسابك بنجاح من قبل الإدارة للبدء من جديد.', 'info');
+              return;
             }
-          } catch (e) { }
 
-          // Clean toast notice and instant dynamic UI re-render (NO RELOAD POPUP)
-          showToast('إشعار إداري', 'تم استلام وتحديث بيانات وممتلكات حسابك فورياً من قبل الإدارة.', 'success');
-          if (typeof playMenuSound === 'function') playMenuSound('success');
-          renderAll();
+            // Process all external admin modifications instantly in real-time (NO RELOAD NEEDED)
+            if (data.adminModifiedTimestamp && data.adminModifiedTimestamp > lastAdminActionTimestamp) {
+              lastAdminActionTimestamp = data.adminModifiedTimestamp;
 
-          // Also trigger active sub-tab renders if user has open drawers or tabs
-          try {
-            if (typeof renderBusinesses === 'function') renderBusinesses();
-            if (typeof renderAssets === 'function') renderAssets();
-            if (typeof renderInventory === 'function') renderInventory();
-            if (typeof renderCars === 'function') renderCars();
-            if (typeof renderHeader === 'function') renderHeader();
-          } catch (_) {}
-        }
-      }, (err) => console.error("User doc listen err:", err));
-    activeListeners.push(unsubUser);
+              // Jail update
+              if (typeof data.jailTimer === 'number' && data.jailTimer !== GameEngine.state.jailTimer) {
+                GameEngine.state.jailTimer = data.jailTimer;
+                if (data.jailTimer > 0 && typeof handleJailedUser === 'function') {
+                  handleJailedUser(data.jailTimer);
+                }
+              }
+
+              if (typeof data.cash === 'number') GameEngine.state.cash = data.cash;
+              if (typeof data.bank === 'number') GameEngine.state.bank = data.bank;
+              if (typeof data.dirtyCash === 'number') GameEngine.state.dirtyCash = data.dirtyCash;
+              if (typeof data.netWorth === 'number') GameEngine.state.netWorth = data.netWorth;
+              if (typeof data.xp === 'number') GameEngine.state.xp = data.xp;
+              if (data.jobId) GameEngine.state.jobId = data.jobId;
+              if (data.title) GameEngine.state.title = data.title;
+              if (data.isAdmin !== undefined) GameEngine.state.isAdmin = Boolean(data.isAdmin);
+
+              // Deep merge all possessions, businesses, assets, cars, items and perks from state
+              if (data.state && typeof data.state === 'object') {
+                const st = data.state;
+                if (st.businesses) GameEngine.state.businesses = JSON.parse(JSON.stringify(st.businesses));
+                if (st.assets) GameEngine.state.assets = JSON.parse(JSON.stringify(st.assets));
+                if (st.stocks) GameEngine.state.stocks = JSON.parse(JSON.stringify(st.stocks));
+                if (st.crypto) GameEngine.state.crypto = JSON.parse(JSON.stringify(st.crypto));
+                if (st.inventory) GameEngine.state.inventory = JSON.parse(JSON.stringify(st.inventory));
+                if (st.ownedCars) GameEngine.state.ownedCars = JSON.parse(JSON.stringify(st.ownedCars));
+                if (st.activeCar !== undefined) GameEngine.state.activeCar = st.activeCar;
+                if (st.customItems) GameEngine.state.customItems = JSON.parse(JSON.stringify(st.customItems));
+                if (st.itemDurations) GameEngine.state.itemDurations = JSON.parse(JSON.stringify(st.itemDurations));
+                if (st.tradeCompany) GameEngine.state.tradeCompany = JSON.parse(JSON.stringify(st.tradeCompany));
+                if (st.industry) GameEngine.state.industry = JSON.parse(JSON.stringify(st.industry));
+                if (st.smugglingFleet) GameEngine.state.smugglingFleet = JSON.parse(JSON.stringify(st.smugglingFleet));
+                if (st.underworldRep !== undefined) GameEngine.state.underworldRep = st.underworldRep;
+                if (st.heatLevel !== undefined) GameEngine.state.heatLevel = st.heatLevel;
+                if (st.afkManagerExpiresAt !== undefined) GameEngine.state.afkManagerExpiresAt = st.afkManagerExpiresAt;
+                if (st.chatGlow !== undefined) GameEngine.state.chatGlow = st.chatGlow;
+                if (st.hasChatGlow !== undefined) GameEngine.state.hasChatGlow = st.hasChatGlow;
+                if (st.unlockedChatGlows) GameEngine.state.unlockedChatGlows = JSON.parse(JSON.stringify(st.unlockedChatGlows));
+                if (st.isVerified !== undefined) GameEngine.state.isVerified = st.isVerified;
+                if (st.vipVerified !== undefined) GameEngine.state.vipVerified = st.vipVerified;
+                if (st.activePackage !== undefined) GameEngine.state.activePackage = st.activePackage;
+                if (st.customBadge !== undefined) GameEngine.state.customBadge = st.customBadge;
+                if (st.badgeTitle !== undefined) GameEngine.state.badgeTitle = st.badgeTitle;
+                if (st.badges) GameEngine.state.badges = JSON.parse(JSON.stringify(st.badges));
+                if (st.activeLoan !== undefined) GameEngine.state.activeLoan = st.activeLoan;
+                if (st.investments) GameEngine.state.investments = JSON.parse(JSON.stringify(st.investments));
+              }
+
+              GameEngine.state.adminModifiedTimestamp = data.adminModifiedTimestamp;
+
+              if (typeof GameEngine.calculateTotalNetWorth === 'function') {
+                GameEngine.calculateTotalNetWorth();
+              }
+
+              try {
+                if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+                  AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, GameEngine.state);
+                }
+              } catch (e) { }
+
+              // Clean toast notice and instant dynamic UI re-render (NO RELOAD POPUP)
+              showToast('إشعار إداري', 'تم استلام وتحديث بيانات وممتلكات حسابك فورياً من قبل الإدارة.', 'success');
+              if (typeof playMenuSound === 'function') playMenuSound('success');
+              renderAll();
+
+              // Also trigger active sub-tab renders if user has open drawers or tabs
+              try {
+                if (typeof renderBusinesses === 'function') renderBusinesses();
+                if (typeof renderAssets === 'function') renderAssets();
+                if (typeof renderInventory === 'function') renderInventory();
+                if (typeof renderCars === 'function') renderCars();
+                if (typeof renderHeader === 'function') renderHeader();
+              } catch (_) {}
+            }
+          }, (err) => console.error("User doc listen err:", err));
+        activeListeners.push(unsubUser);
+      } catch (userErr) {
+        console.warn("[Realtime] User listener error:", userErr);
+      }
+    }
   }
 
   function applyCompleteZeroStateToGameEngine(username) {
@@ -21154,14 +21179,14 @@ const UIController = (() => {
 // Export globally
 window.UIController = UIController;
 window.UI = UIController;
-window.showToast = showToast;
+window.showToast = UIController.showToast;
 window.openNetWorthBreakdownModal = UIController.openNetWorthBreakdownModal;
 window.closeNetWorthBreakdownModal = UIController.closeNetWorthBreakdownModal;
 window.openLegalModal = UIController.openLegalModal;
 window.closeLegalModal = UIController.closeLegalModal;
 window.switchLegalTab = UIController.switchLegalTab;
-window.openNotificationsModal = openNotificationsModal;
-window.closeNotificationsModal = closeNotificationsModal;
+window.openNotificationsModal = UIController.openNotificationsModal;
+window.closeNotificationsModal = UIController.closeNotificationsModal;
 window.playMenuSound = UIController.playMenuSound;
 window.playCasinoSound = UIController.playCasinoSound;
 
