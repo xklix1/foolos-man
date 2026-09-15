@@ -37,9 +37,10 @@ class SessionManager {
    * Retrieves or loads an authoritative player session
    * @param {string} username 
    * @param {boolean} triggerOfflineCatchup - Whether to run offline simulation on load
+   * @param {string|null} clientSessionId - Optional unique client session token
    * @returns {Promise<{ session: Object, offlineReport: Object|null }>}
    */
-  async getOrCreateSession(username, triggerOfflineCatchup = false) {
+  async getOrCreateSession(username, triggerOfflineCatchup = false, clientSessionId = null) {
     if (!username) throw new Error('Username is required');
     const uKey = username.trim().toLowerCase();
 
@@ -60,9 +61,13 @@ class SessionManager {
         offlineReport = calculateAuthoritativeOfflineProgress(state, Date.now());
       }
 
+      const effectiveSessionId = clientSessionId || state.activeSessionId || ('sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9));
+      state.activeSessionId = effectiveSessionId;
+
       session = {
         username: state.username,
         pin: dbRow.pin,
+        sessionId: effectiveSessionId,
         state: state,
         dirty: Boolean(offlineReport && offlineReport.applied),
         lastActivity: Date.now(),
@@ -72,6 +77,11 @@ class SessionManager {
 
       this.sessions.set(uKey, session);
     } else {
+      if (clientSessionId && session.sessionId !== clientSessionId) {
+        session.sessionId = clientSessionId;
+        session.state.activeSessionId = clientSessionId;
+        session.dirty = true;
+      }
       // Re-verify against database in case admin reset or modified player state externally
       try {
         const dbRow = await dbService.getPlayerByUsername(username);
@@ -170,6 +180,12 @@ class SessionManager {
 
     const { session } = await this.getOrCreateSession(username, false);
     if (!session) return false;
+
+    // Strict Concurrent Session Guard: Reject sync if client session token does not match active session
+    if (clientState.activeSessionId && session.sessionId && clientState.activeSessionId !== session.sessionId) {
+      console.warn(`[SessionManager] Blocked stale session sync: target="${username}", active="${session.sessionId}", incoming="${clientState.activeSessionId}"`);
+      return false;
+    }
 
     const s = session.state;
 

@@ -60,9 +60,14 @@ var ServerBridge = (() => {
     _activeUsername = username.trim();
 
     try {
+      const clientSessionToken = (typeof window !== 'undefined' && window.AppDB && typeof window.AppDB.getActiveSessionToken === 'function')
+        ? window.AppDB.getActiveSessionToken()
+        : null;
+
       const data = await _post('/api/session/start', {
         username: _activeUsername,
-        pin: pin
+        pin: pin,
+        sessionId: clientSessionToken
       });
 
       _isServerOnline = true;
@@ -197,6 +202,11 @@ var ServerBridge = (() => {
         immediate
       });
     } catch (e) {
+      if (e.message && (e.message.includes('Session invalidated') || e.message.includes('409') || e.message.includes('SESSION_TERMINATED'))) {
+        if (typeof window !== 'undefined' && typeof window.handleDuplicateSession === 'function') {
+          window.handleDuplicateSession('تم تسجيل الدخول إلى هذا الحساب من جهاز آخر.');
+        }
+      }
       console.warn('[ServerBridge] syncState warning:', e.message);
       return null;
     }

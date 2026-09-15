@@ -15,13 +15,13 @@ async function sessionRoutes(fastify, options) {
       }
     }
   }, async (request, reply) => {
-    const { username, pin } = request.body || {};
+    const { username, pin, sessionId } = request.body || {};
     if (!username) {
       return reply.code(400).send({ error: 'Username is required' });
     }
 
     try {
-      const { session, offlineReport } = await sessionManager.getOrCreateSession(username, true);
+      const { session, offlineReport } = await sessionManager.getOrCreateSession(username, true, sessionId);
       if (!session) {
         return reply.code(404).send({ error: 'Player account not found' });
       }
@@ -34,6 +34,7 @@ async function sessionRoutes(fastify, options) {
       return {
         success: true,
         username: session.username,
+        sessionId: session.sessionId,
         state: session.state,
         offlineReport: offlineReport,
         serverTime: Date.now()
@@ -77,6 +78,9 @@ async function sessionRoutes(fastify, options) {
 
     try {
       const saved = await sessionManager.updateSessionState(username, state, immediate === true);
+      if (!saved) {
+        return reply.code(409).send({ error: 'Session invalidated: logged in from another device', code: 'SESSION_TERMINATED' });
+      }
       return {
         success: true,
         saved,

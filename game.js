@@ -3039,6 +3039,14 @@ const GameEngine = (() => {
         _loadedFromCloud: true
       };
 
+      // Strict Single-Session Tracker initialization
+      if (typeof AppDB !== 'undefined' && typeof AppDB.initSessionTracker === 'function') {
+        const sessToken = AppDB.initSessionTracker(username, dbState ? (dbState.activeSessionId || (dbState.state && dbState.state.activeSessionId)) : null);
+        if (sessToken) {
+          state.activeSessionId = sessToken;
+        }
+      }
+
       // If player was reset by admin, purge local cache and strictly zero all wealth only if newer than acknowledged reset and within 24 hours
       const resetTs = Number(dbState.resetTimestamp || (dbState.state && dbState.state.resetTimestamp) || (dbState.admin_modified_timestamp || 0));
       const isStaleReset = resetTs > 0 && (resetTs > (Date.now() + 60000) || (Date.now() - resetTs) > (24 * 60 * 60 * 1000));
@@ -4602,6 +4610,13 @@ const GameEngine = (() => {
   function checkCasinoAllowedAndDeduct(betAmount, skipCooldown = false) {
     const isEn = (typeof window !=='undefined' && window.currentLang ==='en');
     const currency = isEn ?'EGP' :'ج.م';
+
+    // 0. Strict Single-Session Check (Prevent dual-device save-scumming)
+    if (typeof AppDB !== 'undefined' && typeof AppDB.isSessionValid === 'function' && !AppDB.isSessionValid()) {
+      throw new Error(isEn
+        ? "Session terminated: This account has been opened on another device or tab."
+        : "تم إنهاء الجلسة: تم فتح هذا الحساب على جهاز أو نافذة أخرى لمنع التلاعب.");
+    }
 
     // 1. Anti-Spam Cooldown (6 seconds)
     if (!skipCooldown && state.casinoCooldownUntil && getTrustedNow() < state.casinoCooldownUntil) {
