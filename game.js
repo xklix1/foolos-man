@@ -3031,10 +3031,31 @@ const GameEngine = (() => {
         _loadedFromCloud: true
       };
 
-      // If player was reset by admin, purge local cache and skip recovery
+      // If player was reset by admin, purge local cache and strictly zero all wealth
       const isAccountReset = (dbState.isReset === true || (dbState.state && dbState.state.isReset === true));
       if (isAccountReset) {
-        try { localStorage.removeItem(`rasalmal_state_${username}`); } catch (e) {}
+        state.cash = 0;
+        state.bank = 0;
+        state.dirtyCash = 0;
+        state.netWorth = 0;
+        state.xp = 0;
+        state.businesses = {};
+        Object.keys(INITIAL_STATE.businesses).forEach(k => {
+          state.businesses[k] = { ...INITIAL_STATE.businesses[k], level: 0, workers: 0, suppliesTicks: 0 };
+        });
+        state.assets = {};
+        state.stocks = {};
+        state.crypto = {};
+        state.investments = [];
+        state.ownedCars = [];
+        state.activeCar = null;
+        state.tradeCompany = null;
+        state.industry = {};
+        try {
+          localStorage.removeItem('rasalmal_state_' + username);
+          sessionStorage.removeItem('rasalmal_state_' + username);
+          localStorage.removeItem('rasalmal_backup_' + username);
+        } catch (e) {}
       }
 
       // Safeguard: Recover industry progress from local storage if cloud snapshot was missing it
@@ -3154,6 +3175,9 @@ const GameEngine = (() => {
             window.UI.triggerAccountResetModal(username, resetTs);
           }, 100);
         }
+      } else if (isAccountReset && ackResetTs >= resetTs) {
+        state.isReset = false;
+        if (state.state) state.state.isReset = false;
       }
 
       if (!state.referralCode) {

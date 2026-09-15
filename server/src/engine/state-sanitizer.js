@@ -57,13 +57,29 @@ function sanitizePlayerState(dbRow) {
   // Merge defaults -> rawState -> authoritative columns from row
   const cleanState = Object.assign({}, DEFAULT_STATE, rawState);
 
+  const isAccountReset = Boolean(dbRow.is_reset === true || dbRow.isReset === true || rawState.isReset === true);
+
   // Authoritative SQL columns reconciled with state keys to prevent accidental zeroing
   cleanState.username = String(dbRow.username || cleanState.username || '').trim();
-  cleanState.cash = Math.max(Number(dbRow.cash || 0), Number(rawState.cash || 0));
-  cleanState.bank = Math.max(Number(dbRow.bank || 0), Number(rawState.bank || 0));
-  cleanState.dirtyCash = Math.max(Number(dbRow.dirty_cash || 0), Number(rawState.dirtyCash || 0));
-  cleanState.netWorth = Math.max(Number(dbRow.net_worth || 0), Number(rawState.netWorth || 0));
-  cleanState.xp = Math.max(Number(dbRow.xp || 0), Number(rawState.xp || 0));
+  if (isAccountReset) {
+    cleanState.cash = 0;
+    cleanState.bank = 0;
+    cleanState.dirtyCash = 0;
+    cleanState.netWorth = 0;
+    cleanState.xp = 0;
+    cleanState.businesses = {};
+    cleanState.assets = {};
+    cleanState.stocks = {};
+    cleanState.crypto = {};
+    cleanState.investments = [];
+    cleanState.isReset = true;
+  } else {
+    cleanState.cash = Math.max(Number(dbRow.cash || 0), Number(rawState.cash || 0));
+    cleanState.bank = Math.max(Number(dbRow.bank || 0), Number(rawState.bank || 0));
+    cleanState.dirtyCash = Math.max(Number(dbRow.dirty_cash || 0), Number(rawState.dirtyCash || 0));
+    cleanState.netWorth = Math.max(Number(dbRow.net_worth || 0), Number(rawState.netWorth || 0));
+    cleanState.xp = Math.max(Number(dbRow.xp || 0), Number(rawState.xp || 0));
+  }
   cleanState.title = String(dbRow.title || cleanState.title || 'عامل مبتدئ');
   cleanState.jobId = String(dbRow.job_id || cleanState.jobId || 'worker');
   cleanState.jailTimer = Number(dbRow.jail_timer !== undefined ? dbRow.jail_timer : cleanState.jailTimer) || 0;

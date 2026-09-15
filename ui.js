@@ -7777,6 +7777,27 @@ const UIController = (() => {
   function triggerAccountResetModal(username, resetTs) {
     if (isAccountResetActive) return;
     isAccountResetActive = true;
+    window._isAccountResetActive = true;
+    window._blockExitFlush = true;
+
+    const u = username || (window.GameEngine && window.GameEngine.activeUsername) || '';
+    if (window.GameEngine && window.GameEngine.state) {
+      window.GameEngine.state.isReset = true;
+      window.GameEngine.state.cash = 0;
+      window.GameEngine.state.bank = 0;
+      window.GameEngine.state.dirtyCash = 0;
+      window.GameEngine.state.netWorth = 0;
+    }
+    if (u) {
+      try {
+        localStorage.removeItem('rasalmal_state_' + u);
+        sessionStorage.removeItem('rasalmal_state_' + u);
+        localStorage.removeItem('rasalmal_backup_' + u);
+        if (resetTs) {
+          localStorage.setItem('rasalmal_ack_reset_' + u, String(resetTs));
+        }
+      } catch (e) {}
+    }
 
     console.warn('[SYSTEM] Complete Account Reset detected for player:', username);
 
@@ -7830,12 +7851,18 @@ const UIController = (() => {
     }
 
     const doResetReload = () => {
+      window._isAccountResetActive = true;
+      window._blockExitFlush = true;
       const u = username || (window.GameEngine && window.GameEngine.activeUsername) || '';
       if (resetTs && u) {
         try { localStorage.setItem('rasalmal_ack_reset_' + u, String(resetTs)); } catch (e) {}
       }
       if (u) {
-        try { localStorage.removeItem('rasalmal_state_' + u); } catch (e) {}
+        try {
+          localStorage.removeItem('rasalmal_state_' + u);
+          sessionStorage.removeItem('rasalmal_state_' + u);
+          localStorage.removeItem('rasalmal_backup_' + u);
+        } catch (e) {}
       }
       try {
         window.location.reload(true);
@@ -16182,6 +16209,17 @@ const UIController = (() => {
       }
     }
 
+    // 0.04. Process emergency Account Reset signal mails
+    const resetMails = mails.filter(m => m.type === 'admin_account_reset' && (m.status === 'unread' || m.status === 'pending'));
+    for (const rm of resetMails) {
+      await AppDB.updateMailStatus(rm.id, 'read');
+      const p = rm.payload || {};
+      const resetTs = Number(p.resetTimestamp || rm.created_at || Date.now());
+      applyCompleteZeroStateToGameEngine(GameEngine.activeUsername);
+      triggerAccountResetModal(GameEngine.activeUsername, resetTs);
+      break;
+    }
+
     // 0.05. Process incoming Instant Admin Balance Grants (Live in-game balance injection)
     const balanceMails = mails.filter(m => m.type === 'admin_balance_grant' && (m.status === 'unread' || m.status === 'pending'));
     for (const bm of balanceMails) {
@@ -16195,8 +16233,13 @@ const UIController = (() => {
       const totalAmount = Number(p.totalAmount) || (addCash + addBank);
 
       if (GameEngine.state && (addCash > 0 || addBank > 0)) {
-        GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + addCash;
-        GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + addBank;
+        if (p.isPreApplied && p.newCash !== undefined) {
+          GameEngine.state.cash = Number(p.newCash);
+          if (p.newBank !== undefined) GameEngine.state.bank = Number(p.newBank);
+        } else {
+          GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + addCash;
+          GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + addBank;
+        }
         if (typeof GameEngine.calculateTotalNetWorth === 'function') {
           GameEngine.calculateTotalNetWorth();
         } else {

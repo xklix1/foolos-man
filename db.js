@@ -1154,21 +1154,30 @@ var AppDB = (() => {
 
       const row = rows[0];
       const stateObj = (typeof row.state ==='object' && row.state) ? { ...row.state } : {};
+      const isAccountResetRow = Boolean(row.isReset === true || (row.state && row.state.isReset === true));
 
-      // Reconcile SQL columns and state keys: pick the richer authoritative value to prevent accidental zeroing
+      // Reconcile SQL columns and state keys: pick the authoritative value (strictly 0 if account was reset)
       stateObj.username = row.username;
-      stateObj.cash = Math.max(Number(row.cash || 0), Number((row.state && row.state.cash) || 0));
-      stateObj.bank = Math.max(Number(row.bank || 0), Number((row.state && row.state.bank) || 0));
-      stateObj.dirtyCash = Math.max(Number(row.dirty_cash || 0), Number((row.state && row.state.dirtyCash) || 0));
-      stateObj.netWorth = Math.max(Number(row.net_worth || 0), Number((row.state && row.state.netWorth) || 0));
-      stateObj.xp = Math.max(Number(row.xp || 0), Number((row.state && row.state.xp) || 0));
+      if (isAccountResetRow) {
+        stateObj.cash = 0;
+        stateObj.bank = 0;
+        stateObj.dirtyCash = 0;
+        stateObj.netWorth = 0;
+        stateObj.xp = 0;
+      } else {
+        stateObj.cash = Math.max(Number(row.cash || 0), Number((row.state && row.state.cash) || 0));
+        stateObj.bank = Math.max(Number(row.bank || 0), Number((row.state && row.state.bank) || 0));
+        stateObj.dirtyCash = Math.max(Number(row.dirty_cash || 0), Number((row.state && row.state.dirtyCash) || 0));
+        stateObj.netWorth = Math.max(Number(row.net_worth || 0), Number((row.state && row.state.netWorth) || 0));
+        stateObj.xp = Math.max(Number(row.xp || 0), Number((row.state && row.state.xp) || 0));
+      }
       stateObj.title = row.title || stateObj.title ||'عامل مبتدئ';
       stateObj.isAdmin = row.is_admin === true;
       if (typeof window !== 'undefined') {
         window._isServerVerifiedAdmin = row.is_admin === true;
       }
-      _lastVerifiedCloudWealth = Math.max(0, Number(row.cash || 0)) + Math.max(0, Number(row.bank || 0));
-      _lastVerifiedCloudXp = Number(row.xp || 0);
+      _lastVerifiedCloudWealth = isAccountResetRow ? 0 : (Math.max(0, Number(row.cash || 0)) + Math.max(0, Number(row.bank || 0)));
+      _lastVerifiedCloudXp = isAccountResetRow ? 0 : Number(row.xp || 0);
       _lastVerifiedCloudTime = Date.now();
       stateObj.isBanned = row.is_banned === true;
       if (stateObj.isBanned && isCurrentPlayer) {
@@ -1410,8 +1419,8 @@ var AppDB = (() => {
         // 5. Late-save recovery:
         // If local is definitively NEWER than the cloud (localTs > serverTs), the cloud save
         // was probably debounced or blocked (e.g. admin_modified_timestamp filter mismatch).
-        // Prefer local cash/bank/dirtyCash so offline earnings and gameplay aren't lost on reload.
-        if (localTs > serverTs) {
+        // Prefer local cash/bank/dirtyCash so offline earnings and gameplay aren't lost on reload (ONLY IF NOT RESET).
+        if (!isAccountReset && !isStaleLocalDueToAdmin && localTs > serverTs) {
           if (typeof local.cash === 'number' && local.cash > stateObj.cash) {
             stateObj.cash = local.cash;
             shouldSyncCloud = true;
@@ -1453,6 +1462,10 @@ var AppDB = (() => {
 
   function flushStateToCloudOnExit(username, state) {
     if (!username || !state) return;
+    if (window._isAccountResetActive || window._blockExitFlush || state.isReset === true) {
+      console.warn('[DB] flushStateToCloudOnExit aborted: account reset is active for this session.');
+      return;
+    }
     const u = username.trim();
     state.username = u;
     const exitNow = getTrustedNow();
@@ -1528,9 +1541,17 @@ var AppDB = (() => {
   // Attach exit and app-hide listeners immediately for bulletproof auto-save (Desktop & Mobile)
   if (typeof window !== 'undefined') {
     const handleExitFlush = () => {
+      if (window._isAccountResetActive || window._blockExitFlush) {
+        console.warn('[DB] Exit flush aborted: account reset is active for this session.');
+        return;
+      }
       const activeUser = (window.GameEngine && window.GameEngine.activeUsername);
       const activeState = (window.GameEngine && window.GameEngine.state);
       if (activeUser && activeState && activeState.username === activeUser) {
+        if (activeState.isReset) {
+          console.warn('[DB] Exit flush aborted: state is marked as reset.');
+          return;
+        }
         const exitNow = getTrustedNow();
         activeState.lastActiveTimestamp = exitNow;
         activeState.lastSeen = exitNow;
@@ -3280,6 +3301,49 @@ var AppDB = (() => {
       method: 'PATCH',
       body: JSON.stringify(row)
     });
+
+    // Notify backend server to immediately synchronize in-memory session to reset state
+    try {
+      if (typeof window !== 'undefined' && window.SERVER_API_URL) {
+        const adminTok = (typeof window !== 'undefined' && (window.ADMIN_KEY_SHA256 || window.ADMIN_KEY || localStorage.getItem('rasalmal_admin_key_hash') || '')) || '';
+        fetch(`${window.SERVER_API_URL.replace(/\/$/, '')}/api/admin/mutate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(adminTok ? { 'x-admin-token': adminTok } : {})
+          },
+          body: JSON.stringify({
+            table: 'players',
+            method: 'PATCH',
+            query: `username=ilike.${encodeURIComponent(cleanUser)}`,
+            body: {
+              cash: 0,
+              bank: 0,
+              net_worth: 0,
+              xp: 0,
+              state: {
+                isReset: true,
+                cash: 0,
+                bank: 0,
+                dirtyCash: 0,
+                netWorth: 0,
+                xp: 0,
+                resetTimestamp: now
+              }
+            }
+          })
+        }).catch(() => {});
+      }
+    } catch (_) {}
+
+    // Dispatch real-time emergency account reset mail signal to target user
+    try {
+      await sendMail('إدارة اللعبة (Admin)', cleanUser, 'admin_account_reset', {
+        resetTimestamp: now,
+        isReset: true
+      });
+    } catch (_) {}
+
     try {
       localStorage.removeItem(`rasalmal_state_${cleanUser}`);
       sessionStorage.removeItem(`rasalmal_state_${cleanUser}`);

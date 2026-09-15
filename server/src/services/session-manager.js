@@ -72,9 +72,25 @@ class SessionManager {
 
       this.sessions.set(uKey, session);
     } else {
+      // Re-verify against database in case admin reset or modified player state externally
+      try {
+        const dbRow = await dbService.getPlayerByUsername(username);
+        if (dbRow) {
+          const rawState = (typeof dbRow.state === 'object' && dbRow.state) ? dbRow.state : {};
+          const isDbReset = Boolean(dbRow.is_reset === true || dbRow.isReset === true || rawState.isReset === true);
+          const dbAdminTs = Number(dbRow.admin_modified_timestamp || rawState.adminModifiedTimestamp || 0);
+          const sessionAdminTs = Number(session.state.adminModifiedTimestamp || 0);
+
+          if (isDbReset || dbAdminTs > sessionAdminTs) {
+            session.state = sanitizePlayerState(dbRow);
+            session.dirty = false;
+          }
+        }
+      } catch (_) {}
+
       session.lastActivity = Date.now();
       // Execute authoritative offline calculation if requested, even if session was cached in RAM!
-      if (triggerOfflineCatchup) {
+      if (triggerOfflineCatchup && (!session.state || !session.state.isReset)) {
         offlineReport = calculateAuthoritativeOfflineProgress(session.state, Date.now());
         if (offlineReport && offlineReport.applied) {
           session.dirty = true;
@@ -94,7 +110,7 @@ class SessionManager {
     const uKey = username.trim().toLowerCase();
     const session = this.sessions.get(uKey);
     if (session) {
-      if (session.dirty) {
+      if (session.dirty && (!session.state || !session.state.isReset)) {
         await dbService.savePlayerState(session.username, session.state);
       }
       this.sessions.delete(uKey);
@@ -405,7 +421,7 @@ class SessionManager {
   /**
    * Immediately unloads/evicts a session from memory
    */
-  unloadSession(username) {
+  evictSession(username) {
     if (!username) return false;
     return this.sessions.delete(username.trim().toLowerCase());
   }

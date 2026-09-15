@@ -1366,6 +1366,7 @@
             target: target,
             newCash: newCash,
             newBank: newBank,
+            isPreApplied: true,
             timestamp: now
           };
 
@@ -2093,9 +2094,17 @@
         await AppDB.adminResetPlayer(targetUser);
 
         // If active user is the reset user, sync immediately
+        // If active user is the reset user, sync immediately and trigger modal
         if (targetUser === GameEngine.activeUsername) {
+          window._isAccountResetActive = true;
+          window._blockExitFlush = true;
           applyCompleteZeroStateToGameEngine(targetUser);
           renderAll();
+          const nowTs = Date.now();
+          try { localStorage.setItem('rasalmal_ack_reset_' + targetUser, String(nowTs)); } catch (e) {}
+          if (typeof triggerAccountResetModal === 'function') {
+            triggerAccountResetModal(targetUser, nowTs);
+          }
         }
 
         showToast('تصفير الحساب ✅', `تم تصفير حساب اللاعب "${targetUser}" بالكامل من كل شيء بنجاح (0 EGP).`, 'success');
