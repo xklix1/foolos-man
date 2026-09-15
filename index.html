@@ -160,13 +160,7 @@
     </div>
   </div>
 
-  <!-- ==================== CONNECTIVITY STATUS BADGE ==================== -->
-  <!-- Small floating badge showing online/offline + sync state -->
-  <div id="connectivity-badge"
-    class="fixed bottom-20 left-4 z-[40] hidden items-center gap-1.5 bg-slate-900/90 border border-slate-700 rounded-full px-3 py-1.5 text-[10px] backdrop-blur-md shadow-lg transition-all duration-500 pointer-events-none">
-    <span id="conn-dot" class="w-2 h-2 rounded-full bg-slate-500 inline-block"></span>
-    <span id="conn-label" class="text-slate-400 font-medium">...</span>
-  </div>
+
 
   <!-- ==================== EPIC GAME START MENU / TITLE SCREEN ==================== -->
   <div id="start-menu-screen"
@@ -6908,6 +6902,7 @@
 
     function _initConnectivityBadge() {
       const badge = document.getElementById('connectivity-badge');
+      if (!badge) return;
       const dot = document.getElementById('conn-dot');
       const label = document.getElementById('conn-label');
 
