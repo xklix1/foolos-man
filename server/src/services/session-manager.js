@@ -211,16 +211,13 @@ class SessionManager {
     if (clientState.jailTimer !== undefined) s.jailTimer = Number(clientState.jailTimer) || 0;
     if (clientState.totalTaxesPaid !== undefined) s.totalTaxesPaid = Number(clientState.totalTaxesPaid) || 0;
 
-    // Beta Features (Gold currency & Farm - strictly gated to developer account 'Khaled')
+    // Beta Features (Gold currency - strictly gated to developer account 'Khaled')
     if (username.toLowerCase() === 'khaled') {
       s.gold = Math.max(0, Number(s.gold || 0));
-      if (clientState.farm && typeof clientState.farm === 'object') {
-        s.farm = clientState.farm;
-      }
     } else {
       delete s.gold;
-      delete s.farm;
     }
+    delete s.farm;
 
     // Synchronize modules (safeguarded against stale downgrades)
     if (clientState.businesses && typeof clientState.businesses === 'object' && !isClientStale) {

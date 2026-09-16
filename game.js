@@ -1714,40 +1714,8 @@ const GameEngine = (() => {
       }
     }
 
-    // 5.5 Agro Farm Tycoon (المزرعة الاستثمارية)
+    // 5.5 Agro Farm Tycoon (المزرعة الاستثمارية - Disabled for all players)
     let farmTotal = 0;
-    if (playerState.farm && playerState.farm.unlocked && typeof FARM_CONFIG !== 'undefined') {
-      farmTotal += (playerState.farm.maxPlots || 4) * 25000;
-      farmTotal += (playerState.farm.waterLevel || 1) * 40000;
-      farmTotal += (playerState.farm.fertilizerLevel || 1) * 35000;
-      farmTotal += (playerState.farm.workers || 0) * 30000;
-      // Livestock valuation
-      if (playerState.farm.livestock) {
-        farmTotal += (Number(playerState.farm.livestock.cows || 0)) * 25000;
-        farmTotal += (Number(playerState.farm.livestock.chickens || 0)) * 8000;
-        farmTotal += (Number(playerState.farm.livestock.milk || 0)) * 150;
-        farmTotal += (Number(playerState.farm.livestock.eggs || 0)) * 40;
-        farmTotal += (Number(playerState.farm.livestock.compost || 0)) * 80;
-      }
-      // Raw crops inventory
-      if (playerState.farm.inventory && typeof FARM_CROPS !== 'undefined') {
-        Object.keys(playerState.farm.inventory).forEach(cId => {
-          const qty = Number(playerState.farm.inventory[cId] || 0);
-          if (qty > 0 && FARM_CROPS[cId]) {
-            farmTotal += qty * (FARM_CROPS[cId].sellPrice || 10);
-          }
-        });
-      }
-      // Processed food inventory
-      if (playerState.farm.processing && playerState.farm.processing.storage && typeof FARM_RECIPES !== 'undefined') {
-        Object.keys(playerState.farm.processing.storage).forEach(rId => {
-          const qty = Number(playerState.farm.processing.storage[rId] || 0);
-          if (qty > 0 && FARM_RECIPES[rId]) {
-            farmTotal += qty * (FARM_RECIPES[rId].baseValue || 50);
-          }
-        });
-      }
-    }
 
     // 6. Liabilities: Active bank loan liabilities (True Net Worth = Assets - Liabilities)
     let loanDebt = 0;
@@ -6055,156 +6023,17 @@ const GameEngine = (() => {
   // 🌾 AGRO FARM TYCOON (المزرعة الاستثمارية) METHODS
   // ─────────────────────────────────────────────────────────
   function ensureFarmState() {
-    if (!state) return null;
-    const rawUser = String(activeUsername || (state && state.username) || '').trim().toLowerCase();
-    if (rawUser !== 'khaled') {
+    if (state && state.farm) {
       delete state.farm;
-      return null;
     }
-    if (!state.farm || typeof state.farm !== 'object') {
-      state.farm = {
-        unlocked: false,
-        landLevel: 1,
-        maxPlots: 4,
-        waterLevel: 1,
-        fertilizerLevel: 1,
-        workers: 0,
-        plots: [null, null, null, null],
-        inventory: {},
-        stats: { totalHarvested: 0, totalRevenue: 0 },
-        processing: {
-          storage: { flour_bread: 0, tomato_paste: 0, strawberry_jam: 0, premium_coffee: 0, stuffed_dates: 0, saffron_essence: 0 },
-          stats: { totalProcessed: 0, totalRevenue: 0 }
-        },
-        livestock: {
-          cows: 0,
-          chickens: 0,
-          milk: 0,
-          eggs: 0,
-          compost: 0,
-          lastProduceAt: getTrustedNow(),
-          stats: { totalMilk: 0, totalEggs: 0, totalRevenue: 0 }
-        },
-        contracts: {
-          reputation: 0,
-          completedCount: 0,
-          totalBonusEarned: 0,
-          active: []
-        }
-      };
-    }
-    const f = state.farm;
-    if (typeof f.landLevel !== 'number' || f.landLevel < 1) f.landLevel = 1;
-    if (typeof f.maxPlots !== 'number' || f.maxPlots < 4) f.maxPlots = 4;
-    if (typeof f.waterLevel !== 'number' || f.waterLevel < 1) f.waterLevel = 1;
-    if (typeof f.fertilizerLevel !== 'number' || f.fertilizerLevel < 1) f.fertilizerLevel = 1;
-    if (typeof f.workers !== 'number' || f.workers < 0) f.workers = 0;
-    if (!Array.isArray(f.plots)) f.plots = [];
-    while (f.plots.length < f.maxPlots) f.plots.push(null);
-    if (f.plots.length > f.maxPlots) f.plots = f.plots.slice(0, f.maxPlots);
-    if (!f.inventory || typeof f.inventory !== 'object') f.inventory = {};
-    if (!f.stats || typeof f.stats !== 'object') f.stats = { totalHarvested: 0, totalRevenue: 0 };
-
-    if (!f.processing || typeof f.processing !== 'object') {
-      f.processing = {
-        storage: { flour_bread: 0, tomato_paste: 0, strawberry_jam: 0, premium_coffee: 0, stuffed_dates: 0, saffron_essence: 0 },
-        stats: { totalProcessed: 0, totalRevenue: 0 }
-      };
-    }
-    if (!f.processing.storage || typeof f.processing.storage !== 'object') f.processing.storage = {};
-    if (!f.processing.stats) f.processing.stats = { totalProcessed: 0, totalRevenue: 0 };
-
-    if (!f.livestock || typeof f.livestock !== 'object') {
-      f.livestock = {
-        cows: 0,
-        chickens: 0,
-        milk: 0,
-        eggs: 0,
-        compost: 0,
-        lastProduceAt: getTrustedNow(),
-        stats: { totalMilk: 0, totalEggs: 0, totalRevenue: 0 }
-      };
-    }
-    if (!f.livestock.stats) f.livestock.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
-
-    if (!f.contracts || typeof f.contracts !== 'object') {
-      f.contracts = {
-        reputation: 0,
-        completedCount: 0,
-        totalBonusEarned: 0,
-        active: []
-      };
-    }
-    if (!Array.isArray(f.contracts.active)) f.contracts.active = [];
-
-    return f;
+    return null;
   }
-
   function getFarmState() {
-    const f = ensureFarmState();
-    if (!f) return null;
-    const now = getTrustedNow();
-
-    if (f.unlocked) {
-      ensureFarmContracts();
-    }
-
-    const plotsInfo = (f.plots || []).map((plot, idx) => {
-      if (!plot) return null;
-      const remainingMs = Math.max(0, (plot.readyAt || 0) - now);
-      const isReady = remainingMs <= 0;
-      const progress = plot.durationMs > 0 ? Math.min(100, Math.max(0, Math.round(((plot.durationMs - remainingMs) / plot.durationMs) * 100))) : 100;
-      return {
-        ...plot,
-        index: idx,
-        isReady,
-        remainingMs,
-        progress,
-        crop: FARM_CROPS[plot.cropId] || null
-      };
-    });
-
-    return {
-      farm: f,
-      plots: plotsInfo,
-      config: FARM_CONFIG,
-      crops: FARM_CROPS,
-      recipes: FARM_RECIPES,
-      livestockConfig: FARM_LIVESTOCK_CONFIG,
-      contractClients: FARM_CONTRACT_CLIENTS,
-      contracts: f.contracts.active || [],
-      now
-    };
+    return null;
   }
 
   function unlockFarm() {
-    const rawUser = String(activeUsername || (state && state.username) || '').trim().toLowerCase();
-    if (rawUser !== 'khaled') {
-      throw new Error("المزرعة الاستثمارية ميزة تجريبية خاصة بحساب المطور Khaled فقط حالياً.");
-    }
-    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك استصلاح مزرعة الآن.");
-    const f = ensureFarmState();
-    if (f.unlocked) throw new Error("المزرعة الاستثمارية مفتوحة ومرخصة بالفعل.");
-
-    const cost = FARM_CONFIG.unlockCost;
-    const totalFunds = (state.cash || 0) + (state.bank || 0);
-    if (totalFunds < cost) {
-      throw new Error(`كلفة استصلاح وتملك المزرعة الأولى (4 أحواض زراعية) هي ${cost.toLocaleString()} EGP. رصيدك لا يكفي.`);
-    }
-
-    if ((state.cash || 0) >= cost) {
-      state.cash -= cost;
-    } else {
-      const rem = cost - (state.cash || 0);
-      state.cash = 0;
-      state.bank -= rem;
-    }
-
-    f.unlocked = true;
-    recordPlayerActivity('استصلاح مزرعة استثمارية 🌾', `شراء وتملك المزرعة الاستثمارية الأولى (4 أحواض) بتكلفة ${cost.toLocaleString()} EGP!`, 'business');
-    state.netWorth = calculateNetWorth();
-    forceSaveState(false);
-    return f;
+    throw new Error("المزرعة الاستثمارية معطلة ومغلقة حالياً لجميع اللاعبين.");
   }
 
   function plantFarmCrop(plotIndex, cropId) {

@@ -312,38 +312,36 @@ const UIController = (() => {
   }
 
   function isFarmTesterAccount() {
-    return isKhaledUser();
+    return false; // Farm is completely disabled and hidden for all players
   }
 
   function updateFarmTabVisibility() {
-    const isTester = isKhaledUser();
     const farmTabDesktop = document.getElementById('nav-tab-farm');
     const farmTabMobile = document.getElementById('nav-tab-farm-mobile');
     const farmDashCard = document.getElementById('dash-farm-tester-card');
     const farmPanel = document.getElementById('panel-farm');
 
     if (farmTabDesktop) {
-      farmTabDesktop.classList.toggle('hidden', !isTester);
-      if (isTester) farmTabDesktop.classList.add('flex');
-      else farmTabDesktop.classList.remove('flex');
+      farmTabDesktop.classList.add('hidden');
+      farmTabDesktop.classList.remove('flex');
+      farmTabDesktop.style.setProperty('display', 'none', 'important');
     }
     if (farmTabMobile) {
-      farmTabMobile.classList.toggle('hidden', !isTester);
-      if (isTester) farmTabMobile.classList.add('flex');
-      else farmTabMobile.classList.remove('flex');
+      farmTabMobile.classList.add('hidden');
+      farmTabMobile.classList.remove('flex');
+      farmTabMobile.style.setProperty('display', 'none', 'important');
     }
     if (farmDashCard) {
-      farmDashCard.classList.toggle('hidden', !isTester);
-      if (isTester) farmDashCard.classList.add('flex');
-      else farmDashCard.classList.remove('flex');
+      farmDashCard.classList.add('hidden');
+      farmDashCard.classList.remove('flex');
+      farmDashCard.style.setProperty('display', 'none', 'important');
     }
-    if (!isTester) {
-      if (farmPanel && !farmPanel.classList.contains('hidden')) {
-        farmPanel.classList.add('hidden');
-      }
-      if (activeTab === 'farm' && typeof switchTab === 'function') {
-        switchTab('dashboard');
-      }
+    if (farmPanel) {
+      farmPanel.classList.add('hidden');
+      farmPanel.style.setProperty('display', 'none', 'important');
+    }
+    if (activeTab === 'farm' && typeof switchTab === 'function') {
+      switchTab('dashboard');
     }
   }
 
@@ -2300,7 +2298,7 @@ const UIController = (() => {
   }
 
   function switchTab(tabId) {
-    if (tabId === 'farm' && !isFarmTesterAccount()) {
+    if (tabId === 'farm') {
       tabId = 'dashboard';
     }
     if (activeTab !== tabId) {
@@ -2327,8 +2325,6 @@ const UIController = (() => {
       renderTradePanel();
     } else if (tabId ==='industry') {
       renderIndustryPanel();
-    } else if (tabId ==='farm') {
-      renderFarmPanel();
     } else if (tabId ==='investments') {
       renderInvestmentsTab();
     }
@@ -2587,15 +2583,9 @@ const UIController = (() => {
       else if (activeTab ==='trade') updateTradeShipmentsInDOM();
       else if (activeTab ==='industry') updateIndustryStockInDOM();
       else if (activeTab ==='investments') renderInvestmentsTab();
-      else if (activeTab ==='farm') updateFarmPlotsInDOM();
 
       // Real-time live update for investment cards dynamic status & countdown
       updateInvestmentCardsDOM(state);
-
-      // Real-time live update for farm crop plots countdowns, animated progress bars & badges
-      if (activeTab === 'farm') {
-        updateFarmPlotsInDOM();
-      }
 
       // Real-time live update for cashflow breakdown modal if open
       const cfModal = document.getElementById('cashflow-breakdown-modal');
@@ -2896,11 +2886,7 @@ const UIController = (() => {
         renderIndustryPanel();
         break;
       case'farm':
-        if (isFarmTesterAccount()) {
-          renderFarmPanel();
-        } else {
-          switchTab('dashboard');
-        }
+        switchTab('dashboard');
         break;
       case'investments':
         renderInvestmentsTab();
@@ -19592,8 +19578,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   }
 
   function renderFarmPanel() {
-    if (!isFarmTesterAccount()) return;
-    if (!GameEngine || typeof GameEngine.getFarmState !== 'function') return;
+    return; // Farm completely hidden & disabled for all players
 
     const farmInfo = GameEngine.getFarmState();
     if (!farmInfo || !farmInfo.farm) return;
@@ -20110,14 +20095,9 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
   }
 
-  // ── REAL-TIME LIVE UPDATE FOR FARM PLOTS (Every 1s in-place) ──
+  // ── REAL-TIME LIVE UPDATE FOR FARM PLOTS (Disabled) ──
   function updateFarmPlotsInDOM() {
-    const farmPanel = document.getElementById('panel-farm');
-    if (!farmPanel || farmPanel.classList.contains('hidden')) return;
-
-    if (typeof GameEngine === 'undefined' || typeof GameEngine.getFarmState !== 'function') return;
-    const farmInfo = GameEngine.getFarmState();
-    if (!farmInfo || !farmInfo.farm || !farmInfo.farm.unlocked) return;
+    return;
 
     const plots = farmInfo.plots || [];
     let needsFullReRender = false;
