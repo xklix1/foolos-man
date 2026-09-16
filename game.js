@@ -172,7 +172,7 @@ const GameEngine = (() => {
     COMI: { name:'البنك التجاري الدولي', symbol:'COMI', basePrice: 38, volatility: 0.012, reversion: 0.015, floor: 32, ceiling: 44, dividend: 0.00015, maxShares: 50000, seed: 101 },
     EAST: { name:'الشرقية للدخان', symbol:'EAST', basePrice: 85, volatility: 0.015, reversion: 0.015, floor: 72, ceiling: 98, dividend: 0.00025, maxShares: 30000, seed: 202 },
     ETEL: { name:'المصرية للاتصالات', symbol:'ETEL', basePrice: 48, volatility: 0.014, reversion: 0.015, floor: 40, ceiling: 55, dividend: 0.00018, maxShares: 40000, seed: 303 },
-    FWRY: { name:'فوري للمدفوعات الإلكترونية', symbol:'FWRY', basePrice: 92, volatility: 0.018, reversion: 0.02, floor: 78, ceiling: 106, dividend: 0.00015, maxShares: 25000, seed: 404 },
+    FWRY: { name:'فوري للمدفوعات الإلكترونية', symbol:'FWRY', basePrice: 92, volatility: 0.032, reversion: 0.018, floor: 68, ceiling: 135, dividend: 0.00015, maxShares: 25000, seed: 457 },
     CASH: { name:'صندوق الاستثمار التقني البديل', symbol:'CASH', basePrice: 125, volatility: 0.02, reversion: 0.022, floor: 105, ceiling: 145, dividend: 0.00035, maxShares: 20000, seed: 505 },
     BITC: { name:'مؤشر البيتكوين والأصول الرقمية', symbol:'BITC', basePrice: 310, volatility: 0.035, reversion: 0.025, floor: 240, ceiling: 380, dividend: 0, maxShares: 5000, seed: 606 },
     GOLD: { name:'صندوق سبائك الذهب الخالص', symbol:'GOLD', basePrice: 220, volatility: 0.008, reversion: 0.01, floor: 195, ceiling: 245, dividend: 0.0003, maxShares: 10000, seed: 707 },
@@ -3962,7 +3962,7 @@ const GameEngine = (() => {
     if (!history || history.length === 0) throw new Error("بيانات السوق غير متوفرة بعد. حاول مجدداً.");
     const currentPrice = history[history.length - 1];
     const grossCost = currentPrice * shares;
-    const fee = Math.max(10, Math.floor(grossCost * 0.03)); // 3.0% عمولة سمسرة
+    const fee = Math.max(5, Math.floor(grossCost * 0.01)); // 1.0% عمولة سمسرة (مخفضة لتشجيع التداول)
     const totalCost = grossCost + fee;
 
     if (state.cash < totalCost) {
@@ -4024,7 +4024,7 @@ const GameEngine = (() => {
     if (!history || history.length === 0) throw new Error("بيانات السوق غير متوفرة.");
     const currentPrice = history[history.length - 1];
     const grossReturn = currentPrice * shares;
-    const fee = Math.max(10, Math.floor(grossReturn * 0.03)); // 3.0% عمولة سمسرة
+    const fee = Math.max(5, Math.floor(grossReturn * 0.01)); // 1.0% عمولة سمسرة (مخفضة لتشجيع التداول)
 
     // 2. Daily Realized Profit Cap (1,000,000 EGP per day) & 10% Capital Gains Tax
     const avgPrice = state.stocks[sym].avgPrice || 0;
