@@ -4089,6 +4089,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('بيع أسهم', logDetails, 'stock');
     trackDailyQuestProgress('stock_trade', 1);
+    state._legitimateTransactionBypass = true;
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
     forceSaveState(true);
@@ -5698,6 +5699,7 @@ const GameEngine = (() => {
     state.tradeCompany.activeExports.splice(index, 1);
 
     recordPlayerActivity('تحصيل أرباح تصدير',`تم تحصيل عائد تصدير شحنة"${order.commodityName}" من ${order.buyerName} بمبلغ +${order.totalPayout.toLocaleString()} EGP (صافي ربح: +${order.estProfit.toLocaleString()} EGP).`,'trade');
+    state._legitimateTransactionBypass = true;
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
     forceSaveState(true);

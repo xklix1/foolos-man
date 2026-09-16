@@ -253,7 +253,7 @@ class SessionManager {
       s.inventory = clientState.inventory;
     }
     if (clientState.activityLog && Array.isArray(clientState.activityLog)) {
-      s.activityLog = clientState.activityLog.slice(-50);
+      s.activityLog = clientState.activityLog.slice(0, 50);
     }
     if (clientState.customItems && typeof clientState.customItems === 'object') {
       s.customItems = clientState.customItems;

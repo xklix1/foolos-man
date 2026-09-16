@@ -1683,8 +1683,8 @@ var AppDB = (() => {
     const now = Date.now();
     if (_lastVerifiedCloudWealth !== null && !state._legitimateTransactionBypass) {
       const elapsedSec = Math.max(1, (now - _lastVerifiedCloudTime) / 1000);
-      // Max possible legitimate passive/active earnings is ~15,000/s; min baseline 350,000 per 35s cycle
-      const maxAllowedGain = Math.max(350000, elapsedSec * 15000);
+      // Max possible legitimate passive/active earnings; min baseline 2,500,000 to accommodate legitimate stock & export sales
+      const maxAllowedGain = Math.max(2500000, elapsedSec * 25000);
       const gain = currentLiquid - _lastVerifiedCloudWealth;
       if (gain > maxAllowedGain && !state.adminModifiedTimestamp) {
         console.warn(`[AntiCheat] Abnormal wealth velocity jump: +${gain.toLocaleString()} in ${elapsedSec.toFixed(0)}s. Clamping to legitimate ceiling.`);
