@@ -206,8 +206,8 @@ class SessionManager {
     if (clientState.xp !== undefined) {
       s.xp = isClientStale ? Math.max(Number(s.xp || 0), Number(clientState.xp) || 0) : (Number(clientState.xp) || 0);
     }
-    if (clientState.title) s.title = String(clientState.title);
-    if (clientState.jobId) s.jobId = String(clientState.jobId);
+    if (clientState.title && !isClientStale) s.title = String(clientState.title);
+    if (clientState.jobId && !isClientStale) s.jobId = String(clientState.jobId);
     if (clientState.jailTimer !== undefined) s.jailTimer = Number(clientState.jailTimer) || 0;
     if (clientState.totalTaxesPaid !== undefined) s.totalTaxesPaid = Number(clientState.totalTaxesPaid) || 0;
 
@@ -218,35 +218,35 @@ class SessionManager {
       delete s.gold;
     }
 
-    // Synchronize modules
-    if (clientState.businesses && typeof clientState.businesses === 'object') {
+    // Synchronize modules (safeguarded against stale downgrades)
+    if (clientState.businesses && typeof clientState.businesses === 'object' && !isClientStale) {
       // Don't overwrite existing non-empty businesses with an empty object
       if (Object.keys(clientState.businesses).length > 0 || !s.businesses || Object.keys(s.businesses).length === 0) {
         s.businesses = clientState.businesses;
       }
     }
-    if (clientState.industry && typeof clientState.industry === 'object') {
+    if (clientState.industry && typeof clientState.industry === 'object' && !isClientStale) {
       s.industry = clientState.industry;
     }
-    if (clientState.ownedCars && typeof clientState.ownedCars === 'object') {
+    if (clientState.ownedCars && typeof clientState.ownedCars === 'object' && !isClientStale) {
       s.ownedCars = clientState.ownedCars;
     }
-    if (clientState.activeCar !== undefined) {
+    if (clientState.activeCar !== undefined && !isClientStale) {
       s.activeCar = clientState.activeCar;
     }
-    if (clientState.assets && typeof clientState.assets === 'object') {
+    if (clientState.assets && typeof clientState.assets === 'object' && !isClientStale) {
       s.assets = clientState.assets;
     }
-    if (clientState.stocks && typeof clientState.stocks === 'object') {
+    if (clientState.stocks && typeof clientState.stocks === 'object' && !isClientStale) {
       s.stocks = clientState.stocks;
     }
-    if (clientState.crypto && typeof clientState.crypto === 'object') {
+    if (clientState.crypto && typeof clientState.crypto === 'object' && !isClientStale) {
       s.crypto = clientState.crypto;
     }
-    if (Array.isArray(clientState.investments)) {
+    if (Array.isArray(clientState.investments) && !isClientStale) {
       s.investments = clientState.investments;
     }
-    if (clientState.tradeCompany !== undefined) {
+    if (clientState.tradeCompany !== undefined && !isClientStale) {
       s.tradeCompany = clientState.tradeCompany;
     }
     if (clientState.inventory && typeof clientState.inventory === 'object') {
