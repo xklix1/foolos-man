@@ -4080,30 +4080,36 @@
 
         <!-- SECTION 4: الشحن والتهريب الدولي (Global Smuggling & Cargo Fleets) -->
         <div class="glass-panel p-6 rounded-2xl border border-rose-500/20 bg-slate-900/40 space-y-6 mt-6">
-          <div class="pb-3 border-b border-slate-800">
-            <h4 class="text-md font-bold text-rose-400 flex items-center gap-2">
-              <i class="fa-solid fa-ship"></i>
-              <span>موانئ وأسطول التهريب والشحن الدولي</span>
-            </h4>
-            <p class="text-xs text-slate-400 mt-1">تجهيز أسطول مركبات التهريب الخاصة بك لإرسال شحنات عابرة للقارات بنسب أرباح خيالية وجداول زمنية حقيقية.</p>
+          <div class="pb-3 border-b border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+            <div>
+              <h4 class="text-md font-bold text-rose-400 flex items-center gap-2">
+                <i class="fa-solid fa-ship"></i>
+                <span>موانئ وأسطول التهريب والشحن الدولي</span>
+              </h4>
+              <p class="text-xs text-slate-400 mt-1">تجهيز أسطول مركبات التهريب الخاصة بك لإرسال شحنات دولية استراتيجية بمدد زمنية محسوبة (الحل 2: لا تتم مصادرة المركبة عند المداهمة).</p>
+            </div>
+            <div id="smuggling-daily-quota-badge" class="px-3 py-1.5 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-clock-rotate-left text-rose-400"></i>
+              <span>الرحلات المتاحة اليوم: <strong id="smuggling-quota-val" class="numbers-font text-white font-black">3 / 3</strong></span>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- 1. Fleet Purchasing Panel -->
             <div class="space-y-4 lg:col-span-1 bg-slate-950/50 p-4 rounded-xl border border-slate-900">
-              <h5 class="text-xs font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-anchor text-rose-500"></i> شراء مركبات التهريب</h5>
+              <h5 class="text-xs font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-anchor text-rose-500"></i> شراء مركبات التهريب (الحد: 1 من كل نوع)</h5>
               
               <div class="space-y-3 text-xs text-slate-400">
                 <!-- Speedboat -->
                 <div class="p-3 bg-slate-900 border border-slate-800 rounded-lg flex flex-col justify-between">
                   <div class="flex justify-between items-center mb-1">
                     <span class="text-white font-bold"><i class="fa-solid fa-ship text-rose-400 mr-1.5"></i> قارب تهريب سريع</span>
-                    <span class="numbers-font text-emerald-400">200M جنيه</span>
+                    <span class="numbers-font text-emerald-400">2M جنيه</span>
                   </div>
-                  <p class="text-[10px] text-slate-500 mb-2">سعة: 50 | مثالي للذهب والطرق القصيرة.</p>
+                  <p class="text-[10px] text-slate-500 mb-2">سعة: 50 | رحلات دبي (ساعتان) | متاح فوراً.</p>
                   <div class="flex justify-between items-center">
-                    <span class="text-[10px]">الأسطول الحالي: <strong id="fleet-count-speedboat" class="text-white font-bold">0</strong></span>
-                    <button onclick="window.UI.buySmugglingVehicleAction('speedboat')" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold transition">شراء</button>
+                    <span class="text-[10px]">الأسطول: <strong id="fleet-count-speedboat" class="text-white font-bold">0 / 1</strong></span>
+                    <button id="btn-buy-fleet-speedboat" onclick="window.UI.buySmugglingVehicleAction('speedboat')" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold transition">شراء</button>
                   </div>
                 </div>
 
@@ -4111,12 +4117,12 @@
                 <div class="p-3 bg-slate-900 border border-slate-800 rounded-lg flex flex-col justify-between">
                   <div class="flex justify-between items-center mb-1">
                     <span class="text-white font-bold"><i class="fa-solid fa-plane text-rose-400 mr-1.5"></i> طائرة شحن خفيفة</span>
-                    <span class="numbers-font text-emerald-400">2B جنيه</span>
+                    <span class="numbers-font text-emerald-400">15M جنيه</span>
                   </div>
-                  <p class="text-[10px] text-slate-500 mb-2">سعة: 200 | سريعة وتتجاوز الرادارات الحدودية.</p>
+                  <p class="text-[10px] text-slate-500 mb-2">سعة: 200 | رحلات سويسرا (6 ساعات) | يتطلب ثروة 20M+.</p>
                   <div class="flex justify-between items-center">
-                    <span class="text-[10px]">الأسطول الحالي: <strong id="fleet-count-plane" class="text-white font-bold">0</strong></span>
-                    <button onclick="window.UI.buySmugglingVehicleAction('plane')" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold transition">شراء</button>
+                    <span class="text-[10px]">الأسطول: <strong id="fleet-count-plane" class="text-white font-bold">0 / 1</strong></span>
+                    <button id="btn-buy-fleet-plane" onclick="window.UI.buySmugglingVehicleAction('plane')" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold transition">شراء</button>
                   </div>
                 </div>
 
@@ -4124,12 +4130,12 @@
                 <div class="p-3 bg-slate-900 border border-slate-800 rounded-lg flex flex-col justify-between">
                   <div class="flex justify-between items-center mb-1">
                     <span class="text-white font-bold"><i class="fa-solid fa-ferry text-rose-400 mr-1.5"></i> سفينة حاويات</span>
-                    <span class="numbers-font text-emerald-400">20B جنيه</span>
+                    <span class="numbers-font text-emerald-400">60M جنيه</span>
                   </div>
-                  <p class="text-[10px] text-slate-500 mb-2">سعة: 1000 | لغسيل المليارات وشحن الحاويات الكبرى.</p>
+                  <p class="text-[10px] text-slate-500 mb-2">سعة: 1000 | رحلات الكايمان (12 ساعة) | يتطلب ثروة 100M+.</p>
                   <div class="flex justify-between items-center">
-                    <span class="text-[10px]">الأسطول الحالي: <strong id="fleet-count-ship" class="text-white font-bold">0</strong></span>
-                    <button onclick="window.UI.buySmugglingVehicleAction('ship')" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold transition">شراء</button>
+                    <span class="text-[10px]">الأسطول: <strong id="fleet-count-ship" class="text-white font-bold">0 / 1</strong></span>
+                    <button id="btn-buy-fleet-ship" onclick="window.UI.buySmugglingVehicleAction('ship')" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold transition">شراء</button>
                   </div>
                 </div>
               </div>
@@ -6835,6 +6841,106 @@
     </div>
   </div>
 
+  <!-- MODAL: اختيار نوع الشحنة للتهريب -->
+  <div id="modal-select-cargo"
+    class="fixed inset-0 z-[450] hidden bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div
+      class="glass-panel w-full max-w-md p-5 rounded-2xl border border-rose-500/30 bg-slate-950/95 space-y-4 shadow-2xl relative">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+        <h4 class="text-sm font-black text-white flex items-center gap-2">
+          <i class="fa-solid fa-boxes-stacked text-rose-400"></i>
+          <span>تجهيز واختيار نوع الشحنة</span>
+        </h4>
+        <button id="btn-close-cargo-modal" type="button" class="text-slate-400 hover:text-white transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-300">اختر نوع البضاعة المراد تحميلها. تحدد الحمولة نسبة الخطر ومقدار الأرباح الصافية للرحلة:</p>
+
+      <!-- Cargo Types List -->
+      <div class="space-y-2.5">
+        <!-- Safe: سبائك ذهب ومجوهرات -->
+        <label
+          class="cargo-option-label block p-3 rounded-xl border border-emerald-500/30 bg-emerald-950/20 hover:border-emerald-500 cursor-pointer transition">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <input type="radio" name="cargo-type-choice" value="safe" checked class="text-emerald-500 focus:ring-0">
+              <div>
+                <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                  <i class="fa-solid fa-gem"></i> شحنة آمنة (سبائك ذهب)
+                </span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">سهلة الإخفاء • نسبة خطر أقل (-5%)</span>
+              </div>
+            </div>
+            <span id="cargo-safe-profit" class="numbers-font font-black text-xs text-emerald-400">-- ج.م</span>
+          </div>
+        </label>
+
+        <!-- Medium: أجهزة وإلكترونيات -->
+        <label
+          class="cargo-option-label block p-3 rounded-xl border border-yellow-500/30 bg-yellow-950/20 hover:border-yellow-500 cursor-pointer transition">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <input type="radio" name="cargo-type-choice" value="medium" class="text-yellow-500 focus:ring-0">
+              <div>
+                <span class="text-xs font-bold text-yellow-400 flex items-center gap-1.5">
+                  <i class="fa-solid fa-laptop"></i> شحنة تجارية (إلكترونيات)
+                </span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">مخاطرة قياسية • أرباح جيدة ومتزنة</span>
+              </div>
+            </div>
+            <span id="cargo-medium-profit" class="numbers-font font-black text-xs text-yellow-400">-- ج.م</span>
+          </div>
+        </label>
+
+        <!-- Risky: تحف وآثار نادرة -->
+        <label
+          class="cargo-option-label block p-3 rounded-xl border border-rose-500/30 bg-rose-950/20 hover:border-rose-500 cursor-pointer transition">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <input type="radio" name="cargo-type-choice" value="risky" class="text-rose-500 focus:ring-0">
+              <div>
+                <span class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+                  <i class="fa-solid fa-crown"></i> شحنة خطرة (تحف وآثار)
+                </span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">مخاطرة أعلى (+10%) • أرباح مرتفعة</span>
+              </div>
+            </div>
+            <span id="cargo-risky-profit" class="numbers-font font-black text-xs text-rose-400">-- ج.م</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800 text-[10px] text-slate-400 space-y-1">
+        <div class="flex justify-between">
+          <span>الوجهة والمسار:</span>
+          <strong id="cargo-modal-route-name" class="text-white">--</strong>
+        </div>
+        <div class="flex justify-between">
+          <span>المركبة المستخدمة:</span>
+          <strong id="cargo-modal-vehicle-name" class="text-white">--</strong>
+        </div>
+        <div class="flex justify-between">
+          <span>مدة الرحلة المقدرة:</span>
+          <strong id="cargo-modal-duration" class="text-amber-400 numbers-font">--</strong>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+        <button id="btn-cancel-cargo-modal" type="button"
+          class="py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition">
+          إلغاء
+        </button>
+        <button id="btn-confirm-launch-cargo" type="button"
+          class="py-2.5 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-black rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-lg">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span>إطلاق الشحنة الآن</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- FLOATING NOTIFICATIONS CONTAINER — top center -->
   <div id="toast-container"
     class="fixed top-2 left-1/2 -translate-x-1/2 z-[500] flex flex-col items-center gap-1.5 pointer-events-none w-[90vw] max-w-[340px] sm:max-w-[380px]">
@@ -6844,8 +6950,8 @@
   <!-- Script Initializers -->
   <script src="db.js?v=25.0"></script>
   <script src="server-client-bridge.js?v=25.0"></script>
-  <script src="game.js?v=25.0"></script>
-  <script src="ui.js?v=26.0"></script>
+  <script src="game.js?v=27.0"></script>
+  <script src="ui.js?v=27.0"></script>
   <script src="pwa-manager.js?v=2.5.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────

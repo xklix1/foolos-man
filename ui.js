@@ -17643,54 +17643,133 @@ const UIController = (() => {
     if (!s.smugglingFleet) s.smugglingFleet = { speedboat: 0, plane: 0, ship: 0 };
     if (!s.activeSmugglingJobs) s.activeSmugglingJobs = [];
 
+    if (GameEngine.ensureDailySmugglingTracking) {
+      GameEngine.ensureDailySmugglingTracking();
+    }
+    const dailyUsed = (s.dailySmuggling && s.dailySmuggling.count) || 0;
+    const quotaVal = document.getElementById('smuggling-quota-val');
+    if (quotaVal) {
+      quotaVal.textContent = `${Math.max(0, 3 - dailyUsed)} / 3`;
+    }
+
+    // Speedboat Count & Button state
     const speedCount = document.getElementById('fleet-count-speedboat');
-    if (speedCount) speedCount.textContent = s.smugglingFleet.speedboat || 0;
+    const speedBtn = document.getElementById('btn-buy-fleet-speedboat');
+    const hasSpeedboat = (s.smugglingFleet.speedboat || 0) >= 1;
+    if (speedCount) speedCount.textContent = hasSpeedboat ? '1 / 1' : '0 / 1';
+    if (speedBtn) {
+      if (hasSpeedboat) {
+        speedBtn.disabled = true;
+        speedBtn.textContent = 'مملوكة (1/1)';
+        speedBtn.className = 'px-3 py-1 bg-slate-800 text-slate-500 rounded text-[10px] font-bold cursor-not-allowed border border-slate-700';
+      } else {
+        speedBtn.disabled = false;
+        speedBtn.textContent = 'شراء';
+        speedBtn.className = 'px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold transition';
+      }
+    }
 
+    // Plane Count & Button state
     const planeCount = document.getElementById('fleet-count-plane');
-    if (planeCount) planeCount.textContent = s.smugglingFleet.plane || 0;
+    const planeBtn = document.getElementById('btn-buy-fleet-plane');
+    const hasPlane = (s.smugglingFleet.plane || 0) >= 1;
+    if (planeCount) planeCount.textContent = hasPlane ? '1 / 1' : '0 / 1';
+    if (planeBtn) {
+      if (hasPlane) {
+        planeBtn.disabled = true;
+        planeBtn.textContent = 'مملوكة (1/1)';
+        planeBtn.className = 'px-3 py-1 bg-slate-800 text-slate-500 rounded text-[10px] font-bold cursor-not-allowed border border-slate-700';
+      } else {
+        planeBtn.disabled = false;
+        planeBtn.textContent = 'شراء';
+        planeBtn.className = 'px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold transition';
+      }
+    }
 
+    // Ship Count & Button state
     const shipCount = document.getElementById('fleet-count-ship');
-    if (shipCount) shipCount.textContent = s.smugglingFleet.ship || 0;
+    const shipBtn = document.getElementById('btn-buy-fleet-ship');
+    const hasShip = (s.smugglingFleet.ship || 0) >= 1;
+    if (shipCount) shipCount.textContent = hasShip ? '1 / 1' : '0 / 1';
+    if (shipBtn) {
+      if (hasShip) {
+        shipBtn.disabled = true;
+        shipBtn.textContent = 'مملوكة (1/1)';
+        shipBtn.className = 'px-3 py-1 bg-slate-800 text-slate-500 rounded text-[10px] font-bold cursor-not-allowed border border-slate-700';
+      } else {
+        shipBtn.disabled = false;
+        shipBtn.textContent = 'شراء';
+        shipBtn.className = 'px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold transition';
+      }
+    }
 
     const routesList = document.getElementById('smuggling-routes-list');
     if (routesList) {
-      let routesHtml ='';
+      let routesHtml = '';
+      const hasActiveJob = s.activeSmugglingJobs && s.activeSmugglingJobs.length >= 1;
+      const isDailyExhausted = dailyUsed >= 3;
+
       Object.keys(GameEngine.SMUGGLING_ROUTES).forEach(routeId => {
         const route = GameEngine.SMUGGLING_ROUTES[routeId];
+        const isLocked = route.minNetWorth && (s.netWorth || 0) < route.minNetWorth;
+
         const vehicleButtons = route.requiredVehicles.map(vType => {
           const vDef = GameEngine.SMUGGLING_VEHICLES[vType];
-          const hasV = s.smugglingFleet[vType] > 0;
-          return`
+          const hasV = (s.smugglingFleet[vType] || 0) > 0;
+          const canLaunch = hasV && !hasActiveJob && !isDailyExhausted && !isLocked;
+
+          let btnTitle = 'تجهيز واختيار نوع الشحنة';
+          if (!hasV) btnTitle = 'يجب شراء المركبة أولاً';
+          else if (hasActiveJob) btnTitle = 'يوجد شحنة نشطة بالفعل (الحد: شحنة واحدة)';
+          else if (isDailyExhausted) btnTitle = 'استنفدت الحد اليومي (3/3)';
+          else if (isLocked) btnTitle = `يتطلب ثروة ${formatCompactNumber(route.minNetWorth)} EGP`;
+
+          return `
             <button onclick="window.UI.startSmugglingJobAction('${routeId}','${vType}')" 
-                    ${!hasV ?'disabled' :''} 
-                    class="px-2 py-1 text-[9px] rounded font-bold transition ${hasV ?'bg-rose-700/30 hover:bg-rose-600 text-rose-300 border border-rose-500/20' :'bg-slate-900 text-slate-600 cursor-not-allowed border border-slate-800'}">
-              تهريب عبر: ${vDef.name.split('')[0]}
+                    ${!canLaunch ? 'disabled' : ''} 
+                    title="${btnTitle}"
+                    class="px-2.5 py-1.5 text-[10px] rounded-lg font-black transition ${canLaunch ? 'bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white shadow cursor-pointer' : 'bg-slate-900 text-slate-600 cursor-not-allowed border border-slate-800'}">
+              <i class="fa-solid fa-boxes-packing mr-1"></i> تجهيز عبر: ${vDef.name.split(' ')[0]}
             </button>`;
         }).join('');
 
-        routesHtml +=`
-          <div class="p-3.5 bg-slate-950 border border-slate-800 rounded-xl hover:border-slate-700 transition flex flex-col justify-between text-right">
+        const hoursDuration = Math.round((route.durationTicks || 7200) / 3600);
+        const baseCash = route.baseYieldCash || route.yieldCash || 90000;
+        const minCash = Math.floor(baseCash * 0.7778);
+        const maxCash = Math.floor(baseCash * 1.4445);
+        const baseRisk = route.baseRiskPct || route.riskPct || 18;
+
+        routesHtml += `
+          <div class="p-4 bg-slate-950 border ${isLocked ? 'border-slate-900 opacity-60' : 'border-slate-800 hover:border-slate-700'} rounded-2xl transition flex flex-col justify-between text-right relative overflow-hidden">
+            ${isLocked ? `
+              <div class="absolute top-2 left-2 px-2 py-0.5 bg-rose-950/80 border border-rose-500/40 text-rose-300 rounded-lg text-[9px] font-bold flex items-center gap-1">
+                <i class="fa-solid fa-lock"></i> يتطلب ثروة ${formatCompactNumber(route.minNetWorth)}
+              </div>` : ''}
+
             <div>
-              <h6 class="text-xs font-black text-white">${route.name}</h6>
+              <h6 class="text-xs font-black text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-route text-rose-400"></i>
+                <span>${route.name}</span>
+              </h6>
               <p class="text-[10px] text-slate-500 mt-1 leading-relaxed">${route.desc}</p>
               
-              <div class="grid grid-cols-3 gap-1 mt-3 bg-slate-900 p-2 rounded-lg border border-slate-950 text-[9px] text-right">
+              <div class="grid grid-cols-3 gap-1.5 mt-3 bg-slate-900 p-2.5 rounded-xl border border-slate-950 text-[9px] text-right">
                 <div>
-                  <span class="text-slate-600 block">المدة:</span>
-                  <span class="text-white font-bold">${route.durationTicks}ث</span>
+                  <span class="text-slate-500 block">المدة:</span>
+                  <span class="text-amber-400 font-bold numbers-font">${hoursDuration} ساعة</span>
                 </div>
                 <div>
-                  <span class="text-slate-600 block">الأرباح:</span>
-                  <span class="text-emerald-400 font-bold numbers-font">${(route.yieldCash / 1000000000).toFixed(1)}B</span>
+                  <span class="text-slate-500 block">أرباح الكاش:</span>
+                  <span class="text-emerald-400 font-bold numbers-font">${formatCompactNumber(minCash)} - ${formatCompactNumber(maxCash)}</span>
                 </div>
                 <div>
-                  <span class="text-slate-600 block">الخطر:</span>
-                  <span class="text-rose-400 font-black">${route.riskPct}%</span>
+                  <span class="text-slate-500 block">الخطر:</span>
+                  <span class="text-rose-400 font-black numbers-font">${baseRisk - 5}% - ${baseRisk + 10}%</span>
                 </div>
               </div>
             </div>
             
-            <div class="mt-3 border-t border-slate-900 pt-2 flex flex-wrap gap-1.5 justify-end">
+            <div class="mt-3 border-t border-slate-900 pt-2.5 flex flex-wrap gap-1.5 justify-end">
               ${vehicleButtons}
             </div>
           </div>`;
@@ -17708,11 +17787,11 @@ const UIController = (() => {
     if (!activeJobsContainer) return;
 
     if (!s.activeSmugglingJobs || s.activeSmugglingJobs.length === 0) {
-      activeJobsContainer.innerHTML =`<div class="text-center text-slate-600 text-xs py-4">لا توجد عمليات شحن نشطة حالياً.</div>`;
+      activeJobsContainer.innerHTML = `<div class="text-center text-slate-600 text-xs py-4">لا توجد عمليات شحن نشطة حالياً.</div>`;
       return;
     }
 
-    let jobsHtml ='';
+    let jobsHtml = '';
     const now = Date.now();
     const isKhaled = isKhaledUser();
 
@@ -17721,6 +17800,7 @@ const UIController = (() => {
       const vehicle = GameEngine.SMUGGLING_VEHICLES[job.vehicleType];
       if (!route || !vehicle) return;
 
+      const cargo = (GameEngine.SMUGGLING_CARGO_TYPES && job.cargoType && GameEngine.SMUGGLING_CARGO_TYPES[job.cargoType]) || (GameEngine.SMUGGLING_CARGO_TYPES && GameEngine.SMUGGLING_CARGO_TYPES.medium) || { name: 'شحنة تجارية' };
       const remainingMs = Math.max(0, job.endTime - now);
       const remainingSec = Math.ceil(remainingMs / 1000);
       const totalSec = route.durationTicks || 1;
@@ -17728,18 +17808,27 @@ const UIController = (() => {
       const goldCost = Math.max(1, Math.ceil(remainingMs / 60000));
       const targetJobKey = String(job.id !== undefined ? job.id : idx);
 
-      jobsHtml +=`
-        <div class="p-3 bg-slate-950 border border-slate-900 rounded-xl space-y-2 text-xs text-right">
+      const hours = Math.floor(remainingSec / 3600);
+      const mins = Math.floor((remainingSec % 3600) / 60);
+      const secs = remainingSec % 60;
+      let timeFormatted = '';
+      if (hours > 0) timeFormatted = `${hours}س ${mins}د ${secs}ث`;
+      else if (mins > 0) timeFormatted = `${mins}د ${secs}ث`;
+      else timeFormatted = `${secs}ث`;
+
+      jobsHtml += `
+        <div class="p-3.5 bg-slate-950 border border-slate-900 rounded-xl space-y-2 text-xs text-right">
           <div class="flex justify-between items-center text-[10px]">
-            <span class="text-white font-bold flex items-center gap-1">
+            <span class="text-white font-bold flex items-center gap-1.5">
               <i class="fa-solid fa-ship text-rose-500 animate-pulse"></i>
               <span>${route.name}</span>
+              <span class="px-2 py-0.5 bg-slate-900 border border-slate-800 text-amber-400 rounded-md text-[9px] font-bold">${cargo.name}</span>
             </span>
             <span class="text-slate-400 font-bold">عبر: ${vehicle.name}</span>
           </div>
 
           <div class="flex justify-between items-center text-[10px] text-slate-500">
-            <span>متبقي: <strong class="text-amber-400 numbers-font">${remainingSec}ث</strong></span>
+            <span>الوقت المتبقي: <strong class="text-amber-400 numbers-font">${timeFormatted}</strong></span>
             <span>التقدم: <strong class="text-white numbers-font">${progressPct.toFixed(0)}%</strong></span>
           </div>
 
@@ -17748,7 +17837,7 @@ const UIController = (() => {
           </div>
 
           ${isKhaled && remainingMs > 0 ? `
-          <div class="flex justify-between items-center pt-1 border-t border-slate-900/80 mt-1">
+          <div class="flex justify-between items-center pt-1.5 border-t border-slate-900/80 mt-1">
             <span class="text-[9px] text-amber-400/80 font-bold flex items-center gap-1">
               <i class="fa-solid fa-coins text-amber-400"></i> تسريع فوري (Beta)
             </span>
@@ -17773,30 +17862,94 @@ const UIController = (() => {
     }
   }
 
-  async function buySmugglingVehicleAction(vehicleId) {
-    try {
-      const v = GameEngine.SMUGGLING_VEHICLES[vehicleId];
-      if (!confirm(`هل أنت متأكد من شراء ${v.name} بمبلغ ${v.cost.toLocaleString()} EGP؟`)) return;
-      await GameEngine.buySmugglingVehicle(vehicleId);
-      showToast('مركبة جديدة بالأسطول ️',`تم شراء ${v.name} بنجاح وإضافتها لأسطول التهريب.`,'success');
-      playMenuSound('success');
-      renderAll();
-    } catch (err) {
-      showToast('فشل الشراء', err.message,'error');
+  // Smuggling Cargo Selection Modal State
+  let pendingSmuggleRoute = null;
+  let pendingSmuggleVehicle = null;
+
+  function openCargoSelectionModal(routeId, vehicleType) {
+    const route = GameEngine.SMUGGLING_ROUTES[routeId];
+    const vDef = GameEngine.SMUGGLING_VEHICLES[vehicleType];
+    if (!route || !vDef) return;
+
+    pendingSmuggleRoute = routeId;
+    pendingSmuggleVehicle = vehicleType;
+
+    const modal = document.getElementById('modal-select-cargo');
+    if (!modal) return;
+
+    const routeNameEl = document.getElementById('cargo-modal-route-name');
+    const vNameEl = document.getElementById('cargo-modal-vehicle-name');
+    const durEl = document.getElementById('cargo-modal-duration');
+
+    if (routeNameEl) routeNameEl.textContent = route.name;
+    if (vNameEl) vNameEl.textContent = vDef.name;
+    if (durEl) {
+      const hours = Math.round(route.durationTicks / 3600);
+      durEl.textContent = `${hours} ساعة (${route.durationTicks / 60} دقيقة)`;
+    }
+
+    const baseCash = route.baseYieldCash || route.yieldCash || 90000;
+    const safeProf = document.getElementById('cargo-safe-profit');
+    const medProf = document.getElementById('cargo-medium-profit');
+    const riskProf = document.getElementById('cargo-risky-profit');
+
+    if (safeProf) safeProf.textContent = `+${formatFullCurrency(Math.floor(baseCash * 0.7778))}`;
+    if (medProf) medProf.textContent = `+${formatFullCurrency(baseCash)}`;
+    if (riskProf) riskProf.textContent = `+${formatFullCurrency(Math.floor(baseCash * 1.4445))}`;
+
+    const defaultRadio = modal.querySelector('input[name="cargo-type-choice"][value="medium"]');
+    if (defaultRadio) defaultRadio.checked = true;
+
+    modal.classList.remove('hidden');
+
+    if (!modal._bound) {
+      modal._bound = true;
+      const closeBtn = document.getElementById('btn-close-cargo-modal');
+      const cancelBtn = document.getElementById('btn-cancel-cargo-modal');
+      const confirmBtn = document.getElementById('btn-confirm-launch-cargo');
+
+      if (closeBtn) closeBtn.onclick = () => modal.classList.add('hidden');
+      if (cancelBtn) cancelBtn.onclick = () => modal.classList.add('hidden');
+
+      if (confirmBtn) {
+        confirmBtn.onclick = async () => {
+          const checked = modal.querySelector('input[name="cargo-type-choice"]:checked');
+          const chosenCargo = checked ? checked.value : 'medium';
+          modal.classList.add('hidden');
+          await executeStartSmugglingJob(pendingSmuggleRoute, pendingSmuggleVehicle, chosenCargo);
+        };
+      }
     }
   }
 
-  async function startSmugglingJobAction(routeId, vehicleType) {
+  async function executeStartSmugglingJob(routeId, vehicleType, cargoType) {
     try {
-      const route = GameEngine.SMUGGLING_ROUTES[routeId];
-      if (!confirm(`هل أنت متأكد من بدء عملية شحن"${route.name}" بتكلفة تجميد مركبة شحن؟`)) return;
-      await GameEngine.startSmugglingJob(routeId, vehicleType);
-      showToast('تم انطلاق الشحنة ️','انطلقت المركبة وتظهر الآن في شريط التقدم النشط.','success');
+      await GameEngine.startSmugglingJob(routeId, vehicleType, cargoType);
+      showToast('تم انطلاق الشحنة 🛳️', 'انطلقت المركبة وبدأت رحلة التهريب المتوازنة.', 'success');
       playMenuSound('success');
+      renderSmugglingSection();
       renderAll();
     } catch (err) {
-      showToast('خطأ انطلاق الشحنة', err.message,'error');
+      showToast('خطأ انطلاق الشحنة', err.message, 'error');
     }
+  }
+
+  async function buySmugglingVehicleAction(vehicleId) {
+    try {
+      const v = GameEngine.SMUGGLING_VEHICLES[vehicleId];
+      if (!confirm(`هل أنت متأكد من شراء ${v.name} بمبلغ ${v.cost.toLocaleString()} EGP؟ (الحد الأقصى: مركبة واحدة)`)) return;
+      await GameEngine.buySmugglingVehicle(vehicleId);
+      showToast('مركبة جديدة بالأسطول 🛳️', `تم شراء ${v.name} بنجاح وإضافتها لأسطول التهريب.`, 'success');
+      playMenuSound('success');
+      renderSmugglingSection();
+      renderAll();
+    } catch (err) {
+      showToast('فشل الشراء', err.message, 'error');
+    }
+  }
+
+  function startSmugglingJobAction(routeId, vehicleType) {
+    openCargoSelectionModal(routeId, vehicleType);
   }
 
   function switchAssetsSubtab(subtabId) {

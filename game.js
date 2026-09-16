@@ -225,23 +225,47 @@ const GameEngine = (() => {
     speedboat: {
       id:'speedboat',
       name:'قارب سريع مضاد للرادار',
-      cost: 200000000,
+      cost: 2000000,
       capacity: 50,
-      desc:'قارب تهريب سريع وخفيف الحركة. مثالي للممرات المائية القصيرة والذهب.'
+      desc:'قارب تهريب سريع وخفيف الحركة. مثالي للممرات المائية القصيرة.'
     },
     plane: {
       id:'plane',
       name:'طائرة شحن جوي خفيفة ️',
-      cost: 2000000000,
+      cost: 15000000,
       capacity: 200,
-      desc:'طائرة شحن سريعة تتجاوز الحدود البرية لنقل المجوهرات والتحف الثمينة.'
+      desc:'طائرة شحن سريعة تتجاوز الحدود البرية لنقل البضائع الثمينة.'
     },
     ship: {
       id:'ship',
       name:'سفينة حاويات عملاقة',
-      cost: 20000000000,
+      cost: 60000000,
       capacity: 1000,
-      desc:'سفينة شحن تجارية عملاقة قادرة على نقل أطنان من البضائع وغسيل الأموال.'
+      desc:'سفينة شحن تجارية عملاقة قادرة على نقل شحنات ضخمة عابرة للمحيطات.'
+    }
+  };
+
+  const SMUGGLING_CARGO_TYPES = {
+    safe: {
+      id: 'safe',
+      name: 'سبائك ذهب ومجوهرات',
+      desc: 'شحنة خفيفة سهلة الإخفاء، مخاطرة أقل بـ 5% وأرباح متزنة.',
+      riskMod: -5,
+      profitMult: 0.7778
+    },
+    medium: {
+      id: 'medium',
+      name: 'أجهزة وإلكترونيات',
+      desc: 'شحنة تجارية قياسية بمخاطرة معتدلة وأرباح طبيعية.',
+      riskMod: 0,
+      profitMult: 1.0
+    },
+    risky: {
+      id: 'risky',
+      name: 'تحف وآثار نادرة',
+      desc: 'شحنة ثمينة ومطلوبة، مخاطرة أعلى بـ 10% وأرباح كاش مرتفعة.',
+      riskMod: 10,
+      profitMult: 1.4445
     }
   };
 
@@ -249,29 +273,32 @@ const GameEngine = (() => {
     dubai: {
       id:'dubai',
       name:'تهريب مجوهرات وذهب لـ دبي',
-      requiredVehicles: ['speedboat','plane'],
-      durationTicks: 60,
-      yieldCash: 500000000,
-      riskPct: 20,
-      desc:'طريق مائي وجوي سريع لنقل المعادن النفيسة لخزائن دبي.'
+      requiredVehicles: ['speedboat'],
+      durationTicks: 7200, // 2 hours
+      baseYieldCash: 90000,
+      baseRiskPct: 18,
+      minNetWorth: 0,
+      desc:'طريق مائي سريع لنقل المعادن النفيسة لخزائن دبي (ساعتان).'
     },
     switzerland: {
       id:'switzerland',
       name:'تهريب تحف وسندات لـ سويسرا',
-      requiredVehicles: ['plane','ship'],
-      durationTicks: 180,
-      yieldCash: 6000000000,
-      riskPct: 12,
-      desc:'طريق التفافي معقد لنقل السندات المصرفية والأصول الذهبية للبنوك السويسرية.'
+      requiredVehicles: ['plane'],
+      durationTicks: 21600, // 6 hours
+      baseYieldCash: 550000,
+      baseRiskPct: 12,
+      minNetWorth: 20000000,
+      desc:'طريق جوي دولي لنقل السندات المصرفية والأصول الذهبية لسويسرا (6 ساعات).'
     },
     cayman: {
       id:'cayman',
       name:'غسيل ونقل أموال لـ جزر الكايمان',
       requiredVehicles: ['ship'],
-      durationTicks: 400,
-      yieldCash: 80000000000,
-      riskPct: 6,
-      desc:'عملية نقل أموال عملاقة لغسل أرباح الكارتيل عبر البنوك الخارجية المجهولة.'
+      durationTicks: 43200, // 12 hours
+      baseYieldCash: 2500000,
+      baseRiskPct: 8,
+      minNetWorth: 100000000,
+      desc:'عملية شحن بحري كبرى عبر المحيط إلى بنوك جزر الكايمان (12 ساعة).'
     }
   };
 
@@ -2573,30 +2600,31 @@ const GameEngine = (() => {
         if (nowMs >= job.endTime) {
           const route = SMUGGLING_ROUTES[job.routeId];
           if (route) {
-            const isCaptured = (Math.random() * 100) < route.riskPct;
+            const cargo = (SMUGGLING_CARGO_TYPES && job.cargoType && SMUGGLING_CARGO_TYPES[job.cargoType]) || (SMUGGLING_CARGO_TYPES && SMUGGLING_CARGO_TYPES.medium) || { riskMod: 0, profitMult: 1.0, name: 'شحنة تجارية' };
+            const effectiveRisk = Math.max(2, Math.min(95, (route.baseRiskPct !== undefined ? route.baseRiskPct : (route.riskPct || 10)) + (cargo.riskMod || 0)));
+            const effectiveYield = Math.floor((route.baseYieldCash !== undefined ? route.baseYieldCash : (route.yieldCash || 100000)) * (cargo.profitMult || 1.0));
+            const isCaptured = (Math.random() * 100) < effectiveRisk;
+
             if (isCaptured) {
-              if (state.smugglingFleet && state.smugglingFleet[job.vehicleType] > 0) {
-                state.smugglingFleet[job.vehicleType]--;
-              }
-              state.jailTimer = 600; // 10 minutes
-              recordPlayerActivity('تهريب فشل',`مداهمة أمنية لشحنة"${route.name}". تم اعتقالك ومصادرة الـ ${SMUGGLING_VEHICLES[job.vehicleType].name}.`,'dark');
+              // SOLUTION 2: Keep vehicle intact! Do NOT decrement smugglingFleet!
+              state.jailTimer = 900; // 15 minutes jail
+              recordPlayerActivity('تهريب فشل 🚨', `مداهمة أمنية لشحنة (${cargo.name}) المتجهة إلى "${route.name}". تم اعتراض الشحنة ومصادرتها واحتجازك بالسجن 15 دقيقة! (تم الحفاظ على المركبة)`, 'dark');
               forceSaveState(true);
               if (!updates.tipEvent) {
                 updates.tipEvent = {
-                  title:' مداهمة أمنية وسجن!',
-                  message:`تم اعتراض شحنتك المهربة إلى"${route.name}". تم اعتقالك وحبسك لمدة 10 دقائق ومصادرة مركبة الشحن!`,
+                  title: '🚨 مداهمة أمنية وسجن!',
+                  message: `تم اعتراض ومصادرة شحنة (${cargo.name}) المتجهة إلى "${route.name}". تم حبسك 15 دقيقة، ولكن نجت مركبتك من المصادرة!`,
                   gain: 0
                 };
               }
             } else {
-              state.cash += route.yieldCash;
-              state.xp += 800;
-              recordPlayerActivity('تهريب ناجح ️',`وصول شحنة"${route.name}" بسلام! عائد: ${route.yieldCash.toLocaleString()} EGP (+800 XP)`,'dark');
+              state.cash += effectiveYield;
+              recordPlayerActivity('تهريب ناجح 🛳️', `وصول شحنة (${cargo.name}) إلى "${route.name}" بسلام! عائد صافي: ${effectiveYield.toLocaleString()} EGP.`, 'dark');
               if (!updates.tipEvent) {
                 updates.tipEvent = {
-                  title:' شحنة تهريب ناجحة!',
-                  message:`وصلت شحنتك بسلام إلى وجهتها! تم إيداع الأرباح الكاش: +${route.yieldCash.toLocaleString()} EGP (+800 XP)`,
-                  gain: route.yieldCash
+                  title: '🛳️ شحنة تهريب ناجحة!',
+                  message: `وصلت شحنتك (${cargo.name}) بسلام إلى وجهتها! تم إيداع الأرباح الكاش: +${effectiveYield.toLocaleString()} EGP`,
+                  gain: effectiveYield
                 };
               }
             }
@@ -5026,11 +5054,33 @@ const GameEngine = (() => {
     AppDB.savePlayerState(activeUsername, state);
   }
 
-  // --- Smuggling Actions (New V2) ---
+  // --- Smuggling Actions (New V2 Balanced) ---
+  function ensureDailySmugglingTracking() {
+    if (!state) return;
+    const today = getTodayDateString();
+    if (!state.dailySmuggling || state.dailySmuggling.date !== today) {
+      state.dailySmuggling = {
+        date: today,
+        count: 0
+      };
+    }
+  }
+
   function buySmugglingVehicle(vehicleId) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك شراء مركبات الآن.");
     const v = SMUGGLING_VEHICLES[vehicleId];
     if (!v) throw new Error("مركبة غير صالحة.");
+
+    if (!state.smugglingFleet) state.smugglingFleet = { speedboat: 0, plane: 0, ship: 0 };
+    if ((state.smugglingFleet[vehicleId] || 0) >= 1) {
+      throw new Error(`أنت تمتلك بالفعل ${v.name} في أسطولك! الحد الأقصى المسموح به هو مركبة واحدة من كل نوع.`);
+    }
+
+    const currentNetWorth = calculateNetWorth();
+    const routeEntry = Object.values(SMUGGLING_ROUTES).find(r => r.requiredVehicles.includes(vehicleId));
+    if (routeEntry && routeEntry.minNetWorth && currentNetWorth < routeEntry.minNetWorth) {
+      throw new Error(`شراء هذه المركبة يتطلب بلوغ صافي ثروة ${routeEntry.minNetWorth.toLocaleString()} جنيه.`);
+    }
     
     if (state.cash < v.cost && state.bank < v.cost) {
       throw new Error("لا تملك أموالاً كافية لشراء مركبة التهريب هذه.");
@@ -5042,48 +5092,57 @@ const GameEngine = (() => {
       state.bank -= v.cost;
     }
 
-    if (!state.smugglingFleet) state.smugglingFleet = { speedboat: 0, plane: 0, ship: 0 };
-    state.smugglingFleet[vehicleId] = (state.smugglingFleet[vehicleId] || 0) + 1;
+    state.smugglingFleet[vehicleId] = 1;
 
     recordPlayerActivity('شراء مركبة تهريب',`شراء ${v.name} وتضمينها للأسطول بقيمة ${v.cost.toLocaleString()} ج.م.`,'dark');
     state.netWorth = calculateNetWorth();
     AppDB.savePlayerState(activeUsername, state);
   }
 
-  function startSmugglingJob(routeId, vehicleType) {
+  function startSmugglingJob(routeId, vehicleType, cargoType = 'medium') {
     if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك تهريب الشحنات.");
+    
+    // 1. Single Active Shipment rule
+    if (state.activeSmugglingJobs && state.activeSmugglingJobs.length >= 1) {
+      throw new Error("يوجد شحنة تهريب جارية بالفعل! لا يمكنك تسيير أكثر من رحلة واحدة في نفس الوقت.");
+    }
+
+    // 2. Daily Smuggling Limit (Max 3 operations per 24 hours)
+    ensureDailySmugglingTracking();
+    if (state.dailySmuggling.count >= 3) {
+      throw new Error("لقد استنفدت الحد الأقصى لعمليات التهريب اليومية (3 رحلات فقط كل 24 ساعة). يتجدد الترخيص بعد منتصف الليل.");
+    }
+
     const route = SMUGGLING_ROUTES[routeId];
     if (!route) throw new Error("طريق تهريب غير معروف.");
     if (!route.requiredVehicles.includes(vehicleType)) {
       throw new Error("هذه المركبة غير صالحة لهذا الطريق الجمركي.");
     }
 
+    const currentNetWorth = calculateNetWorth();
+    if (route.minNetWorth && currentNetWorth < route.minNetWorth) {
+      throw new Error(`هذا المسار يتطلب بلوغ صافي ثروة ${route.minNetWorth.toLocaleString()} جنيه.`);
+    }
+
     if (!state.smugglingFleet || !state.smugglingFleet[vehicleType] || state.smugglingFleet[vehicleType] <= 0) {
       throw new Error(`لا تملك أي ${SMUGGLING_VEHICLES[vehicleType].name} جاهزة للاستخدام في أسطولك.`);
     }
 
-    let busyVehicles = 0;
-    if (state.activeSmugglingJobs) {
-      state.activeSmugglingJobs.forEach(job => {
-        if (job.vehicleType === vehicleType) busyVehicles++;
-      });
-    }
-
-    if (busyVehicles >= state.smugglingFleet[vehicleType]) {
-      throw new Error(`جميع الـ ${SMUGGLING_VEHICLES[vehicleType].name} في أسطولك مشغولة حالياً بشحنات أخرى.`);
-    }
+    const cargo = (SMUGGLING_CARGO_TYPES && SMUGGLING_CARGO_TYPES[cargoType]) || (SMUGGLING_CARGO_TYPES && SMUGGLING_CARGO_TYPES.medium) || { id: 'medium', name: 'شحنة تجارية' };
 
     const job = {
       id:'smug_' + getTrustedNow() +'_' + Math.floor(Math.random() * 1000),
       routeId: routeId,
       vehicleType: vehicleType,
+      cargoType: cargo.id,
       endTime: getTrustedNow() + (route.durationTicks * 1000)
     };
 
     if (!state.activeSmugglingJobs) state.activeSmugglingJobs = [];
     state.activeSmugglingJobs.push(job);
+    state.dailySmuggling.count = (state.dailySmuggling.count || 0) + 1;
 
-    recordPlayerActivity('بدء تهريب',`شحن شحنة تهريب إلى"${route.name}" عبر ${SMUGGLING_VEHICLES[vehicleType].name}.`,'dark');
+    recordPlayerActivity('بدء تهريب',`شحن شحنة (${cargo.name}) إلى "${route.name}" عبر ${SMUGGLING_VEHICLES[vehicleType].name}.`,'dark');
     AppDB.savePlayerState(activeUsername, state);
   }
 
@@ -7154,6 +7213,8 @@ const GameEngine = (() => {
     CAR_TEMPLATES,
     SMUGGLING_VEHICLES,
     SMUGGLING_ROUTES,
+    SMUGGLING_CARGO_TYPES,
+    ensureDailySmugglingTracking,
     buyCar,
     setActiveCar,
     rentCar,
