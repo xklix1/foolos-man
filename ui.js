@@ -375,6 +375,11 @@ const UIController = (() => {
     try {
       showToast('جاري تسريع المؤقت ⚡', 'يتم التحقق من الخادم وخصم الذهب...', 'info');
 
+      // Ensure state is flushed to server before requesting speed-up
+      if (typeof GameEngine !== 'undefined' && GameEngine.forceSaveState) {
+        try { await GameEngine.forceSaveState(true); } catch (e) {}
+      }
+
       const res = await fetch(`${base}/api/action/speed-up`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -425,9 +430,16 @@ const UIController = (() => {
         }
       }
 
-      // If smuggling was sped up, refresh active jobs DOM
-      if (timerType === 'smuggling' && typeof updateActiveSmugglingJobsInDOM === 'function') {
-        updateActiveSmugglingJobsInDOM();
+      // If smuggling was sped up, mature job immediately and process tick to deliver earnings
+      if (timerType === 'smuggling') {
+        if (typeof GameEngine !== 'undefined' && GameEngine.state && Array.isArray(GameEngine.state.activeSmugglingJobs)) {
+          const sj = GameEngine.state.activeSmugglingJobs.find(j => String(j.id) === String(targetKey)) || GameEngine.state.activeSmugglingJobs[0];
+          if (sj) sj.endTime = Date.now() - 1000;
+          if (typeof GameEngine.processTick === 'function') GameEngine.processTick();
+        }
+        if (typeof updateActiveSmugglingJobsInDOM === 'function') {
+          updateActiveSmugglingJobsInDOM();
+        }
       }
 
       showToast('تم التسريع بنجاح ⚡', `تم إنهاء المؤقت بنجاح وخصم ${data.goldDeducted} 🪙 ذهب.`, 'success');

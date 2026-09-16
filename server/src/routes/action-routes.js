@@ -494,12 +494,20 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
           return reply.code(400).send({ error: 'MISSING_TARGET_KEY', message: 'targetKey (job ID) is required for smuggling.' });
         }
         const jobs = s.activeSmugglingJobs;
-        if (!jobs || typeof jobs !== 'object' || !jobs[targetKey]) {
+        let job = null;
+        if (Array.isArray(jobs)) {
+          job = jobs.find(j => String(j.id) === String(targetKey)) ||
+                (targetKey !== undefined && jobs[Number(targetKey)]) ||
+                (jobs.length === 1 ? jobs[0] : null);
+        } else if (jobs && typeof jobs === 'object') {
+          job = jobs[targetKey];
+        }
+
+        if (!job) {
           return reply.code(404).send({ error: 'JOB_NOT_FOUND', message: `No active smuggling job found with ID: ${targetKey}` });
         }
 
-        const job = jobs[targetKey];
-        const finishTs = Number(job.finishTime || job.expiresAt || job.endTime || 0);
+        const finishTs = Number(job.endTime || job.finishTime || job.expiresAt || 0);
         const now = Date.now();
         remainingMs = finishTs - now;
         if (remainingMs <= 0) {
@@ -518,6 +526,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         }
 
         s.gold = currentGold - cost;
+        job.endTime = now;
         job.finishTime = now;
         job.expiresAt = now;
         job.ready = true;
