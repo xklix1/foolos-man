@@ -4896,11 +4896,32 @@ var AppDB = (() => {
       let currentFeed = [];
       if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.messages)) {
         currentFeed = rows[0].data.messages;
+      } else if (_cachedChatMessages && _cachedChatMessages.length > 0) {
+        // Safe fallback to local cache to NEVER wipe out chat history on transient read failure
+        currentFeed = [..._cachedChatMessages];
+      }
+
+      // Merge and deduplicate by id to prevent message dropping in concurrent race conditions
+      const seenIds = new Set();
+      const mergedFeed = [];
+      currentFeed.forEach(m => {
+        if (m && m.id && !seenIds.has(m.id)) {
+          seenIds.add(m.id);
+          mergedFeed.push(m);
+        }
+      });
+      if (_cachedChatMessages && _cachedChatMessages.length > 0) {
+        _cachedChatMessages.forEach(m => {
+          if (m && m.id && !seenIds.has(m.id)) {
+            seenIds.add(m.id);
+            mergedFeed.push(m);
+          }
+        });
       }
 
       // If sender has glow, backfill their older messages in current feed so everything glows!
       if (msgObj.chatGlow) {
-        currentFeed.forEach(m => {
+        mergedFeed.forEach(m => {
           if (m.sender === msgObj.sender) {
             m.chatGlow = msgObj.chatGlow;
             if (msgObj.isVerified) m.isVerified = true;
@@ -4909,13 +4930,17 @@ var AppDB = (() => {
         });
       }
 
-      currentFeed.push(msgObj);
-      if (currentFeed.length > 50) {
-        currentFeed = currentFeed.slice(currentFeed.length - 50);
+      if (!seenIds.has(msgObj.id)) {
+        mergedFeed.push(msgObj);
       }
 
+      // Strictly ensure chronological ordering by timestamp
+      mergedFeed.sort((a, b) => (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0));
+
+      const finalFeed = mergedFeed.length > 50 ? mergedFeed.slice(mergedFeed.length - 50) : mergedFeed;
+
       const nowTs = Date.now();
-      _cachedChatMessages = currentFeed;
+      _cachedChatMessages = finalFeed;
       _lastChatUpdatedAt = nowTs;
 
       await _api('globals', {
@@ -4923,7 +4948,7 @@ var AppDB = (() => {
         headers: {'Prefer':'resolution=merge-duplicates' },
         body: JSON.stringify({
           id:'chat_feed',
-          data: { messages: currentFeed },
+          data: { messages: finalFeed },
           updated_at: nowTs
         })
       });
@@ -4950,18 +4975,16 @@ var AppDB = (() => {
           if (remoteTs <= _lastChatUpdatedAt) {
             return _cachedChatMessages; // No new messages! Saved 20KB egress!
           }
-          _lastChatUpdatedAt = remoteTs;
+          // IMPORTANT: Do NOT update _lastChatUpdatedAt here! Only update after full payload is successfully received below.
         }
       }
 
       // 2. Fetch messages data only when changed or on initial load
       const rows = await _api("globals?id=eq.chat_feed&select=data,updated_at");
-      if (rows && rows.length > 0) {
+      if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.messages)) {
         _lastChatUpdatedAt = Number(rows[0].updated_at || Date.now());
-        if (rows[0].data && Array.isArray(rows[0].data.messages)) {
-          _cachedChatMessages = rows[0].data.messages;
-          return _cachedChatMessages;
-        }
+        _cachedChatMessages = rows[0].data.messages;
+        return _cachedChatMessages;
       }
       return _cachedChatMessages;
     } catch (e) {
@@ -4978,9 +5001,11 @@ var AppDB = (() => {
     return Boolean(isMainDrawerOpen || isAdminChatOpen);
   }
 
+  let _isChatPolling = false;
   async function _pollChatTick() {
     if (!isNetworkActive()) return; // 100% pause when idle or tab hidden
     if (_chatCallbacks.size === 0) return;
+    if (_isChatPolling) return; // Prevent concurrent overlapping requests
 
     const isDrawerOpen = _isChatDrawerOpen();
     const now = Date.now();
@@ -4990,16 +5015,22 @@ var AppDB = (() => {
       return;
     }
 
+    _isChatPolling = true;
     _lastChatPollTime = now;
     try {
       const prevTs = _lastChatUpdatedAt;
       const msgs = await getChatMessages();
       if (_lastChatUpdatedAt !== prevTs || prevTs === 0) {
-        _chatCallbacks.forEach(cb => {
-          try { cb(msgs); } catch (e) {}
-        });
+        if (msgs && msgs.length > 0) {
+          _chatCallbacks.forEach(cb => {
+            try { cb(msgs); } catch (e) {}
+          });
+        }
       }
-    } catch (e) {}
+    } catch (e) {
+    } finally {
+      _isChatPolling = false;
+    }
   }
 
   function triggerImmediateChatSync() {
@@ -5017,7 +5048,9 @@ var AppDB = (() => {
     if (_cachedChatMessages.length > 0) {
       callback(_cachedChatMessages);
     } else {
-      getChatMessages(true).then(msgs => callback(msgs));
+      getChatMessages(true).then(msgs => {
+        if (msgs && msgs.length > 0) callback(msgs);
+      });
     }
 
     // Ultra-fast live chat polling: 1.5 seconds when drawer open, 25s when closed, 0 when idle/hidden

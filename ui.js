@@ -7342,7 +7342,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
   }
 
-    // Public Chat listener removed to conserve Firebase read/write quota (replaced with Facebook Community)
+    // Ensure Live Chat listener is active and subscribed
+    if (typeof ensureChatListener === 'function') ensureChatListener();
 
     // Smart Cloud Auto-Sync:
     // Debounced, safe background autosync every 45s without server spam
@@ -8145,6 +8146,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (typeof AppDB !=='undefined') {
       if (typeof AppDB.stopListeningToChat ==='function') AppDB.stopListeningToChat();
       if (typeof AppDB.cleanupAllNetworkPolling ==='function') AppDB.cleanupAllNetworkPolling();
+    }
+    if (window._activeChatUnsub) {
+      try { window._activeChatUnsub(); } catch (_) {}
+      window._activeChatUnsub = null;
     }
     window._chatListenerInitialized = false;
     localStorage.removeItem('rasalmal_active_session_user');
@@ -12184,6 +12189,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
 
     updateCurrentChatFrameBadge();
+    ensureChatListener();
 
     if (typeof AppDB !== 'undefined' && typeof AppDB.triggerImmediateChatSync === 'function') {
       AppDB.triggerImmediateChatSync();
@@ -12603,23 +12609,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
 
     // Live Chat automatic subscription
-    if (typeof AppDB.listenToChatMessages ==='function' && !window._chatListenerInitialized) {
-      window._chatListenerInitialized = true;
-      let lastMsgCount = 0;
-      AppDB.listenToChatMessages((msgs) => {
-        renderChatMessages(msgs);
-        if (msgs && msgs.length > lastMsgCount && lastMsgCount > 0) {
-          const chatDrawer = document.getElementById('chat-drawer');
-          const unreadDot = document.getElementById('chat-unread-dot');
-          if (chatDrawer && !chatDrawer.classList.contains('chat-drawer-open') && unreadDot) {
-            unreadDot.classList.remove('hidden');
-            const diff = msgs.length - lastMsgCount;
-            unreadDot.textContent = diff > 9 ?'+9' : String(diff);
-          }
-        }
-        lastMsgCount = msgs ? msgs.length : 0;
-      });
-    }
+    ensureChatListener();
 
     const adminSendMsgBtn = document.getElementById('btn-admin-send-monitoring-msg');
     if (adminSendMsgBtn) {
@@ -13091,17 +13081,224 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
   }
 
+  function ensureChatListener() {
+    if (typeof AppDB === 'undefined' || typeof AppDB.listenToChatMessages !== 'function') return;
+    if (window._activeChatUnsub) return;
+
+    let lastMsgCount = 0;
+    window._activeChatUnsub = AppDB.listenToChatMessages((msgs) => {
+      renderChatMessages(msgs);
+      if (msgs && msgs.length > lastMsgCount && lastMsgCount > 0) {
+        const chatDrawer = document.getElementById('chat-drawer');
+        const unreadDot = document.getElementById('chat-unread-dot');
+        if (chatDrawer && !chatDrawer.classList.contains('chat-drawer-open') && unreadDot) {
+          unreadDot.classList.remove('hidden');
+          const diff = msgs.length - lastMsgCount;
+          unreadDot.textContent = diff > 9 ? '+9' : String(diff);
+        }
+      }
+      lastMsgCount = msgs ? msgs.length : 0;
+    });
+  }
+
+  function _createChatMessageDOM(msg, curUser, blocked, muted) {
+    if (!msg) return null;
+    if (blocked && blocked.includes(msg.sender)) return null;
+    if (muted && muted.includes(msg.sender)) return null;
+
+    const isSystem = msg.sender === 'الإدارة';
+    const isMe = !isSystem && curUser && msg.sender === curUser;
+    
+    let bubbleClass = isMe ? 'chat-bubble-sent' : 'chat-bubble-received';
+    let alignClass = isMe ? 'text-left flex flex-col items-end' : 'text-right flex flex-col items-start';
+    let senderNameClass = '';
+    let vipTagText = '';
+    const isEn = (window.currentLang === 'en' || document.documentElement.lang === 'en' || document.documentElement.dir === 'ltr');
+
+    if (isSystem) {
+      bubbleClass = 'bg-red-950/40 border border-red-500/30 text-red-200 w-full text-center py-2 px-3 rounded-xl shadow-lg shadow-red-950/20';
+      alignClass = 'text-center flex flex-col items-center w-full';
+    } else {
+      let glowType = msg.chatGlow || (window._knownVipGlowPlayers && window._knownVipGlowPlayers.get(msg.sender)) || '';
+      if (glowType === 'none') glowType = '';
+      if (!glowType) {
+        if (isMe && GameEngine.state && GameEngine.state.chatGlow === 'none') {
+          glowType = '';
+        } else if (isMe && GameEngine.state && GameEngine.state.chatGlow && GameEngine.state.chatGlow !== 'none') {
+          glowType = GameEngine.state.chatGlow;
+        } else if (msg.customBadge === '🔥' || (msg.senderTitle && String(msg.senderTitle).includes('لهيب'))) {
+          glowType = 'crimson_flame';
+        } else if (msg.customBadge === '🌟' || (msg.senderTitle && String(msg.senderTitle).includes('حوت الشات'))) {
+          glowType = 'gold_neon';
+        } else if (msg.customBadge === '👑✔️' || (msg.customBadge && String(msg.customBadge).includes('👑'))) {
+          glowType = 'cyber_rainbow';
+        } else if (isMe && GameEngine.state && GameEngine.state.chatGlow === undefined) {
+          if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.customBadge === '🔥') glowType = 'crimson_flame';
+          else if (GameEngine.state.hasChatGlow || GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.customBadge === '🌟') glowType = 'gold_neon';
+          else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' || GameEngine.state.customBadge === '👑✔️') glowType = 'cyber_rainbow';
+        }
+      }
+
+      if (glowType === 'crimson_flame' || glowType === 'flame') {
+        bubbleClass += ' chat-bubble-glow-flame';
+        senderNameClass = 'chat-sender-flame-glow';
+        vipTagText = isEn ? '🔥 FLAME VIP' : '🔥 لهيب VIP';
+      } else if (glowType === 'gold_neon' || glowType === 'gold') {
+        bubbleClass += ' chat-bubble-glow-gold';
+        senderNameClass = 'chat-sender-gold-glow';
+        vipTagText = isEn ? '✨ VIP PLAYER' : '✨ لاعب VIP';
+      } else if (glowType === 'cyber_rainbow' || glowType === 'rainbow') {
+        bubbleClass += ' chat-bubble-glow-rainbow';
+        senderNameClass = 'chat-sender-rainbow-glow';
+        vipTagText = isEn ? '👑 ROYAL VIP' : '👑 لاعب ملكي VIP';
+      }
+    }
+
+    const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) : '';
+    const msgDiv = document.createElement('div');
+    const msgId = msg.id || (msg.type === 'money_drop' ? ('drop_' + (msg.dropId || msg.id)) : ('msg_' + msg.timestamp + '_' + msg.sender));
+    msgDiv.dataset.msgId = msgId;
+
+    const safeSender = String(msg.sender || 'لاعب').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+    const safeTitle = String(msg.senderTitle || 'مبتدئ').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+    const safeMsg = String(msg.message || msg.text || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+
+    const filter = window.ProfanityFilter || (window.AppDB && window.AppDB.ProfanityFilter);
+    const hasProfanity = !isSystem && filter && filter.containsProfanity(msg.message);
+    const finalMsgHtml = hasProfanity
+      ? '<span class="text-rose-400 italic font-medium text-[11px] flex items-center gap-1.5"><i class="fa-solid fa-ban text-rose-500 text-[10px]"></i> [تم حجب الرسالة لاحتوائها على ألفاظ غير لائقة]</span>'
+      : safeMsg;
+
+    if (isSystem) {
+      msgDiv.className = `w-full flex flex-col ${alignClass}`;
+      msgDiv.innerHTML = `
+        <div class="flex items-center gap-1 mb-1 justify-center">
+          <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
+          <span class="text-[10px] font-black text-red-400"><i class="fa-solid fa-shield-halved text-[9px] mr-1"></i>${safeSender}</span>
+          <span class="text-[8px] px-1 bg-red-950 border border-red-800 rounded-md text-red-300 font-bold">${safeTitle}</span>
+        </div>
+        <div class="chat-message-bubble ${bubbleClass}">
+          ${safeMsg}
+        </div>`;
+    } else if (msg.type === 'money_drop') {
+      const isMyDrop = curUser && msg.sender === curUser;
+      const totalAmt = Number(msg.totalAmount || 0);
+      const totalBags = Number(msg.totalBags || 1);
+      const claimedBags = Number(msg.claimedBags || 0);
+      const remainingBags = Math.max(0, totalBags - claimedBags);
+      const isCompleted = (msg.status === 'completed' || remainingBags === 0);
+      const dropId = msg.dropId || (msg.id ? String(msg.id).replace('drop_', '') : '');
+
+      msgDiv.dataset.claimedBags = String(claimedBags);
+      msgDiv.dataset.status = String(msg.status || (isCompleted ? 'completed' : 'active'));
+      msgDiv.className = 'w-full my-2 select-none';
+      msgDiv.innerHTML = `
+        <div class="money-drop-card relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-950/90 via-amber-950/70 to-slate-950 border-2 border-amber-500/60 p-3 shadow-xl shadow-amber-500/10">
+          <div class="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-amber-500/20">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-400 to-yellow-500 text-slate-950 flex items-center justify-center text-sm font-black shadow-md shadow-amber-500/30 animate-pulse">
+                <i class="fa-solid fa-gift"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-black text-amber-300 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${safeSender}')">${safeSender}</span>
+                  <span class="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-200 border border-amber-500/30">${safeTitle}</span>
+                </div>
+                <span class="text-[9px] text-slate-400 font-medium">${timeStr}</span>
+              </div>
+            </div>
+            <span class="text-[9px] px-2 py-0.5 rounded-full font-black ${isCompleted ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-red-500/20 text-red-300 border border-red-500/40 animate-pulse'}">
+              ${isCompleted ? 'اكتملت 🏁' : 'نُقطة حية 💸'}
+            </span>
+          </div>
+          <div class="mb-2.5 text-xs text-white font-bold bg-black/40 p-2 rounded-xl border border-amber-500/20">
+            <i class="fa-solid fa-quote-right text-amber-400/60 ml-1 text-[10px]"></i>
+            <span>${safeMsg}</span>
+          </div>
+          <div class="flex items-center justify-between text-xs mb-1.5">
+            <div>
+              <span class="text-[9px] text-slate-400 block font-medium">إجمالي النُقطة:</span>
+              <span class="text-sm font-black text-amber-400 numbers-font">${totalAmt.toLocaleString()} EGP</span>
+            </div>
+            <div class="text-left">
+              <span class="text-[9px] text-slate-400 block font-medium">الأكياس المستلمة:</span>
+              <span class="text-xs font-black text-slate-200 numbers-font">${claimedBags} / ${totalBags}</span>
+            </div>
+          </div>
+          <div class="w-full h-2 rounded-full bg-slate-900 border border-slate-800 overflow-hidden mb-2.5">
+            <div class="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full transition-all duration-500" style="width: ${Math.min(100, Math.round((claimedBags / totalBags) * 100))}%"></div>
+          </div>
+          <div class="flex items-center gap-2">
+            ${!isCompleted ? `
+              <button type="button" onclick="window.UI.claimMoneyDrop('${dropId}', this)" class="btn-claim-money-drop flex-1 py-2 px-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer">
+                <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
+                <span>التقط نصيبك! 🧧</span>
+              </button>
+            ` : `
+              <div class="flex-1 py-2 text-center text-xs font-bold text-slate-400 bg-slate-900/60 rounded-xl border border-slate-800">
+                نفدت جميع الأكياس 🏁
+              </div>
+            `}
+            <button type="button" onclick="window.UI.viewMoneyDropWinners('${dropId}')" class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition border border-slate-800 shrink-0 cursor-pointer" title="عرض قائمة المحظوظين">
+              <i class="fa-solid fa-trophy text-amber-400"></i>
+            </button>
+          </div>
+        </div>`;
+    } else {
+      const isMyMsg = curUser && msg.sender === curUser;
+      const lb = window.cachedLeaderboard || (typeof cachedLeaderboard !== 'undefined' ? cachedLeaderboard : null);
+      const cachedP = Array.isArray(lb) ? lb.find(p => p.username === msg.sender) : null;
+      
+      const hasFb = Boolean(msg.facebookVerified || msg.isFbVerified || (cachedP && cachedP.facebookVerified) || (isMyMsg && GameEngine.state && (GameEngine.state.facebookVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('facebook')))));
+      const isVipVerified = Boolean(msg.isVerified || (cachedP && (cachedP.isVerified || cachedP.vipVerified)) || (isMyMsg && GameEngine.state && (GameEngine.state.isVerified || GameEngine.state.vipVerified)));
+
+      const fbIconHtml = hasFb ? '<span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' : '';
+      const verifiedBadgeHtml = isVipVerified ? getVerifiedBadgeIconHtml('text-[13px] mr-0.5 select-none') : '';
+
+      let customBadgeVal = msg.customBadge || (cachedP && cachedP.customBadge) || (isMyMsg && GameEngine.state && GameEngine.state.customBadge) || '';
+      if (isVipVerified && customBadgeVal === '✔️') {
+        customBadgeVal = '';
+      }
+      let badgeIconHtml = customBadgeVal ? `<span class="text-[11px] select-none inline-flex items-center" title="شارة خاصة">${formatCustomBadgeHtml(customBadgeVal, 'text-[12px]')}</span>` : '';
+
+      msgDiv.className = `w-full flex flex-col ${alignClass}`;
+      msgDiv.innerHTML = `
+        <div class="flex items-center gap-1.5 mb-0.5">
+          <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
+          <span class="text-[10px] font-bold cursor-pointer hover:underline inline-flex items-center gap-1.5" onclick="window.UI.openPlayerProfileCard('${safeSender}')">
+            <span class="${senderNameClass || 'text-yellow-400'}">${safeSender}</span>
+            ${verifiedBadgeHtml}
+            ${fbIconHtml}
+            ${badgeIconHtml}
+          </span>
+          <span class="text-[8px] px-1 bg-slate-900 border border-slate-800 rounded-md text-slate-400">${safeTitle}</span>
+        </div>
+        <div class="chat-message-bubble ${bubbleClass} ${hasProfanity ? 'border-rose-500/40 bg-rose-950/20' : ''}" ${vipTagText ? `data-vip-tag="${vipTagText}"` : ''}>
+          ${finalMsgHtml}
+        </div>`;
+    }
+
+    return msgDiv;
+  }
+
   function renderChatMessages(msgs) {
     const container = document.getElementById('chat-messages-container');
     if (!container) return;
 
-    window._lastChatMessagesCache = msgs || [];
-    container.innerHTML = '';
+    if (!Array.isArray(msgs)) return;
 
-    if (!msgs || msgs.length === 0) {
-      container.innerHTML = '<div class="text-center text-slate-500 text-xs py-8">لا توجد رسائل سابقة. كن أول من يكتب! 💬</div>';
+    // Safety guard: NEVER wipe out already rendered messages if the incoming array is unexpectedly empty
+    if (msgs.length === 0) {
+      if (!container.children.length || container.querySelector('.chat-empty-placeholder')) {
+        container.innerHTML = '<div class="chat-empty-placeholder text-center text-slate-500 text-xs py-8">لا توجد رسائل سابقة. كن أول من يكتب! 💬</div>';
+      }
       return;
     }
+
+    const placeholder = container.querySelector('.chat-empty-placeholder');
+    if (placeholder) placeholder.remove();
+
+    window._lastChatMessagesCache = msgs;
 
     const curUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
     const blocked = (GameEngine.state && GameEngine.state.blockedUsers) || [];
@@ -13147,192 +13344,82 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       });
     }
 
-    msgs.forEach(msg => {
-      if (blocked.includes(msg.sender)) return;
-      if (muted.includes(msg.sender)) return;
+    // Smart Incremental DOM reconciliation:
+    const existingElements = Array.from(container.children).filter(el => el.dataset && el.dataset.msgId);
+    const existingIds = existingElements.map(el => el.dataset.msgId);
+    const incomingValidMsgs = msgs.filter(m => !blocked.includes(m.sender) && !muted.includes(m.sender));
+    const incomingIds = incomingValidMsgs.map(m => m.id || (m.type === 'money_drop' ? ('drop_' + (m.dropId || m.id)) : ('msg_' + m.timestamp + '_' + m.sender)));
 
-      const isSystem = msg.sender ==='الإدارة';
-      const isMe = !isSystem && curUser && msg.sender === curUser;
-      
-      let bubbleClass = isMe ?'chat-bubble-sent' :'chat-bubble-received';
-      let alignClass = isMe ?'text-left flex flex-col items-end' :'text-right flex flex-col items-start';
-      let senderNameClass = '';
-      let vipPillHtml = '';
+    const wasNearBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 140;
 
-      let vipTagText = '';
-      const isEn = (window.currentLang === 'en' || document.documentElement.lang === 'en' || document.documentElement.dir === 'ltr');
-
-      if (isSystem) {
-        bubbleClass ='bg-red-950/40 border border-red-500/30 text-red-200 w-full text-center py-2 px-3 rounded-xl shadow-lg shadow-red-950/20';
-        alignClass ='text-center flex flex-col items-center w-full';
-      } else {
-        // Detect chat glow styling
-        let glowType = msg.chatGlow || window._knownVipGlowPlayers.get(msg.sender) || '';
-        if (glowType === 'none') glowType = '';
-        if (!glowType) {
-          if (isMe && GameEngine.state && GameEngine.state.chatGlow === 'none') {
-            glowType = '';
-          } else if (isMe && GameEngine.state && GameEngine.state.chatGlow && GameEngine.state.chatGlow !== 'none') {
-            glowType = GameEngine.state.chatGlow;
-          } else if (msg.customBadge === '🔥' || (msg.senderTitle && msg.senderTitle.includes('لهيب'))) {
-            glowType = 'crimson_flame';
-          } else if (msg.customBadge === '🌟' || (msg.senderTitle && msg.senderTitle.includes('حوت الشات'))) {
-            glowType = 'gold_neon';
-          } else if (msg.customBadge === '👑✔️' || (msg.customBadge && msg.customBadge.includes('👑'))) {
-            glowType = 'cyber_rainbow';
-          } else if (isMe && GameEngine.state && GameEngine.state.chatGlow === undefined) {
-            if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.customBadge === '🔥') glowType = 'crimson_flame';
-            else if (GameEngine.state.hasChatGlow || GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.customBadge === '🌟') glowType = 'gold_neon';
-            else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' || GameEngine.state.customBadge === '👑✔️') glowType = 'cyber_rainbow';
+    // Case 1: Existing elements match incoming messages exactly
+    const isExactMatch = existingIds.length > 0 && existingIds.length === incomingIds.length && existingIds.every((id, idx) => id === incomingIds[idx]);
+    if (isExactMatch) {
+      // Update any money drop whose claim status changed in-place without touching any other nodes
+      incomingValidMsgs.forEach(m => {
+        if (m.type === 'money_drop') {
+          const mId = m.id || ('drop_' + (m.dropId || m.id));
+          const el = container.querySelector(`[data-msg-id="${mId}"]`);
+          if (el) {
+            const curClaimed = el.dataset.claimedBags;
+            const curStatus = el.dataset.status;
+            const newClaimed = String(m.claimedBags || 0);
+            const newStatus = String(m.status || 'active');
+            if (curClaimed !== newClaimed || curStatus !== newStatus) {
+              const updatedEl = _createChatMessageDOM(m, curUser, blocked, muted);
+              if (updatedEl) container.replaceChild(updatedEl, el);
+            }
           }
         }
+      });
+      return; // Zero DOM flicker!
+    }
 
-        if (glowType === 'crimson_flame' || glowType === 'flame') {
-          bubbleClass += ' chat-bubble-glow-flame';
-          senderNameClass = 'chat-sender-flame-glow';
-          vipTagText = isEn ? '🔥 FLAME VIP' : '🔥 لهيب VIP';
-        } else if (glowType === 'gold_neon' || glowType === 'gold') {
-          bubbleClass += ' chat-bubble-glow-gold';
-          senderNameClass = 'chat-sender-gold-glow';
-          vipTagText = isEn ? '✨ VIP PLAYER' : '✨ لاعب VIP';
-        } else if (glowType === 'cyber_rainbow' || glowType === 'rainbow') {
-          bubbleClass += ' chat-bubble-glow-rainbow';
-          senderNameClass = 'chat-sender-rainbow-glow';
-          vipTagText = isEn ? '👑 ROYAL VIP' : '👑 لاعب ملكي VIP';
+    // Case 2: New message(s) appended to the end of the existing list
+    const lastExistingId = existingIds.length > 0 ? existingIds[existingIds.length - 1] : null;
+    const lastExistingIdxInIncoming = lastExistingId ? incomingIds.lastIndexOf(lastExistingId) : -1;
+
+    if (lastExistingIdxInIncoming !== -1 && lastExistingIdxInIncoming < incomingIds.length - 1) {
+      const fragment = document.createDocumentFragment();
+      for (let i = lastExistingIdxInIncoming + 1; i < incomingValidMsgs.length; i++) {
+        const el = _createChatMessageDOM(incomingValidMsgs[i], curUser, blocked, muted);
+        if (el) fragment.appendChild(el);
+      }
+      container.appendChild(fragment);
+
+      // Check money drops in the existing portion for claim updates
+      for (let i = 0; i <= lastExistingIdxInIncoming; i++) {
+        const m = incomingValidMsgs[i];
+        if (m.type === 'money_drop') {
+          const mId = m.id || ('drop_' + (m.dropId || m.id));
+          const el = container.querySelector(`[data-msg-id="${mId}"]`);
+          if (el && (el.dataset.claimedBags !== String(m.claimedBags || 0) || el.dataset.status !== String(m.status || 'active'))) {
+            const updatedEl = _createChatMessageDOM(m, curUser, blocked, muted);
+            if (updatedEl) container.replaceChild(updatedEl, el);
+          }
         }
       }
 
-      const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) :'';
-
-      const msgDiv = document.createElement('div');
-      msgDiv.className =`w-full flex flex-col ${alignClass}`;
-      
-      const safeSender = String(msg.sender ||'لاعب').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
-      const safeTitle = String(msg.senderTitle ||'مبتدئ').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
-      const safeMsg = String(msg.message || msg.text || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
-
-      const filter = window.ProfanityFilter || (window.AppDB && window.AppDB.ProfanityFilter);
-      const hasProfanity = !isSystem && filter && filter.containsProfanity(msg.message);
-      const finalMsgHtml = hasProfanity
-        ? '<span class="text-rose-400 italic font-medium text-[11px] flex items-center gap-1.5"><i class="fa-solid fa-ban text-rose-500 text-[10px]"></i> [تم حجب الرسالة لاحتوائها على ألفاظ غير لائقة]</span>'
-        : safeMsg;
-
-      if (isSystem) {
-        msgDiv.innerHTML =`
-          <div class="flex items-center gap-1 mb-1 justify-center">
-            <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
-            <span class="text-[10px] font-black text-red-400"><i class="fa-solid fa-shield-halved text-[9px] mr-1"></i>${safeSender}</span>
-            <span class="text-[8px] px-1 bg-red-950 border border-red-800 rounded-md text-red-300 font-bold">${safeTitle}</span>
-          </div>
-          <div class="chat-message-bubble ${bubbleClass}">
-            ${safeMsg}
-          </div>`;
-      } else if (msg.type === 'money_drop') {
-        const isMyDrop = curUser && msg.sender === curUser;
-        const totalAmt = Number(msg.totalAmount || 0);
-        const totalBags = Number(msg.totalBags || 1);
-        const claimedBags = Number(msg.claimedBags || 0);
-        const remainingBags = Math.max(0, totalBags - claimedBags);
-        const isCompleted = (msg.status === 'completed' || remainingBags === 0);
-        const dropId = msg.dropId || (msg.id ? String(msg.id).replace('drop_', '') : '');
-
-        msgDiv.className = 'w-full my-2 select-none';
-        msgDiv.innerHTML = `
-          <div class="money-drop-card relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-950/90 via-amber-950/70 to-slate-950 border-2 border-amber-500/60 p-3 shadow-xl shadow-amber-500/10">
-            <!-- Top Badges & Sender -->
-            <div class="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-amber-500/20">
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-400 to-yellow-500 text-slate-950 flex items-center justify-center text-sm font-black shadow-md shadow-amber-500/30 animate-pulse">
-                  <i class="fa-solid fa-gift"></i>
-                </div>
-                <div>
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-xs font-black text-amber-300 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${safeSender}')">${safeSender}</span>
-                    <span class="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-200 border border-amber-500/30">${safeTitle}</span>
-                  </div>
-                  <span class="text-[9px] text-slate-400 font-medium">${timeStr}</span>
-                </div>
-              </div>
-              <span class="text-[9px] px-2 py-0.5 rounded-full font-black ${isCompleted ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-red-500/20 text-red-300 border border-red-500/40 animate-pulse'}">
-                ${isCompleted ? 'اكتملت 🏁' : 'نُقطة حية 💸'}
-              </span>
-            </div>
-
-            <!-- Message Text -->
-            <div class="mb-2.5 text-xs text-white font-bold bg-black/40 p-2 rounded-xl border border-amber-500/20">
-              <i class="fa-solid fa-quote-right text-amber-400/60 ml-1 text-[10px]"></i>
-              <span>${safeMsg}</span>
-            </div>
-
-            <!-- Stats & Progress -->
-            <div class="flex items-center justify-between text-xs mb-1.5">
-              <div>
-                <span class="text-[9px] text-slate-400 block font-medium">إجمالي النُقطة:</span>
-                <span class="text-sm font-black text-amber-400 numbers-font">${totalAmt.toLocaleString()} EGP</span>
-              </div>
-              <div class="text-left">
-                <span class="text-[9px] text-slate-400 block font-medium">الأكياس المستلمة:</span>
-                <span class="text-xs font-black text-slate-200 numbers-font">${claimedBags} / ${totalBags}</span>
-              </div>
-            </div>
-
-            <!-- Progress Bar -->
-            <div class="w-full h-2 rounded-full bg-slate-900 border border-slate-800 overflow-hidden mb-2.5">
-              <div class="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full transition-all duration-500" style="width: ${Math.min(100, Math.round((claimedBags / totalBags) * 100))}%"></div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex items-center gap-2">
-              ${!isCompleted ? `
-                <button type="button" onclick="window.UI.claimMoneyDrop('${dropId}', this)" class="btn-claim-money-drop flex-1 py-2 px-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer">
-                  <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
-                  <span>التقط نصيبك! 🧧</span>
-                </button>
-              ` : `
-                <div class="flex-1 py-2 text-center text-xs font-bold text-slate-400 bg-slate-900/60 rounded-xl border border-slate-800">
-                  نفدت جميع الأكياس 🏁
-                </div>
-              `}
-              <button type="button" onclick="window.UI.viewMoneyDropWinners('${dropId}')" class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition border border-slate-800 shrink-0 cursor-pointer" title="عرض قائمة المحظوظين">
-                <i class="fa-solid fa-trophy text-amber-400"></i>
-              </button>
-            </div>
-          </div>`;
-      } else {
-        const isMyMsg = curUser && msg.sender === curUser;
-        const lb = window.cachedLeaderboard || (typeof cachedLeaderboard !== 'undefined' ? cachedLeaderboard : null);
-        const cachedP = Array.isArray(lb) ? lb.find(p => p.username === msg.sender) : null;
-        
-        const hasFb = Boolean(msg.facebookVerified || msg.isFbVerified || (cachedP && cachedP.facebookVerified) || (isMyMsg && GameEngine.state && (GameEngine.state.facebookVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('facebook')))));
-        const isVipVerified = Boolean(msg.isVerified || (cachedP && (cachedP.isVerified || cachedP.vipVerified)) || (isMyMsg && GameEngine.state && (GameEngine.state.isVerified || GameEngine.state.vipVerified)));
-
-        const fbIconHtml = hasFb ? '<span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' : '';
-        const verifiedBadgeHtml = isVipVerified ? getVerifiedBadgeIconHtml('text-[13px] mr-0.5 select-none') : '';
-
-        let customBadgeVal = msg.customBadge || (cachedP && cachedP.customBadge) || (isMyMsg && GameEngine.state && GameEngine.state.customBadge) || '';
-        if (isVipVerified && customBadgeVal === '✔️') {
-          customBadgeVal = '';
-        }
-        let badgeIconHtml = customBadgeVal ? `<span class="text-[11px] select-none inline-flex items-center" title="شارة خاصة">${formatCustomBadgeHtml(customBadgeVal, 'text-[12px]')}</span>` : '';
-
-        msgDiv.innerHTML =`
-          <div class="flex items-center gap-1.5 mb-0.5">
-            <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
-            <span class="text-[10px] font-bold cursor-pointer hover:underline inline-flex items-center gap-1.5" onclick="window.UI.openPlayerProfileCard('${safeSender}')">
-              <span class="${senderNameClass || 'text-yellow-400'}">${safeSender}</span>
-              ${verifiedBadgeHtml}
-              ${fbIconHtml}
-              ${badgeIconHtml}
-            </span>
-            <span class="text-[8px] px-1 bg-slate-900 border border-slate-800 rounded-md text-slate-400">${safeTitle}</span>
-          </div>
-          <div class="chat-message-bubble ${bubbleClass} ${hasProfanity ? 'border-rose-500/40 bg-rose-950/20' : ''}" ${vipTagText ? `data-vip-tag="${vipTagText}"` : ''}>
-            ${finalMsgHtml}
-          </div>`;
+      // Keep maximum 50 messages in DOM
+      while (container.children.length > 50) {
+        container.removeChild(container.firstElementChild);
       }
-      container.appendChild(msgDiv);
+
+      if (wasNearBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
+      return;
+    }
+
+    // Case 3: Initial render or complete change — use DocumentFragment for flicker-free swap
+    const fragment = document.createDocumentFragment();
+    incomingValidMsgs.forEach(msg => {
+      const el = _createChatMessageDOM(msg, curUser, blocked, muted);
+      if (el) fragment.appendChild(el);
     });
 
+    container.innerHTML = '';
+    container.appendChild(fragment);
     container.scrollTop = container.scrollHeight;
   }
 
