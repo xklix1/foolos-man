@@ -6056,6 +6056,11 @@ const GameEngine = (() => {
   // ─────────────────────────────────────────────────────────
   function ensureFarmState() {
     if (!state) return null;
+    const rawUser = String(activeUsername || (state && state.username) || '').trim().toLowerCase();
+    if (rawUser !== 'khaled') {
+      delete state.farm;
+      return null;
+    }
     if (!state.farm || typeof state.farm !== 'object') {
       state.farm = {
         unlocked: false,
@@ -6173,6 +6178,10 @@ const GameEngine = (() => {
   }
 
   function unlockFarm() {
+    const rawUser = String(activeUsername || (state && state.username) || '').trim().toLowerCase();
+    if (rawUser !== 'khaled') {
+      throw new Error("المزرعة الاستثمارية ميزة تجريبية خاصة بحساب المطور Khaled فقط حالياً.");
+    }
     if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك استصلاح مزرعة الآن.");
     const f = ensureFarmState();
     if (f.unlocked) throw new Error("المزرعة الاستثمارية مفتوحة ومرخصة بالفعل.");

@@ -124,11 +124,15 @@ function sanitizePlayerState(dbRow) {
   // Security Hardening: Never leak PIN hash in client-facing state payloads
   delete cleanState.pin;
 
-  // Gold Currency (Beta testing - strictly gated to developer account 'Khaled')
+  // Experimental & Beta Features (Farm & Gold currency - strictly gated to developer account 'Khaled')
   if (cleanState.username && cleanState.username.toLowerCase() === 'khaled') {
     cleanState.gold = Math.max(0, Number(dbRow.gold !== undefined ? dbRow.gold : (rawState.gold || 0)));
+    if (rawState.farm && typeof rawState.farm === 'object') {
+      cleanState.farm = rawState.farm;
+    }
   } else {
     delete cleanState.gold;
+    delete cleanState.farm;
   }
 
   return cleanState;

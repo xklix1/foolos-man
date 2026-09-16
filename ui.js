@@ -312,30 +312,15 @@ const UIController = (() => {
   }
 
   function isFarmTesterAccount() {
-    const raw = getActiveUsernameSafe() || '';
-    const u = raw.trim().toLowerCase();
-    if (!u) return false;
-
-    // Direct match for "khaled" or variations
-    if (u === 'khaled' || u.startsWith('khaled ') || u.startsWith('khaled_') || u.startsWith('khaled-') || u === 'khaled hawary' || u === 'khaledx010') {
-      return true;
-    }
-    // Also match Arabic variants: خالد, خالد هواري
-    if (u === 'خالد' || u.startsWith('خالد ') || u.startsWith('خالد_') || u === 'خالد هواري') {
-      return true;
-    }
-    // Fallback: if username starts with khaled and is not another specific player
-    if (u.startsWith('khaled')) {
-      return true;
-    }
-    return false;
+    return isKhaledUser();
   }
 
   function updateFarmTabVisibility() {
-    const isTester = isFarmTesterAccount();
+    const isTester = isKhaledUser();
     const farmTabDesktop = document.getElementById('nav-tab-farm');
     const farmTabMobile = document.getElementById('nav-tab-farm-mobile');
     const farmDashCard = document.getElementById('dash-farm-tester-card');
+    const farmPanel = document.getElementById('panel-farm');
 
     if (farmTabDesktop) {
       farmTabDesktop.classList.toggle('hidden', !isTester);
@@ -351,6 +336,14 @@ const UIController = (() => {
       farmDashCard.classList.toggle('hidden', !isTester);
       if (isTester) farmDashCard.classList.add('flex');
       else farmDashCard.classList.remove('flex');
+    }
+    if (!isTester) {
+      if (farmPanel && !farmPanel.classList.contains('hidden')) {
+        farmPanel.classList.add('hidden');
+      }
+      if (activeTab === 'farm' && typeof switchTab === 'function') {
+        switchTab('dashboard');
+      }
     }
   }
 
