@@ -16002,8 +16002,14 @@ const UIController = (() => {
     const iconEl = document.getElementById('admin-popup-icon');
     const closeBtn = document.getElementById('btn-close-direct-admin-popup');
 
+    const cleanMsg = (popupData.message || '')
+      .replace(/\n?شكراً لدعمك لسيرفر لعبة رأس المال[^\n]*/gi, '')
+      .replace(/\n?شكرا لدعمك لسيرفر لعبة رأس المال[^\n]*/gi, '')
+      .replace(/مبروك يا بطل!\s*تم تأكيد الشحن بنجاح وإضافة المزايا لحسابك فوراً:/gi, 'تم تأكيد واعتماد الشحن بنجاح وإضافة المزايا لحسابك:')
+      .trim();
+
     if (titleEl) titleEl.textContent = popupData.title || 'رسالة من الإدارة';
-    if (msgEl) msgEl.textContent = popupData.message || '';
+    if (msgEl) msgEl.textContent = cleanMsg;
     if (timeEl) {
       const d = popupData.timestamp ? new Date(popupData.timestamp) : new Date();
       timeEl.textContent = d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
@@ -16170,15 +16176,27 @@ const UIController = (() => {
         }
 
         // Show celebratory popup modal
+        let itemsDesc = '';
+        if (details.items && typeof details.items === 'object') {
+          const itemEntries = Object.entries(details.items).filter(([_, q]) => Number(q) > 0);
+          if (itemEntries.length > 0) {
+            itemsDesc = itemEntries.map(([k, qty]) => {
+              const def = (typeof INVENTORY_ITEM_CATALOG !== 'undefined' && INVENTORY_ITEM_CATALOG[k]) || (GameEngine.STORE_ITEMS && GameEngine.STORE_ITEMS[k]);
+              const name = def ? def.name : k;
+              return `📦 مقتنيات: ${name} (x${qty})`;
+            }).join('\n') + '\n';
+          }
+        }
+
         showDirectAdminPopupModal({
           id: tm.id,
           title: `🎉 تم اعتماد باقة [${pkgName}] بنجاح!`,
-          message: `مبروك يا بطل! تم تأكيد الشحن بنجاح وإضافة المزايا لحسابك فوراً:\n\n` +
+          message: `تم تأكيد واعتماد الشحن بنجاح وإضافة المزايا لحسابك:\n\n` +
             (addedCash > 0 ? `💵 كاش مالي: +${addedCash.toLocaleString()} EGP\n` : '') +
             (addedBank > 0 ? `🏦 إيداع بنكي: +${addedBank.toLocaleString()} EGP\n` : '') +
             (addedXp > 0 ? `⭐ نقاط خبرة: +${addedXp.toLocaleString()} XP\n` : '') +
             (details.customBadge ? `👑 وسام خاص: [${details.badgeTitle || pkgName}]\n` : '') +
-            `\nشكراً لدعمك لسيرفر لعبة رأس المال! نتمنى لك تجربة لعب ممتعة وموفقة.`,
+            itemsDesc,
           sender: 'إدارة اللعبة (Financial Team)',
           timestamp: details.date || Date.now(),
           style: 'reward'

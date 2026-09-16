@@ -61,6 +61,10 @@ function sanitizePlayerState(dbRow) {
 
   // Authoritative SQL columns reconciled with state keys to prevent accidental zeroing
   cleanState.username = String(dbRow.username || cleanState.username || '').trim();
+  cleanState.adminModifiedTimestamp = Math.max(
+    Number(dbRow.admin_modified_timestamp || 0),
+    Number(rawState.adminModifiedTimestamp || 0)
+  );
   if (isAccountReset) {
     cleanState.cash = 0;
     cleanState.bank = 0;

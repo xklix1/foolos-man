@@ -2967,6 +2967,8 @@ var AppDB = (() => {
         }
       }
 
+      pState.adminModifiedTimestamp = ts;
+
       await _api(`players?username=eq.${encodeURIComponent(targetUser)}`, {
         method:'PATCH',
         body: JSON.stringify({
@@ -3017,6 +3019,11 @@ var AppDB = (() => {
         cash: addedCash,
         bank: addedBank,
         xp: addedXP,
+        newCash: updatedCash,
+        newBank: updatedBank,
+        newXp: updatedXP,
+        newWorth: updatedNetworth,
+        isPreApplied: true,
         customBadge: customBadge,
         badgeTitle: rewards.badgeTitle || req.packageName,
         items: rewards.items || {},
@@ -3029,9 +3036,24 @@ var AppDB = (() => {
 
       await sendMail('SYSTEM', targetUser,'topup_receipt', {
         title:` تم شحن باقة [${req.packageName}] بنجاح!`,
-        message:`شكراً لدعمك لسيرفر لعبة رأس المال! تم اعتماد تحويلك بمبلغ ${req.price} ج.م وإيداع جميع مزايا باقتك بحسابك فوراً.`,
+        message:`تم اعتماد تحويلك بمبلغ ${req.price} ج.م وإيداع جميع مزايا باقتك بحسابك بنجاح.`,
         topupDetails: topupReceiptData
       }).catch(() => {});
+
+      if (addedCash > 0 || addedBank > 0) {
+        await sendMail('إدارة اللعبة (Financial Team)', targetUser, 'admin_balance_grant', {
+          addedCash: addedCash,
+          addedBank: addedBank,
+          totalAmount: addedCash + addedBank,
+          target: targetUser,
+          newCash: updatedCash,
+          newBank: updatedBank,
+          newXp: updatedXP,
+          isPreApplied: true,
+          timestamp: ts,
+          note: `شحن فوري معتمد: [${req.packageName}]`
+        }).catch(() => {});
+      }
 
       req.status ='approved';
       req.reviewedAt = ts;

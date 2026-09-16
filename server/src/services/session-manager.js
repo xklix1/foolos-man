@@ -189,11 +189,23 @@ class SessionManager {
 
     const s = session.state;
 
-    // Synchronize monetary balances
-    if (clientState.cash !== undefined) s.cash = Number(clientState.cash) || 0;
-    if (clientState.bank !== undefined) s.bank = Number(clientState.bank) || 0;
+    // Monetary Stale Client Protection: If server session was modified by an admin (or top-up)
+    // with a timestamp newer than incoming client state, DO NOT allow stale client balances to overwrite!
+    const sessionAdminTs = Number(s.adminModifiedTimestamp || 0);
+    const clientAdminTs = Number(clientState.adminModifiedTimestamp || 0);
+    const isClientStale = sessionAdminTs > 0 && clientAdminTs < sessionAdminTs;
+
+    // Synchronize monetary balances (safeguarded against stale downgrades)
+    if (clientState.cash !== undefined) {
+      s.cash = isClientStale ? Math.max(Number(s.cash || 0), Number(clientState.cash) || 0) : (Number(clientState.cash) || 0);
+    }
+    if (clientState.bank !== undefined) {
+      s.bank = isClientStale ? Math.max(Number(s.bank || 0), Number(clientState.bank) || 0) : (Number(clientState.bank) || 0);
+    }
     if (clientState.dirtyCash !== undefined) s.dirtyCash = Number(clientState.dirtyCash) || 0;
-    if (clientState.xp !== undefined) s.xp = Number(clientState.xp) || 0;
+    if (clientState.xp !== undefined) {
+      s.xp = isClientStale ? Math.max(Number(s.xp || 0), Number(clientState.xp) || 0) : (Number(clientState.xp) || 0);
+    }
     if (clientState.title) s.title = String(clientState.title);
     if (clientState.jobId) s.jobId = String(clientState.jobId);
     if (clientState.jailTimer !== undefined) s.jailTimer = Number(clientState.jailTimer) || 0;
@@ -368,7 +380,7 @@ class SessionManager {
       s.afkManagerExpiresAt = Number(clientState.afkManagerExpiresAt) || 0;
     }
 
-    s.netWorth = Number(clientState.netWorth) || calculateNetWorth(s);
+    s.netWorth = isClientStale ? Math.max(Number(s.netWorth || 0), Number(clientState.netWorth) || calculateNetWorth(s)) : (Number(clientState.netWorth) || calculateNetWorth(s));
     s.lastActiveTimestamp = Number(clientState.lastActiveTimestamp || Date.now());
     s.lastSeen = Date.now();
     session.lastActivity = Date.now();
