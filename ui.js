@@ -5956,16 +5956,7 @@ const UIController = (() => {
     const taxableEl = document.getElementById('tax-kpi-taxable');
     if (taxableEl) taxableEl.textContent = `${Math.round(taxReport.taxableCashflowPerHour || 0).toLocaleString()} EGP/س`;
 
-    let bracketName = window.currentLang === 'en' ? 'Tax Amnesty Season (0% Exempt)' : 'موسم العفو الضريبي (معفى تماماً)';
-    if (!taxReport.isTaxAmnesty) {
-      bracketName = taxReport.bracketName;
-      if (window.currentLang === 'en') {
-        if (taxReport.bracketId === 1) bracketName = 'Bracket 1 (< 1M EGP - 1%)';
-        else if (taxReport.bracketId === 2) bracketName = 'Middle Bracket (1M - 5M EGP - 5%)';
-        else if (taxReport.bracketId === 3) bracketName = 'High Wealth Bracket (> 5M EGP - 15%)';
-      }
-    }
-
+    const bracketName = window.currentLang === 'en' ? 'Tax Amnesty Season (0% Exempt)' : 'موسم العفو الضريبي (معفى تماماً)';
     const bracketEl = document.getElementById('tax-kpi-bracket');
     if (bracketEl) {
       bracketEl.textContent = bracketName;

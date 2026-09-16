@@ -2325,40 +2325,16 @@ const GameEngine = (() => {
       grossPerHour = calculatePassiveIncomePerHour(true);
     }
 
-    // Check if Tax Amnesty Season is in effect (Default: true)
-    const isTaxAmnesty = taxConfig.taxAmnesty !== false;
-
-    let baseRate = 0;
-    let bracketName = window.currentLang === 'en' ? 'Tax Amnesty Season (100% Exempt)' : 'موسم العفو الضريبي (معفى تماماً 0%)';
-    let bracketId = 0;
-    let bracketColor = 'text-emerald-400';
-    let bracketRange = window.currentLang === 'en' ? 'All Wealth Levels (0% Tax)' : 'كافة مستويات الثروة (معفى تماماً)';
-
-    if (!isTaxAmnesty) {
-      baseRate = (taxConfig.bracket1Rate !== undefined ? taxConfig.bracket1Rate : 0.01) * (taxConfig.rateMultiplier !== undefined ? taxConfig.rateMultiplier : 1.0);
-      bracketName = 'الشريحة الأولى (أقل من 1 مليون ج.م)';
-      bracketId = 1;
-      bracketColor = 'text-emerald-400';
-      bracketRange = 'أقل من 1,000,000 جنيه';
-
-      if (netWorth > 5000000) {
-        baseRate = (taxConfig.bracket3Rate !== undefined ? taxConfig.bracket3Rate : 0.15) * (taxConfig.rateMultiplier !== undefined ? taxConfig.rateMultiplier : 1.0);
-        bracketName = 'شريحة كبار المستثمرين (+5 مليون ج.م)';
-        bracketId = 3;
-        bracketColor = 'text-rose-400';
-        bracketRange = 'أكثر من 5,000,000 جنيه';
-      } else if (netWorth >= 1000000) {
-        baseRate = (taxConfig.bracket2Rate !== undefined ? taxConfig.bracket2Rate : 0.05) * (taxConfig.rateMultiplier !== undefined ? taxConfig.rateMultiplier : 1.0);
-        bracketName = 'الشريحة المتوسطة (1 إلى 5 مليون ج.م)';
-        bracketId = 2;
-        bracketColor = 'text-sky-400';
-        bracketRange = '1,000,000 إلى 5,000,000 جنيه';
-      }
-    }
-
-    const effectiveRate = isTaxAmnesty ? 0 : (taxShieldActive ? (baseRate * 0.50) : baseRate);
-    const hourlyTax = Math.round(grossPerHour * effectiveRate);
-    const taxPerSecond = hourlyTax / 3600;
+    // STRICT Tax Amnesty Season (موسم العفو الضريبي): All taxes are strictly 100% exempt (0% tax)
+    const isTaxAmnesty = true;
+    const baseRate = 0;
+    const effectiveRate = 0;
+    const hourlyTax = 0;
+    const taxPerSecond = 0;
+    const bracketName = window.currentLang === 'en' ? 'Tax Amnesty Season (0% Exempt)' : 'موسم العفو الضريبي (معفى تماماً)';
+    const bracketId = 0;
+    const bracketColor = 'text-emerald-400';
+    const bracketRange = window.currentLang === 'en' ? 'All Wealth Levels (0% Tax)' : 'كافة مستويات الثروة (معفى تماماً)';
 
     return {
       netWorth,
@@ -2369,15 +2345,15 @@ const GameEngine = (() => {
       bracketId,
       bracketRange,
       bracketColor,
-      baseRate,
-      effectiveRate,
-      baseRatePct: (baseRate * 100).toFixed(1) + '%',
-      effectiveRatePct: isTaxAmnesty ? (window.currentLang === 'en' ? '0% (Exempt)' : '0% (معفى)') : ((effectiveRate * 100).toFixed(1) + '%'),
-      hourlyTax,
-      taxPerSecond,
+      baseRate: 0,
+      effectiveRate: 0,
+      baseRatePct: '0%',
+      effectiveRatePct: window.currentLang === 'en' ? '0% (Exempt)' : '0% (معفى)',
+      hourlyTax: 0,
+      taxPerSecond: 0,
       taxShieldActive,
       shieldDurationTicks,
-      isTaxAmnesty,
+      isTaxAmnesty: true,
       totalTaxesPaid: state.totalTaxesPaid || 0
     };
   }
@@ -2532,29 +2508,8 @@ const GameEngine = (() => {
     }
 
     // Cashflow Tax deduction (Hourly tax distributed per second tick)
-    const taxReport = calculateTaxReport();
-    const taxThisTick = taxReport.taxPerSecond || 0;
-    if (taxThisTick > 0) {
-      const liquidFunds = (state.bank || 0) + (state.cash || 0);
-      if (liquidFunds > 0) {
-        let remainingTax = taxThisTick;
-        
-        // 1. Try to deduct from bank first
-        if (state.bank > 0) {
-          const bankDeducted = Math.min(state.bank, remainingTax);
-          state.bank -= bankDeducted;
-          remainingTax -= bankDeducted;
-          state.totalTaxesPaid = (state.totalTaxesPaid || 0) + bankDeducted;
-        }
-        
-        // 2. If there's still tax remaining, deduct from cash
-        if (remainingTax > 0 && (state.cash || 0) > 0) {
-          const cashDeducted = Math.min(state.cash, remainingTax);
-          state.cash -= cashDeducted;
-          state.totalTaxesPaid = (state.totalTaxesPaid || 0) + cashDeducted;
-        }
-      }
-    }
+    // Strictly ZERO during Tax Amnesty Season (موسم العفو الضريبي: معفى تماماً 100%)
+    // No deductions made from bank or cash, and totalTaxesPaid will never increment.
 
     // 5. Assets / Real Estate passive rental income ticking (Hourly rent distributed per tick)
     Object.keys(state.assets).forEach(key => {
@@ -4067,8 +4022,7 @@ const GameEngine = (() => {
       }
 
       if (allowedProfit > 0) {
-        capitalGainsTax = Math.floor(allowedProfit * 0.10); // 10% ضريبة أرباح رأسمالية على الربح المسموح
-        state.totalTaxesPaid = (state.totalTaxesPaid || 0) + capitalGainsTax;
+        capitalGainsTax = 0; // معفى تماماً من أي ضرائب رأسمالية بموجب موسم العفو الضريبي
         state.dailyStockProfit.realizedProfit += allowedProfit;
       }
     }
