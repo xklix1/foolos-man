@@ -2595,9 +2595,15 @@ const UIController = (() => {
       else if (activeTab ==='trade') updateTradeShipmentsInDOM();
       else if (activeTab ==='industry') updateIndustryStockInDOM();
       else if (activeTab ==='investments') renderInvestmentsTab();
+      else if (activeTab ==='farm') updateFarmPlotsInDOM();
 
       // Real-time live update for investment cards dynamic status & countdown
       updateInvestmentCardsDOM(state);
+
+      // Real-time live update for farm crop plots countdowns, animated progress bars & badges
+      if (activeTab === 'farm') {
+        updateFarmPlotsInDOM();
+      }
 
       // Real-time live update for cashflow breakdown modal if open
       const cfModal = document.getElementById('cashflow-breakdown-modal');
@@ -19587,21 +19593,21 @@ const UIController = (() => {
     try { renderFarmContracts(farmInfo); } catch (err) { console.error('[Farm UI] renderFarmContracts error:', err); }
   }
 
+  // Format remaining time nicely for farm plots
+  function formatFarmCountdown(sec) {
+    if (sec <= 0) return '0ث';
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    if (m > 0) return `${m}د ${s}ث`;
+    return `${s}ث`;
+  }
+
   // ── SUB-PANEL 1: Fields & Crops ──
   function renderFarmFields(farmInfo) {
     const farm = farmInfo.farm;
     const config = farmInfo.config || {};
     const crops = farmInfo.crops || {};
     const plots = farmInfo.plots || [];
-
-    // Format remaining time nicely
-    function formatRemainingTime(sec) {
-      if (sec <= 0) return '0ث';
-      const m = Math.floor(sec / 60);
-      const s = sec % 60;
-      if (m > 0) return `${m}د ${s}ث`;
-      return `${s}ث`;
-    }
 
     // Header Global Buttons
     const btnHarvestAll = document.getElementById('btn-farm-harvest-all');
@@ -19679,7 +19685,7 @@ const UIController = (() => {
 
         if (!p || !p.cropId) {
           plotsHtml += `
-            <div class="p-4 rounded-2xl bg-gradient-to-b from-slate-900/60 to-slate-950/80 border-2 border-dashed border-amber-500/25 hover:border-amber-400/60 transition-all duration-300 flex flex-col justify-between items-center text-center gap-3 group min-h-[210px] hover:shadow-lg hover:shadow-amber-500/5">
+            <div class="farm-plot-card p-4 rounded-2xl bg-gradient-to-b from-slate-900/60 to-slate-950/80 border-2 border-dashed border-amber-500/25 hover:border-amber-400/60 transition-all duration-300 flex flex-col justify-between items-center text-center gap-3 group min-h-[210px] hover:shadow-lg hover:shadow-amber-500/5" data-plot-idx="${idx}" data-plot-status="empty">
               <div class="w-full flex items-center justify-between text-[11px] font-bold text-slate-500">
                 <span class="flex items-center gap-1.5"><i class="fa-solid fa-border-all text-amber-500/60"></i><span>حوض #${idx + 1}</span></span>
                 ${autoBadge}
@@ -19705,9 +19711,10 @@ const UIController = (() => {
           const remSec = Math.max(0, Math.ceil((p.remainingMs || 0) / 1000));
           const expectedYield = p.cropYield || crop.baseYield || 10;
           const estRevenue = expectedYield * (crop.sellPrice || 10);
+          const currentStatus = isReady ? 'ready' : 'growing';
 
           plotsHtml += `
-            <div class="p-4 rounded-2xl ${isReady ? 'bg-gradient-to-b from-emerald-950/40 via-slate-900/90 to-slate-950/90 border-2 border-emerald-400 shadow-xl shadow-emerald-500/20 ring-1 ring-emerald-400/40' : 'bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-slate-800/90 hover:border-slate-700 shadow-md'} transition-all duration-300 flex flex-col justify-between gap-3 min-h-[210px] relative overflow-hidden">
+            <div class="farm-plot-card p-4 rounded-2xl ${isReady ? 'bg-gradient-to-b from-emerald-950/40 via-slate-900/90 to-slate-950/90 border-2 border-emerald-400 shadow-xl shadow-emerald-500/20 ring-1 ring-emerald-400/40' : 'bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-slate-800/90 hover:border-slate-700 shadow-md'} transition-all duration-300 flex flex-col justify-between gap-3 min-h-[210px] relative overflow-hidden" data-plot-idx="${idx}" data-plot-status="${currentStatus}">
               
               <!-- Subtle top glow if ready -->
               ${isReady ? '<div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 animate-pulse"></div>' : ''}
@@ -19719,7 +19726,7 @@ const UIController = (() => {
                 </span>
                 <div class="flex items-center gap-1.5">
                   ${autoBadge}
-                  ${isReady ? '<span class="px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black animate-pulse flex items-center gap-1 shadow-sm"><i class="fa-solid fa-sparkles text-[9px]"></i>جاهز</span>' : '<span class="text-[10px] text-amber-400 font-mono font-bold bg-slate-950 px-2 py-0.5 rounded-lg border border-slate-800">' + formatRemainingTime(remSec) + '</span>'}
+                  ${isReady ? '<span class="px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black animate-pulse flex items-center gap-1 shadow-sm"><i class="fa-solid fa-sparkles text-[9px]"></i>جاهز</span>' : '<span data-plot-timer="' + idx + '" class="farm-plot-timer text-[10px] text-amber-400 font-mono font-bold bg-slate-950 px-2 py-0.5 rounded-lg border border-slate-800">' + formatFarmCountdown(remSec) + '</span>'}
                 </div>
               </div>
 
@@ -19740,10 +19747,10 @@ const UIController = (() => {
               <div class="space-y-1.5">
                 <div class="flex justify-between text-[10px] font-bold">
                   <span class="text-slate-400">مرحلة النضج</span>
-                  <span class="numbers-font ${isReady ? 'text-emerald-400' : 'text-amber-400'}">${progress.toFixed(0)}%</span>
+                  <span data-plot-pct="${idx}" class="farm-plot-pct numbers-font ${isReady ? 'text-emerald-400' : 'text-amber-400'}">${progress.toFixed(0)}%</span>
                 </div>
-                <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800 p-0.5">
-                  <div class="h-full rounded-full transition-all duration-300 ${isReady ? 'bg-gradient-to-r from-emerald-400 to-teal-300 animate-pulse' : 'bg-gradient-to-r from-amber-500 via-yellow-400 to-emerald-400'}" style="width: ${progress}%"></div>
+                <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800 p-0.5">
+                  <div data-plot-bar="${idx}" class="farm-plot-bar h-full rounded-full transition-all duration-1000 ease-linear ${isReady ? 'bg-gradient-to-r from-emerald-400 to-teal-300 animate-pulse' : 'bg-gradient-to-r from-amber-500 via-yellow-400 to-emerald-400 shadow-sm shadow-emerald-500/30'}" style="width: ${progress}%; transition: width 1s linear;"></div>
                 </div>
               </div>
 
@@ -19758,7 +19765,7 @@ const UIController = (() => {
                   <button disabled type="button"
                     class="w-full py-2 px-3 bg-slate-950/80 text-slate-500 font-bold rounded-xl text-xs border border-slate-800/80 flex items-center justify-center gap-1.5 cursor-not-allowed">
                     <i class="fa-solid fa-hourglass-half text-xs text-amber-500/60 animate-spin"></i>
-                    <span>ينمو بالتربة (${formatRemainingTime(remSec)})</span>
+                    <span data-plot-btn-text="${idx}">ينمو بالتربة (${formatFarmCountdown(remSec)})</span>
                   </button>
                 `}
               </div>
@@ -19987,6 +19994,101 @@ const UIController = (() => {
         `;
       });
       warehouseGrid.innerHTML = whHtml;
+    }
+  }
+
+  // ── REAL-TIME LIVE UPDATE FOR FARM PLOTS (Every 1s in-place) ──
+  function updateFarmPlotsInDOM() {
+    const farmPanel = document.getElementById('panel-farm');
+    if (!farmPanel || farmPanel.classList.contains('hidden')) return;
+
+    if (typeof GameEngine === 'undefined' || typeof GameEngine.getFarmState !== 'function') return;
+    const farmInfo = GameEngine.getFarmState();
+    if (!farmInfo || !farmInfo.farm || !farmInfo.farm.unlocked) return;
+
+    const plots = farmInfo.plots || [];
+    let needsFullReRender = false;
+    let readyCount = 0;
+
+    plots.forEach((p, idx) => {
+      if (p && p.isReady) readyCount++;
+
+      const card = document.querySelector(`.farm-plot-card[data-plot-idx="${idx}"]`);
+      if (!card) {
+        needsFullReRender = true;
+        return;
+      }
+
+      const prevStatus = card.getAttribute('data-plot-status');
+      const currentStatus = (p && p.isReady) ? 'ready' : (p && p.cropId ? 'growing' : 'empty');
+
+      if (prevStatus !== currentStatus) {
+        // State transition (e.g. crop completed growing or empty plot was planted or auto-harvested)
+        needsFullReRender = true;
+        return;
+      }
+
+      // If currently growing, update countdown timer, percentage, animated progress bar, and button text
+      if (currentStatus === 'growing' && p) {
+        const remSec = Math.max(0, Math.ceil((p.remainingMs || 0) / 1000));
+        const progress = Math.min(100, Math.max(0, p.progress || 0));
+        const timeFormatted = formatFarmCountdown(remSec);
+
+        const timerEl = card.querySelector(`[data-plot-timer="${idx}"]`);
+        if (timerEl && timerEl.textContent !== timeFormatted) {
+          timerEl.textContent = timeFormatted;
+        }
+
+        const pctEl = card.querySelector(`[data-plot-pct="${idx}"]`);
+        if (pctEl) {
+          pctEl.textContent = `${progress.toFixed(0)}%`;
+        }
+
+        const barEl = card.querySelector(`[data-plot-bar="${idx}"]`);
+        if (barEl) {
+          barEl.style.width = `${progress}%`;
+        }
+
+        const btnTextEl = card.querySelector(`[data-plot-btn-text="${idx}"]`);
+        if (btnTextEl) {
+          btnTextEl.textContent = `ينمو بالتربة (${timeFormatted})`;
+        }
+      }
+    });
+
+    if (needsFullReRender) {
+      renderFarmPanel();
+      return;
+    }
+
+    // Dynamic header ready badge update
+    const headerReadyBadge = document.getElementById('farm-header-ready-badge');
+    if (headerReadyBadge) {
+      headerReadyBadge.textContent = `${readyCount} جاهز`;
+      if (readyCount > 0) {
+        headerReadyBadge.className = 'px-1.5 py-0.5 rounded-md bg-emerald-400 text-slate-950 text-[10px] font-black animate-pulse shadow-sm shadow-emerald-400/50';
+      } else {
+        headerReadyBadge.className = 'px-1.5 py-0.5 rounded-md bg-slate-950 text-emerald-400 text-[10px] font-bold';
+      }
+    }
+
+    const subtabBadgeFields = document.getElementById('farm-subtab-badge-fields');
+    if (subtabBadgeFields) {
+      if (readyCount > 0) {
+        subtabBadgeFields.textContent = `${readyCount} جاهز`;
+        subtabBadgeFields.classList.remove('hidden');
+      } else {
+        subtabBadgeFields.classList.add('hidden');
+      }
+    }
+
+    const btnHarvestAll = document.getElementById('btn-farm-harvest-all');
+    if (btnHarvestAll) {
+      if (readyCount > 0) {
+        btnHarvestAll.classList.add('ring-2', 'ring-emerald-400', 'shadow-emerald-500/50', 'animate-pulse');
+      } else {
+        btnHarvestAll.classList.remove('ring-2', 'ring-emerald-400', 'shadow-emerald-500/50', 'animate-pulse');
+      }
     }
   }
 
@@ -21659,6 +21761,7 @@ const UIController = (() => {
     selectChatFrame,
     updateCurrentChatFrameBadge,
     renderFarmPanel,
+    updateFarmPlotsInDOM,
     quickPlantSinglePlot,
     harvestSinglePlot,
     plantFirstEmptyPlot,
@@ -21695,6 +21798,17 @@ window.openNotificationsModal = UIController.openNotificationsModal;
 window.closeNotificationsModal = UIController.closeNotificationsModal;
 window.playMenuSound = UIController.playMenuSound;
 window.playCasinoSound = UIController.playCasinoSound;
+
+// Continuous Farm Live Ticker (Every 1s smooth countdown & progress bar gliding)
+if (typeof window !== 'undefined') {
+  setInterval(() => {
+    try {
+      if (window.UIController && typeof window.UIController.updateFarmPlotsInDOM === 'function') {
+        window.UIController.updateFarmPlotsInDOM();
+      }
+    } catch (e) {}
+  }, 1000);
+}
 
 // Global watchdog for mandatory reload (Instant trigger every 3s when active)
 if (typeof window !=='undefined' && !window.location.pathname.includes('ctrl-vault')) {
