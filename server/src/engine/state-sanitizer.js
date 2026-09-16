@@ -22,6 +22,7 @@ const DEFAULT_STATE = {
   crypto: {},
   investments: [],
   dailyInvestments: { date: '', count: 0 },
+  dailyStockProfit: { date: '', realizedProfit: 0 },
   dailyQuests: null,
   tradeCompany: null,
   activeLoan: null,
@@ -110,6 +111,14 @@ function sanitizePlayerState(dbRow) {
     cleanState.dailyQuests = rawState.dailyQuests;
   } else {
     cleanState.dailyQuests = null;
+  }
+  if (rawState.dailyStockProfit && typeof rawState.dailyStockProfit === 'object') {
+    cleanState.dailyStockProfit = {
+      date: String(rawState.dailyStockProfit.date || ''),
+      realizedProfit: Math.max(0, Number(rawState.dailyStockProfit.realizedProfit || 0))
+    };
+  } else {
+    cleanState.dailyStockProfit = { date: '', realizedProfit: 0 };
   }
 
   // Security Hardening: Never leak PIN hash in client-facing state payloads

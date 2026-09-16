@@ -295,6 +295,22 @@ class SessionManager {
     if (clientState.dailyInvestments && typeof clientState.dailyInvestments === 'object') {
       s.dailyInvestments = clientState.dailyInvestments;
     }
+    // Synchronize Daily Stock Profit (Prevent cap reset on reload/reconnect)
+    if (clientState.dailyStockProfit && typeof clientState.dailyStockProfit === 'object') {
+      const cDate = String(clientState.dailyStockProfit.date || '');
+      const sDate = s.dailyStockProfit ? String(s.dailyStockProfit.date || '') : '';
+      if (cDate && cDate === sDate) {
+        s.dailyStockProfit = {
+          date: cDate,
+          realizedProfit: Math.max(Number(s.dailyStockProfit.realizedProfit || 0), Number(clientState.dailyStockProfit.realizedProfit || 0))
+        };
+      } else if (cDate) {
+        s.dailyStockProfit = {
+          date: cDate,
+          realizedProfit: Math.max(0, Number(clientState.dailyStockProfit.realizedProfit || 0))
+        };
+      }
+    }
     if (clientState.dailyWork && typeof clientState.dailyWork === 'object') {
       const cDate = String(clientState.dailyWork.date || '');
       const sDate = s.dailyWork ? String(s.dailyWork.date || '') : '';

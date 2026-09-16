@@ -1122,6 +1122,7 @@ const GameEngine = (() => {
     },
     investments: [], // Array of { id, investedAmount, ticksRemaining, rate, name }
     dailyInvestments: { date: '', count: 0 }, // Max 5 investments per 24 hours (calendar day)
+    dailyStockProfit: { date: '', realizedProfit: 0 }, // Realized capital gains from stock market today
     activeLoan: null, // Stores { amount, totalDue, ticksRemaining, initialTicks, isDefaulted, latePenaltyTicks, latePenaltyCount }
     dailyLoans: { date:'', count: 0 }, // Max 2 loans per 24 hours (calendar day)
     dailyWork: { date:'', shifts: 0, overtimeShifts: 0 }, // Max 100 regular shifts and 15 overtime shifts per 24h
@@ -3022,6 +3023,17 @@ const GameEngine = (() => {
         customItems: Array.isArray(dbState.customItems) ? dbState.customItems : [],
         _loadedFromCloud: true
       };
+
+      if (dbState.dailyStockProfit && typeof dbState.dailyStockProfit === 'object') {
+        const today = getTodayDateString();
+        const savedDate = String(dbState.dailyStockProfit.date || '');
+        if (savedDate === today) {
+          state.dailyStockProfit = {
+            date: today,
+            realizedProfit: Math.max(0, Number(dbState.dailyStockProfit.realizedProfit || 0))
+          };
+        }
+      }
 
 
 

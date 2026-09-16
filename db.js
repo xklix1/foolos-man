@@ -1432,6 +1432,22 @@ var AppDB = (() => {
           }
         }
 
+        // 4.85 Daily Stock Profit Guard:
+        // NEVER allow page reloading or reconnecting to roll back today's realized stock profit
+        if (local && local.dailyStockProfit && local.dailyStockProfit.date === todayStr) {
+          if (!stateObj.dailyStockProfit || stateObj.dailyStockProfit.date !== todayStr) {
+            stateObj.dailyStockProfit = { ...local.dailyStockProfit };
+            shouldSyncCloud = true;
+          } else {
+            const locProfit = Number(local.dailyStockProfit.realizedProfit || 0);
+            const srvProfit = Number(stateObj.dailyStockProfit.realizedProfit || 0);
+            if (locProfit > srvProfit) {
+              stateObj.dailyStockProfit.realizedProfit = locProfit;
+              shouldSyncCloud = true;
+            }
+          }
+        }
+
         // 4.9 Daily Quests Guard:
         // NEVER allow page reloading, reconnecting, or logout/login to reset today's daily quest progress or claimed rewards
         if (local && local.dailyQuests && local.dailyQuests.date === todayStr && Array.isArray(local.dailyQuests.quests)) {
@@ -3393,6 +3409,7 @@ var AppDB = (() => {
         dailyWork: { date: '', shifts: 0, overtimeShifts: 0 },
         dailyBlackMarket: { date: '', count: 0 },
         dailyToolUses: { date: '', uses: {} },
+        dailyStockProfit: { date: '', realizedProfit: 0 },
         dailyMarketingCampaigns: { date: '', count: 0 },
         dailyCasinoNetProfit: 0,
         dailyCasinoResetAt: 0,
