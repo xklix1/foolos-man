@@ -1983,6 +1983,7 @@
               class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
               <i class="fa-solid fa-landmark-dome w-4 text-center text-rose-400 text-sm"></i>
               <span>مصلحة الضرائب</span>
+              <span class="mr-auto text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold border border-emerald-500/30">عفو ضريبي</span>
             </button>
           </div>
 
@@ -3050,21 +3051,22 @@
           <div class="space-y-1">
             <div class="flex items-center gap-2.5">
               <div
-                class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center text-lg">
+                class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-lg">
                 <i class="fa-solid fa-landmark-dome"></i>
               </div>
               <div>
                 <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
                   <span>مصلحة الضرائب والمالية العامة (Tax Authority)</span>
                   <span id="tax-compliance-badge"
-                    class="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">ممتثل
-                    ضريبياً</span>
+                    class="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                    <i class="fa-solid fa-sparkles text-yellow-400"></i>
+                    <span>موسم العفو الضريبي (معفى 100%)</span>
+                  </span>
                   <button class="btn-panel-help text-slate-400 hover:text-yellow-400 transition ml-2" data-help="panel-taxes" title="شرح الصفحة">
                     <i class="fa-solid fa-circle-question text-sm"></i>
                   </button>
                 </h3>
-                <p class="text-xs text-slate-400">إدارة الوعاء الضريبي، نسب الاستقطاع للتدفق الساعي حسب حجم الثروة، وتفعيل الدروع
-                  الضريبية القانونية</p>
+                <p class="text-xs text-slate-400">إدارة الوعاء الضريبي • <strong class="text-emerald-400">موسم العفو الضريبي سارٍ حالياً</strong>: إعفاء شامل بنسبة 100% لكافة التدفقات والأرباح.</p>
               </div>
             </div>
           </div>
@@ -3073,6 +3075,29 @@
           <div class="flex items-center gap-2 bg-slate-900/80 px-3.5 py-2 rounded-xl border border-slate-800 text-xs">
             <span class="text-slate-400">الرقم الضريبي للممول:</span>
             <span id="tax-investor-id" class="font-mono font-bold text-yellow-400">EG-TAX-0000</span>
+          </div>
+        </div>
+
+        <!-- Announcement Banner: موسم العفو الضريبي -->
+        <div class="p-5 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-slate-950 to-emerald-950/80 border border-emerald-500/40 shadow-xl shadow-emerald-950/20 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-2xl text-emerald-400 shrink-0 shadow-lg shadow-emerald-500/10 animate-pulse">
+              <i class="fa-solid fa-hand-holding-dollar"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="text-base font-black text-emerald-300">موسم العفو الضريبي</h4>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500 text-slate-950 tracking-wider uppercase">إعفاء تام 100%</span>
+                <span class="text-[11px] text-emerald-400 font-bold">🏛️ قرار سيادي رسمي</span>
+              </div>
+              <p class="text-xs text-emerald-200/80 mt-1 leading-relaxed">
+                بمناسبة فعاليات <strong class="text-white">موسم العفو الضريبي</strong>، تم إعفاء كافة المستثمرين والشركات من أي استقطاعات ضريبية على الأرباح والتدفقات النقدية الساعية بنسبة 100%. أرباحك الصافية تحسب بالكامل دون أي خصومات!
+              </p>
+            </div>
+          </div>
+          <div class="shrink-0 flex items-center gap-2 bg-emerald-900/40 border border-emerald-500/30 px-3.5 py-2 rounded-xl">
+            <i class="fa-solid fa-shield-halved text-emerald-400 text-base"></i>
+            <span class="text-xs font-bold text-emerald-300">نسبة الضريبة: 0.0% معفى</span>
           </div>
         </div>
 
@@ -3099,10 +3124,9 @@
                 <span class="text-xs text-slate-400 font-bold">الشريحة الضريبية الحالية</span>
                 <i class="fa-solid fa-layer-group text-sky-400 text-sm"></i>
               </div>
-              <span id="tax-kpi-bracket" class="text-sm font-black text-emerald-400 block mt-1">الشريحة الأولى (أقل من
-                1M)</span>
+              <span id="tax-kpi-bracket" class="text-sm font-black text-emerald-400 block mt-1">موسم العفو الضريبي (معفى تماماً)</span>
             </div>
-            <p class="text-[10px] text-slate-500 mt-2">تُحدد الشريحة ونسبة الضريبة وفق إجمالي صافي ثروتك.</p>
+            <p class="text-[10px] text-slate-500 mt-2">إعفاء تام وشامل بنسبة 100% لجميع الحسابات.</p>
           </div>
 
           <!-- KPI 3: Live Deduction Rate -->
@@ -3114,13 +3138,13 @@
                 <i class="fa-solid fa-receipt text-rose-400 text-sm"></i>
               </div>
               <div class="flex items-baseline gap-1">
-                <span id="tax-kpi-deduction" class="numbers-font text-2xl font-black text-rose-400">0</span>
+                <span id="tax-kpi-deduction" class="numbers-font text-2xl font-black text-emerald-400">0</span>
                 <span class="text-xs text-slate-400 font-bold">جنيه/ساعة</span>
               </div>
             </div>
             <div class="text-[10px] text-slate-400 mt-2 flex items-center justify-between">
               <span>النسبة الفعالة:</span>
-              <span id="tax-kpi-rate-pct" class="numbers-font font-bold text-yellow-400">1.0%</span>
+              <span id="tax-kpi-rate-pct" class="numbers-font font-bold text-emerald-400">0.0% (معفى)</span>
             </div>
           </div>
 
@@ -3168,6 +3192,10 @@
                   <span>خصم <strong class="text-cyan-400">15% إلى 25%</strong> على تكاليف ترقية الشركات
                     والمشاريع.</span>
                 </div>
+                <div class="col-span-full p-2.5 bg-emerald-950/40 rounded-xl border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2">
+                  <i class="fa-solid fa-circle-info text-emerald-400"></i>
+                  <span>في ظل سريان موسم العفو الضريبي، كافة الضرائب معفاة تلقائياً بنسبة 100% دون الحاجة لتفعيل درع ضريبي.</span>
+                </div>
               </div>
             </div>
 
@@ -3190,9 +3218,10 @@
             <div>
               <h4 class="text-sm font-bold text-white flex items-center gap-2">
                 <i class="fa-solid fa-scale-balanced text-yellow-400"></i>
-                <span>جدول شرائح ضريبة التدفق الساعي حسب صافي الثروة</span>
+                <span>جدول شرائح ضريبة التدفق الساعي (موسم العفو الضريبي)</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">معفى 100%</span>
               </h4>
-              <p class="text-xs text-slate-400 mt-0.5">نظام تصاعدي عادل يستقطع نسبة من إجمالي التدفق بالساعة بناءً على إجمالي ثروة اللاعب</p>
+              <p class="text-xs text-slate-400 mt-0.5">كافة الشرائح معفاة تماماً بنسبة استقطاع 0% طوال فترة موسم العفو الضريبي</p>
             </div>
           </div>
 
@@ -3215,12 +3244,11 @@
                     <span>الشريحة الأولى (المبتدئين والنمو السريع)</span>
                   </td>
                   <td class="p-3 numbers-font text-slate-300 font-bold">أقل من 1,000,000 جنيه</td>
-                  <td class="p-3 text-center font-bold text-emerald-400">1% من التدفق بالساعة</td>
-                  <td class="p-3 text-center font-bold text-emerald-400">0.5% من التدفق</td>
+                  <td class="p-3 text-center font-bold text-emerald-400">0% (معفى - عفو ضريبي)</td>
+                  <td class="p-3 text-center font-bold text-emerald-400">0% (معفى)</td>
                   <td class="p-3 text-left">
                     <span id="tax-badge-row-1"
-                      class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">شريحتك
-                      الحالية</span>
+                      class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">معفى (عفو ضريبي)</span>
                   </td>
                 </tr>
                 <!-- Bracket 2 -->
@@ -3230,11 +3258,11 @@
                     <span>الشريحة المتوسطة (المستثمر الصاعد)</span>
                   </td>
                   <td class="p-3 numbers-font text-slate-300 font-bold">1,000,000 إلى 5,000,000 جنيه</td>
-                  <td class="p-3 text-center font-bold text-sky-400">5% من التدفق بالساعة</td>
-                  <td class="p-3 text-center font-bold text-yellow-400">2.5% من التدفق</td>
+                  <td class="p-3 text-center font-bold text-emerald-400">0% (معفى - عفو ضريبي)</td>
+                  <td class="p-3 text-center font-bold text-emerald-400">0% (معفى)</td>
                   <td class="p-3 text-left">
                     <span id="tax-badge-row-2"
-                      class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">غير خاضع</span>
+                      class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">معفى (عفو ضريبي)</span>
                   </td>
                 </tr>
                 <!-- Bracket 3 -->
@@ -3244,11 +3272,11 @@
                     <span>شريحة كبار المستثمرين وحيتان المال</span>
                   </td>
                   <td class="p-3 numbers-font text-slate-300 font-bold">أكثر من 5,000,000 جنيه</td>
-                  <td class="p-3 text-center font-bold text-rose-400">15% من التدفق بالساعة</td>
-                  <td class="p-3 text-center font-bold text-yellow-400">7.5% من التدفق</td>
+                  <td class="p-3 text-center font-bold text-emerald-400">0% (معفى - عفو ضريبي)</td>
+                  <td class="p-3 text-center font-bold text-emerald-400">0% (معفى)</td>
                   <td class="p-3 text-left">
                     <span id="tax-badge-row-3"
-                      class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">غير خاضع</span>
+                      class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">معفى (عفو ضريبي)</span>
                   </td>
                 </tr>
               </tbody>
@@ -4975,6 +5003,7 @@
           class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
           <i class="fa-solid fa-landmark-dome w-5 text-center text-rose-400 text-sm"></i>
           <span>مصلحة الضرائب</span>
+          <span class="mr-auto text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold border border-emerald-500/30">عفو ضريبي</span>
         </button>
 
         <button data-tab="store"

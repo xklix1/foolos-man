@@ -5269,14 +5269,11 @@ const UIController = (() => {
         <br>• <strong>توزيعات الأرباح الدورية</strong>: احتفاظك بأسهم الشركات يمنحك تدفقات أرباح دورية كل دقيقة مباشرة إلى حسابك.`
       },
       'panel-taxes': {
-        title: 'مصلحة الضرائب والوعاء الضريبي',
-        desc: `النظام الضريبي العادل وحماية السيولة:
-        <br>• <strong>شرائح ضريبة التدفق الساعي</strong>: تُفرض الضريبة كنسبة من تدفقك المالي حسب صافي ثروتك الإجمالية:
-        <br>— <strong>1%</strong> للثروات الأقل من 1,000,000 ج.م.
-        <br>— <strong>5%</strong> للثروات ما بين 1,000,000 و 5,000,000 ج.م.
-        <br>— <strong>15%</strong> للثروات الكبرى التي تتجاوز 5,000,000 ج.م.
-        <br>• <strong>الدرع الضريبي (Tax Shield)</strong>: أداة قانونية تخفض التزاماتك الضريبية بنسبة 50% كاملة.
-        <br>• <strong>حماية الإعسار</strong>: لا تُخصم أي ضرائب إذا كانت سيولتك غير كافية لحمايتك من التعثر.`
+        title: 'مصلحة الضرائب • موسم العفو الضريبي',
+        desc: `🏛️ <strong class="text-emerald-400">موسم العفو الضريبي سارٍ حالياً</strong>:
+        <br>• <strong>إعفاء شامل بنسبة 100%</strong>: تم تجميد كافة الاستقطاعات الضريبية على الأرباح والتدفقات الساعية لكافة المستثمرين بنسبة 100%.
+        <br>• <strong>احتفاظ كامل بالأرباح</strong>: كافة أرباح الشركات، العقارات، والفوائد تضاف لرصيدك بالكامل دون أي خصم.
+        <br>• <strong>الدرع الضريبي (Tax Shield)</strong>: يمنحك خصومات 15% إلى 25% على تكاليف توسعة وترقية الشركات والمشاريع.`
       },
       'panel-store': {
         title: 'متجر كبار الشخصيات والحقيبة (VIP Store)',
@@ -5946,28 +5943,46 @@ const UIController = (() => {
       idEl.textContent =`EG-TAX-${(GameEngine.activeUsername ||'ANON').toUpperCase().substring(0, 10)}`;
     }
 
+    // Compliance Badge
+    const compBadge = document.getElementById('tax-compliance-badge');
+    if (compBadge) {
+      compBadge.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1';
+      compBadge.innerHTML = window.currentLang === 'en' 
+        ? '<i class="fa-solid fa-sparkles text-yellow-400"></i> <span>Tax Amnesty Season (Exempt)</span>' 
+        : '<i class="fa-solid fa-sparkles text-yellow-400"></i> <span>موسم العفو الضريبي (معفى 100%)</span>';
+    }
+
     // 4 KPI Cards
     const taxableEl = document.getElementById('tax-kpi-taxable');
     if (taxableEl) taxableEl.textContent = `${Math.round(taxReport.taxableCashflowPerHour || 0).toLocaleString()} EGP/س`;
 
-    let bracketName = taxReport.bracketName;
-    if (window.currentLang === 'en') {
-      if (taxReport.bracketId === 1) bracketName = 'Bracket 1 (< 1M EGP - 1%)';
-      else if (taxReport.bracketId === 2) bracketName = 'Middle Bracket (1M - 5M EGP - 5%)';
-      else if (taxReport.bracketId === 3) bracketName = 'High Wealth Bracket (> 5M EGP - 15%)';
+    let bracketName = window.currentLang === 'en' ? 'Tax Amnesty Season (0% Exempt)' : 'موسم العفو الضريبي (معفى تماماً)';
+    if (!taxReport.isTaxAmnesty) {
+      bracketName = taxReport.bracketName;
+      if (window.currentLang === 'en') {
+        if (taxReport.bracketId === 1) bracketName = 'Bracket 1 (< 1M EGP - 1%)';
+        else if (taxReport.bracketId === 2) bracketName = 'Middle Bracket (1M - 5M EGP - 5%)';
+        else if (taxReport.bracketId === 3) bracketName = 'High Wealth Bracket (> 5M EGP - 15%)';
+      }
     }
 
     const bracketEl = document.getElementById('tax-kpi-bracket');
     if (bracketEl) {
       bracketEl.textContent = bracketName;
-      bracketEl.className = `text-sm font-black ${taxReport.bracketColor} block mt-1`;
+      bracketEl.className = 'text-sm font-black text-emerald-400 block mt-1';
     }
 
     const deductionEl = document.getElementById('tax-kpi-deduction');
-    if (deductionEl) deductionEl.textContent = Math.round(taxReport.hourlyTax || 0).toLocaleString();
+    if (deductionEl) {
+      deductionEl.textContent = '0';
+      deductionEl.className = 'numbers-font text-2xl font-black text-emerald-400';
+    }
 
     const ratePctEl = document.getElementById('tax-kpi-rate-pct');
-    if (ratePctEl) ratePctEl.textContent = taxReport.effectiveRatePct + (taxReport.taxShieldActive ? ' (مع الدرع)' : '');
+    if (ratePctEl) {
+      ratePctEl.textContent = window.currentLang === 'en' ? '0.0% (Exempt)' : '0.0% (معفى)';
+      ratePctEl.className = 'numbers-font font-bold text-emerald-400';
+    }
 
     const totalPaidEl = document.getElementById('tax-kpi-total-paid');
     if (totalPaidEl) totalPaidEl.textContent = `${(taxReport.totalTaxesPaid || 0).toLocaleString()} EGP`;
@@ -6008,12 +6023,17 @@ const UIController = (() => {
     for (let i = 1; i <= 3; i++) {
       const badge = document.getElementById(`tax-badge-row-${i}`);
       if (badge) {
-        if (taxReport.bracketId === i) {
+        if (taxReport.isTaxAmnesty) {
           badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
-          badge.textContent = window.currentLang === 'en' ? 'Current Bracket' : 'شريحتك الحالية';
+          badge.textContent = window.currentLang === 'en' ? 'Exempt (Tax Amnesty)' : 'معفى (عفو ضريبي)';
         } else {
-          badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-500';
-          badge.textContent = window.currentLang === 'en' ? 'Inactive' : 'غير خاضع';
+          if (taxReport.bracketId === i) {
+            badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+            badge.textContent = window.currentLang === 'en' ? 'Current Bracket' : 'شريحتك الحالية';
+          } else {
+            badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-500';
+            badge.textContent = window.currentLang === 'en' ? 'Inactive' : 'غير خاضع';
+          }
         }
       }
     }

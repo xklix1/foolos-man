@@ -1218,10 +1218,11 @@ const GameEngine = (() => {
   let lastMarketEventTimestamp = 0;
 
   let taxConfig = {
-    rateMultiplier: 1.0,
-    bracket1Rate: 0.01, // < 1M (1%)
-    bracket2Rate: 0.05, // 1M - 5M (5%)
-    bracket3Rate: 0.15  // > 5M (15%)
+    rateMultiplier: 0.0,
+    bracket1Rate: 0.0, // موسم العفو الضريبي (0% إعفاء شامل)
+    bracket2Rate: 0.0,
+    bracket3Rate: 0.0,
+    taxAmnesty: true
   };
 
   function setTaxConfig(cfg) {
@@ -1230,6 +1231,7 @@ const GameEngine = (() => {
       if (cfg.bracket1Rate !== undefined) taxConfig.bracket1Rate = Number(cfg.bracket1Rate);
       if (cfg.bracket2Rate !== undefined) taxConfig.bracket2Rate = Number(cfg.bracket2Rate);
       if (cfg.bracket3Rate !== undefined) taxConfig.bracket3Rate = Number(cfg.bracket3Rate);
+      if (cfg.taxAmnesty !== undefined) taxConfig.taxAmnesty = Boolean(cfg.taxAmnesty);
       console.log('[GAME] Tax configuration updated dynamically:', taxConfig);
     }
   }
@@ -2269,7 +2271,7 @@ const GameEngine = (() => {
       ratePct: taxReport.effectiveRatePct,
       baseRatePct: taxReport.baseRatePct,
       taxShieldActive: taxReport.taxShieldActive,
-      exemptReason: hourlyTax > 0 ? '' : 'لا توجد تدفقات نقدية خاضعة للضريبة'
+      exemptReason: taxReport.isTaxAmnesty ? 'موسم العفو الضريبي - إعفاء شامل بنسبة 100%' : (hourlyTax > 0 ? '' : 'لا توجد تدفقات نقدية خاضعة للضريبة')
     };
 
     const netIncome = Math.max(0, grossIncome - hourlyTax);
@@ -2308,6 +2310,9 @@ const GameEngine = (() => {
   // - Net Worth 1,000,000 to 5,000,000 EGP: 5% of gross hourly cashflow
   // - Net Worth > 5,000,000 EGP: 15% of gross hourly cashflow
   // - Tax Shield: 50% legal deduction on tax rate
+  // Tax Report & Bracket Engine
+  // Tax Amnesty Season (موسم العفو الضريبي):
+  // All wealth brackets are 100% exempt from cashflow taxes (0% effective tax rate).
   function calculateTaxReport(grossPerHourOverride) {
     const netWorth = (typeof state.netWorth === 'number' && state.netWorth > 0) ? state.netWorth : calculateNetWorth();
     const taxShieldActive = Boolean(state.inventory && state.inventory.tax_shield > 0);
@@ -2320,27 +2325,38 @@ const GameEngine = (() => {
       grossPerHour = calculatePassiveIncomePerHour(true);
     }
 
-    let baseRate = (taxConfig.bracket1Rate || 0.01) * (taxConfig.rateMultiplier || 1.0);
-    let bracketName = 'الشريحة الأولى (أقل من 1 مليون ج.م)';
-    let bracketId = 1;
-    let bracketColor = 'text-emerald-400';
-    let bracketRange = 'أقل من 1,000,000 جنيه';
+    // Check if Tax Amnesty Season is in effect (Default: true)
+    const isTaxAmnesty = taxConfig.taxAmnesty !== false;
 
-    if (netWorth > 5000000) {
-      baseRate = (taxConfig.bracket3Rate || 0.15) * (taxConfig.rateMultiplier || 1.0);
-      bracketName = 'شريحة كبار المستثمرين (+5 مليون ج.م)';
-      bracketId = 3;
-      bracketColor = 'text-rose-400';
-      bracketRange = 'أكثر من 5,000,000 جنيه';
-    } else if (netWorth >= 1000000) {
-      baseRate = (taxConfig.bracket2Rate || 0.05) * (taxConfig.rateMultiplier || 1.0);
-      bracketName = 'الشريحة المتوسطة (1 إلى 5 مليون ج.م)';
-      bracketId = 2;
-      bracketColor = 'text-sky-400';
-      bracketRange = '1,000,000 إلى 5,000,000 جنيه';
+    let baseRate = 0;
+    let bracketName = window.currentLang === 'en' ? 'Tax Amnesty Season (100% Exempt)' : 'موسم العفو الضريبي (معفى تماماً 0%)';
+    let bracketId = 0;
+    let bracketColor = 'text-emerald-400';
+    let bracketRange = window.currentLang === 'en' ? 'All Wealth Levels (0% Tax)' : 'كافة مستويات الثروة (معفى تماماً)';
+
+    if (!isTaxAmnesty) {
+      baseRate = (taxConfig.bracket1Rate !== undefined ? taxConfig.bracket1Rate : 0.01) * (taxConfig.rateMultiplier !== undefined ? taxConfig.rateMultiplier : 1.0);
+      bracketName = 'الشريحة الأولى (أقل من 1 مليون ج.م)';
+      bracketId = 1;
+      bracketColor = 'text-emerald-400';
+      bracketRange = 'أقل من 1,000,000 جنيه';
+
+      if (netWorth > 5000000) {
+        baseRate = (taxConfig.bracket3Rate !== undefined ? taxConfig.bracket3Rate : 0.15) * (taxConfig.rateMultiplier !== undefined ? taxConfig.rateMultiplier : 1.0);
+        bracketName = 'شريحة كبار المستثمرين (+5 مليون ج.م)';
+        bracketId = 3;
+        bracketColor = 'text-rose-400';
+        bracketRange = 'أكثر من 5,000,000 جنيه';
+      } else if (netWorth >= 1000000) {
+        baseRate = (taxConfig.bracket2Rate !== undefined ? taxConfig.bracket2Rate : 0.05) * (taxConfig.rateMultiplier !== undefined ? taxConfig.rateMultiplier : 1.0);
+        bracketName = 'الشريحة المتوسطة (1 إلى 5 مليون ج.م)';
+        bracketId = 2;
+        bracketColor = 'text-sky-400';
+        bracketRange = '1,000,000 إلى 5,000,000 جنيه';
+      }
     }
 
-    const effectiveRate = taxShieldActive ? (baseRate * 0.50) : baseRate;
+    const effectiveRate = isTaxAmnesty ? 0 : (taxShieldActive ? (baseRate * 0.50) : baseRate);
     const hourlyTax = Math.round(grossPerHour * effectiveRate);
     const taxPerSecond = hourlyTax / 3600;
 
@@ -2356,11 +2372,12 @@ const GameEngine = (() => {
       baseRate,
       effectiveRate,
       baseRatePct: (baseRate * 100).toFixed(1) + '%',
-      effectiveRatePct: (effectiveRate * 100).toFixed(1) + '%',
+      effectiveRatePct: isTaxAmnesty ? (window.currentLang === 'en' ? '0% (Exempt)' : '0% (معفى)') : ((effectiveRate * 100).toFixed(1) + '%'),
       hourlyTax,
       taxPerSecond,
       taxShieldActive,
       shieldDurationTicks,
+      isTaxAmnesty,
       totalTaxesPaid: state.totalTaxesPaid || 0
     };
   }

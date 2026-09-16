@@ -159,18 +159,10 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
     });
   }
 
-  // 6. Cashflow Tax Deductions based on Net Worth Brackets (1% / 5% / 15%)
+  // 6. Cashflow Tax Deductions (Tax Amnesty Season: 100% Exempt)
   let totalTaxDeducted = 0;
-  const currentNetWorth = calculateNetWorth(playerState);
-  const taxShieldActive = Boolean(playerState.inventory && playerState.inventory.tax_shield > 0);
-  
-  let taxRate = 0.01; // < 1M: 1%
-  if (currentNetWorth > 5000000) {
-    taxRate = 0.15; // > 5M: 15%
-  } else if (currentNetWorth >= 1000000) {
-    taxRate = 0.05; // 1M - 5M: 5%
-  }
-  if (taxShieldActive) taxRate *= 0.50; // 50% discount
+  // موسم العفو الضريبي: كافة الضرائب معفاة تماماً بنسبة 100%
+  let taxRate = 0;
 
   // Total Gross and Net Calculations
   const nonBizProfits = totalAssetEarnings + totalCarNet + bankInterestEarned;
@@ -222,7 +214,7 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
     deductions: {
       payroll: { title: 'أجور ورواتب العمال والموظفين', amount: totalBizPayroll },
       carMaintenance: { title: 'صيانة وتشغيل أسطول السيارات', amount: totalCarMaintenance },
-      tax: { title: 'ضريبة التدفق الساعي', amount: totalTaxDeducted },
+      tax: { title: 'موسم العفو الضريبي (معفى)', amount: totalTaxDeducted },
       suppliesConsumedHours: Number((totalSuppliesConsumedSec / 3600).toFixed(1))
     },
     breakdown: bizBreakdown
