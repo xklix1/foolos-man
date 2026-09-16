@@ -300,15 +300,29 @@ const UIController = (() => {
   let submitForgotPinForm = () => {};
 
   function getActiveUsernameSafe() {
-    return (
-      (window.GameEngine && window.GameEngine.activeUsername) ||
-      (window.GameEngine && window.GameEngine.state && window.GameEngine.state.username) ||
-      (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) ||
-      (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_active_session_user')) ||
-      (window.AppDB && window.AppDB.currentUsername) ||
-      (document.getElementById('dash-uid') && document.getElementById('dash-uid').textContent && document.getElementById('dash-uid').textContent !== '...' ? document.getElementById('dash-uid').textContent : '') ||
-      ''
-    ).trim();
+    // 1. Current GameEngine active session username (Highest Priority)
+    if (window.GameEngine && window.GameEngine.state && window.GameEngine.state.username) {
+      return String(window.GameEngine.state.username).trim();
+    }
+    if (window.GameEngine && window.GameEngine.activeUsername) {
+      return String(window.GameEngine.activeUsername).trim();
+    }
+    // 2. Authoritative Server Bridge active session username
+    if (window.ServerBridge && window.ServerBridge.activeUsername) {
+      return String(window.ServerBridge.activeUsername).trim();
+    }
+    // 3. AppDB username
+    if (window.AppDB && window.AppDB.currentUsername) {
+      return String(window.AppDB.currentUsername).trim();
+    }
+    // 4. Stored active session
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) {
+      return String(localStorage.getItem('rasalmal_active_session_user')).trim();
+    }
+    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_active_session_user')) {
+      return String(sessionStorage.getItem('rasalmal_active_session_user')).trim();
+    }
+    return '';
   }
 
   function isFarmTesterAccount() {
@@ -346,11 +360,15 @@ const UIController = (() => {
   }
 
   /**
-   * Beta Access Control: Checks if active user is strictly developer account 'Khaled'
+   * Beta Access Control: Checks if active user is strictly and literally developer account 'Khaled'
+   * Rejects any substring, prefix, suffix, or other name containing 'khaled'
    */
   function isKhaledUser() {
-    const raw = getActiveUsernameSafe() || '';
-    return raw.trim().toLowerCase() === 'khaled';
+    const raw = getActiveUsernameSafe();
+    if (!raw) return false;
+    const clean = raw.trim().toLowerCase();
+    // Exclusively and literally 'khaled' only (length exactly 6, no additional words or prefixes)
+    return clean === 'khaled';
   }
 
   /**
@@ -447,6 +465,8 @@ const UIController = (() => {
     if (!jailSpeedupBtn) return;
     if (isKhaledUser() && jailSec > 0) {
       jailSpeedupBtn.classList.remove('hidden');
+      jailSpeedupBtn.classList.add('flex');
+      jailSpeedupBtn.style.removeProperty('display');
       const cost = Math.max(1, Math.ceil(jailSec / 60));
       const costEl = document.getElementById('jail-speedup-cost');
       if (costEl) costEl.textContent = cost;
@@ -456,6 +476,8 @@ const UIController = (() => {
       }
     } else {
       jailSpeedupBtn.classList.add('hidden');
+      jailSpeedupBtn.classList.remove('flex');
+      jailSpeedupBtn.style.setProperty('display', 'none', 'important');
     }
   }
 
@@ -2753,7 +2775,7 @@ const UIController = (() => {
       cfmEl.title =`+${formatFullCurrency(cashflow)}`;
     }
 
-    // Update Gold balance (Beta - strictly for Khaled)
+    // Update Gold balance (Beta - strictly and literally for Khaled)
     const isKhaled = isKhaledUser();
     const goldDesktopContainer = document.getElementById('stat-gold-container-desktop');
     const goldMobileContainer = document.getElementById('stat-gold-container-mobile');
@@ -2762,26 +2784,40 @@ const UIController = (() => {
     if (isKhaled) {
       if (goldDesktopContainer) {
         goldDesktopContainer.classList.remove('hidden');
+        goldDesktopContainer.classList.add('flex');
+        goldDesktopContainer.style.removeProperty('display');
         const gEl = document.getElementById('stat-gold');
         if (gEl) gEl.textContent = goldVal.toLocaleString();
       }
       if (goldMobileContainer) {
         goldMobileContainer.classList.remove('hidden');
+        goldMobileContainer.classList.add('flex');
+        goldMobileContainer.style.removeProperty('display');
         const gmEl = document.getElementById('stat-gold-mobile');
         if (gmEl) gmEl.textContent = goldVal.toLocaleString();
       }
     } else {
-      if (goldDesktopContainer) goldDesktopContainer.classList.add('hidden');
-      if (goldMobileContainer) goldMobileContainer.classList.add('hidden');
+      if (goldDesktopContainer) {
+        goldDesktopContainer.classList.add('hidden');
+        goldDesktopContainer.classList.remove('flex');
+        goldDesktopContainer.style.setProperty('display', 'none', 'important');
+      }
+      if (goldMobileContainer) {
+        goldMobileContainer.classList.add('hidden');
+        goldMobileContainer.classList.remove('flex');
+        goldMobileContainer.style.setProperty('display', 'none', 'important');
+      }
     }
 
-    // Update Speed-Up buttons across panels (Bank Loan & Casino)
+    // Update Speed-Up buttons across panels (Bank Loan & Casino - strictly for Khaled)
     const loanSpeedupBtn = document.getElementById('btn-speedup-loan');
     if (loanSpeedupBtn) {
       const now = Date.now();
       const loanCd = Number(s.loanCooldownUntil || 0);
       if (isKhaled && loanCd > now) {
         loanSpeedupBtn.classList.remove('hidden');
+        loanSpeedupBtn.classList.add('flex');
+        loanSpeedupBtn.style.removeProperty('display');
         const cost = Math.max(1, Math.ceil((loanCd - now) / 60000));
         const costEl = document.getElementById('loan-speedup-cost');
         if (costEl) costEl.textContent = cost;
@@ -2791,6 +2827,8 @@ const UIController = (() => {
         }
       } else {
         loanSpeedupBtn.classList.add('hidden');
+        loanSpeedupBtn.classList.remove('flex');
+        loanSpeedupBtn.style.setProperty('display', 'none', 'important');
       }
     }
 
@@ -2800,6 +2838,8 @@ const UIController = (() => {
       const casinoCd = Number(s.casinoCooldownUntil || 0);
       if (isKhaled && casinoCd > now) {
         casinoSpeedupBtn.classList.remove('hidden');
+        casinoSpeedupBtn.classList.add('flex');
+        casinoSpeedupBtn.style.removeProperty('display');
         const cost = Math.max(1, Math.ceil((casinoCd - now) / 60000));
         const costEl = document.getElementById('casino-speedup-cost');
         if (costEl) costEl.textContent = cost;
@@ -2809,6 +2849,8 @@ const UIController = (() => {
         }
       } else {
         casinoSpeedupBtn.classList.add('hidden');
+        casinoSpeedupBtn.classList.remove('flex');
+        casinoSpeedupBtn.style.setProperty('display', 'none', 'important');
       }
     }
 
