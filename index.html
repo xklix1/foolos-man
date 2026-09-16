@@ -1698,6 +1698,12 @@
       </div>
 
       <div class="flex flex-col gap-2">
+        <!-- Speed-Up Button for Khaled (Closed Beta) -->
+        <button id="btn-jail-speedup-khaled" type="button" class="hidden w-full py-2.5 px-4 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all cursor-pointer">
+          <i class="fa-solid fa-bolt text-slate-950"></i>
+          <span>تسريع وفك السجن فوراً (<span id="jail-speedup-cost">1</span> 🪙 ذهب)</span>
+        </button>
+
         <button id="btn-jail-exit-to-legal" type="button" class="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all cursor-pointer">
           <i class="fa-solid fa-arrow-right-from-bracket"></i>
           <span><i class="fa-solid fa-gamepad mr-1.5"></i> متابعة اللعب وباقي صفحات اللعبة</span>
@@ -1908,6 +1914,19 @@
               <span class="numbers-font text-xs font-bold text-emerald-400 flex items-center gap-1.5">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span id="stat-cashflow">+0</span> جنيه/س
+              </span>
+            </div>
+
+            <div id="stat-gold-container-desktop" class="hidden flex items-center justify-between border-b border-amber-500/30 pb-2 bg-amber-500/5 px-2 py-1 rounded-lg">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xs animate-pulse">
+                  <i class="fa-solid fa-coins"></i>
+                </span>
+                <span class="text-xs text-amber-300 font-bold">الذهب (Beta)</span>
+              </div>
+              <span class="numbers-font text-xs font-black text-amber-400 flex items-center gap-1">
+                <span id="stat-gold">0</span>
+                <span class="text-[10px]">🪙</span>
               </span>
             </div>
 
@@ -2154,6 +2173,14 @@
           <span class="numbers-font font-black text-emerald-400 flex items-center gap-1"><span
               class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span><span
               id="stat-cashflow-mobile">+0</span> جنيه/س</span>
+        </div>
+
+        <div id="stat-gold-container-mobile"
+          class="hidden px-2.5 py-1.5 bg-amber-950/40 rounded-lg border border-amber-500/30 flex justify-between items-center text-[10px]">
+          <span class="text-amber-400 font-bold flex items-center gap-1.5"><i
+              class="fa-solid fa-coins text-amber-400"></i> رصيد الذهب (Beta)</span>
+          <span class="numbers-font font-black text-amber-400 flex items-center gap-1"><span
+              id="stat-gold-mobile">0</span> 🪙</span>
         </div>
       </div>
 
@@ -2499,6 +2526,11 @@
               <button id="btn-repay-loan"
                 class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs transition">
                 سداد القرض بالكامل
+              </button>
+              <button id="btn-speedup-loan" type="button"
+                class="hidden col-span-2 py-2 px-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-lg text-xs flex items-center justify-center gap-1.5 shadow transition cursor-pointer">
+                <i class="fa-solid fa-bolt text-slate-950"></i>
+                <span>تسريع وإنهاء مهلة تقييم القرض (<span id="loan-speedup-cost">1</span> 🪙 ذهب)</span>
               </button>
             </div>
           </div>
@@ -4160,6 +4192,12 @@
               <i class="fa-solid fa-crown text-yellow-400"></i>
               <span id="casino-vip-text">VIP الحظ: غير نشط</span>
             </div>
+            <!-- Speed-Up Casino Button for Khaled (Closed Beta) -->
+            <button id="btn-speedup-casino" type="button"
+              class="hidden px-3 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20 cursor-pointer">
+              <i class="fa-solid fa-bolt text-slate-950"></i>
+              <span>تسريع مهلة الكازينو (<span id="casino-speedup-cost">1</span> 🪙)</span>
+            </button>
           </div>
         </div>
 
@@ -6807,7 +6845,7 @@
   <script src="db.js?v=25.0"></script>
   <script src="server-client-bridge.js?v=25.0"></script>
   <script src="game.js?v=25.0"></script>
-  <script src="ui.js?v=25.0"></script>
+  <script src="ui.js?v=26.0"></script>
   <script src="pwa-manager.js?v=2.5.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────

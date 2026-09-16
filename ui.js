@@ -354,6 +354,111 @@ const UIController = (() => {
     }
   }
 
+  /**
+   * Beta Access Control: Checks if active user is strictly developer account 'Khaled'
+   */
+  function isKhaledUser() {
+    const raw = getActiveUsernameSafe() || '';
+    return raw.trim().toLowerCase() === 'khaled';
+  }
+
+  /**
+   * Authoritative Speed-Up Client Trigger
+   * Invokes POST /api/action/speed-up on Fastify engine
+   */
+  async function requestSpeedUp(timerType, targetKey) {
+    if (!isKhaledUser()) return;
+
+    const username = 'Khaled';
+    const base = (window.SERVER_API_URL || '').replace(/\/$/, '') || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : '');
+
+    try {
+      showToast('جاري تسريع المؤقت ⚡', 'يتم التحقق من الخادم وخصم الذهب...', 'info');
+
+      const res = await fetch(`${base}/api/action/speed-up`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, timerType, targetKey })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.error === 'INSUFFICIENT_GOLD') {
+          showToast('رصيد ذهب غير كافٍ', `تحتاج إلى ${data.required} ذهب لتسريع هذا المؤقت. رصيدك الحالي: ${data.current} 🪙`, 'error');
+        } else {
+          showToast('فشل التسريع', data.message || data.error || 'تعذر تسريع المؤقت.', 'error');
+        }
+        return;
+      }
+
+      // Authoritatively update GameEngine state
+      if (data.state && typeof GameEngine !== 'undefined') {
+        Object.assign(GameEngine.state, data.state);
+      } else if (typeof GameEngine !== 'undefined' && GameEngine.state) {
+        if (data.currentGold !== undefined) GameEngine.state.gold = data.currentGold;
+        if (timerType === 'jail') GameEngine.state.jailTimer = 0;
+        if (timerType === 'cooldown' && targetKey) {
+          const map = { loan: 'loanCooldownUntil', work: 'workCooldownUntil', casino: 'casinoCooldownUntil' };
+          if (map[targetKey]) GameEngine.state[map[targetKey]] = 0;
+        }
+      }
+
+      // Close Jail Overlay immediately if jail was sped up
+      if (timerType === 'jail') {
+        const jailOverlay = document.getElementById('jail-overlay');
+        if (jailOverlay) jailOverlay.classList.add('hidden');
+      }
+
+      // If work cooldown was sped up, reset work interval & restore button
+      if (timerType === 'cooldown' && targetKey === 'work') {
+        if (workCooldownTimer) {
+          clearInterval(workCooldownTimer);
+          workCooldownTimer = null;
+        }
+        workCooldownActive = false;
+        const jobWorkBtn = document.getElementById('btn-job-work');
+        if (jobWorkBtn) {
+          jobWorkBtn.disabled = false;
+          jobWorkBtn.style.opacity = '';
+          jobWorkBtn.style.cursor = 'pointer';
+          jobWorkBtn.innerHTML = '<i class="fa-solid fa-briefcase ml-2"></i> بدء وردية العمل الفورية';
+        }
+      }
+
+      // If smuggling was sped up, refresh active jobs DOM
+      if (timerType === 'smuggling' && typeof updateActiveSmugglingJobsInDOM === 'function') {
+        updateActiveSmugglingJobsInDOM();
+      }
+
+      showToast('تم التسريع بنجاح ⚡', `تم إنهاء المؤقت بنجاح وخصم ${data.goldDeducted} 🪙 ذهب.`, 'success');
+      if (typeof playMenuSound === 'function') playMenuSound('success');
+      if (typeof renderAll === 'function') renderAll();
+    } catch (err) {
+      console.error('[SpeedUp] Network Error:', err);
+      showToast('خطأ في الاتصال', 'تعذر الاتصال بالخادم: ' + err.message, 'error');
+    }
+  }
+
+  function updateJailOverlaySpeedupUI(jailSec) {
+    const jailSpeedupBtn = document.getElementById('btn-jail-speedup-khaled');
+    if (!jailSpeedupBtn) return;
+    if (isKhaledUser() && jailSec > 0) {
+      jailSpeedupBtn.classList.remove('hidden');
+      const cost = Math.max(1, Math.ceil(jailSec / 60));
+      const costEl = document.getElementById('jail-speedup-cost');
+      if (costEl) costEl.textContent = cost;
+      if (!jailSpeedupBtn._bound) {
+        jailSpeedupBtn._bound = true;
+        jailSpeedupBtn.addEventListener('click', () => requestSpeedUp('jail', null));
+      }
+    } else {
+      jailSpeedupBtn.classList.add('hidden');
+    }
+  }
+
+  window.requestSpeedUp = requestSpeedUp;
+  window.isKhaledUser = isKhaledUser;
+
   function applyGlowSetting(enabled) {
     if (typeof document !=='undefined' && document.body) {
       if (enabled) {
@@ -2232,6 +2337,7 @@ const UIController = (() => {
         jailOverlay.classList.remove('hidden');
         const countdownEl = document.getElementById('jail-countdown');
         if (countdownEl) countdownEl.textContent = state.jailTimer;
+        updateJailOverlaySpeedupUI(state.jailTimer);
       } else {
         jailOverlay.classList.add('hidden');
       }
@@ -2334,6 +2440,7 @@ const UIController = (() => {
         jailOverlay.classList.remove('hidden');
         const countdownEl = document.getElementById('jail-countdown');
         if (countdownEl) countdownEl.textContent = state.jailTimer;
+        updateJailOverlaySpeedupUI(state.jailTimer);
       } else if (jailOverlay) {
         jailOverlay.classList.add('hidden');
       }
@@ -2644,6 +2751,65 @@ const UIController = (() => {
     if (cfmEl) {
       cfmEl.textContent =`+${formatCompactNumber(cashflow)}`;
       cfmEl.title =`+${formatFullCurrency(cashflow)}`;
+    }
+
+    // Update Gold balance (Beta - strictly for Khaled)
+    const isKhaled = isKhaledUser();
+    const goldDesktopContainer = document.getElementById('stat-gold-container-desktop');
+    const goldMobileContainer = document.getElementById('stat-gold-container-mobile');
+    const goldVal = Math.max(0, Number(s.gold || 0));
+
+    if (isKhaled) {
+      if (goldDesktopContainer) {
+        goldDesktopContainer.classList.remove('hidden');
+        const gEl = document.getElementById('stat-gold');
+        if (gEl) gEl.textContent = goldVal.toLocaleString();
+      }
+      if (goldMobileContainer) {
+        goldMobileContainer.classList.remove('hidden');
+        const gmEl = document.getElementById('stat-gold-mobile');
+        if (gmEl) gmEl.textContent = goldVal.toLocaleString();
+      }
+    } else {
+      if (goldDesktopContainer) goldDesktopContainer.classList.add('hidden');
+      if (goldMobileContainer) goldMobileContainer.classList.add('hidden');
+    }
+
+    // Update Speed-Up buttons across panels (Bank Loan & Casino)
+    const loanSpeedupBtn = document.getElementById('btn-speedup-loan');
+    if (loanSpeedupBtn) {
+      const now = Date.now();
+      const loanCd = Number(s.loanCooldownUntil || 0);
+      if (isKhaled && loanCd > now) {
+        loanSpeedupBtn.classList.remove('hidden');
+        const cost = Math.max(1, Math.ceil((loanCd - now) / 60000));
+        const costEl = document.getElementById('loan-speedup-cost');
+        if (costEl) costEl.textContent = cost;
+        if (!loanSpeedupBtn._bound) {
+          loanSpeedupBtn._bound = true;
+          loanSpeedupBtn.addEventListener('click', () => requestSpeedUp('cooldown', 'loan'));
+        }
+      } else {
+        loanSpeedupBtn.classList.add('hidden');
+      }
+    }
+
+    const casinoSpeedupBtn = document.getElementById('btn-speedup-casino');
+    if (casinoSpeedupBtn) {
+      const now = Date.now();
+      const casinoCd = Number(s.casinoCooldownUntil || 0);
+      if (isKhaled && casinoCd > now) {
+        casinoSpeedupBtn.classList.remove('hidden');
+        const cost = Math.max(1, Math.ceil((casinoCd - now) / 60000));
+        const costEl = document.getElementById('casino-speedup-cost');
+        if (costEl) costEl.textContent = cost;
+        if (!casinoSpeedupBtn._bound) {
+          casinoSpeedupBtn._bound = true;
+          casinoSpeedupBtn.addEventListener('click', () => requestSpeedUp('cooldown', 'casino'));
+        }
+      } else {
+        casinoSpeedupBtn.classList.add('hidden');
+      }
     }
 
     // Update Facebook Reward Button State
@@ -3810,16 +3976,29 @@ const UIController = (() => {
       const remaining = Math.ceil((totalMs - elapsed) / 1000);
       const progress = elapsed / totalMs;
       const barWidth = Math.round(progress * 100);
+      const isKhaled = isKhaledUser();
       btn.innerHTML =`
         <span class="flex items-center justify-center gap-2 w-full">
           <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
           </svg>
           <span>مهلة زمنية... ${remaining}ث</span>
+          ${isKhaled ? `<button id="btn-quick-speedup-work" type="button" class="mr-2 px-2 py-0.5 rounded bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[10px] shadow cursor-pointer transition flex items-center gap-1 z-20 pointer-events-auto" title="تسريع فوري"><i class="fa-solid fa-bolt"></i> 1 🪙</button>` : ''}
         </span>
         <div class="absolute bottom-0 right-0 h-0.5 bg-yellow-500/60 transition-all duration-75 rounded-b-lg" style="width: ${barWidth}%; left: 0;"></div>`;
       btn.style.position ='relative';
       btn.style.overflow ='hidden';
+
+      if (isKhaled) {
+        const quickBtn = btn.querySelector('#btn-quick-speedup-work');
+        if (quickBtn && !quickBtn._bound) {
+          quickBtn._bound = true;
+          quickBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            requestSpeedUp('cooldown', 'work');
+          });
+        }
+      }
     }
 
     renderCountdown();
@@ -17535,8 +17714,9 @@ const UIController = (() => {
 
     let jobsHtml ='';
     const now = Date.now();
+    const isKhaled = isKhaledUser();
 
-    s.activeSmugglingJobs.forEach(job => {
+    s.activeSmugglingJobs.forEach((job, idx) => {
       const route = GameEngine.SMUGGLING_ROUTES[job.routeId];
       const vehicle = GameEngine.SMUGGLING_VEHICLES[job.vehicleType];
       if (!route || !vehicle) return;
@@ -17545,6 +17725,8 @@ const UIController = (() => {
       const remainingSec = Math.ceil(remainingMs / 1000);
       const totalSec = route.durationTicks || 1;
       const progressPct = Math.min(100, ((totalSec - remainingSec) / totalSec) * 100);
+      const goldCost = Math.max(1, Math.ceil(remainingMs / 60000));
+      const targetJobKey = String(job.id !== undefined ? job.id : idx);
 
       jobsHtml +=`
         <div class="p-3 bg-slate-950 border border-slate-900 rounded-xl space-y-2 text-xs text-right">
@@ -17564,10 +17746,31 @@ const UIController = (() => {
           <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
             <div class="h-full bg-gradient-to-l from-rose-600 to-rose-400 rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
           </div>
+
+          ${isKhaled && remainingMs > 0 ? `
+          <div class="flex justify-between items-center pt-1 border-t border-slate-900/80 mt-1">
+            <span class="text-[9px] text-amber-400/80 font-bold flex items-center gap-1">
+              <i class="fa-solid fa-coins text-amber-400"></i> تسريع فوري (Beta)
+            </span>
+            <button type="button" class="btn-speedup-smuggling px-2.5 py-1 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-lg text-[10px] flex items-center gap-1 shadow transition cursor-pointer active:scale-95" data-job-id="${targetJobKey}">
+              <i class="fa-solid fa-bolt text-slate-950"></i>
+              <span>إنهاء فوري (${goldCost} 🪙)</span>
+            </button>
+          </div>` : ''}
         </div>`;
     });
 
     activeJobsContainer.innerHTML = jobsHtml;
+
+    if (isKhaled) {
+      activeJobsContainer.querySelectorAll('.btn-speedup-smuggling').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const jId = btn.getAttribute('data-job-id');
+          requestSpeedUp('smuggling', jId);
+        });
+      });
+    }
   }
 
   async function buySmugglingVehicleAction(vehicleId) {
