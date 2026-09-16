@@ -13337,7 +13337,11 @@ const UIController = (() => {
               <span class="text-[10px] text-slate-400 numbers-font font-bold">${timeStr}</span>
             </div>
 
-            <p class="text-xs text-slate-300 leading-relaxed">${mail.payload.message ||'تم اعتماد تحويلك بنجاح وإيداع كافة مزايا الباقة بحسابك.'}</p>
+            <p class="text-xs text-slate-300 leading-relaxed">${(mail.payload.message ||'تم اعتماد تحويلك بنجاح وإيداع كافة مزايا الباقة بحسابك.')
+              .replace(/شكراً لدعمك لسيرفر لعبة رأس المال[!\.\s]*/gi, '')
+              .replace(/شكرا لدعمك لسيرفر لعبة رأس المال[!\.\s]*/gi, '')
+              .replace(/نتمنى لك تجربة لعب ممتعة وموفقة[!\.\s]*/gi, '')
+              .trim()}</p>
 
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center pt-1">
               <div class="p-2 rounded-xl bg-slate-950/80 border border-slate-800">
@@ -16005,7 +16009,9 @@ const UIController = (() => {
     const cleanMsg = (popupData.message || '')
       .replace(/\n?شكراً لدعمك لسيرفر لعبة رأس المال[^\n]*/gi, '')
       .replace(/\n?شكرا لدعمك لسيرفر لعبة رأس المال[^\n]*/gi, '')
+      .replace(/\n?نتمنى لك تجربة لعب ممتعة وموفقة[^\n]*/gi, '')
       .replace(/مبروك يا بطل!\s*تم تأكيد الشحن بنجاح وإضافة المزايا لحسابك فوراً:/gi, 'تم تأكيد واعتماد الشحن بنجاح وإضافة المزايا لحسابك:')
+      .replace(/\n{3,}/g, '\n\n')
       .trim();
 
     if (titleEl) titleEl.textContent = popupData.title || 'رسالة من الإدارة';
