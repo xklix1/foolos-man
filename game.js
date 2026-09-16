@@ -2757,23 +2757,7 @@ const GameEngine = (() => {
 
             if (currentStock < siloCapacity) {
               const producedPerTick = Math.max(0.02, bottleneck * 0.04 * logisticsBonus * balanceFactor);
-              
-              // Operational & raw materials maintenance cost (6% of manufactured value)
-              const opCost = Math.floor(producedPerTick * secDef.product.baseValue * 0.06);
-              let funded = true;
-              if (opCost > 0) {
-                if ((state.cash || 0) >= opCost) {
-                  state.cash -= opCost;
-                } else if ((state.bank || 0) >= opCost) {
-                  state.bank -= opCost;
-                } else {
-                  funded = false; // Production pauses if working capital is empty
-                }
-              }
-
-              if (funded) {
-                sec.readyStock = Math.min(siloCapacity, currentStock + producedPerTick);
-              }
+              sec.readyStock = Math.min(siloCapacity, currentStock + producedPerTick);
             }
           }
         }
