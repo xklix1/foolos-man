@@ -3617,65 +3617,77 @@
       <section id="panel-farm" class="game-panel hidden space-y-6">
 
         <!-- 1. Farm Header & Status Hero Card -->
-        <div class="glass-panel p-6 rounded-3xl border border-amber-500/30 relative overflow-hidden shadow-2xl"
-          style="background: radial-gradient(ellipse at top right, rgba(245, 158, 11, 0.15), rgba(16, 185, 129, 0.08), rgba(15, 23, 42, 0.95)) !important;">
-          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
-            <div class="space-y-1.5">
-              <div class="flex items-center gap-2.5 flex-wrap">
-                <span class="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xl shadow-lg shadow-amber-500/10">
+        <div class="glass-panel p-6 sm:p-7 rounded-3xl border border-emerald-500/30 relative overflow-hidden shadow-2xl transition duration-300"
+          style="background: radial-gradient(ellipse at top right, rgba(16, 185, 129, 0.18), rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.96)) !important;">
+          
+          <!-- Subtle background ambient grain/glow -->
+          <div class="absolute -top-24 -right-24 w-72 h-72 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5 relative z-10">
+            <div class="space-y-2">
+              <div class="flex items-center gap-3 flex-wrap">
+                <span class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-amber-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-2xl shadow-xl shadow-emerald-500/15">
                   <i class="fa-solid fa-wheat-awn"></i>
                 </span>
-                <h2 class="text-xl font-black text-white">المزرعة الاستثمارية وسلاسل المحاصيل 🌾</h2>
-                <span class="text-[10px] px-2.5 py-0.5 rounded-full font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">نسخة تجريبية حصرية</span>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">المزرعة الاستثمارية وسلاسل الإنتاج 🌾</h2>
+                    <span class="text-[10px] px-2.5 py-0.5 rounded-full font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse">Agro Tycoon 2.0</span>
+                  </div>
+                  <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                    استصلح الأراضي الخصبة، ازرع المحاصيل المتنوعة، طوّر شبكات الري والأسمدة، وحقق أقصى ربحية عبر دورات الحصاد والتصنيع الغذائي.
+                  </p>
+                </div>
               </div>
-              <p class="text-xs text-slate-400 max-w-2xl leading-relaxed">
-                استصلح الأراضي الزراعية، ازرع مختلف المحاصيل من القمح إلى الزعفران الإمبراطوري، طوّر شبكات الري الحديثة، ووظف عمال الحصاد الآلي لجني أرباح طائلة!
-              </p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <!-- Top Interactive Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2.5 shrink-0 w-full lg:w-auto">
               <button id="btn-farm-harvest-all" type="button"
-                class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs transition duration-200 shadow-lg shadow-emerald-500/20 flex items-center gap-2 cursor-pointer active:scale-95">
+                class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs transition-all duration-200 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95">
                 <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
                 <span>حصاد الكل</span>
+                <span id="farm-header-ready-badge" class="px-1.5 py-0.5 rounded-md bg-slate-950 text-emerald-400 text-[10px] font-bold">0 جاهز</span>
               </button>
               <button id="btn-farm-sell-all" type="button"
-                class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs transition duration-200 shadow-lg shadow-yellow-500/20 flex items-center gap-2 cursor-pointer active:scale-95">
+                class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs transition-all duration-200 shadow-lg shadow-yellow-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95">
                 <i class="fa-solid fa-sack-dollar text-sm"></i>
                 <span>بيع كامل المخزون</span>
+                <span id="farm-header-stored-value" class="px-1.5 py-0.5 rounded-md bg-slate-950 text-amber-400 text-[10px] font-bold">0 EGP</span>
               </button>
             </div>
           </div>
 
           <!-- Farm Key Stat Badges -->
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-800/80">
-            <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+            <div class="p-3.5 bg-slate-950/70 rounded-2xl border border-slate-800/90 shadow-sm hover:border-amber-500/30 transition">
               <span class="text-[10px] text-slate-400 font-bold block mb-1 flex items-center gap-1.5">
                 <i class="fa-solid fa-layer-group text-amber-400 text-xs"></i>
                 <span>رقعة الأرض والأحواض</span>
               </span>
-              <span id="farm-stat-plots" class="numbers-font text-base font-black text-white">4 أحواض</span>
+              <span id="farm-stat-plots" class="numbers-font text-sm sm:text-base font-black text-white">4 أحواض</span>
             </div>
-            <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+            <div class="p-3.5 bg-slate-950/70 rounded-2xl border border-slate-800/90 shadow-sm hover:border-cyan-500/30 transition">
               <span class="text-[10px] text-slate-400 font-bold block mb-1 flex items-center gap-1.5">
                 <i class="fa-solid fa-faucet-drip text-cyan-400 text-xs"></i>
                 <span>شبكة الري والمياه</span>
               </span>
               <span id="farm-stat-irrigation" class="text-xs font-black text-cyan-400 truncate block">ري تقليدي</span>
             </div>
-            <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+            <div class="p-3.5 bg-slate-950/70 rounded-2xl border border-slate-800/90 shadow-sm hover:border-emerald-500/30 transition">
               <span class="text-[10px] text-slate-400 font-bold block mb-1 flex items-center gap-1.5">
                 <i class="fa-solid fa-flask-vial text-emerald-400 text-xs"></i>
                 <span>جودة التربة والأسمدة</span>
               </span>
               <span id="farm-stat-fertilizer" class="text-xs font-black text-emerald-400 truncate block">تربة اعتيادية</span>
             </div>
-            <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+            <div class="p-3.5 bg-slate-950/70 rounded-2xl border border-slate-800/90 shadow-sm hover:border-purple-500/30 transition">
               <span class="text-[10px] text-slate-400 font-bold block mb-1 flex items-center gap-1.5">
                 <i class="fa-solid fa-robot text-purple-400 text-xs"></i>
                 <span>عمال وأتمتة الحصاد</span>
               </span>
-              <span id="farm-stat-workers" class="numbers-font text-base font-black text-purple-300">0 عمال</span>
+              <span id="farm-stat-workers" class="numbers-font text-sm sm:text-base font-black text-purple-300">0 عمال</span>
             </div>
           </div>
         </div>
@@ -3700,9 +3712,10 @@
 
         <!-- Sub-tabs for Farm (Fields & Crops, Processing Workshop, Livestock, B2B Contracts) -->
         <div id="farm-subtabs-nav" class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-slate-800/80">
-          <button type="button" class="farm-subtab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer bg-amber-500/20 text-amber-300 border border-amber-500/40" data-farm-subtab="fields">
-            <i class="fa-solid fa-wheat-awn text-amber-400"></i>
+          <button type="button" class="farm-subtab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm" data-farm-subtab="fields">
+            <i class="fa-solid fa-wheat-awn text-emerald-400"></i>
             <span>الحقول والمحاصيل</span>
+            <span id="farm-subtab-badge-fields" class="hidden text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-black">جاهز</span>
           </button>
           <button type="button" class="farm-subtab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800" data-farm-subtab="processing">
             <i class="fa-solid fa-industry text-yellow-400"></i>
@@ -6951,7 +6964,7 @@
   <script src="db.js?v=25.0"></script>
   <script src="server-client-bridge.js?v=25.0"></script>
   <script src="game.js?v=27.0"></script>
-  <script src="ui.js?v=28.0"></script>
+  <script src="ui.js?v=29.0"></script>
   <script src="pwa-manager.js?v=2.5.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────

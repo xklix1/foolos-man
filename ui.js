@@ -19534,6 +19534,52 @@ const UIController = (() => {
     const statWorkers = document.getElementById('farm-stat-workers');
     if (statWorkers) statWorkers.textContent = `${farm.workers || 0} عمال (تغطية ${(farm.workers || 0) * 4} أحواض)`;
 
+    // Calculate dynamic header badges (ready crops and stored crops value)
+    const plots = farmInfo.plots || [];
+    const crops = farmInfo.crops || {};
+    const readyCount = plots.filter(p => p && p.isReady).length;
+    let storedValue = 0;
+    if (farm.inventory) {
+      Object.entries(farm.inventory).forEach(([cid, qty]) => {
+        const c = crops[cid];
+        if (c && qty > 0) storedValue += (qty * (c.sellPrice || 0));
+      });
+    }
+
+    const headerReadyBadge = document.getElementById('farm-header-ready-badge');
+    if (headerReadyBadge) {
+      headerReadyBadge.textContent = `${readyCount} جاهز`;
+      if (readyCount > 0) {
+        headerReadyBadge.className = 'px-1.5 py-0.5 rounded-md bg-emerald-400 text-slate-950 text-[10px] font-black animate-pulse shadow-sm shadow-emerald-400/50';
+      } else {
+        headerReadyBadge.className = 'px-1.5 py-0.5 rounded-md bg-slate-950 text-emerald-400 text-[10px] font-bold';
+      }
+    }
+
+    const headerStoredVal = document.getElementById('farm-header-stored-value');
+    if (headerStoredVal) {
+      headerStoredVal.textContent = `${storedValue.toLocaleString()} EGP`;
+    }
+
+    const subtabBadgeFields = document.getElementById('farm-subtab-badge-fields');
+    if (subtabBadgeFields) {
+      if (readyCount > 0) {
+        subtabBadgeFields.textContent = `${readyCount} جاهز`;
+        subtabBadgeFields.classList.remove('hidden');
+      } else {
+        subtabBadgeFields.classList.add('hidden');
+      }
+    }
+
+    const btnHarvestAll = document.getElementById('btn-farm-harvest-all');
+    if (btnHarvestAll) {
+      if (readyCount > 0) {
+        btnHarvestAll.classList.add('ring-2', 'ring-emerald-400', 'shadow-emerald-500/50', 'animate-pulse');
+      } else {
+        btnHarvestAll.classList.remove('ring-2', 'ring-emerald-400', 'shadow-emerald-500/50', 'animate-pulse');
+      }
+    }
+
     // Render Sub-panels safely
     try { renderFarmFields(farmInfo); } catch (err) { console.error('[Farm UI] renderFarmFields error:', err); }
     try { renderFarmProcessing(farmInfo); } catch (err) { console.error('[Farm UI] renderFarmProcessing error:', err); }
@@ -19547,6 +19593,15 @@ const UIController = (() => {
     const config = farmInfo.config || {};
     const crops = farmInfo.crops || {};
     const plots = farmInfo.plots || [];
+
+    // Format remaining time nicely
+    function formatRemainingTime(sec) {
+      if (sec <= 0) return '0ث';
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      if (m > 0) return `${m}د ${s}ث`;
+      return `${s}ث`;
+    }
 
     // Header Global Buttons
     const btnHarvestAll = document.getElementById('btn-farm-harvest-all');
@@ -19607,7 +19662,8 @@ const UIController = (() => {
       Object.values(crops).forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.id;
-        opt.textContent = `${c.name} (${(c.seedCost || 50).toLocaleString()} ج.م - ${c.growSeconds || 60}ث)`;
+        const durText = c.growSeconds >= 60 ? `${Math.round(c.growSeconds / 60)}د` : `${c.growSeconds}ث`;
+        opt.textContent = `${c.name} (${(c.seedCost || 50).toLocaleString()} ج.م - ${durText})`;
         cropSelect.appendChild(opt);
       });
       if (currentVal && crops[currentVal]) cropSelect.value = currentVal;
@@ -19619,24 +19675,24 @@ const UIController = (() => {
       let plotsHtml = '';
       plots.forEach((p, idx) => {
         const isWorkerCovered = idx < ((farm.workers || 0) * 4);
-        const autoBadge = isWorkerCovered ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30 ml-auto" title="مغطى بالحصاد الآلي"><i class="fa-solid fa-robot mr-1"></i>آلي</span>' : '';
+        const autoBadge = isWorkerCovered ? '<span class="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30 flex items-center gap-1 shrink-0" title="مغطى بالحصاد الآلي الفوري"><i class="fa-solid fa-robot text-[10px]"></i>أتمتة</span>' : '';
 
         if (!p || !p.cropId) {
           plotsHtml += `
-            <div class="p-4 rounded-2xl bg-slate-950/60 border-2 border-dashed border-slate-800 hover:border-amber-500/50 transition flex flex-col justify-between items-center text-center gap-3 group min-h-[190px]">
+            <div class="p-4 rounded-2xl bg-gradient-to-b from-slate-900/60 to-slate-950/80 border-2 border-dashed border-amber-500/25 hover:border-amber-400/60 transition-all duration-300 flex flex-col justify-between items-center text-center gap-3 group min-h-[210px] hover:shadow-lg hover:shadow-amber-500/5">
               <div class="w-full flex items-center justify-between text-[11px] font-bold text-slate-500">
-                <span>حوض #${idx + 1}</span>
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-border-all text-amber-500/60"></i><span>حوض #${idx + 1}</span></span>
                 ${autoBadge}
               </div>
-              <div class="space-y-1">
-                <div class="w-12 h-12 mx-auto rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-600 group-hover:text-amber-400 group-hover:scale-110 transition">
-                  <i class="fa-solid fa-mound text-xl"></i>
+              <div class="space-y-1.5 my-auto">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-center text-slate-600 group-hover:text-amber-400 group-hover:scale-110 group-hover:border-amber-500/40 transition-all duration-300 shadow-inner">
+                  <i class="fa-solid fa-mound text-2xl"></i>
                 </div>
-                <span class="text-xs font-bold text-slate-400 block">حوض زراعي فارغ</span>
-                <span class="text-[10px] text-slate-500 block">جاهز للغرس والبذر</span>
+                <span class="text-xs font-black text-slate-300 block">حوض زراعي خصب</span>
+                <span class="text-[10px] text-slate-500 block">مهيأ للغرس والبذر الفوري</span>
               </div>
               <button onclick="window.UI?.quickPlantSinglePlot(${idx})" type="button"
-                class="w-full py-2 px-3 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 font-black rounded-xl text-xs border border-amber-500/40 transition flex items-center justify-center gap-1 cursor-pointer active:scale-95">
+                class="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 hover:from-amber-500 hover:to-yellow-500 text-amber-300 hover:text-slate-950 font-black rounded-xl text-xs border border-amber-500/40 transition-all duration-200 shadow-sm flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
                 <i class="fa-solid fa-seedling text-xs"></i>
                 <span>ازرع الآن</span>
               </button>
@@ -19648,52 +19704,61 @@ const UIController = (() => {
           const isReady = p.isReady;
           const remSec = Math.max(0, Math.ceil((p.remainingMs || 0) / 1000));
           const expectedYield = p.cropYield || crop.baseYield || 10;
+          const estRevenue = expectedYield * (crop.sellPrice || 10);
 
           plotsHtml += `
-            <div class="p-4 rounded-2xl bg-slate-900/80 border ${isReady ? 'border-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-slate-800'} transition flex flex-col justify-between gap-3 min-h-[190px]">
+            <div class="p-4 rounded-2xl ${isReady ? 'bg-gradient-to-b from-emerald-950/40 via-slate-900/90 to-slate-950/90 border-2 border-emerald-400 shadow-xl shadow-emerald-500/20 ring-1 ring-emerald-400/40' : 'bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-slate-800/90 hover:border-slate-700 shadow-md'} transition-all duration-300 flex flex-col justify-between gap-3 min-h-[210px] relative overflow-hidden">
+              
+              <!-- Subtle top glow if ready -->
+              ${isReady ? '<div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 animate-pulse"></div>' : ''}
+
               <div class="flex items-center justify-between text-[11px] font-bold text-slate-400">
                 <span class="flex items-center gap-1.5">
-                  <i class="fa-solid fa-seedling text-amber-400"></i>
-                  <span>حوض #${idx + 1}</span>
+                  <i class="fa-solid fa-seedling text-amber-400 text-xs"></i>
+                  <span class="text-white">حوض #${idx + 1}</span>
                 </span>
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-1.5">
                   ${autoBadge}
-                  ${isReady ? '<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black animate-pulse border border-emerald-500/40">جاهز للحصاد</span>' : '<span class="text-[10px] text-slate-400 font-mono">' + formatCountdownHMS(remSec) + '</span>'}
+                  ${isReady ? '<span class="px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black animate-pulse flex items-center gap-1 shadow-sm"><i class="fa-solid fa-sparkles text-[9px]"></i>جاهز</span>' : '<span class="text-[10px] text-amber-400 font-mono font-bold bg-slate-950 px-2 py-0.5 rounded-lg border border-slate-800">' + formatRemainingTime(remSec) + '</span>'}
                 </div>
               </div>
 
               <div class="flex items-center gap-3 my-1">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-emerald-500/20 border border-amber-500/30 flex items-center justify-center text-2xl shrink-0">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-emerald-500/20 border ${isReady ? 'border-emerald-400/50 text-emerald-400' : 'border-amber-500/30 text-amber-400'} flex items-center justify-center text-2xl shrink-0 shadow-inner">
                   <i class="${crop.icon}"></i>
                 </div>
                 <div class="min-w-0">
                   <h4 class="font-black text-white text-sm truncate">${crop.name}</h4>
-                  <p class="text-[11px] text-slate-400 mt-0.5">إنتاج متوقع: <span class="numbers-font font-bold text-emerald-400">+${expectedYield} وحدة</span></p>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="text-[10px] text-slate-400">إنتاج:</span>
+                    <span class="numbers-font font-black text-emerald-400 text-xs">+${expectedYield} وحدة</span>
+                    <span class="text-[9px] text-amber-400/80 font-bold">(${estRevenue.toLocaleString()} ج.م)</span>
+                  </div>
                 </div>
               </div>
 
               <div class="space-y-1.5">
                 <div class="flex justify-between text-[10px] font-bold">
-                  <span class="text-slate-400">مرحلة النمو</span>
-                  <span class="numbers-font text-amber-400">${progress.toFixed(0)}%</span>
+                  <span class="text-slate-400">مرحلة النضج</span>
+                  <span class="numbers-font ${isReady ? 'text-emerald-400' : 'text-amber-400'}">${progress.toFixed(0)}%</span>
                 </div>
-                <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
-                  <div class="h-full rounded-full transition-all duration-300 ${isReady ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-amber-500 to-emerald-500'}" style="width: ${progress}%"></div>
+                <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800 p-0.5">
+                  <div class="h-full rounded-full transition-all duration-300 ${isReady ? 'bg-gradient-to-r from-emerald-400 to-teal-300 animate-pulse' : 'bg-gradient-to-r from-amber-500 via-yellow-400 to-emerald-400'}" style="width: ${progress}%"></div>
                 </div>
               </div>
 
               <div class="pt-1">
                 ${isReady ? `
                   <button onclick="window.UI?.harvestSinglePlot(${idx})" type="button"
-                    class="w-full py-2 px-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs transition shadow flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 animate-bounce">
+                    class="w-full py-2.5 px-3 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-xl text-xs transition-all duration-200 shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 animate-bounce">
                     <i class="fa-solid fa-scythe text-sm"></i>
                     <span>احصد المحصول (+${expectedYield} وحدة)</span>
                   </button>
                 ` : `
                   <button disabled type="button"
-                    class="w-full py-2 px-3 bg-slate-950/80 text-slate-500 font-bold rounded-xl text-xs border border-slate-800 flex items-center justify-center gap-1.5 cursor-not-allowed">
-                    <i class="fa-solid fa-clock text-xs"></i>
-                    <span>ينمو بالتربة (${formatCountdownHMS(remSec)})</span>
+                    class="w-full py-2 px-3 bg-slate-950/80 text-slate-500 font-bold rounded-xl text-xs border border-slate-800/80 flex items-center justify-center gap-1.5 cursor-not-allowed">
+                    <i class="fa-solid fa-hourglass-half text-xs text-amber-500/60 animate-spin"></i>
+                    <span>ينمو بالتربة (${formatRemainingTime(remSec)})</span>
                   </button>
                 `}
               </div>
@@ -19704,44 +19769,74 @@ const UIController = (() => {
       plotsGrid.innerHTML = plotsHtml;
     }
 
-    // Crops Catalog
+    // Crops & Seeds Catalog with ROI Badges
     const cropsCatalog = document.getElementById('farm-crops-catalog');
     if (cropsCatalog) {
+      const cropTags = {
+        wheat: { label: '⚡ نمو فوري', color: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+        tomato: { label: '🍅 متوازن', color: 'bg-rose-500/20 text-rose-300 border-rose-500/30' },
+        strawberry: { label: '🍓 عائد ممتاز', color: 'bg-pink-500/20 text-pink-300 border-pink-500/30' },
+        coffee: { label: '☕ تجارة تصدير', color: 'bg-yellow-600/20 text-yellow-300 border-yellow-600/30' },
+        dates: { label: '🌴 استثمار استراتيجي', color: 'bg-amber-600/20 text-amber-200 border-amber-600/30' },
+        saffron: { label: '💎 الذهب الأحمر', color: 'bg-purple-500/20 text-purple-300 border-purple-500/30' }
+      };
+
       let catalogHtml = '';
       Object.values(crops).forEach(c => {
+        const tag = cropTags[c.id] || { label: '🌱 محصول خصب', color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' };
+        const seedCost = c.seedCost || 50;
+        const baseYield = c.baseYield || 10;
+        const sellPrice = c.sellPrice || 10;
+        const harvestRevenue = baseYield * sellPrice;
+        const netProfit = harvestRevenue - seedCost;
+        const roi = Math.round((netProfit / seedCost) * 100);
+        const durText = c.growSeconds >= 60 ? `${Math.round(c.growSeconds / 60)} دقيقة` : `${c.growSeconds} ثانية`;
+
         catalogHtml += `
-          <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-amber-500/40 transition flex flex-col justify-between gap-3 shadow-lg">
+          <div class="p-4 rounded-2xl bg-gradient-to-b from-slate-900/80 to-slate-950/90 border border-slate-800 hover:border-amber-500/40 transition-all duration-300 flex flex-col justify-between gap-3 shadow-xl hover:shadow-amber-500/5 group">
             <div class="flex items-start justify-between gap-2">
               <div class="flex items-center gap-2.5">
-                <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-xl shrink-0">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500/20 to-emerald-500/20 border border-amber-500/30 flex items-center justify-center text-xl shrink-0 text-amber-400 group-hover:scale-105 transition">
                   <i class="${c.icon}"></i>
                 </div>
                 <div>
-                  <h4 class="font-black text-white text-xs">${c.name}</h4>
-                  <span class="text-[10px] text-amber-400 font-mono font-bold">${(c.seedCost || 50).toLocaleString()} EGP للبذرة</span>
+                  <h4 class="font-black text-white text-xs sm:text-sm">${c.name}</h4>
+                  <span class="text-[10px] text-amber-400 font-mono font-bold">${seedCost.toLocaleString()} EGP للبذرة</span>
                 </div>
               </div>
+              <span class="text-[9px] px-2 py-0.5 rounded-full font-bold border ${tag.color} shrink-0">${tag.label}</span>
             </div>
 
             <p class="text-[11px] text-slate-400 leading-snug">${c.desc || ''}</p>
 
-            <div class="grid grid-cols-3 gap-1.5 p-2 bg-slate-950/60 rounded-xl border border-slate-800/80 text-[10px] text-center font-medium text-slate-300">
+            <div class="grid grid-cols-3 gap-1.5 p-2.5 bg-slate-950/70 rounded-xl border border-slate-800/80 text-[10px] text-center font-medium text-slate-300">
               <div>
-                <span class="text-slate-500 block text-[9px]">المدة</span>
-                <span class="font-mono font-bold text-amber-300">${c.growSeconds} ثانية</span>
+                <span class="text-slate-500 block text-[9px] mb-0.5">مدة النمو</span>
+                <span class="font-mono font-bold text-amber-300">${durText}</span>
               </div>
               <div>
-                <span class="text-slate-500 block text-[9px]">الحصاد</span>
-                <span class="font-mono font-bold text-emerald-400">+${c.baseYield} وحدة</span>
+                <span class="text-slate-500 block text-[9px] mb-0.5">الحصاد</span>
+                <span class="font-mono font-bold text-emerald-400">+${baseYield} وحدة</span>
               </div>
               <div>
-                <span class="text-slate-500 block text-[9px]">سعر البيع</span>
-                <span class="font-mono font-bold text-yellow-400">${c.sellPrice} EGP</span>
+                <span class="text-slate-500 block text-[9px] mb-0.5">سعر الوحدة</span>
+                <span class="font-mono font-bold text-yellow-400">${sellPrice} EGP</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-950/20 border border-emerald-500/20 text-xs">
+              <div>
+                <span class="text-[10px] text-slate-400 block">صافي الربح / حوض:</span>
+                <span class="numbers-font font-black text-emerald-400">+${netProfit.toLocaleString()} EGP</span>
+              </div>
+              <div class="text-left">
+                <span class="text-[10px] text-slate-400 block">العائد (ROI):</span>
+                <span class="numbers-font font-black text-amber-400">+${roi}%</span>
               </div>
             </div>
 
             <button onclick="window.UI?.plantFirstEmptyPlot('${c.id}')" type="button"
-              class="w-full py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 border border-amber-500/40 active:scale-95">
+              class="w-full py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 border border-amber-500/40 active:scale-95 shadow-sm">
               <i class="fa-solid fa-seedling text-xs"></i>
               <span>غرس في أول حوض فارغ</span>
             </button>
@@ -19772,7 +19867,7 @@ const UIController = (() => {
 
       upgradesGrid.innerHTML = `
         <!-- 1. Land Expansion -->
-        <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-amber-500/30 transition flex flex-col justify-between gap-3 shadow">
+        <div class="p-4 rounded-2xl bg-gradient-to-b from-slate-900/80 to-slate-950/90 border border-slate-800 hover:border-amber-500/40 transition flex flex-col justify-between gap-3 shadow">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-lg shrink-0">
               <i class="fa-solid fa-expand"></i>
@@ -19787,13 +19882,13 @@ const UIController = (() => {
             <span class="numbers-font text-amber-400">${farm.landLevel || 1} / 4</span>
           </div>
           <button ${isMaxLand ? 'disabled' : 'onclick="window.UI?.upgradeFarmLand()"'} type="button"
-            class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${!isMaxLand ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+            class="w-full py-2.5 rounded-xl text-xs font-black transition cursor-pointer ${!isMaxLand ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
             ${isMaxLand ? 'أقصى استصلاح' : 'توسيع (' + nextLand.cost.toLocaleString() + ' EGP)'}
           </button>
         </div>
 
         <!-- 2. Irrigation Upgrade -->
-        <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-cyan-500/30 transition flex flex-col justify-between gap-3 shadow">
+        <div class="p-4 rounded-2xl bg-gradient-to-b from-slate-900/80 to-slate-950/90 border border-slate-800 hover:border-cyan-500/40 transition flex flex-col justify-between gap-3 shadow">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-lg shrink-0">
               <i class="fa-solid fa-droplet"></i>
@@ -19804,17 +19899,17 @@ const UIController = (() => {
             </div>
           </div>
           <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
-            <span class="text-slate-400">النوع الحالي:</span>
-            <span class="text-cyan-400 text-[11px]">${currIrr.name}</span>
+            <span class="text-slate-400">الشبكة الحالية:</span>
+            <span class="text-cyan-400 text-[11px] font-bold">${currIrr.name}</span>
           </div>
           <button ${!nextIrr ? 'disabled' : 'onclick="window.UI?.upgradeFarmIrrigation()"'} type="button"
-            class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${nextIrr ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+            class="w-full py-2.5 rounded-xl text-xs font-black transition cursor-pointer ${nextIrr ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
             ${!nextIrr ? 'أقصى شبكة ري' : 'ترقية (' + nextIrr.cost.toLocaleString() + ' EGP)'}
           </button>
         </div>
 
         <!-- 3. Fertilizer Upgrade -->
-        <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-emerald-500/30 transition flex flex-col justify-between gap-3 shadow">
+        <div class="p-4 rounded-2xl bg-gradient-to-b from-slate-900/80 to-slate-950/90 border border-slate-800 hover:border-emerald-500/40 transition flex flex-col justify-between gap-3 shadow">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-lg shrink-0">
               <i class="fa-solid fa-flask-vial"></i>
@@ -19826,16 +19921,16 @@ const UIController = (() => {
           </div>
           <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
             <span class="text-slate-400">المعتمد:</span>
-            <span class="text-emerald-400 text-[11px]">${currFert.name}</span>
+            <span class="text-emerald-400 text-[11px] font-bold">${currFert.name}</span>
           </div>
           <button ${!nextFert ? 'disabled' : 'onclick="window.UI?.upgradeFarmFertilizer()"'} type="button"
-            class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${nextFert ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+            class="w-full py-2.5 rounded-xl text-xs font-black transition cursor-pointer ${nextFert ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
             ${!nextFert ? 'أعلى مخصب' : 'ترقية (' + nextFert.cost.toLocaleString() + ' EGP)'}
           </button>
         </div>
 
         <!-- 4. Automation Workers -->
-        <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-purple-500/30 transition flex flex-col justify-between gap-3 shadow">
+        <div class="p-4 rounded-2xl bg-gradient-to-b from-slate-900/80 to-slate-950/90 border border-slate-800 hover:border-purple-500/40 transition flex flex-col justify-between gap-3 shadow">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 text-lg shrink-0">
               <i class="fa-solid fa-person-digging"></i>
@@ -19846,11 +19941,11 @@ const UIController = (() => {
             </div>
           </div>
           <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
-            <span class="text-slate-400">العمال:</span>
-            <span class="numbers-font text-purple-300">${farm.workers || 0} / ${maxWorkers}</span>
+            <span class="text-slate-400">فريق العمال:</span>
+            <span class="numbers-font text-purple-300 font-bold">${farm.workers || 0} / ${maxWorkers}</span>
           </div>
           <button ${isMaxWorkers ? 'disabled' : 'onclick="window.UI?.hireFarmWorker()"'} type="button"
-            class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${!isMaxWorkers ? 'bg-purple-500 hover:bg-purple-400 text-white shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+            class="w-full py-2.5 rounded-xl text-xs font-black transition cursor-pointer ${!isMaxWorkers ? 'bg-purple-500 hover:bg-purple-400 text-white shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
             ${isMaxWorkers ? 'فريق الحصاد مكتمل' : 'توظيف (' + workerCost.toLocaleString() + ' EGP)'}
           </button>
         </div>
@@ -19868,25 +19963,25 @@ const UIController = (() => {
         const qty = Number((farm.inventory && farm.inventory[c.id]) || 0);
         const val = qty * (c.sellPrice || 10);
         whHtml += `
-          <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between gap-2 shadow-md">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-base shrink-0">
+          <div class="p-3.5 rounded-2xl bg-gradient-to-b from-slate-900/80 to-slate-950/90 border ${qty > 0 ? 'border-amber-500/30' : 'border-slate-800/80'} flex flex-col justify-between gap-2.5 shadow-md">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl ${qty > 0 ? 'bg-amber-500/20 border border-amber-500/40 text-amber-400' : 'bg-slate-800/60 border border-slate-700/50 text-slate-500'} flex items-center justify-center text-lg shrink-0">
                 <i class="${c.icon}"></i>
               </div>
               <div class="min-w-0">
                 <h5 class="text-xs font-black text-white truncate">${c.name}</h5>
-                <span class="numbers-font text-[10px] text-amber-400 font-bold">${qty.toLocaleString()} وحدة</span>
+                <span class="numbers-font text-[10px] ${qty > 0 ? 'text-amber-400 font-bold' : 'text-slate-500'}">${qty.toLocaleString()} وحدة بالمخزن</span>
               </div>
             </div>
 
             <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 border-t border-slate-800/80 pt-1.5">
-              <span>القيمة:</span>
-              <span class="numbers-font text-emerald-400">${val.toLocaleString()} EGP</span>
+              <span>القيمة الإجمالية:</span>
+              <span class="numbers-font text-emerald-400 font-bold">${val.toLocaleString()} EGP</span>
             </div>
 
             <button ${qty <= 0 ? 'disabled' : `onclick="window.UI?.sellSingleFarmCrop('${c.id}')"`} type="button"
-              class="w-full py-1.5 rounded-lg text-[10px] font-black transition cursor-pointer ${qty > 0 ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
-              بيع المحصول
+              class="w-full py-2 rounded-xl text-[11px] font-black transition cursor-pointer ${qty > 0 ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-md active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+              ${qty > 0 ? 'بيع المحصول (' + val.toLocaleString() + ' EGP)' : 'المخزون فارغ'}
             </button>
           </div>
         `;
