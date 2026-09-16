@@ -211,6 +211,13 @@ class SessionManager {
     if (clientState.jailTimer !== undefined) s.jailTimer = Number(clientState.jailTimer) || 0;
     if (clientState.totalTaxesPaid !== undefined) s.totalTaxesPaid = Number(clientState.totalTaxesPaid) || 0;
 
+    // Gold currency is strictly server-authoritative and beta-gated to developer account 'Khaled'
+    if (username.toLowerCase() === 'khaled') {
+      s.gold = Math.max(0, Number(s.gold || 0));
+    } else {
+      delete s.gold;
+    }
+
     // Synchronize modules
     if (clientState.businesses && typeof clientState.businesses === 'object') {
       // Don't overwrite existing non-empty businesses with an empty object

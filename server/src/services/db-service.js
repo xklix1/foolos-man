@@ -66,6 +66,7 @@ class DbService {
       jail_timer: Number(state.jailTimer || 0),
       afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
       total_taxes_paid: Number(state.totalTaxesPaid || 0),
+      gold: Number(state.gold || 0),
       state: state,
       last_seen: Number(state.lastSeen || Date.now())
     };

@@ -8,6 +8,7 @@ const sessionManager = require('../services/session-manager');
 const { BUSINESSES } = require('../engine/definitions');
 const { getBusinessUpgradeCost } = require('../engine/business-engine');
 const { calculateNetWorth, getAppropriateTitle } = require('../engine/net-worth-engine');
+const eventService = require('../services/event-service');
 
 async function actionRoutes(fastify, options) {
 
@@ -402,6 +403,154 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     return {
       success: true,
       message: 'تم استعادة الحساب وتعيين كلمة السر الجديدة بنجاح!'
+    };
+  });
+
+  // 12. POST /api/action/speed-up (Authoritative Speed-Up — Closed Beta for Khaled)
+  fastify.post('/api/action/speed-up', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+
+    // Strict Beta Access Control: Restricted exclusively to developer account 'Khaled'
+    if (!session.username || session.username.trim().toLowerCase() !== 'khaled') {
+      return reply.code(403).send({
+        error: 'Forbidden',
+        message: 'Speed-up system is in closed beta and restricted exclusively to developer account Khaled.'
+      });
+    }
+
+    const { timerType, targetKey } = request.body || {};
+    if (!timerType) {
+      return reply.code(400).send({ error: 'Missing timerType' });
+    }
+
+    const s = session.state;
+    const currentGold = Math.max(0, Number(s.gold || 0));
+    let remainingMs = 0;
+    let cost = 0;
+
+    switch (timerType) {
+      case 'jail': {
+        const jailSec = Number(s.jailTimer || 0);
+        if (jailSec <= 0) {
+          return reply.code(400).send({ error: 'NO_ACTIVE_TIMER', message: 'Player is not currently in jail.' });
+        }
+        remainingMs = jailSec * 1000;
+        // 1 Gold per minute
+        cost = Math.max(1, Math.ceil(jailSec / 60));
+        if (currentGold < cost) {
+          return reply.code(400).send({
+            error: 'INSUFFICIENT_GOLD',
+            message: `Insufficient gold balance. Required: ${cost}, Available: ${currentGold}`,
+            required: cost,
+            current: currentGold
+          });
+        }
+
+        s.gold = currentGold - cost;
+        s.jailTimer = 0;
+        break;
+      }
+
+      case 'cooldown': {
+        const validCooldowns = {
+          loan: 'loanCooldownUntil',
+          work: 'workCooldownUntil',
+          casino: 'casinoCooldownUntil'
+        };
+        const propName = validCooldowns[targetKey];
+        if (!propName) {
+          return reply.code(400).send({
+            error: 'INVALID_TARGET_KEY',
+            message: `Unsupported cooldown targetKey. Allowed: ${Object.keys(validCooldowns).join(', ')}`
+          });
+        }
+
+        const targetTs = Number(s[propName] || 0);
+        const now = Date.now();
+        remainingMs = targetTs - now;
+        if (remainingMs <= 0) {
+          return reply.code(400).send({ error: 'TIMER_EXPIRED', message: 'Cooldown has already expired.' });
+        }
+
+        // 1 Gold per minute
+        cost = Math.max(1, Math.ceil(remainingMs / 60000));
+        if (currentGold < cost) {
+          return reply.code(400).send({
+            error: 'INSUFFICIENT_GOLD',
+            message: `Insufficient gold balance. Required: ${cost}, Available: ${currentGold}`,
+            required: cost,
+            current: currentGold
+          });
+        }
+
+        s.gold = currentGold - cost;
+        s[propName] = now;
+        break;
+      }
+
+      case 'smuggling': {
+        if (!targetKey) {
+          return reply.code(400).send({ error: 'MISSING_TARGET_KEY', message: 'targetKey (job ID) is required for smuggling.' });
+        }
+        const jobs = s.activeSmugglingJobs;
+        if (!jobs || typeof jobs !== 'object' || !jobs[targetKey]) {
+          return reply.code(404).send({ error: 'JOB_NOT_FOUND', message: `No active smuggling job found with ID: ${targetKey}` });
+        }
+
+        const job = jobs[targetKey];
+        const finishTs = Number(job.finishTime || job.expiresAt || job.endTime || 0);
+        const now = Date.now();
+        remainingMs = finishTs - now;
+        if (remainingMs <= 0) {
+          return reply.code(400).send({ error: 'TIMER_EXPIRED', message: 'Smuggling job is already finished.' });
+        }
+
+        // 1 Gold per minute
+        cost = Math.max(1, Math.ceil(remainingMs / 60000));
+        if (currentGold < cost) {
+          return reply.code(400).send({
+            error: 'INSUFFICIENT_GOLD',
+            message: `Insufficient gold balance. Required: ${cost}, Available: ${currentGold}`,
+            required: cost,
+            current: currentGold
+          });
+        }
+
+        s.gold = currentGold - cost;
+        job.finishTime = now;
+        job.expiresAt = now;
+        job.ready = true;
+        break;
+      }
+
+      default:
+        return reply.code(400).send({
+          error: 'UNSUPPORTED_TIMER_TYPE',
+          message: `Supported timer types: jail, cooldown, smuggling`
+        });
+    }
+
+    // Persist authoritative mutation
+    sessionManager.markDirty(session.username);
+
+    return {
+      success: true,
+      timerType,
+      targetKey: targetKey || null,
+      goldDeducted: cost,
+      currentGold: s.gold,
+      state: s
+    };
+  });
+
+  // 13. GET /api/events/active (Active Competitive Events — Beta for Khaled)
+  fastify.get('/api/events/active', async (request, reply) => {
+    const { username } = request.query || {};
+    const events = await eventService.getActiveEventsForUser(username);
+    return {
+      success: true,
+      events
     };
   });
 }

@@ -5,6 +5,7 @@
 
 const crypto = require('crypto');
 const config = require('../config/env');
+const eventService = require('../services/event-service');
 
 const ALLOWED_TABLES = new Set([
   'players',
@@ -14,7 +15,8 @@ const ALLOWED_TABLES = new Set([
   'live_auctions',
   'transfers',
   'transfer_requests',
-  'mailbox'
+  'mailbox',
+  'events'
 ]);
 
 function safeCompare(a, b) {
@@ -182,6 +184,174 @@ async function adminRoutes(fastify, options) {
       role: 'admin_root',
       timestamp: Date.now()
     });
+  });
+
+  /**
+   * POST /api/admin/grant-gold
+   * Grants gold currency to a player (Beta-gated strictly to Khaled)
+   */
+  fastify.post('/grant-gold', {
+    config: { rateLimit: adminRateLimit },
+    preHandler: [requireAdminAuth]
+  }, async (request, reply) => {
+    const { username, amount } = request.body || {};
+    if (!username) {
+      return reply.status(400).send({ error: 'Bad Request', message: 'Username is required.' });
+    }
+    const numAmount = Number(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      return reply.status(400).send({ error: 'Bad Request', message: 'Amount must be a positive number.' });
+    }
+
+    // Strict beta gating: only developer account 'Khaled' can receive gold
+    if (username.trim().toLowerCase() !== 'khaled') {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Gold currency is in closed beta and can only be granted to Khaled.'
+      });
+    }
+
+    try {
+      const uKey = username.trim().toLowerCase();
+      const session = sessionManager ? sessionManager.getSession(uKey) : null;
+
+      if (session) {
+        // Online player: update in-memory state and mark dirty
+        session.state.gold = Math.max(0, Number(session.state.gold || 0) + numAmount);
+        session.dirty = true;
+        session.lastActivity = Date.now();
+
+        return reply.send({
+          success: true,
+          username: session.username,
+          goldGranted: numAmount,
+          currentGold: session.state.gold,
+          isOnline: true
+        });
+      } else {
+        // Offline player: update PostgreSQL directly
+        const serviceKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
+        const fetchUrl = `${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(username.trim())}&select=gold,state`;
+        const fetchRes = await fetch(fetchUrl, {
+          headers: {
+            'apikey': serviceKey,
+            'Authorization': `Bearer ${serviceKey}`
+          }
+        });
+        const rows = await fetchRes.json();
+        if (!Array.isArray(rows) || rows.length === 0) {
+          return reply.status(404).send({ error: 'Not Found', message: 'Player account not found.' });
+        }
+
+        const existingRow = rows[0];
+        const currentGold = Number(existingRow.gold || 0);
+        const newGold = currentGold + numAmount;
+
+        const rawState = (typeof existingRow.state === 'object' && existingRow.state) ? existingRow.state : {};
+        rawState.gold = newGold;
+
+        const patchUrl = `${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(username.trim())}`;
+        const patchRes = await fetch(patchUrl, {
+          method: 'PATCH',
+          headers: {
+            'apikey': serviceKey,
+            'Authorization': `Bearer ${serviceKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            gold: newGold,
+            state: rawState
+          })
+        });
+
+        if (!patchRes.ok) {
+          throw new Error(`Failed to update offline gold: ${await patchRes.text()}`);
+        }
+
+        return reply.send({
+          success: true,
+          username: username.trim(),
+          goldGranted: numAmount,
+          currentGold: newGold,
+          isOnline: false
+        });
+      }
+    } catch (err) {
+      request.log.error(err, '[Grant Gold] Error');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * POST /api/admin/create-event
+   * Creates a competitive event in public.events
+   */
+  fastify.post('/create-event', {
+    config: { rateLimit: adminRateLimit },
+    preHandler: [requireAdminAuth]
+  }, async (request, reply) => {
+    const { id, title, type = 'net_worth_growth', durationHours = 24, prize_pool_gold = [500, 250, 100] } = request.body || {};
+    if (!title) return reply.status(400).send({ error: 'Event title is required.' });
+
+    const eventId = id || ('ev_' + Date.now());
+    const startsAt = Date.now();
+    const endsAt = startsAt + (Number(durationHours) * 3600 * 1000);
+
+    const serviceKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
+    const res = await fetch(`${config.SUPABASE_URL}/rest/v1/events`, {
+      method: 'POST',
+      headers: {
+        'apikey': serviceKey,
+        'Authorization': `Bearer ${serviceKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        id: eventId,
+        title,
+        starts_at: startsAt,
+        ends_at: endsAt,
+        type,
+        prize_pool_gold,
+        is_active: true
+      })
+    });
+
+    if (!res.ok) {
+      return reply.status(500).send({ error: 'Failed to create event: ' + await res.text() });
+    }
+
+    const created = await res.json();
+    return reply.send({
+      success: true,
+      event: (Array.isArray(created) && created.length > 0) ? created[0] : created
+    });
+  });
+
+  /**
+   * POST /api/admin/evaluate-event
+   * Evaluates event ranking and authoritatively rewards gold (Beta for Khaled)
+   */
+  fastify.post('/evaluate-event', {
+    config: { rateLimit: adminRateLimit },
+    preHandler: [requireAdminAuth]
+  }, async (request, reply) => {
+    const { eventId, testTargetUser = 'Khaled' } = request.body || {};
+    if (!eventId) {
+      return reply.status(400).send({ error: 'eventId is required.' });
+    }
+
+    try {
+      const result = await eventService.evaluateAndRewardEvent(eventId, testTargetUser);
+      return reply.send({
+        success: true,
+        evaluation: result
+      });
+    } catch (err) {
+      request.log.error(err, '[Evaluate Event] Error');
+      return reply.status(500).send({ error: 'Failed to evaluate event: ' + err.message });
+    }
   });
 }
 

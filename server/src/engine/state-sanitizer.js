@@ -38,6 +38,7 @@ const DEFAULT_STATE = {
   itemDurations: {},
   smugglingFleet: {},
   activeSmugglingJobs: {},
+  gold: 0,
   lastActiveTimestamp: 0,
   lastSeen: 0
 };
@@ -113,6 +114,13 @@ function sanitizePlayerState(dbRow) {
 
   // Security Hardening: Never leak PIN hash in client-facing state payloads
   delete cleanState.pin;
+
+  // Gold Currency (Beta testing - strictly gated to developer account 'Khaled')
+  if (cleanState.username && cleanState.username.toLowerCase() === 'khaled') {
+    cleanState.gold = Math.max(0, Number(dbRow.gold !== undefined ? dbRow.gold : (rawState.gold || 0)));
+  } else {
+    delete cleanState.gold;
+  }
 
   return cleanState;
 }
