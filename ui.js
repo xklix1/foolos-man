@@ -96,7 +96,7 @@ const UIController = (() => {
 
     // Bank"إدارة حساب الادخار والتحويلات":"Savings & Transfers Management","أودع أموالك في البنك لتحميها وتحصل على فائدة مركبة بمعدل 0.005% لكل دورة تيك.":"Deposit money in the bank to protect it and earn compound interest.","السيولة النقدية المتوفرة":"Available Liquid Cash","رصيد الادخار البنكي":"Bank Savings Balance","المبلغ المطلوب إيداعه / سحبه":"Amount to Deposit / Withdraw","أودع 25%":"Deposit 25%","أودع 50%":"Deposit 50%","أودع 100%":"Deposit 100%","إيداع نقدي بالبنك":"Deposit Cash","سحب نقدي من البنك":"Withdraw Cash","سحب 25%":"Withdraw 25%","سحب 50%":"Withdraw 50%","سحب 100%":"Withdraw 100%","تحويل بنكي للاعب آخر":"Transfer to Another Player","اسم اللاعب المستلم":"Recipient Username","المبلغ المراد تحويله":"Amount to Transfer","إرسال الحوالة البنكية":"Send Bank Wire","القروض البنكية والائتمان":"Bank Loans & Credit Facilities","طلب قرض جديد":"Request New Loan","سداد القرض الحالي":"Repay Current Loan","أقصى حد للقرض:":"Maximum Loan Limit:","القرض النشط:":"Active Loan:","المبلغ المستحق:":"Due Amount:","المهلة المتبقية:":"Remaining Time:","سداد 50%":"Repay 50%","سداد كامل":"Repay All","أصول مقفلة في الصناديق الاستثمارية":"Locked Investment Funds Assets","سجل التحويلات والحوالات الأخيرة":"Recent Wire Transfers History",
 
-    // Stocks"صالة تداول البورصة والأسهم الحية":"Live Stock Trading Hall","بورصة عالمية موحدة لجميع اللاعبين (جلسات M15 موحدة ومطابقة بدقة 100%).":"Global Unified Stock Market (100% Identical M15 Sessions for All Players).","إغلاق الشمعة وتحديث الأسعار:":"Candle Close & Price Update:","جلسة M15 موحدة":"Unified M15 Session","شريط الأخبار الاقتصادي:":"Economic News Ticker:","الأسهم المملوكة:":"Owned Shares:","متوسط سعر الشراء:":"Avg Buy Price:","قيمة الأسهم الكلية:":"Total Shares Value:","ربح/خسارة المحفظة:":"Portfolio Profit/Loss:","سقف تملك السهم:":"Max Holding Limit:","شراء أسهم":"Buy Shares","بيع أسهم":"Sell Shares","بيع كل الأسهم":"Sell All Shares","شراء 25%":"Buy 25%","شراء 50%":"Buy 50%","شراء أقصى":"Buy Max","بيع 25%":"Sell 25%","بيع 50%":"Sell 50%","بيع الكل":"Sell All",
+    // Stocks"صالة تداول البورصة والأسهم الحية":"Live Stock Trading Hall","بورصة عالمية موحدة لجميع اللاعبين (تحديثات شمعية حية كل 30 ثانية ومطابقة بدقة 100%).":"Global Unified Stock Market (100% Identical 30s Sessions for All Players).","إغلاق الشمعة وتحديث الأسعار:":"Candle Close & Price Update:","جلسة تداول حية (30ث)":"Live Session (30s)","شريط الأخبار الاقتصادي:":"Economic News Ticker:","الأسهم المملوكة:":"Owned Shares:","متوسط سعر الشراء:":"Avg Buy Price:","قيمة الأسهم الكلية:":"Total Shares Value:","ربح/خسارة المحفظة:":"Portfolio Profit/Loss:","سقف تملك السهم:":"Max Holding Limit:","شراء أسهم":"Buy Shares","بيع أسهم":"Sell Shares","بيع كل الأسهم":"Sell All Shares","شراء 25%":"Buy 25%","شراء 50%":"Buy 50%","شراء أقصى":"Buy Max","بيع 25%":"Sell 25%","بيع 50%":"Sell 50%","بيع الكل":"Sell All",
 
     // Taxes
     "مصلحة الضرائب والمالية العامة (Tax Authority)":"Tax Authority & Public Finance","إدارة الوعاء الضريبي، نسب الاستقطاع للثروات الكبرى، وتفعيل الدروع الضريبية القانونية":"Tax base management, hourly cashflow tax rates by wealth brackets, and legal tax shields","الرقم الضريبي للممول:":"Taxpayer ID:","ممتثل ضريبياً":"Tax Compliant","متأخرات ضريبية ⚠️":"Tax Arrears ⚠️","الوعاء الضريبي للثروة":"Taxable Wealth Base","الوعاء الضريبي (التدفق الساعي)":"Taxable Base (Hourly Cashflow)","الاستقطاع الضريبي المقدر":"Estimated Tax Deduction","إجمالي الضرائب المسددة":"Total Taxes Paid","درع الإعفاء الضريبي (Shield)":"Tax Exemption Shield","شراء وتفعيل الدرع الضريبي":"Purchase Tax Exemption Shield","تجديد وتمديد الدرع الضريبي":"Renew Tax Exemption Shield","تقديم الإقرار والتسوية":"Submit Tax Return & Settle","دفع الضرائب المستحقة":"Pay Due Taxes",
@@ -2544,12 +2544,11 @@ const UIController = (() => {
         }
       }
 
-      // Handle Unified 15-min Candlestick Stock Movement
+      // Handle Unified 30-sec Candlestick Stock Movement
       if (updates.stockMovement) {
         if (activeTab ==='stocks') {
           renderStocks(true);
         }
-        showToast('جلسة البورصة M15','أُغلقت شمعة التداول السابقة وتم تحديث أسعار الأسهم موحداً لجميع اللاعبين!','info');
       }
 
       // Handle Trade Arrivals and Deliveries

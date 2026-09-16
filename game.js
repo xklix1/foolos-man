@@ -169,14 +169,14 @@ const GameEngine = (() => {
   const DAILY_STOCK_PROFIT_CAP = 1000000; // سقف الأرباح الرأسمالية اليومية من البورصة (1,000,000 ج.م)
 
   const STOCKS = {
-    COMI: { name:'البنك التجاري الدولي', symbol:'COMI', basePrice: 38, volatility: 0.012, reversion: 0.015, floor: 32, ceiling: 44, dividend: 0.00015, maxShares: 50000, seed: 101 },
-    EAST: { name:'الشرقية للدخان', symbol:'EAST', basePrice: 85, volatility: 0.015, reversion: 0.015, floor: 72, ceiling: 98, dividend: 0.00025, maxShares: 30000, seed: 202 },
-    ETEL: { name:'المصرية للاتصالات', symbol:'ETEL', basePrice: 48, volatility: 0.014, reversion: 0.015, floor: 40, ceiling: 55, dividend: 0.00018, maxShares: 40000, seed: 303 },
-    FWRY: { name:'فوري للمدفوعات الإلكترونية', symbol:'FWRY', basePrice: 92, volatility: 0.032, reversion: 0.018, floor: 68, ceiling: 135, dividend: 0.00015, maxShares: 25000, seed: 457 },
-    CASH: { name:'صندوق الاستثمار التقني البديل', symbol:'CASH', basePrice: 125, volatility: 0.02, reversion: 0.022, floor: 105, ceiling: 145, dividend: 0.00035, maxShares: 20000, seed: 505 },
-    BITC: { name:'مؤشر البيتكوين والأصول الرقمية', symbol:'BITC', basePrice: 310, volatility: 0.035, reversion: 0.025, floor: 240, ceiling: 380, dividend: 0, maxShares: 5000, seed: 606 },
-    GOLD: { name:'صندوق سبائك الذهب الخالص', symbol:'GOLD', basePrice: 220, volatility: 0.008, reversion: 0.01, floor: 195, ceiling: 245, dividend: 0.0003, maxShares: 10000, seed: 707 },
-    AIX: { name:'صندوق الذكاء الاصطناعي العالمي', symbol:'AIX', basePrice: 380, volatility: 0.025, reversion: 0.02, floor: 310, ceiling: 450, dividend: 0.00025, maxShares: 8000, seed: 808 }
+    COMI: { name:'البنك التجاري الدولي', symbol:'COMI', basePrice: 38, volatility: 0.018, reversion: 0.015, floor: 32, ceiling: 46, dividend: 0.00015, maxShares: 50000, seed: 101 },
+    EAST: { name:'الشرقية للدخان', symbol:'EAST', basePrice: 85, volatility: 0.020, reversion: 0.015, floor: 70, ceiling: 102, dividend: 0.00025, maxShares: 30000, seed: 202 },
+    ETEL: { name:'المصرية للاتصالات', symbol:'ETEL', basePrice: 48, volatility: 0.018, reversion: 0.015, floor: 40, ceiling: 58, dividend: 0.00018, maxShares: 40000, seed: 303 },
+    FWRY: { name:'فوري للمدفوعات الإلكترونية', symbol:'FWRY', basePrice: 92, volatility: 0.035, reversion: 0.018, floor: 68, ceiling: 135, dividend: 0.00015, maxShares: 25000, seed: 457 },
+    CASH: { name:'صندوق الاستثمار التقني البديل', symbol:'CASH', basePrice: 125, volatility: 0.025, reversion: 0.022, floor: 105, ceiling: 150, dividend: 0.00035, maxShares: 20000, seed: 505 },
+    BITC: { name:'مؤشر البيتكوين والأصول الرقمية', symbol:'BITC', basePrice: 310, volatility: 0.040, reversion: 0.025, floor: 230, ceiling: 410, dividend: 0, maxShares: 5000, seed: 606 },
+    GOLD: { name:'صندوق سبائك الذهب الخالص', symbol:'GOLD', basePrice: 220, volatility: 0.012, reversion: 0.01, floor: 195, ceiling: 250, dividend: 0.0003, maxShares: 10000, seed: 707 },
+    AIX: { name:'صندوق الذكاء الاصطناعي العالمي', symbol:'AIX', basePrice: 380, volatility: 0.030, reversion: 0.02, floor: 300, ceiling: 470, dividend: 0.00025, maxShares: 8000, seed: 808 }
   };
 
   const CORP_PROJECTS = {
@@ -1516,7 +1516,7 @@ const GameEngine = (() => {
     globalMarketEvent = event;
   }
 
-  const STOCK_TICK_INTERVAL_MS = 15 * 60 * 1000; // 15-minute global synchronized candlestick
+  const STOCK_TICK_INTERVAL_MS = 30 * 1000; // 30-second global synchronized candlestick
 
   function getUnifiedStockTick() {
     return Math.floor(getTrustedNow() / STOCK_TICK_INTERVAL_MS);
@@ -1531,8 +1531,9 @@ const GameEngine = (() => {
     if (globalMarketEvent && (!globalMarketEvent.expiresAt || getTrustedNow() < globalMarketEvent.expiresAt)) {
       return globalMarketEvent;
     }
-    // Synchronized 15-minute global cycle (1 event per 15-minute trading candle)
-    const cycleIndex = Math.floor(getTrustedNow() / STOCK_TICK_INTERVAL_MS) % UNIFIED_SCHEDULED_EVENTS.length;
+    // Synchronized global cycle (1 news event per 4-minute window = 8 trading candles)
+    const EVENT_CYCLE_MS = 4 * 60 * 1000;
+    const cycleIndex = Math.floor(getTrustedNow() / EVENT_CYCLE_MS) % UNIFIED_SCHEDULED_EVENTS.length;
     return UNIFIED_SCHEDULED_EVENTS[cycleIndex];
   }
 
@@ -1549,23 +1550,23 @@ const GameEngine = (() => {
     return ((x >>> 0) / 4294967296) * 2 - 1;
   }
 
-  // Calculate the EXACT identical price of stock`sym` at any given 15-minute tick number
+  // Calculate the EXACT identical price of stock `sym` at any given 30-second tick number
   function calculateUnifiedPriceAtTick(sym, tick) {
     const stock = STOCKS[sym];
     if (!stock) return 10;
     const seed = stock.seed || 101;
 
-    // 1. Long-term Macro Cycle (48 ticks = 12 hours)
+    // 1. Long-term Macro Cycle (48 ticks = 24 minutes)
     const wave1 = Math.sin((tick + seed * 13) * (2 * Math.PI / 48));
-    // 2. Medium-term Sector Momentum (16 ticks = 4 hours)
+    // 2. Medium-term Sector Momentum (16 ticks = 8 minutes)
     const wave2 = Math.sin((tick + seed * 29) * (2 * Math.PI / 16));
-    // 3. Short-term Intraday Swing (4 ticks = 1 hour)
+    // 3. Short-term Intraday Swing (4 ticks = 2 minutes)
     const wave3 = Math.sin((tick + seed * 47) * (2 * Math.PI / 4));
-    // 4. Intraday Brownian Noise for this 15-minute period
+    // 4. Intraday Brownian Noise for this 30-second period
     const noise = getDeterministicNoise(seed, tick);
 
     // Weighted Cycle Factor (calibrated for smooth ±12% to ±16% natural swing within tight bounds)
-    const cycleFactor = 1 + (wave1 * 0.08) + (wave2 * 0.04) + (wave3 * 0.02) + (noise * stock.volatility * 1.2);
+    const cycleFactor = 1 + (wave1 * 0.08) + (wave2 * 0.04) + (wave3 * 0.02) + (noise * stock.volatility * 1.8);
     let price = Math.round(stock.basePrice * cycleFactor);
 
     // Apply Active Market Event Multiplier (Admin or Synchronized 15-min Cycle)
