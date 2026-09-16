@@ -5840,45 +5840,61 @@ const UIController = (() => {
       const isUp = currentPrice >= prevPrice;
 
       const ownedData = s.stocks[sym] || { shares: 0, avgPrice: 0 };
-      const totalWorth = ownedData.shares * currentPrice;
-      const totalProfit = (currentPrice - ownedData.avgPrice) * ownedData.shares;
+      const ownedShares = Number(ownedData.shares || 0);
+      const avgBuyPrice = Number(ownedData.avgPrice || 0);
+      const costBasis = ownedShares * avgBuyPrice;
+      const totalWorth = ownedShares * currentPrice;
+      const estFee = ownedShares > 0 ? Math.max(5, Math.floor(totalWorth * 0.01)) : 0;
+      const netPayout = Math.max(0, totalWorth - estFee);
+      const netProfit = ownedShares > 0 ? (netPayout - costBasis) : 0;
+      const profitPct = costBasis > 0 ? ((netProfit / costBasis) * 100) : 0;
 
       const card = document.createElement('div');
-      card.id =`stock-card-${sym}`;
-      card.className =`glass-panel p-5 rounded-xl border border-slate-800 flex flex-col justify-between`;
+      card.id = `stock-card-${sym}`;
+      card.className = `glass-panel p-5 rounded-xl border border-slate-800 flex flex-col justify-between`;
 
       const svgPath = generateSparklineSVG(prices);
 
-      const translatedStockName = window.currentLang ==='en' ? (translationDict[stock.name] || stock.name) : stock.name;
+      const translatedStockName = window.currentLang === 'en' ? (translationDict[stock.name] || stock.name) : stock.name;
 
-      card.innerHTML =`
+      card.innerHTML = `
         <div class="flex justify-between items-start mb-3">
           <div>
             <h4 class="text-md font-bold text-white">${translatedStockName}</h4>
             <span class="numbers-font text-xs text-slate-500 font-bold block mt-1">${stock.symbol}</span>
           </div>
           <div class="text-left">
-            <span id="stock-price-${sym}" class="numbers-font font-bold block ${isUp ?'text-emerald-400 glow-emerald' :'text-rose-400 glow-rose'}">${currentPrice} EGP</span>
-            <span id="stock-change-${sym}" class="numbers-font text-xs ${isUp ?'text-emerald-500' :'text-rose-500'} inline-block mt-0.5">${isUp ?'+' :''}${changePct.toFixed(2)}%</span>
+            <span id="stock-price-${sym}" class="numbers-font font-bold block ${isUp ? 'text-emerald-400 glow-emerald' : 'text-rose-400 glow-rose'}">${currentPrice} EGP</span>
+            <span id="stock-change-${sym}" class="numbers-font text-xs ${isUp ? 'text-emerald-500' : 'text-rose-500'} inline-block mt-0.5">${isUp ? '+' : ''}${changePct.toFixed(2)}%</span>
           </div>
         </div>
 
         <div class="w-full h-16 bg-slate-950/50 rounded-lg p-1 border border-slate-900/60 my-2 overflow-hidden">
           <svg viewBox="0 0 100 30" class="w-full h-full" preserveAspectRatio="none">
-            <path id="stock-svg-path-${sym}" d="${svgPath}" fill="none" stroke="${isUp ?'#10b981' :'#f43f5e'}" stroke-width="1.8" />
+            <path id="stock-svg-path-${sym}" d="${svgPath}" fill="none" stroke="${isUp ? '#10b981' : '#f43f5e'}" stroke-width="1.8" />
           </svg>
         </div>
 
-        <div class="text-xs text-slate-400 space-y-1 mb-3 border-t border-slate-800 pt-3 mt-1">
-          <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Owned Shares:' :'الأسهم المملوكة:'}</span><span id="stock-shares-${sym}" class="numbers-font text-white">${ownedData.shares} ${window.currentLang ==='en' ?'shares' :'سهم'}</span></div>
-          <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Avg Buy Price:' :'متوسط سعر الشراء:'}</span><span id="stock-avg-${sym}" class="numbers-font">${ownedData.avgPrice} EGP</span></div>
-          <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Total Shares Value:' :'قيمة الأسهم الكلية:'}</span><span id="stock-worth-${sym}" class="numbers-font text-yellow-500 font-semibold">${totalWorth.toLocaleString()} EGP</span></div>
-          <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Portfolio Profit/Loss:' :'ربح/خسارة المحفظة:'}</span><span id="stock-profit-${sym}" class="numbers-font font-bold ${totalProfit >= 0 ?'text-emerald-400' :'text-rose-400'}">${totalProfit >= 0 ?'+' :''}${totalProfit.toLocaleString()} EGP</span></div>
-          <div class="flex justify-between text-[11px] text-slate-500 border-t border-slate-800/60 pt-1.5 mt-1"><span>${window.currentLang ==='en' ?'Max Holding Limit:' :'سقف تملك السهم:'}</span><span class="numbers-font text-slate-300 font-semibold">${(stock.maxShares || 50000).toLocaleString()} ${window.currentLang ==='en' ?'shares' :'سهم'}</span></div>
+        <div class="text-xs text-slate-400 space-y-1.5 mb-3 border-t border-slate-800 pt-3 mt-1">
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Owned Shares:' : 'الأسهم المملوكة:'}</span><span id="stock-shares-${sym}" class="numbers-font text-white font-semibold">${ownedShares.toLocaleString()} ${window.currentLang === 'en' ? 'shares' : 'سهم'}</span></div>
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Avg Buy Price:' : 'متوسط سعر الشراء:'}</span><span id="stock-avg-${sym}" class="numbers-font">${avgBuyPrice} EGP</span></div>
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Invested Capital:' : 'رأس المال المستثمر:'}</span><span id="stock-cost-${sym}" class="numbers-font text-slate-300 font-medium">${costBasis.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Current Market Value:' : 'القيمة السوقية الحالية:'}</span><span id="stock-worth-${sym}" class="numbers-font text-yellow-500 font-semibold">${totalWorth.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Net Cash on Sale:' : 'صافي الكاش عند البيع:'}</span><span id="stock-payout-${sym}" class="numbers-font text-cyan-400 font-bold">${netPayout.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between border-t border-slate-800/60 pt-1">
+            <span>${window.currentLang === 'en' ? 'Net Realized Profit:' : 'صافي الربح الفعلي كاش:'}</span>
+            <span id="stock-profit-${sym}" class="numbers-font font-black ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${netProfit >= 0 ? '+' : ''}${netProfit.toLocaleString()} EGP (${netProfit >= 0 ? '+' : ''}${profitPct.toFixed(1)}%)</span>
+          </div>
+          <div class="flex justify-between text-[11px] text-slate-500 border-t border-slate-800/60 pt-1.5 mt-1"><span>${window.currentLang === 'en' ? 'Max Holding Limit:' : 'سقف تملك السهم:'}</span><span class="numbers-font text-slate-300 font-semibold">${(stock.maxShares || 50000).toLocaleString()} ${window.currentLang === 'en' ? 'shares' : 'سهم'}</span></div>
         </div>
-        <div class="mb-3 px-2 py-1 bg-slate-900/60 border border-slate-800 rounded-lg text-[10px] text-slate-400 flex items-center justify-between">
-          <span><i class="fa-solid fa-scale-balanced text-yellow-500/80 mr-1"></i> عمولة سمسرة 1%</span>
-          <span><i class="fa-solid fa-clock text-blue-400/80 mr-1"></i> حظر بيع 45ث</span>
+        <div class="mb-3 px-2.5 py-1.5 bg-slate-900/80 border border-slate-800 rounded-lg text-[10px] text-slate-400 flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <span><i class="fa-solid fa-scale-balanced text-yellow-500/80 mr-1"></i> عمولة سمسرة 1%</span>
+            <span><i class="fa-solid fa-clock text-blue-400/80 mr-1"></i> حظر بيع 45ث</span>
+          </div>
+          <div class="text-[9.5px] text-slate-500 leading-tight">
+            💡 القيمة السوقية = رأس المال + الأرباح | الكاش عند البيع يخصم عمولة 1%
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-2 mb-2">
@@ -5926,14 +5942,17 @@ const UIController = (() => {
             const totalPayout = res.totalReturn || (res.price * res.shares);
             const costBasis = prevAvgPrice * sharesToSell;
             const profitOrLoss = totalPayout - costBasis;
-            const pnlText = profitOrLoss >= 0
-              ?`(صافي ربح: +${profitOrLoss.toLocaleString()} EGP )`
-              :`(صافي خسارة: -${Math.abs(profitOrLoss).toLocaleString()} EGP )`;
-            
-            showToast(
-              profitOrLoss >= 0 ?'بيع كلي رابح!' :'بيع وتسييل كلي',`تم بيع كامل الأسهم (${res.shares} سهم) بقيمة +${totalPayout.toLocaleString()} EGP ${prevAvgPrice > 0 ? pnlText :''}`,
-              profitOrLoss >= 0 ?'success' :'info'
-            );
+            const fee = res.fee || Math.max(5, Math.floor((res.price * res.shares) * 0.01));
+            const isWin = profitOrLoss >= 0;
+
+            const title = isWin ? 'صفقة رابحة! استرداد رأس المال والأرباح 📈' : 'تسييل أسهم (تصفية بخسارة) 📉';
+            const detailsMsg = `تم بيع كامل الأسهم (${res.shares.toLocaleString()} سهم):
+💵 رأس المال المسترد: ${costBasis.toLocaleString()} ج.م
+${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}${Math.abs(profitOrLoss).toLocaleString()} ج.م
+⚖️ عمولة سمسرة (1%): -${fee.toLocaleString()} ج.م
+💰 إجمالي الكاش المضاف لمحفظتك: +${totalPayout.toLocaleString()} ج.م`;
+
+            showToast(title, detailsMsg, isWin ? 'success' : 'info');
             if (res.capHit) {
               setTimeout(() => {
                 showToast('سقف أرباح البورصة اليومي', `تم تطبيق سقف الأرباح اليومي (1,000,000 ج.م). تم استرداد رأس مالك بالكامل وسيتجدد السقف غداً.`, 'warning');
@@ -5942,7 +5961,7 @@ const UIController = (() => {
             renderStocks(true);
             renderStatsBar();
           } catch (err) {
-            showToast('فشل البيع', err.message,'error');
+            showToast('فشل البيع', err.message, 'error');
           }
         });
       }
@@ -5954,12 +5973,12 @@ const UIController = (() => {
         try {
           if (!count || count <= 0) throw new Error("يرجى إدخال عدد أسهم صحيح.");
           const res = GameEngine.buyStock(sym, count);
-          input.value ='';
-          showToast('شراء أسهم',`تم شراء عدد ${res.shares} سهم من سهم"${stock.name}" بنجاح.`,'success');
+          input.value = '';
+          showToast('شراء أسهم', `تم شراء عدد ${res.shares} سهم من سهم "${stock.name}" بنجاح.`, 'success');
           renderStocks(true);
           renderStatsBar();
         } catch (err) {
-          showToast('فشل الشراء', err.message,'error');
+          showToast('فشل الشراء', err.message, 'error');
         }
       });
 
@@ -5975,15 +5994,18 @@ const UIController = (() => {
           const totalPayout = res.totalReturn || (res.price * res.shares);
           const costBasis = prevAvgPrice * res.shares;
           const profitOrLoss = totalPayout - costBasis;
-          const pnlText = profitOrLoss >= 0
-            ?`(صافي ربح: +${profitOrLoss.toLocaleString()} EGP )`
-            :`(صافي خسارة: -${Math.abs(profitOrLoss).toLocaleString()} EGP )`;
+          const fee = res.fee || Math.max(5, Math.floor((res.price * res.shares) * 0.01));
+          const isWin = profitOrLoss >= 0;
 
-          input.value ='';
-          showToast(
-            profitOrLoss >= 0 ?'بيع أسهم رابح!' :'بيع أسهم',`تم بيع عدد ${res.shares} سهم بقيمة +${totalPayout.toLocaleString()} EGP ${prevAvgPrice > 0 ? pnlText :''}`,
-            profitOrLoss >= 0 ?'success' :'info'
-          );
+          input.value = '';
+          const title = isWin ? 'صفقة رابحة! استرداد رأس المال والأرباح 📈' : 'تسييل أسهم (تصفية بخسارة) 📉';
+          const detailsMsg = `تم بيع ${res.shares.toLocaleString()} سهم:
+💵 رأس المال المسترد: ${costBasis.toLocaleString()} ج.م
+${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}${Math.abs(profitOrLoss).toLocaleString()} ج.م
+⚖️ عمولة سمسرة (1%): -${fee.toLocaleString()} ج.م
+💰 إجمالي الكاش المضاف لمحفظتك: +${totalPayout.toLocaleString()} ج.م`;
+
+          showToast(title, detailsMsg, isWin ? 'success' : 'info');
           if (res.capHit) {
             setTimeout(() => {
               showToast('سقف أرباح البورصة اليومي', `تم تطبيق سقف الأرباح اليومي (1,000,000 ج.م). تم استرداد رأس مالك بالكامل وسيتجدد السقف غداً.`, 'warning');
@@ -5992,7 +6014,7 @@ const UIController = (() => {
           renderStocks(true);
           renderStatsBar();
         } catch (err) {
-          showToast('فشل البيع', err.message,'error');
+          showToast('فشل البيع', err.message, 'error');
         }
       });
 
@@ -6035,41 +6057,53 @@ const UIController = (() => {
       const isUp = currentPrice >= prevPrice;
 
       const ownedData = s.stocks[sym] || { shares: 0, avgPrice: 0 };
-      const totalWorth = ownedData.shares * currentPrice;
-      const totalProfit = (currentPrice - ownedData.avgPrice) * ownedData.shares;
+      const ownedShares = Number(ownedData.shares || 0);
+      const avgBuyPrice = Number(ownedData.avgPrice || 0);
+      const costBasis = ownedShares * avgBuyPrice;
+      const totalWorth = ownedShares * currentPrice;
+      const estFee = ownedShares > 0 ? Math.max(5, Math.floor(totalWorth * 0.01)) : 0;
+      const netPayout = Math.max(0, totalWorth - estFee);
+      const netProfit = ownedShares > 0 ? (netPayout - costBasis) : 0;
+      const profitPct = costBasis > 0 ? ((netProfit / costBasis) * 100) : 0;
 
       const priceEl = document.getElementById(`stock-price-${sym}`);
       if (priceEl) {
-        priceEl.textContent =`${currentPrice} EGP`;
-        priceEl.className =`numbers-font font-bold block ${isUp ?'text-emerald-400 glow-emerald' :'text-rose-400 glow-rose'}`;
+        priceEl.textContent = `${currentPrice} EGP`;
+        priceEl.className = `numbers-font font-bold block ${isUp ? 'text-emerald-400 glow-emerald' : 'text-rose-400 glow-rose'}`;
       }
 
       const changeEl = document.getElementById(`stock-change-${sym}`);
       if (changeEl) {
-        changeEl.textContent =`${isUp ?'+' :''}${changePct.toFixed(2)}%`;
-        changeEl.className =`numbers-font text-xs ${isUp ?'text-emerald-500' :'text-rose-500'} inline-block mt-0.5`;
+        changeEl.textContent = `${isUp ? '+' : ''}${changePct.toFixed(2)}%`;
+        changeEl.className = `numbers-font text-xs ${isUp ? 'text-emerald-500' : 'text-rose-500'} inline-block mt-0.5`;
       }
 
       const svgPathEl = document.getElementById(`stock-svg-path-${sym}`);
       if (svgPathEl) {
         svgPathEl.setAttribute('d', generateSparklineSVG(prices));
-        svgPathEl.setAttribute('stroke', isUp ?'#10b981' :'#f43f5e');
-      }
-
-      const worthEl = document.getElementById(`stock-worth-${sym}`);
-      if (worthEl) worthEl.textContent =`${totalWorth.toLocaleString()} EGP`;
-
-      const profitEl = document.getElementById(`stock-profit-${sym}`);
-      if (profitEl) {
-        profitEl.textContent =`${totalProfit >= 0 ?'+' :''}${totalProfit.toLocaleString()} EGP`;
-        profitEl.className =`numbers-font font-bold ${totalProfit >= 0 ?'text-emerald-400' :'text-rose-400'}`;
+        svgPathEl.setAttribute('stroke', isUp ? '#10b981' : '#f43f5e');
       }
 
       const sharesEl = document.getElementById(`stock-shares-${sym}`);
-      if (sharesEl) sharesEl.textContent =`${ownedData.shares} سهم`;
+      if (sharesEl) sharesEl.textContent = `${ownedShares.toLocaleString()} سهم`;
 
       const avgEl = document.getElementById(`stock-avg-${sym}`);
-      if (avgEl) avgEl.textContent =`${ownedData.avgPrice} EGP`;
+      if (avgEl) avgEl.textContent = `${avgBuyPrice} EGP`;
+
+      const costEl = document.getElementById(`stock-cost-${sym}`);
+      if (costEl) costEl.textContent = `${costBasis.toLocaleString()} EGP`;
+
+      const worthEl = document.getElementById(`stock-worth-${sym}`);
+      if (worthEl) worthEl.textContent = `${totalWorth.toLocaleString()} EGP`;
+
+      const payoutEl = document.getElementById(`stock-payout-${sym}`);
+      if (payoutEl) payoutEl.textContent = `${netPayout.toLocaleString()} EGP`;
+
+      const profitEl = document.getElementById(`stock-profit-${sym}`);
+      if (profitEl) {
+        profitEl.textContent = `${netProfit >= 0 ? '+' : ''}${netProfit.toLocaleString()} EGP (${netProfit >= 0 ? '+' : ''}${profitPct.toFixed(1)}%)`;
+        profitEl.className = `numbers-font font-black ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+      }
 
       const sellAllBtn = document.getElementById(`btn-sell-all-${sym}`);
       if (sellAllBtn) sellAllBtn.disabled = (ownedData.shares === 0);
