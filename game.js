@@ -3128,6 +3128,19 @@ const GameEngine = (() => {
         } catch (e) {}
       }
 
+      // Safeguard: Recover farm progress from local storage if cloud snapshot was missing it or locked
+      if (!isAccountReset && (!state.farm || !state.farm.unlocked)) {
+        try {
+          const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
+            ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
+            : null;
+          if (localS && localS.farm && localS.farm.unlocked) {
+            state.farm = localS.farm;
+            console.log('[GameEngine] Recovered farm state from local storage safeguard:', state.farm);
+          }
+        } catch (e) {}
+      }
+
       // Safeguard: Recover active investments from local storage if cloud snapshot was missing them
       if (!isAccountReset) {
         try {
@@ -6319,7 +6332,7 @@ const GameEngine = (() => {
     f.unlocked = true;
     recordPlayerActivity('استصلاح مزرعة استثمارية 🌾', `شراء وتملك المزرعة الاستثمارية الأولى (4 أحواض) بتكلفة ${cost.toLocaleString()} EGP!`, 'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
     return f;
   }
 
@@ -6526,7 +6539,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('توسيع واستصلاح مزرعة 🏞️', `توسيع رقعة المزرعة إلى (${f.maxPlots} أحواض) بتكلفة ${cost.toLocaleString()} EGP`, 'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
     return {
       landLevel: f.landLevel,
       maxPlots: f.maxPlots,
@@ -6560,7 +6573,7 @@ const GameEngine = (() => {
     f.irrigationLevel = nextLvl;
     recordPlayerActivity('ترقية شبكة الري 💧', `تركيب وتطوير "${irDef.name}" لتسريع نمو المحاصيل بنسبة ${(irDef.speedBonus * 100).toFixed(0)}%! بتكلفة ${cost.toLocaleString()} EGP`, 'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
     return {
       waterLevel: f.waterLevel,
       irrigationLevel: f.waterLevel,
@@ -6594,7 +6607,7 @@ const GameEngine = (() => {
     f.fertilizerLevel = nextLvl;
     recordPlayerActivity('ترقية مخصبات المزرعة 🌱', `اعتماد "${fertDef.name}" لمضاعفة المحصول بنسبة +${(fertDef.yieldBonus * 100).toFixed(0)}%! بتكلفة ${cost.toLocaleString()} EGP`, 'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
     return {
       fertilizerLevel: f.fertilizerLevel,
       name: fertDef.name,
@@ -6627,7 +6640,7 @@ const GameEngine = (() => {
     f.workers++;
     recordPlayerActivity('توظيف عامل مزرعة 👨‍🌾', `توظيف عامل للمزرعة لمراقبة وحصاد المحاصيل تلقائياً بتكلفة ${cost.toLocaleString()} EGP`, 'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
     return {
       workers: f.workers
     };
@@ -6658,7 +6671,7 @@ const GameEngine = (() => {
     f.siloLevel = nextLvl;
     recordPlayerActivity('ترقية صوامع المزرعة 🏛️', `توسعة صوامع التخزين إلى "${siloDef.name}" بسعة ${siloDef.capacity.toLocaleString()} وحدة بتكلفة ${cost.toLocaleString()} EGP`, 'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
     return {
       siloLevel: f.siloLevel,
       name: siloDef.name,
@@ -6907,7 +6920,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('توسعة الثروة الحيوانية 🐄', `شراء ${count} من "${def.name}" بتكلفة ${totalCost.toLocaleString()} EGP. إجمالي القطيع: ${(current + count)}`, 'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
 
     return {
       type,

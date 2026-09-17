@@ -218,13 +218,13 @@ class SessionManager {
 
     if (isLiteralKhaled) {
       s.gold = Math.max(0, Number(s.gold || 0));
-      if (clientState.farm && typeof clientState.farm === 'object') {
-        s.farm = clientState.farm;
-      }
     } else {
       delete s.gold;
-      delete s.farm;
-      if (clientState.farm) delete clientState.farm;
+    }
+
+    // Agro Farm Tycoon (Officially open to all players)
+    if (clientState.farm && typeof clientState.farm === 'object') {
+      s.farm = clientState.farm;
     }
 
     // Synchronize modules (safeguarded against stale downgrades)

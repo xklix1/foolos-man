@@ -124,7 +124,7 @@ function sanitizePlayerState(dbRow) {
   // Security Hardening: Never leak PIN hash in client-facing state payloads
   delete cleanState.pin;
 
-  // Experimental & Beta Features (Gold currency & Farm - strictly gated to literal developer account 'Khaled' only)
+  // Gold currency (strictly gated to developer account 'Khaled' only)
   const isLiteralKhaled = cleanState.username &&
     typeof cleanState.username === 'string' &&
     cleanState.username.trim().toLowerCase() === 'khaled' &&
@@ -132,12 +132,13 @@ function sanitizePlayerState(dbRow) {
 
   if (isLiteralKhaled) {
     cleanState.gold = Math.max(0, Number(dbRow.gold !== undefined ? dbRow.gold : (rawState.gold || 0)));
-    if (rawState.farm && typeof rawState.farm === 'object') {
-      cleanState.farm = rawState.farm;
-    }
   } else {
     delete cleanState.gold;
-    delete cleanState.farm;
+  }
+
+  // Agro Farm Tycoon (Officially open to all players)
+  if (rawState.farm && typeof rawState.farm === 'object') {
+    cleanState.farm = rawState.farm;
   }
 
   return cleanState;

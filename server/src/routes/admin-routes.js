@@ -353,6 +353,20 @@ async function adminRoutes(fastify, options) {
       return reply.status(500).send({ error: 'Failed to evaluate event: ' + err.message });
     }
   });
+
+  /**
+   * POST /api/admin/restart
+   * Gracefully restarts the Fastify process so PM2 reloads updated codebase
+   */
+  fastify.post('/restart', {
+    config: { rateLimit: adminRateLimit },
+    preHandler: [requireAdminAuth]
+  }, async (request, reply) => {
+    reply.send({ success: true, message: 'Server process restarting via PM2 autorestart...' });
+    setTimeout(() => {
+      process.exit(0);
+    }, 500);
+  });
 }
 
 module.exports = adminRoutes;
