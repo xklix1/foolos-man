@@ -6792,7 +6792,11 @@ const GameEngine = (() => {
     return {
       recipe,
       sellQty,
+      qty: sellQty,
       totalPrice,
+      totalRevenue: totalPrice,
+      revenue: totalPrice,
+      grandTotal: totalPrice,
       remaining: f.processing.storage[recipeId]
     };
   }

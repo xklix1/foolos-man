@@ -20339,12 +20339,15 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         try {
           const res = GameEngine.sellAllProcessedGoods();
           playCasinoSound('win');
-          showToast('بيع المنتجات الغذائية 🥫', `تم تصريف ${res.totalUnits.toLocaleString()} وحدة منتجات مصنعة بقيمة +${res.totalRevenue.toLocaleString()} EGP نقداً!`, 'success');
-          renderFarmPanel();
-          renderStatsBar();
+          const soldUnits = Number((res && (res.totalUnits || res.itemsSold || res.qty)) || 0);
+          const rev = Number((res && (res.totalRevenue || res.grandTotal || res.totalPrice || res.revenue)) || 0);
+          showToast('بيع المنتجات الغذائية 🥫', `تم تصريف ${soldUnits.toLocaleString()} وحدة منتجات مصنعة بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
         } catch (e) {
           playMenuSound('error');
           showToast('تعذر البيع', e.message, 'error');
+        } finally {
+          renderFarmPanel();
+          renderStatsBar();
         }
       };
     }
@@ -21067,10 +21070,12 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
   function sellProcessedGood(recipeId, qty) {
     try {
-      playCasinoSound('win');
       const res = GameEngine.sellProcessedGood(recipeId, qty);
-      const rev = Number(res.totalPrice || res.totalRevenue || 0);
-      showToast('تم بيع المنتج 💰', `تم بيع ${res.qty.toLocaleString()} عبوة من "${res.recipe.name}" بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
+      playCasinoSound('win');
+      const soldQty = Number((res && (res.sellQty || res.qty)) || qty || 0);
+      const rev = Number((res && (res.totalPrice || res.totalRevenue || res.revenue || res.grandTotal)) || 0);
+      const recipeName = (res && res.recipe && res.recipe.name) || 'المنتج الغذائي';
+      showToast('تم بيع المنتج 💰', `تم بيع ${soldQty.toLocaleString()} عبوة من "${recipeName}" بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
     } catch (e) {
       playMenuSound('error');
       showToast('تعذر البيع', e.message, 'error');
@@ -21082,10 +21087,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
   function sellAllProcessedGoods() {
     try {
-      playCasinoSound('win');
       const res = GameEngine.sellAllProcessedGoods();
-      const rev = Number(res.totalRevenue || res.grandTotal || 0);
-      showToast('بيع المنتجات الغذائية 🥫', `تم تصريف ${res.totalUnits.toLocaleString()} وحدة منتجات مصنعة بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
+      playCasinoSound('win');
+      const soldUnits = Number((res && (res.totalUnits || res.itemsSold || res.qty)) || 0);
+      const rev = Number((res && (res.totalRevenue || res.grandTotal || res.totalPrice || res.revenue)) || 0);
+      showToast('بيع المنتجات الغذائية 🥫', `تم تصريف ${soldUnits.toLocaleString()} وحدة منتجات مصنعة بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
     } catch (e) {
       playMenuSound('error');
       showToast('تعذر البيع', e.message, 'error');
