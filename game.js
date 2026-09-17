@@ -6107,13 +6107,14 @@ const GameEngine = (() => {
   }
 
   // --- Farm Storage & Anti-Exploit Helpers ---
-  let _lastFarmActionTimestamp = 0;
-  function assertFarmRateLimit(actionName = 'العملية') {
+  const _lastFarmActionTimestamps = {};
+  function assertFarmRateLimit(actionName = 'العملية', minIntervalMs = 150) {
     const now = Date.now();
-    if (now - _lastFarmActionTimestamp < 350) {
+    const last = _lastFarmActionTimestamps[actionName] || 0;
+    if (now - last < minIntervalMs) {
       throw new Error(`مهلاً! تمهل قليلاً، يرجى الانتظار لحظة قبل تكرار ${actionName}.`);
     }
-    _lastFarmActionTimestamp = now;
+    _lastFarmActionTimestamps[actionName] = now;
   }
 
   function getFarmStoredUnits(farmState) {
@@ -6708,6 +6709,8 @@ const GameEngine = (() => {
     forceSaveState(false);
     return {
       grandTotal,
+      totalRevenue: grandTotal,
+      revenue: grandTotal,
       itemsSold,
       soldBreakdown
     };
@@ -6912,6 +6915,8 @@ const GameEngine = (() => {
       qty: sellQty,
       totalPrice,
       revenue: totalPrice,
+      totalRevenue: totalPrice,
+      grandTotal: totalPrice,
       remaining: f.livestock[produceKey]
     };
   }
@@ -6949,6 +6954,8 @@ const GameEngine = (() => {
 
     return {
       grandTotal,
+      totalRevenue: grandTotal,
+      revenue: grandTotal,
       milk,
       eggs,
       compost

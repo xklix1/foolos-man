@@ -20464,12 +20464,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         try {
           const res = GameEngine.sellAllLivestockProduce();
           playCasinoSound('win');
-          showToast('بيع منتجات المزرعة 🥛🥚', `تم بيع كافة المنتجات الحيوانية بقيمة +${res.totalRevenue.toLocaleString()} EGP نقداً!`, 'success');
-          renderFarmPanel();
-          renderStatsBar();
+          const rev = Number(res.totalRevenue || res.grandTotal || res.revenue || 0);
+          showToast('بيع منتجات المزرعة 🥛🥚', `تم بيع كافة المنتجات الحيوانية بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
         } catch (e) {
           playMenuSound('error');
           showToast('تعذر البيع', e.message, 'error');
+        } finally {
+          renderFarmPanel();
+          renderStatsBar();
         }
       };
     }
@@ -20959,12 +20961,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playCasinoSound('win');
       const res = GameEngine.sellFarmCrop(cropId);
-      showToast('تم البيع 💰', `تم بيع ${res.qty.toLocaleString()} وحدة من "${res.crop.name}" بقيمة +${res.totalPrice.toLocaleString()} EGP نقداً!`, 'success');
-      renderFarmPanel();
-      renderStatsBar();
+      const rev = Number(res.totalPrice || res.totalRevenue || 0);
+      showToast('تم البيع 💰', `تم بيع ${res.qty.toLocaleString()} وحدة من "${res.crop.name}" بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
     } catch (e) {
       playMenuSound('error');
       showToast('تعذر البيع', e.message, 'error');
+    } finally {
+      renderFarmPanel();
+      renderStatsBar();
     }
   }
 
@@ -21050,12 +21054,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playCasinoSound('win');
       const res = GameEngine.sellProcessedGood(recipeId, qty);
-      showToast('تم بيع المنتج 💰', `تم بيع ${res.qty.toLocaleString()} عبوة من "${res.recipe.name}" بقيمة +${res.totalPrice.toLocaleString()} EGP نقداً!`, 'success');
-      renderFarmPanel();
-      renderStatsBar();
+      const rev = Number(res.totalPrice || res.totalRevenue || 0);
+      showToast('تم بيع المنتج 💰', `تم بيع ${res.qty.toLocaleString()} عبوة من "${res.recipe.name}" بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
     } catch (e) {
       playMenuSound('error');
       showToast('تعذر البيع', e.message, 'error');
+    } finally {
+      renderFarmPanel();
+      renderStatsBar();
     }
   }
 
@@ -21063,12 +21069,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playCasinoSound('win');
       const res = GameEngine.sellAllProcessedGoods();
-      showToast('بيع المنتجات الغذائية 🥫', `تم تصريف ${res.totalUnits.toLocaleString()} وحدة منتجات مصنعة بقيمة +${res.totalRevenue.toLocaleString()} EGP نقداً!`, 'success');
-      renderFarmPanel();
-      renderStatsBar();
+      const rev = Number(res.totalRevenue || res.grandTotal || 0);
+      showToast('بيع المنتجات الغذائية 🥫', `تم تصريف ${res.totalUnits.toLocaleString()} وحدة منتجات مصنعة بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
     } catch (e) {
       playMenuSound('error');
       showToast('تعذر البيع', e.message, 'error');
+    } finally {
+      renderFarmPanel();
+      renderStatsBar();
     }
   }
 
@@ -21089,12 +21097,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playCasinoSound('win');
       const res = GameEngine.sellLivestockProduce(produceKey, qty);
-      showToast('تم البيع 💰', `تم بيع ${res.qty.toLocaleString()} وحدة بقيمة +${res.revenue.toLocaleString()} EGP نقداً!`, 'success');
-      renderFarmPanel();
-      renderStatsBar();
+      const rev = Number(res.revenue || res.totalPrice || res.totalRevenue || 0);
+      showToast('تم البيع 💰', `تم بيع ${res.qty.toLocaleString()} وحدة بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
     } catch (e) {
       playMenuSound('error');
       showToast('تعذر البيع', e.message, 'error');
+    } finally {
+      renderFarmPanel();
+      renderStatsBar();
     }
   }
 
@@ -21102,12 +21112,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playCasinoSound('win');
       const res = GameEngine.sellAllLivestockProduce();
-      showToast('بيع منتجات المزرعة 🥛🥚', `تم بيع كافة المنتجات الحيوانية بقيمة +${res.totalRevenue.toLocaleString()} EGP نقداً!`, 'success');
-      renderFarmPanel();
-      renderStatsBar();
+      const rev = Number(res.totalRevenue || res.grandTotal || res.revenue || 0);
+      showToast('بيع منتجات المزرعة 🥛🥚', `تم بيع كافة المنتجات الحيوانية بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
     } catch (e) {
       playMenuSound('error');
       showToast('تعذر البيع', e.message, 'error');
+    } finally {
+      renderFarmPanel();
+      renderStatsBar();
     }
   }
 
