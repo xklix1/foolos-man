@@ -2029,12 +2029,12 @@
               <span>سلاسل الإمداد</span>
               <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold ml-auto">مصانع</span>
             </button>
-            <!-- Farm (strictly hidden by default with display: none !important for everyone except literal account Khaled) -->
-            <button id="nav-tab-farm" data-tab="farm" style="display: none !important;"
-              class="nav-tab-btn hidden w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200" aria-hidden="true">
+            <!-- Farm tab -->
+            <button id="nav-tab-farm" data-tab="farm"
+              class="nav-tab-btn flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200 cursor-pointer">
               <i class="fa-solid fa-wheat-awn w-4 text-center text-amber-400 text-sm"></i>
               <span>المزرعة الاستثمارية</span>
-              <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold ml-auto">VIP تجريبي</span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold ml-auto">جديد 🌾</span>
             </button>
           </div>
 
@@ -2217,18 +2217,18 @@
           </div>
         </header>
 
-        <!-- Quick Access Card for Farm (Strictly and exclusively for literal account Khaled) -->
-        <div id="dash-farm-tester-card" class="hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-amber-950/40 to-slate-900/90 border border-amber-500/50 shadow-lg shadow-amber-500/10 items-center justify-between gap-4 flex-wrap" style="display: none !important;" aria-hidden="true">
+        <!-- Quick Access Card for Farm (Officially Launched) -->
+        <div id="dash-farm-tester-card" class="flex p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-amber-950/40 to-slate-900/90 border border-amber-500/50 shadow-lg shadow-amber-500/10 items-center justify-between gap-4 flex-wrap">
           <div class="flex items-center gap-3.5">
             <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xl shrink-0 shadow-inner">
               <i class="fa-solid fa-wheat-awn"></i>
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <h4 class="text-sm font-black text-white">المزرعة الاستثمارية (نسخة المعاينة الخاصة)</h4>
-                <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">VIP Tester</span>
+                <h4 class="text-sm font-black text-white">المزرعة الاستثمارية الحديثة 🌾</h4>
+                <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">إطلاق رسمي 🌟</span>
               </div>
-              <p class="text-xs text-slate-300 mt-0.5">مشروع المزرعة، شراء الأراضي، زراعة وحصاد المحاصيل والعمال متاح الآن لحسابك للتجربة.</p>
+              <p class="text-xs text-slate-300 mt-0.5">استصلاح الأراضي، التصنيع الغذائي، الإنتاج الحيواني، وتوريد عقود الشركات B2B متاح الآن لجميع المستثمرين!</p>
             </div>
           </div>
           <button onclick="window.switchTab ? window.switchTab('farm') : (window.UI && window.UI.switchTab('farm'))" class="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 transition cursor-pointer">
@@ -3614,8 +3614,8 @@
         </div>
       </section>
 
-      <!-- ==================== TAB: المزرعة الاستثمارية (Completely hidden & disabled for all players) ==================== -->
-      <section id="panel-farm" class="game-panel hidden space-y-6" style="display: none !important;" aria-hidden="true">
+      <!-- ==================== TAB: المزرعة الاستثمارية ==================== -->
+      <section id="panel-farm" class="game-panel hidden space-y-6">
 
         <!-- 1. Farm Header & Status Hero Card -->
         <div class="glass-panel p-6 sm:p-7 rounded-3xl border border-emerald-500/30 relative overflow-hidden shadow-2xl transition duration-300"
@@ -5151,12 +5151,12 @@
           <span>مجمع الصناعات</span>
         </button>
 
-        <!-- Farm mobile tab (Strictly and exclusively for literal account Khaled) -->
-        <button id="nav-tab-farm-mobile" data-tab="farm" style="display: none !important;"
-          class="nav-tab-btn hidden w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer" aria-hidden="true">
+        <!-- Farm mobile tab -->
+        <button id="nav-tab-farm-mobile" data-tab="farm"
+          class="nav-tab-btn flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
           <i class="fa-solid fa-wheat-awn w-5 text-center text-amber-400 text-sm"></i>
           <span>المزرعة الاستثمارية</span>
-          <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold mr-auto">VIP تجريبي</span>
+          <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold mr-auto">جديد 🌾</span>
         </button>
 
         <!-- Group 3: المخاطر والتسلية -->
@@ -7034,8 +7034,8 @@
   <!-- Script Initializers -->
   <script src="db.js?v=29.0"></script>
   <script src="server-client-bridge.js?v=25.0"></script>
-  <script src="game.js?v=50.0"></script>
-  <script src="ui.js?v=55.0"></script>
+  <script src="game.js?v=51.0"></script>
+  <script src="ui.js?v=56.0"></script>
   <script src="pwa-manager.js?v=2.5.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────

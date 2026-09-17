@@ -1722,11 +1722,9 @@ const GameEngine = (() => {
       }
     }
 
-    // 5.5 Agro Farm Tycoon (المزرعة الاستثمارية - strictly for literal account 'Khaled' only)
+    // 5.5 Agro Farm Tycoon (المزرعة الاستثمارية - متاحة رسمياً لكافة اللاعبين)
     let farmTotal = 0;
-    const activeU = String(activeUsername || (playerState && playerState.username) || '').trim().toLowerCase();
-    const isLitKhaled = activeU === 'khaled' && activeU.length === 6;
-    if (isLitKhaled && playerState.farm && playerState.farm.unlocked && typeof FARM_CONFIG !== 'undefined') {
+    if (playerState.farm && playerState.farm.unlocked && typeof FARM_CONFIG !== 'undefined') {
       const landLevelValues = { 1: 1000000, 2: 1500000, 3: 4500000, 4: 14500000 };
       farmTotal += (landLevelValues[playerState.farm.landLevel] || ((playerState.farm.maxPlots || 4) * 250000));
       farmTotal += (playerState.farm.waterLevel || 1) * 40000;
@@ -6169,10 +6167,6 @@ const GameEngine = (() => {
 
   function ensureFarmState() {
     if (!state) return null;
-    if (!isStrictKhaledUser()) {
-      if (state.farm) delete state.farm;
-      return null;
-    }
     if (!state.farm || typeof state.farm !== 'object') {
       state.farm = {
         unlocked: false,
@@ -6260,7 +6254,6 @@ const GameEngine = (() => {
   }
 
   function getFarmState() {
-    if (!isStrictKhaledUser()) return null;
     const f = ensureFarmState();
     if (!f) return null;
     const now = getTrustedNow();
@@ -6304,9 +6297,6 @@ const GameEngine = (() => {
   }
 
   function unlockFarm() {
-    if (!isStrictKhaledUser()) {
-      throw new Error("المزرعة الاستثمارية ميزة تجريبية خاصة بحساب المطور Khaled فقط حالياً.");
-    }
     if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك استصلاح مزرعة الآن.");
     const f = ensureFarmState();
     if (!f) throw new Error("تعذر تهيئة بيانات المزرعة.");

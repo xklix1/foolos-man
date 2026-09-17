@@ -338,67 +338,36 @@ const UIController = (() => {
   }
 
   function isFarmTesterAccount() {
-    return isKhaledUser();
+    return true; // متاح رسمياً لكافة اللاعبين
   }
 
   function updateFarmTabVisibility() {
-    const isTester = isKhaledUser();
     const farmTabDesktop = document.getElementById('nav-tab-farm');
     const farmTabMobile = document.getElementById('nav-tab-farm-mobile');
     const farmDashCard = document.getElementById('dash-farm-tester-card');
     const farmPanel = document.getElementById('panel-farm');
 
     if (farmTabDesktop) {
-      if (isTester) {
-        farmTabDesktop.classList.remove('hidden');
-        farmTabDesktop.classList.add('flex');
-        farmTabDesktop.style.removeProperty('display');
-        farmTabDesktop.removeAttribute('aria-hidden');
-      } else {
-        farmTabDesktop.classList.add('hidden');
-        farmTabDesktop.classList.remove('flex');
-        farmTabDesktop.style.setProperty('display', 'none', 'important');
-        farmTabDesktop.setAttribute('aria-hidden', 'true');
-      }
+      farmTabDesktop.classList.remove('hidden');
+      farmTabDesktop.classList.add('flex');
+      farmTabDesktop.style.removeProperty('display');
+      farmTabDesktop.removeAttribute('aria-hidden');
     }
     if (farmTabMobile) {
-      if (isTester) {
-        farmTabMobile.classList.remove('hidden');
-        farmTabMobile.classList.add('flex');
-        farmTabMobile.style.removeProperty('display');
-        farmTabMobile.removeAttribute('aria-hidden');
-      } else {
-        farmTabMobile.classList.add('hidden');
-        farmTabMobile.classList.remove('flex');
-        farmTabMobile.style.setProperty('display', 'none', 'important');
-        farmTabMobile.setAttribute('aria-hidden', 'true');
-      }
+      farmTabMobile.classList.remove('hidden');
+      farmTabMobile.classList.add('flex');
+      farmTabMobile.style.removeProperty('display');
+      farmTabMobile.removeAttribute('aria-hidden');
     }
     if (farmDashCard) {
-      if (isTester) {
-        farmDashCard.classList.remove('hidden');
-        farmDashCard.classList.add('flex');
-        farmDashCard.style.removeProperty('display');
-        farmDashCard.removeAttribute('aria-hidden');
-      } else {
-        farmDashCard.classList.add('hidden');
-        farmDashCard.classList.remove('flex');
-        farmDashCard.style.setProperty('display', 'none', 'important');
-        farmDashCard.setAttribute('aria-hidden', 'true');
-      }
+      farmDashCard.classList.remove('hidden');
+      farmDashCard.classList.add('flex');
+      farmDashCard.style.removeProperty('display');
+      farmDashCard.removeAttribute('aria-hidden');
     }
     if (farmPanel) {
-      if (isTester) {
-        farmPanel.removeAttribute('aria-hidden');
-        farmPanel.style.removeProperty('display');
-      } else {
-        farmPanel.classList.add('hidden');
-        farmPanel.style.setProperty('display', 'none', 'important');
-        farmPanel.setAttribute('aria-hidden', 'true');
-      }
-    }
-    if (!isTester && activeTab === 'farm' && typeof switchTab === 'function') {
-      switchTab('dashboard');
+      farmPanel.removeAttribute('aria-hidden');
+      farmPanel.style.removeProperty('display');
     }
   }
 
