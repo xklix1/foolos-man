@@ -912,9 +912,9 @@ const GameEngine = (() => {
     },
     fertilizers: {
       1: { name: 'تربة اعتيادية', cost: 0, yieldBonus: 0, icon: 'fa-solid fa-mound', desc: 'الإنتاج الطبيعي للمحصول' },
-      2: { name: 'سماد عضوي نباتي', cost: 40000, yieldBonus: 0.15, icon: 'fa-solid fa-leaf', desc: 'زيادة كمية المحصول بنسبة +15%' },
-      3: { name: 'سماد نيتروجيني فائق NPK', cost: 200000, yieldBonus: 0.35, icon: 'fa-solid fa-flask-vial', desc: 'زيادة كمية المحصول بنسبة +35%' },
-      4: { name: 'مخصبات نانو بيوتكنولوجي', cost: 800000, yieldBonus: 0.60, icon: 'fa-solid fa-dna', desc: 'زيادة كمية المحصول بنسبة +60%' }
+      2: { name: 'سماد عضوي نباتي', cost: 40000, yieldBonus: 0.10, icon: 'fa-solid fa-leaf', desc: 'زيادة كمية المحصول بنسبة +10%' },
+      3: { name: 'سماد نيتروجيني فائق NPK', cost: 200000, yieldBonus: 0.20, icon: 'fa-solid fa-flask-vial', desc: 'زيادة كمية المحصول بنسبة +20%' },
+      4: { name: 'مخصبات نانو بيوتكنولوجي', cost: 800000, yieldBonus: 0.35, icon: 'fa-solid fa-dna', desc: 'زيادة كمية المحصول بنسبة +35%' }
     },
     workerCost: 30000,
     maxWorkers: 4
@@ -926,10 +926,10 @@ const GameEngine = (() => {
       name: 'القمح الذهبي',
       icon: 'fa-solid fa-wheat-awn',
       color: 'amber',
-      seedCost: 60,
+      seedCost: 50,
       growSeconds: 60,
       baseYield: 10,
-      sellPrice: 8,
+      sellPrice: 6,
       desc: 'محصول سريع النمو يوفر سيولة نقدية لحظية وسريعة للمزرعة.'
     },
     tomato: {
@@ -937,10 +937,10 @@ const GameEngine = (() => {
       name: 'طماطم وخضار طازجة',
       icon: 'fa-solid fa-carrot',
       color: 'rose',
-      seedCost: 250,
+      seedCost: 200,
       growSeconds: 180,
-      baseYield: 12,
-      sellPrice: 28,
+      baseYield: 10,
+      sellPrice: 24,
       desc: 'سلة خضراوات طازجة ذات طلب عالي في أسواق التجزئة.'
     },
     strawberry: {
@@ -950,8 +950,8 @@ const GameEngine = (() => {
       color: 'red',
       seedCost: 1000,
       growSeconds: 480,
-      baseYield: 12,
-      sellPrice: 110,
+      baseYield: 10,
+      sellPrice: 118,
       desc: 'محصول صيفي فاخر يباع بأسعار مرتفعة للفنادق والمطاعم.'
     },
     coffee: {
@@ -961,8 +961,8 @@ const GameEngine = (() => {
       color: 'yellow',
       seedCost: 5000,
       growSeconds: 1200,
-      baseYield: 14,
-      sellPrice: 470,
+      baseYield: 12,
+      sellPrice: 490,
       desc: 'بن يمني وأثيوبي أصيل ذو عائد استثماري مجزٍ لكبار المستثمرين.'
     },
     dates: {
@@ -972,8 +972,8 @@ const GameEngine = (() => {
       color: 'emerald',
       seedCost: 25000,
       growSeconds: 3600,
-      baseYield: 15,
-      sellPrice: 2200,
+      baseYield: 12,
+      sellPrice: 2450,
       desc: 'تمور المجدول الملكية الفاخرة المخصصة للتصدير الخارجي.'
     },
     saffron: {
@@ -983,8 +983,8 @@ const GameEngine = (() => {
       color: 'purple',
       seedCost: 100000,
       growSeconds: 10800,
-      baseYield: 15,
-      sellPrice: 9000,
+      baseYield: 12,
+      sellPrice: 9800,
       desc: 'الذهب الأحمر وأغلى توابل الأرض، أرباح استثمارية نوعية ومجزية.'
     }
   };
@@ -999,7 +999,7 @@ const GameEngine = (() => {
       inputCrop: 'wheat',
       inputQty: 5,
       outputQty: 1,
-      baseValue: 55, // Raw 5 wheat * 8 = 40 -> bread value 55 (+37% value add)
+      baseValue: 35, // Raw 5 wheat * 6 = 30 -> bread value 35 (+17% value add)
       desc: 'دقيق أبيض نقي ومخبوزات هشة تطلبها المخابز الكبرى.'
     },
     tomato_paste: {
@@ -1010,7 +1010,7 @@ const GameEngine = (() => {
       inputCrop: 'tomato',
       inputQty: 5,
       outputQty: 1,
-      baseValue: 185, // Raw 5 tomato * 28 = 140 -> paste value 185 (+32% value add)
+      baseValue: 142, // Raw 5 tomato * 24 = 120 -> paste value 142 (+18% value add)
       desc: 'معجون طماطم مركز معبأ وفق مواصفات الجودة العالمية.'
     },
     strawberry_jam: {
@@ -1021,7 +1021,7 @@ const GameEngine = (() => {
       inputCrop: 'strawberry',
       inputQty: 4,
       outputQty: 1,
-      baseValue: 580, // Raw 4 strawberry * 110 = 440 -> jam value 580 (+32% value add)
+      baseValue: 555, // Raw 4 strawberry * 118 = 472 -> jam value 555 (+18% value add)
       desc: 'مربى فواكه طبيعية نقية بدون مواد حافظة للفنادق الراقية.'
     },
     premium_coffee: {
@@ -1032,7 +1032,7 @@ const GameEngine = (() => {
       inputCrop: 'coffee',
       inputQty: 4,
       outputQty: 1,
-      baseValue: 2500, // Raw 4 coffee * 470 = 1880 -> coffee bag 2500 (+33% value add)
+      baseValue: 2300, // Raw 4 coffee * 490 = 1960 -> coffee bag 2300 (+17% value add)
       desc: 'بن محمص بعناية فائقة وتعبئة مفرغة من الهواء لرواد المقاهي الفخمة.'
     },
     stuffed_dates: {
@@ -1043,7 +1043,7 @@ const GameEngine = (() => {
       inputCrop: 'dates',
       inputQty: 4,
       outputQty: 1,
-      baseValue: 11800, // Raw 4 dates * 2200 = 8800 -> gourmet box 11800 (+34% value add)
+      baseValue: 11500, // Raw 4 dates * 2450 = 9800 -> gourmet box 11500 (+17% value add)
       desc: 'تمور مجدول مختارة حبة بحبة ومحشوة بأفخر أنواع الفستق واللوز.'
     },
     saffron_essence: {
@@ -1054,7 +1054,7 @@ const GameEngine = (() => {
       inputCrop: 'saffron',
       inputQty: 3,
       outputQty: 1,
-      baseValue: 36000, // Raw 3 saffron * 9000 = 27000 -> essence vial 36000 (+33% value add)
+      baseValue: 34500, // Raw 3 saffron * 9800 = 29400 -> essence vial 34500 (+17% value add)
       desc: 'إكسير وزيت نقي مستخلص لمصنعي العطور الملكية ومستحضرات التجميل العالمية.'
     }
   };
@@ -1070,8 +1070,8 @@ const GameEngine = (() => {
       produceIntervalSeconds: 90,
       milkYield: 2,
       compostYield: 1,
-      sellPrice: 75, // Per bottle of fresh milk
-      compostPrice: 50,
+      sellPrice: 45, // Per bottle of fresh milk
+      compostPrice: 30,
       desc: 'أبقار أوروبية عالية الإدرار تنتج حليباً طازجاً وسماداً عضويًا ثميناً للأراضي.'
     },
     chicken: {
@@ -1082,18 +1082,18 @@ const GameEngine = (() => {
       maxCount: 10,
       produceIntervalSeconds: 60,
       eggYield: 3,
-      sellPrice: 25, // Per carton of fresh eggs
+      sellPrice: 15, // Per carton of fresh eggs
       desc: 'سلالات دواجن عالية الإنتاجية للبيض الطازج السريع.'
     }
   };
 
   // --- عملاء عقود التوريد للشركات والفنادق (B2B Supply Contract Clients) ---
   const FARM_CONTRACT_CLIENTS = [
-    { name: 'فنادق فور سيزونز الفاخرة', type: 'luxury_hotel', icon: 'fa-solid fa-hotel', repBonus: 20, payoutMultiplier: 1.25 },
-    { name: 'سلسلة كافيهات وكاريبو بريميوم', type: 'cafe_chain', icon: 'fa-solid fa-mug-saucer', repBonus: 15, payoutMultiplier: 1.20 },
-    { name: 'هايبر ماركت كارفور وسعودي', type: 'hypermarket', icon: 'fa-solid fa-cart-shopping', repBonus: 15, payoutMultiplier: 1.18 },
-    { name: 'سلسلة مطاعم قصر الكبابجي والريف', type: 'restaurant_chain', icon: 'fa-solid fa-utensils', repBonus: 15, payoutMultiplier: 1.18 },
-    { name: 'مختبرات الأدوية ومستحضرات التجميل الملكية', type: 'pharma_cosmetics', icon: 'fa-solid fa-flask', repBonus: 30, payoutMultiplier: 1.30 }
+    { name: 'فنادق فور سيزونز الفاخرة', type: 'luxury_hotel', icon: 'fa-solid fa-hotel', repBonus: 20, payoutMultiplier: 1.15 },
+    { name: 'سلسلة كافيهات وكاريبو بريميوم', type: 'cafe_chain', icon: 'fa-solid fa-mug-saucer', repBonus: 15, payoutMultiplier: 1.12 },
+    { name: 'هايبر ماركت كارفور وسعودي', type: 'hypermarket', icon: 'fa-solid fa-cart-shopping', repBonus: 15, payoutMultiplier: 1.10 },
+    { name: 'سلسلة مطاعم قصر الكبابجي والريف', type: 'restaurant_chain', icon: 'fa-solid fa-utensils', repBonus: 15, payoutMultiplier: 1.10 },
+    { name: 'مختبرات الأدوية ومستحضرات التجميل الملكية', type: 'pharma_cosmetics', icon: 'fa-solid fa-flask', repBonus: 30, payoutMultiplier: 1.18 }
   ];
 
   // --- Initial Default Player State ---
