@@ -6128,7 +6128,7 @@ const GameEngine = (() => {
 
   // --- Farm Storage & Anti-Exploit Helpers ---
   const _lastFarmActionTimestamps = {};
-  function assertFarmRateLimit(actionName = 'العملية', minIntervalMs = 150) {
+  function assertFarmRateLimit(actionName = 'العملية', minIntervalMs = 300) {
     const now = Date.now();
     const last = _lastFarmActionTimestamps[actionName] || 0;
     if (now - last < minIntervalMs) {
@@ -6689,8 +6689,8 @@ const GameEngine = (() => {
     }
 
     // Contract-Only Economy: Direct sale is an emergency clearance recovering only seedCost (0% profit)
-    const seedRecoveryCost = Number(crop.seedCost || 10);
-    const totalPrice = qty * seedRecoveryCost;
+    const unitCropCost = Math.floor((crop.seedCost || 10) / (crop.baseYield || 10));
+    const totalPrice = qty * unitCropCost;
     f.inventory[cropId] = 0;
     state.cash = (state.cash || 0) + totalPrice;
     if (!f.stats) f.stats = { totalHarvested: 0, totalRevenue: 0 };
@@ -6720,8 +6720,8 @@ const GameEngine = (() => {
     Object.keys(f.inventory).forEach(cId => {
       const qty = Number(f.inventory[cId] || 0);
       if (qty > 0 && FARM_CROPS[cId]) {
-        const seedRecoveryCost = Number(FARM_CROPS[cId].seedCost || 10);
-        const p = qty * seedRecoveryCost;
+        const unitCropCost = Math.floor((FARM_CROPS[cId].seedCost || 10) / (FARM_CROPS[cId].baseYield || 10));
+        const p = qty * unitCropCost;
         grandTotal += p;
         itemsSold += qty;
         soldBreakdown.push({ crop: FARM_CROPS[cId], qty, price: p });
@@ -6810,7 +6810,8 @@ const GameEngine = (() => {
     const sellQty = (qty === null || qty <= 0 || qty > available) ? available : Math.floor(Number(qty));
     // Contract-Only Economy: Emergency dump recovers only raw material seed cost (0% profit)
     const rawCrop = FARM_CROPS[recipe.inputCrop];
-    const rawCostPerUnit = (rawCrop && rawCrop.seedCost ? rawCrop.seedCost : 10) * (recipe.inputQty || 1);
+    const unitCropCost = rawCrop ? Math.floor((rawCrop.seedCost || 10) / (rawCrop.baseYield || 10)) : 5;
+    const rawCostPerUnit = unitCropCost * (recipe.inputQty || 1);
     const totalPrice = sellQty * rawCostPerUnit;
 
     f.processing.storage[recipeId] -= sellQty;
@@ -6847,7 +6848,8 @@ const GameEngine = (() => {
       const qty = Number(f.processing.storage[rId] || 0);
       if (qty > 0 && FARM_RECIPES[rId]) {
         const rawCrop = FARM_CROPS[FARM_RECIPES[rId].inputCrop];
-        const rawCostPerUnit = (rawCrop && rawCrop.seedCost ? rawCrop.seedCost : 10) * (FARM_RECIPES[rId].inputQty || 1);
+        const unitCropCost = rawCrop ? Math.floor((rawCrop.seedCost || 10) / (rawCrop.baseYield || 10)) : 5;
+        const rawCostPerUnit = unitCropCost * (FARM_RECIPES[rId].inputQty || 1);
         const p = qty * rawCostPerUnit;
         grandTotal += p;
         itemsSold += qty;
@@ -7164,6 +7166,7 @@ const GameEngine = (() => {
   }
 
   function fulfillFarmContract(contractId) {
+    assertFarmRateLimit('العقود', 400);
     if (state.jailTimer > 0) throw new Error("أنت مسجون!");
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
