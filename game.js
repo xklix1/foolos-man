@@ -897,7 +897,7 @@ const GameEngine = (() => {
 
   // --- مجمع المزرعة الاستثمارية والإنتاج الزراعي (Agro Farm Tycoon) ---
   const FARM_CONFIG = {
-    unlockCost: 25000,
+    unlockCost: 1000000,
     basePlots: 4,
     landExpansions: {
       2: { plots: 8, cost: 500000, name: 'استصلاح القطعة الشرقية (8 أحواض)' },
@@ -1719,8 +1719,8 @@ const GameEngine = (() => {
     const activeU = String(activeUsername || (playerState && playerState.username) || '').trim().toLowerCase();
     const isLitKhaled = activeU === 'khaled' && activeU.length === 6;
     if (isLitKhaled && playerState.farm && playerState.farm.unlocked && typeof FARM_CONFIG !== 'undefined') {
-      const landLevelValues = { 1: 25000, 2: 525000, 3: 3525000, 4: 13525000 };
-      farmTotal += (landLevelValues[playerState.farm.landLevel] || ((playerState.farm.maxPlots || 4) * 25000));
+      const landLevelValues = { 1: 1000000, 2: 1500000, 3: 4500000, 4: 14500000 };
+      farmTotal += (landLevelValues[playerState.farm.landLevel] || ((playerState.farm.maxPlots || 4) * 250000));
       farmTotal += (playerState.farm.waterLevel || 1) * 40000;
       farmTotal += (playerState.farm.fertilizerLevel || 1) * 35000;
       farmTotal += (playerState.farm.workers || 0) * 30000;
