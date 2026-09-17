@@ -6855,37 +6855,41 @@ const GameEngine = (() => {
     };
   }
 
-  // ─── B2B Supply Contracts (عقود التوريد للشركات والمطاعم) ───
-  function generateSingleContract(slotIndex, farmState) {
-    const client = FARM_CONTRACT_CLIENTS[Math.floor(Math.random() * FARM_CONTRACT_CLIENTS.length)];
+  // ─── B2B Supply Contracts (عقود التوريد للشركات والمطاعم - 50 عقداً يومياً) ───
+  const DAILY_CONTRACTS_TARGET = 50;
+
+  function generateSingleContract(slotIndex, farmState, dayEndTimestamp) {
+    const client = FARM_CONTRACT_CLIENTS[slotIndex % FARM_CONTRACT_CLIENTS.length || Math.floor(Math.random() * FARM_CONTRACT_CLIENTS.length)];
     const landLvl = Number(farmState.landLevel || 1);
 
     const candidates = [];
-    candidates.push({ type: 'crop', id: 'wheat', basePrice: 10, min: 20, max: 80 });
-    candidates.push({ type: 'crop', id: 'tomato', basePrice: 35, min: 15, max: 60 });
-    if (landLvl >= 2) candidates.push({ type: 'crop', id: 'strawberry', basePrice: 120, min: 10, max: 40 });
-    if (landLvl >= 3) candidates.push({ type: 'crop', id: 'coffee', basePrice: 500, min: 8, max: 25 });
-    if (landLvl >= 4) candidates.push({ type: 'crop', id: 'dates', basePrice: 2500, min: 5, max: 15 });
+    // 1. Raw Crops (balanced requirements)
+    candidates.push({ type: 'crop', id: 'wheat', basePrice: 10, min: 15, max: 60 });
+    candidates.push({ type: 'crop', id: 'tomato', basePrice: 35, min: 12, max: 45 });
+    candidates.push({ type: 'crop', id: 'strawberry', basePrice: 120, min: 8, max: 30 });
+    if (landLvl >= 2) candidates.push({ type: 'crop', id: 'coffee', basePrice: 500, min: 6, max: 20 });
+    if (landLvl >= 3) candidates.push({ type: 'crop', id: 'dates', basePrice: 2500, min: 4, max: 12 });
+    if (landLvl >= 4) candidates.push({ type: 'crop', id: 'saffron', basePrice: 12000, min: 2, max: 6 });
 
-    candidates.push({ type: 'processed', id: 'flour_bread', basePrice: 90, min: 5, max: 20 });
-    candidates.push({ type: 'processed', id: 'tomato_paste', basePrice: 300, min: 4, max: 15 });
-    if (landLvl >= 2) candidates.push({ type: 'processed', id: 'strawberry_jam', basePrice: 920, min: 3, max: 10 });
-    if (landLvl >= 3) candidates.push({ type: 'processed', id: 'premium_coffee', basePrice: 4200, min: 2, max: 6 });
+    // 2. Processed Recipes (value-add goods)
+    candidates.push({ type: 'processed', id: 'flour_bread', basePrice: 90, min: 4, max: 20 });
+    candidates.push({ type: 'processed', id: 'tomato_paste', basePrice: 300, min: 3, max: 15 });
+    candidates.push({ type: 'processed', id: 'strawberry_jam', basePrice: 920, min: 2, max: 10 });
+    if (landLvl >= 2) candidates.push({ type: 'processed', id: 'premium_coffee', basePrice: 4200, min: 2, max: 6 });
+    if (landLvl >= 3) candidates.push({ type: 'processed', id: 'stuffed_dates', basePrice: 22000, min: 1, max: 4 });
+    if (landLvl >= 4) candidates.push({ type: 'processed', id: 'saffron_essence', basePrice: 110000, min: 1, max: 2 });
 
-    if (farmState.livestock && farmState.livestock.cows > 0) {
-      candidates.push({ type: 'livestock', id: 'milk', basePrice: 150, min: 10, max: 30 });
-    }
-    if (farmState.livestock && farmState.livestock.chickens > 0) {
-      candidates.push({ type: 'livestock', id: 'eggs', basePrice: 40, min: 20, max: 60 });
-    }
+    // 3. Livestock Produce
+    candidates.push({ type: 'livestock', id: 'milk', basePrice: 150, min: 8, max: 30 });
+    candidates.push({ type: 'livestock', id: 'eggs', basePrice: 40, min: 15, max: 50 });
 
     const choice = candidates[Math.floor(Math.random() * candidates.length)];
     const qty = Math.floor(choice.min + Math.random() * (choice.max - choice.min + 1));
     const baseValue = qty * choice.basePrice;
     const bonusMultiplier = client.payoutMultiplier || 1.5;
     const totalPayout = Math.floor(baseValue * bonusMultiplier);
-    const durationMinutes = Math.floor(25 + Math.random() * 20); // 25 to 45 mins
     const now = getTrustedNow();
+    const expiresAt = dayEndTimestamp || (now + 24 * 60 * 60 * 1000);
 
     let itemName = '';
     let itemIcon = '';
@@ -6901,7 +6905,8 @@ const GameEngine = (() => {
     }
 
     return {
-      id: 'cnt_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+      id: 'cnt_' + slotIndex + '_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+      contractNumber: slotIndex,
       clientName: client.name,
       clientIcon: client.icon,
       itemType: choice.type,
@@ -6913,23 +6918,49 @@ const GameEngine = (() => {
       bonusPercent: Math.round((bonusMultiplier - 1) * 100),
       repReward: client.repBonus || 15,
       createdAt: now,
-      expiresAt: now + (durationMinutes * 60 * 1000),
-      fulfilled: false
+      expiresAt,
+      fulfilled: false,
+      fulfilledAt: null
     };
   }
 
   function ensureFarmContracts() {
     const f = ensureFarmState();
     if (!f.unlocked) return [];
-    if (!f.contracts) f.contracts = { reputation: 0, completedCount: 0, totalBonusEarned: 0, active: [] };
+    if (!f.contracts) {
+      f.contracts = {
+        reputation: 0,
+        completedCount: 0,
+        completedToday: 0,
+        revenueToday: 0,
+        dailyDate: '',
+        active: []
+      };
+    }
     if (!Array.isArray(f.contracts.active)) f.contracts.active = [];
 
     const now = getTrustedNow();
-    f.contracts.active = f.contracts.active.filter(c => c && !c.fulfilled && now < c.expiresAt);
+    const todayStr = new Date(now).toISOString().slice(0, 10);
 
-    while (f.contracts.active.length < 3) {
-      f.contracts.active.push(generateSingleContract(f.contracts.active.length + 1, f));
+    // End of day (midnight)
+    const midnight = new Date(now);
+    midnight.setHours(23, 59, 59, 999);
+    const dayEndMs = midnight.getTime() > now ? midnight.getTime() : (now + 24 * 3600 * 1000);
+
+    // If new calendar day or if active contracts list is empty, regenerate 50 daily contracts
+    if (f.contracts.dailyDate !== todayStr || f.contracts.active.length < DAILY_CONTRACTS_TARGET) {
+      if (f.contracts.dailyDate !== todayStr) {
+        f.contracts.dailyDate = todayStr;
+        f.contracts.completedToday = 0;
+        f.contracts.revenueToday = 0;
+        f.contracts.active = [];
+      }
+
+      while (f.contracts.active.length < DAILY_CONTRACTS_TARGET) {
+        f.contracts.active.push(generateSingleContract(f.contracts.active.length + 1, f, dayEndMs));
+      }
     }
+
     return f.contracts.active;
   }
 
@@ -6940,14 +6971,16 @@ const GameEngine = (() => {
     ensureFarmContracts();
 
     const contractIndex = (f.contracts.active || []).findIndex(c => c.id === contractId);
-    if (contractIndex === -1) throw new Error("العقد غير موجود أو انتهت صلاحيته.");
+    if (contractIndex === -1) throw new Error("العقد غير موجود أو غير صالح.");
 
     const contract = f.contracts.active[contractIndex];
+    if (contract.fulfilled) {
+      throw new Error("تم تسليم هذا العقد واستلام أرباحه بالفعل!");
+    }
+
     const now = getTrustedNow();
     if (now >= contract.expiresAt) {
-      f.contracts.active.splice(contractIndex, 1);
-      ensureFarmContracts();
-      throw new Error("انتهت المدة الزمنية لهذا العقد للأسف! تم إرسال عقد جديد للوحة.");
+      throw new Error("انتهت صلاحية هذا العقد لليوم!");
     }
 
     let availableQty = 0;
@@ -6972,14 +7005,16 @@ const GameEngine = (() => {
     }
 
     state.cash = (state.cash || 0) + contract.payout;
+    contract.fulfilled = true;
+    contract.fulfilledAt = now;
+
     f.contracts.reputation = (f.contracts.reputation || 0) + contract.repReward;
     f.contracts.completedCount = (f.contracts.completedCount || 0) + 1;
+    f.contracts.completedToday = (f.contracts.completedToday || 0) + 1;
+    f.contracts.revenueToday = (f.contracts.revenueToday || 0) + contract.payout;
     f.contracts.totalBonusEarned = (f.contracts.totalBonusEarned || 0) + contract.payout;
 
     recordPlayerActivity('إنجاز عقد توريد تجاري 📜🤝', `تم توريد طلبية (${contract.quantityNeeded} وحدة ${contract.itemName}) لـ "${contract.clientName}" وقبض ${contract.payout.toLocaleString()} EGP (+${contract.bonusPercent}% بونص | +${contract.repReward} سمعة)!`, 'business');
-
-    f.contracts.active.splice(contractIndex, 1);
-    ensureFarmContracts();
 
     state.netWorth = calculateNetWorth();
     forceSaveState(false);
@@ -6988,7 +7023,8 @@ const GameEngine = (() => {
       contract,
       payout: contract.payout,
       repReward: contract.repReward,
-      newReputation: f.contracts.reputation
+      newReputation: f.contracts.reputation,
+      completedToday: f.contracts.completedToday
     };
   }
 

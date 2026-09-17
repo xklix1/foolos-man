@@ -3926,28 +3926,87 @@
           <!-- ── SUBPANEL 4: B2B Supply Contracts Board ── -->
           <div id="farm-subpanel-contracts" class="farm-subpanel hidden space-y-6">
             <!-- Contracts Header -->
-            <div class="glass-panel p-6 rounded-3xl border border-purple-500/30 bg-slate-900/50 space-y-4 shadow-xl">
-              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800/80 pb-3">
+            <div class="glass-panel p-6 rounded-3xl border border-purple-500/30 bg-slate-900/50 space-y-5 shadow-xl">
+              <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-800/80 pb-4">
                 <div>
-                  <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-file-signature text-purple-400"></i>
-                    <span>مجلس عقود التوريد للشركات والفنادق (B2B Contracts) 📜🤝</span>
-                  </h3>
-                  <p class="text-xs text-slate-400 mt-0.5">ورّد طلبيات الجملة للشركات الكبرى والفنادق الراقية قبل انتهاء الوقت لجني أرباح خيالية وبونص يصل إلى +70% ورفع سمعتك التجارية!</p>
-                </div>
-                <div class="flex items-center gap-3 bg-purple-950/40 px-3.5 py-2 rounded-2xl border border-purple-500/30">
-                  <div class="w-8 h-8 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-300 text-sm">
-                    <i class="fa-solid fa-award"></i>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                      <i class="fa-solid fa-file-signature text-purple-400"></i>
+                      <span>مجلس عقود التوريد اليومية (50 عقداً تجارياً) 📜🤝</span>
+                    </h3>
+                    <span class="text-[9px] px-2 py-0.5 rounded-full font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">50 Daily Quota</span>
                   </div>
-                  <div>
-                    <span class="text-[10px] text-purple-300 font-bold block">سمعة المزرعة التجارية</span>
-                    <span id="farm-contracts-rep-stat" class="numbers-font text-sm font-black text-white">0 XP</span>
+                  <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                    يصلك يومياً 50 عقد توريد مختلف للشركات والفنادق الكبرى. تصفح العقود، ورّد ما يناسب طاقتك الإنتاجية، واحصد أرباحاً وبونص يصل لـ +70% مع نقاط سمعة تجارية!
+                  </p>
+                </div>
+
+                <!-- Daily Stats Badges -->
+                <div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+                  <div class="flex-1 sm:flex-none flex items-center gap-2.5 bg-slate-950/80 px-3 py-2 rounded-2xl border border-slate-800">
+                    <div class="w-7 h-7 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-300 text-xs">
+                      <i class="fa-solid fa-clipboard-check"></i>
+                    </div>
+                    <div>
+                      <span class="text-[9px] text-slate-400 block">منجز اليوم</span>
+                      <span id="farm-contracts-completed-stat" class="numbers-font text-xs font-black text-emerald-400">0 / 50</span>
+                    </div>
+                  </div>
+
+                  <div class="flex-1 sm:flex-none flex items-center gap-2.5 bg-slate-950/80 px-3 py-2 rounded-2xl border border-slate-800">
+                    <div class="w-7 h-7 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-300 text-xs">
+                      <i class="fa-solid fa-coins"></i>
+                    </div>
+                    <div>
+                      <span class="text-[9px] text-slate-400 block">أرباح عقود اليوم</span>
+                      <span id="farm-contracts-revenue-stat" class="numbers-font text-xs font-black text-amber-400">0 EGP</span>
+                    </div>
+                  </div>
+
+                  <div class="flex-1 sm:flex-none flex items-center gap-2.5 bg-purple-950/40 px-3 py-2 rounded-2xl border border-purple-500/30">
+                    <div class="w-7 h-7 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-300 text-xs">
+                      <i class="fa-solid fa-award"></i>
+                    </div>
+                    <div>
+                      <span class="text-[9px] text-purple-300 block">السمعة التراكمية</span>
+                      <span id="farm-contracts-rep-stat" class="numbers-font text-xs font-black text-white">0 XP</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
+              <!-- Filter Tabs & Quick Search -->
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div id="farm-contracts-filters" class="flex flex-wrap items-center gap-1.5">
+                  <button type="button" data-contract-filter="all" class="farm-contract-filter-btn px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                    الكل (<span id="filter-count-all">50</span>)
+                  </button>
+                  <button type="button" data-contract-filter="ready" class="farm-contract-filter-btn px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800">
+                    جاهزة للتسليم 🚚 (<span id="filter-count-ready">0</span>)
+                  </button>
+                  <button type="button" data-contract-filter="crop" class="farm-contract-filter-btn px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800">
+                    محاصيل زراعية 🌾
+                  </button>
+                  <button type="button" data-contract-filter="processed" class="farm-contract-filter-btn px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800">
+                    معمل التصنيع 🏭
+                  </button>
+                  <button type="button" data-contract-filter="livestock" class="farm-contract-filter-btn px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800">
+                    منتجات حيوانية 🥛
+                  </button>
+                  <button type="button" data-contract-filter="fulfilled" class="farm-contract-filter-btn px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800">
+                    المكتملة ✅ (<span id="filter-count-fulfilled">0</span>)
+                  </button>
+                </div>
+
+                <div class="relative w-full sm:w-60">
+                  <i class="fa-solid fa-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none"></i>
+                  <input type="text" id="farm-contracts-search" placeholder="ابحث باسم المنتج أو العميل..."
+                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl pr-8 pl-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition">
+                </div>
+              </div>
+
               <!-- Active Contracts Cards Grid -->
-              <div id="farm-contracts-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div id="farm-contracts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Rendered by ui.js -->
               </div>
             </div>
@@ -6965,8 +7024,8 @@
   <!-- Script Initializers -->
   <script src="db.js?v=27.0"></script>
   <script src="server-client-bridge.js?v=25.0"></script>
-  <script src="game.js?v=36.0"></script>
-  <script src="ui.js?v=39.0"></script>
+  <script src="game.js?v=37.0"></script>
+  <script src="ui.js?v=40.0"></script>
   <script src="pwa-manager.js?v=2.5.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────

@@ -20627,31 +20627,151 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
   }
 
-  // ── SUB-PANEL 4: B2B Supply Contracts Board ──
+  // ── SUB-PANEL 4: B2B Supply Contracts Board (50 Daily Contracts) ──
+  let _activeContractFilter = 'all';
+  let _contractSearchQuery = '';
+
   function renderFarmContracts(farmInfo) {
     const farm = farmInfo.farm;
+    const contractsData = farm.contracts || {};
+    const allContracts = (farmInfo.contracts) || (contractsData.active) || [];
+    const now = (typeof getTrustedNowUI === 'function') ? getTrustedNowUI() : Date.now();
+
+    // 1. Update Header Statistics
     const repStat = document.getElementById('farm-contracts-rep-stat');
     if (repStat) {
-      repStat.textContent = `${((farm.contracts && farm.contracts.reputation) || 0).toLocaleString()} XP (${((farm.contracts && farm.contracts.completedCount) || 0)} عقود منجزة)`;
+      repStat.textContent = `${(contractsData.reputation || 0).toLocaleString()} XP`;
     }
+
+    const completedStat = document.getElementById('farm-contracts-completed-stat');
+    if (completedStat) {
+      const completedCount = allContracts.filter(c => c && c.fulfilled).length;
+      completedStat.textContent = `${completedCount} / ${allContracts.length || 50}`;
+    }
+
+    const revenueStat = document.getElementById('farm-contracts-revenue-stat');
+    if (revenueStat) {
+      revenueStat.textContent = `${(contractsData.revenueToday || 0).toLocaleString()} EGP`;
+    }
+
+    // 2. Calculate Filter Counts
+    let readyCount = 0;
+    let fulfilledCount = 0;
+
+    allContracts.forEach(c => {
+      if (!c) return;
+      if (c.fulfilled) {
+        fulfilledCount++;
+        return;
+      }
+      let avail = 0;
+      if (c.itemType === 'crop') {
+        avail = Number((farm.inventory && farm.inventory[c.itemId]) || 0);
+      } else if (c.itemType === 'processed') {
+        avail = Number((farm.processing && farm.processing.storage && farm.processing.storage[c.itemId]) || 0);
+      } else if (c.itemType === 'livestock') {
+        avail = Number((farm.livestock && farm.livestock[c.itemId]) || 0);
+      }
+      if (avail >= c.quantityNeeded) {
+        readyCount++;
+      }
+    });
+
+    const filterAllEl = document.getElementById('filter-count-all');
+    if (filterAllEl) filterAllEl.textContent = allContracts.length || 50;
+
+    const filterReadyEl = document.getElementById('filter-count-ready');
+    if (filterReadyEl) filterReadyEl.textContent = readyCount;
+
+    const filterFulfilledEl = document.getElementById('filter-count-fulfilled');
+    if (filterFulfilledEl) filterFulfilledEl.textContent = fulfilledCount;
+
+    // 3. Bind Filter Buttons & Search Input
+    const filterContainer = document.getElementById('farm-contracts-filters');
+    if (filterContainer && !filterContainer.dataset.bound) {
+      filterContainer.dataset.bound = 'true';
+      filterContainer.querySelectorAll('.farm-contract-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          playMenuSound('click');
+          _activeContractFilter = btn.getAttribute('data-contract-filter') || 'all';
+          // Update button styles
+          filterContainer.querySelectorAll('.farm-contract-filter-btn').forEach(b => {
+            const f = b.getAttribute('data-contract-filter');
+            if (f === _activeContractFilter) {
+              b.className = 'farm-contract-filter-btn px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer bg-purple-500/20 text-purple-300 border border-purple-500/40';
+            } else {
+              b.className = 'farm-contract-filter-btn px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800';
+            }
+          });
+          renderFarmContracts(GameEngine.getFarmState());
+        });
+      });
+    }
+
+    const searchInput = document.getElementById('farm-contracts-search');
+    if (searchInput && !searchInput.dataset.bound) {
+      searchInput.dataset.bound = 'true';
+      searchInput.addEventListener('input', (e) => {
+        _contractSearchQuery = (e.target.value || '').trim().toLowerCase();
+        renderFarmContracts(GameEngine.getFarmState());
+      });
+    }
+
+    // 4. Filter Contracts
+    let filtered = allContracts.filter(c => {
+      if (!c) return false;
+
+      let available = 0;
+      if (c.itemType === 'crop') {
+        available = Number((farm.inventory && farm.inventory[c.itemId]) || 0);
+      } else if (c.itemType === 'processed') {
+        available = Number((farm.processing && farm.processing.storage && farm.processing.storage[c.itemId]) || 0);
+      } else if (c.itemType === 'livestock') {
+        available = Number((farm.livestock && farm.livestock[c.itemId]) || 0);
+      }
+      const canFulfill = available >= c.quantityNeeded;
+
+      // Status/Type filter
+      if (_activeContractFilter === 'ready' && (!canFulfill || c.fulfilled)) return false;
+      if (_activeContractFilter === 'fulfilled' && !c.fulfilled) return false;
+      if (_activeContractFilter === 'crop' && c.itemType !== 'crop') return false;
+      if (_activeContractFilter === 'processed' && c.itemType !== 'processed') return false;
+      if (_activeContractFilter === 'livestock' && c.itemType !== 'livestock') return false;
+
+      // Search Query filter
+      if (_contractSearchQuery) {
+        const matchName = (c.itemName || '').toLowerCase().includes(_contractSearchQuery);
+        const matchClient = (c.clientName || '').toLowerCase().includes(_contractSearchQuery);
+        if (!matchName && !matchClient) return false;
+      }
+
+      return true;
+    });
+
+    // Sort: Ready contracts first, then unfulfilled, then fulfilled last
+    filtered.sort((a, b) => {
+      if (a.fulfilled && !b.fulfilled) return 1;
+      if (!a.fulfilled && b.fulfilled) return -1;
+      return 0;
+    });
 
     const contractsGrid = document.getElementById('farm-contracts-grid');
     if (contractsGrid) {
-      const activeContracts = (farmInfo.contracts) || (farm.contracts && farm.contracts.active) || [];
-      const now = (typeof getTrustedNowUI === 'function') ? getTrustedNowUI() : Date.now();
-
-      if (activeContracts.length === 0) {
+      if (filtered.length === 0) {
         contractsGrid.innerHTML = `
-          <div class="col-span-full py-8 text-center space-y-2 text-slate-500">
-            <i class="fa-solid fa-file-circle-question text-3xl"></i>
-            <p class="text-xs font-bold">لا توجد عقود معروضة حالياً! انتظر قليلاً أو حدّث اللوحة.</p>
+          <div class="col-span-full py-12 text-center space-y-3 text-slate-500">
+            <i class="fa-solid fa-file-circle-question text-4xl text-purple-400/40"></i>
+            <p class="text-xs font-bold">لا توجد عقود مطابقة للتصفية الحالية!</p>
+            <button onclick="document.querySelector('.farm-contract-filter-btn[data-contract-filter=\\'all\\']')?.click()" class="text-xs text-purple-400 underline font-bold cursor-pointer">
+              عرض جميع العقود (50 عقد)
+            </button>
           </div>
         `;
         return;
       }
 
       let cHtml = '';
-      activeContracts.forEach(c => {
+      filtered.forEach((c, idx) => {
         const remMs = Math.max(0, c.expiresAt - now);
         const remSec = Math.ceil(remMs / 1000);
 
@@ -20668,23 +20788,38 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const progressPct = Math.min(100, Math.round((available / c.quantityNeeded) * 100));
 
         cHtml += `
-          <div class="p-5 rounded-2xl bg-slate-900/80 border ${canFulfill ? 'border-purple-500/60 shadow-lg shadow-purple-500/10' : 'border-slate-800'} transition flex flex-col justify-between gap-4">
-            <div class="flex items-start justify-between gap-2">
+          <div class="p-5 rounded-2xl ${c.fulfilled ? 'bg-slate-950/60 border border-emerald-500/30 opacity-80' : (canFulfill ? 'bg-slate-900/90 border border-emerald-500/50 shadow-lg shadow-emerald-500/10' : 'bg-slate-900/80 border border-slate-800')} transition flex flex-col justify-between gap-4 relative overflow-hidden">
+            
+            ${canFulfill && !c.fulfilled ? '<div class="absolute -top-12 -right-12 w-28 h-28 bg-emerald-500/10 rounded-full blur-xl pointer-events-none"></div>' : ''}
+
+            <div class="flex items-start justify-between gap-2 relative z-10">
               <div class="flex items-center gap-2.5">
-                <div class="w-11 h-11 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-xl text-purple-300 shrink-0">
+                <div class="w-11 h-11 rounded-xl ${c.fulfilled ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'} flex items-center justify-center text-xl shrink-0">
                   <i class="${c.clientIcon}"></i>
                 </div>
                 <div>
-                  <h4 class="font-black text-white text-xs">${c.clientName}</h4>
-                  <span class="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30 inline-block mt-0.5">عقد توريد معتمد</span>
+                  <div class="flex items-center gap-1.5">
+                    <h4 class="font-black text-white text-xs">${c.clientName}</h4>
+                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono">#${c.contractNumber || (idx + 1)}</span>
+                  </div>
+                  <span class="text-[9px] px-2 py-0.5 rounded-full ${c.fulfilled ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'} font-bold inline-block mt-0.5">
+                    ${c.fulfilled ? 'تم التوريد بنجاح ✅' : 'عقد توريد معتمد'}
+                  </span>
                 </div>
               </div>
-              <span class="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
-                <i class="fa-solid fa-clock text-[9px] ml-1"></i>${formatCountdownHMS(remSec)}
-              </span>
+
+              ${!c.fulfilled ? `
+                <span class="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20 shrink-0">
+                  <i class="fa-solid fa-clock text-[9px] ml-1"></i>${formatCountdownHMS(remSec)}
+                </span>
+              ` : `
+                <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20 shrink-0">
+                  <i class="fa-solid fa-check mr-1"></i> مكتمل
+                </span>
+              `}
             </div>
 
-            <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800 space-y-2">
+            <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800 space-y-2 relative z-10">
               <div class="flex justify-between items-center text-xs">
                 <span class="text-slate-400">المطلوب توريده:</span>
                 <span class="font-bold text-white flex items-center gap-1.5">
@@ -20692,18 +20827,25 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                   <span>${c.quantityNeeded.toLocaleString()} وحدة ${c.itemName}</span>
                 </span>
               </div>
-              <div class="space-y-1">
-                <div class="flex justify-between text-[10px] font-bold">
-                  <span class="text-slate-400">المتوفر لديك:</span>
-                  <span class="numbers-font ${canFulfill ? 'text-emerald-400' : 'text-rose-400'}">${available.toLocaleString()} / ${c.quantityNeeded.toLocaleString()}</span>
+              
+              ${!c.fulfilled ? `
+                <div class="space-y-1">
+                  <div class="flex justify-between text-[10px] font-bold">
+                    <span class="text-slate-400">المتوفر لديك:</span>
+                    <span class="numbers-font ${canFulfill ? 'text-emerald-400' : 'text-rose-400'}">${available.toLocaleString()} / ${c.quantityNeeded.toLocaleString()}</span>
+                  </div>
+                  <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                    <div class="h-full rounded-full transition-all duration-300 ${canFulfill ? 'bg-emerald-500' : 'bg-purple-500'}" style="width: ${progressPct}%"></div>
+                  </div>
                 </div>
-                <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
-                  <div class="h-full rounded-full transition-all duration-300 ${canFulfill ? 'bg-emerald-500' : 'bg-purple-500'}" style="width: ${progressPct}%"></div>
+              ` : `
+                <div class="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                  <i class="fa-solid fa-circle-check"></i> تم تسليم كامل الشحنة المطلوبة للمستودعات.
                 </div>
-              </div>
+              `}
             </div>
 
-            <div class="flex items-center justify-between p-2.5 bg-purple-950/30 rounded-xl border border-purple-500/20 text-xs">
+            <div class="flex items-center justify-between p-2.5 bg-purple-950/30 rounded-xl border border-purple-500/20 text-xs relative z-10">
               <div>
                 <span class="text-[10px] text-purple-300 block">المكافأة المالية والبونص</span>
                 <span class="numbers-font font-black text-amber-400">${c.payout.toLocaleString()} EGP</span>
@@ -20715,11 +20857,22 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               </div>
             </div>
 
-            <button ${!canFulfill ? 'disabled' : `onclick="window.UI?.fulfillFarmContract('${c.id}')"`} type="button"
-              class="w-full py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-2 ${canFulfill ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-500/20 active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
-              <i class="fa-solid fa-truck-fast text-sm"></i>
-              <span>${canFulfill ? 'تسليم الشحنة وتحصيل ' + c.payout.toLocaleString() + ' EGP' : 'المخزون غير كافٍ (ناقص ' + (c.quantityNeeded - available).toLocaleString() + ')'}</span>
-            </button>
+            <div class="relative z-10">
+              ${c.fulfilled ? `
+                <button disabled type="button"
+                  class="w-full py-2.5 rounded-xl text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 cursor-default flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-circle-check"></i>
+                  <span>تم استلام الأرباح (${c.payout.toLocaleString()} EGP)</span>
+                </button>
+              ` : `
+                <button ${!canFulfill ? 'disabled' : `onclick="window.UI?.fulfillFarmContract('${c.id}')"`} type="button"
+                  class="w-full py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-2 ${canFulfill ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/20 active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+                  <i class="fa-solid fa-truck-fast text-sm"></i>
+                  <span>${canFulfill ? 'تسليم الشحنة وتحصيل ' + c.payout.toLocaleString() + ' EGP 🚚' : 'المخزون غير كافٍ (ناقص ' + (c.quantityNeeded - available).toLocaleString() + ')'}</span>
+                </button>
+              `}
+            </div>
+
           </div>
         `;
       });
