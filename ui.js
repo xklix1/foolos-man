@@ -4555,29 +4555,15 @@ const UIController = (() => {
         btnText.classList.add('hidden');
         btnSpinner.classList.remove('hidden');
 
-        // Auto top-up cash from bank if cash is lower than transfer amount
-        if (curCash < amount) {
-          const diff = amount - curCash;
-          GameEngine.state.bank -= diff;
-          GameEngine.state.cash += diff;
-          await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
-        }
-
         await AppDB.executeWireTransfer(GameEngine.activeUsername, recipient, amount);
 
-        // Update local state immediately and persist to local storage before fetching from cloud
-        if (GameEngine.state) {
-          GameEngine.state.cash = Math.max(0, GameEngine.state.cash - amount);
-          GameEngine.state.netWorth = Math.max(0, (GameEngine.state.cash || 0) + (GameEngine.state.bank || 0) + (GameEngine.state.dirtyCash || 0));
-          await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
-        }
-
-        // Fetch latest state to ensure 100% synchronization
+        // Fetch latest authoritative state from database to ensure 100% synchronization
         const updatedState = await AppDB.getPlayerState(GameEngine.activeUsername);
-        if (updatedState) {
-          GameEngine.state.cash = updatedState.cash;
-          GameEngine.state.bank = updatedState.bank;
-          GameEngine.state.netWorth = updatedState.netWorth;
+        if (updatedState && GameEngine.state) {
+          GameEngine.state.cash = Number(updatedState.cash || 0);
+          GameEngine.state.bank = Number(updatedState.bank || 0);
+          GameEngine.state.netWorth = Number(updatedState.netWorth || 0);
+          GameEngine.state.adminModifiedTimestamp = Number(updatedState.adminModifiedTimestamp || 0);
         }
 
         // Reset fields
@@ -14600,13 +14586,6 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري التحويل...</span>';
       }
 
-      if (curCash < amt) {
-        const diff = amt - curCash;
-        GameEngine.state.bank -= diff;
-        GameEngine.state.cash += diff;
-        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
-      }
-
       await AppDB.executeWireTransfer(GameEngine.activeUsername, target, amt);
 
       // Notify offline recipient via server web push immediately
@@ -14623,10 +14602,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         }).catch(() => {});
       } catch (_) {}
 
-      if (GameEngine.state) {
-        GameEngine.state.cash = Math.max(0, GameEngine.state.cash - amt);
-        GameEngine.state.netWorth = Math.max(0, (GameEngine.state.cash || 0) + (GameEngine.state.bank || 0) + (GameEngine.state.dirtyCash || 0));
-        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
+      // Fetch latest authoritative state from database to ensure 100% synchronization
+      const updatedState = await AppDB.getPlayerState(GameEngine.activeUsername);
+      if (updatedState && GameEngine.state) {
+        GameEngine.state.cash = Number(updatedState.cash || 0);
+        GameEngine.state.bank = Number(updatedState.bank || 0);
+        GameEngine.state.netWorth = Number(updatedState.netWorth || 0);
+        GameEngine.state.adminModifiedTimestamp = Number(updatedState.adminModifiedTimestamp || 0);
       }
 
       showToast('تم التحويل بنجاح! 💸', `تم تحويل مبلغ ${amt.toLocaleString()} EGP إلى اللاعب "${target}" بنجاح!`, 'success');

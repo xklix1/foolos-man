@@ -1777,8 +1777,8 @@ var AppDB = (() => {
 
       const adminTs = Number(state.adminModifiedTimestamp || 0);
       const tsFilter = adminTs > 0 
-        ? `&or=(admin_modified_timestamp.lte.${adminTs + 10000},admin_modified_timestamp.gt.${Date.now() + 60000})` 
-        : `&or=(admin_modified_timestamp.is.null,admin_modified_timestamp.eq.0,admin_modified_timestamp.gt.${Date.now() + 60000})`;
+        ? `&admin_modified_timestamp=lte.${adminTs}` 
+        : `&or=(admin_modified_timestamp.is.null,admin_modified_timestamp.eq.0)`;
       
       const res = await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
         method:'PATCH',
@@ -1789,16 +1789,16 @@ var AppDB = (() => {
 
       // If 0 rows were updated, check if admin modified balance or wire transfer occurred
       if (Array.isArray(res) && res.length === 0) {
-
         console.warn(`[Sync] Cloud save rejected for ${u}: server has a newer administrative or wire transfer balance. Refreshing...`);
         getPlayerState(u).then(freshState => {
           if (freshState && typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername === u) {
             const freshAdminTs = Number(freshState.adminModifiedTimestamp || 0);
             const currentAdminTs = Number(window.GameEngine.state.adminModifiedTimestamp || 0);
             if (freshAdminTs > currentAdminTs) {
-              window.GameEngine.state.cash = Math.max(Number(window.GameEngine.state.cash || 0), Number(freshState.cash || 0));
-              window.GameEngine.state.bank = Math.max(Number(window.GameEngine.state.bank || 0), Number(freshState.bank || 0));
-              window.GameEngine.state.netWorth = Math.max(Number(window.GameEngine.state.netWorth || 0), Number(freshState.netWorth || 0));
+              window.GameEngine.state.cash = Number(freshState.cash || 0);
+              window.GameEngine.state.bank = Number(freshState.bank || 0);
+              window.GameEngine.state.dirtyCash = Number(freshState.dirtyCash || 0);
+              window.GameEngine.state.netWorth = Number(freshState.netWorth || 0);
               window.GameEngine.state.adminModifiedTimestamp = freshAdminTs;
               if (typeof renderAll === 'function') renderAll();
             }
@@ -1882,6 +1882,19 @@ var AppDB = (() => {
         transfer_amount: amt
       })
     });
+
+    // Authoritative Immediate Sync: fetch authoritative fresh balance from DB
+    if (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.activeUsername === senderUsername) {
+      try {
+        const fresh = await getPlayerState(senderUsername);
+        if (fresh) {
+          GameEngine.state.cash = Number(fresh.cash || 0);
+          GameEngine.state.bank = Number(fresh.bank || 0);
+          GameEngine.state.netWorth = Number(fresh.netWorth || 0);
+          GameEngine.state.adminModifiedTimestamp = Number(fresh.adminModifiedTimestamp || 0);
+        }
+      } catch (_) {}
+    }
 
     return true;
   }
