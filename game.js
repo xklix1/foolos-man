@@ -900,9 +900,9 @@ const GameEngine = (() => {
     unlockCost: 25000,
     basePlots: 4,
     landExpansions: {
-      2: { plots: 8, cost: 100000, name: 'استصلاح القطعة الشرقية (8 أحواض)' },
-      3: { plots: 12, cost: 500000, name: 'ضم بساتين الواحة (12 حوضاً)' },
-      4: { plots: 16, cost: 2000000, name: 'المجمع الزراعي العملاق (16 حوضاً)' }
+      2: { plots: 8, cost: 500000, name: 'استصلاح القطعة الشرقية (8 أحواض)' },
+      3: { plots: 12, cost: 3000000, name: 'ضم بساتين الواحة (12 حوضاً)' },
+      4: { plots: 16, cost: 10000000, name: 'المجمع الزراعي العملاق (16 حوضاً)' }
     },
     irrigation: {
       1: { name: 'ري تقليدي يدوي', cost: 0, speedBonus: 0, icon: 'fa-solid fa-bucket', desc: 'الزمن الاعتيادي لنمو المحاصيل' },
@@ -1719,7 +1719,8 @@ const GameEngine = (() => {
     const activeU = String(activeUsername || (playerState && playerState.username) || '').trim().toLowerCase();
     const isLitKhaled = activeU === 'khaled' && activeU.length === 6;
     if (isLitKhaled && playerState.farm && playerState.farm.unlocked && typeof FARM_CONFIG !== 'undefined') {
-      farmTotal += (playerState.farm.maxPlots || 4) * 25000;
+      const landLevelValues = { 1: 25000, 2: 525000, 3: 3525000, 4: 13525000 };
+      farmTotal += (landLevelValues[playerState.farm.landLevel] || ((playerState.farm.maxPlots || 4) * 25000));
       farmTotal += (playerState.farm.waterLevel || 1) * 40000;
       farmTotal += (playerState.farm.fertilizerLevel || 1) * 35000;
       farmTotal += (playerState.farm.workers || 0) * 30000;
