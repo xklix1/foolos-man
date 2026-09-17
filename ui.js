@@ -325,50 +325,81 @@ const UIController = (() => {
     return '';
   }
 
-  function isFarmTesterAccount() {
-    return false; // Farm is completely disabled and hidden for all players
-  }
-
-  function updateFarmTabVisibility() {
-    const farmTabDesktop = document.getElementById('nav-tab-farm');
-    const farmTabMobile = document.getElementById('nav-tab-farm-mobile');
-    const farmDashCard = document.getElementById('dash-farm-tester-card');
-    const farmPanel = document.getElementById('panel-farm');
-
-    if (farmTabDesktop) {
-      farmTabDesktop.classList.add('hidden');
-      farmTabDesktop.classList.remove('flex');
-      farmTabDesktop.style.setProperty('display', 'none', 'important');
-    }
-    if (farmTabMobile) {
-      farmTabMobile.classList.add('hidden');
-      farmTabMobile.classList.remove('flex');
-      farmTabMobile.style.setProperty('display', 'none', 'important');
-    }
-    if (farmDashCard) {
-      farmDashCard.classList.add('hidden');
-      farmDashCard.classList.remove('flex');
-      farmDashCard.style.setProperty('display', 'none', 'important');
-    }
-    if (farmPanel) {
-      farmPanel.classList.add('hidden');
-      farmPanel.style.setProperty('display', 'none', 'important');
-    }
-    if (activeTab === 'farm' && typeof switchTab === 'function') {
-      switchTab('dashboard');
-    }
-  }
-
   /**
    * Beta Access Control: Checks if active user is strictly and literally developer account 'Khaled'
    * Rejects any substring, prefix, suffix, or other name containing 'khaled'
    */
   function isKhaledUser() {
     const raw = getActiveUsernameSafe();
-    if (!raw) return false;
+    if (!raw || typeof raw !== 'string') return false;
     const clean = raw.trim().toLowerCase();
     // Exclusively and literally 'khaled' only (length exactly 6, no additional words or prefixes)
-    return clean === 'khaled';
+    return clean === 'khaled' && clean.length === 6;
+  }
+
+  function isFarmTesterAccount() {
+    return isKhaledUser();
+  }
+
+  function updateFarmTabVisibility() {
+    const isTester = isKhaledUser();
+    const farmTabDesktop = document.getElementById('nav-tab-farm');
+    const farmTabMobile = document.getElementById('nav-tab-farm-mobile');
+    const farmDashCard = document.getElementById('dash-farm-tester-card');
+    const farmPanel = document.getElementById('panel-farm');
+
+    if (farmTabDesktop) {
+      if (isTester) {
+        farmTabDesktop.classList.remove('hidden');
+        farmTabDesktop.classList.add('flex');
+        farmTabDesktop.style.removeProperty('display');
+        farmTabDesktop.removeAttribute('aria-hidden');
+      } else {
+        farmTabDesktop.classList.add('hidden');
+        farmTabDesktop.classList.remove('flex');
+        farmTabDesktop.style.setProperty('display', 'none', 'important');
+        farmTabDesktop.setAttribute('aria-hidden', 'true');
+      }
+    }
+    if (farmTabMobile) {
+      if (isTester) {
+        farmTabMobile.classList.remove('hidden');
+        farmTabMobile.classList.add('flex');
+        farmTabMobile.style.removeProperty('display');
+        farmTabMobile.removeAttribute('aria-hidden');
+      } else {
+        farmTabMobile.classList.add('hidden');
+        farmTabMobile.classList.remove('flex');
+        farmTabMobile.style.setProperty('display', 'none', 'important');
+        farmTabMobile.setAttribute('aria-hidden', 'true');
+      }
+    }
+    if (farmDashCard) {
+      if (isTester) {
+        farmDashCard.classList.remove('hidden');
+        farmDashCard.classList.add('flex');
+        farmDashCard.style.removeProperty('display');
+        farmDashCard.removeAttribute('aria-hidden');
+      } else {
+        farmDashCard.classList.add('hidden');
+        farmDashCard.classList.remove('flex');
+        farmDashCard.style.setProperty('display', 'none', 'important');
+        farmDashCard.setAttribute('aria-hidden', 'true');
+      }
+    }
+    if (farmPanel) {
+      if (isTester) {
+        farmPanel.removeAttribute('aria-hidden');
+        farmPanel.style.removeProperty('display');
+      } else {
+        farmPanel.classList.add('hidden');
+        farmPanel.style.setProperty('display', 'none', 'important');
+        farmPanel.setAttribute('aria-hidden', 'true');
+      }
+    }
+    if (!isTester && activeTab === 'farm' && typeof switchTab === 'function') {
+      switchTab('dashboard');
+    }
   }
 
   /**
@@ -2320,7 +2351,7 @@ const UIController = (() => {
   }
 
   function switchTab(tabId) {
-    if (tabId === 'farm') {
+    if (tabId === 'farm' && !isFarmTesterAccount()) {
       tabId = 'dashboard';
     }
     if (activeTab !== tabId) {
@@ -2347,6 +2378,8 @@ const UIController = (() => {
       renderTradePanel();
     } else if (tabId ==='industry') {
       renderIndustryPanel();
+    } else if (tabId ==='farm' && isFarmTesterAccount()) {
+      renderFarmPanel();
     } else if (tabId ==='investments') {
       renderInvestmentsTab();
     }
@@ -2605,9 +2638,15 @@ const UIController = (() => {
       else if (activeTab ==='trade') updateTradeShipmentsInDOM();
       else if (activeTab ==='industry') updateIndustryStockInDOM();
       else if (activeTab ==='investments') renderInvestmentsTab();
+      else if (activeTab ==='farm' && isFarmTesterAccount()) updateFarmPlotsInDOM();
 
       // Real-time live update for investment cards dynamic status & countdown
       updateInvestmentCardsDOM(state);
+
+      // Real-time live update for farm crop plots countdowns, animated progress bars & badges
+      if (activeTab === 'farm' && isFarmTesterAccount()) {
+        updateFarmPlotsInDOM();
+      }
 
       // Real-time live update for cashflow breakdown modal if open
       const cfModal = document.getElementById('cashflow-breakdown-modal');
@@ -2928,7 +2967,11 @@ const UIController = (() => {
         renderIndustryPanel();
         break;
       case'farm':
-        switchTab('dashboard');
+        if (isFarmTesterAccount()) {
+          renderFarmPanel();
+        } else {
+          switchTab('dashboard');
+        }
         break;
       case'investments':
         renderInvestmentsTab();
@@ -19620,7 +19663,16 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   }
 
   function renderFarmPanel() {
-    return; // Farm completely hidden & disabled for all players
+    if (!isFarmTesterAccount()) {
+      const farmPanel = document.getElementById('panel-farm');
+      if (farmPanel) {
+        farmPanel.classList.add('hidden');
+        farmPanel.style.setProperty('display', 'none', 'important');
+      }
+      return;
+    }
+
+    if (!GameEngine || typeof GameEngine.getFarmState !== 'function') return;
 
     const farmInfo = GameEngine.getFarmState();
     if (!farmInfo || !farmInfo.farm) return;
@@ -20137,9 +20189,15 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
   }
 
-  // ── REAL-TIME LIVE UPDATE FOR FARM PLOTS (Disabled) ──
+  // ── REAL-TIME LIVE UPDATE FOR FARM PLOTS ──
   function updateFarmPlotsInDOM() {
-    return;
+    if (!isFarmTesterAccount()) return;
+    const farmPanel = document.getElementById('panel-farm');
+    if (!farmPanel || farmPanel.classList.contains('hidden')) return;
+
+    if (typeof GameEngine === 'undefined' || typeof GameEngine.getFarmState !== 'function') return;
+    const farmInfo = GameEngine.getFarmState();
+    if (!farmInfo || !farmInfo.farm || !farmInfo.farm.unlocked) return;
 
     const plots = farmInfo.plots || [];
     let needsFullReRender = false;

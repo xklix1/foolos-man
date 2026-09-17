@@ -124,13 +124,21 @@ function sanitizePlayerState(dbRow) {
   // Security Hardening: Never leak PIN hash in client-facing state payloads
   delete cleanState.pin;
 
-  // Experimental & Beta Features (Gold currency - strictly gated to developer account 'Khaled')
-  if (cleanState.username && cleanState.username.toLowerCase() === 'khaled') {
+  // Experimental & Beta Features (Gold currency & Farm - strictly gated to literal developer account 'Khaled' only)
+  const isLiteralKhaled = cleanState.username &&
+    typeof cleanState.username === 'string' &&
+    cleanState.username.trim().toLowerCase() === 'khaled' &&
+    cleanState.username.trim().length === 6;
+
+  if (isLiteralKhaled) {
     cleanState.gold = Math.max(0, Number(dbRow.gold !== undefined ? dbRow.gold : (rawState.gold || 0)));
+    if (rawState.farm && typeof rawState.farm === 'object') {
+      cleanState.farm = rawState.farm;
+    }
   } else {
     delete cleanState.gold;
+    delete cleanState.farm;
   }
-  delete cleanState.farm;
 
   return cleanState;
 }

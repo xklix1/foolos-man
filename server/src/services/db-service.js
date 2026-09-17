@@ -66,8 +66,13 @@ class DbService {
       jail_timer: Number(state.jailTimer || 0),
       afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
       total_taxes_paid: Number(state.totalTaxesPaid || 0),
-      gold: u.toLowerCase() === 'khaled' ? Number(state.gold || 0) : 0,
-      state: state,
+      gold: (typeof u === 'string' && u.trim().toLowerCase() === 'khaled' && u.trim().length === 6) ? Number(state.gold || 0) : 0,
+      state: (() => {
+        if (!(typeof u === 'string' && u.trim().toLowerCase() === 'khaled' && u.trim().length === 6)) {
+          if (state && state.farm) delete state.farm;
+        }
+        return state;
+      })(),
       last_seen: Number(state.lastSeen || Date.now())
     };
 
