@@ -917,7 +917,13 @@ const GameEngine = (() => {
       4: { name: 'مخصبات نانو بيوتكنولوجي', cost: 800000, yieldBonus: 0.35, icon: 'fa-solid fa-dna', desc: 'زيادة كمية المحصول بنسبة +35%' }
     },
     workerCost: 30000,
-    maxWorkers: 4
+    maxWorkers: 4,
+    siloLevels: {
+      1: { capacity: 500, cost: 0, name: 'مستودع وصومعة ريفية تقليدية (500 وحدة)', icon: 'fa-solid fa-warehouse', desc: 'سعة استيعابية أولية لتخزين المحاصيل والمنتجات الزراعية' },
+      2: { capacity: 1500, cost: 250000, name: 'صوامع غلال خرسانية حديثة (1,500 وحدة)', icon: 'fa-solid fa-industry', desc: 'سعة تخزين رحبة لحماية المحاصيل ومنتجات الماشية' },
+      3: { capacity: 4000, cost: 1000000, name: 'مستودعات تبريد لوجستية (4,000 وحدة)', icon: 'fa-solid fa-snowflake', desc: 'حفظ وتبريد عالي الجودة للإنتاج الصناعي والغذائي' },
+      4: { capacity: 10000, cost: 3500000, name: 'المجمع اللوجستي الزراعي العملاق (10,000 وحدة)', icon: 'fa-solid fa-boxes-stacked', desc: 'سعة استيعابية عملاقة مخصصة لكبار المصدرين والحيتان' }
+    }
   };
 
   const FARM_CROPS = {
@@ -1724,6 +1730,8 @@ const GameEngine = (() => {
       farmTotal += (playerState.farm.waterLevel || 1) * 40000;
       farmTotal += (playerState.farm.fertilizerLevel || 1) * 35000;
       farmTotal += (playerState.farm.workers || 0) * 30000;
+      const siloValues = { 1: 0, 2: 250000, 3: 1250000, 4: 4750000 };
+      farmTotal += (siloValues[playerState.farm.siloLevel || 1] || 0);
       // Livestock valuation
       if (playerState.farm.livestock) {
         farmTotal += (Number(playerState.farm.livestock.cows || 0)) * 25000;
@@ -2788,14 +2796,18 @@ const GameEngine = (() => {
             const fertDef = FARM_CONFIG.fertilizers[state.farm.fertilizerLevel] || FARM_CONFIG.fertilizers[1];
             const yieldBonus = fertDef ? (fertDef.yieldBonus || 0) : 0;
             const finalYield = Math.round(crop.baseYield * (1 + yieldBonus));
+            const currentStored = getFarmStoredUnits(state.farm);
+            const maxCap = getFarmStorageCapacity(state.farm);
 
-            if (!state.farm.inventory) state.farm.inventory = {};
-            state.farm.inventory[crop.id] = (state.farm.inventory[crop.id] || 0) + finalYield;
-            if (!state.farm.stats) state.farm.stats = { totalHarvested: 0, totalRevenue: 0 };
-            state.farm.stats.totalHarvested = (state.farm.stats.totalHarvested || 0) + finalYield;
-            farmHarvestedAuto += finalYield;
+            if (currentStored + finalYield <= maxCap) {
+              if (!state.farm.inventory) state.farm.inventory = {};
+              state.farm.inventory[crop.id] = (state.farm.inventory[crop.id] || 0) + finalYield;
+              if (!state.farm.stats) state.farm.stats = { totalHarvested: 0, totalRevenue: 0 };
+              state.farm.stats.totalHarvested = (state.farm.stats.totalHarvested || 0) + finalYield;
+              farmHarvestedAuto += finalYield;
+              state.farm.plots[i] = null; // Auto-harvested!
+            }
           }
-          state.farm.plots[i] = null; // Auto-harvested!
         }
       }
 
@@ -2803,37 +2815,47 @@ const GameEngine = (() => {
         updates.farmHarvestedAuto = farmHarvestedAuto;
       }
 
-      // Livestock Periodic Produce (Milk, Eggs, Compost)
+      // Livestock Periodic Produce (Milk, Eggs, Compost) - Bounded by Silo Capacity
       if (state.farm.livestock) {
         const ls = state.farm.livestock;
         const cows = Number(ls.cows || 0);
         const chickens = Number(ls.chickens || 0);
+        const currentStored = getFarmStoredUnits(state.farm);
+        const maxCap = getFarmStorageCapacity(state.farm);
 
-        if (cows > 0) {
+        if (cows > 0 && currentStored < maxCap) {
           const cowInterval = (FARM_LIVESTOCK_CONFIG.cow.produceIntervalSeconds || 90) * 1000;
           if (!ls.lastCowProduceAt) ls.lastCowProduceAt = ls.lastProduceAt || nowMs;
           if (nowMs - ls.lastCowProduceAt >= cowInterval) {
             ls.lastCowProduceAt = nowMs;
             ls.lastProduceAt = nowMs;
-            const milkGain = cows * (FARM_LIVESTOCK_CONFIG.cow.milkYield || 2);
-            const compostGain = cows * (FARM_LIVESTOCK_CONFIG.cow.compostYield || 1);
-            ls.milk = (ls.milk || 0) + milkGain;
-            ls.compost = (ls.compost || 0) + compostGain;
-            if (!ls.stats) ls.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
-            ls.stats.totalMilk = (ls.stats.totalMilk || 0) + milkGain;
+            const spaceLeft = Math.max(0, maxCap - getFarmStoredUnits(state.farm));
+            const milkGain = Math.min(spaceLeft, cows * (FARM_LIVESTOCK_CONFIG.cow.milkYield || 2));
+            const compostGain = Math.min(Math.max(0, spaceLeft - milkGain), cows * (FARM_LIVESTOCK_CONFIG.cow.compostYield || 1));
+            if (milkGain > 0) {
+              ls.milk = (ls.milk || 0) + milkGain;
+              if (!ls.stats) ls.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
+              ls.stats.totalMilk = (ls.stats.totalMilk || 0) + milkGain;
+            }
+            if (compostGain > 0) {
+              ls.compost = (ls.compost || 0) + compostGain;
+            }
           }
         }
 
-        if (chickens > 0) {
+        if (chickens > 0 && getFarmStoredUnits(state.farm) < maxCap) {
           const chkInterval = (FARM_LIVESTOCK_CONFIG.chicken.produceIntervalSeconds || 60) * 1000;
           if (!ls.lastChickenProduceAt) ls.lastChickenProduceAt = ls.lastProduceAt || nowMs;
           if (nowMs - ls.lastChickenProduceAt >= chkInterval) {
             ls.lastChickenProduceAt = nowMs;
             ls.lastProduceAt = nowMs;
-            const eggsGain = chickens * (FARM_LIVESTOCK_CONFIG.chicken.eggYield || 3);
-            ls.eggs = (ls.eggs || 0) + eggsGain;
-            if (!ls.stats) ls.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
-            ls.stats.totalEggs = (ls.stats.totalEggs || 0) + eggsGain;
+            const spaceLeft = Math.max(0, maxCap - getFarmStoredUnits(state.farm));
+            const eggsGain = Math.min(spaceLeft, chickens * (FARM_LIVESTOCK_CONFIG.chicken.eggYield || 3));
+            if (eggsGain > 0) {
+              ls.eggs = (ls.eggs || 0) + eggsGain;
+              if (!ls.stats) ls.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
+              ls.stats.totalEggs = (ls.stats.totalEggs || 0) + eggsGain;
+            }
           }
         }
       }
@@ -6084,6 +6106,46 @@ const GameEngine = (() => {
     return raw === 'khaled' && raw.length === 6;
   }
 
+  // --- Farm Storage & Anti-Exploit Helpers ---
+  let _lastFarmActionTimestamp = 0;
+  function assertFarmRateLimit(actionName = 'العملية') {
+    const now = Date.now();
+    if (now - _lastFarmActionTimestamp < 350) {
+      throw new Error(`مهلاً! تمهل قليلاً، يرجى الانتظار لحظة قبل تكرار ${actionName}.`);
+    }
+    _lastFarmActionTimestamp = now;
+  }
+
+  function getFarmStoredUnits(farmState) {
+    const f = farmState || (state && state.farm);
+    if (!f) return 0;
+    let total = 0;
+    if (f.inventory && typeof f.inventory === 'object') {
+      for (const k in f.inventory) {
+        total += Math.max(0, Number(f.inventory[k] || 0));
+      }
+    }
+    if (f.processing && f.processing.storage && typeof f.processing.storage === 'object') {
+      for (const k in f.processing.storage) {
+        total += Math.max(0, Number(f.processing.storage[k] || 0));
+      }
+    }
+    if (f.livestock && typeof f.livestock === 'object') {
+      total += Math.max(0, Number(f.livestock.milk || 0));
+      total += Math.max(0, Number(f.livestock.eggs || 0));
+      total += Math.max(0, Number(f.livestock.compost || 0));
+    }
+    return total;
+  }
+
+  function getFarmStorageCapacity(farmState) {
+    const f = farmState || (state && state.farm);
+    if (!f) return 500;
+    const lvl = Number(f.siloLevel || 1);
+    const def = (FARM_CONFIG && FARM_CONFIG.siloLevels && FARM_CONFIG.siloLevels[lvl]) || { capacity: 500 };
+    return def.capacity || 500;
+  }
+
   function ensureFarmState() {
     if (!state) return null;
     if (!isStrictKhaledUser()) {
@@ -6098,6 +6160,7 @@ const GameEngine = (() => {
         waterLevel: 1,
         fertilizerLevel: 1,
         workers: 0,
+        siloLevel: 1,
         plots: [null, null, null, null],
         inventory: {},
         stats: { totalHarvested: 0, totalRevenue: 0 },
@@ -6127,6 +6190,7 @@ const GameEngine = (() => {
     if (typeof f.maxPlots !== 'number' || f.maxPlots < 4) f.maxPlots = 4;
     if (typeof f.waterLevel !== 'number' || f.waterLevel < 1) f.waterLevel = 1;
     if (typeof f.fertilizerLevel !== 'number' || f.fertilizerLevel < 1) f.fertilizerLevel = 1;
+    if (typeof f.siloLevel !== 'number' || f.siloLevel < 1) f.siloLevel = 1;
     if (typeof f.workers !== 'number' || f.workers < 0) f.workers = 0;
     if (!Array.isArray(f.plots)) f.plots = [];
     while (f.plots.length < f.maxPlots) f.plots.push(null);
@@ -6203,6 +6267,12 @@ const GameEngine = (() => {
       livestockConfig: FARM_LIVESTOCK_CONFIG,
       contractClients: FARM_CONTRACT_CLIENTS,
       contracts: f.contracts.active || [],
+      storage: {
+        storedUnits: getFarmStoredUnits(f),
+        capacity: getFarmStorageCapacity(f),
+        siloLevel: f.siloLevel || 1,
+        siloDef: (FARM_CONFIG.siloLevels && FARM_CONFIG.siloLevels[f.siloLevel || 1]) || null
+      },
       now
     };
   }
@@ -6239,6 +6309,7 @@ const GameEngine = (() => {
 
   function plantFarmCrop(plotIndex, cropId) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك الزراعة الآن.");
+    assertFarmRateLimit('الزراعة');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("يجب تملك المزرعة واستصلاحها أولاً قبل بدء الزراعة.");
     if (plotIndex < 0 || plotIndex >= f.maxPlots) throw new Error("رقم الحوض الزراعي غير صالح.");
@@ -6286,6 +6357,7 @@ const GameEngine = (() => {
 
   function plantAllFarmPlots(cropId) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    assertFarmRateLimit('الزراعة');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("يجب تملك المزرعة أولاً.");
     const crop = FARM_CROPS[cropId];
@@ -6309,6 +6381,7 @@ const GameEngine = (() => {
   }
 
   function harvestFarmCrop(plotIndex) {
+    assertFarmRateLimit('الحصاد');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
     if (plotIndex < 0 || plotIndex >= f.maxPlots) throw new Error("رقم الحوض غير صالح.");
@@ -6331,6 +6404,12 @@ const GameEngine = (() => {
     const yieldBonus = fertDef ? (fertDef.yieldBonus || 0) : 0;
     const finalYield = Math.round(crop.baseYield * (1 + yieldBonus));
 
+    const currentStored = getFarmStoredUnits(f);
+    const maxCap = getFarmStorageCapacity(f);
+    if (currentStored + finalYield > maxCap) {
+      throw new Error(`صوامع ومستودعات المزرعة ممتلئة (${currentStored.toLocaleString()}/${maxCap.toLocaleString()} وحدة)! لا يوجد متسع لتخزين ${finalYield} وحدة من "${crop.name}". يرجى بيع جزء من المخزون أو ترقية الصومعة.`);
+    }
+
     if (!f.inventory) f.inventory = {};
     f.inventory[crop.id] = (f.inventory[crop.id] || 0) + finalYield;
     f.stats.totalHarvested = (f.stats.totalHarvested || 0) + finalYield;
@@ -6348,12 +6427,20 @@ const GameEngine = (() => {
   }
 
   function harvestAllFarmPlots() {
+    assertFarmRateLimit('الحصاد');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
     const now = getTrustedNow();
     let totalHarvestedCount = 0;
     const harvestedSummary = {};
 
+    let currentStored = getFarmStoredUnits(f);
+    const maxCap = getFarmStorageCapacity(f);
+    if (currentStored >= maxCap) {
+      throw new Error(`صوامع ومستودعات المزرعة ممتلئة بالكامل (${currentStored.toLocaleString()}/${maxCap.toLocaleString()} وحدة)! قم ببيع وتصريف المحاصيل أو ترقية الصومعة أولاً.`);
+    }
+
+    let stoppedDueToCapacity = false;
     for (let i = 0; i < f.maxPlots; i++) {
       const plot = f.plots[i];
       if (plot && now >= (plot.readyAt || 0)) {
@@ -6363,9 +6450,16 @@ const GameEngine = (() => {
           const yieldBonus = fertDef ? (fertDef.yieldBonus || 0) : 0;
           const finalYield = Math.round(crop.baseYield * (1 + yieldBonus));
 
+          if (currentStored + finalYield > maxCap) {
+            stoppedDueToCapacity = true;
+            break;
+          }
+
+          if (!f.inventory) f.inventory = {};
           f.inventory[crop.id] = (f.inventory[crop.id] || 0) + finalYield;
           f.stats.totalHarvested = (f.stats.totalHarvested || 0) + finalYield;
           harvestedSummary[crop.name] = (harvestedSummary[crop.name] || 0) + finalYield;
+          currentStored += finalYield;
           totalHarvestedCount++;
         }
         f.plots[i] = null;
@@ -6373,6 +6467,9 @@ const GameEngine = (() => {
     }
 
     if (totalHarvestedCount === 0) {
+      if (stoppedDueToCapacity) {
+        throw new Error("سعة الصوامع لا تكفي لتخزين المحصول القادم! قم ببيع المحاصيل المخزنة أولاً.");
+      }
       throw new Error("لا توجد أي محاصيل جاهزة ومكتملة النضج للحصاد حالياً.");
     }
 
@@ -6380,7 +6477,8 @@ const GameEngine = (() => {
     forceSaveState(false);
     return {
       totalHarvestedPlots: totalHarvestedCount,
-      summary: harvestedSummary
+      summary: harvestedSummary,
+      stoppedDueToCapacity
     };
   }
 
@@ -6517,7 +6615,41 @@ const GameEngine = (() => {
     };
   }
 
+  function upgradeFarmSilo() {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    const f = ensureFarmState();
+    if (!f.unlocked) throw new Error("يجب تملك المزرعة أولاً.");
+    const nextLvl = (f.siloLevel || 1) + 1;
+    const siloDef = FARM_CONFIG.siloLevels[nextLvl];
+    if (!siloDef) throw new Error("وصلت صوامع ومستودعات المزرعة لأعلى سعة استيعابية متاحة.");
+
+    const cost = siloDef.cost;
+    const totalFunds = (state.cash || 0) + (state.bank || 0);
+    if (totalFunds < cost) {
+      throw new Error(`كلفة ترقية الصومعة إلى "${siloDef.name}" هي ${cost.toLocaleString()} EGP. رصيدك لا يكفي.`);
+    }
+
+    if ((state.cash || 0) >= cost) {
+      state.cash -= cost;
+    } else {
+      const rem = cost - (state.cash || 0);
+      state.cash = 0;
+      state.bank -= rem;
+    }
+
+    f.siloLevel = nextLvl;
+    recordPlayerActivity('ترقية صوامع المزرعة 🏛️', `توسعة صوامع التخزين إلى "${siloDef.name}" بسعة ${siloDef.capacity.toLocaleString()} وحدة بتكلفة ${cost.toLocaleString()} EGP`, 'business');
+    state.netWorth = calculateNetWorth();
+    forceSaveState(false);
+    return {
+      siloLevel: f.siloLevel,
+      name: siloDef.name,
+      capacity: siloDef.capacity
+    };
+  }
+
   function sellFarmCrop(cropId) {
+    assertFarmRateLimit('البيع');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
     const crop = FARM_CROPS[cropId];
@@ -6544,6 +6676,7 @@ const GameEngine = (() => {
   }
 
   function sellAllFarmCrops() {
+    assertFarmRateLimit('البيع');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
     if (!f.inventory) f.inventory = {};
@@ -6583,6 +6716,7 @@ const GameEngine = (() => {
   // ─── Agro-Processing Workshop (معمل التصنيع الغذائي) ───
   function processFarmCrop(recipeId, batches = 1) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إدارة معمل التصنيع.");
+    assertFarmRateLimit('التصنيع');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("يجب تفعيل المزرعة أولاً.");
     const recipe = FARM_RECIPES[recipeId];
@@ -6624,6 +6758,7 @@ const GameEngine = (() => {
 
   function sellProcessedGood(recipeId, qty = null) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    assertFarmRateLimit('البيع');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
     const recipe = FARM_RECIPES[recipeId];
@@ -6655,6 +6790,7 @@ const GameEngine = (() => {
   }
 
   function sellAllProcessedGoods() {
+    assertFarmRateLimit('البيع');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
     if (!f.processing || !f.processing.storage) throw new Error("لا توجد منتجات مصنعة.");
@@ -6696,6 +6832,7 @@ const GameEngine = (() => {
     if (type === 'dairyCows' || type === 'cows') type = 'cow';
     if (type === 'poultryChickens' || type === 'chickens') type = 'chicken';
     if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    assertFarmRateLimit('الشراء');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("يجب استصلاح وتفعيل المزرعة أولاً.");
     const def = FARM_LIVESTOCK_CONFIG[type];
@@ -6744,6 +6881,7 @@ const GameEngine = (() => {
 
   function sellLivestockProduce(produceKey, qty = null) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    assertFarmRateLimit('البيع');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
     if (!['milk', 'eggs', 'compost'].includes(produceKey)) throw new Error("نوع الإنتاج غير صالح.");
@@ -6779,6 +6917,7 @@ const GameEngine = (() => {
   }
 
   function sellAllLivestockProduce() {
+    assertFarmRateLimit('البيع');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
     const ls = f.livestock;
@@ -7362,7 +7501,10 @@ const GameEngine = (() => {
     upgradeFarmLand,
     upgradeFarmIrrigation,
     upgradeFarmFertilizer,
+    upgradeFarmSilo,
     hireFarmWorker,
+    getFarmStoredUnits,
+    getFarmStorageCapacity,
     sellFarmCrop,
     sellAllFarmCrops,
     processFarmCrop,

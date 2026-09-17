@@ -3661,7 +3661,7 @@
           </div>
 
           <!-- Farm Key Stat Badges -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-800/80">
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-6 pt-5 border-t border-slate-800/80">
             <div class="p-3.5 bg-slate-950/70 rounded-2xl border border-slate-800/90 shadow-sm hover:border-amber-500/30 transition">
               <span class="text-[10px] text-slate-400 font-bold block mb-1 flex items-center gap-1.5">
                 <i class="fa-solid fa-layer-group text-amber-400 text-xs"></i>
@@ -3689,6 +3689,16 @@
                 <span>عمال وأتمتة الحصاد</span>
               </span>
               <span id="farm-stat-workers" class="numbers-font text-sm sm:text-base font-black text-purple-300">0 عمال</span>
+            </div>
+            <div class="p-3.5 bg-slate-950/70 rounded-2xl border border-slate-800/90 shadow-sm hover:border-yellow-500/30 transition col-span-2 sm:col-span-1">
+              <span class="text-[10px] text-slate-400 font-bold block mb-1 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-warehouse text-yellow-400 text-xs"></i>
+                  <span>سعة صومعة المخزن</span>
+                </span>
+                <span id="farm-stat-silo-pct" class="text-[10px] font-black text-amber-400">0%</span>
+              </span>
+              <span id="farm-stat-silo" class="numbers-font text-xs sm:text-sm font-black text-white truncate block">0 / 500 وحدة</span>
             </div>
           </div>
         </div>
@@ -3800,7 +3810,7 @@
                 <p class="text-xs text-slate-400 mt-0.5">طوّر شبكات الري لتسريع النمو، استصلح أراضٍ جديدة، واستخدم أحدث الأسمدة النانوية لمضاعفة المحصول.</p>
               </div>
 
-              <div id="farm-upgrades-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div id="farm-upgrades-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 <!-- Rendered by ui.js -->
               </div>
             </div>
@@ -7024,8 +7034,8 @@
   <!-- Script Initializers -->
   <script src="db.js?v=28.0"></script>
   <script src="server-client-bridge.js?v=25.0"></script>
-  <script src="game.js?v=42.0"></script>
-  <script src="ui.js?v=46.0"></script>
+  <script src="game.js?v=43.0"></script>
+  <script src="ui.js?v=47.0"></script>
   <script src="pwa-manager.js?v=2.5.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────

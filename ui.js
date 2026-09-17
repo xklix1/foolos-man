@@ -19714,6 +19714,23 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const statWorkers = document.getElementById('farm-stat-workers');
     if (statWorkers) statWorkers.textContent = `${farm.workers || 0} عمال (تغطية ${(farm.workers || 0) * 4} أحواض)`;
 
+    const storedUnits = (farmInfo.storage && farmInfo.storage.storedUnits) || 0;
+    const storageCap = (farmInfo.storage && farmInfo.storage.capacity) || 500;
+    const storagePct = Math.min(100, Math.round((storedUnits / storageCap) * 100));
+    const statSilo = document.getElementById('farm-stat-silo');
+    if (statSilo) statSilo.textContent = `${storedUnits.toLocaleString()} / ${storageCap.toLocaleString()} وحدة`;
+    const statSiloPct = document.getElementById('farm-stat-silo-pct');
+    if (statSiloPct) {
+      statSiloPct.textContent = `${storagePct}%`;
+      if (storagePct >= 100) {
+        statSiloPct.className = 'text-[10px] font-black text-rose-400 animate-pulse';
+      } else if (storagePct >= 80) {
+        statSiloPct.className = 'text-[10px] font-black text-amber-400';
+      } else {
+        statSiloPct.className = 'text-[10px] font-black text-emerald-400';
+      }
+    }
+
     // Calculate dynamic header badges (ready crops and stored crops value)
     const plots = farmInfo.plots || [];
     const crops = farmInfo.crops || {};
@@ -20048,6 +20065,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const maxWorkers = config.maxWorkers || 4;
       const isMaxWorkers = (farm.workers || 0) >= maxWorkers;
 
+      const nextSiloLevel = (farm.siloLevel || 1) + 1;
+      const nextSilo = config.siloLevels && config.siloLevels[nextSiloLevel];
+      const currSilo = (config.siloLevels && config.siloLevels[farm.siloLevel || 1]) || { capacity: 500, name: 'صومعة ريفية تقليدية' };
+      const isMaxSilo = !nextSilo;
+
       upgradesGrid.innerHTML = `
         <!-- 1. Land Expansion -->
         <div class="p-4 rounded-2xl bg-gradient-to-b from-slate-900/80 to-slate-950/90 border border-slate-800 hover:border-amber-500/40 transition flex flex-col justify-between gap-3 shadow">
@@ -20130,6 +20152,27 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           <button ${isMaxWorkers ? 'disabled' : 'onclick="window.UI?.hireFarmWorker()"'} type="button"
             class="w-full py-2.5 rounded-xl text-xs font-black transition cursor-pointer ${!isMaxWorkers ? 'bg-purple-500 hover:bg-purple-400 text-white shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
             ${isMaxWorkers ? 'فريق الحصاد مكتمل' : 'توظيف (' + workerCost.toLocaleString() + ' EGP)'}
+          </button>
+        </div>
+
+        <!-- 5. Silo & Storage Upgrade -->
+        <div class="p-4 rounded-2xl bg-gradient-to-b from-slate-900/80 to-slate-950/90 border border-slate-800 hover:border-yellow-500/40 transition flex flex-col justify-between gap-3 shadow">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center text-yellow-400 text-lg shrink-0">
+              <i class="fa-solid fa-warehouse"></i>
+            </div>
+            <div>
+              <h4 class="font-black text-white text-xs">صوامع ومستودعات التخزين</h4>
+              <p class="text-[10px] text-slate-400 mt-0.5">${nextSilo ? nextSilo.name : 'أعلى سعة استيعابية متاحة'}</p>
+            </div>
+          </div>
+          <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
+            <span class="text-slate-400">السعة الحالية:</span>
+            <span class="numbers-font text-yellow-400 font-bold">${currSilo.capacity.toLocaleString()} وحدة</span>
+          </div>
+          <button ${isMaxSilo ? 'disabled' : 'onclick="window.UI?.upgradeFarmSilo()"'} type="button"
+            class="w-full py-2.5 rounded-xl text-xs font-black transition cursor-pointer ${!isMaxSilo ? 'bg-yellow-500 hover:bg-yellow-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+            ${isMaxSilo ? 'أقصى سعة للمخزن' : 'ترقية (' + nextSilo.cost.toLocaleString() + ' EGP)'}
           </button>
         </div>
       `;
@@ -20974,6 +21017,19 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     } catch (e) {
       playMenuSound('error');
       showToast('تعذر التوظيف', e.message, 'error');
+    }
+  }
+
+  function upgradeFarmSilo() {
+    try {
+      playMenuSound('click');
+      const res = GameEngine.upgradeFarmSilo();
+      showToast('ترقية الصومعة 🏛️', `تمت توسعة صوامع التخزين إلى "${res.name}" بسعة ${res.capacity.toLocaleString()} وحدة!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر ترقية الصومعة', e.message, 'error');
     }
   }
 
@@ -22098,6 +22154,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     upgradeFarmIrrigation,
     upgradeFarmFertilizer,
     hireFarmWorker,
+    upgradeFarmSilo,
     switchFarmSubtab,
     processFarmCrop,
     sellProcessedGood,
