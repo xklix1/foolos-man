@@ -19699,8 +19699,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     switchFarmSubtab(_activeFarmSubtab);
 
     // Top Stats Bar
-    const currIrr = (config.irrigation && config.irrigation[farm.irrigationLevel]) || { name: 'ري تقليدي', speedBonus: 0 };
-    const currFert = (config.fertilizers && config.fertilizers[farm.fertilizerLevel]) || { name: 'تربة اعتيادية', yieldBonus: 0 };
+    const irrLvl = farm.irrigationLevel || farm.waterLevel || 1;
+    const fertLvl = farm.fertilizerLevel || 1;
+    const currIrr = (config.irrigation && config.irrigation[irrLvl]) || { name: 'ري تقليدي', speedBonus: 0 };
+    const currFert = (config.fertilizers && config.fertilizers[fertLvl]) || { name: 'تربة اعتيادية', yieldBonus: 0 };
 
     const statPlots = document.getElementById('farm-stat-plots');
     if (statPlots) statPlots.textContent = `${farm.maxPlots || 4} أحواض (مستوى ${farm.landLevel || 1})`;
@@ -19718,7 +19720,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const storageCap = (farmInfo.storage && farmInfo.storage.capacity) || 500;
     const storagePct = Math.min(100, Math.round((storedUnits / storageCap) * 100));
     const statSilo = document.getElementById('farm-stat-silo');
-    if (statSilo) statSilo.textContent = `${storedUnits.toLocaleString()} / ${storageCap.toLocaleString()} وحدة`;
+    if (statSilo) statSilo.innerHTML = `<span dir="ltr" class="inline-block numbers-font font-bold">${storedUnits.toLocaleString()} / ${storageCap.toLocaleString()}</span> وحدة`;
     const statSiloPct = document.getElementById('farm-stat-silo-pct');
     if (statSiloPct) {
       statSiloPct.textContent = `${storagePct}%`;
@@ -19823,12 +19825,15 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         try {
           const res = GameEngine.sellAllFarmCrops();
           playCasinoSound('win');
-          showToast('تصفية المحاصيل 💰', `تم بيع ${res.totalUnits.toLocaleString()} وحدة محاصيل بقيمة +${res.totalRevenue.toLocaleString()} EGP نقداً!`, 'success');
-          renderFarmPanel();
-          renderStatsBar();
+          const units = Number(res.totalUnits || res.itemsSold || 0);
+          const rev = Number(res.totalRevenue || res.grandTotal || res.revenue || 0);
+          showToast('تصفية المحاصيل 💰', `تم بيع ${units.toLocaleString()} وحدة محاصيل بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
         } catch (e) {
           playMenuSound('error');
           showToast('تعذر البيع', e.message, 'error');
+        } finally {
+          renderFarmPanel();
+          renderStatsBar();
         }
       };
     }
@@ -20053,9 +20058,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const nextLand = config.landExpansions && config.landExpansions[nextLandLevel];
       const isMaxLand = !nextLand;
 
-      const nextIrrLevel = (farm.irrigationLevel || 1) + 1;
+      const irrLvl = farm.irrigationLevel || farm.waterLevel || 1;
+      const nextIrrLevel = irrLvl + 1;
       const nextIrr = config.irrigation && config.irrigation[nextIrrLevel];
-      const currIrr = (config.irrigation && config.irrigation[farm.irrigationLevel || 1]) || { name: 'ري تقليدي' };
+      const currIrr = (config.irrigation && config.irrigation[irrLvl]) || { name: 'ري تقليدي' };
 
       const nextFertLevel = (farm.fertilizerLevel || 1) + 1;
       const nextFert = config.fertilizers && config.fertilizers[nextFertLevel];

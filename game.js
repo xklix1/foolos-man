@@ -6189,7 +6189,9 @@ const GameEngine = (() => {
     const f = state.farm;
     if (typeof f.landLevel !== 'number' || f.landLevel < 1) f.landLevel = 1;
     if (typeof f.maxPlots !== 'number' || f.maxPlots < 4) f.maxPlots = 4;
-    if (typeof f.waterLevel !== 'number' || f.waterLevel < 1) f.waterLevel = 1;
+    const effectiveIrrLevel = Math.max(1, Number(f.irrigationLevel || f.waterLevel || 1));
+    f.waterLevel = effectiveIrrLevel;
+    f.irrigationLevel = effectiveIrrLevel;
     if (typeof f.fertilizerLevel !== 'number' || f.fertilizerLevel < 1) f.fertilizerLevel = 1;
     if (typeof f.siloLevel !== 'number' || f.siloLevel < 1) f.siloLevel = 1;
     if (typeof f.workers !== 'number' || f.workers < 0) f.workers = 0;
@@ -6542,11 +6544,13 @@ const GameEngine = (() => {
     }
 
     f.waterLevel = nextLvl;
+    f.irrigationLevel = nextLvl;
     recordPlayerActivity('ترقية شبكة الري 💧', `تركيب وتطوير "${irDef.name}" لتسريع نمو المحاصيل بنسبة ${(irDef.speedBonus * 100).toFixed(0)}%! بتكلفة ${cost.toLocaleString()} EGP`, 'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(false);
     return {
       waterLevel: f.waterLevel,
+      irrigationLevel: f.waterLevel,
       name: irDef.name,
       speedBonus: irDef.speedBonus
     };
@@ -6712,6 +6716,7 @@ const GameEngine = (() => {
       totalRevenue: grandTotal,
       revenue: grandTotal,
       itemsSold,
+      totalUnits: itemsSold,
       soldBreakdown
     };
   }
