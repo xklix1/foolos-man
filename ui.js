@@ -19766,7 +19766,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     const headerStoredVal = document.getElementById('farm-header-stored-value');
     if (headerStoredVal) {
-      headerStoredVal.textContent = `${storedValue.toLocaleString()} EGP`;
+      const activeContracts = (farm.contracts && farm.contracts.active) ? farm.contracts.active.filter(c => !c.fulfilled).length : 50;
+      headerStoredVal.textContent = `${activeContracts} عقداً`;
     }
 
     const subtabBadgeFields = document.getElementById('farm-subtab-badge-fields');
@@ -19831,19 +19832,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const btnSellAll = document.getElementById('btn-farm-sell-all');
     if (btnSellAll) {
       btnSellAll.onclick = () => {
-        try {
-          const res = GameEngine.sellAllFarmCrops();
-          playCasinoSound('win');
-          const units = Number(res.totalUnits || res.itemsSold || 0);
-          const rev = Number(res.totalRevenue || res.grandTotal || res.revenue || 0);
-          showToast('تصفية المحاصيل 💰', `تم بيع ${units.toLocaleString()} وحدة محاصيل بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
-        } catch (e) {
-          playMenuSound('error');
-          showToast('تعذر البيع', e.message, 'error');
-        } finally {
-          renderFarmPanel();
-          renderStatsBar();
-        }
+        playMenuSound('click');
+        switchFarmSubtab('contracts');
+        const cPanel = document.getElementById('farm-subpanel-contracts');
+        if (cPanel) cPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       };
     }
 
@@ -20220,10 +20212,19 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               <span class="numbers-font text-emerald-400 font-bold">${val.toLocaleString()} EGP</span>
             </div>
 
-            <button ${qty <= 0 ? 'disabled' : `onclick="window.UI?.sellSingleFarmCrop('${c.id}')"`} type="button"
-              class="w-full py-2 rounded-xl text-[11px] font-black transition cursor-pointer ${qty > 0 ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-md active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
-              ${qty > 0 ? 'بيع المحصول (' + val.toLocaleString() + ' EGP)' : 'المخزون فارغ'}
-            </button>
+            <div class="grid grid-cols-5 gap-1.5 pt-1">
+              <button onclick="window.UI?.switchFarmSubtab('contracts')" type="button"
+                class="col-span-3 py-2 px-2 rounded-xl text-[11px] font-black transition cursor-pointer bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow active:scale-95 flex items-center justify-center gap-1">
+                <i class="fa-solid fa-file-contract text-[10px]"></i>
+                <span>عقود التوريد</span>
+              </button>
+              <button ${qty <= 0 ? 'disabled' : `onclick="window.UI?.emergencyDumpFarmCrop('${c.id}')"`} type="button"
+                title="تسييل اضطراري لتفريغ الصومعة بسعر التكلفة فقط (0% ربح)"
+                class="col-span-2 py-2 px-1 rounded-xl text-[9.5px] font-bold transition flex items-center justify-center gap-1 ${qty > 0 ? 'bg-slate-800/90 hover:bg-rose-950/60 hover:text-rose-300 text-slate-400 border border-slate-700/80 cursor-pointer active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800/50 cursor-not-allowed'}">
+                <i class="fa-solid fa-recycle text-[9px]"></i>
+                <span>تسييل تكلفة</span>
+              </button>
+            </div>
           </div>
         `;
       });
@@ -20336,19 +20337,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const btnSellAllProcessed = document.getElementById('btn-farm-sell-all-processed');
     if (btnSellAllProcessed) {
       btnSellAllProcessed.onclick = () => {
-        try {
-          const res = GameEngine.sellAllProcessedGoods();
-          playCasinoSound('win');
-          const soldUnits = Number((res && (res.totalUnits || res.itemsSold || res.qty)) || 0);
-          const rev = Number((res && (res.totalRevenue || res.grandTotal || res.totalPrice || res.revenue)) || 0);
-          showToast('بيع المنتجات الغذائية 🥫', `تم تصريف ${soldUnits.toLocaleString()} وحدة منتجات مصنعة بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
-        } catch (e) {
-          playMenuSound('error');
-          showToast('تعذر البيع', e.message, 'error');
-        } finally {
-          renderFarmPanel();
-          renderStatsBar();
-        }
+        playMenuSound('click');
+        switchFarmSubtab('contracts');
+        const cPanel = document.getElementById('farm-subpanel-contracts');
+        if (cPanel) cPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       };
     }
 
@@ -20444,10 +20436,19 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               <span class="numbers-font text-emerald-400">${totalVal.toLocaleString()} EGP</span>
             </div>
 
-            <button ${qty <= 0 ? 'disabled' : `onclick="window.UI?.sellProcessedGood('${r.id}', ${qty})"`} type="button"
-              class="w-full py-1.5 rounded-lg text-[10px] font-black transition cursor-pointer ${qty > 0 ? 'bg-yellow-500 hover:bg-yellow-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
-              بيع للمتاجر
-            </button>
+            <div class="grid grid-cols-5 gap-1.5 pt-1">
+              <button onclick="window.UI?.switchFarmSubtab('contracts')" type="button"
+                class="col-span-3 py-1.5 px-2 rounded-xl text-[10px] font-black transition cursor-pointer bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow active:scale-95 flex items-center justify-center gap-1">
+                <i class="fa-solid fa-file-contract text-[9px]"></i>
+                <span>عقود B2B</span>
+              </button>
+              <button ${qty <= 0 ? 'disabled' : `onclick="window.UI?.emergencyDumpProcessedGood('${r.id}')"`} type="button"
+                title="تسييل اضطراري بسعر التكلفة الخام فقط (0% ربح)"
+                class="col-span-2 py-1.5 px-1 rounded-xl text-[9px] font-bold transition flex items-center justify-center gap-1 ${qty > 0 ? 'bg-slate-800/90 hover:bg-rose-950/60 hover:text-rose-300 text-slate-400 border border-slate-700/80 cursor-pointer active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800/50 cursor-not-allowed'}">
+                <i class="fa-solid fa-recycle text-[8.5px]"></i>
+                <span>تسييل تكلفة</span>
+              </button>
+            </div>
           </div>
         `;
       });
@@ -20479,18 +20480,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const btnSellAllLivestock = document.getElementById('btn-farm-sell-all-livestock');
     if (btnSellAllLivestock) {
       btnSellAllLivestock.onclick = () => {
-        try {
-          const res = GameEngine.sellAllLivestockProduce();
-          playCasinoSound('win');
-          const rev = Number(res.totalRevenue || res.grandTotal || res.revenue || 0);
-          showToast('بيع منتجات المزرعة 🥛🥚', `تم بيع كافة المنتجات الحيوانية بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
-        } catch (e) {
-          playMenuSound('error');
-          showToast('تعذر البيع', e.message, 'error');
-        } finally {
-          renderFarmPanel();
-          renderStatsBar();
-        }
+        playMenuSound('click');
+        switchFarmSubtab('contracts');
+        const cPanel = document.getElementById('farm-subpanel-contracts');
+        if (cPanel) cPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       };
     }
 
@@ -20621,10 +20614,19 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             <span class="text-slate-400">المخزون المتوفر:</span>
             <span class="numbers-font text-cyan-300 font-black text-sm">${milk.toLocaleString()} لتر</span>
           </div>
-          <button ${milk <= 0 ? 'disabled' : `onclick="window.UI?.sellLivestockProduce('milk', ${milk})"`} type="button"
-            class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${milk > 0 ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
-            ${milk > 0 ? 'بيع الحليب (+' + (milk * cowDef.sellPrice).toLocaleString() + ' EGP)' : 'المخزون فارغ'}
-          </button>
+          <div class="grid grid-cols-5 gap-1.5 pt-1">
+            <button onclick="window.UI?.switchFarmSubtab('contracts')" type="button"
+              class="col-span-3 py-1.5 px-2 rounded-xl text-xs font-black transition cursor-pointer bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow active:scale-95 flex items-center justify-center gap-1">
+              <i class="fa-solid fa-file-contract text-[10px]"></i>
+              <span>عقود B2B</span>
+            </button>
+            <button ${milk <= 0 ? 'disabled' : `onclick="window.UI?.emergencyDumpLivestockProduce('milk')"`} type="button"
+              title="تسييل اضطراري بسعر التكلفة الرمزية (5 EGP)"
+              class="col-span-2 py-1.5 px-1 rounded-xl text-[9.5px] font-bold transition flex items-center justify-center gap-1 ${milk > 0 ? 'bg-slate-800/90 hover:bg-rose-950/60 hover:text-rose-300 text-slate-400 border border-slate-700/80 cursor-pointer active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800/50 cursor-not-allowed'}">
+              <i class="fa-solid fa-recycle text-[9px]"></i>
+              <span>تسييل تكلفة</span>
+            </button>
+          </div>
         </div>
 
         <!-- Eggs -->
@@ -20642,10 +20644,19 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             <span class="text-slate-400">المخزون المتوفر:</span>
             <span class="numbers-font text-amber-300 font-black text-sm">${eggs.toLocaleString()} كرتونة</span>
           </div>
-          <button ${eggs <= 0 ? 'disabled' : `onclick="window.UI?.sellLivestockProduce('eggs', ${eggs})"`} type="button"
-            class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${eggs > 0 ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
-            ${eggs > 0 ? 'بيع البيض (+' + (eggs * chkDef.sellPrice).toLocaleString() + ' EGP)' : 'المخزون فارغ'}
-          </button>
+          <div class="grid grid-cols-5 gap-1.5 pt-1">
+            <button onclick="window.UI?.switchFarmSubtab('contracts')" type="button"
+              class="col-span-3 py-1.5 px-2 rounded-xl text-xs font-black transition cursor-pointer bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow active:scale-95 flex items-center justify-center gap-1">
+              <i class="fa-solid fa-file-contract text-[10px]"></i>
+              <span>عقود B2B</span>
+            </button>
+            <button ${eggs <= 0 ? 'disabled' : `onclick="window.UI?.emergencyDumpLivestockProduce('eggs')"`} type="button"
+              title="تسييل اضطراري بسعر التكلفة الرمزية (5 EGP)"
+              class="col-span-2 py-1.5 px-1 rounded-xl text-[9.5px] font-bold transition flex items-center justify-center gap-1 ${eggs > 0 ? 'bg-slate-800/90 hover:bg-rose-950/60 hover:text-rose-300 text-slate-400 border border-slate-700/80 cursor-pointer active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800/50 cursor-not-allowed'}">
+              <i class="fa-solid fa-recycle text-[9px]"></i>
+              <span>تسييل تكلفة</span>
+            </button>
+          </div>
         </div>
 
         <!-- Compost Booster -->
@@ -20980,10 +20991,47 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       playCasinoSound('win');
       const res = GameEngine.sellFarmCrop(cropId);
       const rev = Number(res.totalPrice || res.totalRevenue || 0);
-      showToast('تم البيع 💰', `تم بيع ${res.qty.toLocaleString()} وحدة من "${res.crop.name}" بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
+      showToast('تسييل المحصول ♻️', `تم تفريغ ${res.qty.toLocaleString()} وحدة من "${res.crop.name}" بسعر التكلفة الرأسمالية (+${rev.toLocaleString()} EGP). الأرباح محصورة في عقود التوريد B2B.`, 'warning');
     } catch (e) {
       playMenuSound('error');
-      showToast('تعذر البيع', e.message, 'error');
+      showToast('تعذر التسييل', e.message, 'error');
+    } finally {
+      renderFarmPanel();
+      renderStatsBar();
+    }
+  }
+
+  function emergencyDumpFarmCrop(cropId) {
+    sellSingleFarmCrop(cropId);
+  }
+
+  function emergencyDumpProcessedGood(recipeId) {
+    try {
+      const res = GameEngine.emergencyDumpProcessedGood(recipeId);
+      playCasinoSound('win');
+      const soldQty = Number((res && (res.sellQty || res.qty)) || 0);
+      const rev = Number((res && (res.totalPrice || res.totalRevenue)) || 0);
+      const recipeName = (res && res.recipe && res.recipe.name) || 'المنتج الغذائي';
+      showToast('تسييل اضطراري ♻️', `تم تفريغ ${soldQty.toLocaleString()} عبوة من "${recipeName}" بسعر التكلفة الخام (+${rev.toLocaleString()} EGP). الأرباح محصورة في عقود B2B.`, 'warning');
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر التسييل', e.message, 'error');
+    } finally {
+      renderFarmPanel();
+      renderStatsBar();
+    }
+  }
+
+  function emergencyDumpLivestockProduce(produceKey) {
+    try {
+      const res = GameEngine.emergencyDumpLivestockProduce(produceKey);
+      playCasinoSound('win');
+      const soldQty = Number((res && (res.sellQty || res.qty)) || 0);
+      const rev = Number((res && (res.totalPrice || res.totalRevenue)) || 0);
+      showToast('تسييل اضطراري ♻️', `تم تفريغ ${soldQty.toLocaleString()} وحدة من المنتج بسعر التكلفة الرمزية (+${rev.toLocaleString()} EGP). الأرباح محصورة في عقود B2B.`, 'warning');
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر التسييل', e.message, 'error');
     } finally {
       renderFarmPanel();
       renderStatsBar();
@@ -22197,7 +22245,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     sellAllLivestockProduce,
     applyCompostFertilizer,
     fulfillFarmContract,
-    refreshFarmContracts
+    refreshFarmContracts,
+    emergencyDumpFarmCrop,
+    emergencyDumpProcessedGood,
+    emergencyDumpLivestockProduce
   };
 
 })();

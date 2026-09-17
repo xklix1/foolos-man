@@ -6665,18 +6665,22 @@ const GameEngine = (() => {
       throw new Error(`مستودع المزرعة لا يحتوي على أي مخزون من "${crop.name}".`);
     }
 
-    const totalPrice = qty * crop.sellPrice;
+    // Contract-Only Economy: Direct sale is an emergency clearance recovering only seedCost (0% profit)
+    const seedRecoveryCost = Number(crop.seedCost || 10);
+    const totalPrice = qty * seedRecoveryCost;
     f.inventory[cropId] = 0;
     state.cash = (state.cash || 0) + totalPrice;
+    if (!f.stats) f.stats = { totalHarvested: 0, totalRevenue: 0 };
     f.stats.totalRevenue = (f.stats.totalRevenue || 0) + totalPrice;
 
-    recordPlayerActivity('بيع محصول زراعي 💰', `بيع ${qty.toLocaleString()} وحدة من "${crop.name}" بسعر ${totalPrice.toLocaleString()} EGP نقداً!`, 'business');
+    recordPlayerActivity('تسييل اضطراري لتفريغ الصومعة ♻️', `تسييل ${qty.toLocaleString()} وحدة من "${crop.name}" بسعر التكلفة فقط (+${totalPrice.toLocaleString()} EGP) لتفريغ الصومعة. الأرباح محصورة في عقود B2B.`, 'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(false);
     return {
       crop,
       qty,
-      totalPrice
+      totalPrice,
+      isEmergencyDump: true
     };
   }
 
@@ -6693,7 +6697,8 @@ const GameEngine = (() => {
     Object.keys(f.inventory).forEach(cId => {
       const qty = Number(f.inventory[cId] || 0);
       if (qty > 0 && FARM_CROPS[cId]) {
-        const p = qty * FARM_CROPS[cId].sellPrice;
+        const seedRecoveryCost = Number(FARM_CROPS[cId].seedCost || 10);
+        const p = qty * seedRecoveryCost;
         grandTotal += p;
         itemsSold += qty;
         soldBreakdown.push({ crop: FARM_CROPS[cId], qty, price: p });
@@ -6702,13 +6707,14 @@ const GameEngine = (() => {
     });
 
     if (grandTotal <= 0) {
-      throw new Error("لا توجد محاصيل مخزنة في مستودع المزرعة لبيعها حالياً.");
+      throw new Error("لا توجد محاصيل مخزنة في مستودع المزرعة لتسييلها حالياً.");
     }
 
     state.cash = (state.cash || 0) + grandTotal;
+    if (!f.stats) f.stats = { totalHarvested: 0, totalRevenue: 0 };
     f.stats.totalRevenue = (f.stats.totalRevenue || 0) + grandTotal;
 
-    recordPlayerActivity('بيع كافة محاصيل المزرعة 💰', `بيع كامل محصول المزرعة المخزن (${itemsSold.toLocaleString()} وحدة) بإجمالي عائد +${grandTotal.toLocaleString()} EGP نقداً!`, 'business');
+    recordPlayerActivity('تفريغ اضطراري للصوامع ♻️', `تسييل شامل لـ ${itemsSold.toLocaleString()} وحدة محاصيل بسعر التكلفة الرأسمالية فقط (+${grandTotal.toLocaleString()} EGP).`, 'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(false);
     return {
@@ -6717,7 +6723,8 @@ const GameEngine = (() => {
       revenue: grandTotal,
       itemsSold,
       totalUnits: itemsSold,
-      soldBreakdown
+      soldBreakdown,
+      isEmergencyDump: true
     };
   }
 
@@ -6778,14 +6785,17 @@ const GameEngine = (() => {
     }
 
     const sellQty = (qty === null || qty <= 0 || qty > available) ? available : Math.floor(Number(qty));
-    const totalPrice = sellQty * recipe.baseValue;
+    // Contract-Only Economy: Emergency dump recovers only raw material seed cost (0% profit)
+    const rawCrop = FARM_CROPS[recipe.inputCrop];
+    const rawCostPerUnit = (rawCrop && rawCrop.seedCost ? rawCrop.seedCost : 10) * (recipe.inputQty || 1);
+    const totalPrice = sellQty * rawCostPerUnit;
 
     f.processing.storage[recipeId] -= sellQty;
     state.cash = (state.cash || 0) + totalPrice;
     if (!f.processing.stats) f.processing.stats = { totalProcessed: 0, totalRevenue: 0 };
     f.processing.stats.totalRevenue = (f.processing.stats.totalRevenue || 0) + totalPrice;
 
-    recordPlayerActivity('بيع منتج غذائي مصنّع 💰', `بيع ${sellQty.toLocaleString()} وحدة من "${recipe.name}" بسعر ${totalPrice.toLocaleString()} EGP نقداً!`, 'business');
+    recordPlayerActivity('تسييل اضطراري لمنتج مصنع ♻️', `تفريغ ${sellQty.toLocaleString()} عبوة من "${recipe.name}" بسعر التكلفة الخام (+${totalPrice.toLocaleString()} EGP). الأرباح الفاخرة محصورة في عقود B2B.`, 'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(false);
 
@@ -6797,7 +6807,8 @@ const GameEngine = (() => {
       totalRevenue: totalPrice,
       revenue: totalPrice,
       grandTotal: totalPrice,
-      remaining: f.processing.storage[recipeId]
+      remaining: f.processing.storage[recipeId],
+      isEmergencyDump: true
     };
   }
 
@@ -6812,7 +6823,9 @@ const GameEngine = (() => {
     Object.keys(f.processing.storage).forEach(rId => {
       const qty = Number(f.processing.storage[rId] || 0);
       if (qty > 0 && FARM_RECIPES[rId]) {
-        const p = qty * FARM_RECIPES[rId].baseValue;
+        const rawCrop = FARM_CROPS[FARM_RECIPES[rId].inputCrop];
+        const rawCostPerUnit = (rawCrop && rawCrop.seedCost ? rawCrop.seedCost : 10) * (FARM_RECIPES[rId].inputQty || 1);
+        const p = qty * rawCostPerUnit;
         grandTotal += p;
         itemsSold += qty;
         f.processing.storage[rId] = 0;
@@ -6827,7 +6840,7 @@ const GameEngine = (() => {
     if (!f.processing.stats) f.processing.stats = { totalProcessed: 0, totalRevenue: 0 };
     f.processing.stats.totalRevenue = (f.processing.stats.totalRevenue || 0) + grandTotal;
 
-    recordPlayerActivity('بيع كامل المنتجات الغذائية المصنعة 💰', `بيع إجمالي ${itemsSold.toLocaleString()} عبوة مصنعة بعائد قياسي +${grandTotal.toLocaleString()} EGP نقداً!`, 'business');
+    recordPlayerActivity('تفريغ اضطراري للمنتجات المصنعة ♻️', `تسييل شامل لـ ${itemsSold.toLocaleString()} عبوة مصنعة بسعر التكلفة الخام (+${grandTotal.toLocaleString()} EGP).`, 'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(false);
 
@@ -6835,7 +6848,8 @@ const GameEngine = (() => {
       itemsSold,
       grandTotal,
       totalUnits: itemsSold,
-      totalRevenue: grandTotal
+      totalRevenue: grandTotal,
+      isEmergencyDump: true
     };
   }
 
@@ -6905,7 +6919,8 @@ const GameEngine = (() => {
     }
 
     const sellQty = (qty === null || qty <= 0 || qty > available) ? available : Math.floor(Number(qty));
-    const pricePerUnit = produceKey === 'milk' ? FARM_LIVESTOCK_CONFIG.cow.sellPrice : (produceKey === 'eggs' ? FARM_LIVESTOCK_CONFIG.chicken.sellPrice : (FARM_LIVESTOCK_CONFIG.cow.compostPrice || 80));
+    // Contract-Only Economy: Emergency dump recovers only nominal feeding cost (5 EGP, 0% profit)
+    const pricePerUnit = produceKey === 'compost' ? 10 : 5;
     const totalPrice = sellQty * pricePerUnit;
 
     f.livestock[produceKey] -= sellQty;
@@ -6914,7 +6929,7 @@ const GameEngine = (() => {
     f.livestock.stats.totalRevenue = (f.livestock.stats.totalRevenue || 0) + totalPrice;
 
     const names = { milk: 'حليب أبقار طازج', eggs: 'كراتين بيض مائدة', compost: 'سماد عضوي حيواني' };
-    recordPlayerActivity('بيع إنتاج حيواني 🥛', `بيع ${sellQty.toLocaleString()} وحدة من ${names[produceKey]} بسعر ${totalPrice.toLocaleString()} EGP نقداً!`, 'business');
+    recordPlayerActivity('تسييل اضطراري لإنتاج المزرعة ♻️', `تفريغ ${sellQty.toLocaleString()} وحدة من ${names[produceKey]} بسعر التكلفة الرمزية (+${totalPrice.toLocaleString()} EGP). أرباح الألبان الحقيقية في عقود B2B.`, 'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(false);
 
@@ -6926,7 +6941,8 @@ const GameEngine = (() => {
       revenue: totalPrice,
       totalRevenue: totalPrice,
       grandTotal: totalPrice,
-      remaining: f.livestock[produceKey]
+      remaining: f.livestock[produceKey],
+      isEmergencyDump: true
     };
   }
 
@@ -6941,13 +6957,14 @@ const GameEngine = (() => {
     const eggs = Number(ls.eggs || 0);
     const compost = Number(ls.compost || 0);
 
-    const milkPrice = milk * FARM_LIVESTOCK_CONFIG.cow.sellPrice;
-    const eggsPrice = eggs * FARM_LIVESTOCK_CONFIG.chicken.sellPrice;
-    const compostPrice = compost * (FARM_LIVESTOCK_CONFIG.cow.compostPrice || 80);
+    // Nominal feed recovery (0% profit)
+    const milkPrice = milk * 5;
+    const eggsPrice = eggs * 5;
+    const compostPrice = compost * 10;
     const grandTotal = milkPrice + eggsPrice + compostPrice;
 
     if (grandTotal <= 0) {
-      throw new Error("لا يوجد إنتاج حيواني أو بيض أو سماد جاهز للبيع حالياً.");
+      throw new Error("لا يوجد إنتاج حيواني أو بيض أو سماد جاهز لتسييله حالياً.");
     }
 
     ls.milk = 0;
@@ -7529,6 +7546,9 @@ const GameEngine = (() => {
     buyLivestock,
     sellLivestockProduce,
     sellAllLivestockProduce,
+    emergencyDumpFarmCrop: sellFarmCrop,
+    emergencyDumpProcessedGood: sellProcessedGood,
+    emergencyDumpLivestockProduce: sellLivestockProduce,
     applyCompostFertilizer,
     ensureFarmContracts,
     fulfillFarmContract,
