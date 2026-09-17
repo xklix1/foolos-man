@@ -1088,8 +1088,8 @@ const GameEngine = (() => {
       icon: 'fa-solid fa-egg',
       cost: 8000,
       maxCount: 10,
-      produceIntervalSeconds: 60,
-      eggYield: 3,
+      produceIntervalSeconds: 120, // دورة إنتاج البيض: دقيقتين (120 ثانية)
+      eggYield: 1, // كرتونة بيض واحدة لكل عنبر في الدورة
       sellPrice: 15, // Per carton of fresh eggs
       desc: 'سلالات دواجن عالية الإنتاجية للبيض الطازج السريع.'
     }
@@ -2864,13 +2864,13 @@ const GameEngine = (() => {
         }
 
         if (chickens > 0 && getFarmStoredUnits(state.farm) < maxCap) {
-          const chkInterval = (FARM_LIVESTOCK_CONFIG.chicken.produceIntervalSeconds || 60) * 1000;
+          const chkInterval = (FARM_LIVESTOCK_CONFIG.chicken.produceIntervalSeconds || 120) * 1000;
           if (!ls.lastChickenProduceAt) ls.lastChickenProduceAt = ls.lastProduceAt || nowMs;
           if (nowMs - ls.lastChickenProduceAt >= chkInterval) {
             ls.lastChickenProduceAt = nowMs;
             ls.lastProduceAt = nowMs;
             const spaceLeft = Math.max(0, maxCap - getFarmStoredUnits(state.farm));
-            const eggsGain = Math.min(spaceLeft, chickens * (FARM_LIVESTOCK_CONFIG.chicken.eggYield || 3));
+            const eggsGain = Math.min(spaceLeft, chickens * (FARM_LIVESTOCK_CONFIG.chicken.eggYield || 1));
             if (eggsGain > 0) {
               ls.eggs = (ls.eggs || 0) + eggsGain;
               if (!ls.stats) ls.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
