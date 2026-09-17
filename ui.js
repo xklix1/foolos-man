@@ -19840,7 +19840,9 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const cropSelect = document.getElementById('farm-quick-crop-select');
         const cropId = cropSelect ? cropSelect.value : 'wheat';
         try {
-          const res = GameEngine.plantAllPlots(cropId);
+          const plantFn = (GameEngine && (GameEngine.plantAllPlots || GameEngine.plantAllFarmPlots));
+          if (!plantFn) throw new Error("دالة زرع كل الأحواض غير متوفرة.");
+          const res = plantFn.call(GameEngine, cropId);
           playMenuSound('click');
           showToast('غرس شامل 🌱', `تم غرس ${res.plantedCount} حوض بنجاح بمحصول "${res.crop.name}"!`, 'success');
           renderFarmPanel();
