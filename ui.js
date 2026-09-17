@@ -2069,7 +2069,7 @@ const UIController = (() => {
     try {
       let players = await AppDB.getLeaderboard(forceRefresh);
       if (Array.isArray(players)) {
-        players = players.filter(p => p && String(p.username || '').trim().toLowerCase() !== 'newu');
+        players = players.filter(p => p && !['newu', 'khaled'].includes(String(p.username || '').trim().toLowerCase()));
       }
       tbody.innerHTML ='';
       if (typeof updateHourlyLeaderboardTimerUI ==='function') updateHourlyLeaderboardTimerUI();
@@ -7068,7 +7068,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       } else {
         players = await AppDB.getLeaderboard(forceRefresh);
         if (Array.isArray(players)) {
-          players = players.filter(p => p && String(p.username || '').trim().toLowerCase() !== 'newu');
+          players = players.filter(p => p && !['newu', 'khaled'].includes(String(p.username || '').trim().toLowerCase()));
         }
         cachedLeaderboard = players;
         lastLeaderboardFetchTime = now;
@@ -15241,6 +15241,15 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
   async function openPlayerProfileCard(username) {
     if (!username) return;
+    const cleanTarget = String(username).replace(/^@/, '').trim();
+    const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (window.GameEngine && window.GameEngine.getState && window.GameEngine.getState()?.username) || (window.AppDB && window.AppDB.getCurrentUsername && window.AppDB.getCurrentUsername()) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
+
+    // Strict Privacy Protection: Developer account "Khaled" cannot be viewed by any other player
+    if (cleanTarget.toLowerCase() === 'khaled' && curActive.toLowerCase() !== 'khaled') {
+      playMenuSound('error');
+      showToast('الملف الشخصي محمي 🔒', 'الملف التعريفي لهذا الحساب خاص وسري وغير متاح للعرض العام.', 'warning');
+      return;
+    }
     try {
       let pState;
       const now = Date.now();

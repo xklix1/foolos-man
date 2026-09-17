@@ -1192,6 +1192,11 @@ var AppDB = (() => {
     const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
     const isCurrentPlayer = Boolean(curActive && u.toLowerCase() === curActive.toLowerCase());
 
+    // Strict Privacy: Khaled's state cannot be read by any other player/client
+    if (u.toLowerCase() === 'khaled' && !isCurrentPlayer) {
+      return null;
+    }
+
     try {
       const local = isCurrentPlayer ? getDecryptedLocalState(`rasalmal_state_${u}`) : null;
       // Order by last_seen desc to always prioritize the most recently active state
@@ -2899,8 +2904,13 @@ var AppDB = (() => {
 
   async function getPlayerData(username) {
     if (!username) return null;
+    const cleanUser = String(username).replace(/^@/, '').trim();
+    const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
+    if (cleanUser.toLowerCase() === 'khaled' && curActive.toLowerCase() !== 'khaled') {
+      return null;
+    }
     try {
-      const rows = await _api(`players?username=eq.${encodeURIComponent(username)}&select=*`);
+      const rows = await _api(`players?username=eq.${encodeURIComponent(cleanUser)}&select=*`);
       return (rows && rows.length > 0) ? rows[0] : null;
     } catch (e) {
       return null;
@@ -3273,6 +3283,10 @@ var AppDB = (() => {
   async function adminGetPlayer(username) {
     if (!username) return null;
     const cleanUser = String(username).replace(/^@/, '').trim();
+    const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
+    if (cleanUser.toLowerCase() === 'khaled' && curActive.toLowerCase() !== 'khaled') {
+      return null;
+    }
     const rows = await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}&order=last_seen.desc&select=*`);
     if (!rows || rows.length === 0) return null;
     const r = rows[0];
@@ -3901,7 +3915,7 @@ var AppDB = (() => {
 
   async function adminRebuildLeaderboard() {
     const now = Date.now();
-    const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned,state&is_banned=eq.false&username=not.ilike.newu&order=net_worth.desc&limit=30');
+    const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned,state&is_banned=eq.false&username=not.in.(newu,khaled,Khaled)&order=net_worth.desc&limit=30');
 
     const topPlayers = (rows || [])
       .filter(r => !isHiddenPlayer(r.username))
@@ -4540,7 +4554,7 @@ var AppDB = (() => {
   }
 
   //  Unified Official Hourly Leaderboard Document Engine
-  const HIDDEN_TEST_USERS = new Set(['newu']);
+  const HIDDEN_TEST_USERS = new Set(['newu', 'khaled']);
   function isHiddenPlayer(username) {
     if (!username) return false;
     return HIDDEN_TEST_USERS.has(String(username).trim().toLowerCase());
@@ -4561,7 +4575,7 @@ var AppDB = (() => {
   async function _rebuildAndSaveLeaderboard() {
     const now = Date.now();
     try {
-      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&username=not.ilike.newu&order=net_worth.desc&limit=15');
+      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&username=not.in.(newu,khaled,Khaled)&order=net_worth.desc&limit=25');
       const topPlayers = (rows || [])
         .filter(r => !isHiddenPlayer(r.username))
         .slice(0, 10)
