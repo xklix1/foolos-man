@@ -20772,9 +20772,6 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
       let cHtml = '';
       filtered.forEach((c, idx) => {
-        const remMs = Math.max(0, c.expiresAt - now);
-        const remSec = Math.ceil(remMs / 1000);
-
         let available = 0;
         if (c.itemType === 'crop') {
           available = Number((farm.inventory && farm.inventory[c.itemId]) || 0);
@@ -20809,11 +20806,12 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               </div>
 
               ${!c.fulfilled ? `
-                <span class="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20 shrink-0">
-                  <i class="fa-solid fa-clock text-[9px] ml-1"></i>${formatCountdownHMS(remSec)}
+                <span class="text-[10px] font-bold text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded-lg border border-sky-500/20 shrink-0 flex items-center gap-1">
+                  <i class="fa-solid fa-infinity text-[10px]"></i>
+                  <span>مفتوح دون وقت</span>
                 </span>
               ` : `
-                <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20 shrink-0">
+                <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 shrink-0 flex items-center gap-1">
                   <i class="fa-solid fa-check mr-1"></i> مكتمل
                 </span>
               `}

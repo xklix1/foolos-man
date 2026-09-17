@@ -2829,20 +2829,9 @@ const GameEngine = (() => {
         }
       }
 
-      // Contracts Expiry & Refresh Check
-      if (state.farm.contracts && Array.isArray(state.farm.contracts.active)) {
-        let expiredFound = false;
-        state.farm.contracts.active.forEach(contract => {
-          if (contract && !contract.fulfilled && nowMs >= contract.expiresAt) {
-            expiredFound = true;
-          }
-        });
-        if (expiredFound) {
-          state.farm.contracts.active = state.farm.contracts.active.filter(c => c && !c.fulfilled && nowMs < c.expiresAt);
-          while (state.farm.contracts.active.length < 3) {
-            state.farm.contracts.active.push(generateSingleContract(state.farm.contracts.active.length + 1, state.farm));
-          }
-        }
+      // Keep Farm Contracts updated
+      if (state.farm.contracts && Array.isArray(state.farm.contracts.active) && state.farm.unlocked) {
+        ensureFarmContracts();
       }
     }
 
@@ -6889,7 +6878,6 @@ const GameEngine = (() => {
     const bonusMultiplier = client.payoutMultiplier || 1.5;
     const totalPayout = Math.floor(baseValue * bonusMultiplier);
     const now = getTrustedNow();
-    const expiresAt = dayEndTimestamp || (now + 24 * 60 * 60 * 1000);
 
     let itemName = '';
     let itemIcon = '';
@@ -6918,7 +6906,7 @@ const GameEngine = (() => {
       bonusPercent: Math.round((bonusMultiplier - 1) * 100),
       repReward: client.repBonus || 15,
       createdAt: now,
-      expiresAt,
+      expiresAt: null, // مفتوح بدون أي قيود زمنية
       fulfilled: false,
       fulfilledAt: null
     };
@@ -6939,27 +6927,33 @@ const GameEngine = (() => {
     }
     if (!Array.isArray(f.contracts.active)) f.contracts.active = [];
 
+    // إزالة أي توقيت انتهاء سابق لضمان عدم إجبار اللاعب على التسليم في فترة معينة
+    f.contracts.active.forEach(c => {
+      if (c) c.expiresAt = null;
+    });
+
     const now = getTrustedNow();
     const todayStr = new Date(now).toISOString().slice(0, 10);
 
-    // End of day (midnight)
-    const midnight = new Date(now);
-    midnight.setHours(23, 59, 59, 999);
-    const dayEndMs = midnight.getTime() > now ? midnight.getTime() : (now + 24 * 3600 * 1000);
-
-    // If new calendar day or if active contracts list is empty, regenerate 50 daily contracts
-    if (f.contracts.dailyDate !== todayStr || f.contracts.active.length < DAILY_CONTRACTS_TARGET) {
-      if (f.contracts.dailyDate !== todayStr) {
-        f.contracts.dailyDate = todayStr;
-        f.contracts.completedToday = 0;
-        f.contracts.revenueToday = 0;
-        f.contracts.active = [];
-      }
-
-      while (f.contracts.active.length < DAILY_CONTRACTS_TARGET) {
-        f.contracts.active.push(generateSingleContract(f.contracts.active.length + 1, f, dayEndMs));
-      }
+    // عند بدء يوم جديد: يتم أرشفة العقود المكتملة مسبقاً، بينما تظل كافة العقود غير المسلّمة محفوظة دون ضياع
+    if (f.contracts.dailyDate !== todayStr) {
+      f.contracts.dailyDate = todayStr;
+      f.contracts.completedCount = (f.contracts.completedCount || 0) + (f.contracts.completedToday || 0);
+      f.contracts.completedToday = 0;
+      f.contracts.revenueToday = 0;
+      // استبقاء كافة العقود غير المسلمة وحذف العقود التي سُلّمت فقط في الأيام السابقة
+      f.contracts.active = f.contracts.active.filter(c => c && !c.fulfilled);
     }
+
+    // استكمال عدد العقود المعروضة دائماً لتصل إلى 50 عقداً متاحاً
+    while (f.contracts.active.length < DAILY_CONTRACTS_TARGET) {
+      f.contracts.active.push(generateSingleContract(f.contracts.active.length + 1, f));
+    }
+
+    // ترقيم العقود 1 إلى 50
+    f.contracts.active.forEach((c, idx) => {
+      if (c) c.contractNumber = idx + 1;
+    });
 
     return f.contracts.active;
   }
@@ -6979,9 +6973,6 @@ const GameEngine = (() => {
     }
 
     const now = getTrustedNow();
-    if (now >= contract.expiresAt) {
-      throw new Error("انتهت صلاحية هذا العقد لليوم!");
-    }
 
     let availableQty = 0;
     if (contract.itemType === 'crop') {
