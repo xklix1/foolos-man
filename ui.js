@@ -20591,12 +20591,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     // Livestock Produce Grid
     const produceGrid = document.getElementById('farm-livestock-produce-grid');
     if (produceGrid) {
-      const cowDef = lConfig.cow || { sellPrice: 150 };
-      const chkDef = lConfig.chicken || { sellPrice: 40 };
+      const cowDef = lConfig.cow || { sellPrice: 45, maxCompost: 25 };
+      const chkDef = lConfig.chicken || { sellPrice: 15 };
 
       const milk = Number((farm.livestock && farm.livestock.milk) || 0);
       const eggs = Number((farm.livestock && farm.livestock.eggs) || 0);
       const compost = Number((farm.livestock && farm.livestock.compost) || 0);
+      const maxCompost = cowDef.maxCompost || 25;
+      const cowsOwned = Number((farm.livestock && farm.livestock.cows) || 0);
 
       produceGrid.innerHTML = `
         <!-- Milk -->
@@ -20666,17 +20668,33 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               <i class="fa-solid fa-leaf"></i>
             </div>
             <div>
-              <h4 class="font-black text-white text-xs">سماد عضوي طبيعي</h4>
+              <div class="flex items-center gap-1.5">
+                <h4 class="font-black text-white text-xs">سماد عضوي طبيعي</h4>
+                ${compost >= maxCompost ? '<span class="text-[8.5px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 shrink-0">الحفرة ممتلئة</span>' : ''}
+              </div>
               <p class="text-[10px] text-emerald-300 mt-0.5">تسريع نمو الأحواض 35% فوراً!</p>
             </div>
           </div>
-          <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-800/80">
-            <span class="text-slate-400">الكمية المتوفرة:</span>
-            <span class="numbers-font text-emerald-300 font-black text-sm">${compost.toLocaleString()} سماد</span>
+          
+          <div class="space-y-1 pt-1 border-t border-slate-800/80">
+            <div class="flex justify-between items-center text-xs font-bold">
+              <span class="text-slate-400">سعة حفرة التخمير:</span>
+              <span class="numbers-font ${compost >= maxCompost ? 'text-amber-400' : 'text-emerald-300'} font-black text-sm">${compost.toLocaleString()} / ${maxCompost} سماد</span>
+            </div>
+            <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
+              <div class="h-full rounded-full transition-all duration-300 ${compost >= maxCompost ? 'bg-amber-500' : 'bg-emerald-500'}" style="width: ${Math.min(100, Math.round((compost / maxCompost) * 100))}%"></div>
+            </div>
+            <div class="flex justify-between items-center text-[9px] text-slate-500 font-medium">
+              <span>دورة التخمير: 4 دقائق</span>
+              <span class="${cowsOwned > 0 ? (compost >= maxCompost ? 'text-amber-400' : 'text-emerald-400') : 'text-slate-500'} font-bold">
+                ${cowsOwned > 0 ? (compost >= maxCompost ? 'الإنتاج متوقف (ممتلئ)' : 'تخمير (+ ' + (cowsOwned >= 7 ? 3 : (cowsOwned >= 4 ? 2 : 1)) + ' سماد)') : 'يلزم تربية أبقار'}
+              </span>
+            </div>
           </div>
+
           <button ${compost < 5 ? 'disabled' : 'onclick="window.UI?.applyCompostFertilizer()"'} type="button"
             class="w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${compost >= 5 ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
-            ${compost >= 5 ? 'استخدام السماد (خصم 5 وحدات)' : 'يلزم 5 وحدات سماد'}
+            ${compost >= 5 ? 'استخدام السماد (خصم 5 وحدات)' : 'يلزم 5 وحدات سماد (' + compost + '/5)'}
           </button>
         </div>
       `;

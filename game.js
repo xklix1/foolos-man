@@ -1074,10 +1074,12 @@ const GameEngine = (() => {
       cost: 25000,
       maxCount: 8,
       produceIntervalSeconds: 90,
+      compostIntervalSeconds: 240, // دورة تخمير السماد العضوي: 4 دقائق
       milkYield: 2,
-      compostYield: 1,
+      compostYield: 1, // إنتاج متدرج حسب حجم القطيع (1 إلى 3 وحدات)
+      maxCompost: 25, // الحد الأقصى لسعة حفرة التخمير (5 شحنات تسريع)
       sellPrice: 45, // Per bottle of fresh milk
-      compostPrice: 30,
+      compostPrice: 10,
       desc: 'أبقار أوروبية عالية الإدرار تنتج حليباً طازجاً وسماداً عضويًا ثميناً للأراضي.'
     },
     chicken: {
@@ -2831,14 +2833,32 @@ const GameEngine = (() => {
             ls.lastProduceAt = nowMs;
             const spaceLeft = Math.max(0, maxCap - getFarmStoredUnits(state.farm));
             const milkGain = Math.min(spaceLeft, cows * (FARM_LIVESTOCK_CONFIG.cow.milkYield || 2));
-            const compostGain = Math.min(Math.max(0, spaceLeft - milkGain), cows * (FARM_LIVESTOCK_CONFIG.cow.compostYield || 1));
             if (milkGain > 0) {
               ls.milk = (ls.milk || 0) + milkGain;
               if (!ls.stats) ls.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
               ls.stats.totalMilk = (ls.stats.totalMilk || 0) + milkGain;
             }
-            if (compostGain > 0) {
-              ls.compost = (ls.compost || 0) + compostGain;
+          }
+        }
+
+        // Compost Fermentation Cycle (Dedicated 4-min cycle, capped at 25 units)
+        if (cows > 0) {
+          const compostInterval = (FARM_LIVESTOCK_CONFIG.cow.compostIntervalSeconds || 240) * 1000;
+          const maxCompostCap = FARM_LIVESTOCK_CONFIG.cow.maxCompost || 25;
+          const currentCompost = Number(ls.compost || 0);
+
+          if (!ls.lastCompostProduceAt) ls.lastCompostProduceAt = ls.lastProduceAt || nowMs;
+          if (nowMs - ls.lastCompostProduceAt >= compostInterval) {
+            ls.lastCompostProduceAt = nowMs;
+            if (currentCompost < maxCompostCap && getFarmStoredUnits(state.farm) < maxCap) {
+              // Scaled yield: 1-3 cows = 1, 4-6 cows = 2, 7-8 cows = 3
+              const baseGain = cows >= 7 ? 3 : (cows >= 4 ? 2 : 1);
+              const spaceLeft = Math.max(0, maxCap - getFarmStoredUnits(state.farm));
+              const pitSpaceLeft = Math.max(0, maxCompostCap - currentCompost);
+              const compostGain = Math.min(spaceLeft, Math.min(pitSpaceLeft, baseGain));
+              if (compostGain > 0) {
+                ls.compost = currentCompost + compostGain;
+              }
             }
           }
         }
@@ -6222,6 +6242,9 @@ const GameEngine = (() => {
       };
     }
     if (!f.livestock.stats) f.livestock.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
+    if (typeof f.livestock.compost !== 'number' || f.livestock.compost < 0) f.livestock.compost = 0;
+    const maxCompostCap = (FARM_LIVESTOCK_CONFIG && FARM_LIVESTOCK_CONFIG.cow && FARM_LIVESTOCK_CONFIG.cow.maxCompost) || 25;
+    if (f.livestock.compost > maxCompostCap) f.livestock.compost = maxCompostCap;
 
     if (!f.contracts || typeof f.contracts !== 'object') {
       f.contracts = {
@@ -6989,6 +7012,7 @@ const GameEngine = (() => {
   }
 
   function applyCompostFertilizer() {
+    assertFarmRateLimit('applyCompost', 400);
     if (state.jailTimer > 0) throw new Error("أنت مسجون!");
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
