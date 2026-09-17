@@ -20465,7 +20465,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
           <div class="grid grid-cols-2 gap-2 p-3 bg-slate-950/70 rounded-xl border border-slate-800 text-[11px]">
             <div>
-              <span class="text-slate-400 block text-[10px]">الإنتاج الدوري (كل 30ث)</span>
+              <span class="text-slate-400 block text-[10px]">الإنتاج الدوري (كل ${cowDef.produceIntervalSeconds || 90}ث)</span>
               <span class="font-bold text-emerald-400">+2 حليب و +1 سماد / بقرة</span>
             </div>
             <div>
@@ -20507,7 +20507,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
           <div class="grid grid-cols-2 gap-2 p-3 bg-slate-950/70 rounded-xl border border-slate-800 text-[11px]">
             <div>
-              <span class="text-slate-400 block text-[10px]">الإنتاج الدوري (كل 20ث)</span>
+              <span class="text-slate-400 block text-[10px]">الإنتاج الدوري (كل ${chkDef.produceIntervalSeconds || 60}ث)</span>
               <span class="font-bold text-cyan-400">+3 كرتونة بيض / عنبر</span>
             </div>
             <div>

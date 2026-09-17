@@ -912,9 +912,9 @@ const GameEngine = (() => {
     },
     fertilizers: {
       1: { name: 'تربة اعتيادية', cost: 0, yieldBonus: 0, icon: 'fa-solid fa-mound', desc: 'الإنتاج الطبيعي للمحصول' },
-      2: { name: 'سماد عضوي نباتي', cost: 40000, yieldBonus: 0.25, icon: 'fa-solid fa-leaf', desc: 'زيادة كمية المحصول بنسبة +25%' },
-      3: { name: 'سماد نيتروجيني فائق NPK', cost: 200000, yieldBonus: 0.60, icon: 'fa-solid fa-flask-vial', desc: 'زيادة كمية المحصول بنسبة +60%' },
-      4: { name: 'مخصبات نانو بيوتكنولوجي', cost: 800000, yieldBonus: 1.20, icon: 'fa-solid fa-dna', desc: 'مضاعفة كمية المحصول بنسبة +120%' }
+      2: { name: 'سماد عضوي نباتي', cost: 40000, yieldBonus: 0.15, icon: 'fa-solid fa-leaf', desc: 'زيادة كمية المحصول بنسبة +15%' },
+      3: { name: 'سماد نيتروجيني فائق NPK', cost: 200000, yieldBonus: 0.35, icon: 'fa-solid fa-flask-vial', desc: 'زيادة كمية المحصول بنسبة +35%' },
+      4: { name: 'مخصبات نانو بيوتكنولوجي', cost: 800000, yieldBonus: 0.60, icon: 'fa-solid fa-dna', desc: 'زيادة كمية المحصول بنسبة +60%' }
     },
     workerCost: 30000,
     maxWorkers: 4
@@ -926,10 +926,10 @@ const GameEngine = (() => {
       name: 'القمح الذهبي',
       icon: 'fa-solid fa-wheat-awn',
       color: 'amber',
-      seedCost: 50,
+      seedCost: 60,
       growSeconds: 60,
       baseYield: 10,
-      sellPrice: 10,
+      sellPrice: 8,
       desc: 'محصول سريع النمو يوفر سيولة نقدية لحظية وسريعة للمزرعة.'
     },
     tomato: {
@@ -939,8 +939,8 @@ const GameEngine = (() => {
       color: 'rose',
       seedCost: 250,
       growSeconds: 180,
-      baseYield: 15,
-      sellPrice: 35,
+      baseYield: 12,
+      sellPrice: 28,
       desc: 'سلة خضراوات طازجة ذات طلب عالي في أسواق التجزئة.'
     },
     strawberry: {
@@ -950,8 +950,8 @@ const GameEngine = (() => {
       color: 'red',
       seedCost: 1000,
       growSeconds: 480,
-      baseYield: 20,
-      sellPrice: 120,
+      baseYield: 12,
+      sellPrice: 110,
       desc: 'محصول صيفي فاخر يباع بأسعار مرتفعة للفنادق والمطاعم.'
     },
     coffee: {
@@ -961,8 +961,8 @@ const GameEngine = (() => {
       color: 'yellow',
       seedCost: 5000,
       growSeconds: 1200,
-      baseYield: 25,
-      sellPrice: 500,
+      baseYield: 14,
+      sellPrice: 470,
       desc: 'بن يمني وأثيوبي أصيل ذو عائد استثماري مجزٍ لكبار المستثمرين.'
     },
     dates: {
@@ -972,8 +972,8 @@ const GameEngine = (() => {
       color: 'emerald',
       seedCost: 25000,
       growSeconds: 3600,
-      baseYield: 30,
-      sellPrice: 2500,
+      baseYield: 15,
+      sellPrice: 2200,
       desc: 'تمور المجدول الملكية الفاخرة المخصصة للتصدير الخارجي.'
     },
     saffron: {
@@ -981,11 +981,11 @@ const GameEngine = (() => {
       name: 'الزعفران الإمبراطوري',
       icon: 'fa-solid fa-spa',
       color: 'purple',
-      seedCost: 150000,
+      seedCost: 100000,
       growSeconds: 10800,
-      baseYield: 40,
-      sellPrice: 12000,
-      desc: 'الذهب الأحمر وأغلى توابل الأرض، أرباح خيالية واستثنائية.'
+      baseYield: 15,
+      sellPrice: 9000,
+      desc: 'الذهب الأحمر وأغلى توابل الأرض، أرباح استثمارية نوعية ومجزية.'
     }
   };
 
@@ -999,7 +999,7 @@ const GameEngine = (() => {
       inputCrop: 'wheat',
       inputQty: 5,
       outputQty: 1,
-      baseValue: 90, // Raw 5 wheat * 10 = 50 -> bread value 90 (+80% value add)
+      baseValue: 55, // Raw 5 wheat * 8 = 40 -> bread value 55 (+37% value add)
       desc: 'دقيق أبيض نقي ومخبوزات هشة تطلبها المخابز الكبرى.'
     },
     tomato_paste: {
@@ -1010,7 +1010,7 @@ const GameEngine = (() => {
       inputCrop: 'tomato',
       inputQty: 5,
       outputQty: 1,
-      baseValue: 300, // Raw 5 tomato * 35 = 175 -> paste value 300 (+71% value add)
+      baseValue: 185, // Raw 5 tomato * 28 = 140 -> paste value 185 (+32% value add)
       desc: 'معجون طماطم مركز معبأ وفق مواصفات الجودة العالمية.'
     },
     strawberry_jam: {
@@ -1021,7 +1021,7 @@ const GameEngine = (() => {
       inputCrop: 'strawberry',
       inputQty: 4,
       outputQty: 1,
-      baseValue: 920, // Raw 4 strawberry * 120 = 480 -> jam value 920 (+91% value add)
+      baseValue: 580, // Raw 4 strawberry * 110 = 440 -> jam value 580 (+32% value add)
       desc: 'مربى فواكه طبيعية نقية بدون مواد حافظة للفنادق الراقية.'
     },
     premium_coffee: {
@@ -1032,7 +1032,7 @@ const GameEngine = (() => {
       inputCrop: 'coffee',
       inputQty: 4,
       outputQty: 1,
-      baseValue: 4200, // Raw 4 coffee * 500 = 2000 -> coffee bag 4200 (+110% value add)
+      baseValue: 2500, // Raw 4 coffee * 470 = 1880 -> coffee bag 2500 (+33% value add)
       desc: 'بن محمص بعناية فائقة وتعبئة مفرغة من الهواء لرواد المقاهي الفخمة.'
     },
     stuffed_dates: {
@@ -1043,7 +1043,7 @@ const GameEngine = (() => {
       inputCrop: 'dates',
       inputQty: 4,
       outputQty: 1,
-      baseValue: 22000, // Raw 4 dates * 2500 = 10000 -> gourmet box 22000 (+120% value add)
+      baseValue: 11800, // Raw 4 dates * 2200 = 8800 -> gourmet box 11800 (+34% value add)
       desc: 'تمور مجدول مختارة حبة بحبة ومحشوة بأفخر أنواع الفستق واللوز.'
     },
     saffron_essence: {
@@ -1054,7 +1054,7 @@ const GameEngine = (() => {
       inputCrop: 'saffron',
       inputQty: 3,
       outputQty: 1,
-      baseValue: 110000, // Raw 3 saffron * 12000 = 36000 -> essence vial 110000 (+205% value add)
+      baseValue: 36000, // Raw 3 saffron * 9000 = 27000 -> essence vial 36000 (+33% value add)
       desc: 'إكسير وزيت نقي مستخلص لمصنعي العطور الملكية ومستحضرات التجميل العالمية.'
     }
   };
@@ -1067,11 +1067,11 @@ const GameEngine = (() => {
       icon: 'fa-solid fa-cow',
       cost: 25000,
       maxCount: 8,
-      produceIntervalSeconds: 30,
+      produceIntervalSeconds: 90,
       milkYield: 2,
       compostYield: 1,
-      sellPrice: 150, // Per bottle of fresh milk
-      compostPrice: 80,
+      sellPrice: 75, // Per bottle of fresh milk
+      compostPrice: 50,
       desc: 'أبقار أوروبية عالية الإدرار تنتج حليباً طازجاً وسماداً عضويًا ثميناً للأراضي.'
     },
     chicken: {
@@ -1080,20 +1080,20 @@ const GameEngine = (() => {
       icon: 'fa-solid fa-egg',
       cost: 8000,
       maxCount: 10,
-      produceIntervalSeconds: 20,
+      produceIntervalSeconds: 60,
       eggYield: 3,
-      sellPrice: 40, // Per carton of fresh eggs
+      sellPrice: 25, // Per carton of fresh eggs
       desc: 'سلالات دواجن عالية الإنتاجية للبيض الطازج السريع.'
     }
   };
 
   // --- عملاء عقود التوريد للشركات والفنادق (B2B Supply Contract Clients) ---
   const FARM_CONTRACT_CLIENTS = [
-    { name: 'فنادق فور سيزونز الفاخرة', type: 'luxury_hotel', icon: 'fa-solid fa-hotel', repBonus: 20, payoutMultiplier: 1.55 },
-    { name: 'سلسلة كافيهات وكاريبو بريميوم', type: 'cafe_chain', icon: 'fa-solid fa-mug-saucer', repBonus: 15, payoutMultiplier: 1.50 },
-    { name: 'هايبر ماركت كارفور وسعودي', type: 'hypermarket', icon: 'fa-solid fa-cart-shopping', repBonus: 15, payoutMultiplier: 1.45 },
-    { name: 'سلسلة مطاعم قصر الكبابجي والريف', type: 'restaurant_chain', icon: 'fa-solid fa-utensils', repBonus: 15, payoutMultiplier: 1.45 },
-    { name: 'مختبرات الأدوية ومستحضرات التجميل الملكية', type: 'pharma_cosmetics', icon: 'fa-solid fa-flask', repBonus: 30, payoutMultiplier: 1.70 }
+    { name: 'فنادق فور سيزونز الفاخرة', type: 'luxury_hotel', icon: 'fa-solid fa-hotel', repBonus: 20, payoutMultiplier: 1.25 },
+    { name: 'سلسلة كافيهات وكاريبو بريميوم', type: 'cafe_chain', icon: 'fa-solid fa-mug-saucer', repBonus: 15, payoutMultiplier: 1.20 },
+    { name: 'هايبر ماركت كارفور وسعودي', type: 'hypermarket', icon: 'fa-solid fa-cart-shopping', repBonus: 15, payoutMultiplier: 1.18 },
+    { name: 'سلسلة مطاعم قصر الكبابجي والريف', type: 'restaurant_chain', icon: 'fa-solid fa-utensils', repBonus: 15, payoutMultiplier: 1.18 },
+    { name: 'مختبرات الأدوية ومستحضرات التجميل الملكية', type: 'pharma_cosmetics', icon: 'fa-solid fa-flask', repBonus: 30, payoutMultiplier: 1.30 }
   ];
 
   // --- Initial Default Player State ---
@@ -1727,9 +1727,9 @@ const GameEngine = (() => {
       if (playerState.farm.livestock) {
         farmTotal += (Number(playerState.farm.livestock.cows || 0)) * 25000;
         farmTotal += (Number(playerState.farm.livestock.chickens || 0)) * 8000;
-        farmTotal += (Number(playerState.farm.livestock.milk || 0)) * 150;
-        farmTotal += (Number(playerState.farm.livestock.eggs || 0)) * 40;
-        farmTotal += (Number(playerState.farm.livestock.compost || 0)) * 80;
+        farmTotal += (Number(playerState.farm.livestock.milk || 0)) * ((typeof FARM_LIVESTOCK_CONFIG !== 'undefined' && FARM_LIVESTOCK_CONFIG.cow && FARM_LIVESTOCK_CONFIG.cow.sellPrice) || 75);
+        farmTotal += (Number(playerState.farm.livestock.eggs || 0)) * ((typeof FARM_LIVESTOCK_CONFIG !== 'undefined' && FARM_LIVESTOCK_CONFIG.chicken && FARM_LIVESTOCK_CONFIG.chicken.sellPrice) || 25);
+        farmTotal += (Number(playerState.farm.livestock.compost || 0)) * ((typeof FARM_LIVESTOCK_CONFIG !== 'undefined' && FARM_LIVESTOCK_CONFIG.cow && FARM_LIVESTOCK_CONFIG.cow.compostPrice) || 50);
       }
       // Raw crops inventory
       if (playerState.farm.inventory && typeof FARM_CROPS !== 'undefined') {
@@ -2805,14 +2805,15 @@ const GameEngine = (() => {
       // Livestock Periodic Produce (Milk, Eggs, Compost)
       if (state.farm.livestock) {
         const ls = state.farm.livestock;
-        if (!ls.lastProduceAt) ls.lastProduceAt = nowMs;
-        const elapsedSec = (nowMs - ls.lastProduceAt) / 1000;
-        
-        if (elapsedSec >= 25) {
-          ls.lastProduceAt = nowMs;
-          const cows = Number(ls.cows || 0);
-          const chickens = Number(ls.chickens || 0);
-          if (cows > 0) {
+        const cows = Number(ls.cows || 0);
+        const chickens = Number(ls.chickens || 0);
+
+        if (cows > 0) {
+          const cowInterval = (FARM_LIVESTOCK_CONFIG.cow.produceIntervalSeconds || 90) * 1000;
+          if (!ls.lastCowProduceAt) ls.lastCowProduceAt = ls.lastProduceAt || nowMs;
+          if (nowMs - ls.lastCowProduceAt >= cowInterval) {
+            ls.lastCowProduceAt = nowMs;
+            ls.lastProduceAt = nowMs;
             const milkGain = cows * (FARM_LIVESTOCK_CONFIG.cow.milkYield || 2);
             const compostGain = cows * (FARM_LIVESTOCK_CONFIG.cow.compostYield || 1);
             ls.milk = (ls.milk || 0) + milkGain;
@@ -2820,7 +2821,14 @@ const GameEngine = (() => {
             if (!ls.stats) ls.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
             ls.stats.totalMilk = (ls.stats.totalMilk || 0) + milkGain;
           }
-          if (chickens > 0) {
+        }
+
+        if (chickens > 0) {
+          const chkInterval = (FARM_LIVESTOCK_CONFIG.chicken.produceIntervalSeconds || 60) * 1000;
+          if (!ls.lastChickenProduceAt) ls.lastChickenProduceAt = ls.lastProduceAt || nowMs;
+          if (nowMs - ls.lastChickenProduceAt >= chkInterval) {
+            ls.lastChickenProduceAt = nowMs;
+            ls.lastProduceAt = nowMs;
             const eggsGain = chickens * (FARM_LIVESTOCK_CONFIG.chicken.eggYield || 3);
             ls.eggs = (ls.eggs || 0) + eggsGain;
             if (!ls.stats) ls.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
@@ -6853,24 +6861,24 @@ const GameEngine = (() => {
 
     const candidates = [];
     // 1. Raw Crops (balanced requirements)
-    candidates.push({ type: 'crop', id: 'wheat', basePrice: 10, min: 15, max: 60 });
-    candidates.push({ type: 'crop', id: 'tomato', basePrice: 35, min: 12, max: 45 });
-    candidates.push({ type: 'crop', id: 'strawberry', basePrice: 120, min: 8, max: 30 });
-    if (landLvl >= 2) candidates.push({ type: 'crop', id: 'coffee', basePrice: 500, min: 6, max: 20 });
-    if (landLvl >= 3) candidates.push({ type: 'crop', id: 'dates', basePrice: 2500, min: 4, max: 12 });
-    if (landLvl >= 4) candidates.push({ type: 'crop', id: 'saffron', basePrice: 12000, min: 2, max: 6 });
+    candidates.push({ type: 'crop', id: 'wheat', basePrice: FARM_CROPS.wheat.sellPrice, min: 15, max: 60 });
+    candidates.push({ type: 'crop', id: 'tomato', basePrice: FARM_CROPS.tomato.sellPrice, min: 12, max: 45 });
+    candidates.push({ type: 'crop', id: 'strawberry', basePrice: FARM_CROPS.strawberry.sellPrice, min: 8, max: 30 });
+    if (landLvl >= 2) candidates.push({ type: 'crop', id: 'coffee', basePrice: FARM_CROPS.coffee.sellPrice, min: 6, max: 20 });
+    if (landLvl >= 3) candidates.push({ type: 'crop', id: 'dates', basePrice: FARM_CROPS.dates.sellPrice, min: 4, max: 12 });
+    if (landLvl >= 4) candidates.push({ type: 'crop', id: 'saffron', basePrice: FARM_CROPS.saffron.sellPrice, min: 2, max: 6 });
 
     // 2. Processed Recipes (value-add goods)
-    candidates.push({ type: 'processed', id: 'flour_bread', basePrice: 90, min: 4, max: 20 });
-    candidates.push({ type: 'processed', id: 'tomato_paste', basePrice: 300, min: 3, max: 15 });
-    candidates.push({ type: 'processed', id: 'strawberry_jam', basePrice: 920, min: 2, max: 10 });
-    if (landLvl >= 2) candidates.push({ type: 'processed', id: 'premium_coffee', basePrice: 4200, min: 2, max: 6 });
-    if (landLvl >= 3) candidates.push({ type: 'processed', id: 'stuffed_dates', basePrice: 22000, min: 1, max: 4 });
-    if (landLvl >= 4) candidates.push({ type: 'processed', id: 'saffron_essence', basePrice: 110000, min: 1, max: 2 });
+    candidates.push({ type: 'processed', id: 'flour_bread', basePrice: FARM_RECIPES.flour_bread.baseValue, min: 4, max: 20 });
+    candidates.push({ type: 'processed', id: 'tomato_paste', basePrice: FARM_RECIPES.tomato_paste.baseValue, min: 3, max: 15 });
+    candidates.push({ type: 'processed', id: 'strawberry_jam', basePrice: FARM_RECIPES.strawberry_jam.baseValue, min: 2, max: 10 });
+    if (landLvl >= 2) candidates.push({ type: 'processed', id: 'premium_coffee', basePrice: FARM_RECIPES.premium_coffee.baseValue, min: 2, max: 6 });
+    if (landLvl >= 3) candidates.push({ type: 'processed', id: 'stuffed_dates', basePrice: FARM_RECIPES.stuffed_dates.baseValue, min: 1, max: 4 });
+    if (landLvl >= 4) candidates.push({ type: 'processed', id: 'saffron_essence', basePrice: FARM_RECIPES.saffron_essence.baseValue, min: 1, max: 2 });
 
     // 3. Livestock Produce
-    candidates.push({ type: 'livestock', id: 'milk', basePrice: 150, min: 8, max: 30 });
-    candidates.push({ type: 'livestock', id: 'eggs', basePrice: 40, min: 15, max: 50 });
+    candidates.push({ type: 'livestock', id: 'milk', basePrice: FARM_LIVESTOCK_CONFIG.cow.sellPrice, min: 8, max: 30 });
+    candidates.push({ type: 'livestock', id: 'eggs', basePrice: FARM_LIVESTOCK_CONFIG.chicken.sellPrice, min: 15, max: 50 });
 
     const choice = candidates[Math.floor(Math.random() * candidates.length)];
     const qty = Math.floor(choice.min + Math.random() * (choice.max - choice.min + 1));
