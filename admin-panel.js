@@ -5327,7 +5327,7 @@
       // 2. Render Top 5 Richest comparison
       const topRichestContainer = document.getElementById('adm-top-richest-container');
       if (topRichestContainer && stats.topRichest) {
-        const top5 = (stats.topRichest || []).filter(p => p && String(p.username || '').trim().toLowerCase() !== 'newu').slice(0, 5);
+        const top5 = (stats.topRichest || []).filter(p => p && !['newu', 'khaled', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(String(p.username || '').trim().toLowerCase())).slice(0, 5);
         const maxWorth = top5.length > 0 ? (top5[0].netWorth || 1) : 1;
 
         topRichestContainer.innerHTML ='';

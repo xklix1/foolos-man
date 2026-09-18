@@ -333,8 +333,8 @@ const UIController = (() => {
     const raw = getActiveUsernameSafe();
     if (!raw || typeof raw !== 'string') return false;
     const clean = raw.trim().toLowerCase();
-    // Exclusively and literally 'khaled' only (length exactly 6, no additional words or prefixes)
-    return clean === 'khaled' && clean.length === 6;
+    // Developer and QA testing accounts (Khaled, rasalmal, rasalmal1, rasalmal2)
+    return ['khaled', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(clean);
   }
 
   function isFarmTesterAccount() {
@@ -2038,7 +2038,7 @@ const UIController = (() => {
     try {
       let players = await AppDB.getLeaderboard(forceRefresh);
       if (Array.isArray(players)) {
-        players = players.filter(p => p && !['newu', 'khaled'].includes(String(p.username || '').trim().toLowerCase()));
+        players = players.filter(p => p && !['newu', 'khaled', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(String(p.username || '').trim().toLowerCase()));
       }
       tbody.innerHTML ='';
       if (typeof updateHourlyLeaderboardTimerUI ==='function') updateHourlyLeaderboardTimerUI();
@@ -7055,7 +7055,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       } else {
         players = await AppDB.getLeaderboard(forceRefresh);
         if (Array.isArray(players)) {
-          players = players.filter(p => p && !['newu', 'khaled'].includes(String(p.username || '').trim().toLowerCase()));
+          players = players.filter(p => p && !['newu', 'khaled', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(String(p.username || '').trim().toLowerCase()));
         }
         cachedLeaderboard = players;
         lastLeaderboardFetchTime = now;
@@ -11142,7 +11142,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       // 2. Render Top 5 Richest comparison
       const topRichestContainer = document.getElementById('adm-top-richest-container');
       if (topRichestContainer && stats.topRichest) {
-        const top5 = stats.topRichest;
+        const top5 = (stats.topRichest || []).filter(p => p && !['newu', 'khaled', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(String(p.username || '').trim().toLowerCase())).slice(0, 5);
         const maxWorth = top5.length > 0 ? (top5[0].netWorth || 1) : 1;
 
         topRichestContainer.innerHTML ='';
@@ -15242,8 +15242,9 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const cleanTarget = String(username).replace(/^@/, '').trim();
     const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (window.GameEngine && window.GameEngine.getState && window.GameEngine.getState()?.username) || (window.AppDB && window.AppDB.getCurrentUsername && window.AppDB.getCurrentUsername()) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
 
-    // Strict Privacy Protection: Developer account "Khaled" cannot be viewed by any other player
-    if (cleanTarget.toLowerCase() === 'khaled' && curActive.toLowerCase() !== 'khaled') {
+    // Strict Privacy Protection: Developer & Tester accounts cannot be viewed by regular players
+    const hiddenAccounts = ['khaled', 'rasalmal', 'rasalmal1', 'rasalmal2', 'newu'];
+    if (hiddenAccounts.includes(cleanTarget.toLowerCase()) && !hiddenAccounts.includes(curActive.toLowerCase())) {
       playMenuSound('error');
       showToast('الملف الشخصي محمي 🔒', 'الملف التعريفي لهذا الحساب خاص وسري وغير متاح للعرض العام.', 'warning');
       return;

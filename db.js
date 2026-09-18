@@ -3989,7 +3989,7 @@ var AppDB = (() => {
 
   async function adminRebuildLeaderboard() {
     const now = Date.now();
-    const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned,state&is_banned=eq.false&username=not.in.(newu,khaled,Khaled)&order=net_worth.desc&limit=30');
+    const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned,state&is_banned=eq.false&username=not.in.(newu,khaled,Khaled,rasalmal,rasalmal1,rasalmal2,Rasalmal,Rasalmal1,Rasalmal2)&order=net_worth.desc&limit=30');
 
     const topPlayers = (rows || [])
       .filter(r => !isHiddenPlayer(r.username))
@@ -4628,7 +4628,7 @@ var AppDB = (() => {
   }
 
   //  Unified Official Hourly Leaderboard Document Engine
-  const HIDDEN_TEST_USERS = new Set(['newu', 'khaled']);
+  const HIDDEN_TEST_USERS = new Set(['newu', 'khaled', 'rasalmal', 'rasalmal1', 'rasalmal2']);
   function isHiddenPlayer(username) {
     if (!username) return false;
     return HIDDEN_TEST_USERS.has(String(username).trim().toLowerCase());
@@ -4649,7 +4649,7 @@ var AppDB = (() => {
   async function _rebuildAndSaveLeaderboard() {
     const now = Date.now();
     try {
-      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&username=not.in.(newu,khaled,Khaled)&order=net_worth.desc&limit=25');
+      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&username=not.in.(newu,khaled,Khaled,rasalmal,rasalmal1,rasalmal2,Rasalmal,Rasalmal1,Rasalmal2)&order=net_worth.desc&limit=25');
       const topPlayers = (rows || [])
         .filter(r => !isHiddenPlayer(r.username))
         .slice(0, 10)
