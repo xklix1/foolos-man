@@ -1244,7 +1244,134 @@ const GameEngine = (() => {
     stockTradeCooldownUntil: 0
   };
 
-  let state = { ...INITIAL_STATE };
+  // ─────────────────────────────────────────────────────────
+  //  🛡️ IN-MEMORY TAMPER SHIELD & SHADOW VAULT (ANTI-F12 CHEAT)
+  // ─────────────────────────────────────────────────────────
+  const _TamperShield = (() => {
+    let _vaultCash = 0;
+    let _vaultBank = 0;
+    let _vaultDirtyCash = 0;
+    let _isInitialized = false;
+    let _isCompromised = false;
+    const _sessionSalt = 'rsm_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+    let _currentSignature = '';
+
+    function _calcSig(c, b, d) {
+      const cleanC = Number(c || 0).toFixed(2);
+      const cleanB = Number(b || 0).toFixed(2);
+      const cleanD = Number(d || 0).toFixed(2);
+      const raw = `${cleanC}|${cleanB}|${cleanD}|${_sessionSalt}`;
+      let h = 0x811c9dc5;
+      for (let i = 0; i < raw.length; i++) {
+        h ^= raw.charCodeAt(i);
+        h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
+      }
+      return (h >>> 0).toString(16);
+    }
+
+    function sync(c, b, d) {
+      _vaultCash = Number(c || 0);
+      _vaultBank = Number(b || 0);
+      _vaultDirtyCash = Number(d || 0);
+      _currentSignature = _calcSig(_vaultCash, _vaultBank, _vaultDirtyCash);
+      _isInitialized = true;
+    }
+
+    function verifyStateIntegrity(st = state) {
+      if (!_isInitialized || !st) return true;
+      if (_isCompromised) return false;
+      const expected = _calcSig(_vaultCash, _vaultBank, _vaultDirtyCash);
+      if (expected !== _currentSignature) {
+        _isCompromised = true;
+        return false;
+      }
+      const diffCash = Math.abs(Number(st.cash || 0) - _vaultCash);
+      const diffBank = Math.abs(Number(st.bank || 0) - _vaultBank);
+      const diffDirty = Math.abs(Number(st.dirtyCash || 0) - _vaultDirtyCash);
+      if (diffCash > 0.05 || diffBank > 0.05 || diffDirty > 0.05) {
+        console.warn(`[TamperShield] Unauthorized in-memory state divergence! State: Cash=${st.cash}, Bank=${st.bank} vs Vault: Cash=${_vaultCash}, Bank=${_vaultBank}`);
+        _isCompromised = true;
+        return false;
+      }
+      return true;
+    }
+
+    function markCompromised(reason = 'Unknown') {
+      console.warn(`[TamperShield] Security alert: ${reason}`);
+      _isCompromised = true;
+    }
+
+    function isCompromised() {
+      return _isCompromised;
+    }
+
+    function getVault() {
+      return { cash: _vaultCash, bank: _vaultBank, dirtyCash: _vaultDirtyCash };
+    }
+
+    return {
+      sync,
+      verifyStateIntegrity,
+      markCompromised,
+      isCompromised,
+      getVault
+    };
+  })();
+
+  function _wrapStateWithShield(rawObj) {
+    if (!rawObj || typeof rawObj !== 'object') return rawObj;
+    _TamperShield.sync(rawObj.cash, rawObj.bank, rawObj.dirtyCash);
+    return new Proxy(rawObj, {
+      get(target, prop) {
+        return target[prop];
+      },
+      set(target, prop, value) {
+        if (prop === 'cash' || prop === 'bank' || prop === 'dirtyCash' || prop === 'netWorth') {
+          const stack = new Error().stack || '';
+          const isConsoleOrEval = stack.includes('<anonymous>') || stack.includes('evalmachine') || stack.includes('debugger eval');
+          const isFromAuthorizedScript = stack.includes('game.js') || stack.includes('ui.js') || stack.includes('db.js') || stack.includes('server-client-bridge.js') || stack.includes('index.html');
+
+          if (isConsoleOrEval || !isFromAuthorizedScript) {
+            console.warn(`[TamperShield] 🚫 Neutralized unauthorized direct console manipulation on "${prop}"! Attempted value: ${value}`);
+            _TamperShield.markCompromised(`Unauthorized console mutation on ${prop}`);
+            const vault = _TamperShield.getVault();
+            target[prop] = (prop === 'netWorth') ? target[prop] : (vault[prop] !== undefined ? vault[prop] : target[prop]);
+            return true;
+          }
+
+          // Plausibility Check: Single-mutation sanity cap (No single normal mutation can add > 200M without asset liquidation)
+          if ((prop === 'cash' || prop === 'bank') && typeof value === 'number') {
+            const currentVal = Number(target[prop] || 0);
+            const delta = value - currentVal;
+            if (delta > 200000000) {
+              console.warn(`[TamperShield] 🚫 Suspicious impossible single-step jump on "${prop}": +${delta.toLocaleString()} EGP blocked!`);
+              _TamperShield.markCompromised(`Impossible jump on ${prop}: +${delta}`);
+              return true;
+            }
+          }
+
+          target[prop] = value;
+          _TamperShield.sync(target.cash, target.bank, target.dirtyCash);
+          return true;
+        }
+
+        if (prop === 'adminModifiedTimestamp' || prop === 'isAdmin') {
+          const stack = new Error().stack || '';
+          const isConsoleOrEval = stack.includes('<anonymous>') || stack.includes('evalmachine');
+          if (isConsoleOrEval) {
+            console.warn(`[TamperShield] 🚫 Blocked unauthorized modification of "${prop}"!`);
+            _TamperShield.markCompromised(`Tampering with ${prop}`);
+            return true;
+          }
+        }
+
+        target[prop] = value;
+        return true;
+      }
+    });
+  }
+
+  let state = _wrapStateWithShield({ ...INITIAL_STATE });
   let stockPrices = {}; // Stores { SYMBOL: [priceHistory...] }
   let stockRegimes = {}; // Stores { SYMBOL: { direction:'bullish'|'bearish'|'sideways', duration: 15, floatingBase: price } }
   let stockTickCounter = 0;
@@ -3049,7 +3176,7 @@ const GameEngine = (() => {
         mergedInventory[k] = (dbState.inventory && dbState.inventory[k] != null) ? dbState.inventory[k] : 0;
       });
 
-      state = {
+      state = _wrapStateWithShield({
         ...INITIAL_STATE,
         ...dbState,
         username: dbState.username || username,
@@ -3063,7 +3190,7 @@ const GameEngine = (() => {
         investments: Array.isArray(dbState.investments) ? dbState.investments : [],
         customItems: Array.isArray(dbState.customItems) ? dbState.customItems : [],
         _loadedFromCloud: true
-      };
+      });
 
       if (dbState.dailyStockProfit && typeof dbState.dailyStockProfit === 'object') {
         const today = getTodayDateString();
@@ -3532,7 +3659,7 @@ const GameEngine = (() => {
     } else {
       // Local fallback only if no dbState is found; DO NOT overwrite cloud state!
       console.warn('[GameEngine] No cloud dbState found for user:', username);
-      state = JSON.parse(JSON.stringify(INITIAL_STATE));
+      state = _wrapStateWithShield(JSON.parse(JSON.stringify(INITIAL_STATE)));
       state.username = username;
       state.afkManagerExpiresAt = getTrustedNow() + (12 * 60 * 60 * 1000);
       state.lastActiveTimestamp = getTrustedNow();
@@ -3612,7 +3739,7 @@ const GameEngine = (() => {
 
   function logoutUser() {
     activeUsername ="";
-    state = { ...INITIAL_STATE };
+    state = _wrapStateWithShield({ ...INITIAL_STATE });
     if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.clearSession === 'function') {
       ServerBridge.clearSession();
     }
@@ -7393,6 +7520,14 @@ const GameEngine = (() => {
   }
 
   function forceSaveState(immediate = false) {
+    if (!_TamperShield.verifyStateIntegrity(state) || _TamperShield.isCompromised()) {
+      console.warn('[TamperShield] 🚫 forceSaveState aborted: State integrity check failed. Reverting to shadow vault.');
+      const v = _TamperShield.getVault();
+      state.cash = v.cash;
+      state.bank = v.bank;
+      state.dirtyCash = v.dirtyCash;
+      return Promise.resolve({ success: false, message: 'Security integrity error' });
+    }
     sanitizeGameState();
     state.lastActiveTimestamp = getTrustedNow();
     state.netWorth = calculateNetWorth();
@@ -7403,11 +7538,20 @@ const GameEngine = (() => {
   return {
     get state() { return state; },
     set state(val) { 
+      const stack = new Error().stack || '';
+      const isConsoleOrEval = stack.includes('<anonymous>') || stack.includes('evalmachine');
+      if (isConsoleOrEval) {
+        console.warn('[TamperShield] 🚫 Blocked direct external overwrite of GameEngine.state!');
+        _TamperShield.markCompromised('Direct overwrite of GameEngine.state');
+        return;
+      }
       if (val && typeof val === 'object') {
-        state = val;
+        state = _wrapStateWithShield(val);
         sanitizeGameState();
       }
     },
+    verifyIntegrity: () => _TamperShield.verifyStateIntegrity(state),
+    isCompromised: () => _TamperShield.isCompromised(),
     get stockPrices() { return stockPrices; },
     get activeUsername() { return activeUsername; },
 
@@ -7586,8 +7730,6 @@ const GameEngine = (() => {
 
     // State Reader and Accessors
     getState: () => state,
-    get state() { return state; },
-    set state(s) { state = s; },
     get activeUsername() { return activeUsername; },
     set activeUsername(u) { activeUsername = u; },
     getActiveUsername

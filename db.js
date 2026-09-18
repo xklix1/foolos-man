@@ -515,15 +515,28 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   async function checkDeviceBan() {
     try {
+      if (typeof localStorage !== 'undefined') {
+        if (localStorage.getItem('rasalmal_banned_device') === 'true') {
+          return { isBanned: true, reason: '🚫 تم حظر هذا الجهاز نهائياً لمخالفة قواعد النزاهة والتلاعب باللعبة.' };
+        }
+        const lastAcct = (localStorage.getItem('rasalmal_registered_account') || '').toLowerCase().trim();
+        if (lastAcct === 'shadyes' || lastAcct === 'sh-2020' || lastAcct === 'shadyessa') {
+          localStorage.setItem('rasalmal_banned_device', 'true');
+          return { isBanned: true, reason: '🚫 تم حظر هذا الجهاز نهائياً لمخالفة قواعد النزاهة والتلاعب باللعبة.' };
+        }
+      }
+
       const fp = await DeviceFingerprint.getFingerprint();
       const rows = await _api(`banned_devices?device_id=eq.${encodeURIComponent(fp)}&select=device_id,reason`);
       if (rows && rows.length > 0) {
+        if (typeof localStorage !== 'undefined') localStorage.setItem('rasalmal_banned_device', 'true');
         return { isBanned: true, reason: rows[0].reason || 'تم حظر جهازك نهائياً لمخالفة قواعد النزاهة والتلاعب باللعبة.', deviceId: fp };
       }
       const seed = (typeof localStorage !== 'undefined') ? localStorage.getItem('rasalmal_device_seed') : null;
       if (seed) {
         const seedRows = await _api(`banned_devices?device_id=like.*${encodeURIComponent(seed)}*&select=device_id,reason`);
         if (seedRows && seedRows.length > 0) {
+          if (typeof localStorage !== 'undefined') localStorage.setItem('rasalmal_banned_device', 'true');
           return { isBanned: true, reason: seedRows[0].reason || 'تم حظر جهازك نهائياً لمخالفة قواعد النزاهة.', deviceId: seed };
         }
       }
