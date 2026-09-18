@@ -4496,6 +4496,7 @@ const UIController = (() => {
       if (_wireTransferInProgress) return;
       const recipient = document.getElementById('wire-recipient-input').value.trim();
       const amount = parseInt(document.getElementById('wire-amount-input').value);
+      const pin = (document.getElementById('wire-pin-input')?.value || '').trim();
       const wireSubmitBtn = document.getElementById('btn-wire-submit');
       const btnText = document.getElementById('wire-btn-text');
       const btnSpinner = document.getElementById('wire-btn-spinner');
@@ -4503,6 +4504,10 @@ const UIController = (() => {
       try {
         if (!recipient || isNaN(amount) || amount <= 0) {
           throw new Error("يرجى تعبئة حقل المستلم ومبلغ التحويل بشكل صحيح.");
+        }
+
+        if (!pin) {
+          throw new Error("يرجى إدخال الرقم السري (PIN) الخاص بك لتأكيد التحويل المصرفي.");
         }
 
         if (GameEngine.state && GameEngine.state.activeLoan && (Number(GameEngine.state.activeLoan.amount || 0) > 0 || Number(GameEngine.state.activeLoan.totalDue || 0) > 0)) {
@@ -4524,7 +4529,7 @@ const UIController = (() => {
         btnText.classList.add('hidden');
         btnSpinner.classList.remove('hidden');
 
-        await AppDB.executeWireTransfer(GameEngine.activeUsername, recipient, amount);
+        await AppDB.executeWireTransfer(GameEngine.activeUsername, recipient, amount, pin);
 
         // Fetch latest authoritative state from database to ensure 100% synchronization
         const updatedState = await AppDB.getPlayerState(GameEngine.activeUsername);
@@ -4538,6 +4543,7 @@ const UIController = (() => {
         // Reset fields
         document.getElementById('wire-recipient-input').value ='';
         document.getElementById('wire-amount-input').value ='';
+        if (document.getElementById('wire-pin-input')) document.getElementById('wire-pin-input').value ='';
 
         showToast('حوالة صادرة',`تم تحويل مبلغ ${amount.toLocaleString()} EGP بنجاح إلى "${recipient}".`,'success');
 
@@ -14515,6 +14521,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       inputEl.value = '';
       inputEl.dataset.target = targetUsername;
     }
+    const pinEl = document.getElementById('direct-wire-pin-input');
+    if (pinEl) pinEl.value = '';
 
     modal.classList.remove('hidden');
     setTimeout(() => { if (inputEl) inputEl.focus(); }, 100);
@@ -14522,15 +14530,23 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
   async function executeDirectWireFromModal() {
     const inputEl = document.getElementById('direct-wire-amount-input');
+    const pinEl = document.getElementById('direct-wire-pin-input');
     const modal = document.getElementById('direct-wire-modal');
     const confirmBtn = document.getElementById('btn-confirm-direct-wire');
     if (!inputEl) return;
 
     const target = inputEl.dataset.target;
     const amt = parseInt(inputEl.value);
+    const pin = (pinEl?.value || '').trim();
 
     if (!target || isNaN(amt) || amt <= 0) {
       showToast('تنبيه', 'يرجى إدخال مبلغ صحيح للتحويل.', 'warning');
+      return;
+    }
+
+    if (!pin) {
+      showToast('تأكيد أمني', 'يرجى إدخال الرقم السري (PIN) الخاص بك لتأكيد التحويل.', 'warning');
+      if (pinEl) pinEl.focus();
       return;
     }
 
@@ -14555,7 +14571,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري التحويل...</span>';
       }
 
-      await AppDB.executeWireTransfer(GameEngine.activeUsername, target, amt);
+      await AppDB.executeWireTransfer(GameEngine.activeUsername, target, amt, pin);
 
       // Notify offline recipient via server web push immediately
       try {
@@ -14582,6 +14598,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
       showToast('تم التحويل بنجاح! 💸', `تم تحويل مبلغ ${amt.toLocaleString()} EGP إلى اللاعب "${target}" بنجاح!`, 'success');
       if (typeof playMenuSound === 'function') playMenuSound('cash');
+      if (pinEl) pinEl.value = '';
       if (modal) modal.classList.add('hidden');
       renderAll();
     } catch (err) {

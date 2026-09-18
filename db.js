@@ -1882,20 +1882,24 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   //  WIRE TRANSFERS (BANK-GRADE ATOMIC SQL FUNCTION)
   // ─────────────────────────────────────────────
-  async function executeWireTransfer(senderUsername, recipientUsername, amount) {
+  async function executeWireTransfer(senderUsername, recipientUsername, amount, senderPin) {
     if (!senderUsername || !recipientUsername) throw new Error('بيانات التحويل غير مكتملة.');
-    if (senderUsername === recipientUsername) throw new Error('لا يمكنك التحويل لنفسك!');
+    if (senderUsername.toLowerCase() === recipientUsername.toLowerCase()) throw new Error('لا يمكنك التحويل لنفسك!');
     const amt = Number(amount);
     if (isNaN(amt) || amt <= 0) throw new Error('مبلغ التحويل يجب أن يكون أكبر من صفر.');
+
+    const pin = String(senderPin || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.pin) || '').trim();
+    if (!pin) throw new Error('🚫 مطلوب إدخال الرقم السري (PIN) الخاص بحسابك لتأكيد التحويل.');
 
     // Security & Anti-Feeder / Multi-Account Gatekeeper
     await checkWireTransferFraud(senderUsername, recipientUsername, amt);
 
-    // Execute the atomic SQL Stored Procedure (handles row locking, balance deduction & bank deposit atomically)
+    // Execute the atomic SQL Stored Procedure (handles row locking, pin verification, balance deduction & bank deposit atomically)
     await _api('rpc/execute_wire_transfer', {
       method:'POST',
       body: JSON.stringify({
         sender_username: senderUsername.trim(),
+        sender_pin: pin,
         recipient_username: recipientUsername.trim(),
         transfer_amount: amt
       })

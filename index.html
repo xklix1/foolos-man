@@ -2560,6 +2560,15 @@
                     class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold"
                     placeholder="أدخل مبلغ الحوالة">
                 </div>
+                <div>
+                  <label class="block text-xs text-amber-400 mb-1.5 font-bold mr-1 flex items-center gap-1.5">
+                    <i class="fa-solid fa-lock text-xs"></i>
+                    <span>الرقم السري الخاص بحسابك (PIN) لتأكيد التحويل</span>
+                  </label>
+                  <input type="password" id="wire-pin-input"
+                    class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold tracking-widest"
+                    placeholder="أدخل رمز PIN لتأكيد المعاملة" maxlength="16">
+                </div>
               </div>
             </div>
 
@@ -5716,6 +5725,19 @@
               class="w-full p-3 pl-12 bg-slate-900/90 border border-slate-700/80 rounded-xl text-center text-base font-black text-white focus:outline-none focus:border-amber-500/70 numbers-font"
               placeholder="0">
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 font-bold">EGP</span>
+          </div>
+        </div>
+
+        <!-- PIN Confirmation Input -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold text-amber-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-lock text-xs"></i>
+            <span>الرقم السري الخاص بك (PIN):</span>
+          </label>
+          <div class="relative">
+            <input type="password" id="direct-wire-pin-input" maxlength="16"
+              class="w-full p-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-center text-sm font-black text-white focus:outline-none focus:border-amber-500/70 tracking-widest"
+              placeholder="رمز PIN للتأكيد">
           </div>
         </div>
 
