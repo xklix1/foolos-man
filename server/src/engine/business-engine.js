@@ -26,7 +26,8 @@ function calculateSingleBusinessProfit(key, bizState, playerState = {}) {
 
   const lvl = Math.max(1, bizState.level || 1);
   const levelMultiplier = 1 + (lvl - 1) * 0.05; // Linear +5% pricing power per level
-  const franchiseOptMultiplier = bizState.isFranchise ? 1.20 : 1.0;
+  const isFranchise = Boolean(bizState.isFranchise && (bizConfig.allowFranchise !== false));
+  const franchiseOptMultiplier = isFranchise ? 1.10 : 1.0;
   const opt = Math.round(bizConfig.optimumPrice * levelMultiplier * franchiseOptMultiplier);
   let price = bizState.price || opt;
 
@@ -82,7 +83,7 @@ function calculateSingleBusinessProfit(key, bizState, playerState = {}) {
     }
   }
 
-  const franchiseMultiplier = bizState.isFranchise ? 1.20 : 1.0;
+  const franchiseMultiplier = isFranchise ? 1.10 : 1.0;
   const finalNetProfit = Math.max(0, Math.floor(netProfit * synergyMultiplier * franchiseMultiplier));
 
   return {

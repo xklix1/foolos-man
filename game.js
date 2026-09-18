@@ -41,7 +41,8 @@ const GameEngine = (() => {
       costOfGoods: 10,
       maxWorkers: 50,
       workerMultiplier: 1.08,
-      workerWage: 4
+      workerWage: 4,
+      allowFranchise: true
     },
     coffee: {
       id:'coffee',
@@ -52,7 +53,8 @@ const GameEngine = (() => {
       costOfGoods: 16,
       maxWorkers: 50,
       workerMultiplier: 1.08,
-      workerWage: 10
+      workerWage: 10,
+      allowFranchise: true
     },
     tech: {
       id:'tech',
@@ -63,7 +65,8 @@ const GameEngine = (() => {
       costOfGoods: 45,
       maxWorkers: 50,
       workerMultiplier: 1.08,
-      workerWage: 60
+      workerWage: 60,
+      allowFranchise: true
     },
     logistics: {
       id:'logistics',
@@ -74,7 +77,8 @@ const GameEngine = (() => {
       costOfGoods: 100,
       maxWorkers: 50,
       workerMultiplier: 1.08,
-      workerWage: 200
+      workerWage: 200,
+      allowFranchise: true
     },
     supermarket: {
       id:'supermarket',
@@ -85,7 +89,8 @@ const GameEngine = (() => {
       costOfGoods: 200,
       maxWorkers: 50,
       workerMultiplier: 1.08,
-      workerWage: 500
+      workerWage: 500,
+      allowFranchise: true
     },
     solar_factory: {
       id:'solar_factory',
@@ -96,7 +101,8 @@ const GameEngine = (() => {
       costOfGoods: 450,
       maxWorkers: 50,
       workerMultiplier: 1.08,
-      workerWage: 1500
+      workerWage: 1500,
+      allowFranchise: false
     },
     private_hospital: {
       id:'private_hospital',
@@ -107,7 +113,8 @@ const GameEngine = (() => {
       costOfGoods: 1000,
       maxWorkers: 50,
       workerMultiplier: 1.08,
-      workerWage: 4000
+      workerWage: 4000,
+      allowFranchise: false
     },
     media_studio: {
       id:'media_studio',
@@ -118,7 +125,8 @@ const GameEngine = (() => {
       costOfGoods: 1900,
       maxWorkers: 50,
       workerMultiplier: 1.08,
-      workerWage: 10000
+      workerWage: 10000,
+      allowFranchise: false
     },
     private_bank: {
       id:'private_bank',
@@ -129,7 +137,8 @@ const GameEngine = (() => {
       costOfGoods: 3600,
       maxWorkers: 50,
       workerMultiplier: 1.08,
-      workerWage: 25000
+      workerWage: 25000,
+      allowFranchise: false
     },
     oil_refinery: {
       id:'oil_refinery',
@@ -140,7 +149,8 @@ const GameEngine = (() => {
       costOfGoods: 7000,
       maxWorkers: 50,
       workerMultiplier: 1.08,
-      workerWage: 45000
+      workerWage: 45000,
+      allowFranchise: false
     },
     space_tech: {
       id:'space_tech',
@@ -151,7 +161,8 @@ const GameEngine = (() => {
       costOfGoods: 12000,
       maxWorkers: 50,
       workerMultiplier: 1.08,
-      workerWage: 90000
+      workerWage: 90000,
+      allowFranchise: false
     }
   };
 
@@ -1962,7 +1973,8 @@ const GameEngine = (() => {
     const s = playerState || state;
     const lvl = Math.max(1, bizState.level || 1);
     const levelMultiplier = 1 + (lvl - 1) * 0.05; // Linear +5% pricing power per level
-    const franchiseOptMultiplier = bizState.isFranchise ? 1.20 : 1.0;
+    const isFranchise = Boolean(bizState.isFranchise && (bizConfig.allowFranchise !== false));
+    const franchiseOptMultiplier = isFranchise ? 1.10 : 1.0;
     const opt = Math.round(bizConfig.optimumPrice * levelMultiplier * franchiseOptMultiplier);
     let price = bizState.price || opt;
     // Auto-normalize obsolete uncalibrated prices from prior versions
@@ -2020,7 +2032,7 @@ const GameEngine = (() => {
     }
 
     // V2: Franchise Multiplier
-    const franchiseMultiplier = bizState.isFranchise ? 1.20 : 1.0;
+    const franchiseMultiplier = isFranchise ? 1.10 : 1.0;
 
     // V2: Employee Boost & Salary Deductions
     let employeeBoost = 1.0;
@@ -3893,6 +3905,9 @@ const GameEngine = (() => {
 
   function convertToFranchise(key) {
     const biz = BUSINESSES[key];
+    if (!biz || biz.allowFranchise === false) {
+      throw new Error("هذا المشروع منشأة كبرى ولا يدعم نظام الفرانشايز أو العلامات التجارية.");
+    }
     const bizState = state.businesses[key];
     if (!bizState || bizState.level < 10) throw new Error("يجب ترقية المشروع للمستوى 10 أولاً.");
     if (bizState.isFranchise) throw new Error("هذا المشروع علامة تجارية مسجلة بالفعل.");
@@ -3982,7 +3997,8 @@ const GameEngine = (() => {
 
     // Price capping: Max 3x effective optimum price to keep numbers sensible
     const levelMultiplier = 1 + (Math.max(1, (bizState.level || 1)) - 1) * 0.05;
-    const franchiseOptMultiplier = bizState.isFranchise ? 1.20 : 1.0;
+    const isFranchise = Boolean(bizState.isFranchise && (BUSINESSES[key]?.allowFranchise !== false));
+    const franchiseOptMultiplier = isFranchise ? 1.10 : 1.0;
     const effectiveOpt = Math.round(BUSINESSES[key].optimumPrice * levelMultiplier * franchiseOptMultiplier);
     const maxPrice = effectiveOpt * 3;
     if (price > maxPrice) throw new Error(`الحد الأقصى المسموح به للسعر هو ${maxPrice.toLocaleString()} جنيه.`);

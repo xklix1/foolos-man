@@ -3260,8 +3260,8 @@ const UIController = (() => {
         card.innerHTML =`
           <div class="flex justify-between items-center mb-3">
             <h4 class="text-lg font-bold text-white">${translatedBizName}</h4>
-            <span id="biz-level-badge-${key}" class="text-xs px-2.5 py-0.5 ${bizState.isFranchise ?'bg-amber-500/20 text-amber-400 border-amber-500/30' :'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'} rounded border font-bold">
-              ${bizState.isFranchise ? (window.currentLang ==='en' ?'Franchise Brand' :'علامة تجارية') :`${window.currentLang ==='en' ?'Level' :'المستوى'} ${bizState.level}`}
+            <span id="biz-level-badge-${key}" class="text-xs px-2.5 py-0.5 ${(bizState.isFranchise && biz.allowFranchise !== false) ?'bg-amber-500/20 text-amber-400 border-amber-500/30' :'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'} rounded border font-bold">
+              ${(bizState.isFranchise && biz.allowFranchise !== false) ? (window.currentLang ==='en' ?'Franchise Brand' :'علامة تجارية') :`${window.currentLang ==='en' ?'Level' :'المستوى'} ${bizState.level}`}
             </span>
           </div>
           
@@ -3270,7 +3270,7 @@ const UIController = (() => {
             <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Material/Operation Cost:' :'تكلفة المواد/التشغيل:'}</span><span id="biz-cog-${key}" class="numbers-font text-rose-400">${actualCostOfGoods} EGP/${window.currentLang ==='en' ?'unit' :'وحدة'}</span></div>
             <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Current Expected Demand:' :'الطلب الحالي المتوقع:'}</span><span id="biz-demand-${key}" class="numbers-font text-sky-400 font-bold">${estimatedDemand} ${window.currentLang ==='en' ?'units/cycle' :'وحدة/دورة'} ${marketingActive ?`<span class="text-yellow-400 font-bold">(${window.currentLang ==='en' ?'+40% Promo' :'+40% ترويج'})</span>` :''}</span></div>
             <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Unit Profit Margin:' :'هامش ربح الوحدة:'}</span><span id="biz-margin-${key}" class="numbers-font ${profitMargin >= 0 ?'text-teal-400' :'text-rose-400'} font-bold">${profitMargin} EGP</span></div>
-            <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Actual Net Return:' :'العائد الصافي الفعلي:'}</span><span id="biz-profit-${key}" class="numbers-font text-emerald-400 font-bold">+${profitPerTick.toLocaleString()} EGP / ${window.currentLang ==='en' ?'cycle' :'دورة'} ${bizState.isFranchise ?`<span class="text-amber-400 text-[10px] font-black">(${window.currentLang ==='en' ?'+25% Brand' :'+25% براند'})</span>` :''}</span></div>
+            <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Actual Net Return:' :'العائد الصافي الفعلي:'}</span><span id="biz-profit-${key}" class="numbers-font text-emerald-400 font-bold">+${profitPerTick.toLocaleString()} EGP / ${window.currentLang ==='en' ?'cycle' :'دورة'} ${(bizState.isFranchise && biz.allowFranchise !== false) ?`<span class="text-amber-400 text-[10px] font-black">(${window.currentLang ==='en' ?'+10% Brand' :'+10% براند'})</span>` :''}</span></div>
           </div>
 
           <div class="mb-3">
@@ -3321,12 +3321,15 @@ const UIController = (() => {
           </div>
 
           <div class="grid grid-cols-2 gap-2 mt-2">
-            ${bizState.isFranchise ?`
+            ${(bizState.isFranchise && biz.allowFranchise !== false) ?`
               <button disabled class="py-2 bg-amber-950/20 text-amber-500/50 border border-amber-500/10 rounded-lg text-xs font-bold cursor-not-allowed">
                 ${window.currentLang ==='en' ?'Registered Brand' :'علامة مسجلة'}
-              </button>` : bizState.level >= 10 ?`
+              </button>` : (bizState.level >= 10 && biz.allowFranchise !== false) ?`
               <button id="btn-upgrade-${key}" class="py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-black transition">
                 ${window.currentLang ==='en' ?'Upgrade to Brand' :'ترقية لبراند'}<br><span id="biz-upgrade-cost-${key}" class="numbers-font text-[9px] opacity-80">${(biz.cost * 15).toLocaleString()} EGP</span>
+              </button>` : bizState.level >= 10 ?`
+              <button disabled class="py-2 bg-slate-800/40 text-slate-500 border border-slate-700/30 rounded-lg text-xs font-bold cursor-not-allowed">
+                ${window.currentLang ==='en' ?'Max Level (10)' :'أقصى مستوى (10)'}
               </button>` :`
               <button id="btn-upgrade-${key}" class="py-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-lg text-xs font-bold transition">
                 ${window.currentLang ==='en' ?'Upgrade Level' :'ترقية المستوى'}<br><span id="biz-upgrade-cost-${key}" class="numbers-font text-[10px] opacity-75">${nextUpgradeCost.toLocaleString()} EGP</span>
@@ -3335,7 +3338,7 @@ const UIController = (() => {
               ${window.currentLang ==='en' ?'Hire Worker' :'توظيف عمالة'}<br><span id="biz-hire-cost-${key}" class="numbers-font text-[10px] opacity-75">${workerHireCost.toLocaleString()} EGP</span>
             </button>
           </div>
-          ${bizState.isFranchise ?`
+          ${(bizState.isFranchise && biz.allowFranchise !== false) ?`
             <button id="btn-sell-franchise-${key}" class="w-full mt-2 py-2 bg-amber-500/15 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-black transition flex items-center justify-center gap-1 shadow-md">
               <i class="fa-solid fa-right-from-bracket"></i> ${window.currentLang ==='en' ?'Sell Brand (Liquidate & Refund)' :'بيع العلامة التجارية (تصفية واسترداد مالي)'}
             </button>` : (bizState.workers && bizState.workers > 0) ?`
@@ -9789,11 +9792,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const b = bizData[bKey];
         if (b && typeof b ==='object' && b.level > 0) {
           activeBizCount++;
-          totalBizLevels += Number(b.level || 1);
-          if (b.isFranchise) franchiseCount++;
+          const isFranchise = Boolean(b.isFranchise && BIZ_MAP[bKey]?.allowFranchise !== false);
+          if (isFranchise) franchiseCount++;
           const baseProf = (BIZ_MAP[bKey]?.baseProfitPerSec || 50);
           const workers = Number(b.workers || 0);
-          const franchiseMul = b.isFranchise ? 2.5 : 1.0;
+          const franchiseMul = isFranchise ? 1.10 : 1.0;
           const estSecProfit = Math.floor(baseProf * b.level * (1 + workers * 0.1) * franchiseMul);
           totalBizIncomePerSec += estSecProfit;
         }
@@ -14690,7 +14693,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           const pVal = Number(b.profitPerHour !== undefined ? b.profitPerHour : b.profitPerSec);
           bizTotal += pVal;
           const badges = [];
-          if (b.isFranchise) badges.push('<span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30">علامة تجارية +25%</span>');
+          if (b.isFranchise && b.allowFranchise !== false) badges.push('<span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30">علامة تجارية +10%</span>');
           if (b.marketingActive) badges.push('<span class="text-[9px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/30">ترويج نشط +40%</span>');
           if (b.synergyMultiplier > 1) badges.push(`<span class="text-[9px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded border border-cyan-500/30">سلاسل إمداد x${b.synergyMultiplier}</span>`);
           if (b.employeeBoost > 1) badges.push(`<span class="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30">موظفين x${b.employeeBoost.toFixed(1)}</span>`);

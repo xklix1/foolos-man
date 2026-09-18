@@ -3365,10 +3365,11 @@
         if (b && typeof b ==='object' && b.level > 0) {
           activeBizCount++;
           totalBizLevels += Number(b.level || 1);
-          if (b.isFranchise) franchiseCount++;
+          const isFranchise = Boolean(b.isFranchise && BIZ_MAP[bKey]?.allowFranchise !== false);
+          if (isFranchise) franchiseCount++;
           const baseProf = (BIZ_MAP[bKey]?.baseProfitPerSec || 50);
           const workers = Number(b.workers || 0);
-          const franchiseMul = b.isFranchise ? 2.5 : 1.0;
+          const franchiseMul = isFranchise ? 1.10 : 1.0;
           const estSecProfit = Math.floor(baseProf * b.level * (1 + workers * 0.1) * franchiseMul);
           totalBizIncomePerSec += estSecProfit;
         }

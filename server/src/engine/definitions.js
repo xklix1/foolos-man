@@ -13,7 +13,8 @@ const BUSINESSES = {
     costOfGoods: 10,
     maxWorkers: 50,
     workerMultiplier: 1.08,
-    workerWage: 4
+    workerWage: 4,
+    allowFranchise: true
   },
   coffee: {
     id: 'coffee',
@@ -24,7 +25,8 @@ const BUSINESSES = {
     costOfGoods: 16,
     maxWorkers: 50,
     workerMultiplier: 1.08,
-    workerWage: 10
+    workerWage: 10,
+    allowFranchise: true
   },
   tech: {
     id: 'tech',
@@ -35,7 +37,8 @@ const BUSINESSES = {
     costOfGoods: 45,
     maxWorkers: 50,
     workerMultiplier: 1.08,
-    workerWage: 60
+    workerWage: 60,
+    allowFranchise: true
   },
   logistics: {
     id: 'logistics',
@@ -46,7 +49,8 @@ const BUSINESSES = {
     costOfGoods: 100,
     maxWorkers: 50,
     workerMultiplier: 1.08,
-    workerWage: 200
+    workerWage: 200,
+    allowFranchise: true
   },
   supermarket: {
     id: 'supermarket',
@@ -57,7 +61,8 @@ const BUSINESSES = {
     costOfGoods: 200,
     maxWorkers: 50,
     workerMultiplier: 1.08,
-    workerWage: 500
+    workerWage: 500,
+    allowFranchise: true
   },
   solar_factory: {
     id: 'solar_factory',
@@ -68,7 +73,8 @@ const BUSINESSES = {
     costOfGoods: 450,
     maxWorkers: 50,
     workerMultiplier: 1.08,
-    workerWage: 1500
+    workerWage: 1500,
+    allowFranchise: false
   },
   private_hospital: {
     id: 'private_hospital',
@@ -79,7 +85,8 @@ const BUSINESSES = {
     costOfGoods: 1000,
     maxWorkers: 50,
     workerMultiplier: 1.08,
-    workerWage: 4000
+    workerWage: 4000,
+    allowFranchise: false
   },
   media_studio: {
     id: 'media_studio',
@@ -90,7 +97,8 @@ const BUSINESSES = {
     costOfGoods: 1900,
     maxWorkers: 50,
     workerMultiplier: 1.08,
-    workerWage: 10000
+    workerWage: 10000,
+    allowFranchise: false
   },
   private_bank: {
     id: 'private_bank',
@@ -101,7 +109,8 @@ const BUSINESSES = {
     costOfGoods: 3600,
     maxWorkers: 50,
     workerMultiplier: 1.08,
-    workerWage: 25000
+    workerWage: 25000,
+    allowFranchise: false
   },
   oil_refinery: {
     id: 'oil_refinery',
@@ -112,7 +121,8 @@ const BUSINESSES = {
     costOfGoods: 7000,
     maxWorkers: 50,
     workerMultiplier: 1.08,
-    workerWage: 45000
+    workerWage: 45000,
+    allowFranchise: false
   },
   space_tech: {
     id: 'space_tech',
@@ -123,7 +133,8 @@ const BUSINESSES = {
     costOfGoods: 12000,
     maxWorkers: 50,
     workerMultiplier: 1.08,
-    workerWage: 90000
+    workerWage: 90000,
+    allowFranchise: false
   }
 };
 
