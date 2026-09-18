@@ -2699,31 +2699,19 @@ const UIController = (() => {
     const tEl = document.getElementById('stat-title');
     if (tEl) tEl.textContent = s.title;
 
-    const formatLiveStat = (num) => {
-      if (num === null || num === undefined || isNaN(num)) return '0';
-      const val = Number(num);
-      if (val >= 1000000000) {
-        return (val / 1000000000).toFixed(2) + 'B';
-      } else if (val >= 100000000) {
-        return (val / 1000000).toFixed(1) + 'M';
-      } else {
-        return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      }
-    };
-
     const cEl = document.getElementById('stat-cash');
     if (cEl) {
-      cEl.textContent = formatLiveStat(s.cash);
+      cEl.textContent = formatCompactNumber(s.cash);
       cEl.title = formatFullCurrency(s.cash);
     }
     const bEl = document.getElementById('stat-bank');
     if (bEl) {
-      bEl.textContent = formatLiveStat(s.bank);
+      bEl.textContent = formatCompactNumber(s.bank);
       bEl.title = formatFullCurrency(s.bank);
     }
     const nEl = document.getElementById('stat-networth');
     if (nEl) {
-      nEl.textContent = formatLiveStat(s.netWorth);
+      nEl.textContent = formatCompactNumber(s.netWorth);
       nEl.title = formatFullCurrency(s.netWorth);
     }
 
@@ -2753,17 +2741,17 @@ const UIController = (() => {
 
     const cmEl = document.getElementById('stat-cash-mobile');
     if (cmEl) {
-      cmEl.textContent = formatLiveStat(s.cash);
+      cmEl.textContent = formatCompactNumber(s.cash);
       cmEl.title = formatFullCurrency(s.cash);
     }
     const bmEl = document.getElementById('stat-bank-mobile');
     if (bmEl) {
-      bmEl.textContent = formatLiveStat(s.bank);
+      bmEl.textContent = formatCompactNumber(s.bank);
       bmEl.title = formatFullCurrency(s.bank);
     }
     const nmEl = document.getElementById('stat-networth-mobile');
     if (nmEl) {
-      nmEl.textContent = formatLiveStat(s.netWorth);
+      nmEl.textContent = formatCompactNumber(s.netWorth);
       nmEl.title = formatFullCurrency(s.netWorth);
     }
 
