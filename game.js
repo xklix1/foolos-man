@@ -7148,7 +7148,7 @@ const GameEngine = (() => {
   // ─── B2B Supply Contracts (عقود التوريد للشركات والمطاعم - 50 عقداً يومياً) ───
   const DAILY_CONTRACTS_TARGET = 50;
 
-  function generateSingleContract(slotIndex, farmState, dayEndTimestamp) {
+  function generateSingleContract(slotIndex, farmState, forcedItemId = null) {
     const client = FARM_CONTRACT_CLIENTS[slotIndex % FARM_CONTRACT_CLIENTS.length || Math.floor(Math.random() * FARM_CONTRACT_CLIENTS.length)];
     const landLvl = Number(farmState.landLevel || 1);
 
@@ -7159,7 +7159,7 @@ const GameEngine = (() => {
     candidates.push({ type: 'crop', id: 'strawberry', basePrice: FARM_CROPS.strawberry.sellPrice, min: 8, max: 30 });
     candidates.push({ type: 'crop', id: 'coffee', basePrice: FARM_CROPS.coffee.sellPrice, min: 6, max: 20 });
     candidates.push({ type: 'crop', id: 'dates', basePrice: FARM_CROPS.dates.sellPrice, min: 4, max: 12 });
-    candidates.push({ type: 'crop', id: 'saffron', basePrice: FARM_CROPS.saffron.sellPrice, min: 2, max: 6 });
+    candidates.push({ type: 'crop', id: 'saffron', basePrice: FARM_CROPS.saffron.sellPrice, min: 2, max: 8 });
 
     // 2. Processed Recipes (value-add goods)
     candidates.push({ type: 'processed', id: 'flour_bread', basePrice: FARM_RECIPES.flour_bread.baseValue, min: 4, max: 20 });
@@ -7167,13 +7167,20 @@ const GameEngine = (() => {
     candidates.push({ type: 'processed', id: 'strawberry_jam', basePrice: FARM_RECIPES.strawberry_jam.baseValue, min: 2, max: 10 });
     candidates.push({ type: 'processed', id: 'premium_coffee', basePrice: FARM_RECIPES.premium_coffee.baseValue, min: 2, max: 6 });
     candidates.push({ type: 'processed', id: 'stuffed_dates', basePrice: FARM_RECIPES.stuffed_dates.baseValue, min: 1, max: 4 });
-    candidates.push({ type: 'processed', id: 'saffron_essence', basePrice: FARM_RECIPES.saffron_essence.baseValue, min: 1, max: 2 });
+    candidates.push({ type: 'processed', id: 'saffron_essence', basePrice: FARM_RECIPES.saffron_essence.baseValue, min: 1, max: 3 });
 
     // 3. Livestock Produce
     candidates.push({ type: 'livestock', id: 'milk', basePrice: FARM_LIVESTOCK_CONFIG.cow.sellPrice, min: 8, max: 30 });
     candidates.push({ type: 'livestock', id: 'eggs', basePrice: FARM_LIVESTOCK_CONFIG.chicken.sellPrice, min: 15, max: 50 });
 
-    const choice = candidates[Math.floor(Math.random() * candidates.length)];
+    let choice = null;
+    if (forcedItemId) {
+      choice = candidates.find(c => c.id === forcedItemId);
+    }
+    if (!choice) {
+      choice = candidates[Math.floor(Math.random() * candidates.length)];
+    }
+
     const qty = Math.floor(choice.min + Math.random() * (choice.max - choice.min + 1));
     const baseValue = qty * choice.basePrice;
     const bonusMultiplier = client.payoutMultiplier || 1.5;
@@ -7194,7 +7201,7 @@ const GameEngine = (() => {
     }
 
     return {
-      id: 'cnt_' + slotIndex + '_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+      id: 'cnt_' + slotIndex + '_' + Date.now() + '_' + Math.floor(Math.random() * 100000),
       contractNumber: slotIndex,
       clientName: client.name,
       clientIcon: client.icon,
@@ -7249,6 +7256,40 @@ const GameEngine = (() => {
     // استكمال عدد العقود المعروضة دائماً لتصل إلى 50 عقداً متاحاً
     while (f.contracts.active.length < DAILY_CONTRACTS_TARGET) {
       f.contracts.active.push(generateSingleContract(f.contracts.active.length + 1, f));
+    }
+
+    // ─── الدعم الذكي الفوري للمخزون (Dynamic Saffron & Crop Matching) ───
+    // إذا كان لدى اللاعب محاصيل في الصومعة (مثل الزعفران أو التمور) ولا توجد لها عقود كافية، يتم تحويل العقود المكررة فوراً لشراء محصوله
+    if (f.inventory) {
+      Object.keys(f.inventory).forEach(cId => {
+        const qty = Number(f.inventory[cId] || 0);
+        if (qty > 0) {
+          const matchCount = f.contracts.active.filter(c => c && c.itemId === cId && !c.fulfilled).length;
+          const targetContracts = Math.min(5, Math.max(2, Math.ceil(qty / 4)));
+          if (matchCount < targetContracts) {
+            const needed = targetContracts - matchCount;
+            for (let k = 0; k < needed; k++) {
+              // استبدال عقد مكرر من المحاصيل الأساسية
+              const replaceIdx = f.contracts.active.findIndex(c => c && !c.fulfilled && c.itemId !== cId && (c.itemId === 'wheat' || c.itemId === 'tomato' || c.itemId === 'milk' || c.itemId === 'eggs'));
+              if (replaceIdx !== -1) {
+                f.contracts.active[replaceIdx] = generateSingleContract(replaceIdx + 1, f, cId);
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // ضمان وجود عقود الزعفران ومستخلصه دائماً في قائمة العقود لكافة اللاعبين
+    const saffronActiveCount = f.contracts.active.filter(c => c && (c.itemId === 'saffron' || c.itemId === 'saffron_essence') && !c.fulfilled).length;
+    if (saffronActiveCount < 3) {
+      const neededSaffron = 3 - saffronActiveCount;
+      for (let s = 0; s < neededSaffron; s++) {
+        const rIdx = f.contracts.active.findIndex(c => c && !c.fulfilled && c.itemId !== 'saffron' && c.itemId !== 'saffron_essence' && (c.itemId === 'wheat' || c.itemId === 'milk'));
+        if (rIdx !== -1) {
+          f.contracts.active[rIdx] = generateSingleContract(rIdx + 1, f, s % 2 === 0 ? 'saffron' : 'saffron_essence');
+        }
+      }
     }
 
     // ترقيم العقود 1 إلى 50
