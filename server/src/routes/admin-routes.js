@@ -16,7 +16,8 @@ const ALLOWED_TABLES = new Set([
   'transfers',
   'transfer_requests',
   'mailbox',
-  'events'
+  'events',
+  'banned_devices'
 ]);
 
 function safeCompare(a, b) {

@@ -724,6 +724,8 @@
           <i class="fa-solid fa-money-bill-transfer text-xs text-emerald-400"></i><span>التحويلات</span></button>
         <button id="mobtab-admin-fraud" onclick="window.switchAdminTab('fraud')" class="shrink-0 px-3 py-1.5 rounded-xl border border-transparent bg-slate-900 text-rose-300 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition shadow-sm">
           <i class="fa-solid fa-shield-halved text-rose-500 text-xs"></i><span>مكافحة التحايل</span></button>
+        <button id="mobtab-admin-devices" onclick="window.switchAdminTab('devices')" class="shrink-0 px-3 py-1.5 rounded-xl border border-transparent bg-slate-900 text-cyan-300 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition shadow-sm">
+          <i class="fa-solid fa-mobile-screen-button text-cyan-400 text-xs"></i><span>بصمات الهواتف</span></button>
         <button id="mobtab-admin-chat" onclick="window.switchAdminTab('chat')" class="shrink-0 px-3 py-1.5 rounded-xl border border-transparent bg-slate-900 text-slate-300 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition shadow-sm">
           <i class="fa-solid fa-comments text-cyan-400 text-xs"></i><span>الشات</span></button>
         <button id="mobtab-admin-market" onclick="window.switchAdminTab('market')" class="shrink-0 px-3 py-1.5 rounded-xl border border-transparent bg-slate-900 text-slate-300 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition shadow-sm">
@@ -804,6 +806,16 @@
                   <span>مكافحة التحايل</span>
                 </div>
                 <span id="admin-fraud-badge" class="bg-rose-500/20 text-rose-400 text-[10px] px-2 py-0.5 rounded-full font-black hidden">0</span>
+              </button>
+              <button id="tab-admin-devices" onclick="window.switchAdminTab('devices')"
+                class="admin-tab-btn w-full px-3.5 py-2.5 rounded-xl border border-transparent hover:bg-slate-900/70 text-slate-400 hover:text-cyan-300 font-bold transition-all duration-200 flex items-center justify-between hover:translate-x-[-2px]">
+                <div class="flex items-center gap-3">
+                  <div class="w-6 h-6 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 shrink-0">
+                    <i class="fa-solid fa-mobile-screen-button text-xs"></i>
+                  </div>
+                  <span>بصمات الهواتف المشتركة</span>
+                </div>
+                <span id="admin-devices-badge" class="bg-cyan-500/20 text-cyan-400 text-[10px] px-2 py-0.5 rounded-full font-black hidden">0</span>
               </button>
               <button id="tab-admin-chat" onclick="window.switchAdminTab('chat')"
                 class="admin-tab-btn w-full px-3.5 py-2.5 rounded-xl border border-transparent hover:bg-slate-900/70 text-slate-400 hover:text-cyan-300 font-bold transition-all duration-200 flex items-center gap-3 hover:translate-x-[-2px]">
@@ -1737,7 +1749,7 @@
           </div>
 
           <!-- Quick Metrics -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/90 flex justify-between items-center group hover:border-cyan-500/40 transition">
               <div>
                 <div class="text-[10px] text-slate-400 font-bold">الأجهزة المسجلة في السحابة</div>
@@ -1763,6 +1775,18 @@
               </div>
               <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition">
                 <i class="fa-solid fa-network-wired text-sm"></i>
+              </div>
+            </div>
+            <div onclick="window.switchAdminTab && window.switchAdminTab('devices')" class="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-500/40 flex justify-between items-center group hover:border-cyan-400 hover:bg-cyan-950/50 cursor-pointer transition shadow-lg">
+              <div>
+                <div class="text-[10px] text-cyan-300 font-bold flex items-center gap-1">
+                  <span>بصمات الهواتف المشتركة</span>
+                  <i class="fa-solid fa-arrow-left text-[9px]"></i>
+                </div>
+                <div id="admin-fraud-multi-devices-count" class="text-xl font-black text-cyan-400 font-mono mt-1">--</div>
+              </div>
+              <div class="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-300 group-hover:scale-105 transition">
+                <i class="fa-solid fa-mobile-screen-button text-sm"></i>
               </div>
             </div>
           </div>
@@ -1890,6 +1914,106 @@
                 <tr><td colspan="7" class="p-4 text-center text-slate-500 font-sans">جاري تحميل سجل الأمان...</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3.4.5. PANEL SHARED DEVICES & HARDWARE FINGERPRINTS -->
+      <div id="admin-subpanel-devices" class="hidden space-y-4">
+        <div class="glass-panel p-4 sm:p-5 border border-cyan-500/30 rounded-2xl space-y-4 shadow-2xl shadow-cyan-950/20">
+          <div class="flex justify-between items-center flex-wrap gap-2 pb-3 border-b border-slate-800/80">
+            <div>
+              <h4 class="text-sm font-black text-white flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-md shadow-cyan-500/10">
+                  <i class="fa-solid fa-mobile-screen-button text-sm"></i>
+                </div>
+                <span>كاشف ومراقب بصمات الهواتف المشتركة (Shared Phone & Hardware Fingerprints)</span>
+              </h4>
+              <p class="text-[11px] text-slate-400 mt-0.5">تحليل وتطابق بصمات الهواتف والأجهزة لرصد تعدد الحسابات، مع إمكانية فرض حظر كامل للجهاز (Hardware Ban) أو تصفير الحسابات المرتبطة به دفعة واحدة.</p>
+            </div>
+            <div class="flex gap-2">
+              <button id="btn-admin-refresh-devices" onclick="window.renderAdminDeviceFingerprints && window.renderAdminDeviceFingerprints(true)"
+                class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-black rounded-xl transition flex items-center gap-2 shadow-lg shadow-cyan-600/20 cursor-pointer active:scale-95">
+                <i class="fa-solid fa-rotate text-xs"></i>
+                <span>تحديث الفحص والتحليل</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Metrics -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/90 flex justify-between items-center group hover:border-cyan-500/40 transition">
+              <div>
+                <div class="text-[10px] text-slate-400 font-bold">هواتف بها أكثر من حساب</div>
+                <div id="admin-devices-multi-count" class="text-xl font-black text-cyan-400 font-mono mt-1">--</div>
+              </div>
+              <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition">
+                <i class="fa-solid fa-clone text-sm"></i>
+              </div>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/90 flex justify-between items-center group hover:border-amber-500/40 transition">
+              <div>
+                <div class="text-[10px] text-slate-400 font-bold">إجمالي الحسابات المشتركة</div>
+                <div id="admin-devices-total-linked-accounts" class="text-xl font-black text-amber-400 font-mono mt-1">--</div>
+              </div>
+              <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition">
+                <i class="fa-solid fa-users text-sm"></i>
+              </div>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/90 flex justify-between items-center group hover:border-rose-500/40 transition">
+              <div>
+                <div class="text-[10px] text-slate-400 font-bold">أجهزة محظورة نهائياً</div>
+                <div id="admin-devices-banned-count" class="text-xl font-black text-rose-400 font-mono mt-1">--</div>
+              </div>
+              <div class="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 group-hover:scale-105 transition">
+                <i class="fa-solid fa-ban text-sm"></i>
+              </div>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/90 flex justify-between items-center group hover:border-purple-500/40 transition">
+              <div>
+                <div class="text-[10px] text-slate-400 font-bold">أعلى هاتف استُخدم لحسابات</div>
+                <div id="admin-devices-max-single" class="text-xl font-black text-purple-400 font-mono mt-1">--</div>
+              </div>
+              <div class="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:scale-105 transition">
+                <i class="fa-solid fa-fire text-sm"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter & Search Bar -->
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-2.5 p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80">
+            <div class="relative w-full sm:w-80">
+              <i class="fa-solid fa-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+              <input id="input-admin-device-search" type="text" oninput="window.adminSearchDeviceFingerprints && window.adminSearchDeviceFingerprints(this.value)"
+                placeholder="ابحث باسم الحساب أو بصمة الجهاز (dev_hw_...)"
+                class="glass-input w-full pr-8 pl-3 py-2 text-xs bg-slate-900/90 border border-slate-700/80 focus:border-cyan-500 rounded-xl text-white placeholder-slate-500 outline-none" />
+            </div>
+            <div class="flex items-center gap-1.5 flex-wrap w-full sm:w-auto justify-end">
+              <button onclick="window.adminFilterDeviceFingerprints && window.adminFilterDeviceFingerprints('all')" id="btn-filter-dev-all"
+                class="filter-dev-pill px-3 py-1.5 rounded-xl text-xs font-bold transition bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                الكل (<span id="count-dev-all">0</span>)
+              </button>
+              <button onclick="window.adminFilterDeviceFingerprints && window.adminFilterDeviceFingerprints('high')" id="btn-filter-dev-high"
+                class="filter-dev-pill px-3 py-1.5 rounded-xl text-xs font-bold transition bg-slate-900 text-slate-400 hover:text-white border border-slate-800">
+                ⚠️ خطير (3+ حسابات) (<span id="count-dev-high">0</span>)
+              </button>
+              <button onclick="window.adminFilterDeviceFingerprints && window.adminFilterDeviceFingerprints('banned')" id="btn-filter-dev-banned"
+                class="filter-dev-pill px-3 py-1.5 rounded-xl text-xs font-bold transition bg-slate-900 text-slate-400 hover:text-white border border-slate-800">
+                ⛔ أجهزة محظورة (<span id="count-dev-banned">0</span>)
+              </button>
+              <button onclick="window.adminFilterDeviceFingerprints && window.adminFilterDeviceFingerprints('active')" id="btn-filter-dev-active"
+                class="filter-dev-pill px-3 py-1.5 rounded-xl text-xs font-bold transition bg-slate-900 text-slate-400 hover:text-white border border-slate-800">
+                🟢 أجهزة نشطة (<span id="count-dev-active">0</span>)
+              </button>
+            </div>
+          </div>
+
+          <!-- Cards Grid Container -->
+          <div id="admin-devices-container" class="space-y-3 custom-scrollbar">
+            <div class="p-8 text-center text-slate-500 font-sans">
+              <i class="fa-solid fa-spinner fa-spin mr-2 text-cyan-400"></i>
+              جاري فحص وتجميع بصمات الهواتف والأجهزة المشتركة...
+            </div>
           </div>
         </div>
       </div>

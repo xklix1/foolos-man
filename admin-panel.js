@@ -81,7 +81,7 @@
     }
 
     // Tabs logic - bind all subtabs
-    const tabs = ['stats','players','transfers','chat','market','broadcast','auctions','giftcodes','system','corporations','topup'];
+    const tabs = ['stats','players','transfers','fraud','devices','chat','market','broadcast','auctions','giftcodes','onlinegift','system','corporations','topup'];
     tabs.forEach(t => {
       const tabEl = document.getElementById(`tab-admin-${t}`);
       if (tabEl) {
@@ -6272,6 +6272,529 @@
   }
   window.loadAdminFraudAlerts = renderAdminFraudMonitor;
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SHARED PHONE & HARDWARE DEVICE FINGERPRINTS MONITOR (Anti-Multi-Accounts)
+  // ─────────────────────────────────────────────────────────────────────────────
+  let _cachedDeviceClusters = [];
+  let _currentDeviceFilter = 'all';
+  let _currentDeviceSearch = '';
+
+  function extractDeviceSeed(rawId) {
+    if (!rawId) return '';
+    const clean = String(rawId).trim();
+    const match = clean.match(/([a-f0-9]{16})/i);
+    if (match) return match[1].toLowerCase();
+    return clean.toLowerCase();
+  }
+
+  async function renderAdminDeviceFingerprints(forceRefresh = false) {
+    const container = document.getElementById('admin-devices-container');
+    const badgeSidebar = document.getElementById('admin-devices-badge');
+    const badgeFraud = document.getElementById('admin-fraud-multi-devices-count');
+    const multiCountEl = document.getElementById('admin-devices-multi-count');
+    const totalAccountsEl = document.getElementById('admin-devices-total-linked-accounts');
+    const bannedCountEl = document.getElementById('admin-devices-banned-count');
+    const maxSingleEl = document.getElementById('admin-devices-max-single');
+
+    if (container && (forceRefresh || _cachedDeviceClusters.length === 0)) {
+      container.innerHTML = `
+        <div class="p-8 text-center text-slate-400 font-sans">
+          <i class="fa-solid fa-spinner fa-spin text-2xl text-cyan-400 mb-2 block"></i>
+          <span>جاري فحص وتجميع بصمات الهواتف وتحليل تعدد الحسابات في السحابة...</span>
+        </div>
+      `;
+    }
+
+    try {
+      if (forceRefresh || _cachedDeviceClusters.length === 0) {
+        const fetchPlayersFn = AppDB.adminGetAllPlayers || AppDB.getAllPlayersAdmin;
+        const [registry, players, bannedList] = await Promise.all([
+          AppDB.getDeviceRegistry ? AppDB.getDeviceRegistry() : { devices: {}, accounts: {} },
+          fetchPlayersFn ? fetchPlayersFn() : [],
+          AppDB.getBannedDevices ? AppDB.getBannedDevices() : []
+        ]);
+
+        const playerMap = new Map();
+        for (const p of (players || [])) {
+          if (p && p.username) {
+            playerMap.set(p.username.toLowerCase(), p);
+          }
+        }
+
+        const bannedSet = new Set();
+        for (const b of (bannedList || [])) {
+          if (b && b.device_id) {
+            bannedSet.add(b.device_id);
+            const s = extractDeviceSeed(b.device_id);
+            if (s) bannedSet.add(s);
+          }
+        }
+
+        const deviceClusters = new Map();
+
+        function registerLink(devId, username) {
+          if (!devId || !username) return;
+          const seed = extractDeviceSeed(devId);
+          if (!seed) return;
+
+          if (!deviceClusters.has(seed)) {
+            deviceClusters.set(seed, {
+              seed: seed,
+              displayId: devId.startsWith('dev_hw_') ? devId : ('dev_hw_' + seed),
+              accounts: new Set(),
+              rawDevices: new Set()
+            });
+          }
+          const cluster = deviceClusters.get(seed);
+          cluster.accounts.add(username);
+          cluster.rawDevices.add(devId);
+        }
+
+        // 1. From device_registry.devices
+        for (const [d, u] of Object.entries((registry && registry.devices) || {})) {
+          if (typeof u === 'string') registerLink(d, u);
+          else if (Array.isArray(u)) u.forEach(x => registerLink(d, x));
+        }
+
+        // 2. From device_registry.accounts
+        for (const [u, devs] of Object.entries((registry && registry.accounts) || {})) {
+          const list = Array.isArray(devs) ? devs : [devs];
+          for (const d of list) registerLink(d, u);
+        }
+
+        // 3. From players known_devices
+        for (const p of (players || [])) {
+          const known = (p && p.state && Array.isArray(p.state.known_devices)) 
+            ? p.state.known_devices 
+            : (Array.isArray(p.known_devices) ? p.known_devices : []);
+          for (const d of known) registerLink(d, p.username);
+        }
+
+        const clusters = [];
+        for (const [seed, cluster] of deviceClusters.entries()) {
+          const accountNames = Array.from(cluster.accounts);
+          // Only multi-accounts (2 or more)
+          if (accountNames.length > 1) {
+            const isBanned = Array.from(cluster.rawDevices).some(d => bannedSet.has(d)) || bannedSet.has(seed);
+            const accountsDetail = accountNames.map(uname => {
+              const p = playerMap.get(uname.toLowerCase());
+              return {
+                username: uname,
+                net_worth: p ? Number(p.netWorth || p.net_worth || 0) : 0,
+                cash: p ? Number(p.cash || 0) : 0,
+                bank: p ? Number(p.bank || 0) : 0,
+                is_banned: p ? Boolean(p.isBanned || p.is_banned) : false,
+                last_seen: p ? (p.lastSeen || p.last_seen) : null
+              };
+            });
+
+            // Sort accounts inside cluster by net worth desc
+            accountsDetail.sort((a, b) => b.net_worth - a.net_worth);
+
+            clusters.push({
+              seed,
+              displayId: cluster.displayId,
+              isDeviceBanned: isBanned,
+              count: accountNames.length,
+              accounts: accountsDetail
+            });
+          }
+        }
+
+        // Sort clusters by count descending, then by highest wealth
+        clusters.sort((a, b) => {
+          if (b.count !== a.count) return b.count - a.count;
+          const maxWealthA = a.accounts[0] ? a.accounts[0].net_worth : 0;
+          const maxWealthB = b.accounts[0] ? b.accounts[0].net_worth : 0;
+          return maxWealthB - maxWealthA;
+        });
+
+        _cachedDeviceClusters = clusters;
+      }
+
+      // Calculate Metrics
+      const totalMultiDevices = _cachedDeviceClusters.length;
+      let totalLinkedAccounts = 0;
+      let totalBannedDevices = 0;
+      let maxSingleDevice = 0;
+
+      for (const c of _cachedDeviceClusters) {
+        totalLinkedAccounts += c.count;
+        if (c.isDeviceBanned) totalBannedDevices++;
+        if (c.count > maxSingleDevice) maxSingleDevice = c.count;
+      }
+
+      if (multiCountEl) multiCountEl.textContent = totalMultiDevices.toLocaleString();
+      if (totalAccountsEl) totalAccountsEl.textContent = totalLinkedAccounts.toLocaleString();
+      if (bannedCountEl) bannedCountEl.textContent = totalBannedDevices.toLocaleString();
+      if (maxSingleEl) maxSingleEl.textContent = maxSingleDevice ? `${maxSingleDevice} حسابات` : '0';
+
+      if (badgeSidebar) {
+        badgeSidebar.textContent = totalMultiDevices;
+        badgeSidebar.classList.toggle('hidden', totalMultiDevices === 0);
+      }
+      if (badgeFraud) {
+        badgeFraud.textContent = totalMultiDevices;
+      }
+
+      // Update Filter Counters
+      const countAll = _cachedDeviceClusters.length;
+      const countHigh = _cachedDeviceClusters.filter(c => c.count >= 3).length;
+      const countBanned = _cachedDeviceClusters.filter(c => c.isDeviceBanned).length;
+      const countActive = _cachedDeviceClusters.filter(c => !c.isDeviceBanned).length;
+
+      const elAll = document.getElementById('count-dev-all');
+      const elHigh = document.getElementById('count-dev-high');
+      const elBanned = document.getElementById('count-dev-banned');
+      const elActive = document.getElementById('count-dev-active');
+
+      if (elAll) elAll.textContent = countAll;
+      if (elHigh) elHigh.textContent = countHigh;
+      if (elBanned) elBanned.textContent = countBanned;
+      if (elActive) elActive.textContent = countActive;
+
+      applyDeviceFiltersAndRender();
+    } catch (err) {
+      console.error('[Device Fingerprint Error]:', err);
+      if (container) {
+        container.innerHTML = `
+          <div class="p-6 text-center text-rose-400 font-sans border border-rose-500/30 rounded-2xl bg-rose-950/20">
+            <i class="fa-solid fa-triangle-exclamation text-2xl mb-2 block"></i>
+            فشل تحليل وتجميع بصمات الهواتف: ${escapeHtml(err.message)}
+          </div>
+        `;
+      }
+    }
+  }
+
+  function applyDeviceFiltersAndRender() {
+    const container = document.getElementById('admin-devices-container');
+    if (!container) return;
+
+    let filtered = _cachedDeviceClusters.slice();
+
+    // 1. Filter by category
+    if (_currentDeviceFilter === 'high') {
+      filtered = filtered.filter(c => c.count >= 3);
+    } else if (_currentDeviceFilter === 'banned') {
+      filtered = filtered.filter(c => c.isDeviceBanned);
+    } else if (_currentDeviceFilter === 'active') {
+      filtered = filtered.filter(c => !c.isDeviceBanned);
+    }
+
+    // 2. Filter by search query
+    if (_currentDeviceSearch) {
+      const q = _currentDeviceSearch.toLowerCase();
+      filtered = filtered.filter(c => {
+        if (c.displayId.toLowerCase().includes(q) || c.seed.includes(q)) return true;
+        return c.accounts.some(a => a.username.toLowerCase().includes(q));
+      });
+    }
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div class="p-12 text-center text-slate-500 font-sans border border-slate-800/80 rounded-2xl bg-slate-950/40">
+          <i class="fa-solid fa-mobile-screen-button text-3xl mb-3 text-slate-600 block"></i>
+          <span class="text-sm">لا توجد أجهزة مطابقة لخيارات البحث أو الفلتر المحددة.</span>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = filtered.map(c => {
+      const isBanned = c.isDeviceBanned;
+      const count = c.count;
+      const seed = c.seed;
+      const displayId = c.displayId;
+
+      // Color tags for severity
+      let countBadgeClass = 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30';
+      if (count >= 5) countBadgeClass = 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm shadow-rose-500/20';
+      else if (count >= 3) countBadgeClass = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+
+      const bannedBadge = isBanned
+        ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1">
+             <i class="fa-solid fa-ban text-[9px]"></i>
+             <span>محظور بالجهاز (Hardware Banned)</span>
+           </span>`
+        : `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+             <i class="fa-solid fa-circle-check text-[9px]"></i>
+             <span>جهاز نشط (Active)</span>
+           </span>`;
+
+      const safeDisplayId = escapeHtml(displayId);
+      const safeSeed = escapeHtml(seed);
+      const accountNamesList = c.accounts.map(a => a.username);
+      const safeAccountsJson = encodeURIComponent(JSON.stringify(accountNamesList));
+
+      const accountsRows = c.accounts.map(a => {
+        const safeUname = escapeHtml(a.username);
+        const encodedUname = encodeURIComponent(a.username);
+        const wealthFormatted = Number(a.net_worth || 0).toLocaleString();
+        const cashFormatted = Number(a.cash || 0).toLocaleString();
+        const bankFormatted = Number(a.bank || 0).toLocaleString();
+        const isAccBanned = a.is_banned;
+        const timeStr = a.last_seen ? new Date(a.last_seen).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' }) : 'غير محدد';
+
+        return `
+          <tr class="hover:bg-slate-900/60 transition border-b border-slate-800/40">
+            <td class="p-2.5">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 text-xs shrink-0 font-bold">
+                  ${safeUname.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <span class="font-bold text-white text-xs block cursor-pointer hover:text-cyan-400" onclick="window.adminSearchPlayer && window.adminSearchPlayer('${encodedUname}')">
+                    ${safeUname}
+                  </span>
+                  <span class="text-[10px] text-slate-500 font-sans">آخر ظهور: ${timeStr}</span>
+                </div>
+              </div>
+            </td>
+            <td class="p-2.5 text-center">
+              <span class="font-mono font-bold text-emerald-400 text-xs">${wealthFormatted} EGP</span>
+              <div class="text-[10px] text-slate-400 font-mono">كاش: ${cashFormatted} | بنك: ${bankFormatted}</div>
+            </td>
+            <td class="p-2.5 text-center whitespace-nowrap">
+              ${isAccBanned
+                ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">محظور ⛔</span>'
+                : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">نشط 🟢</span>'
+              }
+            </td>
+            <td class="p-2.5 text-center whitespace-nowrap">
+              <div class="flex items-center justify-center gap-1.5">
+                <button onclick="window.adminQuickAccountAction && window.adminQuickAccountAction('reset', '${encodedUname}')"
+                  class="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                  title="تصفير كاش وبنك ومشاريع الحساب">
+                  تصفير
+                </button>
+                <button onclick="window.adminQuickAccountAction && window.adminQuickAccountAction('ban', '${encodedUname}')"
+                  class="px-2 py-1 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                  title="حظر الحساب نهائياً">
+                  حظر
+                </button>
+                <button onclick="window.adminQuickAccountAction && window.adminQuickAccountAction('delete', '${encodedUname}')"
+                  class="px-2 py-1 bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                  title="مسح الحساب نهائياً من قاعدة البيانات">
+                  مسح
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      return `
+        <div class="glass-panel p-4 rounded-2xl border ${isBanned ? 'border-rose-500/40 bg-rose-950/10' : 'border-slate-800/90'} space-y-3 shadow-lg transition hover:border-cyan-500/40">
+          <!-- Device Header -->
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-800/80">
+            <div class="flex items-center gap-2.5 flex-wrap">
+              <div class="w-9 h-9 rounded-xl ${isBanned ? 'bg-rose-500/15 border-rose-500/30 text-rose-400' : 'bg-cyan-500/15 border-cyan-500/30 text-cyan-400'} border flex items-center justify-center shrink-0 shadow-sm">
+                <i class="fa-solid fa-mobile-screen-button text-sm"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-mono font-black text-sm text-white">${safeDisplayId}</span>
+                  <button onclick="window.adminCopyText && window.adminCopyText('${safeDisplayId}')" class="text-slate-400 hover:text-cyan-400 transition text-xs" title="نسخ بصمة الجهاز">
+                    <i class="fa-regular fa-copy"></i>
+                  </button>
+                </div>
+                <div class="text-[10px] text-slate-500 font-mono mt-0.5">Device Seed: ${safeSeed}</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+              ${bannedBadge}
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black border ${countBadgeClass}">
+                <i class="fa-solid fa-clone mr-1"></i> ${count} حسابات مسجلة
+              </span>
+            </div>
+          </div>
+
+          <!-- Accounts Table -->
+          <div class="overflow-x-auto rounded-xl border border-slate-800/60 bg-slate-950/70">
+            <table class="w-full text-right text-xs">
+              <thead class="bg-slate-900/80 text-slate-400 border-b border-slate-800/80">
+                <tr>
+                  <th class="p-2.5 font-bold">الحساب</th>
+                  <th class="p-2.5 text-center font-bold">الثروة والأرصدة</th>
+                  <th class="p-2.5 text-center font-bold">الحالة</th>
+                  <th class="p-2.5 text-center font-bold">إجراءات فردية</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/40">
+                ${accountsRows}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Cluster Action Bar -->
+          <div class="flex items-center justify-between flex-wrap gap-2 pt-1">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              ${isBanned
+                ? `<button onclick="window.adminToggleDeviceBan && window.adminToggleDeviceBan('${safeDisplayId}', false)"
+                     class="px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+                     <i class="fa-solid fa-lock-open text-xs"></i>
+                     <span>إلغاء حظر بصمة الجهاز (Unban Hardware)</span>
+                   </button>`
+                : `<button onclick="window.adminToggleDeviceBan && window.adminToggleDeviceBan('${safeDisplayId}', true)"
+                     class="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900 border border-rose-500/50 text-rose-300 text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+                     <i class="fa-solid fa-ban text-xs"></i>
+                     <span>حظر بصمة الجهاز نهائياً (Hardware Ban)</span>
+                   </button>`
+              }
+
+              <button onclick="window.adminPurgeDeviceCluster && window.adminPurgeDeviceCluster('${safeDisplayId}', '${safeAccountsJson}')"
+                class="px-3 py-1.5 bg-gradient-to-r from-rose-700 to-amber-700 hover:from-rose-600 hover:to-amber-600 text-white text-xs font-black rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95">
+                <i class="fa-solid fa-skull-crossbones text-xs"></i>
+                <span>تصفير وحظر كافة حسابات هذا الجهاز (${count})</span>
+              </button>
+            </div>
+
+            <button onclick="window.adminCopyAccountList && window.adminCopyAccountList('${safeAccountsJson}')"
+              class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-list-check text-xs"></i>
+              <span>نسخ قائمة الأسماء</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  window.adminFilterDeviceFingerprints = function(type) {
+    _currentDeviceFilter = type;
+    document.querySelectorAll('.filter-dev-pill').forEach(btn => {
+      btn.classList.remove('bg-cyan-500/20', 'text-cyan-300', 'border-cyan-500/40');
+      btn.classList.add('bg-slate-900', 'text-slate-400', 'border-slate-800');
+    });
+    const activeBtn = document.getElementById(`btn-filter-dev-${type}`);
+    if (activeBtn) {
+      activeBtn.classList.remove('bg-slate-900', 'text-slate-400', 'border-slate-800');
+      activeBtn.classList.add('bg-cyan-500/20', 'text-cyan-300', 'border-cyan-500/40');
+    }
+    applyDeviceFiltersAndRender();
+  };
+
+  window.adminSearchDeviceFingerprints = function(val) {
+    _currentDeviceSearch = (val || '').trim();
+    applyDeviceFiltersAndRender();
+  };
+
+  window.adminCopyText = function(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      if (typeof showToast === 'function') showToast('تم النسخ', `تم نسخ [${text}] إلى الحافظة.`, 'success');
+      else alert('تم النسخ: ' + text);
+    }).catch(() => {
+      prompt('انسخ المعرف يدوياً:', text);
+    });
+  };
+
+  window.adminCopyAccountList = function(encodedJson) {
+    try {
+      const list = JSON.parse(decodeURIComponent(encodedJson));
+      const text = list.join(', ');
+      navigator.clipboard.writeText(text).then(() => {
+        if (typeof showToast === 'function') showToast('تم النسخ', `تم نسخ ${list.length} اسم حساب إلى الحافظة.`, 'success');
+        else alert('تم النسخ: ' + text);
+      }).catch(() => {
+        prompt('انسخ الأسماء:', text);
+      });
+    } catch (e) {}
+  };
+
+  window.adminToggleDeviceBan = async function(deviceId, shouldBan) {
+    const actionLabel = shouldBan ? 'حظر نهائي لبصمة الجهاز (Hardware Ban)' : 'إلغاء حظر بصمة الجهاز';
+    if (!confirm(`هل أنت متأكد من ${actionLabel} للمعرف:\n${deviceId}؟`)) return;
+
+    try {
+      if (shouldBan) {
+        await AppDB.banDevice(deviceId, 'حظر إداري لبصمة هاتف متعدد الحسابات');
+        if (typeof showToast === 'function') showToast('تم الحظر بنجاح 🚫', `تم حظر الجهاز [${deviceId}] بنجاح في السحابة.`, 'success');
+      } else {
+        await AppDB.unbanDevice(deviceId);
+        if (typeof showToast === 'function') showToast('تم إلغاء الحظر 🔓', `تم فك حظر الجهاز [${deviceId}] بنجاح.`, 'success');
+      }
+      await renderAdminDeviceFingerprints(true);
+    } catch (err) {
+      alert('فشلت العملية: ' + err.message);
+    }
+  };
+
+  window.adminPurgeDeviceCluster = async function(deviceId, encodedAccountsJson) {
+    try {
+      const accounts = JSON.parse(decodeURIComponent(encodedAccountsJson));
+      if (!confirm(`⚠️ تحذير خطير!\nهل أنت متأكد من تصفير وحظر كافة الحسابات التالية (${accounts.length} حساب) وحظر بصمة الجهاز نهائياً؟\n\n${accounts.join(', ')}`)) {
+        return;
+      }
+
+      if (typeof showToast === 'function') showToast('جاري التنفيذ...', `جاري تصفير وحظر ${accounts.length} حساب وتطبيق Hardware Ban...`, 'info');
+
+      for (const uname of accounts) {
+        try {
+          if (AppDB.adminResetPlayer) await AppDB.adminResetPlayer(uname);
+          if (AppDB.adminBanPlayer) await AppDB.adminBanPlayer(uname);
+        } catch (e) {
+          console.warn(`Failed to reset/ban ${uname}:`, e);
+        }
+      }
+
+      if (AppDB.banDevice) {
+        await AppDB.banDevice(deviceId, 'حظر إداري شامل للجهاز وتصفير جميع الحسابات المرتبطة به');
+      }
+
+      if (typeof showToast === 'function') showToast('تم التطهير الشامل 💀', `تم تصفير وحظر ${accounts.length} حساب وحظر بصمة الجهاز بنجاح!`, 'success');
+      await renderAdminDeviceFingerprints(true);
+      if (window._adminReloadPlayers) window._adminReloadPlayers(false);
+    } catch (e) {
+      alert('فشلت عملية التطهير: ' + e.message);
+    }
+  };
+
+  window.adminQuickAccountAction = async function(action, encodedUname) {
+    const username = decodeURIComponent(encodedUname);
+    const actionLabels = {
+      reset: 'تصفير كافة الأموال والمشاريع',
+      ban: 'حظر الحساب نهائياً',
+      delete: 'مسح الحساب نهائياً من قاعدة البيانات'
+    };
+    const label = actionLabels[action] || action;
+    if (!confirm(`هل أنت متأكد من تنفيذ [${label}] على الحساب (${username})؟`)) return;
+
+    try {
+      if (action === 'reset' && AppDB.adminResetPlayer) {
+        await AppDB.adminResetPlayer(username);
+      } else if (action === 'ban' && AppDB.adminBanPlayer) {
+        await AppDB.adminBanPlayer(username);
+      } else if (action === 'delete' && AppDB.adminDeletePlayer) {
+        await AppDB.adminDeletePlayer(username);
+      }
+      if (typeof showToast === 'function') showToast('تم التنفيذ بنجاح ✅', `تمت عملية [${label}] على (${username}) بنجاح.`, 'success');
+      await renderAdminDeviceFingerprints(true);
+      if (window._adminReloadPlayers) window._adminReloadPlayers(false);
+    } catch (e) {
+      alert('فشلت العملية: ' + e.message);
+    }
+  };
+
+  window.adminSearchPlayer = function(encodedUname) {
+    const uname = decodeURIComponent(encodedUname);
+    if (typeof window.switchAdminTab === 'function') {
+      window.switchAdminTab('players');
+      setTimeout(() => {
+        const input = document.getElementById('admin-search-user');
+        const btn = document.getElementById('btn-admin-search');
+        if (input) {
+          input.value = uname;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        if (btn) btn.click();
+      }, 150);
+    }
+  };
+
+  window.renderAdminDeviceFingerprints = renderAdminDeviceFingerprints;
+
   let _adminChatUnsub = null;
   let _adminChatBound = false;
   async function renderAdminChatMonitor() {
@@ -6699,7 +7222,7 @@
 
   function switchAdminTab(tabId) {
     cleanupAdminListeners();
-    const subtabs = ['stats','players','transfers','fraud','chat','market','broadcast','auctions','giftcodes','onlinegift','system','corporations','topup'];
+    const subtabs = ['stats','players','transfers','fraud','devices','chat','market','broadcast','auctions','giftcodes','onlinegift','system','corporations','topup'];
     subtabs.forEach(t => {
       const btn = document.getElementById(`tab-admin-${t}`);
       const mobPill = document.getElementById(`mobtab-admin-${t}`);
@@ -6744,6 +7267,8 @@
       renderAdminTransfersMonitor();
     } else if (tabId ==='fraud') {
       renderAdminFraudMonitor();
+    } else if (tabId ==='devices') {
+      if (typeof renderAdminDeviceFingerprints ==='function') renderAdminDeviceFingerprints();
     } else if (tabId ==='chat') {
       renderAdminChatMonitor();
     } else if (tabId ==='market') {

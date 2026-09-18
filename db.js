@@ -584,6 +584,63 @@ var AppDB = (() => {
     }
   }
 
+  async function getBannedDevices() {
+    try {
+      const rows = await _api('banned_devices?select=*&order=created_at.desc');
+      return rows || [];
+    } catch (e) {
+      console.warn('[DB] getBannedDevices error:', e.message);
+      return [];
+    }
+  }
+
+  async function banDevice(deviceId, reason = 'حظر إداري لبصمة الجهاز') {
+    try {
+      const seedMatch = String(deviceId).match(/([a-f0-9]{16})/i);
+      const seed = seedMatch ? seedMatch[1].toLowerCase() : null;
+      const now = Date.now();
+      const records = [
+        { device_id: deviceId, reason, created_at: now }
+      ];
+      if (seed && seed !== deviceId) {
+        records.push({ device_id: seed, reason, created_at: now });
+        if (!deviceId.startsWith('dev_hw_')) {
+          records.push({ device_id: 'dev_hw_' + seed, reason, created_at: now });
+        }
+      }
+      for (const rec of records) {
+        await _api('banned_devices', {
+          method: 'POST',
+          headers: { 'Prefer': 'resolution=merge-duplicates' },
+          body: JSON.stringify(rec)
+        });
+      }
+      return true;
+    } catch (e) {
+      console.error('[DB] banDevice error:', e);
+      throw e;
+    }
+  }
+
+  async function unbanDevice(deviceId) {
+    try {
+      const seedMatch = String(deviceId).match(/([a-f0-9]{16})/i);
+      const seed = seedMatch ? seedMatch[1].toLowerCase() : null;
+      await _api(`banned_devices?device_id=eq.${encodeURIComponent(deviceId)}`, {
+        method: 'DELETE'
+      });
+      if (seed) {
+        await _api(`banned_devices?device_id=like.*${encodeURIComponent(seed)}*`, {
+          method: 'DELETE'
+        });
+      }
+      return true;
+    } catch (e) {
+      console.error('[DB] unbanDevice error:', e);
+      throw e;
+    }
+  }
+
   async function getFraudAlerts(limit = 60) {
     try {
       const rows = await _api('globals?id=eq.fraud_alerts');
@@ -5701,6 +5758,9 @@ var AppDB = (() => {
     DeviceFingerprint,
     getDeviceRegistry,
     saveDeviceRegistry,
+    getBannedDevices,
+    banDevice,
+    unbanDevice,
     getFraudAlerts,
     logFraudAlert,
     checkWireTransferFraud,
