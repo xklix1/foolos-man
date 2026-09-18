@@ -1299,7 +1299,9 @@ const GameEngine = (() => {
       const diffCash = Math.abs(Number(st.cash || 0) - _vaultCash);
       const diffBank = Math.abs(Number(st.bank || 0) - _vaultBank);
       const diffDirty = Math.abs(Number(st.dirtyCash || 0) - _vaultDirtyCash);
-      if (diffCash > 0.05 || diffBank > 0.05 || diffDirty > 0.05) {
+      // Threshold: 1.0 EGP allows normal floating-point drift from fractional interest accumulation
+      // while still blocking real tampering attempts which change values by much larger amounts.
+      if (diffCash > 1.0 || diffBank > 1.0 || diffDirty > 1.0) {
         console.warn(`[TamperShield] Unauthorized in-memory state divergence! State: Cash=${st.cash}, Bank=${st.bank} vs Vault: Cash=${_vaultCash}, Bank=${_vaultBank}`);
         _isCompromised = true;
         return false;
@@ -2196,7 +2198,9 @@ const GameEngine = (() => {
   function calculateBankInterestPerTick(playerState = state) {
     const hourly = calculateBankInterestHourly(playerState);
     if (hourly <= 0) return 0;
-    return Math.floor(hourly / 1200);
+    // Distribute per second (unfloored) — consistent with how business profits tick.
+    // OLD: Math.floor(hourly / 1200) → returned 0 for balances < 12.5M EGP (silent freeze bug).
+    return hourly / 3600;
   }
 
   // Calculate total passive cashflow per hour from all businesses, real estate, bank interest, corp, and peer employment

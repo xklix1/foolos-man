@@ -2699,19 +2699,31 @@ const UIController = (() => {
     const tEl = document.getElementById('stat-title');
     if (tEl) tEl.textContent = s.title;
 
+    const formatLiveStat = (num) => {
+      if (num === null || num === undefined || isNaN(num)) return '0';
+      const val = Number(num);
+      if (val >= 1000000000) {
+        return (val / 1000000000).toFixed(2) + 'B';
+      } else if (val >= 100000000) {
+        return (val / 1000000).toFixed(1) + 'M';
+      } else {
+        return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+    };
+
     const cEl = document.getElementById('stat-cash');
     if (cEl) {
-      cEl.textContent = formatCompactNumber(s.cash);
+      cEl.textContent = formatLiveStat(s.cash);
       cEl.title = formatFullCurrency(s.cash);
     }
     const bEl = document.getElementById('stat-bank');
     if (bEl) {
-      bEl.textContent = formatCompactNumber(s.bank);
+      bEl.textContent = formatLiveStat(s.bank);
       bEl.title = formatFullCurrency(s.bank);
     }
     const nEl = document.getElementById('stat-networth');
     if (nEl) {
-      nEl.textContent = formatCompactNumber(s.netWorth);
+      nEl.textContent = formatLiveStat(s.netWorth);
       nEl.title = formatFullCurrency(s.netWorth);
     }
 
@@ -2719,16 +2731,16 @@ const UIController = (() => {
     const cashflow = GameEngine.calculatePassiveIncomePerHour ? GameEngine.calculatePassiveIncomePerHour() : (GameEngine.calculatePassiveIncomePerSecond ? (GameEngine.calculatePassiveIncomePerSecond() * 3600) : 0);
     const cfEl = document.getElementById('stat-cashflow');
     if (cfEl) {
-      cfEl.textContent =`+${formatCompactNumber(cashflow)}`;
-      cfEl.title =`+${formatFullCurrency(cashflow)}`;
+      cfEl.textContent = `+${formatCompactNumber(cashflow)}`;
+      cfEl.title = `+${formatFullCurrency(cashflow)}`;
     }
 
     // Mobile stats
     const umEl = document.getElementById('stat-username-mobile');
     if (umEl) {
       umEl.innerHTML = badgeHtml + safeUsername;
-      umEl.classList.add('cursor-pointer','hover:underline');
-      umEl.title ='اضغط لعرض ملفك الشخصي وأوسمتك';
+      umEl.classList.add('cursor-pointer', 'hover:underline');
+      umEl.title = 'اضغط لعرض ملفك الشخصي وأوسمتك';
       umEl.onclick = () => openPlayerProfileCard(username);
     }
     const fbmEl = document.getElementById('stat-fb-badge-mobile');
@@ -2741,17 +2753,17 @@ const UIController = (() => {
 
     const cmEl = document.getElementById('stat-cash-mobile');
     if (cmEl) {
-      cmEl.textContent = formatCompactNumber(s.cash);
+      cmEl.textContent = formatLiveStat(s.cash);
       cmEl.title = formatFullCurrency(s.cash);
     }
     const bmEl = document.getElementById('stat-bank-mobile');
     if (bmEl) {
-      bmEl.textContent = formatCompactNumber(s.bank);
+      bmEl.textContent = formatLiveStat(s.bank);
       bmEl.title = formatFullCurrency(s.bank);
     }
     const nmEl = document.getElementById('stat-networth-mobile');
     if (nmEl) {
-      nmEl.textContent = formatCompactNumber(s.netWorth);
+      nmEl.textContent = formatLiveStat(s.netWorth);
       nmEl.title = formatFullCurrency(s.netWorth);
     }
 
@@ -2963,19 +2975,22 @@ const UIController = (() => {
     // In My Account (حسابي), display full amount prominently, with compact badge if large
     const dashCashEl = document.getElementById('dash-cash');
     if (dashCashEl) {
-      if (s.cash >= 1000000) {
-        dashCashEl.innerHTML =`<span class="break-all">${s.cash.toLocaleString()} ${sym}</span> <span class="text-xs text-yellow-400 font-bold ml-1 bg-yellow-500/10 px-2 py-0.5 rounded-lg border border-yellow-500/20 inline-block numbers-font">(${formatCompactNumber(s.cash)})</span>`;
+      const cashVal = Number(s.cash || 0);
+      if (cashVal >= 1000000) {
+        dashCashEl.innerHTML = `<span class="break-all">${cashVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${sym}</span> <span class="text-xs text-yellow-400 font-bold ml-1 bg-yellow-500/10 px-2 py-0.5 rounded-lg border border-yellow-500/20 inline-block numbers-font">(${formatCompactNumber(cashVal)})</span>`;
       } else {
-        dashCashEl.textContent = s.cash.toLocaleString() +'' + sym;
+        dashCashEl.textContent = cashVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + sym;
       }
     }
 
     const dashBankEl = document.getElementById('dash-bank');
     if (dashBankEl) {
-      if (s.bank >= 1000000) {
-        dashBankEl.innerHTML =`<span class="break-all">${s.bank.toLocaleString()} ${sym}</span> <span class="text-xs text-emerald-400 font-bold ml-1 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20 inline-block numbers-font">(${formatCompactNumber(s.bank)})</span>`;
+      const bankVal = Number(s.bank || 0);
+      if (bankVal >= 1000000) {
+        dashBankEl.innerHTML = `<span class="break-all">${bankVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${sym}</span> <span class="text-xs text-emerald-400 font-bold ml-1 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20 inline-block numbers-font">(${formatCompactNumber(bankVal)})</span>`;
       } else {
-        dashBankEl.textContent = s.bank.toLocaleString() +'' + sym;
+        // Show 2 decimal places so tick-by-tick growth is visible (e.g., "5,000.28")
+        dashBankEl.textContent = bankVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + sym;
       }
     }
 
@@ -3827,13 +3842,15 @@ const UIController = (() => {
     // Display basic balances
     const bCash = document.getElementById('bank-cash');
     if (bCash) {
-      bCash.textContent =`${formatCompactNumber(s.cash)} EGP`;
-      bCash.title =`${s.cash.toLocaleString()} EGP`;
+      const cashVal = Number(s.cash || 0);
+      bCash.textContent = `${cashVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EGP`;
+      bCash.title = `${cashVal.toLocaleString('en-US')} EGP`;
     }
     const bBal = document.getElementById('bank-balance');
     if (bBal) {
-      bBal.textContent =`${formatCompactNumber(s.bank)} EGP`;
-      bBal.title =`${s.bank.toLocaleString()} EGP`;
+      const bankVal = Number(s.bank || 0);
+      bBal.textContent = `${bankVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EGP`;
+      bBal.title = `${bankVal.toLocaleString('en-US')} EGP`;
     }
 
     // Show locked investments in bank
@@ -3877,13 +3894,17 @@ const UIController = (() => {
     const s = GameEngine.state;
     const cashEl = document.getElementById('bank-cash');
     if (cashEl) {
-      cashEl.textContent =`${formatCompactNumber(s.cash)} EGP`;
-      cashEl.title =`${s.cash.toLocaleString()} EGP`;
+      // Show full number in bank tab so fractional gains from ticks are visible
+      const cashFull = Number(s.cash || 0);
+      cashEl.textContent = cashFull.toLocaleString('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 0 }) + ' EGP';
+      cashEl.title = cashFull.toLocaleString('en-US') + ' EGP';
     }
     const balEl = document.getElementById('bank-balance');
     if (balEl) {
-      balEl.textContent =`${formatCompactNumber(s.bank)} EGP`;
-      balEl.title =`${s.bank.toLocaleString()} EGP`;
+      // Show full number in bank tab so fractional gains from ticks are visible
+      const bankFull = Number(s.bank || 0);
+      balEl.textContent = bankFull.toLocaleString('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 0 }) + ' EGP';
+      balEl.title = bankFull.toLocaleString('en-US') + ' EGP';
     }
 
     // Update Loan Info & Eligibility
