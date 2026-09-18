@@ -7157,17 +7157,17 @@ const GameEngine = (() => {
     candidates.push({ type: 'crop', id: 'wheat', basePrice: FARM_CROPS.wheat.sellPrice, min: 15, max: 60 });
     candidates.push({ type: 'crop', id: 'tomato', basePrice: FARM_CROPS.tomato.sellPrice, min: 12, max: 45 });
     candidates.push({ type: 'crop', id: 'strawberry', basePrice: FARM_CROPS.strawberry.sellPrice, min: 8, max: 30 });
-    if (landLvl >= 2) candidates.push({ type: 'crop', id: 'coffee', basePrice: FARM_CROPS.coffee.sellPrice, min: 6, max: 20 });
-    if (landLvl >= 3) candidates.push({ type: 'crop', id: 'dates', basePrice: FARM_CROPS.dates.sellPrice, min: 4, max: 12 });
-    if (landLvl >= 4) candidates.push({ type: 'crop', id: 'saffron', basePrice: FARM_CROPS.saffron.sellPrice, min: 2, max: 6 });
+    candidates.push({ type: 'crop', id: 'coffee', basePrice: FARM_CROPS.coffee.sellPrice, min: 6, max: 20 });
+    candidates.push({ type: 'crop', id: 'dates', basePrice: FARM_CROPS.dates.sellPrice, min: 4, max: 12 });
+    candidates.push({ type: 'crop', id: 'saffron', basePrice: FARM_CROPS.saffron.sellPrice, min: 2, max: 6 });
 
     // 2. Processed Recipes (value-add goods)
     candidates.push({ type: 'processed', id: 'flour_bread', basePrice: FARM_RECIPES.flour_bread.baseValue, min: 4, max: 20 });
     candidates.push({ type: 'processed', id: 'tomato_paste', basePrice: FARM_RECIPES.tomato_paste.baseValue, min: 3, max: 15 });
     candidates.push({ type: 'processed', id: 'strawberry_jam', basePrice: FARM_RECIPES.strawberry_jam.baseValue, min: 2, max: 10 });
-    if (landLvl >= 2) candidates.push({ type: 'processed', id: 'premium_coffee', basePrice: FARM_RECIPES.premium_coffee.baseValue, min: 2, max: 6 });
-    if (landLvl >= 3) candidates.push({ type: 'processed', id: 'stuffed_dates', basePrice: FARM_RECIPES.stuffed_dates.baseValue, min: 1, max: 4 });
-    if (landLvl >= 4) candidates.push({ type: 'processed', id: 'saffron_essence', basePrice: FARM_RECIPES.saffron_essence.baseValue, min: 1, max: 2 });
+    candidates.push({ type: 'processed', id: 'premium_coffee', basePrice: FARM_RECIPES.premium_coffee.baseValue, min: 2, max: 6 });
+    candidates.push({ type: 'processed', id: 'stuffed_dates', basePrice: FARM_RECIPES.stuffed_dates.baseValue, min: 1, max: 4 });
+    candidates.push({ type: 'processed', id: 'saffron_essence', basePrice: FARM_RECIPES.saffron_essence.baseValue, min: 1, max: 2 });
 
     // 3. Livestock Produce
     candidates.push({ type: 'livestock', id: 'milk', basePrice: FARM_LIVESTOCK_CONFIG.cow.sellPrice, min: 8, max: 30 });
