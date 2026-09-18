@@ -18395,6 +18395,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             playMenuSound('success');
             showToast('توسعة المستودع',`تمت توسعة المستودع الرئيسي بنجاح! السعة الاستيعابية الآن: ${res.newCapacity} حاوية.`,'success');
             renderTradePanel();
+            renderStatsBar();
+            if (activeTab === 'bank') updateBankInDOM();
           } catch (err) {
             showToast('فشل التوسعة', err.message,'error');
           }
@@ -18539,6 +18541,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             const order = GameEngine.buyImportCargo(key, qty);
             playMenuSound('success');
             showToast('بدء الاستيراد الدولي',`تم توقيع أمر توريد ${qty} وحدة من"${c.name}" بتكلفة ${order.totalCost.toLocaleString()} EGP! الشحنة الآن في طريقها لمستودعك.`,'success');
+            renderStatsBar();
+            if (activeTab === 'bank') updateBankInDOM();
             switchTradeSubtab('shipments');
           } catch (err) {
             showToast('تعذر الاستيراد', err.message,'error');
