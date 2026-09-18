@@ -12131,21 +12131,21 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       card.innerHTML = `
         <div class="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-800/70">
           <div class="flex items-center gap-2 min-w-0">
-            <span class="text-xs sm:text-sm font-black text-white truncate">${frame.name}</span>
-            <span class="text-[9px] px-2 py-0.5 rounded-full border font-bold ${frame.badgeClass} shrink-0">${frame.badge}</span>
+            <span class="text-xs sm:text-sm font-black text-white truncate">${escapeHtml(frame.name)}</span>
+            <span class="text-[9px] px-2 py-0.5 rounded-full border font-bold ${frame.badgeClass} shrink-0">${escapeHtml(frame.badge)}</span>
           </div>
           ${statusBadgeHtml}
         </div>
 
-        <p class="text-[11px] text-slate-400 leading-relaxed">${frame.description}</p>
+        <p class="text-[11px] text-slate-400 leading-relaxed">${escapeHtml(frame.description)}</p>
 
         <!-- Live Bubble Preview -->
         <div class="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800/70 flex flex-col items-end my-1 overflow-visible">
           <div class="flex items-center gap-1.5 mb-1">
             <span class="text-[9px] text-slate-500 font-bold">الآن</span>
-            <span class="text-[10px] ${frame.senderGlowClass}">${curUser}</span>
+            <span class="text-[10px] ${frame.senderGlowClass}">${escapeHtml(curUser)}</span>
           </div>
-          <div class="chat-message-bubble ${frame.previewBubbleClass} text-xs" ${frame.previewTag ? `data-vip-tag="${frame.previewTag}"` : ''}>
+          <div class="chat-message-bubble ${frame.previewBubbleClass} text-xs" ${frame.previewTag ? `data-vip-tag="${escapeHtml(frame.previewTag)}"` : ''}>
             هكذا ستبدو رسائلك بهذا الإطار!
           </div>
         </div>
@@ -14343,7 +14343,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       container.innerHTML = `
         <div class="text-center text-slate-500 text-xs py-12">
           <i class="fa-solid fa-lock text-sky-400/40 text-3xl mb-2 block"></i>
-          <span class="font-bold text-slate-400">بداية المحادثة الخاصة المشفرة مع "${partnerUsername}"</span>
+          <span class="font-bold text-slate-400">بداية المحادثة الخاصة المشفرة مع "${escapeHtml(partnerUsername)}"</span>
           <p class="text-[10px] text-slate-500 mt-1">الرسائل بينكما خاصة تماماً ولا يراها بقية اللاعبين.</p>
         </div>`;
       return;
@@ -14365,9 +14365,9 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
       msgDiv.innerHTML = `
         <div class="${bubbleClass}">
-          <p class="leading-relaxed whitespace-pre-line">${text}</p>
+          <p class="leading-relaxed whitespace-pre-line">${escapeHtml(text)}</p>
         </div>
-        <span class="text-[9px] text-slate-500 numbers-font font-bold mt-1 px-1">${timeStr}</span>
+        <span class="text-[9px] text-slate-500 numbers-font font-bold mt-1 px-1">${escapeHtml(timeStr)}</span>
       `;
       container.appendChild(msgDiv);
     });
@@ -14439,9 +14439,9 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const timeStr = new Date(localTs).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
         msgDiv.innerHTML = `
           <div class="bg-gradient-to-r from-sky-600 to-sky-500 text-white rounded-2xl rounded-bl-sm p-2.5 text-xs shadow-md shadow-sky-950/30 max-w-[85%] select-text">
-            <p class="leading-relaxed whitespace-pre-line">${text}</p>
+            <p class="leading-relaxed whitespace-pre-line">${escapeHtml(text)}</p>
           </div>
-          <span class="text-[9px] text-slate-500 numbers-font font-bold mt-1 px-1">${timeStr}</span>
+          <span class="text-[9px] text-slate-500 numbers-font font-bold mt-1 px-1">${escapeHtml(timeStr)}</span>
         `;
         container.appendChild(msgDiv);
         container.scrollTop = container.scrollHeight;

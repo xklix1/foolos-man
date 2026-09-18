@@ -8,6 +8,7 @@
  * - Offline catch-up engine on session initialization
  */
 
+const crypto = require('crypto');
 const config = require('../config/env');
 const dbService = require('./db-service');
 const { sanitizePlayerState } = require('../engine/state-sanitizer');
@@ -61,7 +62,7 @@ class SessionManager {
         offlineReport = calculateAuthoritativeOfflineProgress(state, Date.now());
       }
 
-      const effectiveSessionId = clientSessionId || state.activeSessionId || ('sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9));
+      const effectiveSessionId = clientSessionId || state.activeSessionId || ('sess_' + Date.now() + '_' + crypto.randomBytes(12).toString('hex'));
       state.activeSessionId = effectiveSessionId;
 
       session = {

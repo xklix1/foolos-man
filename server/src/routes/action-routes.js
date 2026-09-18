@@ -493,18 +493,23 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         if (!targetKey) {
           return reply.code(400).send({ error: 'MISSING_TARGET_KEY', message: 'targetKey (job ID) is required for smuggling.' });
         }
+        const safeKey = String(targetKey).trim();
+        if (safeKey === '__proto__' || safeKey === 'constructor' || safeKey === 'prototype') {
+          return reply.code(400).send({ error: 'INVALID_TARGET_KEY', message: 'Invalid targetKey property.' });
+        }
+
         const jobs = s.activeSmugglingJobs;
         let job = null;
         if (Array.isArray(jobs)) {
-          job = jobs.find(j => String(j.id) === String(targetKey)) ||
-                (targetKey !== undefined && jobs[Number(targetKey)]) ||
+          job = jobs.find(j => j && typeof j === 'object' && String(j.id) === safeKey) ||
+                (Number.isInteger(Number(safeKey)) && jobs[Number(safeKey)]) ||
                 (jobs.length === 1 ? jobs[0] : null);
-        } else if (jobs && typeof jobs === 'object') {
-          job = jobs[targetKey];
+        } else if (jobs && typeof jobs === 'object' && Object.prototype.hasOwnProperty.call(jobs, safeKey)) {
+          job = jobs[safeKey];
         }
 
-        if (!job) {
-          return reply.code(404).send({ error: 'JOB_NOT_FOUND', message: `No active smuggling job found with ID: ${targetKey}` });
+        if (!job || typeof job !== 'object' || Array.isArray(job) || job === Object.prototype) {
+          return reply.code(404).send({ error: 'JOB_NOT_FOUND', message: `No active smuggling job found with ID: ${safeKey}` });
         }
 
         const finishTs = Number(job.endTime || job.finishTime || job.expiresAt || 0);

@@ -113,7 +113,7 @@ async function pushRoutes(fastify, options) {
         };
         await pushService.sendToUser(u, payload);
       } catch (err) {
-        console.warn(`[PushRoutes] Delayed test push failed for ${u}:`, err.message);
+        console.warn('[PushRoutes] Delayed test push failed for user:', u, err.message);
       }
     }, waitSec * 1000);
 
