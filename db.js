@@ -3004,13 +3004,19 @@ var AppDB = (() => {
 
   async function submitTopupRequest(requestData) {
     const ts = Date.now();
-    let currentRequests = [];
-    try {
-      const rows = await _api(`globals?id=eq.topup_requests`);
-      if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.requests)) {
-        currentRequests = rows[0].data.requests;
+
+    // 1. Authoritative ServerBridge: routes via backend service_role key (bypasses RLS entirely)
+    if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.submitTopupRequest === 'function' && ServerBridge.isServerOnline()) {
+      try {
+        const bridgeReq = await ServerBridge.submitTopupRequest(requestData);
+        if (bridgeReq) {
+          console.log('[DB] Topup request submitted via Authoritative ServerBridge:', bridgeReq.id);
+          return bridgeReq;
+        }
+      } catch (bridgeErr) {
+        console.warn('[DB] ServerBridge submitTopupRequest fallback:', bridgeErr.message);
       }
-    } catch (e) {}
+    }
 
     const newRequest = {
       id:'req_' + ts +'_' + Math.random().toString(36).substring(2, 7),
@@ -3026,6 +3032,29 @@ var AppDB = (() => {
       reviewedAt: null,
       reviewerNote:''
     };
+
+    // 2. PostgreSQL Atomic RPC Function (SECURITY DEFINER, race-condition free)
+    try {
+      const rpcRes = await _api('rpc/submit_topup_request', {
+        method: 'POST',
+        body: JSON.stringify({ request_data: newRequest })
+      });
+      if (rpcRes) {
+        console.log('[DB] Topup request submitted via Supabase RPC:', newRequest.id);
+        return newRequest;
+      }
+    } catch (rpcErr) {
+      // If RPC is not present yet or fails, proceed to direct globals write
+    }
+
+    // 3. Direct globals write (allowed by updated RLS policy)
+    let currentRequests = [];
+    try {
+      const rows = await _api(`globals?id=eq.topup_requests`);
+      if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.requests)) {
+        currentRequests = rows[0].data.requests;
+      }
+    } catch (e) {}
 
     currentRequests.unshift(newRequest);
     if (currentRequests.length > 300) {

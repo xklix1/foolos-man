@@ -354,6 +354,17 @@ var ServerBridge = (() => {
     }
   }
 
+  async function submitTopupRequest(requestData) {
+    if (!_isServerOnline) return null;
+    try {
+      const res = await _post('/api/action/submit-topup', requestData);
+      return (res && res.request) || null;
+    } catch (e) {
+      console.warn('[ServerBridge] submitTopupRequest error:', e.message);
+      return null;
+    }
+  }
+
   return {
     startSession,
     dispatchClick,
@@ -364,6 +375,7 @@ var ServerBridge = (() => {
     changePin,
     notifyWireTransfer,
     sendTransferRequest,
+    submitTopupRequest,
     syncState,
     sendHeartbeat,
     sendExit,

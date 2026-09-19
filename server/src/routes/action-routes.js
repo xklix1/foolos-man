@@ -679,6 +679,79 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       return reply.code(500).send({ error: 'Failed to create transfer request: ' + err.message });
     }
   });
+
+  // 12. POST /api/action/submit-topup (Authoritative Topup Submission)
+  fastify.post('/api/action/submit-topup', async (request, reply) => {
+    const { username, packageId, packageName, price, rewards, senderPhoneOrName, receiptNumber } = request.body || {};
+    if (!username || !packageId || price === undefined) {
+      return reply.code(400).send({ error: 'Missing required topup parameters' });
+    }
+
+    const sKey = config.SUPABASE_SERVICE_ROLE_KEY;
+    const sUrl = config.SUPABASE_URL;
+    const ts = Date.now();
+
+    const newRequest = {
+      id: 'req_' + ts + '_' + Math.random().toString(36).substring(2, 7),
+      username: String(username).trim(),
+      packageId: String(packageId).trim(),
+      packageName: String(packageName || '').trim(),
+      price: Number(price) || 0,
+      rewards: rewards || {},
+      senderPhoneOrName: String(senderPhoneOrName || '').trim(),
+      receiptNumber: String(receiptNumber || '').trim(),
+      status: 'pending',
+      createdAt: ts,
+      reviewedAt: null,
+      reviewerNote: ''
+    };
+
+    try {
+      // 1. Fetch current topup requests via service_role
+      const getRes = await fetch(`${sUrl}/rest/v1/globals?id=eq.topup_requests`, {
+        headers: {
+          'apikey': sKey,
+          'Authorization': `Bearer ${sKey}`
+        }
+      });
+      let currentRequests = [];
+      if (getRes.ok) {
+        const rows = await getRes.json();
+        if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.requests)) {
+          currentRequests = rows[0].data.requests;
+        }
+      }
+
+      currentRequests.unshift(newRequest);
+      if (currentRequests.length > 300) {
+        currentRequests = currentRequests.slice(0, 300);
+      }
+
+      const saveRes = await fetch(`${sUrl}/rest/v1/globals`, {
+        method: 'POST',
+        headers: {
+          'apikey': sKey,
+          'Authorization': `Bearer ${sKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify({
+          id: 'topup_requests',
+          data: { requests: currentRequests, updatedAt: ts },
+          updated_at: ts
+        })
+      });
+
+      if (!saveRes.ok) {
+        throw new Error(`Failed to save topup request: ${await saveRes.text()}`);
+      }
+
+      return { success: true, request: newRequest };
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.code(500).send({ error: 'Failed to submit topup request: ' + err.message });
+    }
+  });
 }
 
 module.exports = actionRoutes;

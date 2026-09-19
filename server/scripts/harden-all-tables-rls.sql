@@ -56,13 +56,52 @@ WITH CHECK (true);
 CREATE POLICY "Public can insert allowed globals"
 ON public.globals FOR INSERT
 TO anon, authenticated
-WITH CHECK (id IN ('chat_feed', 'leaderboard'));
+WITH CHECK (id IN ('chat_feed', 'leaderboard', 'hourly_leaderboard', 'season_leaderboard', 'topup_requests', 'device_registry', 'fraud_alerts'));
 
 CREATE POLICY "Public can update allowed globals"
 ON public.globals FOR UPDATE
 TO anon, authenticated
-USING (id IN ('chat_feed', 'leaderboard'))
-WITH CHECK (id IN ('chat_feed', 'leaderboard'));
+USING (id IN ('chat_feed', 'leaderboard', 'hourly_leaderboard', 'season_leaderboard', 'topup_requests', 'device_registry', 'fraud_alerts'))
+WITH CHECK (id IN ('chat_feed', 'leaderboard', 'hourly_leaderboard', 'season_leaderboard', 'topup_requests', 'device_registry', 'fraud_alerts'));
+
+-- 2.1 ATOMIC TOPUP REQUEST FUNCTION (Prevents race conditions, callable via RPC)
+CREATE OR REPLACE FUNCTION public.submit_topup_request(request_data jsonb)
+RETURNS jsonb AS $$
+DECLARE
+  v_current jsonb;
+  v_requests jsonb;
+  v_now bigint := (extract(epoch from now()) * 1000)::bigint;
+BEGIN
+  -- Row-level lock to prevent concurrent overwrite
+  SELECT data INTO v_current FROM public.globals WHERE id = 'topup_requests' FOR UPDATE;
+  
+  IF v_current IS NULL THEN
+    v_requests := '[]'::jsonb;
+  ELSE
+    v_requests := COALESCE(v_current->'requests', '[]'::jsonb);
+  END IF;
+  
+  -- Prepend new request
+  v_requests := jsonb_build_array(request_data) || v_requests;
+  
+  -- Limit to 300 entries
+  IF jsonb_array_length(v_requests) > 300 THEN
+    SELECT jsonb_agg(elem) INTO v_requests FROM (
+      SELECT elem FROM jsonb_array_elements(v_requests) WITH ORDINALITY AS t(elem, ord)
+      WHERE ord <= 300
+    ) sub;
+  END IF;
+  
+  INSERT INTO public.globals (id, data, updated_at)
+  VALUES ('topup_requests', jsonb_build_object('requests', v_requests, 'updatedAt', v_now), v_now)
+  ON CONFLICT (id) DO UPDATE
+  SET data = EXCLUDED.data, updated_at = EXCLUDED.updated_at;
+  
+  RETURN request_data;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.submit_topup_request(jsonb) TO anon, authenticated;
 
 -- 3. HARDEN: public.gift_codes (Promo Codes & Free Cash Rewards)
 ALTER TABLE public.gift_codes ENABLE ROW LEVEL SECURITY;
