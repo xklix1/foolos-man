@@ -114,6 +114,20 @@ class SessionManager {
   }
 
   /**
+   * Triggers authoritative offline calculation on an authenticated session
+   * @param {Object} session 
+   * @returns {Object|null}
+   */
+  applyOfflineCatchup(session) {
+    if (!session || !session.state || session.state.isReset) return null;
+    const report = calculateAuthoritativeOfflineProgress(session.state, Date.now());
+    if (report && report.applied) {
+      session.dirty = true;
+    }
+    return report;
+  }
+
+  /**
    * Unloads a session on explicit client exit, ensuring dirty state is flushed to DB
    * and next session start performs a clean offline catch-up.
    */

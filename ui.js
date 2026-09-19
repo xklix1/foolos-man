@@ -16396,9 +16396,12 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (closeBtn) {
       closeBtn.onclick = () => {
         modal.classList.add('hidden');
+        if (typeof renderStatsBar === 'function') renderStatsBar();
+        if (typeof renderAll === 'function') renderAll();
       };
     }
 
+    if (typeof renderStatsBar === 'function') renderStatsBar();
     modal.classList.remove('hidden');
     playMenuSound('success');
   }

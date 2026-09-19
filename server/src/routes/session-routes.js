@@ -54,12 +54,13 @@ async function sessionRoutes(fastify, options) {
     }
 
     try {
-      const { session, offlineReport } = await sessionManager.getOrCreateSession(username, true, sessionId);
+      // 1. Load or fetch session WITHOUT triggering offline catchup yet (avoids eating offline time on 401)
+      const { session } = await sessionManager.getOrCreateSession(username, false, sessionId);
       if (!session) {
         return reply.code(404).send({ error: 'Player account not found' });
       }
 
-      // Strict Authentication: Either valid sessionToken OR valid PIN
+      // 2. Strict Authentication: Either valid sessionToken OR valid PIN
       let isAuthed = false;
       if (effectiveToken && session.sessionToken && effectiveToken === session.sessionToken) {
         isAuthed = true;
@@ -80,6 +81,9 @@ async function sessionRoutes(fastify, options) {
       if (!isAuthed) {
         return reply.code(401).send({ error: 'Invalid PIN credentials or expired session token' });
       }
+
+      // 3. User is 100% verified -> NOW run authoritative offline catchup
+      const offlineReport = sessionManager.applyOfflineCatchup(session);
 
       return {
         success: true,

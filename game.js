@@ -3064,7 +3064,7 @@ const GameEngine = (() => {
       try {
         const savedToken = (typeof localStorage !== 'undefined') ? localStorage.getItem('rasalmal_auth_token_' + username) : null;
         const sRes = await ServerBridge.startSession(username, pin, savedToken);
-        if (sRes && sRes.state && !dbState) {
+        if (sRes && sRes.state) {
           dbState = sRes.state;
           serverOfflineReport = sRes.offlineReport;
           console.log('[GameEngine] Authoritative server session active. Offline report:', serverOfflineReport);
