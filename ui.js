@@ -4502,6 +4502,28 @@ const UIController = (() => {
     });
 
     // Wire Transfer Form Actions with Strict Anti-Spam Lock & Total Balance Support
+    const wireAmtInput = document.getElementById('wire-amount-input');
+    const wireTaxBox = document.getElementById('wire-tax-breakdown-box');
+    const wirePrevGross = document.getElementById('wire-preview-gross');
+    const wirePrevTax = document.getElementById('wire-preview-tax');
+    const wirePrevNet = document.getElementById('wire-preview-net');
+
+    if (wireAmtInput) {
+      wireAmtInput.addEventListener('input', () => {
+        const val = parseInt(wireAmtInput.value, 10);
+        if (!isNaN(val) && val > 0 && wireTaxBox) {
+          const tax = Math.floor(val * 0.05);
+          const net = val - tax;
+          wireTaxBox.classList.remove('hidden');
+          if (wirePrevGross) wirePrevGross.textContent = `${val.toLocaleString()} EGP`;
+          if (wirePrevTax) wirePrevTax.textContent = `-${tax.toLocaleString()} EGP`;
+          if (wirePrevNet) wirePrevNet.textContent = `${net.toLocaleString()} EGP`;
+        } else if (wireTaxBox) {
+          wireTaxBox.classList.add('hidden');
+        }
+      });
+    }
+
     let _wireTransferInProgress = false;
     document.getElementById('btn-wire-submit').addEventListener('click', async () => {
       if (_wireTransferInProgress) return;
@@ -4515,6 +4537,10 @@ const UIController = (() => {
       try {
         if (!recipient || isNaN(amount) || amount <= 0) {
           throw new Error("يرجى تعبئة حقل المستلم ومبلغ التحويل بشكل صحيح.");
+        }
+
+        if (amount > 5000000) {
+          throw new Error("🚫 الحد الأقصى للتحويل البنكي الواحد هو 5,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.");
         }
 
         if (!pin) {
@@ -4555,8 +4581,11 @@ const UIController = (() => {
         document.getElementById('wire-recipient-input').value ='';
         document.getElementById('wire-amount-input').value ='';
         if (document.getElementById('wire-pin-input')) document.getElementById('wire-pin-input').value ='';
+        if (wireTaxBox) wireTaxBox.classList.add('hidden');
 
-        showToast('حوالة صادرة',`تم تحويل مبلغ ${amount.toLocaleString()} EGP بنجاح إلى "${recipient}".`,'success');
+        const taxAmt = Math.floor(amount * 0.05);
+        const netAmt = amount - taxAmt;
+        showToast('حوالة صادرة بنجاح 💸', `تم تحويل ${amount.toLocaleString()} EGP إلى "${recipient}". (الصافي المستلم: ${netAmt.toLocaleString()} EGP بعد خصم ضريبة البنك المركزي 5%: ${taxAmt.toLocaleString()} EGP)`, 'success');
 
         // Log transaction locally
         addTransferHistoryRow(recipient, amount);
@@ -12427,6 +12456,28 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       btnCancelDirectWire.addEventListener('click', () => directWireModal.classList.add('hidden'));
     }
 
+    const dWireInput = document.getElementById('direct-wire-amount-input');
+    const dWireTaxBox = document.getElementById('direct-wire-tax-breakdown-box');
+    const dWirePrevGross = document.getElementById('direct-wire-preview-gross');
+    const dWirePrevTax = document.getElementById('direct-wire-preview-tax');
+    const dWirePrevNet = document.getElementById('direct-wire-preview-net');
+
+    if (dWireInput) {
+      dWireInput.addEventListener('input', () => {
+        const val = parseInt(dWireInput.value, 10);
+        if (!isNaN(val) && val > 0 && dWireTaxBox) {
+          const tax = Math.floor(val * 0.05);
+          const net = val - tax;
+          dWireTaxBox.classList.remove('hidden');
+          if (dWirePrevGross) dWirePrevGross.textContent = `${val.toLocaleString()} EGP`;
+          if (dWirePrevTax) dWirePrevTax.textContent = `-${tax.toLocaleString()} EGP`;
+          if (dWirePrevNet) dWirePrevNet.textContent = `${net.toLocaleString()} EGP`;
+        } else if (dWireTaxBox) {
+          dWireTaxBox.classList.add('hidden');
+        }
+      });
+    }
+
     document.querySelectorAll('.direct-wire-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         const amtType = chip.dataset.amount;
@@ -12434,10 +12485,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         if (!inputEl) return;
         if (amtType === 'max') {
           const curCash = Number(GameEngine.state.cash) || 0;
-          inputEl.value = Math.max(0, Math.floor(curCash));
+          const curBank = Number(GameEngine.state.bank) || 0;
+          const totalAvail = curCash + curBank;
+          inputEl.value = Math.min(5000000, Math.max(0, Math.floor(totalAvail)));
         } else {
-          inputEl.value = parseInt(amtType);
+          inputEl.value = Math.min(5000000, parseInt(amtType, 10));
         }
+        inputEl.dispatchEvent(new Event('input'));
         if (typeof playMenuSound === 'function') playMenuSound('click');
       });
     });
@@ -14549,6 +14603,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const titleEl = document.getElementById('direct-wire-recipient-title');
     const balEl = document.getElementById('direct-wire-available-balance');
     const inputEl = document.getElementById('direct-wire-amount-input');
+    const dWireTaxBox = document.getElementById('direct-wire-tax-breakdown-box');
+    if (dWireTaxBox) dWireTaxBox.classList.add('hidden');
 
     if (nameEl) nameEl.textContent = targetUsername;
     if (titleEl) titleEl.textContent = targetTitle;
@@ -14582,6 +14638,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     if (!target || isNaN(amt) || amt <= 0) {
       showToast('تنبيه', 'يرجى إدخال مبلغ صحيح للتحويل.', 'warning');
+      return;
+    }
+
+    if (amt > 5000000) {
+      showToast('سقف التحويل اليومي', '🚫 الحد الأقصى للتحويل البنكي الواحد هو 5,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.', 'warning');
       return;
     }
 
@@ -14637,9 +14698,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         GameEngine.state.adminModifiedTimestamp = Number(updatedState.adminModifiedTimestamp || 0);
       }
 
-      showToast('تم التحويل بنجاح! 💸', `تم تحويل مبلغ ${amt.toLocaleString()} EGP إلى اللاعب "${target}" بنجاح!`, 'success');
+      const taxAmt = Math.floor(amt * 0.05);
+      const netAmt = amt - taxAmt;
+      showToast('تم التحويل بنجاح! 💸', `تم تحويل ${amt.toLocaleString()} EGP إلى اللاعب "${target}" بنجاح! (الصافي المستلم: ${netAmt.toLocaleString()} EGP بعد خصم ضريبة 5%: ${taxAmt.toLocaleString()} EGP)`, 'success');
       if (typeof playMenuSound === 'function') playMenuSound('cash');
       if (pinEl) pinEl.value = '';
+      const dWireTaxBox = document.getElementById('direct-wire-tax-breakdown-box');
+      if (dWireTaxBox) dWireTaxBox.classList.add('hidden');
       if (modal) modal.classList.add('hidden');
       renderAll();
     } catch (err) {

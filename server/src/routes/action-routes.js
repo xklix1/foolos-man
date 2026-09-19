@@ -581,7 +581,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
 
   // 14. POST /api/action/transfer-notify (Wire Transfer Notification to in-memory active session)
   fastify.post('/api/action/transfer-notify', async (request, reply) => {
-    const { sender, recipient, amount } = request.body || {};
+    const { sender, recipient, amount, netAmount } = request.body || {};
     if (!recipient || !amount) {
       return reply.code(400).send({ error: 'recipient and amount are required' });
     }
@@ -591,11 +591,17 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       return reply.code(400).send({ error: 'amount must be positive' });
     }
 
-    const credited = sessionManager.creditRecipientWireTransfer(recipient, amt, Date.now());
+    // Apply 5% Central Bank Wire Tax: recipient in-memory session receives net amount (95%)
+    const taxAmt = Math.floor(amt * 0.05);
+    const finalNet = (netAmount !== undefined && !isNaN(Number(netAmount))) ? Number(netAmount) : (amt - taxAmt);
+
+    const credited = sessionManager.creditRecipientWireTransfer(recipient, finalNet, Date.now());
     return {
       success: true,
       recipient,
-      amount: amt,
+      grossAmount: amt,
+      taxAmount: taxAmt,
+      amount: finalNet,
       inMemorySessionCredited: credited
     };
   });
