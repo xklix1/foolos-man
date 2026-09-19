@@ -40,6 +40,37 @@ const DEFAULT_STATE = {
   smugglingFleet: {},
   activeSmugglingJobs: {},
   gold: 0,
+  farm: {
+    unlocked: false,
+    landLevel: 1,
+    maxPlots: 4,
+    waterLevel: 1,
+    fertilizerLevel: 1,
+    workers: 0,
+    siloLevel: 1,
+    plots: [null, null, null, null],
+    inventory: {},
+    stats: { totalHarvested: 0, totalRevenue: 0 },
+    processing: {
+      storage: { flour_bread: 0, tomato_paste: 0, strawberry_jam: 0, premium_coffee: 0, stuffed_dates: 0, saffron_essence: 0 },
+      stats: { totalProcessed: 0, totalRevenue: 0 }
+    },
+    livestock: {
+      cows: 0,
+      chickens: 0,
+      milk: 0,
+      eggs: 0,
+      compost: 0,
+      lastProduceAt: 0,
+      stats: { totalMilk: 0, totalEggs: 0, totalRevenue: 0 }
+    },
+    contracts: {
+      reputation: 0,
+      completedCount: 0,
+      totalBonusEarned: 0,
+      active: []
+    }
+  },
   lastActiveTimestamp: 0,
   lastSeen: 0
 };

@@ -1615,6 +1615,23 @@ var AppDB = (() => {
           }
         }
 
+        // 4.95 Farm Empire Guard: NEVER downgrade or lose farm unlock, plots, or upgrades
+        if (local && local.farm && typeof local.farm === 'object' && local.farm.unlocked) {
+          if (!stateObj.farm || !stateObj.farm.unlocked) {
+            console.log(`[Sync] Preserving unlocked farm from local state safeguard for ${u}`);
+            stateObj.farm = JSON.parse(JSON.stringify(local.farm));
+            shouldSyncCloud = true;
+          } else {
+            const locPlots = Number(local.farm.maxPlots || 4);
+            const srvPlots = Number(stateObj.farm.maxPlots || 4);
+            if (locPlots > srvPlots) {
+              stateObj.farm.maxPlots = locPlots;
+              stateObj.farm.landLevel = Math.max(Number(local.farm.landLevel || 1), Number(stateObj.farm.landLevel || 1));
+              shouldSyncCloud = true;
+            }
+          }
+        }
+
         // 5. Late-save recovery:
         // If local device was active noticeably newer than cloud (localTs > serverTs + 2000),
         // and cloud save was debounced, reconcile wealth atomically to prevent balance duplication.

@@ -74,6 +74,9 @@ var ServerBridge = (() => {
       if (!effectiveToken && typeof localStorage !== 'undefined') {
         effectiveToken = localStorage.getItem('rasalmal_auth_token_' + _activeUsername);
       }
+      if (effectiveToken) {
+        _sessionToken = effectiveToken;
+      }
 
       const data = await _post('/api/session/start', {
         username: _activeUsername,

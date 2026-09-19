@@ -1872,6 +1872,20 @@ const UIController = (() => {
         try { await window.AppDB.fetchServerTime(); } catch (e) {}
       }
 
+      // Security & Save Integrity: Require PIN once if player does not have a valid ServerBridge auth token
+      const hasAuthToken = Boolean(typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_auth_token_' + username));
+      if (!hasAuthToken) {
+        const authUserEl = document.getElementById('auth-username');
+        const authPinEl = document.getElementById('auth-pin');
+        if (authUserEl && authPinEl) {
+          authUserEl.value = username;
+          authPinEl.value = '';
+          showAuthScreen('login');
+          showToast('تأكيد الدخول 🔒', 'يرجى إدخال الرقم السري لتأكيد حسابك وتفعيل الحفظ السحابي الفوري.', 'info');
+          return;
+        }
+      }
+
       const playerState = await GameEngine.loadUserSession(username);
       if (!playerState || playerState.isBanned || playerState.is_banned) {
         handleBannedUser('تم حظر هذا الحساب نهائياً من اللعبة لمخالفة قواعد النزاهة.');

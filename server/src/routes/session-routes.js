@@ -46,8 +46,8 @@ async function sessionRoutes(fastify, options) {
       }
     }
   }, async (request, reply) => {
-    const { username, pin, sessionId } = request.body || {};
-    const effectiveToken = extractBearerToken(request);
+    const { username, pin, sessionId, token } = request.body || {};
+    const effectiveToken = extractBearerToken(request) || token;
 
     if (!username) {
       return reply.code(400).send({ error: 'Username is required' });
@@ -62,8 +62,12 @@ async function sessionRoutes(fastify, options) {
 
       // 2. Strict Authentication: Either valid sessionToken OR valid PIN
       let isAuthed = false;
-      if (effectiveToken && session.sessionToken && effectiveToken === session.sessionToken) {
+      const dbSavedToken = session.state && session.state.sessionToken;
+      if (effectiveToken && ((session.sessionToken && effectiveToken === session.sessionToken) || (dbSavedToken && effectiveToken === dbSavedToken))) {
         isAuthed = true;
+        if (!session.sessionToken) {
+          session.sessionToken = effectiveToken;
+        }
       } else if (pin && verifyPinMatch(pin, session.pin)) {
         isAuthed = true;
         // Issue fresh cryptographically secure sessionToken
