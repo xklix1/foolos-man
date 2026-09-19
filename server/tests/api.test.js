@@ -252,3 +252,21 @@ test('API Integration — Rate Limiter Enforces HTTP 429 on Rapid Click Bursts',
   // At least some requests should hit the 10 req/sec limit and return 429
   assert.ok(rateLimited.length > 0, 'Rate limiter must enforce HTTP 429 on rapid request bursts');
 });
+
+test('API Integration — /api/session/register Validations', async () => {
+  // 1. Missing username
+  const missingRes = await app.inject({
+    method: 'POST',
+    url: '/api/session/register',
+    payload: { playerRow: {} }
+  });
+  assert.strictEqual(missingRes.statusCode, 400);
+
+  // 2. Short username (< 3 chars)
+  const shortRes = await app.inject({
+    method: 'POST',
+    url: '/api/session/register',
+    payload: { playerRow: { username: 'ab' } }
+  });
+  assert.strictEqual(shortRes.statusCode, 400);
+});

@@ -120,6 +120,33 @@ class DbService {
       return [];
     }
   }
+
+  /**
+   * Authoritatively inserts a new player record into Supabase using service role
+   * @param {Object} playerRow 
+   * @returns {Promise<Object>}
+   */
+  async createPlayer(playerRow) {
+    if (!playerRow || !playerRow.username) throw new Error('Missing player row or username');
+    const endpoint = `${this.url}/rest/v1/players`;
+    
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        ...this.getHeaders(),
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(playerRow)
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Create player failed (${res.status}): ${errText}`);
+    }
+
+    const rows = await res.json();
+    return Array.isArray(rows) && rows.length > 0 ? rows[0] : playerRow;
+  }
 }
 
 module.exports = new DbService();

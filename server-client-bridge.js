@@ -368,7 +368,13 @@ var ServerBridge = (() => {
     }
   }
 
+  async function registerAccount(playerRow) {
+    return await _post('/api/session/register', { playerRow });
+  }
+
   return {
+    getApiBase,
+    registerAccount,
     startSession,
     dispatchClick,
     buyBusiness,

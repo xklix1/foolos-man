@@ -4,6 +4,7 @@
 
 const crypto = require('crypto');
 const sessionManager = require('../services/session-manager');
+const dbService = require('../services/db-service');
 
 /**
  * Robust constant-time or hash-aware PIN verification against stored database PIN
@@ -36,6 +37,55 @@ function extractBearerToken(request) {
 }
 
 async function sessionRoutes(fastify, options) {
+
+  // POST /api/session/register (Authoritative Registration Endpoint)
+  fastify.post('/api/session/register', {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
+    const { playerRow } = request.body || {};
+    if (!playerRow || !playerRow.username) {
+      return reply.code(400).send({ error: 'بيانات التسجيل غير مكتملة' });
+    }
+
+    const u = String(playerRow.username).trim();
+    if (u.length < 3 || u.length > 30) {
+      return reply.code(400).send({ error: 'اسم المستخدم يجب أن يكون بين 3 و 30 حرفاً' });
+    }
+
+    try {
+      // 1. Check if user already exists
+      const existing = await dbService.getPlayerByUsername(u);
+      if (existing) {
+        return reply.code(409).send({ error: 'اسم المستخدم مسجل بالفعل. يرجى اختيار اسم آخر.' });
+      }
+
+      // 2. Strict anti-tamper enforcement for brand new player row
+      const safeRow = {
+        ...playerRow,
+        username: u,
+        is_admin: false,
+        is_banned: false,
+        cash: Math.min(Math.max(Number(playerRow.cash || 300), 0), 1000),
+        bank: 0,
+        dirty_cash: 0,
+        net_worth: Math.min(Math.max(Number(playerRow.net_worth || 400), 0), 1000),
+        xp: 0,
+        created_at: Number(playerRow.created_at || Date.now()),
+        last_seen: Number(playerRow.last_seen || Date.now())
+      };
+
+      const created = await dbService.createPlayer(safeRow);
+      return reply.code(201).send({ success: true, player: created });
+    } catch (err) {
+      console.error('[SessionRoutes] /api/session/register error:', err.message);
+      return reply.code(500).send({ error: err.message || 'فشل تسجيل الحساب على الخادم' });
+    }
+  });
 
   // POST /api/session/start (Brute-Force Shield: 20 attempts/min)
   fastify.post('/api/session/start', {

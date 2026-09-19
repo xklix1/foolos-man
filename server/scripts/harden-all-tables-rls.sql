@@ -25,9 +25,28 @@ ON public.players FOR ALL
 TO service_role
 USING (true)
 WITH CHECK (true);
+-- Allow anonymous new player registration with strict anti-tampering bounds
+GRANT SELECT, INSERT ON public.players TO anon, authenticated;
+REVOKE UPDATE, DELETE ON public.players FROM anon;
+REVOKE UPDATE, DELETE ON public.players FROM authenticated;
 
-REVOKE INSERT, UPDATE, DELETE ON public.players FROM anon;
-REVOKE INSERT, UPDATE, DELETE ON public.players FROM authenticated;
+DROP POLICY IF EXISTS "Allow anon registration" ON public.players;
+DROP POLICY IF EXISTS "Public can insert players" ON public.players;
+
+CREATE POLICY "Allow anon registration"
+ON public.players FOR INSERT
+TO anon, authenticated
+WITH CHECK (
+  username IS NOT NULL AND
+  char_length(trim(username)) >= 3 AND
+  char_length(trim(username)) <= 30 AND
+  (is_admin IS NOT TRUE) AND
+  (is_banned IS NOT TRUE) AND
+  (cash <= 5000) AND
+  (bank = 0) AND
+  (dirty_cash = 0) AND
+  (net_worth <= 5000)
+);
 
 -- 2. HARDEN: public.globals (Maintenance, Force Reload, Market Events, Chat)
 ALTER TABLE public.globals ENABLE ROW LEVEL SECURITY;

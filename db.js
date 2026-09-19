@@ -1057,10 +1057,25 @@ var AppDB = (() => {
       created_at: now
     };
 
-    await _api('players', {
-      method:'POST',
-      body: JSON.stringify(newPlayerRow)
-    });
+    let backendRegistered = false;
+    if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.registerAccount === 'function') {
+      try {
+        await ServerBridge.registerAccount(newPlayerRow);
+        backendRegistered = true;
+      } catch (srvErr) {
+        if (srvErr.message && (srvErr.message.includes('مسجل بالفعل') || srvErr.message.includes('already exists'))) {
+          throw srvErr;
+        }
+        console.warn('[DB] Authoritative server registration failed, attempting database fallback:', srvErr.message);
+      }
+    }
+
+    if (!backendRegistered) {
+      await _api('players', {
+        method:'POST',
+        body: JSON.stringify(newPlayerRow)
+      });
+    }
 
     // Bind device in cloud registry & locally for device history
     try {
