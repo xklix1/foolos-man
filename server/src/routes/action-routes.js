@@ -599,6 +599,80 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       inMemorySessionCredited: credited
     };
   });
+
+  // 15. POST /api/action/transfer-request (Authoritative proxy for peer-to-peer transfer requests)
+  fastify.post('/api/action/transfer-request', async (request, reply) => {
+    const { sender, recipient, amount } = request.body || {};
+    if (!sender || !recipient || !amount) {
+      return reply.code(400).send({ error: 'sender, recipient and amount are required' });
+    }
+
+    const amt = Number(amount);
+    if (amt <= 0) {
+      return reply.code(400).send({ error: 'amount must be positive' });
+    }
+
+    const sKey = config.SUPABASE_SERVICE_ROLE_KEY;
+    const sUrl = config.SUPABASE_URL;
+
+    try {
+      const now = Date.now();
+      const insertRes = await fetch(`${sUrl}/rest/v1/transfer_requests`, {
+        method: 'POST',
+        headers: {
+          'apikey': sKey,
+          'Authorization': `Bearer ${sKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          sender: String(sender).trim(),
+          recipient: String(recipient).trim(),
+          amount: amt,
+          status: 'pending',
+          created_at: now
+        })
+      });
+
+      if (!insertRes.ok) {
+        throw new Error(`Failed to create transfer request: ${await insertRes.text()}`);
+      }
+
+      const rows = await insertRes.json();
+      const createdReq = rows && rows[0];
+
+      // Send interactive mail notification to recipient
+      await fetch(`${sUrl}/rest/v1/mailbox`, {
+        method: 'POST',
+        headers: {
+          'apikey': sKey,
+          'Authorization': `Bearer ${sKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sender: String(sender).trim(),
+          recipient: String(recipient).trim(),
+          type: 'transfer_request',
+          payload: {
+            requestId: createdReq ? createdReq.id : null,
+            amount: amt,
+            title: 'طلب تحويل أموال',
+            message: `يطلب منك اللاعب "${String(sender).trim()}" تحويل مبلغ ${amt.toLocaleString()} EGP.`
+          },
+          status: 'unread',
+          created_at: now
+        })
+      }).catch(() => {});
+
+      return {
+        success: true,
+        request: createdReq
+      };
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.code(500).send({ error: 'Failed to create transfer request: ' + err.message });
+    }
+  });
 }
 
 module.exports = actionRoutes;

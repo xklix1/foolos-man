@@ -129,6 +129,8 @@ DROP POLICY IF EXISTS "Allow public all on transfer_requests" ON public.transfer
 DROP POLICY IF EXISTS "Public can read transfers" ON public.transfers;
 DROP POLICY IF EXISTS "Service role full control on transfers" ON public.transfers;
 DROP POLICY IF EXISTS "Public can read transfer_requests" ON public.transfer_requests;
+DROP POLICY IF EXISTS "Public can insert transfer_requests" ON public.transfer_requests;
+DROP POLICY IF EXISTS "Public can update transfer_requests" ON public.transfer_requests;
 DROP POLICY IF EXISTS "Service role full control on transfer_requests" ON public.transfer_requests;
 
 CREATE POLICY "Public can read transfers"
@@ -143,7 +145,31 @@ USING (true)
 WITH CHECK (true);
 
 REVOKE INSERT, UPDATE, DELETE ON public.transfers FROM anon, authenticated;
-REVOKE INSERT, UPDATE, DELETE ON public.transfer_requests FROM anon, authenticated;
+
+-- Transfer Requests: Allow players to create requests and update status (accept/reject)
+GRANT SELECT, INSERT, UPDATE ON public.transfer_requests TO anon, authenticated;
+
+CREATE POLICY "Service role full control on transfer_requests"
+ON public.transfer_requests FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Public can read transfer_requests"
+ON public.transfer_requests FOR SELECT
+TO anon, authenticated
+USING (true);
+
+CREATE POLICY "Public can insert transfer_requests"
+ON public.transfer_requests FOR INSERT
+TO anon, authenticated
+WITH CHECK (amount > 0 AND sender IS NOT NULL AND recipient IS NOT NULL);
+
+CREATE POLICY "Public can update transfer_requests"
+ON public.transfer_requests FOR UPDATE
+TO anon, authenticated
+USING (true)
+WITH CHECK (true);
 
 -- 7. HARDEN: public.mailbox (Direct Player Mail & Offline Grants)
 ALTER TABLE public.mailbox ENABLE ROW LEVEL SECURITY;

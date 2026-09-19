@@ -337,6 +337,23 @@ var ServerBridge = (() => {
     }
   }
 
+  /**
+   * Authoritatively sends a peer-to-peer transfer request via server proxy
+   */
+  async function sendTransferRequest(sender, recipient, amount) {
+    if (!_isServerOnline || !sender || !recipient || !amount) return null;
+    try {
+      return await _post('/api/action/transfer-request', {
+        sender,
+        recipient,
+        amount: Number(amount)
+      });
+    } catch (e) {
+      console.warn('[ServerBridge] sendTransferRequest error:', e.message);
+      return null;
+    }
+  }
+
   return {
     startSession,
     dispatchClick,
@@ -346,6 +363,7 @@ var ServerBridge = (() => {
     bankAction,
     changePin,
     notifyWireTransfer,
+    sendTransferRequest,
     syncState,
     sendHeartbeat,
     sendExit,
