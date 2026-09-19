@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /ctrl-vault-911-m4x89q2.html
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
