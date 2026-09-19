@@ -9,3 +9,23 @@ server/data/
 scratch/
 *.pdf
 *recovery*
+
+# ─── Sensitive & Development-Only Files ───────────────────────────────────────
+# SQL schemas & migrations (expose DB structure)
+*.sql
+migrate_*.js
+
+# Internal audit & test scripts (expose internals)
+audit_*.js
+test_*.js
+
+# Internal reports & analysis pages (expose game economics & security posture)
+economy-*.html
+economy-*.png
+server-authoritative-*.html
+*-assessment-report.*
+*-balance-report.*
+*-pentest-*.html
+
+# Admin panel (obfuscated URL but should not be in public repo)
+ctrl-vault-*.html

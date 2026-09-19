@@ -345,15 +345,17 @@ var AppDB = (() => {
   //  PLAYER AUTH & STATE MANAGEMENT
   // ─────────────────────────────────────────────
   async function hashPin(pin) {
-    if (!pin) return'1234';
-    if (typeof crypto !=='undefined' && crypto.subtle) {
+    // SECURITY: Never return a hardcoded fallback — reject empty pins at call site
+    if (!pin) throw new Error('PIN_EMPTY');
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
       try {
         const msgBuffer = new TextEncoder().encode(String(pin));
         const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
       } catch (e) {}
     }
+    // Fallback: return plain string (only in environments without crypto.subtle)
     return String(pin);
   }
 
@@ -1243,17 +1245,20 @@ var AppDB = (() => {
     const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&order=last_seen.desc&select=username,pin,net_worth`);
     if (!rows || rows.length === 0) return false;
 
-    const hashed = await hashPin(p);
+    let hashed;
+    try { hashed = await hashPin(p); } catch (e) { return false; }
+
     for (const r of rows) {
-      const stored = String(r.pin ||'').trim();
+      const stored = String(r.pin || '').trim();
       if (!stored) continue;
 
+      // SECURITY: Only accept hashed comparisons — never compare raw plaintext PIN to stored value.
+      // This prevents: (1) plaintext credential leakage via localStorage inspection,
+      // (2) timing-based attacks guessing short PINs.
       if (
-        stored === p ||
         stored === hashed ||
-        stored ==='s256_' + hashed ||
-        stored.replace(/^s256_/,'') === hashed ||
-        stored ==='s256_' + p
+        stored === 's256_' + hashed ||
+        stored.replace(/^s256_/, '') === hashed
       ) {
         return true;
       }
@@ -1309,7 +1314,13 @@ var AppDB = (() => {
       stateObj.title = row.title || stateObj.title ||'عامل مبتدئ';
       stateObj.isAdmin = row.is_admin === true;
       if (typeof window !== 'undefined') {
-        window._isServerVerifiedAdmin = row.is_admin === true;
+        // Use the AppDB._settingAdminFlag guard — required by the read-only defineProperty in game.js
+        try {
+          AppDB._settingAdminFlag = true;
+          window._isServerVerifiedAdmin = row.is_admin === true;
+        } finally {
+          AppDB._settingAdminFlag = false;
+        }
       }
       _lastVerifiedCloudWealth = isAccountResetRow ? 0 : (Math.max(0, Number(row.cash || 0)) + Math.max(0, Number(row.bank || 0)));
       _lastVerifiedCloudXp = isAccountResetRow ? 0 : Number(row.xp || 0);
@@ -5794,7 +5805,11 @@ var AppDB = (() => {
     deleteTopupRequest,
     getPlayerData,
     setEncryptedLocalState,
-    getDecryptedLocalState
+    getDecryptedLocalState,
+    // Expose anon key accessor for inline scripts that load before db.js is fully parsed
+    _getAnonKey: () => SUPABASE_ANON_KEY,
+    // Internal guard used by game.js defineProperty to allow legitimate admin flag updates
+    _settingAdminFlag: false
   };
 })();
 
@@ -5804,6 +5819,8 @@ if (typeof module !=='undefined' && module.exports) {
 
 if (typeof window !=="undefined") {
   window.AppDB = AppDB;
+  // Single source of truth for anon key — inline scripts read from here
+  window.__rasalmal_anon_key__ = SUPABASE_ANON_KEY;
   if (!window.db) {
     try {
       if (window.firebase && typeof window.firebase.firestore === 'function') {

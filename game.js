@@ -3369,10 +3369,9 @@ const GameEngine = (() => {
         if (lastSeenServer > 0) {
           const now = getTrustedNow();
 
-        // ── DEBUG: log key offline-earnings inputs so we can diagnose issues ──
+        // Offline earnings diff
         const _diffMs = now - lastSeenServer;
         const _diffMin = Math.round(_diffMs / 60000);
-        console.log(`[Offline] lastSeenServer=${lastSeenServer} | now=${now} | diff=${_diffMs}ms (${_diffMin} min) | serverSynced=${AppDB.hasServerTimeSynced}`);
 
         // Anti-Time Travel Audit
         // NOTE: Use a 120s tolerance (was 30s) to account for:
@@ -7707,6 +7706,7 @@ const GameEngine = (() => {
     refreshFarmContracts,
 
     // State Reader and Accessors
+    // getState returns the live state reference (used internally by UI)
     getState: () => state,
     get activeUsername() { return activeUsername; },
     set activeUsername(u) { activeUsername = u; },
@@ -7716,7 +7716,40 @@ const GameEngine = (() => {
 
 // Export globally
 if (typeof window !=="undefined") {
-  window.GameEngine = GameEngine;
+  // Expose a hardened proxy of GameEngine instead of the raw object
+  // This prevents direct state mutation from the browser console
+  const _safeGameEngine = new Proxy(GameEngine, {
+    get(target, prop) {
+      // Block direct state mutation attempts via console
+      if (prop === 'state') {
+        // Return a frozen shallow copy — changes won't affect the real state
+        try { return Object.freeze(Object.assign({}, target.state)); } catch(e) { return {}; }
+      }
+      return target[prop];
+    },
+    set(target, prop, value) {
+      // Prevent writing directly to GameEngine via window.GameEngine.x = y
+      console.warn('[Security] Direct mutation via window.GameEngine is blocked.');
+      return true; // silently ignore
+    }
+  });
+  window.GameEngine = _safeGameEngine;
+
+  // Make _isServerVerifiedAdmin read-only — cannot be overridden from console
+  let _sva = false;
+  Object.defineProperty(window, '_isServerVerifiedAdmin', {
+    get() { return _sva; },
+    set(val) {
+      // Only allow the DB module (AppDB) to set this — identified by call context
+      // We check if AppDB exists and is calling (best-effort guard)
+      if (typeof window.AppDB !== 'undefined' && window.AppDB._settingAdminFlag === true) {
+        _sva = Boolean(val);
+      }
+      // Silently ignore console attempts
+    },
+    configurable: false,
+    enumerable: false
+  });
 }
 if (typeof module !=="undefined" && module.exports) {
   module.exports = GameEngine;

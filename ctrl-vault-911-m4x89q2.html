@@ -4407,12 +4407,51 @@
       }
     });
 
-    // Master API Key Authentication Engine (SHA-256 Vault)
-    const ADMIN_KEY_SHA256 = '686e4c577d8bb01be2b93e8a0e8c44a20e690b56691971a968f5a3e3537938cb';
+    // Master API Key Authentication Engine — Server-Side Verification
+    // NOTE: No hash is stored or compared client-side. All verification is done server-side.
 
     async function hashKey(raw) {
       const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(raw || '').trim()));
       return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function verifyWithServer(hashedKey) {
+      const VERIFY_ENDPOINTS = [
+        '/api/admin/verify',
+        'https://rasalmal.online/api/admin/verify'
+      ];
+      for (const endpoint of VERIFY_ENDPOINTS) {
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-admin-token': hashedKey
+            },
+            body: JSON.stringify({ ts: Date.now() })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.success) return true;
+          }
+          if (res.status === 401) return false;
+        } catch (e) {
+          // Try next endpoint
+        }
+      }
+      return false;
+    }
+
+    function unlockAdminInterface(hashedKey) {
+      sessionStorage.setItem('rasalmal_admin_auth_token', hashedKey);
+      const rememberEl = document.getElementById('admin-remember-key');
+      if (rememberEl && rememberEl.checked) {
+        localStorage.setItem('rasalmal_admin_auth_token', hashedKey);
+      } else {
+        localStorage.removeItem('rasalmal_admin_auth_token');
+      }
+      document.getElementById('admin-auth-screen').classList.add('hidden');
+      document.getElementById('admin-main-interface').classList.remove('hidden');
     }
 
     // Login Method
@@ -4431,26 +4470,19 @@
       }
 
       btn.disabled = true;
-      if (btnText) btnText.textContent = 'جاري مطابقة التشفير الأمني...';
+      if (btnText) btnText.textContent = 'جاري التحقق الأمني عبر السيرفر...';
 
       try {
+        // Hash locally (never send raw key over the wire)
         const hashed = await hashKey(input);
-        if (hashed !== ADMIN_KEY_SHA256) {
+
+        // Verify against server — no client-side comparison
+        const isValid = await verifyWithServer(hashed);
+        if (!isValid) {
           throw new Error('مفتاح الوصول غير صحيح! تم رفض محاولة الدخول أمنياً.');
         }
 
-        // Save session token (only the hash is stored locally)
-        sessionStorage.setItem('rasalmal_admin_auth_token', hashed);
-        const rememberEl = document.getElementById('admin-remember-key');
-        if (rememberEl && rememberEl.checked) {
-          localStorage.setItem('rasalmal_admin_auth_token', hashed);
-        } else {
-          localStorage.removeItem('rasalmal_admin_auth_token');
-        }
-
-        // Show interface
-        document.getElementById('admin-auth-screen').classList.add('hidden');
-        document.getElementById('admin-main-interface').classList.remove('hidden');
+        unlockAdminInterface(hashed);
 
         // Initialize Admin components
         await AppDB.init();
@@ -4462,7 +4494,6 @@
         }
         showToast('تم التحقق بنجاح 🛡️', 'مرحباً بك في مركز القيادة والتحكم الموثق.', 'success');
       } catch (err) {
-        console.error('[AUTH ERROR]:', err);
         errBox.textContent = '🚫 ' + (err.message || 'بيانات الاعتماد غير صالحة.');
         errBox.classList.remove('hidden');
       } finally {
@@ -4471,18 +4502,24 @@
       }
     };
 
-    // Auto-check existing authenticated session
+    // Auto-check existing authenticated session (verified against server)
     (async () => {
       try {
         const stored = sessionStorage.getItem('rasalmal_admin_auth_token') || localStorage.getItem('rasalmal_admin_auth_token');
-        if (stored && stored === ADMIN_KEY_SHA256) {
-          document.getElementById('admin-auth-screen').classList.add('hidden');
-          document.getElementById('admin-main-interface').classList.remove('hidden');
-          await AppDB.init();
-          if (typeof setupAdminModal === 'function') setupAdminModal();
-          if (typeof switchAdminTab === 'function') switchAdminTab('stats');
+        if (stored && stored.length === 64) { // SHA-256 hex = 64 chars
+          const isValid = await verifyWithServer(stored);
+          if (isValid) {
+            unlockAdminInterface(stored);
+            await AppDB.init();
+            if (typeof setupAdminModal === 'function') setupAdminModal();
+            if (typeof switchAdminTab === 'function') switchAdminTab('stats');
+          } else {
+            // Stored token rejected by server — clear it
+            sessionStorage.removeItem('rasalmal_admin_auth_token');
+            localStorage.removeItem('rasalmal_admin_auth_token');
+          }
         }
       } catch (e) {}
     })();</script>
 </body>
-</html>
+</html>

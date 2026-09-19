@@ -1,6 +1,5 @@
 User-agent: *
 Allow: /
-Disallow: /ctrl-vault-911-m4x89q2.html
 
 User-agent: ClaudeBot
 Allow: /

@@ -7078,7 +7078,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       if (top1) {
         if (p1Name) {
           const fbBadge = top1.facebookVerified ? ' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' : '';
-          p1Name.innerHTML = top1.username + fbBadge;
+          // SECURITY: escapeHtml prevents Stored XSS via crafted usernames
+          p1Name.innerHTML = escapeHtml(top1.username) + fbBadge;
           p1Name.classList.add('cursor-pointer', 'hover:underline');
           p1Name.onclick = () => openPlayerProfileCard(top1.username);
         }
@@ -7106,7 +7107,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       if (top2) {
         if (p2Name) {
           const fbBadge = top2.facebookVerified ? ' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' : '';
-          p2Name.innerHTML = top2.username + fbBadge;
+          // SECURITY: escapeHtml prevents Stored XSS via crafted usernames
+          p2Name.innerHTML = escapeHtml(top2.username) + fbBadge;
           p2Name.classList.add('cursor-pointer', 'hover:underline');
           p2Name.onclick = () => openPlayerProfileCard(top2.username);
         }
@@ -7134,7 +7136,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       if (top3) {
         if (p3Name) {
           const fbBadge = top3.facebookVerified ? ' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' : '';
-          p3Name.innerHTML = top3.username + fbBadge;
+          // SECURITY: escapeHtml prevents Stored XSS via crafted usernames
+          p3Name.innerHTML = escapeHtml(top3.username) + fbBadge;
           p3Name.classList.add('cursor-pointer', 'hover:underline');
           p3Name.onclick = () => openPlayerProfileCard(top3.username);
         }
@@ -15302,7 +15305,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       if (uCardEl) {
         const fbIconHtml = hasFbVerified ?' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' :'';
         const verifiedIconHtml = isVipVerified ? ` ${getVerifiedBadgeIconHtml('text-base')}` : '';
-        uCardEl.innerHTML = (pState.username ||'---') + verifiedIconHtml + fbIconHtml;
+        // SECURITY: escapeHtml prevents Stored XSS via crafted usernames in profile card
+        uCardEl.innerHTML = escapeHtml(pState.username ||'---') + verifiedIconHtml + fbIconHtml;
       }
       document.getElementById('profile-card-title').textContent = pState.title ||'عامل مبتدئ';
       const pwEl = document.getElementById('profile-card-networth');

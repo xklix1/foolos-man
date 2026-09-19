@@ -7669,7 +7669,12 @@
   <script>
     (function() {
       const SUPABASE_URL = 'https://rasalmal.online';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08';
+      // Read key from AppDB to avoid duplicating it here — AppDB is the single source of truth
+      function _getAnonKey() {
+        try { if (window.AppDB && window.AppDB._getAnonKey) return window.AppDB._getAnonKey(); } catch(e) {}
+        // Fallback: read from db.js module scope via the exposed AppDB object (set during init)
+        return window.__rasalmal_anon_key__ || '';
+      }
       let isOverlayActive = false;
 
       async function checkForceReloadDirectly() {
@@ -7678,8 +7683,8 @@
         try {
           const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.force_reload', {
             headers: {
-              'apikey': SUPABASE_ANON_KEY,
-              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'apikey': _getAnonKey(),
+              'Authorization': 'Bearer ' + _getAnonKey(),
               'Cache-Control': 'no-cache, no-store, must-revalidate',
               'Pragma': 'no-cache'
             }
@@ -7747,8 +7752,8 @@
         try {
           const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.maintenance', {
             headers: {
-              'apikey': SUPABASE_ANON_KEY,
-              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+              'apikey': _getAnonKey(),
+              'Authorization': 'Bearer ' + _getAnonKey()
             }
           });
           if (!res.ok) return;
@@ -7800,7 +7805,7 @@
                   recheckBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري فحص الاتصال...</span>';
                   try {
                     const r = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.maintenance', {
-                      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+                      headers: { 'apikey': _getAnonKey(), 'Authorization': 'Bearer ' + _getAnonKey() }
                     });
                     const rRows = await r.json();
                     if (rRows && rRows[0] && rRows[0].data && (rRows[0].data.active || rRows[0].data.enabled)) {
