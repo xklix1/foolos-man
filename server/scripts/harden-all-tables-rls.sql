@@ -11,6 +11,10 @@ DROP POLICY IF EXISTS "Allow public all on globals" ON public.globals;
 DROP POLICY IF EXISTS "Allow anon full access on globals" ON public.globals;
 DROP POLICY IF EXISTS "Public can read globals" ON public.globals;
 DROP POLICY IF EXISTS "Service role can modify globals" ON public.globals;
+DROP POLICY IF EXISTS "Public can insert chat_feed" ON public.globals;
+DROP POLICY IF EXISTS "Public can update chat_feed" ON public.globals;
+
+GRANT SELECT, INSERT, UPDATE ON public.globals TO anon, authenticated;
 
 CREATE POLICY "Public can read globals"
 ON public.globals FOR SELECT
@@ -23,7 +27,16 @@ TO service_role
 USING (true)
 WITH CHECK (true);
 
-REVOKE INSERT, UPDATE, DELETE ON public.globals FROM anon, authenticated;
+CREATE POLICY "Public can insert chat_feed"
+ON public.globals FOR INSERT
+TO anon, authenticated
+WITH CHECK (id = 'chat_feed');
+
+CREATE POLICY "Public can update chat_feed"
+ON public.globals FOR UPDATE
+TO anon, authenticated
+USING (id = 'chat_feed')
+WITH CHECK (id = 'chat_feed');
 
 -- 2. HARDEN: public.gift_codes (Promo Codes & Free Cash Rewards)
 ALTER TABLE public.gift_codes ENABLE ROW LEVEL SECURITY;
@@ -105,11 +118,13 @@ REVOKE INSERT, UPDATE, DELETE ON public.transfer_requests FROM anon, authenticat
 -- 6. HARDEN: public.mailbox (Direct Player Mail & Offline Grants)
 ALTER TABLE public.mailbox ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public all on mailbox" ON public.mailbox;
+DROP POLICY IF EXISTS "Public can read mailbox" ON public.mailbox;
+DROP POLICY IF EXISTS "Public can insert mailbox" ON public.mailbox;
+DROP POLICY IF EXISTS "Public can update mailbox" ON public.mailbox;
+DROP POLICY IF EXISTS "Public can delete mailbox" ON public.mailbox;
+DROP POLICY IF EXISTS "Service role full control on mailbox" ON public.mailbox;
 
-CREATE POLICY "Public can read mailbox"
-ON public.mailbox FOR SELECT
-TO anon, authenticated
-USING (true);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.mailbox TO anon, authenticated;
 
 CREATE POLICY "Service role full control on mailbox"
 ON public.mailbox FOR ALL
@@ -117,7 +132,26 @@ TO service_role
 USING (true)
 WITH CHECK (true);
 
-REVOKE INSERT, UPDATE, DELETE ON public.mailbox FROM anon, authenticated;
+CREATE POLICY "Public can read mailbox"
+ON public.mailbox FOR SELECT
+TO anon, authenticated
+USING (true);
+
+CREATE POLICY "Public can insert mailbox"
+ON public.mailbox FOR INSERT
+TO anon, authenticated
+WITH CHECK (true);
+
+CREATE POLICY "Public can update mailbox"
+ON public.mailbox FOR UPDATE
+TO anon, authenticated
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Public can delete mailbox"
+ON public.mailbox FOR DELETE
+TO anon, authenticated
+USING (true);
 
 -- 7. CONFIRM ALL TABLES HAVE RLS ENABLED
 SELECT tablename, rowsecurity
