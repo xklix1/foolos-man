@@ -2043,39 +2043,38 @@ const UIController = (() => {
       tbody.innerHTML ='';
       if (typeof updateHourlyLeaderboardTimerUI ==='function') updateHourlyLeaderboardTimerUI();
 
+      // Podium Top 3
+      const top1 = (players && players[0]) || null;
+      const top2 = (players && players[1]) || null;
+      const top3 = (players && players[2]) || null;
+
+      const p1El = document.getElementById('start-podium-name-1');
+      const w1 = document.getElementById('start-podium-worth-1');
+      if (p1El) p1El.textContent = top1 ? top1.username : '—';
+      if (w1) {
+        w1.textContent = top1 ? `${formatCompactNumber(top1.netWorth || 0)} EGP` : '0 جنيه';
+        w1.title = top1 ? `${Number(top1.netWorth || 0).toLocaleString()} EGP` : '0 جنيه';
+      }
+
+      const p2El = document.getElementById('start-podium-name-2');
+      const w2 = document.getElementById('start-podium-worth-2');
+      if (p2El) p2El.textContent = top2 ? top2.username : '—';
+      if (w2) {
+        w2.textContent = top2 ? `${formatCompactNumber(top2.netWorth || 0)} EGP` : '0 جنيه';
+        w2.title = top2 ? `${Number(top2.netWorth || 0).toLocaleString()} EGP` : '0 جنيه';
+      }
+
+      const p3El = document.getElementById('start-podium-name-3');
+      const w3 = document.getElementById('start-podium-worth-3');
+      if (p3El) p3El.textContent = top3 ? top3.username : '—';
+      if (w3) {
+        w3.textContent = top3 ? `${formatCompactNumber(top3.netWorth || 0)} EGP` : '0 جنيه';
+        w3.title = top3 ? `${Number(top3.netWorth || 0).toLocaleString()} EGP` : '0 جنيه';
+      }
+
       if (!players || players.length === 0) {
         tbody.innerHTML =`<tr><td colspan="4" class="py-6 text-center text-slate-500">لا يوجد متصدرين مسجلين حالياً.</td></tr>`;
         return;
-      }
-
-      // Podium Top 3
-      const top1 = players[0];
-      const top2 = players[1];
-      const top3 = players[2];
-
-      if (top1) {
-        document.getElementById('start-podium-name-1').textContent = top1.username;
-        const w1 = document.getElementById('start-podium-worth-1');
-        if (w1) {
-          w1.textContent =`${formatCompactNumber(top1.netWorth || 0)} EGP`;
-          w1.title =`${Number(top1.netWorth || 0).toLocaleString()} EGP`;
-        }
-      }
-      if (top2) {
-        document.getElementById('start-podium-name-2').textContent = top2.username;
-        const w2 = document.getElementById('start-podium-worth-2');
-        if (w2) {
-          w2.textContent =`${formatCompactNumber(top2.netWorth || 0)} EGP`;
-          w2.title =`${Number(top2.netWorth || 0).toLocaleString()} EGP`;
-        }
-      }
-      if (top3) {
-        document.getElementById('start-podium-name-3').textContent = top3.username;
-        const w3 = document.getElementById('start-podium-worth-3');
-        if (w3) {
-          w3.textContent =`${formatCompactNumber(top3.netWorth || 0)} EGP`;
-          w3.title =`${Number(top3.netWorth || 0).toLocaleString()} EGP`;
-        }
       }
 
       // Rows
@@ -6995,26 +6994,26 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const totalSecs = Math.floor(remainingMs / 1000);
     const minutes = Math.floor(totalSecs / 60);
     const seconds = totalSecs % 60;
-    const timeFormatted =`${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+    const timeFormatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
-    const lastUpdatedDate = new Date(meta.updatedAt || now);
-    const lastUpdatedFormatted = lastUpdatedDate.toLocaleTimeString(window.currentLang ==='en' ?'en-US' :'ar-EG', {
-      hour:'2-digit',
-      minute:'2-digit'
+    const lastUpdatedDate = new Date(meta.updatedAt || (meta.nextUpdateAt - 3600000) || now);
+    const lastUpdatedFormatted = lastUpdatedDate.toLocaleTimeString(window.currentLang === 'en' ? 'en-US' : 'ar-EG', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
 
-    ['ingame-lb-timer','start-lb-timer'].forEach(id => {
+    ['ingame-lb-timer', 'start-lb-timer'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.textContent = timeFormatted;
     });
 
-    ['ingame-lb-last-updated','start-lb-last-updated'].forEach(id => {
+    ['ingame-lb-last-updated', 'start-lb-last-updated'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.textContent = lastUpdatedFormatted;
     });
 
     // If countdown reached 0 and leaderboard is currently visible, refresh
-    if (remainingMs === 0 && (now - (window._lastAutoHourlyLdRefresh || 0) > 60000)) {
+    if (remainingMs === 0 && (now - (window._lastAutoHourlyLdRefresh || 0) > 30000)) {
       window._lastAutoHourlyLdRefresh = now;
       const lbTab = document.getElementById('panel-leaderboard');
       const startModal = document.getElementById('start-menu-leaderboard-modal');
@@ -7037,12 +7036,12 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const canUseCache = !forceRefresh && cachedLeaderboard && (now - lastLeaderboardFetchTime < 60000);
 
     if (!canUseCache) {
-      list.innerHTML =`
+      list.innerHTML = `
         <tr>
           <td colspan="4" class="text-center py-8 text-slate-400">
             <div class="flex items-center justify-center gap-2">
               <span class="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></span>
-              <span class="font-bold text-xs">${window.currentLang ==='en' ?'Loading official hourly snapshot...' :'جاري جلب الاعتماد الساعي الرسمي لعرش الأثرياء...'}</span>
+              <span class="font-bold text-xs">${window.currentLang === 'en' ? 'Loading official hourly snapshot...' : 'جاري جلب الاعتماد الساعي الرسمي لعرش الأثرياء...'}</span>
             </div>
           </td>
         </tr>`;
@@ -7064,81 +7063,105 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         players = players.slice(0, 10);
       }
       updateHourlyLeaderboardTimerUI();
-      list.innerHTML ='';
+      list.innerHTML = '';
 
-      if (!players || players.length === 0) {
-        list.innerHTML =`
-          <tr>
-            <td colspan="4" class="text-center py-8 text-slate-500 text-xs">
-              ${window.currentLang ==='en' ?'No registered accounts in the leaderboard yet.' :'لا توجد حسابات مسجلة حالياً في قائمة المتصدرين.'}
-            </td>
-          </tr>`;
-        return;
-      }
-
-      // Update Podium Cards (Top 3)
-      const top1 = players[0];
-      const top2 = players[1];
-      const top3 = players[2];
+      // Update Podium Cards (Top 3) - Guaranteed to never remain stuck on "تحميل..."
+      const top1 = (players && players[0]) || null;
+      const top2 = (players && players[1]) || null;
+      const top3 = (players && players[2]) || null;
 
       // Podium 1 (Gold - 1st)
+      const p1Name = document.getElementById('podium-name-1');
+      const p1Title = document.getElementById('podium-title-1');
+      const p1Worth = document.getElementById('podium-worth-1');
+      const p1Avatar = document.getElementById('podium-avatar-1');
       if (top1) {
-        const p1Name = document.getElementById('podium-name-1');
-        const p1Title = document.getElementById('podium-title-1');
-        const p1Worth = document.getElementById('podium-worth-1');
-        const p1Avatar = document.getElementById('podium-avatar-1');
         if (p1Name) {
-          const fbBadge = top1.facebookVerified ?' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' :'';
+          const fbBadge = top1.facebookVerified ? ' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' : '';
           p1Name.innerHTML = top1.username + fbBadge;
-          p1Name.classList.add('cursor-pointer','hover:underline');
+          p1Name.classList.add('cursor-pointer', 'hover:underline');
           p1Name.onclick = () => openPlayerProfileCard(top1.username);
         }
-        if (p1Title) p1Title.textContent = top1.title || (window.currentLang ==='en' ?'Money Emperor' :'إمبراطور المال');
+        if (p1Title) p1Title.textContent = top1.title || (window.currentLang === 'en' ? 'Money Emperor' : 'إمبراطور المال');
         if (p1Worth) {
-          p1Worth.textContent =`${formatCompactNumber(top1.netWorth || 0)} EGP`;
-          p1Worth.title =`${Number(top1.netWorth || 0).toLocaleString()} EGP`;
+          p1Worth.textContent = `${formatCompactNumber(top1.netWorth || 0)} EGP`;
+          p1Worth.title = `${Number(top1.netWorth || 0).toLocaleString()} EGP`;
         }
-        if (p1Avatar) p1Avatar.innerHTML =`<span class="text-sm sm:text-base font-black">${(top1.username ||'P').substring(0, 2).toUpperCase()}</span>`;
+        if (p1Avatar) p1Avatar.innerHTML = `<span class="text-sm sm:text-base font-black">${(top1.username || 'P').substring(0, 2).toUpperCase()}</span>`;
+      } else {
+        if (p1Name) {
+          p1Name.textContent = '—';
+          p1Name.onclick = null;
+        }
+        if (p1Title) p1Title.textContent = '--';
+        if (p1Worth) p1Worth.textContent = '-- جنيه';
+        if (p1Avatar) p1Avatar.innerHTML = `<i class="fa-solid fa-crown text-slate-950"></i>`;
       }
 
       // Podium 2 (Silver - 2nd)
+      const p2Name = document.getElementById('podium-name-2');
+      const p2Title = document.getElementById('podium-title-2');
+      const p2Worth = document.getElementById('podium-worth-2');
+      const p2Avatar = document.getElementById('podium-avatar-2');
       if (top2) {
-        const p2Name = document.getElementById('podium-name-2');
-        const p2Title = document.getElementById('podium-title-2');
-        const p2Worth = document.getElementById('podium-worth-2');
-        const p2Avatar = document.getElementById('podium-avatar-2');
         if (p2Name) {
-          const fbBadge = top2.facebookVerified ?' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' :'';
+          const fbBadge = top2.facebookVerified ? ' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' : '';
           p2Name.innerHTML = top2.username + fbBadge;
-          p2Name.classList.add('cursor-pointer','hover:underline');
+          p2Name.classList.add('cursor-pointer', 'hover:underline');
           p2Name.onclick = () => openPlayerProfileCard(top2.username);
         }
-        if (p2Title) p2Title.textContent = top2.title || (window.currentLang ==='en' ?'Business Baron' :'بارون التجارة');
+        if (p2Title) p2Title.textContent = top2.title || (window.currentLang === 'en' ? 'Business Baron' : 'بارون التجارة');
         if (p2Worth) {
-          p2Worth.textContent =`${formatCompactNumber(top2.netWorth || 0)} EGP`;
-          p2Worth.title =`${Number(top2.netWorth || 0).toLocaleString()} EGP`;
+          p2Worth.textContent = `${formatCompactNumber(top2.netWorth || 0)} EGP`;
+          p2Worth.title = `${Number(top2.netWorth || 0).toLocaleString()} EGP`;
         }
-        if (p2Avatar) p2Avatar.innerHTML =`<span class="text-xs sm:text-sm font-black">${(top2.username ||'P').substring(0, 2).toUpperCase()}</span>`;
+        if (p2Avatar) p2Avatar.innerHTML = `<span class="text-xs sm:text-sm font-black">${(top2.username || 'P').substring(0, 2).toUpperCase()}</span>`;
+      } else {
+        if (p2Name) {
+          p2Name.textContent = '—';
+          p2Name.onclick = null;
+        }
+        if (p2Title) p2Title.textContent = '--';
+        if (p2Worth) p2Worth.textContent = '-- جنيه';
+        if (p2Avatar) p2Avatar.innerHTML = `<i class="fa-solid fa-medal text-slate-400"></i>`;
       }
 
       // Podium 3 (Bronze - 3rd)
+      const p3Name = document.getElementById('podium-name-3');
+      const p3Title = document.getElementById('podium-title-3');
+      const p3Worth = document.getElementById('podium-worth-3');
+      const p3Avatar = document.getElementById('podium-avatar-3');
       if (top3) {
-        const p3Name = document.getElementById('podium-name-3');
-        const p3Title = document.getElementById('podium-title-3');
-        const p3Worth = document.getElementById('podium-worth-3');
-        const p3Avatar = document.getElementById('podium-avatar-3');
         if (p3Name) {
-          const fbBadge = top3.facebookVerified ?' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' :'';
+          const fbBadge = top3.facebookVerified ? ' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' : '';
           p3Name.innerHTML = top3.username + fbBadge;
-          p3Name.classList.add('cursor-pointer','hover:underline');
+          p3Name.classList.add('cursor-pointer', 'hover:underline');
           p3Name.onclick = () => openPlayerProfileCard(top3.username);
         }
-        if (p3Title) p3Title.textContent = top3.title || (window.currentLang ==='en' ?'Senior Businessman' :'رجل أعمال كبار');
+        if (p3Title) p3Title.textContent = top3.title || (window.currentLang === 'en' ? 'Senior Businessman' : 'رجل أعمال كبار');
         if (p3Worth) {
-          p3Worth.textContent =`${formatCompactNumber(top3.netWorth || 0)} EGP`;
-          p3Worth.title =`${Number(top3.netWorth || 0).toLocaleString()} EGP`;
+          p3Worth.textContent = `${formatCompactNumber(top3.netWorth || 0)} EGP`;
+          p3Worth.title = `${Number(top3.netWorth || 0).toLocaleString()} EGP`;
         }
-        if (p3Avatar) p3Avatar.innerHTML =`<span class="text-xs sm:text-sm font-black">${(top3.username ||'P').substring(0, 2).toUpperCase()}</span>`;
+        if (p3Avatar) p3Avatar.innerHTML = `<span class="text-xs sm:text-sm font-black">${(top3.username || 'P').substring(0, 2).toUpperCase()}</span>`;
+      } else {
+        if (p3Name) {
+          p3Name.textContent = '—';
+          p3Name.onclick = null;
+        }
+        if (p3Title) p3Title.textContent = '--';
+        if (p3Worth) p3Worth.textContent = '-- جنيه';
+        if (p3Avatar) p3Avatar.innerHTML = `<i class="fa-solid fa-medal text-amber-200"></i>`;
+      }
+
+      if (!players || players.length === 0) {
+        list.innerHTML = `
+          <tr>
+            <td colspan="4" class="text-center py-8 text-slate-500 text-xs">
+              ${window.currentLang === 'en' ? 'No registered accounts in the leaderboard yet.' : 'لا توجد حسابات مسجلة حالياً في قائمة المتصدرين.'}
+            </td>
+          </tr>`;
+        return;
       }
 
       // Update Self Rank indicator
@@ -14946,6 +14969,9 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     const tradeEl = document.getElementById('nw-modal-trade');
     if (tradeEl) tradeEl.textContent = `${b.tradeTotal.toLocaleString()} EGP`;
+
+    const farmEl = document.getElementById('nw-modal-farm');
+    if (farmEl) farmEl.textContent = `${(b.farmTotal || 0).toLocaleString()} EGP`;
 
     const debtRow = document.getElementById('nw-modal-debt-row');
     const debtEl = document.getElementById('nw-modal-debt');

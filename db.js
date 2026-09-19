@@ -4636,15 +4636,29 @@ var AppDB = (() => {
     return HIDDEN_TEST_USERS.has(String(username).trim().toLowerCase());
   }
 
-  let _leaderboardMeta = {
-    updatedAt: Date.now(),
-    nextUpdateAt: Date.now() + 3600000,
-    cycleMinutes: 60
-  };
+  function _computeNextHourlyCycle(fromTime) {
+    const t = fromTime || Date.now();
+    const cycleMs = 60 * 60 * 1000;
+    const date = new Date(t);
+    const msIntoCurrentHour = (date.getMinutes() * 60 + date.getSeconds()) * 1000 + date.getMilliseconds();
+    const nextUpdateAt = t + (cycleMs - msIntoCurrentHour);
+    const updatedAt = nextUpdateAt - cycleMs;
+    return {
+      updatedAt,
+      nextUpdateAt,
+      cycleMinutes: 60
+    };
+  }
+
+  let _leaderboardMeta = _computeNextHourlyCycle();
   let _leaderboardCache = null;
   let _lastLeaderboardFetchTime = 0;
 
   function getLeaderboardMeta() {
+    const now = Date.now();
+    if (!_leaderboardMeta || now >= _leaderboardMeta.nextUpdateAt) {
+      _leaderboardMeta = _computeNextHourlyCycle(now);
+    }
     return _leaderboardMeta;
   }
 
@@ -4661,20 +4675,22 @@ var AppDB = (() => {
           bank: Number(r.bank || 0),
           netWorth: Number(r.net_worth || 0),
           net_worth: Number(r.net_worth || 0),
-          title: r.title ||'عامل مبتدئ',
-          jobId: r.job_id ||'worker',
+          title: r.title || 'عامل مبتدئ',
+          jobId: r.job_id || 'worker',
           isAdmin: r.is_admin === true,
           facebookVerified: false
         }));
 
-      _leaderboardMeta = {
-        updatedAt: now,
-        nextUpdateAt: now + (60 * 60 * 1000), // Exactly 1 hour
-        cycleMinutes: 60
-      };
+      _leaderboardMeta = _computeNextHourlyCycle(now);
+
+      // Immediately cache and protect retrieved top players
+      if (topPlayers.length > 0) {
+        _leaderboardCache = topPlayers;
+        _lastLeaderboardFetchTime = now;
+      }
 
       const docPayload = {
-        id:'leaderboard',
+        id: 'leaderboard',
         data: {
           updatedAt: _leaderboardMeta.updatedAt,
           nextUpdateAt: _leaderboardMeta.nextUpdateAt,
@@ -4684,14 +4700,17 @@ var AppDB = (() => {
         updated_at: now
       };
 
-      await _api('globals', {
-        method:'POST',
-        headers: {'Prefer':'resolution=merge-duplicates' },
-        body: JSON.stringify(docPayload)
-      });
+      // Non-blocking write to globals: If RLS blocks client-side mutations, fail silently without discarding players
+      try {
+        await _api('globals', {
+          method: 'POST',
+          headers: { 'Prefer': 'resolution=merge-duplicates' },
+          body: JSON.stringify(docPayload)
+        });
+      } catch (saveErr) {
+        // Expected under locked down RLS when user is anon; safe to ignore
+      }
 
-      _leaderboardCache = topPlayers;
-      _lastLeaderboardFetchTime = now;
       return topPlayers;
     } catch (e) {
       console.warn('[DB] _rebuildAndSaveLeaderboard error:', e.message);
@@ -4702,8 +4721,8 @@ var AppDB = (() => {
   async function getLeaderboard(forceRefresh = false) {
     const now = Date.now();
 
-    // Fast in-memory cache for repeated calls within 10 seconds
-    if (!forceRefresh && _leaderboardCache && (now - _lastLeaderboardFetchTime < 10000)) {
+    // Fast in-memory cache for repeated calls within 30 seconds
+    if (!forceRefresh && _leaderboardCache && _leaderboardCache.length > 0 && (now - _lastLeaderboardFetchTime < 30000)) {
       return _leaderboardCache.filter(p => !isHiddenPlayer(p.username));
     }
 
@@ -4714,20 +4733,17 @@ var AppDB = (() => {
         const nextUpdate = Number(d.nextUpdateAt || 0);
         const topList = (Array.isArray(d.topPlayers) ? d.topPlayers : []).filter(p => !isHiddenPlayer(p.username));
 
-        _leaderboardMeta = {
-          updatedAt: Number(d.updatedAt || now),
-          nextUpdateAt: nextUpdate > 0 ? nextUpdate : (now + 3600000),
-          cycleMinutes: Number(d.cycleMinutes || 60)
-        };
-
-        // If the hour has passed, or leaderboard is empty, rebuild and update the unified document
-        if (forceRefresh || topList.length === 0 || now >= nextUpdate) {
-          return await _rebuildAndSaveLeaderboard();
+        // If active snapshot in DB has not expired and contains players, adopt it
+        if (!forceRefresh && topList.length > 0 && nextUpdate > now) {
+          _leaderboardMeta = {
+            updatedAt: Number(d.updatedAt || (nextUpdate - 3600000)),
+            nextUpdateAt: nextUpdate,
+            cycleMinutes: Number(d.cycleMinutes || 60)
+          };
+          _leaderboardCache = topList;
+          _lastLeaderboardFetchTime = now;
+          return topList;
         }
-
-        _leaderboardCache = topList;
-        _lastLeaderboardFetchTime = now;
-        return topList;
       }
     } catch (err) {
       console.warn('[DB] getLeaderboard globals fetch error:', err.message);

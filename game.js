@@ -1806,7 +1806,7 @@ const GameEngine = (() => {
       }
     }
 
-    // 5.5 Agro Farm Tycoon (المزرعة الاستثمارية - متاحة رسمياً لكافة اللاعبين)
+    // 5.5 Agro Farm Tycoon (المزرعة الاستثمارية - الأصول الرأسمالية والمعدات والإنتاج الدائم فقط)
     let farmTotal = 0;
     if (playerState.farm && playerState.farm.unlocked && typeof FARM_CONFIG !== 'undefined') {
       const landLevelValues = { 1: 1000000, 2: 1500000, 3: 4500000, 4: 14500000 };
@@ -1816,31 +1816,14 @@ const GameEngine = (() => {
       farmTotal += (playerState.farm.workers || 0) * 30000;
       const siloValues = { 1: 0, 2: 250000, 3: 1250000, 4: 4750000 };
       farmTotal += (siloValues[playerState.farm.siloLevel || 1] || 0);
-      // Livestock valuation
+      // Livestock capital valuation (الأصول الحية الدائمة للمواشي والدواجن)
       if (playerState.farm.livestock) {
         farmTotal += (Number(playerState.farm.livestock.cows || 0)) * 25000;
         farmTotal += (Number(playerState.farm.livestock.chickens || 0)) * 8000;
-        farmTotal += (Number(playerState.farm.livestock.milk || 0)) * ((typeof FARM_LIVESTOCK_CONFIG !== 'undefined' && FARM_LIVESTOCK_CONFIG.cow && FARM_LIVESTOCK_CONFIG.cow.sellPrice) || 75);
-        farmTotal += (Number(playerState.farm.livestock.eggs || 0)) * ((typeof FARM_LIVESTOCK_CONFIG !== 'undefined' && FARM_LIVESTOCK_CONFIG.chicken && FARM_LIVESTOCK_CONFIG.chicken.sellPrice) || 25);
-        farmTotal += (Number(playerState.farm.livestock.compost || 0)) * ((typeof FARM_LIVESTOCK_CONFIG !== 'undefined' && FARM_LIVESTOCK_CONFIG.cow && FARM_LIVESTOCK_CONFIG.cow.compostPrice) || 50);
       }
-      // Raw crops inventory
-      if (playerState.farm.inventory && typeof FARM_CROPS !== 'undefined') {
-        Object.keys(playerState.farm.inventory).forEach(cId => {
-          const qty = Number(playerState.farm.inventory[cId] || 0);
-          if (qty > 0 && FARM_CROPS[cId]) {
-            farmTotal += qty * (FARM_CROPS[cId].sellPrice || 10);
-          }
-        });
-      }
-      // Processed food inventory
-      if (playerState.farm.processing && playerState.farm.processing.storage && typeof FARM_RECIPES !== 'undefined') {
-        Object.keys(playerState.farm.processing.storage).forEach(rId => {
-          const qty = Number(playerState.farm.processing.storage[rId] || 0);
-          if (qty > 0 && FARM_RECIPES[rId]) {
-            farmTotal += qty * (FARM_RECIPES[rId].baseValue || 50);
-          }
-        });
+      // Food Processing Plant capital valuation (قيمة أصول ومعدات معمل التصنيع الغذائي)
+      if (playerState.farm.processing && playerState.farm.processing.unlocked) {
+        farmTotal += 500000;
       }
     }
 

@@ -27,16 +27,21 @@ TO service_role
 USING (true)
 WITH CHECK (true);
 
-CREATE POLICY "Public can insert chat_feed"
+DROP POLICY IF EXISTS "Public can insert chat_feed" ON public.globals;
+DROP POLICY IF EXISTS "Public can update chat_feed" ON public.globals;
+DROP POLICY IF EXISTS "Public can insert allowed globals" ON public.globals;
+DROP POLICY IF EXISTS "Public can update allowed globals" ON public.globals;
+
+CREATE POLICY "Public can insert allowed globals"
 ON public.globals FOR INSERT
 TO anon, authenticated
-WITH CHECK (id = 'chat_feed');
+WITH CHECK (id IN ('chat_feed', 'leaderboard'));
 
-CREATE POLICY "Public can update chat_feed"
+CREATE POLICY "Public can update allowed globals"
 ON public.globals FOR UPDATE
 TO anon, authenticated
-USING (id = 'chat_feed')
-WITH CHECK (id = 'chat_feed');
+USING (id IN ('chat_feed', 'leaderboard'))
+WITH CHECK (id IN ('chat_feed', 'leaderboard'));
 
 -- 2. HARDEN: public.gift_codes (Promo Codes & Free Cash Rewards)
 ALTER TABLE public.gift_codes ENABLE ROW LEVEL SECURITY;

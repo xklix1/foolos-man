@@ -95,6 +95,78 @@ if (pushCheckerTimer.unref) {
   pushCheckerTimer.unref(); // Prevents timer from keeping Node process alive during test runs
 }
 
+// Background Authoritative Hourly Leaderboard Updater (runs every 10 minutes)
+async function updateAuthoritativeLeaderboardSnapshot() {
+  try {
+    const serviceKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
+    if (!serviceKey) return;
+
+    const now = Date.now();
+    const cycleMs = 60 * 60 * 1000;
+    const date = new Date(now);
+    const msIntoCurrentHour = (date.getMinutes() * 60 + date.getSeconds()) * 1000 + date.getMilliseconds();
+    const nextUpdateAt = now + (cycleMs - msIntoCurrentHour);
+    const updatedAt = nextUpdateAt - cycleMs;
+
+    const playersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&username=not.in.(newu,khaled,Khaled,rasalmal,rasalmal1,rasalmal2,Rasalmal,Rasalmal1,Rasalmal2)&order=net_worth.desc&limit=25`, {
+      headers: {
+        'apikey': serviceKey,
+        'Authorization': `Bearer ${serviceKey}`
+      }
+    });
+
+    if (!playersRes.ok) return;
+    const rows = await playersRes.json();
+    if (!Array.isArray(rows) || rows.length === 0) return;
+
+    const hiddenList = new Set(['newu', 'khaled', 'rasalmal', 'rasalmal1', 'rasalmal2']);
+    const topPlayers = rows
+      .filter(r => r && !hiddenList.has(String(r.username || '').trim().toLowerCase()))
+      .slice(0, 10)
+      .map(r => ({
+        username: r.username,
+        cash: Number(r.cash || 0),
+        bank: Number(r.bank || 0),
+        netWorth: Number(r.net_worth || 0),
+        net_worth: Number(r.net_worth || 0),
+        title: r.title || 'عامل مبتدئ',
+        jobId: r.job_id || 'worker',
+        isAdmin: r.is_admin === true,
+        facebookVerified: false
+      }));
+
+    const docPayload = {
+      id: 'leaderboard',
+      data: {
+        updatedAt: updatedAt,
+        nextUpdateAt: nextUpdateAt,
+        cycleMinutes: 60,
+        topPlayers: topPlayers
+      },
+      updated_at: now
+    };
+
+    await fetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
+      method: 'POST',
+      headers: {
+        'apikey': serviceKey,
+        'Authorization': `Bearer ${serviceKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify(docPayload)
+    });
+  } catch (err) {
+    // Non-fatal background maintenance
+  }
+}
+
+updateAuthoritativeLeaderboardSnapshot();
+const leaderboardUpdaterTimer = setInterval(updateAuthoritativeLeaderboardSnapshot, 10 * 60 * 1000);
+if (leaderboardUpdaterTimer.unref) {
+  leaderboardUpdaterTimer.unref();
+}
+
 async function start() {
   try {
     await app.listen({ port: config.PORT, host: config.HOST });
