@@ -6283,6 +6283,9 @@
   function extractDeviceSeed(rawId) {
     if (!rawId) return '';
     const clean = String(rawId).trim();
+    // Prioritize 16-hex seed in new format dev_<seed16>_<hw8>
+    const seedMatch = clean.match(/^dev_([a-f0-9]{16})/i);
+    if (seedMatch) return seedMatch[1].toLowerCase();
     const match = clean.match(/([a-f0-9]{16})/i);
     if (match) return match[1].toLowerCase();
     return clean.toLowerCase();
@@ -6341,7 +6344,7 @@
           if (!deviceClusters.has(seed)) {
             deviceClusters.set(seed, {
               seed: seed,
-              displayId: devId.startsWith('dev_hw_') ? devId : ('dev_hw_' + seed),
+              displayId: (devId.startsWith('dev_hw_') || devId.startsWith('dev_')) ? devId : ('dev_' + seed),
               accounts: new Set(),
               rawDevices: new Set()
             });
@@ -6379,12 +6382,14 @@
             const isBanned = Array.from(cluster.rawDevices).some(d => bannedSet.has(d)) || bannedSet.has(seed);
             const accountsDetail = accountNames.map(uname => {
               const p = playerMap.get(uname.toLowerCase());
+              const isAdmin = Boolean(p && (p.isAdmin || p.is_admin || (p.state && (p.state.isAdmin || p.state.is_admin)) || uname.toLowerCase() === 'khaled'));
               return {
                 username: uname,
                 net_worth: p ? Number(p.netWorth || p.net_worth || 0) : 0,
                 cash: p ? Number(p.cash || 0) : 0,
                 bank: p ? Number(p.bank || 0) : 0,
                 is_banned: p ? Boolean(p.isBanned || p.is_banned) : false,
+                is_admin: isAdmin,
                 last_seen: p ? (p.lastSeen || p.last_seen) : null
               };
             });
@@ -6392,10 +6397,15 @@
             // Sort accounts inside cluster by net worth desc
             accountsDetail.sort((a, b) => b.net_worth - a.net_worth);
 
+            const hasAdmin = accountsDetail.some(a => a.is_admin);
+            const isLegacyHwOnly = Array.from(cluster.rawDevices).every(d => d.startsWith('dev_hw_'));
+
             clusters.push({
               seed,
               displayId: cluster.displayId,
               isDeviceBanned: isBanned,
+              hasAdmin,
+              isLegacyHwOnly,
               count: accountNames.length,
               accounts: accountsDetail
             });
@@ -6541,12 +6551,13 @@
           <tr class="hover:bg-slate-900/60 transition border-b border-slate-800/40">
             <td class="p-2.5">
               <div class="flex items-center gap-2">
-                <div class="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 text-xs shrink-0 font-bold">
+                <div class="w-7 h-7 rounded-lg ${a.is_admin ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-300'} border flex items-center justify-center text-xs shrink-0 font-bold">
                   ${safeUname.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <span class="font-bold text-white text-xs block cursor-pointer hover:text-cyan-400" onclick="window.adminSearchPlayer && window.adminSearchPlayer('${encodedUname}')">
+                  <span class="font-bold text-white text-xs flex items-center gap-1.5 cursor-pointer hover:text-cyan-400" onclick="window.adminSearchPlayer && window.adminSearchPlayer('${encodedUname}')">
                     ${safeUname}
+                    ${a.is_admin ? '<span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1 py-0.2 rounded font-bold">مشرف 🛡️</span>' : ''}
                   </span>
                   <span class="text-[10px] text-slate-500 font-sans">آخر ظهور: ${timeStr}</span>
                 </div>
@@ -6564,21 +6575,27 @@
             </td>
             <td class="p-2.5 text-center whitespace-nowrap">
               <div class="flex items-center justify-center gap-1.5">
-                <button onclick="window.adminQuickAccountAction && window.adminQuickAccountAction('reset', '${encodedUname}')"
-                  class="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 rounded-lg text-[10px] font-bold transition cursor-pointer"
-                  title="تصفير كاش وبنك ومشاريع الحساب">
-                  تصفير
-                </button>
-                <button onclick="window.adminQuickAccountAction && window.adminQuickAccountAction('ban', '${encodedUname}')"
-                  class="px-2 py-1 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 rounded-lg text-[10px] font-bold transition cursor-pointer"
-                  title="حظر الحساب نهائياً">
-                  حظر
-                </button>
-                <button onclick="window.adminQuickAccountAction && window.adminQuickAccountAction('delete', '${encodedUname}')"
-                  class="px-2 py-1 bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 rounded-lg text-[10px] font-bold transition cursor-pointer"
-                  title="مسح الحساب نهائياً من قاعدة البيانات">
-                  مسح
-                </button>
+                ${a.is_admin ? `
+                  <span class="px-2.5 py-1 bg-amber-500/10 text-amber-300 border border-amber-500/25 rounded-lg text-[10px] font-bold">
+                    محمي (إدارة)
+                  </span>
+                ` : `
+                  <button onclick="window.adminQuickAccountAction && window.adminQuickAccountAction('reset', '${encodedUname}')"
+                    class="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                    title="تصفير كاش وبنك ومشاريع الحساب">
+                    تصفير
+                  </button>
+                  <button onclick="window.adminQuickAccountAction && window.adminQuickAccountAction('ban', '${encodedUname}')"
+                    class="px-2 py-1 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                    title="حظر الحساب نهائياً">
+                    حظر
+                  </button>
+                  <button onclick="window.adminQuickAccountAction && window.adminQuickAccountAction('delete', '${encodedUname}')"
+                    class="px-2 py-1 bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                    title="مسح الحساب نهائياً من قاعدة البيانات">
+                    مسح
+                  </button>
+                `}
               </div>
             </td>
           </tr>
@@ -6586,11 +6603,11 @@
       }).join('');
 
       return `
-        <div class="glass-panel p-4 rounded-2xl border ${isBanned ? 'border-rose-500/40 bg-rose-950/10' : 'border-slate-800/90'} space-y-3 shadow-lg transition hover:border-cyan-500/40">
+        <div class="glass-panel p-4 rounded-2xl border ${isBanned ? 'border-rose-500/40 bg-rose-950/10' : (c.hasAdmin ? 'border-amber-500/40 bg-amber-950/10' : 'border-slate-800/90')} space-y-3 shadow-lg transition hover:border-cyan-500/40">
           <!-- Device Header -->
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-800/80">
             <div class="flex items-center gap-2.5 flex-wrap">
-              <div class="w-9 h-9 rounded-xl ${isBanned ? 'bg-rose-500/15 border-rose-500/30 text-rose-400' : 'bg-cyan-500/15 border-cyan-500/30 text-cyan-400'} border flex items-center justify-center shrink-0 shadow-sm">
+              <div class="w-9 h-9 rounded-xl ${isBanned ? 'bg-rose-500/15 border-rose-500/30 text-rose-400' : (c.hasAdmin ? 'bg-amber-500/15 border-amber-500/30 text-amber-400' : 'bg-cyan-500/15 border-cyan-500/30 text-cyan-400')} border flex items-center justify-center shrink-0 shadow-sm">
                 <i class="fa-solid fa-mobile-screen-button text-sm"></i>
               </div>
               <div>
@@ -6605,6 +6622,17 @@
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
+              ${c.hasAdmin ? `
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                  <i class="fa-solid fa-crown text-[9px]"></i>
+                  <span>جهاز مشرف / تجارب</span>
+                </span>
+              ` : ''}
+              ${c.isLegacyHwOnly ? `
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700" title="بصمة عتاد قديمة قد تتطابق تلقائياً في نفس موديل الهاتف في مصر">
+                  عتاد قديم
+                </span>
+              ` : ''}
               ${bannedBadge}
               <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black border ${countBadgeClass}">
                 <i class="fa-solid fa-clone mr-1"></i> ${count} حسابات مسجلة

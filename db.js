@@ -455,11 +455,27 @@ var AppDB = (() => {
 
     function _getPersistentSeed() {
       try {
-        if (typeof localStorage === 'undefined') return 'no_storage';
-        let seed = localStorage.getItem('rasalmal_device_seed');
+        let seed = null;
+        if (typeof localStorage !== 'undefined') {
+          seed = localStorage.getItem('rasalmal_device_seed');
+        }
+        if (!seed && typeof document !== 'undefined' && document.cookie) {
+          const match = document.cookie.match(/(?:^|;\s*)rasalmal_device_seed=([^;]+)/);
+          if (match && match[1]) {
+            seed = decodeURIComponent(match[1]);
+          }
+        }
         if (!seed) {
-          seed = 'seed_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now().toString(36);
-          localStorage.setItem('rasalmal_device_seed', seed);
+          seed = 'seed_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 10);
+        }
+        // Persist seed across localStorage and long-lived cookie for device uniqueness
+        if (typeof localStorage !== 'undefined') {
+          try { localStorage.setItem('rasalmal_device_seed', seed); } catch (e) {}
+        }
+        if (typeof document !== 'undefined') {
+          try {
+            document.cookie = `rasalmal_device_seed=${encodeURIComponent(seed)}; max-age=63072000; path=/; SameSite=Lax`;
+          } catch (e) {}
         }
         return seed;
       } catch (e) {
@@ -470,18 +486,27 @@ var AppDB = (() => {
     async function getFingerprint() {
       if (_cachedFp) return _cachedFp;
       try {
+        const seed = _getPersistentSeed();
+        const seedHash = _simpleHash(seed);
+
         const webgl = _getWebGlFingerprint();
         const canvasHash = _getCanvas2dFingerprint();
         const screen = _getScreenMetrics();
-        const lang = (typeof navigator !== 'undefined' && ((navigator.languages && navigator.languages[0]) || navigator.language)) || '';
+        const avail = (typeof window !== 'undefined' && window.screen) ? `${window.screen.availWidth || 0}x${window.screen.availHeight || 0}` : '';
+        const lang = (typeof navigator !== 'undefined' && ((navigator.languages && navigator.languages.join(',')) || navigator.language)) || '';
         const cores = (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 0;
         const tz = new Date().getTimezoneOffset();
+        const tzName = (typeof Intl !== 'undefined' && Intl.DateTimeFormat) ? Intl.DateTimeFormat().resolvedOptions().timeZone : '';
+        const ua = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : '';
+        const touch = (typeof navigator !== 'undefined' && navigator.maxTouchPoints) || 0;
 
-        // Hardware profile components (consistent even in Incognito mode & across sessions)
-        const hwProfile = [webgl, canvasHash, screen, lang, cores, tz].join('|');
+        // Enhanced hardware profile components
+        const hwProfile = [webgl, canvasHash, screen, avail, lang, cores, tz, tzName, ua, touch].join('|');
         const hwHash = _simpleHash(hwProfile);
 
-        _cachedFp = `dev_hw_${hwHash}`;
+        // Format: dev_<16_hex_seedHash>_<8_hex_hwHash>
+        // Guarantees unique device ID while keeping all accounts opened on the same physical phone clustered
+        _cachedFp = `dev_${seedHash}_${hwHash.substring(0, 8)}`;
         return _cachedFp;
       } catch (e) {
         return 'dev_fallback_' + Math.random().toString(36).substring(2, 10);
