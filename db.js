@@ -5561,9 +5561,10 @@ var AppDB = (() => {
       throw new Error('تم حظر هذا الحساب نهائياً من اللعبة.');
     }
 
-    // Track device linkage asynchronously without blocking login
+    // Track device linkage asynchronously without blocking login (bypass for admin)
     (async () => {
       try {
+        if (u.toLowerCase() === 'khaled' || state.isAdmin || state.is_admin) return;
         const fp = await DeviceFingerprint.getFingerprint();
         let stateChanged = false;
         if (!state.known_devices) state.known_devices = [];

@@ -6338,6 +6338,8 @@
 
         function registerLink(devId, username) {
           if (!devId || !username) return;
+          // Protect Admin: Never link admin into player fraud clusters
+          if (String(username).trim().toLowerCase() === 'khaled') return;
           const seed = extractDeviceSeed(devId);
           if (!seed) return;
 
