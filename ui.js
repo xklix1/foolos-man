@@ -16727,12 +16727,56 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const amount = Number(tr.payload && tr.payload.amount ? tr.payload.amount : 0);
 
         if (amount > 0) {
-          // Note: SQL execute_wire_transfer already authoritatively credited the recipient's bank.
-          // This mailbox handler only provides user notification and UI feedback.
           showToast('حوالة بنكية واردة', `وصلتك حوالة مالية بقيمة ${amount.toLocaleString()} EGP من اللاعب "${tr.sender}" في حسابك البنكي.`, 'success');
           playMenuSound('cash');
 
           AppDB.updateMailStatus(tr.id, 'read').catch(() => {});
+
+          // Authoritative DB reconciliation:
+          // SQL execute_wire_transfer already deposited the funds into the PostgreSQL players table.
+          // By fetching fresh authoritative state from DB, we adopt the exact deposited balance:
+          // 1) For an ONLINE player: local state is updated to include the transfer so autosave will never wipe it out.
+          // 2) For an OFFLINE player logging in: getPlayerState already loaded it, so adopting DB balance prevents 2x double credit.
+          if (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.activeUsername) {
+            const transferTs = Number(tr.created_at || Date.now());
+            if (typeof AppDB !== 'undefined' && typeof AppDB.getPlayerState === 'function') {
+              try {
+                const fresh = await AppDB.getPlayerState(GameEngine.activeUsername);
+                if (fresh && fresh.bank !== undefined) {
+                  const authoritativeBank = Number(fresh.bank);
+                  GameEngine.state.bank = Math.max(Number(GameEngine.state.bank || 0), authoritativeBank);
+                  GameEngine.state.netWorth = Math.max(Number(GameEngine.state.netWorth || 0), Number(fresh.netWorth || 0));
+                  GameEngine.state.adminModifiedTimestamp = Math.max(
+                    Number(GameEngine.state.adminModifiedTimestamp || 0),
+                    Number(fresh.adminModifiedTimestamp || 0),
+                    transferTs
+                  );
+                } else {
+                  GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
+                  GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
+                  GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), transferTs);
+                }
+              } catch (_) {
+                GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
+                GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
+                GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), transferTs);
+              }
+            } else {
+              GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
+              GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
+              GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), transferTs);
+            }
+
+            if (typeof renderStatsBar === 'function') renderStatsBar();
+
+            // Push updated state immediately to server session & cache
+            if (typeof window.ServerBridge !== 'undefined' && typeof window.ServerBridge.syncState === 'function') {
+              window.ServerBridge.syncState(GameEngine.state, true).catch(() => {});
+            }
+            if (typeof AppDB !== 'undefined' && typeof AppDB.savePlayerState === 'function') {
+              AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true).catch(() => {});
+            }
+          }
 
           if (typeof loadTransferHistory === 'function') {
             loadTransferHistory(true);

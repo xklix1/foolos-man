@@ -92,8 +92,10 @@ class SessionManager {
           const isDbReset = Boolean(dbRow.is_reset === true || dbRow.isReset === true || rawState.isReset === true);
           const dbAdminTs = Number(dbRow.admin_modified_timestamp || rawState.adminModifiedTimestamp || 0);
           const sessionAdminTs = Number(session.state.adminModifiedTimestamp || 0);
+          const dbBank = Number(dbRow.bank !== undefined && dbRow.bank !== null ? dbRow.bank : (rawState.bank || 0));
+          const sessionBank = Number(session.state.bank || 0);
 
-          if (isDbReset || dbAdminTs > sessionAdminTs) {
+          if (isDbReset || dbAdminTs > sessionAdminTs || dbBank > sessionBank) {
             session.state = sanitizePlayerState(dbRow);
             session.dirty = false;
           }
@@ -533,6 +535,24 @@ class SessionManager {
   evictSession(username) {
     if (!username) return false;
     return this.sessions.delete(username.trim().toLowerCase());
+  }
+
+  /**
+   * Authoritatively updates recipient in-memory session when a wire transfer completes
+   */
+  creditRecipientWireTransfer(recipientUsername, amount, transferTs = Date.now()) {
+    if (!recipientUsername || !amount) return false;
+    const uKey = recipientUsername.trim().toLowerCase();
+    const session = this.sessions.get(uKey);
+    if (session && session.state) {
+      session.state.bank = (Number(session.state.bank) || 0) + Number(amount);
+      session.state.netWorth = (Number(session.state.netWorth) || 0) + Number(amount);
+      session.state.adminModifiedTimestamp = Math.max(Number(session.state.adminModifiedTimestamp || 0), transferTs);
+      session.dirty = true;
+      console.log(`[SessionManager] Credited incoming wire transfer for active session "${recipientUsername}": +${amount.toLocaleString()} EGP (New Bank: ${session.state.bank.toLocaleString()})`);
+      return true;
+    }
+    return false;
   }
 }
 

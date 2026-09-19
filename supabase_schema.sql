@@ -153,6 +153,7 @@ DECLARE
   recipient_created bigint;
   recipient_xp numeric;
   recipient_state jsonb;
+  recipient_admin_ts numeric;
   deduct_from_cash numeric := 0;
   deduct_from_bank numeric := 0;
   new_sender_cash numeric;
@@ -160,6 +161,7 @@ DECLARE
   new_recipient_bank numeric;
   v_now_ms bigint;
   v_lock_ts bigint;
+  v_recip_lock_ts bigint;
   v_daily_sent numeric := 0;
   v_sender_pin_hash text;
 BEGIN
@@ -251,8 +253,8 @@ BEGIN
   END IF;
 
   -- ── 5. إغلاق صف المستلم والتحقق من أهليته ──
-  SELECT username, bank, net_worth, is_banned, created_at, xp, state
-  INTO v_recipient_user, recipient_bank, recipient_net_worth, recipient_banned, recipient_created, recipient_xp, recipient_state
+  SELECT username, bank, net_worth, is_banned, created_at, xp, state, admin_modified_timestamp
+  INTO v_recipient_user, recipient_bank, recipient_net_worth, recipient_banned, recipient_created, recipient_xp, recipient_state, recipient_admin_ts
   FROM public.players 
   WHERE username ILIKE recipient_username 
   FOR UPDATE;
@@ -272,6 +274,7 @@ BEGIN
 
   recipient_bank := COALESCE(recipient_bank, 0);
   recipient_net_worth := COALESCE(recipient_net_worth, 0);
+  v_recip_lock_ts := GREATEST(COALESCE(recipient_admin_ts, 0) + 1000, v_now_ms);
 
   -- ── 6. خصم المبلغ من المرسل (الكاش أولاً ثم البنك) ──
   IF sender_cash >= transfer_amount THEN
@@ -309,12 +312,15 @@ BEGIN
   UPDATE public.players
   SET bank = new_recipient_bank,
       net_worth = recipient_net_worth + transfer_amount,
-      admin_modified_timestamp = v_now_ms,
+      admin_modified_timestamp = v_recip_lock_ts,
       state = CASE 
         WHEN state IS NOT NULL THEN 
           jsonb_set(
-            jsonb_set(state, '{bank}', to_jsonb(new_recipient_bank)),
-            '{adminModifiedTimestamp}', to_jsonb(v_now_ms)
+            jsonb_set(
+              jsonb_set(state, '{bank}', to_jsonb(new_recipient_bank)),
+              '{adminModifiedTimestamp}', to_jsonb(v_recip_lock_ts)
+            ),
+            '{netWorth}', to_jsonb(recipient_net_worth + transfer_amount)
           )
         ELSE state 
       END

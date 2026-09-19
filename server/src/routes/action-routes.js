@@ -578,6 +578,27 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       events
     };
   });
+
+  // 14. POST /api/action/transfer-notify (Wire Transfer Notification to in-memory active session)
+  fastify.post('/api/action/transfer-notify', async (request, reply) => {
+    const { sender, recipient, amount } = request.body || {};
+    if (!recipient || !amount) {
+      return reply.code(400).send({ error: 'recipient and amount are required' });
+    }
+
+    const amt = Number(amount);
+    if (amt <= 0) {
+      return reply.code(400).send({ error: 'amount must be positive' });
+    }
+
+    const credited = sessionManager.creditRecipientWireTransfer(recipient, amt, Date.now());
+    return {
+      success: true,
+      recipient,
+      amount: amt,
+      inMemorySessionCredited: credited
+    };
+  });
 }
 
 module.exports = actionRoutes;

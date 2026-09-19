@@ -1988,6 +1988,11 @@ var AppDB = (() => {
       } catch (_) {}
     }
 
+    // Immediately notify authoritative server so recipient session in RAM is updated if active
+    if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.notifyWireTransfer === 'function') {
+      window.ServerBridge.notifyWireTransfer(senderUsername.trim(), recipientUsername.trim(), amt).catch(() => {});
+    }
+
     return true;
   }
 

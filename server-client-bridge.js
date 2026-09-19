@@ -320,6 +320,23 @@ var ServerBridge = (() => {
     });
   }
 
+  /**
+   * Notifies the server of a completed atomic wire transfer so recipient session in RAM is updated immediately
+   */
+  async function notifyWireTransfer(sender, recipient, amount) {
+    if (!_isServerOnline || !sender || !recipient || !amount) return null;
+    try {
+      return await _post('/api/action/transfer-notify', {
+        sender,
+        recipient,
+        amount: Number(amount)
+      });
+    } catch (e) {
+      console.warn('[ServerBridge] notifyWireTransfer notice:', e.message);
+      return null;
+    }
+  }
+
   return {
     startSession,
     dispatchClick,
@@ -328,6 +345,7 @@ var ServerBridge = (() => {
     buySupplies,
     bankAction,
     changePin,
+    notifyWireTransfer,
     syncState,
     sendHeartbeat,
     sendExit,
