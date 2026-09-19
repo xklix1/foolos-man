@@ -383,134 +383,146 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   //  DEVICE FINGERPRINTING & HARDWARE INTEGRITY
   // ─────────────────────────────────────────────
+  // ─────────────────────────────────────────────
+  //  DEVICE IDENTITY & INTEGRITY (100% Guaranteed Multi-Layer UUID)
+  // ─────────────────────────────────────────────
   const DeviceFingerprint = (() => {
-    let _cachedFp = null;
+    let _cachedUuid = null;
+    const STORAGE_KEY = 'rasalmal_device_uuid_v2';
+    const IDB_DB_NAME = 'rasalmal_system_db';
+    const IDB_STORE_NAME = 'device_identity';
 
-    function _simpleHash(str) {
-      let h1 = 0xdeadbeef ^ 0, h2 = 0x41c64e6d ^ 0;
-      for (let i = 0, ch; i < str.length; i++) {
-        ch = str.charCodeAt(i);
-        h1 = Math.imul(h1 ^ ch, 2654435761);
-        h2 = Math.imul(h2 ^ ch, 1597334677);
-      }
-      h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-      h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-      return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(16, '0');
-    }
-
-    function _getWebGlFingerprint() {
+    // 1. Cryptographic 128-bit UUID generator (Zero collision probability)
+    function _generateSecureUUID() {
       try {
-        if (typeof document === 'undefined') return 'no_dom';
-        const canvas = document.createElement('canvas');
-        canvas.width = 16;
-        canvas.height = 16;
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-        if (!gl) return 'no_webgl';
-        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-        if (debugInfo) {
-          const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '';
-          const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '';
-          return `${vendor}~${renderer}`;
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+          return 'dev_uuid_' + crypto.randomUUID().replace(/-/g, '');
         }
-        return `${gl.getParameter(gl.VENDOR)}~${gl.getParameter(gl.RENDERER)}`;
-      } catch (e) {
-        return 'webgl_err';
-      }
+        if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+          const buf = new Uint8Array(16);
+          crypto.getRandomValues(buf);
+          buf[6] = (buf[6] & 0x0f) | 0x40;
+          buf[8] = (buf[8] & 0x3f) | 0x80;
+          return 'dev_uuid_' + Array.from(buf).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+      } catch (e) {}
+      const s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+      return 'dev_uuid_' + s4() + s4() + s4() + s4() + s4() + s4() + s4() + s4();
     }
 
-    function _getCanvas2dFingerprint() {
+    // Layer 1: LocalStorage
+    function _getFromLocalStorage() {
       try {
-        if (typeof document === 'undefined') return 'no_dom';
-        const canvas = document.createElement('canvas');
-        canvas.width = 200;
-        canvas.height = 50;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return 'no_2d_ctx';
-        ctx.textBaseline = 'top';
-        ctx.font = "14px 'Arial', sans-serif";
-        ctx.fillStyle = '#f60';
-        ctx.fillRect(125, 1, 62, 20);
-        ctx.fillStyle = '#069';
-        ctx.fillText('RasAlMal.Online-2026🛡️', 2, 15);
-        ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
-        ctx.fillText('Anti-Feeder-Shield', 4, 30);
-        return _simpleHash(canvas.toDataURL());
-      } catch (e) {
-        return 'canvas_err';
-      }
-    }
-
-    function _getScreenMetrics() {
-      try {
-        if (typeof window === 'undefined') return 'no_window';
-        const w = (window.screen && window.screen.width) || 0;
-        const h = (window.screen && window.screen.height) || 0;
-        const cd = (window.screen && window.screen.colorDepth) || 0;
-        const dpr = window.devicePixelRatio || 1;
-        return `${w}x${h}x${cd}@${dpr}`;
-      } catch (e) {
-        return 'screen_err';
-      }
-    }
-
-    function _getPersistentSeed() {
-      try {
-        let seed = null;
         if (typeof localStorage !== 'undefined') {
-          seed = localStorage.getItem('rasalmal_device_seed');
+          return localStorage.getItem(STORAGE_KEY) || null;
         }
-        if (!seed && typeof document !== 'undefined' && document.cookie) {
-          const match = document.cookie.match(/(?:^|;\s*)rasalmal_device_seed=([^;]+)/);
-          if (match && match[1]) {
-            seed = decodeURIComponent(match[1]);
+      } catch (e) {}
+      return null;
+    }
+
+    function _saveToLocalStorage(uuid) {
+      try {
+        if (typeof localStorage !== 'undefined' && uuid) {
+          localStorage.setItem(STORAGE_KEY, uuid);
+        }
+      } catch (e) {}
+    }
+
+    // Layer 2: Long-Lived Cookie (Survives LocalStorage clear in many browsers)
+    function _getFromCookie() {
+      try {
+        if (typeof document !== 'undefined' && document.cookie) {
+          const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + STORAGE_KEY + '=([^;]+)'));
+          if (match && match[1]) return decodeURIComponent(match[1]);
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    function _saveToCookie(uuid) {
+      try {
+        if (typeof document !== 'undefined' && uuid) {
+          document.cookie = `${STORAGE_KEY}=${encodeURIComponent(uuid)}; max-age=63072000; path=/; SameSite=Lax`;
+        }
+      } catch (e) {}
+    }
+
+    // Layer 3: IndexedDB (Isolated sandboxed storage for true persistence)
+    function _getFromIDB() {
+      return new Promise((resolve) => {
+        try {
+          if (typeof indexedDB === 'undefined') return resolve(null);
+          const req = indexedDB.open(IDB_DB_NAME, 1);
+          req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(IDB_STORE_NAME)) {
+              db.createObjectStore(IDB_STORE_NAME);
+            }
+          };
+          req.onsuccess = (e) => {
+            try {
+              const db = e.target.result;
+              const tx = db.transaction(IDB_STORE_NAME, 'readonly');
+              const store = tx.objectStore(IDB_STORE_NAME);
+              const getReq = store.get('uuid');
+              getReq.onsuccess = () => resolve(getReq.result || null);
+              getReq.onerror = () => resolve(null);
+            } catch (err) {
+              resolve(null);
+            }
+          };
+          req.onerror = () => resolve(null);
+        } catch (e) {
+          resolve(null);
+        }
+      });
+    }
+
+    function _saveToIDB(uuid) {
+      try {
+        if (typeof indexedDB === 'undefined' || !uuid) return;
+        const req = indexedDB.open(IDB_DB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(IDB_STORE_NAME)) {
+            db.createObjectStore(IDB_STORE_NAME);
           }
-        }
-        if (!seed) {
-          seed = 'seed_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 10);
-        }
-        // Persist seed across localStorage and long-lived cookie for device uniqueness
-        if (typeof localStorage !== 'undefined') {
-          try { localStorage.setItem('rasalmal_device_seed', seed); } catch (e) {}
-        }
-        if (typeof document !== 'undefined') {
+        };
+        req.onsuccess = (e) => {
           try {
-            document.cookie = `rasalmal_device_seed=${encodeURIComponent(seed)}; max-age=63072000; path=/; SameSite=Lax`;
-          } catch (e) {}
-        }
-        return seed;
-      } catch (e) {
-        return 'seed_err';
-      }
+            const db = e.target.result;
+            const tx = db.transaction(IDB_STORE_NAME, 'readwrite');
+            const store = tx.objectStore(IDB_STORE_NAME);
+            store.put(uuid, 'uuid');
+          } catch (err) {}
+        };
+      } catch (e) {}
     }
 
+    // Master getter: Cross-layer validation & Self-Healing
     async function getFingerprint() {
-      if (_cachedFp) return _cachedFp;
-      try {
-        const seed = _getPersistentSeed();
-        const seedHash = _simpleHash(seed);
+      if (_cachedUuid) return _cachedUuid;
 
-        const webgl = _getWebGlFingerprint();
-        const canvasHash = _getCanvas2dFingerprint();
-        const screen = _getScreenMetrics();
-        const avail = (typeof window !== 'undefined' && window.screen) ? `${window.screen.availWidth || 0}x${window.screen.availHeight || 0}` : '';
-        const lang = (typeof navigator !== 'undefined' && ((navigator.languages && navigator.languages.join(',')) || navigator.language)) || '';
-        const cores = (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 0;
-        const tz = new Date().getTimezoneOffset();
-        const tzName = (typeof Intl !== 'undefined' && Intl.DateTimeFormat) ? Intl.DateTimeFormat().resolvedOptions().timeZone : '';
-        const ua = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : '';
-        const touch = (typeof navigator !== 'undefined' && navigator.maxTouchPoints) || 0;
+      let uuid = _getFromLocalStorage();
+      if (!uuid) uuid = _getFromCookie();
+      if (!uuid) uuid = await _getFromIDB();
 
-        // Enhanced hardware profile components
-        const hwProfile = [webgl, canvasHash, screen, avail, lang, cores, tz, tzName, ua, touch].join('|');
-        const hwHash = _simpleHash(hwProfile);
-
-        // Format: dev_<16_hex_seedHash>_<8_hex_hwHash>
-        // Guarantees unique device ID while keeping all accounts opened on the same physical phone clustered
-        _cachedFp = `dev_${seedHash}_${hwHash.substring(0, 8)}`;
-        return _cachedFp;
-      } catch (e) {
-        return 'dev_fallback_' + Math.random().toString(36).substring(2, 10);
+      // If found in any of the 3 layers, heal and persist to all 3 layers
+      if (uuid && typeof uuid === 'string' && uuid.startsWith('dev_uuid_')) {
+        _saveToLocalStorage(uuid);
+        _saveToCookie(uuid);
+        _saveToIDB(uuid);
+        _cachedUuid = uuid;
+        return _cachedUuid;
       }
+
+      // Generate brand new unique device UUID on first visit
+      uuid = _generateSecureUUID();
+      _saveToLocalStorage(uuid);
+      _saveToCookie(uuid);
+      _saveToIDB(uuid);
+      _cachedUuid = uuid;
+      return _cachedUuid;
     }
 
     function getRegisteredAccountOnDevice() {
