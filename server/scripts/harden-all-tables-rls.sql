@@ -3,9 +3,33 @@
 -- Target: PostgreSQL / Supabase
 -- Purpose: Lock down all database tables so anonymous browser clients cannot
 --          arbitrarily mutate economy, promo codes, maintenance, or global state.
+-- Note: Fully idempotent (safe to run multiple times without conflict errors).
 -- ==============================================================================
 
--- 1. HARDEN: public.globals (Maintenance, Force Reload, Market Events, Chat)
+-- 1. HARDEN: public.players (Core Player Balances, State & Credentials)
+ALTER TABLE public.players ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public can insert players" ON public.players;
+DROP POLICY IF EXISTS "Public can update players" ON public.players;
+DROP POLICY IF EXISTS "Allow anon full access" ON public.players;
+DROP POLICY IF EXISTS "Allow authenticated full access" ON public.players;
+DROP POLICY IF EXISTS "Public can view player profiles" ON public.players;
+DROP POLICY IF EXISTS "Service role full control on players" ON public.players;
+
+CREATE POLICY "Public can view player profiles"
+ON public.players FOR SELECT
+TO anon, authenticated
+USING (true);
+
+CREATE POLICY "Service role full control on players"
+ON public.players FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+REVOKE INSERT, UPDATE, DELETE ON public.players FROM anon;
+REVOKE INSERT, UPDATE, DELETE ON public.players FROM authenticated;
+
+-- 2. HARDEN: public.globals (Maintenance, Force Reload, Market Events, Chat)
 ALTER TABLE public.globals ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public all on globals" ON public.globals;
 DROP POLICY IF EXISTS "Allow anon full access on globals" ON public.globals;
@@ -13,6 +37,8 @@ DROP POLICY IF EXISTS "Public can read globals" ON public.globals;
 DROP POLICY IF EXISTS "Service role can modify globals" ON public.globals;
 DROP POLICY IF EXISTS "Public can insert chat_feed" ON public.globals;
 DROP POLICY IF EXISTS "Public can update chat_feed" ON public.globals;
+DROP POLICY IF EXISTS "Public can insert allowed globals" ON public.globals;
+DROP POLICY IF EXISTS "Public can update allowed globals" ON public.globals;
 
 GRANT SELECT, INSERT, UPDATE ON public.globals TO anon, authenticated;
 
@@ -27,11 +53,6 @@ TO service_role
 USING (true)
 WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Public can insert chat_feed" ON public.globals;
-DROP POLICY IF EXISTS "Public can update chat_feed" ON public.globals;
-DROP POLICY IF EXISTS "Public can insert allowed globals" ON public.globals;
-DROP POLICY IF EXISTS "Public can update allowed globals" ON public.globals;
-
 CREATE POLICY "Public can insert allowed globals"
 ON public.globals FOR INSERT
 TO anon, authenticated
@@ -43,7 +64,7 @@ TO anon, authenticated
 USING (id IN ('chat_feed', 'leaderboard'))
 WITH CHECK (id IN ('chat_feed', 'leaderboard'));
 
--- 2. HARDEN: public.gift_codes (Promo Codes & Free Cash Rewards)
+-- 3. HARDEN: public.gift_codes (Promo Codes & Free Cash Rewards)
 ALTER TABLE public.gift_codes ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public all on gift_codes" ON public.gift_codes;
 DROP POLICY IF EXISTS "Public can read gift_codes" ON public.gift_codes;
@@ -62,7 +83,7 @@ WITH CHECK (true);
 
 REVOKE INSERT, UPDATE, DELETE ON public.gift_codes FROM anon, authenticated;
 
--- 3. HARDEN: public.corporations (Guilds / Corporate Entities)
+-- 4. HARDEN: public.corporations (Guilds / Corporate Entities)
 ALTER TABLE public.corporations ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public all on corporations" ON public.corporations;
 DROP POLICY IF EXISTS "Public can read corporations" ON public.corporations;
@@ -81,7 +102,7 @@ WITH CHECK (true);
 
 REVOKE INSERT, UPDATE, DELETE ON public.corporations FROM anon, authenticated;
 
--- 4. HARDEN: public.live_auctions (Auctions & Bidding)
+-- 5. HARDEN: public.live_auctions (Auctions & Bidding)
 ALTER TABLE public.live_auctions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public all on live_auctions" ON public.live_auctions;
 DROP POLICY IF EXISTS "Public can read live_auctions" ON public.live_auctions;
@@ -100,11 +121,15 @@ WITH CHECK (true);
 
 REVOKE INSERT, UPDATE, DELETE ON public.live_auctions FROM anon, authenticated;
 
--- 5. HARDEN: public.transfers & transfer_requests
+-- 6. HARDEN: public.transfers & transfer_requests
 ALTER TABLE public.transfers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transfer_requests ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public all on transfers" ON public.transfers;
 DROP POLICY IF EXISTS "Allow public all on transfer_requests" ON public.transfer_requests;
+DROP POLICY IF EXISTS "Public can read transfers" ON public.transfers;
+DROP POLICY IF EXISTS "Service role full control on transfers" ON public.transfers;
+DROP POLICY IF EXISTS "Public can read transfer_requests" ON public.transfer_requests;
+DROP POLICY IF EXISTS "Service role full control on transfer_requests" ON public.transfer_requests;
 
 CREATE POLICY "Public can read transfers"
 ON public.transfers FOR SELECT
@@ -120,7 +145,7 @@ WITH CHECK (true);
 REVOKE INSERT, UPDATE, DELETE ON public.transfers FROM anon, authenticated;
 REVOKE INSERT, UPDATE, DELETE ON public.transfer_requests FROM anon, authenticated;
 
--- 6. HARDEN: public.mailbox (Direct Player Mail & Offline Grants)
+-- 7. HARDEN: public.mailbox (Direct Player Mail & Offline Grants)
 ALTER TABLE public.mailbox ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public all on mailbox" ON public.mailbox;
 DROP POLICY IF EXISTS "Public can read mailbox" ON public.mailbox;
@@ -158,7 +183,7 @@ ON public.mailbox FOR DELETE
 TO anon, authenticated
 USING (true);
 
--- 7. CONFIRM ALL TABLES HAVE RLS ENABLED
+-- 8. CONFIRM ALL TABLES HAVE RLS ENABLED
 SELECT tablename, rowsecurity
 FROM pg_tables
 WHERE schemaname = 'public'
