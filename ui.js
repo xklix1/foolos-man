@@ -3018,9 +3018,7 @@ const UIController = (() => {
           `• سيولة (كاش + بنك): ${formatCompactNumber(b.liquidTotal)} EGP\n` +
           `• محفظة البورصة: ${formatCompactNumber(b.stocksTotal)} EGP\n` +
           `• شهادات الاستثمار: ${formatCompactNumber(b.investmentsTotal)} EGP\n` +
-          `• العقارات والأسطول: ${formatCompactNumber(b.assetsTotal)} EGP` +
-          (b.industryTotal > 0 ? `\n• مجمع الصناعات: ${formatCompactNumber(b.industryTotal)} EGP` : '') +
-          (b.tradeTotal > 0 ? `\n• بضائع المستودع: ${formatCompactNumber(b.tradeTotal)} EGP` : '') +
+          `• العقارات والسيارات: ${formatCompactNumber(b.assetsTotal)} EGP` +
           (b.loanDebt > 0 ? `\n• قروض مستحقة: -${formatCompactNumber(b.loanDebt)} EGP` : '');
       }
     }
@@ -15048,15 +15046,6 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     const assetsEl = document.getElementById('nw-modal-assets');
     if (assetsEl) assetsEl.textContent = `${b.assetsTotal.toLocaleString()} EGP`;
-
-    const indEl = document.getElementById('nw-modal-industry');
-    if (indEl) indEl.textContent = `${b.industryTotal.toLocaleString()} EGP`;
-
-    const tradeEl = document.getElementById('nw-modal-trade');
-    if (tradeEl) tradeEl.textContent = `${b.tradeTotal.toLocaleString()} EGP`;
-
-    const farmEl = document.getElementById('nw-modal-farm');
-    if (farmEl) farmEl.textContent = `${(b.farmTotal || 0).toLocaleString()} EGP`;
 
     const debtRow = document.getElementById('nw-modal-debt-row');
     const debtEl = document.getElementById('nw-modal-debt');

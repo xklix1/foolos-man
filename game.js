@@ -1719,38 +1719,27 @@ const GameEngine = (() => {
   // Calculate Net Worth: Cash + Bank + DirtyCash + (Real Estate * Cost) + (Stocks * currentPrice) + Locked Investments + Industry + Trade - Liabilities
   function getNetWorthBreakdown(playerState = state) {
     if (!playerState) {
-      return { cash: 0, bank: 0, dirtyCash: 0, liquidTotal: 0, assetsTotal: 0, stocksTotal: 0, investmentsTotal: 0, industryTotal: 0, tradeTotal: 0, loanDebt: 0, total: 0 };
+      return {
+        cash: 0,
+        bank: 0,
+        dirtyCash: 0,
+        liquidTotal: 0,
+        investmentsTotal: 0,
+        realEstateTotal: 0,
+        carsTotal: 0,
+        assetsTotal: 0,
+        stocksTotal: 0,
+        loanDebt: 0,
+        total: 0
+      };
     }
 
-    const cash = Number(playerState.cash || 0);
-    const bank = Number(playerState.bank || 0);
-    const dirtyCash = Number(playerState.dirtyCash || 0);
+    const cash = Math.max(0, Number(playerState.cash || 0));
+    const bank = Math.max(0, Number(playerState.bank || 0));
+    const dirtyCash = Math.max(0, Number(playerState.dirtyCash || 0));
     const liquidTotal = cash + bank + dirtyCash;
 
-    // 1. Real estate assets value
-    let assetsTotal = 0;
-    if (playerState.assets && typeof playerState.assets === 'object') {
-      Object.keys(playerState.assets).forEach(key => {
-        if (ASSETS[key]) {
-          assetsTotal += Number(playerState.assets[key] || 0) * (ASSETS[key].cost || 0);
-        }
-      });
-    }
-
-    // 2. Stock shares valuation (live market price)
-    let stocksTotal = 0;
-    if (playerState.stocks && typeof playerState.stocks === 'object') {
-      Object.keys(playerState.stocks).forEach(sym => {
-        const shares = Number((playerState.stocks[sym] && playerState.stocks[sym].shares) || 0);
-        if (shares > 0) {
-          const history = stockPrices[sym];
-          const currentPrice = (history && history.length > 0) ? history[history.length - 1] : (STOCKS[sym] ? STOCKS[sym].basePrice : 50);
-          stocksTotal += shares * currentPrice;
-        }
-      });
-    }
-
-    // 3. Locked investment funds & banking certificates
+    // 1. Locked investment funds & banking certificates
     let investmentsTotal = 0;
     if (Array.isArray(playerState.investments)) {
       playerState.investments.forEach(inv => {
@@ -1758,117 +1747,60 @@ const GameEngine = (() => {
       });
     }
 
-    // 4. Industrial supply chain infrastructure & inventory
-    let industryTotal = 0;
-    if (playerState.industry && typeof INDUSTRIAL_SECTORS !== 'undefined') {
-      Object.keys(INDUSTRIAL_SECTORS).forEach(secKey => {
-        const secDef = INDUSTRIAL_SECTORS[secKey];
-        const sec = playerState.industry[secKey];
-        if (sec && sec.unlocked) {
-          industryTotal += Number(secDef.unlockCost || 0);
-          ['stage1', 'stage2', 'stage3', 'logistics'].forEach(stKey => {
-            const lvl = Number(sec[stKey] || 0);
-            if (lvl > 0 && secDef.stages && secDef.stages[stKey]) {
-              industryTotal += Math.floor((secDef.stages[stKey].baseCost || 0) * lvl * 1.15);
-            }
-          });
-          if (sec.readyStock > 0 && secDef.product) {
-            industryTotal += Math.floor(Number(sec.readyStock || 0) * (secDef.product.baseValue || 0));
-          }
+    // 2. Real estate assets value
+    let realEstateTotal = 0;
+    if (playerState.assets && typeof playerState.assets === 'object') {
+      Object.keys(playerState.assets).forEach(key => {
+        if (ASSETS[key]) {
+          realEstateTotal += Number(playerState.assets[key] || 0) * (ASSETS[key].cost || 0);
         }
       });
     }
 
-    // 5. Trade & customs warehouse inventory + active shipments
-    let tradeTotal = 0;
-    if (playerState.tradeCompany && typeof TRADE_COMMODITIES !== 'undefined') {
-      if (playerState.tradeCompany.warehouse && typeof playerState.tradeCompany.warehouse === 'object') {
-        Object.keys(playerState.tradeCompany.warehouse).forEach(commId => {
-          const qty = Number(playerState.tradeCompany.warehouse[commId] || 0);
-          const comm = TRADE_COMMODITIES[commId];
-          if (qty > 0 && comm) {
-            tradeTotal += qty * (comm.unitCost || 0);
-          }
-        });
-      }
-      if (Array.isArray(playerState.tradeCompany.activeImports)) {
-        playerState.tradeCompany.activeImports.forEach(imp => {
-          tradeTotal += Number(imp.totalCost || ((imp.quantity || 0) * (TRADE_COMMODITIES[imp.commodityId]?.unitCost || 0)) || 0);
-        });
-      }
-      if (Array.isArray(playerState.tradeCompany.activeExports)) {
-        playerState.tradeCompany.activeExports.forEach(exp => {
-          if (!exp.claimed) {
-            const comm = TRADE_COMMODITIES[exp.commodityId];
-            tradeTotal += Number(exp.quantity || 0) * (comm ? (comm.unitCost || 0) : 0);
-          }
-        });
-      }
+    // 3. Owned Luxury Cars
+    let carsTotal = 0;
+    if (Array.isArray(playerState.ownedCars) && typeof CAR_TEMPLATES !== 'undefined') {
+      playerState.ownedCars.forEach(c => {
+        const carId = (c && typeof c === 'object') ? c.id : c;
+        if (carId && CAR_TEMPLATES[carId]) {
+          carsTotal += Number(CAR_TEMPLATES[carId].cost || 0);
+        }
+      });
+    }
+    const assetsTotal = realEstateTotal + carsTotal;
+
+    // 4. Stock shares at Cost Basis (Invested Capital = shares * avgPrice)
+    // Avoids wild second-by-second bouncing of player wealth with market price fluctuations
+    let stocksTotal = 0;
+    if (playerState.stocks && typeof playerState.stocks === 'object') {
+      Object.keys(playerState.stocks).forEach(sym => {
+        const shares = Number((playerState.stocks[sym] && playerState.stocks[sym].shares) || 0);
+        if (shares > 0) {
+          const avgPrice = Number(playerState.stocks[sym].avgPrice || (STOCKS[sym] ? STOCKS[sym].basePrice : 50));
+          stocksTotal += shares * avgPrice;
+        }
+      });
     }
 
-    // 5.5 Agro Farm Tycoon (المزرعة الاستثمارية - الأصول الرأسمالية والمعدات والإنتاج الدائم فقط)
-    let farmTotal = 0;
-    if (playerState.farm && playerState.farm.unlocked && typeof FARM_CONFIG !== 'undefined') {
-      const landLevelValues = { 1: 1000000, 2: 1500000, 3: 4500000, 4: 14500000 };
-      farmTotal += (landLevelValues[playerState.farm.landLevel] || ((playerState.farm.maxPlots || 4) * 250000));
-      farmTotal += (playerState.farm.waterLevel || 1) * 40000;
-      farmTotal += (playerState.farm.fertilizerLevel || 1) * 35000;
-      farmTotal += (playerState.farm.workers || 0) * 30000;
-      const siloValues = { 1: 0, 2: 250000, 3: 1250000, 4: 4750000 };
-      farmTotal += (siloValues[playerState.farm.siloLevel || 1] || 0);
-      // Livestock capital valuation (الأصول الحية والمخرجات المخزنة)
-      if (playerState.farm.livestock) {
-        farmTotal += (Number(playerState.farm.livestock.cows || 0)) * 25000;
-        farmTotal += (Number(playerState.farm.livestock.chickens || 0)) * 8000;
-        farmTotal += (Number(playerState.farm.livestock.milk || 0)) * 45;
-        farmTotal += (Number(playerState.farm.livestock.eggs || 0)) * 15;
-        farmTotal += (Number(playerState.farm.livestock.compost || 0)) * 10;
-      }
-      // Food Processing Plant capital valuation (قيمة أصول ومعدات معمل التصنيع الغذائي)
-      if (playerState.farm.processing && playerState.farm.processing.unlocked) {
-        farmTotal += 500000;
-      }
-      // Stored crops valuation (مخزون الصوامع من المحاصيل الزراعية)
-      if (playerState.farm.inventory) {
-        const cropPrices = { wheat: 6, tomato: 24, strawberry: 118, coffee: 490, dates: 2450, saffron: 9800 };
-        Object.keys(playerState.farm.inventory).forEach(cId => {
-          const qty = Number(playerState.farm.inventory[cId] || 0);
-          if (qty > 0 && cropPrices[cId]) {
-            farmTotal += qty * cropPrices[cId];
-          }
-        });
-      }
-      // Stored processed recipes valuation (مخزون المنتجات المصنعة)
-      if (playerState.farm.processing && playerState.farm.processing.storage) {
-        const recipeValues = { flour_bread: 56, tomato_paste: 196, strawberry_jam: 555, premium_coffee: 2300, stuffed_dates: 11500, saffron_essence: 34500 };
-        Object.keys(playerState.farm.processing.storage).forEach(rId => {
-          const qty = Number(playerState.farm.processing.storage[rId] || 0);
-          if (qty > 0 && recipeValues[rId]) {
-            farmTotal += qty * recipeValues[rId];
-          }
-        });
-      }
-    }
-
-    // 6. Liabilities: Active bank loan liabilities (True Net Worth = Assets - Liabilities)
+    // 5. Liabilities: Active bank loan liabilities (True Net Worth = Assets - Liabilities)
     let loanDebt = 0;
     if (playerState.activeLoan) {
       loanDebt = Number(playerState.activeLoan.totalDue || playerState.activeLoan.amount || 0);
     }
 
-    const total = Math.max(0, Math.floor(liquidTotal + assetsTotal + stocksTotal + investmentsTotal + industryTotal + tradeTotal + farmTotal - loanDebt));
+    // Simple, Rock-Solid Formula: Liquid + Investments + Fixed Assets + Invested Stocks - Loans
+    const total = Math.max(0, Math.floor(liquidTotal + investmentsTotal + assetsTotal + stocksTotal - loanDebt));
 
     return {
       cash,
       bank,
       dirtyCash,
       liquidTotal,
+      investmentsTotal,
+      realEstateTotal,
+      carsTotal,
       assetsTotal,
       stocksTotal,
-      investmentsTotal,
-      industryTotal,
-      tradeTotal,
-      farmTotal,
       loanDebt,
       total
     };
