@@ -1648,7 +1648,14 @@ var AppDB = (() => {
         }
 
         if (shouldSyncCloud) {
-          stateObj.netWorth = Math.max(0, (stateObj.cash || 0) + (stateObj.bank || 0) + (stateObj.dirtyCash || 0));
+          if (typeof window !== 'undefined' && window.GameEngine && typeof window.GameEngine.calculateNetWorth === 'function') {
+            stateObj.netWorth = window.GameEngine.calculateNetWorth(stateObj);
+          } else {
+            stateObj.netWorth = Math.max(
+              Number(row.net_worth || stateObj.netWorth || 0),
+              (Number(stateObj.cash) || 0) + (Number(stateObj.bank) || 0) + (Number(stateObj.dirtyCash) || 0)
+            );
+          }
           _pushStateToCloud(row.username, stateObj).catch(() => {});
         }
       }

@@ -1816,14 +1816,37 @@ const GameEngine = (() => {
       farmTotal += (playerState.farm.workers || 0) * 30000;
       const siloValues = { 1: 0, 2: 250000, 3: 1250000, 4: 4750000 };
       farmTotal += (siloValues[playerState.farm.siloLevel || 1] || 0);
-      // Livestock capital valuation (الأصول الحية الدائمة للمواشي والدواجن)
+      // Livestock capital valuation (الأصول الحية والمخرجات المخزنة)
       if (playerState.farm.livestock) {
         farmTotal += (Number(playerState.farm.livestock.cows || 0)) * 25000;
         farmTotal += (Number(playerState.farm.livestock.chickens || 0)) * 8000;
+        farmTotal += (Number(playerState.farm.livestock.milk || 0)) * 45;
+        farmTotal += (Number(playerState.farm.livestock.eggs || 0)) * 15;
+        farmTotal += (Number(playerState.farm.livestock.compost || 0)) * 10;
       }
       // Food Processing Plant capital valuation (قيمة أصول ومعدات معمل التصنيع الغذائي)
       if (playerState.farm.processing && playerState.farm.processing.unlocked) {
         farmTotal += 500000;
+      }
+      // Stored crops valuation (مخزون الصوامع من المحاصيل الزراعية)
+      if (playerState.farm.inventory) {
+        const cropPrices = { wheat: 6, tomato: 24, strawberry: 118, coffee: 490, dates: 2450, saffron: 9800 };
+        Object.keys(playerState.farm.inventory).forEach(cId => {
+          const qty = Number(playerState.farm.inventory[cId] || 0);
+          if (qty > 0 && cropPrices[cId]) {
+            farmTotal += qty * cropPrices[cId];
+          }
+        });
+      }
+      // Stored processed recipes valuation (مخزون المنتجات المصنعة)
+      if (playerState.farm.processing && playerState.farm.processing.storage) {
+        const recipeValues = { flour_bread: 56, tomato_paste: 196, strawberry_jam: 555, premium_coffee: 2300, stuffed_dates: 11500, saffron_essence: 34500 };
+        Object.keys(playerState.farm.processing.storage).forEach(rId => {
+          const qty = Number(playerState.farm.processing.storage[rId] || 0);
+          if (qty > 0 && recipeValues[rId]) {
+            farmTotal += qty * recipeValues[rId];
+          }
+        });
       }
     }
 

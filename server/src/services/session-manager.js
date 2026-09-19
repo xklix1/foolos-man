@@ -94,9 +94,23 @@ class SessionManager {
           const sessionAdminTs = Number(session.state.adminModifiedTimestamp || 0);
           const dbBank = Number(dbRow.bank !== undefined && dbRow.bank !== null ? dbRow.bank : (rawState.bank || 0));
           const sessionBank = Number(session.state.bank || 0);
+          const dbCash = Number(dbRow.cash !== undefined && dbRow.cash !== null ? dbRow.cash : (rawState.cash || 0));
+          const sessionCash = Number(session.state.cash || 0);
+          const dbNetWorth = Number(dbRow.net_worth !== undefined && dbRow.net_worth !== null ? dbRow.net_worth : (rawState.netWorth || 0));
+          const sessionNetWorth = Number(session.state.netWorth || 0);
+          const dbLastSeen = Number(dbRow.last_seen || rawState.lastSeen || 0);
+          const sessionLastSeen = Number(session.state.lastSeen || session.state.lastActiveTimestamp || 0);
 
-          if (isDbReset || dbAdminTs > sessionAdminTs || dbBank > sessionBank) {
+          if (
+            isDbReset || 
+            dbAdminTs > sessionAdminTs || 
+            Math.abs(dbBank - sessionBank) > 1 ||
+            Math.abs(dbCash - sessionCash) > 1 ||
+            Math.abs(dbNetWorth - sessionNetWorth) > 1 ||
+            dbLastSeen > sessionLastSeen + 5000
+          ) {
             session.state = sanitizePlayerState(dbRow);
+            if (dbRow.pin) session.pin = dbRow.pin;
             session.dirty = false;
           }
         }

@@ -127,6 +127,9 @@ function calculateNetWorth(playerState, stockPrices = {}) {
       worth += (Number(playerState.farm.livestock.eggs || 0)) * 15;
       worth += (Number(playerState.farm.livestock.compost || 0)) * 10;
     }
+    if (playerState.farm.processing && playerState.farm.processing.unlocked) {
+      worth += 500000;
+    }
     if (playerState.farm.inventory) {
       const cropPrices = { wheat: 6, tomato: 24, strawberry: 118, coffee: 490, dates: 2450, saffron: 9800 };
       Object.keys(playerState.farm.inventory).forEach(cId => {
