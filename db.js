@@ -516,9 +516,6 @@ var AppDB = (() => {
   async function checkDeviceBan() {
     try {
       if (typeof localStorage !== 'undefined') {
-        if (localStorage.getItem('rasalmal_banned_device') === 'true') {
-          return { isBanned: true, reason: '🚫 تم حظر هذا الجهاز نهائياً لمخالفة قواعد النزاهة والتلاعب باللعبة.' };
-        }
         const lastAcct = (localStorage.getItem('rasalmal_registered_account') || '').toLowerCase().trim();
         if (lastAcct === 'shadyes' || lastAcct === 'sh-2020' || lastAcct === 'shadyessa') {
           localStorage.setItem('rasalmal_banned_device', 'true');
@@ -540,9 +537,18 @@ var AppDB = (() => {
           return { isBanned: true, reason: seedRows[0].reason || 'تم حظر جهازك نهائياً لمخالفة قواعد النزاهة.', deviceId: seed };
         }
       }
+
+      // Device is NOT banned on the server: clear any stale local ban cache
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('rasalmal_banned_device');
+      }
       return { isBanned: false };
     } catch (e) {
       console.warn('[DB] checkDeviceBan note:', e.message);
+      // Fallback to local flag only if offline / network error occurred
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_banned_device') === 'true') {
+        return { isBanned: true, reason: '🚫 تم حظر هذا الجهاز نهائياً لمخالفة قواعد النزاهة والتلاعب باللعبة.' };
+      }
       return { isBanned: false };
     }
   }
@@ -1294,11 +1300,11 @@ var AppDB = (() => {
       } else {
         stateObj.isReset = false;
         if (stateObj.resetTimestamp) delete stateObj.resetTimestamp;
-        stateObj.cash = Math.max(Number(row.cash || 0), Number((row.state && row.state.cash) || 0));
-        stateObj.bank = Math.max(Number(row.bank || 0), Number((row.state && row.state.bank) || 0));
-        stateObj.dirtyCash = Math.max(Number(row.dirty_cash || 0), Number((row.state && row.state.dirtyCash) || 0));
-        stateObj.netWorth = Math.max(Number(row.net_worth || 0), Number((row.state && row.state.netWorth) || 0));
-        stateObj.xp = Math.max(Number(row.xp || 0), Number((row.state && row.state.xp) || 0));
+        stateObj.cash = (row.cash !== null && row.cash !== undefined) ? Number(row.cash) : Number((row.state && row.state.cash) || 0);
+        stateObj.bank = (row.bank !== null && row.bank !== undefined) ? Number(row.bank) : Number((row.state && row.state.bank) || 0);
+        stateObj.dirtyCash = (row.dirty_cash !== null && row.dirty_cash !== undefined) ? Number(row.dirty_cash) : Number((row.state && row.state.dirtyCash) || 0);
+        stateObj.netWorth = (row.net_worth !== null && row.net_worth !== undefined) ? Number(row.net_worth) : Number((row.state && row.state.netWorth) || 0);
+        stateObj.xp = (row.xp !== null && row.xp !== undefined) ? Number(row.xp) : Number((row.state && row.state.xp) || 0);
       }
       stateObj.title = row.title || stateObj.title ||'عامل مبتدئ';
       stateObj.isAdmin = row.is_admin === true;
@@ -1562,20 +1568,16 @@ var AppDB = (() => {
         }
 
         // 5. Late-save recovery:
-        // If local is definitively NEWER than the cloud (localTs > serverTs), the cloud save
-        // was probably debounced or blocked (e.g. admin_modified_timestamp filter mismatch).
-        // Prefer local cash/bank/dirtyCash so offline earnings and gameplay aren't lost on reload (ONLY IF NOT RESET).
-        if (!isAccountReset && !isStaleLocalDueToAdmin && localTs > serverTs) {
-          if (typeof local.cash === 'number' && local.cash > stateObj.cash) {
-            stateObj.cash = local.cash;
-            shouldSyncCloud = true;
-          }
-          if (typeof local.bank === 'number' && local.bank > stateObj.bank) {
-            stateObj.bank = local.bank;
-            shouldSyncCloud = true;
-          }
-          if (typeof local.dirtyCash === 'number' && local.dirtyCash > stateObj.dirtyCash) {
-            stateObj.dirtyCash = local.dirtyCash;
+        // If local device was active noticeably newer than cloud (localTs > serverTs + 2000),
+        // and cloud save was debounced, reconcile wealth atomically to prevent balance duplication.
+        // NEVER independently take max(cash) and max(bank), as shifting funds between cash & bank would duplicate money!
+        if (!isAccountReset && !isStaleLocalDueToAdmin && localTs > (serverTs + 2000)) {
+          const localTotal = (Number(local.cash) || 0) + (Number(local.bank) || 0) + (Number(local.dirtyCash) || 0);
+          const serverTotal = (Number(stateObj.cash) || 0) + (Number(stateObj.bank) || 0) + (Number(stateObj.dirtyCash) || 0);
+          if (localTotal > serverTotal) {
+            stateObj.cash = Number(local.cash || 0);
+            stateObj.bank = Number(local.bank || 0);
+            stateObj.dirtyCash = Number(local.dirtyCash || 0);
             shouldSyncCloud = true;
           }
         }

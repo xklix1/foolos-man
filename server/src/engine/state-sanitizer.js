@@ -80,11 +80,11 @@ function sanitizePlayerState(dbRow) {
     cleanState.investments = [];
     cleanState.isReset = true;
   } else {
-    cleanState.cash = Math.max(Number(dbRow.cash || 0), Number(rawState.cash || 0));
-    cleanState.bank = Math.max(Number(dbRow.bank || 0), Number(rawState.bank || 0));
-    cleanState.dirtyCash = Math.max(Number(dbRow.dirty_cash || 0), Number(rawState.dirtyCash || 0));
-    cleanState.netWorth = Math.max(Number(dbRow.net_worth || 0), Number(rawState.netWorth || 0));
-    cleanState.xp = Math.max(Number(dbRow.xp || 0), Number(rawState.xp || 0));
+    cleanState.cash = (dbRow.cash !== null && dbRow.cash !== undefined) ? Number(dbRow.cash) : Number(rawState.cash || 0);
+    cleanState.bank = (dbRow.bank !== null && dbRow.bank !== undefined) ? Number(dbRow.bank) : Number(rawState.bank || 0);
+    cleanState.dirtyCash = (dbRow.dirty_cash !== null && dbRow.dirty_cash !== undefined) ? Number(dbRow.dirty_cash) : Number(rawState.dirtyCash || 0);
+    cleanState.netWorth = (dbRow.net_worth !== null && dbRow.net_worth !== undefined) ? Number(dbRow.net_worth) : Number(rawState.netWorth || 0);
+    cleanState.xp = (dbRow.xp !== null && dbRow.xp !== undefined) ? Number(dbRow.xp) : Number(rawState.xp || 0);
   }
   cleanState.title = String(dbRow.title || cleanState.title || 'عامل مبتدئ');
   cleanState.jobId = String(dbRow.job_id || cleanState.jobId || 'worker');
