@@ -16691,25 +16691,12 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const amount = Number(tr.payload && tr.payload.amount ? tr.payload.amount : 0);
 
         if (amount > 0) {
-          // Guaranteed single credit: Deposit transfer directly into recipient's Bank (1x, zero duplicate)
-          GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
-          GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
-          const trTs = Number((tr.payload && tr.payload.timestamp) || tr.created_at || Date.now());
-          GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), trTs);
-
-          try {
-            if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
-              AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, GameEngine.state);
-            }
-          } catch (_) {}
-
-          // Immediately persist credited bank balance to cloud
-          await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
-
-          showToast('حوالة بنكية واردة', `وصلتك حوالة مالية بقيمة ${amount.toLocaleString()} EGP من اللاعب "${tr.sender}" أودعت في البنك بنجاح.`, 'success');
+          // Note: SQL execute_wire_transfer already authoritatively credited the recipient's bank.
+          // This mailbox handler only provides user notification and UI feedback.
+          showToast('حوالة بنكية واردة', `وصلتك حوالة مالية بقيمة ${amount.toLocaleString()} EGP من اللاعب "${tr.sender}" في حسابك البنكي.`, 'success');
           playMenuSound('cash');
 
-          await AppDB.updateMailStatus(tr.id, 'read');
+          AppDB.updateMailStatus(tr.id, 'read').catch(() => {});
 
           if (typeof loadTransferHistory === 'function') {
             loadTransferHistory(true);
