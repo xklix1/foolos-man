@@ -14,7 +14,11 @@ async function actionRoutes(fastify, options) {
 
   // Middleware helper to resolve active session
   async function resolveSession(request, reply) {
-    const { username } = request.body || {};
+    const authHeader = request.headers['authorization'] || '';
+    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+    const { username, token } = request.body || {};
+    const effectiveToken = bearerToken || token;
+
     if (!username) {
       reply.code(400).send({ error: 'Username is required' });
       return null;
@@ -24,6 +28,13 @@ async function actionRoutes(fastify, options) {
       reply.code(404).send({ error: 'Player session not found' });
       return null;
     }
+
+    // Strict Anti-IDOR Authentication Guard
+    if (session.sessionToken && effectiveToken !== session.sessionToken) {
+      reply.code(401).send({ error: 'Unauthorized: Invalid or expired session token' });
+      return null;
+    }
+
     return session;
   }
 

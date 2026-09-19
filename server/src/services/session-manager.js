@@ -69,6 +69,7 @@ class SessionManager {
         username: state.username,
         pin: dbRow.pin,
         sessionId: effectiveSessionId,
+        sessionToken: state.sessionToken || null,
         state: state,
         dirty: Boolean(offlineReport && offlineReport.applied),
         lastActivity: Date.now(),

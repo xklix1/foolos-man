@@ -3,7 +3,7 @@
  * Cache Strategy: Strict Network-Only for APIs & Backend, Strict Network-First for Static Game Assets.
  */
 
-const CACHE_NAME = 'rasalmal-v5.9.0';
+const CACHE_NAME = 'rasalmal-v5.9.1';
 
 // Essential static shell assets to pre-cache on install
 const PRECACHE_ASSETS = [
@@ -135,10 +135,20 @@ self.addEventListener('push', (event) => {
   );
 });
 
-// 5. Notification Click Event: Focus or open the game window
+// 5. Notification Click Event: Focus or open the game window safely
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+  let safeTargetUrl = '/';
+  try {
+    const rawUrl = (event.notification.data && event.notification.data.url) || '/';
+    const parsed = new URL(rawUrl, self.location.origin);
+    // Enforce same-origin navigation to prevent open redirect vulnerabilities
+    if (parsed.origin === self.location.origin) {
+      safeTargetUrl = parsed.pathname + parsed.search + parsed.hash;
+    }
+  } catch (e) {
+    safeTargetUrl = '/';
+  }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
@@ -148,7 +158,7 @@ self.addEventListener('notificationclick', (event) => {
         }
       }
       if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
+        return clients.openWindow(safeTargetUrl);
       }
     })
   );

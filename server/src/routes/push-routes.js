@@ -7,6 +7,44 @@ const crypto = require('crypto');
 const config = require('../config/env');
 const pushService = require('../services/push-service');
 
+// SSRF Protection: Strict validation of Web Push endpoint URLs
+function validatePushEndpoint(endpoint) {
+  if (!endpoint || typeof endpoint !== 'string' || endpoint.length > 500) {
+    return false;
+  }
+  try {
+    const parsed = new URL(endpoint);
+    if (parsed.protocol !== 'https:') {
+      return false;
+    }
+    const host = parsed.hostname.toLowerCase();
+    // Block private/internal IPs and loopback
+    if (
+      host === 'localhost' || 
+      host === '127.0.0.1' || 
+      host === '::1' || 
+      host.startsWith('192.168.') || 
+      host.startsWith('10.') || 
+      host.startsWith('172.') || 
+      host === '169.254.169.254'
+    ) {
+      return false;
+    }
+    // Allow legitimate push service providers
+    const allowedSuffixes = [
+      '.google.com',
+      '.googleapis.com',
+      '.push.apple.com',
+      '.notify.windows.com',
+      '.services.mozilla.com',
+      '.mozilla.com'
+    ];
+    return allowedSuffixes.some(suffix => host === suffix.slice(1) || host.endsWith(suffix));
+  } catch (e) {
+    return false;
+  }
+}
+
 async function pushRoutes(fastify, options) {
   // 1. GET /api/push/public-key
   fastify.get('/api/push/public-key', async (request, reply) => {
@@ -15,12 +53,24 @@ async function pushRoutes(fastify, options) {
     };
   });
 
-  // 2. POST /api/push/subscribe (Register client subscription)
-  fastify.post('/api/push/subscribe', async (request, reply) => {
+  // 2. POST /api/push/subscribe (Register client subscription with strict SSRF defense)
+  fastify.post('/api/push/subscribe', {
+    config: {
+      rateLimit: {
+        max: 30,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
     const { username, subscription } = request.body || {};
     if (!subscription || !subscription.endpoint) {
       reply.code(400);
       return { error: 'Missing or invalid subscription object' };
+    }
+
+    if (!validatePushEndpoint(subscription.endpoint)) {
+      reply.code(400);
+      return { error: 'Invalid or untrusted push service endpoint (SSRF protection rejected)' };
     }
 
     try {
@@ -35,6 +85,15 @@ async function pushRoutes(fastify, options) {
       reply.code(500);
       return { error: err.message };
     }
+  });
+
+  // 2.1 POST /api/push/unsubscribe (Unregister client subscription on logout)
+  fastify.post('/api/push/unsubscribe', async (request, reply) => {
+    const { endpoint } = request.body || {};
+    if (endpoint && typeof endpoint === 'string') {
+      pushService.removeSubscription(endpoint);
+    }
+    return { success: true };
   });
 
   // 3. GET /api/push/stats
@@ -94,7 +153,14 @@ async function pushRoutes(fastify, options) {
   });
 
   // 5. POST /api/push/test-delayed (Test receiving a push notification after closing the app)
-  fastify.post('/api/push/test-delayed', async (request, reply) => {
+  fastify.post('/api/push/test-delayed', {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
     const { username, delaySeconds } = request.body || {};
     if (!username) {
       reply.code(400);

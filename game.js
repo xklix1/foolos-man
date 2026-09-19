@@ -3054,7 +3054,7 @@ const GameEngine = (() => {
     }
   }
 
-  async function loadUserSession(username, preloadedData = null) {
+  async function loadUserSession(username, preloadedData = null, pin = null) {
     activeUsername = username;
     syncItemsConfig().catch(() => {}); // Non-blocking background sync
 
@@ -3062,7 +3062,8 @@ const GameEngine = (() => {
     let dbState = preloadedData;
     if (typeof ServerBridge !== 'undefined') {
       try {
-        const sRes = await ServerBridge.startSession(username);
+        const savedToken = (typeof localStorage !== 'undefined') ? localStorage.getItem('rasalmal_auth_token_' + username) : null;
+        const sRes = await ServerBridge.startSession(username, pin, savedToken);
         if (sRes && sRes.state && !dbState) {
           dbState = sRes.state;
           serverOfflineReport = sRes.offlineReport;

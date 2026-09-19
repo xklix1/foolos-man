@@ -23,6 +23,7 @@ var ServerBridge = (() => {
   }
 
   let _activeUsername = null;
+  let _sessionToken = null;
   let _isServerOnline = false;
   let _heartbeatTimer = null;
   let _clickBatchQueue = 0;
@@ -32,11 +33,16 @@ var ServerBridge = (() => {
   async function _post(endpoint, body = {}) {
     const base = getApiBase();
     const url = `${base}${endpoint}`;
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+    if (_sessionToken) {
+      headers['Authorization'] = `Bearer ${_sessionToken}`;
+    }
+
     const res = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify(body)
     });
 
@@ -55,7 +61,7 @@ var ServerBridge = (() => {
   /**
    * Initializes player session on server, running authoritative offline calculations
    */
-  async function startSession(username, pin = null) {
+  async function startSession(username, pin = null, token = null) {
     if (!username) return null;
     _activeUsername = username.trim();
 
@@ -64,11 +70,26 @@ var ServerBridge = (() => {
         ? window.AppDB.getActiveSessionToken()
         : null;
 
+      let effectiveToken = token;
+      if (!effectiveToken && typeof localStorage !== 'undefined') {
+        effectiveToken = localStorage.getItem('rasalmal_auth_token_' + _activeUsername);
+      }
+
       const data = await _post('/api/session/start', {
         username: _activeUsername,
         pin: pin,
+        token: effectiveToken,
         sessionId: clientSessionToken
       });
+
+      if (data && data.sessionToken) {
+        _sessionToken = data.sessionToken;
+        if (typeof localStorage !== 'undefined') {
+          try {
+            localStorage.setItem('rasalmal_auth_token_' + _activeUsername, _sessionToken);
+          } catch (storageErr) {}
+        }
+      }
 
       _isServerOnline = true;
       console.log('[ServerBridge] Connected to Authoritative Server. Offline report:', data.offlineReport);
@@ -234,7 +255,8 @@ var ServerBridge = (() => {
     }
     const payload = JSON.stringify({
       username: user,
-      state: st
+      state: st,
+      token: _sessionToken
     });
 
     if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
@@ -243,7 +265,10 @@ var ServerBridge = (() => {
     } else {
       fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(_sessionToken ? { 'Authorization': `Bearer ${_sessionToken}` } : {})
+        },
         body: payload,
         keepalive: true
       }).catch(() => {});
@@ -259,7 +284,13 @@ var ServerBridge = (() => {
     _heartbeatTimer = null;
     _clickBatchTimer = null;
     _clickBatchQueue = 0;
+    if (_activeUsername && typeof localStorage !== 'undefined') {
+      try {
+        localStorage.removeItem('rasalmal_auth_token_' + _activeUsername);
+      } catch (_) {}
+    }
     _activeUsername = null;
+    _sessionToken = null;
     _isServerOnline = false;
     console.log('[ServerBridge] Session completely cleared.');
   }
@@ -304,7 +335,8 @@ var ServerBridge = (() => {
     logout: clearSession,
     destroy: clearSession,
     isServerOnline: () => _isServerOnline,
-    getActiveUsername: () => _activeUsername
+    getActiveUsername: () => _activeUsername,
+    getSessionToken: () => _sessionToken
   };
 })();
 

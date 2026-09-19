@@ -2174,13 +2174,13 @@ const UIController = (() => {
           if (currentAuthMode ==='register') {
             const refCodeInput = document.getElementById('auth-referral-code')?.value?.trim() || '';
             await AppDB.registerPlayer(usernameInput, pinInput, refCodeInput);
-            playerState = await GameEngine.loadUserSession(usernameInput);
+            playerState = await GameEngine.loadUserSession(usernameInput, null, pinInput);
             localStorage.setItem('rasalmal_active_session_user', usernameInput);
             showToast('نجاح','تم تسجيل حسابك الجديد بنجاح! مرحباً بك.','success');
           } else {
             const loggedUser = await AppDB.loginPlayer(usernameInput, pinInput);
             canonicalUser = (loggedUser && loggedUser.username) ? loggedUser.username : usernameInput;
-            playerState = await GameEngine.loadUserSession(canonicalUser, loggedUser);
+            playerState = await GameEngine.loadUserSession(canonicalUser, loggedUser, pinInput);
             localStorage.setItem('rasalmal_active_session_user', canonicalUser);
             showToast('أهلاً بك',`تم تحميل بيانات الحساب: ${canonicalUser}`,'success');
           }
@@ -8220,6 +8220,9 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
     window._chatListenerInitialized = false;
     localStorage.removeItem('rasalmal_active_session_user');
+    if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.clearSession === 'function') {
+      ServerBridge.clearSession();
+    }
     GameEngine.logoutUser();
     document.getElementById('auth-screen').classList.add('hidden');
     const mainLayout = document.getElementById('main-game-layout');

@@ -7055,9 +7055,9 @@
 
   <!-- Script Initializers -->
   <script src="db.js?v=30.0"></script>
-  <script src="server-client-bridge.js?v=25.0"></script>
-  <script src="game.js?v=53.0"></script>
-  <script src="ui.js?v=59.0"></script>
+  <script src="server-client-bridge.js?v=26.0"></script>
+  <script src="game.js?v=54.0"></script>
+  <script src="ui.js?v=60.0"></script>
   <script src="pwa-manager.js?v=2.5.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
@@ -7774,12 +7774,7 @@
                     <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
                     <span>الخوادم رهن الصيانة الفنية</span>
                   </h3>
-                  <div class="inline-block px-3 py-1 bg-rose-500/20 text-rose-300 text-xs font-bold rounded-full border border-rose-500/30 mb-3">
-                    تحديث وصيانة طارئة
-                  </div>
-                  <p id="maintenance-overlay-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6 font-medium">
-                    ${data.message || 'تخضع خوادم اللعبة حالياً لأعمال صيانة وتحديث إداري لتحسين الأداء وحماية الحسابات. يرجى الانتظار والمحاولة لاحقاً.'}
-                  </p>
+                  <p id="maintenance-overlay-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6 font-medium"></p>
                   <button id="btn-maintenance-recheck" class="w-full py-3.5 px-6 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-sm rounded-xl shadow-lg shadow-amber-500/20 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
                     <i class="fa-solid fa-rotate-right text-lg"></i>
                     <span>إعادة فحص حالة الخوادم الآن</span>
@@ -7792,6 +7787,11 @@
                 </div>
               `;
               document.body.appendChild(overlay);
+
+              const reasonEl = document.getElementById('maintenance-overlay-reason');
+              if (reasonEl) {
+                reasonEl.textContent = data.message || 'تخضع خوادم اللعبة حالياً لأعمال صيانة وتحديث إداري لتحسين الأداء وحماية الحسابات. يرجى الانتظار والمحاولة لاحقاً.';
+              }
 
               const recheckBtn = document.getElementById('btn-maintenance-recheck');
               if (recheckBtn) {
