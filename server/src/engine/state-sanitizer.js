@@ -141,6 +141,10 @@ function sanitizePlayerState(dbRow) {
     cleanState.farm = rawState.farm;
   }
 
+  // Strip sensitive security fields from state blob to prevent leaks in JSON column
+  delete cleanState.pin;
+  delete cleanState.password;
+
   return cleanState;
 }
 

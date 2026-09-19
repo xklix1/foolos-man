@@ -197,12 +197,28 @@ class SessionManager {
     const clientAdminTs = Number(clientState.adminModifiedTimestamp || 0);
     const isClientStale = sessionAdminTs > 0 && clientAdminTs < sessionAdminTs;
 
-    // Synchronize monetary balances (safeguarded against stale downgrades)
+    // Synchronize monetary balances (safeguarded against stale downgrades and impossible wealth jumps)
+    const currentGross = (Number(s.cash) || 0) + (Number(s.bank) || 0);
+    let incomingCash = Number(clientState.cash) || 0;
+    let incomingBank = Number(clientState.bank) || 0;
+    const incomingGross = incomingCash + incomingBank;
+    const grossDelta = incomingGross - currentGross;
+
+    // Anti-Tamper Velocity Shield: Detect impossible monetary leaps from console tampering
+    // Base 10M + 2.5x of current gross + 1M buffer
+    const maxAllowableJump = Math.max(10000000, currentGross * 2.5) + 1000000;
+
+    if (grossDelta > maxAllowableJump && sessionAdminTs === 0 && !isClientStale) {
+      console.warn(`[AntiTamper] Flagged impossible wealth jump for "${username}": delta=${grossDelta.toLocaleString()}, maxAllowed=${maxAllowableJump.toLocaleString()}`);
+      const excess = grossDelta - maxAllowableJump;
+      incomingCash = Math.max(0, incomingCash - excess);
+    }
+
     if (clientState.cash !== undefined) {
-      s.cash = isClientStale ? Math.max(Number(s.cash || 0), Number(clientState.cash) || 0) : (Number(clientState.cash) || 0);
+      s.cash = isClientStale ? Math.max(Number(s.cash || 0), incomingCash) : incomingCash;
     }
     if (clientState.bank !== undefined) {
-      s.bank = isClientStale ? Math.max(Number(s.bank || 0), Number(clientState.bank) || 0) : (Number(clientState.bank) || 0);
+      s.bank = isClientStale ? Math.max(Number(s.bank || 0), incomingBank) : incomingBank;
     }
     if (clientState.dirtyCash !== undefined) s.dirtyCash = Number(clientState.dirtyCash) || 0;
     if (clientState.xp !== undefined) {
@@ -212,6 +228,10 @@ class SessionManager {
     if (clientState.jobId && !isClientStale) s.jobId = String(clientState.jobId);
     if (clientState.jailTimer !== undefined) s.jailTimer = Number(clientState.jailTimer) || 0;
     if (clientState.totalTaxesPaid !== undefined) s.totalTaxesPaid = Number(clientState.totalTaxesPaid) || 0;
+
+    // Ensure security fields are never stored in state
+    delete s.pin;
+    delete s.password;
 
     // Beta Features (Gold currency & Farm - strictly gated to literal developer account 'Khaled' only)
     const isLiteralKhaled = typeof username === 'string' &&
@@ -298,46 +318,59 @@ class SessionManager {
     if (clientState.loanCooldownUntil !== undefined) {
       s.loanCooldownUntil = Number(clientState.loanCooldownUntil) || 0;
     }
+    const serverToday = new Date().toISOString().split('T')[0];
+
     if (clientState.dailyLoans && typeof clientState.dailyLoans === 'object') {
-      s.dailyLoans = clientState.dailyLoans;
+      s.dailyLoans = {
+        date: serverToday,
+        count: Math.min(10, Math.max(0, Number(clientState.dailyLoans.count || 0)))
+      };
     }
 
-    // Synchronize daily activities & cooldowns
+    // Synchronize daily activities & cooldowns (Anchored strictly to trusted server UTC date)
     if (clientState.dailyInvestments && typeof clientState.dailyInvestments === 'object') {
-      s.dailyInvestments = clientState.dailyInvestments;
+      s.dailyInvestments = {
+        date: serverToday,
+        count: Math.min(20, Math.max(0, Number(clientState.dailyInvestments.count || 0)))
+      };
     }
-    // Synchronize Daily Stock Profit (Prevent cap reset on reload/reconnect)
+
+    // Synchronize Daily Stock Profit (Prevent cap reset via device timezone manipulation)
     if (clientState.dailyStockProfit && typeof clientState.dailyStockProfit === 'object') {
-      const cDate = String(clientState.dailyStockProfit.date || '');
       const sDate = s.dailyStockProfit ? String(s.dailyStockProfit.date || '') : '';
-      if (cDate && cDate === sDate) {
+      if (sDate === serverToday) {
         s.dailyStockProfit = {
-          date: cDate,
+          date: serverToday,
           realizedProfit: Math.max(Number(s.dailyStockProfit.realizedProfit || 0), Number(clientState.dailyStockProfit.realizedProfit || 0))
         };
-      } else if (cDate) {
+      } else {
         s.dailyStockProfit = {
-          date: cDate,
+          date: serverToday,
           realizedProfit: Math.max(0, Number(clientState.dailyStockProfit.realizedProfit || 0))
         };
       }
     }
+
     if (clientState.dailyWork && typeof clientState.dailyWork === 'object') {
-      const cDate = String(clientState.dailyWork.date || '');
       const sDate = s.dailyWork ? String(s.dailyWork.date || '') : '';
-      if (cDate && cDate === sDate) {
+      if (sDate === serverToday) {
         s.dailyWork = {
-          date: cDate,
+          date: serverToday,
           shifts: Math.min(100, Math.max(Number(s.dailyWork.shifts || 0), Number(clientState.dailyWork.shifts || 0))),
           overtimeShifts: Math.min(15, Math.max(Number(s.dailyWork.overtimeShifts || 0), Number(clientState.dailyWork.overtimeShifts || 0)))
         };
       } else {
         s.dailyWork = {
-          date: cDate,
+          date: serverToday,
           shifts: Math.min(100, Math.max(0, Number(clientState.dailyWork.shifts || 0))),
           overtimeShifts: Math.min(15, Math.max(0, Number(clientState.dailyWork.overtimeShifts || 0)))
         };
       }
+    }
+
+    // Enforce 5M server-authoritative casino daily net profit cap
+    if (clientState.dailyCasinoNetProfit !== undefined) {
+      s.dailyCasinoNetProfit = Math.min(5000000, Math.max(0, Number(clientState.dailyCasinoNetProfit) || 0));
     }
     if (clientState.dailyBlackMarket && typeof clientState.dailyBlackMarket === 'object') {
       const cDate = String(clientState.dailyBlackMarket.date || '');

@@ -42,6 +42,13 @@ app.register(require('@fastify/cors'), {
   }
 });
 
+// Enforce Global Security Headers (Clickjacking & MIME-Sniffing Defense)
+app.addHook('onSend', async (request, reply) => {
+  reply.header('X-Content-Type-Options', 'nosniff');
+  reply.header('X-Frame-Options', 'SAMEORIGIN');
+  reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+});
+
 // Health check endpoint
 app.get('/health', async (request, reply) => {
   const mem = process.memoryUsage();

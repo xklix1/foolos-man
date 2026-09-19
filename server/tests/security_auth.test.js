@@ -151,6 +151,39 @@ test('Security Shield — Authentication, Anti-IDOR & SSRF Defense', async () =>
   });
   assert.strictEqual(validPushRes.statusCode, 200, 'Valid FCM endpoint must be accepted');
 
+  // 10. Anti-Tamper Wealth Velocity Shield: Attempting impossible 100 Billion jump from console
+  const hackedStateRes = await app.inject({
+    method: 'POST',
+    url: '/api/session/sync-state',
+    headers: {
+      'authorization': `Bearer ${victimToken}`
+    },
+    payload: {
+      username: victimUser,
+      state: {
+        username: victimUser,
+        cash: 100000000000, // 100 Billion (impossible jump from 1M)
+        bank: 500000,
+        pin: 'LEAKED_PIN_HASH',
+        dailyStockProfit: { date: '2020-01-01', realizedProfit: 999999999 }
+      }
+    }
+  });
+  assert.strictEqual(hackedStateRes.statusCode, 200);
+  const activeSess = sessionManager.sessions.get(victimUser.toLowerCase());
+  assert.ok(activeSess.state.cash < 50000000, 'Anti-Tamper Shield must clamp impossible wealth leap');
+  assert.strictEqual(activeSess.state.pin, undefined, 'PIN must never be stored inside state blob');
+  const serverToday = new Date().toISOString().split('T')[0];
+  assert.strictEqual(activeSess.state.dailyStockProfit.date, serverToday, 'Daily limits must be strictly anchored to server date');
+
+  // 11. Security Headers Verification
+  const headersRes = await app.inject({
+    method: 'GET',
+    url: '/health'
+  });
+  assert.strictEqual(headersRes.headers['x-frame-options'], 'SAMEORIGIN', 'X-Frame-Options must be present');
+  assert.strictEqual(headersRes.headers['x-content-type-options'], 'nosniff', 'X-Content-Type-Options must be nosniff');
+
   // Cleanup session
   sessionManager.sessions.delete(victimUser.toLowerCase());
 });

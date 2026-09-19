@@ -54,6 +54,10 @@ class DbService {
     if (!username || !state) return false;
     const u = username.trim();
 
+    const safeState = (typeof state === 'object' && state) ? { ...state } : {};
+    delete safeState.pin;
+    delete safeState.password;
+
     const payload = {
       username: u,
       cash: Number(state.cash || 0),
@@ -67,7 +71,7 @@ class DbService {
       afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
       total_taxes_paid: Number(state.totalTaxesPaid || 0),
       gold: (typeof u === 'string' && u.trim().toLowerCase() === 'khaled' && u.trim().length === 6) ? Number(state.gold || 0) : 0,
-      state: state,
+      state: safeState,
       last_seen: Number(state.lastSeen || Date.now())
     };
 
