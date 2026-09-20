@@ -3,7 +3,7 @@
  * Cache Strategy: Strict Network-Only for APIs & Backend, Strict Network-First for Static Game Assets.
  */
 
-const CACHE_NAME = 'rasalmal-v6.2.9';
+const CACHE_NAME = 'rasalmal-v6.3.0';
 
 // Essential static shell assets to pre-cache on install
 const PRECACHE_ASSETS = [
@@ -15,6 +15,13 @@ const PRECACHE_ASSETS = [
   '/assets/icon-512.png',
   '/assets/logo-transparent.png'
 ];
+
+// Message Event: Allow client to force immediate skipWaiting
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.action === 'skipWaiting') {
+    self.skipWaiting();
+  }
+});
 
 // 1. Install Event: Pre-cache static shell & skip waiting
 self.addEventListener('install', (event) => {

@@ -48,13 +48,17 @@ var PWAManager = (() => {
           .then((registration) => {
             console.log('[PWAManager] ServiceWorker registered with scope:', registration.scope);
             
+            // Force SW to check for updates immediately
+            try { registration.update(); } catch(e) {}
+
             // Check for updates
             registration.addEventListener('updatefound', () => {
               const newWorker = registration.installing;
               if (newWorker) {
                 newWorker.addEventListener('statechange', () => {
                   if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    console.log('[PWAManager] New game version available.');
+                    console.log('[PWAManager] New game version available. Activating immediately...');
+                    newWorker.postMessage({ action: 'skipWaiting' });
                   }
                 });
               }
@@ -63,6 +67,16 @@ var PWAManager = (() => {
           .catch((err) => {
             console.warn('[PWAManager] ServiceWorker registration failed:', err);
           });
+
+        // When the active controller changes (new version took over), refresh cleanly once
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            console.log('[PWAManager] Controller changed. Reloading for newest game build...');
+            window.location.reload();
+          }
+        });
       });
     }
 

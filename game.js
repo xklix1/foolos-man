@@ -7399,9 +7399,9 @@ const GameEngine = (() => {
     candidates.push({ type: 'livestock', id: 'eggs', basePrice: FARM_LIVESTOCK_CONFIG.chicken.sellPrice, min: 15, max: 50 });
 
     // Multi-requirement generation (1 to 3 requirements per contract)
-    // Distribution: 30% 1 item, 45% 2 items, 25% 3 items
+    // Distribution: 20% 1 item, 50% 2 items, 30% 3 items
     const randType = Math.random();
-    const reqCount = forcedItemId ? 1 : (randType < 0.3 ? 1 : (randType < 0.75 ? 2 : 3));
+    const reqCount = randType < 0.2 ? 1 : (randType < 0.70 ? 2 : 3);
     
     const pickedItems = [];
     const usedIds = new Set();
@@ -7508,6 +7508,14 @@ const GameEngine = (() => {
       f.contracts.revenueToday = 0;
       // استبقاء كافة العقود غير المسلمة وحذف العقود التي سُلّمت فقط في الأيام السابقة
       f.contracts.active = f.contracts.active.filter(c => c && !c.fulfilled);
+    }
+
+    // ترقية أي عقود فردية قديمة غير مسلمة تلقائياً إلى النظام الجديد متعدد المتطلبات
+    for (let i = 0; i < f.contracts.active.length; i++) {
+      const c = f.contracts.active[i];
+      if (c && !c.fulfilled && (!c.requirements || !Array.isArray(c.requirements) || c.requirements.length <= 1)) {
+        f.contracts.active[i] = generateSingleContract(i + 1, f);
+      }
     }
 
     // استكمال عدد العقود المعروضة دائماً لتصل إلى 50 عقداً متاحاً
