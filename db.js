@@ -1847,7 +1847,9 @@ var AppDB = (() => {
       _sanitizePayloadBeforeCloudPush(payload, state);
 
       const adminTs = Number(state.adminModifiedTimestamp || 0);
-      const tsFilter = adminTs > 0 ? `&admin_modified_timestamp=lte.${adminTs}` : '';
+      const tsFilter = adminTs > 0 
+        ? `&admin_modified_timestamp=lte.${adminTs}` 
+        : `&or=(admin_modified_timestamp.is.null,admin_modified_timestamp.eq.0)`;
       fetch(`${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
         method: 'PATCH',
         headers: {
@@ -3706,7 +3708,7 @@ var AppDB = (() => {
     if (payload.is_admin !== undefined) stateObj.isAdmin = payload.is_admin;
     if (payload.jail_timer !== undefined) stateObj.jailTimer = payload.jail_timer;
 
-    const now = Number(updates.adminModifiedTimestamp) || Date.now();
+    const now = Number(updates.adminModifiedTimestamp) || (Date.now() + 600000);
     stateObj.adminModifiedTimestamp = now;
     payload.state = stateObj;
     payload.admin_modified_timestamp = now;
