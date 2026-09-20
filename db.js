@@ -1654,30 +1654,28 @@ var AppDB = (() => {
             console.log(`[Sync] Preserving unlocked farm from local state safeguard for ${u}`);
             stateObj.farm = JSON.parse(JSON.stringify(local.farm));
             shouldSyncCloud = true;
+          } else if (isLocalRecentOrNewer) {
+            // Local device is active and recent. Local farm actions (planting, harvesting, liquidation/dumping) MUST take priority over any stale server snapshot
+            stateObj.farm = JSON.parse(JSON.stringify(local.farm));
+            shouldSyncCloud = true;
           } else {
-            if (isLocalRecentOrNewer && localTs >= serverTs) {
-              stateObj.farm = JSON.parse(JSON.stringify(local.farm));
+            const locPlots = Number(local.farm.maxPlots || 4);
+            const srvPlots = Number(stateObj.farm.maxPlots || 4);
+            if (locPlots > srvPlots) {
+              stateObj.farm.maxPlots = locPlots;
+              stateObj.farm.landLevel = Math.max(Number(local.farm.landLevel || 1), Number(stateObj.farm.landLevel || 1));
               shouldSyncCloud = true;
-            } else {
-              const locPlots = Number(local.farm.maxPlots || 4);
-              const srvPlots = Number(stateObj.farm.maxPlots || 4);
-              if (locPlots > srvPlots) {
-                stateObj.farm.maxPlots = locPlots;
-                stateObj.farm.landLevel = Math.max(Number(local.farm.landLevel || 1), Number(stateObj.farm.landLevel || 1));
-                shouldSyncCloud = true;
-              }
             }
           }
         }
 
         // 5. Late-save recovery:
-        // If local device was active noticeably newer than cloud (localTs > serverTs + 2000),
-        // and cloud save was debounced, reconcile wealth atomically to prevent balance duplication.
-        // NEVER independently take max(cash) and max(bank), as shifting funds between cash & bank would duplicate money!
-        if (!isAccountReset && !isStaleLocalDueToAdmin && localTs > (serverTs + 2000)) {
+        // If local device was active recently (isLocalRecentOrNewer) and not reset or overridden by admin,
+        // reconcile wealth atomically from local state to ensure liquidations/sales and debounced saves are 100% persistent.
+        if (!isAccountReset && !isStaleLocalDueToAdmin && isLocalRecentOrNewer) {
           const localTotal = (Number(local.cash) || 0) + (Number(local.bank) || 0) + (Number(local.dirtyCash) || 0);
           const serverTotal = (Number(stateObj.cash) || 0) + (Number(stateObj.bank) || 0) + (Number(stateObj.dirtyCash) || 0);
-          if (localTotal > serverTotal || (local.farm && local.farm.unlocked)) {
+          if (localTotal !== serverTotal || (local.farm && local.farm.unlocked) || localTs >= serverTs) {
             stateObj.cash = Number(local.cash || 0);
             stateObj.bank = Number(local.bank || 0);
             stateObj.dirtyCash = Number(local.dirtyCash || 0);
