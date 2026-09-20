@@ -1988,6 +1988,9 @@ var AppDB = (() => {
   let _cloudSyncDebounceTimer = null;
   let _lastCloudSyncTimestamp = 0;
   const SMART_SYNC_INTERVAL_MS = 35000; // 35 seconds max delay for background autosync
+  // Guard flag: prevents Supabase polling from overwriting GameEngine.state while a PATCH is in-flight
+  let _pendingCloudWrite = false;
+  let _pendingCloudWriteClearedAt = 0;
 
   async function _pushStateToCloud(u, state) {
     if (!u || !state) return;
@@ -2046,31 +2049,57 @@ var AppDB = (() => {
       const tsFilter = adminTs > 0 
         ? `&admin_modified_timestamp=lte.${adminTs}` 
         : `&or=(admin_modified_timestamp.is.null,admin_modified_timestamp.eq.0)`;
-      
-      const res = await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
-        method:'PATCH',
-        headers: {'Prefer':'return=representation' },
-        body: JSON.stringify(payload)
-      });
+
+      // Set guard flag so polling does NOT overwrite in-memory state while PATCH is in-flight
+      _pendingCloudWrite = true;
+      if (typeof window !== 'undefined') window._dbPendingCloudWrite = true;
+      let res;
+      try {
+        res = await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
+          method:'PATCH',
+          headers: {'Prefer':'return=representation' },
+          body: JSON.stringify(payload)
+        });
+      } finally {
+        _pendingCloudWrite = false;
+        _pendingCloudWriteClearedAt = Date.now();
+        if (typeof window !== 'undefined') {
+          window._dbPendingCloudWrite = false;
+          window._dbPendingCloudWriteClearedAt = Date.now();
+        }
+      }
       _lastCloudSyncTimestamp = Date.now();
 
-      // If 0 rows were updated, check if admin modified balance or wire transfer occurred
+      // If 0 rows were updated: timestamp mismatch (wire transfer lock or admin override).
+      // Pull fresh DB state and refresh the UI so the user sees the correct authoritative balance.
       if (Array.isArray(res) && res.length === 0) {
-        console.warn(`[Sync] Cloud save rejected for ${u}: server has a newer administrative or wire transfer balance. Refreshing...`);
-        getPlayerState(u).then(freshState => {
+        console.warn(`[Sync] Cloud save rejected for ${u}: DB has newer admin_modified_timestamp. Refreshing state from DB...`);
+        try {
+          const freshState = await getPlayerState(u);
           if (freshState && typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername === u) {
             const freshAdminTs = Number(freshState.adminModifiedTimestamp || 0);
-            const currentAdminTs = Number(window.GameEngine.state.adminModifiedTimestamp || 0);
-            if (freshAdminTs > currentAdminTs) {
-              window.GameEngine.state.cash = Number(freshState.cash || 0);
-              window.GameEngine.state.bank = Number(freshState.bank || 0);
-              window.GameEngine.state.dirtyCash = Number(freshState.dirtyCash || 0);
-              window.GameEngine.state.netWorth = Number(freshState.netWorth || 0);
-              window.GameEngine.state.adminModifiedTimestamp = freshAdminTs;
-              if (typeof renderAll === 'function') renderAll();
-            }
+            // Update in-memory state to authoritative DB values
+            window.GameEngine.state.cash = Number(freshState.cash || 0);
+            window.GameEngine.state.bank = Number(freshState.bank || 0);
+            window.GameEngine.state.dirtyCash = Number(freshState.dirtyCash || 0);
+            window.GameEngine.state.netWorth = Number(freshState.netWorth || 0);
+            window.GameEngine.state.adminModifiedTimestamp = freshAdminTs;
+            setEncryptedLocalState(`rasalmal_state_${u}`, window.GameEngine.state);
+            // Now retry the save with the fresh anchor so subsequent operations (e.g. deposit) can land
+            const retryPayload = { ...payload };
+            retryPayload.cash = Number(freshState.cash || 0);
+            retryPayload.bank = Number(freshState.bank || 0);
+            retryPayload.net_worth = Number(freshState.netWorth || 0);
+            retryPayload.state = window.GameEngine.state;
+            await _api(`players?username=ilike.${encodeURIComponent(u)}&admin_modified_timestamp=lte.${freshAdminTs}`, {
+              method: 'PATCH',
+              headers: { 'Prefer': 'return=minimal' },
+              body: JSON.stringify(retryPayload)
+            }).catch(() => {});
+            _lastCloudSyncTimestamp = Date.now();
+            if (typeof renderAll === 'function') renderAll();
           }
-        }).catch(() => {});
+        } catch (_) {}
       }
     } catch (err) {
       // Direct client mutation is blocked by RLS in production
@@ -2198,6 +2227,17 @@ var AppDB = (() => {
         GameEngine.state.netWorth = Number(fresh.netWorth !== undefined ? fresh.netWorth : GameEngine.state.netWorth);
         GameEngine.state.adminModifiedTimestamp = Number(fresh.adminModifiedTimestamp || lockTs);
         setEncryptedLocalState(`rasalmal_state_${cleanSender}`, GameEngine.state);
+      }
+    } catch (_) {}
+
+    // Immediately trigger the player doc check so the polling cycle reflects the new balance
+    // This also forces the recipient's session (if online) to pick up the incoming transfer faster
+    try {
+      if (typeof window !== 'undefined' && typeof window._triggerPlayerDocCheck === 'function') {
+        // Short delay to allow the DB write to propagate before we read it back
+        setTimeout(() => {
+          if (typeof window._triggerPlayerDocCheck === 'function') window._triggerPlayerDocCheck();
+        }, 500);
       }
     } catch (_) {}
 
@@ -5650,9 +5690,16 @@ var AppDB = (() => {
             const checkPlayer = async () => {
               if (!isSubscribed) return;
               if (!isNetworkActive()) return; // Gated by IdleManager
+              // Don't fire callback while a local PATCH is in-flight (prevents polling from
+              // overwriting in-memory state with stale DB values during deposit/withdraw)
+              if (_pendingCloudWrite) return;
+              // Also skip for 800ms after a write clears — gives the PATCH time to land in DB
+              if (_pendingCloudWriteClearedAt > 0 && (Date.now() - _pendingCloudWriteClearedAt) < 800) return;
               try {
                 const rows = await _api(`players?username=eq.${encodeURIComponent(docId)}&select=username,cash,bank,dirty_cash,net_worth,xp,title,job_id,is_admin,is_banned,jail_timer,admin_modified_timestamp,state`);
                 if (rows && rows.length > 0 && isSubscribed) {
+                  // Final guard: if a write completed while we were fetching, discard stale read
+                  if (_pendingCloudWrite) return;
                   const r = rows[0];
                   const d = {};
                   d.username = r.username;
@@ -5675,8 +5722,36 @@ var AppDB = (() => {
               } catch (e) {}
             };
             checkPlayer();
+            // Force-check variant bypasses the pending-write guard (used by wire transfer mailbox notifications)
+            const forceCheckPlayer = async () => {
+              if (!isSubscribed) return;
+              if (!isNetworkActive()) return;
+              try {
+                const rows = await _api(`players?username=eq.${encodeURIComponent(docId)}&select=username,cash,bank,dirty_cash,net_worth,xp,title,job_id,is_admin,is_banned,jail_timer,admin_modified_timestamp,state`);
+                if (rows && rows.length > 0 && isSubscribed) {
+                  const r = rows[0];
+                  const d = {};
+                  d.username = r.username;
+                  d.cash = Number(r.cash || 0);
+                  d.bank = Number(r.bank || 0);
+                  d.dirtyCash = Number(r.dirty_cash || 0);
+                  d.netWorth = Number(r.net_worth || 0);
+                  d.xp = Number(r.xp || 0);
+                  d.title = r.title || 'عامل مبتدئ';
+                  d.jobId = r.job_id || 'worker';
+                  d.isAdmin = r.is_admin === true;
+                  d.isBanned = r.is_banned === true;
+                  d.jailTimer = Number(r.jail_timer || 0);
+                  d.adminModifiedTimestamp = Number(r.admin_modified_timestamp || 0);
+                  d.state = r.state || {};
+                  d.isReset = Boolean(r.state && (r.state.isReset === true || r.state.isReset === 'true'));
+                  d.resetTimestamp = Number((r.state && r.state.resetTimestamp) || r.admin_modified_timestamp || 0);
+                  cb({ exists: true, data: () => d });
+                }
+              } catch (e) {}
+            };
             window._triggerPlayerDocCheck = () => {
-              if (isSubscribed && isNetworkActive()) checkPlayer();
+              if (isSubscribed && isNetworkActive()) forceCheckPlayer();
             };
             let pollMs = (typeof document !== 'undefined' && document.hidden) ? 10000 : 2500;
             let currentPollTimer = setInterval(checkPlayer, pollMs);

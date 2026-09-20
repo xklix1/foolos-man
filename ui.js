@@ -7605,6 +7605,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             }
 
             // Process all external admin modifications and incoming wire transfers instantly in real-time (NO RELOAD NEEDED)
+            // Guard: skip applying DB snapshot if a local PATCH (deposit/withdraw) is currently in-flight
+            // or was just completed (800ms grace), to prevent stale DB reads from overwriting local changes
+            if (window._dbPendingCloudWrite) return;
+            if (window._dbPendingCloudWriteClearedAt && (Date.now() - window._dbPendingCloudWriteClearedAt) < 800) return;
             if (data.adminModifiedTimestamp && data.adminModifiedTimestamp > lastAdminActionTimestamp) {
               lastAdminActionTimestamp = data.adminModifiedTimestamp;
 
