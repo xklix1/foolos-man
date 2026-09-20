@@ -6465,7 +6465,7 @@ const GameEngine = (() => {
     return f;
   }
 
-  const DAILY_FARM_LIQUIDATION_CAP = 5000000;
+  const DAILY_FARM_LIQUIDATION_CAP = 15000000;
 
   function getFarmTodayDateStr() {
     const d = new Date(getTrustedNow());
@@ -6515,7 +6515,7 @@ const GameEngine = (() => {
     }
     const info = getFarmDailyLiquidationInfo(f);
     if (info.totalLiquidated + amount > DAILY_FARM_LIQUIDATION_CAP) {
-      throw new Error(`بلغت سقف التسييل اليومي لمنتجات معمل التصنيع (5,000,000 EGP يومياً). المتبقي لك اليوم: ${info.remaining.toLocaleString()} EGP. يمكنك تلبية عقود التوريد B2B بدون أي سقف، أو تسييل المحاصيل الخام.`);
+      throw new Error(`بلغت سقف التسييل اليومي لمنتجات معمل التصنيع (15,000,000 EGP يومياً). المتبقي لك اليوم: ${info.remaining.toLocaleString()} EGP. يمكنك تلبية عقود التوريد B2B بدون أي سقف، أو تسييل المحاصيل الخام.`);
     }
     f.dailyLiquidation.totalLiquidated = info.totalLiquidated + amount;
   }
