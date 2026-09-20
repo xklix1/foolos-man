@@ -235,8 +235,8 @@ class SessionManager {
     const grossDelta = incomingGross - currentGross;
 
     // Anti-Tamper Velocity Shield: Detect impossible monetary leaps from console tampering
-    // Base 10M + 2.5x of current gross + 1M buffer
-    const maxAllowableJump = Math.max(10000000, currentGross * 2.5) + 1000000;
+    // Base 25M + 3.0x of current gross + 5M buffer (sufficient for multi-million trade shipment payouts)
+    const maxAllowableJump = Math.max(25000000, currentGross * 3.0) + 5000000;
 
     if (grossDelta > maxAllowableJump && sessionAdminTs === 0 && !isClientStale) {
       console.warn(`[AntiTamper] Flagged impossible wealth jump for "${username}": delta=${grossDelta.toLocaleString()}, maxAllowed=${maxAllowableJump.toLocaleString()}`);
@@ -326,79 +326,8 @@ class SessionManager {
     if (Array.isArray(clientState.investments) && !isClientStale) {
       s.investments = clientState.investments;
     }
-    if (clientState.tradeCompany && typeof clientState.tradeCompany === 'object') {
-      if (!s.tradeCompany || typeof s.tradeCompany !== 'object') {
-        s.tradeCompany = clientState.tradeCompany;
-      } else {
-        s.tradeCompany.warehouseCapacity = Math.max(
-          Number(s.tradeCompany.warehouseCapacity || 10),
-          Number(clientState.tradeCompany.warehouseCapacity || 10)
-        );
-        s.tradeCompany.totalProfitEarned = Math.max(
-          Number(s.tradeCompany.totalProfitEarned || 0),
-          Number(clientState.tradeCompany.totalProfitEarned || 0)
-        );
-        s.tradeCompany.totalShipmentsCompleted = Math.max(
-          Number(s.tradeCompany.totalShipmentsCompleted || 0),
-          Number(clientState.tradeCompany.totalShipmentsCompleted || 0)
-        );
-
-        // Merge warehouse stock (take highest known count)
-        if (clientState.tradeCompany.warehouse && typeof clientState.tradeCompany.warehouse === 'object') {
-          if (!s.tradeCompany.warehouse) s.tradeCompany.warehouse = {};
-          Object.keys(clientState.tradeCompany.warehouse).forEach(k => {
-            s.tradeCompany.warehouse[k] = Math.max(
-              Number(s.tradeCompany.warehouse[k] || 0),
-              Number(clientState.tradeCompany.warehouse[k] || 0)
-            );
-          });
-        }
-
-        // Merge activeImports (never lose an in-flight import)
-        if (Array.isArray(clientState.tradeCompany.activeImports)) {
-          if (!Array.isArray(s.tradeCompany.activeImports)) s.tradeCompany.activeImports = [];
-          clientState.tradeCompany.activeImports.forEach(cImp => {
-            if (!cImp || !cImp.id) return;
-            const existingIdx = s.tradeCompany.activeImports.findIndex(i => i && i.id === cImp.id);
-            if (existingIdx === -1) {
-              s.tradeCompany.activeImports.push(cImp);
-            } else {
-              if (cImp.arrived) s.tradeCompany.activeImports[existingIdx].arrived = true;
-            }
-          });
-        }
-
-        // Merge activeExports (never lose an in-flight export)
-        if (Array.isArray(clientState.tradeCompany.activeExports)) {
-          if (!Array.isArray(s.tradeCompany.activeExports)) s.tradeCompany.activeExports = [];
-          clientState.tradeCompany.activeExports.forEach(cExp => {
-            if (!cExp || !cExp.id) return;
-            const existingIdx = s.tradeCompany.activeExports.findIndex(e => e && e.id === cExp.id);
-            if (existingIdx === -1) {
-              s.tradeCompany.activeExports.push(cExp);
-            } else {
-              if (cExp.delivered) s.tradeCompany.activeExports[existingIdx].delivered = true;
-              if (cExp.claimed) s.tradeCompany.activeExports[existingIdx].claimed = true;
-            }
-          });
-        }
-
-        if (clientState.tradeCompany.dailyExportsCount && typeof clientState.tradeCompany.dailyExportsCount === 'object') {
-          s.tradeCompany.dailyExportsCount = clientState.tradeCompany.dailyExportsCount;
-        }
-        if (clientState.tradeCompany.dailyExportedContainers !== undefined) {
-          s.tradeCompany.dailyExportedContainers = Math.max(
-            Number(s.tradeCompany.dailyExportedContainers || 0),
-            Number(clientState.tradeCompany.dailyExportedContainers || 0)
-          );
-        }
-        if (clientState.tradeCompany.dailyTradeProfit !== undefined) {
-          s.tradeCompany.dailyTradeProfit = Math.max(
-            Number(s.tradeCompany.dailyTradeProfit || 0),
-            Number(clientState.tradeCompany.dailyTradeProfit || 0)
-          );
-        }
-      }
+    if (clientState.tradeCompany && typeof clientState.tradeCompany === 'object' && !isClientStale) {
+      s.tradeCompany = clientState.tradeCompany;
     }
     if (clientState.inventory && typeof clientState.inventory === 'object') {
       s.inventory = clientState.inventory;

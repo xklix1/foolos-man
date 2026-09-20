@@ -1718,6 +1718,10 @@ var AppDB = (() => {
           if (!stateObj.tradeCompany || typeof stateObj.tradeCompany !== 'object') {
             stateObj.tradeCompany = JSON.parse(JSON.stringify(local.tradeCompany));
             shouldSyncCloud = true;
+          } else if (isLocalRecentOrNewer) {
+            // Local device is active and recent. Local trade actions (claiming profits, exporting, importing) MUST take priority over any stale server snapshot
+            stateObj.tradeCompany = JSON.parse(JSON.stringify(local.tradeCompany));
+            shouldSyncCloud = true;
           } else {
             const locTc = local.tradeCompany;
             const srvTc = stateObj.tradeCompany;
@@ -1731,47 +1735,6 @@ var AppDB = (() => {
 
             srvTc.totalProfitEarned = Math.max(Number(srvTc.totalProfitEarned || 0), Number(locTc.totalProfitEarned || 0));
             srvTc.totalShipmentsCompleted = Math.max(Number(srvTc.totalShipmentsCompleted || 0), Number(locTc.totalShipmentsCompleted || 0));
-
-            // Merge Warehouse Goods
-            if (locTc.warehouse && typeof locTc.warehouse === 'object') {
-              if (!srvTc.warehouse) srvTc.warehouse = {};
-              Object.keys(locTc.warehouse).forEach(k => {
-                const lQty = Number(locTc.warehouse[k] || 0);
-                const sQty = Number(srvTc.warehouse[k] || 0);
-                if (lQty > sQty) {
-                  srvTc.warehouse[k] = lQty;
-                  shouldSyncCloud = true;
-                }
-              });
-            }
-
-            // Merge Active In-Flight Imports (Preserve by ID)
-            if (Array.isArray(locTc.activeImports) && locTc.activeImports.length > 0) {
-              if (!Array.isArray(srvTc.activeImports)) srvTc.activeImports = [];
-              locTc.activeImports.forEach(locImp => {
-                if (!locImp || !locImp.id) return;
-                const srvImp = srvTc.activeImports.find(si => si && si.id === locImp.id);
-                if (!srvImp) {
-                  srvTc.activeImports.push(JSON.parse(JSON.stringify(locImp)));
-                  console.log(`[Sync] Reconciled missing local trade import [${locImp.id}] into server snapshot for ${u}`);
-                  shouldSyncCloud = true;
-                }
-              });
-            }
-
-            // Merge Active In-Flight Exports (Preserve by ID)
-            if (Array.isArray(locTc.activeExports) && locTc.activeExports.length > 0) {
-              if (!Array.isArray(srvTc.activeExports)) srvTc.activeExports = [];
-              locTc.activeExports.forEach(locExp => {
-                if (!locExp || !locExp.id) return;
-                const srvExp = srvTc.activeExports.find(se => se && se.id === locExp.id);
-                if (!srvExp) {
-                  srvTc.activeExports.push(JSON.parse(JSON.stringify(locExp)));
-                  console.log(`[Sync] Reconciled missing local trade export [${locExp.id}] into server snapshot for ${u}`);
-                  shouldSyncCloud = true;
-                }
-              });
-            }
           }
         }
 
