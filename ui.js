@@ -15355,11 +15355,16 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const cleanTarget = String(username).replace(/^@/, '').trim();
     const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (window.GameEngine && window.GameEngine.getState && window.GameEngine.getState()?.username) || (window.AppDB && window.AppDB.getCurrentUsername && window.AppDB.getCurrentUsername()) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
 
-    // Strict Privacy Protection: Developer & Tester accounts cannot be viewed by regular players
-    const hiddenAccounts = ['khaled', 'rasalmal', 'rasalmal1', 'rasalmal2', 'newu'];
-    if (hiddenAccounts.includes(cleanTarget.toLowerCase()) && !hiddenAccounts.includes(curActive.toLowerCase())) {
-      playMenuSound('error');
-      showToast('الملف الشخصي محمي 🔒', 'الملف التعريفي لهذا الحساب خاص وسري وغير متاح للعرض العام.', 'warning');
+    // Strict Privacy Protection: Owner, Developer & Admin accounts cannot be viewed by other players
+    const protectedAccounts = ['khaled', 'lola-khaled', 'rasalmal', 'rasalmal1', 'rasalmal2', 'newu'];
+    const isTargetProtectedName = protectedAccounts.includes(cleanTarget.toLowerCase());
+    const isSelfView = cleanTarget.toLowerCase() === curActive.toLowerCase();
+
+    if (isTargetProtectedName && !isSelfView) {
+      if (typeof playMenuSound === 'function') playMenuSound('error');
+      showToast('الملف الشخصي محمي 🔒', 'الملف التعريفي لهذا الحساب خاص وسري ومحمي بالكامل وغير متاح للعرض.', 'warning');
+      const pm = document.getElementById('player-profile-modal');
+      if (pm) pm.classList.add('hidden');
       return;
     }
     try {
@@ -15377,6 +15382,15 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
       if (!pState) {
         showToast('خطأ بروفايل','الملف التعريفي للاعب غير موجود.','error');
+        return;
+      }
+
+      // Check if the fetched account is an Admin/Owner and viewer is not the same person
+      if ((pState.isAdmin || pState.is_admin || protectedAccounts.includes((pState.username || '').toLowerCase())) && !isSelfView) {
+        if (typeof playMenuSound === 'function') playMenuSound('error');
+        showToast('الملف الشخصي محمي 🔒', 'الملف التعريفي لهذا الحساب خاص وسري ومحمي بالكامل وغير متاح للعرض.', 'warning');
+        const pm = document.getElementById('player-profile-modal');
+        if (pm) pm.classList.add('hidden');
         return;
       }
 
