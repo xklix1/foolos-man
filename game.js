@@ -2708,8 +2708,9 @@ const GameEngine = (() => {
 
       if (inv.ticksRemaining <= 0) {
         // Investment matures!
-        const payout = Math.floor(inv.investedAmount * (1 + inv.rate));
-        state.cash += payout;
+        const payout = Math.floor(inv.investedAmount * (1 + (inv.rate || 0)));
+        state.bank += payout;
+        recordPlayerActivity('استحقاق أرباح صندوق استثماري 🏛️', `اكتملت مدة الاستثمار في "${inv.name}". تم إيداع رأس المال والأرباح بالكامل في حسابك البنكي (+${payout.toLocaleString()} EGP).`, 'banking');
         updates.investmentsMatured.push({
           name: inv.name,
           payout: payout,

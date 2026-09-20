@@ -204,6 +204,38 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
     }
   }
 
+  // 8. Locked Bank Investments & Funds (الصناديق الاستثمارية المصرفية): Auto-credit matured funds with profits to bank
+  let totalInvestmentsPayout = 0;
+  if (Array.isArray(playerState.investments) && playerState.investments.length > 0) {
+    const remainingInvestments = [];
+    playerState.investments.forEach(inv => {
+      const maturesAt = Number(inv.maturesAt || 0);
+      const isMatured = (maturesAt > 0 && serverNow >= maturesAt) || (typeof inv.ticksRemaining === 'number' && inv.ticksRemaining <= totalElapsedSeconds);
+      if (isMatured) {
+        const rate = Number(inv.rate || 0);
+        const amt = Number(inv.investedAmount || 0);
+        const payout = Math.floor(amt * (1 + rate));
+        totalInvestmentsPayout += payout;
+        playerState.bank = (Number(playerState.bank) || 0) + payout;
+        if (!playerState.activityLog) playerState.activityLog = [];
+        playerState.activityLog.unshift({
+          action: 'استحقاق أرباح صندوق استثماري 🏛️',
+          details: `اكتملت مدة الاستثمار في "${inv.name || 'الصندوق الاستثماري'}". تم إيداع رأس المال والأرباح بالكامل في حسابك البنكي (+${payout.toLocaleString()} EGP).`,
+          category: 'banking',
+          timestamp: serverNow
+        });
+      } else {
+        if (maturesAt > 0) {
+          inv.ticksRemaining = Math.max(0, Math.ceil((maturesAt - serverNow) / 1000));
+        } else if (typeof inv.ticksRemaining === 'number') {
+          inv.ticksRemaining = Math.max(0, inv.ticksRemaining - totalElapsedSeconds);
+        }
+        remainingInvestments.push(inv);
+      }
+    });
+    playerState.investments = remainingInvestments;
+  }
+
   // Re-evaluate net worth and title
   playerState.netWorth = calculateNetWorth(playerState);
   playerState.title = getAppropriateTitle(playerState.netWorth, playerState.xp);
