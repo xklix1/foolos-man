@@ -77,12 +77,11 @@ class DbService {
     };
 
     const adminTs = Number(state.adminModifiedTimestamp || 0);
-    // Use lte filter: only overwrite DB if our session's timestamp is >= DB value.
-    // This prevents a stale server flush from clobbering a wire-transfer or admin update
-    // that set admin_modified_timestamp to a future lock value in the DB.
-    const endpoint = adminTs > 0
-      ? `${this.url}/rest/v1/players?username=ilike.${encodeURIComponent(u)}&admin_modified_timestamp=lte.${adminTs}`
-      : `${this.url}/rest/v1/players?username=ilike.${encodeURIComponent(u)}`;
+    // ALWAYS apply lte guard: only write to DB if our session's adminTs >= DB value.
+    // When adminTs=0 the filter is "lte.0" — this safely blocks overwrites on any row
+    // that a wire-transfer SQL just bumped to now_ms (now_ms > 0 → filter rejects stale flush).
+    // When adminTs=now_ms the filter passes normally and the write succeeds.
+    const endpoint = `${this.url}/rest/v1/players?username=ilike.${encodeURIComponent(u)}&admin_modified_timestamp=lte.${adminTs}`;
 
     
     try {
