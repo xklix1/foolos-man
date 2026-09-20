@@ -76,7 +76,14 @@ class DbService {
       last_seen: Number(state.lastSeen || Date.now())
     };
 
-    const endpoint = `${this.url}/rest/v1/players?username=ilike.${encodeURIComponent(u)}`;
+    const adminTs = Number(state.adminModifiedTimestamp || 0);
+    // Use lte filter: only overwrite DB if our session's timestamp is >= DB value.
+    // This prevents a stale server flush from clobbering a wire-transfer or admin update
+    // that set admin_modified_timestamp to a future lock value in the DB.
+    const endpoint = adminTs > 0
+      ? `${this.url}/rest/v1/players?username=ilike.${encodeURIComponent(u)}&admin_modified_timestamp=lte.${adminTs}`
+      : `${this.url}/rest/v1/players?username=ilike.${encodeURIComponent(u)}`;
+
     
     try {
       const res = await fetch(endpoint, {
