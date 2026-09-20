@@ -15045,7 +15045,16 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (invEl) invEl.textContent = `${b.investmentsTotal.toLocaleString()} EGP`;
 
     const assetsEl = document.getElementById('nw-modal-assets');
-    if (assetsEl) assetsEl.textContent = `${b.assetsTotal.toLocaleString()} EGP`;
+    if (assetsEl) assetsEl.textContent = `${(b.assetsTotal || 0).toLocaleString()} EGP`;
+
+    const industryEl = document.getElementById('nw-modal-industry');
+    if (industryEl) industryEl.textContent = `${(b.industryTotal || 0).toLocaleString()} EGP`;
+
+    const tradeEl = document.getElementById('nw-modal-trade');
+    if (tradeEl) tradeEl.textContent = `${(b.tradeTotal || 0).toLocaleString()} EGP`;
+
+    const farmEl = document.getElementById('nw-modal-farm');
+    if (farmEl) farmEl.textContent = `${(b.farmTotal || 0).toLocaleString()} EGP`;
 
     const debtRow = document.getElementById('nw-modal-debt-row');
     const debtEl = document.getElementById('nw-modal-debt');

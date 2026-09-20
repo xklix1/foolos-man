@@ -1339,10 +1339,6 @@ var AppDB = (() => {
     const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
     const isCurrentPlayer = Boolean(curActive && u.toLowerCase() === curActive.toLowerCase());
 
-    // Strict Privacy: Khaled's state cannot be read by any other player/client
-    if (u.toLowerCase() === 'khaled' && !isCurrentPlayer) {
-      return null;
-    }
 
     try {
       const local = isCurrentPlayer ? getDecryptedLocalState(`rasalmal_state_${u}`) : null;
@@ -3140,10 +3136,6 @@ var AppDB = (() => {
   async function getPlayerData(username) {
     if (!username) return null;
     const cleanUser = String(username).replace(/^@/, '').trim();
-    const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
-    if (cleanUser.toLowerCase() === 'khaled' && curActive.toLowerCase() !== 'khaled') {
-      return null;
-    }
     try {
       const rows = await _api(`players?username=eq.${encodeURIComponent(cleanUser)}&select=*`);
       return (rows && rows.length > 0) ? rows[0] : null;
@@ -3518,10 +3510,6 @@ var AppDB = (() => {
   async function adminGetPlayer(username) {
     if (!username) return null;
     const cleanUser = String(username).replace(/^@/, '').trim();
-    const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
-    if (cleanUser.toLowerCase() === 'khaled' && curActive.toLowerCase() !== 'khaled') {
-      return null;
-    }
     const rows = await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}&order=last_seen.desc&select=*`);
     if (!rows || rows.length === 0) return null;
     const r = rows[0];

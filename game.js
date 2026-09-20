@@ -1782,14 +1782,102 @@ const GameEngine = (() => {
       });
     }
 
-    // 5. Liabilities: Active bank loan liabilities (True Net Worth = Assets - Liabilities)
+    // 5. Industrial supply chain infrastructure & inventory
+    let industryTotal = 0;
+    if (playerState.industry && typeof INDUSTRIAL_SECTORS !== 'undefined') {
+      Object.keys(INDUSTRIAL_SECTORS).forEach(secKey => {
+        const secDef = INDUSTRIAL_SECTORS[secKey];
+        const sec = playerState.industry[secKey];
+        if (sec && sec.unlocked) {
+          industryTotal += Number(secDef.unlockCost || 0);
+          ['stage1', 'stage2', 'stage3', 'logistics'].forEach(stKey => {
+            const lvl = Number(sec[stKey] || 0);
+            if (lvl > 0 && secDef.stages && secDef.stages[stKey]) {
+              industryTotal += Math.floor((secDef.stages[stKey].baseCost || 0) * lvl * 1.15);
+            }
+          });
+          if (sec.readyStock > 0 && secDef.product) {
+            industryTotal += Math.floor(Number(sec.readyStock || 0) * (secDef.product.baseValue || 0));
+          }
+        }
+      });
+    }
+
+    // 6. Trade & customs warehouse inventory + active shipments
+    let tradeTotal = 0;
+    if (playerState.tradeCompany && typeof TRADE_COMMODITIES !== 'undefined') {
+      if (playerState.tradeCompany.warehouse && typeof playerState.tradeCompany.warehouse === 'object') {
+        Object.keys(playerState.tradeCompany.warehouse).forEach(commId => {
+          const qty = Number(playerState.tradeCompany.warehouse[commId] || 0);
+          const comm = TRADE_COMMODITIES[commId];
+          if (qty > 0 && comm) {
+            tradeTotal += qty * (comm.unitCost || 0);
+          }
+        });
+      }
+      if (Array.isArray(playerState.tradeCompany.activeImports)) {
+        playerState.tradeCompany.activeImports.forEach(imp => {
+          tradeTotal += Number(imp.totalCost || ((imp.quantity || 0) * (TRADE_COMMODITIES[imp.commodityId]?.unitCost || 0)) || 0);
+        });
+      }
+      if (Array.isArray(playerState.tradeCompany.activeExports)) {
+        playerState.tradeCompany.activeExports.forEach(exp => {
+          if (!exp.claimed) {
+            const comm = TRADE_COMMODITIES[exp.commodityId];
+            tradeTotal += Number(exp.quantity || 0) * (comm ? (comm.unitCost || 0) : 0);
+          }
+        });
+      }
+    }
+
+    // 7. Agro Farm Tycoon (المزرعة الاستثمارية - الأصول والمعدات والمواشي والمحاصيل)
+    let farmTotal = 0;
+    if (playerState.farm && playerState.farm.unlocked && typeof FARM_CONFIG !== 'undefined') {
+      const landLevelValues = { 1: 1000000, 2: 1500000, 3: 4500000, 4: 14500000 };
+      farmTotal += (landLevelValues[playerState.farm.landLevel] || ((playerState.farm.maxPlots || 4) * 250000));
+      farmTotal += (playerState.farm.waterLevel || 1) * 40000;
+      farmTotal += (playerState.farm.fertilizerLevel || 1) * 35000;
+      farmTotal += (playerState.farm.workers || 0) * 30000;
+      const siloValues = { 1: 0, 2: 250000, 3: 1250000, 4: 4750000 };
+      farmTotal += (siloValues[playerState.farm.siloLevel || 1] || 0);
+      if (playerState.farm.livestock) {
+        farmTotal += (Number(playerState.farm.livestock.cows || 0)) * 25000;
+        farmTotal += (Number(playerState.farm.livestock.chickens || 0)) * 8000;
+        farmTotal += (Number(playerState.farm.livestock.milk || 0)) * 45;
+        farmTotal += (Number(playerState.farm.livestock.eggs || 0)) * 15;
+        farmTotal += (Number(playerState.farm.livestock.compost || 0)) * 10;
+      }
+      if (playerState.farm.processing && playerState.farm.processing.unlocked) {
+        farmTotal += 500000;
+      }
+      if (playerState.farm.inventory) {
+        const cropPrices = { wheat: 6, tomato: 24, strawberry: 118, coffee: 490, dates: 2450, saffron: 9800 };
+        Object.keys(playerState.farm.inventory).forEach(cId => {
+          const qty = Number(playerState.farm.inventory[cId] || 0);
+          if (qty > 0 && cropPrices[cId]) {
+            farmTotal += qty * cropPrices[cId];
+          }
+        });
+      }
+      if (playerState.farm.processing && playerState.farm.processing.storage) {
+        const recipeValues = { flour_bread: 56, tomato_paste: 196, strawberry_jam: 555, premium_coffee: 2300, stuffed_dates: 11500, saffron_essence: 34500 };
+        Object.keys(playerState.farm.processing.storage).forEach(rId => {
+          const qty = Number(playerState.farm.processing.storage[rId] || 0);
+          if (qty > 0 && recipeValues[rId]) {
+            farmTotal += qty * recipeValues[rId];
+          }
+        });
+      }
+    }
+
+    // 8. Liabilities: Active bank loan liabilities (True Net Worth = Assets - Liabilities)
     let loanDebt = 0;
     if (playerState.activeLoan) {
       loanDebt = Number(playerState.activeLoan.totalDue || playerState.activeLoan.amount || 0);
     }
 
-    // Simple, Rock-Solid Formula: Liquid + Investments + Fixed Assets + Invested Stocks - Loans
-    const total = Math.max(0, Math.floor(liquidTotal + investmentsTotal + assetsTotal + stocksTotal - loanDebt));
+    // Comprehensive Net Worth: Liquid + Investments + Real Estate + Cars + Stocks + Industry + Trade + Farm - Loans
+    const total = Math.max(0, Math.floor(liquidTotal + investmentsTotal + assetsTotal + stocksTotal + industryTotal + tradeTotal + farmTotal - loanDebt));
 
     return {
       cash,
@@ -1801,6 +1889,9 @@ const GameEngine = (() => {
       carsTotal,
       assetsTotal,
       stocksTotal,
+      industryTotal,
+      tradeTotal,
+      farmTotal,
       loanDebt,
       total
     };
