@@ -138,10 +138,7 @@ var AppDB = (() => {
 
     if (!res.ok) {
       if (res.status === 401) {
-        console.warn('[Sync] Auth signature mismatch or token expired. Triggering smooth reload...');
-        if (typeof window !== 'undefined' && window.location) {
-          setTimeout(() => window.location.reload(true), 500);
-        }
+        console.warn('[Sync] Request unauthorized or permission denied (HTTP 401).');
       }
       const errBody = await res.text().catch(() => '');
       let parsed = null;
