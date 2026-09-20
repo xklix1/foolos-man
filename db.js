@@ -1711,6 +1711,8 @@ var AppDB = (() => {
               }
             });
           }
+        }
+
         // 4.97 Trade Company & Global Supply Fleet Guard: NEVER downgrade or lose active imports, exports, warehouse stock or capacity
         if (local && local.tradeCompany && typeof local.tradeCompany === 'object') {
           if (!stateObj.tradeCompany || typeof stateObj.tradeCompany !== 'object') {

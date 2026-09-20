@@ -3316,6 +3316,8 @@ const GameEngine = (() => {
             }
           }
         } catch (e) {}
+      }
+
       // Safeguard: Recover trade company cargo & in-flight shipments from local storage if cloud snapshot was missing them
       if (!isAccountReset) {
         try {
