@@ -209,9 +209,12 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
   if (Array.isArray(playerState.investments) && playerState.investments.length > 0) {
     const remainingInvestments = [];
     playerState.investments.forEach(inv => {
+      if (!inv || inv.claimed === true || inv.matured === true) return;
       const maturesAt = Number(inv.maturesAt || 0);
-      const isMatured = (maturesAt > 0 && serverNow >= maturesAt) || (typeof inv.ticksRemaining === 'number' && inv.ticksRemaining <= totalElapsedSeconds);
+      const isMatured = (maturesAt > 0 && serverNow >= maturesAt) || (maturesAt <= 0 && typeof inv.ticksRemaining === 'number' && inv.ticksRemaining <= totalElapsedSeconds);
       if (isMatured) {
+        inv.claimed = true;
+        inv.matured = true;
         const rate = Number(inv.rate || 0);
         const amt = Number(inv.investedAmount || 0);
         const payout = Math.floor(amt * (1 + rate));

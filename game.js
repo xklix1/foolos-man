@@ -2695,32 +2695,46 @@ const GameEngine = (() => {
     // 6. Investments duration counters (Real-time and offline timestamp accurate)
     const nowTimestamp = getTrustedNow();
     const remainingInvestments = [];
-    state.investments.forEach(inv => {
-      if (inv.maturesAt) {
-        if (nowTimestamp >= inv.maturesAt) {
-          inv.ticksRemaining = 0;
-        } else {
-          inv.ticksRemaining = Math.max(0, Math.ceil((inv.maturesAt - nowTimestamp) / 1000));
-        }
-      } else {
-        inv.ticksRemaining--;
-      }
+    let hadMaturedInvestment = false;
+    if (state.investments && state.investments.length > 0) {
+      state.investments.forEach(inv => {
+        if (!inv || inv.claimed === true || inv.matured === true) return;
 
-      if (inv.ticksRemaining <= 0) {
-        // Investment matures!
-        const payout = Math.floor(inv.investedAmount * (1 + (inv.rate || 0)));
-        state.bank += payout;
-        recordPlayerActivity('استحقاق أرباح صندوق استثماري 🏛️', `اكتملت مدة الاستثمار في "${inv.name}". تم إيداع رأس المال والأرباح بالكامل في حسابك البنكي (+${payout.toLocaleString()} EGP).`, 'banking');
-        updates.investmentsMatured.push({
-          name: inv.name,
-          payout: payout,
-          profit: payout - inv.investedAmount
-        });
-      } else {
-        remainingInvestments.push(inv);
+        if (inv.maturesAt) {
+          if (nowTimestamp >= inv.maturesAt) {
+            inv.ticksRemaining = 0;
+          } else {
+            inv.ticksRemaining = Math.max(0, Math.ceil((inv.maturesAt - nowTimestamp) / 1000));
+          }
+        } else {
+          inv.ticksRemaining--;
+        }
+
+        if (inv.ticksRemaining <= 0) {
+          // Investment matures!
+          inv.claimed = true;
+          inv.matured = true;
+          hadMaturedInvestment = true;
+          const payout = Math.floor(inv.investedAmount * (1 + (inv.rate || 0)));
+          state.bank = (Number(state.bank) || 0) + payout;
+          recordPlayerActivity('استحقاق أرباح صندوق استثماري 🏛️', `اكتملت مدة الاستثمار في "${inv.name}". تم إيداع رأس المال والأرباح بالكامل في حسابك البنكي (+${payout.toLocaleString()} EGP).`, 'banking');
+          updates.investmentsMatured.push({
+            name: inv.name,
+            payout: payout,
+            profit: payout - inv.investedAmount
+          });
+        } else {
+          remainingInvestments.push(inv);
+        }
+      });
+      state.investments = remainingInvestments;
+      if (hadMaturedInvestment) {
+        state._legitimateTransactionBypass = true;
+        state.netWorth = calculateNetWorth();
+        state.title = getAppropriateTitle(state.netWorth, state.xp);
+        forceSaveState(true);
       }
-    });
-    state.investments = remainingInvestments;
+    }
 
     // 6.5 Smuggling jobs counter & completion
     if (state.activeSmugglingJobs && state.activeSmugglingJobs.length > 0) {

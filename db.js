@@ -1523,18 +1523,29 @@ var AppDB = (() => {
         }
 
         // 4.5 Active Investments guard: Never lose active investments on reload or server lag
+        // CRITICAL FIX: Only preserve STRICTLY ACTIVE UNMATURED investments (maturesAt in the future and ticksRemaining > 0).
+        // If an investment already matured or was cleared in cloud (offline-engine processed it), NEVER resurrect it!
+        const nowMs = typeof getTrustedNow === 'function' ? getTrustedNow() : Date.now();
         if (local && Array.isArray(local.investments) && local.investments.length > 0) {
-          if (!Array.isArray(stateObj.investments) || stateObj.investments.length === 0) {
-            stateObj.investments = local.investments;
-            shouldSyncCloud = true;
-          } else {
-            local.investments.forEach(locInv => {
-              if (locInv && locInv.id && !stateObj.investments.some(sInv => sInv && sInv.id === locInv.id)) {
-                stateObj.investments.push(locInv);
-                shouldSyncCloud = true;
-              }
-            });
+          const activeLocalInvs = local.investments.filter(inv => {
+            if (!inv || !inv.id) return false;
+            if (inv.claimed === true || inv.matured === true) return false;
+            const maturesAt = Number(inv.maturesAt || 0);
+            if (maturesAt > 0 && maturesAt <= nowMs) return false;
+            if (typeof inv.ticksRemaining === 'number' && inv.ticksRemaining <= 0) return false;
+            return true;
+          });
+
+          if (!Array.isArray(stateObj.investments)) {
+            stateObj.investments = [];
           }
+
+          activeLocalInvs.forEach(locInv => {
+            if (!stateObj.investments.some(sInv => sInv && sInv.id === locInv.id)) {
+              stateObj.investments.push(locInv);
+              shouldSyncCloud = true;
+            }
+          });
         }
 
         // 4.6 Bank Loan Repayment Guard:
