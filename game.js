@@ -6468,7 +6468,11 @@ const GameEngine = (() => {
   const DAILY_FARM_LIQUIDATION_CAP = 5000000;
 
   function getFarmTodayDateStr() {
-    return new Date(getTrustedNow()).toISOString().split('T')[0];
+    const d = new Date(getTrustedNow());
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   function getFarmDailyLiquidationInfo(f) {
@@ -7473,8 +7477,7 @@ const GameEngine = (() => {
       if (c) c.expiresAt = null;
     });
 
-    const now = getTrustedNow();
-    const todayStr = new Date(now).toISOString().slice(0, 10);
+    const todayStr = getFarmTodayDateStr();
 
     // عند بدء يوم جديد: يتم أرشفة العقود المكتملة مسبقاً، بينما تظل كافة العقود غير المسلّمة محفوظة دون ضياع
     if (f.contracts.dailyDate !== todayStr) {
@@ -7491,27 +7494,26 @@ const GameEngine = (() => {
       f.contracts.active.push(generateSingleContract(f.contracts.active.length + 1, f));
     }
 
-    // ─── الدعم الذكي الفوري للمخزون (Dynamic Saffron & Crop Matching) ───
-    // إذا كان لدى اللاعب محاصيل في الصومعة (مثل الزعفران أو التمور) ولا توجد لها عقود كافية، يتم تحويل العقود المكررة فوراً لشراء محصوله
-    if (f.inventory) {
-      Object.keys(f.inventory).forEach(cId => {
-        const qty = Number(f.inventory[cId] || 0);
-        if (qty > 0) {
-          const matchCount = f.contracts.active.filter(c => c && c.itemId === cId && !c.fulfilled).length;
-          const targetContracts = Math.min(5, Math.max(2, Math.ceil(qty / 4)));
-          if (matchCount < targetContracts) {
-            const needed = targetContracts - matchCount;
-            for (let k = 0; k < needed; k++) {
-              // استبدال عقد مكرر من المحاصيل الأساسية
-              const replaceIdx = f.contracts.active.findIndex(c => c && !c.fulfilled && c.itemId !== cId && (c.itemId === 'wheat' || c.itemId === 'tomato' || c.itemId === 'milk' || c.itemId === 'eggs'));
-              if (replaceIdx !== -1) {
-                f.contracts.active[replaceIdx] = generateSingleContract(replaceIdx + 1, f, cId);
-              }
+    // ─── الدعم الذكي الفوري للمخزون (Dynamic Saffron, Processed Goods & Crop Matching) ───
+    // إذا كان لدى اللاعب محاصيل في الصومعة أو منتجات مصنعة (مثل قطرات الزعفران)، يتم تحويل العقود فوراً لشرائها
+    const allStoredItems = { ...(f.inventory || {}), ...(f.processing?.storage || {}) };
+    Object.keys(allStoredItems).forEach(cId => {
+      const qty = Number(allStoredItems[cId] || 0);
+      if (qty > 0) {
+        const matchCount = f.contracts.active.filter(c => c && c.itemId === cId && !c.fulfilled).length;
+        const targetContracts = Math.min(8, Math.max(2, Math.ceil(qty / 4)));
+        if (matchCount < targetContracts) {
+          const needed = targetContracts - matchCount;
+          for (let k = 0; k < needed; k++) {
+            // استبدال عقد مكرر من المحاصيل الأساسية
+            const replaceIdx = f.contracts.active.findIndex(c => c && !c.fulfilled && c.itemId !== cId && (c.itemId === 'wheat' || c.itemId === 'tomato' || c.itemId === 'milk' || c.itemId === 'eggs'));
+            if (replaceIdx !== -1) {
+              f.contracts.active[replaceIdx] = generateSingleContract(replaceIdx + 1, f, cId);
             }
           }
         }
-      });
-    }
+      }
+    });
 
     // ضمان وجود عقود الزعفران ومستخلصه دائماً في قائمة العقود لكافة اللاعبين
     const saffronActiveCount = f.contracts.active.filter(c => c && (c.itemId === 'saffron' || c.itemId === 'saffron_essence') && !c.fulfilled).length;
