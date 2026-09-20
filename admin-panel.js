@@ -5171,6 +5171,10 @@
   };
 
   window.UIController.adminQuickBanAction = async function(username) {
+    if (String(username || '').replace(/^@/, '').trim().toLowerCase() === 'khaled') {
+      alert('لا يمكن حظر حساب المشرف العام Khaled!');
+      return;
+    }
     if (!confirm(`هل أنت متأكد من حظر حساب اللاعب ${username} نهائياً؟`)) return;
     try {
       await AppDB.adminBanPlayer(username);
@@ -5580,6 +5584,7 @@
 
     try {
       for (const uname of targetUsers) {
+        if (String(uname || '').replace(/^@/, '').trim().toLowerCase() === 'khaled') continue;
         // 1. Reset player if requested
         if (doReset && AppDB.adminResetPlayer) {
           await AppDB.adminResetPlayer(uname);
@@ -5686,6 +5691,7 @@
 
     let successCount = 0;
     for (const uname of rawTargets) {
+      if (String(uname || '').replace(/^@/, '').trim().toLowerCase() === 'khaled') continue;
       try {
         if (actionType === 'reset' || actionType === 'full_purge') {
           if (AppDB.adminResetPlayer) await AppDB.adminResetPlayer(uname);

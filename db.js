@@ -3602,6 +3602,10 @@ var AppDB = (() => {
   async function adminDeletePlayer(username) {
     if (!username) return false;
     const cleanUser = String(username).replace(/^@/, '').trim();
+    if (cleanUser.toLowerCase() === 'khaled') {
+      console.warn('[SECURITY] Master Admin Khaled is immune to deletion.');
+      return false;
+    }
     await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}`, {
       method:'DELETE'
     });
@@ -3616,6 +3620,10 @@ var AppDB = (() => {
   async function adminResetPlayer(username) {
     if (!username) return false;
     const cleanUser = String(username).replace(/^@/, '').trim();
+    if (cleanUser.toLowerCase() === 'khaled') {
+      console.warn('[SECURITY] Master Admin Khaled is immune to reset.');
+      return false;
+    }
     const now = Date.now();
     const cleanBusinesses = {
       kiosk: { level: 0, price: 15, workers: 0, suppliesTicks: 0, marketingTicks: 0 },
@@ -3752,7 +3760,13 @@ var AppDB = (() => {
   }
 
   async function adminBanPlayer(username) {
-    await _api(`players?username=eq.${encodeURIComponent(username)}`, {
+    if (!username) return false;
+    const cleanUser = String(username).replace(/^@/, '').trim();
+    if (cleanUser.toLowerCase() === 'khaled') {
+      console.warn('[SECURITY] Master Admin Khaled is immune to bans.');
+      return false;
+    }
+    await _api(`players?username=eq.${encodeURIComponent(cleanUser)}`, {
       method:'PATCH',
       body: JSON.stringify({ is_banned: true, admin_modified_timestamp: Date.now() })
     });
@@ -3760,7 +3774,9 @@ var AppDB = (() => {
   }
 
   async function adminUnbanPlayer(username) {
-    await _api(`players?username=eq.${encodeURIComponent(username)}`, {
+    if (!username) return false;
+    const cleanUser = String(username).replace(/^@/, '').trim();
+    await _api(`players?username=eq.${encodeURIComponent(cleanUser)}`, {
       method:'PATCH',
       body: JSON.stringify({ is_banned: false, admin_modified_timestamp: Date.now() })
     });
@@ -3768,8 +3784,14 @@ var AppDB = (() => {
   }
 
   async function adminChangePlayerPin(username, newPin) {
+    if (!username) return false;
+    const cleanUser = String(username).replace(/^@/, '').trim();
+    if (cleanUser.toLowerCase() === 'khaled') {
+      console.warn('[SECURITY] Master Admin Khaled PIN cannot be modified via admin panel.');
+      return false;
+    }
     const hashed = await hashPin(newPin);
-    await _api(`players?username=eq.${encodeURIComponent(username)}`, {
+    await _api(`players?username=eq.${encodeURIComponent(cleanUser)}`, {
       method:'PATCH',
       body: JSON.stringify({ pin: hashed })
     });

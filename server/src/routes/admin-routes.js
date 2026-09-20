@@ -88,6 +88,29 @@ async function adminRoutes(fastify, options) {
     }
 
     const cleanBody = sanitizePayload(body);
+
+    // Absolute Admin Immunity for Master Admin (Khaled)
+    if (table === 'players') {
+      const qLower = String(query || '').toLowerCase();
+      const bUserLower = (cleanBody && cleanBody.username ? String(cleanBody.username) : '').toLowerCase();
+      const isTargetingKhaled = qLower.includes('khaled') || bUserLower === 'khaled';
+
+      if (isTargetingKhaled) {
+        if (cleanMethod === 'DELETE') {
+          return reply.status(403).send({
+            error: 'Forbidden',
+            message: 'حساب المشرف العام محمي تماماً من الحذف.'
+          });
+        }
+        if (cleanBody && (cleanBody.is_banned === true || (cleanBody.state && cleanBody.state.isBanned === true) || (cleanBody.jail_timer && Number(cleanBody.jail_timer) > 0))) {
+          return reply.status(403).send({
+            error: 'Forbidden',
+            message: 'حساب المشرف العام محمي تماماً من الحظر والسجن.'
+          });
+        }
+      }
+    }
+
     const serviceKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
     const url = `${config.SUPABASE_URL}/rest/v1/${table}${query ? '?' + query.replace(/^\?/, '') : ''}`;
 

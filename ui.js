@@ -22445,7 +22445,7 @@ if (typeof window !== 'undefined') {
 }
 
 // Global watchdog for mandatory reload (Instant trigger every 3s when active)
-if (typeof window !=='undefined' && !window.location.pathname.includes('ctrl-vault')) {
+if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySelector('#admin-container, #admin-auth-screen, #admin-main-interface')) {
   const checkForceReloadWatchdog = async () => {
     if (typeof AppDB !=='undefined' && typeof AppDB.isNetworkActive ==='function' && !AppDB.isNetworkActive()) return;
     if (typeof document !=='undefined' && document.hidden) return;
