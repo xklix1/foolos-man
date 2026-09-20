@@ -182,6 +182,28 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
   // Credit net earnings to bank
   playerState.bank = (Number(playerState.bank) || 0) + totalEarned;
 
+  // 7. Trade Company (الاستيراد والتصدير): Resolve arriving imports and delivering exports offline
+  if (playerState.tradeCompany && typeof playerState.tradeCompany === 'object') {
+    if (!playerState.tradeCompany.warehouse || typeof playerState.tradeCompany.warehouse !== 'object') {
+      playerState.tradeCompany.warehouse = {};
+    }
+    if (Array.isArray(playerState.tradeCompany.activeImports)) {
+      playerState.tradeCompany.activeImports.forEach(imp => {
+        if (!imp.arrived && serverNow >= imp.arrivalTime) {
+          imp.arrived = true;
+          playerState.tradeCompany.warehouse[imp.commodityId] = (playerState.tradeCompany.warehouse[imp.commodityId] || 0) + imp.quantity;
+        }
+      });
+    }
+    if (Array.isArray(playerState.tradeCompany.activeExports)) {
+      playerState.tradeCompany.activeExports.forEach(exp => {
+        if (!exp.delivered && serverNow >= exp.deliveryTime) {
+          exp.delivered = true;
+        }
+      });
+    }
+  }
+
   // Re-evaluate net worth and title
   playerState.netWorth = calculateNetWorth(playerState);
   playerState.title = getAppropriateTitle(playerState.netWorth, playerState.xp);

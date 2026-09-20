@@ -3316,6 +3316,59 @@ const GameEngine = (() => {
             }
           }
         } catch (e) {}
+      // Safeguard: Recover trade company cargo & in-flight shipments from local storage if cloud snapshot was missing them
+      if (!isAccountReset) {
+        try {
+          const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
+            ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
+            : null;
+          if (localS && localS.tradeCompany && typeof localS.tradeCompany === 'object') {
+            if (!state.tradeCompany || typeof state.tradeCompany !== 'object') {
+              state.tradeCompany = JSON.parse(JSON.stringify(localS.tradeCompany));
+            } else {
+              const locTc = localS.tradeCompany;
+              const sTc = state.tradeCompany;
+
+              sTc.warehouseCapacity = Math.max(Number(sTc.warehouseCapacity || 10), Number(locTc.warehouseCapacity || 10));
+              sTc.totalProfitEarned = Math.max(Number(sTc.totalProfitEarned || 0), Number(locTc.totalProfitEarned || 0));
+              sTc.totalShipmentsCompleted = Math.max(Number(sTc.totalShipmentsCompleted || 0), Number(locTc.totalShipmentsCompleted || 0));
+
+              // Merge Warehouse
+              if (locTc.warehouse && typeof locTc.warehouse === 'object') {
+                if (!sTc.warehouse) sTc.warehouse = {};
+                Object.keys(locTc.warehouse).forEach(k => {
+                  sTc.warehouse[k] = Math.max(Number(sTc.warehouse[k] || 0), Number(locTc.warehouse[k] || 0));
+                });
+              }
+
+              // Merge Active Imports
+              if (Array.isArray(locTc.activeImports) && locTc.activeImports.length > 0) {
+                if (!Array.isArray(sTc.activeImports)) sTc.activeImports = [];
+                locTc.activeImports.forEach(locImp => {
+                  if (!locImp || !locImp.id) return;
+                  const sImp = sTc.activeImports.find(si => si && si.id === locImp.id);
+                  if (!sImp) {
+                    sTc.activeImports.push(JSON.parse(JSON.stringify(locImp)));
+                    console.log('[GameEngine] Recovered in-flight trade import from local storage safeguard:', locImp.id);
+                  }
+                });
+              }
+
+              // Merge Active Exports
+              if (Array.isArray(locTc.activeExports) && locTc.activeExports.length > 0) {
+                if (!Array.isArray(sTc.activeExports)) sTc.activeExports = [];
+                locTc.activeExports.forEach(locExp => {
+                  if (!locExp || !locExp.id) return;
+                  const sExp = sTc.activeExports.find(se => se && se.id === locExp.id);
+                  if (!sExp) {
+                    sTc.activeExports.push(JSON.parse(JSON.stringify(locExp)));
+                    console.log('[GameEngine] Recovered in-flight trade export from local storage safeguard:', locExp.id);
+                  }
+                });
+              }
+            }
+          }
+        } catch (e) {}
       }
 
       // Safeguard: Prevent resurrection of settled bank loans if local session had already settled it
