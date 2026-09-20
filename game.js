@@ -6565,28 +6565,70 @@ const GameEngine = (() => {
   }
 
   function plantAllFarmPlots(cropId) {
-    if (state.jailTimer > 0) throw new Error("أنت مسجون!");
+    if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك الزراعة الآن.");
     assertFarmRateLimit('الزراعة');
     const f = ensureFarmState();
-    if (!f.unlocked) throw new Error("يجب تملك المزرعة أولاً.");
+    if (!f.unlocked) throw new Error("يجب تملك المزرعة واستصلاحها أولاً قبل بدء الزراعة.");
     const crop = FARM_CROPS[cropId];
-    if (!crop) throw new Error("نوع المحصول غير صالح.");
+    if (!crop) throw new Error("نوع المحصول أو البذرة غير صالح.");
 
-    let plantedCount = 0;
+    const emptyIndices = [];
     for (let i = 0; i < f.maxPlots; i++) {
       if (f.plots[i] === null) {
-        const totalFunds = (state.cash || 0) + (state.bank || 0);
-        if (totalFunds < crop.seedCost) break;
-        plantFarmCrop(i, cropId);
-        plantedCount++;
+        emptyIndices.push(i);
       }
     }
 
-    if (plantedCount === 0) {
-      throw new Error("لا توجد أحواض زراعية فارغة أو رصيدك لا يكفي لشراء البذور.");
+    if (emptyIndices.length === 0) {
+      throw new Error("لا توجد أحواض زراعية فارغة للزراعة! كل الأحواض مشغولة حالياً.");
     }
 
-    return { plantedCount, crop };
+    const irrigationDef = FARM_CONFIG.irrigation[f.waterLevel] || FARM_CONFIG.irrigation[1];
+    const speedBonus = irrigationDef ? (irrigationDef.speedBonus || 0) : 0;
+    const durationMs = Math.max(5000, Math.round(crop.growSeconds * (1 - speedBonus) * 1000));
+    const now = getTrustedNow();
+
+    let plantedCount = 0;
+    let totalSpent = 0;
+
+    for (const plotIndex of emptyIndices) {
+      const totalFunds = (state.cash || 0) + (state.bank || 0);
+      if (totalFunds < crop.seedCost) {
+        break;
+      }
+
+      if ((state.cash || 0) >= crop.seedCost) {
+        state.cash -= crop.seedCost;
+      } else {
+        const rem = crop.seedCost - (state.cash || 0);
+        state.cash = 0;
+        state.bank -= rem;
+      }
+
+      totalSpent += crop.seedCost;
+      f.plots[plotIndex] = {
+        cropId,
+        plantedAt: now,
+        readyAt: now + durationMs,
+        durationMs,
+        ready: false
+      };
+      plantedCount++;
+    }
+
+    if (plantedCount === 0) {
+      throw new Error(`رصيدك المالي لا يكفي لشراء بذور "${crop.name}" (التكلفة: ${crop.seedCost.toLocaleString()} EGP للحوض).`);
+    }
+
+    state.netWorth = calculateNetWorth();
+    forceSaveState(true);
+
+    return {
+      plantedCount,
+      crop,
+      totalCost: totalSpent,
+      durationMs
+    };
   }
 
   function harvestFarmCrop(plotIndex) {
@@ -6641,6 +6683,7 @@ const GameEngine = (() => {
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
     const now = getTrustedNow();
     let totalHarvestedCount = 0;
+    let totalYield = 0;
     const harvestedSummary = {};
 
     let currentStored = getFarmStoredUnits(f);
@@ -6669,6 +6712,7 @@ const GameEngine = (() => {
           f.stats.totalHarvested = (f.stats.totalHarvested || 0) + finalYield;
           harvestedSummary[crop.name] = (harvestedSummary[crop.name] || 0) + finalYield;
           currentStored += finalYield;
+          totalYield += finalYield;
           totalHarvestedCount++;
         }
         f.plots[i] = null;
@@ -6686,6 +6730,8 @@ const GameEngine = (() => {
     forceSaveState(true);
     return {
       totalHarvestedPlots: totalHarvestedCount,
+      harvestedCount: totalHarvestedCount,
+      totalYield,
       summary: harvestedSummary,
       stoppedDueToCapacity
     };

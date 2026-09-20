@@ -3677,7 +3677,7 @@
 
             <!-- Top Interactive Action Buttons -->
             <div class="flex flex-wrap items-center gap-2.5 shrink-0 w-full lg:w-auto">
-              <button id="btn-farm-harvest-all" type="button"
+              <button id="btn-farm-harvest-all" type="button" onclick="window.UI?.harvestAllPlots()"
                 class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs transition-all duration-200 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95">
                 <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
                 <span>حصاد الكل</span>
@@ -3803,7 +3803,7 @@
                     <option value="dates">تمور المجدول (25,000 ج.م - 1 س)</option>
                     <option value="saffron">الزعفران (100,000 ج.م - 3 س)</option>
                   </select>
-                  <button id="btn-farm-plant-all" type="button"
+                  <button id="btn-farm-plant-all" type="button" onclick="window.UI?.plantAllPlots()"
                     class="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer shrink-0 shadow-md">
                     <i class="fa-solid fa-wheat-awn mr-1"></i>
                     <span>زرع كل الأحواض الفارغة</span>
@@ -7117,8 +7117,8 @@
   <!-- Script Initializers -->
   <script src="db.js?v=35.0"></script>
   <script src="server-client-bridge.js?v=31.0"></script>
-  <script src="game.js?v=59.0"></script>
-  <script src="ui.js?v=65.0"></script>
+  <script src="game.js?v=60.0"></script>
+  <script src="ui.js?v=66.0"></script>
   <script src="pwa-manager.js?v=3.0.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────

@@ -19967,16 +19967,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const btnHarvestAll = document.getElementById('btn-farm-harvest-all');
     if (btnHarvestAll) {
       btnHarvestAll.onclick = () => {
-        try {
-          const res = GameEngine.harvestAllFarmPlots();
-          playMenuSound('success');
-          showToast('حصاد شامل 🌾', `تم حصد ${res.harvestedCount} حوض بنجاح! تم تخزين ${res.totalYield} وحدة بالمستودع.`, 'success');
-          renderFarmPanel();
-          renderStatsBar();
-        } catch (e) {
-          playMenuSound('error');
-          showToast('تعذر الحصاد', e.message, 'error');
-        }
+        harvestAllPlots();
       };
     }
 
@@ -19995,18 +19986,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       btnPlantAll.onclick = () => {
         const cropSelect = document.getElementById('farm-quick-crop-select');
         const cropId = cropSelect ? cropSelect.value : 'wheat';
-        try {
-          const plantFn = (GameEngine && (GameEngine.plantAllPlots || GameEngine.plantAllFarmPlots));
-          if (!plantFn) throw new Error("دالة زرع كل الأحواض غير متوفرة.");
-          const res = plantFn.call(GameEngine, cropId);
-          playMenuSound('click');
-          showToast('غرس شامل 🌱', `تم غرس ${res.plantedCount} حوض بنجاح بمحصول "${res.crop.name}"!`, 'success');
-          renderFarmPanel();
-          renderStatsBar();
-        } catch (e) {
-          playMenuSound('error');
-          showToast('تعذر الزراعة', e.message, 'error');
-        }
+        plantAllPlots(cropId);
       };
     }
 
@@ -21104,6 +21084,42 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   }
 
   // ── FARM 2.0 USER ACTIONS & HANDLERS ──
+  function plantAllPlots(cropId) {
+    if (!cropId) {
+      const cropSelect = document.getElementById('farm-quick-crop-select');
+      cropId = cropSelect ? cropSelect.value : 'wheat';
+    }
+    try {
+      const plantFn = (GameEngine && (GameEngine.plantAllPlots || GameEngine.plantAllFarmPlots));
+      if (!plantFn) throw new Error("دالة زرع كل الأحواض غير متوفرة.");
+      const res = plantFn.call(GameEngine, cropId);
+      playMenuSound('click');
+      showToast('غرس شامل 🌱', `تم غرس ${res.plantedCount} حوض بنجاح بمحصول "${res.crop.name}"!`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر الزراعة', e.message, 'error');
+    }
+  }
+
+  function harvestAllPlots() {
+    try {
+      const harvestFn = (GameEngine && (GameEngine.harvestAllFarmPlots || GameEngine.harvestAllPlots));
+      if (!harvestFn) throw new Error("دالة الحصاد الشامل غير متوفرة.");
+      const res = harvestFn.call(GameEngine);
+      playMenuSound('success');
+      const count = res.harvestedCount || res.totalHarvestedPlots || 0;
+      const yieldAmt = res.totalYield || 0;
+      showToast('حصاد شامل 🌾', `تم حصد ${count} حوض بنجاح! تم تخزين ${yieldAmt.toLocaleString()} وحدة بالمستودع.`, 'success');
+      renderFarmPanel();
+      renderStatsBar();
+    } catch (e) {
+      playMenuSound('error');
+      showToast('تعذر الحصاد', e.message, 'error');
+    }
+  }
+
   function quickPlantSinglePlot(plotIndex) {
     const cropSelect = document.getElementById('farm-quick-crop-select');
     const cropId = cropSelect ? cropSelect.value : 'wheat';
@@ -22396,6 +22412,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     updateCurrentChatFrameBadge,
     renderFarmPanel,
     updateFarmPlotsInDOM,
+    plantAllPlots,
+    plantAllFarmPlots: plantAllPlots,
+    harvestAllPlots,
+    harvestAllFarmPlots: harvestAllPlots,
     quickPlantSinglePlot,
     harvestSinglePlot,
     plantFirstEmptyPlot,
