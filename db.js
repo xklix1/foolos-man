@@ -2612,7 +2612,7 @@ var AppDB = (() => {
           }
           lastKnownMailIds = new Set(rows.map(r => r.id));
           isFirstRun = false;
-          if (rows && rows.some(r => r.type === 'admin_sync' || r.type === 'admin_balance_grant' || r.type === 'topup_receipt')) {
+          if (rows && rows.some(r => r.type === 'admin_sync' || r.type === 'admin_balance_grant' || r.type === 'topup_receipt' || r.type === 'transfer_received')) {
             if (typeof window !== 'undefined' && typeof window._triggerPlayerDocCheck === 'function') {
               window._triggerPlayerDocCheck();
             }

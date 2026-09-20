@@ -591,8 +591,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       return reply.code(400).send({ error: 'amount must be positive' });
     }
 
-    const taxAmt = Math.floor(amt * 0.05);
-    const finalNet = (netAmount !== undefined && !isNaN(Number(netAmount))) ? Number(netAmount) : (amt - taxAmt);
+    const taxAmt = 0;
+    const finalNet = (netAmount !== undefined && !isNaN(Number(netAmount))) ? Number(netAmount) : amt;
     const now = Date.now();
 
     let senderDeducted = false;
