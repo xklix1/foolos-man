@@ -19919,11 +19919,18 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const liqInfo = (farmInfo.dailyLiquidation) || { totalLiquidated: 0, cap: 5000000, remaining: 5000000 };
     const statLiq = document.getElementById('farm-stat-liquidation');
     if (statLiq) {
-      statLiq.innerHTML = `<span dir="ltr" class="inline-block numbers-font font-bold">${(liqInfo.totalLiquidated || 0).toLocaleString()} / ${(liqInfo.cap || 5000000).toLocaleString()}</span> EGP`;
+      if (liqInfo.isUnlimited) {
+        statLiq.innerHTML = `<span class="inline-block text-amber-300 font-bold">غير محدود 👑</span>`;
+      } else {
+        statLiq.innerHTML = `<span dir="ltr" class="inline-block numbers-font font-bold">${(liqInfo.totalLiquidated || 0).toLocaleString()} / ${(liqInfo.cap || 5000000).toLocaleString()}</span> EGP`;
+      }
     }
     const statLiqBadge = document.getElementById('farm-stat-liquidation-badge');
     if (statLiqBadge) {
-      if (liqInfo.remaining <= 0) {
+      if (liqInfo.isUnlimited) {
+        statLiqBadge.textContent = '👑 غير محدود (المالك)';
+        statLiqBadge.className = 'text-[9px] font-black text-amber-400';
+      } else if (liqInfo.remaining <= 0) {
         statLiqBadge.textContent = 'مكتمل (0 EGP)';
         statLiqBadge.className = 'text-[9px] font-black text-rose-400 animate-pulse';
       } else if (liqInfo.totalLiquidated > 0) {

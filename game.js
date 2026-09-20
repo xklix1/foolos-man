@@ -6472,7 +6472,20 @@ const GameEngine = (() => {
   }
 
   function getFarmDailyLiquidationInfo(f) {
-    if (!f) return { date: '', totalLiquidated: 0, cap: DAILY_FARM_LIQUIDATION_CAP, remaining: DAILY_FARM_LIQUIDATION_CAP };
+    const curUser = (typeof state !== 'undefined' && state && state.username) 
+      ? String(state.username).trim() 
+      : ((typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || '');
+    const isOwnerKhaled = curUser.toLowerCase() === 'khaled';
+    if (isOwnerKhaled) {
+      return {
+        date: getFarmTodayDateStr(),
+        totalLiquidated: 0,
+        cap: 999999999999,
+        remaining: 999999999999,
+        isUnlimited: true
+      };
+    }
+    if (!f) return { date: '', totalLiquidated: 0, cap: DAILY_FARM_LIQUIDATION_CAP, remaining: DAILY_FARM_LIQUIDATION_CAP, isUnlimited: false };
     const today = getFarmTodayDateStr();
     if (!f.dailyLiquidation || f.dailyLiquidation.date !== today) {
       f.dailyLiquidation = { date: today, totalLiquidated: 0 };
@@ -6483,12 +6496,19 @@ const GameEngine = (() => {
       date: today,
       totalLiquidated,
       cap: DAILY_FARM_LIQUIDATION_CAP,
-      remaining
+      remaining,
+      isUnlimited: false
     };
   }
 
   function assertAndRecordFarmLiquidation(f, amount) {
     if (amount <= 0) return;
+    const curUser = (typeof state !== 'undefined' && state && state.username) 
+      ? String(state.username).trim() 
+      : ((typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || '');
+    if (curUser.toLowerCase() === 'khaled') {
+      return; // Khaled (Owner/Admin) has unlimited farm liquidation
+    }
     const info = getFarmDailyLiquidationInfo(f);
     if (info.totalLiquidated + amount > DAILY_FARM_LIQUIDATION_CAP) {
       throw new Error(`بلغت سقف التسييل اليومي للمزرعة (5,000,000 EGP يومياً). المتبقي لك اليوم: ${info.remaining.toLocaleString()} EGP. يمكنك تلبية عقود التوريد B2B أو استئناف التسييل غداً.`);
