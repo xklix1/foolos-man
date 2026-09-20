@@ -15355,8 +15355,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const cleanTarget = String(username).replace(/^@/, '').trim();
     const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (window.GameEngine && window.GameEngine.getState && window.GameEngine.getState()?.username) || (window.AppDB && window.AppDB.getCurrentUsername && window.AppDB.getCurrentUsername()) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
 
-    // Strict Privacy Protection: Owner, Developer & Admin accounts cannot be viewed by other players
-    const protectedAccounts = ['khaled', 'lola-khaled', 'rasalmal', 'rasalmal1', 'rasalmal2', 'newu'];
+    // Strict Privacy Protection: Master Admin & Core Dev accounts cannot be viewed by other players
+    const protectedAccounts = ['khaled', 'rasalmal', 'rasalmal1', 'rasalmal2', 'newu'];
     const isTargetProtectedName = protectedAccounts.includes(cleanTarget.toLowerCase());
     const isSelfView = cleanTarget.toLowerCase() === curActive.toLowerCase();
 
