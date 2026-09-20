@@ -591,16 +591,35 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       return reply.code(400).send({ error: 'amount must be positive' });
     }
 
-    const taxAmt = 0;
-    const finalNet = (netAmount !== undefined && !isNaN(Number(netAmount))) ? Number(netAmount) : amt;
+    // Tax is 5% — recipient gets 95% (matches execute_wire_transfer SQL)
+    const TAX_RATE = 0.05;
+    const taxAmt = Math.floor(amt * TAX_RATE);
+    // Use explicit netAmount if provided by caller, otherwise compute from tax rate
+    const finalNet = (netAmount !== undefined && !isNaN(Number(netAmount)))
+      ? Number(netAmount)
+      : (amt - taxAmt);
+
     const now = Date.now();
+    // SQL sets sender lock 120 seconds into the future to block stale flushes from overwriting;
+    // mirror that here so the server session's adminModifiedTimestamp matches the DB value
+    // and our lte filter allows the next flush to succeed.
+    const senderLockTs = now + 120000;
 
     let senderDeducted = false;
     if (sender) {
-      senderDeducted = sessionManager.deductSenderWireTransfer(sender, amt, now);
+      senderDeducted = sessionManager.deductSenderWireTransfer(sender, amt, senderLockTs);
     }
 
     const credited = sessionManager.creditRecipientWireTransfer(recipient, finalNet, now);
+
+    // Immediately persist recipient's updated balance to DB so a concurrent stale flush
+    // cannot overwrite the incoming transfer before the next background write-behind cycle.
+    if (credited) {
+      sessionManager.forceSaveSession(recipient).catch(err => {
+        console.warn('[transfer-notify] forceSave for recipient failed:', err.message);
+      });
+    }
+
     return {
       success: true,
       sender: sender || null,
