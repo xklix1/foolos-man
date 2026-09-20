@@ -4526,12 +4526,12 @@
             await AppDB.setMaintenanceMode(nextState, nextState ? 'الخوادم رهن الصيانة الفنية والتحديث الإداري حالياً.' : '');
           } else {
             const SUPABASE_URL = 'https://rasalmal.online';
-            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTU5NzUzLCJleHAiOjIxMDM5MTk3NTN9.2465KGfimfRI4L3fZ6L6kXSOjPt6AC-0eHtchpt7F08';
+            const _tok = (typeof AppDB !== 'undefined' && AppDB._getAnonKey ? AppDB._getAnonKey() : '');
             await fetch(`${SUPABASE_URL}/rest/v1/globals`, {
               method: 'POST',
               headers: {
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'apikey': _tok,
+                'Authorization': `Bearer ${_tok}`,
                 'Content-Type': 'application/json',
                 'Prefer': 'resolution=merge-duplicates'
               },
