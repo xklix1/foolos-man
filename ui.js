@@ -16835,45 +16835,28 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
           AppDB.updateMailStatus(tr.id, 'read').catch(() => {});
 
-          // Authoritative DB reconciliation:
-          // SQL execute_wire_transfer already deposited the funds into the PostgreSQL players table.
-          // By fetching fresh authoritative state from DB, we adopt the exact deposited balance:
-          // 1) For an ONLINE player: local state is updated to include the transfer so autosave will never wipe it out.
-          // 2) For an OFFLINE player logging in: getPlayerState already loaded it, so adopting DB balance prevents 2x double credit.
+          // Authoritative transfer crediting:
+          // Add the net transfer amount directly to the player's bank balance and update net worth
           if (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.activeUsername) {
             const transferTs = Number(tr.created_at || Date.now());
-            if (typeof AppDB !== 'undefined' && typeof AppDB.getPlayerState === 'function') {
-              try {
-                const fresh = await AppDB.getPlayerState(GameEngine.activeUsername);
-                if (fresh && fresh.bank !== undefined) {
-                  const authoritativeBank = Number(fresh.bank);
-                  GameEngine.state.bank = Math.max(Number(GameEngine.state.bank || 0), authoritativeBank);
-                  GameEngine.state.netWorth = Math.max(Number(GameEngine.state.netWorth || 0), Number(fresh.netWorth || 0));
-                  GameEngine.state.adminModifiedTimestamp = Math.max(
-                    Number(GameEngine.state.adminModifiedTimestamp || 0),
-                    Number(fresh.adminModifiedTimestamp || 0),
-                    transferTs
-                  );
-                } else {
-                  GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
-                  GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
-                  GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), transferTs);
-                }
-              } catch (_) {
-                GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
-                GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
-                GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), transferTs);
-              }
-            } else {
-              GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
-              GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
-              GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), transferTs);
-            }
+            GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
+            GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
+            GameEngine.state.adminModifiedTimestamp = Math.max(
+              Number(GameEngine.state.adminModifiedTimestamp || 0),
+              transferTs,
+              Date.now()
+            );
 
             GameEngine.state._legitimateTransactionBypass = true;
             if (typeof AppDB !== 'undefined' && typeof AppDB.notifyLegitimateWealthGain === 'function') {
               AppDB.notifyLegitimateWealthGain((Number(GameEngine.state.cash) || 0) + (Number(GameEngine.state.bank) || 0));
             }
+
+            try {
+              if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+                AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, GameEngine.state);
+              }
+            } catch (_) {}
 
             if (typeof renderStatsBar === 'function') renderStatsBar();
 

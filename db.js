@@ -1404,6 +1404,10 @@ var AppDB = (() => {
       stateObj.jailTimer = Number(row.jail_timer || 0);
       stateObj.afkManagerExpiresAt = Number(row.afk_manager_expires_at || 0);
       stateObj.totalTaxesPaid = Number(row.total_taxes_paid || 0);
+      stateObj.adminModifiedTimestamp = Math.max(
+        Number(row.admin_modified_timestamp || 0),
+        Number((row.state && row.state.adminModifiedTimestamp) || 0)
+      );
       stateObj.lastSeen = Number(row.last_seen || getTrustedNow());
       // OFFLINE EARNINGS FIX: Take the MAX of server last_seen and local lastActiveTimestamp.
       // When the cloud save hasn't landed yet (e.g. race between logout flush and getPlayerState),
@@ -2018,6 +2022,7 @@ var AppDB = (() => {
       jail_timer: Number(state.jailTimer || 0),
       afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
       total_taxes_paid: Number(state.totalTaxesPaid || 0),
+      admin_modified_timestamp: Number(state.adminModifiedTimestamp || 0),
       state: state,
       last_seen: Number(state.lastActiveTimestamp || state.lastSeen || getTrustedNow())
     };
