@@ -1753,6 +1753,61 @@ var AppDB = (() => {
           }
         }
 
+        // 4.98 Stock Market Portfolio Guard:
+        // NEVER lose purchased stocks, shares, or average prices on abrupt reload or exit
+        if (local && local.stocks && typeof local.stocks === 'object') {
+          if (!stateObj.stocks || typeof stateObj.stocks !== 'object') {
+            stateObj.stocks = JSON.parse(JSON.stringify(local.stocks));
+            shouldSyncCloud = true;
+          } else {
+            Object.keys(local.stocks).forEach(sym => {
+              const locStock = local.stocks[sym];
+              if (!locStock || typeof locStock !== 'object') return;
+              const srvStock = stateObj.stocks[sym] || { shares: 0, avgPrice: 0 };
+              const locShares = Number(locStock.shares || 0);
+              const srvShares = Number(srvStock.shares || 0);
+
+              if (locShares > 0) {
+                // If local has shares and server has less or 0 (bought right before exit)
+                if (locShares > srvShares || !srvStock.shares || isLocalRecentOrNewer) {
+                  stateObj.stocks[sym] = {
+                    shares: locShares,
+                    avgPrice: Number(locStock.avgPrice || srvStock.avgPrice || 0)
+                  };
+                  shouldSyncCloud = true;
+                }
+              }
+            });
+          }
+        }
+
+        // 4.99 Real Estate Assets & Fleet Guard:
+        // NEVER lose purchased properties or rental vehicles on abrupt exit
+        if (local && local.assets && typeof local.assets === 'object') {
+          if (!stateObj.assets || typeof stateObj.assets !== 'object') {
+            stateObj.assets = JSON.parse(JSON.stringify(local.assets));
+            shouldSyncCloud = true;
+          } else if (isLocalRecentOrNewer) {
+            Object.keys(local.assets).forEach(ak => {
+              const locCount = Number(local.assets[ak] || 0);
+              const srvCount = Number(stateObj.assets[ak] || 0);
+              if (locCount > srvCount) {
+                stateObj.assets[ak] = locCount;
+                shouldSyncCloud = true;
+              }
+            });
+          }
+        }
+        if (local && Array.isArray(local.ownedCars) && local.ownedCars.length > 0) {
+          if (!Array.isArray(stateObj.ownedCars) || stateObj.ownedCars.length === 0) {
+            stateObj.ownedCars = JSON.parse(JSON.stringify(local.ownedCars));
+            shouldSyncCloud = true;
+          } else if (isLocalRecentOrNewer && local.ownedCars.length > stateObj.ownedCars.length) {
+            stateObj.ownedCars = JSON.parse(JSON.stringify(local.ownedCars));
+            shouldSyncCloud = true;
+          }
+        }
+
         // 5. Late-save recovery:
         // If local device was active recently (isLocalRecentOrNewer) and not reset or overridden by admin,
         // reconcile wealth atomically from local state to ensure liquidations/sales and debounced saves are 100% persistent.
