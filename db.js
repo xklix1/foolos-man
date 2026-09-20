@@ -3440,6 +3440,8 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   //  SYSTEM STATS & ADMIN PANEL
   // ─────────────────────────────────────────────
+  const HIDDEN_ADMIN_USERNAMES = ['khaled', 'newu', 'rasalmal', 'rasalmal1', 'rasalmal2'];
+
   async function getSystemStats() {
     try {
       const rows = await _api('players?select=username,cash,bank,dirty_cash,net_worth,xp,is_banned,jail_timer,title,last_seen&limit=10000');
@@ -3451,7 +3453,13 @@ var AppDB = (() => {
       const now = Date.now();
       const allPlayersList = [];
 
-      (rows || []).forEach(r => {
+      // Filter out Master Admin and internal test accounts completely from dashboard analytics
+      const filteredRows = (rows || []).filter(r => {
+        const u = String(r.username || '').trim().toLowerCase();
+        return !HIDDEN_ADMIN_USERNAMES.includes(u);
+      });
+
+      filteredRows.forEach(r => {
         const cash = Number(r.cash || 0);
         const bank = Number(r.bank || 0);
         const nw = Number(r.net_worth || 0);
@@ -3490,8 +3498,8 @@ var AppDB = (() => {
       allPlayersList.sort((a, b) => b.netWorth - a.netWorth);
 
       return {
-        totalPlayers: rows.length,
-        scannedPlayers: rows.length,
+        totalPlayers: filteredRows.length,
+        scannedPlayers: filteredRows.length,
         onlineCount,
         isFromCache: false,
         quotaExceeded: false,
@@ -3522,7 +3530,7 @@ var AppDB = (() => {
 
   async function adminGetAllPlayers() {
     const rows = await _api('players?select=username,pin,cash,bank,dirty_cash,net_worth,xp,title,job_id,is_admin,is_banned,jail_timer,total_taxes_paid,afk_manager_expires_at,last_seen,created_at,state&order=net_worth.desc&limit=10000');
-    return (rows || []).map(r => {
+    return (rows || []).filter(r => !HIDDEN_ADMIN_USERNAMES.includes(String(r.username || '').trim().toLowerCase())).map(r => {
       let stateObj = {};
       if (r.state) {
         if (typeof r.state === 'object') stateObj = r.state;
