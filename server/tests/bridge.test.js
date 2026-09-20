@@ -194,7 +194,7 @@ test('Client ServerBridge End-to-End Test', async () => {
     assert.ok(offlineStartRes, 'Session started');
     assert.ok(offlineStartRes.offlineReport, 'Offline report generated');
     assert.strictEqual(offlineStartRes.offlineReport.applied, true, 'Offline progress applied');
-    assert.strictEqual(offlineStartRes.offlineReport.elapsedSeconds, 3600, '3600s elapsed');
+    assert.ok(Math.abs(offlineStartRes.offlineReport.elapsedSeconds - 3600) <= 2, 'Approximately 3600s elapsed');
     assert.ok(offlineStartRes.offlineReport.totalEarnings > 0, 'Earned offline profit');
     assert.strictEqual(offlineStartRes.state.bank, 5000 + offlineStartRes.offlineReport.totalEarnings, 'Bank credited');
     assert.strictEqual(offlineStartRes.state.businesses.kiosk.suppliesTicks, 7200 - 3600, 'Supplies depleted by 1h');

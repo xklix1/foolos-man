@@ -4551,7 +4551,10 @@ const UIController = (() => {
           throw new Error("يرجى تعبئة حقل المستلم ومبلغ التحويل بشكل صحيح.");
         }
 
-        const isOwnerKhaled = (GameEngine.activeUsername || '').trim().toLowerCase() === 'khaled';
+        const myUsername = (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username) 
+          ? GameEngine.state.username 
+          : ((typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || (typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || '');
+        const isOwnerKhaled = String(myUsername).trim().toLowerCase() === 'khaled';
         if (!isOwnerKhaled && amount > 5000000) {
           throw new Error("🚫 الحد الأقصى للتحويل البنكي الواحد هو 5,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.");
         }
@@ -12504,7 +12507,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const amtType = chip.dataset.amount;
         const inputEl = document.getElementById('direct-wire-amount-input');
         if (!inputEl) return;
-        const isOwnerKhaled = (GameEngine.activeUsername || '').trim().toLowerCase() === 'khaled';
+        const myUsername = (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username) 
+          ? GameEngine.state.username 
+          : ((typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || (typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || '');
+        const isOwnerKhaled = String(myUsername).trim().toLowerCase() === 'khaled';
         if (amtType === 'max') {
           const curCash = Number(GameEngine.state.cash) || 0;
           const curBank = Number(GameEngine.state.bank) || 0;
@@ -14663,7 +14669,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       return;
     }
 
-    const isOwnerKhaled = (GameEngine.activeUsername || '').trim().toLowerCase() === 'khaled';
+    const myUsername = (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username) 
+      ? GameEngine.state.username 
+      : ((typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || (typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || '');
+    const isOwnerKhaled = String(myUsername).trim().toLowerCase() === 'khaled';
     if (!isOwnerKhaled && amt > 5000000) {
       showToast('سقف التحويل اليومي', '🚫 الحد الأقصى للتحويل البنكي الواحد هو 5,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.', 'warning');
       return;
