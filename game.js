@@ -3245,15 +3245,19 @@ const GameEngine = (() => {
         } catch (e) {}
       }
 
-      // Safeguard: Recover farm progress from local storage if cloud snapshot was missing it or locked
-      if (!isAccountReset && (!state.farm || !state.farm.unlocked)) {
+      // Safeguard: Recover farm progress from local storage if cloud snapshot was missing it, locked, or stale
+      if (!isAccountReset) {
         try {
           const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
             ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
             : null;
           if (localS && localS.farm && localS.farm.unlocked) {
-            state.farm = localS.farm;
-            console.log('[GameEngine] Recovered farm state from local storage safeguard:', state.farm);
+            const locTs = Number(localS.lastActiveTimestamp || localS.lastSeen || 0);
+            const srvTs = Number(dbState.lastActiveTimestamp || dbState.lastSeen || 0);
+            if (!state.farm || !state.farm.unlocked || locTs >= srvTs) {
+              state.farm = localS.farm;
+              console.log('[GameEngine] Recovered / reconciled newer farm state from local storage safeguard:', state.farm);
+            }
           }
         } catch (e) {}
       }
@@ -6495,7 +6499,7 @@ const GameEngine = (() => {
     };
 
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
     return {
       plotIndex,
       crop,
@@ -6565,7 +6569,7 @@ const GameEngine = (() => {
 
     f.plots[plotIndex] = null;
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
 
     return {
       plotIndex,
@@ -6623,7 +6627,7 @@ const GameEngine = (() => {
     }
 
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
     return {
       totalHarvestedPlots: totalHarvestedCount,
       summary: harvestedSummary,
@@ -6821,7 +6825,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('تسييل اضطراري لتفريغ الصومعة ♻️', `تسييل ${qty.toLocaleString()} وحدة من "${crop.name}" بسعر التكلفة فقط (+${totalPrice.toLocaleString()} EGP) لتفريغ الصومعة. الأرباح محصورة في عقود B2B.`, 'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
     return {
       crop,
       qty,
@@ -6862,7 +6866,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('تفريغ اضطراري للصوامع ♻️', `تسييل شامل لـ ${itemsSold.toLocaleString()} وحدة محاصيل بسعر التكلفة الرأسمالية فقط (+${grandTotal.toLocaleString()} EGP).`, 'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
     return {
       grandTotal,
       totalRevenue: grandTotal,
@@ -6903,7 +6907,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('تصنيع زراعي غذائي 🏭', `تم تشغيل معمل التصنيع وإنتاج ${producedQty.toLocaleString()} وحدة من "${recipe.name}" بقيمة مضافة ممتازة!`, 'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
 
     const totalValueAdded = recipe.baseValue * producedQty;
     return {
@@ -6944,7 +6948,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('تسييل اضطراري لمنتج مصنع ♻️', `تفريغ ${sellQty.toLocaleString()} عبوة من "${recipe.name}" بسعر التكلفة الخام (+${totalPrice.toLocaleString()} EGP). الأرباح الفاخرة محصورة في عقود B2B.`, 'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
 
     return {
       recipe,
@@ -6990,7 +6994,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('تفريغ اضطراري للمنتجات المصنعة ♻️', `تسييل شامل لـ ${itemsSold.toLocaleString()} عبوة مصنعة بسعر التكلفة الخام (+${grandTotal.toLocaleString()} EGP).`, 'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
 
     return {
       itemsSold,
@@ -7079,7 +7083,7 @@ const GameEngine = (() => {
     const names = { milk: 'حليب أبقار طازج', eggs: 'كراتين بيض مائدة', compost: 'سماد عضوي حيواني' };
     recordPlayerActivity('تسييل اضطراري لإنتاج المزرعة ♻️', `تفريغ ${sellQty.toLocaleString()} وحدة من ${names[produceKey]} بسعر التكلفة الرمزية (+${totalPrice.toLocaleString()} EGP). أرباح الألبان الحقيقية في عقود B2B.`, 'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
 
     return {
       produceKey,
@@ -7124,7 +7128,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('بيع كامل الإنتاج الحيواني 💰', `بيع كافة منتجات المزرعة الحيوانية بإجمالي +${grandTotal.toLocaleString()} EGP نقداً!`, 'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
 
     return {
       grandTotal,
@@ -7166,7 +7170,7 @@ const GameEngine = (() => {
 
     f.livestock.compost -= cost;
     recordPlayerActivity('تسميد عضوي مكثف 🌿', `استخدام ${cost} وحدات سماد حيواني عضوي لتسريع نضج ${plotsBoosted} أحواض زراعية فورياً!`, 'business');
-    forceSaveState(false);
+    forceSaveState(true);
 
     return {
       plotsBoosted,
@@ -7380,7 +7384,7 @@ const GameEngine = (() => {
     recordPlayerActivity('إنجاز عقد توريد تجاري 📜🤝', `تم توريد طلبية (${contract.quantityNeeded} وحدة ${contract.itemName}) لـ "${contract.clientName}" وقبض ${contract.payout.toLocaleString()} EGP (+${contract.bonusPercent}% بونص | +${contract.repReward} سمعة)!`, 'business');
 
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
 
     return {
       contract,
