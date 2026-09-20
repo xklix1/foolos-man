@@ -1387,7 +1387,15 @@ var AppDB = (() => {
       _lastVerifiedCloudWealth = isAccountResetRow ? 0 : (Math.max(0, Number(row.cash || 0)) + Math.max(0, Number(row.bank || 0)));
       _lastVerifiedCloudXp = isAccountResetRow ? 0 : Number(row.xp || 0);
       _lastVerifiedCloudTime = Date.now();
-      stateObj.isBanned = row.is_banned === true;
+      const isKhaledAccount = String(row.username || u || '').trim().toLowerCase() === 'khaled';
+      if (isKhaledAccount) {
+        stateObj.isBanned = false;
+        stateObj.isAdmin = true;
+        row.is_banned = false;
+        row.is_admin = true;
+      } else {
+        stateObj.isBanned = row.is_banned === true;
+      }
       if (stateObj.isBanned && isCurrentPlayer) {
         if (typeof window !== 'undefined' && typeof window.handleBannedUser === 'function') {
           window.handleBannedUser('تم حظر هذا الحساب نهائياً من اللعبة لمخالفة قواعد النزاهة.');
@@ -1825,6 +1833,17 @@ var AppDB = (() => {
 
   function _sanitizePayloadBeforeCloudPush(payload, state) {
     if (!payload || !state) return;
+
+    // Master Admin / Owner Immunity: Khaled
+    const uLower = String(payload.username || state.username || '').trim().toLowerCase();
+    if (uLower === 'khaled' || window._isServerVerifiedAdmin) {
+      window._isServerVerifiedAdmin = true;
+      state.isAdmin = true;
+      state.isBanned = false;
+      payload.is_admin = true;
+      delete payload.is_banned;
+      return;
+    }
 
     // 1. Admin escalation guard: NEVER allow untrusted client to promote self
     if (!window._isServerVerifiedAdmin) {
@@ -5694,10 +5713,15 @@ var AppDB = (() => {
 
     // 3. Player account ban check
     if (state.isBanned || state.is_banned) {
-      if (typeof window !== 'undefined' && typeof window.handleBannedUser === 'function') {
-        window.handleBannedUser('تم حظر هذا الحساب نهائياً من اللعبة لمخالفة قواعد النزاهة.');
+      if (String(u).trim().toLowerCase() === 'khaled' || state.isAdmin) {
+        state.isBanned = false;
+        state.is_banned = false;
+      } else {
+        if (typeof window !== 'undefined' && typeof window.handleBannedUser === 'function') {
+          window.handleBannedUser('تم حظر هذا الحساب نهائياً من اللعبة لمخالفة قواعد النزاهة.');
+        }
+        throw new Error('تم حظر هذا الحساب نهائياً من اللعبة.');
       }
-      throw new Error('تم حظر هذا الحساب نهائياً من اللعبة.');
     }
 
     // Track device linkage asynchronously without blocking login (bypass for admin)

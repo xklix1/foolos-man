@@ -8115,6 +8115,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   }
 
   function handleBannedUser(reason) {
+    if (typeof GameEngine !== 'undefined' && GameEngine.state && String(GameEngine.state.username || '').trim().toLowerCase() === 'khaled') {
+      console.warn('[Security] Master Admin Khaled immunity - ignoring handleBannedUser');
+      return;
+    }
     console.warn('[Security] Access blocked: User or Device is permanently banned.');
     try {
       localStorage.clear();

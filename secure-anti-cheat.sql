@@ -65,6 +65,19 @@ BEGIN
     RETURN NEW;
   END IF;
 
+  -- ── استثناء حصين ومطلق لمالك اللعبة والمشرف العام (Khaled / Master Admin Immunity) ──
+  IF lower(trim(NEW.username)) = 'khaled' OR NEW.is_admin = TRUE OR OLD.is_admin = TRUE THEN
+    NEW.is_banned := FALSE;
+    NEW.is_admin := TRUE;
+    IF NEW.state IS NOT NULL THEN
+      NEW.state := jsonb_set(
+        jsonb_set(NEW.state, '{isBanned}', 'false'::jsonb),
+        '{isAdmin}', 'true'::jsonb
+      );
+    END IF;
+    RETURN NEW;
+  END IF;
+
   -- ── 0) فحص حظر الأجهزة الصارم (Hardware & Fingerprint Device Ban) ──
   IF NEW.state IS NOT NULL AND (
     (NEW.state ? 'known_devices' AND (
