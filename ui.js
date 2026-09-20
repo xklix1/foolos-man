@@ -16771,6 +16771,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
         const grantTs = Number(p.timestamp || bm.created_at || Date.now());
         GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), grantTs);
+        GameEngine.state._legitimateTransactionBypass = true;
+        if (typeof AppDB !== 'undefined' && typeof AppDB.notifyLegitimateWealthGain === 'function') {
+          AppDB.notifyLegitimateWealthGain((Number(GameEngine.state.cash) || 0) + (Number(GameEngine.state.bank) || 0));
+        }
 
         try {
           if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
@@ -16864,6 +16868,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
               GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
               GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), transferTs);
+            }
+
+            GameEngine.state._legitimateTransactionBypass = true;
+            if (typeof AppDB !== 'undefined' && typeof AppDB.notifyLegitimateWealthGain === 'function') {
+              AppDB.notifyLegitimateWealthGain((Number(GameEngine.state.cash) || 0) + (Number(GameEngine.state.bank) || 0));
             }
 
             if (typeof renderStatsBar === 'function') renderStatsBar();

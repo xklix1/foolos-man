@@ -235,13 +235,19 @@ class SessionManager {
     const grossDelta = incomingGross - currentGross;
 
     // Anti-Tamper Velocity Shield: Detect impossible monetary leaps from console tampering
-    // Base 25M + 3.0x of current gross + 5M buffer (sufficient for multi-million trade shipment payouts)
-    const maxAllowableJump = Math.max(25000000, currentGross * 3.0) + 5000000;
+    // Base 35M + 3.0x of current gross + 5M buffer (for unflagged micro-increments; bypassed for legitimate transactions)
+    const maxAllowableJump = Math.max(35000000, currentGross * 3.0) + 5000000;
+    const isLegitBypass = Boolean(clientState._legitimateTransactionBypass || clientAdminTs > 0 || sessionAdminTs > 0);
 
-    if (grossDelta > maxAllowableJump && sessionAdminTs === 0 && !isClientStale) {
+    if (grossDelta > maxAllowableJump && !isLegitBypass && !isClientStale) {
       console.warn(`[AntiTamper] Flagged impossible wealth jump for "${username}": delta=${grossDelta.toLocaleString()}, maxAllowed=${maxAllowableJump.toLocaleString()}`);
       const excess = grossDelta - maxAllowableJump;
-      incomingCash = Math.max(0, incomingCash - excess);
+      if (incomingCash >= excess) {
+        incomingCash -= excess;
+      } else {
+        incomingBank = Math.max(0, incomingBank - (excess - incomingCash));
+        incomingCash = 0;
+      }
     }
 
     if (clientState.cash !== undefined) {

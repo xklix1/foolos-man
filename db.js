@@ -1948,12 +1948,13 @@ var AppDB = (() => {
     // 4. Wealth Velocity Limiter (Anti-F12 memory cash/bank injection)
     const currentLiquid = Math.max(0, Number(state.cash || 0)) + Math.max(0, Number(state.bank || 0));
     const now = Date.now();
-    if (_lastVerifiedCloudWealth !== null && !state._legitimateTransactionBypass) {
+    const isLegitBypass = Boolean(state._legitimateTransactionBypass || (state.adminModifiedTimestamp && state.adminModifiedTimestamp > 0));
+    if (_lastVerifiedCloudWealth !== null && !isLegitBypass) {
       const elapsedSec = Math.max(1, (now - _lastVerifiedCloudTime) / 1000);
-      // Max possible legitimate passive/active earnings; min baseline 2,500,000 to accommodate legitimate stock & export sales
-      const maxAllowedGain = Math.max(2500000, elapsedSec * 25000);
+      // High-capacity ceiling: 500M baseline to comfortably accommodate high-volume trade, auctions, investments, and luxury business revenue
+      const maxAllowedGain = Math.max(500000000, elapsedSec * 2000000);
       const gain = currentLiquid - _lastVerifiedCloudWealth;
-      if (gain > maxAllowedGain && !state.adminModifiedTimestamp) {
+      if (gain > maxAllowedGain) {
         console.warn(`[AntiCheat] Abnormal wealth velocity jump: +${gain.toLocaleString()} in ${elapsedSec.toFixed(0)}s. Clamping to legitimate ceiling.`);
         const excess = gain - maxAllowedGain;
         if (state.cash >= excess) {
@@ -1969,12 +1970,12 @@ var AppDB = (() => {
     _lastVerifiedCloudWealth = Math.max(0, Number(state.cash || 0)) + Math.max(0, Number(state.bank || 0));
 
     // 4.1 XP Velocity Guard (Anti-F12 memory XP injection / shift spam)
-    if (_lastVerifiedCloudXp !== null && !state._legitimateTransactionBypass) {
+    if (_lastVerifiedCloudXp !== null && !isLegitBypass) {
       const elapsedSec = Math.max(1, (now - _lastVerifiedCloudTime) / 1000);
       // Max possible XP gain is ~200 XP/s (overtime shift); min baseline 3,500 per 35s cycle
-      const maxAllowedXpGain = Math.max(3500, elapsedSec * 200);
+      const maxAllowedXpGain = Math.max(100000, elapsedSec * 2000);
       const xpGain = (Number(state.xp || 0)) - _lastVerifiedCloudXp;
-      if (xpGain > maxAllowedXpGain && !state.adminModifiedTimestamp) {
+      if (xpGain > maxAllowedXpGain) {
         console.warn(`[AntiCheat] Abnormal XP velocity jump: +${xpGain} in ${elapsedSec.toFixed(0)}s. Clamping to legitimate ceiling.`);
         state.xp = _lastVerifiedCloudXp + maxAllowedXpGain;
         payload.xp = state.xp;
@@ -2147,6 +2148,17 @@ var AppDB = (() => {
         _pushStateToCloud(u, state);
       }, remainingTime);
     }
+  }
+
+  function notifyLegitimateWealthGain(newLiquidWealth) {
+    if (typeof newLiquidWealth === 'number' && !isNaN(newLiquidWealth)) {
+      _lastVerifiedCloudWealth = Math.max(0, newLiquidWealth);
+      _lastVerifiedCloudTime = Date.now();
+    }
+  }
+
+  function setLastVerifiedWealth(val) {
+    notifyLegitimateWealthGain(val);
   }
 
   async function syncProgressToCloud(username, force = false) {
@@ -6208,6 +6220,8 @@ var AppDB = (() => {
     getPlayerData,
     setEncryptedLocalState,
     getDecryptedLocalState,
+    notifyLegitimateWealthGain,
+    setLastVerifiedWealth,
     // Expose runtime token accessor for inline scripts that load before db.js is fully parsed
     _getAnonKey: () => _getRuntimeToken(),
     // Internal guard used by game.js defineProperty to allow legitimate admin flag updates
