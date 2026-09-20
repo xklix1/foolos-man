@@ -19920,6 +19920,26 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       }
     }
 
+    // Daily Liquidation Cap indicator (5,000,000 EGP / day)
+    const liqInfo = (farmInfo.dailyLiquidation) || { totalLiquidated: 0, cap: 5000000, remaining: 5000000 };
+    const statLiq = document.getElementById('farm-stat-liquidation');
+    if (statLiq) {
+      statLiq.innerHTML = `<span dir="ltr" class="inline-block numbers-font font-bold">${(liqInfo.totalLiquidated || 0).toLocaleString()} / ${(liqInfo.cap || 5000000).toLocaleString()}</span> EGP`;
+    }
+    const statLiqBadge = document.getElementById('farm-stat-liquidation-badge');
+    if (statLiqBadge) {
+      if (liqInfo.remaining <= 0) {
+        statLiqBadge.textContent = 'مكتمل (0 EGP)';
+        statLiqBadge.className = 'text-[9px] font-black text-rose-400 animate-pulse';
+      } else if (liqInfo.totalLiquidated > 0) {
+        statLiqBadge.textContent = `متبقي ${(Math.round(liqInfo.remaining / 1000)).toLocaleString()}k`;
+        statLiqBadge.className = 'text-[9px] font-black text-amber-400';
+      } else {
+        statLiqBadge.textContent = 'متاح (5M)';
+        statLiqBadge.className = 'text-[9px] font-black text-emerald-400';
+      }
+    }
+
     // Calculate dynamic header badges (ready crops and stored crops value)
     const plots = farmInfo.plots || [];
     const crops = farmInfo.crops || {};
