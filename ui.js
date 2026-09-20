@@ -7604,9 +7604,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               return;
             }
 
-            // Process all external admin modifications instantly in real-time (NO RELOAD NEEDED)
-            if (data.adminModifiedTimestamp && data.adminModifiedTimestamp > lastAdminActionTimestamp) {
-              lastAdminActionTimestamp = data.adminModifiedTimestamp;
+            // Process all external admin modifications and incoming wire transfers instantly in real-time (NO RELOAD NEEDED)
+            const isTimestampNewer = Boolean(data.adminModifiedTimestamp && data.adminModifiedTimestamp > lastAdminActionTimestamp);
+            const isBankIncreased = Boolean(typeof data.bank === 'number' && data.bank > (Number(GameEngine.state.bank) || 0) + 10);
+            const isCashIncreased = Boolean(typeof data.cash === 'number' && data.cash > (Number(GameEngine.state.cash) || 0) + 10);
+
+            if (isTimestampNewer || isBankIncreased || isCashIncreased) {
+              const previousBank = Number(GameEngine.state.bank || 0);
+              lastAdminActionTimestamp = Math.max(Number(data.adminModifiedTimestamp || 0), Date.now());
 
               // Jail update
               if (typeof data.jailTimer === 'number' && data.jailTimer !== GameEngine.state.jailTimer) {
@@ -7616,14 +7621,21 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                 }
               }
 
-              if (typeof data.cash === 'number') GameEngine.state.cash = data.cash;
-              if (typeof data.bank === 'number') GameEngine.state.bank = data.bank;
+              if (typeof data.cash === 'number') GameEngine.state.cash = isCashIncreased ? Math.max(GameEngine.state.cash, data.cash) : data.cash;
+              if (typeof data.bank === 'number') GameEngine.state.bank = isBankIncreased ? Math.max(GameEngine.state.bank, data.bank) : data.bank;
               if (typeof data.dirtyCash === 'number') GameEngine.state.dirtyCash = data.dirtyCash;
-              if (typeof data.netWorth === 'number') GameEngine.state.netWorth = data.netWorth;
+              if (typeof data.netWorth === 'number') GameEngine.state.netWorth = Math.max(GameEngine.state.netWorth || 0, data.netWorth);
               if (typeof data.xp === 'number') GameEngine.state.xp = data.xp;
               if (data.jobId) GameEngine.state.jobId = data.jobId;
               if (data.title) GameEngine.state.title = data.title;
               if (data.isAdmin !== undefined) GameEngine.state.isAdmin = Boolean(data.isAdmin);
+
+              // If incoming bank transfer occurred
+              if (isBankIncreased && !isTimestampNewer) {
+                const diff = (Number(data.bank) || 0) - previousBank;
+                showToast('حوالة بنكية واردة 💸', `تم إيداع ${diff.toLocaleString()} EGP في حسابك البنكي فورياً!`, 'success');
+                if (typeof playMenuSound === 'function') playMenuSound('cash');
+              }
 
               // Deep merge all possessions, businesses, assets, cars, items and perks from state
               if (data.state && typeof data.state === 'object') {
