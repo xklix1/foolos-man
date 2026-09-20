@@ -1669,6 +1669,50 @@ var AppDB = (() => {
           }
         }
 
+        // 4.96 Industry Empire Guard: NEVER downgrade or lose industrial sector unlocks or factory stage upgrades
+        if (local && local.industry && typeof local.industry === 'object') {
+          if (!stateObj.industry || typeof stateObj.industry !== 'object') {
+            stateObj.industry = JSON.parse(JSON.stringify(local.industry));
+            shouldSyncCloud = true;
+          } else {
+            Object.keys(local.industry).forEach(secKey => {
+              const locSec = local.industry[secKey];
+              if (locSec && typeof locSec === 'object') {
+                if (!stateObj.industry[secKey]) {
+                  stateObj.industry[secKey] = JSON.parse(JSON.stringify(locSec));
+                  shouldSyncCloud = true;
+                } else {
+                  const srvSec = stateObj.industry[secKey];
+                  if (locSec.unlocked && !srvSec.unlocked) {
+                    console.log(`[Sync] Preserving unlocked industry sector [${secKey}] from local state safeguard for ${u}`);
+                    srvSec.unlocked = true;
+                    srvSec.stage1 = Math.max(Number(srvSec.stage1 || 0), Number(locSec.stage1 || 1));
+                    srvSec.stage2 = Math.max(Number(srvSec.stage2 || 0), Number(locSec.stage2 || 1));
+                    srvSec.stage3 = Math.max(Number(srvSec.stage3 || 0), Number(locSec.stage3 || 1));
+                    srvSec.logistics = Math.max(Number(srvSec.logistics || 0), Number(locSec.logistics || 1));
+                    shouldSyncCloud = true;
+                  } else if (locSec.unlocked && srvSec.unlocked) {
+                    const locMax = Math.max(Number(locSec.stage1 || 0), Number(locSec.stage2 || 0), Number(locSec.stage3 || 0));
+                    const srvMax = Math.max(Number(srvSec.stage1 || 0), Number(srvSec.stage2 || 0), Number(srvSec.stage3 || 0));
+                    if (locMax > srvMax || isLocalRecentOrNewer) {
+                      srvSec.stage1 = Math.max(Number(srvSec.stage1 || 0), Number(locSec.stage1 || 0));
+                      srvSec.stage2 = Math.max(Number(srvSec.stage2 || 0), Number(locSec.stage2 || 0));
+                      srvSec.stage3 = Math.max(Number(srvSec.stage3 || 0), Number(locSec.stage3 || 0));
+                      srvSec.logistics = Math.max(Number(srvSec.logistics || 0), Number(locSec.logistics || 0));
+                      if (isLocalRecentOrNewer) {
+                        srvSec.readyStock = Number(locSec.readyStock || 0);
+                        srvSec.totalEarned = Math.max(Number(srvSec.totalEarned || 0), Number(locSec.totalEarned || 0));
+                        srvSec.totalExported = Math.max(Number(srvSec.totalExported || 0), Number(locSec.totalExported || 0));
+                      }
+                      shouldSyncCloud = true;
+                    }
+                  }
+                }
+              }
+            });
+          }
+        }
+
         // 5. Late-save recovery:
         // If local device was active recently (isLocalRecentOrNewer) and not reset or overridden by admin,
         // reconcile wealth atomically from local state to ensure liquidations/sales and debounced saves are 100% persistent.

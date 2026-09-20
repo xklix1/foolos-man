@@ -3233,14 +3233,42 @@ const GameEngine = (() => {
       delete state.resetTimestamp;
       if (state.state && state.state.resetTimestamp) delete state.state.resetTimestamp;
 
-      // Safeguard: Recover industry progress from local storage if cloud snapshot was missing it
-      if (!isAccountReset && (!state.industry || Object.keys(state.industry).length === 0)) {
+      // Safeguard: Recover industry progress from local storage if cloud snapshot was missing it or locked
+      if (!isAccountReset) {
         try {
           const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
             ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
             : null;
-          if (localS && localS.industry && Object.keys(localS.industry).length > 0) {
-            state.industry = localS.industry;
+          if (localS && localS.industry && typeof localS.industry === 'object') {
+            if (!state.industry || typeof state.industry !== 'object') state.industry = {};
+            const locTs = Number(localS.lastActiveTimestamp || localS.lastSeen || 0);
+            const srvTs = Number(dbState.lastActiveTimestamp || dbState.lastSeen || 0);
+            const isLocalRecent = (locTs >= srvTs - 60000);
+
+            Object.keys(localS.industry).forEach(secKey => {
+              const locSec = localS.industry[secKey];
+              if (locSec && typeof locSec === 'object' && locSec.unlocked) {
+                if (!state.industry[secKey]) {
+                  state.industry[secKey] = JSON.parse(JSON.stringify(locSec));
+                  console.log(`[GameEngine] Recovered industry sector [${secKey}] from local storage safeguard`);
+                } else {
+                  const sSec = state.industry[secKey];
+                  if (!sSec.unlocked || isLocalRecent) {
+                    sSec.unlocked = true;
+                    sSec.stage1 = Math.max(Number(sSec.stage1 || 0), Number(locSec.stage1 || 0));
+                    sSec.stage2 = Math.max(Number(sSec.stage2 || 0), Number(locSec.stage2 || 0));
+                    sSec.stage3 = Math.max(Number(sSec.stage3 || 0), Number(locSec.stage3 || 0));
+                    sSec.logistics = Math.max(Number(sSec.logistics || 0), Number(locSec.logistics || 0));
+                    if (isLocalRecent) {
+                      sSec.readyStock = Number(locSec.readyStock || 0);
+                      sSec.totalEarned = Math.max(Number(sSec.totalEarned || 0), Number(locSec.totalEarned || 0));
+                      sSec.totalExported = Math.max(Number(sSec.totalExported || 0), Number(locSec.totalExported || 0));
+                    }
+                    console.log(`[GameEngine] Reconciled industry sector [${secKey}] unlocks/upgrades from local storage safeguard`);
+                  }
+                }
+              }
+            });
           }
         } catch (e) {}
       }
@@ -6045,7 +6073,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('ترخيص قطاع صناعي',`الحصول على رخصة وتأسيس"${info.definition.name}" بتكلفة ${cost.toLocaleString()} EGP`,'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
 
     return {
       sectorId,
@@ -6136,7 +6164,7 @@ const GameEngine = (() => {
     info.state[stageKey] = curLvl + multi.count;
     recordPlayerActivity('تطوير خط إنتاج صناعي ️',`ترقية"${stDef.name}" في ${info.definition.name} بمقدار +${multi.count} (إلى المستوى ${info.state[stageKey]}) بتكلفة ${cost.toLocaleString()} EGP`,'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
 
     return {
       sectorId,
@@ -6166,7 +6194,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('بيع إنتاج صناعي',`بيع ${units.toLocaleString()} وحدة من"${info.definition.product.name}" بإجمالي ${grossPayout.toLocaleString()} EGP (مصاريف تشغيل 15%: -${overheadCost.toLocaleString()} EGP | صافي مودع: +${netPayout.toLocaleString()} EGP)`,'business');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
 
     return {
       units,
@@ -6222,7 +6250,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('شحن لمستودع التصدير',`تعبئة وشحن ${containersToTransfer} حاوية من"${info.definition.product.name}" (${unitsDeducted} وحدة منتجة) إلى مستودع التصدير كبضاعة"${commName}"!`,'trade');
     state.netWorth = calculateNetWorth();
-    forceSaveState(false);
+    forceSaveState(true);
 
     return {
       transferred: containersToTransfer,

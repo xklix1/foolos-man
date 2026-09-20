@@ -286,8 +286,27 @@ class SessionManager {
         s.businesses = clientState.businesses;
       }
     }
-    if (clientState.industry && typeof clientState.industry === 'object' && !isClientStale) {
-      s.industry = clientState.industry;
+    if (clientState.industry && typeof clientState.industry === 'object') {
+      if (!s.industry || typeof s.industry !== 'object') s.industry = {};
+      if (!isClientStale) {
+        s.industry = clientState.industry;
+      } else {
+        // Anti-rollback: preserve client unlocks and higher levels even if client timestamp is slightly older
+        Object.keys(clientState.industry).forEach(secKey => {
+          const cSec = clientState.industry[secKey];
+          if (cSec && typeof cSec === 'object' && cSec.unlocked) {
+            if (!s.industry[secKey]) {
+              s.industry[secKey] = cSec;
+            } else {
+              s.industry[secKey].unlocked = true;
+              s.industry[secKey].stage1 = Math.max(Number(s.industry[secKey].stage1 || 0), Number(cSec.stage1 || 0));
+              s.industry[secKey].stage2 = Math.max(Number(s.industry[secKey].stage2 || 0), Number(cSec.stage2 || 0));
+              s.industry[secKey].stage3 = Math.max(Number(s.industry[secKey].stage3 || 0), Number(cSec.stage3 || 0));
+              s.industry[secKey].logistics = Math.max(Number(s.industry[secKey].logistics || 0), Number(cSec.logistics || 0));
+            }
+          }
+        });
+      }
     }
     if (clientState.ownedCars && typeof clientState.ownedCars === 'object' && !isClientStale) {
       s.ownedCars = clientState.ownedCars;
