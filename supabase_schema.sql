@@ -330,7 +330,13 @@ BEGIN
             ),
             '{netWorth}', to_jsonb(recipient_net_worth + v_net_transfer_amount)
           )
-        ELSE state 
+        ELSE
+          -- Initialize minimal state JSONB so adminModifiedTimestamp is always written
+          jsonb_build_object(
+            'bank', new_recipient_bank,
+            'netWorth', recipient_net_worth + v_net_transfer_amount,
+            'adminModifiedTimestamp', v_recip_lock_ts
+          )
       END
   WHERE username = v_recipient_user;
 

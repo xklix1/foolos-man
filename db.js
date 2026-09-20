@@ -2598,6 +2598,33 @@ var AppDB = (() => {
                     'cash'
                   );
 
+                  // CRITICAL FIX: Immediately apply fresh DB balance to recipient's in-memory state.
+                  // Do NOT rely solely on onSnapshot (which requires adminModifiedTimestamp > lastKnown).
+                  // If recipient's state JSONB is null the SQL won't update adminModifiedTimestamp in
+                  // the nested state blob, causing the onSnapshot guard to silently skip the update.
+                  try {
+                    if (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) {
+                      getPlayerState(window.GameEngine.activeUsername).then(freshState => {
+                        if (!freshState) return;
+                        if (window.GameEngine && window.GameEngine.state) {
+                          const prev = Number(window.GameEngine.state.bank || 0);
+                          window.GameEngine.state.bank = Number(freshState.bank || 0);
+                          window.GameEngine.state.cash = Number(freshState.cash || 0);
+                          window.GameEngine.state.netWorth = Number(freshState.netWorth || 0);
+                          window.GameEngine.state.adminModifiedTimestamp = Number(freshState.adminModifiedTimestamp || 0);
+                          if (typeof setEncryptedLocalState === 'function') {
+                            setEncryptedLocalState(`rasalmal_state_${window.GameEngine.activeUsername}`, window.GameEngine.state);
+                          }
+                          // Re-render UI if bank balance actually changed
+                          if (Number(freshState.bank || 0) !== prev) {
+                            if (typeof window.renderAll === 'function') window.renderAll();
+                            if (typeof window.renderHeader === 'function') window.renderHeader();
+                          }
+                        }
+                      }).catch(() => {});
+                    }
+                  } catch (_) {}
+
                   // Native OS / Browser Push Notification
                   if (typeof window !== 'undefined' && window.PWAManager && typeof window.PWAManager.sendNotification === 'function') {
                     window.PWAManager.sendNotification(`💸 استلام حوالة بنكية (${amtStr})`, {
