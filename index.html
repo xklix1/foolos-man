@@ -2564,9 +2564,9 @@
                 </div>
                 <div>
                   <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">مبلغ التحويل (يودع في الحساب البنكي)</label>
-                  <input type="number" id="wire-amount-input" min="1" max="5000000"
+                  <input type="number" id="wire-amount-input" min="1"
                     class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold"
-                    placeholder="أدخل مبلغ الحوالة (بحد أقصى 5,000,000)">
+                    placeholder="أدخل مبلغ الحوالة (الحد الأقصى للاعبين 5,000,000)">
                   <!-- Live Tax & Net Calculation Preview Box -->
                   <div id="wire-tax-breakdown-box" class="hidden mt-2 p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] space-y-1">
                     <div class="flex justify-between text-slate-400">
@@ -5763,7 +5763,7 @@
         <div class="space-y-1.5">
           <label class="block text-xs font-bold text-slate-300">مبلغ التحويل (EGP):</label>
           <div class="relative">
-            <input type="number" id="direct-wire-amount-input" min="1" max="5000000" step="1000"
+            <input type="number" id="direct-wire-amount-input" min="1" step="1000"
               class="w-full p-3 pl-12 bg-slate-900/90 border border-slate-700/80 rounded-xl text-center text-base font-black text-white focus:outline-none focus:border-amber-500/70 numbers-font"
               placeholder="0 (الحد الأقصى 5,000,000)">
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 font-bold">EGP</span>

@@ -4551,7 +4551,8 @@ const UIController = (() => {
           throw new Error("يرجى تعبئة حقل المستلم ومبلغ التحويل بشكل صحيح.");
         }
 
-        if (amount > 5000000) {
+        const isOwnerKhaled = (GameEngine.activeUsername || '').trim().toLowerCase() === 'khaled';
+        if (!isOwnerKhaled && amount > 5000000) {
           throw new Error("🚫 الحد الأقصى للتحويل البنكي الواحد هو 5,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.");
         }
 
@@ -12503,13 +12504,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const amtType = chip.dataset.amount;
         const inputEl = document.getElementById('direct-wire-amount-input');
         if (!inputEl) return;
+        const isOwnerKhaled = (GameEngine.activeUsername || '').trim().toLowerCase() === 'khaled';
         if (amtType === 'max') {
           const curCash = Number(GameEngine.state.cash) || 0;
           const curBank = Number(GameEngine.state.bank) || 0;
           const totalAvail = curCash + curBank;
-          inputEl.value = Math.min(5000000, Math.max(0, Math.floor(totalAvail)));
+          inputEl.value = isOwnerKhaled ? Math.max(0, Math.floor(totalAvail)) : Math.min(5000000, Math.max(0, Math.floor(totalAvail)));
         } else {
-          inputEl.value = Math.min(5000000, parseInt(amtType, 10));
+          inputEl.value = parseInt(amtType, 10);
         }
         inputEl.dispatchEvent(new Event('input'));
         if (typeof playMenuSound === 'function') playMenuSound('click');
@@ -14661,7 +14663,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       return;
     }
 
-    if (amt > 5000000) {
+    const isOwnerKhaled = (GameEngine.activeUsername || '').trim().toLowerCase() === 'khaled';
+    if (!isOwnerKhaled && amt > 5000000) {
       showToast('سقف التحويل اليومي', '🚫 الحد الأقصى للتحويل البنكي الواحد هو 5,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.', 'warning');
       return;
     }

