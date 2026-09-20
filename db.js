@@ -3394,7 +3394,7 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   async function getSystemStats() {
     try {
-      const rows = await _api('players?select=username,cash,bank,dirty_cash,net_worth,xp,is_banned,jail_timer,title,last_seen');
+      const rows = await _api('players?select=username,cash,bank,dirty_cash,net_worth,xp,is_banned,jail_timer,title,last_seen&limit=10000');
       let totalCash = 0, totalBank = 0, totalNetWorth = 0;
       let jailedCount = 0, bannedCount = 0;
       let billionaires = 0, millionaires = 0, middleClass = 0, workingClass = 0;
@@ -3456,18 +3456,24 @@ var AppDB = (() => {
         millionaires,
         middleClass,
         workingClass,
+        wealthBrackets: {
+          billionaires,
+          millionaires,
+          middleClass,
+          workingClass
+        },
         topRichest: allPlayersList.slice(0, 5),
         allPlayers: allPlayersList,
         suspiciousPlayers: []
       };
     } catch (err) {
       console.warn('[DB] getSystemStats error:', err.message);
-      return { totalPlayers: 0, onlineCount: 0, totalCash: 0, totalBank: 0, totalNetWorth: 0, jailedCount: 0, bannedCount: 0 };
+      return { totalPlayers: 0, onlineCount: 0, totalCash: 0, totalBank: 0, totalNetWorth: 0, jailedCount: 0, bannedCount: 0, wealthBrackets: { billionaires: 0, millionaires: 0, middleClass: 0, workingClass: 0 } };
     }
   }
 
   async function adminGetAllPlayers() {
-    const rows = await _api('players?select=username,pin,cash,bank,dirty_cash,net_worth,xp,title,job_id,is_admin,is_banned,jail_timer,total_taxes_paid,afk_manager_expires_at,last_seen,created_at,state&order=net_worth.desc');
+    const rows = await _api('players?select=username,pin,cash,bank,dirty_cash,net_worth,xp,title,job_id,is_admin,is_banned,jail_timer,total_taxes_paid,afk_manager_expires_at,last_seen,created_at,state&order=net_worth.desc&limit=10000');
     return (rows || []).map(r => {
       let stateObj = {};
       if (r.state) {

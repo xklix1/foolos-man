@@ -2,6 +2,7 @@
   let adminCorpsUnsubscribe = null;
   let adminLiveAuctionsUnsubscribe = null;
   var _currentTopupPackagesCache = [];
+  var cachedPlayers = [];
 
   // Safe in-game renderAll fallback for admin panel terminal
   function renderAll() {
@@ -139,7 +140,7 @@
     // ─────────────────────────────────────────────
     //  MODULE: PLAYERS DIRECTORY & MANAGEMENT
     // ─────────────────────────────────────────────
-    let cachedPlayers = [];
+    cachedPlayers = [];
     let selectedPlayer = null;
     let selectedPlayerState = null;
     let activeFilter ='all';
@@ -1207,28 +1208,10 @@
           selectedPlayerState.bank = newBank;
           selectedPlayerState.xp = newXp;
 
-          // Accurate NetWorth calculation
-          let worth = newCash + newBank;
-          if (selectedPlayerState.assets) {
-            Object.keys(selectedPlayerState.assets).forEach(k => {
-              if (GameEngine.ASSETS && GameEngine.ASSETS[k]) worth += (selectedPlayerState.assets[k] || 0) * GameEngine.ASSETS[k].cost;
-            });
-          }
-          if (selectedPlayerState.stocks) {
-            Object.keys(selectedPlayerState.stocks).forEach(sym => {
-              const shares = (selectedPlayerState.stocks[sym] && selectedPlayerState.stocks[sym].shares) || 0;
-              const history = GameEngine.stockPrices[sym] || [GameEngine.STOCKS[sym]?.basePrice || 10];
-              const currentPrice = history[history.length - 1];
-              worth += shares * currentPrice;
-            });
-          }
-          if (selectedPlayerState.investments && Array.isArray(selectedPlayerState.investments)) {
-            selectedPlayerState.investments.forEach(inv => worth += (inv.investedAmount || 0));
-          }
-          if (selectedPlayerState.activeLoan) {
-            const loanDebt = Number(selectedPlayerState.activeLoan.totalDue || selectedPlayerState.activeLoan.amount || 0);
-            if (loanDebt > 0) worth -= loanDebt;
-          }
+          // Accurate NetWorth calculation (Comprehensive including businesses, farm, industry, trade)
+          let worth = (typeof GameEngine !== 'undefined' && typeof GameEngine.calculateNetWorth === 'function')
+            ? GameEngine.calculateNetWorth(selectedPlayerState)
+            : (newCash + newBank);
           selectedPlayerState.netWorth = Math.max(0, Math.floor(worth));
 
           // Recalculate title if GameEngine has getAppropriateTitle
@@ -7418,7 +7401,7 @@
     });
   }
 
-  function renderOnlineGiftPanel() {
+  async function renderOnlineGiftPanel() {
     const tbody = document.getElementById('admin-online-gift-players-list');
     const previewCount = document.getElementById('admin-online-gift-preview-count');
     const previewTotal = document.getElementById('admin-online-gift-preview-total');
@@ -7428,7 +7411,15 @@
     const amountLabel = document.getElementById('admin-online-gift-amount-label');
     const typeLabels = { cash: 'نقود يد', bank: 'إيداع بنكي', xp: 'نقاط خبرة', supplies: 'ساعات إمداد' };
 
-    function refreshList() {
+    async function refreshList() {
+      if (!Array.isArray(cachedPlayers) || cachedPlayers.length === 0) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-400 text-xs"><i class="fa-solid fa-spinner fa-spin mr-2"></i>جاري فحص اللاعبين المتصلين...</td></tr>';
+        try {
+          if (typeof AppDB !== 'undefined' && typeof AppDB.adminGetAllPlayers === 'function') {
+            cachedPlayers = await AppDB.adminGetAllPlayers();
+          }
+        } catch (e) {}
+      }
       const online = getOnlinePlayers();
       const count = online.length;
       const amount = Number(amountInput ? amountInput.value : 0) || 0;
