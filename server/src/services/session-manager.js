@@ -568,6 +568,39 @@ class SessionManager {
     }
     return false;
   }
+
+  /**
+   * Authoritatively updates sender in-memory session when a wire transfer completes
+   */
+  deductSenderWireTransfer(senderUsername, amount, transferTs = Date.now()) {
+    if (!senderUsername || !amount) return false;
+    const uKey = senderUsername.trim().toLowerCase();
+    const session = this.sessions.get(uKey);
+    if (session && session.state) {
+      const amt = Number(amount);
+      const sCash = Math.max(0, Number(session.state.cash) || 0);
+      const sBank = Math.max(0, Number(session.state.bank) || 0);
+
+      let deductCash = 0;
+      let deductBank = 0;
+      if (sCash >= amt) {
+        deductCash = amt;
+        deductBank = 0;
+      } else {
+        deductCash = sCash;
+        deductBank = amt - sCash;
+      }
+
+      session.state.cash = Math.max(0, sCash - deductCash);
+      session.state.bank = Math.max(0, sBank - deductBank);
+      session.state.netWorth = Math.max(0, (Number(session.state.netWorth) || 0) - amt);
+      session.state.adminModifiedTimestamp = Math.max(Number(session.state.adminModifiedTimestamp || 0), transferTs);
+      session.dirty = true;
+      console.log(`[SessionManager] Deducted outgoing wire transfer for active session "${senderUsername}": -${amt.toLocaleString()} EGP (New Cash: ${session.state.cash.toLocaleString()}, New Bank: ${session.state.bank.toLocaleString()})`);
+      return true;
+    }
+    return false;
+  }
 }
 
 module.exports = new SessionManager();

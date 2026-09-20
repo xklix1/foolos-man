@@ -1433,7 +1433,7 @@ var AppDB = (() => {
       const adminTs = Number(row.admin_modified_timestamp || (row.state && row.state.adminModifiedTimestamp) || 0);
       const isAccountReset = isAccountResetRow;
       const localTs = local ? Number(local.lastSeen || local.lastActiveTimestamp || 0) : 0;
-      const isStaleLocalDueToAdmin = (adminTs > 0 && adminTs > localTs && adminTs <= Date.now() + 60000) || isAccountReset;
+      const isStaleLocalDueToAdmin = (adminTs > 0 && adminTs > localTs && adminTs <= Date.now() + 300000) || isAccountReset;
 
       if (isStaleLocalDueToAdmin && isCurrentPlayer) {
         try { localStorage.removeItem(`rasalmal_state_${u}`); } catch (e) {}
@@ -2050,34 +2050,63 @@ var AppDB = (() => {
     // Security & Anti-Feeder / Multi-Account Gatekeeper
     await checkWireTransferFraud(senderUsername, recipientUsername, amt);
 
+    const cleanSender = senderUsername.trim();
+    const cleanRecipient = recipientUsername.trim();
+
     // Execute the atomic SQL Stored Procedure (handles row locking, pin verification, balance deduction & bank deposit atomically)
     await _api('rpc/execute_wire_transfer', {
       method:'POST',
       body: JSON.stringify({
-        sender_username: senderUsername.trim(),
+        sender_username: cleanSender,
         sender_pin: pin,
-        recipient_username: recipientUsername.trim(),
+        recipient_username: cleanRecipient,
         transfer_amount: amt
       })
     });
 
-    // Authoritative Immediate Sync: fetch authoritative fresh balance from DB
-    if (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.activeUsername === senderUsername) {
-      try {
-        const fresh = await getPlayerState(senderUsername);
-        if (fresh) {
-          GameEngine.state.cash = Number(fresh.cash || 0);
-          GameEngine.state.bank = Number(fresh.bank || 0);
-          GameEngine.state.netWorth = Number(fresh.netWorth || 0);
-          GameEngine.state.adminModifiedTimestamp = Number(fresh.adminModifiedTimestamp || 0);
+    const lockTs = Date.now() + 120000;
+
+    // Immediately deduct sender in GameEngine.state and localStorage to match SQL execution
+    if (typeof GameEngine !== 'undefined' && GameEngine.state) {
+      const curUser = (GameEngine.activeUsername || GameEngine.state.username || '').trim();
+      if (curUser.toLowerCase() === cleanSender.toLowerCase()) {
+        let sCash = Math.max(0, Number(GameEngine.state.cash) || 0);
+        let sBank = Math.max(0, Number(GameEngine.state.bank) || 0);
+        let deductCash = 0;
+        let deductBank = 0;
+        if (sCash >= amt) {
+          deductCash = amt;
+          deductBank = 0;
+        } else {
+          deductCash = sCash;
+          deductBank = amt - sCash;
         }
+        GameEngine.state.cash = Math.max(0, sCash - deductCash);
+        GameEngine.state.bank = Math.max(0, sBank - deductBank);
+        GameEngine.state.netWorth = Math.max(0, (Number(GameEngine.state.netWorth) || 0) - amt);
+        GameEngine.state.adminModifiedTimestamp = lockTs;
+        setEncryptedLocalState(`rasalmal_state_${cleanSender}`, GameEngine.state);
+      }
+    }
+
+    // Immediately notify authoritative server so BOTH sender and recipient sessions in RAM are updated
+    if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.notifyWireTransfer === 'function') {
+      try {
+        await window.ServerBridge.notifyWireTransfer(cleanSender, cleanRecipient, amt);
       } catch (_) {}
     }
 
-    // Immediately notify authoritative server so recipient session in RAM is updated if active
-    if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.notifyWireTransfer === 'function') {
-      window.ServerBridge.notifyWireTransfer(senderUsername.trim(), recipientUsername.trim(), amt).catch(() => {});
-    }
+    // Authoritative Immediate Sync: fetch authoritative fresh balance from DB
+    try {
+      const fresh = await getPlayerState(cleanSender);
+      if (fresh && typeof GameEngine !== 'undefined' && GameEngine.state) {
+        GameEngine.state.cash = Number(fresh.cash !== undefined ? fresh.cash : GameEngine.state.cash);
+        GameEngine.state.bank = Number(fresh.bank !== undefined ? fresh.bank : GameEngine.state.bank);
+        GameEngine.state.netWorth = Number(fresh.netWorth !== undefined ? fresh.netWorth : GameEngine.state.netWorth);
+        GameEngine.state.adminModifiedTimestamp = Number(fresh.adminModifiedTimestamp || lockTs);
+        setEncryptedLocalState(`rasalmal_state_${cleanSender}`, GameEngine.state);
+      }
+    } catch (_) {}
 
     return true;
   }

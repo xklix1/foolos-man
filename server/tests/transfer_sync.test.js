@@ -57,3 +57,45 @@ test('Wire Transfer In-Memory Credit & Anti-Overwrite Protection', async (t) => 
   // Clean up
   sessionManager.sessions.delete(uKey);
 });
+
+test('Wire Transfer In-Memory Sender Deduction & Anti-Restoration Protection', async (t) => {
+  const senderUser = 'test_wire_sender_' + Date.now();
+  const sKey = senderUser.toLowerCase();
+
+  const initialBank = 6000000;
+  const initialCash = 500000;
+  const initialNetWorth = 6500000;
+
+  sessionManager.sessions.set(sKey, {
+    username: senderUser,
+    pin: '1234',
+    sessionId: 'sess_test_sender_1',
+    sessionToken: 'tok_test_sender_1',
+    state: {
+      username: senderUser,
+      cash: initialCash,
+      bank: initialBank,
+      netWorth: initialNetWorth,
+      adminModifiedTimestamp: 1000
+    },
+    dirty: false,
+    lastActivity: Date.now()
+  });
+
+  // 1. Deduct sender 5,000,000 EGP
+  const transferAmount = 5000000;
+  const transferTs = 3000;
+  const deducted = sessionManager.deductSenderWireTransfer(senderUser, transferAmount, transferTs);
+
+  assert.equal(deducted, true, 'Sender active session should be deducted');
+  const session = sessionManager.sessions.get(sKey);
+  // Cash was 500k, so 500k deducted from cash (cash -> 0), remaining 4.5M deducted from bank (bank -> 1.5M)
+  assert.equal(session.state.cash, 0, 'Sender cash should be 0');
+  assert.equal(session.state.bank, 1500000, 'Sender bank should be 1,500,000');
+  assert.equal(session.state.netWorth, initialNetWorth - transferAmount, 'Net worth should decrease by transfer amount');
+  assert.equal(session.state.adminModifiedTimestamp, transferTs, 'adminModifiedTimestamp should advance');
+  assert.equal(session.dirty, true, 'Session should be marked dirty for write-behind');
+
+  // Clean up
+  sessionManager.sessions.delete(sKey);
+});

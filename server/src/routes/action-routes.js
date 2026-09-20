@@ -591,13 +591,20 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       return reply.code(400).send({ error: 'amount must be positive' });
     }
 
-    // Apply 5% Central Bank Wire Tax: recipient in-memory session receives net amount (95%)
     const taxAmt = Math.floor(amt * 0.05);
     const finalNet = (netAmount !== undefined && !isNaN(Number(netAmount))) ? Number(netAmount) : (amt - taxAmt);
+    const now = Date.now();
 
-    const credited = sessionManager.creditRecipientWireTransfer(recipient, finalNet, Date.now());
+    let senderDeducted = false;
+    if (sender) {
+      senderDeducted = sessionManager.deductSenderWireTransfer(sender, amt, now);
+    }
+
+    const credited = sessionManager.creditRecipientWireTransfer(recipient, finalNet, now);
     return {
       success: true,
+      sender: sender || null,
+      senderDeducted,
       recipient,
       grossAmount: amt,
       taxAmount: taxAmt,
