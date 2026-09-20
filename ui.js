@@ -21026,22 +21026,42 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
       let cHtml = '';
       filtered.forEach((c, idx) => {
-        let available = 0;
-        if (c.itemType === 'crop') {
-          available = Number((farm.inventory && farm.inventory[c.itemId]) || 0);
-        } else if (c.itemType === 'processed') {
-          available = Number((farm.processing && farm.processing.storage && farm.processing.storage[c.itemId]) || 0);
-        } else if (c.itemType === 'livestock') {
-          available = Number((farm.livestock && farm.livestock[c.itemId]) || 0);
-        }
+        const reqs = (Array.isArray(c.requirements) && c.requirements.length > 0)
+          ? c.requirements
+          : [{
+              itemType: c.itemType,
+              itemId: c.itemId,
+              itemName: c.itemName,
+              itemIcon: c.itemIcon,
+              quantityNeeded: c.quantityNeeded
+            }];
 
-        const canFulfill = available >= c.quantityNeeded;
-        const progressPct = Math.min(100, Math.round((available / c.quantityNeeded) * 100));
+        const reqStatusList = reqs.map(r => {
+          let avail = 0;
+          if (r.itemType === 'crop') {
+            avail = Number((farm.inventory && farm.inventory[r.itemId]) || 0);
+          } else if (r.itemType === 'processed') {
+            avail = Number((farm.processing && farm.processing.storage && farm.processing.storage[r.itemId]) || 0);
+          } else if (r.itemType === 'livestock') {
+            avail = Number((farm.livestock && farm.livestock[r.itemId]) || 0);
+          }
+          const isReady = avail >= r.quantityNeeded;
+          const pct = Math.min(100, Math.round((avail / r.quantityNeeded) * 100));
+          return {
+            ...r,
+            available: avail,
+            isReady,
+            pct
+          };
+        });
+
+        const canFulfillAll = reqStatusList.every(r => r.isReady);
+        const missingCount = reqStatusList.filter(r => !r.isReady).length;
 
         cHtml += `
-          <div class="p-5 rounded-2xl ${c.fulfilled ? 'bg-slate-950/60 border border-emerald-500/30 opacity-80' : (canFulfill ? 'bg-slate-900/90 border border-emerald-500/50 shadow-lg shadow-emerald-500/10' : 'bg-slate-900/80 border border-slate-800')} transition flex flex-col justify-between gap-4 relative overflow-hidden">
+          <div class="p-5 rounded-2xl ${c.fulfilled ? 'bg-slate-950/60 border border-emerald-500/30 opacity-80' : (canFulfillAll ? 'bg-slate-900/90 border border-emerald-500/50 shadow-lg shadow-emerald-500/10' : 'bg-slate-900/80 border border-slate-800')} transition flex flex-col justify-between gap-4 relative overflow-hidden">
             
-            ${canFulfill && !c.fulfilled ? '<div class="absolute -top-12 -right-12 w-28 h-28 bg-emerald-500/10 rounded-full blur-xl pointer-events-none"></div>' : ''}
+            ${canFulfillAll && !c.fulfilled ? '<div class="absolute -top-12 -right-12 w-28 h-28 bg-emerald-500/10 rounded-full blur-xl pointer-events-none"></div>' : ''}
 
             <div class="flex items-start justify-between gap-2 relative z-10">
               <div class="flex items-center gap-2.5">
@@ -21053,9 +21073,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                     <h4 class="font-black text-white text-xs">${c.clientName}</h4>
                     <span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono">#${c.contractNumber || (idx + 1)}</span>
                   </div>
-                  <span class="text-[9px] px-2 py-0.5 rounded-full ${c.fulfilled ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'} font-bold inline-block mt-0.5">
-                    ${c.fulfilled ? 'تم التوريد بنجاح ✅' : 'عقد توريد معتمد'}
-                  </span>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="text-[9px] px-2 py-0.5 rounded-full ${c.fulfilled ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'} font-bold inline-block">
+                      ${c.fulfilled ? 'تم التوريد بنجاح ✅' : (reqStatusList.length > 1 ? `طلبية مجمعة (${reqStatusList.length} أصناف)` : 'عقد توريد معتمد')}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -21071,30 +21093,38 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               `}
             </div>
 
-            <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800 space-y-2 relative z-10">
-              <div class="flex justify-between items-center text-xs">
-                <span class="text-slate-400">المطلوب توريده:</span>
-                <span class="font-bold text-white flex items-center gap-1.5">
-                  <i class="${c.itemIcon} text-amber-400 text-xs"></i>
-                  <span>${c.quantityNeeded.toLocaleString()} وحدة ${c.itemName}</span>
-                </span>
+            <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800 space-y-2.5 relative z-10">
+              <div class="text-[11px] font-bold text-slate-400 flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                <span>المطلوب توريده:</span>
+                <span class="text-[10px] text-purple-300">${reqStatusList.length > 1 ? `${reqStatusList.length} متطلبات` : 'صنف واحد'}</span>
               </div>
               
-              ${!c.fulfilled ? `
-                <div class="space-y-1">
-                  <div class="flex justify-between text-[10px] font-bold">
-                    <span class="text-slate-400">المتوفر لديك:</span>
-                    <span class="numbers-font ${canFulfill ? 'text-emerald-400' : 'text-rose-400'}">${available.toLocaleString()} / ${c.quantityNeeded.toLocaleString()}</span>
+              <div class="space-y-2">
+                ${reqStatusList.map(r => `
+                  <div class="space-y-1">
+                    <div class="flex justify-between items-center text-xs">
+                      <span class="font-bold text-white flex items-center gap-1.5 text-[11px]">
+                        <i class="${r.itemIcon} text-amber-400 text-xs"></i>
+                        <span>${r.itemName}</span>
+                      </span>
+                      <span class="numbers-font text-[10px] font-bold ${r.isReady ? 'text-emerald-400' : 'text-slate-400'}">
+                        ${r.available.toLocaleString()} / ${r.quantityNeeded.toLocaleString()} ${r.isReady ? '✅' : ''}
+                      </span>
+                    </div>
+                    ${!c.fulfilled ? `
+                      <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                        <div class="h-full rounded-full transition-all duration-300 ${r.isReady ? 'bg-emerald-500' : 'bg-purple-500'}" style="width: ${r.pct}%"></div>
+                      </div>
+                    ` : ''}
                   </div>
-                  <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
-                    <div class="h-full rounded-full transition-all duration-300 ${canFulfill ? 'bg-emerald-500' : 'bg-purple-500'}" style="width: ${progressPct}%"></div>
-                  </div>
-                </div>
-              ` : `
-                <div class="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                `).join('')}
+              </div>
+
+              ${c.fulfilled ? `
+                <div class="text-[10px] text-emerald-400 font-bold flex items-center gap-1 pt-1 border-t border-slate-800/80">
                   <i class="fa-solid fa-circle-check"></i> تم تسليم كامل الشحنة المطلوبة للمستودعات.
                 </div>
-              `}
+              ` : ''}
             </div>
 
             <div class="flex items-center justify-between p-2.5 bg-purple-950/30 rounded-xl border border-purple-500/20 text-xs relative z-10">
@@ -21117,10 +21147,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                   <span>تم استلام الأرباح (${c.payout.toLocaleString()} EGP)</span>
                 </button>
               ` : `
-                <button ${!canFulfill ? 'disabled' : `onclick="window.UI?.fulfillFarmContract('${c.id}')"`} type="button"
-                  class="w-full py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-2 ${canFulfill ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/20 active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+                <button ${!canFulfillAll ? 'disabled' : `onclick="window.UI?.fulfillFarmContract('${c.id}')"`} type="button"
+                  class="w-full py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-2 ${canFulfillAll ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/20 active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
                   <i class="fa-solid fa-truck-fast text-sm"></i>
-                  <span>${canFulfill ? 'تسليم الشحنة وتحصيل ' + c.payout.toLocaleString() + ' EGP 🚚' : 'المخزون غير كافٍ (ناقص ' + (c.quantityNeeded - available).toLocaleString() + ')'}</span>
+                  <span>${canFulfillAll ? 'تسليم الشحنة وتحصيل ' + c.payout.toLocaleString() + ' EGP 🚚' : (missingCount > 1 ? `المخزون ناقص (${missingCount} أصناف)` : 'المخزون غير كافٍ')}</span>
                 </button>
               `}
             </div>

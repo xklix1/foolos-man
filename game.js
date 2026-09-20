@@ -6515,7 +6515,7 @@ const GameEngine = (() => {
     }
     const info = getFarmDailyLiquidationInfo(f);
     if (info.totalLiquidated + amount > DAILY_FARM_LIQUIDATION_CAP) {
-      throw new Error(`بلغت سقف التسييل اليومي للمزرعة (5,000,000 EGP يومياً). المتبقي لك اليوم: ${info.remaining.toLocaleString()} EGP. يمكنك تلبية عقود التوريد B2B أو استئناف التسييل غداً.`);
+      throw new Error(`بلغت سقف التسييل اليومي لمنتجات معمل التصنيع (5,000,000 EGP يومياً). المتبقي لك اليوم: ${info.remaining.toLocaleString()} EGP. يمكنك تلبية عقود التوريد B2B بدون أي سقف، أو تسييل المحاصيل الخام.`);
     }
     f.dailyLiquidation.totalLiquidated = info.totalLiquidated + amount;
   }
@@ -6996,9 +6996,6 @@ const GameEngine = (() => {
     const unitCropCost = Math.floor((crop.seedCost || 10) / (crop.baseYield || 10));
     const totalPrice = qty * unitCropCost;
 
-    // Enforce 5,000,000 EGP daily farm liquidation cap
-    assertAndRecordFarmLiquidation(f, totalPrice);
-
     f.inventory[cropId] = 0;
     state.cash = (state.cash || 0) + totalPrice;
     if (!f.stats) f.stats = { totalHarvested: 0, totalRevenue: 0 };
@@ -7039,9 +7036,6 @@ const GameEngine = (() => {
     if (grandTotal <= 0) {
       throw new Error("لا توجد محاصيل مخزنة في مستودع المزرعة لتسييلها حالياً.");
     }
-
-    // Enforce 5,000,000 EGP daily farm liquidation cap
-    assertAndRecordFarmLiquidation(f, grandTotal);
 
     soldBreakdown.forEach(item => {
       f.inventory[item.cId] = 0;
@@ -7273,9 +7267,6 @@ const GameEngine = (() => {
     const pricePerUnit = produceKey === 'compost' ? 10 : 5;
     const totalPrice = sellQty * pricePerUnit;
 
-    // Enforce 5,000,000 EGP daily farm liquidation cap
-    assertAndRecordFarmLiquidation(f, totalPrice);
-
     f.livestock[produceKey] -= sellQty;
     state.cash = (state.cash || 0) + totalPrice;
     if (!f.livestock.stats) f.livestock.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
@@ -7319,9 +7310,6 @@ const GameEngine = (() => {
     if (grandTotal <= 0) {
       throw new Error("لا يوجد إنتاج حيواني أو بيض أو سماد جاهز لتسييله حالياً.");
     }
-
-    // Enforce 5,000,000 EGP daily farm liquidation cap
-    assertAndRecordFarmLiquidation(f, grandTotal);
 
     ls.milk = 0;
     ls.eggs = 0;
@@ -7410,46 +7398,79 @@ const GameEngine = (() => {
     candidates.push({ type: 'livestock', id: 'milk', basePrice: FARM_LIVESTOCK_CONFIG.cow.sellPrice, min: 8, max: 30 });
     candidates.push({ type: 'livestock', id: 'eggs', basePrice: FARM_LIVESTOCK_CONFIG.chicken.sellPrice, min: 15, max: 50 });
 
-    let choice = null;
+    // Multi-requirement generation (1 to 3 requirements per contract)
+    // Distribution: 30% 1 item, 45% 2 items, 25% 3 items
+    const randType = Math.random();
+    const reqCount = forcedItemId ? 1 : (randType < 0.3 ? 1 : (randType < 0.75 ? 2 : 3));
+    
+    const pickedItems = [];
+    const usedIds = new Set();
+
     if (forcedItemId) {
-      choice = candidates.find(c => c.id === forcedItemId);
-    }
-    if (!choice) {
-      choice = candidates[Math.floor(Math.random() * candidates.length)];
+      const match = candidates.find(c => c.id === forcedItemId);
+      if (match) {
+        pickedItems.push(match);
+        usedIds.add(match.id);
+      }
     }
 
-    const qty = Math.floor(choice.min + Math.random() * (choice.max - choice.min + 1));
-    const baseValue = qty * choice.basePrice;
+    while (pickedItems.length < reqCount) {
+      const remaining = candidates.filter(c => !usedIds.has(c.id));
+      if (remaining.length === 0) break;
+      const pick = remaining[Math.floor(Math.random() * remaining.length)];
+      pickedItems.push(pick);
+      usedIds.add(pick.id);
+    }
+
+    let totalBaseValue = 0;
+    const requirements = pickedItems.map(choice => {
+      const qty = Math.floor(choice.min + Math.random() * (choice.max - choice.min + 1));
+      const val = qty * choice.basePrice;
+      totalBaseValue += val;
+
+      let itemName = '';
+      let itemIcon = '';
+      if (choice.type === 'crop') {
+        itemName = FARM_CROPS[choice.id].name;
+        itemIcon = FARM_CROPS[choice.id].icon;
+      } else if (choice.type === 'processed') {
+        itemName = FARM_RECIPES[choice.id].name;
+        itemIcon = FARM_RECIPES[choice.id].icon;
+      } else {
+        itemName = choice.id === 'milk' ? 'حليب أبقار طازج' : 'كراتين بيض مائدة';
+        itemIcon = choice.id === 'milk' ? 'fa-solid fa-bottle-water' : 'fa-solid fa-egg';
+      }
+
+      return {
+        itemType: choice.type,
+        itemId: choice.id,
+        itemName,
+        itemIcon,
+        quantityNeeded: qty,
+        unitPrice: choice.basePrice,
+        baseValue: val
+      };
+    });
+
     const bonusMultiplier = client.payoutMultiplier || 1.5;
-    const totalPayout = Math.floor(baseValue * bonusMultiplier);
+    const totalPayout = Math.floor(totalBaseValue * bonusMultiplier);
     const now = getTrustedNow();
-
-    let itemName = '';
-    let itemIcon = '';
-    if (choice.type === 'crop') {
-      itemName = FARM_CROPS[choice.id].name;
-      itemIcon = FARM_CROPS[choice.id].icon;
-    } else if (choice.type === 'processed') {
-      itemName = FARM_RECIPES[choice.id].name;
-      itemIcon = FARM_RECIPES[choice.id].icon;
-    } else {
-      itemName = choice.id === 'milk' ? 'حليب أبقار طازج' : 'كراتين بيض مائدة';
-      itemIcon = choice.id === 'milk' ? 'fa-solid fa-bottle-water' : 'fa-solid fa-egg';
-    }
 
     return {
       id: 'cnt_' + slotIndex + '_' + Date.now() + '_' + Math.floor(Math.random() * 100000),
       contractNumber: slotIndex,
       clientName: client.name,
       clientIcon: client.icon,
-      itemType: choice.type,
-      itemId: choice.id,
-      itemName,
-      itemIcon,
-      quantityNeeded: qty,
+      requirements: requirements,
+      // Backwards compatibility mappings
+      itemType: requirements[0].itemType,
+      itemId: requirements[0].itemId,
+      itemName: requirements.length === 1 ? requirements[0].itemName : requirements.map(r => `${r.quantityNeeded} ${r.itemName}`).join(' + '),
+      itemIcon: requirements[0].itemIcon,
+      quantityNeeded: requirements[0].quantityNeeded,
       payout: totalPayout,
       bonusPercent: Math.round((bonusMultiplier - 1) * 100),
-      repReward: client.repBonus || 15,
+      repReward: (client.repBonus || 15) * requirements.length,
       createdAt: now,
       expiresAt: null, // مفتوح بدون أي قيود زمنية
       fulfilled: false,
@@ -7500,7 +7521,7 @@ const GameEngine = (() => {
     Object.keys(allStoredItems).forEach(cId => {
       const qty = Number(allStoredItems[cId] || 0);
       if (qty > 0) {
-        const matchCount = f.contracts.active.filter(c => c && c.itemId === cId && !c.fulfilled).length;
+        const matchCount = f.contracts.active.filter(c => c && ((c.requirements && c.requirements.some(r => r.itemId === cId)) || c.itemId === cId) && !c.fulfilled).length;
         const targetContracts = Math.min(8, Math.max(2, Math.ceil(qty / 4)));
         if (matchCount < targetContracts) {
           const needed = targetContracts - matchCount;
@@ -7516,7 +7537,7 @@ const GameEngine = (() => {
     });
 
     // ضمان وجود عقود الزعفران ومستخلصه دائماً في قائمة العقود لكافة اللاعبين
-    const saffronActiveCount = f.contracts.active.filter(c => c && (c.itemId === 'saffron' || c.itemId === 'saffron_essence') && !c.fulfilled).length;
+    const saffronActiveCount = f.contracts.active.filter(c => c && ((c.requirements && c.requirements.some(r => r.itemId === 'saffron' || r.itemId === 'saffron_essence')) || c.itemId === 'saffron' || c.itemId === 'saffron_essence') && !c.fulfilled).length;
     if (saffronActiveCount < 3) {
       const neededSaffron = 3 - saffronActiveCount;
       for (let s = 0; s < neededSaffron; s++) {
@@ -7550,29 +7571,44 @@ const GameEngine = (() => {
       throw new Error("تم تسليم هذا العقد واستلام أرباحه بالفعل!");
     }
 
+    const reqs = (Array.isArray(contract.requirements) && contract.requirements.length > 0)
+      ? contract.requirements
+      : [{
+          itemType: contract.itemType,
+          itemId: contract.itemId,
+          itemName: contract.itemName,
+          itemIcon: contract.itemIcon,
+          quantityNeeded: contract.quantityNeeded
+        }];
+
+    // 1. Verify all requirements
+    for (const req of reqs) {
+      let availableQty = 0;
+      if (req.itemType === 'crop') {
+        availableQty = Number((f.inventory && f.inventory[req.itemId]) || 0);
+      } else if (req.itemType === 'processed') {
+        availableQty = Number((f.processing && f.processing.storage && f.processing.storage[req.itemId]) || 0);
+      } else if (req.itemType === 'livestock') {
+        availableQty = Number((f.livestock && f.livestock[req.itemId]) || 0);
+      }
+
+      if (availableQty < req.quantityNeeded) {
+        throw new Error(`المخزون المتوفر لديك من "${req.itemName}" (${availableQty.toLocaleString()}) لا يكفي (يلزم ${req.quantityNeeded.toLocaleString()} وحدة).`);
+      }
+    }
+
+    // 2. Deduct all requirements
+    for (const req of reqs) {
+      if (req.itemType === 'crop') {
+        f.inventory[req.itemId] -= req.quantityNeeded;
+      } else if (req.itemType === 'processed') {
+        f.processing.storage[req.itemId] -= req.quantityNeeded;
+      } else if (req.itemType === 'livestock') {
+        f.livestock[req.itemId] -= req.quantityNeeded;
+      }
+    }
+
     const now = getTrustedNow();
-
-    let availableQty = 0;
-    if (contract.itemType === 'crop') {
-      availableQty = Number((f.inventory && f.inventory[contract.itemId]) || 0);
-    } else if (contract.itemType === 'processed') {
-      availableQty = Number((f.processing && f.processing.storage && f.processing.storage[contract.itemId]) || 0);
-    } else if (contract.itemType === 'livestock') {
-      availableQty = Number((f.livestock && f.livestock[contract.itemId]) || 0);
-    }
-
-    if (availableQty < contract.quantityNeeded) {
-      throw new Error(`المخزون المتوفر لديك (${availableQty.toLocaleString()}) لا يكفي لتوريد طلبية "${contract.itemName}" (يلزم ${contract.quantityNeeded.toLocaleString()} وحدة).`);
-    }
-
-    if (contract.itemType === 'crop') {
-      f.inventory[contract.itemId] -= contract.quantityNeeded;
-    } else if (contract.itemType === 'processed') {
-      f.processing.storage[contract.itemId] -= contract.quantityNeeded;
-    } else if (contract.itemType === 'livestock') {
-      f.livestock[contract.itemId] -= contract.quantityNeeded;
-    }
-
     state.cash = (state.cash || 0) + contract.payout;
     contract.fulfilled = true;
     contract.fulfilledAt = now;
@@ -7583,7 +7619,8 @@ const GameEngine = (() => {
     f.contracts.revenueToday = (f.contracts.revenueToday || 0) + contract.payout;
     f.contracts.totalBonusEarned = (f.contracts.totalBonusEarned || 0) + contract.payout;
 
-    recordPlayerActivity('إنجاز عقد توريد تجاري 📜🤝', `تم توريد طلبية (${contract.quantityNeeded} وحدة ${contract.itemName}) لـ "${contract.clientName}" وقبض ${contract.payout.toLocaleString()} EGP (+${contract.bonusPercent}% بونص | +${contract.repReward} سمعة)!`, 'business');
+    const summaryText = reqs.map(r => `${r.quantityNeeded} ${r.itemName}`).join(' + ');
+    recordPlayerActivity('إنجاز عقد توريد تجاري 📜🤝', `تم توريد طلبية (${summaryText}) لـ "${contract.clientName}" وقبض ${contract.payout.toLocaleString()} EGP (+${contract.bonusPercent}% بونص | +${contract.repReward} سمعة)!`, 'business');
 
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
