@@ -2041,95 +2041,27 @@ const UIController = (() => {
   async function renderStartMenuLeaderboard(forceRefresh = false) {
     const tbody = document.getElementById('start-menu-leaderboard-rows');
     if (!tbody) return;
-    tbody.innerHTML =`
+    const podiumEl = document.getElementById('start-menu-leaderboard-podium');
+    if (podiumEl) {
+      podiumEl.style.opacity = '0.35';
+      podiumEl.style.pointerEvents = 'none';
+      podiumEl.style.filter = 'grayscale(60%)';
+    }
+
+    tbody.innerHTML = `
       <tr>
-        <td colspan="4" class="py-6 text-center text-slate-400">
-          <i class="fa-solid fa-spinner animate-spin ml-2"></i>
-          جاري جلب أحدث بيانات المتصدرين...
+        <td colspan="4" class="py-10 px-4 text-center">
+          <div class="max-w-md mx-auto p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center shadow-lg">
+            <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xl">
+              <i class="fa-solid fa-screwdriver-wrench animate-bounce" style="animation-duration: 2s;"></i>
+            </div>
+            <h4 class="text-sm font-black text-white mb-1">قائمة التوب مغلقة حالياً للصيانة 🔒</h4>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              تخضع قائمة المتصدرين لأعمال تدقيق ومراجعة حسابات شاملة. سيتم إتاحتها قريباً.
+            </p>
+          </div>
         </td>
       </tr>`;
-
-    try {
-      let players = await AppDB.getLeaderboard(forceRefresh);
-      if (Array.isArray(players)) {
-        players = players.filter(p => p && !['newu', 'khaled', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(String(p.username || '').trim().toLowerCase()));
-      }
-      tbody.innerHTML ='';
-      if (typeof updateHourlyLeaderboardTimerUI ==='function') updateHourlyLeaderboardTimerUI();
-
-      // Podium Top 3
-      const top1 = (players && players[0]) || null;
-      const top2 = (players && players[1]) || null;
-      const top3 = (players && players[2]) || null;
-
-      const p1El = document.getElementById('start-podium-name-1');
-      const w1 = document.getElementById('start-podium-worth-1');
-      if (p1El) p1El.textContent = top1 ? top1.username : '—';
-      if (w1) {
-        w1.textContent = top1 ? `${formatCompactNumber(top1.netWorth || 0)} EGP` : '0 جنيه';
-        w1.title = top1 ? `${Number(top1.netWorth || 0).toLocaleString()} EGP` : '0 جنيه';
-      }
-
-      const p2El = document.getElementById('start-podium-name-2');
-      const w2 = document.getElementById('start-podium-worth-2');
-      if (p2El) p2El.textContent = top2 ? top2.username : '—';
-      if (w2) {
-        w2.textContent = top2 ? `${formatCompactNumber(top2.netWorth || 0)} EGP` : '0 جنيه';
-        w2.title = top2 ? `${Number(top2.netWorth || 0).toLocaleString()} EGP` : '0 جنيه';
-      }
-
-      const p3El = document.getElementById('start-podium-name-3');
-      const w3 = document.getElementById('start-podium-worth-3');
-      if (p3El) p3El.textContent = top3 ? top3.username : '—';
-      if (w3) {
-        w3.textContent = top3 ? `${formatCompactNumber(top3.netWorth || 0)} EGP` : '0 جنيه';
-        w3.title = top3 ? `${Number(top3.netWorth || 0).toLocaleString()} EGP` : '0 جنيه';
-      }
-
-      if (!players || players.length === 0) {
-        tbody.innerHTML =`<tr><td colspan="4" class="py-6 text-center text-slate-500">لا يوجد متصدرين مسجلين حالياً.</td></tr>`;
-        return;
-      }
-
-      // Rows
-      players.slice(0, 15).forEach((p, idx) => {
-        const tr = document.createElement('tr');
-        const rank = idx + 1;
-        const initials = (p.username ||'P').substring(0, 2).toUpperCase();
-        tr.className =`transition duration-150 border-b border-slate-900/60 ${rank === 1 ?'bg-yellow-500/10' :'hover:bg-slate-900/50'}`;
-
-        let rankBadge ='';
-        if (rank === 1) {
-          rankBadge =`<span class="w-6 h-6 rounded-lg bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center shadow"><i class="fa-solid fa-crown text-[9px] mr-0.5"></i>1</span>`;
-        } else if (rank === 2) {
-          rankBadge =`<span class="w-6 h-6 rounded-lg bg-slate-700 border border-slate-500 text-slate-200 font-black text-[10px] flex items-center justify-center"><i class="fa-solid fa-medal text-[9px] mr-0.5"></i>2</span>`;
-        } else if (rank === 3) {
-          rankBadge =`<span class="w-6 h-6 rounded-lg bg-amber-950 border border-amber-700 text-amber-300 font-black text-[10px] flex items-center justify-center"><i class="fa-solid fa-medal text-[9px] mr-0.5"></i>3</span>`;
-        } else {
-          rankBadge =`<span class="text-slate-400 font-bold numbers-font text-xs">#${rank}</span>`;
-        }
-
-        tr.innerHTML =`
-          <td class="py-2.5 pr-2 text-right">${rankBadge}</td>
-          <td class="py-2.5">
-            <div class="flex items-center gap-2">
-              <div class="w-6 h-6 rounded bg-slate-800 border border-slate-700 text-[9px] font-black text-slate-300 flex items-center justify-center numbers-font">
-                ${initials}
-              </div>
-              <span class="font-black ${rank === 1 ?'text-yellow-400 glow-gold' :'text-white'} text-xs truncate max-w-[110px] sm:max-w-none">${p.username}</span>
-            </div>
-          </td>
-          <td class="py-2.5 text-slate-400">
-            <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300 inline-block truncate max-w-[90px] sm:max-w-none">${p.title ||'مستثمر'}</span>
-          </td>
-          <td class="py-2.5 pl-2 text-left numbers-font font-black ${rank === 1 ?'text-yellow-400 text-xs glow-gold' :'text-emerald-400 text-xs'} whitespace-nowrap" title="${Number(p.netWorth || 0).toLocaleString()} EGP">
-            ${formatCompactNumber(p.netWorth || 0)} EGP
-          </td>`;
-        tbody.appendChild(tr);
-      });
-    } catch (e) {
-      tbody.innerHTML =`<tr><td colspan="4" class="py-6 text-center text-rose-400">تعذر تحميل المتصدرين. تحقق من اتصالك.</td></tr>`;
-    }
   }
 
   function setupAuthPanel() {
@@ -15376,14 +15308,12 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const cleanTarget = String(username).replace(/^@/, '').trim();
     const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (window.GameEngine && window.GameEngine.getState && window.GameEngine.getState()?.username) || (window.AppDB && window.AppDB.getCurrentUsername && window.AppDB.getCurrentUsername()) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
 
-    // Strict Privacy Protection: Master Admin & Core Dev accounts cannot be viewed by other players
-    const protectedAccounts = ['khaled', 'rasalmal', 'rasalmal1', 'rasalmal2', 'newu'];
-    const isTargetProtectedName = protectedAccounts.includes(cleanTarget.toLowerCase());
     const isSelfView = cleanTarget.toLowerCase() === curActive.toLowerCase();
 
-    if (isTargetProtectedName && !isSelfView) {
-      if (typeof playMenuSound === 'function') playMenuSound('error');
-      showToast('الملف الشخصي محمي 🔒', 'الملف التعريفي لهذا الحساب خاص وسري ومحمي بالكامل وغير متاح للعرض.', 'warning');
+    // Maintenance / Privacy Lock: Inspecting other players is disabled
+    if (!isSelfView) {
+      if (typeof playMenuSound === 'function') playMenuSound('warning');
+      showToast('الملف الشخصي مغلق 🔒', 'خدمة استعراض الملفات الشخصية للاعبين مغلقة حالياً لأعمال الصيانة والتحديث.', 'warning');
       const pm = document.getElementById('player-profile-modal');
       if (pm) pm.classList.add('hidden');
       return;
