@@ -7978,7 +7978,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
 
     const reloadTs = Number(data.timestamp);
-    const storedAck = Number(sessionStorage.getItem('rasalmal_acknowledged_reload') || 0);
+    const storedAck = Math.max(
+      Number(localStorage.getItem('rasalmal_acknowledged_reload') || 0),
+      Number(sessionStorage.getItem('rasalmal_acknowledged_reload') || 0)
+    );
 
     // If targeted specifically to this user, trigger immediately if newer than acknowledged
     if (data.targetUser) {
@@ -7989,15 +7992,16 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
 
     // Initial session baseline: record existing timestamp so fresh loads aren't blocked
-    if (!sessionStorage.getItem('rasalmal_acknowledged_reload')) {
-      sessionStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
+    if (storedAck === 0) {
+      try { localStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs)); } catch (e) {}
+      try { sessionStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs)); } catch (e) {}
       console.log('[RELOAD SYNC] Initial session baseline set to:', reloadTs);
       return;
     }
 
     // If admin issued a newer reload command after our baseline:
     if (reloadTs > storedAck) {
-      console.warn('[RELOAD SYNC] New force reload detected! Broadcast TS:', reloadTs,'Stored Baseline:', storedAck);
+      console.warn('[RELOAD SYNC] New force reload detected! Broadcast TS:', reloadTs, 'Stored Baseline:', storedAck);
       triggerMandatoryReloadModal(data.message, reloadTs);
     }
   }
@@ -8066,7 +8070,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       } catch (e) {}
 
       if (reloadTs) {
-        sessionStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
+        try { localStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs)); } catch (e) {}
+        try { sessionStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs)); } catch (e) {}
       }
       try {
         window.location.reload(true);
