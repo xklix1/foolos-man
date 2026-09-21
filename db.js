@@ -2989,7 +2989,7 @@ var AppDB = (() => {
     try {
       // Direct fetch with guaranteed no-cache to bypass all HTTP caching layers
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/globals?id=eq.maintenance&_t=${Date.now()}`,
+        `${SUPABASE_URL}/rest/v1/globals?id=eq.maintenance`,
         {
           method: 'GET',
           cache: 'no-store',
@@ -3061,7 +3061,7 @@ var AppDB = (() => {
     }
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/globals?id=eq.standby_mode&_t=${Date.now()}`,
+        `${SUPABASE_URL}/rest/v1/globals?id=eq.standby_mode`,
         {
           method: 'GET',
           cache: 'no-store',

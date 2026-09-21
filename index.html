@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Automatic Cache Purge
-    window._CLIENT_VERSION = 'v7.8.8';
+    window._CLIENT_VERSION = 'v7.8.9';
     (async function() {
-      const CURRENT_APP_BUILD = 'v7.8.8';
+      const CURRENT_APP_BUILD = 'v7.8.9';
       try {
         localStorage.removeItem('rasalmal_banned_device');
         // Unregister any stale Service Workers
@@ -7156,11 +7156,11 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=7.8.8"></script>
-  <script src="server-client-bridge.js?v=7.8.8"></script>
-  <script src="game.js?v=7.8.8"></script>
-  <script src="ui.js?v=7.8.8"></script>
-  <script src="pwa-manager.js?v=7.8.8"></script>
+  <script src="db.js?v=7.8.9"></script>
+  <script src="server-client-bridge.js?v=7.8.9"></script>
+  <script src="game.js?v=7.8.9"></script>
+  <script src="ui.js?v=7.8.9"></script>
+  <script src="pwa-manager.js?v=7.8.9"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -7852,7 +7852,7 @@
         }
         if (typeof document !== 'undefined' && document.hidden) return;
         try {
-          const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.maintenance&_t=' + Date.now(), {
+          const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.maintenance', {
             cache: 'no-store',
             headers: {
               'apikey': _getAnonKey(),
@@ -7935,7 +7935,7 @@
                   recheckBtn.disabled = true;
                   recheckBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري فحص الاتصال...</span>';
                   try {
-                    const r = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.maintenance&_t=' + Date.now(), {
+                    const r = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.maintenance', {
                       cache: 'no-store',
                       headers: {
                         'apikey': _getAnonKey(),
@@ -7989,7 +7989,15 @@
         }
         if (typeof document !== 'undefined' && document.hidden) return;
         try {
-          const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.standby_mode&_t=' + Date.now(), {
+          const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.standby_mode', {
+            cache: 'no-store',
+            headers: {
+              'apikey': _getAnonKey(),
+              'Authorization': 'Bearer ' + _getAnonKey(),
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache'
+            }
+          });
             cache: 'no-store',
             headers: {
               'apikey': _getAnonKey(),
