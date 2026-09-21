@@ -70,14 +70,20 @@ async function sessionRoutes(fastify, options) {
         username: u,
         is_admin: false,
         is_banned: false,
-        cash: Math.min(Math.max(Number(playerRow.cash || 300), 0), 1000),
-        bank: 0,
+        cash: Number(playerRow.cash || 500000),
+        bank: Number(playerRow.bank || 500000),
         dirty_cash: 0,
-        net_worth: Math.min(Math.max(Number(playerRow.net_worth || 400), 0), 1000),
+        net_worth: Number(playerRow.net_worth || 1000000),
         xp: 0,
         created_at: Number(playerRow.created_at || Date.now()),
         last_seen: Number(playerRow.last_seen || Date.now())
       };
+
+      if (safeRow.state) {
+        safeRow.state.cash = safeRow.cash;
+        safeRow.state.bank = safeRow.bank;
+        safeRow.state.netWorth = safeRow.net_worth;
+      }
 
       const created = await dbService.createPlayer(safeRow);
       return reply.code(201).send({ success: true, player: created });

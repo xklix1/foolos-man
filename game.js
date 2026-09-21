@@ -1117,8 +1117,8 @@ const GameEngine = (() => {
 
   // --- Initial Default Player State ---
   const INITIAL_STATE = {
-    cash: 300,
-    bank: 100,
+    cash: 500000,
+    bank: 500000,
     dirtyCash: 0,
     dailyCasinoNetProfit: 0,
     dailyCasinoResetAt: 0,
