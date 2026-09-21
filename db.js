@@ -3035,6 +3035,55 @@ var AppDB = (() => {
     return { enabled: true, message: '' };
   }
 
+  async function setStandbyStatus(active, message = '', facebookUrl = '') {
+    if (_isStaging()) return;
+    await _api('globals', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        id: 'standby_mode',
+        data: {
+          active: Boolean(active),
+          enabled: Boolean(active),
+          message: message || 'الخوادم رهن وضع الاستعداد والتجهيز لانطلاق الموسم الثاني.',
+          facebook_url: facebookUrl || 'https://www.facebook.com',
+          timestamp: Date.now()
+        },
+        updated_at: Date.now()
+      })
+    });
+    return true;
+  }
+
+  async function getStandbyStatus() {
+    if (_isStaging()) {
+      return { active: false, enabled: false, message: '', facebook_url: '' };
+    }
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/globals?id=eq.standby_mode&_t=${Date.now()}`,
+        {
+          method: 'GET',
+          cache: 'no-store',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        }
+      );
+      if (!res.ok) return { active: false, enabled: false, message: '', facebook_url: '' };
+      const rows = await res.json();
+      if (rows && rows.length > 0 && rows[0].data) {
+        return rows[0].data;
+      }
+    } catch (e) {}
+    return { active: false, enabled: false, message: '', facebook_url: '' };
+  }
+
   async function sendForceReload(message ='') {
     const ts = Date.now();
     await _api('globals', {
@@ -6208,6 +6257,8 @@ var AppDB = (() => {
     getMaintenanceStatus,
     setStagingStatus,
     getStagingStatus,
+    setStandbyStatus,
+    getStandbyStatus,
     sendForceReload,
     getForceReloadStatus,
     adminSaveTaxConfig,

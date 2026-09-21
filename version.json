@@ -1,7 +1,7 @@
 {
-  "version": "v7.8.6",
-  "build": "2026-09-21T20:21:00.000Z",
-  "minRequiredVersion": "v7.8.6",
-  "notes": "Completely remove tester bypass - enforce global maintenance",
+  "version": "v7.8.7",
+  "build": "2026-09-21T20:33:00.000Z",
+  "minRequiredVersion": "v7.8.7",
+  "notes": "Add Standby Mode feature with reload and Facebook buttons",
   "forcePurgeCache": true
 }
