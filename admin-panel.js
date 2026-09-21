@@ -4444,7 +4444,7 @@
       });
     }
 
-    let currentTesterPasscode = 'Season2_Tester_2026';
+    let currentTesterPasscode = '';
 
     function updateMaintenanceUIState(isMaint, testerKey) {
       const badge = document.getElementById('admin-maintenance-badge');
@@ -4452,11 +4452,11 @@
       const btnText = document.getElementById('admin-maintenance-btn-text');
       const testerDisplay = document.getElementById('admin-tester-key-display');
 
-      if (testerKey) {
-        currentTesterPasscode = testerKey;
+      if (testerKey !== undefined) {
+        currentTesterPasscode = testerKey || '';
       }
       if (testerDisplay) {
-        testerDisplay.textContent = currentTesterPasscode;
+        testerDisplay.textContent = currentTesterPasscode || 'لا يوجد مفتاح (مغلق أمام الجميع)';
       }
 
       if (badge) {
@@ -4489,7 +4489,7 @@
     if (typeof AppDB !== 'undefined' && typeof AppDB.getMaintenanceStatus === 'function') {
       AppDB.getMaintenanceStatus().then(st => {
         const isMaint = Boolean(st && (st.active || st.enabled));
-        const tKey = (st && (st.tester_pass || st.tester_key)) || 'Season2_Tester_2026';
+        const tKey = (st && (st.tester_pass || st.tester_key)) || '';
         updateMaintenanceUIState(isMaint, tKey);
       }).catch(err => console.warn('Failed to load initial maintenance state:', err));
     }
