@@ -1,7 +1,7 @@
 {
-  "version": "v7.8.3",
-  "build": "2026-09-21T19:46:00.000Z",
-  "minRequiredVersion": "v7.8.3",
-  "notes": "Industry Net Revenue and Tax Display Fix",
+  "version": "v7.8.4",
+  "build": "2026-09-21T19:55:00.000Z",
+  "minRequiredVersion": "v7.8.4",
+  "notes": "Anti-Cache HTTP Protocol for Maintenance Status",
   "forcePurgeCache": true
 }

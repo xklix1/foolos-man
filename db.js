@@ -2987,7 +2987,9 @@ var AppDB = (() => {
       return { active: false, enabled: false, message: '' };
     }
     try {
-      const rows = await _api(`globals?id=eq.maintenance`);
+      const rows = await _api(`globals?id=eq.maintenance&_t=${Date.now()}`, {
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
+      });
       if (rows && rows.length > 0 && rows[0].data) {
         return rows[0].data;
       }

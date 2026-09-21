@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Automatic Cache Purge
-    window._CLIENT_VERSION = 'v7.8.3';
+    window._CLIENT_VERSION = 'v7.8.4';
     (async function() {
-      const CURRENT_APP_BUILD = 'v7.8.3';
+      const CURRENT_APP_BUILD = 'v7.8.4';
       try {
         localStorage.removeItem('rasalmal_banned_device');
         // Unregister any stale Service Workers
@@ -7846,10 +7846,13 @@
         if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.isNetworkActive === 'function' && !window.AppDB.isNetworkActive()) return;
         if (typeof document !== 'undefined' && document.hidden) return;
         try {
-          const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.maintenance', {
+          const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.maintenance&_t=' + Date.now(), {
+            cache: 'no-store',
             headers: {
               'apikey': _getAnonKey(),
-              'Authorization': 'Bearer ' + _getAnonKey()
+              'Authorization': 'Bearer ' + _getAnonKey(),
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache'
             }
           });
           if (!res.ok) return;
@@ -7866,11 +7869,13 @@
             const urlParams = new URLSearchParams(window.location.search);
             const queryPass = urlParams.get('tester_pass');
             const storedPass = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_tester_pass')) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_tester_pass')) || '';
-            const activeServerPass = (data.tester_pass || data.tester_key || 'Season2_Tester_2026').trim();
+            const activeServerPass = (data.tester_pass || data.tester_key || '').trim();
 
             const isTesterAuthorized = Boolean(
-              (queryPass && queryPass.trim() === activeServerPass) ||
-              (storedPass && storedPass.trim() === activeServerPass)
+              activeServerPass && (
+                (queryPass && queryPass.trim() === activeServerPass) ||
+                (storedPass && storedPass.trim() === activeServerPass)
+              )
             );
 
             if (isTesterAuthorized) {
@@ -7961,8 +7966,14 @@
                   recheckBtn.disabled = true;
                   recheckBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري فحص الاتصال...</span>';
                   try {
-                    const r = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.maintenance', {
-                      headers: { 'apikey': _getAnonKey(), 'Authorization': 'Bearer ' + _getAnonKey() }
+                    const r = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.maintenance&_t=' + Date.now(), {
+                      cache: 'no-store',
+                      headers: {
+                        'apikey': _getAnonKey(),
+                        'Authorization': 'Bearer ' + _getAnonKey(),
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache'
+                      }
                     });
                     const rRows = await r.json();
                     if (rRows && rRows[0] && rRows[0].data && (rRows[0].data.active || rRows[0].data.enabled)) {

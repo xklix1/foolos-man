@@ -7796,15 +7796,20 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const urlParams = new URLSearchParams(window.location.search);
         const queryPass = urlParams.get('tester_pass');
         const storedPass = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_tester_pass')) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_tester_pass')) || '';
-        const activeServerPass = (st.tester_pass || st.tester_key || 'Season2_Tester_2026').trim();
+        const activeServerPass = (st.tester_pass || st.tester_key || '').trim();
 
-        if ((queryPass && queryPass.trim() === activeServerPass) || (storedPass && storedPass.trim() === activeServerPass)) {
+        if (activeServerPass && ((queryPass && queryPass.trim() === activeServerPass) || (storedPass && storedPass.trim() === activeServerPass))) {
           try {
             sessionStorage.setItem('rasalmal_tester_pass', activeServerPass);
             localStorage.setItem('rasalmal_tester_pass', activeServerPass);
           } catch (e) {}
           hideMaintenanceOverlay();
           return false;
+        } else {
+          try {
+            sessionStorage.removeItem('rasalmal_tester_pass');
+            localStorage.removeItem('rasalmal_tester_pass');
+          } catch (e) {}
         }
 
         showMaintenancePopup(st.message, st);
