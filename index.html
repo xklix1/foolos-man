@@ -7987,7 +7987,11 @@
             }
           } else {
             const overlay = document.getElementById('maintenance-overlay');
-            if (overlay) overlay.classList.add('hidden');
+            if (overlay) {
+              overlay.classList.add('hidden');
+              overlay.style.display = 'none';
+              try { overlay.remove(); } catch (e) {}
+            }
           }
         } catch (err) {}
       }
