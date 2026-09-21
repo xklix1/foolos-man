@@ -3383,19 +3383,26 @@ const GameEngine = (() => {
           const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
             ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
             : null;
-          if (localS && localS.dailyWork && localS.dailyWork.date === todayStr) {
-            if (!state.dailyWork || state.dailyWork.date !== todayStr) {
-              state.dailyWork = { ...localS.dailyWork };
-            } else {
-              state.dailyWork.shifts = Math.min(100, Math.max(Number(state.dailyWork.shifts || 0), Number(localS.dailyWork.shifts || 0)));
-              state.dailyWork.overtimeShifts = Math.min(15, Math.max(Number(state.dailyWork.overtimeShifts || 0), Number(localS.dailyWork.overtimeShifts || 0)));
+          
+          const dbAdminTs = Number(dbState.admin_modified_timestamp || dbState.adminModifiedTimestamp || (dbState.state && dbState.state.adminModifiedTimestamp) || 0);
+          const localAdminTs = Number(localS?.adminModifiedTimestamp || localS?.admin_modified_timestamp || 0);
+          const isServerAdminOverride = dbAdminTs > localAdminTs;
+
+          if (!isServerAdminOverride) {
+            if (localS && localS.dailyWork && localS.dailyWork.date === todayStr) {
+              if (!state.dailyWork || state.dailyWork.date !== todayStr) {
+                state.dailyWork = { ...localS.dailyWork };
+              } else {
+                state.dailyWork.shifts = Math.min(100, Math.max(Number(state.dailyWork.shifts || 0), Number(localS.dailyWork.shifts || 0)));
+                state.dailyWork.overtimeShifts = Math.min(15, Math.max(Number(state.dailyWork.overtimeShifts || 0), Number(localS.dailyWork.overtimeShifts || 0)));
+              }
             }
-          }
-          if (localS && localS.dailyBlackMarket && localS.dailyBlackMarket.date === todayStr) {
-            if (!state.dailyBlackMarket || state.dailyBlackMarket.date !== todayStr) {
-              state.dailyBlackMarket = { ...localS.dailyBlackMarket };
-            } else {
-              state.dailyBlackMarket.count = Math.min(15, Math.max(Number(state.dailyBlackMarket.count || 0), Number(localS.dailyBlackMarket.count || 0)));
+            if (localS && localS.dailyBlackMarket && localS.dailyBlackMarket.date === todayStr) {
+              if (!state.dailyBlackMarket || state.dailyBlackMarket.date !== todayStr) {
+                state.dailyBlackMarket = { ...localS.dailyBlackMarket };
+              } else {
+                state.dailyBlackMarket.count = Math.min(15, Math.max(Number(state.dailyBlackMarket.count || 0), Number(localS.dailyBlackMarket.count || 0)));
+              }
             }
           }
           // Safeguard: Prevent reload, re-login, or cloud race from resetting today's daily quests
