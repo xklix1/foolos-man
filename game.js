@@ -7115,17 +7115,31 @@ const GameEngine = (() => {
       throw new Error(`مستودع التصنيع لا يحتوي على أي كميات جاهزة من "${recipe.name}".`);
     }
 
-    const sellQty = (qty === null || qty <= 0 || qty > available) ? available : Math.floor(Number(qty));
+    const info = getFarmDailyLiquidationInfo(f);
+    if (!info.isUnlimited && info.remaining <= 0) {
+      throw new Error(`لقد استنفدت كامل سقف التسييل اليومي للمصنع (15,000,000 EGP). المتبقي لك اليوم: 0 EGP. يمكنك تلبية عقود التوريد B2B بدون سقف أو الانتظار للغد.`);
+    }
+
+    let sellQty = (qty === null || qty <= 0 || qty > available) ? available : Math.floor(Number(qty));
     // Contract-Only Economy: Emergency dump recovers only raw material seed cost (0% profit)
     const rawCrop = FARM_CROPS[recipe.inputCrop];
     const unitCropCost = rawCrop ? Math.floor((rawCrop.seedCost || 10) / (rawCrop.baseYield || 10)) : 5;
     const rawCostPerUnit = unitCropCost * (recipe.inputQty || 1);
-    const totalPrice = sellQty * rawCostPerUnit;
+    let totalPrice = sellQty * rawCostPerUnit;
 
-    // Enforce 5,000,000 EGP daily farm liquidation cap
+    // Smart Partial Liquidation: if requested amount exceeds remaining cap, clamp sellQty to fit perfectly
+    if (!info.isUnlimited && totalPrice > info.remaining) {
+      const allowedQty = Math.floor(info.remaining / rawCostPerUnit);
+      if (allowedQty <= 0) {
+        throw new Error(`سقف التسييل المتبقي اليوم (${info.remaining.toLocaleString()} EGP) لا يكفي لتسييل حتى وحدة واحدة من "${recipe.name}". المتبقي لك محفوظ بالمستودع.`);
+      }
+      sellQty = allowedQty;
+      totalPrice = sellQty * rawCostPerUnit;
+    }
+
     assertAndRecordFarmLiquidation(f, totalPrice);
 
-    f.processing.storage[recipeId] -= sellQty;
+    f.processing.storage[recipeId] = Math.max(0, f.processing.storage[recipeId] - sellQty);
     state.cash = (state.cash || 0) + totalPrice;
     if (!f.processing.stats) f.processing.stats = { totalProcessed: 0, totalRevenue: 0 };
     f.processing.stats.totalRevenue = (f.processing.stats.totalRevenue || 0) + totalPrice;
@@ -7153,32 +7167,45 @@ const GameEngine = (() => {
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
     if (!f.processing || !f.processing.storage) throw new Error("لا توجد منتجات مصنعة.");
 
+    const info = getFarmDailyLiquidationInfo(f);
+    if (!info.isUnlimited && info.remaining <= 0) {
+      throw new Error(`لقد استنفدت كامل سقف التسييل اليومي للمصنع (15,000,000 EGP). المتبقي لك اليوم: 0 EGP.`);
+    }
+
+    let remainingCap = info.isUnlimited ? Infinity : info.remaining;
     let grandTotal = 0;
     let itemsSold = 0;
-    const itemsToClear = [];
+    const soldBreakdown = [];
+
     Object.keys(f.processing.storage).forEach(rId => {
-      const qty = Number(f.processing.storage[rId] || 0);
-      if (qty > 0 && FARM_RECIPES[rId]) {
+      const availableQty = Number(f.processing.storage[rId] || 0);
+      if (availableQty > 0 && FARM_RECIPES[rId] && remainingCap > 0) {
         const rawCrop = FARM_CROPS[FARM_RECIPES[rId].inputCrop];
         const unitCropCost = rawCrop ? Math.floor((rawCrop.seedCost || 10) / (rawCrop.baseYield || 10)) : 5;
         const rawCostPerUnit = unitCropCost * (FARM_RECIPES[rId].inputQty || 1);
-        const p = qty * rawCostPerUnit;
-        grandTotal += p;
-        itemsSold += qty;
-        itemsToClear.push(rId);
+
+        const neededFunds = availableQty * rawCostPerUnit;
+        let qtyToSell = availableQty;
+        if (neededFunds > remainingCap) {
+          qtyToSell = Math.floor(remainingCap / rawCostPerUnit);
+        }
+
+        if (qtyToSell > 0) {
+          const itemPrice = qtyToSell * rawCostPerUnit;
+          grandTotal += itemPrice;
+          itemsSold += qtyToSell;
+          remainingCap -= itemPrice;
+          f.processing.storage[rId] = Math.max(0, availableQty - qtyToSell);
+          soldBreakdown.push({ rId, qty: qtyToSell, price: itemPrice });
+        }
       }
     });
 
     if (grandTotal <= 0) {
-      throw new Error("مستودع المنتجات المصنعة فارغ حالياً.");
+      throw new Error("مستودع المنتجات المصنعة فارغ أو تم استنفاد السقف المتبقي اليوم. المحاصيل المتبقية محفوظة في المزرعة.");
     }
 
-    // Enforce 5,000,000 EGP daily farm liquidation cap
     assertAndRecordFarmLiquidation(f, grandTotal);
-
-    itemsToClear.forEach(rId => {
-      f.processing.storage[rId] = 0;
-    });
 
     state.cash = (state.cash || 0) + grandTotal;
     if (!f.processing.stats) f.processing.stats = { totalProcessed: 0, totalRevenue: 0 };
@@ -7193,6 +7220,7 @@ const GameEngine = (() => {
       grandTotal,
       totalUnits: itemsSold,
       totalRevenue: grandTotal,
+      soldBreakdown,
       isEmergencyDump: true
     };
   }
