@@ -7795,7 +7795,23 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         if (GameEngine.state && GameEngine.state.isAdmin) {
           return false;
         }
-        showMaintenancePopup(st.message);
+
+        // Check Tester Passcode Bypass
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryPass = urlParams.get('tester_pass');
+        const storedPass = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_tester_pass')) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_tester_pass')) || '';
+        const activeServerPass = (st.tester_pass || st.tester_key || 'Season2_Tester_2026').trim();
+
+        if ((queryPass && queryPass.trim() === activeServerPass) || (storedPass && storedPass.trim() === activeServerPass)) {
+          try {
+            sessionStorage.setItem('rasalmal_tester_pass', activeServerPass);
+            localStorage.setItem('rasalmal_tester_pass', activeServerPass);
+          } catch (e) {}
+          hideMaintenanceOverlay();
+          return false;
+        }
+
+        showMaintenancePopup(st.message, st);
         return true;
       } else {
         hideMaintenanceOverlay();
@@ -7806,41 +7822,74 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
   }
 
-  function showMaintenancePopup(msg) {
+  function showMaintenancePopup(msg, stData) {
     if (isStagingEnvironment()) {
       hideMaintenanceOverlay();
       return;
     }
+
+    // Check Tester Passcode Bypass
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryPass = urlParams.get('tester_pass');
+    const storedPass = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_tester_pass')) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_tester_pass')) || '';
+    const activeServerPass = (stData && (stData.tester_pass || stData.tester_key) ? stData.tester_pass || stData.tester_key : 'Season2_Tester_2026').trim();
+
+    if ((queryPass && queryPass.trim() === activeServerPass) || (storedPass && storedPass.trim() === activeServerPass)) {
+      try {
+        sessionStorage.setItem('rasalmal_tester_pass', activeServerPass);
+        localStorage.setItem('rasalmal_tester_pass', activeServerPass);
+      } catch (e) {}
+      hideMaintenanceOverlay();
+      return;
+    }
+
     let overlay = document.getElementById('maintenance-overlay');
     if (!overlay) {
       overlay = document.createElement('div');
       overlay.id = 'maintenance-overlay';
-      overlay.className = 'fixed inset-0 z-[9999998] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4 select-none';
+      overlay.className = 'fixed inset-0 z-[9999998] flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl p-4 select-none';
       overlay.style.pointerEvents = 'auto';
       overlay.innerHTML = `
-        <div class="relative w-full max-w-md bg-slate-900 border-2 border-rose-500/80 rounded-2xl p-6 text-center shadow-2xl shadow-rose-500/20">
-          <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 text-3xl">
-            <i class="fa-solid fa-screwdriver-wrench animate-bounce" style="animation-duration: 2s;"></i>
+        <div class="relative w-full max-w-md bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 border-2 border-amber-500/70 rounded-3xl p-6 sm:p-7 text-center shadow-2xl shadow-amber-500/20">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-tr from-amber-500/20 to-yellow-500/30 border-2 border-amber-500/50 flex items-center justify-center text-amber-400 text-3xl shadow-inner">
+            <i class="fa-solid fa-rocket animate-bounce" style="animation-duration: 2.5s;"></i>
           </div>
-          <h3 class="text-xl font-black text-white mb-1.5 flex items-center justify-center gap-2">
-            <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
-            <span>الخوادم رهن الصيانة الفنية</span>
+          
+          <div class="inline-block px-3 py-1 bg-amber-500/20 text-amber-300 text-xs font-black rounded-full border border-amber-500/30 mb-2">
+            SEASON 2 • الموسم الثاني
+          </div>
+
+          <h3 class="text-xl sm:text-2xl font-black text-white mb-1.5 flex items-center justify-center gap-2">
+            <span>الخوادم رهن التجهيز للموسم الجديد</span>
           </h3>
-          <div class="inline-block px-3 py-1 bg-rose-500/20 text-rose-300 text-xs font-bold rounded-full border border-rose-500/30 mb-3">
-            تحديث وصيانة طارئة
-          </div>
-          <p id="maintenance-overlay-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6 font-medium">
-            ${msg || 'تخضع خوادم اللعبة حالياً لأعمال صيانة وتحديث إداري لتحسين الأداء وحماية الحسابات. يرجى الانتظار والمحاولة لاحقاً.'}
+          
+          <p id="maintenance-overlay-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4 font-medium">
+            ${msg || 'يجري العمل حالياً على تجهيز البنية التحتية والموازنة الاقتصادية لضمان انطلاقة خالية من الأخطاء وتجربة عادلة وممتعة للجميع.'}
           </p>
-          <button id="btn-maintenance-recheck" class="w-full py-3.5 px-6 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-sm rounded-xl shadow-lg shadow-amber-500/20 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
-            <i class="fa-solid fa-rotate-right text-lg"></i>
-            <span>إعادة فحص حالة الخوادم الآن</span>
-          </button>
+
+          <!-- Rechargers Special Notice -->
+          <div class="my-4 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/15 border-2 border-amber-500/50 text-amber-200 text-xs text-right leading-relaxed shadow-lg">
+            <div class="font-black text-amber-300 text-xs sm:text-sm mb-1.5 flex items-center gap-1.5">
+              <i class="fa-solid fa-gem text-amber-400"></i>
+              <span>تنويه هام لجميع الداعمين والشاحنين 💎:</span>
+            </div>
+            <p class="text-[11.5px] text-amber-100/90 leading-relaxed">
+              يرجى من جميع اللاعبين الذين قاموا بالشحن سابقاً، <strong class="text-white font-black underline">التواصل معنا عبر رسائل صفحة فيسبوك</strong> لتسجيل وتأكيد إعادة إرسال كامل باقاتهم وشحناتهم لحساباتهم فور انطلاق الموسم الجديد.
+            </p>
+          </div>
+
+          <!-- Facebook Button -->
           <a href="https://www.facebook.com/share/1V5sfNkvC9/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
-            class="w-full mt-3 py-3 px-6 bg-[#1877F2]/15 hover:bg-[#1877F2]/25 border border-[#1877F2]/40 text-blue-300 hover:text-white font-bold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer no-underline">
-            <i class="fa-brands fa-facebook text-base text-[#1877F2]"></i>
-            <span>متابعة آخر أخبار وتحديثات اللعبة عبر فيسبوك</span>
+            class="w-full py-3.5 px-6 bg-gradient-to-r from-[#1877F2] to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/25 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer no-underline">
+            <i class="fa-brands fa-facebook text-lg"></i>
+            <span>تواصل معنا ومتابعة آخر الأخبار عبر فيسبوك</span>
           </a>
+
+          <!-- Reload Button -->
+          <button id="btn-maintenance-recheck" class="w-full mt-2.5 py-3 px-6 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-rotate-right text-sm text-amber-400"></i>
+            <span>إعادة فحص حالة الخوادم الآن (Reload)</span>
+          </button>
         </div>
       `;
       document.body.appendChild(overlay);
@@ -7854,14 +7903,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             const st = await AppDB.getMaintenanceStatus();
             if (st && (st.active || st.enabled)) {
               recheckBtn.disabled = false;
-              recheckBtn.innerHTML = '<i class="fa-solid fa-rotate-right text-lg"></i> <span>الخوادم ما زالت قيد الصيانة.. إعادة الفحص</span>';
+              recheckBtn.innerHTML = '<i class="fa-solid fa-rotate-right text-sm text-amber-400"></i> <span>الخوادم ما زالت قيد التجهيز.. إعادة الفحص</span>';
             } else {
               hideMaintenanceOverlay();
               window.location.reload();
             }
           } catch (e) {
             recheckBtn.disabled = false;
-            recheckBtn.innerHTML = '<i class="fa-solid fa-rotate-right text-lg"></i> <span>إعادة فحص حالة الخوادم</span>';
+            recheckBtn.innerHTML = '<i class="fa-solid fa-rotate-right text-sm text-amber-400"></i> <span>إعادة فحص حالة الخوادم</span>';
           }
         });
       }
