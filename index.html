@@ -12,31 +12,33 @@
     if (window.location.hostname.endsWith('vercel.app')) {
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
-    // Hard Build Version Enforcement & Automatic Cache Purge
+    // Hard Build Version Enforcement with Loop Prevention Guard
     window._CLIENT_VERSION = 'v7.9.0';
     (async function() {
       const CURRENT_APP_BUILD = 'v7.9.0';
       try {
         localStorage.removeItem('rasalmal_banned_device');
-        // Unregister any stale Service Workers
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            for (let r of registrations) r.unregister();
-          }).catch(function() {});
-        }
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
           const s = await res.json();
           if (s && s.version && s.version !== CURRENT_APP_BUILD) {
+            const reloadKey = 'rasalmal_reload_attempt_' + s.version;
+            const attempts = Number(sessionStorage.getItem(reloadKey) || 0);
+            if (attempts >= 2) {
+              console.warn('[Version Sync] Max reload attempts reached for', s.version, 'Preventing loop.');
+              return;
+            }
+            sessionStorage.setItem(reloadKey, String(attempts + 1));
             console.warn('[Version Sync] New game version available:', s.version, 'Current:', CURRENT_APP_BUILD);
             if ('caches' in window) {
-              const keys = await caches.keys();
-              await Promise.all(keys.map(k => caches.delete(k)));
+              try {
+                const keys = await caches.keys();
+                await Promise.all(keys.map(k => caches.delete(k)));
+              } catch (_) {}
             }
-            sessionStorage.clear();
             const url = new URL(window.location.href);
-            url.searchParams.set('_build', s.version);
+            url.searchParams.set('_v', s.version);
             window.location.replace(url.toString());
             return;
           }
@@ -7807,22 +7809,18 @@
               window.location.replace(window.location.pathname + '?v=' + Date.now());
             };
 
-            if (window.UIController && typeof window.UIController.triggerMandatoryReloadModal === 'function') {
-              window.UIController.triggerMandatoryReloadModal(data.message || 'تم إطلاق تحديث برمجي جديد لتحسين الاستقرار وحماية الحسابات.', reloadTs);
-            } else {
-              const overlay = document.getElementById('mandatory-reload-overlay');
-              if (overlay) {
-                const reason = document.getElementById('mandatory-reload-reason');
-                if (reason && data.message) reason.textContent = data.message;
-                overlay.classList.remove('hidden');
-                const btn = document.getElementById('btn-mandatory-reload-action');
-                if (btn) {
-                  btn.onclick = purgeAndReload;
-                }
-              } else {
-                // Fallback: reload automatically after 1 second
-                setTimeout(purgeAndReload, 1000);
+            const overlay = document.getElementById('mandatory-reload-overlay');
+            if (overlay) {
+              const reason = document.getElementById('mandatory-reload-reason');
+              if (reason && data.message) reason.textContent = data.message;
+              overlay.classList.remove('hidden');
+              const btn = document.getElementById('btn-mandatory-reload-action');
+              if (btn) {
+                btn.onclick = purgeAndReload;
               }
+            } else {
+              // Mark acknowledged immediately to prevent loop
+              localStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
             }
           }
         } catch (err) {}

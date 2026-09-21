@@ -22535,32 +22535,42 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
         await checkMaintenanceMode();
       }
 
-      // 3. Check Version Manifest every 10 seconds
+      // 3. Check Version Manifest every 30 seconds with loop protection
       const now = Date.now();
-      if (now - _lastVersionCheckWatchdog >= 10000) {
+      if (now - _lastVersionCheckWatchdog >= 30000) {
         _lastVersionCheckWatchdog = now;
-        const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
-        if (res.ok) {
-          const s = await res.json();
-          const curVer = (window._CLIENT_VERSION || 'v7.7.0');
-          if (s && s.version && s.version !== curVer) {
-            console.warn('[Auto-Updater] Game update detected:', s.version, 'Current:', curVer);
-            if (window.UIController && typeof window.UIController.triggerMandatoryReloadModal === 'function') {
-              window.UIController.triggerMandatoryReloadModal('تم إطلاق تحديث جديد للعبة على السيرفر (' + s.version + '). جاري تحديث اللعبة ومسح الكاش تلقائياً...');
-            } else {
-              if ('caches' in window) {
-                const keys = await caches.keys();
-                await Promise.all(keys.map(k => caches.delete(k)));
+        try {
+          const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
+          if (res.ok) {
+            const s = await res.json();
+            const curVer = (window._CLIENT_VERSION || 'v7.9.0');
+            if (s && s.version && s.version !== curVer) {
+              const loopKey = 'rasalmal_watchdog_reload_' + s.version;
+              const reloadedCount = Number(sessionStorage.getItem(loopKey) || 0);
+              if (reloadedCount < 2) {
+                sessionStorage.setItem(loopKey, String(reloadedCount + 1));
+                console.warn('[Auto-Updater] Game update detected:', s.version, 'Current:', curVer);
+                if ('caches' in window) {
+                  try {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(k => caches.delete(k)));
+                  } catch (_) {}
+                }
+                const url = new URL(window.location.href);
+                url.searchParams.set('_v', s.version);
+                window.location.replace(url.toString());
+                return;
+              } else {
+                console.warn('[Auto-Updater] Auto-reload already attempted twice for', s.version, 'Suppressing loop.');
               }
-              window.location.reload(true);
             }
           }
-        }
+        } catch (_) {}
       }
     } catch (e) {}
   };
 
-  setInterval(checkForceReloadWatchdog, 3000);
+  setInterval(checkForceReloadWatchdog, 15000);
   checkForceReloadWatchdog();
 
   if (typeof document !== 'undefined') {
