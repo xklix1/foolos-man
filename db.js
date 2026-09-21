@@ -1991,10 +1991,10 @@ var AppDB = (() => {
   function _sanitizePayloadBeforeCloudPush(payload, state) {
     if (!payload || !state) return;
 
-    // Master Admin / Owner Immunity: Khaled
     const uLower = String(payload.username || state.username || '').trim().toLowerCase();
-    if (uLower === 'khaled' || window._isServerVerifiedAdmin) {
-      window._isServerVerifiedAdmin = true;
+    
+    // Master Admin / Owner Immunity: Khaled
+    if (uLower === 'khaled') {
       state.isAdmin = true;
       state.isBanned = false;
       payload.is_admin = true;
@@ -2002,12 +2002,10 @@ var AppDB = (() => {
       return;
     }
 
-    // 1. Admin escalation guard: NEVER allow untrusted client to promote self
-    if (!window._isServerVerifiedAdmin) {
-      delete payload.is_admin;
-      if (state.isAdmin) state.isAdmin = false;
-    } else {
-      payload.is_admin = true;
+    // STRICT: Any other player account must NEVER have is_admin set from client push
+    delete payload.is_admin;
+    if (state.isAdmin) {
+      state.isAdmin = false;
     }
 
     // 2. Unban guard: NEVER allow untrusted client to unban self
