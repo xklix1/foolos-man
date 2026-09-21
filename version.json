@@ -1,7 +1,7 @@
 {
-  "version": "v7.8.2",
-  "build": "2026-09-21T19:31:00.000Z",
-  "minRequiredVersion": "v7.8.2",
-  "notes": "Instant Real-Time Maintenance Enforcement & Auto-Lock",
+  "version": "v7.8.3",
+  "build": "2026-09-21T19:46:00.000Z",
+  "minRequiredVersion": "v7.8.3",
+  "notes": "Industry Net Revenue and Tax Display Fix",
   "forcePurgeCache": true
 }

@@ -19252,8 +19252,9 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const info = GameEngine.getIndustrySectorState(sKey);
         if (info && info.state && info.state.unlocked) {
           const ready = Math.floor(info.state.readyStock || 0);
-          const val = (ready * (info.definition.product.baseValue || 0));
-          totalPendingCash += val;
+          const grossVal = ready * (info.definition.product.baseValue || 0);
+          const netVal = grossVal - Math.floor(grossVal * 0.15);
+          totalPendingCash += netVal;
 
           // Update tab stock badges
           const tabBadge = document.getElementById(`industry-tab-badge-${sKey}`);
@@ -19278,7 +19279,9 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (!activeInfo || !activeInfo.state || !activeInfo.state.unlocked) return;
 
     const readyUnits = Math.floor(activeInfo.state.readyStock || 0);
-    const pendingRev = readyUnits * (activeInfo.definition.product.baseValue || 0);
+    const grossRev = readyUnits * (activeInfo.definition.product.baseValue || 0);
+    const overheadCost = Math.floor(grossRev * 0.15);
+    const netRev = grossRev - overheadCost;
 
     const unitsEl = document.getElementById('industry-active-stock-units');
     if (unitsEl) unitsEl.textContent = readyUnits.toLocaleString();
@@ -19296,14 +19299,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
 
     const revEl = document.getElementById('industry-active-stock-rev');
-    if (revEl) revEl.textContent =`${pendingRev.toLocaleString()} EGP`;
+    if (revEl) revEl.textContent =`${netRev.toLocaleString()} EGP`;
 
     const sellBtn = document.getElementById('btn-industry-sell-cash');
     if (sellBtn) {
       const label = sellBtn.querySelector('.btn-label');
       if (label) {
         label.textContent = readyUnits > 0 
-          ?`بيع فوري نقداً (+${pendingRev.toLocaleString()} EGP)` 
+          ?`بيع فوري نقداً (+${netRev.toLocaleString()} EGP)` 
           :'بيع فوري نقداً';
       }
       if (readyUnits <= 0) {
