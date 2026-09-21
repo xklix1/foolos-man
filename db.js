@@ -3831,7 +3831,7 @@ var AppDB = (() => {
     if (payload.is_admin !== undefined) stateObj.isAdmin = payload.is_admin;
     if (payload.jail_timer !== undefined) stateObj.jailTimer = payload.jail_timer;
 
-    const now = Number(updates.adminModifiedTimestamp) || (Date.now() + 600000);
+    const now = Number(updates.adminModifiedTimestamp) || Date.now();
     stateObj.adminModifiedTimestamp = now;
     payload.state = stateObj;
     payload.admin_modified_timestamp = now;
