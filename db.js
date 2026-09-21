@@ -2106,20 +2106,11 @@ var AppDB = (() => {
     if (state.pin) payload.pin = state.pin;
     _sanitizePayloadBeforeCloudPush(payload, state);
 
-    // When Authoritative ServerBridge is online, server writes authoritatively via service_role
-    if (typeof window !== 'undefined' && window.ServerBridge) {
-      if (typeof window.ServerBridge.syncState === 'function') {
-        try {
-          await window.ServerBridge.syncState(state, true, u);
-        } catch (e) {}
-        _lastCloudSyncTimestamp = Date.now();
-        return;
-      } else if (typeof window.ServerBridge.isServerOnline === 'function' && window.ServerBridge.isServerOnline() && typeof window.ServerBridge.sendHeartbeat === 'function') {
-        window.ServerBridge.sendHeartbeat();
-        _lastCloudSyncTimestamp = Date.now();
-        return;
-      }
+    // Background ServerBridge notification (non-blocking, never skips Supabase direct save)
+    if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.syncState === 'function') {
+      window.ServerBridge.syncState(state, immediateCloud === true, u).catch(() => {});
     }
+
     try {
       state.isReset = false;
       if (state.state) state.state.isReset = false;
@@ -2128,17 +2119,12 @@ var AppDB = (() => {
         delete payload.state.resetTimestamp;
       }
 
-      const adminTs = Number(state.adminModifiedTimestamp || 0);
-      const tsFilter = adminTs > 0 
-        ? `&admin_modified_timestamp=lte.${adminTs}` 
-        : `&or=(admin_modified_timestamp.is.null,admin_modified_timestamp.eq.0)`;
-
       // Set guard flag so polling does NOT overwrite in-memory state while PATCH is in-flight
       _pendingCloudWrite = true;
       if (typeof window !== 'undefined') window._dbPendingCloudWrite = true;
       let res;
       try {
-        res = await _api(`players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
+        res = await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
           method:'PATCH',
           headers: {'Prefer':'return=representation' },
           body: JSON.stringify(payload)
@@ -2152,40 +2138,9 @@ var AppDB = (() => {
         }
       }
       _lastCloudSyncTimestamp = Date.now();
-
-      // If 0 rows were updated: timestamp mismatch (wire transfer lock or admin override).
-      // Pull fresh DB state and refresh the UI so the user sees the correct authoritative balance.
-      if (Array.isArray(res) && res.length === 0) {
-        console.warn(`[Sync] Cloud save rejected for ${u}: DB has newer admin_modified_timestamp. Refreshing state from DB...`);
-        try {
-          const freshState = await getPlayerState(u);
-          if (freshState && typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername === u) {
-            const freshAdminTs = Number(freshState.adminModifiedTimestamp || 0);
-            // Update in-memory state to authoritative DB values
-            window.GameEngine.state.cash = Number(freshState.cash || 0);
-            window.GameEngine.state.bank = Number(freshState.bank || 0);
-            window.GameEngine.state.dirtyCash = Number(freshState.dirtyCash || 0);
-            window.GameEngine.state.netWorth = Number(freshState.netWorth || 0);
-            window.GameEngine.state.adminModifiedTimestamp = freshAdminTs;
-            setEncryptedLocalState(`rasalmal_state_${u}`, window.GameEngine.state);
-            // Now retry the save with the fresh anchor so subsequent operations (e.g. deposit) can land
-            const retryPayload = { ...payload };
-            retryPayload.cash = Number(freshState.cash || 0);
-            retryPayload.bank = Number(freshState.bank || 0);
-            retryPayload.net_worth = Number(freshState.netWorth || 0);
-            retryPayload.state = window.GameEngine.state;
-            await _api(`players?username=ilike.${encodeURIComponent(u)}&admin_modified_timestamp=lte.${freshAdminTs}`, {
-              method: 'PATCH',
-              headers: { 'Prefer': 'return=minimal' },
-              body: JSON.stringify(retryPayload)
-            }).catch(() => {});
-            _lastCloudSyncTimestamp = Date.now();
-            if (typeof renderAll === 'function') renderAll();
-          }
-        } catch (_) {}
-      }
+      return res;
     } catch (err) {
-      // Direct client mutation is blocked by RLS in production
+      console.warn('[Sync] Direct Supabase push note:', err.message);
     }
   }
 
