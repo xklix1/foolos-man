@@ -12,6 +12,30 @@
     if (window.location.hostname.endsWith('vercel.app')) {
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
+    // Hard Build Version Enforcement & Cache Purge
+    (function() {
+      const CURRENT_APP_BUILD = 'v7.2.0';
+      try {
+        const storedBuild = localStorage.getItem('rasalmal_client_build_version');
+        if (storedBuild !== CURRENT_APP_BUILD) {
+          localStorage.setItem('rasalmal_client_build_version', CURRENT_APP_BUILD);
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              names.forEach(function(name) {
+                if (name !== 'rasalmal-' + CURRENT_APP_BUILD) {
+                  caches.delete(name);
+                }
+              });
+            });
+          }
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              regs.forEach(function(r) { r.update(); });
+            });
+          }
+        }
+      } catch (e) {}
+    })();
   </script>
   <!-- Google Fonts (Cairo & Outfit) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -7766,17 +7790,32 @@
 
           const data = rows[0].data;
           const reloadTs = Number(data.timestamp);
-          const storedAck = Number(sessionStorage.getItem('rasalmal_acknowledged_reload') || 0);
+          const storedAck = Number(localStorage.getItem('rasalmal_acknowledged_reload') || 0);
 
-          if (!sessionStorage.getItem('rasalmal_acknowledged_reload')) {
-            sessionStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
+          if (storedAck === 0) {
+            localStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
             return;
           }
 
           if (reloadTs > storedAck && !isOverlayActive) {
             isOverlayActive = true;
+            const purgeAndReload = async () => {
+              localStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
+              try {
+                if ('caches' in window) {
+                  const keys = await caches.keys();
+                  await Promise.all(keys.map(k => caches.delete(k)));
+                }
+                if ('serviceWorker' in navigator) {
+                  const regs = await navigator.serviceWorker.getRegistrations();
+                  await Promise.all(regs.map(r => r.unregister()));
+                }
+              } catch (e) {}
+              window.location.replace(window.location.pathname + '?v=' + Date.now());
+            };
+
             if (window.UIController && typeof window.UIController.triggerMandatoryReloadModal === 'function') {
-              window.UIController.triggerMandatoryReloadModal(data.message, reloadTs);
+              window.UIController.triggerMandatoryReloadModal(data.message || 'تم إطلاق تحديث برمجي جديد لتحسين الاستقرار وحماية الحسابات.', reloadTs);
             } else {
               const overlay = document.getElementById('mandatory-reload-overlay');
               if (overlay) {
@@ -7785,11 +7824,11 @@
                 overlay.classList.remove('hidden');
                 const btn = document.getElementById('btn-mandatory-reload-action');
                 if (btn) {
-                  btn.onclick = function() {
-                    sessionStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
-                    window.location.reload(true);
-                  };
+                  btn.onclick = purgeAndReload;
                 }
+              } else {
+                // Fallback: reload automatically after 1 second
+                setTimeout(purgeAndReload, 1000);
               }
             }
           }
