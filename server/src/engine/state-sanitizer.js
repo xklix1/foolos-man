@@ -5,10 +5,10 @@
  */
 
 const DEFAULT_STATE = {
-  cash: 1000,
-  bank: 0,
+  cash: 500000,
+  bank: 500000,
   dirtyCash: 0,
-  netWorth: 1000,
+  netWorth: 1000000,
   xp: 0,
   title: 'عامل مبتدئ',
   jobId: 'worker',

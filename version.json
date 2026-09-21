@@ -1,7 +1,7 @@
 {
-  "version": "v7.8.9",
-  "build": "2026-09-21T21:02:00.000Z",
-  "minRequiredVersion": "v7.8.9",
-  "notes": "Fix PostgREST query URL syntax by removing _t parameter",
+  "version": "v7.9.0",
+  "build": "2026-09-21T21:12:00.000Z",
+  "minRequiredVersion": "v7.9.0",
+  "notes": "Set 500k cash and 500k bank initial starting balance across all client and server engines",
   "forcePurgeCache": true
 }
