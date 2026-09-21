@@ -22546,7 +22546,12 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
         }
       }
 
-      // 2. Check Version Manifest every 10 seconds
+      // 2. Check Maintenance Mode status
+      if (typeof checkMaintenanceMode === 'function') {
+        await checkMaintenanceMode();
+      }
+
+      // 3. Check Version Manifest every 10 seconds
       const now = Date.now();
       if (now - _lastVersionCheckWatchdog >= 10000) {
         _lastVersionCheckWatchdog = now;

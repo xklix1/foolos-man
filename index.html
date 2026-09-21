@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Automatic Cache Purge
-    window._CLIENT_VERSION = 'v7.8.1';
+    window._CLIENT_VERSION = 'v7.8.2';
     (async function() {
-      const CURRENT_APP_BUILD = 'v7.8.1';
+      const CURRENT_APP_BUILD = 'v7.8.2';
       try {
         localStorage.removeItem('rasalmal_banned_device');
         // Unregister any stale Service Workers
@@ -7980,6 +7980,7 @@
               }
             } else {
               overlay.classList.remove('hidden');
+              overlay.style.display = 'flex';
               const reasonEl = document.getElementById('maintenance-overlay-reason');
               if (reasonEl && data.message) {
                 reasonEl.textContent = data.message;
@@ -7999,8 +8000,8 @@
       checkForceReloadDirectly();
       if (!isStagingEnv()) {
         checkMaintenanceDirectly();
-        // Egress optimization: check every 90s when tab is active and not idle
-        setInterval(checkMaintenanceDirectly, 90000);
+        // Check maintenance status every 3s for instant block
+        setInterval(checkMaintenanceDirectly, 3000);
       } else {
         const overlay = document.getElementById('maintenance-overlay');
         if (overlay) {
@@ -8032,6 +8033,9 @@
       if (typeof window !== 'undefined') {
         window.addEventListener('focus', function() {
           checkForceReloadDirectly();
+          if (!isStagingEnv()) {
+            checkMaintenanceDirectly();
+          }
         });
       }
     })();

@@ -1,7 +1,7 @@
 {
-  "version": "v7.8.1",
-  "build": "2026-09-21T18:37:47.025Z",
-  "minRequiredVersion": "v7.8.1",
-  "notes": "Arabic Khaled Admin Immunity & Velocity Protection Fix",
+  "version": "v7.8.2",
+  "build": "2026-09-21T19:31:00.000Z",
+  "minRequiredVersion": "v7.8.2",
+  "notes": "Instant Real-Time Maintenance Enforcement & Auto-Lock",
   "forcePurgeCache": true
 }
