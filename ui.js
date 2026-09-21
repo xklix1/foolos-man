@@ -7788,9 +7788,12 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const st = await AppDB.getMaintenanceStatus();
       const isMaint = Boolean(st && (st.active || st.enabled));
       if (isMaint) {
-        if (GameEngine.state && GameEngine.state.isAdmin) {
-          return false;
-        }
+        // Admin bypass (only if GameEngine is loaded and user is admin)
+        try {
+          if (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.isAdmin) {
+            return false;
+          }
+        } catch (e) {}
 
         // Check Tester Passcode Bypass
         const urlParams = new URLSearchParams(window.location.search);
@@ -7806,6 +7809,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           hideMaintenanceOverlay();
           return false;
         } else {
+          // Revoke stale tester tokens
           try {
             sessionStorage.removeItem('rasalmal_tester_pass');
             localStorage.removeItem('rasalmal_tester_pass');
@@ -7819,6 +7823,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         return false;
       }
     } catch (e) {
+      // Fail-open: on unexpected errors don't block users (network issues etc.)
+      console.warn('[Maintenance] check error:', e);
       return false;
     }
   }
@@ -7829,19 +7835,27 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       return;
     }
 
-    // Check Tester Passcode Bypass
+    // Check Tester Passcode Bypass - ONLY if server defines a real pass
     const urlParams = new URLSearchParams(window.location.search);
     const queryPass = urlParams.get('tester_pass');
     const storedPass = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_tester_pass')) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_tester_pass')) || '';
-    const activeServerPass = (stData && (stData.tester_pass || stData.tester_key) ? stData.tester_pass || stData.tester_key : 'Season2_Tester_2026').trim();
+    const activeServerPass = (stData && (stData.tester_pass || stData.tester_key) ? (stData.tester_pass || stData.tester_key) : '').trim();
 
-    if ((queryPass && queryPass.trim() === activeServerPass) || (storedPass && storedPass.trim() === activeServerPass)) {
+    if (activeServerPass && ((queryPass && queryPass.trim() === activeServerPass) || (storedPass && storedPass.trim() === activeServerPass))) {
       try {
         sessionStorage.setItem('rasalmal_tester_pass', activeServerPass);
         localStorage.setItem('rasalmal_tester_pass', activeServerPass);
       } catch (e) {}
       hideMaintenanceOverlay();
       return;
+    } else {
+      // Revoke any stale tester tokens so they don't bypass again
+      try {
+        sessionStorage.removeItem('rasalmal_tester_pass');
+        localStorage.removeItem('rasalmal_tester_pass');
+      } catch (e) {}
+      const badgeTb = document.getElementById('tester-mode-badge');
+      if (badgeTb) { try { badgeTb.remove(); } catch (e) {} }
     }
 
     let overlay = document.getElementById('maintenance-overlay');

@@ -2987,14 +2987,29 @@ var AppDB = (() => {
       return { active: false, enabled: false, message: '' };
     }
     try {
-      const rows = await _api(`globals?id=eq.maintenance&_t=${Date.now()}`, {
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
-      });
+      // Direct fetch with guaranteed no-cache to bypass all HTTP caching layers
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/globals?id=eq.maintenance&_t=${Date.now()}`,
+        {
+          method: 'GET',
+          cache: 'no-store',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        }
+      );
+      if (!res.ok) return { active: false, message: '' };
+      const rows = await res.json();
       if (rows && rows.length > 0 && rows[0].data) {
         return rows[0].data;
       }
     } catch (e) {}
-    return { active: false, message:'' };
+    return { active: false, message: '' };
   }
 
   async function setStagingStatus(enabled, message = '') {
