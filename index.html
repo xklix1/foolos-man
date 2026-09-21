@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Automatic Cache Purge
-    window._CLIENT_VERSION = 'v7.8.0';
+    window._CLIENT_VERSION = 'v7.8.1';
     (async function() {
-      const CURRENT_APP_BUILD = 'v7.8.0';
+      const CURRENT_APP_BUILD = 'v7.8.1';
       try {
         localStorage.removeItem('rasalmal_banned_device');
         // Unregister any stale Service Workers
@@ -112,7 +112,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=7.8.0">
+  <link rel="stylesheet" href="app.css?v=7.8.1">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -7156,11 +7156,11 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=7.8.0"></script>
-  <script src="server-client-bridge.js?v=7.8.0"></script>
-  <script src="game.js?v=7.8.0"></script>
-  <script src="ui.js?v=7.8.0"></script>
-  <script src="pwa-manager.js?v=7.8.0"></script>
+  <script src="db.js?v=7.8.1"></script>
+  <script src="server-client-bridge.js?v=7.8.1"></script>
+  <script src="game.js?v=7.8.1"></script>
+  <script src="ui.js?v=7.8.1"></script>
+  <script src="pwa-manager.js?v=7.8.1"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

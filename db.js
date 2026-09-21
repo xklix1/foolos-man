@@ -571,7 +571,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v7.8.0';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v7.8.1';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -580,7 +580,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v7.8.0', remoteVersion: 'v7.8.0' };
+    return { upToDate: true, clientVersion: 'v7.8.1', remoteVersion: 'v7.8.1' };
   }
 
   async function checkDeviceBan() {
@@ -1387,7 +1387,7 @@ var AppDB = (() => {
       _lastVerifiedCloudWealth = isAccountResetRow ? 0 : (Math.max(0, Number(row.cash || 0)) + Math.max(0, Number(row.bank || 0)));
       _lastVerifiedCloudXp = isAccountResetRow ? 0 : Number(row.xp || 0);
       _lastVerifiedCloudTime = Date.now();
-      const isKhaledAccount = String(row.username || u || '').trim().toLowerCase() === 'khaled';
+      const isKhaledAccount = ['khaled', 'خالد'].includes(String(row.username || u || '').trim().toLowerCase()) || Boolean(row.is_admin);
       if (isKhaledAccount) {
         stateObj.isBanned = false;
         stateObj.isAdmin = true;
@@ -1981,7 +1981,7 @@ var AppDB = (() => {
     const uLower = String(payload.username || state.username || '').trim().toLowerCase();
     
     // Master Admin / Owner Immunity: Khaled
-    if (uLower === 'khaled') {
+    if (['khaled', 'خالد'].includes(uLower) || state.isAdmin) {
       state.isAdmin = true;
       state.isBanned = false;
       payload.is_admin = true;
@@ -3821,7 +3821,7 @@ var AppDB = (() => {
   async function adminDeletePlayer(username) {
     if (!username) return false;
     const cleanUser = String(username).replace(/^@/, '').trim();
-    if (cleanUser.toLowerCase() === 'khaled') {
+    if (['khaled', 'خالد'].includes(cleanUser.toLowerCase())) {
       console.warn('[SECURITY] Master Admin Khaled is immune to deletion.');
       return false;
     }
@@ -3839,7 +3839,7 @@ var AppDB = (() => {
   async function adminResetPlayer(username) {
     if (!username) return false;
     const cleanUser = String(username).replace(/^@/, '').trim();
-    if (cleanUser.toLowerCase() === 'khaled') {
+    if (['khaled', 'خالد'].includes(cleanUser.toLowerCase())) {
       console.warn('[SECURITY] Master Admin Khaled is immune to reset.');
       return false;
     }
@@ -3981,7 +3981,7 @@ var AppDB = (() => {
   async function adminBanPlayer(username) {
     if (!username) return false;
     const cleanUser = String(username).replace(/^@/, '').trim();
-    if (cleanUser.toLowerCase() === 'khaled') {
+    if (['khaled', 'خالد'].includes(cleanUser.toLowerCase())) {
       console.warn('[SECURITY] Master Admin Khaled is immune to bans.');
       return false;
     }
@@ -4023,7 +4023,7 @@ var AppDB = (() => {
   async function adminChangePlayerPin(username, newPin) {
     if (!username) return false;
     const cleanUser = String(username).replace(/^@/, '').trim();
-    if (cleanUser.toLowerCase() === 'khaled') {
+    if (['khaled', 'خالد'].includes(cleanUser.toLowerCase())) {
       console.warn('[SECURITY] Master Admin Khaled PIN cannot be modified via admin panel.');
       return false;
     }
@@ -6006,7 +6006,7 @@ var AppDB = (() => {
 
     // 3. Player account ban check
     if (state.isBanned || state.is_banned) {
-      if (String(u).trim().toLowerCase() === 'khaled' || state.isAdmin) {
+      if (['khaled', 'خالد'].includes(String(u).trim().toLowerCase()) || state.isAdmin) {
         state.isBanned = false;
         state.is_banned = false;
       } else {
