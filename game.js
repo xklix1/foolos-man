@@ -3719,7 +3719,7 @@ const GameEngine = (() => {
 
       state.lastActiveTimestamp = getTrustedNow();
       state.netWorth = calculateNetWorth();
-      await AppDB.savePlayerState(username, state);
+      await AppDB.savePlayerState(username, state, true);
     } else {
       // Local fallback only if no dbState is found; DO NOT overwrite cloud state!
       console.warn('[GameEngine] No cloud dbState found for user:', username);
