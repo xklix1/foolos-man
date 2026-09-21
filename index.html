@@ -14,25 +14,18 @@
     }
     // Hard Build Version Enforcement & Cache Purge
     (function() {
-      const CURRENT_APP_BUILD = 'v7.5.0';
+      const CURRENT_APP_BUILD = 'v7.6.0';
       try {
-        const storedBuild = localStorage.getItem('rasalmal_client_build_version');
-        if (storedBuild !== CURRENT_APP_BUILD) {
-          localStorage.setItem('rasalmal_client_build_version', CURRENT_APP_BUILD);
-          if ('caches' in window) {
-            caches.keys().then(function(names) {
-              names.forEach(function(name) {
-                if (name !== 'rasalmal-' + CURRENT_APP_BUILD) {
-                  caches.delete(name);
-                }
-              });
-            });
-          }
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(regs) {
-              regs.forEach(function(r) { r.update(); });
-            });
-          }
+        const SEASON_TAG = 'season_2_clean_epoch_v1';
+        if (localStorage.getItem('rasalmal_season_epoch') !== SEASON_TAG) {
+          localStorage.setItem('rasalmal_season_epoch', SEASON_TAG);
+          // Purge all old player states from localStorage to prevent Season 1 ghost resurrection
+          Object.keys(localStorage).forEach(function(k) {
+            if (k.startsWith('rasalmal_state_') || k.startsWith('rasalmal_backup_') || k.startsWith('rasalmal_auth_token_') || k === 'rasalmal_active_session_user' || k === 'rasalmal_registered_account') {
+              localStorage.removeItem(k);
+            }
+          });
+          sessionStorage.clear();
         }
       } catch (e) {}
     })();
@@ -7149,7 +7142,7 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=42.0"></script>
+  <script src="db.js?v=43.0"></script>
   <script src="server-client-bridge.js?v=34.0"></script>
   <script src="game.js?v=66.0"></script>
   <script src="ui.js?v=78.0"></script>

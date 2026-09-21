@@ -1341,11 +1341,24 @@ var AppDB = (() => {
 
 
     try {
-      const local = isCurrentPlayer ? getDecryptedLocalState(`rasalmal_state_${u}`) : null;
       // Order by last_seen desc to always prioritize the most recently active state
       const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&order=last_seen.desc&select=*`);
       if (!rows || rows.length === 0) {
-        return local;
+        // Account does NOT exist in cloud DB: strictly purge any local ghost state
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem(`rasalmal_state_${u}`);
+            localStorage.removeItem(`rasalmal_backup_${u}`);
+            localStorage.removeItem(`rasalmal_auth_token_${u}`);
+            if (localStorage.getItem('rasalmal_active_session_user') === u) {
+              localStorage.removeItem('rasalmal_active_session_user');
+            }
+          }
+          if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.removeItem(`rasalmal_state_${u}`);
+          }
+        } catch (e) {}
+        return null;
       }
 
       const row = rows[0];
