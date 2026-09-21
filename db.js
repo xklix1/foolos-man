@@ -2108,7 +2108,7 @@ var AppDB = (() => {
 
     // Background ServerBridge notification (non-blocking, never skips Supabase direct save)
     if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.syncState === 'function') {
-      window.ServerBridge.syncState(state, immediateCloud === true, u).catch(() => {});
+      window.ServerBridge.syncState(state, true, u).catch(() => {});
     }
 
     try {
