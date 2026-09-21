@@ -1338,7 +1338,7 @@ var AppDB = (() => {
 
     const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
     const isCurrentPlayer = Boolean(curActive && u.toLowerCase() === curActive.toLowerCase());
-
+    let local = isCurrentPlayer ? getDecryptedLocalState(`rasalmal_state_${u}`) : null;
 
     try {
       // Order by last_seen desc to always prioritize the most recently active state
