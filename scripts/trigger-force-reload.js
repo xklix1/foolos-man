@@ -1,7 +1,17 @@
 const fs = require('fs');
 const path = require('path');
 
-const envFile = fs.readFileSync(path.join(__dirname, '../server/.env'), 'utf8');
+let envFile = '';
+const envPath1 = path.join(__dirname, '../server/.env');
+const envPath2 = path.join(__dirname, '../../server/.env');
+const envPath3 = path.join(process.cwd(), '.env');
+const envPath4 = path.join(process.cwd(), 'server/.env');
+
+if (fs.existsSync(envPath1)) envFile = fs.readFileSync(envPath1, 'utf8');
+else if (fs.existsSync(envPath4)) envFile = fs.readFileSync(envPath4, 'utf8');
+else if (fs.existsSync(envPath3)) envFile = fs.readFileSync(envPath3, 'utf8');
+else if (fs.existsSync(envPath2)) envFile = fs.readFileSync(envPath2, 'utf8');
+
 const supabaseUrl = envFile.match(/SUPABASE_URL=(.*)/)?.[1]?.trim();
 const supabaseKey = envFile.match(/SUPABASE_SERVICE_ROLE_KEY=(.*)/)?.[1]?.trim();
 
