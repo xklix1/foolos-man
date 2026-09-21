@@ -3035,13 +3035,20 @@ var AppDB = (() => {
     };
   }
 
-  async function setMaintenanceMode(active, message ='') {
+  async function setMaintenanceMode(active, message ='', testerPass = 'Season2_Tester_2026') {
+    let tPass = testerPass;
+    try {
+      const cur = await getMaintenanceStatus();
+      if (!testerPass && cur && (cur.tester_pass || cur.tester_key)) {
+        tPass = cur.tester_pass || cur.tester_key;
+      }
+    } catch (e) {}
     await _api('globals', {
       method:'POST',
       headers: {'Prefer':'resolution=merge-duplicates' },
       body: JSON.stringify({
         id:'maintenance',
-        data: { active: Boolean(active), message, timestamp: Date.now() },
+        data: { active: Boolean(active), message, tester_pass: tPass, tester_key: tPass, timestamp: Date.now() },
         updated_at: Date.now()
       })
     });

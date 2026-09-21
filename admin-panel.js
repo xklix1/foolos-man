@@ -4443,41 +4443,123 @@
       });
     }
 
-    function updateMaintenanceUIState(isMaint) {
+    let currentTesterPasscode = 'Season2_Tester_2026';
+
+    function updateMaintenanceUIState(isMaint, testerKey) {
       const badge = document.getElementById('admin-maintenance-badge');
       const toggleBtn = document.getElementById('btn-admin-toggle-maintenance');
       const btnText = document.getElementById('admin-maintenance-btn-text');
+      const testerDisplay = document.getElementById('admin-tester-key-display');
+
+      if (testerKey) {
+        currentTesterPasscode = testerKey;
+      }
+      if (testerDisplay) {
+        testerDisplay.textContent = currentTesterPasscode;
+      }
+
       if (badge) {
         if (isMaint) {
-          badge.textContent = 'وضع الصيانة نشط';
-          badge.className = 'text-[10px] px-2 py-0.5 bg-rose-500/20 text-rose-400 rounded border border-rose-500/30 font-bold animate-pulse';
+          badge.textContent = 'وضع التجهيز للموسم الثاني نشط 🚀';
+          badge.className = 'text-[10px] px-2.5 py-0.5 bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/40 font-black animate-pulse';
         } else {
-          badge.textContent = 'الخادم متاح للجميع';
-          badge.className = 'text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30 font-bold';
+          badge.textContent = 'الخادم متاح للجميع 🟢';
+          badge.className = 'text-[10px] px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30 font-bold';
         }
       }
       if (toggleBtn) {
         const text = isMaint
-          ? 'إنهاء وضع الصيانة والعودة للتشغيل الطبيعي للجميع'
-          : 'تفعيل وضع الصيانة الشامل وإغلاق الخوادم';
+          ? 'إنهاء وضع التجهيز وإعادة فتح اللعبة لجميع اللاعبين 🟢'
+          : 'تفعيل وضع التجهيز للموسم الثاني وإغلاق الخوادم 🚀';
         if (btnText) {
           btnText.textContent = text;
         } else {
           toggleBtn.textContent = text;
         }
         if (isMaint) {
-          toggleBtn.className = 'w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer';
+          toggleBtn.className = 'w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer';
         } else {
-          toggleBtn.className = 'w-full py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-600/10 flex items-center justify-center gap-2 cursor-pointer';
+          toggleBtn.className = 'w-full py-3 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-amber-600/20 flex items-center justify-center gap-2 cursor-pointer';
         }
       }
     }
 
-    // Auto-fetch maintenance status on admin panel initialization
+    // Auto-fetch maintenance and tester status on admin panel initialization
     if (typeof AppDB !== 'undefined' && typeof AppDB.getMaintenanceStatus === 'function') {
       AppDB.getMaintenanceStatus().then(st => {
-        updateMaintenanceUIState(Boolean(st && (st.active || st.enabled)));
+        const isMaint = Boolean(st && (st.active || st.enabled));
+        const tKey = (st && (st.tester_pass || st.tester_key)) || 'Season2_Tester_2026';
+        updateMaintenanceUIState(isMaint, tKey);
       }).catch(err => console.warn('Failed to load initial maintenance state:', err));
+    }
+
+    // Bind Copy Tester Link Button
+    const copyTesterBtn = document.getElementById('btn-admin-copy-tester-link');
+    if (copyTesterBtn && !copyTesterBtn.dataset.bound) {
+      copyTesterBtn.dataset.bound = 'true';
+      copyTesterBtn.addEventListener('click', () => {
+        const link = `https://rasalmal.online/?tester_pass=${encodeURIComponent(currentTesterPasscode)}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(link).then(() => {
+            showToast('تم نسخ الرابط 📋', 'تم نسخ رابط الدخول المباشر للمختبرين (Tester Access) إلى الحافظة بنجاح!', 'success');
+          }).catch(() => {
+            prompt('انسخ رابط التيست المباشر:', link);
+          });
+        } else {
+          prompt('انسخ رابط التيست المباشر:', link);
+        }
+      });
+    }
+
+    // Bind Revoke & Regenerate Tester Key Button
+    const revokeTesterBtn = document.getElementById('btn-admin-revoke-tester-key');
+    if (revokeTesterBtn && !revokeTesterBtn.dataset.bound) {
+      revokeTesterBtn.dataset.bound = 'true';
+      revokeTesterBtn.addEventListener('click', async () => {
+        if (!confirm('⚠️ هل أنت متأكد من رغبتك في تدمير وتغيير مفتاح التيست الحالي؟\n\nسيتم فوراً طرد جميع المختبرين وإلغاء صلاحية الرابط القديم حتى ترسل لهم المفتاح الجديد.')) {
+          return;
+        }
+        try {
+          revokeTesterBtn.disabled = true;
+          const newPass = 'S2_Test_' + Math.random().toString(36).substring(2, 8).toUpperCase();
+          const SUPABASE_URL = 'https://rasalmal.online';
+          const _tok = (typeof AppDB !== 'undefined' && AppDB._getAnonKey ? AppDB._getAnonKey() : '');
+
+          let currentSt = {};
+          if (typeof AppDB !== 'undefined' && typeof AppDB.getMaintenanceStatus === 'function') {
+            currentSt = await AppDB.getMaintenanceStatus();
+          }
+
+          await fetch(`${SUPABASE_URL}/rest/v1/globals`, {
+            method: 'POST',
+            headers: {
+              'apikey': _tok,
+              'Authorization': `Bearer ${_tok}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'resolution=merge-duplicates'
+            },
+            body: JSON.stringify({
+              id: 'maintenance',
+              data: {
+                ...currentSt,
+                tester_pass: newPass,
+                tester_key: newPass,
+                timestamp: Date.now()
+              },
+              updated_at: Date.now()
+            })
+          });
+
+          currentTesterPasscode = newPass;
+          updateMaintenanceUIState(Boolean(currentSt.active || currentSt.enabled), newPass);
+          showToast('تم تدمير المفتاح القديم 🗑️', `تم إنشاء مفتاح تيست جديد بنجاح: [ ${newPass} ] وإلغاء الرابط السابق.`, 'success');
+          logAdminAction(`تدمير مفتاح التيست وإنشاء مفتاح جديد: ${newPass}`);
+        } catch (err) {
+          showToast('خطأ في العملية', err.message || err, 'error');
+        } finally {
+          revokeTesterBtn.disabled = false;
+        }
+      });
     }
 
     // Bind maintenance toggle click handler
@@ -4495,8 +4577,8 @@
           const nextState = !isCurrentlyMaint;
 
           const confirmMsg = nextState
-            ? "⚠️ تنبيه إداري عاجل:\n\nهل أنت متأكد من رغبتك في إغلاق اللعبة وتفعيل وضع الصيانة الشامل لكافة اللاعبين؟\n\nسيتم منع أي لاعب غير المشرفين من الدخول وتظهر له شاشة الصيانة الفنية."
-            : "✅ هل تريد إنهاء وضع الصيانة وإعادة فتح الخوادم لجميع اللاعبين؟";
+            ? "🚀 تنبيه إداري عاجل:\n\nهل أنت متأكد من تفعيل وضع التجهيز للموسم الثاني وإغلاق الخوادم عن اللاعبين العاديين؟\n\n- ستظهر للاعبين شاشة الموسم الجديد مع تنويه الشاحنين.\n- سيتمكن المختبرون والمشرفون فقط من الدخول عبر رابط التيست السري."
+            : "✅ هل تريد إنهاء وضع التجهيز وإعادة فتح الخوادم لجميع اللاعبين رسمياً؟";
 
           if (!confirm(confirmMsg)) {
             maintToggleBtn.disabled = false;
@@ -4505,35 +4587,37 @@
 
           maintToggleBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري تطبيق حالة الخادم...</span>';
 
-          if (typeof AppDB !== 'undefined' && typeof AppDB.setMaintenanceMode === 'function') {
-            await AppDB.setMaintenanceMode(nextState, nextState ? 'الخوادم رهن الصيانة الفنية والتحديث الإداري حالياً.' : '');
-          } else {
-            const SUPABASE_URL = 'https://rasalmal.online';
-            const _tok = (typeof AppDB !== 'undefined' && AppDB._getAnonKey ? AppDB._getAnonKey() : '');
-            await fetch(`${SUPABASE_URL}/rest/v1/globals`, {
-              method: 'POST',
-              headers: {
-                'apikey': _tok,
-                'Authorization': `Bearer ${_tok}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'resolution=merge-duplicates'
+          const SUPABASE_URL = 'https://rasalmal.online';
+          const _tok = (typeof AppDB !== 'undefined' && AppDB._getAnonKey ? AppDB._getAnonKey() : '');
+          await fetch(`${SUPABASE_URL}/rest/v1/globals`, {
+            method: 'POST',
+            headers: {
+              'apikey': _tok,
+              'Authorization': `Bearer ${_tok}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'resolution=merge-duplicates'
+            },
+            body: JSON.stringify({
+              id: 'maintenance',
+              data: {
+                active: Boolean(nextState),
+                message: nextState ? 'الخوادم رهن التجهيز لانطلاق الموسم الثاني وضبط الموازنة الاقتصادية لضمان تجربة مستقرة وعادلة.' : '',
+                tester_pass: currentTesterPasscode,
+                tester_key: currentTesterPasscode,
+                timestamp: Date.now()
               },
-              body: JSON.stringify({
-                id: 'maintenance',
-                data: { active: Boolean(nextState), message: nextState ? 'الخوادم رهن الصيانة الفنية والتحديث الإداري حالياً.' : '', timestamp: Date.now() },
-                updated_at: Date.now()
-              })
-            });
-          }
+              updated_at: Date.now()
+            })
+          });
 
-          updateMaintenanceUIState(nextState);
+          updateMaintenanceUIState(nextState, currentTesterPasscode);
 
           if (nextState) {
-            showToast('وضع الصيانة نشط ⚠️', 'تم إغلاق الخوادم وتفعيل وضع الصيانة الشامل بنجاح!', 'warning');
-            logAdminAction('تفعيل وضع الصيانة الشامل وإغلاق الخوادم');
+            showToast('وضع الموسم الثاني نشط 🚀', 'تم إغلاق الخوادم وتفعيل وضع التجهيز للموسم الثاني بنجاح!', 'warning');
+            logAdminAction('تفعيل وضع التجهيز للموسم الثاني وإغلاق الخوادم');
           } else {
-            showToast('الخوادم مفتوحة ✅', 'تم إنهاء وضع الصيانة وإتاحة اللعبة للجميع بنجاح!', 'success');
-            logAdminAction('إنهاء وضع الصيانة وإعادة فتح الخوادم');
+            showToast('الخوادم مفتوحة ✅', 'تم إنهاء وضع التجهيز وإتاحة اللعبة لجميع اللاعبين بنجاح!', 'success');
+            logAdminAction('إنهاء وضع التجهيز وفتح اللعبة للجميع');
           }
         } catch (err) {
           console.error('Maintenance toggle error:', err);
