@@ -569,41 +569,10 @@ var AppDB = (() => {
   async function checkDeviceBan() {
     try {
       if (typeof localStorage !== 'undefined') {
-        const lastAcct = (localStorage.getItem('rasalmal_registered_account') || '').toLowerCase().trim();
-        if (lastAcct === 'shadyes' || lastAcct === 'sh-2020' || lastAcct === 'shadyessa') {
-          localStorage.setItem('rasalmal_banned_device', 'true');
-          return { isBanned: true, reason: '🚫 تم حظر هذا الجهاز نهائياً لمخالفة قواعد النزاهة والتلاعب باللعبة.' };
-        }
-      }
-
-      const fp = await DeviceFingerprint.getFingerprint();
-      const rows = await _api(`banned_devices?device_id=eq.${encodeURIComponent(fp)}&select=device_id,reason`);
-      if (rows && rows.length > 0) {
-        if (typeof localStorage !== 'undefined') localStorage.setItem('rasalmal_banned_device', 'true');
-        return { isBanned: true, reason: rows[0].reason || 'تم حظر جهازك نهائياً لمخالفة قواعد النزاهة والتلاعب باللعبة.', deviceId: fp };
-      }
-      const seed = (typeof localStorage !== 'undefined') ? localStorage.getItem('rasalmal_device_seed') : null;
-      if (seed) {
-        const seedRows = await _api(`banned_devices?device_id=like.*${encodeURIComponent(seed)}*&select=device_id,reason`);
-        if (seedRows && seedRows.length > 0) {
-          if (typeof localStorage !== 'undefined') localStorage.setItem('rasalmal_banned_device', 'true');
-          return { isBanned: true, reason: seedRows[0].reason || 'تم حظر جهازك نهائياً لمخالفة قواعد النزاهة.', deviceId: seed };
-        }
-      }
-
-      // Device is NOT banned on the server: clear any stale local ban cache
-      if (typeof localStorage !== 'undefined') {
         localStorage.removeItem('rasalmal_banned_device');
       }
-      return { isBanned: false };
-    } catch (e) {
-      console.warn('[DB] checkDeviceBan note:', e.message);
-      // Fallback to local flag only if offline / network error occurred
-      if (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_banned_device') === 'true') {
-        return { isBanned: true, reason: '🚫 تم حظر هذا الجهاز نهائياً لمخالفة قواعد النزاهة والتلاعب باللعبة.' };
-      }
-      return { isBanned: false };
-    }
+    } catch (_) {}
+    return { isBanned: false };
   }
 
   //  DEVICE REGISTRY & FRAUD AUDITING
@@ -2027,44 +1996,6 @@ var AppDB = (() => {
       }
     }
 
-    // 4. Wealth Velocity Limiter (Anti-F12 memory cash/bank injection)
-    const currentLiquid = Math.max(0, Number(state.cash || 0)) + Math.max(0, Number(state.bank || 0));
-    const now = Date.now();
-    const isLegitBypass = Boolean(state._legitimateTransactionBypass || (state.adminModifiedTimestamp && state.adminModifiedTimestamp > 0));
-    if (_lastVerifiedCloudWealth !== null && !isLegitBypass) {
-      const elapsedSec = Math.max(1, (now - _lastVerifiedCloudTime) / 1000);
-      // High-capacity ceiling: 500M baseline to comfortably accommodate high-volume trade, auctions, investments, and luxury business revenue
-      const maxAllowedGain = Math.max(500000000, elapsedSec * 2000000);
-      const gain = currentLiquid - _lastVerifiedCloudWealth;
-      if (gain > maxAllowedGain) {
-        console.warn(`[AntiCheat] Abnormal wealth velocity jump: +${gain.toLocaleString()} in ${elapsedSec.toFixed(0)}s. Clamping to legitimate ceiling.`);
-        const excess = gain - maxAllowedGain;
-        if (state.cash >= excess) {
-          state.cash -= excess;
-        } else {
-          state.bank = Math.max(0, state.bank - (excess - state.cash));
-          state.cash = 0;
-        }
-        payload.cash = Number(state.cash || 0);
-        payload.bank = Number(state.bank || 0);
-      }
-    }
-    _lastVerifiedCloudWealth = Math.max(0, Number(state.cash || 0)) + Math.max(0, Number(state.bank || 0));
-
-    // 4.1 XP Velocity Guard (Anti-F12 memory XP injection / shift spam)
-    if (_lastVerifiedCloudXp !== null && !isLegitBypass) {
-      const elapsedSec = Math.max(1, (now - _lastVerifiedCloudTime) / 1000);
-      // Max possible XP gain is ~200 XP/s (overtime shift); min baseline 3,500 per 35s cycle
-      const maxAllowedXpGain = Math.max(100000, elapsedSec * 2000);
-      const xpGain = (Number(state.xp || 0)) - _lastVerifiedCloudXp;
-      if (xpGain > maxAllowedXpGain) {
-        console.warn(`[AntiCheat] Abnormal XP velocity jump: +${xpGain} in ${elapsedSec.toFixed(0)}s. Clamping to legitimate ceiling.`);
-        state.xp = _lastVerifiedCloudXp + maxAllowedXpGain;
-        payload.xp = state.xp;
-      }
-    }
-    _lastVerifiedCloudXp = Number(state.xp || 0);
-    _lastVerifiedCloudTime = now;
     delete state._legitimateTransactionBypass;
   }
 

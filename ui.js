@@ -1853,15 +1853,6 @@ const UIController = (() => {
 
   async function launchGameSession(username) {
     try {
-      // 0. Enforce device ban check
-      if (window.AppDB && typeof window.AppDB.checkDeviceBan === 'function') {
-        const devBan = await window.AppDB.checkDeviceBan();
-        if (devBan && devBan.isBanned) {
-          handleBannedUser(devBan.reason);
-          return;
-        }
-      }
-
       // Check maintenance mode on session launch
       const isMaint = await checkMaintenanceMode();
       if (isMaint) return;

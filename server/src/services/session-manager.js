@@ -227,28 +227,9 @@ class SessionManager {
     const clientAdminTs = Number(clientState.adminModifiedTimestamp || 0);
     const isClientStale = sessionAdminTs > 0 && clientAdminTs < sessionAdminTs;
 
-    // Synchronize monetary balances (safeguarded against stale downgrades and impossible wealth jumps)
-    const currentGross = (Number(s.cash) || 0) + (Number(s.bank) || 0);
+    // Synchronize monetary balances
     let incomingCash = Number(clientState.cash) || 0;
     let incomingBank = Number(clientState.bank) || 0;
-    const incomingGross = incomingCash + incomingBank;
-    const grossDelta = incomingGross - currentGross;
-
-    // Anti-Tamper Velocity Shield: Detect impossible monetary leaps from console tampering
-    // Base 35M + 3.0x of current gross + 5M buffer (for unflagged micro-increments; bypassed for legitimate transactions)
-    const maxAllowableJump = Math.max(35000000, currentGross * 3.0) + 5000000;
-    const isLegitBypass = Boolean(clientState._legitimateTransactionBypass || clientAdminTs > 0 || sessionAdminTs > 0);
-
-    if (grossDelta > maxAllowableJump && !isLegitBypass && !isClientStale) {
-      console.warn(`[AntiTamper] Flagged impossible wealth jump for "${username}": delta=${grossDelta.toLocaleString()}, maxAllowed=${maxAllowableJump.toLocaleString()}`);
-      const excess = grossDelta - maxAllowableJump;
-      if (incomingCash >= excess) {
-        incomingCash -= excess;
-      } else {
-        incomingBank = Math.max(0, incomingBank - (excess - incomingCash));
-        incomingCash = 0;
-      }
-    }
 
     if (clientState.cash !== undefined) {
       s.cash = isClientStale ? Math.max(Number(s.cash || 0), incomingCash) : incomingCash;

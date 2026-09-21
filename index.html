@@ -14,11 +14,12 @@
     }
     // Hard Build Version Enforcement & Cache Purge
     (function() {
-      const CURRENT_APP_BUILD = 'v7.6.0';
+      const CURRENT_APP_BUILD = 'v7.7.0';
       try {
         const SEASON_TAG = 'season_2_clean_epoch_v1';
         if (localStorage.getItem('rasalmal_season_epoch') !== SEASON_TAG) {
           localStorage.setItem('rasalmal_season_epoch', SEASON_TAG);
+        localStorage.removeItem('rasalmal_banned_device');
           // Purge all old player states from localStorage to prevent Season 1 ghost resurrection
           Object.keys(localStorage).forEach(function(k) {
             if (k.startsWith('rasalmal_state_') || k.startsWith('rasalmal_backup_') || k.startsWith('rasalmal_auth_token_') || k === 'rasalmal_active_session_user' || k === 'rasalmal_registered_account') {
@@ -7142,10 +7143,10 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=49.0"></script>
+  <script src="db.js?v=50.0"></script>
   <script src="server-client-bridge.js?v=34.0"></script>
-  <script src="game.js?v=68.0"></script>
-  <script src="ui.js?v=78.0"></script>
+  <script src="game.js?v=69.0"></script>
+  <script src="ui.js?v=7.7.0"></script>
   <script src="pwa-manager.js?v=3.3.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
@@ -7183,27 +7184,6 @@
       // Hide connecting overlay
       connectingOverlay.classList.add('hidden');
       connectingOverlay.classList.remove('flex');
-
-      // 1.5. HARD SECURITY GATE: Check if this device is permanently banned
-      try {
-        if (window.AppDB && typeof window.AppDB.checkDeviceBan === 'function') {
-          const devBan = await window.AppDB.checkDeviceBan();
-          if (devBan && devBan.isBanned) {
-            console.error('[Security] Banned device blocked from booting:', devBan);
-            if (typeof window.handleBannedUser === 'function') {
-              window.handleBannedUser(devBan.reason);
-            } else {
-              const b = document.getElementById('ban-overlay');
-              const r = document.getElementById('ban-overlay-reason');
-              if (r && devBan.reason) r.textContent = devBan.reason;
-              if (b) { b.classList.remove('hidden'); b.classList.add('flex'); }
-            }
-            return; // COMPLETELY HALT BOOT! Game never initializes for banned device.
-          }
-        }
-      } catch (devBanErr) {
-        console.warn('[Boot] Device ban check note:', devBanErr);
-      }
 
       // 2. Version check — show Force Update modal if outdated
       try {
