@@ -1,7 +1,7 @@
 {
-  "version": "v7.8.4",
-  "build": "2026-09-21T19:55:00.000Z",
-  "minRequiredVersion": "v7.8.4",
-  "notes": "Anti-Cache HTTP Protocol for Maintenance Status",
+  "version": "v7.8.5",
+  "build": "2026-09-21T20:12:00.000Z",
+  "minRequiredVersion": "v7.8.5",
+  "notes": "Script tag cache busting and strict maintenance check",
   "forcePurgeCache": true
 }
