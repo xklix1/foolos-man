@@ -15646,7 +15646,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         if (!GameEngine.state.friends.includes(mailDoc.sender)) {
           GameEngine.state.friends.push(mailDoc.sender);
         }
-        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
         await AppDB.updateMailStatus(mailId,'accepted');
         showToast('تم قبول الصداقة',`أنت واللاعب ${mailDoc.sender} أصدقاء الآن!`,'success');
 
@@ -15662,7 +15662,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         };
         GameEngine.state.lastPuzzleSolved = getTrustedNowUI();
 
-        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
         await AppDB.updateMailStatus(mailId,'accepted');
         showToast('تم التوظيف!',`لقد التحقت بالعمل لدى ${mailDoc.sender} براتب دوري قدره ${mailDoc.payload.salary} EGP!`,'success');
 
@@ -15682,7 +15682,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           businessName: mailDoc.payload.businessName,
           sharePct: mailDoc.payload.sharePct
         });
-        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
         await AppDB.updateMailStatus(mailId,'accepted');
         showToast('شراكة معتمدة!',`أصبحت شريكاً رسمياً بنسبة ${Math.round(mailDoc.payload.sharePct * 100)}% من عوائد المشروع!`,'success');
 
@@ -16899,7 +16899,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         GameEngine.state.friends = GameEngine.state.friends || [];
         if (!GameEngine.state.friends.includes(fr)) {
           GameEngine.state.friends.push(fr);
-          await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+          await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
         }
         await AppDB.updateMailStatus(add.id,'accepted');
         showToast('صديق جديد',`قبل اللاعب ${fr} طلب الصداقة! أصبحتم أصدقاء الآن.`,'success');
@@ -16942,7 +16942,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         }
 
         GameEngine.state.netWorth = GameEngine.calculateNetWorth();
-        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
         await AppDB.updateMailStatus(win.id,'accepted');
 
         showToast(' فزت بالمزاد!',`تهانينا! لقد فزت بمزاد (${win.payload.itemName}) مقابل ${price.toLocaleString()} EGP تم خصمها من حسابك.`,'success');
@@ -16964,7 +16964,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         biz.employees = biz.employees || {};
         biz.employees[emp] = { role, salary };
 
-        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
         await AppDB.updateMailStatus(add.id,'accepted');
         showToast('موظف جديد',`التحق اللاعب ${emp} بالعمل في مشروعك (${biz.name || bizId}) كمساعد براتب ${salary} EGP/ث!`,'success');
         renderAll();
@@ -16985,7 +16985,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const currentOwnerShare = biz.partners[GameEngine.state.username] !== undefined ? biz.partners[GameEngine.state.username] : 1.0;
         biz.partners[GameEngine.state.username] = Math.max(0.01, currentOwnerShare - sharePct);
 
-        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
         await AppDB.updateMailStatus(add.id,'accepted');
         showToast('شريك جديد',`انضم اللاعب ${partner} كشريك استثماري بنسبة أرباح ${Math.round(sharePct * 100)}%!`,'success');
         renderAll();
@@ -17007,7 +17007,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       if (totalClaimed > 0) {
         GameEngine.state.cash += totalClaimed;
         GameEngine.state.netWorth = GameEngine.calculateNetWorth();
-        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state);
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
         showToast('أرباح شراكة استثمارية', `تمت إضافة +${Math.round(totalClaimed).toLocaleString()} EGP من أرباحك في شراكات المشاريع!`, 'success');
         renderAll();
       }
@@ -17596,7 +17596,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       GameEngine.state.cash = Math.max(0, currentCash - cashDeduction);
       GameEngine.state.bank = Math.max(0, currentBank - bankDeduction);
       GameEngine.state.netWorth = GameEngine.calculateNetWorth();
-      await AppDB.savePlayerState(username, GameEngine.state);
+      await AppDB.savePlayerState(username, GameEngine.state, true);
 
       // 3. Update local state immediately so user sees their company
       window.activeCorporationState = {
@@ -17678,7 +17678,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       GameEngine.state.cash -= cashDeduction;
       GameEngine.state.bank -= bankDeduction;
       GameEngine.state.netWorth = GameEngine.calculateNetWorth();
-      await AppDB.savePlayerState(username, GameEngine.state);
+      await AppDB.savePlayerState(username, GameEngine.state, true);
 
       if (window.activeCorporationState && window.activeCorporationState.id === corpId) {
         window.activeCorporationState.treasury = (window.activeCorporationState.treasury || 0) + amount;

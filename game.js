@@ -2524,7 +2524,7 @@ const GameEngine = (() => {
     state.xp = (state.xp || 0) + 250;
     recordPlayerActivity('إقرار ضريبي',`تقديم إقرار ضريبي طوعي وتسوية ${cost.toLocaleString()} ج.م (+250 XP)`,'banking');
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return { cost, xpGain: 250 };
   }
 
@@ -3878,8 +3878,8 @@ const GameEngine = (() => {
     }
 
     state.jobId = jobId;
-    recordPlayerActivity('ترقية وظيفية ️',`ترقية إلى مرتبة"${targetJob.name}" براتب أساسي ${targetJob.salary.toLocaleString()} ج.م/دورة`,'work');
-    AppDB.savePlayerState(activeUsername, state);
+    recordPlayerActivity('ترقية وظيفية ️',`ترقية إلى مرتبة "${targetJob.name}" براتب أساسي ${targetJob.salary.toLocaleString()} ج.م/دورة`,'work');
+    forceSaveState(true);
     return targetJob;
   }
 
@@ -4037,7 +4037,7 @@ const GameEngine = (() => {
 
     bizState.workers--;
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return bizState.workers;
   }
 
@@ -4056,7 +4056,7 @@ const GameEngine = (() => {
     if (price > maxPrice) throw new Error(`الحد الأقصى المسموح به للسعر هو ${maxPrice.toLocaleString()} جنيه.`);
 
     bizState.price = price;
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
   }
 
   // Launch Marketing Campaign (+40% demand boost for 1200 ticks = 1 hour)
@@ -4447,9 +4447,9 @@ const GameEngine = (() => {
       state.itemCooldowns[itemId] = getTrustedNow() + (item.cooldownSec * 1000);
     }
 
-    recordPlayerActivity('شراء متجر',`شراء وتفعيل أداة"${item.name}" (الاستخدام ${usedToday + 1}/${maxUses} لليوم)`,'store');
+    recordPlayerActivity('شراء متجر',`شراء وتفعيل أداة "${item.name}" (الاستخدام ${usedToday + 1}/${maxUses} لليوم)`,'store');
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
     return item;
   }
 
@@ -5297,7 +5297,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('بيع سيارة',`بيع سيارة ${car.name} واسترداد ${sellPrice.toLocaleString()} EGP.`,'assets');
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
   }
 
   // --- Smuggling Actions (New V2 Balanced) ---
@@ -5342,7 +5342,7 @@ const GameEngine = (() => {
 
     recordPlayerActivity('شراء مركبة تهريب',`شراء ${v.name} وتضمينها للأسطول بقيمة ${v.cost.toLocaleString()} ج.م.`,'dark');
     state.netWorth = calculateNetWorth();
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
   }
 
   function startSmugglingJob(routeId, vehicleType, cargoType = 'medium') {
@@ -5389,7 +5389,7 @@ const GameEngine = (() => {
     state.dailySmuggling.count = (state.dailySmuggling.count || 0) + 1;
 
     recordPlayerActivity('بدء تهريب',`شحن شحنة (${cargo.name}) إلى "${route.name}" عبر ${SMUGGLING_VEHICLES[vehicleType].name}.`,'dark');
-    AppDB.savePlayerState(activeUsername, state);
+    forceSaveState(true);
   }
 
   // Helper: Ensure daily work shifts tracking (max 100 regular, 15 overtime per 24 hours)
