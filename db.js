@@ -1207,8 +1207,9 @@ var AppDB = (() => {
       }
     }
 
-    if (!changed) throw new Error(`لم يُعثر على بيانات جهاز مرتبطة بـ "${key}" في السجل.`);
-    await saveDeviceRegistry(registry);
+    if (changed) {
+      await saveDeviceRegistry(registry);
+    }
     return true;
   }
 
@@ -3772,26 +3773,34 @@ var AppDB = (() => {
     const rows = await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}&order=last_seen.desc&select=*`);
     if (!rows || rows.length === 0) return null;
     const r = rows[0];
-    const p = (typeof r.state === 'object' && r.state) ? { ...r.state } : {};
+    let stateObj = {};
+    if (r.state) {
+      if (typeof r.state === 'object') stateObj = { ...r.state };
+      else if (typeof r.state === 'string') {
+        try { stateObj = JSON.parse(r.state); } catch(e) {}
+      }
+    }
+    const p = { ...stateObj };
+    p.state = stateObj;
     p.username = r.username;
     p.pin = r.pin;
-    p.cash = Number(r.cash || 0);
-    p.bank = Number(r.bank || 0);
-    p.dirtyCash = Number(r.dirty_cash || 0);
-    p.netWorth = Number(r.net_worth || 0);
-    p.xp = Number(r.xp || 0);
-    p.title = r.title || 'عامل مبتدئ';
-    p.jobId = r.job_id || 'worker';
-    p.isAdmin = r.is_admin === true;
-    p.isBanned = r.is_banned === true;
-    p.jailTimer = Number(r.jail_timer || 0);
-    p.totalTaxesPaid = Number(r.total_taxes_paid || 0);
-    p.afkManagerExpiresAt = Number(r.afk_manager_expires_at || 0);
-    const seenTs = Number(r.last_seen || (r.state && (r.state.lastSeen || r.state.lastActiveTimestamp)) || 0);
+    p.cash = Number(r.cash !== undefined ? r.cash : (stateObj.cash || 0));
+    p.bank = Number(r.bank !== undefined ? r.bank : (stateObj.bank || 0));
+    p.dirtyCash = Number(r.dirty_cash !== undefined ? r.dirty_cash : (stateObj.dirtyCash || 0));
+    p.netWorth = Number(r.net_worth !== undefined ? r.net_worth : (stateObj.netWorth || 0));
+    p.xp = Number(r.xp !== undefined ? r.xp : (stateObj.xp || 0));
+    p.title = r.title || stateObj.title || 'عامل مبتدئ';
+    p.jobId = r.job_id || stateObj.jobId || 'worker';
+    p.isAdmin = r.is_admin === true || stateObj.isAdmin === true;
+    p.isBanned = r.is_banned === true || stateObj.isBanned === true;
+    p.jailTimer = Number(r.jail_timer !== undefined ? r.jail_timer : (stateObj.jailTimer || 0));
+    p.totalTaxesPaid = Number(r.total_taxes_paid !== undefined ? r.total_taxes_paid : (stateObj.totalTaxesPaid || 0));
+    p.afkManagerExpiresAt = Number(r.afk_manager_expires_at !== undefined ? r.afk_manager_expires_at : (stateObj.afkManagerExpiresAt || 0));
+    const seenTs = Number(r.last_seen || stateObj.lastSeen || stateObj.lastActiveTimestamp || 0);
     p.lastSeen = seenTs;
     p.lastActiveTimestamp = seenTs;
     p.last_seen = seenTs;
-    p.createdAt = Number(r.created_at || 0);
+    p.createdAt = Number(r.created_at || stateObj.createdAt || 0);
     p.is_admin = p.isAdmin;
     p.is_banned = p.isBanned;
     p.jail_timer = p.jailTimer;
@@ -3802,6 +3811,12 @@ var AppDB = (() => {
 
   async function adminSavePlayer(username, updates) {
     const cleanUser = String(username || '').replace(/^@/, '').trim();
+    if (!cleanUser) return false;
+
+    // 1. Fetch freshest existing state to prevent data loss on partial updates
+    const existing = await adminGetPlayer(cleanUser) || {};
+    const existingState = (existing.state && typeof existing.state === 'object') ? existing.state : existing;
+
     const payload = {};
     if (updates.cash !== undefined) payload.cash = Number(updates.cash);
     if (updates.bank !== undefined) payload.bank = Number(updates.bank);
@@ -3815,12 +3830,15 @@ var AppDB = (() => {
     if (updates.jailTimer !== undefined) payload.jail_timer = Number(updates.jailTimer);
     if (updates.pin !== undefined) payload.pin = updates.pin;
 
-    // Prepare comprehensive state payload ensuring all player assets, businesses, cars and inventory are preserved
-    const stateObj = (updates.state && typeof updates.state === 'object') ? { ...updates.state } : { ...updates };
-    // Clear any past reset flags so previous resets never interfere with active gameplay
+    // 2. Prepare comprehensive state payload merging existing and new updates
+    const updatesState = (updates.state && typeof updates.state === 'object') ? updates.state : updates;
+    const stateObj = { ...existingState, ...updatesState };
+
+    // Clear any past reset flags
     stateObj.isReset = false;
     delete stateObj.resetTimestamp;
     stateObj.username = cleanUser;
+
     if (payload.cash !== undefined) stateObj.cash = payload.cash;
     if (payload.bank !== undefined) stateObj.bank = payload.bank;
     if (payload.dirty_cash !== undefined) stateObj.dirtyCash = payload.dirty_cash;
@@ -3837,7 +3855,7 @@ var AppDB = (() => {
     payload.admin_modified_timestamp = now;
 
     await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}`, {
-      method:'PATCH',
+      method: 'PATCH',
       body: JSON.stringify(payload)
     });
 
@@ -4019,20 +4037,38 @@ var AppDB = (() => {
       console.warn('[SECURITY] Master Admin Khaled is immune to bans.');
       return false;
     }
-    await _api(`players?username=eq.${encodeURIComponent(cleanUser)}`, {
+    const now = Date.now();
+    const fresh = await adminGetPlayer(cleanUser) || {};
+    const stateObj = (fresh.state && typeof fresh.state === 'object') ? fresh.state : fresh;
+    stateObj.isBanned = true;
+    stateObj.adminModifiedTimestamp = now;
+
+    await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}`, {
       method:'PATCH',
-      body: JSON.stringify({ is_banned: true, admin_modified_timestamp: Date.now() })
+      body: JSON.stringify({ is_banned: true, admin_modified_timestamp: now, state: stateObj })
     });
+    try {
+      await sendMail('إدارة اللعبة (Admin)', cleanUser, 'admin_sync', { timestamp: now, reason: 'admin_banned' });
+    } catch (_) {}
     return true;
   }
 
   async function adminUnbanPlayer(username) {
     if (!username) return false;
     const cleanUser = String(username).replace(/^@/, '').trim();
-    await _api(`players?username=eq.${encodeURIComponent(cleanUser)}`, {
+    const now = Date.now();
+    const fresh = await adminGetPlayer(cleanUser) || {};
+    const stateObj = (fresh.state && typeof fresh.state === 'object') ? fresh.state : fresh;
+    stateObj.isBanned = false;
+    stateObj.adminModifiedTimestamp = now;
+
+    await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}`, {
       method:'PATCH',
-      body: JSON.stringify({ is_banned: false, admin_modified_timestamp: Date.now() })
+      body: JSON.stringify({ is_banned: false, admin_modified_timestamp: now, state: stateObj })
     });
+    try {
+      await sendMail('إدارة اللعبة (Admin)', cleanUser, 'admin_sync', { timestamp: now, reason: 'admin_unbanned' });
+    } catch (_) {}
     return true;
   }
 
@@ -4044,9 +4080,15 @@ var AppDB = (() => {
       return false;
     }
     const hashed = await hashPin(newPin);
-    await _api(`players?username=eq.${encodeURIComponent(cleanUser)}`, {
+    const now = Date.now();
+    const fresh = await adminGetPlayer(cleanUser) || {};
+    const stateObj = (fresh.state && typeof fresh.state === 'object') ? fresh.state : fresh;
+    stateObj.pin = hashed;
+    stateObj.adminModifiedTimestamp = now;
+
+    await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}`, {
       method:'PATCH',
-      body: JSON.stringify({ pin: hashed })
+      body: JSON.stringify({ pin: hashed, admin_modified_timestamp: now, state: stateObj })
     });
     return true;
   }
@@ -4232,26 +4274,89 @@ var AppDB = (() => {
   }
 
   async function adminReleaseJail(username) {
-    await _api(`players?username=eq.${encodeURIComponent(username)}`, {
+    if (!username) return false;
+    const cleanUser = String(username).replace(/^@/, '').trim();
+    const now = Date.now();
+    const fresh = await adminGetPlayer(cleanUser) || {};
+    const stateObj = (fresh.state && typeof fresh.state === 'object') ? fresh.state : fresh;
+    stateObj.jailTimer = 0;
+    stateObj.adminModifiedTimestamp = now;
+
+    await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}`, {
       method:'PATCH',
-      body: JSON.stringify({ jail_timer: 0 })
+      body: JSON.stringify({ jail_timer: 0, admin_modified_timestamp: now, state: stateObj })
     });
+    try {
+      await sendMail('إدارة اللعبة (Admin)', cleanUser, 'admin_sync', { timestamp: now, reason: 'admin_jail_released' });
+    } catch (_) {}
     return true;
   }
 
   async function adminSetPlayerJail(username, seconds) {
-    await _api(`players?username=eq.${encodeURIComponent(username)}`, {
+    if (!username) return false;
+    const cleanUser = String(username).replace(/^@/, '').trim();
+    const now = Date.now();
+    const fresh = await adminGetPlayer(cleanUser) || {};
+    const stateObj = (fresh.state && typeof fresh.state === 'object') ? fresh.state : fresh;
+    stateObj.jailTimer = Number(seconds);
+    stateObj.adminModifiedTimestamp = now;
+
+    await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}`, {
       method:'PATCH',
-      body: JSON.stringify({ jail_timer: Number(seconds) })
+      body: JSON.stringify({ jail_timer: Number(seconds), admin_modified_timestamp: now, state: stateObj })
     });
+    try {
+      await sendMail('إدارة اللعبة (Admin)', cleanUser, 'admin_sync', { timestamp: now, reason: 'admin_jail_set', jailTimer: Number(seconds) });
+    } catch (_) {}
     return true;
   }
 
   async function adminSetPlayerAdminStatus(username, isAdmin) {
-    await _api(`players?username=eq.${encodeURIComponent(username)}`, {
+    if (!username) return false;
+    const cleanUser = String(username).replace(/^@/, '').trim();
+    const now = Date.now();
+    const fresh = await adminGetPlayer(cleanUser) || {};
+    const stateObj = (fresh.state && typeof fresh.state === 'object') ? fresh.state : fresh;
+    stateObj.isAdmin = Boolean(isAdmin);
+    stateObj.adminModifiedTimestamp = now;
+
+    await _api(`players?username=ilike.${encodeURIComponent(cleanUser)}`, {
       method:'PATCH',
-      body: JSON.stringify({ is_admin: Boolean(isAdmin) })
+      body: JSON.stringify({ is_admin: Boolean(isAdmin), admin_modified_timestamp: now, state: stateObj })
     });
+    return true;
+  }
+
+  async function getPlayerBackupDates(username) {
+    if (!username) return [];
+    const cleanUser = String(username).replace(/^@/, '').trim();
+    const dates = [];
+    const today = new Date().toISOString().slice(0, 10);
+    dates.push(today);
+    try {
+      const local = localStorage.getItem(`rasalmal_backup_${cleanUser}`);
+      if (local) dates.push('local_cached_backup');
+    } catch (_) {}
+    return dates;
+  }
+
+  async function getPlayerBackupState(username, date) {
+    if (!username) return null;
+    const cleanUser = String(username).replace(/^@/, '').trim();
+    if (date === 'local_cached_backup') {
+      try {
+        const local = localStorage.getItem(`rasalmal_backup_${cleanUser}`);
+        if (local) return JSON.parse(local);
+      } catch (_) {}
+    }
+    return await adminGetPlayer(cleanUser);
+  }
+
+  async function adminRestorePlayerFromState(username, stateToRestore) {
+    if (!username || !stateToRestore) return false;
+    const cleanUser = String(username).replace(/^@/, '').trim();
+    const parsedState = (typeof stateToRestore === 'string') ? JSON.parse(stateToRestore) : stateToRestore;
+    await adminSavePlayer(cleanUser, parsedState);
     return true;
   }
 
@@ -6173,9 +6278,9 @@ var AppDB = (() => {
 
     // Backups
     checkAndCreateDailyBackup,
-    getPlayerBackupDates: async () => [],
-    getPlayerBackupState: async () => null,
-    adminRestorePlayerFromState: async () => true,
+    getPlayerBackupDates,
+    getPlayerBackupState,
+    adminRestorePlayerFromState,
 
     // Corporations
     createCorporation,

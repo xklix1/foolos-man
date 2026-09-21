@@ -870,6 +870,7 @@
           if (loanDebt > 0) worth -= loanDebt;
         }
         selectedPlayerState.netWorth = Math.max(0, Math.floor(worth));
+        selectedPlayerState.adminModifiedTimestamp = Date.now();
 
         // Save to DB
         await AppDB.adminSavePlayer(selectedPlayer, selectedPlayerState);
