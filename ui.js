@@ -1878,7 +1878,12 @@ const UIController = (() => {
       }
 
       const playerState = await GameEngine.loadUserSession(username);
-      if (!playerState || playerState.isBanned || playerState.is_banned) {
+      if (!playerState) {
+        showToast('تعذر تحميل الحساب ⚠️', 'تعذر جلب بيانات الحساب من الخادم السحابي، يرجى المحاولة مرة أخرى أو تسجيل الدخول.', 'error');
+        showStartMenu();
+        return;
+      }
+      if (playerState.isBanned === true || playerState.is_banned === true) {
         handleBannedUser('تم حظر هذا الحساب نهائياً من اللعبة لمخالفة قواعد النزاهة.');
         return;
       }
@@ -8106,8 +8111,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
     console.warn('[Security] Access blocked: User or Device is permanently banned.');
     try {
-      localStorage.clear();
-      sessionStorage.clear();
+      localStorage.removeItem('rasalmal_active_session_user');
+      if (typeof GameEngine !== 'undefined' && GameEngine.activeUsername) {
+        localStorage.removeItem('rasalmal_auth_token_' + GameEngine.activeUsername);
+      }
     } catch (e) {}
 
     // Halt game engine & tick loop

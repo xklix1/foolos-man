@@ -1,7 +1,7 @@
 {
-  "version": "v7.7.0",
-  "build": "2026-09-21T21:15:00Z",
-  "minRequiredVersion": "v7.7.0",
-  "notes": "Season 2 Preparation & Admin Player Moderation Updates",
+  "version": "v7.8.0",
+  "build": "2026-09-21T18:29:45.867Z",
+  "minRequiredVersion": "v7.8.0",
+  "notes": "Anti-Cheat Velocity Removal & Admin Grant Protection",
   "forcePurgeCache": true
 }
