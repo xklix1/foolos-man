@@ -3864,7 +3864,7 @@ const GameEngine = (() => {
     state.title = getAppropriateTitle(state.netWorth, state.xp);
     recordPlayerActivity('نوبة عمل',`إتمام وردية عمل كـ"${job.name}" (+${finalSalary.toLocaleString()} ج.م للبنك و +${finalXpReward} XP)`,'work');
     trackDailyQuestProgress('work_shifts', 1);
-    forceSaveState(state.dailyWork.shifts >= MAX_DAILY_SHIFTS);
+    forceSaveState(true);
 
     return {
       salary: finalSalary,
