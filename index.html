@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Automatic Cache Purge
-    window._CLIENT_VERSION = 'v7.8.5';
+    window._CLIENT_VERSION = 'v7.8.6';
     (async function() {
-      const CURRENT_APP_BUILD = 'v7.8.5';
+      const CURRENT_APP_BUILD = 'v7.8.6';
       try {
         localStorage.removeItem('rasalmal_banned_device');
         // Unregister any stale Service Workers
@@ -7156,11 +7156,11 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=7.8.5"></script>
-  <script src="server-client-bridge.js?v=7.8.5"></script>
-  <script src="game.js?v=7.8.5"></script>
-  <script src="ui.js?v=7.8.5"></script>
-  <script src="pwa-manager.js?v=7.8.5"></script>
+  <script src="db.js?v=7.8.6"></script>
+  <script src="server-client-bridge.js?v=7.8.6"></script>
+  <script src="game.js?v=7.8.6"></script>
+  <script src="ui.js?v=7.8.6"></script>
+  <script src="pwa-manager.js?v=7.8.6"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -7863,51 +7863,14 @@
 
           if (isMaint) {
             if (isStagingEnv()) return;
-            if (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.isAdmin) return;
 
-            // Check Tester Pass Bypass
-            const urlParams = new URLSearchParams(window.location.search);
-            const queryPass = urlParams.get('tester_pass');
-            const storedPass = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_tester_pass')) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_tester_pass')) || '';
-            const activeServerPass = (data.tester_pass || data.tester_key || '').trim();
-
-            const isTesterAuthorized = Boolean(
-              activeServerPass && (
-                (queryPass && queryPass.trim() === activeServerPass) ||
-                (storedPass && storedPass.trim() === activeServerPass)
-              )
-            );
-
-            if (isTesterAuthorized) {
-              try {
-                sessionStorage.setItem('rasalmal_tester_pass', activeServerPass);
-                localStorage.setItem('rasalmal_tester_pass', activeServerPass);
-              } catch (e) {}
-
-              let overlay = document.getElementById('maintenance-overlay');
-              if (overlay) {
-                overlay.classList.add('hidden');
-                overlay.style.display = 'none';
-              }
-
-              // Show subtle tester badge
-              if (!document.getElementById('tester-mode-badge')) {
-                const tb = document.createElement('div');
-                tb.id = 'tester-mode-badge';
-                tb.className = 'fixed bottom-2 left-2 z-[9999] px-2.5 py-1 rounded-full bg-cyan-950/90 border border-cyan-500/50 text-cyan-300 text-[10px] font-bold shadow-lg flex items-center gap-1.5 pointer-events-none select-none';
-                tb.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span><span>وضع التيست (Tester Mode S2)</span>';
-                document.body.appendChild(tb);
-              }
-              return;
-            } else {
-              // Clear any invalid / revoked tester tokens
-              try {
-                sessionStorage.removeItem('rasalmal_tester_pass');
-                localStorage.removeItem('rasalmal_tester_pass');
-              } catch (e) {}
-              const tb = document.getElementById('tester-mode-badge');
-              if (tb) tb.remove();
-            }
+            // Clear any old tester artifacts
+            try {
+              sessionStorage.removeItem('rasalmal_tester_pass');
+              localStorage.removeItem('rasalmal_tester_pass');
+            } catch (e) {}
+            const tb = document.getElementById('tester-mode-badge');
+            if (tb) tb.remove();
 
             let overlay = document.getElementById('maintenance-overlay');
             if (!overlay) {

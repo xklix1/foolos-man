@@ -1,7 +1,7 @@
 {
-  "version": "v7.8.5",
-  "build": "2026-09-21T20:12:00.000Z",
-  "minRequiredVersion": "v7.8.5",
-  "notes": "Script tag cache busting and strict maintenance check",
+  "version": "v7.8.6",
+  "build": "2026-09-21T20:21:00.000Z",
+  "minRequiredVersion": "v7.8.6",
+  "notes": "Completely remove tester bypass - enforce global maintenance",
   "forcePurgeCache": true
 }
