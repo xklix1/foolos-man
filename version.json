@@ -1,7 +1,7 @@
 {
-  "version": "v7.8.7",
-  "build": "2026-09-21T20:33:00.000Z",
-  "minRequiredVersion": "v7.8.7",
-  "notes": "Add Standby Mode feature with reload and Facebook buttons",
+  "version": "v7.8.8",
+  "build": "2026-09-21T20:41:00.000Z",
+  "minRequiredVersion": "v7.8.8",
+  "notes": "Fix direct anon key decode for Standby and Maintenance overlays",
   "forcePurgeCache": true
 }
