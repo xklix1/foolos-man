@@ -566,6 +566,23 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   //  DEVICE BAN VERIFICATION
   // ─────────────────────────────────────────────
+    async function checkVersion() {
+    try {
+      const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        const s = await res.json();
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v7.7.0';
+        const isLatest = s.version === client;
+        return {
+          upToDate: isLatest,
+          clientVersion: client,
+          remoteVersion: s.version || client
+        };
+      }
+    } catch (_) {}
+    return { upToDate: true, clientVersion: 'v7.7.0', remoteVersion: 'v7.7.0' };
+  }
+
   async function checkDeviceBan() {
     try {
       if (typeof localStorage !== 'undefined') {
@@ -6121,7 +6138,7 @@ var AppDB = (() => {
     getAuctionItems: async () => [],
     purchaseAuctionItem: async () => true,
     adminDeleteAuctionItem: async () => true,
-    checkVersion: async () => ({ upToDate: true, clientVersion:'5.1', remoteVersion:'5.1' }),
+    checkVersion,
     pendingSyncs: 0,
 
     // Strict Single-Session

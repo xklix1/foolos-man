@@ -22524,15 +22524,40 @@ if (typeof window !== 'undefined') {
 
 // Global watchdog for mandatory reload (Instant trigger every 3s when active)
 if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySelector('#admin-container, #admin-auth-screen, #admin-main-interface')) {
+    let _lastVersionCheckWatchdog = 0;
   const checkForceReloadWatchdog = async () => {
     if (typeof AppDB !=='undefined' && typeof AppDB.isNetworkActive ==='function' && !AppDB.isNetworkActive()) return;
     if (typeof document !=='undefined' && document.hidden) return;
     try {
+      // 1. Check Admin Force Reload broadcast
       if (typeof AppDB !=='undefined' && typeof AppDB.getForceReloadStatus ==='function') {
         const reloadData = await AppDB.getForceReloadStatus();
         if (reloadData && reloadData.timestamp) {
           if (window.UIController && typeof window.UIController.handleIncomingForceReload ==='function') {
             window.UIController.handleIncomingForceReload(reloadData);
+          }
+        }
+      }
+
+      // 2. Check Version Manifest every 10 seconds
+      const now = Date.now();
+      if (now - _lastVersionCheckWatchdog >= 10000) {
+        _lastVersionCheckWatchdog = now;
+        const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
+        if (res.ok) {
+          const s = await res.json();
+          const curVer = (window._CLIENT_VERSION || 'v7.7.0');
+          if (s && s.version && s.version !== curVer) {
+            console.warn('[Auto-Updater] Game update detected:', s.version, 'Current:', curVer);
+            if (window.UIController && typeof window.UIController.triggerMandatoryReloadModal === 'function') {
+              window.UIController.triggerMandatoryReloadModal('تم إطلاق تحديث جديد للعبة على السيرفر (' + s.version + '). جاري تحديث اللعبة ومسح الكاش تلقائياً...');
+            } else {
+              if ('caches' in window) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map(k => caches.delete(k)));
+              }
+              window.location.reload(true);
+            }
           }
         }
       }

@@ -8,25 +8,38 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>رأس المال | Ras ALmal</title>
-  <script>
+    <script>
     if (window.location.hostname.endsWith('vercel.app')) {
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
-    // Hard Build Version Enforcement & Cache Purge
-    (function() {
+    // Hard Build Version Enforcement & Automatic Cache Purge
+    window._CLIENT_VERSION = 'v7.7.0';
+    (async function() {
       const CURRENT_APP_BUILD = 'v7.7.0';
       try {
-        const SEASON_TAG = 'season_2_clean_epoch_v1';
-        if (localStorage.getItem('rasalmal_season_epoch') !== SEASON_TAG) {
-          localStorage.setItem('rasalmal_season_epoch', SEASON_TAG);
         localStorage.removeItem('rasalmal_banned_device');
-          // Purge all old player states from localStorage to prevent Season 1 ghost resurrection
-          Object.keys(localStorage).forEach(function(k) {
-            if (k.startsWith('rasalmal_state_') || k.startsWith('rasalmal_backup_') || k.startsWith('rasalmal_auth_token_') || k === 'rasalmal_active_session_user' || k === 'rasalmal_registered_account') {
-              localStorage.removeItem(k);
+        // Unregister any stale Service Workers
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for (let r of registrations) r.unregister();
+          }).catch(function() {});
+        }
+        // Check server version manifest directly with no-store
+        const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
+        if (res.ok) {
+          const s = await res.json();
+          if (s && s.version && s.version !== CURRENT_APP_BUILD) {
+            console.warn('[Version Sync] New game version available:', s.version, 'Current:', CURRENT_APP_BUILD);
+            if ('caches' in window) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map(k => caches.delete(k)));
             }
-          });
-          sessionStorage.clear();
+            sessionStorage.clear();
+            const url = new URL(window.location.href);
+            url.searchParams.set('_build', s.version);
+            window.location.replace(url.toString());
+            return;
+          }
         }
       } catch (e) {}
     })();
