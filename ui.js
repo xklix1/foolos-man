@@ -22631,7 +22631,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v7.9.0');
+            const curVer = (window._CLIENT_VERSION || 'v7.9.1');
             if (s && s.version && s.version !== curVer) {
               const loopKey = 'rasalmal_watchdog_reload_' + s.version;
               const reloadedCount = Number(sessionStorage.getItem(loopKey) || 0);
