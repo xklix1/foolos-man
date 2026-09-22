@@ -4929,35 +4929,40 @@
 
     async function verifyWithServer(hashedKey) {
       if (!hashedKey) return false;
-      const cleanKey = String(hashedKey).trim().toLowerCase();
-      if (cleanKey === TRUSTED_ADMIN_HASH.toLowerCase()) return true;
+      try {
+        const cleanKey = String(hashedKey).trim().toLowerCase();
+        // Primary local hash check — no network needed
+        if (cleanKey === 'f7bd3e9d5f13264c2dcc635b0f0e7edd3cc732d23d86b1d642e20ce9bd43dd99') return true;
 
-      const VERIFY_ENDPOINTS = [
-        '/api/admin/verify',
-        (typeof window !== 'undefined' && window.location ? window.location.origin + '/api/admin/verify' : ''),
-        'https://rasalmal.online/api/admin/verify'
-      ].filter(Boolean);
+        const VERIFY_ENDPOINTS = [
+          window.location.origin + '/api/admin/verify',
+          '/api/admin/verify',
+          'https://rasalmal.online/api/admin/verify'
+        ];
 
-      for (const endpoint of VERIFY_ENDPOINTS) {
-        try {
-          const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-admin-token': cleanKey
-            },
-            body: JSON.stringify({ ts: Date.now() })
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.success) return true;
+        for (const endpoint of VERIFY_ENDPOINTS) {
+          try {
+            const res = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-admin-token': cleanKey
+              },
+              body: JSON.stringify({ ts: Date.now() })
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.success) return true;
+            }
+            if (res.status === 401) return false;
+          } catch (e) {
+            // Try next endpoint
           }
-          if (res.status === 401) return false;
-        } catch (e) {
-          // Try next endpoint
         }
+        return false;
+      } catch (e) {
+        return false;
       }
-      return false;
     }
 
     function unlockAdminInterface(hashedKey) {
@@ -4985,41 +4990,55 @@
 
     // Login Method
     window.loginAdminTerminal = async function() {
-      const keyInput = document.getElementById('admin-auth-master-key');
-      const input = (keyInput ? keyInput.value : '').trim();
-      const errBox = document.getElementById('admin-login-error');
-      const btn = document.getElementById('btn-admin-submit-login');
-      const btnText = document.getElementById('admin-login-btn-text');
-
-      if (errBox) {
-        errBox.classList.add('hidden');
-        errBox.textContent = '';
-      }
-      if (!input) {
-        if (errBox) {
-          errBox.textContent = 'يرجى إدخال مفتاح الإدارة السري (Master API Key).';
-          errBox.classList.remove('hidden');
-        }
-        return;
-      }
-
-      if (btn) btn.disabled = true;
-      if (btnText) btnText.textContent = 'جاري التحقق الأمني عبر السيرفر...';
-
       try {
-        let hashed = input;
-        if (!/^[0-9a-fA-F]{64}$/.test(input)) {
-          hashed = await hashKey(input);
+        const keyInput = document.getElementById('admin-auth-master-key');
+        const input = (keyInput ? keyInput.value : '').trim();
+        const errBox = document.getElementById('admin-login-error');
+        const btn = document.getElementById('btn-admin-submit-login');
+        const btnText = document.getElementById('admin-login-btn-text');
+
+        if (errBox) {
+          errBox.classList.add('hidden');
+          errBox.textContent = '';
+        }
+        if (!input) {
+          if (errBox) {
+            errBox.textContent = 'يرجى إدخال مفتاح الإدارة السري (Master API Key).';
+            errBox.classList.remove('hidden');
+          }
+          return;
         }
 
-        let isValid = await verifyWithServer(hashed);
-        if (!isValid && hashed !== input) {
-          isValid = await verifyWithServer(input);
-          if (isValid) hashed = input;
-        } else if (!isValid && /^[0-9a-fA-F]{64}$/.test(input)) {
-          const hashedAgain = await hashKey(input);
-          isValid = await verifyWithServer(hashedAgain);
-          if (isValid) hashed = hashedAgain;
+        if (btn) btn.disabled = true;
+        if (btnText) btnText.textContent = 'جاري التحقق الأمني...';
+
+        // Self-contained hash function — no dependency on outer hashKey
+        async function _sha256(str) {
+          try {
+            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(str).trim()));
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+          } catch(e) { return String(str).trim(); }
+        }
+
+        const TRUSTED = 'f7bd3e9d5f13264c2dcc635b0f0e7edd3cc732d23d86b1d642e20ce9bd43dd99';
+
+        // Try all verification paths
+        let hashed = /^[0-9a-fA-F]{64}$/.test(input) ? input : await _sha256(input);
+        let isValid = hashed.toLowerCase() === TRUSTED;
+
+        // Server fallback if local check passes or fails
+        if (!isValid) {
+          try {
+            const res = await fetch(window.location.origin + '/api/admin/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-admin-token': hashed },
+              body: JSON.stringify({ ts: Date.now() })
+            });
+            if (res.ok) {
+              const d = await res.json();
+              if (d && d.success) isValid = true;
+            }
+          } catch(e) { /* ignore */ }
         }
 
         if (!isValid) {
