@@ -4425,7 +4425,7 @@
 
     
     // Direct Season 1 Top 10 Coronation Engine Binding
-    const SEASON_RANKS_DEF = [
+    const HQ_SEASON_RANKS_DEF = [
       { rank: 1, code: 'S1T1', label: 'المركز الأول 👑', subtitle: 'بطل الموسم الأول (S1T1)', icon: '👑', bgClass: 'from-amber-500 via-yellow-400 to-amber-600', textClass: 'text-slate-950', borderClass: 'border-amber-400/80', glow: 'shadow-amber-500/30' },
       { rank: 2, code: 'S1T2', label: 'المركز الثاني 🥈', subtitle: 'وصيف الموسم الأول (S1T2)', icon: '🥈', bgClass: 'from-slate-200 via-slate-100 to-slate-300', textClass: 'text-slate-950', borderClass: 'border-slate-300', glow: 'shadow-slate-300/20' },
       { rank: 3, code: 'S1T3', label: 'المركز الثالث 🥉', subtitle: 'برونزية الموسم الأول (S1T3)', icon: '🥉', bgClass: 'from-amber-700 via-amber-600 to-yellow-800', textClass: 'text-amber-100', borderClass: 'border-amber-600', glow: 'shadow-amber-700/20' },
@@ -4444,7 +4444,7 @@
       const container = document.getElementById('season-badges-slots-container');
       if (!container) return;
 
-      container.innerHTML = SEASON_RANKS_DEF.map(def => {
+      container.innerHTML = HQ_SEASON_RANKS_DEF.map(def => {
         return `
           <div id="season-slot-card-${def.rank}" class="p-3 sm:p-4 rounded-xl bg-slate-900/80 border ${def.borderClass} flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg ${def.glow}">
             <!-- Rank Badge & Details -->
@@ -4577,7 +4577,7 @@
           });
         }
 
-        for (const def of SEASON_RANKS_DEF) {
+        for (const def of HQ_SEASON_RANKS_DEF) {
           const input = document.getElementById(`season-input-rank-${def.rank}`);
           if (!input) continue;
 
@@ -4614,7 +4614,7 @@
     };
 
     window.assignSeasonBadgeSlot = async function(rank) {
-      const def = SEASON_RANKS_DEF.find(d => d.rank === rank);
+      const def = HQ_SEASON_RANKS_DEF.find(d => d.rank === rank);
       if (!def) return;
 
       const input = document.getElementById(`season-input-rank-${rank}`);
@@ -4672,7 +4672,7 @@
     };
 
     window.removeSeasonBadgeSlot = async function(rank) {
-      const def = SEASON_RANKS_DEF.find(d => d.rank === rank);
+      const def = HQ_SEASON_RANKS_DEF.find(d => d.rank === rank);
       if (!def) return;
 
       const input = document.getElementById(`season-input-rank-${rank}`);
@@ -4741,7 +4741,7 @@
       let successCount = 0;
       let errors = [];
 
-      for (const def of SEASON_RANKS_DEF) {
+      for (const def of HQ_SEASON_RANKS_DEF) {
         const input = document.getElementById(`season-input-rank-${def.rank}`);
         const username = (input ? input.value : '').trim();
         if (!username) continue;
