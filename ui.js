@@ -2609,6 +2609,51 @@ const UIController = (() => {
     return escapeHtml(str);
   }
 
+  function getSeasonBadgeHtml(badge, extraClass = '') {
+    if (!badge) return '';
+    const b = String(badge).trim().toUpperCase();
+    const match = b.match(/^S(\d+)T(\d+)$/i);
+    if (!match) return '';
+    const season = match[1];
+    const rank = parseInt(match[2], 10);
+    if (isNaN(rank) || rank < 1) return '';
+
+    let bgGradient = 'bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600';
+    let textColor = 'text-white';
+    let icon = '💎';
+    let glowStyle = 'box-shadow: 0 0 8px rgba(6, 182, 212, 0.45);';
+    let borderStyle = 'border-cyan-400/50';
+    let title = `الموسم ${season} - توب ${rank} 💎`;
+
+    if (rank === 1) {
+      bgGradient = 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600';
+      textColor = 'text-slate-950';
+      icon = '👑';
+      glowStyle = 'box-shadow: 0 0 10px rgba(245, 158, 11, 0.75);';
+      borderStyle = 'border-amber-300';
+      title = `بطل الموسم ${season} - المركز الأول 👑`;
+    } else if (rank === 2) {
+      bgGradient = 'bg-gradient-to-r from-slate-200 via-slate-100 to-slate-300';
+      textColor = 'text-slate-950';
+      icon = '🥈';
+      glowStyle = 'box-shadow: 0 0 8px rgba(226, 232, 240, 0.6);';
+      borderStyle = 'border-slate-300';
+      title = `وصيف الموسم ${season} - المركز الثاني 🥈`;
+    } else if (rank === 3) {
+      bgGradient = 'bg-gradient-to-r from-amber-700 via-amber-600 to-yellow-800';
+      textColor = 'text-amber-100';
+      icon = '🥉';
+      glowStyle = 'box-shadow: 0 0 8px rgba(180, 83, 9, 0.5);';
+      borderStyle = 'border-amber-600';
+      title = `الموسم ${season} - المركز الثالث 🥉`;
+    }
+
+    return `<span class="season-rank-badge ${bgGradient} ${textColor} ${borderStyle} border font-black text-[9px] select-none ${extraClass}" style="${glowStyle}" title="${title}">
+      <span class="text-[10px] leading-none">${icon}</span>
+      <span class="tracking-tight leading-none">${escapeHtml(b)}</span>
+    </span>`;
+  }
+
   // --- Dynamic Stats Bars Rendering ---
   function renderStatsBar() {
     const s = GameEngine.state;
@@ -2623,11 +2668,14 @@ const UIController = (() => {
     const badgeContentHtml = customBadge ? formatCustomBadgeHtml(customBadge, 'text-base') : '';
     const badgeHtml = badgeContentHtml ?`<span class="vip-custom-badge ml-1 inline-flex items-center drop-shadow-sm" title="${s.badgeTitle ||'عضو VIP'}">${badgeContentHtml}</span>` :'';
 
+    const seasonBadge = s.seasonBadge || '';
+    const seasonBadgeHtml = seasonBadge ? `<span class="ml-1 inline-flex items-center">${getSeasonBadgeHtml(seasonBadge)}</span>` : '';
+
     // Desktop stats
     const safeUsername = escapeHtml(username);
     const uEl = document.getElementById('stat-username');
     if (uEl) {
-      uEl.innerHTML = badgeHtml + safeUsername;
+      uEl.innerHTML = badgeHtml + safeUsername + seasonBadgeHtml;
       uEl.classList.add('cursor-pointer','hover:underline');
       uEl.title ='اضغط لعرض ملفك الشخصي وأوسمتك';
       uEl.onclick = () => openPlayerProfileCard(username);
@@ -12704,8 +12752,9 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           }
           const isVerified = Boolean(GameEngine.state && (GameEngine.state.isVerified || GameEngine.state.vipVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('vip_verified'))));
           const customBadge = (GameEngine.state && GameEngine.state.customBadge) || '';
+          const seasonBadge = (GameEngine.state && GameEngine.state.seasonBadge) || '';
 
-          await AppDB.sendChatMessage(username, userTitle, text, isFb, { chatGlow, isVerified, customBadge });
+          await AppDB.sendChatMessage(username, userTitle, text, isFb, { chatGlow, isVerified, customBadge, seasonBadge });
           if (typeof AppDB.triggerImmediateChatSync === 'function') AppDB.triggerImmediateChatSync();
         } catch (err) {
           showToast('خطأ إرسال', err.message,'error');
@@ -13381,12 +13430,16 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       }
       let badgeIconHtml = customBadgeVal ? `<span class="text-[11px] select-none inline-flex items-center" title="شارة خاصة">${formatCustomBadgeHtml(customBadgeVal, 'text-[12px]')}</span>` : '';
 
+      const seasonBadgeVal = msg.seasonBadge || (cachedP && (cachedP.seasonBadge || (cachedP.state && cachedP.state.seasonBadge))) || (isMyMsg && GameEngine.state && GameEngine.state.seasonBadge) || '';
+      const seasonBadgeHtml = seasonBadgeVal ? ` ${getSeasonBadgeHtml(seasonBadgeVal)}` : '';
+
       msgDiv.className = `w-full flex flex-col ${alignClass}`;
       msgDiv.innerHTML = `
         <div class="flex items-center gap-1.5 mb-0.5">
           <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
           <span class="text-[10px] font-bold cursor-pointer hover:underline inline-flex items-center gap-1.5" onclick="window.UI.openPlayerProfileCard('${safeSender}')">
             <span class="${senderNameClass || 'text-yellow-400'}">${safeSender}</span>
+            ${seasonBadgeHtml}
             ${verifiedBadgeHtml}
             ${fbIconHtml}
             ${badgeIconHtml}
@@ -15375,12 +15428,15 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
       const hasFbVerified = Boolean(pState.facebookVerified === true || (pState.state && pState.state.facebookVerified) || (pState.badges && pState.badges.includes('facebook')));
       const isVipVerified = Boolean(pState.isVerified || pState.vipVerified || (pState.state && (pState.state.isVerified || pState.state.vipVerified)) || (pState.badges && pState.badges.includes('verified')) || pState.activePackage === 'pkg_vip_verified' || pState.activePackage === 'pkg_vip_royal_ultimate' || (pState.customBadge && pState.customBadge.includes('✔️')));
+      const seasonBadge = pState.seasonBadge || (pState.state && pState.state.seasonBadge) || '';
+      const seasonBadgeIconHtml = seasonBadge ? ` ${getSeasonBadgeHtml(seasonBadge, 'text-xs')}` : '';
+
       const uCardEl = document.getElementById('profile-card-username');
       if (uCardEl) {
         const fbIconHtml = hasFbVerified ?' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' :'';
         const verifiedIconHtml = isVipVerified ? ` ${getVerifiedBadgeIconHtml('text-base')}` : '';
         // SECURITY: escapeHtml prevents Stored XSS via crafted usernames in profile card
-        uCardEl.innerHTML = escapeHtml(pState.username ||'---') + verifiedIconHtml + fbIconHtml;
+        uCardEl.innerHTML = escapeHtml(pState.username ||'---') + seasonBadgeIconHtml + verifiedIconHtml + fbIconHtml;
       }
       document.getElementById('profile-card-title').textContent = pState.title ||'عامل مبتدئ';
       const pwEl = document.getElementById('profile-card-networth');
@@ -15406,6 +15462,37 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
         let badgeCount = 0;
 
+        // 1. Season Rank Badge (S1TX)
+        if (seasonBadge) {
+          badgeCount++;
+          const sbBadge = document.createElement('div');
+          const sMatch = seasonBadge.match(/^S(\d+)T(\d+)$/i);
+          const sNum = sMatch ? sMatch[1] : '1';
+          const rNum = sMatch ? parseInt(sMatch[2], 10) : 1;
+
+          let cardBg = 'bg-cyan-950/80 border-cyan-400 text-cyan-300 shadow-cyan-950/60';
+          let cardIcon = '<i class="fa-solid fa-gem text-cyan-300 text-sm"></i>';
+          let cardText = `وسام نخبة توب 10 (الموسم ${sNum} #${rNum} - ${seasonBadge})`;
+
+          if (rNum === 1) {
+            cardBg = 'bg-amber-950/80 border-yellow-400 text-yellow-300 shadow-amber-950/60';
+            cardIcon = '<i class="fa-solid fa-crown text-yellow-300 text-sm"></i>';
+            cardText = `وسام بطل الموسم ${sNum} 👑 (المركز الأول ${seasonBadge})`;
+          } else if (rNum === 2) {
+            cardBg = 'bg-slate-900/90 border-slate-300 text-slate-200 shadow-slate-900/60';
+            cardIcon = '<i class="fa-solid fa-medal text-slate-200 text-sm"></i>';
+            cardText = `وسام وصيف الموسم ${sNum} 🥈 (المركز الثاني ${seasonBadge})`;
+          } else if (rNum === 3) {
+            cardBg = 'bg-orange-950/80 border-orange-500 text-amber-300 shadow-orange-950/60';
+            cardIcon = '<i class="fa-solid fa-award text-amber-300 text-sm"></i>';
+            cardText = `وسام برونزية الموسم ${sNum} 🥉 (المركز الثالث ${seasonBadge})`;
+          }
+
+          sbBadge.className = `flex items-center gap-2 px-3 py-1.5 rounded-xl border-2 ${cardBg} text-xs font-black shadow-md`;
+          sbBadge.innerHTML = `${cardIcon}<span>${cardText}</span>`;
+          badgesListEl.appendChild(sbBadge);
+        }
+
         if (isVipVerified) {
           badgeCount++;
           const vBadge = document.createElement('div');
@@ -15428,7 +15515,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const hasBronze = pState.s1Badge ==='bronze' || titleStr.includes('مستثمر برونزي') || titleStr.includes('برونزي');
         const hasVeteran = pState.s1Veteran || pState.s1Badge ==='veteran' || titleStr.includes('مستثمر مخضرم') || titleStr.includes('مخضرم');
 
-        if (hasDiamond) {
+        if (hasDiamond && !seasonBadge) {
           badgeCount++;
           const dBadge = document.createElement('div');
           dBadge.className ='flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cyan-950/80 border-2 border-cyan-400 text-cyan-300 text-xs font-black shadow-md shadow-cyan-950/60';
@@ -15436,7 +15523,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           badgesListEl.appendChild(dBadge);
         }
 
-        if (hasGold) {
+        if (hasGold && !seasonBadge) {
           badgeCount++;
           const gBadge = document.createElement('div');
           gBadge.className ='flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-950/80 border-2 border-yellow-400 text-yellow-300 text-xs font-black shadow-md shadow-amber-950/60';
@@ -15444,7 +15531,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           badgesListEl.appendChild(gBadge);
         }
 
-        if (hasBronze) {
+        if (hasBronze && !seasonBadge) {
           badgeCount++;
           const bBadge = document.createElement('div');
           bBadge.className ='flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-950/80 border-2 border-orange-500 text-amber-300 text-xs font-black shadow-md shadow-orange-950/60';
@@ -22441,6 +22528,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     triggerAccountResetModal,
     getVerifiedBadgeIconHtml,
     formatCustomBadgeHtml,
+    getSeasonBadgeHtml,
     openDirectWireModal,
     openPrivateChatWith,
     openChatDrawerWithDM,

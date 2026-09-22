@@ -1,7 +1,7 @@
 {
-  "version": "v7.9.0",
-  "build": "2026-09-21T21:12:00.000Z",
-  "minRequiredVersion": "v7.9.0",
-  "notes": "Set 500k cash and 500k bank initial starting balance across all client and server engines",
+  "version": "v7.9.1",
+  "build": "2026-09-22T21:30:00.000Z",
+  "minRequiredVersion": "v7.9.1",
+  "notes": "Added Season 1 Top 10 Badges (S1TX) system and Admin Panel coronation manager",
   "forcePurgeCache": true
 }

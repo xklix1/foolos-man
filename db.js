@@ -5523,6 +5523,7 @@ var AppDB = (() => {
       chatGlow: (extraMeta && extraMeta.chatGlow) ? String(extraMeta.chatGlow) : '',
       isVerified: Boolean(extraMeta && (extraMeta.isVerified || extraMeta.verified)),
       customBadge: (extraMeta && extraMeta.customBadge) ? String(extraMeta.customBadge) : '',
+      seasonBadge: (extraMeta && extraMeta.seasonBadge) ? String(extraMeta.seasonBadge) : '',
       timestamp: Date.now()
     };
 
@@ -5550,6 +5551,7 @@ var AppDB = (() => {
             }
             if (st.isVerified || st.vipVerified) msgObj.isVerified = true;
             if (st.customBadge && !msgObj.customBadge) msgObj.customBadge = st.customBadge;
+            if (st.seasonBadge && !msgObj.seasonBadge) msgObj.seasonBadge = st.seasonBadge;
           }
         } catch (e) {
           // Fallback silently if network query fails

@@ -1805,4 +1805,48 @@ html[dir="ltr"] .chat-bubble-glow-flame[data-vip-tag=""]::before {
   transform: scale(0.97);
 }
 
+/* ═══════════════════════════════════════════
+   SEASON RANK BADGES (S1TX)
+═══════════════════════════════════════════ */
+.season-rank-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 5px;
+  border-radius: 6px;
+  font-family: 'Outfit', 'Cairo', sans-serif;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1.15;
+  transition: all 0.2s ease-in-out;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.season-rank-badge:hover {
+  transform: translateY(-1px) scale(1.05);
+}
+
+.season-rank-badge::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  animation: seasonBadgeShimmer 3.5s infinite;
+  pointer-events: none;
+}
+
+@keyframes seasonBadgeShimmer {
+  0% { left: -100%; }
+  25% { left: 150%; }
+  100% { left: 150%; }
+}
+
+
 
