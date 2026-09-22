@@ -391,6 +391,24 @@ async function adminRoutes(fastify, options) {
       process.exit(0);
     }, 500);
   });
+
+  /**
+   * POST /api/admin/git-pull
+   * Pulls latest code from git and restarts the server
+   */
+  fastify.post('/git-pull', {
+    config: { rateLimit: adminRateLimit },
+    preHandler: [requireAdminAuth]
+  }, async (request, reply) => {
+    const { execSync } = require('child_process');
+    try {
+      const cwd = require('path').resolve(__dirname, '../../../../');
+      const out = execSync('git pull origin main', { cwd, timeout: 30000 }).toString();
+      reply.send({ success: true, output: out });
+    } catch (err) {
+      reply.status(500).send({ success: false, error: err.message });
+    }
+  });
 }
 
 module.exports = adminRoutes;
