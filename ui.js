@@ -2609,7 +2609,7 @@ const UIController = (() => {
     return escapeHtml(str);
   }
 
-  function getSeasonBadgeHtml(badge, extraClass = '') {
+  function getSeasonBadgeHtml(badge, extraClass = '', playerName = '') {
     if (!badge) return '';
     const b = String(badge).trim().toUpperCase();
     const match = b.match(/^S(\d+)T(\d+)$/i);
@@ -2621,34 +2621,45 @@ const UIController = (() => {
     let bgGradient = 'bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600';
     let textColor = 'text-white';
     let icon = '💎';
-    let glowStyle = 'box-shadow: 0 0 8px rgba(6, 182, 212, 0.45);';
-    let borderStyle = 'border-cyan-400/50';
+    let glowStyle = 'box-shadow: 0 0 10px rgba(6, 182, 212, 0.55);';
+    let borderStyle = 'border-cyan-400/60';
     let title = `الموسم ${season} - توب ${rank} 💎`;
 
     if (rank === 1) {
       bgGradient = 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600';
       textColor = 'text-slate-950';
       icon = '👑';
-      glowStyle = 'box-shadow: 0 0 10px rgba(245, 158, 11, 0.75);';
+      glowStyle = 'box-shadow: 0 0 12px rgba(245, 158, 11, 0.85);';
       borderStyle = 'border-amber-300';
       title = `بطل الموسم ${season} - المركز الأول 👑`;
     } else if (rank === 2) {
       bgGradient = 'bg-gradient-to-r from-slate-200 via-slate-100 to-slate-300';
       textColor = 'text-slate-950';
       icon = '🥈';
-      glowStyle = 'box-shadow: 0 0 8px rgba(226, 232, 240, 0.6);';
+      glowStyle = 'box-shadow: 0 0 10px rgba(226, 232, 240, 0.7);';
       borderStyle = 'border-slate-300';
       title = `وصيف الموسم ${season} - المركز الثاني 🥈`;
     } else if (rank === 3) {
       bgGradient = 'bg-gradient-to-r from-amber-700 via-amber-600 to-yellow-800';
       textColor = 'text-amber-100';
       icon = '🥉';
-      glowStyle = 'box-shadow: 0 0 8px rgba(180, 83, 9, 0.5);';
-      borderStyle = 'border-amber-600';
+      glowStyle = 'box-shadow: 0 0 10px rgba(180, 83, 9, 0.6);';
+      borderStyle = 'border-amber-500';
       title = `الموسم ${season} - المركز الثالث 🥉`;
     }
 
-    return `<span class="season-rank-badge ${bgGradient} ${textColor} ${borderStyle} border font-black text-[9px] select-none ${extraClass}" style="${glowStyle}" title="${title}">
+    if (playerName) {
+      const nameColor = rank === 1 || rank === 2 ? 'text-slate-950 font-black' : (rank === 3 ? 'text-amber-100 font-black' : 'text-white font-black');
+      return `<span class="season-rank-badge ${bgGradient} ${textColor} ${borderStyle} border font-bold select-none inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full shadow-md ${extraClass}" style="${glowStyle}" title="${title}">
+        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/25 font-black text-[9px] leading-tight shrink-0">
+          <span class="text-[10px] leading-none">${icon}</span>
+          <span class="tracking-tight leading-none">${escapeHtml(b)}</span>
+        </span>
+        <span class="player-season-name ${nameColor} text-[10px] tracking-wide leading-none">${escapeHtml(playerName)}</span>
+      </span>`;
+    }
+
+    return `<span class="season-rank-badge ${bgGradient} ${textColor} ${borderStyle} border font-black text-[9px] select-none ${extraClass} inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full" style="${glowStyle}" title="${title}">
       <span class="text-[10px] leading-none">${icon}</span>
       <span class="tracking-tight leading-none">${escapeHtml(b)}</span>
     </span>`;
@@ -2669,13 +2680,13 @@ const UIController = (() => {
     const badgeHtml = badgeContentHtml ?`<span class="vip-custom-badge ml-1 inline-flex items-center drop-shadow-sm" title="${s.badgeTitle ||'عضو VIP'}">${badgeContentHtml}</span>` :'';
 
     const seasonBadge = s.seasonBadge || '';
-    const seasonBadgeHtml = seasonBadge ? `<span class="ml-1 inline-flex items-center">${getSeasonBadgeHtml(seasonBadge)}</span>` : '';
+    const safeUsername = escapeHtml(username);
+    const userDisplayNameHtml = seasonBadge ? getSeasonBadgeHtml(seasonBadge, '', safeUsername) : safeUsername;
 
     // Desktop stats
-    const safeUsername = escapeHtml(username);
     const uEl = document.getElementById('stat-username');
     if (uEl) {
-      uEl.innerHTML = badgeHtml + safeUsername + seasonBadgeHtml;
+      uEl.innerHTML = badgeHtml + userDisplayNameHtml;
       uEl.classList.add('cursor-pointer','hover:underline');
       uEl.title ='اضغط لعرض ملفك الشخصي وأوسمتك';
       uEl.onclick = () => openPlayerProfileCard(username);
@@ -2715,7 +2726,7 @@ const UIController = (() => {
     // Mobile stats
     const umEl = document.getElementById('stat-username-mobile');
     if (umEl) {
-      umEl.innerHTML = badgeHtml + safeUsername;
+      umEl.innerHTML = badgeHtml + userDisplayNameHtml;
       umEl.classList.add('cursor-pointer', 'hover:underline');
       umEl.title = 'اضغط لعرض ملفك الشخصي وأوسمتك';
       umEl.onclick = () => openPlayerProfileCard(username);
@@ -13431,15 +13442,16 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       let badgeIconHtml = customBadgeVal ? `<span class="text-[11px] select-none inline-flex items-center" title="شارة خاصة">${formatCustomBadgeHtml(customBadgeVal, 'text-[12px]')}</span>` : '';
 
       const seasonBadgeVal = msg.seasonBadge || (cachedP && (cachedP.seasonBadge || (cachedP.state && cachedP.state.seasonBadge))) || (isMyMsg && GameEngine.state && GameEngine.state.seasonBadge) || '';
-      const seasonBadgeHtml = seasonBadgeVal ? ` ${getSeasonBadgeHtml(seasonBadgeVal)}` : '';
+      const playerDisplayNameHtml = seasonBadgeVal 
+        ? getSeasonBadgeHtml(seasonBadgeVal, '', safeSender)
+        : `<span class="${senderNameClass || 'text-yellow-400'}">${safeSender}</span>`;
 
       msgDiv.className = `w-full flex flex-col ${alignClass}`;
       msgDiv.innerHTML = `
         <div class="flex items-center gap-1.5 mb-0.5">
           <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
-          <span class="text-[10px] font-bold cursor-pointer hover:underline inline-flex items-center gap-1.5" onclick="window.UI.openPlayerProfileCard('${safeSender}')">
-            <span class="${senderNameClass || 'text-yellow-400'}">${safeSender}</span>
-            ${seasonBadgeHtml}
+          <span class="text-[10px] font-bold cursor-pointer hover:opacity-90 inline-flex items-center gap-1.5" onclick="window.UI.openPlayerProfileCard('${safeSender}')">
+            ${playerDisplayNameHtml}
             ${verifiedBadgeHtml}
             ${fbIconHtml}
             ${badgeIconHtml}
@@ -15429,14 +15441,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const hasFbVerified = Boolean(pState.facebookVerified === true || (pState.state && pState.state.facebookVerified) || (pState.badges && pState.badges.includes('facebook')));
       const isVipVerified = Boolean(pState.isVerified || pState.vipVerified || (pState.state && (pState.state.isVerified || pState.state.vipVerified)) || (pState.badges && pState.badges.includes('verified')) || pState.activePackage === 'pkg_vip_verified' || pState.activePackage === 'pkg_vip_royal_ultimate' || (pState.customBadge && pState.customBadge.includes('✔️')));
       const seasonBadge = pState.seasonBadge || (pState.state && pState.state.seasonBadge) || '';
-      const seasonBadgeIconHtml = seasonBadge ? ` ${getSeasonBadgeHtml(seasonBadge, 'text-xs')}` : '';
 
       const uCardEl = document.getElementById('profile-card-username');
       if (uCardEl) {
         const fbIconHtml = hasFbVerified ?' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' :'';
         const verifiedIconHtml = isVipVerified ? ` ${getVerifiedBadgeIconHtml('text-base')}` : '';
+        const nameCardHtml = seasonBadge ? getSeasonBadgeHtml(seasonBadge, 'text-xs py-1 px-3', pState.username || '---') : escapeHtml(pState.username || '---');
         // SECURITY: escapeHtml prevents Stored XSS via crafted usernames in profile card
-        uCardEl.innerHTML = escapeHtml(pState.username ||'---') + seasonBadgeIconHtml + verifiedIconHtml + fbIconHtml;
+        uCardEl.innerHTML = nameCardHtml + verifiedIconHtml + fbIconHtml;
       }
       document.getElementById('profile-card-title').textContent = pState.title ||'عامل مبتدئ';
       const pwEl = document.getElementById('profile-card-networth');
