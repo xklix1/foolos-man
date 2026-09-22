@@ -4140,9 +4140,9 @@
   <div id="toast-container" class="fixed top-4 left-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Core Modules -->
-  <script src="game.js?v=69.0"></script>
-  <script src="db.js?v=50.0"></script>
-  <script src="admin-panel.js?v=50.0"></script>
+  <script src="game.js?v=70.0"></script>
+  <script src="db.js?v=52.0"></script>
+  <script src="admin-panel.js?v=52.0"></script>
 
   <!-- Standalone Admin Controller Script -->
   <script>
@@ -4419,6 +4419,393 @@
             stagingToggleBtn.disabled = false;
           }
         };
+      }
+    });
+
+    
+    // Direct Season 1 Top 10 Coronation Engine Binding
+    const SEASON_RANKS_DEF = [
+      { rank: 1, code: 'S1T1', label: 'المركز الأول 👑', subtitle: 'بطل الموسم الأول (S1T1)', icon: '👑', bgClass: 'from-amber-500 via-yellow-400 to-amber-600', textClass: 'text-slate-950', borderClass: 'border-amber-400/80', glow: 'shadow-amber-500/30' },
+      { rank: 2, code: 'S1T2', label: 'المركز الثاني 🥈', subtitle: 'وصيف الموسم الأول (S1T2)', icon: '🥈', bgClass: 'from-slate-200 via-slate-100 to-slate-300', textClass: 'text-slate-950', borderClass: 'border-slate-300', glow: 'shadow-slate-300/20' },
+      { rank: 3, code: 'S1T3', label: 'المركز الثالث 🥉', subtitle: 'برونزية الموسم الأول (S1T3)', icon: '🥉', bgClass: 'from-amber-700 via-amber-600 to-yellow-800', textClass: 'text-amber-100', borderClass: 'border-amber-600', glow: 'shadow-amber-700/20' },
+      { rank: 4, code: 'S1T4', label: 'المركز الرابع 💎', subtitle: 'توب 4 الموسم الأول (S1T4)', icon: '💎', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
+      { rank: 5, code: 'S1T5', label: 'المركز الخامس 💎', subtitle: 'توب 5 الموسم الأول (S1T5)', icon: '💎', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
+      { rank: 6, code: 'S1T6', label: 'المركز السادس 💎', subtitle: 'توب 6 الموسم الأول (S1T6)', icon: '💎', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
+      { rank: 7, code: 'S1T7', label: 'المركز السابع 💎', subtitle: 'توب 7 الموسم الأول (S1T7)', icon: '💎', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
+      { rank: 8, code: 'S1T8', label: 'المركز الثامن 💎', subtitle: 'توب 8 الموسم الأول (S1T8)', icon: '💎', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
+      { rank: 9, code: 'S1T9', label: 'المركز التاسع 💎', subtitle: 'توب 9 الموسم الأول (S1T9)', icon: '💎', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
+      { rank: 10, code: 'S1T10', label: 'المركز العاشر 💎', subtitle: 'توب 10 الموسم الأول (S1T10)', icon: '💎', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' }
+    ];
+
+    let _seasonPlayerSearchDebounce = {};
+
+    function renderSeasonBadgesSlots() {
+      const container = document.getElementById('season-badges-slots-container');
+      if (!container) return;
+
+      container.innerHTML = SEASON_RANKS_DEF.map(def => {
+        return `
+          <div id="season-slot-card-${def.rank}" class="p-3 sm:p-4 rounded-xl bg-slate-900/80 border ${def.borderClass} flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg ${def.glow}">
+            <!-- Rank Badge & Details -->
+            <div class="flex items-center gap-3 min-w-[200px]">
+              <div class="px-2.5 py-1.5 rounded-lg bg-gradient-to-r ${def.bgClass} ${def.textClass} font-black text-xs flex items-center gap-1.5 shadow-md shrink-0">
+                <span>${def.icon}</span>
+                <span class="tracking-wider">${def.code}</span>
+              </div>
+              <div>
+                <div class="text-xs font-black text-white">${def.label}</div>
+                <div class="text-[10px] text-slate-400">${def.subtitle}</div>
+              </div>
+            </div>
+
+            <!-- Player Search Input & Live Status -->
+            <div class="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div class="relative flex-1">
+                <input type="text" id="season-input-rank-${def.rank}" placeholder="اكتب اسم اللاعب للبحث عنه..."
+                  class="glass-input w-full p-2 pr-8 text-xs text-right bg-slate-950 border border-slate-700 text-white rounded-lg focus:border-amber-400 outline-none font-bold"
+                  oninput="window.onSeasonSlotInput(${def.rank}, this.value)"
+                  autocomplete="off">
+                <i class="fa-solid fa-magnifying-glass absolute right-2.5 top-2.5 text-slate-400 text-xs"></i>
+              </div>
+              <div id="season-status-rank-${def.rank}" class="text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1">
+                <span>⚪ أدخل اسم اللاعب</span>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button type="button" onclick="window.assignSeasonBadgeSlot(${def.rank})"
+                class="px-3 py-1.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 text-slate-950 font-black rounded-lg text-xs transition flex items-center gap-1 shadow-md shadow-amber-500/20 active:scale-95 cursor-pointer">
+                <i class="fa-solid fa-check text-[11px]"></i>
+                <span>إسناد الشارة</span>
+              </button>
+              <button type="button" onclick="window.removeSeasonBadgeSlot(${def.rank})"
+                class="px-2.5 py-1.5 bg-rose-950/70 hover:bg-rose-900 text-rose-300 border border-rose-500/40 font-bold rounded-lg text-xs transition flex items-center gap-1 cursor-pointer" title="مسح وسحب الشارة">
+                <i class="fa-solid fa-trash-can text-[11px]"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.openSeasonBadgesModal = async function() {
+      const modal = document.getElementById('modal-admin-season-badges');
+      if (!modal) return;
+      renderSeasonBadgesSlots();
+      modal.classList.remove('hidden');
+      await window.loadCurrentSeasonBadges();
+    };
+
+    window.closeSeasonBadgesModal = function() {
+      const modal = document.getElementById('modal-admin-season-badges');
+      if (modal) modal.classList.add('hidden');
+    };
+
+    window.onSeasonSlotInput = function(rank, username) {
+      if (_seasonPlayerSearchDebounce[rank]) {
+        clearTimeout(_seasonPlayerSearchDebounce[rank]);
+      }
+      _seasonPlayerSearchDebounce[rank] = setTimeout(() => {
+        window.checkSeasonPlayerSlot(rank, username);
+      }, 250);
+    };
+
+    window.checkSeasonPlayerSlot = async function(rank, username) {
+      const statusEl = document.getElementById(`season-status-rank-${rank}`);
+      if (!statusEl) return null;
+
+      const u = String(username || '').trim();
+      if (!u) {
+        statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
+        statusEl.innerHTML = '<span>⚪ أدخل اسم اللاعب</span>';
+        return null;
+      }
+
+      statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-amber-400 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
+      statusEl.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-[10px]"></i> <span>جاري البحث...</span>';
+
+      try {
+        let player = null;
+        if (typeof cachedPlayers !== 'undefined' && Array.isArray(cachedPlayers)) {
+          player = cachedPlayers.find(p => p.username && p.username.toLowerCase() === u.toLowerCase());
+        }
+
+        if (!player && typeof AppDB !== 'undefined' && typeof AppDB.adminGetPlayer === 'function') {
+          player = await AppDB.adminGetPlayer(u);
+        }
+
+        if (player && player.username) {
+          const worth = player.netWorth !== undefined ? player.netWorth : (player.net_worth || 0);
+          const currentBadge = player.seasonBadge || (player.state && player.state.seasonBadge) || '';
+          statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
+          statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> <span>موجود ✅ (${Number(worth).toLocaleString()} EGP)${currentBadge ? ` [${currentBadge}]` : ''}</span>`;
+          return player;
+        } else {
+          statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-rose-950/80 border border-rose-500/50 text-rose-300 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
+          statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-400"></i> <span>اللاعب غير مسجل ❌</span>`;
+          return null;
+        }
+      } catch (e) {
+        statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-rose-950/80 border border-rose-500/50 text-rose-300 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
+        statusEl.innerHTML = `<span>خطأ في الاتصال</span>`;
+        return null;
+      }
+    };
+
+    window.loadCurrentSeasonBadges = async function() {
+      const loadBtn = document.getElementById('btn-admin-season-load-current');
+      if (loadBtn) {
+        loadBtn.disabled = true;
+        loadBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-amber-400"></i> <span>جاري الجلب...</span>';
+      }
+
+      try {
+        let playersWithBadges = [];
+        try {
+          if (typeof AppDB !== 'undefined' && typeof AppDB._api === 'function') {
+            const rows = await AppDB._api('players?state->>seasonBadge=like.S1T*&select=username,net_worth,state');
+            if (Array.isArray(rows)) playersWithBadges = rows;
+          }
+        } catch (e) {}
+
+        if (playersWithBadges.length === 0 && typeof cachedPlayers !== 'undefined' && Array.isArray(cachedPlayers)) {
+          playersWithBadges = cachedPlayers.filter(p => {
+            const b = p.seasonBadge || (p.state && p.state.seasonBadge) || '';
+            return b && String(b).toUpperCase().startsWith('S1T');
+          });
+        }
+
+        for (const def of SEASON_RANKS_DEF) {
+          const input = document.getElementById(`season-input-rank-${def.rank}`);
+          if (!input) continue;
+
+          const found = playersWithBadges.find(p => {
+            const b = p.seasonBadge || (p.state && p.state.seasonBadge) || '';
+            return String(b).toUpperCase() === def.code;
+          });
+
+          if (found && found.username) {
+            input.value = found.username;
+            await window.checkSeasonPlayerSlot(def.rank, found.username);
+          } else {
+            if (!input.value) {
+              const statusEl = document.getElementById(`season-status-rank-${def.rank}`);
+              if (statusEl) {
+                statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
+                statusEl.innerHTML = '<span>⚪ شاغر (لم يتم التعيين)</span>';
+              }
+            }
+          }
+        }
+
+        if (typeof showToast === 'function') {
+          showToast('تحميل الأبطال', 'تم جلب وتعبئة قائمة حاملي الشارات الحالية بنجاح.', 'info');
+        }
+      } catch (err) {
+        console.warn('loadCurrentSeasonBadges error:', err);
+      } finally {
+        if (loadBtn) {
+          loadBtn.disabled = false;
+          loadBtn.innerHTML = '<i class="fa-solid fa-rotate text-amber-400"></i> <span>تعبئة الحاملين الحاليين للشارات</span>';
+        }
+      }
+    };
+
+    window.assignSeasonBadgeSlot = async function(rank) {
+      const def = SEASON_RANKS_DEF.find(d => d.rank === rank);
+      if (!def) return;
+
+      const input = document.getElementById(`season-input-rank-${rank}`);
+      const username = (input ? input.value : '').trim();
+
+      if (!username) {
+        if (typeof showToast === 'function') showToast('خطأ إدخال', `يرجى كتابة اسم اللاعب أولاً للمركز ${rank}.`, 'warning');
+        if (input) input.focus();
+        return;
+      }
+
+      try {
+        const player = await window.checkSeasonPlayerSlot(rank, username);
+        if (!player) {
+          if (typeof showToast === 'function') showToast('اللاعب غير موجود', `الحساب "${username}" غير موجود في قاعدة البيانات. تأكد من صحة الاسم.`, 'error');
+          return;
+        }
+
+        const pState = player.state || player;
+        pState.seasonBadge = def.code;
+        if (pState.state && typeof pState.state === 'object') {
+          pState.state.seasonBadge = def.code;
+        }
+        pState.adminModifiedTimestamp = Date.now();
+
+        if (typeof AppDB !== 'undefined') {
+          if (typeof AppDB.adminSavePlayer === 'function') await AppDB.adminSavePlayer(player.username, pState);
+          if (typeof AppDB.savePlayerState === 'function') await AppDB.savePlayerState(player.username, pState, true);
+        }
+
+        if (typeof cachedPlayers !== 'undefined' && Array.isArray(cachedPlayers)) {
+          const pIdx = cachedPlayers.findIndex(p => p.username === player.username);
+          if (pIdx !== -1) {
+            cachedPlayers[pIdx].seasonBadge = def.code;
+            if (cachedPlayers[pIdx].state) cachedPlayers[pIdx].state.seasonBadge = def.code;
+          }
+        }
+
+        if (typeof GameEngine !== 'undefined' && player.username === GameEngine.activeUsername && GameEngine.state) {
+          GameEngine.state.seasonBadge = def.code;
+          if (typeof renderAll === 'function') renderAll();
+        }
+
+        if (typeof showToast === 'function') {
+          showToast('تتويج بطل 🏆', `تم إسناد الشارة الملكية [${def.code}] للاعب "${player.username}" بنجاح!`, 'success');
+        }
+        if (typeof logAdminAction === 'function') {
+          logAdminAction(`إسناد شارة أبطال الموسم الأول [${def.code}] للاعب: ${player.username}`);
+        }
+
+        await window.checkSeasonPlayerSlot(rank, player.username);
+      } catch (err) {
+        if (typeof showToast === 'function') showToast('فشل الإسناد', err.message || 'حدث خطأ أثناء الحفظ', 'error');
+      }
+    };
+
+    window.removeSeasonBadgeSlot = async function(rank) {
+      const def = SEASON_RANKS_DEF.find(d => d.rank === rank);
+      if (!def) return;
+
+      const input = document.getElementById(`season-input-rank-${rank}`);
+      const username = (input ? input.value : '').trim();
+
+      if (!username) {
+        if (input) input.value = '';
+        const statusEl = document.getElementById(`season-status-rank-${rank}`);
+        if (statusEl) {
+          statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
+          statusEl.innerHTML = '<span>⚪ فارغ</span>';
+        }
+        return;
+      }
+
+      if (!confirm(`هل أنت متأكد من سحب شارة [${def.code}] من اللاعب "${username}"؟`)) return;
+
+      try {
+        if (typeof AppDB !== 'undefined' && typeof AppDB.adminGetPlayer === 'function') {
+          const player = await AppDB.adminGetPlayer(username);
+          if (player) {
+            const pState = player.state || player;
+            pState.seasonBadge = '';
+            if (pState.state && typeof pState.state === 'object') {
+              pState.state.seasonBadge = '';
+            }
+            if (typeof AppDB.adminSavePlayer === 'function') await AppDB.adminSavePlayer(player.username, pState);
+            if (typeof AppDB.savePlayerState === 'function') await AppDB.savePlayerState(player.username, pState, true);
+
+            if (typeof cachedPlayers !== 'undefined' && Array.isArray(cachedPlayers)) {
+              const pIdx = cachedPlayers.findIndex(p => p.username === player.username);
+              if (pIdx !== -1) {
+                cachedPlayers[pIdx].seasonBadge = '';
+                if (cachedPlayers[pIdx].state) cachedPlayers[pIdx].state.seasonBadge = '';
+              }
+            }
+
+            if (typeof GameEngine !== 'undefined' && player.username === GameEngine.activeUsername && GameEngine.state) {
+              GameEngine.state.seasonBadge = '';
+              if (typeof renderAll === 'function') renderAll();
+            }
+          }
+        }
+
+        if (input) input.value = '';
+        const statusEl = document.getElementById(`season-status-rank-${rank}`);
+        if (statusEl) {
+          statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
+          statusEl.innerHTML = '<span>⚪ تم سحب الشارة</span>';
+        }
+
+        if (typeof showToast === 'function') showToast('سحب الشارة', `تم سحب شارة [${def.code}] من الحساب بنجاح.`, 'info');
+        if (typeof logAdminAction === 'function') logAdminAction(`سحب شارة [${def.code}] من اللاعب: ${username}`);
+      } catch (err) {
+        if (typeof showToast === 'function') showToast('خطأ سحب الشارة', err.message, 'error');
+      }
+    };
+
+    window.saveAllSeasonBadges = async function() {
+      const saveAllBtn = document.getElementById('btn-admin-season-save-all');
+      if (saveAllBtn) {
+        saveAllBtn.disabled = true;
+        saveAllBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري اعتماد الجميع...</span>';
+      }
+
+      let successCount = 0;
+      let errors = [];
+
+      for (const def of SEASON_RANKS_DEF) {
+        const input = document.getElementById(`season-input-rank-${def.rank}`);
+        const username = (input ? input.value : '').trim();
+        if (!username) continue;
+
+        try {
+          if (typeof AppDB === 'undefined' || typeof AppDB.adminGetPlayer !== 'function') continue;
+          const player = await AppDB.adminGetPlayer(username);
+          if (!player) {
+            errors.push(`المركز ${def.rank}: اللاعب "${username}" غير موجود`);
+            continue;
+          }
+
+          const pState = player.state || player;
+          pState.seasonBadge = def.code;
+          if (pState.state && typeof pState.state === 'object') {
+            pState.state.seasonBadge = def.code;
+          }
+          if (typeof AppDB.adminSavePlayer === 'function') await AppDB.adminSavePlayer(player.username, pState);
+          if (typeof AppDB.savePlayerState === 'function') await AppDB.savePlayerState(player.username, pState, true);
+
+          if (typeof cachedPlayers !== 'undefined' && Array.isArray(cachedPlayers)) {
+            const pIdx = cachedPlayers.findIndex(p => p.username === player.username);
+            if (pIdx !== -1) {
+              cachedPlayers[pIdx].seasonBadge = def.code;
+              if (cachedPlayers[pIdx].state) cachedPlayers[pIdx].state.seasonBadge = def.code;
+            }
+          }
+
+          if (typeof GameEngine !== 'undefined' && player.username === GameEngine.activeUsername && GameEngine.state) {
+            GameEngine.state.seasonBadge = def.code;
+          }
+
+          successCount++;
+          await window.checkSeasonPlayerSlot(def.rank, player.username);
+        } catch (err) {
+          errors.push(`المركز ${def.rank}: ${err.message}`);
+        }
+      }
+
+      if (typeof renderAll === 'function') renderAll();
+
+      if (saveAllBtn) {
+        saveAllBtn.disabled = false;
+        saveAllBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>حفظ واعتماد الكل (Save All)</span>';
+      }
+
+      if (successCount > 0 && typeof showToast === 'function') {
+        showToast('اعتماد الأبطال 🏆', `تم اعتماد وتتويج ${successCount} لاعب بشارات الموسم الأول بنجاح!`, 'success');
+        if (typeof logAdminAction === 'function') logAdminAction(`اعتماد جماعي لشارات أبطال الموسم الأول (${successCount} حسابات)`);
+      }
+
+      if (errors.length > 0 && typeof showToast === 'function') {
+        showToast('تنبيهات أثناء الحفظ', errors.join('\n'), 'warning');
+      }
+    };
+
+    // Direct event listener fallback
+    document.addEventListener('DOMContentLoaded', () => {
+      const openBtn = document.getElementById('btn-admin-open-season-badges-modal');
+      if (openBtn && !openBtn.dataset.boundDirect) {
+        openBtn.dataset.boundDirect = 'true';
+        openBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          window.openSeasonBadgesModal();
+        });
       }
     });
 
