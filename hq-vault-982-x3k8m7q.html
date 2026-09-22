@@ -1136,6 +1136,26 @@
 
       <!-- 2. PANEL PLAYERS -->
       <div id="admin-subpanel-players" class="hidden space-y-4">
+        <!-- Season 1 Top 10 Badges Granter Quick Action Banner -->
+        <div class="p-3.5 bg-gradient-to-r from-amber-950/70 via-slate-900/95 to-amber-950/70 border border-amber-500/40 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-lg shadow-amber-500/5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-600 flex items-center justify-center text-slate-950 font-black text-lg shadow-md shadow-yellow-500/30 shrink-0">
+              <i class="fa-solid fa-trophy"></i>
+            </div>
+            <div>
+              <h4 class="text-xs sm:text-sm font-black text-white flex items-center gap-2">
+                <span>منصة تتويج وإسناد شارات أبطال الموسم الأول (Top 10 S1TX)</span>
+                <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">جديد 🏆</span>
+              </h4>
+              <p class="text-[10px] text-slate-300 mt-0.5">اكتب اسم اللاعب في المركز المطلوب للبحث عنه وإسناد الشارة المميزة (S1T1 إلى S1T10) لتظهر فوراً في الشات والبروفايل.</p>
+            </div>
+          </div>
+          <button id="btn-admin-open-season-badges-modal" type="button" onclick="if(window.openSeasonBadgesModal) window.openSeasonBadgesModal()"
+            class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer shrink-0">
+            <i class="fa-solid fa-crown text-sm"></i>
+            <span>فتح منصة تتويج التوب 10 🏆</span>
+          </button>
+        </div>
 
         <!-- Search & Filter Controls -->
         <div class="p-3.5 bg-slate-900/50 border border-slate-800 rounded-xl space-y-3">
