@@ -4587,6 +4587,9 @@ var AppDB = (() => {
         title: r.title || 'عامل مبتدئ',
         jobId: r.job_id || 'worker',
         isAdmin: r.is_admin === true,
+        seasonBadge: pState.seasonBadge || '',
+        customBadge: pState.customBadge || '',
+        state: pState,
         facebookVerified: isFb
       };
     });
@@ -5239,7 +5242,7 @@ var AppDB = (() => {
   async function _rebuildAndSaveLeaderboard() {
     const now = Date.now();
     try {
-      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&username=not.in.(newu,khaled,Khaled,rasalmal,rasalmal1,rasalmal2,Rasalmal,Rasalmal1,Rasalmal2)&order=net_worth.desc&limit=25');
+      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned,state&is_banned=eq.false&username=not.in.(newu,khaled,Khaled,rasalmal,rasalmal1,rasalmal2,Rasalmal,Rasalmal1,Rasalmal2)&order=net_worth.desc&limit=25');
       const topPlayers = (rows || [])
         .filter(r => !isHiddenPlayer(r.username))
         .slice(0, 10)
@@ -5252,6 +5255,9 @@ var AppDB = (() => {
           title: r.title || 'عامل مبتدئ',
           jobId: r.job_id || 'worker',
           isAdmin: r.is_admin === true,
+          seasonBadge: (r.state && r.state.seasonBadge) || '',
+          customBadge: (r.state && r.state.customBadge) || '',
+          state: r.state || {},
           facebookVerified: false
         }));
 
