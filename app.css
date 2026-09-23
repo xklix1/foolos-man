@@ -1512,7 +1512,124 @@ html[dir="ltr"] .chat-bubble-glow-flame[data-vip-tag=""]::before {
   content: '🔥 FLAME VIP';
 }
 
+/* ═══════════════════════════════════════════
+   BLUE FLAME SVIP CHAT GLOW (حزمة لهيب SVIP الأزرق المشتعل)
+   ═══════════════════════════════════════════ */
+@keyframes moving-gradient-blue-flame {
+  0% {
+    background-position: 0% 70%;
+  }
+  50% {
+    background-position: 100% 30%;
+  }
+  100% {
+    background-position: 0% 70%;
+  }
+}
+
+@keyframes calm-blue-flame-blaze {
+  0%, 100% {
+    box-shadow: 
+      0 0 10px rgba(14, 165, 233, 0.6),
+      0 0 22px rgba(2, 132, 199, 0.4),
+      0 0 38px rgba(37, 99, 235, 0.2),
+      inset 0 0 10px rgba(56, 189, 248, 0.25);
+    border-color: #0284c7;
+  }
+  30% {
+    box-shadow: 
+      0 0 16px rgba(56, 189, 248, 0.75),
+      0 0 30px rgba(14, 165, 233, 0.5),
+      0 0 48px rgba(37, 99, 235, 0.3),
+      inset 0 0 14px rgba(56, 189, 248, 0.35);
+    border-color: #38bdf8;
+  }
+  60% {
+    box-shadow: 
+      0 0 12px rgba(14, 165, 233, 0.55),
+      0 0 25px rgba(3, 105, 161, 0.35),
+      0 0 42px rgba(30, 64, 175, 0.2),
+      inset 0 0 11px rgba(14, 165, 233, 0.22);
+    border-color: #0369a1;
+  }
+  85% {
+    box-shadow: 
+      0 0 18px rgba(56, 189, 248, 0.8),
+      0 0 34px rgba(14, 165, 233, 0.55),
+      0 0 54px rgba(2, 132, 199, 0.35),
+      inset 0 0 15px rgba(56, 189, 248, 0.35);
+    border-color: #0ea5e9;
+  }
+}
+
+/* Blue Flame SVIP Glowing Bubble */
+.chat-bubble-glow-blue-flame {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.32), rgba(8, 25, 48, 0.96), rgba(37, 99, 235, 0.25), rgba(15, 23, 42, 0.98), rgba(14, 165, 233, 0.28)) !important;
+  background-size: 300% 300% !important;
+  animation: moving-gradient-blue-flame 4.2s ease infinite, calm-blue-flame-blaze 2.2s ease-in-out infinite !important;
+  border: 1.5px solid #0ea5e9 !important;
+  color: #f0f9ff !important;
+  position: relative !important;
+  margin-top: 10px !important;
+  margin-bottom: 6px !important;
+  text-shadow: 0 0 8px rgba(14, 165, 233, 0.5);
+  font-weight: 500;
+  min-width: 100px;
+  overflow: visible;
+}
+
+.chat-bubble-glow-blue-flame::before {
+  content: attr(data-vip-tag);
+  position: absolute;
+  top: -11px;
+  right: 8px;
+  font-size: 8px;
+  font-weight: 900;
+  color: #e0f2fe;
+  background: linear-gradient(90deg, #082f49, #0369a1, #0284c7, #2563eb, #0369a1, #082f49);
+  background-size: 200% auto;
+  animation: shimmer-badge-glow 2.8s linear infinite;
+  border: 1px solid rgba(56, 189, 248, 0.85);
+  border-radius: 999px;
+  padding: 1px 7px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 12px rgba(14, 165, 233, 0.8), inset 0 0 6px rgba(186, 230, 253, 0.4);
+  z-index: 2;
+  white-space: nowrap;
+}
+
+/* RTL / LTR direction adjustments */
+html[dir="rtl"] .chat-bubble-sent.chat-bubble-glow-blue-flame::before {
+  left: 8px;
+  right: auto;
+}
+
+html[dir="ltr"] .chat-bubble-glow-blue-flame::before {
+  left: 8px;
+  right: auto;
+}
+
+html[dir="rtl"] .chat-bubble-glow-blue-flame:not([data-vip-tag])::before,
+html[dir="rtl"] .chat-bubble-glow-blue-flame[data-vip-tag=""]::before {
+  content: '⚡ لهيب SVIP';
+}
+
+html[dir="ltr"] .chat-bubble-glow-blue-flame:not([data-vip-tag])::before,
+html[dir="ltr"] .chat-bubble-glow-blue-flame[data-vip-tag=""]::before {
+  content: '⚡ SVIP FLAME';
+}
+
 /* Sender Name Glows & Indicators */
+.chat-sender-blue-flame-glow {
+  background: linear-gradient(90deg, #38bdf8, #7dd3fc, #0ea5e9, #60a5fa, #38bdf8);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-badge-glow 3.5s linear infinite;
+  font-weight: 900 !important;
+  filter: drop-shadow(0 0 6px rgba(14, 165, 233, 0.75));
+}
+
 .chat-sender-flame-glow {
   background: linear-gradient(90deg, #f43f5e, #fda4af, #e11d48, #fb7185);
   background-size: 200% auto;
@@ -1567,6 +1684,54 @@ html[dir="ltr"] .chat-bubble-glow-flame[data-vip-tag=""]::before {
   border: 1px solid rgba(168, 85, 247, 0.65);
   color: #e9d5ff;
   box-shadow: 0 0 10px rgba(168, 85, 247, 0.45);
+}
+
+.chat-vip-svip-pill,
+.badge-svip-blue-flame {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3.5px !important;
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  padding: 1.5px 8px !important;
+  border-radius: 999px !important;
+  letter-spacing: 0.5px !important;
+  line-height: 1.2 !important;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 25%, #0ea5e9 50%, #2563eb 75%, #1d4ed8 100%) !important;
+  background-size: 250% 250% !important;
+  color: #f0f9ff !important;
+  border: 1.5px solid rgba(56, 189, 248, 0.95) !important;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.95), 0 0 16px rgba(14, 165, 233, 0.8) !important;
+  box-shadow: 
+    0 0 10px rgba(14, 165, 233, 0.75),
+    0 0 20px rgba(56, 189, 248, 0.45),
+    inset 0 0 8px rgba(186, 230, 253, 0.6) !important;
+  animation: svipBlueFlameShimmer 3s ease infinite alternate, svipBlueFlameGlow 2s ease-in-out infinite !important;
+  position: relative !important;
+  overflow: hidden !important;
+  vertical-align: middle !important;
+  user-select: none !important;
+}
+
+@keyframes svipBlueFlameShimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes svipBlueFlameGlow {
+  0% {
+    box-shadow: 0 0 8px rgba(14, 165, 233, 0.6), 0 0 16px rgba(56, 189, 248, 0.35), inset 0 0 6px rgba(186, 230, 253, 0.4);
+    filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.7));
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(14, 165, 233, 0.95), 0 0 26px rgba(56, 189, 248, 0.65), inset 0 0 10px rgba(186, 230, 253, 0.8);
+    filter: drop-shadow(0 0 8px rgba(14, 165, 233, 1));
+  }
+  100% {
+    box-shadow: 0 0 8px rgba(14, 165, 233, 0.6), 0 0 16px rgba(56, 189, 248, 0.35), inset 0 0 6px rgba(186, 230, 253, 0.4);
+    filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.7));
+  }
 }
 
 /* Scrollbar Utility */

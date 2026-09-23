@@ -3875,6 +3875,11 @@ var AppDB = (() => {
     const updatesState = (updates.state && typeof updates.state === 'object') ? updates.state : updates;
     const stateObj = { ...existingState, ...updatesState };
 
+    // Preserve seasonBadge if present in existing state and not intentionally changed
+    if (existingState.seasonBadge && (updatesState.seasonBadge === undefined || updatesState.seasonBadge === '')) {
+      stateObj.seasonBadge = existingState.seasonBadge;
+    }
+
     // Clear any past reset flags
     stateObj.isReset = false;
     delete stateObj.resetTimestamp;

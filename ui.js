@@ -2600,7 +2600,13 @@ const UIController = (() => {
 
   function formatCustomBadgeHtml(badge, iconExtraClass = '') {
     if (!badge) return '';
-    const str = String(badge);
+    const str = String(badge).trim();
+    if (str.toUpperCase() === 'SVIP' || str.toUpperCase() === '⚡ SVIP' || str.toUpperCase() === '🔥 SVIP' || str === 'عضو SVIP' || str === 'عضو VIP') {
+      return `<span class="badge-svip-blue-flame inline-flex items-center gap-1 select-none" title="عضوية فائقة التميز SVIP ⚡">
+        <i class="fa-solid fa-bolt-lightning text-cyan-300 text-[8px] animate-pulse"></i>
+        <span>SVIP</span>
+      </span>`;
+    }
     if (str.includes('✔️')) {
       const parts = str.split('✔️');
       const iconHtml = getVerifiedBadgeIconHtml(iconExtraClass);
@@ -13306,6 +13312,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           glowType = '';
         } else if (isMe && GameEngine.state && GameEngine.state.chatGlow && GameEngine.state.chatGlow !== 'none') {
           glowType = GameEngine.state.chatGlow;
+        } else if (msg.customBadge === 'SVIP' || (msg.customBadge && String(msg.customBadge).toUpperCase().includes('SVIP')) || (msg.senderTitle && String(msg.senderTitle).toUpperCase().includes('SVIP'))) {
+          glowType = 'blue_flame';
         } else if (msg.customBadge === '🔥' || (msg.senderTitle && String(msg.senderTitle).includes('لهيب'))) {
           glowType = 'crimson_flame';
         } else if (msg.customBadge === '🌟' || (msg.senderTitle && String(msg.senderTitle).includes('حوت الشات'))) {
@@ -13313,13 +13321,18 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         } else if (msg.customBadge === '👑✔️' || (msg.customBadge && String(msg.customBadge).includes('👑'))) {
           glowType = 'cyber_rainbow';
         } else if (isMe && GameEngine.state && GameEngine.state.chatGlow === undefined) {
-          if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.customBadge === '🔥') glowType = 'crimson_flame';
+          if (GameEngine.state.customBadge === 'SVIP' || (GameEngine.state.customBadge && String(GameEngine.state.customBadge).toUpperCase().includes('SVIP')) || (GameEngine.state.badgeTitle && String(GameEngine.state.badgeTitle).toUpperCase().includes('SVIP'))) glowType = 'blue_flame';
+          else if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.customBadge === '🔥') glowType = 'crimson_flame';
           else if (GameEngine.state.hasChatGlow || GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.customBadge === '🌟') glowType = 'gold_neon';
           else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' || GameEngine.state.customBadge === '👑✔️') glowType = 'cyber_rainbow';
         }
       }
 
-      if (glowType === 'crimson_flame' || glowType === 'flame') {
+      if (glowType === 'blue_flame' || glowType === 'svip' || glowType === 'blue') {
+        bubbleClass += ' chat-bubble-glow-blue-flame';
+        senderNameClass = 'chat-sender-blue-flame-glow';
+        vipTagText = isEn ? '⚡ SVIP FLAME' : '⚡ لهيب SVIP';
+      } else if (glowType === 'crimson_flame' || glowType === 'flame') {
         bubbleClass += ' chat-bubble-glow-flame';
         senderNameClass = 'chat-sender-flame-glow';
         vipTagText = isEn ? '🔥 FLAME VIP' : '🔥 لهيب VIP';
