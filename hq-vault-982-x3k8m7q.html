@@ -4108,7 +4108,12 @@
           <button id="btn-admin-season-load-current" type="button" onclick="window.loadCurrentSeasonBadges && window.loadCurrentSeasonBadges()"
             class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border border-slate-700 cursor-pointer">
             <i class="fa-solid fa-rotate text-amber-400"></i>
-            <span>تعبئة الحاملين الحاليين للشارات</span>
+            <span>تعبئة الحاملين الحاليين</span>
+          </button>
+          <button id="btn-admin-season-clear-all" type="button" onclick="window.clearAllSeasonBadges && window.clearAllSeasonBadges()"
+            class="px-3 py-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-700/60 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+            <i class="fa-solid fa-trash-can text-rose-400"></i>
+            <span>سحب الشارات من الجميع</span>
           </button>
           <button id="btn-admin-season-save-all" type="button" onclick="window.saveAllSeasonBadges && window.saveAllSeasonBadges()"
             class="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 text-slate-950 rounded-lg text-xs font-black transition flex items-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer">
@@ -4847,13 +4852,93 @@
           showToast('تحديث الشارات 🏆', 'تم حفظ التعديلات وإلغاء تعيين الشارات للمراكز الشاغرة بنجاح.', 'success');
         }
 
-        if (errors.length > 0 && typeof showToast === 'function') {
-          showToast('تنبيهات أثناء الحفظ', errors.join('\n'), 'warning');
+    window.clearAllSeasonBadges = async function() {
+      if (!confirm('⚠️ تحذير: هل أنت متأكد من رغبتك في سحب وإزالة شارات التوب (S1T1 - S1T10) من جميع اللاعبين الحاليين في اللعبة دفعة واحدة؟')) {
+        return;
+      }
+
+      const clearBtn = document.getElementById('btn-admin-season-clear-all');
+      if (clearBtn) {
+        clearBtn.disabled = true;
+        clearBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-rose-400"></i> <span>جاري سحب الشارات...</span>';
+      }
+
+      try {
+        let allPlayers = [];
+        if (typeof AppDB !== 'undefined' && typeof AppDB._api === 'function') {
+          const rows = await AppDB._api('players?select=username,net_worth,state').catch(() => []);
+          if (Array.isArray(rows) && rows.length > 0) allPlayers = rows;
         }
-      } catch (e) {
-        if (saveAllBtn) {
-          saveAllBtn.disabled = false;
-          saveAllBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>حفظ واعتماد الكل (Save All)</span>';
+        if (allPlayers.length === 0 && typeof cachedPlayers !== 'undefined' && Array.isArray(cachedPlayers)) {
+          allPlayers = cachedPlayers;
+        }
+
+        const playersWithBadges = allPlayers.filter(p => {
+          const b = p.seasonBadge || (p.state && p.state.seasonBadge) || '';
+          return b && String(b).toUpperCase().startsWith('S1T');
+        });
+
+        let clearedCount = 0;
+        for (const p of playersWithBadges) {
+          try {
+            let pData = null;
+            if (typeof AppDB !== 'undefined' && typeof AppDB.adminGetPlayer === 'function') {
+              pData = await AppDB.adminGetPlayer(p.username);
+            }
+            const pState = (pData && pData.state) ? pData.state : (p.state || p);
+            pState.seasonBadge = '';
+            if (pState.state && typeof pState.state === 'object') {
+              pState.state.seasonBadge = '';
+            }
+            pState.adminModifiedTimestamp = Date.now();
+
+            if (typeof AppDB !== 'undefined') {
+              if (typeof AppDB.adminSavePlayer === 'function') await AppDB.adminSavePlayer(p.username, pState);
+              if (typeof AppDB.savePlayerState === 'function') await AppDB.savePlayerState(p.username, pState, true);
+            }
+
+            if (typeof cachedPlayers !== 'undefined' && Array.isArray(cachedPlayers)) {
+              const pIdx = cachedPlayers.findIndex(cp => cp.username === p.username);
+              if (pIdx !== -1) {
+                cachedPlayers[pIdx].seasonBadge = '';
+                if (cachedPlayers[pIdx].state) cachedPlayers[pIdx].state.seasonBadge = '';
+              }
+            }
+
+            if (typeof GameEngine !== 'undefined' && p.username === GameEngine.activeUsername && GameEngine.state) {
+              GameEngine.state.seasonBadge = '';
+            }
+
+            clearedCount++;
+          } catch (err) {
+            console.warn(`Failed to clear badge for ${p.username}:`, err);
+          }
+        }
+
+        for (const def of HQ_SEASON_RANKS_DEF) {
+          const input = document.getElementById(`season-input-rank-${def.rank}`);
+          if (input) input.value = '';
+          const statusEl = document.getElementById(`season-status-rank-${def.rank}`);
+          if (statusEl) {
+            statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
+            statusEl.innerHTML = '<span>⚪ شاغر (تم المسح)</span>';
+          }
+        }
+
+        if (typeof renderAll === 'function') renderAll();
+
+        if (typeof showToast === 'function') {
+          showToast('سحب الشارات بنجاح 🗑️', `تم سحب شارات التوب من جميع اللاعبين بنجاح (${clearedCount} حسابات).`, 'success');
+        }
+        if (typeof logAdminAction === 'function') {
+          logAdminAction(`سحب وإزالة شارات التوب 10 من جميع اللاعبين (${clearedCount} حسابات)`);
+        }
+      } catch (gErr) {
+        if (typeof showToast === 'function') showToast('خطأ أثناء سحب الشارات', gErr.message, 'error');
+      } finally {
+        if (clearBtn) {
+          clearBtn.disabled = false;
+          clearBtn.innerHTML = '<i class="fa-solid fa-trash-can text-rose-400"></i> <span>سحب الشارات من الجميع</span>';
         }
       }
     };

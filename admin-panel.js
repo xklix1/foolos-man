@@ -9907,6 +9907,97 @@
     }
   };
 
+  window.clearAllSeasonBadges = async function() {
+    if (!confirm('⚠️ تحذير: هل أنت متأكد من رغبتك في سحب وإزالة شارات التوب (S1T1 - S1T10) من جميع اللاعبين الحاليين في اللعبة دفعة واحدة؟')) {
+      return;
+    }
+
+    const clearBtn = document.getElementById('btn-admin-season-clear-all');
+    if (clearBtn) {
+      clearBtn.disabled = true;
+      clearBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-rose-400"></i> <span>جاري سحب الشارات...</span>';
+    }
+
+    try {
+      let allPlayers = [];
+      if (typeof AppDB !== 'undefined' && typeof AppDB._api === 'function') {
+        const rows = await AppDB._api('players?select=username,net_worth,state').catch(() => []);
+        if (Array.isArray(rows) && rows.length > 0) allPlayers = rows;
+      }
+      if (allPlayers.length === 0 && typeof cachedPlayers !== 'undefined' && Array.isArray(cachedPlayers)) {
+        allPlayers = cachedPlayers;
+      }
+
+      const playersWithBadges = allPlayers.filter(p => {
+        const b = p.seasonBadge || (p.state && p.state.seasonBadge) || '';
+        return b && String(b).toUpperCase().startsWith('S1T');
+      });
+
+      let clearedCount = 0;
+      for (const p of playersWithBadges) {
+        try {
+          let pData = null;
+          if (typeof AppDB !== 'undefined' && typeof AppDB.adminGetPlayer === 'function') {
+            pData = await AppDB.adminGetPlayer(p.username);
+          }
+          const pState = (pData && pData.state) ? pData.state : (p.state || p);
+          pState.seasonBadge = '';
+          if (pState.state && typeof pState.state === 'object') {
+            pState.state.seasonBadge = '';
+          }
+          pState.adminModifiedTimestamp = Date.now();
+
+          if (typeof AppDB !== 'undefined') {
+            if (typeof AppDB.adminSavePlayer === 'function') await AppDB.adminSavePlayer(p.username, pState);
+            if (typeof AppDB.savePlayerState === 'function') await AppDB.savePlayerState(p.username, pState, true);
+          }
+
+          if (typeof cachedPlayers !== 'undefined' && Array.isArray(cachedPlayers)) {
+            const pIdx = cachedPlayers.findIndex(cp => cp.username === p.username);
+            if (pIdx !== -1) {
+              cachedPlayers[pIdx].seasonBadge = '';
+              if (cachedPlayers[pIdx].state) cachedPlayers[pIdx].state.seasonBadge = '';
+            }
+          }
+
+          if (typeof GameEngine !== 'undefined' && p.username === GameEngine.activeUsername && GameEngine.state) {
+            GameEngine.state.seasonBadge = '';
+          }
+
+          clearedCount++;
+        } catch (err) {
+          console.warn(`Failed to clear badge for ${p.username}:`, err);
+        }
+      }
+
+      for (const def of SEASON_RANKS_DEF) {
+        const input = document.getElementById(`season-input-rank-${def.rank}`);
+        if (input) input.value = '';
+        const statusEl = document.getElementById(`season-status-rank-${def.rank}`);
+        if (statusEl) {
+          statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
+          statusEl.innerHTML = '<span>⚪ شاغر (تم المسح)</span>';
+        }
+      }
+
+      if (typeof renderAll === 'function') renderAll();
+
+      if (typeof showToast === 'function') {
+        showToast('سحب الشارات بنجاح 🗑️', `تم سحب شارات التوب من جميع اللاعبين بنجاح (${clearedCount} حسابات).`, 'success');
+      }
+      if (typeof logAdminAction === 'function') {
+        logAdminAction(`سحب وإزالة شارات التوب 10 من جميع اللاعبين (${clearedCount} حسابات)`);
+      }
+    } catch (gErr) {
+      if (typeof showToast === 'function') showToast('خطأ أثناء سحب الشارات', gErr.message, 'error');
+    } finally {
+      if (clearBtn) {
+        clearBtn.disabled = false;
+        clearBtn.innerHTML = '<i class="fa-solid fa-trash-can text-rose-400"></i> <span>سحب الشارات من الجميع</span>';
+      }
+    }
+  };
+
   // Direct binding for Single Player Season Badge Save Button
   document.addEventListener('DOMContentLoaded', () => {
     const savePlayerSeasonBadgeBtn = document.getElementById('btn-admin-save-player-season-badge');
