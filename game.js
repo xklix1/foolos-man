@@ -1252,7 +1252,14 @@ const GameEngine = (() => {
     overtimeCooldownUntil: 0,
     casinoCooldownUntil: 0,
     loanCooldownUntil: 0,
-    stockTradeCooldownUntil: 0
+    stockTradeCooldownUntil: 0,
+    seasonBadge: '',
+    customBadge: '',
+    badgeTitle: '',
+    vipVerified: false,
+    isVerified: false,
+    chatGlow: '',
+    unlockedChatGlows: []
   };
 
   // ─────────────────────────────────────────────────────────
@@ -3194,6 +3201,9 @@ const GameEngine = (() => {
         inventory: mergedInventory,
         investments: Array.isArray(dbState.investments) ? dbState.investments : [],
         customItems: Array.isArray(dbState.customItems) ? dbState.customItems : [],
+        seasonBadge: dbState.seasonBadge || (dbState.state && dbState.state.seasonBadge) || '',
+        customBadge: dbState.customBadge || (dbState.state && dbState.state.customBadge) || '',
+        badgeTitle: dbState.badgeTitle || (dbState.state && dbState.state.badgeTitle) || '',
         _loadedFromCloud: true
       });
 
