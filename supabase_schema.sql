@@ -277,7 +277,7 @@ BEGIN
 
   recipient_bank := COALESCE(recipient_bank, 0);
   recipient_net_worth := COALESCE(recipient_net_worth, 0);
-  v_recip_lock_ts := GREATEST(COALESCE(recipient_admin_ts, 0) + 1000, v_now_ms);
+  v_recip_lock_ts := v_now_ms + 120000;
 
   -- ── 6. حساب الضريبة البنكية (5%) والمبلغ الصافي ──
   v_tax_amount := FLOOR(transfer_amount * 0.05);

@@ -16917,8 +16917,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
             GameEngine.state.adminModifiedTimestamp = Math.max(
               Number(GameEngine.state.adminModifiedTimestamp || 0),
-              transferTs,
-              Date.now()
+              transferTs + 120000,
+              Date.now() + 120000
             );
 
             GameEngine.state._legitimateTransactionBypass = true;

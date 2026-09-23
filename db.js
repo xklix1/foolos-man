@@ -1816,7 +1816,8 @@ var AppDB = (() => {
           const serverTotal = (Number(stateObj.cash) || 0) + (Number(stateObj.bank) || 0) + (Number(stateObj.dirtyCash) || 0);
           if (localTotal !== serverTotal || (local.farm && local.farm.unlocked) || localTs >= serverTs) {
             stateObj.cash = Number(local.cash || 0);
-            stateObj.bank = Number(local.bank || 0);
+            // Protect incoming wire transfers: if server bank has more funds, preserve server bank!
+            stateObj.bank = Math.max(Number(stateObj.bank || 0), Number(local.bank || 0));
             stateObj.dirtyCash = Number(local.dirtyCash || 0);
             shouldSyncCloud = true;
           }
@@ -2072,12 +2073,35 @@ var AppDB = (() => {
       _pendingCloudWrite = true;
       if (typeof window !== 'undefined') window._dbPendingCloudWrite = true;
       let res;
+      const adminTs = Number(state.adminModifiedTimestamp || 0);
+      const patchEndpoint = `players?username=ilike.${encodeURIComponent(u)}&admin_modified_timestamp=lte.${adminTs}`;
       try {
-        res = await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
+        res = await _api(patchEndpoint, {
           method:'PATCH',
           headers: {'Prefer':'return=representation' },
           body: JSON.stringify(payload)
         });
+
+        // If representation returns empty array, DB row had a higher admin_modified_timestamp (incoming wire transfer or admin grant)
+        if (Array.isArray(res) && res.length === 0) {
+          console.warn(`[Sync] Stale cloud push blocked by adminModifiedTimestamp guard for ${u}. Pulling fresh authoritative state from database...`);
+          getPlayerState(u).then(fresh => {
+            if (fresh && typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state) {
+              const curUser = (window.GameEngine.activeUsername || '').trim().toLowerCase();
+              if (curUser === u.toLowerCase()) {
+                window.GameEngine.state.bank = Number(fresh.bank !== undefined ? fresh.bank : window.GameEngine.state.bank);
+                window.GameEngine.state.cash = Number(fresh.cash !== undefined ? fresh.cash : window.GameEngine.state.cash);
+                window.GameEngine.state.netWorth = Number(fresh.netWorth !== undefined ? fresh.netWorth : window.GameEngine.state.netWorth);
+                window.GameEngine.state.adminModifiedTimestamp = Number(fresh.adminModifiedTimestamp || 0);
+                if (typeof setEncryptedLocalState === 'function') {
+                  setEncryptedLocalState(`rasalmal_state_${u}`, window.GameEngine.state);
+                }
+                if (typeof window.renderAll === 'function') window.renderAll();
+                if (typeof window.renderHeader === 'function') window.renderHeader();
+              }
+            }
+          }).catch(() => {});
+        }
       } finally {
         _pendingCloudWrite = false;
         _pendingCloudWriteClearedAt = Date.now();

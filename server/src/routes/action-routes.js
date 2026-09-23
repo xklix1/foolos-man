@@ -600,9 +600,9 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       : (amt - taxAmt);
 
     const now = Date.now();
-    // SQL sets sender lock 120 seconds into the future to block stale flushes from overwriting;
-    // mirror that here so the server session's adminModifiedTimestamp matches the DB value
-    // and our lte filter allows the next flush to succeed.
+    // SQL sets sender and recipient lock 120 seconds into the future to block stale flushes from overwriting;
+    // mirror that here so both server sessions' adminModifiedTimestamp matches the DB value
+    // and our lte filter allows subsequent flushes to succeed.
     const senderLockTs = now + 120000;
 
     let senderDeducted = false;
@@ -610,7 +610,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       senderDeducted = sessionManager.deductSenderWireTransfer(sender, amt, senderLockTs);
     }
 
-    const credited = sessionManager.creditRecipientWireTransfer(recipient, finalNet, now);
+    const credited = sessionManager.creditRecipientWireTransfer(recipient, finalNet, senderLockTs);
 
     // Immediately persist recipient's updated balance to DB so a concurrent stale flush
     // cannot overwrite the incoming transfer before the next background write-behind cycle.
