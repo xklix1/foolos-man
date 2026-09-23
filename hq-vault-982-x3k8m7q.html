@@ -4852,6 +4852,17 @@
           showToast('تحديث الشارات 🏆', 'تم حفظ التعديلات وإلغاء تعيين الشارات للمراكز الشاغرة بنجاح.', 'success');
         }
 
+        if (errors.length > 0 && typeof showToast === 'function') {
+          showToast('تنبيهات أثناء الحفظ', errors.join('\n'), 'warning');
+        }
+      } catch (e) {
+        if (saveAllBtn) {
+          saveAllBtn.disabled = false;
+          saveAllBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>حفظ واعتماد الكل (Save All)</span>';
+        }
+      }
+    };
+
     window.clearAllSeasonBadges = async function() {
       if (!confirm('⚠️ تحذير: هل أنت متأكد من رغبتك في سحب وإزالة شارات التوب (S1T1 - S1T10) من جميع اللاعبين الحاليين في اللعبة دفعة واحدة؟')) {
         return;
