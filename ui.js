@@ -7643,8 +7643,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                 if (st.unlockedChatGlows) GameEngine.state.unlockedChatGlows = JSON.parse(JSON.stringify(st.unlockedChatGlows));
                 if (st.isVerified !== undefined) GameEngine.state.isVerified = st.isVerified;
                 if (st.vipVerified !== undefined) GameEngine.state.vipVerified = st.vipVerified;
-                if (st.activePackage !== undefined) GameEngine.state.activePackage = st.activePackage;
                 if (st.customBadge !== undefined) GameEngine.state.customBadge = st.customBadge;
+                if (st.seasonBadge !== undefined) GameEngine.state.seasonBadge = st.seasonBadge;
                 if (st.badgeTitle !== undefined) GameEngine.state.badgeTitle = st.badgeTitle;
                 if (st.badges) GameEngine.state.badges = JSON.parse(JSON.stringify(st.badges));
                 if (st.activeLoan !== undefined) GameEngine.state.activeLoan = st.activeLoan;

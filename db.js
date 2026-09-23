@@ -2093,6 +2093,9 @@ var AppDB = (() => {
                 window.GameEngine.state.cash = Number(fresh.cash !== undefined ? fresh.cash : window.GameEngine.state.cash);
                 window.GameEngine.state.netWorth = Number(fresh.netWorth !== undefined ? fresh.netWorth : window.GameEngine.state.netWorth);
                 window.GameEngine.state.adminModifiedTimestamp = Number(fresh.adminModifiedTimestamp || 0);
+                if (fresh.seasonBadge !== undefined || (fresh.state && fresh.state.seasonBadge !== undefined)) {
+                  window.GameEngine.state.seasonBadge = fresh.seasonBadge || (fresh.state && fresh.state.seasonBadge) || '';
+                }
                 if (typeof setEncryptedLocalState === 'function') {
                   setEncryptedLocalState(`rasalmal_state_${u}`, window.GameEngine.state);
                 }

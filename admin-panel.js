@@ -9590,7 +9590,17 @@
         player = await AppDB.adminGetPlayer(u);
       }
 
+      if (!player && Array.isArray(cachedPlayers)) {
+        if (['🎵', '🎶', '♫', '♪'].includes(u)) {
+          player = cachedPlayers.find(p => ['🎵', '🎶', '♫', '♪'].includes(p.username));
+        }
+      }
+
       if (player && player.username) {
+        const input = document.getElementById(`season-input-rank-${rank}`);
+        if (input && input.value !== player.username && ['🎵', '🎶', '♫', '♪'].includes(u)) {
+          input.value = player.username;
+        }
         const worth = player.netWorth !== undefined ? player.netWorth : (player.net_worth || 0);
         const currentBadge = player.seasonBadge || (player.state && player.state.seasonBadge) || '';
         statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
