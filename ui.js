@@ -12159,6 +12159,18 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       senderGlowClass: 'chat-sender-rainbow-glow',
       pkgId: 'pkg_vip_royal_ultimate',
       isFree: false
+    },
+    {
+      id: 'blue_flame',
+      name: 'لهيب SVIP الأزرق الملكي ⚡',
+      badge: 'لهيب أزرق مشتعل',
+      badgeClass: 'bg-sky-950/80 text-sky-300 border-cyan-500/40',
+      description: 'إطار ناري مشتعل بتدرج أزرق كهربائي ملكي ⚡ مع وسم SVIP الناري.',
+      previewBubbleClass: 'chat-bubble-glow-blue-flame',
+      previewTag: '⚡ لهيب SVIP',
+      senderGlowClass: 'chat-sender-blue-flame-glow',
+      pkgId: 'pkg_vip_svip_blue_flame',
+      isFree: false
     }
   ];
 
@@ -12181,8 +12193,12 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (st.activePackage === 'pkg_vip_chat_glow') unlocked.add('gold_neon');
     if (st.activePackage === 'pkg_vip_crimson_flame') unlocked.add('crimson_flame');
     if (st.activePackage === 'pkg_vip_royal_ultimate') unlocked.add('cyber_rainbow');
+    if (st.activePackage === 'pkg_vip_svip_blue_flame') unlocked.add('blue_flame');
 
     // Badges & Titles
+    if (st.customBadge === 'SVIP' || (st.customBadge && String(st.customBadge).toUpperCase().includes('SVIP')) || (st.badgeTitle && String(st.badgeTitle).toUpperCase().includes('SVIP'))) {
+      unlocked.add('blue_flame');
+    }
     if (st.customBadge === '🌟' || (st.badgeTitle && st.badgeTitle.includes('حوت الشات'))) {
       unlocked.add('gold_neon');
     }

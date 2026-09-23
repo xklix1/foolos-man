@@ -3269,6 +3269,20 @@ var AppDB = (() => {
       items: { vip_casino_pass: 1, safe_lock: 3 },
       description:'إطار شات ناري ملتهب بلون قرمزي هادئ وأنيق 🔥 + وسام لهيب العرش + حزمة الملصقات + 3 مليون كاش وخزائن أمان.',
       hidden: true
+    },
+    {
+      id:'pkg_vip_svip_blue_flame',
+      name:'حزمة لهيب SVIP الأزرق الملكي ⚡',
+      price: 200,
+      cash: 5000000,
+      bank: 2000000,
+      xp: 8000,
+      customBadge:'SVIP',
+      badgeTitle:'SVIP',
+      features: { chatGlow:'blue_flame', stickersPack: true, title:'لهيب SVIP الأزرق' },
+      items: { vip_casino_pass: 2, swiss_safe: 1 },
+      description:'إطار شات ناري مشتعل بتدرج أزرق كهربائي ملكي ⚡ + شارة SVIP المشتعلة + حزمة الملصقات + 5 مليون كاش وخزائن سويسرية.',
+      hidden: true
     }
   ];
 
@@ -3493,6 +3507,12 @@ var AppDB = (() => {
         pState.chatGlow = 'crimson_flame';
         pState.hasChatGlow = true;
         pState.activePackage = 'pkg_vip_crimson_flame';
+      } else if (req.packageId === 'pkg_vip_svip_blue_flame') {
+        pState.chatGlow = 'blue_flame';
+        pState.hasChatGlow = true;
+        pState.customBadge = 'SVIP';
+        pState.badgeTitle = 'SVIP';
+        pState.activePackage = 'pkg_vip_svip_blue_flame';
       } else if (req.packageId === 'pkg_vip_verified') {
         pState.isVerified = true;
         pState.vipVerified = true;

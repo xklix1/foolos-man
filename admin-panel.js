@@ -2802,7 +2802,9 @@
           appliedGlow = null;
         } else {
           // Auto-detect based on selected package or package name
-          if (selectedPkgId === 'pkg_vip_crimson_flame' || (foundPkg && foundPkg.features && foundPkg.features.chatGlow === 'crimson_flame') || (pkgName && pkgName.includes('اللهب القرمزي'))) {
+          if (selectedPkgId === 'pkg_vip_svip_blue_flame' || (foundPkg && foundPkg.features && foundPkg.features.chatGlow === 'blue_flame') || (pkgName && pkgName.includes('SVIP'))) {
+            appliedGlow = 'blue_flame';
+          } else if (selectedPkgId === 'pkg_vip_crimson_flame' || (foundPkg && foundPkg.features && foundPkg.features.chatGlow === 'crimson_flame') || (pkgName && pkgName.includes('اللهب القرمزي'))) {
             appliedGlow = 'crimson_flame';
           } else if (selectedPkgId === 'pkg_vip_royal_ultimate' || (foundPkg && foundPkg.features && foundPkg.features.chatGlow === 'cyber_rainbow') || (pkgName && pkgName.includes('الملكية'))) {
             appliedGlow = 'cyber_rainbow';
