@@ -22722,21 +22722,29 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
         await checkMaintenanceMode();
       }
 
-      // 3. Check Version Manifest every 30 seconds with loop protection
+      // 3. Ultra-fast Version & Build Enforcer Watchdog (Every 5 seconds)
       const now = Date.now();
-      if (now - _lastVersionCheckWatchdog >= 30000) {
+      if (now - _lastVersionCheckWatchdog >= 5000) {
         _lastVersionCheckWatchdog = now;
         try {
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v7.9.1');
+            const curVer = (window._CLIENT_VERSION || 'v7.9.2');
             if (s && s.version && s.version !== curVer) {
               const loopKey = 'rasalmal_watchdog_reload_' + s.version;
               const reloadedCount = Number(sessionStorage.getItem(loopKey) || 0);
-              if (reloadedCount < 2) {
+              if (reloadedCount < 3) {
                 sessionStorage.setItem(loopKey, String(reloadedCount + 1));
-                console.warn('[Auto-Updater] Game update detected:', s.version, 'Current:', curVer);
+                console.warn('[Auto-Updater] Game update detected:', s.version, 'Current:', curVer, 'Triggering instant auto-update.');
+                
+                // Flush local state cleanly before reloading to avoid any data loss
+                try {
+                  if (typeof GameEngine !== 'undefined' && GameEngine.activeUsername && typeof AppDB !== 'undefined' && typeof AppDB.flushStateToCloudOnExit === 'function') {
+                    AppDB.flushStateToCloudOnExit(GameEngine.activeUsername, GameEngine.state);
+                  }
+                } catch (_) {}
+
                 if ('caches' in window) {
                   try {
                     const keys = await caches.keys();
@@ -22747,8 +22755,6 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
                 url.searchParams.set('_v', s.version);
                 window.location.replace(url.toString());
                 return;
-              } else {
-                console.warn('[Auto-Updater] Auto-reload already attempted twice for', s.version, 'Suppressing loop.');
               }
             }
           }
@@ -22757,8 +22763,9 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     } catch (e) {}
   };
 
-  setInterval(checkForceReloadWatchdog, 15000);
+  setInterval(checkForceReloadWatchdog, 5000);
   checkForceReloadWatchdog();
+
 
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', () => {
