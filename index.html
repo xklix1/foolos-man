@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.1.1';
+    window._CLIENT_VERSION = 'v8.1.2';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.1.1';
+      const CURRENT_APP_BUILD = 'v8.1.2';
       try {
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -6639,27 +6639,6 @@
                   <i class="fa-solid fa-copy text-xs"></i>
                   <span>نسخ</span>
                 </button>
-              </div>
-
-              <!-- PayPal Card -->
-              <div class="p-3 bg-slate-950/80 rounded-xl border border-sky-500/30 flex items-center justify-between gap-2">
-                <div class="min-w-0">
-                  <span class="text-[10px] text-sky-300 font-bold block flex items-center gap-1">
-                    <i class="fa-brands fa-paypal text-sky-400"></i>
-                    <span>باي بال (PayPal)</span>
-                  </span>
-                  <span id="player-topup-paypal-num" class="numbers-font font-black text-xs text-sky-200 font-mono block mt-0.5 select-all truncate">https://paypal.me/khalidsaad475</span>
-                </div>
-                <div class="flex items-center gap-1 shrink-0">
-                  <a id="btn-open-topup-paypal" href="https://paypal.me/khalidsaad475" target="_blank" rel="noopener noreferrer" class="px-2 py-1.5 bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer" title="فتح رابط الدفع">
-                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-                    <span>فتح</span>
-                  </a>
-                  <button id="btn-copy-topup-paypal" type="button" class="px-2 py-1.5 bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer" title="نسخ الرابط">
-                    <i class="fa-solid fa-copy text-xs"></i>
-                    <span>نسخ</span>
-                  </button>
-                </div>
               </div>
 
               <!-- PayPal Card -->

@@ -1,7 +1,7 @@
 {
-  "version": "v8.1.1",
-  "build": "2026-09-24T23:55:32.223Z",
-  "minRequiredVersion": "v8.1.1",
-  "notes": "Add PayPal payment option in admin panel and client store",
+  "version": "v8.1.2",
+  "build": "2026-09-24T23:58:51.312Z",
+  "minRequiredVersion": "v8.1.2",
+  "notes": "Fix duplicate PayPal card in topup modal",
   "forcePurgeCache": true
 }
