@@ -1890,6 +1890,11 @@ const UIController = (() => {
       const canonicalUser = (playerState && playerState.username) ? playerState.username : username;
       localStorage.setItem('rasalmal_active_session_user', canonicalUser);
 
+      // Claim session and initialize active device lock
+      if (typeof AppDB !== 'undefined' && typeof AppDB.initSessionTracker === 'function') {
+        try { AppDB.initSessionTracker(canonicalUser); } catch (e) {}
+      }
+
       window._sessionInitTimestamp = Date.now();
       window._processedTransferMailIds = new Set();
       const mainLayout = document.getElementById('main-game-layout');
@@ -8237,10 +8242,6 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
   // ==================== STRICT CONCURRENT SESSION TERMINATION ====================
   function handleDuplicateSession(reason) {
-    if (typeof GameEngine !== 'undefined' && GameEngine.state && ['khaled', 'خالد'].includes(String(GameEngine.state.username || '').trim().toLowerCase()) && Boolean(GameEngine.state.isAdmin)) {
-      console.warn('[Security] Master Admin Khaled immunity - ignoring duplicate session');
-      return;
-    }
     console.warn('[Security] Concurrent Session Detected. Halting current tab/device.');
     window._isSessionInvalidated = true;
 

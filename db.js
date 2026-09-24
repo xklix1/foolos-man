@@ -91,12 +91,37 @@ var AppDB = (() => {
   }
 
   function initSessionTracker(username) {
+    if (!username) return _currentSessionToken;
+    claimActiveSession(username, _currentSessionToken);
     _startConcurrentSessionGuard(username);
     return _currentSessionToken;
   }
 
   async function claimActiveSession(username, sessionToken) {
-    return true;
+    if (!username) return false;
+    const u = username.trim();
+    const token = sessionToken || _currentSessionToken;
+    try {
+      const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=state`);
+      if (rows && rows.length > 0) {
+        const curState = (rows[0].state && typeof rows[0].state === 'object') ? rows[0].state : {};
+        curState.activeSessionId = token;
+        await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            state: curState,
+            last_seen: getTrustedNow()
+          })
+        });
+        console.log(`[Session] Claimed active session "${token}" for player: ${u}`);
+      }
+      _startConcurrentSessionGuard(u);
+      return true;
+    } catch (e) {
+      console.warn(`[Session] Note claiming active session for ${u}:`, e && e.message);
+      _startConcurrentSessionGuard(u);
+      return false;
+    }
   }
 
   function _startConcurrentSessionGuard(username) {
@@ -119,12 +144,13 @@ var AppDB = (() => {
           }
         }
       } catch (err) {}
-    }, 8000); // Check every 8 seconds
+    }, 3000); // Check every 3 seconds
 
     if (_sessionGuardTimer && typeof _sessionGuardTimer.unref === 'function') {
       _sessionGuardTimer.unref();
     }
   }
+
 
 
   // ─────────────────────────────────────────────
