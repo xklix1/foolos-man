@@ -1584,35 +1584,28 @@ var AppDB = (() => {
           // would overwrite last_seen in cloud with current time, killing offline earnings.
         }
 
-        // 1. Business Levels & Workers Guard: NEVER downgrade business levels or worker counts on same device
-        if (isLocalRecentOrNewer && local.businesses && typeof local.businesses === 'object') {
-          Object.keys(local.businesses).forEach(bk => {
-            const locBiz = local.businesses[bk];
-            if (!locBiz || typeof locBiz !== 'object') return;
-            const srvBiz = stateObj.businesses[bk] || {};
-
-            const locLvl = Number(locBiz.level || 0);
-            const srvLvl = Number(srvBiz.level || 0);
-            const locWorkers = Number(locBiz.workers || 0);
-            const srvWorkers = Number(srvBiz.workers || 0);
-
-            if (locLvl > srvLvl) {
-              // Local device has a HIGHER business level (e.g. upgraded before reload/lag)
-              stateObj.businesses[bk] = { ...srvBiz, ...locBiz };
-              shouldSyncCloud = true;
-            } else if (locLvl === srvLvl && locLvl > 0) {
-              // Same level: preserve maximum workers and franchise state
-              const maxW = Math.max(locWorkers, srvWorkers);
-              if (maxW > srvWorkers || locBiz.isFranchise !== srvBiz.isFranchise) {
-                stateObj.businesses[bk] = {
-                  ...srvBiz,
-                  workers: maxW,
-                  isFranchise: Boolean(srvBiz.isFranchise || locBiz.isFranchise)
-                };
+        // 1. Business Levels & Workers Guard:
+        if (local && local.businesses && typeof local.businesses === 'object') {
+          if (!stateObj.businesses || typeof stateObj.businesses !== 'object') {
+            stateObj.businesses = JSON.parse(JSON.stringify(local.businesses));
+            shouldSyncCloud = true;
+          } else if (isLocalRecentOrNewer) {
+            // Local device is active and recent. Local business state (including franchise exits/sales and upgrades) is authoritative
+            stateObj.businesses = JSON.parse(JSON.stringify(local.businesses));
+            shouldSyncCloud = true;
+          } else {
+            Object.keys(local.businesses).forEach(bk => {
+              const locBiz = local.businesses[bk];
+              if (!locBiz || typeof locBiz !== 'object') return;
+              const srvBiz = stateObj.businesses[bk] || {};
+              const locLvl = Number(locBiz.level || 0);
+              const srvLvl = Number(srvBiz.level || 0);
+              if (locLvl > srvLvl) {
+                stateObj.businesses[bk] = { ...srvBiz, ...locBiz };
                 shouldSyncCloud = true;
               }
-            }
-          });
+            });
+          }
         }
 
         // 2. Jail sentence guard: Reload cannot evade prison time
@@ -1869,70 +1862,60 @@ var AppDB = (() => {
         }
 
         // 4.98 Stock Market Portfolio Guard:
-        // NEVER lose purchased stocks, shares, or average prices on abrupt reload or exit
+        // When local device was actively played, local stock portfolio (including sales to 0 shares) is authoritative and synced atomically with cash
         if (local && local.stocks && typeof local.stocks === 'object') {
           if (!stateObj.stocks || typeof stateObj.stocks !== 'object') {
             stateObj.stocks = JSON.parse(JSON.stringify(local.stocks));
             shouldSyncCloud = true;
-          } else {
-            Object.keys(local.stocks).forEach(sym => {
-              const locStock = local.stocks[sym];
-              if (!locStock || typeof locStock !== 'object') return;
-              const srvStock = stateObj.stocks[sym] || { shares: 0, avgPrice: 0 };
-              const locShares = Number(locStock.shares || 0);
-              const srvShares = Number(srvStock.shares || 0);
-
-              if (locShares > 0) {
-                // If local has shares and server has less or 0 (bought right before exit)
-                if (locShares > srvShares || !srvStock.shares || isLocalRecentOrNewer) {
-                  stateObj.stocks[sym] = {
-                    shares: locShares,
-                    avgPrice: Number(locStock.avgPrice || srvStock.avgPrice || 0)
-                  };
-                  shouldSyncCloud = true;
-                }
-              }
-            });
+          } else if (isLocalRecentOrNewer) {
+            stateObj.stocks = JSON.parse(JSON.stringify(local.stocks));
+            shouldSyncCloud = true;
           }
         }
 
         // 4.99 Real Estate Assets & Fleet Guard:
-        // NEVER lose purchased properties or rental vehicles on abrupt exit
+        // When local device was actively played, local assets (including liquidated/sold properties) are authoritative and synced atomically with cash
         if (local && local.assets && typeof local.assets === 'object') {
           if (!stateObj.assets || typeof stateObj.assets !== 'object') {
             stateObj.assets = JSON.parse(JSON.stringify(local.assets));
             shouldSyncCloud = true;
           } else if (isLocalRecentOrNewer) {
-            Object.keys(local.assets).forEach(ak => {
-              const locCount = Number(local.assets[ak] || 0);
-              const srvCount = Number(stateObj.assets[ak] || 0);
-              if (locCount > srvCount) {
-                stateObj.assets[ak] = locCount;
-                shouldSyncCloud = true;
-              }
-            });
+            stateObj.assets = JSON.parse(JSON.stringify(local.assets));
+            shouldSyncCloud = true;
           }
         }
-        if (local && Array.isArray(local.ownedCars) && local.ownedCars.length > 0) {
+        if (local && Array.isArray(local.ownedCars)) {
           if (!Array.isArray(stateObj.ownedCars) || stateObj.ownedCars.length === 0) {
             stateObj.ownedCars = JSON.parse(JSON.stringify(local.ownedCars));
+            stateObj.activeCar = local.activeCar || null;
             shouldSyncCloud = true;
-          } else if (isLocalRecentOrNewer && local.ownedCars.length > stateObj.ownedCars.length) {
+          } else if (isLocalRecentOrNewer) {
             stateObj.ownedCars = JSON.parse(JSON.stringify(local.ownedCars));
+            stateObj.activeCar = local.activeCar || null;
+            shouldSyncCloud = true;
+          }
+        }
+
+        // 4.995 Inventory Guard:
+        if (local && local.inventory && typeof local.inventory === 'object') {
+          if (!stateObj.inventory || typeof stateObj.inventory !== 'object') {
+            stateObj.inventory = JSON.parse(JSON.stringify(local.inventory));
+            shouldSyncCloud = true;
+          } else if (isLocalRecentOrNewer) {
+            stateObj.inventory = JSON.parse(JSON.stringify(local.inventory));
             shouldSyncCloud = true;
           }
         }
 
         // 5. Late-save recovery:
         // If local device was active recently (isLocalRecentOrNewer) and not reset or overridden by admin,
-        // reconcile wealth atomically from local state to ensure liquidations/sales and debounced saves are 100% persistent.
+        // reconcile wealth atomically from local state to ensure liquidations/sales, bank withdrawals, and debounced saves are 100% persistent.
         if (!isAccountReset && !isStaleLocalDueToAdmin && isLocalRecentOrNewer) {
           const localTotal = (Number(local.cash) || 0) + (Number(local.bank) || 0) + (Number(local.dirtyCash) || 0);
           const serverTotal = (Number(stateObj.cash) || 0) + (Number(stateObj.bank) || 0) + (Number(stateObj.dirtyCash) || 0);
           if (localTotal !== serverTotal || (local.farm && local.farm.unlocked) || localTs >= serverTs) {
             stateObj.cash = Number(local.cash || 0);
-            // Protect incoming wire transfers: if server bank has more funds, preserve server bank!
-            stateObj.bank = Math.max(Number(stateObj.bank || 0), Number(local.bank || 0));
+            stateObj.bank = Number(local.bank || 0);
             stateObj.dirtyCash = Number(local.dirtyCash || 0);
             shouldSyncCloud = true;
           }
