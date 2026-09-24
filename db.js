@@ -671,7 +671,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.0.8';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.0.9';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -680,7 +680,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.0.8', remoteVersion: 'v8.0.8' };
+    return { upToDate: true, clientVersion: 'v8.0.9', remoteVersion: 'v8.0.9' };
   }
 
   async function checkDeviceBan() {
@@ -1595,13 +1595,9 @@ var AppDB = (() => {
           // would overwrite last_seen in cloud with current time, killing offline earnings.
         }
 
-        // 1. Business Levels & Workers Guard:
+                // 1. Business Levels & Workers Guard:
         if (local && local.businesses && typeof local.businesses === 'object') {
           if (!stateObj.businesses || typeof stateObj.businesses !== 'object') {
-            stateObj.businesses = JSON.parse(JSON.stringify(local.businesses));
-            shouldSyncCloud = true;
-          } else if (isLocalRecentOrNewer) {
-            // Local device is active and recent. Local business state (including franchise exits/sales and upgrades) is authoritative
             stateObj.businesses = JSON.parse(JSON.stringify(local.businesses));
             shouldSyncCloud = true;
           } else {
@@ -1614,78 +1610,15 @@ var AppDB = (() => {
               if (locLvl > srvLvl) {
                 stateObj.businesses[bk] = { ...srvBiz, ...locBiz };
                 shouldSyncCloud = true;
+              } else if (srvLvl > locLvl) {
+                // Server has higher/restored business level: server is authoritative to prevent wiping by stale cache
+                stateObj.businesses[bk] = { ...locBiz, ...srvBiz };
+              } else if (locLvl === srvLvl && locLvl > 0) {
+                const maxWorkers = Math.max(Number(locBiz.workers || 0), Number(srvBiz.workers || 0));
+                const maxSupplies = Math.max(Number(locBiz.suppliesTicks || 0), Number(srvBiz.suppliesTicks || 0));
+                stateObj.businesses[bk] = { ...srvBiz, ...locBiz, workers: maxWorkers, suppliesTicks: maxSupplies };
               }
             });
-          }
-        }
-
-        // 2. Jail sentence guard: Reload cannot evade prison time
-        if (typeof local.jailTimer === 'number' && local.jailTimer > 0 && local.jailTimer > stateObj.jailTimer) {
-          stateObj.jailTimer = local.jailTimer;
-          shouldSyncCloud = true;
-        }
-
-        // 3. Active police raid guard: Reload cannot evade active raids
-        if (local.raidActive && !stateObj.raidActive) {
-          stateObj.raidActive = true;
-          stateObj.raidBribeCost = local.raidBribeCost;
-          stateObj.raidEscapeChance = local.raidEscapeChance;
-          shouldSyncCloud = true;
-        }
-
-        // 4. Loss & confiscation guard:
-        // Protect black market cooldowns without overwriting server cash
-        if (localTs >= serverTs - 300000) {
-          if (local.blackMarketCooldowns && Object.keys(local.blackMarketCooldowns).length > 0) {
-            stateObj.blackMarketCooldowns = { ...(stateObj.blackMarketCooldowns || {}), ...local.blackMarketCooldowns };
-          }
-        }
-
-        // 4.5 Active Investments guard: Never lose active investments on reload or server lag
-        // CRITICAL FIX: Only preserve STRICTLY ACTIVE UNMATURED investments (maturesAt in the future and ticksRemaining > 0).
-        // If an investment already matured or was cleared in cloud (offline-engine processed it), NEVER resurrect it!
-        const nowMs = typeof getTrustedNow === 'function' ? getTrustedNow() : Date.now();
-        if (local && Array.isArray(local.investments) && local.investments.length > 0) {
-          const activeLocalInvs = local.investments.filter(inv => {
-            if (!inv || !inv.id) return false;
-            if (inv.claimed === true || inv.matured === true) return false;
-            const maturesAt = Number(inv.maturesAt || 0);
-            if (maturesAt > 0 && maturesAt <= nowMs) return false;
-            if (typeof inv.ticksRemaining === 'number' && inv.ticksRemaining <= 0) return false;
-            return true;
-          });
-
-          if (!Array.isArray(stateObj.investments)) {
-            stateObj.investments = [];
-          }
-
-          activeLocalInvs.forEach(locInv => {
-            if (!stateObj.investments.some(sInv => sInv && sInv.id === locInv.id)) {
-              stateObj.investments.push(locInv);
-              shouldSyncCloud = true;
-            }
-          });
-        }
-
-        // 4.6 Bank Loan Repayment Guard:
-        // If player settled their loan locally (local.activeLoan === null) recently or local is newer,
-        // NEVER resurrect the loan from a delayed or stale cloud snapshot!
-        if (localTs >= serverTs - 300000) {
-          if (!local.activeLoan && stateObj.activeLoan) {
-            console.log(`[Sync] Local loan repayment detected for ${u} (loan settled locally). Discarding resurrected cloud loan.`);
-            stateObj.activeLoan = null;
-            if (local.loanCooldownUntil) {
-              stateObj.loanCooldownUntil = Math.max(Number(stateObj.loanCooldownUntil || 0), Number(local.loanCooldownUntil || 0));
-            }
-            shouldSyncCloud = true;
-          } else if (local.activeLoan && stateObj.activeLoan) {
-            // If both have active loans, ensure partial repayments aren't reverted
-            const localDue = Number(local.activeLoan.totalDue || local.activeLoan.amount || 0);
-            const serverDue = Number(stateObj.activeLoan.totalDue || stateObj.activeLoan.amount || 0);
-            if (localDue < serverDue) {
-              stateObj.activeLoan = local.activeLoan;
-              shouldSyncCloud = true;
-            }
           }
         }
 

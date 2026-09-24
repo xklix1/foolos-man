@@ -1,7 +1,7 @@
 {
-  "version": "v8.0.8",
-  "build": "2026-09-24T22:22:10.100Z",
-  "minRequiredVersion": "v8.0.8",
-  "notes": "Completely remove bank loan feature, wipe loan debts, and polish central banking",
+  "version": "v8.0.9",
+  "build": "2026-09-24T23:16:13.741Z",
+  "minRequiredVersion": "v8.0.9",
+  "notes": "Fix business state reconciliation to protect server business levels from stale client cache",
   "forcePurgeCache": true
 }
