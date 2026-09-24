@@ -3999,6 +3999,9 @@ const GameEngine = (() => {
   }
 
   function sellFranchise(key) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      throw new Error("🚫 لا يمكن بيع العلامات التجارية أثناء انقطاع الإنترنت. يرجى الاتصال بالشبكة للمتابعة.");
+    }
     const biz = BUSINESSES[key];
     const bizState = state.businesses[key];
     if (!bizState || !bizState.isFranchise) throw new Error("المشروع ليس علامة تجارية مسجلة للبيع.");
@@ -4183,6 +4186,9 @@ const GameEngine = (() => {
 
   // Sell Real Estate/Asset (Liquidation at 85% of market value)
   function sellAsset(key) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      throw new Error("🚫 لا يمكن بيع أو تصفية العقارات أثناء انقطاع الإنترنت. يرجى الاتصال بالشبكة للمتابعة.");
+    }
     const count = state.assets[key] || 0;
     if (count <= 0) throw new Error("لا تمتلك أي عقار من هذا النوع للبيع.");
 
@@ -4200,6 +4206,9 @@ const GameEngine = (() => {
 
   // Buy Stocks (with 3.0% Brokerage Commission, 45s Holding Period, & Max Shares Cap)
   function buyStock(sym, shares) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      throw new Error("🚫 تداول وبورصة الأسهم تتطلب اتصالاً مباشراً بالإنترنت لتحديث أسعار السوق والتسوية اللحظية.");
+    }
     const stock = STOCKS[sym];
     if (!stock) throw new Error("رمز الشركة غير صالح.");
     if (shares <= 0 || !Number.isInteger(shares)) throw new Error("عدد الأسهم يجب أن يكون عدداً صحيحاً موجباً.");
@@ -4259,6 +4268,9 @@ const GameEngine = (() => {
 
   // Sell Stocks (with 3.0% Brokerage Commission, 10% Capital Gains Tax, & 45s Cooldown Check)
   function sellStock(sym, shares) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      throw new Error("🚫 تداول وبورصة الأسهم تتطلب اتصالاً مباشراً بالإنترنت لتحديث أسعار السوق والتسوية اللحظية.");
+    }
     const stock = STOCKS[sym];
     if (!stock) throw new Error("الشركة غير موجودة.");
     if (shares <= 0 || !Number.isInteger(shares)) throw new Error("عدد الأسهم غير صالح.");
@@ -5296,6 +5308,9 @@ const GameEngine = (() => {
   }
 
   function sellCar(carId, carIndex = -1) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      throw new Error("🚫 لا يمكن بيع السيارات أثناء انقطاع الإنترنت. يرجى الاتصال بالشبكة للمتابعة.");
+    }
     let idx = carIndex;
     if (idx === -1) {
       idx = state.ownedCars.findIndex(c => c.id === carId);

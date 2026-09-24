@@ -1,8 +1,8 @@
 {
-  "version": "v7.9.2",
-  "build": "2026-09-24T18:35:00.000Z",
-  "minRequiredVersion": "v7.9.2",
-  "notes": "Real-time concurrent multi-device session lock and anti-duplication protection",
+  "version": "v8.0.1",
+  "build": "2026-09-24T22:25:00.000Z",
+  "minRequiredVersion": "v8.0.1",
+  "notes": "Anti-duplication atomic sync & offline liquidation protection",
   "forcePurgeCache": true
 }
 
