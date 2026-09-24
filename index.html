@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.0.9';
+    window._CLIENT_VERSION = 'v8.1.0';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.0.9';
+      const CURRENT_APP_BUILD = 'v8.1.0';
       try {
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -657,7 +657,7 @@
               <i class="fa-solid fa-wallet text-emerald-400"></i>
               <span>محفظتك المالية: فهم الأرصدة الأربعة</span>
             </h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px]">
               <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80">
                 <span class="font-black text-yellow-400 flex items-center gap-1.5 mb-1"><i
                     class="fa-solid fa-money-bill-wave"></i> 1. سيولة الكاش:</span>
@@ -6554,7 +6554,7 @@
           <div class="p-3 sm:p-3.5 bg-gradient-to-r from-amber-950/40 via-slate-900/60 to-slate-950 border border-amber-500/30 rounded-2xl flex items-center justify-between gap-3 text-[11px]">
             <div class="flex items-center gap-2.5">
               <i class="fa-solid fa-shield-check text-amber-400 text-lg shrink-0"></i>
-              <span class="text-slate-300">تحويل مباشر وسريع وآمن عبر <strong>فودافون كاش</strong> أو <strong>InstaPay</strong> مع إيداع المكافآت بحسابك فوراً.</span>
+              <span class="text-slate-300">تحويل مباشر وسريع وآمن عبر <strong>فودافون كاش</strong> أو <strong>InstaPay</strong> أو <strong>PayPal</strong> مع إيداع المكافآت بحسابك فوراً.</span>
             </div>
             <span class="text-[10px] px-2.5 py-1 bg-amber-500/15 border border-amber-500/30 text-amber-300 rounded-xl font-black shrink-0 hidden sm:inline-block">فوري ومعتمد</span>
           </div>
@@ -6610,13 +6610,13 @@
               <span>طرق وبيانات التحويل المباشر:</span>
             </h4>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <!-- Vodafone Cash Card -->
               <div class="p-3 bg-slate-950/80 rounded-xl border border-rose-500/30 flex items-center justify-between gap-2">
                 <div class="min-w-0">
                   <span class="text-[10px] text-rose-300 font-bold block flex items-center gap-1">
                     <i class="fa-solid fa-mobile-screen"></i>
-                    <span>فودافون كاش (Vodafone Cash)</span>
+                    <span>فودافون كاش</span>
                   </span>
                   <span id="player-topup-vodafone-num" class="numbers-font font-black text-sm text-white font-mono block mt-0.5 select-all">--</span>
                 </div>
@@ -6640,6 +6640,48 @@
                   <span>نسخ</span>
                 </button>
               </div>
+
+              <!-- PayPal Card -->
+              <div class="p-3 bg-slate-950/80 rounded-xl border border-sky-500/30 flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <span class="text-[10px] text-sky-300 font-bold block flex items-center gap-1">
+                    <i class="fa-brands fa-paypal text-sky-400"></i>
+                    <span>باي بال (PayPal)</span>
+                  </span>
+                  <span id="player-topup-paypal-num" class="numbers-font font-black text-xs text-sky-200 font-mono block mt-0.5 select-all truncate">https://paypal.me/khalidsaad475</span>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                  <a id="btn-open-topup-paypal" href="https://paypal.me/khalidsaad475" target="_blank" rel="noopener noreferrer" class="px-2 py-1.5 bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer" title="فتح رابط الدفع">
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                    <span>فتح</span>
+                  </a>
+                  <button id="btn-copy-topup-paypal" type="button" class="px-2 py-1.5 bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer" title="نسخ الرابط">
+                    <i class="fa-solid fa-copy text-xs"></i>
+                    <span>نسخ</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- PayPal Card -->
+              <div class="p-3 bg-slate-950/80 rounded-xl border border-sky-500/30 flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <span class="text-[10px] text-sky-300 font-bold block flex items-center gap-1">
+                    <i class="fa-brands fa-paypal text-sky-400"></i>
+                    <span>باي بال (PayPal)</span>
+                  </span>
+                  <span id="player-topup-paypal-num" class="numbers-font font-black text-xs text-sky-200 font-mono block mt-0.5 select-all truncate">https://paypal.me/khalidsaad475</span>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                  <a id="btn-open-topup-paypal" href="https://paypal.me/khalidsaad475" target="_blank" rel="noopener noreferrer" class="px-2 py-1.5 bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer" title="فتح رابط الدفع">
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                    <span>فتح</span>
+                  </a>
+                  <button id="btn-copy-topup-paypal" type="button" class="px-2 py-1.5 bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer" title="نسخ الرابط">
+                    <i class="fa-solid fa-copy text-xs"></i>
+                    <span>نسخ</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             <!-- Notes from admin -->
@@ -6655,8 +6697,8 @@
               </h4>
 
               <div>
-                <label class="text-[11px] font-bold text-slate-300 block mb-1">رقم الهاتف المحوّل منه (أو اسم حساب انستاباي):</label>
-                <input type="text" id="topup-sender-phone" required placeholder="مثال: 010xxxxxxxx أو اسم حسابك" dir="ltr"
+                <label class="text-[11px] font-bold text-slate-300 block mb-1">رقم الهاتف المحوّل منه (أو معرف انستاباي / بريد PayPal):</label>
+                <input type="text" id="topup-sender-phone" required placeholder="مثال: 010xxxxxxxx أو اسم انستاباي أو بريد PayPal" dir="ltr"
                   class="glass-input w-full px-3.5 py-2.5 rounded-xl text-xs font-bold text-white focus:border-amber-400 outline-none" />
               </div>
 

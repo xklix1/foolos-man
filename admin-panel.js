@@ -9028,7 +9028,7 @@
         try {
           btnSaveSettings.disabled = true;
           btnSaveSettings.innerHTML ='<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري الحفظ...</span>';
-          await AppDB.savePaymentSettings({ vodafoneCash, instapay, notes });
+          await AppDB.savePaymentSettings({ vodafoneCash, instapay, paypal, notes });
           showToast('تم الحفظ بنجاح','تم تحديث أرقام وبيانات الدفع (فودافون كاش & انستاباي) لجميع اللاعبين.','success');
           logAdminAction(`تحديث بيانات الدفع: فودافون=${vodafoneCash}, انستاباي=${instapay}`);
         } catch (err) {
