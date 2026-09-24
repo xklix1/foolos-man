@@ -66,8 +66,11 @@ function calculateNetWorth(playerState) {
         worth += Number(secDef.unlockCost || 0);
         ['stage1', 'stage2', 'stage3', 'logistics'].forEach(stKey => {
           const lvl = Number(sec[stKey] || 0);
-          if (lvl > 0 && secDef.stages && secDef.stages[stKey]) {
-            worth += Math.floor((secDef.stages[stKey].baseCost || 0) * lvl * 1.15);
+          if (lvl > 1 && secDef.stages && secDef.stages[stKey]) {
+            const baseCost = Number(secDef.stages[stKey].baseCost || 0);
+            for (let i = 1; i < lvl; i++) {
+              worth += Math.floor(baseCost * Math.pow(1.65, i));
+            }
           }
         });
         if (sec.readyStock > 0 && secDef.product) {

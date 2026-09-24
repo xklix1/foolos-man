@@ -195,3 +195,26 @@ test('State Sanitizer Guarantees Zero Runtime Null Crashes', () => {
   assert.ok(sanitized.stocks, 'Missing stocks safely defaulted');
   assert.ok(sanitized.assets, 'Missing assets safely defaulted');
 });
+
+test('Industry Sector Net Worth Calculation Accuracy', () => {
+  const { INDUSTRIAL_SECTORS } = require('../src/engine/definitions');
+  const player = {
+    cash: 1000000,
+    industry: {
+      food: {
+        unlocked: true,
+        stage1: 1,
+        stage2: 1,
+        stage3: 1,
+        logistics: 1,
+        readyStock: 0
+      }
+    }
+  };
+
+  const netWorth = calculateNetWorth(player);
+  // Net worth should equal cash (1M) + food sector unlockCost (1.5M) = 2.5M without double-counting stage 1 costs
+  const expected = 1000000 + INDUSTRIAL_SECTORS.food.unlockCost;
+  assert.strictEqual(netWorth, expected, 'Net worth accurately reflects factory unlockCost without inflating base stages');
+});
+
