@@ -1,8 +1,8 @@
 {
-  "version": "v8.0.3",
-  "build": "2026-09-24T22:50:00.000Z",
-  "minRequiredVersion": "v8.0.3",
-  "notes": "Hard cap on all casino game jackpot payouts to strictly obey daily 5M limit",
+  "version": "v8.0.4",
+  "build": "2026-09-24T23:47:00.000Z",
+  "minRequiredVersion": "v8.0.4",
+  "notes": "Hidden casino tab and replaced casino daily quests",
   "forcePurgeCache": true
 }
 

@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.0.3';
+    window._CLIENT_VERSION = 'v8.0.4';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.0.3';
+      const CURRENT_APP_BUILD = 'v8.0.4';
       try {
         localStorage.removeItem('rasalmal_banned_device');
         // Check server version manifest directly with no-store
@@ -2083,7 +2083,7 @@
               <span>السوق السوداء</span>
             </button>
             <button data-tab="casino"
-              class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200">
+              class="hidden nav-tab-btn w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200" style="display: none !important;">
               <i class="fa-solid fa-dice w-4 text-center text-fuchsia-400 text-sm"></i>
               <span>كازينو التسلية</span>
             </button>
@@ -4322,7 +4322,7 @@
       </section>
 
       <!-- TAB 9: كازينو التسلية الفاخر (CASINO & GAMBLING SUITE) -->
-      <section id="panel-casino" class="game-panel hidden space-y-6">
+      <section id="panel-casino" class="game-panel hidden space-y-6" style="display: none !important;">
         <!-- Casino Header & Hub Banner -->
         <div
           class="glass-panel p-4 lg:p-6 rounded-2xl border border-yellow-500/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl"
@@ -5247,7 +5247,7 @@
         </button>
 
         <button data-tab="casino"
-          class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
+          class="hidden nav-tab-btn w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer" style="display: none !important;">
           <i class="fa-solid fa-dice w-5 text-center text-fuchsia-400 text-sm"></i>
           <span>كازينو التسلية</span>
         </button>
@@ -7172,11 +7172,11 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=8.0.3"></script>
-  <script src="server-client-bridge.js?v=8.0.3"></script>
-  <script src="game.js?v=8.0.3"></script>
-  <script src="ui.js?v=8.0.3"></script>
-  <script src="pwa-manager.js?v=8.0.3"></script>
+  <script src="db.js?v=8.0.4"></script>
+  <script src="server-client-bridge.js?v=8.0.4"></script>
+  <script src="game.js?v=8.0.4"></script>
+  <script src="ui.js?v=8.0.4"></script>
+  <script src="pwa-manager.js?v=8.0.4"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

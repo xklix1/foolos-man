@@ -1415,12 +1415,12 @@ const GameEngine = (() => {
       category: 'business'
     },
     {
-      id: 'casino_play',
-      title: 'المغامر الذكي',
-      desc: 'خُض 5 جولات في ألعاب الكازينو المختلفة',
-      target: 5,
-      icon: 'fa-dice',
-      category: 'casino'
+      id: 'trade_shipment',
+      title: 'خبير التجارة الدولية',
+      desc: 'أكمل شحنة تصدير أو استيراد في شركة التجارة',
+      target: 1,
+      icon: 'fa-ship',
+      category: 'trade'
     }
   ];
 
@@ -1476,6 +1476,27 @@ const GameEngine = (() => {
         }))
       };
     } else {
+      // Migrate legacy casino_play quest to trade_shipment
+      const casinoIdx = state.dailyQuests.quests.findIndex(q => q && q.id === 'casino_play');
+      if (casinoIdx !== -1) {
+        const netWorth = (typeof calculateNetWorth === 'function') ? calculateNetWorth() : (state.netWorth || 400);
+        const baseCash = Math.max(350, Math.round(350 + Math.min(35000, Math.sqrt(Math.max(0, netWorth)) * 1.2)));
+        const baseXP = Math.max(20, Math.round(Math.min(250, 15 + Math.log10(Math.max(10, netWorth)) * 10)));
+        state.dailyQuests.quests[casinoIdx] = {
+          id: 'trade_shipment',
+          title: 'خبير التجارة الدولية',
+          desc: 'أكمل شحنة تصدير أو استيراد في شركة التجارة',
+          target: 1,
+          progress: 0,
+          completed: false,
+          claimed: false,
+          cashReward: baseCash,
+          xpReward: baseXP,
+          icon: 'fa-ship',
+          category: 'trade'
+        };
+      }
+
       // Re-normalize if existing active quests have obsolete overpowered rewards (> 50,000 EGP)
       if (state.dailyQuests.quests.some(q => q.cashReward > 50000)) {
         const netWorth = (typeof calculateNetWorth === 'function') ? calculateNetWorth() : (state.netWorth || 400);
