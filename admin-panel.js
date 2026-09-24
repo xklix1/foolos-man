@@ -9023,14 +9023,15 @@
       btnSaveSettings.addEventListener('click', async () => {
         const vodafoneCash = (document.getElementById('adm-topup-vodafone')?.value ||'').trim();
         const instapay = (document.getElementById('adm-topup-instapay')?.value ||'').trim();
+        const paypal = (document.getElementById('adm-topup-paypal')?.value ||'').trim();
         const notes = (document.getElementById('adm-topup-notes')?.value ||'').trim();
 
         try {
           btnSaveSettings.disabled = true;
           btnSaveSettings.innerHTML ='<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري الحفظ...</span>';
           await AppDB.savePaymentSettings({ vodafoneCash, instapay, paypal, notes });
-          showToast('تم الحفظ بنجاح','تم تحديث أرقام وبيانات الدفع (فودافون كاش & انستاباي) لجميع اللاعبين.','success');
-          logAdminAction(`تحديث بيانات الدفع: فودافون=${vodafoneCash}, انستاباي=${instapay}`);
+          showToast('تم الحفظ بنجاح','تم تحديث بيانات الدفع (فودافون كاش & انستاباي & باي بال) لجميع اللاعبين.','success');
+          logAdminAction(`تحديث بيانات الدفع: فودافون=${vodafoneCash}, انستاباي=${instapay}, بايبال=${paypal}`);
         } catch (err) {
           showToast('خطأ في الحفظ', err.message ||'تعذر حفظ بيانات الدفع','error');
         } finally {
@@ -9087,10 +9088,12 @@
       const settings = await AppDB.getPaymentSettings();
       const vodafoneInput = document.getElementById('adm-topup-vodafone');
       const instapayInput = document.getElementById('adm-topup-instapay');
+      const paypalInput = document.getElementById('adm-topup-paypal');
       const notesInput = document.getElementById('adm-topup-notes');
 
       if (vodafoneInput) vodafoneInput.value = settings.vodafoneCash ||'';
       if (instapayInput) instapayInput.value = settings.instapay ||'';
+      if (paypalInput) paypalInput.value = settings.paypal ||'';
       if (notesInput) notesInput.value = settings.notes ||'';
     } catch (e) {
       console.warn('[Admin Topup] Error fetching payment settings:', e);

@@ -1,7 +1,7 @@
 {
-  "version": "v8.1.0",
-  "build": "2026-09-25T00:00:00.000Z",
-  "minRequiredVersion": "v8.1.0",
-  "notes": "Add PayPal direct payment method with link in topup modal and admin panel",
+  "version": "v8.1.1",
+  "build": "2026-09-24T23:55:32.223Z",
+  "minRequiredVersion": "v8.1.1",
+  "notes": "Add PayPal payment option in admin panel and client store",
   "forcePurgeCache": true
 }

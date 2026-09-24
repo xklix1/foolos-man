@@ -2717,7 +2717,7 @@
           </div>
           <p class="text-[11px] text-slate-400">إنشاء غرض مخصص نادر بحد أقصى للكمية المتاحة وسعر محدد، ليتمكن اللاعبون من شرائه حياً من صفحة المزادات.</p>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div>
               <label class="block text-[11px] font-bold text-slate-400 mb-1">اسم الغرض (Item Name)</label>
               <input type="text" id="admin-auction-name" placeholder="مثال: سيارة بوجاتي ملكية نادرة"
@@ -2727,7 +2727,7 @@
               <input type="text" id="admin-auction-desc" placeholder="تفاصيل ووصف الغرض للمشترين"
                 class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl"></div></div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div>
               <label class="block text-[11px] font-bold text-slate-400 mb-1">السعر المطلوب (ج.م EGP)</label>
               <input type="number" id="admin-auction-price" min="1" placeholder="سعر الشراء الفوري بالجنيه"
@@ -3187,7 +3187,13 @@
                 <i class="fa-solid fa-bolt"></i>
                 <span>معرف أو رابط حساب انستاباي (InstaPay):</span></label>
               <input type="text" id="adm-topup-instapay" placeholder="مثال: username@instapay أو رقم الهاتف" dir="ltr"
-                class="glass-input w-full px-3 py-2 rounded-lg text-xs font-mono font-bold text-white focus:border-purple-400 outline-none" /></div></div>
+                class="glass-input w-full px-3 py-2 rounded-lg text-xs font-mono font-bold text-white focus:border-purple-400 outline-none" /></div>
+            <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl space-y-1.5">
+              <label class="text-xs font-bold text-sky-300 flex items-center gap-2">
+                <i class="fa-brands fa-paypal text-sky-400"></i>
+                <span>رابط أو بريد حساب باي بال (PayPal):</span></label>
+              <input type="text" id="adm-topup-paypal" placeholder="مثال: https://paypal.me/khalidsaad475" dir="ltr"
+                class="glass-input w-full px-3 py-2 rounded-lg text-xs font-mono font-bold text-white focus:border-sky-400 outline-none" /></div></div>
 
           <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl space-y-1.5">
             <label class="text-xs font-bold text-slate-300 flex items-center gap-2">
