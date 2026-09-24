@@ -1888,6 +1888,9 @@ const UIController = (() => {
         return;
       }
       const canonicalUser = (playerState && playerState.username) ? playerState.username : username;
+      if (playerState && (playerState.underSuspicion === true || (playerState.state && playerState.state.underSuspicion === true))) {
+        enforceSuspicionStatus(true);
+      }
       localStorage.setItem('rasalmal_active_session_user', canonicalUser);
 
       // Claim session and initialize active device lock
@@ -16683,6 +16686,17 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   // =========================================================================
   // Direct Admin Popup Modal Controller (شاشة منبثقة مباشرة من الإدارة)
   // =========================================================================
+  
+  function enforceSuspicionStatus(isUnderSuspicion) {
+    const modal = document.getElementById('modal-account-under-suspicion');
+    if (!modal) return;
+    if (isUnderSuspicion === true) {
+      modal.classList.remove('hidden');
+    } else {
+      modal.classList.add('hidden');
+    }
+  }
+
   function showDirectAdminPopupModal(popupData) {
     if (!popupData || !popupData.message) return;
     const modal = document.getElementById('modal-direct-admin-popup');
@@ -22740,6 +22754,10 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
       }
 
       // 2. Check Maintenance Mode status
+      if (GameEngine.state) {
+        const isSusp = Boolean(GameEngine.state.underSuspicion || (GameEngine.state.state && GameEngine.state.state.underSuspicion));
+        enforceSuspicionStatus(isSusp);
+      }
       if (typeof checkMaintenanceMode === 'function') {
         await checkMaintenanceMode();
       }
@@ -22752,7 +22770,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.0.6');
+            const curVer = (window._CLIENT_VERSION || 'v8.0.7');
             if (s && s.version && s.version !== curVer) {
               const loopKey = 'rasalmal_watchdog_reload_' + s.version;
               const reloadedCount = Number(sessionStorage.getItem(loopKey) || 0);

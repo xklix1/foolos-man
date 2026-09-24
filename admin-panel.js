@@ -542,6 +542,11 @@
           if (state.isBanned) {
             statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block ml-1"></span>محظور نهائياً ⛔';
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center';
+          } else if (isUnderSuspicion) {
+            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-bounce inline-block ml-1"></span>تحت الشبهة ⚠️ (الشاشة مثبتة)';
+            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-500/20 flex items-center';
+            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block ml-1"></span>محظور نهائياً ⛔';
+            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center';
           } else if (state.jailTimer > 0) {
             statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block ml-1"></span>سجين (${state.jailTimer}ث) ${isOnline ? '🟢 متصل الآن' : '⚪ غير نشط'}`;
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center';
@@ -574,6 +579,20 @@
           }
           resultCard.scrollIntoView({ behavior:'smooth', block:'nearest' });
         }
+        
+        const suspicionBtn = document.getElementById('btn-admin-toggle-suspicion-lock');
+        const suspicionText = document.getElementById('admin-toggle-suspicion-text');
+        const isUnderSuspicion = Boolean(state.underSuspicion || (state.state && state.state.underSuspicion));
+        if (suspicionBtn && suspicionText) {
+          if (isUnderSuspicion) {
+            suspicionText.textContent = 'إلغاء تثبيت شاشة الشبهة (فك التجميد) 🔓';
+            suspicionBtn.className = 'w-full py-2 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/50 rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 cursor-pointer';
+          } else {
+            suspicionText.textContent = 'تثبيت شاشة (حسابك تحت الشبهة) ⚠️';
+            suspicionBtn.className = 'w-full py-2 bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-orange-500/20 cursor-pointer';
+          }
+        }
+
         const fbText = document.getElementById('admin-toggle-fb-text');
         if (fbText) {
           const isFb = Boolean(state.facebookVerified || (state.badges && state.badges.includes('facebook')));
@@ -1593,6 +1612,47 @@
           selectPlayerForModeration(selectedPlayer);
         } catch (err) {
           showToast('خطأ فك الحظر', err.message,'error');
+        }
+      });
+    }
+
+    
+    // Toggle Account Suspicion Lock Action
+    const toggleSuspicionBtn = document.getElementById('btn-admin-toggle-suspicion-lock');
+    if (toggleSuspicionBtn) {
+      toggleSuspicionBtn.addEventListener('click', async () => {
+        if (!selectedPlayer || !selectedPlayerState) {
+          showToast('إدارة اللاعب', 'يرجى اختيار لاعب أولاً من القائمة.', 'error');
+          return;
+        }
+        const currentSuspicion = Boolean(selectedPlayerState.underSuspicion || (selectedPlayerState.state && selectedPlayerState.state.underSuspicion));
+        const newSuspicion = !currentSuspicion;
+        const targetUser = selectedPlayer;
+        const confirmMsg = newSuspicion
+          ? `⚠️ تأكيد تثبيت شاشة الشبهة:\nهل أنت متأكد من تثبيت شاشة [حسابك تحت الشبهة يرجى التواصل مع صفحة الفيسبوك] على حساب اللاعب "${targetUser}"؟\nستظهر الشاشة فوراً أمامه وتمنعه من اللعب حتى تقوم بإلغائها.`
+          : `تأكيد رفع التجميد:\nهل أنت متأكد من إلغاء تثبيت شاشة الشبهة عن حساب اللاعب "${targetUser}"؟`;
+
+        if (!confirm(confirmMsg)) return;
+
+        try {
+          toggleSuspicionBtn.disabled = true;
+          toggleSuspicionBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري تحديث الحالة...';
+
+          await AppDB.adminSetPlayerSuspicion(targetUser, newSuspicion);
+          selectedPlayerState.underSuspicion = newSuspicion;
+          if (selectedPlayerState.state) selectedPlayerState.state.underSuspicion = newSuspicion;
+
+          showToast(
+            newSuspicion ? 'تم التثبيت ⚠️' : 'تم رفع التجميد 🔓',
+            newSuspicion ? `تم تثبيت شاشة الشبهة على حساب ${targetUser} بنجاح.` : `تم إلغاء تثبيت شاشة الشبهة عن حساب ${targetUser}.`,
+            'success'
+          );
+          logAdminAction(`${newSuspicion ? 'تثبيت' : 'إلغاء'} شاشة (حسابك تحت الشبهة) على حساب اللاعب: ${targetUser}`);
+          selectPlayerForModeration(targetUser);
+        } catch (err) {
+          showToast('خطأ في العملية', err.message, 'error');
+        } finally {
+          toggleSuspicionBtn.disabled = false;
         }
       });
     }

@@ -671,7 +671,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.0.6';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.0.7';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -680,7 +680,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.0.6', remoteVersion: 'v8.0.6' };
+    return { upToDate: true, clientVersion: 'v8.0.7', remoteVersion: 'v8.0.7' };
   }
 
   async function checkDeviceBan() {
@@ -4261,6 +4261,27 @@ var AppDB = (() => {
     return true;
   }
 
+  
+  async function adminSetPlayerSuspicion(username, underSuspicion = true) {
+    if (!username) throw new Error('اسم المستخدم مطلوب');
+    const u = String(username).trim();
+    const now = Date.now();
+    const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}`);
+    if (!rows || rows.length === 0) throw new Error('اللاعب غير موجود');
+    const row = rows[0];
+    const curState = (typeof row.state === 'string') ? JSON.parse(row.state) : (row.state || {});
+    curState.underSuspicion = Boolean(underSuspicion);
+    curState.adminModifiedTimestamp = now;
+    await _api(`players?username=ilike.${encodeURIComponent(u)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        state: curState,
+        admin_modified_timestamp: now
+      })
+    });
+    return true;
+  }
+
   async function adminBanPlayer(username) {
     if (!username) return false;
     const cleanUser = String(username).replace(/^@/, '').trim();
@@ -6501,6 +6522,7 @@ var AppDB = (() => {
     adminDeletePlayer,
     adminResetPlayer,
     adminBanPlayer,
+    adminSetPlayerSuspicion,
     adminUnbanPlayer,
     adminChangePlayerPin,
     adminReleaseJail,

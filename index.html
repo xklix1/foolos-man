@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.0.6';
+    window._CLIENT_VERSION = 'v8.0.7';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.0.6';
+      const CURRENT_APP_BUILD = 'v8.0.7';
       try {
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -7171,11 +7171,11 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=8.0.6"></script>
-  <script src="server-client-bridge.js?v=8.0.6"></script>
-  <script src="game.js?v=8.0.6"></script>
-  <script src="ui.js?v=8.0.6"></script>
-  <script src="pwa-manager.js?v=8.0.6"></script>
+  <script src="db.js?v=8.0.7"></script>
+  <script src="server-client-bridge.js?v=8.0.7"></script>
+  <script src="game.js?v=8.0.7"></script>
+  <script src="ui.js?v=8.0.7"></script>
+  <script src="pwa-manager.js?v=8.0.7"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -7506,7 +7506,54 @@
     </div>
   </div>
 
-  <!-- ==================== DIRECT ADMIN POPUP MODAL (شاشة منبثقة مباشرة من الإدارة) ==================== -->
+    <!-- ==================== ACCOUNT UNDER SUSPICION LOCKED MODAL (شاشة حسابك تحت الشبهة) ==================== -->
+  <div id="modal-account-under-suspicion" dir="rtl"
+    class="hidden fixed inset-0 z-[999999] flex items-center justify-center bg-black/92 backdrop-blur-lg p-4 animate-fade-in text-right">
+    <div class="glass-panel w-full max-w-md rounded-3xl border-2 border-amber-500/60 p-6 sm:p-7 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden space-y-5">
+      
+      <!-- Top Ambient Glow -->
+      <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-80 h-36 bg-amber-500/25 blur-3xl rounded-full pointer-events-none"></div>
+
+      <!-- Icon & Warning Header -->
+      <div class="flex flex-col items-center text-center space-y-3 pt-2 relative z-10">
+        <div class="w-16 h-16 rounded-3xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-600 text-slate-950 flex items-center justify-center text-2xl font-black shadow-xl shadow-orange-500/30 animate-pulse">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <span class="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-black text-xs inline-block mb-1.5">
+            تنبيه أمني إداري ⚠️
+          </span>
+          <h3 class="text-xl font-black text-white">حسابك تحت الشبهة</h3>
+        </div>
+      </div>
+
+      <!-- Body Message -->
+      <div class="space-y-3 text-xs sm:text-sm text-slate-300 text-center leading-relaxed relative z-10 bg-slate-900/70 p-4 rounded-2xl border border-slate-800">
+        <p class="font-bold text-amber-200">
+          تم تعليق نشاط حسابك مؤقتاً لوجود شبهة نشاط غير اعتيادي يتطلب التحقق.
+        </p>
+        <p class="text-slate-400 text-xs">
+          يرجى التواصل الفوري مع صفحة الفيسبوك الرسمية لتأكيد بيانات الحساب ورفع التعليق من قبل إدارة اللعبة.
+        </p>
+      </div>
+
+      <!-- Action Button (Facebook Link) -->
+      <div class="space-y-2 relative z-10">
+        <a href="https://www.facebook.com/profile.php?id=61578368735393" target="_blank" rel="noopener noreferrer"
+          class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-blue-600/30 transition transform active:scale-95 no-underline">
+          <i class="fa-brands fa-facebook text-base"></i>
+          <span>مراسلة صفحة الفيسبوك الرسمية 💬</span>
+        </a>
+        
+        <p class="text-[11px] text-center text-slate-500 font-medium">
+          🔒 هذه الشاشة مثبتة إدارياً ولن يتم إغلاقها حتى مراجعة الحساب.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+<!-- ==================== DIRECT ADMIN POPUP MODAL (شاشة منبثقة مباشرة من الإدارة) ==================== -->
   <div id="modal-direct-admin-popup" dir="rtl"
     class="hidden fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in text-right">
     <div id="admin-popup-card"
