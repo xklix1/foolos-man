@@ -405,6 +405,7 @@
         const state = await AppDB.adminGetPlayer(username);
         selectedPlayer = username;
         selectedPlayerState = state;
+        const isUnderSuspicion = Boolean(state.underSuspicion || (state.state && state.state.underSuspicion));
 
         document.getElementById('admin-p-username').textContent = username;
         const sBadgeEl = document.getElementById('admin-p-season-badge-select');
@@ -582,7 +583,6 @@
         
         const suspicionBtn = document.getElementById('btn-admin-toggle-suspicion-lock');
         const suspicionText = document.getElementById('admin-toggle-suspicion-text');
-        const isUnderSuspicion = Boolean(state.underSuspicion || (state.state && state.state.underSuspicion));
         if (suspicionBtn && suspicionText) {
           if (isUnderSuspicion) {
             suspicionText.textContent = 'إلغاء تثبيت شاشة الشبهة (فك التجميد) 🔓';
