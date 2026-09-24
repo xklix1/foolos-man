@@ -3722,6 +3722,11 @@ const GameEngine = (() => {
         }
       }
       }
+      // Clean legacy active loans
+      state.activeLoan = null;
+      state.dailyLoans = { date: '', count: 0 };
+      state.loanCooldownUntil = 0;
+
       // Ensure tradeCompany state integrity & resolve offline shipments
       if (!state.tradeCompany) {
         state.tradeCompany = {
@@ -5497,6 +5502,7 @@ const GameEngine = (() => {
 
   // Bank Loan: Take instant liquidity loan (up to 35% of Net Worth, max 2 loans per 24 hours)
   function takeBankLoan(amount) {
+    throw new Error('تم إلغاء نظام القروض البنكية بالكامل من اللعبة.');
     if (state.activeLoan && state.activeLoan.amount > 0) {
       throw new Error(`لديك قرض قائم بالفعل بقيمة ${state.activeLoan.totalDue.toLocaleString()} EGP يجب سداده أولاً!`);
     }

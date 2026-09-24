@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.0.7';
+    window._CLIENT_VERSION = 'v8.0.8';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.0.7';
+      const CURRENT_APP_BUILD = 'v8.0.8';
       try {
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -958,14 +958,13 @@
             <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
               <h3 class="text-sm font-black text-purple-400 flex items-center gap-2">
                 <i class="fa-solid fa-landmark"></i>
-                <span>4. Central Bank, Wire Transfers & Loans</span>
+                <span>4. Central Bank & Wire Transfers</span>
               </h3>
               <p class="leading-relaxed text-slate-300 text-xs">
                 • <strong class="text-white">Secure Vault</strong>: Salaries, corporate profits, and rental yields are deposited directly into your bank to earn compounding interest safe from daily cash taxes.<br>
                 • <strong class="text-purple-300">Fast Withdraw & Deposit</strong>: Withdraw cash to acquire assets or stocks, and deposit excess back with one click.<br>
                 • <strong class="text-cyan-400">Direct Player Wire Transfers</strong>: Send funds instantly to any active player online with minimal banking fees.<br>
-                • <strong class="text-yellow-400">Collateralized Loans</strong>: Borrow quick liquidity against your net worth with flexible repayment terms.
-              </p>
+                              </p>
             </div>
 
             <!-- Section 5: Assets -->
@@ -1141,7 +1140,7 @@
                 <span>4. البنك المركزي والقروض</span>
               </h3>
               <p class="text-[11px] leading-relaxed text-slate-400">
-                حافظ على ثروتك في البنك بعيداً عن ضرائب الكاش ونمّها بالفوائد المركبة، مع إمكانية التحويل المباشر لأي لاعب واقتراض سيولة سريعة بضمان أصولك.
+                حافظ على ثروتك في البنك بعيداً عن ضرائب الكاش ونمّها بالفوائد المركبة، مع إمكانية التحويل المباشر لأي لاعب بأمان وسرعة.
               </p>
             </div>
 
@@ -1221,10 +1220,10 @@
             <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800">
               <h3 class="text-xs font-black text-purple-400 mb-1 flex items-center gap-2">
                 <i class="fa-solid fa-building-columns"></i>
-                <span>4. Central Bank, Transfers & Loans</span>
+                <span>4. Central Bank & Transfers</span>
               </h3>
               <p class="text-[11px] leading-relaxed text-slate-400">
-                Store capital in your bank to avoid cash liquidity taxes, earn compounding interest, execute instant player wire transfers, and obtain collateralized loans against your net worth.
+                Store capital in your bank to avoid cash liquidity taxes, earn compounding interest, and execute instant player wire transfers.
               </p>
             </div>
 
@@ -2502,75 +2501,6 @@
             </div>
           </div>
 
-          <!-- Bank Loan & Credit Facility Card -->
-          <div
-            class="glass-panel p-6 rounded-2xl border border-yellow-500/30 flex flex-col justify-between bg-slate-900/40">
-            <div>
-              <div class="flex justify-between items-center mb-2">
-                <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                  <i class="fa-solid fa-hand-holding-dollar text-yellow-400"></i>
-                  <span>القروض البنكية والسيولة الفورية</span>
-                </h3>
-                <span id="loan-status-badge"
-                  class="text-[10px] px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full font-bold">مؤهل
-                  للاقتراض</span>
-              </div>
-              <p class="text-xs text-slate-400 mb-4">احصل على تمويل مصرفي فوري حتى 35% من صافي ثروتك (بحد أدنى 10,000 ج.م) لاغتنام صفقات السوق
-                مع فائدة 15% ومهلة سداد ساعة كاملة (60 دقيقة).</p>
-
-              <!-- Loan Info Display -->
-              <div id="loan-info-box"
-                class="p-3 bg-slate-950/70 rounded-xl border border-slate-800 space-y-2 mb-4 text-xs text-slate-300">
-                <div class="flex justify-between">
-                  <span>الحد الأقصى المتاح للاقتراض:</span>
-                  <span id="loan-max-limit" class="numbers-font font-black text-yellow-400">0 جنيه</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>القروض اليومية المتبقية (كل 24 ساعة):</span>
-                  <span id="loan-daily-remaining" class="numbers-font font-black text-amber-400">2 / 2</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>القرض القائم حالياً:</span>
-                  <span id="loan-active-amount" class="numbers-font font-black text-rose-400">لا يوجد قرض</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>إجمالي المبلغ المطلوب سداده:</span>
-                  <span id="loan-due-amount" class="numbers-font font-black text-rose-300">0 جنيه</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>الوقت المتبقي للسداد قبل الغرامة:</span>
-                  <span id="loan-time-left" class="numbers-font font-bold text-sky-400">--</span>
-                </div>
-              </div>
-
-              <!-- Loan Amount Input -->
-              <div class="mb-3">
-                <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">المبلغ المطلوب اقتراضه</label>
-                <input type="number" id="bank-loan-input" placeholder="أدخل مبلغ القرض"
-                  class="glass-input w-full p-2.5 text-xs text-center font-bold rounded-xl">
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2 mt-2">
-              <button id="btn-take-loan"
-                class="py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-lg text-xs transition">
-                طلب القرض الفوري
-              </button>
-              <button id="btn-repay-loan"
-                class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs transition">
-                سداد القرض بالكامل
-              </button>
-              <button id="btn-speedup-loan" type="button"
-                class="hidden col-span-2 py-2 px-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-lg text-xs items-center justify-center gap-1.5 shadow transition cursor-pointer" style="display: none !important;">
-                <i class="fa-solid fa-bolt text-slate-950"></i>
-                <span>تسريع وإنهاء مهلة تقييم القرض (<span id="loan-speedup-cost">1</span> 🪙 ذهب)</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Wire Transfers & History -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Wire Transfers -->
           <div class="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col justify-between">
             <div>
@@ -2628,10 +2558,7 @@
             </div>
 
             <div class="mt-4">
-              <div id="wire-loan-warning" class="hidden mb-3 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-2">
-                <i class="fa-solid fa-triangle-exclamation text-rose-400 shrink-0"></i>
-                <span>🚫 <strong>الحساب مقيد مصرفياً:</strong> لا يمكنك إجراء حوالات مالية أثناء وجود قرض بنكي نشط. يرجى سداد القرض أولاً لفك القيد.</span>
-              </div>
+              
               <button id="btn-wire-submit"
                 class="w-full py-3.5 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold rounded-lg transition duration-300 flex items-center justify-center gap-2">
                 <span id="wire-btn-text">تأكيد عملية التحويل المالي</span>
@@ -7171,11 +7098,11 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=8.0.7"></script>
-  <script src="server-client-bridge.js?v=8.0.7"></script>
-  <script src="game.js?v=8.0.7"></script>
-  <script src="ui.js?v=8.0.7"></script>
-  <script src="pwa-manager.js?v=8.0.7"></script>
+  <script src="db.js?v=8.0.8"></script>
+  <script src="server-client-bridge.js?v=8.0.8"></script>
+  <script src="game.js?v=8.0.8"></script>
+  <script src="ui.js?v=8.0.8"></script>
+  <script src="pwa-manager.js?v=8.0.8"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

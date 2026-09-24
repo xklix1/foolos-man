@@ -671,7 +671,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.0.7';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.0.8';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -680,7 +680,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.0.7', remoteVersion: 'v8.0.7' };
+    return { upToDate: true, clientVersion: 'v8.0.8', remoteVersion: 'v8.0.8' };
   }
 
   async function checkDeviceBan() {
@@ -940,21 +940,6 @@ var AppDB = (() => {
 
     const fp = await DeviceFingerprint.getFingerprint();
     const registry = await getDeviceRegistry();
-
-    // 1.5 Active Bank Loan Freeze: Block all outgoing transfers while an active loan is outstanding
-    const activeLoan = sender.activeLoan || (senderRow.state && senderRow.state.activeLoan);
-    if (activeLoan && (Number(activeLoan.amount || 0) > 0 || Number(activeLoan.totalDue || 0) > 0)) {
-      const dueAmt = Number(activeLoan.totalDue || activeLoan.amount || 0);
-      await logFraudAlert({
-        type: 'ACTIVE_LOAN_TRANSFER_BLOCKED',
-        sender: sUser,
-        recipient: rUser,
-        amount: amt,
-        device: fp,
-        details: `محاولة تحويل مالي أثناء وجود قرض بنكي نشط غير مسدد (${dueAmt.toLocaleString()} EGP)`
-      });
-      throw new Error(`🚫 مرفوض مصرفياً: لا يمكنك إجراء أي حوالات مالية أثناء وجود قرض بنكي نشط (${dueAmt.toLocaleString()} ج.م)! يرجى سداد القرض المستحق أولاً لفك تجميد التحويلات.`);
-    }
 
     // 2. Multi-Account / Same Device Intersection Check
     const senderDevs = Array.isArray(sender.known_devices) ? sender.known_devices : (sender.initial_device ? [sender.initial_device] : []);

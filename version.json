@@ -1,8 +1,7 @@
 {
-  "version": "v8.0.7",
-  "build": "2026-09-25T01:08:00.000Z",
-  "minRequiredVersion": "v8.0.7",
-  "notes": "Admin account suspicion lock screen with permanent overlay feature",
+  "version": "v8.0.8",
+  "build": "2026-09-24T22:22:10.100Z",
+  "minRequiredVersion": "v8.0.8",
+  "notes": "Completely remove bank loan feature, wipe loan debts, and polish central banking",
   "forcePurgeCache": true
 }
-
