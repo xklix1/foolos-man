@@ -6749,19 +6749,19 @@
           <div class="flex items-center justify-between flex-wrap gap-2 pt-1">
             <div class="flex items-center gap-1.5 flex-wrap">
               ${isBanned
-                ? `<button onclick="window.adminToggleDeviceBan && window.adminToggleDeviceBan('${safeDisplayId}', false)"
+                ? `<button onclick="window.adminToggleDeviceBan && window.adminToggleDeviceBan('${safeSeed}', false)"
                      class="px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm">
                      <i class="fa-solid fa-lock-open text-xs"></i>
                      <span>إلغاء حظر بصمة الجهاز (Unban Hardware)</span>
                    </button>`
-                : `<button onclick="window.adminToggleDeviceBan && window.adminToggleDeviceBan('${safeDisplayId}', true)"
+                : `<button onclick="window.adminToggleDeviceBan && window.adminToggleDeviceBan('${safeSeed}', true)"
                      class="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900 border border-rose-500/50 text-rose-300 text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm">
                      <i class="fa-solid fa-ban text-xs"></i>
                      <span>حظر بصمة الجهاز نهائياً (Hardware Ban)</span>
                    </button>`
               }
 
-              <button onclick="window.adminPurgeDeviceCluster && window.adminPurgeDeviceCluster('${safeDisplayId}', '${safeAccountsJson}')"
+              <button onclick="window.adminPurgeDeviceCluster && window.adminPurgeDeviceCluster('${safeSeed}', '${safeAccountsJson}')"
                 class="px-3 py-1.5 bg-gradient-to-r from-rose-700 to-amber-700 hover:from-rose-600 hover:to-amber-600 text-white text-xs font-black rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95">
                 <i class="fa-solid fa-skull-crossbones text-xs"></i>
                 <span>تصفير وحظر كافة حسابات هذا الجهاز (${count})</span>

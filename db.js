@@ -671,7 +671,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.0.4';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.0.5';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -680,13 +680,39 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.0.4', remoteVersion: 'v8.0.4' };
+    return { upToDate: true, clientVersion: 'v8.0.5', remoteVersion: 'v8.0.5' };
   }
 
   async function checkDeviceBan() {
     try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem('rasalmal_banned_device');
+      const devId = (typeof DeviceFingerprint !== 'undefined' && DeviceFingerprint.getDeviceId) 
+        ? DeviceFingerprint.getDeviceId() 
+        : _getHardwareFingerprintUUID();
+
+      if (!devId) return { isBanned: false };
+
+      const seedMatch = String(devId).match(/([a-f0-9]{16})/i);
+      const seed = seedMatch ? seedMatch[1].toLowerCase() : null;
+
+      const filterParts = [`device_id.eq.${encodeURIComponent(devId)}`];
+      if (seed && seed !== devId) {
+        filterParts.push(`device_id.eq.${encodeURIComponent(seed)}`);
+        filterParts.push(`device_id.eq.dev_hw_${encodeURIComponent(seed)}`);
+      }
+
+      const rows = await _api(`banned_devices?or=(${filterParts.join(',')})&limit=1`);
+      if (rows && rows.length > 0) {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('rasalmal_banned_device', 'true');
+        }
+        return {
+          isBanned: true,
+          reason: rows[0].reason || 'تم حظر هذا الجهاز نهائياً من قبل الإدارة لمخالفته قوانين اللعبة.'
+        };
+      } else {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('rasalmal_banned_device');
+        }
       }
     } catch (_) {}
     return { isBanned: false };

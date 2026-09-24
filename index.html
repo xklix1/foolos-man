@@ -13,11 +13,10 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.0.4';
+    window._CLIENT_VERSION = 'v8.0.5';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.0.4';
+      const CURRENT_APP_BUILD = 'v8.0.5';
       try {
-        localStorage.removeItem('rasalmal_banned_device');
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
@@ -7172,11 +7171,11 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=8.0.4"></script>
-  <script src="server-client-bridge.js?v=8.0.4"></script>
-  <script src="game.js?v=8.0.4"></script>
-  <script src="ui.js?v=8.0.4"></script>
-  <script src="pwa-manager.js?v=8.0.4"></script>
+  <script src="db.js?v=8.0.5"></script>
+  <script src="server-client-bridge.js?v=8.0.5"></script>
+  <script src="game.js?v=8.0.5"></script>
+  <script src="ui.js?v=8.0.5"></script>
+  <script src="pwa-manager.js?v=8.0.5"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
