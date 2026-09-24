@@ -37,10 +37,21 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   //  CONCURRENT SESSION & MULTI-DEVICE PROTECTION
   // ─────────────────────────────────────────────
-  let _currentSessionToken = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_session_token')) || ('sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11));
-  if (typeof sessionStorage !== 'undefined') {
-    try { sessionStorage.setItem('rasalmal_session_token', _currentSessionToken); } catch(e) {}
-  }
+  let _currentSessionToken = (() => {
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        const s = sessionStorage.getItem('rasalmal_session_token');
+        if (s) return s;
+      }
+    } catch (e) {}
+    const fresh = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('rasalmal_session_token', fresh);
+      }
+    } catch (e) {}
+    return fresh;
+  })();
   let _isSessionInvalidated = false;
   let _sessionGuardTimer = null;
 
@@ -65,6 +76,27 @@ var AppDB = (() => {
         window.handleDuplicateSession(reason);
       }
     }
+  }
+
+  function isSessionValid() {
+    return !_isSessionInvalidated;
+  }
+
+  function isSessionTerminated() {
+    return _isSessionInvalidated;
+  }
+
+  function invalidateLocalSession(reason) {
+    invalidateCurrentSession(reason);
+  }
+
+  function initSessionTracker(username) {
+    _startConcurrentSessionGuard(username);
+    return _currentSessionToken;
+  }
+
+  async function claimActiveSession(username, sessionToken) {
+    return true;
   }
 
   function _startConcurrentSessionGuard(username) {
@@ -93,6 +125,7 @@ var AppDB = (() => {
       _sessionGuardTimer.unref();
     }
   }
+
 
   // ─────────────────────────────────────────────
   //  SECURE SERVER-ANCHORED MONOTONIC TIME ENGINE
@@ -358,53 +391,6 @@ var AppDB = (() => {
     _resetIdleTimer();
   }
 
-  // ─────────────────────────────────────────────
-  //  STRICT SINGLE-SESSION (DISABLED)
-  // ─────────────────────────────────────────────
-  let _currentSessionToken = null;
-  let _activeSessionUser = null;
-  let _isSessionInvalidated = false;
-
-  function generateSessionToken() {
-    return 'sess_default';
-  }
-
-  function getActiveSessionToken() {
-    return _currentSessionToken;
-  }
-
-  function isSessionValid() {
-    return true;
-  }
-
-  function isSessionTerminated() {
-    return false;
-  }
-
-  function invalidateLocalSession() {
-    return;
-  }
-
-  function triggerSessionInvalidation(reasonCode = 'another_device') {
-    // Feature completely disabled
-    return;
-  }
-
-  function initSessionTracker(username, forceNew = false) {
-    return null;
-  }
-
-  async function claimActiveSession(username, sessionToken) {
-    return true;
-  }
-
-  async function checkSessionStatus(username) {
-    return;
-  }
-
-  function startSessionHeartbeat(username) {
-    return;
-  }
 
   // ─────────────────────────────────────────────
   //  INITIALIZATION
