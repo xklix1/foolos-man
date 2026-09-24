@@ -143,7 +143,10 @@ var AppDB = (() => {
       const errBody = await res.text().catch(() => '');
       let parsed = null;
       try { parsed = JSON.parse(errBody); } catch (e) {}
-      const msg = (parsed && (parsed.message || parsed.hint || parsed.details)) || errBody || `HTTP ${res.status}`;
+      let msg = (parsed && (parsed.message || parsed.hint || parsed.details)) || errBody || `HTTP ${res.status}`;
+      if (typeof msg === 'string' && msg.includes('<html')) {
+        msg = `خطأ في الاتصال بالخادم (${res.status} ${res.status === 413 ? 'حجم البيانات كبير جداً' : res.statusText || 'Error'})`;
+      }
       throw new Error(msg);
     }
 
@@ -4614,7 +4617,6 @@ var AppDB = (() => {
         isAdmin: r.is_admin === true,
         seasonBadge: pState.seasonBadge || '',
         customBadge: pState.customBadge || '',
-        state: pState,
         facebookVerified: isFb
       };
     });
@@ -5271,20 +5273,21 @@ var AppDB = (() => {
       const topPlayers = (rows || [])
         .filter(r => !isHiddenPlayer(r.username))
         .slice(0, 10)
-        .map(r => ({
-          username: r.username,
-          cash: Number(r.cash || 0),
-          bank: Number(r.bank || 0),
-          netWorth: Number(r.net_worth || 0),
-          net_worth: Number(r.net_worth || 0),
-          title: r.title || 'عامل مبتدئ',
-          jobId: r.job_id || 'worker',
-          isAdmin: r.is_admin === true,
-          seasonBadge: (r.state && r.state.seasonBadge) || '',
-          customBadge: (r.state && r.state.customBadge) || '',
-          state: r.state || {},
-          facebookVerified: false
-        }));
+        .map(r => {
+          return {
+            username: r.username,
+            cash: Number(r.cash || 0),
+            bank: Number(r.bank || 0),
+            netWorth: Number(r.net_worth || 0),
+            net_worth: Number(r.net_worth || 0),
+            title: r.title || 'عامل مبتدئ',
+            jobId: r.job_id || 'worker',
+            isAdmin: r.is_admin === true,
+            seasonBadge: (r.state && r.state.seasonBadge) || '',
+            customBadge: (r.state && r.state.customBadge) || '',
+            facebookVerified: false
+          };
+        });
 
       _leaderboardMeta = _computeNextHourlyCycle(now);
 
