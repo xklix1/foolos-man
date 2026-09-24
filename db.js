@@ -124,32 +124,57 @@ var AppDB = (() => {
     }
   }
 
+  let _lastSessionCheckTime = 0;
+  async function _checkSessionImmediate(u) {
+    if (_isSessionInvalidated || !u) return;
+    const now = Date.now();
+    if (now - _lastSessionCheckTime < 800) return; // Throttle to max once per 800ms
+    _lastSessionCheckTime = now;
+    try {
+      const rows = await _api(`players?select=username,state&username=ilike.${encodeURIComponent(u)}&limit=1`);
+      if (rows && rows.length > 0 && rows[0].state) {
+        const srvSession = rows[0].state.activeSessionId;
+        if (srvSession && srvSession !== _currentSessionToken) {
+          console.warn(`[Sync] Concurrent login detected for ${u}: active="${srvSession}", current="${_currentSessionToken}"`);
+          invalidateCurrentSession('تم فتح حسابك في جلسة جديدة من جهاز أو متصفح آخر. تم إيقاف هذا الجهاز لحماية أموالك من التضارب.');
+        }
+      }
+    } catch (err) {}
+  }
+
   function _startConcurrentSessionGuard(username) {
     if (!username) return;
     const u = username.trim();
     if (_sessionGuardTimer) clearInterval(_sessionGuardTimer);
 
-    _sessionGuardTimer = setInterval(async () => {
-      if (_isSessionInvalidated) {
-        if (_sessionGuardTimer) clearInterval(_sessionGuardTimer);
-        return;
-      }
-      try {
-        const rows = await _api(`players?select=username,state&username=ilike.${encodeURIComponent(u)}&limit=1`);
-        if (rows && rows.length > 0 && rows[0].state) {
-          const srvSession = rows[0].state.activeSessionId;
-          if (srvSession && srvSession !== _currentSessionToken) {
-            console.warn(`[Sync] Concurrent login detected for ${u}: active="${srvSession}", current="${_currentSessionToken}"`);
-            invalidateCurrentSession('تم فتح حسابك في جلسة جديدة من جهاز أو متصفح آخر. تم إيقاف هذا الجهاز لحماية أموالك من التضارب.');
-          }
-        }
-      } catch (err) {}
-    }, 3000); // Check every 3 seconds
+    // Ultra-responsive 1.5 second background pulse
+    _sessionGuardTimer = setInterval(() => {
+      _checkSessionImmediate(u);
+    }, 1500);
 
     if (_sessionGuardTimer && typeof _sessionGuardTimer.unref === 'function') {
       _sessionGuardTimer.unref();
     }
+
+    // Instant check triggers on user interaction and tab switching
+    if (typeof window !== 'undefined' && !window._sessionGuardListenersBound) {
+      window._sessionGuardListenersBound = true;
+      const triggerCheck = () => {
+        const activeU = (window.GameEngine && window.GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || u;
+        if (activeU) _checkSessionImmediate(activeU);
+      };
+
+      window.addEventListener('focus', triggerCheck, { passive: true });
+      if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) triggerCheck();
+        }, { passive: true });
+      }
+      window.addEventListener('pointerdown', triggerCheck, { passive: true });
+      window.addEventListener('touchstart', triggerCheck, { passive: true });
+    }
   }
+
 
 
 
