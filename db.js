@@ -671,7 +671,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.0.5';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.0.6';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -680,7 +680,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.0.5', remoteVersion: 'v8.0.5' };
+    return { upToDate: true, clientVersion: 'v8.0.6', remoteVersion: 'v8.0.6' };
   }
 
   async function checkDeviceBan() {
@@ -1948,9 +1948,11 @@ var AppDB = (() => {
         }
 
         // 5. Late-save recovery:
-        // If local device was active recently (isLocalRecentOrNewer) and not reset or overridden by admin,
-        // reconcile wealth atomically from local state to ensure liquidations/sales, bank withdrawals, and debounced saves are 100% persistent.
-        if (!isAccountReset && !isStaleLocalDueToAdmin && isLocalRecentOrNewer) {
+        // Only reconcile wealth from local state if this is an immediate page reload / tab switch (< 45s).
+        // If returning after being away/offline, local.bank is stale from before the absence and must NEVER
+        // overwrite the cloud state or erase offline earnings accumulated while away!
+        const isImmediateReload = (_nowAtLoad - localTs <= 45000);
+        if (!isAccountReset && !isStaleLocalDueToAdmin && isLocalRecentOrNewer && isImmediateReload) {
           const localTotal = (Number(local.cash) || 0) + (Number(local.bank) || 0) + (Number(local.dirtyCash) || 0);
           const serverTotal = (Number(stateObj.cash) || 0) + (Number(stateObj.bank) || 0) + (Number(stateObj.dirtyCash) || 0);
           if (localTotal !== serverTotal || (local.farm && local.farm.unlocked) || localTs >= serverTs) {

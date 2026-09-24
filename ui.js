@@ -16502,8 +16502,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         companiesList.forEach(item => {
           const row = document.createElement('div');
           row.className = 'flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs';
-          const pGross = item.grossProfit !== undefined ? item.grossProfit : item.profit;
-          const pNet = item.netProfit !== undefined ? item.netProfit : item.profit;
+          const pGross = rep.wasManagerActive !== false ? (item.grossProfit !== undefined ? item.grossProfit : item.profit) : 0;
+          const pNet = rep.wasManagerActive !== false ? (item.netProfit !== undefined ? item.netProfit : item.profit) : 0;
           const consumedHours = item.consumedHours !== undefined ? item.consumedHours : (item.activeHours || 0);
           row.innerHTML = `
             <div class="flex items-center gap-2">
@@ -16514,8 +16514,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               </div>
             </div>
             <div class="text-left">
-              <span class="font-black text-emerald-400 numbers-font text-xs sm:text-sm block">+${Math.round(pNet).toLocaleString()} EGP</span>
-              <span class="text-[9px] text-slate-400">صافي المالك</span>
+              <span class="font-black ${rep.wasManagerActive !== false ? 'text-emerald-400' : 'text-slate-400'} numbers-font text-xs sm:text-sm block">${rep.wasManagerActive !== false ? `+${Math.round(pNet).toLocaleString()} EGP` : '0 EGP (معلق)'}</span>
+              <span class="text-[9px] text-slate-400">${rep.wasManagerActive !== false ? 'صافي المالك' : 'يحتاج ترخيص'}</span>
             </div>
           `;
           listEl.appendChild(row);
@@ -16657,10 +16657,21 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     const closeBtn = document.getElementById('btn-close-offline-report');
     if (closeBtn) {
+      if (netAmount > 0) {
+        closeBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>تم إيداع (+${Math.round(netAmount).toLocaleString()} EGP) في البنك بنجاح ✓ (إغلاق)</span>`;
+      } else {
+        closeBtn.innerHTML = `<i class="fa-solid fa-check"></i><span>إغلاق تقرير الغياب (0 EGP)</span>`;
+      }
       closeBtn.onclick = () => {
         modal.classList.add('hidden');
         if (typeof renderStatsBar === 'function') renderStatsBar();
         if (typeof renderAll === 'function') renderAll();
+        // Highlight bank balance in header
+        const bankStatEl = document.getElementById('stat-bank-val') || document.getElementById('header-bank-balance');
+        if (bankStatEl && netAmount > 0) {
+          bankStatEl.classList.add('animate-pulse', 'text-yellow-300');
+          setTimeout(() => bankStatEl.classList.remove('animate-pulse', 'text-yellow-300'), 2500);
+        }
       };
     }
 
@@ -22741,7 +22752,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.0.5');
+            const curVer = (window._CLIENT_VERSION || 'v8.0.6');
             if (s && s.version && s.version !== curVer) {
               const loopKey = 'rasalmal_watchdog_reload_' + s.version;
               const reloadedCount = Number(sessionStorage.getItem(loopKey) || 0);
