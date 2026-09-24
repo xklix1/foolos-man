@@ -1,7 +1,8 @@
 {
-  "version": "v7.9.1",
-  "build": "2026-09-22T21:30:00.000Z",
-  "minRequiredVersion": "v7.9.1",
-  "notes": "Added Season 1 Top 10 Badges (S1TX) system and Admin Panel coronation manager",
+  "version": "v7.9.2",
+  "build": "2026-09-24T18:35:00.000Z",
+  "minRequiredVersion": "v7.9.2",
+  "notes": "Real-time concurrent multi-device session lock and anti-duplication protection",
   "forcePurgeCache": true
 }
+
