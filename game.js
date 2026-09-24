@@ -6496,9 +6496,11 @@ const GameEngine = (() => {
   }
 
   function getFarmDailyLiquidationInfo(f) {
-    const curUser = (typeof state !== 'undefined' && state && state.username) 
-      ? String(state.username).trim() 
-      : ((typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || '');
+    const curUser = (typeof activeUsername === 'string' && activeUsername) 
+      ? activeUsername 
+      : ((typeof state !== 'undefined' && state && state.username) 
+          ? String(state.username).trim() 
+          : ((typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || ''));
     const isOwnerKhaled = curUser.toLowerCase() === 'khaled';
     if (isOwnerKhaled) {
       return {
@@ -6527,15 +6529,17 @@ const GameEngine = (() => {
 
   function assertAndRecordFarmLiquidation(f, amount) {
     if (amount <= 0) return;
-    const curUser = (typeof state !== 'undefined' && state && state.username) 
-      ? String(state.username).trim() 
-      : ((typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || '');
+    const curUser = (typeof activeUsername === 'string' && activeUsername) 
+      ? activeUsername 
+      : ((typeof state !== 'undefined' && state && state.username) 
+          ? String(state.username).trim() 
+          : ((typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || ''));
     if (curUser.toLowerCase() === 'khaled') {
-      return; // Khaled (Owner/Admin) has unlimited farm liquidation
+      return; // Khaled (Owner/Admin) has unlimited farm liquidation & contract payouts
     }
     const info = getFarmDailyLiquidationInfo(f);
     if (info.totalLiquidated + amount > DAILY_FARM_LIQUIDATION_CAP) {
-      throw new Error(`بلغت سقف التسييل اليومي لمنتجات معمل التصنيع (15,000,000 EGP يومياً). المتبقي لك اليوم: ${info.remaining.toLocaleString()} EGP. يمكنك تلبية عقود التوريد B2B بدون أي سقف، أو تسييل المحاصيل الخام.`);
+      throw new Error(`بلغت سقف الأرباح والتسييل اليومي للمزرعة والعقود (${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} EGP يومياً). المتبقي لك اليوم: ${info.remaining.toLocaleString()} EGP. يمكنك استئناف التوريد والتسييل غداً!`);
     }
     f.dailyLiquidation.totalLiquidated = info.totalLiquidated + amount;
   }
@@ -7007,26 +7011,43 @@ const GameEngine = (() => {
     const crop = FARM_CROPS[cropId];
     if (!crop) throw new Error("نوع المحصول غير صالح.");
 
-    const qty = Number((f.inventory && f.inventory[cropId]) || 0);
-    if (qty <= 0) {
+    const available = Number((f.inventory && f.inventory[cropId]) || 0);
+    if (available <= 0) {
       throw new Error(`مستودع المزرعة لا يحتوي على أي مخزون من "${crop.name}".`);
     }
 
-    // Contract-Only Economy: Direct sale is an emergency clearance recovering only seedCost (0% profit)
-    const unitCropCost = Math.floor((crop.seedCost || 10) / (crop.baseYield || 10));
-    const totalPrice = qty * unitCropCost;
+    const info = getFarmDailyLiquidationInfo(f);
+    if (!info.isUnlimited && info.remaining <= 0) {
+      throw new Error(`لقد استنفدت كامل سقف الأرباح والتسييل اليومي للمزرعة (${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} EGP). المتبقي لك اليوم: 0 EGP. يمكنك الانتظار للغد.`);
+    }
 
-    f.inventory[cropId] = 0;
+    // Contract-Only Economy: Direct sale is an emergency clearance recovering only seedCost (0% profit)
+    const unitCropCost = Math.max(1, Math.floor((crop.seedCost || 10) / (crop.baseYield || 10)));
+    let sellQty = available;
+    let totalPrice = sellQty * unitCropCost;
+
+    if (!info.isUnlimited && totalPrice > info.remaining) {
+      const allowedQty = Math.floor(info.remaining / unitCropCost);
+      if (allowedQty <= 0) {
+        throw new Error(`سقف الأرباح والتسييل المتبقي اليوم (${info.remaining.toLocaleString()} EGP) لا يكفي لتسييل حتى وحدة واحدة من "${crop.name}".`);
+      }
+      sellQty = allowedQty;
+      totalPrice = sellQty * unitCropCost;
+    }
+
+    assertAndRecordFarmLiquidation(f, totalPrice);
+
+    f.inventory[cropId] = Math.max(0, available - sellQty);
     state.cash = (state.cash || 0) + totalPrice;
     if (!f.stats) f.stats = { totalHarvested: 0, totalRevenue: 0 };
     f.stats.totalRevenue = (f.stats.totalRevenue || 0) + totalPrice;
 
-    recordPlayerActivity('تسييل اضطراري لتفريغ الصومعة ♻️', `تسييل ${qty.toLocaleString()} وحدة من "${crop.name}" بسعر التكلفة فقط (+${totalPrice.toLocaleString()} EGP) لتفريغ الصومعة. الأرباح محصورة في عقود B2B.`, 'business');
+    recordPlayerActivity('تسييل اضطراري لتفريغ الصومعة ♻️', `تسييل ${sellQty.toLocaleString()} وحدة من "${crop.name}" بسعر التكلفة فقط (+${totalPrice.toLocaleString()} EGP) لتفريغ الصومعة. الأرباح محصورة في عقود B2B.`, 'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
     return {
       crop,
-      qty,
+      qty: sellQty,
       totalPrice,
       isEmergencyDump: true
     };
@@ -7038,28 +7059,42 @@ const GameEngine = (() => {
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
     if (!f.inventory) f.inventory = {};
 
+    const info = getFarmDailyLiquidationInfo(f);
+    if (!info.isUnlimited && info.remaining <= 0) {
+      throw new Error(`لقد استنفدت كامل سقف الأرباح والتسييل اليومي للمزرعة (${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} EGP). المتبقي لك اليوم: 0 EGP.`);
+    }
+
+    let remainingCap = info.isUnlimited ? Infinity : info.remaining;
     let grandTotal = 0;
     let itemsSold = 0;
     const soldBreakdown = [];
 
     Object.keys(f.inventory).forEach(cId => {
-      const qty = Number(f.inventory[cId] || 0);
-      if (qty > 0 && FARM_CROPS[cId]) {
-        const unitCropCost = Math.floor((FARM_CROPS[cId].seedCost || 10) / (FARM_CROPS[cId].baseYield || 10));
-        const p = qty * unitCropCost;
-        grandTotal += p;
-        itemsSold += qty;
-        soldBreakdown.push({ crop: FARM_CROPS[cId], qty, price: p, cId });
+      const availableQty = Number(f.inventory[cId] || 0);
+      if (availableQty > 0 && FARM_CROPS[cId] && remainingCap > 0) {
+        const unitCropCost = Math.max(1, Math.floor((FARM_CROPS[cId].seedCost || 10) / (FARM_CROPS[cId].baseYield || 10)));
+        const neededFunds = availableQty * unitCropCost;
+        let qtyToSell = availableQty;
+        if (neededFunds > remainingCap) {
+          qtyToSell = Math.floor(remainingCap / unitCropCost);
+        }
+
+        if (qtyToSell > 0) {
+          const itemPrice = qtyToSell * unitCropCost;
+          grandTotal += itemPrice;
+          itemsSold += qtyToSell;
+          remainingCap -= itemPrice;
+          f.inventory[cId] = Math.max(0, availableQty - qtyToSell);
+          soldBreakdown.push({ crop: FARM_CROPS[cId], qty: qtyToSell, price: itemPrice, cId });
+        }
       }
     });
 
     if (grandTotal <= 0) {
-      throw new Error("لا توجد محاصيل مخزنة في مستودع المزرعة لتسييلها حالياً.");
+      throw new Error("لا توجد محاصيل مخزنة في مستودع المزرعة لتسييلها حالياً أو تم استنفاد السقف اليومي.");
     }
 
-    soldBreakdown.forEach(item => {
-      f.inventory[item.cId] = 0;
-    });
+    assertAndRecordFarmLiquidation(f, grandTotal);
 
     state.cash = (state.cash || 0) + grandTotal;
     if (!f.stats) f.stats = { totalHarvested: 0, totalRevenue: 0 };
@@ -7310,12 +7345,28 @@ const GameEngine = (() => {
       throw new Error(`لا يوجد مخزون متوفر من "${label}" لبيعه حالياً.`);
     }
 
-    const sellQty = (qty === null || qty <= 0 || qty > available) ? available : Math.floor(Number(qty));
+    const info = getFarmDailyLiquidationInfo(f);
+    if (!info.isUnlimited && info.remaining <= 0) {
+      throw new Error(`لقد استنفدت كامل سقف الأرباح والتسييل اليومي للمزرعة (${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} EGP). المتبقي لك اليوم: 0 EGP.`);
+    }
+
+    let sellQty = (qty === null || qty <= 0 || qty > available) ? available : Math.floor(Number(qty));
     // Contract-Only Economy: Emergency dump recovers only nominal feeding cost (5 EGP, 0% profit)
     const pricePerUnit = produceKey === 'compost' ? 10 : 5;
-    const totalPrice = sellQty * pricePerUnit;
+    let totalPrice = sellQty * pricePerUnit;
 
-    f.livestock[produceKey] -= sellQty;
+    if (!info.isUnlimited && totalPrice > info.remaining) {
+      const allowedQty = Math.floor(info.remaining / pricePerUnit);
+      if (allowedQty <= 0) {
+        throw new Error(`سقف الأرباح والتسييل المتبقي اليوم (${info.remaining.toLocaleString()} EGP) لا يكفي لتسييل الإنتاج الحيواني.`);
+      }
+      sellQty = allowedQty;
+      totalPrice = sellQty * pricePerUnit;
+    }
+
+    assertAndRecordFarmLiquidation(f, totalPrice);
+
+    f.livestock[produceKey] = Math.max(0, f.livestock[produceKey] - sellQty);
     state.cash = (state.cash || 0) + totalPrice;
     if (!f.livestock.stats) f.livestock.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
     f.livestock.stats.totalRevenue = (f.livestock.stats.totalRevenue || 0) + totalPrice;
@@ -7345,6 +7396,11 @@ const GameEngine = (() => {
     const ls = f.livestock;
     if (!ls) throw new Error("لا توجد مواشي.");
 
+    const info = getFarmDailyLiquidationInfo(f);
+    if (!info.isUnlimited && info.remaining <= 0) {
+      throw new Error(`لقد استنفدت كامل سقف الأرباح والتسييل اليومي للمزرعة (${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} EGP). المتبقي لك اليوم: 0 EGP.`);
+    }
+
     const milk = Number(ls.milk || 0);
     const eggs = Number(ls.eggs || 0);
     const compost = Number(ls.compost || 0);
@@ -7359,24 +7415,56 @@ const GameEngine = (() => {
       throw new Error("لا يوجد إنتاج حيواني أو بيض أو سماد جاهز لتسييله حالياً.");
     }
 
-    ls.milk = 0;
-    ls.eggs = 0;
-    ls.compost = 0;
-    state.cash = (state.cash || 0) + grandTotal;
-    if (!ls.stats) ls.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
-    ls.stats.totalRevenue = (ls.stats.totalRevenue || 0) + grandTotal;
+    let remainingCap = info.isUnlimited ? Infinity : info.remaining;
+    let soldMilk = milk;
+    let soldEggs = eggs;
+    let soldCompost = compost;
 
-    recordPlayerActivity('بيع كامل الإنتاج الحيواني 💰', `بيع كافة منتجات المزرعة الحيوانية بإجمالي +${grandTotal.toLocaleString()} EGP نقداً!`, 'business');
+    if (!info.isUnlimited && grandTotal > remainingCap) {
+      const mCost = 5;
+      const eCost = 5;
+      const cCost = 10;
+
+      const mFunds = Math.min(remainingCap, milk * mCost);
+      soldMilk = Math.floor(mFunds / mCost);
+      remainingCap -= soldMilk * mCost;
+
+      const eFunds = Math.min(remainingCap, eggs * eCost);
+      soldEggs = Math.floor(eFunds / eCost);
+      remainingCap -= soldEggs * eCost;
+
+      const cFunds = Math.min(remainingCap, compost * cCost);
+      soldCompost = Math.floor(cFunds / cCost);
+      remainingCap -= soldCompost * cCost;
+
+      const cappedTotal = (soldMilk * mCost) + (soldEggs * eCost) + (soldCompost * cCost);
+      if (cappedTotal <= 0) {
+        throw new Error(`سقف الأرباح والتسييل اليومي المتبقي (${info.remaining.toLocaleString()} EGP) لا يكفي لتسييل الإنتاج الحيواني.`);
+      }
+    }
+
+    const finalTotal = (soldMilk * 5) + (soldEggs * 5) + (soldCompost * 10);
+    assertAndRecordFarmLiquidation(f, finalTotal);
+
+    ls.milk = Math.max(0, ls.milk - soldMilk);
+    ls.eggs = Math.max(0, ls.eggs - soldEggs);
+    ls.compost = Math.max(0, ls.compost - soldCompost);
+    state.cash = (state.cash || 0) + finalTotal;
+    if (!ls.stats) ls.stats = { totalMilk: 0, totalEggs: 0, totalRevenue: 0 };
+    ls.stats.totalRevenue = (ls.stats.totalRevenue || 0) + finalTotal;
+
+    recordPlayerActivity('بيع كامل الإنتاج الحيواني 💰', `بيع كافة منتجات المزرعة الحيوانية بإجمالي +${finalTotal.toLocaleString()} EGP نقداً!`, 'business');
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
 
     return {
-      grandTotal,
-      totalRevenue: grandTotal,
-      revenue: grandTotal,
-      milk,
-      eggs,
-      compost
+      grandTotal: finalTotal,
+      totalRevenue: finalTotal,
+      revenue: finalTotal,
+      milk: soldMilk,
+      eggs: soldEggs,
+      compost: soldCompost,
+      isEmergencyDump: true
     };
   }
 
@@ -7617,7 +7705,9 @@ const GameEngine = (() => {
     if (state.jailTimer > 0) throw new Error("أنت مسجون!");
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
-    ensureFarmContracts();
+    if (!f.contracts || !Array.isArray(f.contracts.active) || f.contracts.active.length === 0) {
+      ensureFarmContracts();
+    }
 
     const contractIndex = (f.contracts.active || []).findIndex(c => c.id === contractId);
     if (contractIndex === -1) throw new Error("العقد غير موجود أو غير صالح.");
@@ -7625,6 +7715,11 @@ const GameEngine = (() => {
     const contract = f.contracts.active[contractIndex];
     if (contract.fulfilled) {
       throw new Error("تم تسليم هذا العقد واستلام أرباحه بالفعل!");
+    }
+
+    const info = getFarmDailyLiquidationInfo(f);
+    if (!info.isUnlimited && info.totalLiquidated + contract.payout > DAILY_FARM_LIQUIDATION_CAP) {
+      throw new Error(`مكافأة العقد (${contract.payout.toLocaleString()} EGP) تتجاوز سقف أرباح وتسييل المزرعة المتبقي لليوم (${info.remaining.toLocaleString()} EGP من أصل ${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} EGP). يمكنك تسليم العقد غداً فور تجدد السقف اليومي دون ضياع العقد!`);
     }
 
     const reqs = (Array.isArray(contract.requirements) && contract.requirements.length > 0)
@@ -7663,6 +7758,8 @@ const GameEngine = (() => {
         f.livestock[req.itemId] -= req.quantityNeeded;
       }
     }
+
+    assertAndRecordFarmLiquidation(f, contract.payout);
 
     const now = getTrustedNow();
     state.cash = (state.cash || 0) + contract.payout;
@@ -8049,6 +8146,7 @@ const GameEngine = (() => {
     ensureFarmContracts,
     fulfillFarmContract,
     refreshFarmContracts,
+    getFarmDailyLiquidationInfo,
 
     // State Reader and Accessors
     // getState returns the live state reference (used internally by UI)

@@ -21057,7 +21057,12 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     const revenueStat = document.getElementById('farm-contracts-revenue-stat');
     if (revenueStat) {
-      revenueStat.textContent = `${(contractsData.revenueToday || 0).toLocaleString()} EGP`;
+      const dailyLiq = farmInfo.dailyLiquidation || (GameEngine && GameEngine.getFarmDailyLiquidationInfo ? GameEngine.getFarmDailyLiquidationInfo(farm) : null);
+      if (dailyLiq && !dailyLiq.isUnlimited) {
+        revenueStat.textContent = `${(dailyLiq.totalLiquidated || 0).toLocaleString()} / ${dailyLiq.cap.toLocaleString()} EGP`;
+      } else {
+        revenueStat.textContent = `${(contractsData.revenueToday || 0).toLocaleString()} EGP`;
+      }
     }
 
     // 2. Calculate Filter Counts
@@ -21176,6 +21181,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         return;
       }
 
+      const dailyLiq = farmInfo.dailyLiquidation || (GameEngine && GameEngine.getFarmDailyLiquidationInfo ? GameEngine.getFarmDailyLiquidationInfo(farm) : { isUnlimited: true, remaining: Infinity });
+
       let cHtml = '';
       filtered.forEach((c, idx) => {
         const reqs = (Array.isArray(c.requirements) && c.requirements.length > 0)
@@ -21209,6 +21216,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
         const canFulfillAll = reqStatusList.every(r => r.isReady);
         const missingCount = reqStatusList.filter(r => !r.isReady).length;
+        const exceedsDailyCap = !dailyLiq.isUnlimited && !c.fulfilled && (c.payout > dailyLiq.remaining);
 
         cHtml += `
           <div class="p-5 rounded-2xl ${c.fulfilled ? 'bg-slate-950/60 border border-emerald-500/30 opacity-80' : (canFulfillAll ? 'bg-slate-900/90 border border-emerald-500/50 shadow-lg shadow-emerald-500/10' : 'bg-slate-900/80 border border-slate-800')} transition flex flex-col justify-between gap-4 relative overflow-hidden">
@@ -21299,10 +21307,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                   <span>تم استلام الأرباح (${c.payout.toLocaleString()} EGP)</span>
                 </button>
               ` : `
-                <button ${!canFulfillAll ? 'disabled' : `onclick="window.UI?.fulfillFarmContract('${c.id}')"`} type="button"
-                  class="w-full py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-2 ${canFulfillAll ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/20 active:scale-95' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
-                  <i class="fa-solid fa-truck-fast text-sm"></i>
-                  <span>${canFulfillAll ? 'تسليم الشحنة وتحصيل ' + c.payout.toLocaleString() + ' EGP 🚚' : (missingCount > 1 ? `المخزون ناقص (${missingCount} أصناف)` : 'المخزون غير كافٍ')}</span>
+                <button ${(!canFulfillAll || exceedsDailyCap) ? 'disabled' : `onclick="window.UI?.fulfillFarmContract('${c.id}')"`} type="button"
+                  class="w-full py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${canFulfillAll && !exceedsDailyCap ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
+                  <i class="${exceedsDailyCap ? 'fa-solid fa-ban text-rose-400' : 'fa-solid fa-truck-fast text-sm'}"></i>
+                  <span>${exceedsDailyCap ? `تجاوز السقف اليومي (المتبقي: ${dailyLiq.remaining.toLocaleString()} EGP)` : (canFulfillAll ? 'تسليم الشحنة وتحصيل ' + c.payout.toLocaleString() + ' EGP 🚚' : (missingCount > 1 ? `المخزون ناقص (${missingCount} أصناف)` : 'المخزون غير كافٍ'))}</span>
                 </button>
               `}
             </div>
