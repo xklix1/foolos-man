@@ -22783,4 +22783,95 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
   if (typeof window !== 'undefined') {
     window.addEventListener('focus', checkForceReloadWatchdog);
   }
+
+  // ── REALTIME NETWORK CONNECTION WATCHER ─────────────────────────────────
+  function initNetworkWatcher() {
+    const offlineOverlay = document.getElementById('offline-overlay');
+    const retryBtn = document.getElementById('btn-retry-connect');
+    const errDesc = document.getElementById('offline-error-description');
+
+    let isCurrentlyOffline = (typeof navigator !== 'undefined' && navigator.onLine === false);
+
+    async function checkServerPing() {
+      try {
+        const res = await fetch('/version.json?_ping=' + Date.now(), { method: 'HEAD', cache: 'no-store' });
+        return res.ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function showOfflineScreen(customMsg = null) {
+      if (!offlineOverlay) return;
+      isCurrentlyOffline = true;
+      offlineOverlay.classList.remove('hidden');
+      offlineOverlay.classList.add('flex');
+      if (errDesc) {
+        errDesc.textContent = customMsg || 'انقطع الاتصال بالإنترنت، يرجى إعادة تفعيل الشبكة للمتابعة...';
+      }
+      if (typeof GameEngine !== 'undefined' && typeof GameEngine.pauseEngine === 'function') {
+        try { GameEngine.pauseEngine(); } catch (_) {}
+      }
+    }
+
+    function hideOfflineScreen() {
+      if (!offlineOverlay) return;
+      isCurrentlyOffline = false;
+      offlineOverlay.classList.add('hidden');
+      offlineOverlay.classList.remove('flex');
+      if (typeof GameEngine !== 'undefined' && typeof GameEngine.resumeEngine === 'function') {
+        try { GameEngine.resumeEngine(); } catch (_) {}
+      }
+      showToast('🟢 متصل بالإنترنت', 'تمت استعادة الاتصال بالخوادم بنجاح ومزامنة البيانات.', 'success');
+      if (typeof GameEngine !== 'undefined' && typeof GameEngine.forceSaveState === 'function') {
+        try { GameEngine.forceSaveState(true); } catch (_) {}
+      }
+    }
+
+    window.addEventListener('offline', () => {
+      console.warn('[NetworkWatcher] Offline event detected.');
+      showOfflineScreen();
+    });
+
+    window.addEventListener('online', async () => {
+      console.log('[NetworkWatcher] Online event detected, verifying ping...');
+      if (errDesc) errDesc.textContent = 'جاري التحقق من استقرار الاتصال بالخادم...';
+      const ok = await checkServerPing();
+      if (ok) {
+        hideOfflineScreen();
+      } else {
+        showOfflineScreen('تعذر الوصول إلى الخادم رغم توفر اتصال محلي.');
+      }
+    });
+
+    if (retryBtn) {
+      retryBtn.addEventListener('click', async () => {
+        retryBtn.disabled = true;
+        const origHtml = retryBtn.innerHTML;
+        retryBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري فحص الاتصال...</span>';
+        if (errDesc) errDesc.textContent = 'جاري فحص الاتصال بالخادم...';
+        
+        const ok = await checkServerPing();
+        if (ok) {
+          hideOfflineScreen();
+        } else {
+          showToast('⚠️ لا يزال الاتصال منقطعاً', 'تأكد من تشغيل الواي فاي أو باقة البيانات ثم أعد المحاولة.', 'error');
+          if (errDesc) errDesc.textContent = 'فشلت محاولة الاتصال، يرجى فحص الشبكة...';
+        }
+        retryBtn.disabled = false;
+        retryBtn.innerHTML = origHtml;
+      });
+    }
+
+    // Periodic background health-check every 4s to catch silent dropped connections
+    setInterval(async () => {
+      if (typeof navigator !== 'undefined') {
+        if (!navigator.onLine && !isCurrentlyOffline) {
+          showOfflineScreen();
+        }
+      }
+    }, 4000);
+  }
+
+  initNetworkWatcher();
 }

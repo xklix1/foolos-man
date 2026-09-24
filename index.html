@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.0.1';
+    window._CLIENT_VERSION = 'v8.0.2';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.0.1';
+      const CURRENT_APP_BUILD = 'v8.0.2';
       try {
         localStorage.removeItem('rasalmal_banned_device');
         // Check server version manifest directly with no-store
@@ -140,29 +140,29 @@
     </div>
   </div>
 
-  <!-- ==================== OFFLINE ERROR OVERLAY ==================== -->
+  <!-- ==================== REALTIME OFFLINE NETWORK OVERLAY ==================== -->
   <div id="offline-overlay"
-    class="fixed inset-0 z-[300] hidden items-center justify-center bg-black/95 backdrop-blur-lg p-4">
+    class="fixed inset-0 z-[9999999] hidden items-center justify-center bg-slate-950/95 backdrop-blur-2xl p-4 select-none pointer-events-auto">
     <div
-      class="w-full max-w-sm bg-slate-950 border border-rose-500/40 rounded-2xl p-8 text-center shadow-2xl shadow-rose-500/10">
+      class="w-full max-w-md bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 border-2 border-rose-500/70 rounded-3xl p-6 sm:p-8 text-center shadow-2xl shadow-rose-500/20 animate-scale-in">
       <!-- Icon -->
       <div
-        class="w-16 h-16 mx-auto mb-5 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center">
-        <i class="fa-solid fa-wifi text-rose-400 text-3xl"></i>
+        class="w-20 h-20 mx-auto mb-5 rounded-full bg-gradient-to-tr from-rose-500/20 to-red-500/30 border-2 border-rose-500/50 flex items-center justify-center text-rose-400 text-3xl shadow-lg shadow-rose-500/20">
+        <i class="fa-solid fa-wifi-slash animate-pulse"></i>
       </div>
-      <h2 class="text-xl font-black text-white mb-1">لا يوجد اتصال بالخوادم</h2>
-      <p class="text-xs text-rose-400 font-bold tracking-widest mb-4">NO SERVER CONNECTION</p>
-      <p class="text-sm text-slate-400 mb-4 leading-relaxed">
-        تعذّر الاتصال بقاعدة بيانات اللعبة. اللعبة تعمل بوضع أونلاين فقط — تحقق من اتصالك بالإنترنت وأعد المحاولة.
+      <h2 class="text-xl sm:text-2xl font-black text-white mb-1">انقطع الاتصال بالإنترنت ⚠️</h2>
+      <p class="text-xs text-rose-400 font-bold tracking-widest mb-4">NETWORK CONNECTION LOST</p>
+      <p class="text-xs sm:text-sm text-slate-300 mb-4 leading-relaxed font-medium">
+        تم إيقاف اللعبة مؤقتاً لحماية تقدمك وسجلاتك المالية من التلف. تتطلب اللعبة اتصالاً نشطاً بالإنترنت للمتابعة.
       </p>
-      <p id="offline-error-description"
-        class="text-[10px] text-rose-400 bg-rose-950/40 p-2.5 rounded-xl border border-rose-500/20 font-mono mb-6 text-center break-all">
-        جاري تهيئة قاعدة البيانات...
-      </p>
+      <div class="my-4 p-3 rounded-2xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs text-center flex items-center justify-center gap-2 font-mono">
+        <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+        <span id="offline-error-description">جاري مراقبة الاتصال بالشبكة...</span>
+      </div>
       <button id="btn-retry-connect"
-        class="w-full py-3 bg-rose-500 hover:bg-rose-400 text-white font-black rounded-xl transition-all duration-300 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+        class="w-full py-3.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-rose-600/30 cursor-pointer">
         <i class="fa-solid fa-rotate-right text-sm"></i>
-        إعادة المحاولة
+        <span>إعادة الاتصال باللعبة</span>
       </button>
     </div>
   </div>
@@ -7172,11 +7172,11 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=8.0.1"></script>
-  <script src="server-client-bridge.js?v=8.0.1"></script>
-  <script src="game.js?v=8.0.1"></script>
-  <script src="ui.js?v=8.0.1"></script>
-  <script src="pwa-manager.js?v=8.0.1"></script>
+  <script src="db.js?v=8.0.2"></script>
+  <script src="server-client-bridge.js?v=8.0.2"></script>
+  <script src="game.js?v=8.0.2"></script>
+  <script src="ui.js?v=8.0.2"></script>
+  <script src="pwa-manager.js?v=8.0.2"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
