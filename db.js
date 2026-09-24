@@ -671,7 +671,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.0.2';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.0.3';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -680,7 +680,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.0.2', remoteVersion: 'v8.0.2' };
+    return { upToDate: true, clientVersion: 'v8.0.3', remoteVersion: 'v8.0.3' };
   }
 
   async function checkDeviceBan() {
@@ -1730,6 +1730,20 @@ var AppDB = (() => {
               stateObj.dailyStockProfit.realizedProfit = locProfit;
               shouldSyncCloud = true;
             }
+          }
+        }
+
+        // 4.86 Daily Casino Profit Guard:
+        // NEVER allow page reloading or reconnecting to roll back today's casino profit or bypass the 5M daily cap
+        if (local && (Number(local.dailyCasinoNetProfit || 0) > 0 || Number(local.dailyCasinoResetAt || 0) > 0)) {
+          const locCasinoProfit = Number(local.dailyCasinoNetProfit || 0);
+          const srvCasinoProfit = Number(stateObj.dailyCasinoNetProfit || 0);
+          const locResetAt = Number(local.dailyCasinoResetAt || 0);
+          const srvResetAt = Number(stateObj.dailyCasinoResetAt || 0);
+          if (locCasinoProfit > srvCasinoProfit || locResetAt > srvResetAt) {
+            stateObj.dailyCasinoNetProfit = Math.max(locCasinoProfit, srvCasinoProfit);
+            stateObj.dailyCasinoResetAt = Math.max(locResetAt, srvResetAt);
+            shouldSyncCloud = true;
           }
         }
 

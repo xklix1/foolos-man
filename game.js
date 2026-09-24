@@ -4965,6 +4965,14 @@ const GameEngine = (() => {
     let netProfit = 0;
     let rakeAmount = 0;
     let vipBonusAmount = 0;
+    let isCapped = false;
+    let cappedExcess = 0;
+
+    // Daily Reset Check
+    if (!state.dailyCasinoResetAt || now >= state.dailyCasinoResetAt) {
+      state.dailyCasinoNetProfit = 0;
+      state.dailyCasinoResetAt = now + (24 * 60 * 60 * 1000);
+    }
 
     if (grossProfit > 0) {
       // Won round!
@@ -4975,15 +4983,27 @@ const GameEngine = (() => {
       // House Rake: 3% commission on net profit
       rakeAmount = Math.floor(grossProfit * CASINO_HOUSE_RAKE);
 
-      netProfit = grossProfit - rakeAmount + vipBonusAmount;
-      finalPayout = betAmount + netProfit;
+      const rawNetProfit = grossProfit - rakeAmount + vipBonusAmount;
+      const currentDailyProfit = Math.max(0, Number(state.dailyCasinoNetProfit || 0));
+      const remainingAllowedDaily = Math.max(0, MAX_CASINO_DAILY_PROFIT - currentDailyProfit);
 
+      if (rawNetProfit > remainingAllowedDaily) {
+        // Enforce strict cap: do NOT allow payout to exceed the remaining daily allowance!
+        netProfit = remainingAllowedDaily;
+        isCapped = true;
+        cappedExcess = rawNetProfit - remainingAllowedDaily;
+        state.dailyCasinoNetProfit = MAX_CASINO_DAILY_PROFIT;
+      } else {
+        netProfit = rawNetProfit;
+        state.dailyCasinoNetProfit = currentDailyProfit + netProfit;
+      }
+
+      finalPayout = betAmount + netProfit;
       state.cash += finalPayout;
-      state.dailyCasinoNetProfit = Math.min(MAX_CASINO_DAILY_PROFIT, Math.max(0, (state.dailyCasinoNetProfit || 0) + netProfit));
 
       recordPlayerActivity(gameName, isEn
-        ?`Won ${finalPayout.toLocaleString()} ${currency} (Net: +${netProfit.toLocaleString()} ${currency})`
-        :`فوز في ${gameName}: +${finalPayout.toLocaleString()} ${currency} (صافي ربح +${netProfit.toLocaleString()} ${currency})`,'casino');
+        ?`Won ${finalPayout.toLocaleString()} ${currency} (Net: +${netProfit.toLocaleString()} ${currency}${isCapped ? ' [DAILY CAP REACHED]' : ''})`
+        :`فوز في ${gameName}: +${finalPayout.toLocaleString()} ${currency} (صافي ربح +${netProfit.toLocaleString()} ${currency}${isCapped ? ' [تم تطبيق السقف اليومي للربح]' : ''})`,'casino');
     } else if (grossPayout === betAmount) {
       // Push / Tie: Return original bet
       finalPayout = betAmount;
@@ -5012,7 +5032,9 @@ const GameEngine = (() => {
       rake: rakeAmount,
       vipBonus: vipBonusAmount,
       won: grossProfit > 0,
-      isPush: grossPayout === betAmount
+      isPush: grossPayout === betAmount,
+      isCapped: Boolean(isCapped),
+      cappedExcess: Number(cappedExcess || 0)
     };
   }
 
