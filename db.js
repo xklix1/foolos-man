@@ -35,6 +35,66 @@ var AppDB = (() => {
   let _lastVerifiedCloudTime = 0;
 
   // ─────────────────────────────────────────────
+  //  CONCURRENT SESSION & MULTI-DEVICE PROTECTION
+  // ─────────────────────────────────────────────
+  let _currentSessionToken = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_session_token')) || ('sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11));
+  if (typeof sessionStorage !== 'undefined') {
+    try { sessionStorage.setItem('rasalmal_session_token', _currentSessionToken); } catch(e) {}
+  }
+  let _isSessionInvalidated = false;
+  let _sessionGuardTimer = null;
+
+  function getActiveSessionToken() {
+    return _currentSessionToken;
+  }
+
+  function invalidateCurrentSession(reason) {
+    if (_isSessionInvalidated) return;
+    _isSessionInvalidated = true;
+    if (_cloudSyncDebounceTimer) {
+      clearTimeout(_cloudSyncDebounceTimer);
+      _cloudSyncDebounceTimer = null;
+    }
+    if (_sessionGuardTimer) {
+      clearInterval(_sessionGuardTimer);
+      _sessionGuardTimer = null;
+    }
+    if (typeof window !== 'undefined') {
+      window._isSessionInvalidated = true;
+      if (typeof window.handleDuplicateSession === 'function') {
+        window.handleDuplicateSession(reason);
+      }
+    }
+  }
+
+  function _startConcurrentSessionGuard(username) {
+    if (!username) return;
+    const u = username.trim();
+    if (_sessionGuardTimer) clearInterval(_sessionGuardTimer);
+
+    _sessionGuardTimer = setInterval(async () => {
+      if (_isSessionInvalidated) {
+        if (_sessionGuardTimer) clearInterval(_sessionGuardTimer);
+        return;
+      }
+      try {
+        const rows = await _api(`players?select=username,state&username=ilike.${encodeURIComponent(u)}&limit=1`);
+        if (rows && rows.length > 0 && rows[0].state) {
+          const srvSession = rows[0].state.activeSessionId;
+          if (srvSession && srvSession !== _currentSessionToken) {
+            console.warn(`[Sync] Concurrent login detected for ${u}: active="${srvSession}", current="${_currentSessionToken}"`);
+            invalidateCurrentSession('تم فتح حسابك في جلسة جديدة من جهاز أو متصفح آخر. تم إيقاف هذا الجهاز لحماية أموالك من التضارب.');
+          }
+        }
+      } catch (err) {}
+    }, 8000); // Check every 8 seconds
+
+    if (_sessionGuardTimer && typeof _sessionGuardTimer.unref === 'function') {
+      _sessionGuardTimer.unref();
+    }
+  }
+
+  // ─────────────────────────────────────────────
   //  SECURE SERVER-ANCHORED MONOTONIC TIME ENGINE
   //  (IMMUNE TO SYSTEM CLOCK TAMPERING / TIME CHEATS)
   // ─────────────────────────────────────────────
@@ -1437,7 +1497,22 @@ var AppDB = (() => {
       stateObj.lastActiveTimestamp = Math.min(_rawLastActive, _nowAtLoad);
       stateObj.lastSeen = stateObj.lastActiveTimestamp;
       stateObj.adminModifiedTimestamp = Number(row.admin_modified_timestamp || 0);
+      stateObj.activeSessionId = _currentSessionToken;
       stateObj._loadedFromCloud = true;
+
+      // Start real-time multi-device concurrent session guard
+      _startConcurrentSessionGuard(u);
+
+      // Claim this session as authoritative in Supabase (invalidates older device sessions)
+      if (isCurrentPlayer && !_isSessionInvalidated) {
+        _api(`players?username=ilike.${encodeURIComponent(u)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            state: { ...(row.state || {}), activeSessionId: _currentSessionToken },
+            last_seen: getTrustedNow()
+          })
+        }).catch(() => {});
+      }
 
       if (!stateObj.businesses || typeof stateObj.businesses !== 'object') {
         stateObj.businesses = {};
@@ -1963,7 +2038,22 @@ var AppDB = (() => {
     window.addEventListener('pagehide', handleExitFlush);
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', () => {
-        if (document.hidden) handleExitFlush();
+        if (document.hidden) {
+          handleExitFlush();
+        } else if (!_isSessionInvalidated) {
+          const activeUser = (window.GameEngine && window.GameEngine.activeUsername);
+          if (activeUser) {
+            _api(`players?select=username,state&username=ilike.${encodeURIComponent(activeUser)}&limit=1`).then(rows => {
+              if (rows && rows.length > 0 && rows[0].state) {
+                const srvSession = rows[0].state.activeSessionId;
+                if (srvSession && srvSession !== _currentSessionToken) {
+                  console.warn(`[Sync] Concurrent login detected on tab focus for ${activeUser}: server="${srvSession}", local="${_currentSessionToken}"`);
+                  invalidateCurrentSession('تم فتح حسابك في جلسة جديدة من جهاز آخر. تم إيقاف هذا الجهاز لحماية أموالك من التضارب.');
+                }
+              }
+            }).catch(() => {});
+          }
+        }
       });
     }
   }
@@ -2084,6 +2174,16 @@ var AppDB = (() => {
           headers: {'Prefer':'return=representation' },
           body: JSON.stringify(payload)
         });
+
+        // If representation returned, verify this session is still the authoritative active session
+        if (Array.isArray(res) && res.length > 0 && res[0].state) {
+          const srvSession = res[0].state.activeSessionId;
+          if (srvSession && srvSession !== _currentSessionToken) {
+            console.warn(`[Sync] Concurrent login detected on push for ${u}: server active="${srvSession}", current="${_currentSessionToken}"`);
+            invalidateCurrentSession('تم فتح حسابك في جلسة جديدة من جهاز آخر. تم إيقاف هذا الجهاز لحماية أموالك من التضارب.');
+            return res;
+          }
+        }
 
         // If representation returns empty array, DB row had a higher admin_modified_timestamp (incoming wire transfer or admin grant)
         if (Array.isArray(res) && res.length === 0) {
@@ -6450,6 +6550,8 @@ var AppDB = (() => {
     getDecryptedLocalState,
     notifyLegitimateWealthGain,
     setLastVerifiedWealth,
+    getActiveSessionToken,
+    invalidateCurrentSession,
     // Expose runtime token accessor for inline scripts that load before db.js is fully parsed
     _getAnonKey: () => _getRuntimeToken(),
     // Internal guard used by game.js defineProperty to allow legitimate admin flag updates

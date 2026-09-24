@@ -8235,13 +8235,70 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   }
   window.handleBannedUser = handleBannedUser;
 
-  // ==================== STRICT CONCURRENT SESSION TERMINATION (DISABLED) ====================
+  // ==================== STRICT CONCURRENT SESSION TERMINATION ====================
   function handleDuplicateSession(reason) {
-    const dupOverlay = document.getElementById('duplicate-session-overlay');
-    if (dupOverlay) dupOverlay.remove();
-    return;
+    if (typeof GameEngine !== 'undefined' && GameEngine.state && ['khaled', 'خالد'].includes(String(GameEngine.state.username || '').trim().toLowerCase()) && Boolean(GameEngine.state.isAdmin)) {
+      console.warn('[Security] Master Admin Khaled immunity - ignoring duplicate session');
+      return;
+    }
+    console.warn('[Security] Concurrent Session Detected. Halting current tab/device.');
+    window._isSessionInvalidated = true;
+
+    // Halt game engine & tick loop immediately
+    if (tickIntervalId) {
+      clearInterval(tickIntervalId);
+      tickIntervalId = null;
+    }
+    if (typeof GameEngine !== 'undefined') {
+      try { if (typeof GameEngine.pauseEngine === 'function') GameEngine.pauseEngine(); } catch (e) {}
+    }
+    activeListeners.forEach(unsub => { try { unsub(); } catch (e) {} });
+    activeListeners = [];
+
+    if (typeof AppDB !== 'undefined') {
+      try { if (typeof AppDB.stopListeningToChat === 'function') AppDB.stopListeningToChat(); } catch (e) {}
+      try { if (typeof AppDB.cleanupAllNetworkPolling === 'function') AppDB.cleanupAllNetworkPolling(); } catch (e) {}
+    }
+
+    // Show stylish, unclosable duplicate session modal
+    let dupOverlay = document.getElementById('duplicate-session-overlay');
+    if (!dupOverlay) {
+      dupOverlay = document.createElement('div');
+      dupOverlay.id = 'duplicate-session-overlay';
+      dupOverlay.className = 'fixed inset-0 z-[999999999] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4 select-none pointer-events-auto';
+      dupOverlay.innerHTML = `
+        <div class="relative w-full max-w-md bg-slate-900 border-2 border-amber-500/80 rounded-3xl p-7 text-center shadow-2xl shadow-amber-500/20 animate-scale-in">
+          <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-amber-500/20 border-2 border-amber-500/50 flex items-center justify-center text-amber-400 text-3xl shadow-lg shadow-amber-500/20">
+            <i class="fa-solid fa-mobile-screen-button animate-bounce"></i>
+          </div>
+          <div class="inline-block px-3.5 py-1 bg-amber-500/20 text-amber-300 text-xs font-black rounded-full border border-amber-500/40 mb-3 uppercase tracking-wider">
+            ⚠️ تنبيه: تم تسجيل الدخول من جهاز آخر
+          </div>
+          <h3 class="text-xl sm:text-2xl font-black text-white mb-2">تم إيقاف هذه الجلسة</h3>
+          <p id="dup-session-overlay-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6 font-medium">
+            ${reason || 'تم فتح حسابك في جلسة جديدة من هاتف أو متصفح آخر. تم إيقاف هذا الجهاز تلقائياً لحماية رصيدك وأموالك من أي تضارب.'}
+          </p>
+          <div class="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-400 mb-6 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-shield-halved text-emerald-400 text-base"></i>
+            <span>حماية نشطة لمنع تضارب وازدواجية العمليات المالية.</span>
+          </div>
+          <button onclick="window.location.reload()"
+            class="w-full py-3.5 px-6 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer border-none">
+            <i class="fa-solid fa-rotate-right"></i>
+            <span>المتابعة من هذا الجهاز (إعادة التحميل)</span>
+          </button>
+        </div>
+      `;
+      document.body.appendChild(dupOverlay);
+    } else {
+      const reasonEl = document.getElementById('dup-session-overlay-reason');
+      if (reasonEl && reason) reasonEl.textContent = reason;
+      dupOverlay.classList.remove('hidden');
+      dupOverlay.classList.add('flex');
+    }
   }
   window.handleDuplicateSession = handleDuplicateSession;
+  window.showConcurrentSessionModal = handleDuplicateSession;
 
   // ==================== SEAMLESS ACCOUNT RESET (NO RELOAD NEEDED) ====================
   function triggerAccountResetModal(username, resetTs) {
