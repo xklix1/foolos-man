@@ -9100,19 +9100,19 @@
     }
   }
 
-  async function loadAndRenderTopupPackages() {
+    async function loadAndRenderTopupPackages() {
     const listEl = document.getElementById('adm-topup-packages-list');
     if (!listEl) return;
 
     try {
       _currentTopupPackagesCache = await AppDB.getTopupPackages();
       if (!_currentTopupPackagesCache || _currentTopupPackagesCache.length === 0) {
-        listEl.innerHTML ='<div class="col-span-full p-4 text-center text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">لا توجد باقات شحن معرفة حالياً. اضغط"إضافة باقة جديدة" لإنشاء أول باقة!</div>';
+        listEl.innerHTML ='<div class="col-span-full p-4 text-center text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">لا توجد باقات شحن معرفة حالياً. اضغط "إضافة باقة جديدة" لإنشاء أول باقة!</div>';
         return;
       }
 
       listEl.innerHTML = '';
-      _currentTopupPackagesCache.forEach(pkg => {
+      _currentTopupPackagesCache.forEach((pkg, index) => {
         const isHidden = (pkg.hidden === true || pkg.visible === false);
         const card = document.createElement('div');
         card.className = `p-4 rounded-2xl bg-slate-900/80 border ${isHidden ? 'border-slate-800 opacity-90' : 'border-amber-500/30'} flex flex-col justify-between space-y-3 relative overflow-hidden shadow-lg transition`;
@@ -9129,13 +9129,17 @@
         }).join(' • ') : '';
 
         const statusBadge = isHidden
-          ? `<span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 flex items-center gap-1 shrink-0"><i class="fa-solid fa-eye-slash text-[9px]"></i> مخفية من المتجر</span>`
-          : `<span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 shrink-0"><i class="fa-solid fa-eye text-[9px]"></i> ظاهرة في المتجر</span>`;
+          ? `<span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 flex items-center gap-1 shrink-0"><i class="fa-solid fa-eye-slash text-[9px]"></i> مخفية</span>`
+          : `<span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 shrink-0"><i class="fa-solid fa-eye text-[9px]"></i> ظاهرة</span>`;
+
+        const isFirst = index === 0;
+        const isLast = index === _currentTopupPackagesCache.length - 1;
 
         card.innerHTML = `
           <div>
             <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-800">
               <div class="flex items-center gap-1.5 min-w-0">
+                <span class="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black font-mono shrink-0" title="ترتيب ظهور الباقة في المتجر">#${index + 1}</span>
                 ${badge ? `<span class="text-base">${badge}</span>` : ''}
                 <strong class="text-white font-bold text-xs truncate">${pkg.name}</strong>
               </div>
@@ -9156,19 +9160,77 @@
             </div>
           </div>
 
-          <div class="flex items-center gap-2 pt-2 border-t border-slate-800">
-            <button class="btn-toggle-visibility-pkg flex-1 py-1.5 ${isHidden ? 'bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/40'} rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer" title="${isHidden ? 'إظهار الحزمة للاعبين في متجر VIP' : 'إخفاء الحزمة من متجر VIP'}">
-              <i class="fa-solid ${isHidden ? 'fa-eye' : 'fa-eye-slash'} text-xs"></i>
-              <span>${isHidden ? 'إظهار بالمتجر' : 'إخفاء من المتجر'}</span>
-            </button>
-            <button class="btn-edit-pkg px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer">
-              <i class="fa-solid fa-pen-to-square text-xs"></i>
-              <span>تعديل</span>
-            </button>
-            <button class="btn-delete-pkg px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/30 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer" title="حذف الباقة">
-              <i class="fa-solid fa-trash text-xs"></i>
-            </button>
+          <!-- Controls & Sorting Bar -->
+          <div class="space-y-2 pt-2 border-t border-slate-800">
+            <div class="flex items-center justify-between gap-1.5 bg-slate-950/70 p-1.5 rounded-xl border border-slate-800/80">
+              <span class="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                <i class="fa-solid fa-arrow-down-1-9 text-amber-400 text-[10px]"></i>
+                <span>الترتيب بالمتجر:</span>
+              </span>
+              <div class="flex items-center gap-1">
+                <button class="btn-move-up-pkg px-2.5 py-1 ${isFirst ? 'opacity-30 cursor-not-allowed bg-slate-900 text-slate-600' : 'bg-slate-800 hover:bg-amber-500/20 text-slate-200 hover:text-amber-300 border border-slate-700 hover:border-amber-500/40 cursor-pointer'} rounded-lg text-xs font-bold transition flex items-center gap-1" ${isFirst ? 'disabled' : ''} title="تقديم ترتيب الباقة خطوة للأمام">
+                  <i class="fa-solid fa-arrow-up text-[10px]"></i>
+                  <span>تقديم</span>
+                </button>
+                <button class="btn-move-down-pkg px-2.5 py-1 ${isLast ? 'opacity-30 cursor-not-allowed bg-slate-900 text-slate-600' : 'bg-slate-800 hover:bg-amber-500/20 text-slate-200 hover:text-amber-300 border border-slate-700 hover:border-amber-500/40 cursor-pointer'} rounded-lg text-xs font-bold transition flex items-center gap-1" ${isLast ? 'disabled' : ''} title="تأخير ترتيب الباقة خطوة للخلف">
+                  <i class="fa-solid fa-arrow-down text-[10px]"></i>
+                  <span>تأخير</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button class="btn-toggle-visibility-pkg flex-1 py-1.5 ${isHidden ? 'bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/40'} rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer" title="${isHidden ? 'إظهار الحزمة للاعبين في متجر VIP' : 'إخفاء الحزمة من متجر VIP'}">
+                <i class="fa-solid ${isHidden ? 'fa-eye' : 'fa-eye-slash'} text-xs"></i>
+                <span>${isHidden ? 'إظهار بالمتجر' : 'إخفاء من المتجر'}</span>
+              </button>
+              <button class="btn-edit-pkg px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-pen-to-square text-xs"></i>
+                <span>تعديل</span>
+              </button>
+              <button class="btn-delete-pkg px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/30 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer" title="حذف الباقة">
+                <i class="fa-solid fa-trash text-xs"></i>
+              </button>
+            </div>
           </div>`;
+
+        // Move Up event listener
+        const btnUp = card.querySelector('.btn-move-up-pkg');
+        if (btnUp && !isFirst) {
+          btnUp.addEventListener('click', async () => {
+            try {
+              const temp = _currentTopupPackagesCache[index];
+              _currentTopupPackagesCache[index] = _currentTopupPackagesCache[index - 1];
+              _currentTopupPackagesCache[index - 1] = temp;
+              _currentTopupPackagesCache.forEach((p, idx) => p.sortOrder = idx + 1);
+              await AppDB.saveTopupPackages(_currentTopupPackagesCache);
+              showToast('ترتيب الباقات', `تم تقديم باقة "${pkg.name}" إلى الترتيب #${index}`, 'success');
+              loadAndRenderTopupPackages();
+              logAdminAction(`تقديم ترتيب باقة الشحن: ${pkg.id} -> المركز ${index}`);
+            } catch (err) {
+              showToast('خطأ في الترتيب', err.message, 'error');
+            }
+          });
+        }
+
+        // Move Down event listener
+        const btnDown = card.querySelector('.btn-move-down-pkg');
+        if (btnDown && !isLast) {
+          btnDown.addEventListener('click', async () => {
+            try {
+              const temp = _currentTopupPackagesCache[index];
+              _currentTopupPackagesCache[index] = _currentTopupPackagesCache[index + 1];
+              _currentTopupPackagesCache[index + 1] = temp;
+              _currentTopupPackagesCache.forEach((p, idx) => p.sortOrder = idx + 1);
+              await AppDB.saveTopupPackages(_currentTopupPackagesCache);
+              showToast('ترتيب الباقات', `تم تأخير باقة "${pkg.name}" إلى الترتيب #${index + 2}`, 'success');
+              loadAndRenderTopupPackages();
+              logAdminAction(`تأخير ترتيب باقة الشحن: ${pkg.id} -> المركز ${index + 2}`);
+            } catch (err) {
+              showToast('خطأ في الترتيب', err.message, 'error');
+            }
+          });
+        }
 
         // Visibility toggle button listener
         card.querySelector('.btn-toggle-visibility-pkg').addEventListener('click', async () => {
@@ -9192,6 +9254,7 @@
           if (!confirm(`هل أنت متأكد من حذف باقة [${pkg.name}] نهائياً من المتجر؟`)) return;
           try {
             _currentTopupPackagesCache = _currentTopupPackagesCache.filter(p => p.id !== pkg.id);
+            _currentTopupPackagesCache.forEach((p, idx) => p.sortOrder = idx + 1);
             await AppDB.saveTopupPackages(_currentTopupPackagesCache);
             showToast('تم الحذف', `تم حذف باقة "${pkg.name}" بنجاح.`, 'success');
             loadAndRenderTopupPackages();
@@ -9222,6 +9285,7 @@
     const xpInput = document.getElementById('adm-pkg-xp');
     const badgeInput = document.getElementById('adm-pkg-badge');
     const badgeTitleInput = document.getElementById('adm-pkg-badgetitle');
+    const sortOrderInput = document.getElementById('adm-pkg-sort-order');
     const descInput = document.getElementById('adm-pkg-desc');
     const visibleCheck = document.getElementById('adm-pkg-visible');
 
@@ -9243,6 +9307,8 @@
       xpInput.value = pkg.xp || 0;
       badgeInput.value = pkg.customBadge || '';
       badgeTitleInput.value = pkg.badgeTitle || '';
+      const existingIdx = _currentTopupPackagesCache.findIndex(p => p.id === pkg.id);
+      if (sortOrderInput) sortOrderInput.value = pkg.sortOrder || (existingIdx !== -1 ? existingIdx + 1 : 1);
       descInput.value = pkg.description || '';
       if (visibleCheck) visibleCheck.checked = (pkg.hidden !== true && pkg.visible !== false);
       if (chatGlowInput) chatGlowInput.value = (pkg.features && pkg.features.chatGlow) || pkg.chatGlow || 'none';
@@ -9264,6 +9330,7 @@
       xpInput.value = '1000';
       badgeInput.value = '';
       badgeTitleInput.value = 'عضو VIP';
+      if (sortOrderInput) sortOrderInput.value = _currentTopupPackagesCache.length + 1;
       descInput.value = '';
       if (visibleCheck) visibleCheck.checked = true;
       if (chatGlowInput) chatGlowInput.value = 'none';

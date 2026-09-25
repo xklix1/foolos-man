@@ -1,7 +1,7 @@
 {
-  "version": "v8.1.2",
-  "build": "2026-09-24T23:58:51.312Z",
-  "minRequiredVersion": "v8.1.2",
-  "notes": "Fix duplicate PayPal card in topup modal",
+  "version": "v8.1.3",
+  "build": "2026-09-25T00:18:58.586Z",
+  "minRequiredVersion": "v8.1.3",
+  "notes": "Add package sorting and ordering controls in admin panel and player store",
   "forcePurgeCache": true
 }

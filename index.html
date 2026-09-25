@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.1.2';
+    window._CLIENT_VERSION = 'v8.1.3';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.1.2';
+      const CURRENT_APP_BUILD = 'v8.1.3';
       try {
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
