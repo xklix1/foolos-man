@@ -7569,6 +7569,50 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       unsubMarketResume();
     });
 
+    // 3. Supabase REST Real-Time User Doc & Security Watchdog (Live Real-Time Sync)
+    let _lastLiveAdminActionTs = null;
+    const checkLiveUserStatus = async () => {
+      if (typeof AppDB !== 'undefined' && typeof AppDB.isNetworkActive === 'function' && !AppDB.isNetworkActive()) return;
+      if (typeof document !== 'undefined' && document.hidden) return;
+      try {
+        const fresh = await AppDB.getPlayerState(username);
+        if (!fresh) return;
+
+        // Ban check
+        if (fresh.isBanned || fresh.is_banned) {
+          if (typeof handleBannedUser === 'function') {
+            handleBannedUser('تم حظر هذا الحساب نهائياً من اللعبة لمخالفة قواعد النزاهة.');
+          }
+          return;
+        }
+
+        // Suspicion lock check
+        const isSusp = Boolean(fresh.underSuspicion || (fresh.state && fresh.state.underSuspicion));
+        if (GameEngine.state) GameEngine.state.underSuspicion = isSusp;
+        if (typeof enforceSuspicionStatus === 'function') {
+          enforceSuspicionStatus(isSusp);
+        }
+
+        // Jail check
+        if (typeof fresh.jailTimer === 'number' && GameEngine.state && fresh.jailTimer !== GameEngine.state.jailTimer) {
+          GameEngine.state.jailTimer = fresh.jailTimer;
+          if (fresh.jailTimer > 0 && typeof handleJailedUser === 'function') {
+            handleJailedUser(fresh.jailTimer);
+          }
+        }
+      } catch (e) {
+        console.warn('[Realtime] checkLiveUserStatus error:', e);
+      }
+    };
+
+    checkLiveUserStatus();
+    const liveUserPollTimer = setInterval(checkLiveUserStatus, 4000);
+    window._triggerPlayerDocCheck = checkLiveUserStatus;
+    activeListeners.push(() => {
+      clearInterval(liveUserPollTimer);
+      if (window._triggerPlayerDocCheck === checkLiveUserStatus) delete window._triggerPlayerDocCheck;
+    });
+
     // 3. User document listener for ban & external edits (Live Real-Time Sync)
     if (db && typeof db.collection === 'function') {
       try {

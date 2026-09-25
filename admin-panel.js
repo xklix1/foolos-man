@@ -580,13 +580,12 @@
         }
         
         const suspicionBtn = document.getElementById('btn-admin-toggle-suspicion-lock');
-        const suspicionText = document.getElementById('admin-toggle-suspicion-text');
-        if (suspicionBtn && suspicionText) {
+        if (suspicionBtn) {
           if (isUnderSuspicion) {
-            suspicionText.textContent = 'إلغاء تثبيت شاشة الشبهة (فك التجميد) 🔓';
+            suspicionBtn.innerHTML = '<i class="fa-solid fa-lock-open text-xs"></i> <span id="admin-toggle-suspicion-text">إلغاء تثبيت شاشة الشبهة (فك التجميد) 🔓</span>';
             suspicionBtn.className = 'w-full py-2 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/50 rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 cursor-pointer';
           } else {
-            suspicionText.textContent = 'تثبيت شاشة (حسابك تحت الشبهة) ⚠️';
+            suspicionBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-xs animate-bounce"></i> <span id="admin-toggle-suspicion-text">تثبيت شاشة (حسابك تحت الشبهة) ⚠️</span>';
             suspicionBtn.className = 'w-full py-2 bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-orange-500/20 cursor-pointer';
           }
         }

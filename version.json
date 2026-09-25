@@ -1,7 +1,7 @@
 {
-  "version": "v8.1.3",
-  "build": "2026-09-25T00:18:58.586Z",
-  "minRequiredVersion": "v8.1.3",
-  "notes": "Add package sorting and ordering controls in admin panel and player store",
+  "version": "v8.1.4",
+  "build": "2026-09-25T13:00:00.000Z",
+  "minRequiredVersion": "v8.1.4",
+  "notes": "Fix account under suspicion lock live watchdog and admin controls",
   "forcePurgeCache": true
 }
