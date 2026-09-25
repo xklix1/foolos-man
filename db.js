@@ -4198,7 +4198,6 @@ var AppDB = (() => {
       method: 'PATCH',
       body: JSON.stringify({
         state: curState,
-        under_suspicion: Boolean(underSuspicion),
         admin_modified_timestamp: now
       })
     });
@@ -6093,7 +6092,7 @@ var AppDB = (() => {
                   d.jailTimer = Number(r.jail_timer || 0);
                   d.adminModifiedTimestamp = Number(r.admin_modified_timestamp || 0);
                   d.state = r.state || {};
-                  d.underSuspicion = Boolean(r.under_suspicion || (r.state && (r.state.underSuspicion === true || r.state.underSuspicion === 'true')));
+                  d.underSuspicion = Boolean( (r.state && (r.state.underSuspicion === true || r.state.underSuspicion === 'true')));
                   d.isReset = Boolean(r.state && (r.state.isReset === true || r.state.isReset === 'true'));
                   d.resetTimestamp = Number((r.state && r.state.resetTimestamp) || r.admin_modified_timestamp || 0);
                   cb({ exists: true, data: () => d });
@@ -6123,7 +6122,7 @@ var AppDB = (() => {
                   d.jailTimer = Number(r.jail_timer || 0);
                   d.adminModifiedTimestamp = Number(r.admin_modified_timestamp || 0);
                   d.state = r.state || {};
-                  d.underSuspicion = Boolean(r.under_suspicion || (r.state && (r.state.underSuspicion === true || r.state.underSuspicion === 'true')));
+                  d.underSuspicion = Boolean( (r.state && (r.state.underSuspicion === true || r.state.underSuspicion === 'true')));
                   d.isReset = Boolean(r.state && (r.state.isReset === true || r.state.isReset === 'true'));
                   d.resetTimestamp = Number((r.state && r.state.resetTimestamp) || r.admin_modified_timestamp || 0);
                   cb({ exists: true, data: () => d });
