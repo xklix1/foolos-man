@@ -1189,6 +1189,7 @@ const GameEngine = (() => {
     customItems: [], // Array of { auctionId, name, description, price, timestamp }
     blackMarketCooldowns: {}, // Stores { dealId: expiresAtTimestamp } for operation cooldowns
     jailTimer: 0,
+    underSuspicion: false,
     afkManagerExpiresAt: 0, // 12-hour active manager timestamp
     activityLog: [], // Rolling audit log of player actions
     totalTaxesPaid: 0, // Cumulative taxes paid to public treasury
@@ -3219,6 +3220,7 @@ const GameEngine = (() => {
         pin: dbState.pin ||'',
         isAdmin: dbState.isAdmin === true,
         dirtyCash: Number(dbState.dirtyCash || 0),
+        underSuspicion: Boolean(dbState.underSuspicion || (dbState.state && dbState.state.underSuspicion)),
         businesses: mergedBusinesses,
         assets: mergedAssets,
         stocks: mergedStocks,

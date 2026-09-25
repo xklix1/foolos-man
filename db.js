@@ -4182,7 +4182,11 @@ var AppDB = (() => {
   
   async function adminSetPlayerSuspicion(username, underSuspicion = true) {
     if (!username) throw new Error('اسم المستخدم مطلوب');
-    const u = String(username).trim();
+    const u = String(username).replace(/^@/, '').trim();
+    if (['khaled', 'خالد'].includes(u.toLowerCase())) {
+      console.warn('[SECURITY] Master Admin Khaled is immune to suspicion locks.');
+      return false;
+    }
     const now = Date.now();
     const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}`);
     if (!rows || rows.length === 0) throw new Error('اللاعب غير موجود');
@@ -4194,9 +4198,17 @@ var AppDB = (() => {
       method: 'PATCH',
       body: JSON.stringify({
         state: curState,
+        under_suspicion: Boolean(underSuspicion),
         admin_modified_timestamp: now
       })
     });
+    try {
+      await sendMail('إدارة اللعبة (Admin)', u, 'admin_sync', {
+        timestamp: now,
+        reason: underSuspicion ? 'admin_suspicion_locked' : 'admin_suspicion_unlocked',
+        underSuspicion: Boolean(underSuspicion)
+      });
+    } catch (_) {}
     return true;
   }
 
@@ -6081,6 +6093,7 @@ var AppDB = (() => {
                   d.jailTimer = Number(r.jail_timer || 0);
                   d.adminModifiedTimestamp = Number(r.admin_modified_timestamp || 0);
                   d.state = r.state || {};
+                  d.underSuspicion = Boolean(r.under_suspicion || (r.state && (r.state.underSuspicion === true || r.state.underSuspicion === 'true')));
                   d.isReset = Boolean(r.state && (r.state.isReset === true || r.state.isReset === 'true'));
                   d.resetTimestamp = Number((r.state && r.state.resetTimestamp) || r.admin_modified_timestamp || 0);
                   cb({ exists: true, data: () => d });
@@ -6110,6 +6123,7 @@ var AppDB = (() => {
                   d.jailTimer = Number(r.jail_timer || 0);
                   d.adminModifiedTimestamp = Number(r.admin_modified_timestamp || 0);
                   d.state = r.state || {};
+                  d.underSuspicion = Boolean(r.under_suspicion || (r.state && (r.state.underSuspicion === true || r.state.underSuspicion === 'true')));
                   d.isReset = Boolean(r.state && (r.state.isReset === true || r.state.isReset === 'true'));
                   d.resetTimestamp = Number((r.state && r.state.resetTimestamp) || r.admin_modified_timestamp || 0);
                   cb({ exists: true, data: () => d });

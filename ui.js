@@ -7637,6 +7637,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               if (data.title) GameEngine.state.title = data.title;
               if (data.isAdmin !== undefined) GameEngine.state.isAdmin = Boolean(data.isAdmin);
 
+              const isLiveSusp = Boolean(data.underSuspicion || (data.state && data.state.underSuspicion) || data.is_under_suspicion || data.isUnderSuspicion);
+              GameEngine.state.underSuspicion = isLiveSusp;
+              enforceSuspicionStatus(isLiveSusp);
+
               // Deep merge all possessions, businesses, assets, cars, items and perks from state
               if (data.state && typeof data.state === 'object') {
                 const st = data.state;
@@ -16692,10 +16696,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (!modal) return;
     if (isUnderSuspicion === true) {
       modal.classList.remove('hidden');
+      if (typeof window !== 'undefined') window._isUnderSuspicionLocked = true;
     } else {
       modal.classList.add('hidden');
+      if (typeof window !== 'undefined') window._isUnderSuspicionLocked = false;
     }
   }
+  if (typeof window !== 'undefined') window.enforceSuspicionStatus = enforceSuspicionStatus;
 
   function showDirectAdminPopupModal(popupData) {
     if (!popupData || !popupData.message) return;
