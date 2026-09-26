@@ -6115,7 +6115,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (s.dailyStockProfit && s.dailyStockProfit.date === today) {
       todayProfit = Number(s.dailyStockProfit.realizedProfit || 0);
     }
-    const cap = GameEngine.DAILY_STOCK_PROFIT_CAP || 1000000;
+    const cap = GameEngine.DAILY_STOCK_PROFIT_CAP || 3000000;
     const pct = Math.min(100, Math.round((todayProfit / cap) * 100));
 
     badgeText.textContent = `${todayProfit.toLocaleString()} / ${cap.toLocaleString()} ج.م (${pct}%)`;
@@ -15544,38 +15544,23 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     const isSelfView = cleanTarget.toLowerCase() === curActive.toLowerCase();
 
-    // Maintenance / Privacy Lock: Inspecting other players is disabled
-    if (!isSelfView) {
-      if (typeof playMenuSound === 'function') playMenuSound('warning');
-      showToast('الملف الشخصي مغلق 🔒', 'خدمة استعراض الملفات الشخصية للاعبين مغلقة حالياً لأعمال الصيانة والتحديث.', 'warning');
-      const pm = document.getElementById('player-profile-modal');
-      if (pm) pm.classList.add('hidden');
-      return;
-    }
     try {
       let pState;
       const now = Date.now();
-      const cached = profileCache.get(username);
+      const cached = profileCache.get(cleanTarget);
       if (cached && (now - cached.timestamp < 20000)) {
         pState = cached.data;
       } else {
-        pState = await AppDB.adminGetPlayer(username);
+        if (typeof AppDB !== 'undefined' && typeof AppDB.adminGetPlayer === 'function') {
+          pState = await AppDB.adminGetPlayer(cleanTarget);
+        }
         if (pState) {
-          profileCache.set(username, { data: pState, timestamp: now });
+          profileCache.set(cleanTarget, { data: pState, timestamp: now });
         }
       }
 
       if (!pState) {
-        showToast('خطأ بروفايل','الملف التعريفي للاعب غير موجود.','error');
-        return;
-      }
-
-      // Check if the fetched account is an Admin/Owner and viewer is not the same person
-      if ((pState.isAdmin || pState.is_admin || protectedAccounts.includes((pState.username || '').toLowerCase())) && !isSelfView) {
-        if (typeof playMenuSound === 'function') playMenuSound('error');
-        showToast('الملف الشخصي محمي 🔒', 'الملف التعريفي لهذا الحساب خاص وسري ومحمي بالكامل وغير متاح للعرض.', 'warning');
-        const pm = document.getElementById('player-profile-modal');
-        if (pm) pm.classList.add('hidden');
+        showToast('خطأ بروفايل', 'الملف التعريفي للاعب غير موجود.', 'error');
         return;
       }
 
@@ -18949,6 +18934,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             const order = GameEngine.buyImportCargo(key, qty);
             playMenuSound('success');
             showToast('بدء الاستيراد الدولي',`تم توقيع أمر توريد ${qty} وحدة من"${c.name}" بتكلفة ${order.totalCost.toLocaleString()} EGP! الشحنة الآن في طريقها لمستودعك.`,'success');
+            if (typeof renderDailyQuests === "function") renderDailyQuests();
             renderStatsBar();
             if (activeTab === 'bank') updateBankInDOM();
             switchTradeSubtab('shipments');
@@ -19246,6 +19232,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             const order = GameEngine.sellExportCargo(commKey, buyer.id, qty);
             playMenuSound('success');
             showToast('تم توقيع عقد التصدير! 🚢',`تم تصدير ${qty} وحدة إلى "${buyer.name}". إجمالي العقد: ${order.totalPayout.toLocaleString()} EGP (صافي ربح: +${order.estProfit.toLocaleString()} EGP). الشحنة انطلقت الآن!`,'success');
+            if (typeof renderDailyQuests === "function") renderDailyQuests();
             preselectedExportCommodity = null;
             switchTradeSubtab('shipments');
           } catch (err) {
@@ -19385,6 +19372,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           const res = GameEngine.claimExportProfit(orderId);
           playMenuSound('success');
           showToast('تحصيل أرباح التصدير',`تم تحصيل مبلغ ${res.payout.toLocaleString()} EGP وأودع مباشرة في حسابك البنكي! صافي الربح المحقق: +${res.profit.toLocaleString()} EGP.`,'success');
+          if (typeof renderDailyQuests === "function") renderDailyQuests();
           renderTradePanel();
           renderStatsBar();
         } catch (err) {
@@ -20147,13 +20135,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
 
     // Daily Liquidation Cap indicator (15,000,000 EGP / day)
-    const liqInfo = (farmInfo.dailyLiquidation) || { totalLiquidated: 0, cap: 15000000, remaining: 15000000 };
+    const liqInfo = (farmInfo.dailyLiquidation) || { totalLiquidated: 0, cap: 20000000, remaining: 20000000 };
     const statLiq = document.getElementById('farm-stat-liquidation');
     if (statLiq) {
       if (liqInfo.isUnlimited) {
         statLiq.innerHTML = `<span class="inline-block text-amber-300 font-bold">غير محدود 👑</span>`;
       } else {
-        statLiq.innerHTML = `<span dir="ltr" class="inline-block numbers-font font-bold">${(liqInfo.totalLiquidated || 0).toLocaleString()} / ${(liqInfo.cap || 15000000).toLocaleString()}</span> EGP`;
+        statLiq.innerHTML = `<span dir="ltr" class="inline-block numbers-font font-bold">${(liqInfo.totalLiquidated || 0).toLocaleString()} / ${(liqInfo.cap || 20000000).toLocaleString()}</span> EGP`;
       }
     }
     const statLiqBadge = document.getElementById('farm-stat-liquidation-badge');

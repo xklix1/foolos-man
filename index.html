@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.1.4';
+    window._CLIENT_VERSION = 'v8.1.5';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.1.4';
+      const CURRENT_APP_BUILD = 'v8.1.5';
       try {
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -3042,7 +3042,7 @@
             <div id="stock-daily-cap-container" class="bg-slate-950/80 border border-emerald-500/30 rounded-lg px-3 py-1.5 text-xs flex items-center gap-2" title="الحد الأقصى لصافي الأرباح الرأسمالية المسموح بها من البورصة خلال اليوم">
               <i class="fa-solid fa-scale-balanced text-emerald-400"></i>
               <span class="text-slate-400">سقف أرباح اليوم:</span>
-              <span id="stock-daily-profit-text" class="numbers-font font-black text-emerald-400 text-xs">0 / 1,000,000 ج.م</span>
+              <span id="stock-daily-profit-text" class="numbers-font font-black text-emerald-400 text-xs">0 / 3,000,000 ج.م</span>
             </div>
           </div>
         </div>
@@ -3697,9 +3697,9 @@
                   <i class="fa-solid fa-coins text-amber-400 text-xs"></i>
                   <span>سقف تسييل المعمل</span>
                 </span>
-                <span id="farm-stat-liquidation-badge" class="text-[9px] font-black text-emerald-400">15M</span>
+                <span id="farm-stat-liquidation-badge" class="text-[9px] font-black text-emerald-400">20M</span>
               </span>
-              <span id="farm-stat-liquidation" class="numbers-font text-[11px] sm:text-xs font-black text-amber-300 truncate block">0 / 15,000,000</span>
+              <span id="farm-stat-liquidation" class="numbers-font text-[11px] sm:text-xs font-black text-amber-300 truncate block">0 / 20,000,000</span>
             </div>
           </div>
         </div>

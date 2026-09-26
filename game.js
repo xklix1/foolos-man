@@ -177,7 +177,7 @@ const GameEngine = (() => {
     orbital_station: { id:'orbital_station', name:'محطة مدارية فضائية خاصة', cost: 7820000000, rent: 3450000, appreciation: 0.0020 }
   };
 
-  const DAILY_STOCK_PROFIT_CAP = 1000000; // سقف الأرباح الرأسمالية اليومية من البورصة (1,000,000 ج.م)
+  const DAILY_STOCK_PROFIT_CAP = 3000000; // سقف الأرباح الرأسمالية اليومية من البورصة (3,000,000 ج.م)
 
   const STOCKS = {
     COMI: { name:'البنك التجاري الدولي', symbol:'COMI', basePrice: 38, volatility: 0.018, reversion: 0.015, floor: 32, ceiling: 46, dividend: 0.00015, maxShares: 50000, seed: 101 },
@@ -2871,6 +2871,7 @@ const GameEngine = (() => {
             state.tradeCompany.warehouse[imp.commodityId] = (state.tradeCompany.warehouse[imp.commodityId] || 0) + imp.quantity;
             if (!updates.tradeImportsArrived) updates.tradeImportsArrived = [];
             const comm = TRADE_COMMODITIES[imp.commodityId];
+            trackDailyQuestProgress('trade_shipment', 1);
             updates.tradeImportsArrived.push({ commodityName: comm ? comm.name : imp.commodityId, quantity: imp.quantity });
             recordPlayerActivity('وصول شحنة استيراد',`وصلت شحنة"${comm ? comm.name : imp.commodityId}" (${imp.quantity} وحدة) لمستودع الشركة بنجاح وجاهزة للبيع والتصدير.`,'trade');
           }
@@ -2881,6 +2882,7 @@ const GameEngine = (() => {
           if (!exp.delivered && nowMs >= exp.deliveryTime) {
             exp.delivered = true;
             if (!updates.tradeExportsDelivered) updates.tradeExportsDelivered = [];
+            trackDailyQuestProgress('trade_shipment', 1);
             updates.tradeExportsDelivered.push({ id: exp.id, buyerName: exp.buyerName, payout: exp.totalPayout });
             recordPlayerActivity('تسليم شحنة تصدير',`وصلت شحنة التصدير إلى العميل"${exp.buyerName}". أرباحك جاهزة للتحصيل فوراً (${exp.totalPayout.toLocaleString()} EGP).`,'trade');
           }
@@ -5878,6 +5880,7 @@ const GameEngine = (() => {
     };
 
     state.tradeCompany.activeImports.push(importOrder);
+    trackDailyQuestProgress('trade_shipment', 1);
     recordPlayerActivity('استيراد بضاعة',`بدء استيراد ${quantity} وحدة من"${item.name}" بتكلفة ${baseCost.toLocaleString()} EGP + ${customsAndFreightFee.toLocaleString()} EGP رسوم جمركية وشحن دولي (تصل خلال ${Math.round(item.importDurationSec / 60)} دقيقة).`,'trade');
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
@@ -5995,6 +5998,7 @@ const GameEngine = (() => {
     state.tradeCompany.dailyExportsCount[commodityId] = (Number(state.tradeCompany.dailyExportsCount[commodityId]) || 0) + quantity;
 
     state.tradeCompany.activeExports.push(exportOrder);
+    trackDailyQuestProgress('trade_shipment', 1);
     recordPlayerActivity('تصدير بضاعة',`شحن وتصدير ${quantity} وحدة من"${item.name}" إلى ${buyer.name} بقيمة تعاقد ${totalPayout.toLocaleString()} ج.م (ربح تقديري: +${estProfit.toLocaleString()} ج.م)${saturationDiscount > 0 ?` [تشبع سوق: -${Math.round(saturationDiscount * 100)}%]` :''}.`,'trade');
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
@@ -6032,6 +6036,7 @@ const GameEngine = (() => {
     // Remove from activeExports
     state.tradeCompany.activeExports.splice(index, 1);
 
+    trackDailyQuestProgress('trade_shipment', 1);
     recordPlayerActivity('تحصيل أرباح تصدير',`تم تحصيل عائد تصدير شحنة"${order.commodityName}" من ${order.buyerName} بمبلغ +${order.totalPayout.toLocaleString()} EGP (صافي ربح: +${order.estProfit.toLocaleString()} EGP).`,'trade');
     state._legitimateTransactionBypass = true;
     state.netWorth = calculateNetWorth();
@@ -6551,7 +6556,7 @@ const GameEngine = (() => {
     return f;
   }
 
-  const DAILY_FARM_LIQUIDATION_CAP = 15000000;
+  const DAILY_FARM_LIQUIDATION_CAP = 20000000;
 
   function getFarmTodayDateStr() {
     const d = new Date(getTrustedNow());
@@ -7238,7 +7243,7 @@ const GameEngine = (() => {
 
     const info = getFarmDailyLiquidationInfo(f);
     if (!info.isUnlimited && info.remaining <= 0) {
-      throw new Error(`لقد استنفدت كامل سقف التسييل اليومي للمصنع (15,000,000 EGP). المتبقي لك اليوم: 0 EGP. يمكنك تلبية عقود التوريد B2B بدون سقف أو الانتظار للغد.`);
+      throw new Error(`لقد استنفدت كامل سقف التسييل اليومي للمصنع (${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} EGP). المتبقي لك اليوم: 0 EGP. يمكنك تلبية عقود التوريد B2B بدون سقف أو الانتظار للغد.`);
     }
 
     let sellQty = (qty === null || qty <= 0 || qty > available) ? available : Math.floor(Number(qty));
@@ -7290,7 +7295,7 @@ const GameEngine = (() => {
 
     const info = getFarmDailyLiquidationInfo(f);
     if (!info.isUnlimited && info.remaining <= 0) {
-      throw new Error(`لقد استنفدت كامل سقف التسييل اليومي للمصنع (15,000,000 EGP). المتبقي لك اليوم: 0 EGP.`);
+      throw new Error(`لقد استنفدت كامل سقف التسييل اليومي للمصنع (${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} EGP). المتبقي لك اليوم: 0 EGP.`);
     }
 
     let remainingCap = info.isUnlimited ? Infinity : info.remaining;
