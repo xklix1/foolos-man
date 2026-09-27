@@ -19411,6 +19411,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
               <div id="bar-${order.id}" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full transition-all duration-300" style="width: ${progress}%"></div>
             </div>
+            <button class="btn-speedup-trade-import w-full mt-2 py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-[11px] transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95" data-id="${order.id}">
+              <i class="fa-solid fa-bolt text-xs"></i>
+              <span>تسريع الوصول الفوري</span>
+              <span class="px-1.5 py-0.5 rounded bg-black/30 text-amber-950 font-black text-[10px] numbers-font" id="speedup-cost-${order.id}">${Math.max(1, Math.ceil(remSec / 60))} 🪙</span>
+            </button>
           </div>`}
         </div>`;
 
@@ -19457,6 +19462,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
                 <div id="bar-${order.id}" class="bg-gradient-to-r from-emerald-500 to-amber-500 h-full rounded-full transition-all duration-300" style="width: ${progress}%"></div>
               </div>
+              <button class="btn-speedup-trade-export w-full mt-2 py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-[11px] transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95" data-id="${order.id}">
+                <i class="fa-solid fa-bolt text-xs"></i>
+                <span>تسريع التسليم الفوري</span>
+                <span class="px-1.5 py-0.5 rounded bg-black/30 text-amber-950 font-black text-[10px] numbers-font" id="speedup-cost-${order.id}">${Math.max(1, Math.ceil(remSec / 60))} 🪙</span>
+              </button>
             </div>`}
         </div>`;
 
@@ -19491,6 +19501,40 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         }
       });
     });
+
+    // Bind speed-up import buttons
+    list.querySelectorAll('.btn-speedup-trade-import').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const orderId = btn.getAttribute('data-id');
+        try {
+          if (!GameEngine || typeof GameEngine.speedUpTradeShipment !== 'function') return;
+          const res = GameEngine.speedUpTradeShipment('import', orderId);
+          playMenuSound('success');
+          showToast('تسريع الاستيراد ⚡', `تم تسريع وصول الشحنة وتفريغ البضاعة بالمستودع فورياً! (تم خصم ${res.goldCost} 🪙 ذهب - المتبقي: ${res.remainingGold} 🪙)`, 'success');
+          renderTradePanel();
+          renderStatsBar();
+        } catch (err) {
+          showToast('تعذر التسريع', err.message, 'error');
+        }
+      });
+    });
+
+    // Bind speed-up export buttons
+    list.querySelectorAll('.btn-speedup-trade-export').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const orderId = btn.getAttribute('data-id');
+        try {
+          if (!GameEngine || typeof GameEngine.speedUpTradeShipment !== 'function') return;
+          const res = GameEngine.speedUpTradeShipment('export', orderId);
+          playMenuSound('success');
+          showToast('تسريع التصدير ⚡', `تم تسريع تسليم الشحنة للعميل وأصبحت أرباح الصفقة جاهزة للتحصيل فوراً! (تم خصم ${res.goldCost} 🪙 ذهب - المتبقي: ${res.remainingGold} 🪙)`, 'success');
+          renderTradePanel();
+          renderStatsBar();
+        } catch (err) {
+          showToast('تعذر التسريع', err.message, 'error');
+        }
+      });
+    });
   }
 
   function updateTradeShipmentsInDOM() {
@@ -19508,6 +19552,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const barEl = document.getElementById(`bar-${order.id}`);
       const cardEl = document.getElementById(`trade-order-card-${order.id}`);
       const dismissBtn = cardEl ? cardEl.querySelector('.btn-dismiss-trade-import') : null;
+      const speedupCostEl = document.getElementById(`speedup-cost-${order.id}`);
 
       const isArrived = order.arrived || (now >= order.arrivalTime);
       if (isArrived && !dismissBtn) {
@@ -19518,12 +19563,16 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const remSec = Math.max(0, Math.ceil((order.arrivalTime - now) / 1000));
         timerEl.textContent = formatCountdownHMS(remSec);
         barEl.style.width =`${progress}%`;
+        if (speedupCostEl) {
+          speedupCostEl.textContent = `${Math.max(1, Math.ceil(remSec / 60))} 🪙`;
+        }
       }
     });
 
     exports.forEach(order => {
       const timerEl = document.getElementById(`timer-${order.id}`);
       const barEl = document.getElementById(`bar-${order.id}`);
+      const speedupCostEl = document.getElementById(`speedup-cost-${order.id}`);
       const isDelivered = order.delivered || (now >= order.deliveryTime);
 
       if (isDelivered && timerEl) {
@@ -19534,6 +19583,9 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const remSec = Math.max(0, Math.ceil((order.deliveryTime - now) / 1000));
         timerEl.textContent = formatCountdownHMS(remSec);
         barEl.style.width =`${progress}%`;
+        if (speedupCostEl) {
+          speedupCostEl.textContent = `${Math.max(1, Math.ceil(remSec / 60))} 🪙`;
+        }
       }
     });
 
@@ -22908,7 +22960,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.0');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.1');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

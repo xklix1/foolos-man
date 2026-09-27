@@ -549,10 +549,74 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         break;
       }
 
+      case 'trade_import': {
+        if (!targetKey) {
+          return reply.code(400).send({ error: 'MISSING_TARGET_KEY', message: 'targetKey (import order ID) is required.' });
+        }
+        const safeKey = String(targetKey).trim();
+        const imports = s.tradeCompany && s.tradeCompany.activeImports;
+        const order = Array.isArray(imports) ? imports.find(o => o && String(o.id) === safeKey) : null;
+        if (!order) {
+          return reply.code(404).send({ error: 'ORDER_NOT_FOUND', message: `No active import order found with ID: ${safeKey}` });
+        }
+        const finishTs = Number(order.arrivalTime || 0);
+        const now = Date.now();
+        remainingMs = finishTs - now;
+        if (remainingMs <= 0 || order.arrived) {
+          return reply.code(400).send({ error: 'TIMER_EXPIRED', message: 'Import shipment has already arrived.' });
+        }
+        cost = Math.max(1, Math.ceil(remainingMs / 60000));
+        if (currentGold < cost) {
+          return reply.code(400).send({
+            error: 'INSUFFICIENT_GOLD',
+            message: `Insufficient gold balance. Required: ${cost}, Available: ${currentGold}`,
+            required: cost,
+            current: currentGold
+          });
+        }
+        s.gold = currentGold - cost;
+        order.arrivalTime = now - 1000;
+        order.arrived = true;
+        if (!s.tradeCompany.warehouse) s.tradeCompany.warehouse = {};
+        s.tradeCompany.warehouse[order.commodityId] = (s.tradeCompany.warehouse[order.commodityId] || 0) + order.quantity;
+        break;
+      }
+
+      case 'trade_export': {
+        if (!targetKey) {
+          return reply.code(400).send({ error: 'MISSING_TARGET_KEY', message: 'targetKey (export order ID) is required.' });
+        }
+        const safeKey = String(targetKey).trim();
+        const exports = s.tradeCompany && s.tradeCompany.activeExports;
+        const order = Array.isArray(exports) ? exports.find(o => o && String(o.id) === safeKey) : null;
+        if (!order) {
+          return reply.code(404).send({ error: 'ORDER_NOT_FOUND', message: `No active export order found with ID: ${safeKey}` });
+        }
+        const finishTs = Number(order.deliveryTime || 0);
+        const now = Date.now();
+        remainingMs = finishTs - now;
+        if (remainingMs <= 0 || order.delivered) {
+          return reply.code(400).send({ error: 'TIMER_EXPIRED', message: 'Export shipment is already delivered.' });
+        }
+        cost = Math.max(1, Math.ceil(remainingMs / 60000));
+        if (currentGold < cost) {
+          return reply.code(400).send({
+            error: 'INSUFFICIENT_GOLD',
+            message: `Insufficient gold balance. Required: ${cost}, Available: ${currentGold}`,
+            required: cost,
+            current: currentGold
+          });
+        }
+        s.gold = currentGold - cost;
+        order.deliveryTime = now - 1000;
+        order.delivered = true;
+        break;
+      }
+
       default:
         return reply.code(400).send({
           error: 'UNSUPPORTED_TIMER_TYPE',
-          message: `Supported timer types: jail, cooldown, smuggling`
+          message: `Supported timer types: jail, cooldown, smuggling, trade_import, trade_export`
         });
     }
 

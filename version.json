@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.0",
-  "build": 1790469600000,
-  "timestamp": "2026-09-27T00:39:00.000Z",
-  "notes": "Fix chat profanity filter false positives on common Arabic words (خلاص, خلصت, خلي, تحديث, خدت, etc.)"
+  "version": "v8.2.1",
+  "build": 1790470500000,
+  "timestamp": "2026-09-27T00:55:00.000Z",
+  "notes": "Add Gold speed-up support for Trade Company Import and Export shipments"
 }

@@ -6079,6 +6079,74 @@ const GameEngine = (() => {
     return false;
   }
 
+  function speedUpTradeShipment(shipmentType, orderId) {
+    if (state.jailTimer > 0) throw new Error("أنت مسجون حالياً! لا يمكنك تسريع العمليات التجارية.");
+    if (!state.tradeCompany) throw new Error("شركة التجارة غير مهيأة.");
+
+    const now = getTrustedNow();
+    let order = null;
+    let remainingMs = 0;
+
+    if (shipmentType === 'import') {
+      const list = state.tradeCompany.activeImports || [];
+      order = list.find(o => String(o.id) === String(orderId));
+      if (!order) throw new Error("شحنة الاستيراد المحددة غير موجودة.");
+      if (order.arrived || now >= order.arrivalTime) {
+        throw new Error("الشحنة وصلت بالفعل إلى المستودع الجمركي!");
+      }
+      remainingMs = Math.max(0, order.arrivalTime - now);
+    } else if (shipmentType === 'export') {
+      const list = state.tradeCompany.activeExports || [];
+      order = list.find(o => String(o.id) === String(orderId));
+      if (!order) throw new Error("شحنة التصدير المحددة غير موجودة.");
+      if (order.delivered || now >= order.deliveryTime) {
+        throw new Error("الشحنة وصلت للعميل بالفعل وجاهزة لتحصيل الأرباح!");
+      }
+      remainingMs = Math.max(0, order.deliveryTime - now);
+    } else {
+      throw new Error("نوع الشحنة غير صالح (استيراد أو تصدير).");
+    }
+
+    if (remainingMs <= 0) {
+      throw new Error("مؤقت الشحنة منتهٍ بالفعل.");
+    }
+
+    // Cost: 1 Gold per minute (minimum 1 Gold)
+    const goldCost = Math.max(1, Math.ceil(remainingMs / 60000));
+    const currentGold = Math.max(0, Number(state.gold || 0));
+
+    if (currentGold < goldCost) {
+      throw new Error(`رصيد الذهب غير كافٍ! تحتاج إلى ${goldCost} 🪙 ذهب لتسريع هذه الشحنة (رصيدك الحالي: ${currentGold} 🪙).`);
+    }
+
+    // Deduct Gold
+    state.gold = currentGold - goldCost;
+
+    if (shipmentType === 'import') {
+      order.arrivalTime = now - 1000;
+      order.arrived = true;
+      if (!state.tradeCompany.warehouse) state.tradeCompany.warehouse = {};
+      state.tradeCompany.warehouse[order.commodityId] = (state.tradeCompany.warehouse[order.commodityId] || 0) + order.quantity;
+      recordPlayerActivity('تسريع استيراد ⚡', `تم تسريع وصول شحنة استيراد (${order.quantity} حاوية) فورياً بتكلفة ${goldCost} 🪙 ذهب.`, 'trade');
+    } else if (shipmentType === 'export') {
+      order.deliveryTime = now - 1000;
+      order.delivered = true;
+      recordPlayerActivity('تسريع تصدير ⚡', `تم تسريع تسليم شحنة تصدير (${order.quantity} حاوية) إلى ${order.buyerName || 'العميل'} فورياً بتكلفة ${goldCost} 🪙 ذهب.`, 'trade');
+    }
+
+    state.netWorth = calculateNetWorth();
+    forceSaveState(true);
+
+    return {
+      success: true,
+      shipmentType,
+      orderId,
+      goldCost,
+      remainingGold: state.gold,
+      order
+    };
+  }
+
   // ─────────────────────────────────────────────────────────
   //  مجمع الصناعات وسلاسل الإمداد (INDUSTRIAL SUPPLY CHAIN EMPIRE)
   // ─────────────────────────────────────────────────────────
@@ -8153,6 +8221,7 @@ const GameEngine = (() => {
     claimExportProfit,
     upgradeWarehouse,
     dismissTradeImport,
+    speedUpTradeShipment,
 
     // Industrial Supply Chain Empire Exports
     INDUSTRIAL_SECTORS,
