@@ -155,11 +155,10 @@ function sanitizePlayerState(dbRow) {
   // Security Hardening: Never leak PIN hash in client-facing state payloads
   delete cleanState.pin;
 
-  // Gold currency (strictly gated to developer account 'Khaled' only)
+  // Gold currency (strictly gated to developer account 'Khaled' / 'خالد' only)
   const isLiteralKhaled = cleanState.username &&
     typeof cleanState.username === 'string' &&
-    cleanState.username.trim().toLowerCase() === 'khaled' &&
-    cleanState.username.trim().length === 6;
+    ['khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(cleanState.username.trim().toLowerCase());
 
   if (isLiteralKhaled) {
     cleanState.gold = Math.max(0, Number(dbRow.gold !== undefined ? dbRow.gold : (rawState.gold || 0)));

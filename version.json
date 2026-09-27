@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.1",
-  "build": 1790470500000,
-  "timestamp": "2026-09-27T00:55:00.000Z",
-  "notes": "Add Gold speed-up support for Trade Company Import and Export shipments"
+  "version": "v8.2.2",
+  "build": 1790471000000,
+  "timestamp": "2026-09-27T01:00:00.000Z",
+  "notes": "Enable Gold currency and full developer speed-up permissions for Arabic account خالد"
 }

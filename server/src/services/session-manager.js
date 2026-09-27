@@ -250,10 +250,9 @@ class SessionManager {
     delete s.pin;
     delete s.password;
 
-    // Beta Features (Gold currency & Farm - strictly gated to literal developer account 'Khaled' only)
+    // Beta Features (Gold currency - strictly gated to literal developer account 'Khaled' / 'خالد' only)
     const isLiteralKhaled = typeof username === 'string' &&
-      username.trim().toLowerCase() === 'khaled' &&
-      username.trim().length === 6;
+      ['khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(username.trim().toLowerCase());
 
     if (isLiteralKhaled) {
       s.gold = Math.max(0, Number(s.gold || 0));

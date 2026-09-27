@@ -422,8 +422,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const session = await resolveSession(request, reply);
     if (!session) return;
 
-    // Strict Beta Access Control: Restricted exclusively to developer account 'Khaled'
-    if (!session.username || session.username.trim().toLowerCase() !== 'khaled') {
+    // Strict Beta Access Control: Restricted exclusively to developer account 'Khaled' / 'خالد'
+    if (!session.username || !['khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(session.username.trim().toLowerCase())) {
       return reply.code(403).send({
         error: 'Forbidden',
         message: 'Speed-up system is in closed beta and restricted exclusively to developer account Khaled.'
