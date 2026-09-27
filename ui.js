@@ -14507,20 +14507,23 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (partnerNameEl) partnerNameEl.textContent = currentActiveDMUser;
     if (partnerStatusEl) partnerStatusEl.textContent = 'جاري المزامنة...';
 
-    if (AppDB && typeof AppDB.getPlayerState === 'function') {
-      AppDB.getPlayerState(currentActiveDMUser).then(ps => {
-        if (partnerStatusEl) {
-          const isOnline = ps && ps.lastSeen && (Date.now() - ps.lastSeen < 120000);
-          if (isOnline) {
-            partnerStatusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block ml-1"></span> متصل الآن';
-            partnerStatusEl.className = 'text-[9px] text-emerald-400 font-bold';
-          } else {
-            partnerStatusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-slate-500 inline-block ml-1"></span> غير متصل';
-            partnerStatusEl.className = 'text-[9px] text-slate-400 font-medium';
-          }
+    const fetchPartnerStatus = (AppDB && typeof AppDB.adminGetPlayer === 'function')
+      ? AppDB.adminGetPlayer(currentActiveDMUser)
+      : ((AppDB && typeof AppDB.getPlayerState === 'function') ? AppDB.getPlayerState(currentActiveDMUser) : Promise.resolve(null));
+
+    fetchPartnerStatus.then(ps => {
+      if (partnerStatusEl) {
+        const lastSeenTs = Number((ps && (ps.last_seen || ps.lastSeen || (ps.state && ps.state.lastSeen))) || 0);
+        const isOnline = lastSeenTs > 0 && (Date.now() - lastSeenTs < 120000);
+        if (isOnline) {
+          partnerStatusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block ml-1"></span> متصل الآن';
+          partnerStatusEl.className = 'text-[9px] text-emerald-400 font-bold';
+        } else {
+          partnerStatusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-slate-500 inline-block ml-1"></span> غير متصل';
+          partnerStatusEl.className = 'text-[9px] text-slate-400 font-medium';
         }
-      }).catch(() => {});
-    }
+      }
+    }).catch(() => {});
 
     if (msgInput) {
       msgInput.value = '';

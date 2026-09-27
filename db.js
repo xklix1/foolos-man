@@ -127,6 +127,8 @@ var AppDB = (() => {
   let _lastSessionCheckTime = 0;
   async function _checkSessionImmediate(u) {
     if (_isSessionInvalidated || !u) return;
+    const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
+    if (curActive && u.toLowerCase() !== curActive.toLowerCase()) return;
     const now = Date.now();
     if (now - _lastSessionCheckTime < 800) return; // Throttle to max once per 800ms
     _lastSessionCheckTime = now;
@@ -145,6 +147,8 @@ var AppDB = (() => {
   function _startConcurrentSessionGuard(username) {
     if (!username) return;
     const u = username.trim();
+    const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
+    if (curActive && u.toLowerCase() !== curActive.toLowerCase()) return;
     if (_sessionGuardTimer) clearInterval(_sessionGuardTimer);
 
     // Ultra-responsive 1.5 second background pulse
@@ -1486,7 +1490,7 @@ var AppDB = (() => {
       }
       stateObj.title = row.title || stateObj.title ||'عامل مبتدئ';
       stateObj.isAdmin = row.is_admin === true;
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && isCurrentPlayer) {
         // Use the AppDB._settingAdminFlag guard — required by the read-only defineProperty in game.js
         try {
           AppDB._settingAdminFlag = true;
@@ -1495,9 +1499,11 @@ var AppDB = (() => {
           AppDB._settingAdminFlag = false;
         }
       }
-      _lastVerifiedCloudWealth = isAccountResetRow ? 0 : (Math.max(0, Number(row.cash || 0)) + Math.max(0, Number(row.bank || 0)));
-      _lastVerifiedCloudXp = isAccountResetRow ? 0 : Number(row.xp || 0);
-      _lastVerifiedCloudTime = Date.now();
+      if (isCurrentPlayer) {
+        _lastVerifiedCloudWealth = isAccountResetRow ? 0 : (Math.max(0, Number(row.cash || 0)) + Math.max(0, Number(row.bank || 0)));
+        _lastVerifiedCloudXp = isAccountResetRow ? 0 : Number(row.xp || 0);
+        _lastVerifiedCloudTime = Date.now();
+      }
       const isKhaledAccount = ['khaled', 'خالد'].includes(String(row.username || u || '').trim().toLowerCase()) || Boolean(row.is_admin);
       if (isKhaledAccount) {
         stateObj.isBanned = false;
@@ -1545,11 +1551,15 @@ var AppDB = (() => {
       stateObj.lastActiveTimestamp = Math.min(_rawLastActive, _nowAtLoad);
       stateObj.lastSeen = stateObj.lastActiveTimestamp;
       stateObj.adminModifiedTimestamp = Number(row.admin_modified_timestamp || 0);
-      stateObj.activeSessionId = _currentSessionToken;
+      if (isCurrentPlayer) {
+        stateObj.activeSessionId = _currentSessionToken;
+      }
       stateObj._loadedFromCloud = true;
 
       // Start real-time multi-device concurrent session guard
-      _startConcurrentSessionGuard(u);
+      if (isCurrentPlayer) {
+        _startConcurrentSessionGuard(u);
+      }
 
       // Claim this session as authoritative in Supabase (invalidates older device sessions)
       if (isCurrentPlayer && !_isSessionInvalidated) {
