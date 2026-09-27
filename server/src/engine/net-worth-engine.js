@@ -126,43 +126,28 @@ function calculateNetWorth(playerState) {
     }
   }
 
-  // 7. Agro Farm Tycoon (Lands, upgrades, silos, livestock, crops)
+  // 7. Agro Farm Tycoon (Farm base price & upgrades purchased only - crops & produce excluded)
   if (playerState.farm && playerState.farm.unlocked) {
     const landLevelValues = { 1: 1000000, 2: 1500000, 3: 4500000, 4: 14500000 };
     worth += (landLevelValues[playerState.farm.landLevel] || ((playerState.farm.maxPlots || 4) * 250000));
-    worth += (playerState.farm.waterLevel || 1) * 40000;
-    worth += (playerState.farm.fertilizerLevel || 1) * 35000;
-    worth += (playerState.farm.workers || 0) * 30000;
+
+    const irrValues = { 1: 0, 2: 50000, 3: 300000, 4: 1300000 };
+    worth += (irrValues[playerState.farm.irrigationLevel || playerState.farm.waterLevel || 1] || 0);
+
+    const fertValues = { 1: 0, 2: 40000, 3: 240000, 4: 1040000 };
+    worth += (fertValues[playerState.farm.fertilizerLevel || 1] || 0);
+
+    worth += Math.max(0, Number(playerState.farm.workers || 0)) * 30000;
+
     const siloValues = { 1: 0, 2: 250000, 3: 1250000, 4: 4750000 };
     worth += (siloValues[playerState.farm.siloLevel || 1] || 0);
 
     if (playerState.farm.livestock) {
-      worth += (Number(playerState.farm.livestock.cows || 0)) * 25000;
-      worth += (Number(playerState.farm.livestock.chickens || 0)) * 8000;
-      worth += (Number(playerState.farm.livestock.milk || 0)) * 45;
-      worth += (Number(playerState.farm.livestock.eggs || 0)) * 15;
-      worth += (Number(playerState.farm.livestock.compost || 0)) * 10;
+      worth += Math.max(0, Number(playerState.farm.livestock.cows || 0)) * 25000;
+      worth += Math.max(0, Number(playerState.farm.livestock.chickens || 0)) * 8000;
     }
     if (playerState.farm.processing && playerState.farm.processing.unlocked) {
       worth += 500000;
-    }
-    if (playerState.farm.inventory) {
-      const cropPrices = { wheat: 6, tomato: 24, strawberry: 118, coffee: 490, dates: 2450, saffron: 9800 };
-      Object.keys(playerState.farm.inventory).forEach(cId => {
-        const qty = Number(playerState.farm.inventory[cId] || 0);
-        if (qty > 0 && cropPrices[cId]) {
-          worth += qty * cropPrices[cId];
-        }
-      });
-    }
-    if (playerState.farm.processing && playerState.farm.processing.storage) {
-      const recipeValues = { flour_bread: 56, tomato_paste: 196, strawberry_jam: 555, premium_coffee: 2300, stuffed_dates: 11500, saffron_essence: 34500 };
-      Object.keys(playerState.farm.processing.storage).forEach(rId => {
-        const qty = Number(playerState.farm.processing.storage[rId] || 0);
-        if (qty > 0 && recipeValues[rId]) {
-          worth += qty * recipeValues[rId];
-        }
-      });
     }
   }
 

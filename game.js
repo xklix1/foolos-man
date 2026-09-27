@@ -1862,43 +1862,37 @@ const GameEngine = (() => {
       }
     }
 
-    // 7. Agro Farm Tycoon (المزرعة الاستثمارية - الأصول والمعدات والمواشي والمحاصيل)
+        // 7. Agro Farm Tycoon (المزرعة الاستثمارية - سعر المزرعة وتطويرات اللاعب فقط بدون محاصيل أو منتجات)
     let farmTotal = 0;
-    if (playerState.farm && playerState.farm.unlocked && typeof FARM_CONFIG !== 'undefined') {
+    if (playerState.farm && playerState.farm.unlocked) {
+      // Land level (سعر تملك المزرعة واستصلاح الأراضي)
       const landLevelValues = { 1: 1000000, 2: 1500000, 3: 4500000, 4: 14500000 };
       farmTotal += (landLevelValues[playerState.farm.landLevel] || ((playerState.farm.maxPlots || 4) * 250000));
-      farmTotal += (playerState.farm.waterLevel || 1) * 40000;
-      farmTotal += (playerState.farm.fertilizerLevel || 1) * 35000;
-      farmTotal += (playerState.farm.workers || 0) * 30000;
+
+      // Irrigation upgrades (تطويرات شبكات الري)
+      const irrValues = { 1: 0, 2: 50000, 3: 300000, 4: 1300000 };
+      farmTotal += (irrValues[playerState.farm.irrigationLevel || playerState.farm.waterLevel || 1] || 0);
+
+      // Fertilizer upgrades (تطويرات المخصبات والأسمدة)
+      const fertValues = { 1: 0, 2: 40000, 3: 240000, 4: 1040000 };
+      farmTotal += (fertValues[playerState.farm.fertilizerLevel || 1] || 0);
+
+      // Hired workers (عمال المزرعة)
+      farmTotal += Math.max(0, Number(playerState.farm.workers || 0)) * 30000;
+
+      // Silo upgrades (صوامع ومستودعات التخزين)
       const siloValues = { 1: 0, 2: 250000, 3: 1250000, 4: 4750000 };
       farmTotal += (siloValues[playerState.farm.siloLevel || 1] || 0);
+
+      // Livestock animals purchased (رؤوس الماشية والدواجن المشتراة)
       if (playerState.farm.livestock) {
-        farmTotal += (Number(playerState.farm.livestock.cows || 0)) * 25000;
-        farmTotal += (Number(playerState.farm.livestock.chickens || 0)) * 8000;
-        farmTotal += (Number(playerState.farm.livestock.milk || 0)) * 45;
-        farmTotal += (Number(playerState.farm.livestock.eggs || 0)) * 15;
-        farmTotal += (Number(playerState.farm.livestock.compost || 0)) * 10;
+        farmTotal += Math.max(0, Number(playerState.farm.livestock.cows || 0)) * 25000;
+        farmTotal += Math.max(0, Number(playerState.farm.livestock.chickens || 0)) * 8000;
       }
+
+      // Processing factory unit (وحدة التصنيع الغذائي)
       if (playerState.farm.processing && playerState.farm.processing.unlocked) {
         farmTotal += 500000;
-      }
-      if (playerState.farm.inventory) {
-        const cropPrices = { wheat: 6, tomato: 24, strawberry: 118, coffee: 490, dates: 2450, saffron: 9800 };
-        Object.keys(playerState.farm.inventory).forEach(cId => {
-          const qty = Number(playerState.farm.inventory[cId] || 0);
-          if (qty > 0 && cropPrices[cId]) {
-            farmTotal += qty * cropPrices[cId];
-          }
-        });
-      }
-      if (playerState.farm.processing && playerState.farm.processing.storage) {
-        const recipeValues = { flour_bread: 56, tomato_paste: 196, strawberry_jam: 555, premium_coffee: 2300, stuffed_dates: 11500, saffron_essence: 34500 };
-        Object.keys(playerState.farm.processing.storage).forEach(rId => {
-          const qty = Number(playerState.farm.processing.storage[rId] || 0);
-          if (qty > 0 && recipeValues[rId]) {
-            farmTotal += qty * recipeValues[rId];
-          }
-        });
       }
     }
 

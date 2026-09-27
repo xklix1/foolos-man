@@ -1,6 +1,6 @@
 {
-  "version": "v8.1.5",
-  "build": 1790466515916,
-  "timestamp": "2026-09-26T23:48:35.916Z",
-  "notes": "Open player profiles on click, fix trade daily quest, set stock market cap to 3M, set farm cap to 20M"
+  "version": "v8.1.6",
+  "build": 1790467431825,
+  "timestamp": "2026-09-27T00:03:51.825Z",
+  "notes": "Count only farm purchase price and upgrades in Net Worth (exclude crops and produced goods)"
 }
