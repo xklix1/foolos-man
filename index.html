@@ -13,18 +13,22 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.1.5';
+    window._CLIENT_VERSION = 'v8.1.7';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.1.5';
+      const CURRENT_APP_BUILD = 'v8.1.7';
       try {
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
           const s = await res.json();
           if (s && s.version && s.version !== CURRENT_APP_BUILD) {
+            const curParam = new URL(window.location.href).searchParams.get('_v');
+            if (curParam === s.version) {
+              return; // Already refreshed with current version query param
+            }
             const reloadKey = 'rasalmal_reload_attempt_' + s.version;
             const attempts = Number(sessionStorage.getItem(reloadKey) || 0);
-            if (attempts >= 2) {
+            if (attempts >= 1) {
               console.warn('[Version Sync] Max reload attempts reached for', s.version, 'Preventing loop.');
               return;
             }

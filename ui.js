@@ -22812,11 +22812,15 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.1.4');
+            const curVer = (window._CLIENT_VERSION || 'v8.1.7');
             if (s && s.version && s.version !== curVer) {
+              const curParam = new URL(window.location.href).searchParams.get('_v');
+              if (curParam === s.version) {
+                return; // Already running with target version param
+              }
               const loopKey = 'rasalmal_watchdog_reload_' + s.version;
               const reloadedCount = Number(sessionStorage.getItem(loopKey) || 0);
-              if (reloadedCount < 3) {
+              if (reloadedCount < 1) {
                 sessionStorage.setItem(loopKey, String(reloadedCount + 1));
                 console.warn('[Auto-Updater] Game update detected:', s.version, 'Current:', curVer, 'Triggering instant auto-update.');
                 
