@@ -1,6 +1,6 @@
 {
-  "version": "v8.1.9",
-  "build": 1790468900000,
-  "timestamp": "2026-09-27T00:28:00.000Z",
-  "notes": "Display Top badges, season honors, and custom VIP medals on player profile"
+  "version": "v8.2.0",
+  "build": 1790469600000,
+  "timestamp": "2026-09-27T00:39:00.000Z",
+  "notes": "Fix chat profanity filter false positives on common Arabic words (خلاص, خلصت, خلي, تحديث, خدت, etc.)"
 }

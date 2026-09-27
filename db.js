@@ -675,7 +675,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.1.9';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.0';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -684,7 +684,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.1.9', remoteVersion: 'v8.1.9' };
+    return { upToDate: true, clientVersion: 'v8.2.0', remoteVersion: 'v8.2.0' };
   }
 
   async function checkDeviceBan() {
@@ -5495,50 +5495,41 @@ var AppDB = (() => {
   const ProfanityFilter = (() => {
     // Severe roots/words that are always offensive regardless of context
     const SEVERE_PATTERNS = [
-      /شرمو*[طت]/i,
-      /منيو*[كق]/i,
-      /قحب/i,
-      /متنا*[كق]/i,
-      /تنا*[كق]/i,
-      /معر*[صس]/i,
-      /ديو*[ثس]/i,
-      /خو*[لت]/i,
-      /عاه[ره]/i,
+      /شرمو+ط/i,
+      /منيو+[كق]/i,
+      /قحب[هة]/i,
+      /متنا+[كق]/i,
+      /تنا+[كق]/i,
+      /معر+ص/i,
+      /ديو+[ثس]/i,
+      /عاهر[هة]/i,
       /بظر/i,
       /طيز/i,
-      /ني[كق]/i,
-      /يني[كق]/i,
-      /اني[كق]/i,
       /كسم/i,
       /كسخت/i,
-      /عرص[هة]?/i,
-      /لبو*[هة]/i,
-      /سكس/i,
-      /بورن/i,
-      /شاذ/i,
+      /لبو+[هة]/i,
       /لوطي/i,
       /لواط/i,
       /سحاق/i,
-      /وسخ/i,
-      /حقير/i,
-      /بضا*[نت]/i,
-      /بضي*[نت]/i,
-      /مبضو*[نت]/i,
-      /تبضي*[نت]/i,
+      /مبضو+[نت]/i,
+      /تبضي+[نت]/i,
       /ات?بض[نت]/i
     ];
 
-    // Word boundary patterns (prevents false positives on words like مكسرات, كسب, انكسار, تركيز, حزب, عسل, إلخ)
+    // Word boundary patterns (prevents false positives on words like مكسرات, كسب, خلاص, تحديث, ميكانيكي, إلخ)
     const BOUNDARY_PATTERNS = [
+      /(?:^|[^\p{L}\p{N}])(خول|الخول|ياخول|يا خول|خوله|خولة|خولات|مخول)(?:[^\p{L}\p{N}]|$)/u,
+      /(?:^|[^\p{L}\p{N}])(نيك|النيك|بنيك|بنيكو|بينيك|ينيك|تنيك|انيك|منيك)(?:[^\p{L}\p{N}]|$)/u,
+      /(?:^|[^\p{L}\p{N}])(سكس|السكس|بورن|البورن|شاذ|الشاذ)(?:[^\p{L}\p{N}]|$)/u,
       /(?:^|[^\p{L}\p{N}])(بضان|البضان|يابضان|يا بضان|بضاني|بضانه|بضانك|بضانكم|بضانهم|مبضون|مبضونة|مبضونين|بيتبضن|بيتبضنو|بتبضن|اتبضنت|تبضين)(?:[^\p{L}\p{N}]|$)/u,
       /(?:^|[^\p{L}\p{N}])(كس|الكس|كسك|كسها|كسهم|كسكم|كسم|كسمك|كسختك|كسختكم)(?:[^\p{L}\p{N}]|$)/u,
       /(?:^|[^\p{L}\p{N}])(زب|الزب|زبي|زبك|زبها|زبهم)(?:[^\p{L}\p{N}]|$)/u,
-      /(?:^|[^\p{L}\p{N}])(عرص|العرص|ياعرص|يا معرص)(?:[^\p{L}\p{N}]|$)/u,
-      /(?:^|[^\p{L}\p{N}])(خول|الخول|ياخول|يا خول)(?:[^\p{L}\p{N}]|$)/u,
+      /(?:^|[^\p{L}\p{N}])(عرص|العرص|ياعرص|يا معرص|عرصة|عرصه)(?:[^\p{L}\p{N}]|$)/u,
+      /(?:^|[^\p{L}\p{N}])(ديوث|الديوث|ياديوث|يا ديوث)(?:[^\p{L}\p{N}]|$)/u,
       /(?:^|[^\p{L}\p{N}])(واطي|الواطي|ياواطي|يا واطي)(?:[^\p{L}\p{N}]|$)/u,
       /(?:^|[^\p{L}\p{N}])(كلب|الكلب|ياكلب|يا كلب|ابن الكلب|ابن كلب|ولاد الكلب)(?:[^\p{L}\p{N}]|$)/u,
       /(?:^|[^\p{L}\p{N}])(حيوان|الحيوان|ياحيوان|يا حيوان|حمار|الحمار|ياحمار|يا حمار)(?:[^\p{L}\p{N}]|$)/u,
-      /(?:^|[^\p{L}\p{N}])(وسخ|الوسخ|ياوسخ|يا وسخ|قذر|القذر|ياقذر|يا قذر)(?:[^\p{L}\p{N}]|$)/u,
+      /(?:^|[^\p{L}\p{N}])(وسخ|الوسخ|ياوسخ|يا وسخ|قذر|القذر|ياقذر|يا قذر|حقير|الحقير|ياحقير)(?:[^\p{L}\p{N}]|$)/u,
       /(?:^|[^\p{L}\p{N}])(تفو|تفه|يلعن|يلعنك|يلعنكم|ملعون|اللعنة|تبا لك)(?:[^\p{L}\p{N}]|$)/u,
       /(?:^|[^\p{L}\p{N}])(fuck|fucking|fucker|fuk|fck|shit|bitch|asshole|pussy|cunt|dick|cock|bastard|slut|whore|motherfucker|nigger|nigga|porn|blowjob)(?:[^\p{L}\p{N}]|$)/iu
     ];
