@@ -15567,66 +15567,90 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         return;
       }
 
-      const hasFbVerified = Boolean(pState.facebookVerified === true || (pState.state && pState.state.facebookVerified) || (pState.badges && pState.badges.includes('facebook')));
-      const isVipVerified = Boolean(pState.isVerified || pState.vipVerified || (pState.state && (pState.state.isVerified || pState.state.vipVerified)) || (pState.badges && pState.badges.includes('verified')) || pState.activePackage === 'pkg_vip_verified' || pState.activePackage === 'pkg_vip_royal_ultimate' || (pState.customBadge && pState.customBadge.includes('✔️')));
+      const customBadge = pState.customBadge || (pState.state && pState.state.customBadge) || '';
+      const badgeTitle = pState.badgeTitle || (pState.state && pState.state.badgeTitle) || '';
+      const activePkg = pState.activePackage || (pState.state && pState.state.activePackage) || '';
       const seasonBadge = pState.seasonBadge || (pState.state && pState.state.seasonBadge) || '';
+
+      const hasFbVerified = Boolean(pState.facebookVerified === true || (pState.state && pState.state.facebookVerified) || (pState.badges && pState.badges.includes('facebook')));
+      const isVipVerified = Boolean(pState.isVerified || pState.vipVerified || (pState.state && (pState.state.isVerified || pState.state.vipVerified)) || (pState.badges && pState.badges.includes('verified')) || activePkg === 'pkg_vip_verified' || activePkg === 'pkg_vip_royal_ultimate' || (customBadge && customBadge.includes('✔️')));
 
       const uCardEl = document.getElementById('profile-card-username');
       if (uCardEl) {
-        const fbIconHtml = hasFbVerified ?' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' :'';
+        const fbIconHtml = hasFbVerified ? ' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' : '';
         const verifiedIconHtml = isVipVerified ? ` ${getVerifiedBadgeIconHtml('text-base')}` : '';
+        const customBadgeHtml = (customBadge && !customBadge.includes('✔️')) ? ` <span class="inline-flex items-center text-sm ml-1 select-none" title="${escapeHtml(badgeTitle || 'وسام خاص')}">${formatCustomBadgeHtml(customBadge, 'text-sm')}</span>` : '';
         const nameCardHtml = seasonBadge ? getSeasonBadgeHtml(seasonBadge, 'text-xs py-1 px-3', pState.username || '---') : escapeHtml(pState.username || '---');
         // SECURITY: escapeHtml prevents Stored XSS via crafted usernames in profile card
-        uCardEl.innerHTML = nameCardHtml + verifiedIconHtml + fbIconHtml;
+        uCardEl.innerHTML = nameCardHtml + customBadgeHtml + verifiedIconHtml + fbIconHtml;
       }
-      document.getElementById('profile-card-title').textContent = pState.title ||'عامل مبتدئ';
+      document.getElementById('profile-card-title').textContent = pState.title || 'عامل مبتدئ';
       const pwEl = document.getElementById('profile-card-networth');
       if (pwEl) {
         const nw = pState.netWorth || 0;
         if (nw >= 1000000) {
-          pwEl.innerHTML =`<span class="break-all">${nw.toLocaleString()} EGP</span> <span class="text-xs text-yellow-400 font-bold ml-1 bg-yellow-500/10 px-2 py-0.5 rounded-lg border border-yellow-500/20 inline-block numbers-font">(${formatCompactNumber(nw)})</span>`;
+          pwEl.innerHTML = `<span class="break-all">${nw.toLocaleString()} EGP</span> <span class="text-xs text-yellow-400 font-bold ml-1 bg-yellow-500/10 px-2 py-0.5 rounded-lg border border-yellow-500/20 inline-block numbers-font">(${formatCompactNumber(nw)})</span>`;
         } else {
-          pwEl.textContent =`${nw.toLocaleString()} EGP`;
+          pwEl.textContent = `${nw.toLocaleString()} EGP`;
         }
       }
-      document.getElementById('profile-card-reputation').textContent =`${(pState.underworldRep || 0).toLocaleString()} ⭐`;
-      document.getElementById('profile-card-createdat').textContent = pState.createdAt ? new Date(pState.createdAt).toLocaleDateString() :'غير معروف';
+      document.getElementById('profile-card-reputation').textContent = `${(pState.underworldRep || 0).toLocaleString()} ⭐`;
+      document.getElementById('profile-card-createdat').textContent = pState.createdAt ? new Date(pState.createdAt).toLocaleDateString() : 'غير معروف';
 
       const jobConfig = GameEngine.JOBS && GameEngine.JOBS[pState.jobId];
-      const jobName = jobConfig ? jobConfig.name : (pState.jobId ||'عامل باليومية');
+      const jobName = jobConfig ? jobConfig.name : (pState.jobId || 'عامل باليومية');
       document.getElementById('profile-card-job').textContent = jobName;
 
-      // Populate Season Honors & Badges
+      // Check Live Leaderboard Rank for Top Badge
+      let liveRank = null;
+      if (window.lastLeaderboardCache && Array.isArray(window.lastLeaderboardCache)) {
+        const idx = window.lastLeaderboardCache.findIndex(p => p && p.username && p.username.toLowerCase() === cleanTarget.toLowerCase());
+        if (idx !== -1) liveRank = idx + 1;
+      }
+
+      // Populate Season Honors & Top Badges
       const badgesListEl = document.getElementById('profile-card-badges-list');
       if (badgesListEl) {
-        badgesListEl.innerHTML ='';
+        badgesListEl.innerHTML = '';
 
         let badgeCount = 0;
+        let sMatch = seasonBadge ? String(seasonBadge).trim().match(/^S?(\d+)?[-_ ]?T(?:OP)?[-_ ]?(\d+)$/i) : null;
+        let sNum = (sMatch && sMatch[1]) ? sMatch[1] : '1';
+        let rNum = (sMatch && sMatch[2]) ? parseInt(sMatch[2], 10) : (seasonBadge ? 1 : 0);
 
-        // 1. Season Rank Badge (S1TX)
+        // 1. Season Top Rank Badge (S1TX / Top Honors)
         if (seasonBadge) {
           badgeCount++;
           const sbBadge = document.createElement('div');
-          const sMatch = seasonBadge.match(/^S(\d+)T(\d+)$/i);
-          const sNum = sMatch ? sMatch[1] : '1';
-          const rNum = sMatch ? parseInt(sMatch[2], 10) : 1;
 
-          let cardBg = 'bg-cyan-950/80 border-cyan-400 text-cyan-300 shadow-cyan-950/60';
+          let cardBg = 'bg-gradient-to-r from-cyan-950/90 via-blue-950/80 to-cyan-950/90 border-2 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-950/60';
           let cardIcon = '<i class="fa-solid fa-gem text-cyan-300 text-sm"></i>';
-          let cardText = `وسام نخبة توب 10 (الموسم ${sNum} #${rNum} - ${seasonBadge})`;
+          let cardText = `وسام نخبة توب 10 💎 (الموسم ${sNum} المركز #${rNum} - ${seasonBadge})`;
 
           if (rNum === 1) {
-            cardBg = 'bg-amber-950/80 border-yellow-400 text-yellow-300 shadow-amber-950/60';
-            cardIcon = '<i class="fa-solid fa-crown text-yellow-300 text-sm"></i>';
-            cardText = `وسام بطل الموسم ${sNum} 👑 (المركز الأول ${seasonBadge})`;
+            cardBg = 'bg-gradient-to-r from-amber-950/90 via-yellow-950/80 to-amber-950/90 border-2 border-yellow-400 text-yellow-300 shadow-md shadow-amber-950/60';
+            cardIcon = '<i class="fa-solid fa-crown text-yellow-300 text-sm animate-pulse"></i>';
+            cardText = `وسام بطل الموسم ${sNum} 👑 (المركز الأول TOP 1 - بطل اللعبة)`;
           } else if (rNum === 2) {
-            cardBg = 'bg-slate-900/90 border-slate-300 text-slate-200 shadow-slate-900/60';
+            cardBg = 'bg-gradient-to-r from-slate-900/90 via-slate-800 to-slate-900/90 border-2 border-slate-300 text-slate-200 shadow-md shadow-slate-900/60';
             cardIcon = '<i class="fa-solid fa-medal text-slate-200 text-sm"></i>';
-            cardText = `وسام وصيف الموسم ${sNum} 🥈 (المركز الثاني ${seasonBadge})`;
+            cardText = `وسام وصيف الموسم ${sNum} 🥈 (المركز الثاني TOP 2)`;
           } else if (rNum === 3) {
-            cardBg = 'bg-orange-950/80 border-orange-500 text-amber-300 shadow-orange-950/60';
+            cardBg = 'bg-gradient-to-r from-orange-950/90 via-amber-950/80 to-orange-950/90 border-2 border-orange-500 text-amber-300 shadow-md shadow-orange-950/60';
             cardIcon = '<i class="fa-solid fa-award text-amber-300 text-sm"></i>';
-            cardText = `وسام برونزية الموسم ${sNum} 🥉 (المركز الثالث ${seasonBadge})`;
+            cardText = `وسام برونزية الموسم ${sNum} 🥉 (المركز الثالث TOP 3)`;
+          } else if (rNum >= 4 && rNum <= 10) {
+            cardBg = 'bg-gradient-to-r from-cyan-950/90 via-blue-950/80 to-cyan-950/90 border-2 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-950/60';
+            cardIcon = '<i class="fa-solid fa-gem text-cyan-300 text-sm"></i>';
+            cardText = `وسام نخبة توب 10 💎 (الموسم ${sNum} المركز #${rNum} - ${seasonBadge})`;
+          } else if (rNum >= 11 && rNum <= 25) {
+            cardBg = 'bg-gradient-to-r from-purple-950/90 via-indigo-950/80 to-purple-950/90 border-2 border-purple-400 text-purple-300 shadow-md shadow-purple-950/60';
+            cardIcon = '<i class="fa-solid fa-certificate text-purple-300 text-sm"></i>';
+            cardText = `وسام نخبة توب 25 🎖️ (الموسم ${sNum} المركز #${rNum} - مستثمر مخضرم)`;
+          } else {
+            cardBg = 'bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border-2 border-blue-400 text-blue-300 shadow-md';
+            cardIcon = '<i class="fa-solid fa-star text-blue-300 text-sm"></i>';
+            cardText = `وسام نخبة التوب 🌟 (الموسم ${sNum} المركز #${rNum})`;
           }
 
           sbBadge.className = `flex items-center gap-2 px-3 py-1.5 rounded-xl border-2 ${cardBg} text-xs font-black shadow-md`;
@@ -15634,6 +15658,67 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           badgesListEl.appendChild(sbBadge);
         }
 
+        // 2. Live Top Ranking Honor (إذا كان متصدر حالي في قائمة الأثرياء)
+        if (liveRank && liveRank <= 10 && !seasonBadge) {
+          badgeCount++;
+          const liveBadge = document.createElement('div');
+          if (liveRank === 1) {
+            liveBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-950/90 via-yellow-950/80 to-amber-950/90 border-2 border-yellow-400 text-yellow-300 text-xs font-black shadow-md shadow-yellow-500/20';
+            liveBadge.innerHTML = '<i class="fa-solid fa-crown text-yellow-300 text-sm animate-pulse"></i><span>متصدر قائمة الأثرياء الحالي 👑 (المركز الأول عالمياً #1)</span>';
+          } else if (liveRank === 2) {
+            liveBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-2 border-slate-300 text-slate-100 text-xs font-black shadow-md shadow-slate-300/20';
+            liveBadge.innerHTML = '<i class="fa-solid fa-medal text-slate-200 text-sm"></i><span>وصيف قائمة الأثرياء الحالي 🥈 (المركز الثاني عالمياً #2)</span>';
+          } else if (liveRank === 3) {
+            liveBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-950/90 via-amber-950/80 to-orange-950/90 border-2 border-orange-500 text-amber-200 text-xs font-black shadow-md shadow-orange-500/20';
+            liveBadge.innerHTML = '<i class="fa-solid fa-award text-amber-300 text-sm"></i><span>برونزية قائمة الأثرياء الحالي 🥉 (المركز الثالث عالمياً #3)</span>';
+          } else {
+            liveBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-950/90 via-blue-950/80 to-cyan-950/90 border-2 border-cyan-400 text-cyan-300 text-xs font-black shadow-md shadow-cyan-500/20';
+            liveBadge.innerHTML = `<i class="fa-solid fa-gem text-cyan-300 text-sm"></i><span>من نخبة التوب 10 الحاليين 💎 (المركز #${liveRank} في قائمة الأثرياء)</span>`;
+          }
+          badgesListEl.appendChild(liveBadge);
+        }
+
+        // 3. Custom VIP / Top Badges (👑 الملك الأسطوري / ⚡ SVIP / 🔥 لهيب / 🌟 حوت الشات)
+        if (customBadge) {
+          const isRoyalKing = customBadge.includes('👑') || (badgeTitle && (badgeTitle.includes('الملك') || badgeTitle.includes('إمبراطور'))) || activePkg === 'pkg_vip_royal_ultimate';
+          const isSvip = String(customBadge).toUpperCase().includes('SVIP');
+          const isFlame = customBadge.includes('🔥') || (badgeTitle && badgeTitle.includes('لهيب')) || activePkg === 'pkg_vip_crimson_flame';
+          const isChatWhale = customBadge.includes('🌟') || (badgeTitle && badgeTitle.includes('حوت')) || activePkg === 'pkg_vip_chat_glow';
+
+          if (isRoyalKing) {
+            badgeCount++;
+            const cbBadge = document.createElement('div');
+            cbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-950/90 via-yellow-900/60 to-purple-950/90 border-2 border-amber-400 text-yellow-300 text-xs font-black shadow-lg shadow-amber-500/30';
+            cbBadge.innerHTML = '<i class="fa-solid fa-crown text-yellow-300 text-sm"></i><span>وسام الملك الأسطوري وإمبراطور اللعبة 👑 (عضوية ملكية Ultimate)</span>';
+            badgesListEl.appendChild(cbBadge);
+          } else if (isSvip) {
+            badgeCount++;
+            const cbBadge = document.createElement('div');
+            cbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-950/90 via-blue-900/60 to-indigo-950/90 border-2 border-cyan-400 text-cyan-300 text-xs font-black shadow-lg shadow-cyan-500/30';
+            cbBadge.innerHTML = '<i class="fa-solid fa-bolt-lightning text-cyan-300 text-sm animate-pulse"></i><span>وسام النخبة الفائقة SVIP ⚡ (نخبة كبار المستثمرين)</span>';
+            badgesListEl.appendChild(cbBadge);
+          } else if (isFlame) {
+            badgeCount++;
+            const cbBadge = document.createElement('div');
+            cbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-950/90 via-red-900/60 to-orange-950/90 border-2 border-rose-400 text-rose-300 text-xs font-black shadow-lg shadow-rose-500/30';
+            cbBadge.innerHTML = '<i class="fa-solid fa-fire text-rose-400 text-sm animate-pulse"></i><span>وسام اللهيب الحارق والتأثير الناري 🔥 (نخبة VIP)</span>';
+            badgesListEl.appendChild(cbBadge);
+          } else if (isChatWhale) {
+            badgeCount++;
+            const cbBadge = document.createElement('div');
+            cbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-950/90 via-yellow-900/60 to-amber-950/90 border-2 border-yellow-400 text-yellow-300 text-xs font-black shadow-lg shadow-yellow-500/30';
+            cbBadge.innerHTML = '<i class="fa-solid fa-star text-yellow-300 text-sm"></i><span>وسام حوت الشات والوهج الذهبي 🌟 (حوت السوق)</span>';
+            badgesListEl.appendChild(cbBadge);
+          } else if (customBadge !== '✔️') {
+            badgeCount++;
+            const cbBadge = document.createElement('div');
+            cbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/90 border-2 border-yellow-500/60 text-yellow-300 text-xs font-black shadow-md';
+            cbBadge.innerHTML = `<span class="text-sm">${formatCustomBadgeHtml(customBadge, 'text-sm')}</span><span>وسام التميز الخاص: ${escapeHtml(badgeTitle || customBadge)}</span>`;
+            badgesListEl.appendChild(cbBadge);
+          }
+        }
+
+        // 4. VIP Verification Badge
         if (isVipVerified) {
           badgeCount++;
           const vBadge = document.createElement('div');
@@ -15642,75 +15727,86 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           badgesListEl.appendChild(vBadge);
         }
 
+        // 5. Facebook Follower Badge
         if (hasFbVerified) {
           badgeCount++;
           const fbBadge = document.createElement('div');
-          fbBadge.className ='flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-950/80 border-2 border-blue-500 text-blue-300 text-xs font-black shadow-md shadow-blue-950/60';
-          fbBadge.innerHTML ='<span class="fb-vip-badge">f</span><span>متابع رسمي لصفحة اللعبة على فيسبوك </span>';
+          fbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-950/80 border-2 border-blue-500 text-blue-300 text-xs font-black shadow-md shadow-blue-950/60';
+          fbBadge.innerHTML = '<span class="fb-vip-badge">f</span><span>متابع رسمي لصفحة اللعبة على فيسبوك</span>';
           badgesListEl.appendChild(fbBadge);
         }
 
-        const titleStr = pState.title ||'';
-        const hasDiamond = pState.s1Badge ==='diamond' || titleStr.includes('مستثمر ألماسي') || titleStr.includes('ألماسي');
-        const hasGold = pState.s1Badge ==='gold' || titleStr.includes('مستثمر ذهبي') || titleStr.includes('ذهبي');
-        const hasBronze = pState.s1Badge ==='bronze' || titleStr.includes('مستثمر برونزي') || titleStr.includes('برونزي');
-        const hasVeteran = pState.s1Veteran || pState.s1Badge ==='veteran' || titleStr.includes('مستثمر مخضرم') || titleStr.includes('مخضرم');
+        // 6. Legacy S1 Honors
+        const titleStr = pState.title || '';
+        const hasDiamond = pState.s1Badge === 'diamond' || titleStr.includes('مستثمر ألماسي') || titleStr.includes('ألماسي');
+        const hasGold = pState.s1Badge === 'gold' || titleStr.includes('مستثمر ذهبي') || titleStr.includes('ذهبي');
+        const hasBronze = pState.s1Badge === 'bronze' || titleStr.includes('مستثمر برونزي') || titleStr.includes('برونزي');
+        const hasVeteran = pState.s1Veteran || pState.s1Badge === 'veteran' || titleStr.includes('مستثمر مخضرم') || titleStr.includes('مخضرم');
 
         if (hasDiamond && !seasonBadge) {
           badgeCount++;
           const dBadge = document.createElement('div');
-          dBadge.className ='flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cyan-950/80 border-2 border-cyan-400 text-cyan-300 text-xs font-black shadow-md shadow-cyan-950/60';
-          dBadge.innerHTML ='<i class="fa-solid fa-gem text-cyan-300 text-sm"></i><span>وسام مستثمر ألماسي (بطل S1 #1)</span>';
+          dBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cyan-950/80 border-2 border-cyan-400 text-cyan-300 text-xs font-black shadow-md shadow-cyan-950/60';
+          dBadge.innerHTML = '<i class="fa-solid fa-gem text-cyan-300 text-sm"></i><span>وسام مستثمر ألماسي (بطل S1 #1)</span>';
           badgesListEl.appendChild(dBadge);
         }
 
         if (hasGold && !seasonBadge) {
           badgeCount++;
           const gBadge = document.createElement('div');
-          gBadge.className ='flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-950/80 border-2 border-yellow-400 text-yellow-300 text-xs font-black shadow-md shadow-amber-950/60';
-          gBadge.innerHTML ='<i class="fa-solid fa-crown text-yellow-300 text-sm"></i><span>وسام مستثمر ذهبي (وصيف S1 #2)</span>';
+          gBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-950/80 border-2 border-yellow-400 text-yellow-300 text-xs font-black shadow-md shadow-amber-950/60';
+          gBadge.innerHTML = '<i class="fa-solid fa-crown text-yellow-300 text-sm"></i><span>وسام مستثمر ذهبي (وصيف S1 #2)</span>';
           badgesListEl.appendChild(gBadge);
         }
 
         if (hasBronze && !seasonBadge) {
           badgeCount++;
           const bBadge = document.createElement('div');
-          bBadge.className ='flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-950/80 border-2 border-orange-500 text-amber-300 text-xs font-black shadow-md shadow-orange-950/60';
-          bBadge.innerHTML ='<i class="fa-solid fa-award text-amber-300 text-sm"></i><span>وسام مستثمر برونزي (برونزية S1 #3)</span>';
+          bBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-950/80 border-2 border-orange-500 text-amber-300 text-xs font-black shadow-md shadow-orange-950/60';
+          bBadge.innerHTML = '<i class="fa-solid fa-award text-amber-300 text-sm"></i><span>وسام مستثمر برونزي (برونزية S1 #3)</span>';
           badgesListEl.appendChild(bBadge);
         }
 
-        if (hasVeteran) {
+        if (hasVeteran && (!seasonBadge || rNum > 25)) {
           badgeCount++;
           const vBadge = document.createElement('div');
-          vBadge.className ='flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-950/80 border-2 border-purple-400 text-purple-300 text-xs font-black shadow-md shadow-purple-950/60';
-          vBadge.innerHTML ='<i class="fa-solid fa-certificate text-purple-300 text-sm"></i><span>وسام مستثمر مخضرم S1 (نخبة التوب 25)</span>';
+          vBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-950/80 border-2 border-purple-400 text-purple-300 text-xs font-black shadow-md shadow-purple-950/60';
+          vBadge.innerHTML = '<i class="fa-solid fa-certificate text-purple-300 text-sm"></i><span>وسام مستثمر مخضرم S1 (نخبة التوب 25)</span>';
           badgesListEl.appendChild(vBadge);
         }
 
         if (badgeCount === 0) {
-          badgesListEl.innerHTML ='<div class="text-[11px] text-slate-500 py-1 flex items-center gap-1.5"><i class="fa-solid fa-circle-info text-[10px]"></i><span>لم يحصل هذا الحساب على أوسمة مواسم حتى الآن. شارك في الموسم الثاني للمنافسة!</span></div>';
+          badgesListEl.innerHTML = '<div class="text-[11px] text-slate-500 py-1 flex items-center gap-1.5"><i class="fa-solid fa-circle-info text-[10px]"></i><span>لم يحصل هذا الحساب على أوسمة مواسم حتى الآن. تنافس للوصول إلى التوب!</span></div>';
         }
 
         // Dynamic Avatar styling according to honors
         const avatarBox = document.getElementById('profile-card-avatar-box');
         const avatarIcon = document.getElementById('profile-card-avatar-icon');
         if (avatarBox && avatarIcon) {
-          if (hasDiamond) {
-            avatarBox.className ='w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 border-2 border-cyan-200 flex items-center justify-center text-slate-950 shadow-lg shadow-cyan-500/40 shrink-0';
-            avatarIcon.className ='fa-solid fa-gem text-2xl';
-          } else if (hasGold) {
-            avatarBox.className ='w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600 border-2 border-yellow-200 flex items-center justify-center text-slate-950 shadow-lg shadow-yellow-500/40 shrink-0';
-            avatarIcon.className ='fa-solid fa-crown text-2xl';
-          } else if (hasBronze) {
-            avatarBox.className ='w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-600 via-orange-600 to-amber-800 border-2 border-amber-400 flex items-center justify-center text-amber-100 shadow-lg shadow-orange-900/40 shrink-0';
-            avatarIcon.className ='fa-solid fa-award text-2xl';
-          } else if (hasVeteran) {
-            avatarBox.className ='w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-800 border-2 border-purple-400 flex items-center justify-center text-purple-100 shadow-lg shadow-purple-900/40 shrink-0';
-            avatarIcon.className ='fa-solid fa-certificate text-2xl';
+          if (rNum === 1 || hasGold || (customBadge && customBadge.includes('👑')) || liveRank === 1) {
+            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600 border-2 border-yellow-200 flex items-center justify-center text-slate-950 shadow-xl shadow-yellow-500/50 shrink-0';
+            avatarIcon.className = 'fa-solid fa-crown text-2xl animate-pulse';
+          } else if (rNum === 2 || liveRank === 2) {
+            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-200 via-slate-100 to-slate-400 border-2 border-slate-100 flex items-center justify-center text-slate-950 shadow-xl shadow-slate-300/50 shrink-0';
+            avatarIcon.className = 'fa-solid fa-medal text-2xl';
+          } else if (rNum === 3 || hasBronze || liveRank === 3) {
+            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-600 via-orange-600 to-amber-800 border-2 border-amber-400 flex items-center justify-center text-amber-100 shadow-xl shadow-orange-900/50 shrink-0';
+            avatarIcon.className = 'fa-solid fa-award text-2xl';
+          } else if ((rNum >= 4 && rNum <= 10) || hasDiamond || (liveRank && liveRank <= 10)) {
+            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 border-2 border-cyan-200 flex items-center justify-center text-slate-950 shadow-xl shadow-cyan-500/50 shrink-0';
+            avatarIcon.className = 'fa-solid fa-gem text-2xl';
+          } else if ((rNum >= 11 && rNum <= 25) || hasVeteran || (liveRank && liveRank <= 25)) {
+            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-800 border-2 border-purple-400 flex items-center justify-center text-purple-100 shadow-xl shadow-purple-900/50 shrink-0';
+            avatarIcon.className = 'fa-solid fa-certificate text-2xl';
+          } else if (customBadge && String(customBadge).toUpperCase().includes('SVIP')) {
+            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-700 border-2 border-cyan-300 flex items-center justify-center text-white shadow-xl shadow-cyan-500/50 shrink-0';
+            avatarIcon.className = 'fa-solid fa-bolt-lightning text-2xl animate-pulse text-yellow-300';
+          } else if (customBadge && (customBadge.includes('🔥') || (badgeTitle && badgeTitle.includes('لهيب')))) {
+            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 via-orange-500 to-amber-600 border-2 border-rose-300 flex items-center justify-center text-white shadow-xl shadow-rose-500/50 shrink-0';
+            avatarIcon.className = 'fa-solid fa-fire text-2xl animate-pulse text-yellow-300';
           } else {
-            avatarBox.className ='w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shrink-0';
-            avatarIcon.className ='fa-solid fa-user text-2xl';
+            avatarBox.className = 'w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shrink-0';
+            avatarIcon.className = 'fa-solid fa-user text-2xl';
           }
         }
       }
@@ -22812,7 +22908,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.1.8');
+            const curVer = (window._CLIENT_VERSION || 'v8.1.9');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {
