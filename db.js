@@ -675,7 +675,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.2';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.3';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -684,7 +684,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.2.2', remoteVersion: 'v8.2.2' };
+    return { upToDate: true, clientVersion: 'v8.2.3', remoteVersion: 'v8.2.3' };
   }
 
   async function checkDeviceBan() {
@@ -1521,6 +1521,8 @@ var AppDB = (() => {
       stateObj.jailTimer = Number(row.jail_timer || 0);
       stateObj.afkManagerExpiresAt = Number(row.afk_manager_expires_at || 0);
       stateObj.totalTaxesPaid = Number(row.total_taxes_paid || 0);
+      const rawGold = (row.gold !== undefined && row.gold !== null) ? row.gold : ((row.state && row.state.gold !== undefined) ? row.state.gold : ((local && local.gold !== undefined) ? local.gold : 0));
+      stateObj.gold = Math.max(0, Number(rawGold || 0));
       stateObj.adminModifiedTimestamp = Math.max(
         Number(row.admin_modified_timestamp || 0),
         Number((row.state && row.state.adminModifiedTimestamp) || 0)
@@ -1979,6 +1981,7 @@ var AppDB = (() => {
         jail_timer: Number(state.jailTimer || 0),
         afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
         total_taxes_paid: Number(state.totalTaxesPaid || 0),
+        gold: Number(state.gold || 0),
         state: state,
         last_seen: exitNow
       };
@@ -2132,6 +2135,7 @@ var AppDB = (() => {
       jail_timer: Number(state.jailTimer || 0),
       afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
       total_taxes_paid: Number(state.totalTaxesPaid || 0),
+      gold: Number(state.gold || 0),
       admin_modified_timestamp: Number(state.adminModifiedTimestamp || 0),
       state: state,
       last_seen: Number(state.lastActiveTimestamp || state.lastSeen || getTrustedNow())

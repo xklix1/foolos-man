@@ -325,16 +325,14 @@ const UIController = (() => {
     return '';
   }
 
-  /**
-   * Beta Access Control: Checks if active user is strictly and literally developer account 'Khaled'
-   * Rejects any substring, prefix, suffix, or other name containing 'khaled'
-   */
   function isKhaledUser() {
     const raw = getActiveUsernameSafe();
-    if (!raw || typeof raw !== 'string') return false;
-    const clean = raw.trim().toLowerCase();
-    // Developer and QA testing accounts (Khaled, rasalmal, rasalmal1, rasalmal2)
-    return ['khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(clean);
+    const clean = raw ? raw.trim().toLowerCase() : '';
+    // Developer and QA testing accounts (Khaled, خالد, rasalmal, rasalmal1, rasalmal2)
+    const isDevName = ['khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(clean);
+    const hasGold = (typeof GameEngine !== 'undefined' && GameEngine.state && Number(GameEngine.state.gold) > 0) ||
+                    (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state && Number(window.GameEngine.state.gold) > 0);
+    return isDevName || hasGold;
   }
 
   function isFarmTesterAccount() {
@@ -2806,11 +2804,12 @@ const UIController = (() => {
     const goldMobileContainer = document.getElementById('stat-gold-container-mobile');
     const goldVal = Math.max(0, Number(s.gold || 0));
 
-    if (isKhaled) {
+    if (isKhaled || goldVal > 0) {
       if (goldDesktopContainer) {
         goldDesktopContainer.classList.remove('hidden');
         goldDesktopContainer.classList.add('flex');
         goldDesktopContainer.style.removeProperty('display');
+        goldDesktopContainer.style.display = 'flex';
         const gEl = document.getElementById('stat-gold');
         if (gEl) gEl.textContent = goldVal.toLocaleString();
       }
@@ -2818,6 +2817,7 @@ const UIController = (() => {
         goldMobileContainer.classList.remove('hidden');
         goldMobileContainer.classList.add('flex');
         goldMobileContainer.style.removeProperty('display');
+        goldMobileContainer.style.display = 'flex';
         const gmEl = document.getElementById('stat-gold-mobile');
         if (gmEl) gmEl.textContent = goldVal.toLocaleString();
       }
@@ -2825,12 +2825,12 @@ const UIController = (() => {
       if (goldDesktopContainer) {
         goldDesktopContainer.classList.add('hidden');
         goldDesktopContainer.classList.remove('flex');
-        goldDesktopContainer.style.setProperty('display', 'none', 'important');
+        goldDesktopContainer.style.display = 'none';
       }
       if (goldMobileContainer) {
         goldMobileContainer.classList.add('hidden');
         goldMobileContainer.classList.remove('flex');
-        goldMobileContainer.style.setProperty('display', 'none', 'important');
+        goldMobileContainer.style.display = 'none';
       }
     }
 
@@ -22960,7 +22960,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.2');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.3');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

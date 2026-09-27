@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.2.2';
+    window._CLIENT_VERSION = 'v8.2.3';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.2.2';
+      const CURRENT_APP_BUILD = 'v8.2.3';
       try {
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -1952,7 +1952,7 @@
               </span>
             </div>
 
-            <div id="stat-gold-container-desktop" class="hidden items-center justify-between border-b border-amber-500/30 pb-2 bg-amber-500/5 px-2 py-1 rounded-lg" style="display: none !important;">
+            <div id="stat-gold-container-desktop" class="hidden items-center justify-between border-b border-amber-500/30 pb-2 bg-amber-500/5 px-2 py-1 rounded-lg">
               <div class="flex items-center gap-2">
                 <span class="w-5 h-5 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xs animate-pulse">
                   <i class="fa-solid fa-coins"></i>
@@ -2212,7 +2212,7 @@
         </div>
 
         <div id="stat-gold-container-mobile"
-          class="hidden px-2.5 py-1.5 bg-amber-950/40 rounded-lg border border-amber-500/30 justify-between items-center text-[10px]" style="display: none !important;">
+          class="hidden px-2.5 py-1.5 bg-amber-950/40 rounded-lg border border-amber-500/30 justify-between items-center text-[10px]">
           <span class="text-amber-400 font-bold flex items-center gap-1.5"><i
               class="fa-solid fa-coins text-amber-400"></i> رصيد الذهب (Beta)</span>
           <span class="numbers-font font-black text-amber-400 flex items-center gap-1"><span

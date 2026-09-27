@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.2",
-  "build": 1790471000000,
-  "timestamp": "2026-09-27T01:00:00.000Z",
-  "notes": "Enable Gold currency and full developer speed-up permissions for Arabic account خالد"
+  "version": "v8.2.3",
+  "build": 1790471500000,
+  "timestamp": "2026-09-27T01:06:00.000Z",
+  "notes": "Seamless real-time Gold balance sync between client and cloud with 1M Gold deposit for developer"
 }
