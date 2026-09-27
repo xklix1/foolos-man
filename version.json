@@ -1,6 +1,6 @@
 {
-  "version": "v8.1.7",
-  "build": 1790468000000,
-  "timestamp": "2026-09-27T00:12:00.000Z",
-  "notes": "Fix duplicate session popup trigger when opening private chat"
+  "version": "v8.1.8",
+  "build": 1790468600000,
+  "timestamp": "2026-09-27T00:23:00.000Z",
+  "notes": "Fix offline AFK earnings bank balance deposit and reconciliation"
 }

@@ -3332,12 +3332,7 @@ const GameEngine = (() => {
             const isLocalRecent = (locTs >= srvTs - 60000);
             if (!state.farm || !state.farm.unlocked || isLocalRecent) {
               state.farm = JSON.parse(JSON.stringify(localS.farm));
-              if (localS.cash !== undefined && isLocalRecent) {
-                state.cash = Number(localS.cash || 0);
-                state.bank = Number(localS.bank || 0);
-                state.dirtyCash = Number(localS.dirtyCash || 0);
-              }
-              console.log('[GameEngine] Recovered / reconciled newer farm state and balances from local storage safeguard:', state.farm);
+              console.log('[GameEngine] Recovered / reconciled newer farm state from local storage safeguard:', state.farm);
             }
           }
         } catch (e) {}
@@ -3377,11 +3372,6 @@ const GameEngine = (() => {
             const isLocalRecent = (locTs >= srvTs - 60000);
             if (!state.tradeCompany || typeof state.tradeCompany !== 'object' || isLocalRecent) {
               state.tradeCompany = JSON.parse(JSON.stringify(localS.tradeCompany));
-              if (localS.bank !== undefined && isLocalRecent) {
-                state.bank = Number(localS.bank || 0);
-                state.cash = Number(localS.cash || 0);
-                state.dirtyCash = Number(localS.dirtyCash || 0);
-              }
             }
           }
         } catch (e) {}
