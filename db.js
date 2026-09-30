@@ -675,7 +675,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.14';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.15';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -684,7 +684,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.2.14', remoteVersion: 'v8.2.14' };
+    return { upToDate: true, clientVersion: 'v8.2.15', remoteVersion: 'v8.2.15' };
   }
 
   async function checkDeviceBan() {
@@ -2197,6 +2197,9 @@ var AppDB = (() => {
                 window.GameEngine.state.cash = Number(fresh.cash !== undefined ? fresh.cash : window.GameEngine.state.cash);
                 window.GameEngine.state.netWorth = Number(fresh.netWorth !== undefined ? fresh.netWorth : window.GameEngine.state.netWorth);
                 window.GameEngine.state.adminModifiedTimestamp = Number(fresh.adminModifiedTimestamp || 0);
+                if (fresh.gold !== undefined || (fresh.state && fresh.state.gold !== undefined)) {
+                  window.GameEngine.state.gold = Number(fresh.gold !== undefined ? fresh.gold : fresh.state.gold);
+                }
                 if (fresh.seasonBadge !== undefined || (fresh.state && fresh.state.seasonBadge !== undefined)) {
                   window.GameEngine.state.seasonBadge = fresh.seasonBadge || (fresh.state && fresh.state.seasonBadge) || '';
                 }

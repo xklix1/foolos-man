@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.14",
-  "build": 1790804200000,
-  "timestamp": "2026-10-01T00:48:00.000Z",
-  "notes": "Ensure btn-admin-instant-add-gold listener is correctly inserted and active"
+  "version": "v8.2.15",
+  "build": 1790804300000,
+  "timestamp": "2026-10-01T00:57:00.000Z",
+  "notes": "Fix server and client gold currency persistence across session exit and reload"
 }

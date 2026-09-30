@@ -155,21 +155,13 @@ function sanitizePlayerState(dbRow) {
   // Security Hardening: Never leak PIN hash in client-facing state payloads
   delete cleanState.pin;
 
-  // Gold currency (strictly gated to developer account 'Khaled' / 'خالد' only)
-  const isLiteralKhaled = cleanState.username &&
-    typeof cleanState.username === 'string' &&
-    ['khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(cleanState.username.trim().toLowerCase());
-
-  if (isLiteralKhaled) {
-    if (dbRow && dbRow.gold !== undefined && dbRow.gold !== null) {
-      cleanState.gold = Math.max(0, Number(dbRow.gold));
-    } else if (rawState && rawState.gold !== undefined && rawState.gold !== null) {
-      cleanState.gold = Math.max(0, Number(rawState.gold));
-    } else {
-      cleanState.gold = 0;
-    }
+    // Gold currency: Authoritative persistence from PostgreSQL row or state JSON
+  if (dbRow && dbRow.gold !== undefined && dbRow.gold !== null) {
+    cleanState.gold = Math.max(0, Number(dbRow.gold));
+  } else if (rawState && rawState.gold !== undefined && rawState.gold !== null) {
+    cleanState.gold = Math.max(0, Number(rawState.gold));
   } else {
-    delete cleanState.gold;
+    cleanState.gold = 0;
   }
 
   // Agro Farm Tycoon (Officially open to all players)

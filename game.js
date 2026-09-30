@@ -3227,6 +3227,7 @@ const GameEngine = (() => {
         seasonBadge: dbState.seasonBadge || (dbState.state && dbState.state.seasonBadge) || '',
         customBadge: dbState.customBadge || (dbState.state && dbState.state.customBadge) || '',
         badgeTitle: dbState.badgeTitle || (dbState.state && dbState.state.badgeTitle) || '',
+        gold: Math.max(0, Number(dbState.gold !== undefined && dbState.gold !== null ? dbState.gold : ((dbState.state && dbState.state.gold !== undefined && dbState.state.gold !== null) ? dbState.state.gold : 0))),
         _loadedFromCloud: true
       });
 

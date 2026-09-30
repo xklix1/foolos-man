@@ -259,14 +259,11 @@ class SessionManager {
     delete s.pin;
     delete s.password;
 
-    if (isLiteralKhaled) {
-      if (clientState.gold !== undefined && clientState.gold !== null) {
-        s.gold = Math.max(0, Number(clientState.gold));
-      } else {
-        s.gold = Math.max(0, Number(s.gold || 0));
-      }
+        // Synchronize Gold currency authoritatively
+    if (clientState.gold !== undefined && clientState.gold !== null) {
+      s.gold = Math.max(0, Number(clientState.gold));
     } else {
-      delete s.gold;
+      s.gold = Math.max(0, Number(s.gold || 0));
     }
 
     // Agro Farm Tycoon (Officially open to all players)
