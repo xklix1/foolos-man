@@ -50,9 +50,6 @@ class EventService {
    * @returns {Promise<Array>}
    */
   async getActiveEventsForUser(username) {
-    if (!username || username.trim().toLowerCase() !== 'khaled') {
-      return [];
-    }
     return await this.getActiveEvents();
   }
 

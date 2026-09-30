@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.2.17';
+    window._CLIENT_VERSION = 'v8.2.18';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.2.17';
+      const CURRENT_APP_BUILD = 'v8.2.18';
       try {
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -117,7 +117,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v8.2.17">
+  <link rel="stylesheet" href="app.css?v=v8.2.18">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -1952,12 +1952,12 @@
               </span>
             </div>
 
-            <div id="stat-gold-container-desktop" class="hidden items-center justify-between border-b border-amber-500/30 pb-2 bg-amber-500/5 px-2 py-1 rounded-lg">
+            <div id="stat-gold-container-desktop" class="flex items-center justify-between border-b border-amber-500/30 pb-2 bg-amber-500/5 px-2 py-1 rounded-lg">
               <div class="flex items-center gap-2">
                 <span class="w-5 h-5 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xs animate-pulse">
                   <i class="fa-solid fa-coins"></i>
                 </span>
-                <span class="text-xs text-amber-300 font-bold">الذهب (Beta)</span>
+                <span class="text-xs text-amber-300 font-bold">رصيد الذهب</span>
               </div>
               <span class="numbers-font text-xs font-black text-amber-400 flex items-center gap-1">
                 <span id="stat-gold">0</span>
@@ -2212,9 +2212,9 @@
         </div>
 
         <div id="stat-gold-container-mobile"
-          class="hidden px-2.5 py-1.5 bg-amber-950/40 rounded-lg border border-amber-500/30 justify-between items-center text-[10px]">
+          class="flex px-2.5 py-1.5 bg-amber-950/40 rounded-lg border border-amber-500/30 justify-between items-center text-[10px]">
           <span class="text-amber-400 font-bold flex items-center gap-1.5"><i
-              class="fa-solid fa-coins text-amber-400"></i> رصيد الذهب (Beta)</span>
+              class="fa-solid fa-coins text-amber-400"></i> رصيد الذهب</span>
           <span class="numbers-font font-black text-amber-400 flex items-center gap-1"><span
               id="stat-gold-mobile">0</span> 🪙</span>
         </div>
@@ -7123,11 +7123,11 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=v8.2.17"></script>
-  <script src="server-client-bridge.js?v=v8.2.17"></script>
-  <script src="game.js?v=v8.2.17"></script>
-  <script src="ui.js?v=v8.2.17"></script>
-  <script src="pwa-manager.js?v=v8.2.17"></script>
+  <script src="db.js?v=v8.2.18"></script>
+  <script src="server-client-bridge.js?v=v8.2.18"></script>
+  <script src="game.js?v=v8.2.18"></script>
+  <script src="ui.js?v=v8.2.18"></script>
+  <script src="pwa-manager.js?v=v8.2.18"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

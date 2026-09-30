@@ -227,13 +227,7 @@ async function adminRoutes(fastify, options) {
       return reply.status(400).send({ error: 'Bad Request', message: 'Amount must be a positive number.' });
     }
 
-    // Strict beta gating: developer accounts ('Khaled' / 'خالد') can receive gold
-    if (!['khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(username.trim().toLowerCase())) {
-      return reply.status(403).send({
-        error: 'Forbidden',
-        message: 'Gold currency is in closed beta and can only be granted to developer accounts.'
-      });
-    }
+    // Gold currency can now be granted to any valid player
 
     try {
       const uKey = username.trim().toLowerCase();

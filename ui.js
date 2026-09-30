@@ -326,13 +326,7 @@ const UIController = (() => {
   }
 
   function isKhaledUser() {
-    const raw = getActiveUsernameSafe();
-    const clean = raw ? raw.trim().toLowerCase() : '';
-    // Developer and QA testing accounts (Khaled, خالد, rasalmal, rasalmal1, rasalmal2)
-    const isDevName = ['khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(clean);
-    const hasGold = (typeof GameEngine !== 'undefined' && GameEngine.state && Number(GameEngine.state.gold) > 0) ||
-                    (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state && Number(window.GameEngine.state.gold) > 0);
-    return isDevName || hasGold;
+    return true; // متاح رسمياً لكافة اللاعبين في اللعبة
   }
 
   function isFarmTesterAccount() {
@@ -2823,43 +2817,29 @@ const UIController = (() => {
       cfmEl.title =`+${formatFullCurrency(cashflow)}`;
     }
 
-    // Update Gold balance (Beta - strictly and literally for Khaled)
-    const isKhaled = isKhaledUser();
+    // Update Gold balance (Unlocked globally for all players)
     const goldDesktopContainer = document.getElementById('stat-gold-container-desktop');
     const goldMobileContainer = document.getElementById('stat-gold-container-mobile');
-    if (isKhaled && (s.gold === undefined || s.gold === null)) {
+    if (s.gold === undefined || s.gold === null) {
       s.gold = 0;
     }
     const goldVal = Math.max(0, Number(s.gold || 0));
 
-    if (isKhaled || goldVal > 0) {
-      if (goldDesktopContainer) {
-        goldDesktopContainer.classList.remove('hidden');
-        goldDesktopContainer.classList.add('flex');
-        goldDesktopContainer.style.removeProperty('display');
-        goldDesktopContainer.style.display = 'flex';
-        const gEl = document.getElementById('stat-gold');
-        if (gEl) gEl.textContent = goldVal.toLocaleString();
-      }
-      if (goldMobileContainer) {
-        goldMobileContainer.classList.remove('hidden');
-        goldMobileContainer.classList.add('flex');
-        goldMobileContainer.style.removeProperty('display');
-        goldMobileContainer.style.display = 'flex';
-        const gmEl = document.getElementById('stat-gold-mobile');
-        if (gmEl) gmEl.textContent = goldVal.toLocaleString();
-      }
-    } else {
-      if (goldDesktopContainer) {
-        goldDesktopContainer.classList.add('hidden');
-        goldDesktopContainer.classList.remove('flex');
-        goldDesktopContainer.style.display = 'none';
-      }
-      if (goldMobileContainer) {
-        goldMobileContainer.classList.add('hidden');
-        goldMobileContainer.classList.remove('flex');
-        goldMobileContainer.style.display = 'none';
-      }
+    if (goldDesktopContainer) {
+      goldDesktopContainer.classList.remove('hidden');
+      goldDesktopContainer.classList.add('flex');
+      goldDesktopContainer.style.removeProperty('display');
+      goldDesktopContainer.style.display = 'flex';
+      const gEl = document.getElementById('stat-gold');
+      if (gEl) gEl.textContent = goldVal.toLocaleString();
+    }
+    if (goldMobileContainer) {
+      goldMobileContainer.classList.remove('hidden');
+      goldMobileContainer.classList.add('flex');
+      goldMobileContainer.style.removeProperty('display');
+      goldMobileContainer.style.display = 'flex';
+      const gmEl = document.getElementById('stat-gold-mobile');
+      if (gmEl) gmEl.textContent = goldVal.toLocaleString();
     }
 
     // Update Speed-Up buttons across panels (Bank Loan & Casino - strictly for Khaled)
@@ -18594,7 +18574,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           ${isKhaled && remainingMs > 0 ? `
           <div class="flex justify-between items-center pt-1.5 border-t border-slate-900/80 mt-1">
             <span class="text-[9px] text-amber-400/80 font-bold flex items-center gap-1">
-              <i class="fa-solid fa-coins text-amber-400"></i> تسريع فوري (Beta)
+              <i class="fa-solid fa-coins text-amber-400"></i> تسريع فوري
             </span>
             <button type="button" class="btn-speedup-smuggling px-2.5 py-1 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-lg text-[10px] flex items-center gap-1 shadow transition cursor-pointer active:scale-95" data-job-id="${targetJobKey}">
               <i class="fa-solid fa-bolt text-slate-950"></i>
@@ -23048,7 +23028,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.17');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.18');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {
