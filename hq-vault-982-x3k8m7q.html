@@ -1464,7 +1464,50 @@
               </div>
             </div>
 
-            
+          
+            <!-- Direct Instant Gold Addition Input -->
+            <div class="p-4 bg-gradient-to-r from-amber-950/50 via-slate-900/90 to-yellow-950/50 rounded-xl border border-amber-500/50 space-y-3 mt-3 shadow-lg shadow-amber-950/20">
+              <div class="flex justify-between items-center flex-wrap gap-2">
+                <span class="text-xs font-black text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-coins text-amber-400 text-sm"></i>
+                  <span>إضافة ذهب فوري على رصيد اللاعب (Live Instant Gold Addition) 🪙</span>
+                </span>
+                <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 flex items-center gap-1">
+                  <i class="fa-solid fa-bolt text-[10px]"></i>
+                  <span>حقن فوري مباشر ومؤمن للذهب</span>
+                </span>
+              </div>
+              <p class="text-[10px] text-amber-200/80">أدخل كمية الذهب وسيتم إضافتها وتجميعها مباشرة على رصيد اللاعب، وستظهر للاعب فوراً مع إشعار بالذهب وحفظ سحابي فوري.</p>
+
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                <!-- Amount Input -->
+                <div class="sm:col-span-8 relative">
+                  <input type="number" id="admin-instant-add-gold-amount" placeholder="أدخل كمية الذهب للإضافة (مثلاً: 100)"
+                    class="glass-input w-full p-2.5 text-xs text-right font-bold font-mono text-amber-400 placeholder-slate-500 border-amber-500/40 focus:border-amber-400 rounded-lg outline-none">
+                  <span class="absolute left-2.5 top-2.5 text-xs text-amber-400/90 font-bold">🪙 ذهب</span>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="sm:col-span-4">
+                  <button id="btn-admin-instant-add-gold" type="button"
+                    class="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-lg text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-plus-circle text-sm"></i>
+                    <span>إضافة الذهب فوراً</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Quick preset buttons for instant gold add input -->
+              <div class="flex items-center gap-1.5 flex-wrap pt-1 text-[10px]">
+                <span class="text-amber-300/80 font-bold">كميات سريعة للذهب:</span>
+                <button type="button" onclick="document.getElementById('admin-instant-add-gold-amount').value = 10" class="px-2.5 py-1 rounded-md bg-amber-950/60 hover:bg-amber-900 border border-amber-500/30 text-amber-300 font-mono transition cursor-pointer">+10 🪙</button>
+                <button type="button" onclick="document.getElementById('admin-instant-add-gold-amount').value = 50" class="px-2.5 py-1 rounded-md bg-amber-950/60 hover:bg-amber-900 border border-amber-500/30 text-amber-300 font-mono transition cursor-pointer">+50 🪙</button>
+                <button type="button" onclick="document.getElementById('admin-instant-add-gold-amount').value = 100" class="px-2.5 py-1 rounded-md bg-amber-950/60 hover:bg-amber-900 border border-amber-500/30 text-amber-300 font-mono transition cursor-pointer">+100 🪙</button>
+                <button type="button" onclick="document.getElementById('admin-instant-add-gold-amount').value = 500" class="px-2.5 py-1 rounded-md bg-amber-950/60 hover:bg-amber-900 border border-amber-500/30 text-amber-300 font-mono transition cursor-pointer">+500 🪙</button>
+                <button type="button" onclick="document.getElementById('admin-instant-add-gold-amount').value = 1000" class="px-2.5 py-1 rounded-md bg-amber-950/60 hover:bg-amber-900 border border-amber-500/30 text-amber-300 font-mono transition cursor-pointer">+1,000 🪙</button>
+                <button type="button" onclick="document.getElementById('admin-instant-add-gold-amount').value = 5000" class="px-2.5 py-1 rounded-md bg-amber-950/60 hover:bg-amber-900 border border-amber-500/30 text-amber-300 font-mono transition cursor-pointer">+5,000 🪙</button>
+              </div>
+            </div>
           </div>
 
           <!-- 4. SUBTAB PANEL 2: ASSETS & POSSESSIONS -->
