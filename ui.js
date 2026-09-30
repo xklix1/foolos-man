@@ -7106,7 +7106,12 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       } else {
         players = await AppDB.getLeaderboard(forceRefresh);
         if (Array.isArray(players)) {
-          players = players.filter(p => p && !['newu', 'khaled', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(String(p.username || '').trim().toLowerCase()));
+          players = players.filter(p => {
+            if (!p || !p.username) return false;
+            if (p.isAdmin) return false;
+            const u = String(p.username).trim().toLowerCase();
+            return !['newu', 'khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(u) && !u.includes('khaled') && !u.includes('خالد');
+          });
         }
         cachedLeaderboard = players;
         lastLeaderboardFetchTime = now;
@@ -22969,7 +22974,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.7');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.8');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

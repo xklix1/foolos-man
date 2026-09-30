@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.7",
-  "build": 1790801800000,
-  "timestamp": "2026-09-30T20:55:00.000Z",
-  "notes": "Synchronize script query strings and force purge browser cache for gold persistence"
+  "version": "v8.2.8",
+  "build": 1790802000000,
+  "timestamp": "2026-09-30T21:00:00.000Z",
+  "notes": "Exclude admin and developer accounts from public leaderboard and Hall of Fame"
 }

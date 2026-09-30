@@ -675,7 +675,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.7';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.8';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -684,7 +684,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.2.7', remoteVersion: 'v8.2.7' };
+    return { upToDate: true, clientVersion: 'v8.2.8', remoteVersion: 'v8.2.8' };
   }
 
   async function checkDeviceBan() {
@@ -4728,10 +4728,10 @@ var AppDB = (() => {
 
   async function adminRebuildLeaderboard() {
     const now = Date.now();
-    const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned,state&is_banned=eq.false&username=not.in.(newu,khaled,Khaled,rasalmal,rasalmal1,rasalmal2,Rasalmal,Rasalmal1,Rasalmal2)&order=net_worth.desc&limit=30');
+    const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned,state&is_banned=eq.false&is_admin=eq.false&username=not.in.(newu,khaled,Khaled,خالد,rasalmal,rasalmal1,rasalmal2,Rasalmal,Rasalmal1,Rasalmal2)&order=net_worth.desc&limit=35');
 
     const topPlayers = (rows || [])
-      .filter(r => !isHiddenPlayer(r.username))
+      .filter(r => !isHiddenPlayer(r.username, r.is_admin))
       .slice(0, 25)
       .map(r => {
       let pState = r.state;
@@ -5369,10 +5369,14 @@ var AppDB = (() => {
   }
 
   //  Unified Official Hourly Leaderboard Document Engine
-  const HIDDEN_TEST_USERS = new Set(['newu', 'khaled', 'rasalmal', 'rasalmal1', 'rasalmal2']);
-  function isHiddenPlayer(username) {
+  const HIDDEN_TEST_USERS = new Set(['newu', 'khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2']);
+  function isHiddenPlayer(username, isAdmin) {
     if (!username) return false;
-    return HIDDEN_TEST_USERS.has(String(username).trim().toLowerCase());
+    if (isAdmin === true) return true;
+    const clean = String(username).trim().toLowerCase();
+    if (HIDDEN_TEST_USERS.has(clean)) return true;
+    if (clean === 'khaled' || clean === 'خالد' || clean.includes('khaled') || clean.includes('خالد')) return true;
+    return false;
   }
 
   function _computeNextHourlyCycle(fromTime) {
@@ -5404,9 +5408,9 @@ var AppDB = (() => {
   async function _rebuildAndSaveLeaderboard() {
     const now = Date.now();
     try {
-      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned,state&is_banned=eq.false&username=not.in.(newu,khaled,Khaled,rasalmal,rasalmal1,rasalmal2,Rasalmal,Rasalmal1,Rasalmal2)&order=net_worth.desc&limit=25');
+      const rows = await _api('players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned,state&is_banned=eq.false&is_admin=eq.false&username=not.in.(newu,khaled,Khaled,خالد,rasalmal,rasalmal1,rasalmal2,Rasalmal,Rasalmal1,Rasalmal2)&order=net_worth.desc&limit=35');
       const topPlayers = (rows || [])
-        .filter(r => !isHiddenPlayer(r.username))
+        .filter(r => !isHiddenPlayer(r.username, r.is_admin))
         .slice(0, 10)
         .map(r => {
           return {
