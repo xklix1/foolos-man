@@ -13466,13 +13466,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     let alignClass = isMe ? 'text-left flex flex-col items-end' : 'text-right flex flex-col items-start';
     let senderNameClass = '';
     let vipTagText = '';
+    let glowType = '';
     const isEn = (window.currentLang === 'en' || document.documentElement.lang === 'en' || document.documentElement.dir === 'ltr');
 
     if (isSystem) {
       bubbleClass = 'bg-red-950/40 border border-red-500/30 text-red-200 w-full text-center py-2 px-3 rounded-xl shadow-lg shadow-red-950/20';
       alignClass = 'text-center flex flex-col items-center w-full';
     } else {
-      let glowType = msg.chatGlow || (window._knownVipGlowPlayers && window._knownVipGlowPlayers.get(msg.sender)) || '';
+      glowType = msg.chatGlow || (window._knownVipGlowPlayers && window._knownVipGlowPlayers.get(msg.sender)) || '';
       if (glowType === 'none') glowType = '';
       if (!glowType) {
         if (isMe && GameEngine.state && GameEngine.state.chatGlow === 'none') {
@@ -23184,33 +23185,53 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       if (saveBtn) {
         saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري الرفع والتشفير...</span>';
+        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري حفظ وتطبيق الصورة...</span>';
       }
       if (statusEl) {
         statusEl.className = 'p-2.5 rounded-xl text-center font-bold text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 block';
-        statusEl.textContent = 'جاري نقل الصورة للسيرفر والتشفير الأمني... 🔒';
+        statusEl.textContent = 'جاري حفظ الصورة وتطبيقها بأمان... 🔒';
       }
 
-      const res = await ServerBridge.uploadAvatar(_stagedAvatarBase64);
-      if (res && res.success) {
-        if (GameEngine.state) {
-          GameEngine.state.avatarUrl = res.avatarUrl;
-        }
-        showToast('تم بنجاح', res.message || 'تم تحديث صورتك الشخصية بنجاح! 📸', 'success');
-        closeAvatarModal();
+      let finalAvatarUrl = _stagedAvatarBase64;
 
-        const curUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
-        if (curUser) {
-          profileCache.delete(curUser);
+      // Try uploading to server if backend bridge is reachable
+      try {
+        if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.uploadAvatar === 'function') {
+          const res = await ServerBridge.uploadAvatar(_stagedAvatarBase64);
+          if (res && res.success && res.avatarUrl) {
+            finalAvatarUrl = res.avatarUrl;
+          }
         }
-        if (window._lastChatMessagesCache) {
-          renderChatMessages(window._lastChatMessagesCache);
+      } catch (srvErr) {
+        console.warn('[Avatar] Server bridge upload fallback to direct cloud state:', srvErr.message);
+      }
+
+      if (GameEngine.state) {
+        GameEngine.state.avatarUrl = finalAvatarUrl;
+      }
+
+      const curUser = (GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username) || '').trim();
+      if (curUser && typeof AppDB !== 'undefined' && typeof AppDB.savePlayerState === 'function') {
+        await AppDB.savePlayerState(curUser, GameEngine.state, true);
+      }
+
+      showToast('تم بنجاح', 'تم حفظ وتحديث صورتك الشخصية بنجاح! 📸', 'success');
+      closeAvatarModal();
+
+      if (curUser) {
+        profileCache.delete(curUser);
+        const avatarBox = document.getElementById('profile-card-avatar-box');
+        if (avatarBox) {
+          avatarBox.className = 'w-14 h-14 rounded-2xl border-2 border-yellow-400 overflow-hidden shrink-0 shadow-lg shadow-yellow-500/20';
+          avatarBox.innerHTML = `<img src="${finalAvatarUrl}" class="w-full h-full object-cover" alt="${escapeHtml(curUser)}" onerror="this.remove(); document.getElementById('profile-card-avatar-icon')?.classList.remove('hidden');" /><i id="profile-card-avatar-icon" class="fa-solid fa-user text-2xl hidden text-yellow-400"></i>`;
         }
-      } else {
-        throw new Error((res && res.error) || 'فشل رفع الصورة');
+      }
+
+      if (window._lastChatMessagesCache) {
+        renderChatMessages(window._lastChatMessagesCache);
       }
     } catch (err) {
-      showToast('خطأ في الرفع', err.message || 'حدث خطأ أثناء رفع الصورة', 'error');
+      showToast('خطأ في الحفظ', err.message || 'حدث خطأ أثناء حفظ الصورة', 'error');
       if (statusEl) {
         statusEl.className = 'p-2.5 rounded-xl text-center font-bold text-xs bg-rose-500/20 text-rose-300 border border-rose-500/30 block';
         statusEl.textContent = err.message || 'فشل حفظ الصورة.';
@@ -23226,14 +23247,27 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   async function removeUserAvatar() {
     if (!confirm('هل تريد بالتأكيد إزالة صورتك الشخصية والعودة للشكل الافتراضي؟')) return;
     try {
-      await ServerBridge.removeAvatar();
+      try {
+        if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.removeAvatar === 'function') {
+          await ServerBridge.removeAvatar();
+        }
+      } catch (_) {}
+
       if (GameEngine.state) {
         GameEngine.state.avatarUrl = '';
       }
+
+      const curUser = (GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username) || '').trim();
+      if (curUser && typeof AppDB !== 'undefined' && typeof AppDB.savePlayerState === 'function') {
+        await AppDB.savePlayerState(curUser, GameEngine.state, true);
+      }
+
       showToast('تمت الإزالة', 'تمت إزالة صورتك الشخصية والعودة للافتراضي.', 'info');
       closeAvatarModal();
-      const curUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
-      if (curUser) profileCache.delete(curUser);
+      if (curUser) {
+        profileCache.delete(curUser);
+        openPlayerProfileCard(curUser);
+      }
       if (window._lastChatMessagesCache) renderChatMessages(window._lastChatMessagesCache);
     } catch (err) {
       showToast('خطأ', err.message || 'فشل حذف الصورة', 'error');
@@ -23481,7 +23515,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.24');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.25');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

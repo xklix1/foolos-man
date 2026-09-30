@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.24",
-  "build": 1790812000000,
-  "timestamp": "2026-10-01T02:22:00.000Z",
-  "notes": "Add secure custom avatar profile picture upload, magic bytes validation, and chat/profile integration"
+  "version": "v8.2.25",
+  "build": 1790813000000,
+  "timestamp": "2026-10-01T02:27:00.000Z",
+  "notes": "Fix glowType scope in chat messages and add seamless Supabase avatar storage fallback"
 }
