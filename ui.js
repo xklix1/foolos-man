@@ -23078,7 +23078,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   function openAvatarModal() {
     const modal = document.getElementById('avatar-upload-modal');
     if (!modal) return;
-    const curAvatar = (GameEngine.state && GameEngine.state.avatarUrl) ? (typeof ServerBridge !== 'undefined' ? ServerBridge.formatAvatarUrl(GameEngine.state.avatarUrl) : GameEngine.state.avatarUrl) : '';
+    const curUser = (GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username) || '').trim();
+    const curAvatar = (GameEngine.state && GameEngine.state.avatarUrl) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_avatar_' + curUser)) || '';
     const previewImg = document.getElementById('avatar-preview-img');
     const placeholder = document.getElementById('avatar-preview-placeholder');
     const statusEl = document.getElementById('avatar-upload-status');
@@ -23211,6 +23212,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       }
 
       const curUser = (GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username) || '').trim();
+      if (curUser) { try { localStorage.setItem('rasalmal_avatar_' + curUser, finalAvatarUrl); } catch (_) {} }
+      if (curUser) { try { localStorage.removeItem('rasalmal_avatar_' + curUser); } catch (_) {} }
       if (curUser && typeof AppDB !== 'undefined' && typeof AppDB.savePlayerState === 'function') {
         await AppDB.savePlayerState(curUser, GameEngine.state, true);
       }
@@ -23515,7 +23518,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.25');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.26');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

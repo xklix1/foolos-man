@@ -675,7 +675,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.25';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.26';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -684,7 +684,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.2.25', remoteVersion: 'v8.2.25' };
+    return { upToDate: true, clientVersion: 'v8.2.26', remoteVersion: 'v8.2.26' };
   }
 
   async function checkDeviceBan() {
@@ -1530,6 +1530,7 @@ var AppDB = (() => {
       } else {
         stateObj.gold = 0;
       }
+      stateObj.avatarUrl = (row.avatar_url || (row.state && row.state.avatarUrl) || (local && local.avatarUrl) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_avatar_' + u)) || stateObj.avatarUrl || '');
       stateObj.adminModifiedTimestamp = Math.max(
         Number(row.admin_modified_timestamp || 0),
         Number((row.state && row.state.adminModifiedTimestamp) || 0)
@@ -1989,6 +1990,7 @@ var AppDB = (() => {
         afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
         total_taxes_paid: Number(state.totalTaxesPaid || 0),
         gold: Number(state.gold || 0),
+      avatar_url: state.avatarUrl || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_avatar_' + u)) || '',
         state: state,
         last_seen: exitNow
       };

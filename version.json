@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.25",
-  "build": 1790813000000,
-  "timestamp": "2026-10-01T02:27:00.000Z",
-  "notes": "Fix glowType scope in chat messages and add seamless Supabase avatar storage fallback"
+  "version": "v8.2.26",
+  "build": 1790814000000,
+  "timestamp": "2026-10-01T02:35:00.000Z",
+  "notes": "Ensure permanent avatar persistence across reloads and multi-layer local/cloud state hydration"
 }

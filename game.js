@@ -1261,7 +1261,8 @@ const GameEngine = (() => {
     isVerified: false,
     chatGlow: '',
     unlockedChatGlows: [],
-    gold: 0
+    gold: 0,
+    avatarUrl: ''
   };
 
   // ─────────────────────────────────────────────────────────
@@ -3224,6 +3225,7 @@ const GameEngine = (() => {
         inventory: mergedInventory,
         investments: Array.isArray(dbState.investments) ? dbState.investments : [],
         customItems: Array.isArray(dbState.customItems) ? dbState.customItems : [],
+        avatarUrl: (dbState.avatarUrl || (dbState.state && dbState.state.avatarUrl) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_avatar_' + username)) || '').trim(),
         seasonBadge: dbState.seasonBadge || (dbState.state && dbState.state.seasonBadge) || '',
         customBadge: dbState.customBadge || (dbState.state && dbState.state.customBadge) || '',
         badgeTitle: dbState.badgeTitle || (dbState.state && dbState.state.badgeTitle) || '',
