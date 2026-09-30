@@ -21941,6 +21941,9 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   // ─────────────────────────────────────────────
   //  TOP-UP & SUPPORT STORE CONTROLLER (متجر الشحن والدعم)
   // ─────────────────────────────────────────────
+  let _activeSelectedTopupPkg = null;
+  let _topupModalEventsBound = false;
+  let _currentTopupPaymentSettings = null;
   let _cachedTopupPackagesList = [];
   let _activeTopupCategoryFilter = 'all';
 
@@ -21998,6 +22001,12 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
   }
 
+  function closeTopupModal() {
+    const modal = document.getElementById('topup-store-modal');
+    if (modal) modal.classList.add('hidden');
+    _activeSelectedTopupPkg = null;
+  }
+
   function renderTopupPackagesList(packages) {
     const container = document.getElementById('topup-packages-container');
     if (!container) return;
@@ -22038,7 +22047,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const cardBorder = isGoldPkg ? 'border-amber-500/40 hover:border-amber-300 hover:shadow-amber-500/20' : 'border-cyan-500/30 hover:border-cyan-300 hover:shadow-cyan-500/20';
       const cardBg = isGoldPkg ? 'bg-gradient-to-b from-amber-950/20 via-slate-900/95 to-slate-950' : 'bg-gradient-to-b from-slate-900/90 via-slate-950 to-black';
 
-      card.className = `p-4 rounded-3xl ${cardBg} border-2 ${cardBorder} flex flex-col justify-between space-y-3.5 transition-all duration-300 shadow-xl relative overflow-hidden group hover:scale-[1.02] cursor-default`;
+      card.className = `topup-pkg-card p-4 rounded-3xl ${cardBg} border-2 ${cardBorder} flex flex-col justify-between space-y-3.5 transition-all duration-300 shadow-xl relative overflow-hidden group`;
 
       // Header Tag/Pill
       let topPill = '';
@@ -22144,7 +22153,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     });
   }
 
-    function selectPackageForTopup(pkg) {
+  function selectPackageForTopup(pkg) {
     playMenuSound('click');
     _activeSelectedTopupPkg = pkg;
 
@@ -23139,7 +23148,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.19');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.20');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {
