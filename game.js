@@ -6111,8 +6111,8 @@ const GameEngine = (() => {
       throw new Error("مؤقت الشحنة منتهٍ بالفعل.");
     }
 
-    // Cost: 1 Gold per minute (minimum 1 Gold)
-    const goldCost = Math.max(1, Math.ceil(remainingMs / 60000));
+    // Cost: 1 Gold per 10 minutes (600,000 ms) (minimum 1 Gold)
+    const goldCost = Math.max(1, Math.ceil(remainingMs / 600000));
     const currentGold = Math.max(0, Number(state.gold || 0));
 
     if (currentGold < goldCost) {

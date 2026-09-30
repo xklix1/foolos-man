@@ -6,8 +6,8 @@ const supabaseUrl = envFile.match(/SUPABASE_URL=(.*)/)?.[1]?.trim();
 const supabaseKey = envFile.match(/SUPABASE_SERVICE_ROLE_KEY=(.*)/)?.[1]?.trim();
 
 async function run() {
-  const oldName = 'mooka14';
-  const newName = 'MoOka Aziz';
+  const oldName = 'yassertofek022@gmai.com';
+  const newName = 'B7R';
 
   // 1. Fetch old player data
   const res = await fetch(`${supabaseUrl}/rest/v1/players?username=eq.${encodeURIComponent(oldName)}`, {
@@ -15,7 +15,7 @@ async function run() {
   });
   const [player] = await res.json();
   if (!player) {
-    console.error('Player mooka14 not found!');
+    console.error(`Player ${oldName} not found!`);
     return;
   }
 

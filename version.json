@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.4",
-  "build": 1790472000000,
-  "timestamp": "2026-09-27T02:56:00.000Z",
-  "notes": "Ensure permanent 1M Gold balance preservation and instant display for developer account"
+  "version": "v8.2.5",
+  "build": 1790800500000,
+  "timestamp": "2026-09-30T20:35:00.000Z",
+  "notes": "Update gold speed-up rate to 1 Gold per 10 minutes (6 Gold per 1 hour)"
 }

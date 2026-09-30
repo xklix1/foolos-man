@@ -465,7 +465,7 @@ const UIController = (() => {
       jailSpeedupBtn.classList.remove('hidden');
       jailSpeedupBtn.classList.add('flex');
       jailSpeedupBtn.style.removeProperty('display');
-      const cost = Math.max(1, Math.ceil(jailSec / 60));
+      const cost = Math.max(1, Math.ceil(jailSec / 600));
       const costEl = document.getElementById('jail-speedup-cost');
       if (costEl) costEl.textContent = cost;
       if (!jailSpeedupBtn._bound) {
@@ -2846,7 +2846,7 @@ const UIController = (() => {
         loanSpeedupBtn.classList.remove('hidden');
         loanSpeedupBtn.classList.add('flex');
         loanSpeedupBtn.style.removeProperty('display');
-        const cost = Math.max(1, Math.ceil((loanCd - now) / 60000));
+        const cost = Math.max(1, Math.ceil((loanCd - now) / 600000));
         const costEl = document.getElementById('loan-speedup-cost');
         if (costEl) costEl.textContent = cost;
         if (!loanSpeedupBtn._bound) {
@@ -2868,7 +2868,7 @@ const UIController = (() => {
         casinoSpeedupBtn.classList.remove('hidden');
         casinoSpeedupBtn.classList.add('flex');
         casinoSpeedupBtn.style.removeProperty('display');
-        const cost = Math.max(1, Math.ceil((casinoCd - now) / 60000));
+        const cost = Math.max(1, Math.ceil((casinoCd - now) / 600000));
         const costEl = document.getElementById('casino-speedup-cost');
         if (costEl) costEl.textContent = cost;
         if (!casinoSpeedupBtn._bound) {
@@ -18482,7 +18482,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const remainingSec = Math.ceil(remainingMs / 1000);
       const totalSec = route.durationTicks || 1;
       const progressPct = Math.min(100, ((totalSec - remainingSec) / totalSec) * 100);
-      const goldCost = Math.max(1, Math.ceil(remainingMs / 60000));
+      const goldCost = Math.max(1, Math.ceil(remainingMs / 600000));
       const targetJobKey = String(job.id !== undefined ? job.id : idx);
 
       const hours = Math.floor(remainingSec / 3600);
@@ -19417,7 +19417,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             <button class="btn-speedup-trade-import w-full mt-2 py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-[11px] transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95" data-id="${order.id}">
               <i class="fa-solid fa-bolt text-xs"></i>
               <span>تسريع الوصول الفوري</span>
-              <span class="px-1.5 py-0.5 rounded bg-black/30 text-amber-950 font-black text-[10px] numbers-font" id="speedup-cost-${order.id}">${Math.max(1, Math.ceil(remSec / 60))} 🪙</span>
+              <span class="px-1.5 py-0.5 rounded bg-black/30 text-amber-950 font-black text-[10px] numbers-font" id="speedup-cost-${order.id}">${Math.max(1, Math.ceil(remSec / 600))} 🪙</span>
             </button>
           </div>`}
         </div>`;
@@ -19468,7 +19468,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               <button class="btn-speedup-trade-export w-full mt-2 py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-[11px] transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95" data-id="${order.id}">
                 <i class="fa-solid fa-bolt text-xs"></i>
                 <span>تسريع التسليم الفوري</span>
-                <span class="px-1.5 py-0.5 rounded bg-black/30 text-amber-950 font-black text-[10px] numbers-font" id="speedup-cost-${order.id}">${Math.max(1, Math.ceil(remSec / 60))} 🪙</span>
+                <span class="px-1.5 py-0.5 rounded bg-black/30 text-amber-950 font-black text-[10px] numbers-font" id="speedup-cost-${order.id}">${Math.max(1, Math.ceil(remSec / 600))} 🪙</span>
               </button>
             </div>`}
         </div>`;
@@ -19567,7 +19567,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         timerEl.textContent = formatCountdownHMS(remSec);
         barEl.style.width =`${progress}%`;
         if (speedupCostEl) {
-          speedupCostEl.textContent = `${Math.max(1, Math.ceil(remSec / 60))} 🪙`;
+          speedupCostEl.textContent = `${Math.max(1, Math.ceil(remSec / 600))} 🪙`;
         }
       }
     });
@@ -19587,7 +19587,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         timerEl.textContent = formatCountdownHMS(remSec);
         barEl.style.width =`${progress}%`;
         if (speedupCostEl) {
-          speedupCostEl.textContent = `${Math.max(1, Math.ceil(remSec / 60))} 🪙`;
+          speedupCostEl.textContent = `${Math.max(1, Math.ceil(remSec / 600))} 🪙`;
         }
       }
     });
@@ -22963,7 +22963,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.4');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.5');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

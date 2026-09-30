@@ -447,8 +447,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
           return reply.code(400).send({ error: 'NO_ACTIVE_TIMER', message: 'Player is not currently in jail.' });
         }
         remainingMs = jailSec * 1000;
-        // 1 Gold per minute
-        cost = Math.max(1, Math.ceil(jailSec / 60));
+        // 1 Gold per 10 minutes (600 seconds)
+        cost = Math.max(1, Math.ceil(jailSec / 600));
         if (currentGold < cost) {
           return reply.code(400).send({
             error: 'INSUFFICIENT_GOLD',
@@ -484,8 +484,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
           return reply.code(400).send({ error: 'TIMER_EXPIRED', message: 'Cooldown has already expired.' });
         }
 
-        // 1 Gold per minute
-        cost = Math.max(1, Math.ceil(remainingMs / 60000));
+        // 1 Gold per 10 minutes (600,000 ms)
+        cost = Math.max(1, Math.ceil(remainingMs / 600000));
         if (currentGold < cost) {
           return reply.code(400).send({
             error: 'INSUFFICIENT_GOLD',
@@ -530,8 +530,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
           return reply.code(400).send({ error: 'TIMER_EXPIRED', message: 'Smuggling job is already finished.' });
         }
 
-        // 1 Gold per minute
-        cost = Math.max(1, Math.ceil(remainingMs / 60000));
+        // 1 Gold per 10 minutes (600,000 ms)
+        cost = Math.max(1, Math.ceil(remainingMs / 600000));
         if (currentGold < cost) {
           return reply.code(400).send({
             error: 'INSUFFICIENT_GOLD',
@@ -565,7 +565,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         if (remainingMs <= 0 || order.arrived) {
           return reply.code(400).send({ error: 'TIMER_EXPIRED', message: 'Import shipment has already arrived.' });
         }
-        cost = Math.max(1, Math.ceil(remainingMs / 60000));
+        // 1 Gold per 10 minutes (600,000 ms)
+        cost = Math.max(1, Math.ceil(remainingMs / 600000));
         if (currentGold < cost) {
           return reply.code(400).send({
             error: 'INSUFFICIENT_GOLD',
@@ -598,7 +599,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         if (remainingMs <= 0 || order.delivered) {
           return reply.code(400).send({ error: 'TIMER_EXPIRED', message: 'Export shipment is already delivered.' });
         }
-        cost = Math.max(1, Math.ceil(remainingMs / 60000));
+        // 1 Gold per 10 minutes (600,000 ms)
+        cost = Math.max(1, Math.ceil(remainingMs / 600000));
         if (currentGold < cost) {
           return reply.code(400).send({
             error: 'INSUFFICIENT_GOLD',
