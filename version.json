@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.22",
-  "build": 1790809500000,
-  "timestamp": "2026-10-01T01:57:00.000Z",
-  "notes": "Fix isKhaled ReferenceError during header render"
+  "version": "v8.2.23",
+  "build": 1790810000000,
+  "timestamp": "2026-10-01T02:03:00.000Z",
+  "notes": "Add animated live chat frames & badge previews for all VIP packages"
 }

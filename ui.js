@@ -2635,12 +2635,31 @@ const UIController = (() => {
         <span>SVIP</span>
       </span>`;
     }
-    if (str.includes('✔️')) {
-      const parts = str.split('✔️');
-      const iconHtml = getVerifiedBadgeIconHtml(iconExtraClass);
-      return parts.map(p => escapeHtml(p)).join(iconHtml);
+    if (str === '🔥' || str.includes('لهيب') || str.includes('لهب')) {
+      return `<span class="badge-crimson-flame inline-flex items-center gap-1 select-none" title="وسام لهيب العرش 🔥">
+        <i class="fa-solid fa-fire text-amber-300 text-[8px] animate-pulse"></i>
+        <span>لهيب العرش</span>
+      </span>`;
     }
-    return escapeHtml(str);
+    if (str === '👑' || str.includes('👑') || str.includes('ملك') || str.includes('إمبراطور')) {
+      return `<span class="badge-royal-crown inline-flex items-center gap-1 select-none" title="وسام الملك الأسطوري 👑">
+        <i class="fa-solid fa-crown text-slate-950 text-[8px]"></i>
+        <span>الملك الأسطوري</span>
+      </span>`;
+    }
+    if (str === '🌟' || str.includes('🌟') || str.includes('حوت الشات')) {
+      return `<span class="badge-chat-whale inline-flex items-center gap-1 select-none" title="وسام حوت الشات 🌟">
+        <i class="fa-solid fa-star text-white text-[8px]"></i>
+        <span>حوت الشات</span>
+      </span>`;
+    }
+    if (str.includes('✔️') || str.includes('موثق')) {
+      return `<span class="badge-verified-glow inline-flex items-center gap-1 select-none" title="حساب موثق رسمي ✔️">
+        ${getVerifiedBadgeIconHtml(iconExtraClass || 'w-3 h-3')}
+        <span>موثق</span>
+      </span>`;
+    }
+    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-amber-300 font-black text-[9px] shadow-sm">${escapeHtml(str)}</span>`;
   }
 
   function getSeasonBadgeHtml(badge, extraClass = '', playerName = '') {
@@ -22150,24 +22169,47 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               </div>
             ` : ''}
 
-            ${pkg.features?.chatGlow ? `
-              <div class="flex justify-between items-center text-purple-300 font-bold">
-                <span class="flex items-center gap-1.5"><i class="fa-solid fa-wand-magic-sparkles text-xs"></i> إطار شات متوهج:</span>
-                <span class="px-2 py-0.5 bg-purple-500/20 text-purple-200 border border-purple-500/30 rounded text-[10px] font-bold">توهج ${pkg.features.chatGlow}</span>
-              </div>
-            ` : ''}
-
             ${pkg.features?.verified ? `
-              <div class="flex justify-between items-center text-sky-400 font-bold">
-                <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-xs"></i> شارة التوثيق:</span>
-                <span class="text-xs text-sky-300">علامة زرقاء متوهجة ✔️</span>
+              <div class="flex justify-between items-center text-sky-300 font-bold">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-sky-400 text-xs"></i> شارة التوثيق:</span>
+                <span class="badge-verified-glow inline-flex items-center gap-1 text-[10px]">
+                  ${getVerifiedBadgeIconHtml('w-3.5 h-3.5')}
+                  <span>موثق رسمي</span>
+                </span>
               </div>
             ` : ''}
 
             ${pkg.features?.customAvatar ? `
               <div class="flex justify-between items-center text-pink-400 font-bold">
-                <span class="flex items-center gap-1.5"><i class="fa-solid fa-image text-xs"></i> ميزة الصورة:</span>
-                <span class="text-[10px] text-pink-300">رفع صورة مخصصة</span>
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-image text-xs"></i> ميزة الصورة الشخصية:</span>
+                <span class="px-2 py-0.5 bg-pink-500/20 text-pink-300 border border-pink-500/30 rounded text-[10px] font-bold">رفع صورة مخصصة</span>
+              </div>
+            ` : ''}
+
+            ${badge ? `
+              <div class="flex justify-between items-center text-yellow-400 font-bold p-1.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-crown text-amber-400 text-xs"></i> وسام VIP:</span>
+                <span class="flex items-center gap-1.5">${formatCustomBadgeHtml(badge, 'text-sm')}</span>
+              </div>
+            ` : ''}
+
+            ${pkg.features?.chatGlow ? `
+              <div class="mt-2 p-2.5 rounded-2xl bg-slate-900/90 border border-purple-500/40 space-y-1.5 shadow-inner">
+                <div class="flex items-center justify-between text-[10px] text-purple-300 font-black border-b border-slate-800 pb-1">
+                  <span class="flex items-center gap-1.5"><i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i> معاينة إطار ورسالة الشات:</span>
+                  <span class="text-[9px] px-1.5 py-0.2 bg-purple-500/20 rounded font-mono text-purple-200">
+                    ${pkg.features.chatGlow === 'blue_flame' ? '⚡ لهيب أزرق' : (pkg.features.chatGlow === 'crimson_flame' ? '🔥 لهيب قرمزي' : (pkg.features.chatGlow === 'cyber_rainbow' ? '🌈 سايبر ملكي' : '✨ نيون ذهبي'))}
+                  </span>
+                </div>
+                <div class="chat-message-bubble ${pkg.features.chatGlow === 'blue_flame' ? 'chat-bubble-glow-blue-flame' : (pkg.features.chatGlow === 'crimson_flame' ? 'chat-bubble-glow-flame' : (pkg.features.chatGlow === 'cyber_rainbow' ? 'chat-bubble-glow-rainbow' : 'chat-bubble-glow-gold'))} p-2 rounded-xl text-right text-[11px]">
+                  <div class="flex items-center gap-1.5 mb-0.5 justify-start">
+                    <span class="text-[10px] font-black ${pkg.features.chatGlow === 'blue_flame' ? 'chat-sender-blue-flame-glow' : (pkg.features.chatGlow === 'crimson_flame' ? 'chat-sender-flame-glow' : (pkg.features.chatGlow === 'cyber_rainbow' ? 'chat-sender-rainbow-glow' : 'chat-sender-gold-glow'))}">اسمك</span>
+                    ${badge ? formatCustomBadgeHtml(badge, 'text-[9px]') : ''}
+                  </div>
+                  <div class="text-white text-[10.5px] font-medium leading-tight">
+                    ${pkg.features.chatGlow === 'blue_flame' ? 'رسالة مميزة بإطار اللهب الأزرق الملكي ⚡' : (pkg.features.chatGlow === 'crimson_flame' ? 'رسالة مشتعلة باللهب القرمزي الملكي! 🔥' : (pkg.features.chatGlow === 'cyber_rainbow' ? 'حضور أسطوري متوهج بألوان السايبر 👑' : 'رسالة ذهبية متوهجة في الشات العام ✨'))}
+                  </div>
+                </div>
               </div>
             ` : ''}
 
@@ -22175,13 +22217,6 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               <div class="flex justify-between items-center text-cyan-400 font-bold">
                 <span class="flex items-center gap-1.5"><i class="fa-solid fa-star text-xs"></i> نقاط خبرة:</span>
                 <span class="numbers-font font-mono text-xs text-cyan-300">+${Number(pkg.xp).toLocaleString()} XP</span>
-              </div>
-            ` : ''}
-
-            ${badge ? `
-              <div class="flex justify-between items-center text-yellow-400 font-bold">
-                <span class="flex items-center gap-1.5"><i class="fa-solid fa-crown text-xs"></i> وسام VIP:</span>
-                <span class="flex items-center gap-1.5">${formatCustomBadgeHtml(badge, 'text-sm')} ${pkg.badgeTitle || 'وسام حصري'}</span>
               </div>
             ` : ''}
 
@@ -23203,7 +23238,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.22');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.23');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

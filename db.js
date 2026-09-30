@@ -675,7 +675,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.22';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.23';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -684,7 +684,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.2.22', remoteVersion: 'v8.2.22' };
+    return { upToDate: true, clientVersion: 'v8.2.23', remoteVersion: 'v8.2.23' };
   }
 
   async function checkDeviceBan() {
