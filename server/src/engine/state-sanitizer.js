@@ -161,7 +161,13 @@ function sanitizePlayerState(dbRow) {
     ['khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(cleanState.username.trim().toLowerCase());
 
   if (isLiteralKhaled) {
-    cleanState.gold = Math.max(0, Number(dbRow.gold !== undefined ? dbRow.gold : (rawState.gold || 0)));
+    if (dbRow && dbRow.gold !== undefined && dbRow.gold !== null) {
+      cleanState.gold = Math.max(0, Number(dbRow.gold));
+    } else if (rawState && rawState.gold !== undefined && rawState.gold !== null) {
+      cleanState.gold = Math.max(0, Number(rawState.gold));
+    } else {
+      cleanState.gold = 0;
+    }
   } else {
     delete cleanState.gold;
   }

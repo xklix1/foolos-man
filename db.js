@@ -675,7 +675,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.5';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.6';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -684,7 +684,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.2.5', remoteVersion: 'v8.2.5' };
+    return { upToDate: true, clientVersion: 'v8.2.6', remoteVersion: 'v8.2.6' };
   }
 
   async function checkDeviceBan() {
@@ -1520,14 +1520,17 @@ var AppDB = (() => {
       }
       stateObj.jailTimer = Number(row.jail_timer || 0);
       stateObj.afkManagerExpiresAt = Number(row.afk_manager_expires_at || 0);
-      const rawGold = (row.gold !== undefined && row.gold !== null && Number(row.gold) > 0) 
+      const rawGold = (row.gold !== undefined && row.gold !== null) 
         ? row.gold 
-        : ((row.state && row.state.gold !== undefined && Number(row.state.gold) > 0) 
+        : ((row.state && row.state.gold !== undefined && row.state.gold !== null) 
             ? row.state.gold 
-            : ((local && local.gold !== undefined) ? local.gold : 0));
-      stateObj.gold = Math.max(0, Number(rawGold || 0));
-      if (['khaled', 'خالد'].includes(String(row.username || u || '').trim().toLowerCase())) {
-        if (!stateObj.gold || stateObj.gold <= 0) stateObj.gold = 1000000;
+            : ((local && local.gold !== undefined && local.gold !== null) ? local.gold : null));
+      if (rawGold !== null && rawGold !== undefined) {
+        stateObj.gold = Math.max(0, Number(rawGold));
+      } else if (['khaled', 'خالد'].includes(String(row.username || u || '').trim().toLowerCase())) {
+        stateObj.gold = 1000000;
+      } else {
+        stateObj.gold = 0;
       }
       stateObj.adminModifiedTimestamp = Math.max(
         Number(row.admin_modified_timestamp || 0),

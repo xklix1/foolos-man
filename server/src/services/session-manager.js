@@ -255,7 +255,11 @@ class SessionManager {
       ['khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(username.trim().toLowerCase());
 
     if (isLiteralKhaled) {
-      s.gold = Math.max(0, Number(s.gold || 0));
+      if (clientState.gold !== undefined && clientState.gold !== null) {
+        s.gold = Math.max(0, Number(clientState.gold));
+      } else {
+        s.gold = Math.max(0, Number(s.gold || 0));
+      }
     } else {
       delete s.gold;
     }

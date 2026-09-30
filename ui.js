@@ -2802,7 +2802,7 @@ const UIController = (() => {
     const isKhaled = isKhaledUser();
     const goldDesktopContainer = document.getElementById('stat-gold-container-desktop');
     const goldMobileContainer = document.getElementById('stat-gold-container-mobile');
-    if (isKhaled && (!s.gold || Number(s.gold) <= 0)) {
+    if (isKhaled && (s.gold === undefined || s.gold === null)) {
       s.gold = 1000000;
     }
     const goldVal = Math.max(0, Number(s.gold || 0));
@@ -19507,11 +19507,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     // Bind speed-up import buttons
     list.querySelectorAll('.btn-speedup-trade-import').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const orderId = btn.getAttribute('data-id');
         try {
           if (!GameEngine || typeof GameEngine.speedUpTradeShipment !== 'function') return;
           const res = GameEngine.speedUpTradeShipment('import', orderId);
+          if (typeof GameEngine.forceSaveState === 'function') {
+            try { await GameEngine.forceSaveState(true); } catch (e) {}
+          }
           playMenuSound('success');
           showToast('تسريع الاستيراد ⚡', `تم تسريع وصول الشحنة وتفريغ البضاعة بالمستودع فورياً! (تم خصم ${res.goldCost} 🪙 ذهب - المتبقي: ${res.remainingGold} 🪙)`, 'success');
           renderTradePanel();
@@ -19524,11 +19527,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     // Bind speed-up export buttons
     list.querySelectorAll('.btn-speedup-trade-export').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const orderId = btn.getAttribute('data-id');
         try {
           if (!GameEngine || typeof GameEngine.speedUpTradeShipment !== 'function') return;
           const res = GameEngine.speedUpTradeShipment('export', orderId);
+          if (typeof GameEngine.forceSaveState === 'function') {
+            try { await GameEngine.forceSaveState(true); } catch (e) {}
+          }
           playMenuSound('success');
           showToast('تسريع التصدير ⚡', `تم تسريع تسليم الشحنة للعميل وأصبحت أرباح الصفقة جاهزة للتحصيل فوراً! (تم خصم ${res.goldCost} 🪙 ذهب - المتبقي: ${res.remainingGold} 🪙)`, 'success');
           renderTradePanel();
@@ -22963,7 +22969,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.5');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.6');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

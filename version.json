@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.5",
-  "build": 1790800500000,
-  "timestamp": "2026-09-30T20:35:00.000Z",
-  "notes": "Update gold speed-up rate to 1 Gold per 10 minutes (6 Gold per 1 hour)"
+  "version": "v8.2.6",
+  "build": 1790801200000,
+  "timestamp": "2026-09-30T20:47:00.000Z",
+  "notes": "Fix gold balance persistence and prevent unwanted 1M resets on speed-up and session reload"
 }
