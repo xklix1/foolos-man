@@ -17183,6 +17183,48 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       }
     }
 
+    // 0.06. Process incoming Instant Admin Gold Grants (Live in-game gold injection)
+    const goldMails = mails.filter(m => m.type === 'admin_gold_grant' && (m.status === 'unread' || m.status === 'pending'));
+    for (const gm of goldMails) {
+      if (!window._processedGoldGrantIds) window._processedGoldGrantIds = new Set();
+      if (window._processedGoldGrantIds.has(gm.id)) continue;
+      window._processedGoldGrantIds.add(gm.id);
+
+      const p = gm.payload || {};
+      const addGold = Number(p.addedGold) || 0;
+
+      if (GameEngine.state && addGold > 0) {
+        if (p.isPreApplied && p.newGold !== undefined) {
+          GameEngine.state.gold = Number(p.newGold);
+        } else {
+          GameEngine.state.gold = (Number(GameEngine.state.gold) || 0) + addGold;
+        }
+
+        const grantTs = Number(p.timestamp || gm.created_at || Date.now());
+        GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), grantTs);
+        GameEngine.state._legitimateTransactionBypass = true;
+
+        try {
+          if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+            AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, GameEngine.state);
+          }
+        } catch (_) {}
+
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
+        await AppDB.updateMailStatus(gm.id, 'read');
+
+        if (typeof playMenuSound === 'function') playMenuSound('level-up');
+        if (typeof renderAll === 'function') renderAll();
+
+        showToast(
+          '🪙 إيداع ذهب إداري فوري!',
+          `تمت إضافة +${addGold.toLocaleString()} ذهبة إلى حسابك فوراً من قبل الإدارة. الرصيد الإجمالي: ${Number(GameEngine.state.gold).toLocaleString()} ذهبة.`,
+          'success'
+        );
+        break;
+      }
+    }
+
     // 0. Process incoming Direct Admin Popup Messages
     const adminPopups = mails.filter(m => (m.type === 'admin_popup' || m.type === 'urgent_alert') && (m.status === 'unread' || m.status === 'pending'));
     for (const popup of adminPopups) {
@@ -23024,7 +23066,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.12');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.13');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

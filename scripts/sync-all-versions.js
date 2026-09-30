@@ -29,6 +29,19 @@ if (fs.existsSync(indexHtmlPath)) {
   console.log(`Updated index.html to ${currentVersion} (including all script/css tags)`);
 }
 
+
+// 1.1 Update hq-vault-982-x3k8m7q.html
+const hqHtmlPath = path.join(rootDir, 'hq-vault-982-x3k8m7q.html');
+if (fs.existsSync(hqHtmlPath)) {
+  let hqHtml = fs.readFileSync(hqHtmlPath, 'utf8');
+  hqHtml = hqHtml.replace(/href="app\.css\?v=[^"]+"/g, `href="app.css?v=${currentVersion}"`);
+  hqHtml = hqHtml.replace(/src="game\.js\?v=[^"]+"/g, `src="game.js?v=${currentVersion}"`);
+  hqHtml = hqHtml.replace(/src="db\.js\?v=[^"]+"/g, `src="db.js?v=${currentVersion}"`);
+  hqHtml = hqHtml.replace(/src="admin-panel\.js\?v=[^"]+"/g, `src="admin-panel.js?v=${currentVersion}"`);
+  fs.writeFileSync(hqHtmlPath, hqHtml, 'utf8');
+  console.log(`Updated hq-vault-982-x3k8m7q.html to ${currentVersion} (all scripts/css tags)`);
+}
+
 // 2. Update sw.js
 const swPath = path.join(rootDir, 'sw.js');
 if (fs.existsSync(swPath)) {

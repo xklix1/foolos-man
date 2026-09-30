@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.12",
-  "build": 1790804000000,
-  "timestamp": "2026-10-01T00:35:00.000Z",
-  "notes": "Add Live Instant Gold Addition section with quick presets to Admin Panel"
+  "version": "v8.2.13",
+  "build": 1790804100000,
+  "timestamp": "2026-10-01T00:43:00.000Z",
+  "notes": "Fix admin panel live instant gold addition button listener and sync cache headers"
 }

@@ -558,6 +558,11 @@
           }
         }
 
+        const goldEl = document.getElementById('admin-p-gold');
+        if (goldEl) goldEl.textContent = Number(state.gold || (state.state && state.state.gold) || 0).toLocaleString();
+        const goldInp = document.getElementById('admin-input-gold');
+        if (goldInp) goldInp.value = Number(state.gold || (state.state && state.state.gold) || 0);
+
         document.getElementById('admin-input-cash').value = state.cash || 0;
         document.getElementById('admin-input-bank').value = state.bank || 0;
         const xpInp = document.getElementById('admin-input-xp');
