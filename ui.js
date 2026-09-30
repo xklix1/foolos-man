@@ -22060,6 +22060,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
           <!-- Rewards Box -->
           <div class="p-2.5 bg-slate-950/90 rounded-2xl border border-slate-800 space-y-1.5 text-[11px]">
+            ${pkg.gold ? `<div class="flex justify-between items-center text-amber-400 font-black"><span>🪙 رصيد ذهب:</span><span class="numbers-font font-mono text-xs">+${Number(pkg.gold).toLocaleString()} ذهبة</span></div>` : ''}
             ${pkg.cash ?`<div class="flex justify-between items-center text-emerald-400 font-black"><span>كاش فوري:</span><span class="numbers-font font-mono text-xs">+${Number(pkg.cash).toLocaleString()} EGP</span></div>` :''}
             ${pkg.bank ?`<div class="flex justify-between items-center text-sky-400 font-bold"><span>وديعة بالبنك:</span><span class="numbers-font font-mono text-xs">+${Number(pkg.bank).toLocaleString()} EGP</span></div>` :''}
             ${pkg.xp ?`<div class="flex justify-between items-center text-cyan-400 font-bold"><span>نقاط خبرة:</span><span class="numbers-font font-mono text-xs">+${Number(pkg.xp).toLocaleString()} XP</span></div>` :''}
@@ -23047,7 +23048,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.16');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.17');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

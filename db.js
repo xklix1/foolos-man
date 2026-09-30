@@ -675,7 +675,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.16';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.17';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -684,7 +684,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.2.16', remoteVersion: 'v8.2.16' };
+    return { upToDate: true, clientVersion: 'v8.2.17', remoteVersion: 'v8.2.17' };
   }
 
   async function checkDeviceBan() {
@@ -3284,6 +3284,79 @@ var AppDB = (() => {
   //  TOP-UP & RECHARGE SYSTEM (باقات الشحن والدعم)
   // ─────────────────────────────────────────────
   const DEFAULT_TOPUP_PACKAGES = [
+    {
+          "id": "gold_pack_starter",
+          "name": "باقة البداية الذهبية 🪙",
+          "price": 100,
+          "gold": 60,
+          "cash": 0,
+          "bank": 0,
+          "xp": 0,
+          "customBadge": "🪙",
+          "badgeTitle": "رصيد ذهب",
+          "description": "60 ذهبة نقية (تسريع 10 ساعات كاملة) لتسريع الشحنات ونوبات العمل والصفقات فوراً وبأعلى كفاءة."
+    },
+    {
+          "id": "gold_pack_ingot",
+          "name": "حقيبة السبائك الفاخرة 💼",
+          "price": 200,
+          "gold": 130,
+          "cash": 0,
+          "bank": 0,
+          "xp": 0,
+          "customBadge": "💼",
+          "badgeTitle": "سبائك ذهبية",
+          "description": "130 ذهبة (+10 بونص) (تسريع 22 ساعة) لتغطية مستمرة لكافة أنشطة الشركات والتهريب والاستيراد."
+    },
+    {
+          "id": "gold_pack_elite",
+          "name": "صندوق النخبة الملكي 🏆",
+          "price": 350,
+          "gold": 240,
+          "cash": 0,
+          "bank": 0,
+          "xp": 0,
+          "customBadge": "🏆",
+          "badgeTitle": "نخبة المستثمرين",
+          "description": "240 ذهبة (+30 بونص) (تسريع 40 ساعة كاملة) لإنهاء فوري لأقوى مؤقتات القروض والصفقات الكبيرة."
+    },
+    {
+          "id": "gold_pack_investor",
+          "name": "خزنة كبار المستثمرين 💎",
+          "price": 500,
+          "gold": 360,
+          "cash": 0,
+          "bank": 0,
+          "xp": 0,
+          "customBadge": "💎",
+          "badgeTitle": "حوت استثماري",
+          "description": "360 ذهبة (+60 بونص) (تسريع 60 ساعة = يومان ونصف) لسرعة نمو وتراكم أرباح فائقة للتفوق على المنافسين."
+    },
+    {
+          "id": "gold_pack_royal",
+          "name": "كنز الملوك والجبابرة 👑",
+          "price": 750,
+          "gold": 580,
+          "cash": 0,
+          "bank": 0,
+          "xp": 0,
+          "customBadge": "👑",
+          "badgeTitle": "كنز الملوك",
+          "description": "580 ذهبة (+130 بونص) (تسريع 96 ساعة = 4 أيام متواصلة) قوة استثمارية ضخمة للسيطرة على المزادات والشركات."
+    },
+    {
+          "id": "gold_pack_imperial",
+          "name": "الخزينة الإمبراطورية العظمى 🏛️",
+          "price": 1000,
+          "gold": 850,
+          "cash": 0,
+          "bank": 0,
+          "xp": 0,
+          "customBadge": "⚡",
+          "badgeTitle": "إمبراطور الذهب",
+          "description": "850 ذهبة (+250 بونص) (تسريع 141 ساعة = 6 أيام متواصلة) هيمنة مطلقة لحيتان اللعبة على صدارة التوب العالمي."
+    },
+
     {
       id:'starter_pack',
       name:'حزمة المستثمر الصاعد',

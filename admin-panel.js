@@ -2847,6 +2847,8 @@
               const pkgCashInp = document.getElementById('adm-send-pkg-cash');
               const pkgBankInp = document.getElementById('adm-send-pkg-bank');
               const pkgXpInp = document.getElementById('adm-send-pkg-xp');
+              const pkgGoldInp = document.getElementById('adm-send-pkg-gold');
+              if (pkgGoldInp) pkgGoldInp.value = Number(found.gold !== undefined ? found.gold : (rewards.gold || 0));
 
               if (pkgNameInp) pkgNameInp.value = found.name || 'حزمة متجر مميزة';
               if (pkgBadgeInp) pkgBadgeInp.value = found.customBadge || found.badgeTitle || rewards.customBadge || rewards.badgeTitle || '';
@@ -2943,7 +2945,7 @@
         return;
       }
 
-      if (addCash <= 0 && addBank <= 0 && addXp <= 0 && !customBadge && Object.keys(items).length === 0) {
+      if (addCash <= 0 && addBank <= 0 && addXp <= 0 && addGold <= 0 && !customBadge && Object.keys(items).length === 0) {
         showToast('حزمة فارغة', 'يرجى تحديد مكافأة واحدة على الأقل (كاش، بنك، خبرة، وسام، أو معدات).', 'warning');
         return;
       }
