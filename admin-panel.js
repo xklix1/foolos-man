@@ -1161,6 +1161,27 @@
       });
     });
 
+    
+    // Quick Gold Injection Buttons (+10, +50, +200, +1000 Gold)
+    const quickInjectGoldBtns = document.querySelectorAll('.btn-quick-inject-gold');
+    quickInjectGoldBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const addAmount = Number(btn.getAttribute('data-add-gold') || 0);
+        const goldInp = document.getElementById('admin-input-gold');
+        if (goldInp) {
+          const current = Number(goldInp.value || 0);
+          goldInp.value = Math.max(0, current + addAmount);
+          goldInp.classList.add('glow-gold');
+          setTimeout(() => goldInp.classList.remove('glow-gold'), 600);
+
+          // Auto-trigger save to make the addition instant in the database
+          const updateMoneyBtn = document.getElementById('btn-admin-update-money');
+          if (updateMoneyBtn && selectedPlayer && selectedPlayerState) {
+            updateMoneyBtn.click();
+          }
+        }
+      });
+    });
     // Quick XP Injection Buttons (+500 XP, +5K XP, +50K XP)
     const quickInjectXpBtns = document.querySelectorAll('.btn-quick-inject-xp');
     quickInjectXpBtns.forEach(btn => {
@@ -1219,7 +1240,7 @@
         const xpInp = document.getElementById('admin-input-xp');
         const newXp = xpInp ? Number(xpInp.value) : (selectedPlayerState.xp || 0);
 
-        if (isNaN(newCash) || isNaN(newBank) || isNaN(newXp) || newCash < 0 || newBank < 0 || newXp < 0) {
+        if (isNaN(newCash) || isNaN(newBank) || isNaN(newXp) || isNaN(newGold) || newCash < 0 || newBank < 0 || newXp < 0 || newGold < 0) {
           showToast('خطأ مدخلات','يرجى إدخال أرقام صحيحة وموجبة (الكاش، البنك، ونقاط الخبرة XP).','error');
           return;
         }
@@ -1228,6 +1249,7 @@
           selectedPlayerState.cash = newCash;
           selectedPlayerState.bank = newBank;
           selectedPlayerState.xp = newXp;
+          selectedPlayerState.gold = newGold;
 
           // Accurate NetWorth calculation (Comprehensive including businesses, farm, industry, trade)
           let worth = (typeof GameEngine !== 'undefined' && typeof GameEngine.calculateNetWorth === 'function')
@@ -1248,6 +1270,7 @@
             GameEngine.state.cash = newCash;
             GameEngine.state.bank = newBank;
             GameEngine.state.xp = newXp;
+            GameEngine.state.gold = newGold;
             GameEngine.state.netWorth = worth;
             if (typeof GameEngine.getAppropriateTitle ==='function') {
               GameEngine.state.title = GameEngine.getAppropriateTitle(worth, newXp);

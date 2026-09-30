@@ -8914,6 +8914,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
         document.getElementById('admin-input-cash').value = state.cash || 0;
         document.getElementById('admin-input-bank').value = state.bank || 0;
+        const goldInp = document.getElementById('admin-input-gold');
+        if (goldInp) goldInp.value = state.gold || 0;
+        const pGold = document.getElementById('admin-p-gold');
+        if (pGold) pGold.textContent = (state.gold || 0).toLocaleString();
 
         const bizSelect = document.getElementById('admin-input-biz-type');
         if (bizSelect) {
@@ -9456,7 +9460,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const newCash = Number(document.getElementById('admin-input-cash').value);
         const newBank = Number(document.getElementById('admin-input-bank').value);
 
-        if (isNaN(newCash) || isNaN(newBank) || newCash < 0 || newBank < 0) {
+        if (isNaN(newCash) || isNaN(newBank) || isNaN(newGold) || newCash < 0 || newBank < 0 || newGold < 0) {
           showToast('خطأ مدخلات','يرجى إدخال مبالغ صحيحة وموجبة.','error');
           return;
         }
@@ -9464,6 +9468,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         try {
           selectedPlayerState.cash = newCash;
           selectedPlayerState.bank = newBank;
+          selectedPlayerState.gold = newGold;
 
           // Accurate NetWorth calculation
           let worth = newCash + newBank;
@@ -9492,6 +9497,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           if (selectedPlayer === GameEngine.activeUsername) {
             GameEngine.state.cash = newCash;
             GameEngine.state.bank = newBank;
+            GameEngine.state.gold = newGold;
             GameEngine.state.netWorth = worth;
             try {
               if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
@@ -23018,7 +23024,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.10');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.11');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

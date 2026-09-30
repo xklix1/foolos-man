@@ -675,7 +675,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.10';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.11';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -684,7 +684,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.2.10', remoteVersion: 'v8.2.10' };
+    return { upToDate: true, clientVersion: 'v8.2.11', remoteVersion: 'v8.2.11' };
   }
 
   async function checkDeviceBan() {
@@ -3988,6 +3988,7 @@ var AppDB = (() => {
     if (updates.dirtyCash !== undefined) payload.dirty_cash = Number(updates.dirtyCash);
     if (updates.netWorth !== undefined) payload.net_worth = Number(updates.netWorth);
     if (updates.xp !== undefined) payload.xp = Number(updates.xp);
+    if (updates.gold !== undefined) payload.gold = Math.max(0, Number(updates.gold));
     if (updates.title !== undefined) payload.title = updates.title;
     if (updates.jobId !== undefined) payload.job_id = updates.jobId;
     if (updates.isAdmin !== undefined) payload.is_admin = Boolean(updates.isAdmin);
@@ -4014,6 +4015,7 @@ var AppDB = (() => {
     if (payload.dirty_cash !== undefined) stateObj.dirtyCash = payload.dirty_cash;
     if (payload.net_worth !== undefined) stateObj.netWorth = payload.net_worth;
     if (payload.xp !== undefined) stateObj.xp = payload.xp;
+    if (payload.gold !== undefined) stateObj.gold = payload.gold;
     if (payload.title !== undefined) stateObj.title = payload.title;
     if (payload.job_id !== undefined) stateObj.jobId = payload.job_id;
     if (payload.is_admin !== undefined) stateObj.isAdmin = payload.is_admin;
