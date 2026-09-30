@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.20",
-  "build": 1790808500000,
-  "timestamp": "2026-10-01T01:46:00.000Z",
-  "notes": "Fix UI controller export and deliver luxury Topup Store overhaul"
+  "version": "v8.2.21",
+  "build": 1790809000000,
+  "timestamp": "2026-10-01T01:52:00.000Z",
+  "notes": "Organize Topup Store into Gold Packages, Cash Packages, and Cosmetics & Chat Frames Packages"
 }

@@ -22007,6 +22007,16 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     _activeSelectedTopupPkg = null;
   }
 
+  function getTopupPackageCategory(pkg) {
+    if (pkg.category === 'cosmetics' || (pkg.features && (pkg.features.chatGlow || pkg.features.verified || pkg.features.customAvatar || pkg.features.stickersPack)) || (pkg.id && (pkg.id.includes('glow') || pkg.id.includes('flame') || pkg.id.includes('verified')))) {
+      return 'cosmetics';
+    }
+    if (pkg.category === 'gold' || (pkg.gold && Number(pkg.gold) > 0) || (pkg.id && pkg.id.startsWith('gold_pack_'))) {
+      return 'gold';
+    }
+    return 'cash';
+  }
+
   function renderTopupPackagesList(packages) {
     const container = document.getElementById('topup-packages-container');
     if (!container) return;
@@ -22015,10 +22025,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     let visiblePackages = (packages || []).filter(pkg => pkg.hidden !== true && pkg.visible !== false && pkg.active !== false);
 
     // Apply category filter
-    if (_activeTopupCategoryFilter === 'gold') {
-      visiblePackages = visiblePackages.filter(pkg => Boolean(pkg.gold && Number(pkg.gold) > 0));
-    } else if (_activeTopupCategoryFilter === 'vip') {
-      visiblePackages = visiblePackages.filter(pkg => !pkg.gold || Number(pkg.gold) <= 0 || Boolean(pkg.customBadge || pkg.cash));
+    if (_activeTopupCategoryFilter !== 'all') {
+      visiblePackages = visiblePackages.filter(pkg => getTopupPackageCategory(pkg) === _activeTopupCategoryFilter);
     }
 
     if (visiblePackages.length === 0) {
@@ -22029,7 +22037,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     container.innerHTML = '';
     visiblePackages.forEach(pkg => {
       const card = document.createElement('div');
-      const isGoldPkg = Boolean(pkg.gold && Number(pkg.gold) > 0);
+      const cat = getTopupPackageCategory(pkg);
+      const isGoldPkg = cat === 'gold';
+      const isCosmeticsPkg = cat === 'cosmetics';
+      const isCashPkg = cat === 'cash';
+
       const goldAmt = Number(pkg.gold || 0);
       const speedupHours = Math.floor((goldAmt * 10) / 60);
 
@@ -22040,12 +22052,31 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         else if (k === 'swiss_safe') label = 'خزنة سويسرية';
         else if (k === 'offshore_account') label = 'حساب خارجي';
         else if (k === 'lottery_ticket') label = 'تذكرة يانصيب';
+        else if (k === 'legalShield') label = 'درع قانوني';
+        else if (k === 'safe_lock') label = 'أقفال أمان';
         return `${v}x ${label}`;
       }).join(' • ') : '';
 
-      // High-end styling
-      const cardBorder = isGoldPkg ? 'border-amber-500/40 hover:border-amber-300 hover:shadow-amber-500/20' : 'border-cyan-500/30 hover:border-cyan-300 hover:shadow-cyan-500/20';
-      const cardBg = isGoldPkg ? 'bg-gradient-to-b from-amber-950/20 via-slate-900/95 to-slate-950' : 'bg-gradient-to-b from-slate-900/90 via-slate-950 to-black';
+      // High-end styling based on category
+      let cardBorder = 'border-emerald-500/40 hover:border-emerald-300 hover:shadow-emerald-500/20';
+      let cardBg = 'bg-gradient-to-b from-emerald-950/20 via-slate-900/95 to-slate-950';
+      let glowBg = 'bg-emerald-500/10';
+      let iconHtml = '💵';
+      let iconBoxBg = 'bg-gradient-to-br from-emerald-400 to-teal-600 text-slate-950';
+
+      if (isGoldPkg) {
+        cardBorder = 'border-amber-500/40 hover:border-amber-300 hover:shadow-amber-500/20';
+        cardBg = 'bg-gradient-to-b from-amber-950/25 via-slate-900/95 to-slate-950';
+        glowBg = 'bg-amber-500/10';
+        iconHtml = '🪙';
+        iconBoxBg = 'bg-gradient-to-br from-amber-400 to-yellow-600 text-slate-950';
+      } else if (isCosmeticsPkg) {
+        cardBorder = 'border-purple-500/40 hover:border-purple-300 hover:shadow-purple-500/20';
+        cardBg = 'bg-gradient-to-b from-purple-950/25 via-slate-900/95 to-slate-950';
+        glowBg = 'bg-purple-500/10';
+        iconHtml = badge ? formatCustomBadgeHtml(badge, 'text-xl') : '🎨';
+        iconBoxBg = 'bg-gradient-to-br from-purple-400 to-pink-600 text-white';
+      }
 
       card.className = `topup-pkg-card p-4 rounded-3xl ${cardBg} border-2 ${cardBorder} flex flex-col justify-between space-y-3.5 transition-all duration-300 shadow-xl relative overflow-hidden group`;
 
@@ -22055,13 +22086,15 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         if (goldAmt >= 800) topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-black">🔥 عرش الأباطرة</span>';
         else if (goldAmt >= 300) topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-black">⭐ الأكثر طلباً</span>';
         else topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 font-black">⚡ تسريع فوري</span>';
-      } else if (badge) {
-        topPill = `<span class="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 font-black">💎 VIP وسام مميز</span>`;
+      } else if (isCosmeticsPkg) {
+        topPill = `<span class="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 font-black">🎨 مظاهر وإطارات VIP</span>`;
+      } else {
+        topPill = `<span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-black">💵 سيولة واستثمار</span>`;
       }
 
       card.innerHTML = `
         <!-- Card Top Glow Accent -->
-        <div class="absolute -top-12 -right-12 w-28 h-28 ${isGoldPkg ? 'bg-amber-500/10' : 'bg-cyan-500/10'} rounded-full blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-500"></div>
+        <div class="absolute -top-12 -right-12 w-28 h-28 ${glowBg} rounded-full blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-500"></div>
 
         <!-- Card Content -->
         <div class="space-y-3 relative z-10">
@@ -22077,8 +22110,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
           <!-- Title & Icon -->
           <div class="flex items-center gap-2.5 pb-2 border-b border-slate-800/80">
-            <div class="w-10 h-10 rounded-2xl ${isGoldPkg ? 'bg-gradient-to-br from-amber-400 to-yellow-600 text-slate-950' : 'bg-gradient-to-br from-cyan-400 to-blue-600 text-white'} flex items-center justify-center text-lg font-black shrink-0 shadow-md group-hover:rotate-6 transition-transform">
-              ${isGoldPkg ? '🪙' : (badge ? formatCustomBadgeHtml(badge, 'text-xl') : '💎')}
+            <div class="w-10 h-10 rounded-2xl ${iconBoxBg} flex items-center justify-center text-lg font-black shrink-0 shadow-md group-hover:rotate-6 transition-transform">
+              ${iconHtml}
             </div>
             <div class="min-w-0">
               <h3 class="font-black text-white text-xs sm:text-sm truncate group-hover:text-amber-300 transition-colors">${pkg.name}</h3>
@@ -22113,6 +22146,27 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               <div class="flex justify-between items-center text-sky-400 font-bold">
                 <span class="flex items-center gap-1.5"><i class="fa-solid fa-building-columns text-xs"></i> وديعة بالبنك:</span>
                 <span class="numbers-font font-mono text-xs text-sky-300">+${Number(pkg.bank).toLocaleString()} EGP</span>
+              </div>
+            ` : ''}
+
+            ${pkg.features?.chatGlow ? `
+              <div class="flex justify-between items-center text-purple-300 font-bold">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-wand-magic-sparkles text-xs"></i> إطار شات متوهج:</span>
+                <span class="px-2 py-0.5 bg-purple-500/20 text-purple-200 border border-purple-500/30 rounded text-[10px] font-bold">توهج ${pkg.features.chatGlow}</span>
+              </div>
+            ` : ''}
+
+            ${pkg.features?.verified ? `
+              <div class="flex justify-between items-center text-sky-400 font-bold">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-xs"></i> شارة التوثيق:</span>
+                <span class="text-xs text-sky-300">علامة زرقاء متوهجة ✔️</span>
+              </div>
+            ` : ''}
+
+            ${pkg.features?.customAvatar ? `
+              <div class="flex justify-between items-center text-pink-400 font-bold">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-image text-xs"></i> ميزة الصورة:</span>
+                <span class="text-[10px] text-pink-300">رفع صورة مخصصة</span>
               </div>
             ` : ''}
 
@@ -23148,7 +23202,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.20');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.21');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

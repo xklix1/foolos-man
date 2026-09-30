@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.2.20';
+    window._CLIENT_VERSION = 'v8.2.21';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.2.20';
+      const CURRENT_APP_BUILD = 'v8.2.21';
       try {
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -117,7 +117,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v8.2.20">
+  <link rel="stylesheet" href="app.css?v=v8.2.21">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -6588,12 +6588,17 @@
             </button>
             <button type="button" id="topup-tab-gold" class="topup-filter-tab px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-slate-900/90 text-slate-300 hover:text-amber-300 hover:bg-slate-800 border border-slate-800 active:scale-95" data-category="gold">
               <i class="fa-solid fa-coins text-amber-400"></i>
-              <span>باقات الذهب والتسريع</span>
-              <span class="text-[9px] px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded font-black">جديد 🔥</span>
+              <span>باقات الذهب</span>
+              <span class="text-[9px] px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded font-black">تسريع 🔥</span>
             </button>
-            <button type="button" id="topup-tab-vip" class="topup-filter-tab px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-slate-900/90 text-slate-300 hover:text-amber-300 hover:bg-slate-800 border border-slate-800 active:scale-95" data-category="vip">
-              <i class="fa-solid fa-gem text-cyan-400"></i>
-              <span>كاش وأوسمة كبار المستثمرين VIP</span>
+            <button type="button" id="topup-tab-cash" class="topup-filter-tab px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-slate-900/90 text-slate-300 hover:text-emerald-300 hover:bg-slate-800 border border-slate-800 active:scale-95" data-category="cash">
+              <i class="fa-solid fa-money-bill-wave text-emerald-400"></i>
+              <span>باقات الكاش</span>
+            </button>
+            <button type="button" id="topup-tab-cosmetics" class="topup-filter-tab px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-slate-900/90 text-slate-300 hover:text-purple-300 hover:bg-slate-800 border border-slate-800 active:scale-95" data-category="cosmetics">
+              <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i>
+              <span>باقات المظاهر والإطارات</span>
+              <span class="text-[9px] px-1.5 py-0.2 bg-purple-500/20 text-purple-300 rounded font-black">VIP ✨</span>
             </button>
           </div>
 
@@ -7157,11 +7162,11 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=v8.2.20"></script>
-  <script src="server-client-bridge.js?v=v8.2.20"></script>
-  <script src="game.js?v=v8.2.20"></script>
-  <script src="ui.js?v=v8.2.20"></script>
-  <script src="pwa-manager.js?v=v8.2.20"></script>
+  <script src="db.js?v=v8.2.21"></script>
+  <script src="server-client-bridge.js?v=v8.2.21"></script>
+  <script src="game.js?v=v8.2.21"></script>
+  <script src="ui.js?v=v8.2.21"></script>
+  <script src="pwa-manager.js?v=v8.2.21"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
