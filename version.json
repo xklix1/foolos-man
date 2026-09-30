@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.6",
-  "build": 1790801200000,
-  "timestamp": "2026-09-30T20:47:00.000Z",
-  "notes": "Fix gold balance persistence and prevent unwanted 1M resets on speed-up and session reload"
+  "version": "v8.2.7",
+  "build": 1790801800000,
+  "timestamp": "2026-09-30T20:55:00.000Z",
+  "notes": "Synchronize script query strings and force purge browser cache for gold persistence"
 }

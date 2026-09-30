@@ -19,8 +19,14 @@ if (fs.existsSync(indexHtmlPath)) {
   let indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
   indexHtml = indexHtml.replace(/window\._CLIENT_VERSION\s*=\s*'[^']+';/g, `window._CLIENT_VERSION = '${currentVersion}';`);
   indexHtml = indexHtml.replace(/const CURRENT_APP_BUILD\s*=\s*'[^']+';/g, `const CURRENT_APP_BUILD = '${currentVersion}';`);
+  indexHtml = indexHtml.replace(/href="app\.css\?v=[^"]+"/g, `href="app.css?v=${currentVersion}"`);
+  indexHtml = indexHtml.replace(/src="db\.js\?v=[^"]+"/g, `src="db.js?v=${currentVersion}"`);
+  indexHtml = indexHtml.replace(/src="server-client-bridge\.js\?v=[^"]+"/g, `src="server-client-bridge.js?v=${currentVersion}"`);
+  indexHtml = indexHtml.replace(/src="game\.js\?v=[^"]+"/g, `src="game.js?v=${currentVersion}"`);
+  indexHtml = indexHtml.replace(/src="ui\.js\?v=[^"]+"/g, `src="ui.js?v=${currentVersion}"`);
+  indexHtml = indexHtml.replace(/src="pwa-manager\.js\?v=[^"]+"/g, `src="pwa-manager.js?v=${currentVersion}"`);
   fs.writeFileSync(indexHtmlPath, indexHtml, 'utf8');
-  console.log(`Updated index.html to ${currentVersion}`);
+  console.log(`Updated index.html to ${currentVersion} (including all script/css tags)`);
 }
 
 // 2. Update sw.js
