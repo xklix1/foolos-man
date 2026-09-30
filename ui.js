@@ -2818,6 +2818,7 @@ const UIController = (() => {
     }
 
     // Update Gold balance (Unlocked globally for all players)
+    const isKhaled = isKhaledUser();
     const goldDesktopContainer = document.getElementById('stat-gold-container-desktop');
     const goldMobileContainer = document.getElementById('stat-gold-container-mobile');
     if (s.gold === undefined || s.gold === null) {
@@ -2842,12 +2843,12 @@ const UIController = (() => {
       if (gmEl) gmEl.textContent = goldVal.toLocaleString();
     }
 
-    // Update Speed-Up buttons across panels (Bank Loan & Casino - strictly for Khaled)
+    // Update Speed-Up buttons across panels (Bank Loan & Casino)
     const loanSpeedupBtn = document.getElementById('btn-speedup-loan');
     if (loanSpeedupBtn) {
       const now = Date.now();
       const loanCd = Number(s.loanCooldownUntil || 0);
-      if (isKhaled && loanCd > now) {
+      if (loanCd > now) {
         loanSpeedupBtn.classList.remove('hidden');
         loanSpeedupBtn.classList.add('flex');
         loanSpeedupBtn.style.removeProperty('display');
@@ -2869,7 +2870,7 @@ const UIController = (() => {
     if (casinoSpeedupBtn) {
       const now = Date.now();
       const casinoCd = Number(s.casinoCooldownUntil || 0);
-      if (isKhaled && casinoCd > now) {
+      if (casinoCd > now) {
         casinoSpeedupBtn.classList.remove('hidden');
         casinoSpeedupBtn.classList.add('flex');
         casinoSpeedupBtn.style.removeProperty('display');
@@ -23202,7 +23203,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.21');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.22');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

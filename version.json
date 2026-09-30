@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.21",
-  "build": 1790809000000,
-  "timestamp": "2026-10-01T01:52:00.000Z",
-  "notes": "Organize Topup Store into Gold Packages, Cash Packages, and Cosmetics & Chat Frames Packages"
+  "version": "v8.2.22",
+  "build": 1790809500000,
+  "timestamp": "2026-10-01T01:57:00.000Z",
+  "notes": "Fix isKhaled ReferenceError during header render"
 }
