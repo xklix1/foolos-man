@@ -381,86 +381,54 @@ const UIController = (() => {
     const token = (typeof ServerBridge !== 'undefined' && ServerBridge.sessionToken) || (typeof AppDB !== 'undefined' && AppDB.getSessionToken && AppDB.getSessionToken()) || '';
 
     try {
-      showToast('جاري تسريع المؤقت ⚡', 'يتم التحقق وخصم الذهب...', 'info');
-
-      let serverSuccess = false;
-      let data = null;
-
-      try {
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
-        const res = await fetch(`${base}/api/action/speed-up`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ username, timerType, targetKey, token })
-        });
-
-        if (res.ok) {
-          data = await res.json();
-          serverSuccess = true;
-        }
-      } catch (netErr) {
-        console.warn('[SpeedUp] Server API unreachable, using client engine fallback:', netErr.message);
-      }
-
-      // Calculate cost on client if server did not respond
-      let goldDeducted = data ? data.goldDeducted : 1;
       const s = (typeof GameEngine !== 'undefined' && GameEngine.state) ? GameEngine.state : null;
       if (!s) return;
       const currentGold = Math.max(0, Number(s.gold || 0));
+      let goldDeducted = 1;
 
-      if (serverSuccess && data) {
-        if (data.state) {
-          Object.assign(GameEngine.state, data.state);
-        } else if (data.currentGold !== undefined) {
-          GameEngine.state.gold = data.currentGold;
+      // 1. Authoritative client deduction & validation
+      if (timerType === 'jail') {
+        const jailSec = Number(s.jailTimer || 0);
+        goldDeducted = Math.max(1, Math.ceil(jailSec / 600));
+        if (currentGold < goldDeducted) {
+          showToast('رصيد ذهب غير كافٍ', `تحتاج إلى ${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: ${currentGold} 🪙`, 'error');
+          return;
         }
-      } else {
-        // Client Fallback Execution (1 Gold per 10 minutes = 600,000 ms)
-        if (timerType === 'jail') {
-          const jailSec = Number(s.jailTimer || 0);
-          goldDeducted = Math.max(1, Math.ceil(jailSec / 600));
+        s.gold = currentGold - goldDeducted;
+        s.jailTimer = 0;
+      } else if (timerType === 'cooldown' && targetKey) {
+        const map = { loan: 'loanCooldownUntil', work: 'workCooldownUntil', casino: 'casinoCooldownUntil' };
+        const prop = map[targetKey];
+        if (prop) {
+          const remMs = Math.max(0, Number(s[prop] || 0) - Date.now());
+          goldDeducted = Math.max(1, Math.ceil(remMs / 600000));
           if (currentGold < goldDeducted) {
             showToast('رصيد ذهب غير كافٍ', `تحتاج إلى ${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: ${currentGold} 🪙`, 'error');
             return;
           }
           s.gold = currentGold - goldDeducted;
-          s.jailTimer = 0;
-        } else if (timerType === 'cooldown' && targetKey) {
-          const map = { loan: 'loanCooldownUntil', work: 'workCooldownUntil', casino: 'casinoCooldownUntil' };
-          const prop = map[targetKey];
-          if (prop) {
-            const remMs = Math.max(0, Number(s[prop] || 0) - Date.now());
+          s[prop] = 0;
+        }
+      } else if (timerType === 'smuggling') {
+        if (Array.isArray(s.activeSmugglingJobs)) {
+          const sj = s.activeSmugglingJobs.find(j => String(j.id) === String(targetKey)) || s.activeSmugglingJobs[Number(targetKey)] || s.activeSmugglingJobs[0];
+          if (sj) {
+            const remMs = Math.max(0, (sj.endTime || sj.finishTime || sj.expiresAt || 0) - Date.now());
             goldDeducted = Math.max(1, Math.ceil(remMs / 600000));
             if (currentGold < goldDeducted) {
               showToast('رصيد ذهب غير كافٍ', `تحتاج إلى ${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: ${currentGold} 🪙`, 'error');
               return;
             }
             s.gold = currentGold - goldDeducted;
-            s[prop] = 0;
-          }
-        } else if (timerType === 'smuggling') {
-          if (Array.isArray(s.activeSmugglingJobs)) {
-            const sj = s.activeSmugglingJobs.find(j => String(j.id) === String(targetKey)) || s.activeSmugglingJobs[Number(targetKey)] || s.activeSmugglingJobs[0];
-            if (sj) {
-              const remMs = Math.max(0, (sj.endTime || sj.finishTime || sj.expiresAt || 0) - Date.now());
-              goldDeducted = Math.max(1, Math.ceil(remMs / 600000));
-              if (currentGold < goldDeducted) {
-                showToast('رصيد ذهب غير كافٍ', `تحتاج إلى ${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: ${currentGold} 🪙`, 'error');
-                return;
-              }
-              s.gold = currentGold - goldDeducted;
-              sj.endTime = Date.now() - 1000;
-              sj.finishTime = Date.now() - 1000;
-              sj.expiresAt = Date.now() - 1000;
-              sj.ready = true;
-            }
+            sj.endTime = Date.now() - 1000;
+            sj.finishTime = Date.now() - 1000;
+            sj.expiresAt = Date.now() - 1000;
+            sj.ready = true;
           }
         }
       }
 
-      // Handle UI and post-execution triggers
+      // 2. Handle UI and post-execution triggers
       if (timerType === 'jail') {
         const jailOverlay = document.getElementById('jail-overlay');
         if (jailOverlay) jailOverlay.classList.add('hidden');
@@ -488,12 +456,25 @@ const UIController = (() => {
         }
       }
 
-      // Persist state immediately
-      if (typeof GameEngine !== 'undefined' && GameEngine.forceSaveState) {
+      // 3. Persist state immediately to Cloud & Local Storage
+      if (typeof AppDB !== 'undefined' && typeof AppDB.savePlayerState === 'function') {
+        try { await AppDB.savePlayerState(username, s, true); } catch (e) {}
+      } else if (typeof GameEngine !== 'undefined' && GameEngine.forceSaveState) {
         try { await GameEngine.forceSaveState(true); } catch (e) {}
       }
 
-      showToast('تم التسريع بنجاح ⚡', `تم إنهاء المؤقت بنجاح وخصم ${goldDeducted} 🪙 ذهب.`, 'success');
+      // 4. Background Server Notification
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        fetch(`${base}/api/action/speed-up`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ username, timerType, targetKey, token, goldDeducted, newGold: s.gold })
+        }).catch(() => {});
+      } catch (_) {}
+
+      showToast('تم التسريع بنجاح ⚡', `تم إنهاء المؤقت بنجاح وخصم ${goldDeducted} 🪙 ذهب. الرصيد المتبقي: ${Number(s.gold).toLocaleString()} 🪙`, 'success');
       if (typeof playMenuSound === 'function') playMenuSound('success');
       if (typeof renderAll === 'function') renderAll();
     } catch (err) {
@@ -23066,7 +23047,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.15');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.16');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

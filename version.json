@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.15",
-  "build": 1790804300000,
-  "timestamp": "2026-10-01T00:57:00.000Z",
-  "notes": "Fix server and client gold currency persistence across session exit and reload"
+  "version": "v8.2.16",
+  "build": 1790804400000,
+  "timestamp": "2026-10-01T01:05:00.000Z",
+  "notes": "Ensure speedup actions preserve remaining gold authoritatively across saves and sessions"
 }
