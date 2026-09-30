@@ -376,52 +376,96 @@ const UIController = (() => {
   async function requestSpeedUp(timerType, targetKey) {
     if (!isKhaledUser()) return;
 
-    const username = 'Khaled';
+    const username = (typeof getActiveUsernameSafe === 'function' && getActiveUsernameSafe()) || (GameEngine.state && GameEngine.state.username) || 'Khaled';
     const base = (window.SERVER_API_URL || '').replace(/\/$/, '') || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : '');
+    const token = (typeof ServerBridge !== 'undefined' && ServerBridge.sessionToken) || (typeof AppDB !== 'undefined' && AppDB.getSessionToken && AppDB.getSessionToken()) || '';
 
     try {
-      showToast('جاري تسريع المؤقت ⚡', 'يتم التحقق من الخادم وخصم الذهب...', 'info');
+      showToast('جاري تسريع المؤقت ⚡', 'يتم التحقق وخصم الذهب...', 'info');
 
-      // Ensure state is flushed to server before requesting speed-up
-      if (typeof GameEngine !== 'undefined' && GameEngine.forceSaveState) {
-        try { await GameEngine.forceSaveState(true); } catch (e) {}
-      }
+      let serverSuccess = false;
+      let data = null;
 
-      const res = await fetch(`${base}/api/action/speed-up`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, timerType, targetKey })
-      });
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const data = await res.json();
-      if (!res.ok) {
-        if (data.error === 'INSUFFICIENT_GOLD') {
-          showToast('رصيد ذهب غير كافٍ', `تحتاج إلى ${data.required} ذهب لتسريع هذا المؤقت. رصيدك الحالي: ${data.current} 🪙`, 'error');
-        } else {
-          showToast('فشل التسريع', data.message || data.error || 'تعذر تسريع المؤقت.', 'error');
+        const res = await fetch(`${base}/api/action/speed-up`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ username, timerType, targetKey, token })
+        });
+
+        if (res.ok) {
+          data = await res.json();
+          serverSuccess = true;
         }
-        return;
+      } catch (netErr) {
+        console.warn('[SpeedUp] Server API unreachable, using client engine fallback:', netErr.message);
       }
 
-      // Authoritatively update GameEngine state
-      if (data.state && typeof GameEngine !== 'undefined') {
-        Object.assign(GameEngine.state, data.state);
-      } else if (typeof GameEngine !== 'undefined' && GameEngine.state) {
-        if (data.currentGold !== undefined) GameEngine.state.gold = data.currentGold;
-        if (timerType === 'jail') GameEngine.state.jailTimer = 0;
-        if (timerType === 'cooldown' && targetKey) {
+      // Calculate cost on client if server did not respond
+      let goldDeducted = data ? data.goldDeducted : 1;
+      const s = (typeof GameEngine !== 'undefined' && GameEngine.state) ? GameEngine.state : null;
+      if (!s) return;
+      const currentGold = Math.max(0, Number(s.gold || 0));
+
+      if (serverSuccess && data) {
+        if (data.state) {
+          Object.assign(GameEngine.state, data.state);
+        } else if (data.currentGold !== undefined) {
+          GameEngine.state.gold = data.currentGold;
+        }
+      } else {
+        // Client Fallback Execution (1 Gold per 10 minutes = 600,000 ms)
+        if (timerType === 'jail') {
+          const jailSec = Number(s.jailTimer || 0);
+          goldDeducted = Math.max(1, Math.ceil(jailSec / 600));
+          if (currentGold < goldDeducted) {
+            showToast('رصيد ذهب غير كافٍ', `تحتاج إلى ${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: ${currentGold} 🪙`, 'error');
+            return;
+          }
+          s.gold = currentGold - goldDeducted;
+          s.jailTimer = 0;
+        } else if (timerType === 'cooldown' && targetKey) {
           const map = { loan: 'loanCooldownUntil', work: 'workCooldownUntil', casino: 'casinoCooldownUntil' };
-          if (map[targetKey]) GameEngine.state[map[targetKey]] = 0;
+          const prop = map[targetKey];
+          if (prop) {
+            const remMs = Math.max(0, Number(s[prop] || 0) - Date.now());
+            goldDeducted = Math.max(1, Math.ceil(remMs / 600000));
+            if (currentGold < goldDeducted) {
+              showToast('رصيد ذهب غير كافٍ', `تحتاج إلى ${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: ${currentGold} 🪙`, 'error');
+              return;
+            }
+            s.gold = currentGold - goldDeducted;
+            s[prop] = 0;
+          }
+        } else if (timerType === 'smuggling') {
+          if (Array.isArray(s.activeSmugglingJobs)) {
+            const sj = s.activeSmugglingJobs.find(j => String(j.id) === String(targetKey)) || s.activeSmugglingJobs[Number(targetKey)] || s.activeSmugglingJobs[0];
+            if (sj) {
+              const remMs = Math.max(0, (sj.endTime || sj.finishTime || sj.expiresAt || 0) - Date.now());
+              goldDeducted = Math.max(1, Math.ceil(remMs / 600000));
+              if (currentGold < goldDeducted) {
+                showToast('رصيد ذهب غير كافٍ', `تحتاج إلى ${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: ${currentGold} 🪙`, 'error');
+                return;
+              }
+              s.gold = currentGold - goldDeducted;
+              sj.endTime = Date.now() - 1000;
+              sj.finishTime = Date.now() - 1000;
+              sj.expiresAt = Date.now() - 1000;
+              sj.ready = true;
+            }
+          }
         }
       }
 
-      // Close Jail Overlay immediately if jail was sped up
+      // Handle UI and post-execution triggers
       if (timerType === 'jail') {
         const jailOverlay = document.getElementById('jail-overlay');
         if (jailOverlay) jailOverlay.classList.add('hidden');
       }
 
-      // If work cooldown was sped up, reset work interval & restore button
       if (timerType === 'cooldown' && targetKey === 'work') {
         if (workCooldownTimer) {
           clearInterval(workCooldownTimer);
@@ -437,24 +481,24 @@ const UIController = (() => {
         }
       }
 
-      // If smuggling was sped up, mature job immediately and process tick to deliver earnings
       if (timerType === 'smuggling') {
-        if (typeof GameEngine !== 'undefined' && GameEngine.state && Array.isArray(GameEngine.state.activeSmugglingJobs)) {
-          const sj = GameEngine.state.activeSmugglingJobs.find(j => String(j.id) === String(targetKey)) || GameEngine.state.activeSmugglingJobs[0];
-          if (sj) sj.endTime = Date.now() - 1000;
-          if (typeof GameEngine.processTick === 'function') GameEngine.processTick();
-        }
+        if (typeof GameEngine.processTick === 'function') GameEngine.processTick();
         if (typeof updateActiveSmugglingJobsInDOM === 'function') {
           updateActiveSmugglingJobsInDOM();
         }
       }
 
-      showToast('تم التسريع بنجاح ⚡', `تم إنهاء المؤقت بنجاح وخصم ${data.goldDeducted} 🪙 ذهب.`, 'success');
+      // Persist state immediately
+      if (typeof GameEngine !== 'undefined' && GameEngine.forceSaveState) {
+        try { await GameEngine.forceSaveState(true); } catch (e) {}
+      }
+
+      showToast('تم التسريع بنجاح ⚡', `تم إنهاء المؤقت بنجاح وخصم ${goldDeducted} 🪙 ذهب.`, 'success');
       if (typeof playMenuSound === 'function') playMenuSound('success');
       if (typeof renderAll === 'function') renderAll();
     } catch (err) {
-      console.error('[SpeedUp] Network Error:', err);
-      showToast('خطأ في الاتصال', 'تعذر الاتصال بالخادم: ' + err.message, 'error');
+      console.error('[SpeedUp] Error:', err);
+      showToast('خطأ في التسريع', err.message || 'تعذر تسريع المؤقت.', 'error');
     }
   }
 
@@ -22974,7 +23018,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.8');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.9');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

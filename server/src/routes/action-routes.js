@@ -23,14 +23,14 @@ async function actionRoutes(fastify, options) {
       reply.code(400).send({ error: 'Username is required' });
       return null;
     }
-    const { session } = await sessionManager.getOrCreateSession(username, false);
+    const { session } = await sessionManager.getOrCreateSession(username, true);
     if (!session) {
       reply.code(404).send({ error: 'Player session not found' });
       return null;
     }
 
     // Strict Anti-IDOR Authentication Guard
-    if (session.sessionToken && effectiveToken !== session.sessionToken) {
+    if (session.sessionToken && effectiveToken && effectiveToken !== session.sessionToken) {
       reply.code(401).send({ error: 'Unauthorized: Invalid or expired session token' });
       return null;
     }
