@@ -21941,9 +21941,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   // ─────────────────────────────────────────────
   //  TOP-UP & SUPPORT STORE CONTROLLER (متجر الشحن والدعم)
   // ─────────────────────────────────────────────
-  let _activeSelectedTopupPkg = null;
-  let _topupModalEventsBound = false;
-  let _currentTopupPaymentSettings = null;
+  let _cachedTopupPackagesList = [];
+  let _activeTopupCategoryFilter = 'all';
 
   async function openTopupModal() {
     playMenuSound('modal_open');
@@ -21951,6 +21950,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     const modal = document.getElementById('topup-store-modal');
     if (!modal) return;
+
+    // Update real-time balance in modal
+    const s = (typeof GameEngine !== 'undefined' && GameEngine.state) ? GameEngine.state : {};
+    const pGoldEl = document.getElementById('topup-modal-player-gold');
+    const pCashEl = document.getElementById('topup-modal-player-cash');
+    if (pGoldEl) pGoldEl.textContent = Math.max(0, Number(s.gold || 0)).toLocaleString();
+    if (pCashEl) pCashEl.textContent = formatCompactNumber(Math.max(0, Number(s.cash || 0)));
 
     // Reset views
     document.getElementById('topup-view-packages')?.classList.remove('hidden');
@@ -21962,7 +21968,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     const container = document.getElementById('topup-packages-container');
     if (container) {
-      container.innerHTML ='<div class="col-span-full p-8 text-center text-slate-400"><i class="fa-solid fa-spinner animate-spin text-xl text-amber-400 block mb-2"></i><span>جاري جلب باقات الشحن المعتمدة...</span></div>';
+      container.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400"><i class="fa-solid fa-spinner animate-spin text-xl text-amber-400 block mb-2"></i><span>جاري جلب باقات الشحن المعتمدة...</span></div>';
     }
 
     try {
@@ -21972,29 +21978,24 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       ]);
 
       _currentTopupPaymentSettings = settings;
+      _cachedTopupPackagesList = packages || [];
 
       // Populate Payment Info in view 2
       const vodafoneNumEl = document.getElementById('player-topup-vodafone-num');
       const instapayNumEl = document.getElementById('player-topup-instapay-num');
       const instructionsEl = document.getElementById('player-topup-instructions');
 
-      if (vodafoneNumEl) vodafoneNumEl.textContent = settings.vodafoneCash ||'غير محدد حالياً';
-      if (instapayNumEl) instapayNumEl.textContent = settings.instapay ||'غير محدد حالياً';
-      if (instructionsEl) instructionsEl.textContent = settings.notes ||'يرجى تحويل المبلغ بدقة وكتابة رقم الهاتف المحوّل منه ورقم العملية أو الوصل لتأكيد الشحن فوراً.';
+      if (vodafoneNumEl) vodafoneNumEl.textContent = settings.vodafoneCash || 'غير محدد حالياً';
+      if (instapayNumEl) instapayNumEl.textContent = settings.instapay || 'غير محدد حالياً';
+      if (instructionsEl) instructionsEl.textContent = settings.notes || 'يرجى تحويل المبلغ بدقة وكتابة رقم الهاتف المحوّل منه ورقم العملية أو الوصل لتأكيد الشحن فوراً.';
 
       // Render packages
-      renderTopupPackagesList(packages || []);
+      renderTopupPackagesList(_cachedTopupPackagesList);
     } catch (err) {
       if (container) {
-        container.innerHTML =`<div class="col-span-full p-4 text-center text-rose-400 bg-rose-950/40 rounded-2xl border border-rose-500/30">تعذر جلب باقات الشحن: ${err.message}</div>`;
+        container.innerHTML = `<div class="col-span-full p-4 text-center text-rose-400 bg-rose-950/40 rounded-2xl border border-rose-500/30">تعذر جلب باقات الشحن: ${err.message}</div>`;
       }
     }
-  }
-
-  function closeTopupModal() {
-    const modal = document.getElementById('topup-store-modal');
-    if (modal) modal.classList.add('hidden');
-    _activeSelectedTopupPkg = null;
   }
 
   function renderTopupPackagesList(packages) {
@@ -22002,57 +22003,137 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (!container) return;
 
     // Filter out packages hidden by admin
-    const visiblePackages = (packages || []).filter(pkg => pkg.hidden !== true && pkg.visible !== false && pkg.active !== false);
+    let visiblePackages = (packages || []).filter(pkg => pkg.hidden !== true && pkg.visible !== false && pkg.active !== false);
+
+    // Apply category filter
+    if (_activeTopupCategoryFilter === 'gold') {
+      visiblePackages = visiblePackages.filter(pkg => Boolean(pkg.gold && Number(pkg.gold) > 0));
+    } else if (_activeTopupCategoryFilter === 'vip') {
+      visiblePackages = visiblePackages.filter(pkg => !pkg.gold || Number(pkg.gold) <= 0 || Boolean(pkg.customBadge || pkg.cash));
+    }
 
     if (visiblePackages.length === 0) {
-      container.innerHTML = '<div class="col-span-full p-6 text-center text-slate-400 bg-slate-900/40 rounded-2xl border border-slate-800">لا توجد باقات متاحة حالياً. يرجى مراجعة الإدارة لاحقاً.</div>';
+      container.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 bg-slate-900/40 rounded-3xl border border-slate-800"><i class="fa-solid fa-box-open text-2xl text-slate-600 block mb-2"></i><span>لا توجد باقات متاحة في هذا التصنيف حالياً.</span></div>';
       return;
     }
 
     container.innerHTML = '';
     visiblePackages.forEach(pkg => {
       const card = document.createElement('div');
-      card.className ='p-4 rounded-3xl bg-slate-900/85 border-2 border-amber-500/30 hover:border-amber-400 flex flex-col justify-between space-y-3.5 transition-all duration-300 shadow-xl relative overflow-hidden group hover:scale-[1.01]';
+      const isGoldPkg = Boolean(pkg.gold && Number(pkg.gold) > 0);
+      const goldAmt = Number(pkg.gold || 0);
+      const speedupHours = Math.floor((goldAmt * 10) / 60);
 
-      const badge = pkg.customBadge ||'';
+      const badge = pkg.customBadge || '';
       const itemsList = pkg.items ? Object.entries(pkg.items).map(([k, v]) => {
         let label = k;
-        if (k ==='vip_casino_pass') label ='تصريح كازينو VIP';
-        else if (k ==='swiss_safe') label ='خزنة سويسرية';
-        else if (k ==='offshore_account') label ='حساب خارجي';
-        else if (k ==='lottery_ticket') label ='تذكرة يانصيب';
-        return`${v}x ${label}`;
-      }).join(' •') :'';
+        if (k === 'vip_casino_pass') label = 'تصريح كازينو VIP';
+        else if (k === 'swiss_safe') label = 'خزنة سويسرية';
+        else if (k === 'offshore_account') label = 'حساب خارجي';
+        else if (k === 'lottery_ticket') label = 'تذكرة يانصيب';
+        return `${v}x ${label}`;
+      }).join(' • ') : '';
 
-      card.innerHTML =`
+      // High-end styling
+      const cardBorder = isGoldPkg ? 'border-amber-500/40 hover:border-amber-300 hover:shadow-amber-500/20' : 'border-cyan-500/30 hover:border-cyan-300 hover:shadow-cyan-500/20';
+      const cardBg = isGoldPkg ? 'bg-gradient-to-b from-amber-950/20 via-slate-900/95 to-slate-950' : 'bg-gradient-to-b from-slate-900/90 via-slate-950 to-black';
+
+      card.className = `p-4 rounded-3xl ${cardBg} border-2 ${cardBorder} flex flex-col justify-between space-y-3.5 transition-all duration-300 shadow-xl relative overflow-hidden group hover:scale-[1.02] cursor-default`;
+
+      // Header Tag/Pill
+      let topPill = '';
+      if (isGoldPkg) {
+        if (goldAmt >= 800) topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-black">🔥 عرش الأباطرة</span>';
+        else if (goldAmt >= 300) topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-black">⭐ الأكثر طلباً</span>';
+        else topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 font-black">⚡ تسريع فوري</span>';
+      } else if (badge) {
+        topPill = `<span class="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 font-black">💎 VIP وسام مميز</span>`;
+      }
+
+      card.innerHTML = `
+        <!-- Card Top Glow Accent -->
+        <div class="absolute -top-12 -right-12 w-28 h-28 ${isGoldPkg ? 'bg-amber-500/10' : 'bg-cyan-500/10'} rounded-full blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-500"></div>
+
         <!-- Card Content -->
-        <div class="space-y-3">
-          <!-- Header -->
-          <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-800/80">
-            <div class="flex items-center gap-2 min-w-0">
-              ${badge ?`<span class="text-xl shrink-0 drop-shadow-sm inline-flex items-center justify-center">${formatCustomBadgeHtml(badge, 'text-2xl')}</span>` :''}
-              <h3 class="font-black text-white text-xs sm:text-sm truncate">${pkg.name}</h3>
+        <div class="space-y-3 relative z-10">
+          
+          <!-- Top Row: Category Tag & Price -->
+          <div class="flex items-center justify-between gap-2">
+            <div>${topPill}</div>
+            <div class="numbers-font text-amber-300 font-black text-xs sm:text-sm px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/10 border border-amber-500/40 shadow-inner flex items-center gap-1 font-mono">
+              <span>${Number(pkg.price).toLocaleString()}</span>
+              <span class="text-[10px] font-sans">EGP</span>
             </div>
-            <span class="numbers-font text-amber-400 font-black text-sm shrink-0 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 shadow-sm">${Number(pkg.price).toLocaleString()} EGP</span>
           </div>
 
-          <p class="text-[11px] text-slate-300 leading-relaxed">${(pkg.description ||'باقة استثنائية لدعم السيرفر وحصاد مزايا ومكافآت هائلة في اللعبة.').includes('✔️') ? formatCustomBadgeHtml(pkg.description, 'text-xs') : (pkg.description ||'باقة استثنائية لدعم السيرفر وحصاد مزايا ومكافآت هائلة في اللعبة.')}</p>
+          <!-- Title & Icon -->
+          <div class="flex items-center gap-2.5 pb-2 border-b border-slate-800/80">
+            <div class="w-10 h-10 rounded-2xl ${isGoldPkg ? 'bg-gradient-to-br from-amber-400 to-yellow-600 text-slate-950' : 'bg-gradient-to-br from-cyan-400 to-blue-600 text-white'} flex items-center justify-center text-lg font-black shrink-0 shadow-md group-hover:rotate-6 transition-transform">
+              ${isGoldPkg ? '🪙' : (badge ? formatCustomBadgeHtml(badge, 'text-xl') : '💎')}
+            </div>
+            <div class="min-w-0">
+              <h3 class="font-black text-white text-xs sm:text-sm truncate group-hover:text-amber-300 transition-colors">${pkg.name}</h3>
+              <p class="text-[10px] text-slate-400 truncate mt-0.5">${(pkg.description || 'باقة مميزة لدعم السيرفر واكتساب موارد حصرية.')}</p>
+            </div>
+          </div>
 
-          <!-- Rewards Box -->
-          <div class="p-2.5 bg-slate-950/90 rounded-2xl border border-slate-800 space-y-1.5 text-[11px]">
-            ${pkg.gold ? `<div class="flex justify-between items-center text-amber-400 font-black"><span>🪙 رصيد ذهب:</span><span class="numbers-font font-mono text-xs">+${Number(pkg.gold).toLocaleString()} ذهبة</span></div>` : ''}
-            ${pkg.cash ?`<div class="flex justify-between items-center text-emerald-400 font-black"><span>كاش فوري:</span><span class="numbers-font font-mono text-xs">+${Number(pkg.cash).toLocaleString()} EGP</span></div>` :''}
-            ${pkg.bank ?`<div class="flex justify-between items-center text-sky-400 font-bold"><span>وديعة بالبنك:</span><span class="numbers-font font-mono text-xs">+${Number(pkg.bank).toLocaleString()} EGP</span></div>` :''}
-            ${pkg.xp ?`<div class="flex justify-between items-center text-cyan-400 font-bold"><span>نقاط خبرة:</span><span class="numbers-font font-mono text-xs">+${Number(pkg.xp).toLocaleString()} XP</span></div>` :''}
-            ${badge ?`<div class="flex justify-between items-center text-yellow-400 font-bold"><span>وسام VIP:</span><span class="flex items-center gap-1.5">${formatCustomBadgeHtml(badge, 'text-base')} ${pkg.badgeTitle ||''}</span></div>` :''}
-            ${itemsList ?`<div class="flex justify-between items-center text-purple-300 font-bold"><span>معدات إضافية:</span><span class="text-[10px] truncate max-w-[140px]">${itemsList}</span></div>` :''}
+          <!-- Highlight Rewards Box -->
+          <div class="p-3 bg-slate-950/90 rounded-2xl border border-slate-850 space-y-2 text-[11px]">
+            ${isGoldPkg ? `
+              <div class="flex items-center justify-between p-2 rounded-xl bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-transparent border border-amber-500/30">
+                <div class="flex items-center gap-1.5 font-black text-amber-300">
+                  <span class="text-sm">🪙</span>
+                  <span>رصيد الذهب:</span>
+                </div>
+                <span class="numbers-font font-black text-amber-400 text-sm font-mono">+${goldAmt.toLocaleString()} ذهبة</span>
+              </div>
+              <div class="text-[10px] text-slate-300 flex items-center gap-1.5 px-1">
+                <i class="fa-solid fa-bolt-lightning text-amber-400"></i>
+                <span>تعادل تسريع <strong>${speedupHours > 0 ? speedupHours + ' ساعة' : (goldAmt * 10) + ' دقيقة'}</strong> عمل/تهريب/سجن</span>
+              </div>
+            ` : ''}
+
+            ${pkg.cash ? `
+              <div class="flex justify-between items-center text-emerald-400 font-black">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-money-bill-wave text-xs"></i> كاش فوري:</span>
+                <span class="numbers-font font-mono text-xs text-emerald-300 font-black">+${Number(pkg.cash).toLocaleString()} EGP</span>
+              </div>
+            ` : ''}
+
+            ${pkg.bank ? `
+              <div class="flex justify-between items-center text-sky-400 font-bold">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-building-columns text-xs"></i> وديعة بالبنك:</span>
+                <span class="numbers-font font-mono text-xs text-sky-300">+${Number(pkg.bank).toLocaleString()} EGP</span>
+              </div>
+            ` : ''}
+
+            ${pkg.xp ? `
+              <div class="flex justify-between items-center text-cyan-400 font-bold">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-star text-xs"></i> نقاط خبرة:</span>
+                <span class="numbers-font font-mono text-xs text-cyan-300">+${Number(pkg.xp).toLocaleString()} XP</span>
+              </div>
+            ` : ''}
+
+            ${badge ? `
+              <div class="flex justify-between items-center text-yellow-400 font-bold">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-crown text-xs"></i> وسام VIP:</span>
+                <span class="flex items-center gap-1.5">${formatCustomBadgeHtml(badge, 'text-sm')} ${pkg.badgeTitle || 'وسام حصري'}</span>
+              </div>
+            ` : ''}
+
+            ${itemsList ? `
+              <div class="flex justify-between items-center text-purple-300 font-bold pt-1 border-t border-slate-850">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-box text-xs"></i> معدات إضافية:</span>
+                <span class="text-[10px] text-purple-200 truncate max-w-[130px]">${itemsList}</span>
+              </div>
+            ` : ''}
           </div>
         </div>
 
         <!-- Action Button -->
-        <button class="btn-select-topup-pkg w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer">
-          <i class="fa-solid fa-bolt"></i>
-          <span>طلب وشحن الباقة </span>
+        <button class="btn-select-topup-pkg w-full py-2.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black rounded-2xl text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer relative z-10 group-hover:shadow-amber-500/40">
+          <i class="fa-solid fa-bolt text-slate-950"></i>
+          <span>طلب وشحن الباقة الآن</span>
         </button>`;
 
       card.querySelector('.btn-select-topup-pkg').onclick = () => {
@@ -22063,7 +22144,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     });
   }
 
-  function selectPackageForTopup(pkg) {
+    function selectPackageForTopup(pkg) {
     playMenuSound('click');
     _activeSelectedTopupPkg = pkg;
 
@@ -22150,6 +22231,26 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (_topupModalEventsBound) return;
     _topupModalEventsBound = true;
 
+    // Filter tab buttons
+    const filterTabs = document.querySelectorAll('.topup-filter-tab');
+    filterTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        playMenuSound('click');
+        const cat = tab.dataset.category || 'all';
+        _activeTopupCategoryFilter = cat;
+
+        filterTabs.forEach(t => {
+          t.classList.remove('bg-gradient-to-r', 'from-amber-500', 'to-yellow-500', 'text-slate-950', 'shadow-md', 'shadow-amber-500/20');
+          t.classList.add('bg-slate-900/90', 'text-slate-300', 'border', 'border-slate-800');
+        });
+
+        tab.classList.add('bg-gradient-to-r', 'from-amber-500', 'to-yellow-500', 'text-slate-950', 'shadow-md', 'shadow-amber-500/20');
+        tab.classList.remove('bg-slate-900/90', 'text-slate-300', 'border', 'border-slate-800');
+
+        renderTopupPackagesList(_cachedTopupPackagesList);
+      });
+    });
+
     // Close button
     const closeBtn = document.getElementById('btn-close-topup-modal');
     if (closeBtn) closeBtn.onclick = () => closeTopupModal();
@@ -22181,6 +22282,16 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const num = document.getElementById('player-topup-instapay-num')?.textContent ||'';
         navigator.clipboard.writeText(num.trim());
         showToast('تم النسخ','تم نسخ حساب انستاباي للحافظة.','info');
+      };
+    }
+
+    // Copy PayPal
+    const copyPaypalBtn = document.getElementById('btn-copy-topup-paypal');
+    if (copyPaypalBtn) {
+      copyPaypalBtn.onclick = () => {
+        const num = document.getElementById('player-topup-paypal-num')?.textContent ||'';
+        navigator.clipboard.writeText(num.trim());
+        showToast('تم النسخ','تم نسخ رابط PayPal للحافظة.','info');
       };
     }
   }
@@ -23028,7 +23139,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.18');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.19');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.2.18';
+    window._CLIENT_VERSION = 'v8.2.19';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.2.18';
+      const CURRENT_APP_BUILD = 'v8.2.19';
       try {
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -117,7 +117,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v8.2.18">
+  <link rel="stylesheet" href="app.css?v=v8.2.19">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -6524,7 +6524,7 @@
   <div id="topup-store-modal" dir="rtl"
     class="hidden fixed inset-0 z-[160] flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-4 animate-fade-in text-right">
     <div dir="rtl"
-      class="glass-panel w-full max-w-3xl max-h-[92vh] flex flex-col rounded-3xl border-2 border-amber-500/50 p-4 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden">
+      class="glass-panel w-full max-w-4xl max-h-[94vh] flex flex-col rounded-3xl border-2 border-amber-500/50 p-4 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden">
       
       <!-- Top Glowing Accent -->
       <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-36 bg-amber-500/15 blur-3xl rounded-full pointer-events-none"></div>
@@ -6554,17 +6554,51 @@
 
         <!-- VIEW 1: PACKAGES SHOWCASE -->
         <div id="topup-view-packages" class="space-y-4">
-          <!-- Guarantee Banner -->
-          <div class="p-3 sm:p-3.5 bg-gradient-to-r from-amber-950/40 via-slate-900/60 to-slate-950 border border-amber-500/30 rounded-2xl flex items-center justify-between gap-3 text-[11px]">
-            <div class="flex items-center gap-2.5">
-              <i class="fa-solid fa-shield-check text-amber-400 text-lg shrink-0"></i>
-              <span class="text-slate-300">تحويل مباشر وسريع وآمن عبر <strong>فودافون كاش</strong> أو <strong>InstaPay</strong> أو <strong>PayPal</strong> مع إيداع المكافآت بحسابك فوراً.</span>
+          
+          <!-- Player Balance Strip & Guarantee -->
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+            <div class="sm:col-span-7 p-3 bg-gradient-to-r from-amber-950/40 via-slate-900/70 to-slate-950 border border-amber-500/30 rounded-2xl flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-base shrink-0">
+                <i class="fa-solid fa-shield-halved"></i>
+              </div>
+              <div class="min-w-0">
+                <span class="text-[11px] text-white font-bold block">شحن فوري ومعتمد 100%</span>
+                <span class="text-[10px] text-slate-400 block truncate">فودافون كاش • انستاباي • باي بال مع إيداع فوري بحسابك</span>
+              </div>
             </div>
-            <span class="text-[10px] px-2.5 py-1 bg-amber-500/15 border border-amber-500/30 text-amber-300 rounded-xl font-black shrink-0 hidden sm:inline-block">فوري ومعتمد</span>
+
+            <div class="sm:col-span-5 p-2.5 bg-slate-950/90 border border-slate-800 rounded-2xl flex items-center justify-between gap-2">
+              <span class="text-[11px] text-slate-400 font-bold">رصيدك الحالي:</span>
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-1 bg-amber-500/15 border border-amber-500/30 rounded-lg text-amber-300 font-black text-xs flex items-center gap-1 font-mono">
+                  <span id="topup-modal-player-gold">0</span> 🪙
+                </span>
+                <span class="px-2 py-1 bg-emerald-500/15 border border-emerald-500/30 rounded-lg text-emerald-400 font-black text-xs flex items-center gap-1 font-mono">
+                  <span id="topup-modal-player-cash">0</span> ج
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Category Filter Tabs -->
+          <div class="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+            <button type="button" id="topup-tab-all" class="topup-filter-tab px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 shadow-md shadow-amber-500/20 active:scale-95" data-category="all">
+              <i class="fa-solid fa-sparkles"></i>
+              <span>جميع الباقات</span>
+            </button>
+            <button type="button" id="topup-tab-gold" class="topup-filter-tab px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-slate-900/90 text-slate-300 hover:text-amber-300 hover:bg-slate-800 border border-slate-800 active:scale-95" data-category="gold">
+              <i class="fa-solid fa-coins text-amber-400"></i>
+              <span>باقات الذهب والتسريع</span>
+              <span class="text-[9px] px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded font-black">جديد 🔥</span>
+            </button>
+            <button type="button" id="topup-tab-vip" class="topup-filter-tab px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-slate-900/90 text-slate-300 hover:text-amber-300 hover:bg-slate-800 border border-slate-800 active:scale-95" data-category="vip">
+              <i class="fa-solid fa-gem text-cyan-400"></i>
+              <span>كاش وأوسمة كبار المستثمرين VIP</span>
+            </button>
           </div>
 
           <!-- Packages Grid -->
-          <div id="topup-packages-container" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div id="topup-packages-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
             <!-- Dynamically populated from AppDB.getTopupPackages() -->
           </div>
 
@@ -7123,11 +7157,11 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=v8.2.18"></script>
-  <script src="server-client-bridge.js?v=v8.2.18"></script>
-  <script src="game.js?v=v8.2.18"></script>
-  <script src="ui.js?v=v8.2.18"></script>
-  <script src="pwa-manager.js?v=v8.2.18"></script>
+  <script src="db.js?v=v8.2.19"></script>
+  <script src="server-client-bridge.js?v=v8.2.19"></script>
+  <script src="game.js?v=v8.2.19"></script>
+  <script src="ui.js?v=v8.2.19"></script>
+  <script src="pwa-manager.js?v=v8.2.19"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

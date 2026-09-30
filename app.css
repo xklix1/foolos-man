@@ -2007,11 +2007,44 @@ html[dir="ltr"] .chat-bubble-glow-blue-flame[data-vip-tag=""]::before {
   pointer-events: none;
 }
 
-@keyframes seasonBadgeShimmer {
-  0% { left: -100%; }
-  25% { left: 150%; }
-  100% { left: 150%; }
+/* ═══════════════════════════════════════════
+   TOP-UP & LUXURY STORE STYLES
+═══════════════════════════════════════════ */
+.topup-filter-tab {
+  user-select: none;
+  white-space: nowrap;
 }
+
+.topup-pkg-card {
+  position: relative;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+}
+
+.topup-pkg-card:hover {
+  transform: translateY(-3px) scale(1.015);
+}
+
+.btn-select-topup-pkg {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-select-topup-pkg::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -100%;
+  width: 60%;
+  height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: rotate(25deg);
+  transition: all 0.75s ease;
+}
+
+.btn-select-topup-pkg:hover::after {
+  left: 140%;
+}
+
 
 
 

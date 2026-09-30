@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.18",
-  "build": 1790807500000,
-  "timestamp": "2026-10-01T01:31:00.000Z",
-  "notes": "Fix global gold counter visibility in header for all players"
+  "version": "v8.2.19",
+  "build": 1790808000000,
+  "timestamp": "2026-10-01T01:35:00.000Z",
+  "notes": "Premium aesthetic overhaul for in-game Topup Store with category filters and rich cards"
 }
