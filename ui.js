@@ -2847,7 +2847,7 @@ const UIController = (() => {
     const goldDesktopContainer = document.getElementById('stat-gold-container-desktop');
     const goldMobileContainer = document.getElementById('stat-gold-container-mobile');
     if (isKhaled && (s.gold === undefined || s.gold === null)) {
-      s.gold = 1000000;
+      s.gold = 0;
     }
     const goldVal = Math.max(0, Number(s.gold || 0));
 
@@ -23018,7 +23018,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.9');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.10');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

@@ -30,7 +30,7 @@ async function actionRoutes(fastify, options) {
     }
 
     // Strict Anti-IDOR Authentication Guard
-    if (session.sessionToken && effectiveToken && effectiveToken !== session.sessionToken) {
+    if (session.sessionToken && (!effectiveToken || effectiveToken !== session.sessionToken)) {
       reply.code(401).send({ error: 'Unauthorized: Invalid or expired session token' });
       return null;
     }
@@ -624,6 +624,12 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
 
     // Persist authoritative mutation
     sessionManager.markDirty(session.username);
+    const dbService = require('../services/db-service');
+    try {
+      await dbService.savePlayerState(session.username, session.state);
+    } catch (dbErr) {
+      fastify.log.warn(`[SpeedUp] Direct DB save note: ${dbErr.message}`);
+    }
 
     return {
       success: true,

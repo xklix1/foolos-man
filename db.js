@@ -675,7 +675,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.9';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.10';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -684,7 +684,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.2.9', remoteVersion: 'v8.2.9' };
+    return { upToDate: true, clientVersion: 'v8.2.10', remoteVersion: 'v8.2.10' };
   }
 
   async function checkDeviceBan() {
@@ -1527,8 +1527,6 @@ var AppDB = (() => {
             : ((local && local.gold !== undefined && local.gold !== null) ? local.gold : null));
       if (rawGold !== null && rawGold !== undefined) {
         stateObj.gold = Math.max(0, Number(rawGold));
-      } else if (['khaled', 'خالد'].includes(String(row.username || u || '').trim().toLowerCase())) {
-        stateObj.gold = 1000000;
       } else {
         stateObj.gold = 0;
       }

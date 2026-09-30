@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.9",
-  "build": 1790802500000,
-  "timestamp": "2026-10-01T00:07:00.000Z",
-  "notes": "Fix speedup session resolution and add client fallback to eliminate Player session not found errors"
+  "version": "v8.2.10",
+  "build": 1790803200000,
+  "timestamp": "2026-10-01T00:20:00.000Z",
+  "notes": "Fix gold balance persistence and eliminate hardcoded 1M reset on app launch"
 }

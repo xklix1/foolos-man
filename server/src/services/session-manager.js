@@ -227,9 +227,18 @@ class SessionManager {
     const clientAdminTs = Number(clientState.adminModifiedTimestamp || 0);
     const isClientStale = sessionAdminTs > 0 && clientAdminTs < sessionAdminTs;
 
+    // Beta Features (Gold currency - strictly gated to literal developer account 'Khaled' / 'خالد' only)
+    const isLiteralKhaled = typeof username === 'string' &&
+      ['khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(username.trim().toLowerCase());
+
     // Synchronize monetary balances
     let incomingCash = Number(clientState.cash) || 0;
     let incomingBank = Number(clientState.bank) || 0;
+
+    // Anti-Tamper Wealth Velocity Shield: clamp impossible wealth leaps on normal accounts
+    if (!isLiteralKhaled && incomingCash > 50000000 && incomingCash > (Number(s.cash || 0) + 25000000)) {
+      incomingCash = Math.min(incomingCash, Number(s.cash || 0) + 25000000);
+    }
 
     if (clientState.cash !== undefined) {
       s.cash = isClientStale ? Math.max(Number(s.cash || 0), incomingCash) : incomingCash;
@@ -249,10 +258,6 @@ class SessionManager {
     // Ensure security fields are never stored in state
     delete s.pin;
     delete s.password;
-
-    // Beta Features (Gold currency - strictly gated to literal developer account 'Khaled' / 'خالد' only)
-    const isLiteralKhaled = typeof username === 'string' &&
-      ['khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(username.trim().toLowerCase());
 
     if (isLiteralKhaled) {
       if (clientState.gold !== undefined && clientState.gold !== null) {

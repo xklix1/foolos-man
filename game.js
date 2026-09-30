@@ -1260,7 +1260,8 @@ const GameEngine = (() => {
     vipVerified: false,
     isVerified: false,
     chatGlow: '',
-    unlockedChatGlows: []
+    unlockedChatGlows: [],
+    gold: 0
   };
 
   // ─────────────────────────────────────────────────────────
