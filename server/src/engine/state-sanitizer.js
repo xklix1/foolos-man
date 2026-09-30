@@ -40,6 +40,7 @@ const DEFAULT_STATE = {
   smugglingFleet: {},
   activeSmugglingJobs: {},
   gold: 0,
+  avatarUrl: '',
   farm: {
     unlocked: false,
     landLevel: 1,

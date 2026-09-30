@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.23",
-  "build": 1790810000000,
-  "timestamp": "2026-10-01T02:03:00.000Z",
-  "notes": "Add animated live chat frames & badge previews for all VIP packages"
+  "version": "v8.2.24",
+  "build": 1790812000000,
+  "timestamp": "2026-10-01T02:22:00.000Z",
+  "notes": "Add secure custom avatar profile picture upload, magic bytes validation, and chat/profile integration"
 }

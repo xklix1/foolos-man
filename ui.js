@@ -13626,20 +13626,38 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         ? getSeasonBadgeHtml(seasonBadgeVal, '', safeSender)
         : `<span class="${senderNameClass || 'text-yellow-400'}">${safeSender}</span>`;
 
-      msgDiv.className = `w-full flex flex-col ${alignClass}`;
+      const rawAvatarUrl = msg.avatarUrl || (cachedP && (cachedP.avatarUrl || (cachedP.state && cachedP.state.avatarUrl))) || (isMyMsg && GameEngine.state && GameEngine.state.avatarUrl) || '';
+      const avatarUrl = (typeof ServerBridge !== 'undefined' && ServerBridge.formatAvatarUrl) ? ServerBridge.formatAvatarUrl(rawAvatarUrl) : rawAvatarUrl;
+
+      const avatarInitial = (safeSender.substring(0, 2)).toUpperCase();
+      const avatarBorderClass = glowType === 'blue_flame' ? 'border-sky-400 shadow-sky-500/30' : (glowType === 'crimson_flame' ? 'border-rose-500 shadow-rose-500/30' : (glowType === 'gold_neon' ? 'border-amber-400 shadow-amber-500/30' : (glowType === 'cyber_rainbow' ? 'border-purple-400 shadow-purple-500/30' : 'border-slate-700/80')));
+
+      const avatarThumbHtml = avatarUrl
+        ? `<div class="relative shrink-0 cursor-pointer group" onclick="window.UI.openPlayerProfileCard('${safeSender}')" title="عرض ملف ${safeSender}">
+             <img src="${avatarUrl}" class="w-8 h-8 rounded-xl object-cover border-2 ${avatarBorderClass} shadow-md transition group-hover:scale-105" alt="${safeSender}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+             <div class="w-8 h-8 rounded-xl bg-slate-800 border-2 ${avatarBorderClass} items-center justify-center text-[10px] font-black text-amber-400 select-none shadow-md hidden">${avatarInitial}</div>
+           </div>`
+        : `<div class="w-8 h-8 rounded-xl bg-slate-900 border-2 ${avatarBorderClass} flex items-center justify-center text-[10px] font-black text-slate-300 select-none shrink-0 cursor-pointer shadow-md hover:border-yellow-400/60 transition group-hover:scale-105" onclick="window.UI.openPlayerProfileCard('${safeSender}')" title="عرض ملف ${safeSender}">${avatarInitial}</div>`;
+
+      msgDiv.className = `w-full flex ${isMyMsg ? 'justify-start flex-row-reverse' : 'justify-start flex-row'} items-start gap-2 my-1.5`;
       msgDiv.innerHTML = `
-        <div class="flex items-center gap-1.5 mb-0.5">
-          <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
-          <span class="text-[10px] font-bold cursor-pointer hover:opacity-90 inline-flex items-center gap-1.5" onclick="window.UI.openPlayerProfileCard('${safeSender}')">
-            ${playerDisplayNameHtml}
-            ${verifiedBadgeHtml}
-            ${fbIconHtml}
-            ${badgeIconHtml}
-          </span>
-          <span class="text-[8px] px-1 bg-slate-900 border border-slate-800 rounded-md text-slate-400">${safeTitle}</span>
+        <div class="mt-0.5 shrink-0">
+          ${avatarThumbHtml}
         </div>
-        <div class="chat-message-bubble ${bubbleClass} ${hasProfanity ? 'border-rose-500/40 bg-rose-950/20' : ''}" ${vipTagText ? `data-vip-tag="${vipTagText}"` : ''}>
-          ${finalMsgHtml}
+        <div class="flex flex-col ${alignClass} max-w-[85%]">
+          <div class="flex items-center gap-1.5 mb-0.5">
+            <span class="text-[9px] text-slate-500 font-bold">${timeStr}</span>
+            <span class="text-[10px] font-bold cursor-pointer hover:opacity-90 inline-flex items-center gap-1.5" onclick="window.UI.openPlayerProfileCard('${safeSender}')">
+              ${playerDisplayNameHtml}
+              ${verifiedBadgeHtml}
+              ${fbIconHtml}
+              ${badgeIconHtml}
+            </span>
+            <span class="text-[8px] px-1 bg-slate-900 border border-slate-800 rounded-md text-slate-400">${safeTitle}</span>
+          </div>
+          <div class="chat-message-bubble ${bubbleClass} ${hasProfanity ? 'border-rose-500/40 bg-rose-950/20' : ''}" ${vipTagText ? `data-vip-tag="${vipTagText}"` : ''}>
+            ${finalMsgHtml}
+          </div>
         </div>`;
     }
 
@@ -15819,33 +15837,54 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         }
 
         // Dynamic Avatar styling according to honors
+        const rawAvatar = pState.avatarUrl || (pState.state && pState.state.avatarUrl) || (isSelfView && GameEngine.state && GameEngine.state.avatarUrl) || '';
+        const avatarUrl = (typeof ServerBridge !== 'undefined' && ServerBridge.formatAvatarUrl) ? ServerBridge.formatAvatarUrl(rawAvatar) : rawAvatar;
+
         const avatarBox = document.getElementById('profile-card-avatar-box');
         const avatarIcon = document.getElementById('profile-card-avatar-icon');
-        if (avatarBox && avatarIcon) {
-          if (rNum === 1 || hasGold || (customBadge && customBadge.includes('👑')) || liveRank === 1) {
-            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600 border-2 border-yellow-200 flex items-center justify-center text-slate-950 shadow-xl shadow-yellow-500/50 shrink-0';
-            avatarIcon.className = 'fa-solid fa-crown text-2xl animate-pulse';
-          } else if (rNum === 2 || liveRank === 2) {
-            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-200 via-slate-100 to-slate-400 border-2 border-slate-100 flex items-center justify-center text-slate-950 shadow-xl shadow-slate-300/50 shrink-0';
-            avatarIcon.className = 'fa-solid fa-medal text-2xl';
-          } else if (rNum === 3 || hasBronze || liveRank === 3) {
-            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-600 via-orange-600 to-amber-800 border-2 border-amber-400 flex items-center justify-center text-amber-100 shadow-xl shadow-orange-900/50 shrink-0';
-            avatarIcon.className = 'fa-solid fa-award text-2xl';
-          } else if ((rNum >= 4 && rNum <= 10) || hasDiamond || (liveRank && liveRank <= 10)) {
-            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 border-2 border-cyan-200 flex items-center justify-center text-slate-950 shadow-xl shadow-cyan-500/50 shrink-0';
-            avatarIcon.className = 'fa-solid fa-gem text-2xl';
-          } else if ((rNum >= 11 && rNum <= 25) || hasVeteran || (liveRank && liveRank <= 25)) {
-            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-800 border-2 border-purple-400 flex items-center justify-center text-purple-100 shadow-xl shadow-purple-900/50 shrink-0';
-            avatarIcon.className = 'fa-solid fa-certificate text-2xl';
-          } else if (customBadge && String(customBadge).toUpperCase().includes('SVIP')) {
-            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-700 border-2 border-cyan-300 flex items-center justify-center text-white shadow-xl shadow-cyan-500/50 shrink-0';
-            avatarIcon.className = 'fa-solid fa-bolt-lightning text-2xl animate-pulse text-yellow-300';
-          } else if (customBadge && (customBadge.includes('🔥') || (badgeTitle && badgeTitle.includes('لهيب')))) {
-            avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 via-orange-500 to-amber-600 border-2 border-rose-300 flex items-center justify-center text-white shadow-xl shadow-rose-500/50 shrink-0';
-            avatarIcon.className = 'fa-solid fa-fire text-2xl animate-pulse text-yellow-300';
+        const btnEditAvatar = document.getElementById('btn-profile-card-edit-avatar');
+
+        if (btnEditAvatar) {
+          if (isSelfView) {
+            btnEditAvatar.classList.remove('hidden');
+            btnEditAvatar.onclick = (e) => { e.stopPropagation(); window.UI.openAvatarModal(); };
           } else {
-            avatarBox.className = 'w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shrink-0';
-            avatarIcon.className = 'fa-solid fa-user text-2xl';
+            btnEditAvatar.classList.add('hidden');
+          }
+        }
+
+        if (avatarBox) {
+          if (avatarUrl) {
+            avatarBox.className = 'w-14 h-14 rounded-2xl border-2 border-yellow-400 overflow-hidden shrink-0 shadow-lg shadow-yellow-500/20';
+            avatarBox.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${escapeHtml(cleanTarget)}" onerror="this.remove(); document.getElementById('profile-card-avatar-icon')?.classList.remove('hidden');" /><i id="profile-card-avatar-icon" class="fa-solid fa-user text-2xl hidden text-yellow-400"></i>`;
+          } else if (avatarIcon) {
+            avatarBox.innerHTML = '<i id="profile-card-avatar-icon" class="fa-solid fa-user text-2xl"></i>';
+            const newAvatarIcon = document.getElementById('profile-card-avatar-icon');
+            if (rNum === 1 || hasGold || (customBadge && customBadge.includes('👑')) || liveRank === 1) {
+              avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600 border-2 border-yellow-200 flex items-center justify-center text-slate-950 shadow-xl shadow-yellow-500/50 shrink-0';
+              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-crown text-2xl animate-pulse';
+            } else if (rNum === 2 || liveRank === 2) {
+              avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-200 via-slate-100 to-slate-400 border-2 border-slate-100 flex items-center justify-center text-slate-950 shadow-xl shadow-slate-300/50 shrink-0';
+              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-medal text-2xl';
+            } else if (rNum === 3 || hasBronze || liveRank === 3) {
+              avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-600 via-orange-600 to-amber-800 border-2 border-amber-400 flex items-center justify-center text-amber-100 shadow-xl shadow-orange-900/50 shrink-0';
+              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-award text-2xl';
+            } else if ((rNum >= 4 && rNum <= 10) || hasDiamond || (liveRank && liveRank <= 10)) {
+              avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 border-2 border-cyan-200 flex items-center justify-center text-slate-950 shadow-xl shadow-cyan-500/50 shrink-0';
+              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-gem text-2xl';
+            } else if ((rNum >= 11 && rNum <= 25) || hasVeteran || (liveRank && liveRank <= 25)) {
+              avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-800 border-2 border-purple-400 flex items-center justify-center text-purple-100 shadow-xl shadow-purple-900/50 shrink-0';
+              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-certificate text-2xl';
+            } else if (customBadge && String(customBadge).toUpperCase().includes('SVIP')) {
+              avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-700 border-2 border-cyan-300 flex items-center justify-center text-white shadow-xl shadow-cyan-500/50 shrink-0';
+              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-bolt-lightning text-2xl animate-pulse text-yellow-300';
+            } else if (customBadge && (customBadge.includes('🔥') || (badgeTitle && badgeTitle.includes('لهيب')))) {
+              avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 via-orange-500 to-amber-600 border-2 border-rose-300 flex items-center justify-center text-white shadow-xl shadow-rose-500/50 shrink-0';
+              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-fire text-2xl animate-pulse text-yellow-300';
+            } else {
+              avatarBox.className = 'w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shrink-0';
+              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-user text-2xl';
+            }
           }
         }
       }
@@ -15886,7 +15925,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       p2.innerHTML =`<span class="text-slate-400"> العقارات والأصول:</span><div class="pl-2 mt-1 text-white font-bold">${assetList.length > 0 ? assetList.map(a =>`• ${a}`).join('<br>') :'لا توجد عقارات مملوكة'}</div>`;
       summaryContainer.appendChild(p2);
 
-      const isMe = pState.username === GameEngine.state.username;
+      const isMe = isSelfView || (pState.username === GameEngine.state.username);
 
       const btnTransferMoney = document.getElementById('btn-profile-transfer-money');
       const btnPrivateChat = document.getElementById('btn-profile-private-chat');
@@ -15894,13 +15933,21 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const btnProfileBlock = document.getElementById('btn-profile-block-player');
 
       if (isMe) {
-        if (btnTransferMoney) btnTransferMoney.classList.add('hidden');
+        if (btnTransferMoney) {
+          btnTransferMoney.classList.remove('hidden');
+          btnTransferMoney.className = 'w-full py-2.5 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 active:scale-95 cursor-pointer';
+          btnTransferMoney.innerHTML = '<i class="fa-solid fa-camera text-sm"></i> <span>تغيير / إدارة صورتك الشخصية 📸</span>';
+          btnTransferMoney.onclick = () => window.UI.openAvatarModal();
+        }
         if (btnPrivateChat) btnPrivateChat.classList.add('hidden');
         if (btnMutePlayer) btnMutePlayer.classList.add('hidden');
         if (btnProfileBlock) btnProfileBlock.classList.add('hidden');
       } else {
         if (btnTransferMoney) {
           btnTransferMoney.classList.remove('hidden');
+          btnTransferMoney.className = 'w-full py-2.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer';
+          btnTransferMoney.innerHTML = '<i class="fa-solid fa-money-bill-transfer text-sm"></i> <span>تحويل أموال لهذا اللاعب</span>';
+          btnTransferMoney.onclick = null;
           btnTransferMoney.dataset.username = username;
           btnTransferMoney.dataset.title = pState.title || 'مستثمر طموح';
         }
@@ -23024,6 +23071,195 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     renderAll();
   }
 
+  // ── CUSTOM AVATAR PROFILE PICTURE CONTROLLER (Secure Client Canvas Pre-Compression) ──
+  let _stagedAvatarBase64 = null;
+
+  function openAvatarModal() {
+    const modal = document.getElementById('avatar-upload-modal');
+    if (!modal) return;
+    const curAvatar = (GameEngine.state && GameEngine.state.avatarUrl) ? (typeof ServerBridge !== 'undefined' ? ServerBridge.formatAvatarUrl(GameEngine.state.avatarUrl) : GameEngine.state.avatarUrl) : '';
+    const previewImg = document.getElementById('avatar-preview-img');
+    const placeholder = document.getElementById('avatar-preview-placeholder');
+    const statusEl = document.getElementById('avatar-upload-status');
+    const saveBtn = document.getElementById('btn-save-avatar');
+    const fileInput = document.getElementById('avatar-file-input');
+
+    if (fileInput) fileInput.value = '';
+    _stagedAvatarBase64 = null;
+    if (statusEl) { statusEl.className = 'hidden'; statusEl.textContent = ''; }
+
+    if (curAvatar && previewImg && placeholder) {
+      previewImg.src = curAvatar;
+      previewImg.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+      if (saveBtn) saveBtn.disabled = true;
+    } else if (previewImg && placeholder) {
+      previewImg.src = '';
+      previewImg.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+      if (saveBtn) saveBtn.disabled = true;
+    }
+    modal.classList.remove('hidden');
+  }
+
+  function closeAvatarModal() {
+    const modal = document.getElementById('avatar-upload-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function handleAvatarFileSelected(file) {
+    if (!file) return;
+    if (!file.type.match(/^image\/(png|jpeg|jpg|webp)$/i)) {
+      showToast('تنبيه أمني', 'نوع الملف غير مدعوم. يرجى اختيار صورة بصيغة JPG أو PNG أو WebP فقط.', 'warning');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      showToast('حجم الملف كبير', 'حجم الصورة يتجاوز 8 ميجابايت. يرجى اختيار صورة أصغر.', 'warning');
+      return;
+    }
+
+    const statusEl = document.getElementById('avatar-upload-status');
+    if (statusEl) {
+      statusEl.className = 'p-2.5 rounded-xl text-center font-bold text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 block';
+      statusEl.textContent = 'جاري معالجة وتصغير أبعاد الصورة... ⏳';
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        // Center Crop to square & resize to 256x256
+        const canvas = document.createElement('canvas');
+        const targetDim = 256;
+        canvas.width = targetDim;
+        canvas.height = targetDim;
+        const ctx = canvas.getContext('2d');
+
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width - minSide) / 2;
+        const sy = (img.height - minSide) / 2;
+
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, targetDim, targetDim);
+
+        let compressedDataUrl = '';
+        try {
+          compressedDataUrl = canvas.toDataURL('image/webp', 0.85);
+          if (!compressedDataUrl.startsWith('data:image/webp')) {
+            compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          }
+        } catch (err) {
+          compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        }
+
+        _stagedAvatarBase64 = compressedDataUrl;
+
+        const previewImg = document.getElementById('avatar-preview-img');
+        const placeholder = document.getElementById('avatar-preview-placeholder');
+        const saveBtn = document.getElementById('btn-save-avatar');
+
+        if (previewImg && placeholder) {
+          previewImg.src = compressedDataUrl;
+          previewImg.classList.remove('hidden');
+          placeholder.classList.add('hidden');
+        }
+        if (saveBtn) saveBtn.disabled = false;
+        if (statusEl) {
+          statusEl.className = 'p-2.5 rounded-xl text-center font-bold text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 block';
+          statusEl.textContent = 'الصورة جاهزة! انقر "حفظ وتطبيق الصورة" 📸';
+        }
+      };
+      img.onerror = function() {
+        showToast('خطأ', 'فشل قراءة ملف الصورة. تأكد أن الملف سليم وغير تالف.', 'error');
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function saveStagedAvatar() {
+    if (!_stagedAvatarBase64) return;
+    const saveBtn = document.getElementById('btn-save-avatar');
+    const statusEl = document.getElementById('avatar-upload-status');
+
+    try {
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري الرفع والتشفير...</span>';
+      }
+      if (statusEl) {
+        statusEl.className = 'p-2.5 rounded-xl text-center font-bold text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 block';
+        statusEl.textContent = 'جاري نقل الصورة للسيرفر والتشفير الأمني... 🔒';
+      }
+
+      const res = await ServerBridge.uploadAvatar(_stagedAvatarBase64);
+      if (res && res.success) {
+        if (GameEngine.state) {
+          GameEngine.state.avatarUrl = res.avatarUrl;
+        }
+        showToast('تم بنجاح', res.message || 'تم تحديث صورتك الشخصية بنجاح! 📸', 'success');
+        closeAvatarModal();
+
+        const curUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
+        if (curUser) {
+          profileCache.delete(curUser);
+        }
+        if (window._lastChatMessagesCache) {
+          renderChatMessages(window._lastChatMessagesCache);
+        }
+      } else {
+        throw new Error((res && res.error) || 'فشل رفع الصورة');
+      }
+    } catch (err) {
+      showToast('خطأ في الرفع', err.message || 'حدث خطأ أثناء رفع الصورة', 'error');
+      if (statusEl) {
+        statusEl.className = 'p-2.5 rounded-xl text-center font-bold text-xs bg-rose-500/20 text-rose-300 border border-rose-500/30 block';
+        statusEl.textContent = err.message || 'فشل حفظ الصورة.';
+      }
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk text-sm"></i> <span>حفظ وتطبيق الصورة</span>';
+      }
+    }
+  }
+
+  async function removeUserAvatar() {
+    if (!confirm('هل تريد بالتأكيد إزالة صورتك الشخصية والعودة للشكل الافتراضي؟')) return;
+    try {
+      await ServerBridge.removeAvatar();
+      if (GameEngine.state) {
+        GameEngine.state.avatarUrl = '';
+      }
+      showToast('تمت الإزالة', 'تمت إزالة صورتك الشخصية والعودة للافتراضي.', 'info');
+      closeAvatarModal();
+      const curUser = GameEngine.activeUsername || (GameEngine.state && GameEngine.state.username);
+      if (curUser) profileCache.delete(curUser);
+      if (window._lastChatMessagesCache) renderChatMessages(window._lastChatMessagesCache);
+    } catch (err) {
+      showToast('خطأ', err.message || 'فشل حذف الصورة', 'error');
+    }
+  }
+
+  if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
+      const btnCloseAvatar = document.getElementById('btn-close-avatar-modal');
+      const avatarFileInput = document.getElementById('avatar-file-input');
+      const btnSaveAvatar = document.getElementById('btn-save-avatar');
+      const btnRemoveAvatar = document.getElementById('btn-remove-avatar');
+
+      if (btnCloseAvatar) btnCloseAvatar.addEventListener('click', closeAvatarModal);
+      if (avatarFileInput) {
+        avatarFileInput.addEventListener('change', (e) => {
+          if (e.target.files && e.target.files[0]) {
+            handleAvatarFileSelected(e.target.files[0]);
+          }
+        });
+      }
+      if (btnSaveAvatar) btnSaveAvatar.addEventListener('click', saveStagedAvatar);
+      if (btnRemoveAvatar) btnRemoveAvatar.addEventListener('click', removeUserAvatar);
+    });
+  }
+
   return {
     init,
     renderAll,
@@ -23112,6 +23348,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     openForgotPinModal: () => openForgotPinModal(),
     closeForgotPinModal: () => closeForgotPinModal(),
     submitForgotPinForm: () => submitForgotPinForm(),
+
+    // Custom Profile Picture Avatar Controller
+    openAvatarModal: () => openAvatarModal(),
+    closeAvatarModal: () => closeAvatarModal(),
+    saveStagedAvatar: () => saveStagedAvatar(),
+    removeUserAvatar: () => removeUserAvatar(),
+    handleAvatarFileSelected: (f) => handleAvatarFileSelected(f),
 
     // Player Tools & Inventory Exports
     openPlayerInventoryModal,
@@ -23238,7 +23481,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.23');
+            const curVer = (window._CLIENT_VERSION || 'v8.2.24');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

@@ -675,7 +675,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.23';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.2.24';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -684,7 +684,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.2.23', remoteVersion: 'v8.2.23' };
+    return { upToDate: true, clientVersion: 'v8.2.24', remoteVersion: 'v8.2.24' };
   }
 
   async function checkDeviceBan() {
@@ -5787,6 +5787,7 @@ var AppDB = (() => {
       senderTitle: String(senderTitle ||'عامل مبتدئ'),
       message: trimmedMsg,
       facebookVerified: Boolean(facebookVerified),
+      avatarUrl: (extraMeta && extraMeta.avatarUrl) ? String(extraMeta.avatarUrl) : ((typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username === sender) ? (GameEngine.state.avatarUrl || '') : ''),
       chatGlow: (extraMeta && extraMeta.chatGlow) ? String(extraMeta.chatGlow) : '',
       isVerified: Boolean(extraMeta && (extraMeta.isVerified || extraMeta.verified)),
       customBadge: (extraMeta && extraMeta.customBadge) ? String(extraMeta.customBadge) : '',
@@ -5816,6 +5817,7 @@ var AppDB = (() => {
             } else if (st.activePackage === 'pkg_vip_royal_ultimate' || st.customBadge === '👑✔️' || (st.customBadge && st.customBadge.includes('👑'))) {
               msgObj.chatGlow = 'cyber_rainbow';
             }
+            if (st.avatarUrl && !msgObj.avatarUrl) msgObj.avatarUrl = st.avatarUrl;
             if (st.isVerified || st.vipVerified) msgObj.isVerified = true;
             if (st.customBadge && !msgObj.customBadge) msgObj.customBadge = st.customBadge;
             if (st.seasonBadge && !msgObj.seasonBadge) msgObj.seasonBadge = st.seasonBadge;

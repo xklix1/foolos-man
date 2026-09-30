@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.2.23';
+    window._CLIENT_VERSION = 'v8.2.24';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.2.23';
+      const CURRENT_APP_BUILD = 'v8.2.24';
       try {
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -117,7 +117,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v8.2.23">
+  <link rel="stylesheet" href="app.css?v=v8.2.24">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -5568,9 +5568,14 @@
       <!-- Sticky/Fixed Profile Header -->
       <div class="flex items-center justify-between gap-3 p-4 sm:p-5 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur shrink-0 relative z-10">
         <div class="flex items-center gap-3 min-w-0">
-          <div id="profile-card-avatar-box"
-            class="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shrink-0 shadow-md">
-            <i id="profile-card-avatar-icon" class="fa-solid fa-user text-xl"></i>
+          <div class="relative shrink-0">
+            <div id="profile-card-avatar-box"
+              class="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 overflow-hidden shadow-md">
+              <i id="profile-card-avatar-icon" class="fa-solid fa-user text-xl"></i>
+            </div>
+            <button id="btn-profile-card-edit-avatar" type="button" class="hidden absolute -bottom-1 -right-1 w-5 h-5 rounded-md bg-yellow-400 text-slate-950 flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition cursor-pointer" title="تغيير صورتك الشخصية">
+              <i class="fa-solid fa-camera text-[9px]"></i>
+            </button>
           </div>
           <div class="min-w-0">
             <div class="flex items-center gap-2">
@@ -5663,6 +5668,77 @@
           <i class="fa-solid fa-ban text-[10px]"></i>
           <span>حظر اللاعب</span>
         </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== AVATAR UPLOAD & CROP MODAL ==================== -->
+  <div id="avatar-upload-modal" dir="rtl"
+    class="hidden fixed inset-0 z-[160] flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in">
+    <div
+      class="glass-panel w-full max-w-md flex flex-col rounded-3xl border-2 border-yellow-500/50 bg-slate-950/98 shadow-2xl text-right relative overflow-hidden">
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between gap-3 p-4 sm:p-5 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center text-yellow-400 shadow-lg shadow-yellow-500/10">
+            <i class="fa-solid fa-camera text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-black text-white">تخصيص الصورة الشخصية</h3>
+            <p class="text-[11px] text-slate-400">ارفع صورتك الخاصة لتظهر في الشات والبروفايل</p>
+          </div>
+        </div>
+        <button id="btn-close-avatar-modal" type="button"
+          class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-5 space-y-4 text-xs">
+        <!-- Preview Box -->
+        <div class="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
+          <div class="relative group">
+            <div id="avatar-preview-box" class="w-28 h-28 rounded-3xl overflow-hidden bg-slate-950 border-2 border-yellow-500/60 shadow-xl shadow-yellow-500/20 flex items-center justify-center">
+              <img id="avatar-preview-img" src="" class="w-full h-full object-cover hidden" alt="معاينة الصورة" />
+              <i id="avatar-preview-placeholder" class="fa-solid fa-user text-4xl text-slate-600"></i>
+            </div>
+            <label for="avatar-file-input" class="absolute -bottom-2 -right-2 w-9 h-9 rounded-xl bg-gradient-to-tr from-yellow-500 to-amber-400 text-slate-950 flex items-center justify-center font-black cursor-pointer shadow-lg shadow-yellow-500/40 hover:scale-110 active:scale-95 transition" title="اختيار ملف صورة">
+              <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+            </label>
+          </div>
+          <button type="button" onclick="document.getElementById('avatar-file-input').click()" class="text-xs text-yellow-400 hover:text-yellow-300 font-black cursor-pointer underline flex items-center gap-1.5">
+            <i class="fa-solid fa-image"></i>
+            <span>انقر لاختيار صورة من جهازك (JPG, PNG, WebP)</span>
+          </button>
+        </div>
+
+        <input type="file" id="avatar-file-input" accept="image/png, image/jpeg, image/webp" class="hidden" />
+
+        <!-- Info / Security Note -->
+        <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-start gap-2.5 text-[11px] text-slate-400">
+          <i class="fa-solid fa-shield-halved text-yellow-400 text-sm mt-0.5 shrink-0"></i>
+          <div>
+            <span class="font-bold text-slate-200 block mb-0.5">حماية وأمان الملفات:</span>
+            <span>يتم ضغط الصورة وتشفيرها آلياً لضمان سرعة التحميل وتأمين سيرفر اللعبة من أي برمجيات ضارة.</span>
+          </div>
+        </div>
+
+        <div id="avatar-upload-status" class="hidden p-2.5 rounded-xl text-center font-bold text-xs"></div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-2 pt-2">
+          <button id="btn-save-avatar" type="button" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black text-xs transition shadow-lg shadow-yellow-500/25 flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+            <i class="fa-solid fa-floppy-disk text-sm"></i>
+            <span>حفظ وتطبيق الصورة</span>
+          </button>
+          <button id="btn-remove-avatar" type="button" class="py-3 px-4 rounded-xl bg-rose-950/60 border border-rose-800/80 hover:bg-rose-900/80 text-rose-300 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0 active:scale-95" title="إزالة الصورة والعودة للنمط الافتراضي">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+            <span>حذف</span>
+          </button>
+        </div>
       </div>
 
     </div>
@@ -7162,11 +7238,11 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=v8.2.23"></script>
-  <script src="server-client-bridge.js?v=v8.2.23"></script>
-  <script src="game.js?v=v8.2.23"></script>
-  <script src="ui.js?v=v8.2.23"></script>
-  <script src="pwa-manager.js?v=v8.2.23"></script>
+  <script src="db.js?v=v8.2.24"></script>
+  <script src="server-client-bridge.js?v=v8.2.24"></script>
+  <script src="game.js?v=v8.2.24"></script>
+  <script src="ui.js?v=v8.2.24"></script>
+  <script src="pwa-manager.js?v=v8.2.24"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

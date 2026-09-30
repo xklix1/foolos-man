@@ -372,8 +372,42 @@ var ServerBridge = (() => {
     return await _post('/api/session/register', { playerRow });
   }
 
+  function formatAvatarUrl(url) {
+    if (!url || typeof url !== 'string') return '';
+    if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    const base = getApiBase();
+    if (url.startsWith('/')) {
+      return base ? `${base}${url}` : url;
+    }
+    return base ? `${base}/${url}` : `/${url}`;
+  }
+
+  async function uploadAvatar(imageBase64) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const res = await _post('/api/action/upload-avatar', {
+      username: user,
+      imageBase64
+    });
+    return res;
+  }
+
+  async function removeAvatar() {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const res = await _post('/api/action/remove-avatar', {
+      username: user
+    });
+    return res;
+  }
+
   return {
     getApiBase,
+    formatAvatarUrl,
+    uploadAvatar,
+    removeAvatar,
     registerAccount,
     startSession,
     dispatchClick,

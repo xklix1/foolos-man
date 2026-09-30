@@ -9,6 +9,7 @@ const { sanitizePlayerState } = require('./engine/state-sanitizer');
 
 const app = Fastify({
   trustProxy: true,
+  bodyLimit: 5 * 1024 * 1024, // 5MB limit for base64 avatar uploads
   logger: {
     level: config.NODE_ENV === 'production' ? 'info' : 'info'
   }

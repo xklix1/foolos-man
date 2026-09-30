@@ -3,12 +3,17 @@
  * All player actions are validated and calculated strictly on the server.
  */
 
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
 const config = require('../config/env');
 const sessionManager = require('../services/session-manager');
 const { BUSINESSES } = require('../engine/definitions');
 const { getBusinessUpgradeCost } = require('../engine/business-engine');
 const { calculateNetWorth, getAppropriateTitle } = require('../engine/net-worth-engine');
 const eventService = require('../services/event-service');
+
+const AVATARS_DIR = path.resolve(__dirname, '../../../uploads/avatars');
 
 async function actionRoutes(fastify, options) {
 
@@ -844,6 +849,225 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       return reply.code(500).send({ error: 'Failed to submit topup request: ' + err.message });
     }
   });
+
+  // 17. POST /api/action/upload-avatar (Secure Profile Picture Upload with Magic Bytes Validation)
+  const avatarUploadHandler = async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+
+    const { imageBase64 } = request.body || {};
+    if (!imageBase64 || typeof imageBase64 !== 'string') {
+      return reply.code(400).send({ error: 'لم يتم إرسال أي صورة (Base64 image is required).' });
+    }
+
+    // Guard against oversized raw string payloads (Max ~2.5MB base64)
+    if (imageBase64.length > 2500000) {
+      return reply.code(413).send({ error: 'حجم الصورة كبير جداً. الحد الأقصى المسموح به هو 1.5 ميجابايت.' });
+    }
+
+    // Strip Data URL prefix if present (e.g. data:image/png;base64,...)
+    const cleanBase64 = imageBase64.replace(/^data:image\/[a-zA-Z0-9.+_-]+;base64,/, '').trim();
+    let imageBuffer;
+    try {
+      imageBuffer = Buffer.from(cleanBase64, 'base64');
+    } catch (e) {
+      return reply.code(400).send({ error: 'تنسيق ترميز الصورة غير صالح (Invalid Base64).' });
+    }
+
+    // Enforce size bounds (min 50 bytes, max 1.5MB binary)
+    if (imageBuffer.length < 50 || imageBuffer.length > 1.5 * 1024 * 1024) {
+      return reply.code(400).send({ error: 'حجم ملف الصورة غير صالح (يجب أن يكون بين 50 بايت و 1.5 ميجابايت).' });
+    }
+
+    // STRICT MAGIC BYTES / FILE SIGNATURE VALIDATION (Raster Images ONLY - Strictly NO SVG, HTML, or Executables)
+    let ext = '';
+    let mimeType = '';
+
+    // Check PNG: 89 50 4E 47 0D 0A 1A 0A
+    if (imageBuffer.length >= 8 &&
+        imageBuffer[0] === 0x89 && imageBuffer[1] === 0x50 && imageBuffer[2] === 0x4E && imageBuffer[3] === 0x47 &&
+        imageBuffer[4] === 0x0D && imageBuffer[5] === 0x0A && imageBuffer[6] === 0x1A && imageBuffer[7] === 0x0A) {
+      ext = '.png';
+      mimeType = 'image/png';
+    }
+    // Check JPEG: FF D8 FF
+    else if (imageBuffer.length >= 3 &&
+             imageBuffer[0] === 0xFF && imageBuffer[1] === 0xD8 && imageBuffer[2] === 0xFF) {
+      ext = '.jpg';
+      mimeType = 'image/jpeg';
+    }
+    // Check WebP: RIFF .... WEBP
+    else if (imageBuffer.length >= 12 &&
+             imageBuffer.subarray(0, 4).toString('ascii') === 'RIFF' &&
+             imageBuffer.subarray(8, 12).toString('ascii') === 'WEBP') {
+      ext = '.webp';
+      mimeType = 'image/webp';
+    }
+
+    if (!ext || !mimeType) {
+      return reply.code(400).send({
+        error: 'صيغة الملف غير مدعومة لأسباب أمنية. يُسمح فقط بصور (WebP, PNG, JPEG) الحقيقية والمشفرة رقمياً.'
+      });
+    }
+
+    // Secondary defense-in-depth inspection against embedded script injections
+    const rawAsciiSample = imageBuffer.subarray(0, Math.min(imageBuffer.length, 4096)).toString('ascii').toLowerCase();
+    if (rawAsciiSample.includes('<script') || rawAsciiSample.includes('<?php') || rawAsciiSample.includes('<svg') || rawAsciiSample.includes('javascript:')) {
+      return reply.code(403).send({ error: 'تم رفض الملف لاحتوائه على وسوم برمجية غير آمنة.' });
+    }
+
+    // Safe File Storage
+    if (!fs.existsSync(AVATARS_DIR)) {
+      fs.mkdirSync(AVATARS_DIR, { recursive: true });
+    }
+
+    // Clean up any old avatar files for this user to avoid disk waste
+    try {
+      const sanitizedPrefix = 'avatar_' + encodeURIComponent(session.username).replace(/[^a-zA-Z0-9_-]/g, '_') + '_';
+      const existingFiles = fs.readdirSync(AVATARS_DIR);
+      existingFiles.forEach(f => {
+        if (f.startsWith(sanitizedPrefix)) {
+          try { fs.unlinkSync(path.join(AVATARS_DIR, f)); } catch (_) {}
+        }
+      });
+    } catch (_) {}
+
+    // Cryptographic unguessable filename
+    const safeHash = crypto.createHash('sha256')
+      .update(session.username + '_' + Date.now() + '_' + crypto.randomBytes(8).toString('hex'))
+      .digest('hex')
+      .substring(0, 16);
+    const safeUsername = encodeURIComponent(session.username).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `avatar_${safeUsername}_${safeHash}${ext}`;
+    const targetPath = path.join(AVATARS_DIR, filename);
+
+    fs.writeFileSync(targetPath, imageBuffer);
+
+    // Relative public URL
+    const avatarUrl = `/api/avatars/${filename}`;
+
+    // Update In-Memory Session & Dirty Queue
+    session.state.avatarUrl = avatarUrl;
+    sessionManager.markDirty(session.username);
+
+    // Also persist immediately to Supabase
+    try {
+      const sUrl = config.SUPABASE_URL;
+      const sKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
+      if (sUrl && sKey) {
+        await fetch(`${sUrl}/rest/v1/players?username=eq.${encodeURIComponent(session.username)}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': sKey,
+            'Authorization': `Bearer ${sKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            state: session.state
+          })
+        });
+      }
+    } catch (e) {
+      fastify.log.warn('[UploadAvatar] Supabase sync non-fatal warning: ' + e.message);
+    }
+
+    return {
+      success: true,
+      avatarUrl: avatarUrl,
+      message: 'تم تحديث صورتك الشخصية بنجاح! 📸'
+    };
+  };
+
+  fastify.post('/api/action/upload-avatar', {
+    config: {
+      rateLimit: { max: 10, timeWindow: 60 * 1000 }
+    }
+  }, avatarUploadHandler);
+
+  fastify.post('/api/upload-avatar', {
+    config: {
+      rateLimit: { max: 10, timeWindow: 60 * 1000 }
+    }
+  }, avatarUploadHandler);
+
+  // 18. POST /api/action/remove-avatar (Remove custom avatar & reset to default)
+  fastify.post('/api/action/remove-avatar', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+
+    try {
+      const sanitizedPrefix = 'avatar_' + encodeURIComponent(session.username).replace(/[^a-zA-Z0-9_-]/g, '_') + '_';
+      if (fs.existsSync(AVATARS_DIR)) {
+        const existingFiles = fs.readdirSync(AVATARS_DIR);
+        existingFiles.forEach(f => {
+          if (f.startsWith(sanitizedPrefix)) {
+            try { fs.unlinkSync(path.join(AVATARS_DIR, f)); } catch (_) {}
+          }
+        });
+      }
+    } catch (_) {}
+
+    session.state.avatarUrl = '';
+    sessionManager.markDirty(session.username);
+
+    try {
+      const sUrl = config.SUPABASE_URL;
+      const sKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
+      if (sUrl && sKey) {
+        await fetch(`${sUrl}/rest/v1/players?username=eq.${encodeURIComponent(session.username)}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': sKey,
+            'Authorization': `Bearer ${sKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            state: session.state
+          })
+        });
+      }
+    } catch (e) {}
+
+    return {
+      success: true,
+      message: 'تمت إزالة الصورة الشخصية والعودة للنمط الافتراضي.'
+    };
+  });
+
+  // 19. GET /api/avatars/:filename (Ultra-secure static avatar stream)
+  const avatarServeHandler = async (request, reply) => {
+    const filename = request.params.filename;
+    if (!filename || !/^avatar_[a-zA-Z0-9_-]+\.(jpg|png|webp)$/.test(filename)) {
+      return reply.code(400).send('Invalid avatar filename');
+    }
+
+    const filePath = path.join(AVATARS_DIR, path.basename(filename));
+    if (!fs.existsSync(filePath)) {
+      return reply.code(404).send('Avatar not found');
+    }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeMap = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.webp': 'image/webp'
+    };
+    const mimeType = mimeMap[ext] || 'application/octet-stream';
+
+    reply.header('Content-Type', mimeType);
+    reply.header('X-Content-Type-Options', 'nosniff');
+    reply.header('Content-Security-Policy', "default-src 'none'; sandbox");
+    reply.header('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+
+    const stream = fs.createReadStream(filePath);
+    return reply.send(stream);
+  };
+
+  fastify.get('/api/avatars/:filename', avatarServeHandler);
+  fastify.get('/uploads/avatars/:filename', avatarServeHandler);
 }
 
 module.exports = actionRoutes;
