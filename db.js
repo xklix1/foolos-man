@@ -653,7 +653,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.4.3';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.4.4';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -662,7 +662,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.4.3', remoteVersion: 'v8.4.3' };
+    return { upToDate: true, clientVersion: 'v8.4.4', remoteVersion: 'v8.4.4' };
   }
 
   async function checkDeviceBan() {
@@ -2084,7 +2084,7 @@ var AppDB = (() => {
 
   let _cloudSyncDebounceTimer = null;
   let _lastCloudSyncTimestamp = 0;
-  const SMART_SYNC_INTERVAL_MS = 35000; // 35 seconds max delay for background autosync
+  const SMART_SYNC_INTERVAL_MS = 3500; // 3.5 seconds near-realtime autosync to cloud
   // Guard flag: prevents Supabase polling from overwriting GameEngine.state while a PATCH is in-flight
   let _pendingCloudWrite = false;
   let _pendingCloudWriteClearedAt = 0;
@@ -2225,16 +2225,16 @@ var AppDB = (() => {
       return;
     }
 
-    // Smart Debounce: ensure progress is auto-saved to cloud every 35 seconds without flooding the server
+    // Smart Micro-Debounce: ensure progress is auto-saved to cloud every 3.5 seconds
     const now = Date.now();
     if (now - _lastCloudSyncTimestamp >= SMART_SYNC_INTERVAL_MS) {
       if (_cloudSyncDebounceTimer) clearTimeout(_cloudSyncDebounceTimer);
       _cloudSyncDebounceTimer = setTimeout(() => {
         _cloudSyncDebounceTimer = null;
         _pushStateToCloud(u, state);
-      }, 1500); // 1.5s micro-debounce to batch rapid clicks
+      }, 1000); // 1.0s micro-debounce to batch rapid clicks
     } else if (!_cloudSyncDebounceTimer) {
-      const remainingTime = Math.max(2000, SMART_SYNC_INTERVAL_MS - (now - _lastCloudSyncTimestamp));
+      const remainingTime = Math.max(1000, SMART_SYNC_INTERVAL_MS - (now - _lastCloudSyncTimestamp));
       _cloudSyncDebounceTimer = setTimeout(() => {
         _cloudSyncDebounceTimer = null;
         _pushStateToCloud(u, state);
