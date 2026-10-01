@@ -1,7 +1,7 @@
 {
-  "version": "v8.4.6",
-  "build": 1790900000000,
-  "timestamp": 1790898500000,
-  "notes": "Airport Megaproject Realism & Economics Overhaul: Upfront fuel/crew/landing costs, realistic long-haul flight times, 7-day balanced ROI, and fleet management.",
-  "releaseNotes": "Airport Megaproject Overhaul: Realistic flight durations, operating costs (fuel, crew, landing fees), and balanced economy."
+  "version": "v8.4.7",
+  "build": 1790901000000,
+  "timestamp": 1790899000000,
+  "notes": "Airport Security Update: Conceal authorization license code from client interface.",
+  "releaseNotes": "Airport Security Update: Authorization license code is strictly private."
 }

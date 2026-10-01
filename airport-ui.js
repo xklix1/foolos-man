@@ -267,8 +267,8 @@ window.AirportUI = (() => {
             </label>
             <input type="text" id="airport-unlock-code-input" placeholder="اكتب كود تصريح الطيران هنا..."
               class="w-full px-4 py-3 bg-slate-900 border border-slate-700 focus:border-sky-500 rounded-xl text-center text-sm font-bold text-white uppercase tracking-widest placeholder:normal-case placeholder:text-slate-600 outline-none transition shadow-inner">
-            <p class="text-[10px] text-slate-400 leading-tight">
-              * كود التصريح المعتمد من الإدارة: <strong class="text-amber-400 select-all font-mono">SKY-ROYAL-2026</strong>
+            <p class="text-[10px] text-slate-500 leading-tight">
+              * يتم الحصول على كود تصريح الطيران الأمني حصرياً من إدارة اللعبة.
             </p>
           </div>
 
