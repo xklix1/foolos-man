@@ -653,7 +653,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.4.4';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.4.5';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -662,7 +662,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.4.4', remoteVersion: 'v8.4.4' };
+    return { upToDate: true, clientVersion: 'v8.4.5', remoteVersion: 'v8.4.5' };
   }
 
   async function checkDeviceBan() {
@@ -2139,8 +2139,7 @@ var AppDB = (() => {
       _pendingCloudWrite = true;
       if (typeof window !== 'undefined') window._dbPendingCloudWrite = true;
       let res;
-      const adminTs = Number(state.adminModifiedTimestamp || 0);
-      const patchEndpoint = `players?username=ilike.${encodeURIComponent(u)}&admin_modified_timestamp=lte.${adminTs}`;
+      const patchEndpoint = `players?username=ilike.${encodeURIComponent(u)}`;
       try {
         res = await _api(patchEndpoint, {
           method:'PATCH',
