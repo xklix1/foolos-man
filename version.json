@@ -1,6 +1,6 @@
 {
-  "version": "v8.2.26",
-  "build": 1790814000000,
-  "timestamp": "2026-10-01T02:35:00.000Z",
-  "notes": "Ensure permanent avatar persistence across reloads and multi-layer local/cloud state hydration"
+  "version": "v8.3.0",
+  "build": 1790888000000,
+  "timestamp": "2026-10-01T20:45:00.000Z",
+  "notes": "Add 100% Server-Authoritative International Airport Hub with dynamic access licensing, fleet management, flight scheduling, gold speedups, duty free passive income, and transit radar."
 }

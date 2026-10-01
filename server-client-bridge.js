@@ -403,11 +403,105 @@ var ServerBridge = (() => {
     return res;
   }
 
+  // ─────────────────────────────────────────────
+  //  AIRPORT HUB AUTHORITATIVE ACTIONS
+  // ─────────────────────────────────────────────
+  async function unlockAirport(code, airportName) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    return await _post('/api/airport/unlock', {
+      username: user,
+      code,
+      airportName
+    });
+  }
+
+  async function renameAirport(name) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    return await _post('/api/airport/rename', {
+      username: user,
+      name
+    });
+  }
+
+  async function upgradeAirportFacility(facilityId) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    return await _post('/api/airport/upgrade', {
+      username: user,
+      facilityId
+    });
+  }
+
+  async function buyAirportPlane(modelId, customName) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    return await _post('/api/airport/buy-plane', {
+      username: user,
+      modelId,
+      customName
+    });
+  }
+
+  async function launchAirportFlight(planeId, destinationId) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    return await _post('/api/airport/launch-flight', {
+      username: user,
+      planeId,
+      destinationId
+    });
+  }
+
+  async function speedupAirportFlight(planeId) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    return await _post('/api/airport/speedup-flight', {
+      username: user,
+      planeId
+    });
+  }
+
+  async function claimAirportFlight(planeId) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    return await _post('/api/airport/claim-flight', {
+      username: user,
+      planeId
+    });
+  }
+
+  async function claimDutyFree() {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    return await _post('/api/airport/claim-duty-free', {
+      username: user
+    });
+  }
+
+  async function acceptAirportTransit() {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    return await _post('/api/airport/transit', {
+      username: user
+    });
+  }
+
   return {
     getApiBase,
     formatAvatarUrl,
     uploadAvatar,
     removeAvatar,
+    unlockAirport,
+    renameAirport,
+    upgradeAirportFacility,
+    buyAirportPlane,
+    launchAirportFlight,
+    speedupAirportFlight,
+    claimAirportFlight,
+    claimDutyFree,
+    acceptAirportTransit,
     registerAccount,
     startSession,
     dispatchClick,

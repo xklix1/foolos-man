@@ -151,7 +151,31 @@ function calculateNetWorth(playerState) {
     }
   }
 
-  // 8. Deduct active bank loan liabilities (True Net Worth = Assets - Liabilities)
+  // 8. International Airport Hub & Aircraft Fleet valuation
+  if (playerState.airport && playerState.airport.unlocked) {
+    worth += 50000000; // Base airport license value
+    const f = playerState.airport.facilities || {};
+    const { AIRPORT_FACILITIES, AIRCRAFT_MODELS } = require('./airport-engine');
+    if (AIRPORT_FACILITIES) {
+      Object.keys(f).forEach(fKey => {
+        const lvl = Number(f[fKey] || 0);
+        if (lvl > 1 && AIRPORT_FACILITIES[fKey]?.levels) {
+          for (let i = 2; i <= lvl; i++) {
+            worth += Number(AIRPORT_FACILITIES[fKey].levels[i]?.cost || 0);
+          }
+        }
+      });
+    }
+    if (Array.isArray(playerState.airport.fleet) && AIRCRAFT_MODELS) {
+      playerState.airport.fleet.forEach(plane => {
+        if (plane && plane.modelId && AIRCRAFT_MODELS[plane.modelId]) {
+          worth += Number(AIRCRAFT_MODELS[plane.modelId].cost || 0);
+        }
+      });
+    }
+  }
+
+  // 9. Deduct active bank loan liabilities (True Net Worth = Assets - Liabilities)
   if (playerState.activeLoan) {
     const loanDebt = Number(playerState.activeLoan.totalDue || playerState.activeLoan.amount || 0);
     if (loanDebt > 0) {

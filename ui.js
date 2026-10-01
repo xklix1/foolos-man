@@ -2316,6 +2316,10 @@ const UIController = (() => {
       renderTradePanel();
     } else if (tabId ==='industry') {
       renderIndustryPanel();
+    } else if (tabId ==='airport') {
+      if (window.AirportUI && typeof window.AirportUI.renderAirportPanel === 'function') {
+        window.AirportUI.renderAirportPanel();
+      }
     } else if (tabId ==='farm' && isFarmTesterAccount()) {
       renderFarmPanel();
     } else if (tabId ==='investments') {
@@ -2979,6 +2983,11 @@ const UIController = (() => {
         break;
       case'industry':
         renderIndustryPanel();
+        break;
+      case'airport':
+        if (window.AirportUI && typeof window.AirportUI.renderAirportPanel === 'function') {
+          window.AirportUI.renderAirportPanel();
+        }
         break;
       case'farm':
         if (isFarmTesterAccount()) {
@@ -23518,7 +23527,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.2.26');
+            const curVer = (window._CLIENT_VERSION || 'v8.3.0');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

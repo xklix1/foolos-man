@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.2.26';
+    window._CLIENT_VERSION = 'v8.3.0';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.2.26';
+      const CURRENT_APP_BUILD = 'v8.3.0';
       try {
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -117,7 +117,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v8.2.26">
+  <link rel="stylesheet" href="app.css?v=v8.3.0">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -2064,6 +2064,13 @@
               <span>سلاسل الإمداد</span>
               <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold ml-auto">مصانع</span>
             </button>
+            <!-- Airport tab -->
+            <button id="nav-tab-airport" data-tab="airport"
+              class="nav-tab-btn flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-sky-300 transition duration-200 cursor-pointer">
+              <i class="fa-solid fa-plane-departure w-4 text-center text-sky-400 text-sm"></i>
+              <span>مطار الطيران الدولي</span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold ml-auto border border-sky-500/30">جديد 🛫</span>
+            </button>
             <!-- Farm tab -->
             <button id="nav-tab-farm" data-tab="farm"
               class="nav-tab-btn flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200 cursor-pointer">
@@ -3606,6 +3613,13 @@
         <!-- Dynamic Active Sector Content Area -->
         <div id="industry-sector-container" class="space-y-6">
           <!-- Populated cleanly by ui.js -->
+        </div>
+      </section>
+
+      <!-- ==================== TAB: مطار الطيران الدولي ==================== -->
+      <section id="panel-airport" class="game-panel hidden space-y-6">
+        <div id="airport-main-container" class="space-y-6">
+          <!-- Populated dynamically by UI.renderAirportPanel() -->
         </div>
       </section>
 
@@ -5154,6 +5168,14 @@
           class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
           <i class="fa-solid fa-industry w-5 text-center text-emerald-400 text-sm"></i>
           <span>مجمع الصناعات</span>
+        </button>
+
+        <!-- Airport mobile tab -->
+        <button id="nav-tab-airport-mobile" data-tab="airport"
+          class="nav-tab-btn flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-sky-300 text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-plane-departure w-5 text-center text-sky-400 text-sm"></i>
+          <span>مطار الطيران الدولي</span>
+          <span class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold mr-auto border border-sky-500/30">جديد 🛫</span>
         </button>
 
         <!-- Farm mobile tab -->
@@ -7238,11 +7260,12 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=v8.2.26"></script>
-  <script src="server-client-bridge.js?v=v8.2.26"></script>
-  <script src="game.js?v=v8.2.26"></script>
-  <script src="ui.js?v=v8.2.26"></script>
-  <script src="pwa-manager.js?v=v8.2.26"></script>
+  <script src="db.js?v=v8.3.0"></script>
+  <script src="server-client-bridge.js?v=v8.3.0"></script>
+  <script src="game.js?v=v8.3.0"></script>
+  <script src="ui.js?v=v8.3.0"></script>
+  <script src="airport-ui.js?v=v8.3.0"></script>
+  <script src="pwa-manager.js?v=v8.3.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

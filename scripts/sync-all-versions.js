@@ -24,6 +24,7 @@ if (fs.existsSync(indexHtmlPath)) {
   indexHtml = indexHtml.replace(/src="server-client-bridge\.js\?v=[^"]+"/g, `src="server-client-bridge.js?v=${currentVersion}"`);
   indexHtml = indexHtml.replace(/src="game\.js\?v=[^"]+"/g, `src="game.js?v=${currentVersion}"`);
   indexHtml = indexHtml.replace(/src="ui\.js\?v=[^"]+"/g, `src="ui.js?v=${currentVersion}"`);
+  indexHtml = indexHtml.replace(/src="airport-ui\.js\?v=[^"]+"/g, `src="airport-ui.js?v=${currentVersion}"`);
   indexHtml = indexHtml.replace(/src="pwa-manager\.js\?v=[^"]+"/g, `src="pwa-manager.js?v=${currentVersion}"`);
   fs.writeFileSync(indexHtmlPath, indexHtml, 'utf8');
   console.log(`Updated index.html to ${currentVersion} (including all script/css tags)`);
