@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v8.3.0';
+    window._CLIENT_VERSION = 'v8.4.0';
     (async function() {
-      const CURRENT_APP_BUILD = 'v8.3.0';
+      const CURRENT_APP_BUILD = 'v8.4.0';
       try {
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -117,7 +117,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v8.3.0">
+  <link rel="stylesheet" href="app.css?v=v8.4.0">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -7260,12 +7260,12 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=v8.3.0"></script>
-  <script src="server-client-bridge.js?v=v8.3.0"></script>
-  <script src="game.js?v=v8.3.0"></script>
-  <script src="ui.js?v=v8.3.0"></script>
-  <script src="airport-ui.js?v=v8.3.0"></script>
-  <script src="pwa-manager.js?v=v8.3.0"></script>
+  <script src="db.js?v=v8.4.0"></script>
+  <script src="server-client-bridge.js?v=v8.4.0"></script>
+  <script src="game.js?v=v8.4.0"></script>
+  <script src="ui.js?v=v8.4.0"></script>
+  <script src="airport-ui.js?v=v8.4.0"></script>
+  <script src="pwa-manager.js?v=v8.4.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
