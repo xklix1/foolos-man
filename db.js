@@ -3650,19 +3650,26 @@ var AppDB = (() => {
 
       const pState = playerDoc.state || {};
       const rewards = req.rewards || {};
-      const addedCash = Number(rewards.cash) || 0;
-      const addedBank = Number(rewards.bank) || 0;
-      const addedXP = Number(rewards.xp) || 0;
-      const customBadge = rewards.customBadge ||'';
+      const pkgDef = (typeof DEFAULT_TOPUP_PACKAGES !== 'undefined' && Array.isArray(DEFAULT_TOPUP_PACKAGES)) 
+        ? DEFAULT_TOPUP_PACKAGES.find(p => p.id === req.packageId) 
+        : null;
+
+      const addedCash = Number(rewards.cash !== undefined ? rewards.cash : (pkgDef ? pkgDef.cash : 0)) || 0;
+      const addedBank = Number(rewards.bank !== undefined ? rewards.bank : (pkgDef ? pkgDef.bank : 0)) || 0;
+      const addedXP = Number(rewards.xp !== undefined ? rewards.xp : (pkgDef ? pkgDef.xp : 0)) || 0;
+      const addedGold = Number(rewards.gold !== undefined ? rewards.gold : (pkgDef ? pkgDef.gold : 0)) || 0;
+      const customBadge = rewards.customBadge || (pkgDef ? pkgDef.customBadge : '') || '';
 
       const updatedCash = (Number(playerDoc.cash) || 0) + addedCash;
       const updatedBank = (Number(playerDoc.bank) || 0) + addedBank;
       const updatedXP = (Number(playerDoc.xp) || 0) + addedXP;
+      const updatedGold = (Number(playerDoc.gold) || 0) + addedGold;
       const updatedNetworth = updatedCash + updatedBank;
 
       pState.cash = updatedCash;
       pState.bank = updatedBank;
       pState.xp = updatedXP;
+      pState.gold = updatedGold;
       pState.netWorth = updatedNetworth;
 
       if (customBadge) {
@@ -3720,11 +3727,12 @@ var AppDB = (() => {
 
       pState.adminModifiedTimestamp = ts;
 
-      await _api(`players?username=eq.${encodeURIComponent(targetUser)}`, {
+      await _api(`players?username=ilike.${encodeURIComponent(targetUser)}`, {
         method:'PATCH',
         body: JSON.stringify({
           cash: updatedCash,
           bank: updatedBank,
+          gold: updatedGold,
           xp: updatedXP,
           net_worth: updatedNetworth,
           state: pState,
@@ -3769,9 +3777,11 @@ var AppDB = (() => {
         price: req.price,
         cash: addedCash,
         bank: addedBank,
+        gold: addedGold,
         xp: addedXP,
         newCash: updatedCash,
         newBank: updatedBank,
+        newGold: updatedGold,
         newXp: updatedXP,
         newWorth: updatedNetworth,
         isPreApplied: true,
@@ -3803,6 +3813,16 @@ var AppDB = (() => {
           isPreApplied: true,
           timestamp: ts,
           note: `شحن فوري معتمد: [${req.packageName}]`
+        }).catch(() => {});
+      }
+
+      if (addedGold > 0) {
+        await sendMail('إدارة اللعبة (Financial Team)', targetUser, 'admin_gold_grant', {
+          addedGold: addedGold,
+          newGold: updatedGold,
+          isPreApplied: true,
+          timestamp: ts,
+          note: `شحن سبائك الذهب: [${req.packageName}]`
         }).catch(() => {});
       }
 

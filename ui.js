@@ -17030,7 +17030,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       if (details.status === 'approved') {
         const addedCash = Number(details.cash) || 0;
         const addedBank = Number(details.bank) || 0;
+        const addedGold = Number(details.gold) || 0;
         const addedXp = Number(details.xp) || 0;
+        if (addedGold > 0) {
+          GameEngine.state.gold = (Number(GameEngine.state.gold) || 0) + addedGold;
+        }
         const pkgName = details.packageName || 'باقة الشحن';
 
         // Synchronize in-memory balances
@@ -22359,6 +22363,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         rewards: {
           cash: _activeSelectedTopupPkg.cash || 0,
           bank: _activeSelectedTopupPkg.bank || 0,
+          gold: _activeSelectedTopupPkg.gold || 0,
           xp: _activeSelectedTopupPkg.xp || 0,
           customBadge: _activeSelectedTopupPkg.customBadge ||'',
           badgeTitle: _activeSelectedTopupPkg.badgeTitle ||'',
