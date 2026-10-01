@@ -125,12 +125,17 @@ var AppDB = (() => {
   }
 
   let _lastSessionCheckTime = 0;
+  let _sessionClaimedTimestamp = Date.now();
+
   async function _checkSessionImmediate(u) {
     if (_isSessionInvalidated || !u) return;
+    // Allow 8-second grace period after session claiming to prevent initial login race conditions
+    if (Date.now() - _sessionClaimedTimestamp < 8000) return;
+
     const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
     if (curActive && u.toLowerCase() !== curActive.toLowerCase()) return;
     const now = Date.now();
-    if (now - _lastSessionCheckTime < 800) return; // Throttle to max once per 800ms
+    if (now - _lastSessionCheckTime < 3000) return; // Throttle to max once per 3s
     _lastSessionCheckTime = now;
     try {
       const rows = await _api(`players?select=username,state&username=ilike.${encodeURIComponent(u)}&limit=1`);
@@ -147,20 +152,21 @@ var AppDB = (() => {
   function _startConcurrentSessionGuard(username) {
     if (!username) return;
     const u = username.trim();
+    _sessionClaimedTimestamp = Date.now();
     const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
     if (curActive && u.toLowerCase() !== curActive.toLowerCase()) return;
     if (_sessionGuardTimer) clearInterval(_sessionGuardTimer);
 
-    // Ultra-responsive 1.5 second background pulse
+    // Steady 10-second background pulse
     _sessionGuardTimer = setInterval(() => {
       _checkSessionImmediate(u);
-    }, 1500);
+    }, 10000);
 
     if (_sessionGuardTimer && typeof _sessionGuardTimer.unref === 'function') {
       _sessionGuardTimer.unref();
     }
 
-    // Instant check triggers on user interaction and tab switching
+    // Check triggers on tab switching and focus
     if (typeof window !== 'undefined' && !window._sessionGuardListenersBound) {
       window._sessionGuardListenersBound = true;
       const triggerCheck = () => {
@@ -174,8 +180,6 @@ var AppDB = (() => {
           if (!document.hidden) triggerCheck();
         }, { passive: true });
       }
-      window.addEventListener('pointerdown', triggerCheck, { passive: true });
-      window.addEventListener('touchstart', triggerCheck, { passive: true });
     }
   }
 
