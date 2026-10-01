@@ -9,6 +9,7 @@ const {
   FLIGHT_DESTINATIONS,
   createInitialAirportState,
   getAirportBonuses,
+  calculateFlightEconomics,
   calculateDutyFreeAccumulated
 } = require('../engine/airport-engine');
 const { calculateNetWorth, getAppropriateTitle } = require('../engine/net-worth-engine');
@@ -335,13 +336,27 @@ async function airportRoutes(fastify, options) {
       });
     }
 
-    const bonuses = getAirportBonuses(s.airport);
-    const rawTimeSec = model.baseFlightTimeSec * dest.distanceMultiplier;
-    const durationSec = Math.max(20, Math.round(rawTimeSec * (1 - bonuses.timeReduction)));
-    const durationMs = durationSec * 1000;
+    const eco = calculateFlightEconomics(model, dest, s.airport);
+    const durationMs = eco.durationSec * 1000;
 
-    const expectedProfit = Math.round(model.baseProfit * dest.distanceMultiplier * bonuses.ticketBonus);
-    const expectedXp = Math.round(model.baseXp * dest.distanceMultiplier);
+    const curCash = Number(s.cash || 0);
+    const curBank = Number(s.bank || 0);
+    const totalLiquid = curCash + curBank;
+
+    if (totalLiquid < eco.totalOperatingCost) {
+      return reply.code(400).send({
+        error: `🚫 رصيدك غير كافٍ لتغطية تكاليف تجهيز الرحلة (وقود + طاقم + رسوم هبوط: ${eco.totalOperatingCost.toLocaleString()} ج.م)`
+      });
+    }
+
+    // Deduct operating costs upfront upon flight dispatch
+    if (curCash >= eco.totalOperatingCost) {
+      s.cash = curCash - eco.totalOperatingCost;
+    } else {
+      const rem = eco.totalOperatingCost - curCash;
+      s.cash = 0;
+      s.bank = Math.max(0, curBank - rem);
+    }
 
     const now = Date.now();
     plane.status = 'in_flight';
@@ -351,19 +366,34 @@ async function airportRoutes(fastify, options) {
       destinationName: dest.name,
       launchTime: now,
       landingTime: now + durationMs,
-      durationSec,
-      expectedProfit,
-      expectedXp,
+      durationSec: eco.durationSec,
+      grossRevenue: eco.grossRevenue,
+      fuelCost: eco.fuelCost,
+      fuelDiscountPct: eco.fuelDiscountPct,
+      crewCost: eco.crewCost,
+      landingFee: eco.landingFee,
+      totalOperatingCost: eco.totalOperatingCost,
+      expectedProfit: eco.grossRevenue, // gross revenue added to cash on claim
+      expectedNetProfit: eco.netProfit,
+      expectedXp: eco.xpReward,
       speedupGold: model.speedupGold || 5
     };
 
+    if (!s.airport.stats) s.airport.stats = {};
+    s.airport.stats.totalOperatingCost = (Number(s.airport.stats.totalOperatingCost) || 0) + eco.totalOperatingCost;
+
+    s.netWorth = calculateNetWorth(s);
     s.adminModifiedTimestamp = Date.now() + 60000;
     await dbService.savePlayerState(session.username, s);
 
+    const minStr = Math.floor(eco.durationSec / 60);
     return {
       success: true,
-      message: `🛫 أقلعت الرحلة المتجهة إلى ${dest.name}! وقت الهبوط المتوقع خلال ${durationSec} ثانية.`,
+      message: `🛫 تم تزويد الطائرة بالوقود وإقلاع الرحلة إلى ${dest.name}! وقت الهبوط المتوقع خلال ${minStr > 0 ? minStr + ' دقيقة' : eco.durationSec + ' ثانية'}. (صافي الربح: +${eco.netProfit.toLocaleString()} ج.م)`,
       plane,
+      economics: eco,
+      cash: s.cash,
+      bank: s.bank,
       airport: s.airport
     };
   });

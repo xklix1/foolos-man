@@ -1,7 +1,7 @@
 {
-  "version": "v8.4.5",
-  "build": 1790890000000,
-  "timestamp": 1790894287447,
-  "notes": "100% Server-Authoritative Architecture & Ironclad Anti-Tamper Database Shield: complete server-side action validation, immutable game economy, and forced version synchronization.",
-  "releaseNotes": "Critical fix: Eliminate false-positive session conflict popup on initial login and action"
+  "version": "v8.4.6",
+  "build": 1790900000000,
+  "timestamp": 1790898500000,
+  "notes": "Airport Megaproject Realism & Economics Overhaul: Upfront fuel/crew/landing costs, realistic long-haul flight times, 7-day balanced ROI, and fleet management.",
+  "releaseNotes": "Airport Megaproject Overhaul: Realistic flight durations, operating costs (fuel, crew, landing fees), and balanced economy."
 }

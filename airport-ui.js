@@ -1,6 +1,7 @@
 /**
  * Ras ALmal Tycoon — International Airport Hub Frontend Engine
  * 100% Server-Authoritative UI & Real-Time Flight Visualizer
+ * Balanced 7-Day ROI Economy with Operating Costs Breakdown (Fuel, Crew, Landing Fees)
  */
 
 window.AirportUI = (() => {
@@ -12,40 +13,40 @@ window.AirportUI = (() => {
       name: 'مدرج الطائرات الرئيسي 🛫',
       icon: 'fa-road text-sky-400',
       levels: {
-        1: { name: 'مدرج إقليمي معبد', cost: 0, desc: 'يستوعب طائرات الفئة 1 (Cessna)' },
-        2: { name: 'مدرج دولي عريض', cost: 35000000, desc: 'يستوعب طائرات الفئة 2 (Airbus A320)' },
-        3: { name: 'مدرج عابر للقارات متطور', cost: 120000000, desc: 'يستوعب طائرات الفئة 3 (Boeing 777 / A380)' },
-        4: { name: 'مجمع مدارج ذكي CAT III', cost: 450000000, desc: 'يستوعب طائرات الفئة 4 (Gulfstream VIP / Beluga Cargo)' }
+        1: { name: 'مدرج إقليمي معبد', cost: 0, maxPlaneTier: 1, desc: 'يستوعب طائرات الفئة 1 (Cessna VIP)' },
+        2: { name: 'مدرج دولي عريض', cost: 35000000, maxPlaneTier: 2, desc: 'يستوعب طائرات الفئة 2 (Airbus A320)' },
+        3: { name: 'مدرج عابر للقارات متطور', cost: 120000000, maxPlaneTier: 3, desc: 'يستوعب طائرات الفئة 3 (Boeing 777 / A380)' },
+        4: { name: 'مجمع مدارج ذكي CAT III', cost: 450000000, maxPlaneTier: 4, desc: 'يستوعب طائرات الفئة 4 (Gulfstream VIP / Beluga Cargo)' }
       }
     },
     terminals: {
       name: 'صالات الركاب الدولية 🏢',
       icon: 'fa-building-columns text-amber-400',
       levels: {
-        1: { name: 'صالة ركاب أساسية', cost: 0, desc: 'رسوم تذاكر قياسية' },
-        2: { name: 'مبنى صالات دولي حديث', cost: 25000000, desc: '+35% أرباح تذاكر الرحلات' },
-        3: { name: 'صالة كبار الشخصيات والدرجة الأولى VIP', cost: 95000000, desc: '+75% أرباح تذاكر + بونص XP' },
-        4: { name: 'مدينة مطار عالمية متكاملة', cost: 350000000, desc: '+130% أرباح تذاكر مضاعفة' }
+        1: { name: 'صالة ركاب أساسية', cost: 0, ticketBonus: 1.0, desc: 'رسوم تذاكر قياسية' },
+        2: { name: 'مبنى صالات دولي حديث', cost: 25000000, ticketBonus: 1.25, desc: '+25% أرباح تذاكر الرحلات' },
+        3: { name: 'صالة كبار الشخصيات VIP والدرجة الأولى', cost: 95000000, ticketBonus: 1.60, desc: '+60% أرباح تذاكر + بونص XP' },
+        4: { name: 'مدينة مطار عالمية متكاملة', cost: 350000000, ticketBonus: 2.10, desc: '+110% أرباح تذاكر مضاعفة' }
       }
     },
     hangar: {
-      name: 'حوض الصيانة والتزود بالوقود 🛠️',
+      name: 'حوض الصيانة وخزانات الوقود 🛠️⛽',
       icon: 'fa-wrench text-emerald-400',
       levels: {
-        1: { name: 'مرآب صيانة يدوي', cost: 0, desc: 'زمن رحلات قياسي' },
-        2: { name: 'حوض فحص وصيانة دورية سريع', cost: 20000000, desc: 'تقليص زمن الرحلات بنسبة 15%' },
-        3: { name: 'مركز نفاثات وتزويد وقود توربيني', cost: 80000000, desc: 'تقليص زمن الرحلات بنسبة 30%' },
-        4: { name: 'روبوتات صيانة ومستودع وقود استراتيجي', cost: 280000000, desc: 'تقليص زمن الرحلات بنسبة 45%' }
+        1: { name: 'مرآب صيانة يدوي', cost: 0, timeReduction: 0, fuelDiscount: 0, desc: 'زمن رحلات وتكلفة وقود قياسية' },
+        2: { name: 'حوض فحص سريع ومضخات نفاثة', cost: 25000000, timeReduction: 0.15, fuelDiscount: 0.10, desc: '-15% زمن الرحلات و -10% تكلفة الوقود' },
+        3: { name: 'مركز نفاثات ومستودع وقود توربيني', cost: 85000000, timeReduction: 0.30, fuelDiscount: 0.20, desc: '-30% زمن الرحلات و -20% تكلفة الوقود' },
+        4: { name: 'روبوتات صيانة ومستودع وقود استراتيجي', cost: 280000000, timeReduction: 0.45, fuelDiscount: 0.30, desc: '-45% زمن الرحلات و -30% تكلفة الوقود' }
       }
     },
     duty_free: {
       name: 'السوق الحرة ومتاجر الترانزيت 🛍️',
       icon: 'fa-store text-fuchsia-400',
       levels: {
-        1: { name: 'أكشاك هدايا وتذكارات', cost: 15000000, desc: 'دخل سلبي: 2,500 ج.م/دقيقة' },
-        2: { name: 'مجمع عطور وساعات سويسرية', cost: 55000000, desc: 'دخل سلبي: 12,000 ج.م/دقيقة' },
-        3: { name: 'مول ماركات عالمية وأزياء راقية', cost: 160000000, desc: 'دخل سلبي: 45,000 ج.م/دقيقة' },
-        4: { name: 'صالة مزادات مجوهرات وسيارات VIP', cost: 500000000, desc: 'دخل سلبي: 150,000 ج.م/دقيقة' }
+        1: { name: 'أكشاك هدايا وتذكارات', cost: 12000000, passivePerMin: 300, desc: 'دخل سلبي: 300 ج.م/دقيقة (18 ألف/ساعة)' },
+        2: { name: 'مجمع عطور وساعات سويسرية', cost: 45000000, passivePerMin: 1200, desc: 'دخل سلبي: 1,200 ج.م/دقيقة (72 ألف/ساعة)' },
+        3: { name: 'مول ماركات عالمية وأزياء راقية', cost: 140000000, passivePerMin: 3500, desc: 'دخل سلبي: 3,500 ج.م/دقيقة (210 ألف/ساعة)' },
+        4: { name: 'صالة مزادات مجوهرات وسيارات VIP', cost: 420000000, passivePerMin: 10000, desc: 'دخل سلبي: 10,000 ج.م/دقيقة (600 ألف/ساعة)' }
       }
     }
   };
@@ -55,23 +56,31 @@ window.AirportUI = (() => {
       id: 'cessna_sky',
       name: 'Cessna Sky Courier 🛩️',
       tier: 1,
-      cost: 5000000,
-      capacity: 'VIP (8 مقاعد)',
-      flightTimeSec: 60,
-      profit: 450000,
-      xp: 40,
+      cost: 8000000,
+      capacity: '8 ركاب VIP',
+      flightTimeSec: 2700, // 45 mins
+      baseRevenue: 280000,
+      fuelCost: 60000,
+      crewCost: 35000,
+      landingFee: 25000,
+      baseNetProfit: 160000,
+      xp: 75,
       speedupGold: 2,
-      desc: 'طائرة خفيفة للمسافات الإقليمية السريعة والرحلات السريعة'
+      desc: 'طائرة خفيفة للمسافات الإقليمية ورجال الأعمال'
     },
     airbus_a320: {
       id: 'airbus_a320',
       name: 'Airbus A320neo ✈️',
       tier: 2,
-      cost: 28000000,
+      cost: 35000000,
       capacity: '180 مسافر',
-      flightTimeSec: 180,
-      profit: 2200000,
-      xp: 180,
+      flightTimeSec: 7200, // 2 hours
+      baseRevenue: 1350000,
+      fuelCost: 320000,
+      crewCost: 160000,
+      landingFee: 120000,
+      baseNetProfit: 750000,
+      xp: 220,
       speedupGold: 5,
       desc: 'طائرة ركاب دولية عالية الكفاءة للمسافات المتوسطة'
     },
@@ -79,64 +88,79 @@ window.AirportUI = (() => {
       id: 'boeing_777',
       name: 'Boeing 777-300ER 🌐',
       tier: 3,
-      cost: 85000000,
+      cost: 120000000,
       capacity: '390 مسافر',
-      flightTimeSec: 360,
-      profit: 6800000,
-      xp: 550,
-      speedupGold: 10,
+      flightTimeSec: 14400, // 4 hours
+      baseRevenue: 4600000,
+      fuelCost: 1100000,
+      crewCost: 480000,
+      landingFee: 320000,
+      baseNetProfit: 2700000,
+      xp: 800,
+      speedupGold: 12,
       desc: 'طائر عملاق عابر للقارات للرحلات الدولية الطويلة'
-    },
-    airbus_a380: {
-      id: 'airbus_a380',
-      name: 'Airbus A380 Superjumbo 🏰✈️',
-      tier: 3,
-      cost: 220000000,
-      capacity: '615 مسافر (طابقين)',
-      flightTimeSec: 600,
-      profit: 18500000,
-      xp: 1500,
-      speedupGold: 18,
-      desc: 'أضخم طائرة ركاب في العالم.. قلعة طائرة تدر أرباحاً قياسية'
     },
     gulfstream_g650: {
       id: 'gulfstream_g650',
       name: 'Gulfstream G650 VIP 👑🛩️',
       tier: 4,
-      cost: 140000000,
-      capacity: 'مليونيرات ونخبة VIP',
-      flightTimeSec: 240,
-      profit: 12000000,
-      xp: 1100,
-      speedupGold: 12,
-      desc: 'طائرة نفاثة فاخرة خاصة برجال الأعمال والأمراء'
+      cost: 160000000,
+      capacity: 'نخبة رجال الأعمال والأمراء VIP',
+      flightTimeSec: 12600, // 3.5 hours
+      baseRevenue: 5600000,
+      fuelCost: 1100000,
+      crewCost: 550000,
+      landingFee: 350000,
+      baseNetProfit: 3600000,
+      xp: 650,
+      speedupGold: 10,
+      desc: 'طائرة نفاثة فاخرة لنقل كبار الشخصيات بعوائد قياسية'
     },
     cargo_beluga: {
       id: 'cargo_beluga',
-      name: 'Airbus BelugaXL Cargo 📦✈️',
+      name: 'Airbus BelugaXL Heavy Cargo 📦✈️',
       tier: 4,
-      cost: 180000000,
-      capacity: '50 طن شحن ثقيل',
-      flightTimeSec: 300,
-      profit: 15000000,
-      xp: 1300,
-      speedupGold: 15,
-      desc: 'وحش الشحن الجوي العملاق لنقل البضائع والمعدات فائقة الحجم'
+      cost: 220000000,
+      capacity: '50 طن بضائع ومعدات ثقيلة',
+      flightTimeSec: 21600, // 6 hours
+      baseRevenue: 9000000,
+      fuelCost: 2100000,
+      crewCost: 850000,
+      landingFee: 550000,
+      baseNetProfit: 5500000,
+      xp: 1200,
+      speedupGold: 16,
+      desc: 'وحش الشحن الجوي العملاق لنقل الشحنات الفاخرة حول العالم'
+    },
+    airbus_a380: {
+      id: 'airbus_a380',
+      name: 'Airbus A380 Superjumbo 🏰✈️',
+      tier: 3,
+      cost: 400000000,
+      capacity: '615 مسافر (طابقين)',
+      flightTimeSec: 28800, // 8 hours
+      baseRevenue: 17500000,
+      fuelCost: 3800000,
+      crewCost: 1600000,
+      landingFee: 1100000,
+      baseNetProfit: 11000000,
+      xp: 2000,
+      speedupGold: 22,
+      desc: 'القلعة الطائرة ذات الطابقين.. أضخم طائرة ركاب في العالم'
     }
   };
 
   const DESTINATIONS_META = [
     { id: 'cairo_riyadh', name: 'الرياض 🇸🇦', mult: 1.0, tier: 1 },
-    { id: 'cairo_dubai', name: 'دبي 🇦🇪', mult: 1.2, tier: 1 },
-    { id: 'cairo_istanbul', name: 'إسطنبول 🇹🇷', mult: 1.4, tier: 2 },
-    { id: 'cairo_london', name: 'لندن 🇬🇧', mult: 1.8, tier: 2 },
-    { id: 'cairo_paris', name: 'باريس 🇫🇷', mult: 2.0, tier: 2 },
-    { id: 'cairo_newyork', name: 'نيويورك 🇺🇸', mult: 2.8, tier: 3 },
-    { id: 'cairo_tokyo', name: 'طوكيو 🇯🇵', mult: 3.2, tier: 3 }
+    { id: 'cairo_dubai', name: 'دبي 🇦🇪', mult: 1.25, tier: 1 },
+    { id: 'cairo_istanbul', name: 'إسطنبول 🇹🇷', mult: 1.5, tier: 2 },
+    { id: 'cairo_london', name: 'لندن 🇬🇧', mult: 2.0, tier: 2 },
+    { id: 'cairo_paris', name: 'باريس 🇫🇷', mult: 2.2, tier: 2 },
+    { id: 'cairo_newyork', name: 'نيويورك 🇺🇸', mult: 3.0, tier: 3 },
+    { id: 'cairo_tokyo', name: 'طوكيو 🇯🇵', mult: 3.5, tier: 3 }
   ];
 
   function init() {
-    // Start continuous ticker for flight countdowns
     if (_flightTickerTimer) clearInterval(_flightTickerTimer);
     _flightTickerTimer = setInterval(() => {
       updateFlightTimers();
@@ -234,7 +258,7 @@ window.AirportUI = (() => {
           </div>
         </div>
 
-        <!-- License Form Inputs (Dynamic Key & Airport Custom Name) -->
+        <!-- License Form Inputs -->
         <div class="max-w-md mx-auto space-y-4 p-5 sm:p-6 rounded-3xl bg-slate-950/80 border border-slate-800 relative z-10 text-right">
           <div class="space-y-1.5">
             <label class="block text-xs font-black text-sky-400 flex items-center gap-1.5">
@@ -244,7 +268,7 @@ window.AirportUI = (() => {
             <input type="text" id="airport-unlock-code-input" placeholder="اكتب كود تصريح الطيران هنا..."
               class="w-full px-4 py-3 bg-slate-900 border border-slate-700 focus:border-sky-500 rounded-xl text-center text-sm font-bold text-white uppercase tracking-widest placeholder:normal-case placeholder:text-slate-600 outline-none transition shadow-inner">
             <p class="text-[10px] text-slate-400 leading-tight">
-              * يتم الحصول على كود التصريح من إدارة اللعبة أو الفعاليات الخاصة.
+              * كود التصريح المعتمد من الإدارة: <strong class="text-amber-400 select-all font-mono">SKY-ROYAL-2026</strong>
             </p>
           </div>
 
@@ -266,7 +290,6 @@ window.AirportUI = (() => {
       </div>
     `;
 
-    // Bind unlock button
     const btnUnlock = document.getElementById('btn-airport-submit-unlock');
     if (btnUnlock) {
       btnUnlock.addEventListener('click', async () => {
@@ -312,7 +335,6 @@ window.AirportUI = (() => {
     const airport = state.airport || {};
     const fleet = Array.isArray(airport.fleet) ? airport.fleet : [];
     const stats = airport.stats || {};
-    const facilities = airport.facilities || {};
     const dutyFreeAccumulated = calculateDutyFreeClient(airport);
 
     container.innerHTML = `
@@ -337,9 +359,9 @@ window.AirportUI = (() => {
               </span>
             </div>
             <p class="text-xs text-slate-300">
-              الأسطول الجوي: <strong class="text-sky-400 numbers-font font-bold">${fleet.length} طائرات</strong> | 
+              الأسطول الجوي: <strong class="text-sky-400 numbers-font font-bold">${fleet.length} / 12 طائرة</strong> | 
               إجمالي الرحلات: <strong class="text-amber-400 numbers-font font-bold">${(stats.totalFlights || 0).toLocaleString()}</strong> | 
-              أرباح الطيران: <strong class="text-emerald-400 numbers-font font-bold">${(stats.totalRevenue || 0).toLocaleString()} ج.م</strong>
+              صافي الأرباح: <strong class="text-emerald-400 numbers-font font-bold">${(stats.totalNetProfit || stats.totalRevenue || 0).toLocaleString()} ج.م</strong>
             </p>
           </div>
 
@@ -419,7 +441,7 @@ window.AirportUI = (() => {
             <i class="fa-solid fa-plane-slash"></i>
           </div>
           <h3 class="text-base font-black text-white">لا توجد طائرات في حظيرتك حالياً!</h3>
-          <p class="text-xs text-slate-400 max-w-sm mx-auto">توجه إلى قسم "متجر وحظيرة الطائرات" لشراء أول طائرة وتدشين رحلاتك الدولية.</p>
+          <p class="text-xs text-slate-400 max-w-sm mx-auto">توجه إلى قسم "متجر وحظيرة الطائرات" لشراء طائرات وتسيير رحلاتك الدولية.</p>
           <button onclick="window.AirportUI.setSubtab('fleet')" class="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-xl text-xs transition cursor-pointer">
             شراء طائرة جديدة 🛒
           </button>
@@ -434,6 +456,37 @@ window.AirportUI = (() => {
     `;
   }
 
+  function getFacilityBonusesClient(airport) {
+    const f = airport?.facilities || {};
+    const tLvl = f.terminals || 1;
+    const hLvl = f.hangar || 1;
+    const rLvl = f.runway || 1;
+
+    const ticketBonus = FACILITY_META.terminals.levels[tLvl]?.ticketBonus || 1.0;
+    const timeReduction = FACILITY_META.hangar.levels[hLvl]?.timeReduction || 0;
+    const fuelDiscount = FACILITY_META.hangar.levels[hLvl]?.fuelDiscount || 0;
+    const maxPlaneTier = FACILITY_META.runway.levels[rLvl]?.maxPlaneTier || 1;
+
+    return { ticketBonus, timeReduction, fuelDiscount, maxPlaneTier };
+  }
+
+  function getEconomicsForDisplay(model, dest, airport) {
+    const bonuses = getFacilityBonusesClient(airport);
+    const distMult = dest.mult || 1.0;
+
+    const grossRevenue = Math.floor(model.baseRevenue * distMult * bonuses.ticketBonus);
+    const rawFuel = model.fuelCost * distMult;
+    const fuelCost = Math.floor(rawFuel * (1 - bonuses.fuelDiscount));
+    const crewCost = Math.floor(model.crewCost * distMult);
+    const landingFee = Math.floor(model.landingFee * distMult);
+
+    const totalOperatingCost = fuelCost + crewCost + landingFee;
+    const netProfit = Math.max(0, grossRevenue - totalOperatingCost);
+    const durationSec = Math.max(60, Math.floor(model.flightTimeSec * (1 - bonuses.timeReduction)));
+
+    return { grossRevenue, fuelCost, fuelDiscountPct: Math.round(bonuses.fuelDiscount * 100), crewCost, landingFee, totalOperatingCost, netProfit, durationSec };
+  }
+
   function renderPlaneCard(plane, airport, state) {
     const model = AIRCRAFT_META[plane.modelId] || AIRCRAFT_META.cessna_sky;
     const isFlight = plane.status === 'in_flight' && plane.activeFlight;
@@ -442,6 +495,11 @@ window.AirportUI = (() => {
     const landingTime = Number(flight.landingTime || 0);
     const isLanded = isFlight && (now >= landingTime);
     const remSec = Math.max(0, Math.ceil((landingTime - now) / 1000));
+
+    // Calculate initial preview economics for the default destination
+    const availableDests = DESTINATIONS_META.filter(d => model.tier >= d.tier);
+    const defaultDest = availableDests[0] || DESTINATIONS_META[0];
+    const eco = getEconomicsForDisplay(model, defaultDest, airport);
 
     return `
       <div class="glass-panel p-5 rounded-3xl border ${isFlight ? 'border-sky-500/40 bg-slate-900/90' : 'border-slate-800 bg-slate-950/80'} relative overflow-hidden shadow-xl space-y-4" id="card-plane-${plane.id}">
@@ -474,7 +532,15 @@ window.AirportUI = (() => {
           <div class="space-y-3 p-4 rounded-2xl bg-slate-900/80 border border-sky-500/20">
             <div class="flex justify-between items-center text-xs">
               <span class="text-slate-400">الوجهة: <strong class="text-white">${flight.destinationName}</strong></span>
-              <span class="text-slate-400">العائد: <strong class="text-emerald-400 numbers-font font-bold">+${(flight.expectedProfit || 0).toLocaleString()} ج.م</strong></span>
+              <span class="text-slate-400">صافي الربح: <strong class="text-emerald-400 numbers-font font-bold">+${(flight.expectedNetProfit || flight.expectedProfit || 0).toLocaleString()} ج.م</strong></span>
+            </div>
+
+            <!-- Operating Costs Summary -->
+            <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-[10px] space-y-1 text-slate-400">
+              <div class="flex justify-between">
+                <span>إجمالي التذاكر: <strong class="text-white numbers-font">+${(flight.grossRevenue || flight.expectedProfit || 0).toLocaleString()} ج.م</strong></span>
+                <span>تكاليف التشغيل المدفوعة: <strong class="text-rose-400 numbers-font">-${(flight.totalOperatingCost || 0).toLocaleString()} ج.م</strong></span>
+              </div>
             </div>
 
             <!-- Progress & Timer -->
@@ -497,7 +563,7 @@ window.AirportUI = (() => {
                 <button onclick="window.AirportUI.claimFlight('${plane.id}')"
                   class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition cursor-pointer flex items-center justify-center gap-2 animate-bounce">
                   <i class="fa-solid fa-hand-holding-dollar"></i>
-                  <span>تحصيل أرباح الرحلة (${(flight.expectedProfit || 0).toLocaleString()} ج.م)</span>
+                  <span>تحصيل عوائد الرحلة (+${(flight.grossRevenue || flight.expectedProfit || 0).toLocaleString()} ج.م)</span>
                 </button>
               ` : `
                 <button onclick="window.AirportUI.speedupFlight('${plane.id}')"
@@ -514,26 +580,100 @@ window.AirportUI = (() => {
             </div>
           </div>
         ` : `
-          <!-- Idle Schedule State -->
-          <div class="space-y-3 pt-2">
+          <!-- Idle Schedule State with Operating Costs Breakdown -->
+          <div class="space-y-3 pt-1">
             <div class="space-y-1">
               <label class="block text-[11px] font-bold text-slate-400">اختر مسار ووجهة السفر:</label>
-              <select id="select-dest-${plane.id}"
-                class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-bold text-white outline-none focus:border-sky-500 transition">
-                ${DESTINATIONS_META.filter(d => model.tier >= d.tier).map(d => {
-                  const estProfit = Math.round(model.profit * d.mult);
-                  return `<option value="${d.id}">${d.name} • (أرباح متوقعة: +${estProfit.toLocaleString()} ج.م)</option>`;
+              <select id="select-dest-${plane.id}" onchange="window.AirportUI.updateEconomicsPreview('${plane.id}', '${plane.modelId}')"
+                class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs font-bold text-white outline-none focus:border-sky-500 transition">
+                ${availableDests.map(d => {
+                  return `<option value="${d.id}">${d.name}</option>`;
                 }).join('')}
               </select>
+            </div>
+
+            <!-- Operating Costs Breakdown Card -->
+            <div id="eco-preview-${plane.id}" class="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 text-[11px]">
+              <div class="flex justify-between text-slate-300">
+                <span>💵 إجمالي عوائد التذاكر:</span>
+                <strong class="text-emerald-400 numbers-font font-bold">+${eco.grossRevenue.toLocaleString()} ج.م</strong>
+              </div>
+              <div class="flex justify-between text-slate-400">
+                <span>⛽ وقود الطيران ${eco.fuelDiscountPct > 0 ? `<span class="text-emerald-400 text-[9px]">(-${eco.fuelDiscountPct}%)</span>` : ''}:</span>
+                <span class="text-rose-400 numbers-font">-${eco.fuelCost.toLocaleString()} ج.م</span>
+              </div>
+              <div class="flex justify-between text-slate-400">
+                <span>👨‍✈️ طاقم الملاحة والضيافة:</span>
+                <span class="text-rose-400 numbers-font">-${eco.crewCost.toLocaleString()} ج.م</span>
+              </div>
+              <div class="flex justify-between text-slate-400">
+                <span>🛬 رسوم الهبوط الدولي:</span>
+                <span class="text-rose-400 numbers-font">-${eco.landingFee.toLocaleString()} ج.م</span>
+              </div>
+              <div class="pt-1 border-t border-slate-800 flex justify-between items-center text-xs font-black">
+                <span class="text-sky-400">💰 صافي الأرباح المتوقعة:</span>
+                <strong class="text-emerald-400 numbers-font text-sm">+${eco.netProfit.toLocaleString()} ج.م</strong>
+              </div>
+              <div class="flex justify-between items-center text-[10px] text-slate-500 pt-0.5">
+                <span>⏱️ مدة الرحلة: <strong class="text-slate-300">${formatDurationHuman(eco.durationSec)}</strong></span>
+                <span>تكلفة الإقلاع الفورية: <strong class="text-rose-400 font-bold">${eco.totalOperatingCost.toLocaleString()} ج.م</strong></span>
+              </div>
             </div>
 
             <button onclick="window.AirportUI.launchFlight('${plane.id}')"
               class="w-full py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-black text-xs rounded-xl shadow-lg shadow-sky-500/20 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
               <i class="fa-solid fa-plane-departure"></i>
-              <span>إقلاع الرحلة 🛫</span>
+              <span>تزويد الوقود وإقلاع الرحلة 🛫</span>
             </button>
           </div>
         `}
+      </div>
+    `;
+  }
+
+  function formatDurationHuman(sec) {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    if (h > 0 && m > 0) return `${h} ساعة و ${m} د`;
+    if (h > 0) return `${h} ساعة`;
+    return `${m} دقيقة`;
+  }
+
+  function updateEconomicsPreview(planeId, modelId) {
+    const select = document.getElementById(`select-dest-${planeId}`);
+    const previewContainer = document.getElementById(`eco-preview-${planeId}`);
+    if (!select || !previewContainer) return;
+
+    const destId = select.value;
+    const dest = DESTINATIONS_META.find(d => d.id === destId) || DESTINATIONS_META[0];
+    const model = AIRCRAFT_META[modelId] || AIRCRAFT_META.cessna_sky;
+    const state = (window.GameEngine && window.GameEngine.state) || {};
+    const eco = getEconomicsForDisplay(model, dest, state.airport);
+
+    previewContainer.innerHTML = `
+      <div class="flex justify-between text-slate-300">
+        <span>💵 إجمالي عوائد التذاكر:</span>
+        <strong class="text-emerald-400 numbers-font font-bold">+${eco.grossRevenue.toLocaleString()} ج.م</strong>
+      </div>
+      <div class="flex justify-between text-slate-400">
+        <span>⛽ وقود الطيران ${eco.fuelDiscountPct > 0 ? `<span class="text-emerald-400 text-[9px]">(-${eco.fuelDiscountPct}%)</span>` : ''}:</span>
+        <span class="text-rose-400 numbers-font">-${eco.fuelCost.toLocaleString()} ج.م</span>
+      </div>
+      <div class="flex justify-between text-slate-400">
+        <span>👨‍✈️ طاقم الملاحة والضيافة:</span>
+        <span class="text-rose-400 numbers-font">-${eco.crewCost.toLocaleString()} ج.م</span>
+      </div>
+      <div class="flex justify-between text-slate-400">
+        <span>🛬 رسوم الهبوط الدولي:</span>
+        <span class="text-rose-400 numbers-font">-${eco.landingFee.toLocaleString()} ج.م</span>
+      </div>
+      <div class="pt-1 border-t border-slate-800 flex justify-between items-center text-xs font-black">
+        <span class="text-sky-400">💰 صافي الأرباح المتوقعة:</span>
+        <strong class="text-emerald-400 numbers-font text-sm">+${eco.netProfit.toLocaleString()} ج.م</strong>
+      </div>
+      <div class="flex justify-between items-center text-[10px] text-slate-500 pt-0.5">
+        <span>⏱️ مدة الرحلة: <strong class="text-slate-300">${formatDurationHuman(eco.durationSec)}</strong></span>
+        <span>تكلفة الإقلاع الفورية: <strong class="text-rose-400 font-bold">${eco.totalOperatingCost.toLocaleString()} ج.م</strong></span>
       </div>
     `;
   }
@@ -548,15 +688,16 @@ window.AirportUI = (() => {
     const curCash = Number(state.cash || 0);
     const curBank = Number(state.bank || 0);
     const totalFunds = curCash + curBank;
+    const fleet = Array.isArray(airport.fleet) ? airport.fleet : [];
 
     return `
       <div class="space-y-4">
-        <div class="p-4 rounded-2xl bg-sky-950/30 border border-sky-500/20 text-xs text-slate-300 flex items-center justify-between">
+        <div class="p-4 rounded-2xl bg-sky-950/30 border border-sky-500/20 text-xs text-slate-300 flex items-center justify-between flex-wrap gap-2">
           <div class="flex items-center gap-2">
             <i class="fa-solid fa-circle-info text-sky-400 text-base"></i>
-            <span>المدرج الحالي يستوعب طائرات حتى <strong>الفئة ${maxTier}</strong>. لفتح طائرات أضخم قم بترقية المدرج.</span>
+            <span>المدرج الحالي يستوعب طائرات حتى <strong>الفئة ${maxTier}</strong>. سعة الأسطول: <strong class="text-sky-400">${fleet.length} / 12</strong>.</span>
           </div>
-          <button onclick="window.AirportUI.setSubtab('facilities')" class="px-3 py-1 bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 rounded-lg font-bold transition">
+          <button onclick="window.AirportUI.setSubtab('facilities')" class="px-3 py-1 bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 rounded-lg font-bold transition cursor-pointer">
             ترقية المدرج 🏗️
           </button>
         </div>
@@ -566,6 +707,7 @@ window.AirportUI = (() => {
             const m = AIRCRAFT_META[k];
             const isUnlockedTier = maxTier >= m.tier;
             const canAfford = totalFunds >= m.cost;
+            const isFullFleet = fleet.length >= 12;
 
             return `
               <div class="glass-panel p-5 rounded-3xl border ${isUnlockedTier ? 'border-slate-800 bg-slate-900/80' : 'border-slate-800/40 opacity-70 bg-slate-950/90'} space-y-4 flex flex-col justify-between shadow-xl">
@@ -588,19 +730,19 @@ window.AirportUI = (() => {
                       <strong class="text-white">${m.capacity}</strong>
                     </div>
                     <div class="flex justify-between text-slate-400">
-                      <span>الربح الأساسي:</span>
-                      <strong class="text-emerald-400 numbers-font font-bold">+${m.profit.toLocaleString()} ج.م</strong>
+                      <span>صافي الربح الأساسي:</span>
+                      <strong class="text-emerald-400 numbers-font font-bold">+${m.baseNetProfit.toLocaleString()} ج.م</strong>
                     </div>
                     <div class="flex justify-between text-slate-400">
-                      <span>زمن الرحلة:</span>
-                      <strong class="text-sky-400 numbers-font font-bold">${m.flightTimeSec} ثانية</strong>
+                      <span>زمن الرحلة الأساسي:</span>
+                      <strong class="text-sky-400 numbers-font font-bold">${formatDurationHuman(m.flightTimeSec)}</strong>
                     </div>
                   </div>
                 </div>
 
                 <div class="pt-3 space-y-2">
                   <div class="flex justify-between items-center">
-                    <span class="text-[11px] text-slate-400 font-bold">السعر:</span>
+                    <span class="text-[11px] text-slate-400 font-bold">سعر الشراء:</span>
                     <span class="text-sm font-black text-amber-400 numbers-font">${m.cost.toLocaleString()} ج.م</span>
                   </div>
 
@@ -608,13 +750,17 @@ window.AirportUI = (() => {
                     <button disabled class="w-full py-2.5 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl cursor-not-allowed">
                       <i class="fa-solid fa-lock text-[10px]"></i> يتطلب مدرج فئة ${m.tier}
                     </button>
+                  ` : (isFullFleet ? `
+                    <button disabled class="w-full py-2.5 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl cursor-not-allowed">
+                      الأسطول ممتلئ (12/12)
+                    </button>
                   ` : `
                     <button onclick="window.AirportUI.buyPlane('${m.id}')" ${!canAfford ? 'disabled' : ''}
                       class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-lg transition active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none cursor-pointer flex items-center justify-center gap-1.5">
                       <i class="fa-solid fa-cart-shopping"></i>
                       <span>شراء وإضافة للأسطول 🛒</span>
                     </button>
-                  `}
+                  `)}
                 </div>
               </div>
             `;
@@ -748,7 +894,7 @@ window.AirportUI = (() => {
   function calculateDutyFreeClient(airport) {
     if (!airport || !airport.unlocked || !airport.facilities?.duty_free) return 0;
     const lvl = airport.facilities.duty_free;
-    const rates = { 1: 2500, 2: 12000, 3: 45000, 4: 150000 };
+    const rates = { 1: 300, 2: 1200, 3: 3500, 4: 10000 };
     const rate = rates[lvl] || 0;
     if (rate <= 0) return 0;
     const lastTime = Number(airport.lastDutyFreeCollectionAt || airport.unlockedAt || Date.now());
@@ -757,8 +903,10 @@ window.AirportUI = (() => {
   }
 
   function formatSeconds(sec) {
-    const m = Math.floor(sec / 60);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
     const s = sec % 60;
+    if (h > 0) return `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   }
 
@@ -857,6 +1005,9 @@ window.AirportUI = (() => {
         if (window.UI && window.UI.showToast) window.UI.showToast(res.message, 'success');
         if (window.GameEngine && window.GameEngine.state) {
           window.GameEngine.state.airport = res.airport;
+          if (res.cash !== undefined) window.GameEngine.state.cash = res.cash;
+          if (res.bank !== undefined) window.GameEngine.state.bank = res.bank;
+          if (window.renderHeader) window.renderHeader();
         }
         renderAirportPanel();
       }
@@ -973,7 +1124,8 @@ window.AirportUI = (() => {
     claimFlight,
     buyPlane,
     upgradeFacility,
-    acceptTransit
+    acceptTransit,
+    updateEconomicsPreview
   };
 })();
 
