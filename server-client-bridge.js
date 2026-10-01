@@ -226,11 +226,7 @@ var ServerBridge = (() => {
         immediate
       });
     } catch (e) {
-      if (e.message && (e.message.includes('Session invalidated') || e.message.includes('409') || e.message.includes('SESSION_TERMINATED'))) {
-        if (typeof window !== 'undefined' && typeof window.handleDuplicateSession === 'function') {
-          window.handleDuplicateSession('تم تسجيل الدخول إلى هذا الحساب من جهاز آخر.');
-        }
-      }
+      // Safe sync warning log without prematurely killing active UI
       console.warn('[ServerBridge] syncState warning:', e.message);
       return null;
     }

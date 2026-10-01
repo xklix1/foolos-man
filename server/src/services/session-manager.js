@@ -213,10 +213,10 @@ class SessionManager {
     const { session } = await this.getOrCreateSession(username, false);
     if (!session) return false;
 
-    // Strict Concurrent Session Guard: Reject sync if client session token does not match active session
-    if (clientState.activeSessionId && session.sessionId && clientState.activeSessionId !== session.sessionId) {
-      console.warn(`[SessionManager] Blocked stale session sync: target="${username}", active="${session.sessionId}", incoming="${clientState.activeSessionId}"`);
-      return false;
+    // Seamlessly adopt incoming client session ID if provided
+    if (clientState.activeSessionId) {
+      session.sessionId = clientState.activeSessionId;
+      if (session.state) session.state.activeSessionId = clientState.activeSessionId;
     }
 
     const s = session.state;

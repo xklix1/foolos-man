@@ -679,7 +679,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.4.0';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.4.1';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -688,7 +688,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.4.0', remoteVersion: 'v8.4.0' };
+    return { upToDate: true, clientVersion: 'v8.4.1', remoteVersion: 'v8.4.1' };
   }
 
   async function checkDeviceBan() {
@@ -2049,15 +2049,7 @@ var AppDB = (() => {
         } else if (!_isSessionInvalidated) {
           const activeUser = (window.GameEngine && window.GameEngine.activeUsername);
           if (activeUser) {
-            _api(`players?select=username,state&username=ilike.${encodeURIComponent(activeUser)}&limit=1`).then(rows => {
-              if (rows && rows.length > 0 && rows[0].state) {
-                const srvSession = rows[0].state.activeSessionId;
-                if (srvSession && srvSession !== _currentSessionToken) {
-                  console.warn(`[Sync] Concurrent login detected on tab focus for ${activeUser}: server="${srvSession}", local="${_currentSessionToken}"`);
-                  invalidateCurrentSession('تم فتح حسابك في جلسة جديدة من جهاز آخر. تم إيقاف هذا الجهاز لحماية أموالك من التضارب.');
-                }
-              }
-            }).catch(() => {});
+            _checkSessionImmediate(activeUser);
           }
         }
       });
@@ -2183,7 +2175,7 @@ var AppDB = (() => {
         });
 
         // If representation returned, verify this session is still the authoritative active session
-        if (Array.isArray(res) && res.length > 0 && res[0].state) {
+        if (Array.isArray(res) && res.length > 0 && res[0].state && (Date.now() - _sessionClaimedTimestamp > 15000)) {
           const srvSession = res[0].state.activeSessionId;
           if (srvSession && srvSession !== _currentSessionToken) {
             console.warn(`[Sync] Concurrent login detected on push for ${u}: server active="${srvSession}", current="${_currentSessionToken}"`);

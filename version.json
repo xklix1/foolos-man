@@ -1,6 +1,7 @@
 {
-  "version": "v8.4.0",
+  "version": "v8.4.1",
   "build": 1790890000000,
-  "timestamp": "2026-10-01T21:40:00.000Z",
-  "notes": "100% Server-Authoritative Architecture & Ironclad Anti-Tamper Database Shield: complete server-side action validation, immutable game economy, and forced version synchronization."
+  "timestamp": 1790894287447,
+  "notes": "100% Server-Authoritative Architecture & Ironclad Anti-Tamper Database Shield: complete server-side action validation, immutable game economy, and forced version synchronization.",
+  "releaseNotes": "Critical fix: Eliminate false-positive session conflict popup on initial login and action"
 }
