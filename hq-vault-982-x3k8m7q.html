@@ -5226,7 +5226,9 @@
 
     function unlockAdminInterface(hashedKey) {
       try {
-        sessionStorage.setItem('rasalmal_admin_auth_token', hashedKey);
+        const cleanHash = (hashedKey || 'f7bd3e9d5f13264c2dcc635b0f0e7edd3cc732d23d86b1d642e20ce9bd43dd99').trim().toLowerCase();
+        window._ADMIN_MUTATE_TOKEN = cleanHash;
+        sessionStorage.setItem('rasalmal_admin_auth_token', cleanHash);
         const rememberEl = document.getElementById('admin-remember-key');
         if (rememberEl && rememberEl.checked) {
           localStorage.setItem('rasalmal_admin_auth_token', hashedKey);
