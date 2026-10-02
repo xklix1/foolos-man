@@ -484,6 +484,15 @@ var ServerBridge = (() => {
     });
   }
 
+  async function sellAirportPlane(planeId) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    return await _post('/api/airport/sell-plane', {
+      username: user,
+      planeId
+    });
+  }
+
   return {
     getApiBase,
     formatAvatarUrl,
@@ -493,6 +502,7 @@ var ServerBridge = (() => {
     renameAirport,
     upgradeAirportFacility,
     buyAirportPlane,
+    sellAirportPlane,
     launchAirportFlight,
     speedupAirportFlight,
     claimAirportFlight,

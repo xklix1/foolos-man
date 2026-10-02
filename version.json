@@ -1,7 +1,7 @@
 {
-  "version": "v8.5.0",
-  "build": 1790904000000,
-  "timestamp": 1790901000000,
-  "notes": "Airport Flight Visualizer Fix: Live in-flight radar, live countdown timers, progress bars, and instant claim upon landing.",
-  "releaseNotes": "Airport Flight Visualizer: Live in-flight radar, countdown timers, and speedup controls."
+  "version": "v8.5.5",
+  "build": 1790905000000,
+  "timestamp": 1790905000000,
+  "notes": "Airport Hub Mega-Update: Airport state preservation guard, 50% aircraft resale feature, instant flight claim/speedup reliability, and topup mailbox deduplication.",
+  "releaseNotes": "Airport Hub: Aircraft selling option (50% refund), airport save fix, and topup repeat resolution."
 }

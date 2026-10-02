@@ -8170,6 +8170,8 @@ const GameEngine = (() => {
     getAppropriateTitle,
     renewAfkManager,
     forceSaveState,
+    saveState: forceSaveState,
+    getState: () => state,
     applyOfflineCatchup,
 
     // Referral System Exports

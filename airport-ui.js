@@ -749,11 +749,19 @@ window.AirportUI = (() => {
               </div>
             </div>
 
-            <button onclick="window.AirportUI.launchFlight('${plane.id}')"
-              class="w-full py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-black text-xs rounded-xl shadow-lg shadow-sky-500/20 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
-              <i class="fa-solid fa-plane-departure"></i>
-              <span>تزويد الوقود وإقلاع الرحلة 🛫</span>
-            </button>
+            <div class="flex items-center gap-2 pt-1">
+              <button onclick="window.AirportUI.launchFlight('${plane.id}')"
+                class="flex-1 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-black text-xs rounded-xl shadow-lg shadow-sky-500/20 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
+                <i class="fa-solid fa-plane-departure"></i>
+                <span>تزويد الوقود وإقلاع الرحلة 🛫</span>
+              </button>
+              <button onclick="window.AirportUI.sellPlane('${plane.id}')"
+                title="بيع الطائرة بنصف سعر الشراء (+${Math.floor(model.cost * 0.5).toLocaleString()} ج.م)"
+                class="px-3.5 py-2.5 bg-slate-900 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500/50 text-slate-300 hover:text-rose-300 font-black text-xs rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-md">
+                <i class="fa-solid fa-hand-holding-dollar text-amber-400"></i>
+                <span>بيع (+${Math.floor(model.cost * 0.5).toLocaleString()} ج.م)</span>
+              </button>
+            </div>
           </div>
         `}
       </div>
@@ -1090,12 +1098,20 @@ window.AirportUI = (() => {
 
   function persistGameState() {
     try {
-      if (window.GameEngine && typeof window.GameEngine.saveState === 'function') {
+      if (window.GameEngine && typeof window.GameEngine.forceSaveState === 'function') {
+        window.GameEngine.forceSaveState(true);
+      } else if (window.GameEngine && typeof window.GameEngine.saveState === 'function') {
         window.GameEngine.saveState();
+      }
+      if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.savePlayerState === 'function' && window.GameEngine && window.GameEngine.activeUsername) {
+        window.AppDB.savePlayerState(window.GameEngine.activeUsername, window.GameEngine.state, true).catch(() => {});
       }
     } catch (_) {}
     if (typeof window.renderHeader === 'function') {
       window.renderHeader();
+    }
+    if (typeof window.renderAll === 'function') {
+      window.renderAll();
     }
   }
 
@@ -1239,7 +1255,7 @@ window.AirportUI = (() => {
     const now = Date.now();
     const durationMs = eco.durationSec * 1000;
     plane.status = 'in_flight';
-    plane.currentFlight = {
+    const flightObj = {
       destinationId: dest.id,
       destinationName: dest.name,
       launchTime: now,
@@ -1255,6 +1271,8 @@ window.AirportUI = (() => {
       expectedXp: eco.xpReward,
       speedupGold: model.speedupGold || 5
     };
+    plane.currentFlight = flightObj;
+    plane.activeFlight = flightObj;
 
     if (!ap.stats) ap.stats = {};
     ap.stats.totalOperatingCost = (Number(ap.stats.totalOperatingCost) || 0) + eco.totalOperatingCost;
@@ -1275,9 +1293,11 @@ window.AirportUI = (() => {
     if (!ap || !Array.isArray(ap.fleet)) return;
 
     const plane = ap.fleet.find(p => p.id === planeId);
-    if (!plane || plane.status !== 'in_flight' || !plane.currentFlight) return;
+    if (!plane || plane.status !== 'in_flight') return;
+    const flight = plane.currentFlight || plane.activeFlight;
+    if (!flight) return;
 
-    const costGold = Number(plane.currentFlight.speedupGold || 5);
+    const costGold = Number(flight.speedupGold || 5);
     const curGold = Number(liveState.gold || 0);
 
     if (curGold < costGold) {
@@ -1285,11 +1305,13 @@ window.AirportUI = (() => {
       return;
     }
 
-    liveState.gold = curGold - costGold;
-    plane.currentFlight.landingTime = Date.now();
+    liveState.gold = Math.max(0, curGold - costGold);
+    flight.landingTime = Date.now() - 1000;
+    plane.currentFlight = flight;
+    plane.activeFlight = flight;
 
     persistGameState();
-    showAirportToast('⚡ تم تسريع الرحلة وهبوط الطائرة بنجاح!', 'success');
+    showAirportToast('⚡ تم تسريع الرحلة وهبوط الطائرة فوراً بنجاح!', 'success');
     renderAirportPanel();
 
     if (window.ServerBridge && typeof window.ServerBridge.speedupAirportFlight === 'function') {
@@ -1303,9 +1325,10 @@ window.AirportUI = (() => {
     if (!ap || !Array.isArray(ap.fleet)) return;
 
     const plane = ap.fleet.find(p => p.id === planeId);
-    if (!plane || plane.status !== 'in_flight' || !plane.currentFlight) return;
+    if (!plane || plane.status !== 'in_flight') return;
+    const f = plane.currentFlight || plane.activeFlight;
+    if (!f) return;
 
-    const f = plane.currentFlight;
     if (Date.now() < Number(f.landingTime || 0)) {
       showAirportToast('الطائرة لا تزال في الجو!', 'error');
       return;
@@ -1322,6 +1345,7 @@ window.AirportUI = (() => {
     plane.totalFlights = (Number(plane.totalFlights) || 0) + 1;
     plane.totalRevenue = (Number(plane.totalRevenue) || 0) + grossRev;
     plane.currentFlight = null;
+    plane.activeFlight = null;
 
     if (!ap.stats) ap.stats = {};
     ap.stats.totalFlights = (Number(ap.stats.totalFlights) || 0) + 1;
@@ -1334,6 +1358,38 @@ window.AirportUI = (() => {
 
     if (window.ServerBridge && typeof window.ServerBridge.claimAirportFlight === 'function') {
       try { await window.ServerBridge.claimAirportFlight(planeId); } catch (_) {}
+    }
+  }
+
+  async function sellPlane(planeId) {
+    const liveState = getLiveGameState();
+    const ap = liveState.airport;
+    if (!ap || !Array.isArray(ap.fleet)) return;
+
+    const planeIdx = ap.fleet.findIndex(p => p.id === planeId);
+    if (planeIdx === -1) return;
+
+    const plane = ap.fleet[planeIdx];
+    if (plane.status === 'in_flight') {
+      showAirportToast('🚫 لا يمكن بيع الطائرة وهي في الجو! انتظر هبوطها وتحصيل الرحلة أولاً.', 'error');
+      return;
+    }
+
+    const model = AIRCRAFT_META[plane.modelId] || AIRCRAFT_META.cessna_sky;
+    const refund = Math.floor((model.cost || 8000000) * 0.5);
+
+    const confirmed = confirm(`هل أنت متأكد من بيع طائرة "${plane.customName || model.name}" مقابل استرداد +${refund.toLocaleString()} ج.م (50% من سعر الشراء)؟`);
+    if (!confirmed) return;
+
+    ap.fleet.splice(planeIdx, 1);
+    liveState.cash = (Number(liveState.cash) || 0) + refund;
+
+    persistGameState();
+    showAirportToast(`💸 تم بيع طائرة ${model.name} واسترداد +${refund.toLocaleString()} ج.م بنجاح!`, 'success');
+    renderAirportPanel();
+
+    if (window.ServerBridge && typeof window.ServerBridge.sellAirportPlane === 'function') {
+      try { await window.ServerBridge.sellAirportPlane(planeId); } catch (_) {}
     }
   }
 
@@ -1374,7 +1430,8 @@ window.AirportUI = (() => {
       status: 'idle',
       totalFlights: 0,
       totalRevenue: 0,
-      currentFlight: null
+      currentFlight: null,
+      activeFlight: null
     };
 
     ap.fleet.push(newPlane);
@@ -1474,6 +1531,7 @@ window.AirportUI = (() => {
     speedupFlight,
     claimFlight,
     buyPlane,
+    sellPlane,
     upgradeFacility,
     acceptTransit,
     updateEconomicsPreview

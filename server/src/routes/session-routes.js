@@ -254,6 +254,22 @@ async function sessionRoutes(fastify, options) {
       serverTime: Date.now()
     };
   });
+
+  // POST /api/mailbox/status (Mark mailbox item as read/claimed with service role)
+  fastify.post('/api/mailbox/status', async (request, reply) => {
+    const { mailId, status } = request.body || {};
+    if (!mailId) return reply.code(400).send({ error: 'mailId is required' });
+    try {
+      const res = await fetch(`${dbService.url}/rest/v1/mailbox?id=eq.${encodeURIComponent(mailId)}`, {
+        method: 'PATCH',
+        headers: dbService.getHeaders(),
+        body: JSON.stringify({ status: status || 'read' })
+      });
+      return { success: res.ok, status: res.status };
+    } catch (err) {
+      return reply.code(500).send({ error: err.message });
+    }
+  });
 }
 
 module.exports = sessionRoutes;

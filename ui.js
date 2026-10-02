@@ -17023,8 +17023,21 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const topupMails = mails.filter(m => (m.type === 'topup_receipt' || (m.payload && m.payload.topupDetails)) && (m.status === 'unread' || m.status === 'pending'));
     for (const tm of topupMails) {
       if (!window._processedTopupMailIds) window._processedTopupMailIds = new Set();
-      if (window._processedTopupMailIds.has(tm.id)) continue;
+      let localProcessed = [];
+      try {
+        localProcessed = JSON.parse(localStorage.getItem('rasalmal_processed_topups') || '[]');
+      } catch (_) {}
+
+      if (window._processedTopupMailIds.has(tm.id) || localProcessed.includes(tm.id)) {
+        AppDB.updateMailStatus(tm.id, 'read').catch(() => {});
+        continue;
+      }
+
       window._processedTopupMailIds.add(tm.id);
+      localProcessed.push(tm.id);
+      try {
+        localStorage.setItem('rasalmal_processed_topups', JSON.stringify(localProcessed.slice(-100)));
+      } catch (_) {}
 
       const details = (tm.payload && tm.payload.topupDetails) || {};
       if (details.status === 'approved') {
@@ -17171,8 +17184,21 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const balanceMails = mails.filter(m => m.type === 'admin_balance_grant' && (m.status === 'unread' || m.status === 'pending'));
     for (const bm of balanceMails) {
       if (!window._processedBalanceGrantIds) window._processedBalanceGrantIds = new Set();
-      if (window._processedBalanceGrantIds.has(bm.id)) continue;
+      let localProcessedGrants = [];
+      try {
+        localProcessedGrants = JSON.parse(localStorage.getItem('rasalmal_processed_grants') || '[]');
+      } catch (_) {}
+
+      if (window._processedBalanceGrantIds.has(bm.id) || localProcessedGrants.includes(bm.id)) {
+        AppDB.updateMailStatus(bm.id, 'read').catch(() => {});
+        continue;
+      }
+
       window._processedBalanceGrantIds.add(bm.id);
+      localProcessedGrants.push(bm.id);
+      try {
+        localStorage.setItem('rasalmal_processed_grants', JSON.stringify(localProcessedGrants.slice(-100)));
+      } catch (_) {}
 
       const p = bm.payload || {};
       const addCash = Number(p.addedCash) || 0;
@@ -23532,7 +23558,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.5.0');
+            const curVer = (window._CLIENT_VERSION || 'v8.5.5');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

@@ -569,6 +569,53 @@ async function airportRoutes(fastify, options) {
       netWorth: s.netWorth
     };
   });
+
+  // 10. POST /api/airport/sell-plane (Sell plane for 50% refund)
+  fastify.post('/api/airport/sell-plane', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const s = session.state;
+
+    if (!s.airport || !s.airport.unlocked) {
+      return reply.code(400).send({ error: 'المطار غير مفعل.' });
+    }
+
+    const { planeId } = request.body || {};
+    const fleet = Array.isArray(s.airport.fleet) ? s.airport.fleet : [];
+    const planeIdx = fleet.findIndex(p => p.id === planeId);
+
+    if (planeIdx === -1) {
+      return reply.code(404).send({ error: 'الطائرة غير موجودة في أسطولك.' });
+    }
+
+    const plane = fleet[planeIdx];
+    if (plane.status === 'in_flight') {
+      return reply.code(400).send({ error: 'لا يمكن بيع الطائرة وهي في الجو! انتظر هبوطها أولاً.' });
+    }
+
+    const model = AIRCRAFT_MODELS[plane.modelId] || AIRCRAFT_MODELS.cessna_sky;
+    const refund = Math.floor((model.cost || 8000000) * 0.5);
+
+    // Remove plane from fleet
+    fleet.splice(planeIdx, 1);
+    s.airport.fleet = fleet;
+
+    // Add refund to cash
+    s.cash = Math.max(0, Number(s.cash || 0)) + refund;
+    s.netWorth = calculateNetWorth(s);
+    s.adminModifiedTimestamp = Date.now() + 60000;
+
+    await dbService.savePlayerState(session.username, s);
+
+    return {
+      success: true,
+      message: `💸 تم بيع طائرة ${model.name} بنجاح واسترداد +${refund.toLocaleString()} ج.م (50% من سعر الشراء)!`,
+      refund,
+      cash: s.cash,
+      airport: s.airport,
+      netWorth: s.netWorth
+    };
+  });
 }
 
 module.exports = airportRoutes;

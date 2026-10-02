@@ -653,7 +653,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.5.0';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.5.5';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -662,7 +662,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.5.0', remoteVersion: 'v8.5.0' };
+    return { upToDate: true, clientVersion: 'v8.5.5', remoteVersion: 'v8.5.5' };
   }
 
   async function checkDeviceBan() {
@@ -1863,6 +1863,38 @@ var AppDB = (() => {
           }
         }
 
+        // 4.996 Airport Megaproject Guard:
+        // When local device was actively played, airport progression, fleet, and upgrades must never be wiped
+        if (local && local.airport && typeof local.airport === 'object') {
+          if (!stateObj.airport || typeof stateObj.airport !== 'object' || local.airport.unlocked) {
+            stateObj.airport = JSON.parse(JSON.stringify(local.airport));
+            shouldSyncCloud = true;
+          } else if (isLocalRecentOrNewer) {
+            stateObj.airport = JSON.parse(JSON.stringify(local.airport));
+            shouldSyncCloud = true;
+          } else {
+            // Reconcile facilities and fleet if local has higher progression
+            const locA = local.airport;
+            const srvA = stateObj.airport;
+            if (locA.unlocked && !srvA.unlocked) {
+              srvA.unlocked = true;
+              shouldSyncCloud = true;
+            }
+            if (locA.facilities && srvA.facilities) {
+              ['runway', 'terminals', 'hangar', 'duty_free'].forEach(k => {
+                if ((Number(locA.facilities[k]) || 0) > (Number(srvA.facilities[k]) || 0)) {
+                  srvA.facilities[k] = locA.facilities[k];
+                  shouldSyncCloud = true;
+                }
+              });
+            }
+            if (Array.isArray(locA.fleet) && locA.fleet.length > (srvA.fleet || []).length) {
+              srvA.fleet = JSON.parse(JSON.stringify(locA.fleet));
+              shouldSyncCloud = true;
+            }
+          }
+        }
+
         // 5. Late-save recovery:
         // Only reconcile wealth from local state if this is an immediate page reload / tab switch (< 45s).
         // If returning after being away/offline, local.bank is stale from before the absence and must NEVER
@@ -1871,7 +1903,7 @@ var AppDB = (() => {
         if (!isAccountReset && !isStaleLocalDueToAdmin && isLocalRecentOrNewer && isImmediateReload) {
           const localTotal = (Number(local.cash) || 0) + (Number(local.bank) || 0) + (Number(local.dirtyCash) || 0);
           const serverTotal = (Number(stateObj.cash) || 0) + (Number(stateObj.bank) || 0) + (Number(stateObj.dirtyCash) || 0);
-          if (localTotal !== serverTotal || (local.farm && local.farm.unlocked) || localTs >= serverTs) {
+          if (localTotal !== serverTotal || (local.farm && local.farm.unlocked) || (local.airport && local.airport.unlocked) || localTs >= serverTs) {
             stateObj.cash = Number(local.cash || 0);
             stateObj.bank = Number(local.bank || 0);
             stateObj.dirtyCash = Number(local.dirtyCash || 0);
@@ -2837,11 +2869,28 @@ var AppDB = (() => {
   }
 
   async function updateMailStatus(mailId, status) {
-    await _api(`mailbox?id=eq.${encodeURIComponent(mailId)}`, {
-      method:'PATCH',
-      body: JSON.stringify({ status })
-    });
-    return true;
+    if (!mailId) return false;
+    try {
+      const serverUrl = (typeof window !== 'undefined' && window.SERVER_API_URL) ? window.SERVER_API_URL : '';
+      if (serverUrl) {
+        try {
+          const sRes = await fetch(`${serverUrl.replace(/\/$/, '')}/api/mailbox/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mailId, status: status || 'read' })
+          });
+          if (sRes.ok) return true;
+        } catch (_) {}
+      }
+      await _api(`mailbox?id=eq.${encodeURIComponent(mailId)}`, {
+        method:'PATCH',
+        body: JSON.stringify({ status })
+      });
+      return true;
+    } catch (e) {
+      console.warn('[DB] updateMailStatus note:', e.message);
+      return false;
+    }
   }
 
   async function deleteMail(mailId) {
