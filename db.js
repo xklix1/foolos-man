@@ -906,8 +906,8 @@ var AppDB = (() => {
     const sender = { ...(senderRow.state || {}), ...senderRow };
     const recipient = { ...(recipientRow.state || {}), ...recipientRow };
 
-    // Admin / Owner accounts (Khaled) bypass transfer fraud checks and limits
-    if (sender.is_admin || senderRow.is_admin || sUser.toLowerCase() === 'khaled') {
+    // Admin accounts bypass transfer fraud checks
+    if (sender.is_admin || senderRow.is_admin) {
       return true;
     }
 
@@ -1493,15 +1493,8 @@ var AppDB = (() => {
         _lastVerifiedCloudXp = isAccountResetRow ? 0 : Number(row.xp || 0);
         _lastVerifiedCloudTime = Date.now();
       }
-      const isKhaledAccount = ['khaled', 'خالد'].includes(String(row.username || u || '').trim().toLowerCase()) || Boolean(row.is_admin);
-      if (isKhaledAccount) {
-        stateObj.isBanned = false;
-        stateObj.isAdmin = true;
-        row.is_banned = false;
-        row.is_admin = true;
-      } else {
-        stateObj.isBanned = row.is_banned === true;
-      }
+      stateObj.isAdmin = row.is_admin === true;
+      stateObj.isBanned = row.is_banned === true;
       if (stateObj.isBanned && isCurrentPlayer) {
         if (typeof window !== 'undefined' && typeof window.handleBannedUser === 'function') {
           window.handleBannedUser('تم حظر هذا الحساب نهائياً من اللعبة لمخالفة قواعد النزاهة.');
@@ -2133,24 +2126,8 @@ var AppDB = (() => {
   function _sanitizePayloadBeforeCloudPush(payload, state) {
     if (!payload || !state) return;
 
-    const uLower = String(payload.username || state.username || '').trim().toLowerCase();
-    
-    // Master Admin / Owner Immunity: Khaled
-    if (['khaled', 'خالد'].includes(uLower) || state.isAdmin) {
-      state.isAdmin = true;
-      state.isBanned = false;
-      payload.is_admin = true;
-      delete payload.is_banned;
-      return;
-    }
-
-    // STRICT: Any other player account must NEVER have is_admin set from client push
+    // STRICT: Client push must NEVER set or escalate is_admin or is_banned
     delete payload.is_admin;
-    if (state.isAdmin) {
-      state.isAdmin = false;
-    }
-
-    // 2. Unban guard: NEVER allow untrusted client to unban self
     delete payload.is_banned;
 
     // 3. Stock shares cap validation in both payload and inner state
