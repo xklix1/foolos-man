@@ -1314,7 +1314,18 @@ window.AirportUI = (() => {
     renderAirportPanel();
 
     if (window.ServerBridge && typeof window.ServerBridge.launchAirportFlight === 'function') {
-      try { await window.ServerBridge.launchAirportFlight(planeId, destId); } catch (_) {}
+      try {
+        const res = await window.ServerBridge.launchAirportFlight(planeId, destId);
+        if (res && res.plane && res.plane.activeFlight) {
+          plane.activeFlight = res.plane.activeFlight;
+          plane.currentFlight = res.plane.activeFlight;
+          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+          }
+          persistGameState();
+          renderAirportPanel();
+        }
+      } catch (_) {}
     }
   }
 
@@ -1424,6 +1435,10 @@ window.AirportUI = (() => {
     ap.fleet.splice(planeIdx, 1);
     liveState.cash = (Number(liveState.cash) || 0) + refund;
 
+    if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+      window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+    }
+
     persistGameState();
     showAirportToast(`💸 تم بيع طائرة ${model.name} واسترداد +${refund.toLocaleString()} ج.م بنجاح!`, 'success');
     renderAirportPanel();
@@ -1465,23 +1480,26 @@ window.AirportUI = (() => {
     }
 
     const newPlane = {
-      id: 'plane_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      id: 'plane_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
       modelId: model.id,
+      customName: `${model.name} #${ap.fleet.length + 1}`,
       status: 'idle',
-      totalFlights: 0,
-      totalRevenue: 0,
       currentFlight: null,
       activeFlight: null
     };
 
     ap.fleet.push(newPlane);
+
+    if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+      window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+    }
+
     persistGameState();
-    showAirportToast(`✈️ مبروك! تم شراء ${model.name} وإضافتها إلى أسطولك الجوي!`, 'success');
-    _activeSubtab = 'flights';
+    showAirportToast(`🎉 تم شراء وإضافة ${model.name} إلى أسطولك الجوي بنجاح!`, 'success');
     renderAirportPanel();
 
     if (window.ServerBridge && typeof window.ServerBridge.buyAirportPlane === 'function') {
-      try { await window.ServerBridge.buyAirportPlane(modelId); } catch (_) {}
+      try { await window.ServerBridge.buyAirportPlane(modelId, newPlane.customName); } catch (_) {}
     }
   }
 

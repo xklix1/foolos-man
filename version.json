@@ -1,7 +1,7 @@
 {
-  "version": "v8.6.0",
-  "build": 1790908000000,
-  "timestamp": 1790908000000,
-  "notes": "Airport Flight Balancing: Max 5 concurrent flights limit, 5-hour tiered flight duration system, distance-scaled operating costs, and flight claim reload duplication fix.",
-  "releaseNotes": "Airport Flight Balancing: Max 5 concurrent flights limit, 5h-30h flight durations, distance cost scaling, and anti-duplication on reload."
+  "version": "v8.6.1",
+  "build": 1790912000000,
+  "timestamp": 1790912000000,
+  "notes": "Fix server-client airport sync, flight duration/profit consistency, bank deposit retention, and sold aircraft persistence.",
+  "releaseNotes": "Airport & Banking Patch: Complete fix for flight durations, profit accuracy, bank deposit saving, and sold plane persistence."
 }

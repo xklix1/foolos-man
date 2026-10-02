@@ -129,7 +129,8 @@ async function airportRoutes(fastify, options) {
     s.airport = createInitialAirportState(airportName);
     s.netWorth = calculateNetWorth(s);
     s.title = getAppropriateTitle(s.netWorth, s.xp);
-    s.adminModifiedTimestamp = Date.now() + 120000;
+    s.lastActiveTimestamp = Date.now();
+    s.lastSeen = Date.now();
 
     await dbService.savePlayerState(session.username, s);
 
@@ -160,7 +161,8 @@ async function airportRoutes(fastify, options) {
     }
 
     s.airport.name = cleanName;
-    s.adminModifiedTimestamp = Date.now() + 60000;
+    s.lastActiveTimestamp = Date.now();
+    s.lastSeen = Date.now();
     await dbService.savePlayerState(session.username, s);
 
     return {
@@ -214,7 +216,8 @@ async function airportRoutes(fastify, options) {
 
     s.airport.facilities[facilityId] = nextLvl;
     s.netWorth = calculateNetWorth(s);
-    s.adminModifiedTimestamp = Date.now() + 60000;
+    s.lastActiveTimestamp = Date.now();
+    s.lastSeen = Date.now();
 
     await dbService.savePlayerState(session.username, s);
 
@@ -285,7 +288,8 @@ async function airportRoutes(fastify, options) {
 
     s.airport.fleet.push(newPlane);
     s.netWorth = calculateNetWorth(s);
-    s.adminModifiedTimestamp = Date.now() + 60000;
+    s.lastActiveTimestamp = Date.now();
+    s.lastSeen = Date.now();
 
     await dbService.savePlayerState(session.username, s);
 
@@ -390,7 +394,8 @@ async function airportRoutes(fastify, options) {
     s.airport.stats.totalOperatingCost = (Number(s.airport.stats.totalOperatingCost) || 0) + eco.totalOperatingCost;
 
     s.netWorth = calculateNetWorth(s);
-    s.adminModifiedTimestamp = Date.now() + 60000;
+    s.lastActiveTimestamp = Date.now();
+    s.lastSeen = Date.now();
     await dbService.savePlayerState(session.username, s);
 
     const minStr = Math.floor(eco.durationSec / 60);
@@ -433,7 +438,8 @@ async function airportRoutes(fastify, options) {
     s.gold = curGold - goldCost;
     // Set landing time to past so it can be claimed immediately
     plane.activeFlight.landingTime = Date.now() - 1000;
-    s.adminModifiedTimestamp = Date.now() + 60000;
+    s.lastActiveTimestamp = Date.now();
+    s.lastSeen = Date.now();
 
     await dbService.savePlayerState(session.username, s);
 
@@ -489,7 +495,8 @@ async function airportRoutes(fastify, options) {
 
     s.netWorth = calculateNetWorth(s);
     s.title = getAppropriateTitle(s.netWorth, s.xp);
-    s.adminModifiedTimestamp = Date.now() + 60000;
+    s.lastActiveTimestamp = Date.now();
+    s.lastSeen = Date.now();
 
     await dbService.savePlayerState(session.username, s);
 
@@ -529,7 +536,8 @@ async function airportRoutes(fastify, options) {
     s.airport.stats.totalDutyFreeCollected = (Number(s.airport.stats.totalDutyFreeCollected) || 0) + dutyFreeEarnings;
 
     s.netWorth = calculateNetWorth(s);
-    s.adminModifiedTimestamp = Date.now() + 60000;
+    s.lastActiveTimestamp = Date.now();
+    s.lastSeen = Date.now();
 
     await dbService.savePlayerState(session.username, s);
 
@@ -562,7 +570,8 @@ async function airportRoutes(fastify, options) {
     s.airport.stats.transitPermitsAccepted = (Number(s.airport.stats.transitPermitsAccepted) || 0) + 1;
 
     s.netWorth = calculateNetWorth(s);
-    s.adminModifiedTimestamp = Date.now() + 60000;
+    s.lastActiveTimestamp = Date.now();
+    s.lastSeen = Date.now();
 
     await dbService.savePlayerState(session.username, s);
 
@@ -610,7 +619,8 @@ async function airportRoutes(fastify, options) {
     // Add refund to cash
     s.cash = Math.max(0, Number(s.cash || 0)) + refund;
     s.netWorth = calculateNetWorth(s);
-    s.adminModifiedTimestamp = Date.now() + 60000;
+    s.lastActiveTimestamp = Date.now();
+    s.lastSeen = Date.now();
 
     await dbService.savePlayerState(session.username, s);
 

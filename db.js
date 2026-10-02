@@ -653,7 +653,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.6.0';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.6.1';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -662,7 +662,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.6.0', remoteVersion: 'v8.6.0' };
+    return { upToDate: true, clientVersion: 'v8.6.1', remoteVersion: 'v8.6.1' };
   }
 
   async function checkDeviceBan() {
@@ -1889,54 +1889,55 @@ var AppDB = (() => {
             }
             // Reconcile fleet
             if (Array.isArray(locA.fleet) && locA.fleet.length > 0) {
-              srvA.fleet = Array.isArray(srvA.fleet) ? srvA.fleet : [];
-              const srvFleetMap = new Map();
-              srvA.fleet.forEach((p, idx) => srvFleetMap.set(p.id || String(idx), p));
+              if (!Array.isArray(srvA.fleet) || srvA.fleet.length === 0) {
+                // Server had no fleet array initialized at all, initialize from local
+                srvA.fleet = JSON.parse(JSON.stringify(locA.fleet));
+                shouldSyncCloud = true;
+              } else {
+                // Server fleet is authoritative for owned aircraft (sold planes must stay sold)
+                const srvFleetMap = new Map();
+                srvA.fleet.forEach((p, idx) => srvFleetMap.set(p.id || String(idx), p));
 
-              locA.fleet.forEach(locPlane => {
-                const pId = locPlane.id || locPlane.aircraft_type || locPlane.type;
-                const srvPlane = srvFleetMap.get(pId);
-                if (!srvPlane) {
-                  // Only add if not found on server
-                  srvA.fleet.push(JSON.parse(JSON.stringify(locPlane)));
-                  shouldSyncCloud = true;
-                } else {
-                  // Reconcile flight status to prevent duplicate claims
-                  const locStatus = locPlane.status || (locPlane.currentFlight ? 'in_flight' : 'idle');
-                  const srvStatus = srvPlane.status || (srvPlane.currentFlight ? 'in_flight' : 'idle');
-                  const locTotal = Number(locPlane.totalFlights) || 0;
-                  const srvTotal = Number(srvPlane.totalFlights) || 0;
+                locA.fleet.forEach(locPlane => {
+                  const pId = locPlane.id || locPlane.aircraft_type || locPlane.type;
+                  const srvPlane = srvFleetMap.get(pId);
+                  if (srvPlane) {
+                    // Reconcile flight status to prevent duplicate claims
+                    const locStatus = locPlane.status || (locPlane.currentFlight ? 'in_flight' : 'idle');
+                    const srvStatus = srvPlane.status || (srvPlane.currentFlight ? 'in_flight' : 'idle');
+                    const locTotal = Number(locPlane.totalFlights) || 0;
+                    const srvTotal = Number(srvPlane.totalFlights) || 0;
 
-                  // If either side shows idle or completed/claimed, prefer idle to prevent infinite loop
-                  if (srvStatus === 'idle' || locStatus === 'idle' || srvTotal > locTotal || locTotal > srvTotal) {
-                    if (srvPlane.status === 'in_flight' && (locStatus === 'idle' || locTotal > srvTotal)) {
-                      srvPlane.status = 'idle';
-                      srvPlane.currentFlight = null;
-                      srvPlane.activeFlight = null;
-                      shouldSyncCloud = true;
-                    } else if (srvPlane.status === 'idle') {
-                      // Server is already idle, keep it idle
-                      srvPlane.currentFlight = null;
-                      srvPlane.activeFlight = null;
+                    // If either side shows idle or completed/claimed, prefer idle to prevent infinite loop
+                    if (srvStatus === 'idle' || locStatus === 'idle' || srvTotal > locTotal || locTotal > srvTotal) {
+                      if (srvPlane.status === 'in_flight' && (locStatus === 'idle' || locTotal > srvTotal)) {
+                        srvPlane.status = 'idle';
+                        srvPlane.currentFlight = null;
+                        srvPlane.activeFlight = null;
+                        shouldSyncCloud = true;
+                      } else if (srvPlane.status === 'idle') {
+                        // Server is already idle, keep it idle
+                        srvPlane.currentFlight = null;
+                        srvPlane.activeFlight = null;
+                      }
                     }
+                    srvPlane.totalFlights = Math.max(srvTotal, locTotal);
+                    srvPlane.totalRevenue = Math.max(Number(srvPlane.totalRevenue) || 0, Number(locPlane.totalRevenue) || 0);
                   }
-                  srvPlane.totalFlights = Math.max(srvTotal, locTotal);
-                  srvPlane.totalRevenue = Math.max(Number(srvPlane.totalRevenue) || 0, Number(locPlane.totalRevenue) || 0);
-                }
-              });
+                });
+              }
             }
           }
         }
 
         // 5. Late-save recovery:
-        // Only reconcile wealth from local state if this is an immediate page reload / tab switch (< 45s).
-        // If returning after being away/offline, local.bank is stale from before the absence and must NEVER
-        // overwrite the cloud state or erase offline earnings accumulated while away!
+        // Only reconcile wealth from local state if this is an immediate page reload / tab switch (< 45s)
+        // AND local state timestamp is genuinely newer than or equal to the server timestamp.
         const isImmediateReload = (_nowAtLoad - localTs <= 45000);
-        if (!isAccountReset && !isStaleLocalDueToAdmin && isLocalRecentOrNewer && isImmediateReload) {
+        if (!isAccountReset && !isStaleLocalDueToAdmin && isLocalRecentOrNewer && isImmediateReload && localTs >= serverTs) {
           const localTotal = (Number(local.cash) || 0) + (Number(local.bank) || 0) + (Number(local.dirtyCash) || 0);
           const serverTotal = (Number(stateObj.cash) || 0) + (Number(stateObj.bank) || 0) + (Number(stateObj.dirtyCash) || 0);
-          if (localTotal !== serverTotal || (local.farm && local.farm.unlocked) || localTs >= serverTs) {
+          if (localTotal !== serverTotal || localTs > serverTs) {
             stateObj.cash = Number(local.cash || 0);
             stateObj.bank = Number(local.bank || 0);
             stateObj.dirtyCash = Number(local.dirtyCash || 0);
