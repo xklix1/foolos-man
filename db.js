@@ -1385,26 +1385,7 @@ var AppDB = (() => {
     const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&order=last_seen.desc&select=username,pin,net_worth,state`);
     if (!rows || rows.length === 0) return false;
 
-    // Hardware Lock Check for Owner & Bound Accounts
-    const targetRow = rows[0];
-    const boundDevice = targetRow.state?.strictDeviceBinding || targetRow.state?.initial_device;
-    const isOwnerAcc = ['خالد', 'khaled'].includes(u.toLowerCase());
-
-    if (isOwnerAcc || (targetRow.state && targetRow.state.ownerHardwareLock)) {
-      let currentFp = '';
-      try {
-        currentFp = (typeof DeviceFingerprint !== 'undefined' && DeviceFingerprint.getFingerprint)
-          ? await DeviceFingerprint.getFingerprint()
-          : '';
-      } catch(_) {}
-      
-      const allowedOwnerDev = 'dev_uuid_27b5f917ce3041f594a18421f2577310';
-      if (!currentFp || (currentFp !== allowedOwnerDev && (!boundDevice || currentFp !== boundDevice))) {
-        console.warn(`[Security] Hardware Lock Violation: Unauthorized device ${currentFp} attempted to access ${u}!`);
-        throw new Error('🚫 حساب المالك محمي ومقفل عتادياً بجهاز المالك الأصلي فقط.');
-      }
-    }
-
+    // Verify PIN first
     let hashed;
     try { hashed = await hashPin(p); } catch (e) { return false; }
 
@@ -6382,22 +6363,7 @@ var AppDB = (() => {
       throw new Error(devBan.reason || 'تم حظر هذا الجهاز نهائياً من دخول اللعبة.');
     }
 
-    // 1.5 Strict Hardware Lockdown for Owner Account
-    const isOwnerAcc = ['خالد', 'khaled'].includes(u.toLowerCase());
-    if (isOwnerAcc) {
-      let currentFp = '';
-      try {
-        currentFp = (typeof DeviceFingerprint !== 'undefined' && DeviceFingerprint.getFingerprint)
-          ? await DeviceFingerprint.getFingerprint()
-          : '';
-      } catch(_) {}
-      const allowedOwnerDev = 'dev_uuid_27b5f917ce3041f594a18421f2577310';
-      if (!currentFp || currentFp !== allowedOwnerDev) {
-        console.warn(`[Security] Hardware Lock: Unauthorized device "${currentFp}" rejected on owner login "${u}".`);
-        throw new Error('🚫 حساب المالك محمي ومقفل عتادياً بجهاز المالك الأصلي فقط.');
-      }
-    }
-
+    // 1.5 Verify PIN
     const ok = await verifyPin(u, pin);
     if (!ok) {
       try {
