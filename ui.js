@@ -8184,8 +8184,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       }
     }
 
-    // 4. Force Reload Action
-    const doReload = () => {
+    // 4. Force Reload Action (with complete cache purge)
+    const doReload = async () => {
       try {
         const u = (window.GameEngine && window.GameEngine.activeUsername) || localStorage.getItem('rasalmal_active_session_user');
         if (u) localStorage.removeItem(`rasalmal_state_${u}`);
@@ -8195,19 +8195,33 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         try { localStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs)); } catch (e) {}
         try { sessionStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs)); } catch (e) {}
       }
+
       try {
-        window.location.reload(true);
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        }
+      } catch (e) {}
+
+      try {
+        window.location.replace(window.location.pathname + '?v=' + Date.now());
       } catch (err) {
-        window.location.href = window.location.href;
+        window.location.href = window.location.pathname + '?v=' + Date.now();
       }
     };
 
     const actionBtn = document.getElementById('btn-mandatory-reload-action');
     if (actionBtn) {
-      actionBtn.onclick = (e) => {
+      actionBtn.onclick = async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        doReload();
+        actionBtn.disabled = true;
+        actionBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري تصفير الكاش والتحديث...</span>';
+        await doReload();
       };
     }
 

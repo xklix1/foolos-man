@@ -1,7 +1,7 @@
 {
-  "version": "v8.6.4",
-  "build": 1790920000000,
-  "timestamp": 1790920000000,
-  "notes": "Instant 0-second cloud save on any financial spend, purchase, balance drop, or gold transaction.",
-  "releaseNotes": "Instant Cloud Save on Any Financial Spend: Guarantees 0-second immediate persistence on all purchases, upgrades, bank deposits, and flight dispatches."
+  "version": "v8.6.5",
+  "build": 1790965950000,
+  "timestamp": 1790965950000,
+  "notes": "System maintenance mode lock and forced client cache purge.",
+  "releaseNotes": "System maintenance mode active. Client cache purge and hard reload."
 }
