@@ -1,7 +1,7 @@
 {
-  "version": "v8.7.0",
-  "build": 1790977000000,
-  "timestamp": 1790977000000,
-  "notes": "PIN auth fix and cache update",
-  "releaseNotes": "PIN auth fix and cache update"
+  "version": "v8.7.2",
+  "build": 1790978000000,
+  "timestamp": 1790978000000,
+  "notes": "Fix ServiceWorker API interception for Supabase REST endpoints",
+  "releaseNotes": "Fix ServiceWorker API interception for Supabase REST endpoints"
 }

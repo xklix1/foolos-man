@@ -3,7 +3,7 @@
  * Cache Strategy: Strict Network-Only for APIs & Backend, Strict Network-First for Static Game Assets.
  */
 
-const CACHE_NAME = 'rasalmal-v8.7.0';
+const CACHE_NAME = 'rasalmal-v8.7.2';
 
 // Essential static shell assets to pre-cache on install
 const PRECACHE_ASSETS = [
@@ -72,8 +72,13 @@ self.addEventListener('fetch', (event) => {
 
   const isApi = url.pathname.startsWith('/api/') || 
                 url.pathname.startsWith('/auth/') ||
+                url.pathname.startsWith('/rest/') ||
+                url.pathname.startsWith('/storage/') ||
+                url.pathname.startsWith('/graphql/') ||
+                url.pathname.startsWith('/realtime/') ||
                 url.port === '3999' ||
                 url.port === '3001' ||
+                url.port === '8000' ||
                 isExternalApiHost;
 
   if (isApi) {
