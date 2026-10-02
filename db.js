@@ -2646,6 +2646,13 @@ var AppDB = (() => {
       throw new Error('🚫 تنبيه أمني: لاسترداد هدايا وأكواد رأس المال، يجب تطوير مشروعك الأول على الأقل أو قضاء ساعة واحدة في بناء المشاريع لمنع الحسابات الوهمية.');
     }
 
+    // 1. Immediately register usage in gift_codes table first (prevents race condition & parallel click spam)
+    usedBy.push(u.toLowerCase());
+    await _api(`gift_codes?code=eq.${encodeURIComponent(normalized)}`, {
+      method:'PATCH',
+      body: JSON.stringify({ used_by: usedBy })
+    });
+
     const curCash = Number(p.cash || 0);
     const curWorth = Number(p.net_worth || 0);
     const reward = Number(gift.reward_cash || 100000);
@@ -2665,13 +2672,6 @@ var AppDB = (() => {
         net_worth: newWorth,
         state: pState
       })
-    });
-
-    // Update gift code usedBy
-    usedBy.push(u.toLowerCase());
-    await _api(`gift_codes?code=eq.${encodeURIComponent(normalized)}`, {
-      method:'PATCH',
-      body: JSON.stringify({ used_by: usedBy })
     });
 
     return {
