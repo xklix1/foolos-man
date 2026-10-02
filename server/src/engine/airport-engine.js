@@ -63,7 +63,7 @@ const AIRCRAFT_MODELS = {
     cost: 8000000,
     goldCost: 0,
     capacity: '8 ركاب VIP',
-    baseFlightTimeSec: 2700, // 45 mins
+    baseFlightTimeSec: 18000, // 5 hours
     baseRevenue: 280000,
     fuelCost: 60000,
     crewCost: 35000,
@@ -72,7 +72,7 @@ const AIRCRAFT_MODELS = {
     baseXp: 75,
     speedupGold: 2,
     icon: 'fa-plane',
-    desc: 'طائرة خفيفة للمسافات الإقليمية ورجال الأعمال'
+    desc: 'طائرة خفيفة للمسافات الإقليمية ورجال الأعمال (رحلة 5 ساعات)'
   },
   airbus_a320: {
     id: 'airbus_a320',
@@ -81,7 +81,7 @@ const AIRCRAFT_MODELS = {
     cost: 35000000,
     goldCost: 0,
     capacity: '180 مسافر',
-    baseFlightTimeSec: 7200, // 2 hours
+    baseFlightTimeSec: 36000, // 10 hours
     baseRevenue: 1350000,
     fuelCost: 320000,
     crewCost: 160000,
@@ -90,7 +90,7 @@ const AIRCRAFT_MODELS = {
     baseXp: 220,
     speedupGold: 5,
     icon: 'fa-plane-departure',
-    desc: 'طائرة ركاب دولية عالية الكفاءة للمسافات المتوسطة'
+    desc: 'طائرة ركاب دولية عالية الكفاءة للمسافات المتوسطة (رحلة 10 ساعات)'
   },
   boeing_777: {
     id: 'boeing_777',
@@ -99,7 +99,7 @@ const AIRCRAFT_MODELS = {
     cost: 120000000,
     goldCost: 0,
     capacity: '390 مسافر',
-    baseFlightTimeSec: 14400, // 4 hours
+    baseFlightTimeSec: 54000, // 15 hours
     baseRevenue: 4600000,
     fuelCost: 1100000,
     crewCost: 480000,
@@ -108,7 +108,7 @@ const AIRCRAFT_MODELS = {
     baseXp: 800,
     speedupGold: 12,
     icon: 'fa-plane',
-    desc: 'طائر عملاق عابر للقارات للرحلات الدولية الطويلة'
+    desc: 'طائر عملاق عابر للقارات للرحلات الدولية الطويلة (رحلة 15 ساعة)'
   },
   gulfstream_g650: {
     id: 'gulfstream_g650',
@@ -117,16 +117,16 @@ const AIRCRAFT_MODELS = {
     cost: 160000000,
     goldCost: 0,
     capacity: 'نخبة رجال الأعمال والأمراء VIP',
-    baseFlightTimeSec: 12600, // 3.5 hours
+    baseFlightTimeSec: 72000, // 20 hours
     baseRevenue: 5600000,
     fuelCost: 1100000,
     crewCost: 550000,
     landingFee: 350000,
-    baseNetProfit: 360000,
+    baseNetProfit: 3600000,
     baseXp: 650,
     speedupGold: 10,
     icon: 'fa-crown',
-    desc: 'طائرة نفاثة فاخرة لنقل كبار الشخصيات بعوائد قياسية'
+    desc: 'طائرة نفاثة فاخرة لنقل كبار الشخصيات بعوائد قياسية (رحلة 20 ساعة)'
   },
   cargo_beluga: {
     id: 'cargo_beluga',
@@ -135,7 +135,7 @@ const AIRCRAFT_MODELS = {
     cost: 220000000,
     goldCost: 0,
     capacity: '50 طن بضائع ومعدات ثقيلة',
-    baseFlightTimeSec: 21600, // 6 hours
+    baseFlightTimeSec: 90000, // 25 hours
     baseRevenue: 9000000,
     fuelCost: 2100000,
     crewCost: 850000,
@@ -144,7 +144,7 @@ const AIRCRAFT_MODELS = {
     baseXp: 1200,
     speedupGold: 16,
     icon: 'fa-box-open',
-    desc: 'وحش الشحن الجوي العملاق لنقل الشحنات الفاخرة حول العالم'
+    desc: 'وحش الشحن الجوي العملاق لنقل الشحنات الفاخرة حول العالم (رحلة 25 ساعة)'
   },
   airbus_a380: {
     id: 'airbus_a380',
@@ -153,7 +153,7 @@ const AIRCRAFT_MODELS = {
     cost: 400000000,
     goldCost: 0,
     capacity: '615 مسافر (طابقين)',
-    baseFlightTimeSec: 28800, // 8 hours
+    baseFlightTimeSec: 108000, // 30 hours
     baseRevenue: 17500000,
     fuelCost: 3800000,
     crewCost: 1600000,
@@ -162,7 +162,7 @@ const AIRCRAFT_MODELS = {
     baseXp: 2000,
     speedupGold: 22,
     icon: 'fa-jet-fighter-up',
-    desc: 'القلعة الطائرة ذات الطابقين.. أضخم طائرة ركاب في العالم'
+    desc: 'القلعة الطائرة ذات الطابقين.. أضخم طائرة ركاب في العالم (رحلة 30 ساعة)'
   }
 };
 
@@ -296,7 +296,7 @@ function calculateFlightEconomics(model, dest, airportState) {
   const netProfit = Math.max(0, grossRevenue - totalOperatingCost);
 
   // 3. Flight Duration & XP
-  const durationSec = Math.max(60, Math.floor(model.baseFlightTimeSec * (1 - bonuses.timeReduction)));
+  const durationSec = Math.max(60, Math.floor(model.baseFlightTimeSec * distMult * (1 - bonuses.timeReduction)));
   const xpReward = Math.floor(model.baseXp * distMult);
 
   return {

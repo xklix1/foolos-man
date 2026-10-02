@@ -653,7 +653,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.5.5';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.6.0';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -662,7 +662,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.5.5', remoteVersion: 'v8.5.5' };
+    return { upToDate: true, clientVersion: 'v8.6.0', remoteVersion: 'v8.6.0' };
   }
 
   async function checkDeviceBan() {
@@ -1863,34 +1863,67 @@ var AppDB = (() => {
           }
         }
 
-        // 4.996 Airport Megaproject Guard:
-        // When local device was actively played, airport progression, fleet, and upgrades must never be wiped
+        // 4.996 Airport Megaproject Guard & Anti-Duplication Reconciler:
+        // Ensures airport progression and fleet are preserved without resurrecting already-claimed flights on reload
         if (local && local.airport && typeof local.airport === 'object') {
-          if (!stateObj.airport || typeof stateObj.airport !== 'object' || local.airport.unlocked) {
-            stateObj.airport = JSON.parse(JSON.stringify(local.airport));
-            shouldSyncCloud = true;
-          } else if (isLocalRecentOrNewer) {
+          if (!stateObj.airport || typeof stateObj.airport !== 'object') {
             stateObj.airport = JSON.parse(JSON.stringify(local.airport));
             shouldSyncCloud = true;
           } else {
-            // Reconcile facilities and fleet if local has higher progression
             const locA = local.airport;
             const srvA = stateObj.airport;
             if (locA.unlocked && !srvA.unlocked) {
               srvA.unlocked = true;
               shouldSyncCloud = true;
             }
-            if (locA.facilities && srvA.facilities) {
+            if (locA.facilities) {
+              srvA.facilities = srvA.facilities || { runway: 1, terminals: 1, hangar: 1, duty_free: 0 };
               ['runway', 'terminals', 'hangar', 'duty_free'].forEach(k => {
-                if ((Number(locA.facilities[k]) || 0) > (Number(srvA.facilities[k]) || 0)) {
-                  srvA.facilities[k] = locA.facilities[k];
+                const locLvl = Number(locA.facilities[k]) || 0;
+                const srvLvl = Number(srvA.facilities[k]) || 0;
+                if (locLvl > srvLvl) {
+                  srvA.facilities[k] = locLvl;
                   shouldSyncCloud = true;
                 }
               });
             }
-            if (Array.isArray(locA.fleet) && locA.fleet.length > (srvA.fleet || []).length) {
-              srvA.fleet = JSON.parse(JSON.stringify(locA.fleet));
-              shouldSyncCloud = true;
+            // Reconcile fleet
+            if (Array.isArray(locA.fleet) && locA.fleet.length > 0) {
+              srvA.fleet = Array.isArray(srvA.fleet) ? srvA.fleet : [];
+              const srvFleetMap = new Map();
+              srvA.fleet.forEach((p, idx) => srvFleetMap.set(p.id || String(idx), p));
+
+              locA.fleet.forEach(locPlane => {
+                const pId = locPlane.id || locPlane.aircraft_type || locPlane.type;
+                const srvPlane = srvFleetMap.get(pId);
+                if (!srvPlane) {
+                  // Only add if not found on server
+                  srvA.fleet.push(JSON.parse(JSON.stringify(locPlane)));
+                  shouldSyncCloud = true;
+                } else {
+                  // Reconcile flight status to prevent duplicate claims
+                  const locStatus = locPlane.status || (locPlane.currentFlight ? 'in_flight' : 'idle');
+                  const srvStatus = srvPlane.status || (srvPlane.currentFlight ? 'in_flight' : 'idle');
+                  const locTotal = Number(locPlane.totalFlights) || 0;
+                  const srvTotal = Number(srvPlane.totalFlights) || 0;
+
+                  // If either side shows idle or completed/claimed, prefer idle to prevent infinite loop
+                  if (srvStatus === 'idle' || locStatus === 'idle' || srvTotal > locTotal || locTotal > srvTotal) {
+                    if (srvPlane.status === 'in_flight' && (locStatus === 'idle' || locTotal > srvTotal)) {
+                      srvPlane.status = 'idle';
+                      srvPlane.currentFlight = null;
+                      srvPlane.activeFlight = null;
+                      shouldSyncCloud = true;
+                    } else if (srvPlane.status === 'idle') {
+                      // Server is already idle, keep it idle
+                      srvPlane.currentFlight = null;
+                      srvPlane.activeFlight = null;
+                    }
+                  }
+                  srvPlane.totalFlights = Math.max(srvTotal, locTotal);
+                  srvPlane.totalRevenue = Math.max(Number(srvPlane.totalRevenue) || 0, Number(locPlane.totalRevenue) || 0);
+                }
+              });
             }
           }
         }
@@ -1903,7 +1936,7 @@ var AppDB = (() => {
         if (!isAccountReset && !isStaleLocalDueToAdmin && isLocalRecentOrNewer && isImmediateReload) {
           const localTotal = (Number(local.cash) || 0) + (Number(local.bank) || 0) + (Number(local.dirtyCash) || 0);
           const serverTotal = (Number(stateObj.cash) || 0) + (Number(stateObj.bank) || 0) + (Number(stateObj.dirtyCash) || 0);
-          if (localTotal !== serverTotal || (local.farm && local.farm.unlocked) || (local.airport && local.airport.unlocked) || localTs >= serverTs) {
+          if (localTotal !== serverTotal || (local.farm && local.farm.unlocked) || localTs >= serverTs) {
             stateObj.cash = Number(local.cash || 0);
             stateObj.bank = Number(local.bank || 0);
             stateObj.dirtyCash = Number(local.dirtyCash || 0);

@@ -58,7 +58,7 @@ window.AirportUI = (() => {
       tier: 1,
       cost: 8000000,
       capacity: '8 ركاب VIP',
-      flightTimeSec: 2700, // 45 mins
+      flightTimeSec: 18000, // 5 hours
       baseRevenue: 280000,
       fuelCost: 60000,
       crewCost: 35000,
@@ -66,7 +66,7 @@ window.AirportUI = (() => {
       baseNetProfit: 160000,
       xp: 75,
       speedupGold: 2,
-      desc: 'طائرة خفيفة للمسافات الإقليمية ورجال الأعمال'
+      desc: 'طائرة خفيفة للمسافات الإقليمية ورجال الأعمال (رحلة 5 ساعات)'
     },
     airbus_a320: {
       id: 'airbus_a320',
@@ -74,7 +74,7 @@ window.AirportUI = (() => {
       tier: 2,
       cost: 35000000,
       capacity: '180 مسافر',
-      flightTimeSec: 7200, // 2 hours
+      flightTimeSec: 36000, // 10 hours
       baseRevenue: 1350000,
       fuelCost: 320000,
       crewCost: 160000,
@@ -82,7 +82,7 @@ window.AirportUI = (() => {
       baseNetProfit: 750000,
       xp: 220,
       speedupGold: 5,
-      desc: 'طائرة ركاب دولية عالية الكفاءة للمسافات المتوسطة'
+      desc: 'طائرة ركاب دولية عالية الكفاءة للمسافات المتوسطة (رحلة 10 ساعات)'
     },
     boeing_777: {
       id: 'boeing_777',
@@ -90,7 +90,7 @@ window.AirportUI = (() => {
       tier: 3,
       cost: 120000000,
       capacity: '390 مسافر',
-      flightTimeSec: 14400, // 4 hours
+      flightTimeSec: 54000, // 15 hours
       baseRevenue: 4600000,
       fuelCost: 1100000,
       crewCost: 480000,
@@ -98,7 +98,7 @@ window.AirportUI = (() => {
       baseNetProfit: 2700000,
       xp: 800,
       speedupGold: 12,
-      desc: 'طائر عملاق عابر للقارات للرحلات الدولية الطويلة'
+      desc: 'طائر عملاق عابر للقارات للرحلات الدولية الطويلة (رحلة 15 ساعة)'
     },
     gulfstream_g650: {
       id: 'gulfstream_g650',
@@ -106,7 +106,7 @@ window.AirportUI = (() => {
       tier: 4,
       cost: 160000000,
       capacity: 'نخبة رجال الأعمال والأمراء VIP',
-      flightTimeSec: 12600, // 3.5 hours
+      flightTimeSec: 72000, // 20 hours
       baseRevenue: 5600000,
       fuelCost: 1100000,
       crewCost: 550000,
@@ -114,7 +114,7 @@ window.AirportUI = (() => {
       baseNetProfit: 3600000,
       xp: 650,
       speedupGold: 10,
-      desc: 'طائرة نفاثة فاخرة لنقل كبار الشخصيات بعوائد قياسية'
+      desc: 'طائرة نفاثة فاخرة لنقل كبار الشخصيات بعوائد قياسية (رحلة 20 ساعة)'
     },
     cargo_beluga: {
       id: 'cargo_beluga',
@@ -122,7 +122,7 @@ window.AirportUI = (() => {
       tier: 4,
       cost: 220000000,
       capacity: '50 طن بضائع ومعدات ثقيلة',
-      flightTimeSec: 21600, // 6 hours
+      flightTimeSec: 90000, // 25 hours
       baseRevenue: 9000000,
       fuelCost: 2100000,
       crewCost: 850000,
@@ -130,7 +130,7 @@ window.AirportUI = (() => {
       baseNetProfit: 5500000,
       xp: 1200,
       speedupGold: 16,
-      desc: 'وحش الشحن الجوي العملاق لنقل الشحنات الفاخرة حول العالم'
+      desc: 'وحش الشحن الجوي العملاق لنقل الشحنات الفاخرة حول العالم (رحلة 25 ساعة)'
     },
     airbus_a380: {
       id: 'airbus_a380',
@@ -138,7 +138,7 @@ window.AirportUI = (() => {
       tier: 3,
       cost: 400000000,
       capacity: '615 مسافر (طابقين)',
-      flightTimeSec: 28800, // 8 hours
+      flightTimeSec: 108000, // 30 hours
       baseRevenue: 17500000,
       fuelCost: 3800000,
       crewCost: 1600000,
@@ -146,7 +146,7 @@ window.AirportUI = (() => {
       baseNetProfit: 11000000,
       xp: 2000,
       speedupGold: 22,
-      desc: 'القلعة الطائرة ذات الطابقين.. أضخم طائرة ركاب في العالم'
+      desc: 'القلعة الطائرة ذات الطابقين.. أضخم طائرة ركاب في العالم (رحلة 30 ساعة)'
     }
   };
 
@@ -578,9 +578,29 @@ window.AirportUI = (() => {
       `;
     }
 
+    const inFlightCount = fleet.filter(p => p.status === 'in_flight').length;
+
     return `
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-        ${fleet.map(plane => renderPlaneCard(plane, airport, state)).join('')}
+      <div class="space-y-4">
+        <!-- Max 5 Active Flights Status Bar -->
+        <div class="p-3.5 rounded-2xl bg-slate-900/90 border ${inFlightCount >= 5 ? 'border-rose-500/40 bg-rose-950/20' : 'border-sky-500/20'} flex items-center justify-between flex-wrap gap-2 text-xs shadow-lg">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full ${inFlightCount >= 5 ? 'bg-rose-500 animate-ping' : 'bg-emerald-400'}"></span>
+            <span class="text-slate-200 font-bold">الرحلات المحلقة في الجو:</span>
+            <span class="px-2.5 py-0.5 rounded-lg ${inFlightCount >= 5 ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-sky-500/20 text-sky-300 border border-sky-500/40'} font-black numbers-font text-xs">
+              ${inFlightCount} / 5 طائرات (الحد الأقصى)
+            </span>
+          </div>
+          <div class="text-[11px]">
+            ${inFlightCount >= 5 
+              ? '<span class="text-rose-400 font-bold flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> تم بلوغ الحد الأقصى (5 طائرات محلقة). انتظر هبوط إحداها.</span>' 
+              : `<span class="text-slate-400">يمكنك إطلاق <strong class="text-emerald-400">${5 - inFlightCount}</strong> رحلات إضافية في نفس الوقت</span>`}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          ${fleet.map(plane => renderPlaneCard(plane, airport, state)).join('')}
+        </div>
       </div>
     `;
   }
@@ -611,7 +631,8 @@ window.AirportUI = (() => {
 
     const totalOperatingCost = fuelCost + crewCost + landingFee;
     const netProfit = Math.max(0, grossRevenue - totalOperatingCost);
-    const durationSec = Math.max(60, Math.floor(model.flightTimeSec * (1 - bonuses.timeReduction)));
+    const baseDuration = model.flightTimeSec || 18000;
+    const durationSec = Math.max(60, Math.floor(baseDuration * distMult * (1 - bonuses.timeReduction)));
 
     return { grossRevenue, fuelCost, fuelDiscountPct: Math.round(bonuses.fuelDiscount * 100), crewCost, landingFee, totalOperatingCost, netProfit, durationSec };
   }
@@ -1225,6 +1246,12 @@ window.AirportUI = (() => {
     const ap = liveState.airport;
     if (!ap || !Array.isArray(ap.fleet)) return;
 
+    const inFlightCount = ap.fleet.filter(p => p.status === 'in_flight').length;
+    if (inFlightCount >= 5) {
+      showAirportToast('🚫 الحد الأقصى للطيران المتزامن هو 5 طائرات في الجو في نفس الوقت! انتظر هبوط إحدى الطائرات.', 'error');
+      return;
+    }
+
     const plane = ap.fleet.find(p => p.id === planeId);
     if (!plane || plane.status === 'in_flight') return;
 
@@ -1277,6 +1304,10 @@ window.AirportUI = (() => {
     if (!ap.stats) ap.stats = {};
     ap.stats.totalOperatingCost = (Number(ap.stats.totalOperatingCost) || 0) + eco.totalOperatingCost;
 
+    if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+      window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+    }
+
     persistGameState();
     const minStr = Math.floor(eco.durationSec / 60);
     showAirportToast(`🛫 أقلعت الرحلة إلى ${dest.name}! وقت الهبوط خلال ${minStr > 0 ? minStr + ' دقيقة' : eco.durationSec + ' ثانية'}. (صافي الربح: +${eco.netProfit.toLocaleString()} ج.م)`, 'success');
@@ -1309,6 +1340,10 @@ window.AirportUI = (() => {
     flight.landingTime = Date.now() - 1000;
     plane.currentFlight = flight;
     plane.activeFlight = flight;
+
+    if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+      window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+    }
 
     persistGameState();
     showAirportToast('⚡ تم تسريع الرحلة وهبوط الطائرة فوراً بنجاح!', 'success');
@@ -1351,6 +1386,11 @@ window.AirportUI = (() => {
     ap.stats.totalFlights = (Number(ap.stats.totalFlights) || 0) + 1;
     ap.stats.totalRevenue = (Number(ap.stats.totalRevenue) || 0) + grossRev;
     ap.stats.totalNetProfit = (Number(ap.stats.totalNetProfit) || 0) + netProfit;
+
+    // Immediately update local encrypted cache synchronously to prevent any duplication on reload
+    if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+      window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+    }
 
     persistGameState();
     showAirportToast(`🛬 هبطت الرحلة بسلام! تم تحصيل عوائد +${grossRev.toLocaleString()} ج.م (صافي ربح: +${netProfit.toLocaleString()} ج.م) و +${xp} XP`, 'success');

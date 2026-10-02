@@ -316,6 +316,13 @@ async function airportRoutes(fastify, options) {
       return reply.code(404).send({ error: 'الطائرة غير موجودة في أسطولك.' });
     }
 
+    const activeFlightsCount = (s.airport.fleet || []).filter(p => p.status === 'in_flight').length;
+    if (activeFlightsCount >= 5) {
+      return reply.code(400).send({
+        error: '🚫 الحد الأقصى للطيران المتزامن هو 5 طائرات في الجو في نفس الوقت! انتظر هبوط إحدى الطائرات في أسطولك أولاً.'
+      });
+    }
+
     if (plane.status === 'in_flight') {
       return reply.code(400).send({ error: 'هذه الطائرة تحلق في رحلة جوية بالفعل!' });
     }
