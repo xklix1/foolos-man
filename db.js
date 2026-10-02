@@ -229,17 +229,8 @@ var AppDB = (() => {
   async function _api(endpoint, options = {}) {
     const method = (options.method || 'GET').toUpperCase();
 
-    // In Admin context (hq-vault or authenticated admin token), use full SERVICE_ROLE authority
-    const isMasterAdmin = (typeof window !== 'undefined' && (
-      window._IS_ADMIN_PAGE ||
-      window.location.pathname.includes('hq-vault') ||
-      !!(window._ADMIN_MUTATE_TOKEN) ||
-      !!(sessionStorage && sessionStorage.getItem('rasalmal_admin_auth_token')) ||
-      !!(localStorage && localStorage.getItem('rasalmal_admin_auth_token'))
-    ));
-
-    const _SERVICE_ROLE_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3ODk4NjMwNzksImV4cCI6MjI2MjkwMzA3OX0.MzJFvgWCKHu3BoStHrmQSEYQBlCjkvFYeQfmmPDs8M4';
-    const activeAuthKey = isMasterAdmin ? _SERVICE_ROLE_TOKEN : SUPABASE_ANON_KEY;
+    // Client-side requests always use public anon key. Privileged operations are mediated by backend server.
+    const activeAuthKey = SUPABASE_ANON_KEY;
 
     const url = `${SUPABASE_URL}/rest/v1/${endpoint}`;
     const headers = {
