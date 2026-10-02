@@ -2146,6 +2146,7 @@ var AppDB = (() => {
           }
         }
       }
+    }
     // 4. Currency sanity caps: prevent absurd nonillion console injections
     const MAX_ALLOWED_CURRENCY = 100000000000000; // 100 Trillion EGP absolute cap
     if (typeof payload.cash === 'number' && (payload.cash > MAX_ALLOWED_CURRENCY || !isFinite(payload.cash) || isNaN(payload.cash))) {
