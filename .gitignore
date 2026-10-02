@@ -33,3 +33,4 @@ server-authoritative-*.html
 
 # Admin panel (obfuscated URL but should not be in public repo)
 ctrl-vault-*.html
+security-audit-report.json

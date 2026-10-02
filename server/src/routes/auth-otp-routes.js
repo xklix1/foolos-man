@@ -341,6 +341,21 @@ module.exports = async function authOtpRoutes(fastify, opts) {
     // Success! Consume and remove OTP
     otpStore.delete(cleanEmail);
 
+    const { username } = request.body || {};
+    if (username && typeof username === 'string') {
+      try {
+        const dbService = require('../services/db-service');
+        const playerRow = await dbService.getPlayerByUsername(username);
+        if (playerRow) {
+          const stateObj = (playerRow.state && typeof playerRow.state === 'object') ? playerRow.state : {};
+          stateObj.email = cleanEmail;
+          await dbService.savePlayerState(username, stateObj);
+        }
+      } catch (bindErr) {
+        request.log.warn({ bindErr }, 'Failed to bind email to player in Supabase');
+      }
+    }
+
     return reply.send({
       success: true,
       verified: true,

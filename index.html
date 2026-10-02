@@ -1551,15 +1551,20 @@
       <!-- Auth Inputs -->
       <div class="space-y-4 w-full text-right mb-6">
         <div>
-          <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">اسم المستخدم (بالأحرف أو الأرقام)</label>
+          <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">اسم المستخدم</label>
           <input type="text" id="auth-username" class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold"
-            placeholder="مثال: abu_shehab" required>
+            placeholder="مثال: abu_shehab" required autocomplete="username">
+        </div>
+        <div id="auth-email-container" class="hidden">
+          <label class="block text-xs text-yellow-400 mb-1.5 font-bold mr-1">البريد الإلكتروني (لتوثيق واستعادة الحساب)</label>
+          <input type="email" id="auth-email" class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold text-white placeholder-slate-500 border-yellow-500/30 focus:border-yellow-400"
+            placeholder="مثال: player@example.com" autocomplete="email">
         </div>
         <div>
-          <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">الرقم السري للمحفظة (PIN)</label>
+          <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">كلمة السر / الرقم السري (PIN)</label>
           <input type="password" id="auth-pin"
             class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold tracking-widest" placeholder="••••"
-            required>
+            required autocomplete="current-password">
           <div id="auth-forgot-pin-container" class="mt-1.5 flex justify-end">
             <button type="button" id="btn-open-forgot-pin-modal" class="text-[11px] text-yellow-400/90 hover:text-yellow-300 transition hover:underline font-bold flex items-center gap-1">
               <i class="fa-solid fa-key text-[10px]"></i>
@@ -1700,6 +1705,93 @@
           <i class="fa-solid fa-check"></i>
           <span id="text-submit-forgot-pin">استعادة الحساب وتعيين الرمز</span>
           <i id="spinner-submit-forgot-pin" class="fa-solid fa-spinner fa-spin hidden"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== LINK EMAIL & OTP VERIFICATION MODAL ==================== -->
+  <div id="modal-link-email"
+    class="hidden fixed inset-0 z-[360] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+    <div class="glass-panel w-full max-w-md flex flex-col rounded-3xl border border-yellow-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden text-right">
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-400">
+            <i class="fa-solid fa-envelope-circle-check text-lg"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-black text-white">ربط وتوثيق البريد الإلكتروني 🛡️</h2>
+            <p class="text-xs text-slate-400">تأمين حسابك واستعادة إمبراطوريتك</p>
+          </div>
+        </div>
+        <button id="btn-close-link-email-modal" onclick="window.UI?.closeLinkEmailModal?.()"
+          class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Description Banner -->
+      <div class="p-3 my-4 bg-yellow-950/30 border border-yellow-500/30 rounded-xl text-xs text-yellow-200/90 leading-relaxed flex items-start gap-2.5">
+        <i class="fa-solid fa-shield-halved text-yellow-400 text-sm mt-0.5 shrink-0"></i>
+        <span>
+          لحماية إمبراطوريتك وضمان استعادة حسابك في أي وقت، يرجى إدخال بريدك الإلكتروني وتأكيده برمز التحقق الفوري.
+        </span>
+      </div>
+
+      <!-- Step 1: Email Input Form -->
+      <div id="link-email-step-1" class="space-y-3.5 my-2 text-xs text-slate-300">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1 font-bold mr-1">البريد الإلكتروني الخاص بك</label>
+          <input type="email" id="input-link-player-email" class="glass-input w-full p-3 rounded-xl text-xs text-center font-bold text-white border-yellow-500/30 focus:border-yellow-400"
+            placeholder="مثال: player@example.com" autocomplete="email">
+        </div>
+        <button id="btn-send-link-otp" type="button" onclick="window.UI?.sendLinkEmailOtp?.()"
+          class="w-full py-3 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span id="text-send-link-otp">إرسال رمز التحقق (OTP)</span>
+          <i id="spinner-send-link-otp" class="fa-solid fa-spinner fa-spin hidden"></i>
+        </button>
+      </div>
+
+      <!-- Step 2: OTP Verification Form (Hidden until OTP is sent) -->
+      <div id="link-email-step-2" class="hidden space-y-3.5 my-2 text-xs text-slate-300">
+        <div class="p-2.5 bg-slate-900/80 border border-slate-800 rounded-xl text-center">
+          <span class="text-[11px] text-slate-400 block">تم إرسال رمز التحقق المكون من 6 أرقام إلى:</span>
+          <span id="display-target-link-email" class="text-xs font-bold text-yellow-400 numbers-font dir-ltr inline-block mt-0.5">...</span>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1 font-bold text-center">رمز التحقق (OTP)</label>
+          <input type="text" id="input-link-otp-code" maxlength="6" class="glass-input w-full p-3 rounded-xl text-lg text-center font-mono font-black tracking-widest text-yellow-400 border-yellow-500/40 placeholder-slate-600 focus:border-yellow-400"
+            placeholder="••••••" autocomplete="one-time-code">
+          <div class="flex justify-between items-center mt-1.5 px-1 text-[10px] text-slate-400">
+            <span>صلاحية الرمز 5 دقائق</span>
+            <button id="btn-resend-link-otp" type="button" onclick="window.UI?.sendLinkEmailOtp?.()" class="text-yellow-400 hover:underline font-bold" disabled>
+              إعادة الإرسال (<span id="resend-link-otp-timer">60</span>s)
+            </button>
+          </div>
+        </div>
+
+        <button id="btn-verify-link-otp" type="button" onclick="window.UI?.verifyAndLinkEmail?.()"
+          class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
+          <i class="fa-solid fa-check-double"></i>
+          <span id="text-verify-link-otp">تحقق وربط الحساب ومتابعة اللعب</span>
+          <i id="spinner-verify-link-otp" class="fa-solid fa-spinner fa-spin hidden"></i>
+        </button>
+
+        <button id="btn-change-email-target" type="button" onclick="window.UI?.resetLinkEmailStep?.()" class="w-full text-center text-[11px] text-slate-400 hover:text-white transition">
+          ← تعديل البريد الإلكتروني
+        </button>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="pt-4 border-t border-slate-800 mt-2 flex justify-between items-center gap-2">
+        <button id="btn-skip-link-email" type="button" onclick="window.UI?.skipLinkEmailAndContinue?.()" class="text-[11px] text-slate-500 hover:text-slate-300 font-bold transition">
+          متابعة مؤقتاً بدون ربط ←
+        </button>
+        <button type="button" onclick="window.UI?.closeLinkEmailModal?.()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">
+          إلغاء
         </button>
       </div>
     </div>

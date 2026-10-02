@@ -1019,11 +1019,16 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   //  REGISTRATION & STRICT SINGLE-ACCOUNT PER DEVICE
   // ─────────────────────────────────────────────
-  async function registerPlayer(username, pin, referralCodeInput = '') {
+  async function registerPlayer(username, pin, referralCodeInput = '', emailInput = '') {
     if (!username || !pin) throw new Error('يرجى إدخال اسم المستخدم ورمز PIN.');
     const u = username.trim();
     const p = String(pin).trim();
     const refCode = (typeof referralCodeInput === 'string' ? referralCodeInput.trim() : '').toUpperCase();
+    const cleanEmail = (typeof emailInput === 'string' && emailInput.trim()) ? emailInput.trim().toLowerCase() : '';
+
+    if (cleanEmail && (!cleanEmail.includes('@') || !cleanEmail.includes('.') || cleanEmail.length < 5)) {
+      throw new Error('يرجى إدخال بريد إلكتروني صحيح ومعتمد.');
+    }
 
     // 1. Obtain hardware device fingerprint and enforce device ban
     const fp = await DeviceFingerprint.getFingerprint();
@@ -1039,6 +1044,18 @@ var AppDB = (() => {
     const existing = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username`);
     if (existing && existing.length > 0) {
       throw new Error('اسم المستخدم مسجل بالفعل. يرجى اختيار اسم آخر.');
+    }
+
+    // Check if email already registered with another account
+    if (cleanEmail) {
+      try {
+        const emailExists = await _api(`players?state->>email=eq.${encodeURIComponent(cleanEmail)}&select=username`);
+        if (emailExists && emailExists.length > 0) {
+          throw new Error('هذا البريد الإلكتروني مسجل بالفعل مع حساب آخر.');
+        }
+      } catch (emErr) {
+        if (emErr.message && emErr.message.includes('مسجل بالفعل')) throw emErr;
+      }
     }
 
     // 5. Validate optional referral code if provided at registration
@@ -1085,6 +1102,7 @@ var AppDB = (() => {
       state: {
         username: u,
         pin: hashed,
+        email: cleanEmail,
         cash: 500000,
         bank: 500000,
         dirtyCash: 0,
@@ -1130,6 +1148,10 @@ var AppDB = (() => {
       created_at: now
     };
 
+    if (cleanEmail) {
+      localStorage.setItem('rasalmal_player_email_' + u, cleanEmail);
+    }
+
     let backendRegistered = false;
     if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.registerAccount === 'function') {
       try {
@@ -1166,6 +1188,35 @@ var AppDB = (() => {
 
     setEncryptedLocalState(`rasalmal_state_${u}`, newPlayerRow.state);
     return true;
+  }
+
+  /**
+   * Binds an email to an existing player's account in Supabase and local cache
+   */
+  async function bindPlayerEmail(username, email) {
+    if (!username || !email) throw new Error('يرجى تحديد اسم المستخدم والبريد الإلكتروني.');
+    const u = username.trim();
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanEmail.includes('@') || !cleanEmail.includes('.') || cleanEmail.length < 5) {
+      throw new Error('يرجى إدخال بريد إلكتروني صحيح.');
+    }
+
+    const s = (window.GameEngine && window.GameEngine.state && window.GameEngine.state.username === u)
+      ? window.GameEngine.state
+      : await getPlayerState(u);
+
+    if (!s) throw new Error('تعذر العثور على بيانات الحساب.');
+
+    s.email = cleanEmail;
+    if (s.state && typeof s.state === 'object') {
+      s.state.email = cleanEmail;
+    }
+
+    localStorage.setItem('rasalmal_player_email_' + u, cleanEmail);
+
+    await savePlayerState(u, s, true);
+    return { success: true, email: cleanEmail, message: 'تم ربط البريد الإلكتروني بحسابك بنجاح!' };
   }
 
   // ─────────────────────────────────────────────
@@ -6509,6 +6560,7 @@ var AppDB = (() => {
 
     // Auth & Player
     registerPlayer,
+    bindPlayerEmail,
     verifyPin,
     changePlayerPin,
     getPlayerSecurityCodes,

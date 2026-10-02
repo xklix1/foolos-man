@@ -298,6 +298,12 @@ const UIController = (() => {
   let openForgotPinModal = () => {};
   let closeForgotPinModal = () => {};
   let submitForgotPinForm = () => {};
+  let openLinkEmailModal = (targetUser) => {};
+  let closeLinkEmailModal = () => {};
+  let sendLinkEmailOtp = () => {};
+  let verifyAndLinkEmail = () => {};
+  let skipLinkEmailAndContinue = () => {};
+  let resetLinkEmailStep = () => {};
 
   function getActiveUsernameSafe() {
     // 1. Current GameEngine active session username (Highest Priority)
@@ -1062,6 +1068,21 @@ const UIController = (() => {
         if (isMaint) return;
         const savedUser = localStorage.getItem('rasalmal_active_session_user');
         if (savedUser) {
+          try {
+            let state = GameEngine.state;
+            if (!state || GameEngine.activeUsername !== savedUser) {
+              state = await AppDB.getPlayerState(savedUser);
+            }
+            const linkedEmail = (state && (state.email || (state.state && state.state.email))) || localStorage.getItem('rasalmal_player_email_' + savedUser);
+            if (!linkedEmail) {
+              // Existing player without linked email -> prompt with email linking modal
+              openLinkEmailModal(savedUser);
+              return;
+            }
+          } catch (e) {
+            console.warn('[StartMenu] Email check warning:', e);
+          }
+
           playMenuSound('start');
           await launchGameSession(savedUser);
         } else {
@@ -1638,6 +1659,211 @@ const UIController = (() => {
     if (cancelForgotPinBtn) cancelForgotPinBtn.addEventListener('click', closeForgotPinModal);
     if (submitForgotPinBtn) submitForgotPinBtn.addEventListener('click', submitForgotPinForm);
 
+    // ─────────────────────────────────────────────
+    // 📧 Link Email & OTP Verification Handlers
+    // ─────────────────────────────────────────────
+    let _targetLinkEmailUser = '';
+    let _linkEmailCountdownTimer = null;
+    let _lastSentLinkEmail = '';
+
+    openLinkEmailModal = (targetUser) => {
+      _targetLinkEmailUser = targetUser || getActiveUsernameSafe() || '';
+      playMenuSound('modal_open');
+      resetLinkEmailStep();
+
+      const modal = document.getElementById('modal-link-email');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+
+      const emailInput = document.getElementById('input-link-player-email');
+      if (emailInput) {
+        emailInput.value = '';
+        setTimeout(() => emailInput.focus(), 150);
+      }
+    };
+
+    closeLinkEmailModal = () => {
+      if (_linkEmailCountdownTimer) {
+        clearInterval(_linkEmailCountdownTimer);
+        _linkEmailCountdownTimer = null;
+      }
+      const modal = document.getElementById('modal-link-email');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+      playMenuSound('modal_close');
+    };
+
+    resetLinkEmailStep = () => {
+      const step1 = document.getElementById('link-email-step-1');
+      const step2 = document.getElementById('link-email-step-2');
+      if (step1) step1.classList.remove('hidden');
+      if (step2) step2.classList.add('hidden');
+      const otpInput = document.getElementById('input-link-otp-code');
+      if (otpInput) otpInput.value = '';
+    };
+
+    sendLinkEmailOtp = async () => {
+      const emailInput = document.getElementById('input-link-player-email');
+      const emailVal = emailInput ? emailInput.value.trim().toLowerCase() : '';
+      const sendBtn = document.getElementById('btn-send-link-otp');
+      const sendText = document.getElementById('text-send-link-otp');
+      const sendSpinner = document.getElementById('spinner-send-link-otp');
+      const resendBtn = document.getElementById('btn-resend-link-otp');
+
+      if (!emailVal || !emailVal.includes('@') || !emailVal.includes('.') || emailVal.length < 5) {
+        showToast('خطأ', 'يرجى إدخال بريد إلكتروني صحيح ومعتمد.', 'error');
+        if (emailInput) emailInput.focus();
+        return;
+      }
+
+      try {
+        if (sendBtn) sendBtn.disabled = true;
+        if (resendBtn) resendBtn.disabled = true;
+        if (sendText) sendText.textContent = 'جارٍ إرسال الرمز...';
+        if (sendSpinner) sendSpinner.classList.remove('hidden');
+
+        _lastSentLinkEmail = emailVal;
+
+        const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
+          ? window.SERVER_API_URL.replace(/\/$/, '') 
+          : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:3001' : '');
+
+        const endpoint = `${apiBase}/api/auth/send-otp`;
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailVal,
+            username: _targetLinkEmailUser || 'المستثمر',
+            type: 'verify'
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'فشل إرسال رمز التحقق. يرجى المحاولة لاحقاً.');
+        }
+
+        showToast('تم الإرسال 📩', 'تم إرسال رمز التحقق الأمني (OTP) إلى بريدك الإلكتروني بنجاح.', 'success', 4000);
+        playMenuSound('success');
+
+        // Transition to Step 2
+        const step1 = document.getElementById('link-email-step-1');
+        const step2 = document.getElementById('link-email-step-2');
+        const displayEmail = document.getElementById('display-target-link-email');
+        const otpInput = document.getElementById('input-link-otp-code');
+
+        if (displayEmail) displayEmail.textContent = emailVal;
+        if (step1) step1.classList.add('hidden');
+        if (step2) step2.classList.remove('hidden');
+        if (otpInput) {
+          otpInput.value = '';
+          setTimeout(() => otpInput.focus(), 150);
+        }
+
+        // Start 60-second resend countdown
+        let countdown = 60;
+        const timerSpan = document.getElementById('resend-link-otp-timer');
+        if (timerSpan) timerSpan.textContent = String(countdown);
+
+        if (_linkEmailCountdownTimer) clearInterval(_linkEmailCountdownTimer);
+        _linkEmailCountdownTimer = setInterval(() => {
+          countdown -= 1;
+          if (timerSpan) timerSpan.textContent = String(countdown);
+          if (countdown <= 0) {
+            clearInterval(_linkEmailCountdownTimer);
+            _linkEmailCountdownTimer = null;
+            if (resendBtn) {
+              resendBtn.disabled = false;
+              resendBtn.innerHTML = 'إعادة إرسال رمز جديد';
+            }
+          }
+        }, 1000);
+
+      } catch (err) {
+        showToast('فشل الإرسال', err.message || 'حدث خطأ أثناء الاتصال بخدمة التحقق.', 'error');
+      } finally {
+        if (sendBtn) sendBtn.disabled = false;
+        if (sendText) sendText.textContent = 'إرسال رمز التحقق (OTP)';
+        if (sendSpinner) sendSpinner.classList.add('hidden');
+      }
+    };
+
+    verifyAndLinkEmail = async () => {
+      const otpInput = document.getElementById('input-link-otp-code');
+      const otpVal = otpInput ? otpInput.value.trim() : '';
+      const emailVal = _lastSentLinkEmail || (document.getElementById('input-link-player-email')?.value?.trim()?.toLowerCase()) || '';
+      const verifyBtn = document.getElementById('btn-verify-link-otp');
+      const verifyText = document.getElementById('text-verify-link-otp');
+      const verifySpinner = document.getElementById('spinner-verify-link-otp');
+
+      if (!otpVal || otpVal.length !== 6 || !/^\d{6}$/.test(otpVal)) {
+        showToast('خطأ', 'يرجى إدخال رمز التحقق المكون من 6 أرقام بدقة.', 'error');
+        if (otpInput) otpInput.focus();
+        return;
+      }
+
+      try {
+        if (verifyBtn) verifyBtn.disabled = true;
+        if (verifyText) verifyText.textContent = 'جارٍ التحقق والربط...';
+        if (verifySpinner) verifySpinner.classList.remove('hidden');
+
+        const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
+          ? window.SERVER_API_URL.replace(/\/$/, '') 
+          : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:3001' : '');
+
+        const endpoint = `${apiBase}/api/auth/verify-otp`;
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailVal,
+            code: otpVal,
+            username: _targetLinkEmailUser
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'رمز التحقق غير صحيح أو منتهي الصلاحية.');
+        }
+
+        // Save email link locally and via AppDB
+        if (_targetLinkEmailUser) {
+          await AppDB.bindPlayerEmail(_targetLinkEmailUser, emailVal);
+        }
+
+        showToast('تم التوثيق والربط 🛡️', 'تم تأكيد وربط بريدك الإلكتروني بنجاح! جاري دخول اللعبة...', 'success', 4000);
+        playMenuSound('success');
+
+        closeLinkEmailModal();
+
+        // Launch game session for player
+        if (_targetLinkEmailUser) {
+          await launchGameSession(_targetLinkEmailUser);
+        }
+
+      } catch (err) {
+        showToast('فشل التحقق', err.message || 'تعذر التحقق من الرمز.', 'error');
+      } finally {
+        if (verifyBtn) verifyBtn.disabled = false;
+        if (verifyText) verifyText.textContent = 'تحقق وربط الحساب ومتابعة اللعب';
+        if (verifySpinner) verifySpinner.classList.add('hidden');
+      }
+    };
+
+    skipLinkEmailAndContinue = async () => {
+      closeLinkEmailModal();
+      if (_targetLinkEmailUser) {
+        playMenuSound('start');
+        await launchGameSession(_targetLinkEmailUser);
+      }
+    };
+
     if (saveSettingsBtn && startSettingsModal) {
       saveSettingsBtn.addEventListener('click', () => {
         playMenuSound('click');
@@ -2034,17 +2260,23 @@ const UIController = (() => {
     const authLoginBtn = document.getElementById('auth-switch-login');
     const authModeTitle = document.getElementById('auth-mode-title');
     const authActionBtn = document.getElementById('auth-action-text');
+    const emailCont = document.getElementById('auth-email-container');
+    const refCont = document.getElementById('auth-referral-container');
 
     if (mode ==='register') {
       if (authModeTitle) authModeTitle.textContent ='تسجيل حساب جديد';
       if (authActionBtn) authActionBtn.textContent ='إنشاء حساب وبدء اللعب';
       if (authRegBtn) authRegBtn.classList.add('border-yellow-500','text-yellow-500');
       if (authLoginBtn) authLoginBtn.classList.remove('border-yellow-500','text-yellow-500');
+      if (emailCont) emailCont.classList.remove('hidden');
+      if (refCont) refCont.classList.remove('hidden');
     } else {
       if (authModeTitle) authModeTitle.textContent ='تسجيل الدخول للمحفظة';
       if (authActionBtn) authActionBtn.textContent ='دخول وتزامن الحساب';
       if (authLoginBtn) authLoginBtn.classList.add('border-yellow-500','text-yellow-500');
       if (authRegBtn) authRegBtn.classList.remove('border-yellow-500','text-yellow-500');
+      if (emailCont) emailCont.classList.add('hidden');
+      if (refCont) refCont.classList.add('hidden');
     }
 
     if (authScreen) {
@@ -2091,6 +2323,8 @@ const UIController = (() => {
     const authLoginBtn = document.getElementById('auth-switch-login');
     const authModeTitle = document.getElementById('auth-mode-title');
     const authActionBtn = document.getElementById('auth-action-text');
+    const emailCont = document.getElementById('auth-email-container');
+    const refCont = document.getElementById('auth-referral-container');
 
     if (authRegBtn) {
       authRegBtn.addEventListener('click', () => {
@@ -2100,7 +2334,7 @@ const UIController = (() => {
         if (authActionBtn) authActionBtn.textContent ='إنشاء حساب وبدء اللعب';
         authRegBtn.classList.add('border-yellow-500','text-yellow-500');
         authLoginBtn.classList.remove('border-yellow-500','text-yellow-500');
-        const refCont = document.getElementById('auth-referral-container');
+        if (emailCont) emailCont.classList.remove('hidden');
         if (refCont) refCont.classList.remove('hidden');
       });
     }
@@ -2113,7 +2347,7 @@ const UIController = (() => {
         if (authActionBtn) authActionBtn.textContent ='دخول وتزامن الحساب';
         authLoginBtn.classList.add('border-yellow-500','text-yellow-500');
         authRegBtn.classList.remove('border-yellow-500','text-yellow-500');
-        const refCont = document.getElementById('auth-referral-container');
+        if (emailCont) emailCont.classList.add('hidden');
         if (refCont) refCont.classList.add('hidden');
       });
     }
@@ -2124,11 +2358,22 @@ const UIController = (() => {
 
         const usernameInput = document.getElementById('auth-username').value.trim();
         const pinInput = document.getElementById('auth-pin').value.trim();
+        const emailInput = (document.getElementById('auth-email')?.value || '').trim();
 
         if (!usernameInput || !pinInput) {
           showToast('خطأ','يرجى ملء جميع الحقول للمتابعة.','error');
           playMenuSound('back');
           return;
+        }
+
+        if (currentAuthMode === 'register') {
+          if (!emailInput || !emailInput.includes('@') || !emailInput.includes('.') || emailInput.length < 5) {
+            showToast('خطأ', 'يرجى إدخال بريد إلكتروني صحيح لتأمين الحساب.', 'error');
+            const emEl = document.getElementById('auth-email');
+            if (emEl) emEl.focus();
+            playMenuSound('back');
+            return;
+          }
         }
 
         try {
@@ -2140,10 +2385,10 @@ const UIController = (() => {
           let canonicalUser = usernameInput;
           if (currentAuthMode ==='register') {
             const refCodeInput = document.getElementById('auth-referral-code')?.value?.trim() || '';
-            await AppDB.registerPlayer(usernameInput, pinInput, refCodeInput);
+            await AppDB.registerPlayer(usernameInput, pinInput, refCodeInput, emailInput);
             playerState = await GameEngine.loadUserSession(usernameInput, null, pinInput);
             localStorage.setItem('rasalmal_active_session_user', usernameInput);
-            showToast('نجاح','تم تسجيل حسابك الجديد بنجاح! مرحباً بك.','success');
+            showToast('نجاح','تم تسجيل حسابك الجديد وتوثيق البريد بنجاح! مرحباً بك.','success');
           } else {
             const loggedUser = await AppDB.loginPlayer(usernameInput, pinInput);
             canonicalUser = (loggedUser && loggedUser.username) ? loggedUser.username : usernameInput;
@@ -23462,7 +23707,15 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     refreshFarmContracts,
     emergencyDumpFarmCrop,
     emergencyDumpProcessedGood,
-    emergencyDumpLivestockProduce
+    emergencyDumpLivestockProduce,
+
+    // Link Email & OTP Verification Modal
+    openLinkEmailModal,
+    closeLinkEmailModal,
+    sendLinkEmailOtp,
+    verifyAndLinkEmail,
+    skipLinkEmailAndContinue,
+    resetLinkEmailStep
   };
 
 })();
@@ -23481,6 +23734,12 @@ window.openNotificationsModal = UIController.openNotificationsModal;
 window.closeNotificationsModal = UIController.closeNotificationsModal;
 window.playMenuSound = UIController.playMenuSound;
 window.playCasinoSound = UIController.playCasinoSound;
+window.openLinkEmailModal = UIController.openLinkEmailModal;
+window.closeLinkEmailModal = UIController.closeLinkEmailModal;
+window.sendLinkEmailOtp = UIController.sendLinkEmailOtp;
+window.verifyAndLinkEmail = UIController.verifyAndLinkEmail;
+window.skipLinkEmailAndContinue = UIController.skipLinkEmailAndContinue;
+window.resetLinkEmailStep = UIController.resetLinkEmailStep;
 
 // Continuous Farm Live Ticker (Every 1s smooth countdown & progress bar gliding)
 if (typeof window !== 'undefined') {
