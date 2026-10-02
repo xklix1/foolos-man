@@ -24,12 +24,16 @@ setInterval(() => {
  * Generates an Enterprise Ultra-Luxury Dark/Gold HTML email (Pure SVG Icons, Zero Emojis)
  */
 function buildOtpEmailHtml(otpCode, username, typeText) {
-  // Format OTP code into spaced digit cards
+  // Format OTP code into spaced luxury digit cards with vibrant gold digits
   const codeDigits = String(otpCode).split('').map(d => `
-    <td align="center" style="padding:0 3px;">
-      <div style="width:44px; height:52px; line-height:52px; background-color:#0b1120 !important; background-image:linear-gradient(#0b1120, #0b1120) !important; color:#ffffff !important; font-size:28px; font-weight:900; font-family:'Courier New', Courier, monospace; border:2px solid #d4af37; border-radius:10px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.8);">
-        ${d}
-      </div>
+    <td align="center" style="padding: 0 4px;">
+      <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin:0 auto;">
+        <tr>
+          <td align="center" width="46" height="54" bgcolor="#0b1329" style="width:46px; height:54px; background-color:#0b1329 !important; background-image:linear-gradient(#0b1329, #0b1329) !important; border:2px solid #f59e0b; border-radius:10px; text-align:center; vertical-align:middle; box-shadow:0 4px 12px rgba(0,0,0,0.8);">
+            <span style="font-size:30px; font-weight:900; color:#fbbf24 !important; font-family:'Courier New', Courier, monospace; display:block; line-height:50px;">${d}</span>
+          </td>
+        </tr>
+      </table>
     </td>
   `).join('');
 
@@ -47,99 +51,125 @@ function buildOtpEmailHtml(otpCode, username, typeText) {
       color-scheme: dark only !important;
       supported-color-schemes: dark only !important;
     }
-    body, table, td, p, div {
+    body, table, td, p, div, span, a {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
       -webkit-font-smoothing: antialiased !important;
     }
-    .gmail-dark-fix {
-      background-color: #060913 !important;
-      background-image: linear-gradient(#060913, #060913) !important;
+    .bg-main {
+      background-color: #030712 !important;
+      background-image: linear-gradient(#030712, #030712) !important;
     }
-    .card-dark-fix {
-      background-color: #0f172a !important;
-      background-image: linear-gradient(#0f172a, #0f172a) !important;
+    .bg-card {
+      background-color: #0d1527 !important;
+      background-image: linear-gradient(#0d1527, #0d1527) !important;
+    }
+    .bg-box {
+      background-color: #060a14 !important;
+      background-image: linear-gradient(#060a14, #060a14) !important;
     }
   </style>
 </head>
-<body bgcolor="#060913" class="gmail-dark-fix" style="margin:0; padding:0; background-color:#060913 !important; background-image:linear-gradient(#060913, #060913) !important; color:#f8fafc !important; direction:rtl; text-align:right;">
+<body bgcolor="#030712" class="bg-main" style="margin:0; padding:0; background-color:#030712 !important; background-image:linear-gradient(#030712, #030712) !important; color:#ffffff !important; direction:rtl; text-align:right;">
   
-  <!-- Outer Wrapper with linear-gradient (Immune to Gmail Inversion) -->
-  <table role="presentation" width="100%" bgcolor="#060913" border="0" cellspacing="0" cellpadding="0" class="gmail-dark-fix" style="background-color:#060913 !important; background-image:linear-gradient(#060913, #060913) !important; width:100%; margin:0; padding:30px 10px;">
+  <!-- Outer Table Wrapper -->
+  <table role="presentation" width="100%" bgcolor="#030712" border="0" cellspacing="0" cellpadding="0" class="bg-main" style="background-color:#030712 !important; background-image:linear-gradient(#030712, #030712) !important; width:100%; margin:0; padding:30px 10px;">
     <tr>
-      <td align="center" style="padding:5px;">
+      <td align="center" style="padding:0;">
         
-        <!-- Main Card Container -->
-        <table role="presentation" width="100%" bgcolor="#0f172a" border="0" cellspacing="0" cellpadding="0" class="card-dark-fix" style="max-width:500px; background-color:#0f172a !important; background-image:linear-gradient(#0f172a, #0f172a) !important; border:2px solid #23324d; border-radius:20px; overflow:hidden; box-shadow:0 30px 60px rgba(0,0,0,0.9);">
+        <!-- Main Container Card -->
+        <table role="presentation" width="100%" bgcolor="#0d1527" border="0" cellspacing="0" cellpadding="0" class="bg-card" style="max-width:520px; background-color:#0d1527 !important; background-image:linear-gradient(#0d1527, #0d1527) !important; border:2px solid #d4af37; border-radius:20px; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.95);">
           
-          <!-- Top Gold Accent Ribbon -->
+          <!-- Top Gold Ribbon -->
           <tr>
-            <td height="5" bgcolor="#d4af37" style="background:linear-gradient(90deg, #996515 0%, #d4af37 50%, #f59e0b 100%);"></td>
+            <td height="6" bgcolor="#d4af37" style="height:6px; background-color:#d4af37 !important; background-image:linear-gradient(90deg, #996515 0%, #d4af37 50%, #f59e0b 100%) !important;"></td>
           </tr>
 
-          <!-- Header with Official Logo -->
+          <!-- Header Section with CDN Hosted Logo -->
           <tr>
-            <td align="center" bgcolor="#090e1a" style="padding:28px 20px 20px 20px; background-color:#090e1a !important; background-image:linear-gradient(#090e1a, #090e1a) !important; text-align:center; border-bottom:1px solid #1e2c45;">
-              <table role="presentation" align="center" border="0" cellspacing="0" cellpadding="0" style="margin:0 auto 12px auto;">
+            <td align="center" bgcolor="#080e1c" style="padding:28px 20px 22px 20px; background-color:#080e1c !important; background-image:linear-gradient(#080e1c, #080e1c) !important; text-align:center; border-bottom:1px solid #1e2c48;">
+              
+              <!-- Official Emblem Image -->
+              <table role="presentation" align="center" border="0" cellspacing="0" cellpadding="0" style="margin:0 auto 14px auto;">
                 <tr>
-                  <td align="center" style="border-radius:14px; overflow:hidden; border:1px solid rgba(212,175,55,0.4);">
-                    <img src="https://rasalmal.online/assets/official-logo.jpg?v=3" width="140" height="78" alt="رأس المال | RA'S AL-MAL" style="display:block; width:140px; height:78px; border:0; outline:none; text-decoration:none;" />
+                  <td align="center" style="border-radius:14px; overflow:hidden; border:2px solid #d4af37; background-color:#030712;">
+                    <img src="https://cdn.jsdelivr.net/gh/xklix1/foolos-man@main/assets/official-logo.jpg" width="160" height="90" alt="رأس المال | RA'S AL-MAL" style="display:block; width:160px; height:90px; border:0; outline:none; text-decoration:none;" />
                   </td>
                 </tr>
               </table>
-              <div style="font-size:22px; font-weight:900; color:#ffffff !important; letter-spacing:-0.3px; margin-bottom:4px;">رأس المال</div>
-              <div style="font-size:11px; font-weight:700; color:#d4af37 !important; text-transform:uppercase; letter-spacing:2px;">RA'S AL-MAL BUSINESS EMPIRE</div>
+
+              <!-- Brand Titles -->
+              <div style="font-size:24px; font-weight:900; color:#ffffff !important; letter-spacing:-0.5px; margin-bottom:5px;">
+                <span style="color:#ffffff !important;">رأس المال</span>
+              </div>
+              <div style="font-size:12px; font-weight:800; color:#fbbf24 !important; text-transform:uppercase; letter-spacing:2.5px;">
+                <span style="color:#fbbf24 !important;">RA'S AL-MAL BUSINESS EMPIRE</span>
+              </div>
             </td>
           </tr>
 
-          <!-- Content Body -->
+          <!-- Email Content Body -->
           <tr>
-            <td bgcolor="#0f172a" class="card-dark-fix" style="padding:28px 25px 20px 25px; background-color:#0f172a !important; background-image:linear-gradient(#0f172a, #0f172a) !important;">
+            <td bgcolor="#0d1527" class="bg-card" style="padding:32px 28px 24px 28px; background-color:#0d1527 !important; background-image:linear-gradient(#0d1527, #0d1527) !important;">
               
-              <div style="font-size:17px; font-weight:800; color:#ffffff !important; margin-bottom:12px;">
-                أهلاً بك${username ? ` يا <strong style="color:#f59e0b !important;">${username}</strong>` : ''}،
+              <!-- Greeting -->
+              <div style="font-size:19px; font-weight:800; color:#ffffff !important; margin-bottom:14px; line-height:1.4;">
+                <span style="color:#ffffff !important;">أهلاً بك${username ? ` يا <span style="color:#fbbf24 !important; font-weight:900;">${username}</span>` : ''}،</span>
               </div>
 
-              <p style="font-size:14px; line-height:1.75; color:#cbd5e1 !important; margin:0 0 22px 0;">
-                تم طلب رمز تحقق أمني لتوثيق <strong style="color:#ffffff !important;">${typeText}</strong> الخاص بحسابك. يُرجى استخدام رمز الأمان المكون من 6 أرقام التالي لتأكيد العملية:
+              <!-- Message Description -->
+              <p style="font-size:15px; line-height:1.8; color:#ffffff !important; margin:0 0 24px 0;">
+                <span style="color:#f1f5f9 !important;">تم طلب رمز تحقق أمني لتوثيق <strong style="color:#fbbf24 !important;">${typeText}</strong> الخاص بحسابك. يُرجى استخدام رمز الأمان التالي لتأكيد العملية:</span>
               </p>
 
               <!-- OTP Code Display Card -->
-              <table role="presentation" width="100%" bgcolor="#060913" border="0" cellspacing="0" cellpadding="0" class="gmail-dark-fix" style="background-color:#060913 !important; background-image:linear-gradient(#060913, #060913) !important; border:1px solid #2a3d5e; border-radius:14px; margin:0 0 22px 0;">
+              <table role="presentation" width="100%" bgcolor="#060a14" border="0" cellspacing="0" cellpadding="0" class="bg-box" style="background-color:#060a14 !important; background-image:linear-gradient(#060a14, #060a14) !important; border:2px solid #233554; border-radius:16px; margin:0 0 24px 0;">
                 <tr>
-                  <td align="center" style="padding:22px 10px;">
-                    <div style="font-size:11px; font-weight:800; color:#d4af37 !important; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:12px;">رمز التحقق (OTP)</div>
-                    <table role="presentation" align="center" border="0" cellspacing="0" cellpadding="0" style="direction:ltr; margin:0 auto 10px auto;">
+                  <td align="center" style="padding:24px 12px;">
+                    
+                    <div style="font-size:12px; font-weight:900; color:#fbbf24 !important; text-transform:uppercase; letter-spacing:2px; margin-bottom:16px;">
+                      <span style="color:#fbbf24 !important;">رمز التحقق (OTP)</span>
+                    </div>
+
+                    <!-- 6 Digit Digits Grid -->
+                    <table role="presentation" align="center" border="0" cellspacing="0" cellpadding="0" style="direction:ltr; margin:0 auto 14px auto;">
                       <tr>
                         ${codeDigits}
                       </tr>
                     </table>
-                    <div style="font-size:12px; color:#94a3b8 !important;">صلاحية الرمز تنتهي خلال <span style="color:#f59e0b !important; font-weight:800;">5 دقائق</span></div>
+
+                    <div style="font-size:13px; font-weight:700; color:#e2e8f0 !important;">
+                      <span style="color:#cbd5e1 !important;">صلاحية الرمز تنتهي خلال </span>
+                      <span style="color:#f59e0b !important; font-weight:900; font-size:14px;">5 دقائق</span>
+                    </div>
+
                   </td>
                 </tr>
               </table>
 
-              <!-- Security Notice -->
-              <table role="presentation" width="100%" bgcolor="#131c2e" border="0" cellspacing="0" cellpadding="0" style="background-color:#131c2e !important; background-image:linear-gradient(#131c2e, #131c2e) !important; border-right:4px solid #d4af37; border-radius:8px; margin:0 0 20px 0;">
+              <!-- Security Notice Banner -->
+              <table role="presentation" width="100%" bgcolor="#091020" border="0" cellspacing="0" cellpadding="0" style="background-color:#091020 !important; background-image:linear-gradient(#091020, #091020) !important; border-right:4px solid #f59e0b; border-radius:10px; margin:0 0 22px 0;">
                 <tr>
-                  <td style="padding:12px 15px; font-size:12px; line-height:1.6; color:#cbd5e1 !important;">
-                    <strong style="color:#ffffff !important;">تنبيه أمني:</strong> لا تشارك هذا الرمز مع أي شخص. فريق إدارة رأس المال لن يطلب منك هذا الرمز أبداً.
+                  <td style="padding:14px 18px; font-size:13px; line-height:1.7; color:#ffffff !important;">
+                    <span style="color:#fbbf24 !important; font-weight:900;">تنبيه أمني:</span>
+                    <span style="color:#e2e8f0 !important;"> لا تشارك هذا الرمز مع أي شخص. فريق إدارة رأس المال لن يطلب منك هذا الرمز أبداً تحت أي ظرف.</span>
                   </td>
                 </tr>
               </table>
 
-              <p style="font-size:12px; color:#64748b !important; margin:0; line-height:1.6;">
-                إذا لم تكن أنت من أجرى هذا الطلب، يمكنك تجاهل هذه الرسالة بأمان دون أي قلق.
+              <p style="font-size:13px; color:#94a3b8 !important; margin:0; line-height:1.7;">
+                <span style="color:#94a3b8 !important;">إذا لم تكن أنت من أجرى هذا الطلب، يمكنك تجاهل هذه الرسالة بأمان دون أدنى قلق.</span>
               </p>
 
             </td>
           </tr>
 
-          <!-- Footer -->
+          <!-- Footer Section -->
           <tr>
-            <td align="center" bgcolor="#080c16" style="padding:20px 25px; background-color:#080c16 !important; background-image:linear-gradient(#080c16, #080c16) !important; border-top:1px solid #1a253a; text-align:center;">
-              <div style="font-size:11px; color:#64748b !important; line-height:1.8;">
-                تم الإرسال من النطاق الموثق: <span style="color:#94a3b8 !important; font-family:monospace;">auth.rasalmal.online</span><br>
-                جميع الحقوق محفوظة &copy; ${new Date().getFullYear()} لعبة رأس المال &bull; RA'S AL-MAL EMPIRE
+            <td align="center" bgcolor="#050812" style="padding:22px 25px; background-color:#050812 !important; background-image:linear-gradient(#050812, #050812) !important; border-top:1px solid #172338; text-align:center;">
+              <div style="font-size:11px; color:#94a3b8 !important; line-height:1.9;">
+                <span style="color:#64748b !important;">تم الإرسال من النطاق الموثق: </span>
+                <span style="color:#fbbf24 !important; font-family:monospace; font-weight:bold;">auth.rasalmal.online</span><br>
+                <span style="color:#64748b !important;">جميع الحقوق محفوظة &copy; ${new Date().getFullYear()} لعبة رأس المال &bull; RA'S AL-MAL EMPIRE</span>
               </div>
             </td>
           </tr>
