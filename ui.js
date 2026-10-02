@@ -7976,6 +7976,15 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       return;
     }
 
+    // Halt game loop and pause engine immediately
+    if (tickIntervalId) {
+      clearInterval(tickIntervalId);
+      tickIntervalId = null;
+    }
+    if (typeof GameEngine !== 'undefined' && typeof GameEngine.pauseEngine === 'function') {
+      try { GameEngine.pauseEngine(); } catch (e) {}
+    }
+
     // Clear any stale tester tokens
     try {
       sessionStorage.removeItem('rasalmal_tester_pass');
