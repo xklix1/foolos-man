@@ -1,7 +1,7 @@
 {
-  "version": "v8.6.1",
-  "build": 1790912000000,
-  "timestamp": 1790912000000,
-  "notes": "Fix server-client airport sync, flight duration/profit consistency, bank deposit retention, and sold aircraft persistence.",
-  "releaseNotes": "Airport & Banking Patch: Complete fix for flight durations, profit accuracy, bank deposit saving, and sold plane persistence."
+  "version": "v8.6.2",
+  "build": 1790915000000,
+  "timestamp": 1790915000000,
+  "notes": "Fix active flight destination persistence (Tokyo/Riyadh), session manager airport synchronization, and strict fleet preservation on reload.",
+  "releaseNotes": "Aviation Flight Persistence Patch: Fix flight destination preservation, session sync, and exact reload state."
 }

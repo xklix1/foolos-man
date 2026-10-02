@@ -681,8 +681,8 @@ window.AirportUI = (() => {
         ${isFlight ? `
           <div class="space-y-3 p-4 rounded-2xl bg-slate-900/80 border border-sky-500/20">
             <div class="flex justify-between items-center text-xs">
-              <span class="text-slate-400">الوجهة: <strong class="text-white">${flight.destinationName}</strong></span>
-              <span class="text-slate-400">صافي الربح: <strong class="text-emerald-400 numbers-font font-bold">+${(flight.expectedNetProfit || flight.expectedProfit || 0).toLocaleString()} ج.م</strong></span>
+              <span class="text-slate-400">الوجهة: <strong class="text-white">${flight.destinationName || (DESTINATIONS_META.find(d => d.id === flight.destinationId)?.name) || 'طيران دولي'}</strong></span>
+              <span class="text-slate-400">صافي الربح: <strong class="text-emerald-400 numbers-font font-bold">+${(flight.expectedNetProfit !== undefined ? flight.expectedNetProfit : Math.max(0, Number(flight.grossRevenue || flight.expectedProfit || 0) - Number(flight.totalOperatingCost || 0))).toLocaleString()} ج.م</strong></span>
             </div>
 
             <!-- Operating Costs Summary -->

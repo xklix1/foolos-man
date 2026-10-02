@@ -653,7 +653,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.6.1';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.6.2';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -662,7 +662,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.6.1', remoteVersion: 'v8.6.1' };
+    return { upToDate: true, clientVersion: 'v8.6.2', remoteVersion: 'v8.6.2' };
   }
 
   async function checkDeviceBan() {
@@ -1908,15 +1908,27 @@ var AppDB = (() => {
                     const locTotal = Number(locPlane.totalFlights) || 0;
                     const srvTotal = Number(srvPlane.totalFlights) || 0;
 
-                    // If either side shows idle or completed/claimed, prefer idle to prevent infinite loop
-                    if (srvStatus === 'idle' || locStatus === 'idle' || srvTotal > locTotal || locTotal > srvTotal) {
+                    const locFlight = locPlane.activeFlight || locPlane.currentFlight;
+                    const srvFlight = srvPlane.activeFlight || srvPlane.currentFlight;
+
+                    // 1. If local plane was actively launched on a new flight (e.g. Tokyo), preserve active flight details
+                    if (locStatus === 'in_flight' && locFlight && locFlight.launchTime) {
+                      const srvLaunch = srvFlight ? Number(srvFlight.launchTime || 0) : 0;
+                      if (Number(locFlight.launchTime) >= srvLaunch || srvStatus === 'idle') {
+                        srvPlane.status = 'in_flight';
+                        srvPlane.activeFlight = JSON.parse(JSON.stringify(locFlight));
+                        srvPlane.currentFlight = JSON.parse(JSON.stringify(locFlight));
+                        shouldSyncCloud = true;
+                      }
+                    }
+                    // 2. If claimed/idle on either side, keep idle
+                    else if (srvStatus === 'idle' || locStatus === 'idle' || srvTotal > locTotal || locTotal > srvTotal) {
                       if (srvPlane.status === 'in_flight' && (locStatus === 'idle' || locTotal > srvTotal)) {
                         srvPlane.status = 'idle';
                         srvPlane.currentFlight = null;
                         srvPlane.activeFlight = null;
                         shouldSyncCloud = true;
                       } else if (srvPlane.status === 'idle') {
-                        // Server is already idle, keep it idle
                         srvPlane.currentFlight = null;
                         srvPlane.activeFlight = null;
                       }
