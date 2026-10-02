@@ -19,6 +19,7 @@ scratch/
 migrate_*.js
 
 # Internal audit & test scripts (expose internals)
+scripts/
 audit_*.js
 test_*.js
 
