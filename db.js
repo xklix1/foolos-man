@@ -60,22 +60,7 @@ var AppDB = (() => {
   }
 
   function invalidateCurrentSession(reason) {
-    if (_isSessionInvalidated) return;
-    _isSessionInvalidated = true;
-    if (_cloudSyncDebounceTimer) {
-      clearTimeout(_cloudSyncDebounceTimer);
-      _cloudSyncDebounceTimer = null;
-    }
-    if (_sessionGuardTimer) {
-      clearInterval(_sessionGuardTimer);
-      _sessionGuardTimer = null;
-    }
-    if (typeof window !== 'undefined') {
-      window._isSessionInvalidated = true;
-      if (typeof window.handleDuplicateSession === 'function') {
-        window.handleDuplicateSession(reason);
-      }
-    }
+    console.warn('[Session] Session notice (non-blocking):', reason);
   }
 
   function isSessionValid() {
@@ -2221,15 +2206,7 @@ var AppDB = (() => {
           body: JSON.stringify(payload)
         });
 
-        // If representation returned, verify this session is still the authoritative active session
-        if (Array.isArray(res) && res.length > 0 && res[0].state && (Date.now() - _sessionClaimedTimestamp > 15000)) {
-          const srvSession = res[0].state.activeSessionId;
-          if (srvSession && srvSession !== _currentSessionToken) {
-            console.warn(`[Sync] Concurrent login detected on push for ${u}: server active="${srvSession}", current="${_currentSessionToken}"`);
-            invalidateCurrentSession('تم فتح حسابك في جلسة جديدة من جهاز آخر. تم إيقاف هذا الجهاز لحماية أموالك من التضارب.');
-            return res;
-          }
-        }
+        // Representation returned successfully
 
         // If representation returns empty array, DB row had a higher admin_modified_timestamp (incoming wire transfer or admin grant)
         if (Array.isArray(res) && res.length === 0) {

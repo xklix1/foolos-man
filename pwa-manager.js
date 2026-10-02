@@ -44,7 +44,7 @@ var PWAManager = (() => {
     // 1. Register Service Worker (Production & Local)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js?v=8.7.3')
+        navigator.serviceWorker.register('/sw.js?v=8.7.5')
           .then((registration) => {
             console.log('[PWAManager] ServiceWorker registered with scope:', registration.scope);
             
