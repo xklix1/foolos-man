@@ -618,8 +618,8 @@ window.AirportUI = (() => {
 
   function renderPlaneCard(plane, airport, state) {
     const model = AIRCRAFT_META[plane.modelId] || AIRCRAFT_META.cessna_sky;
-    const isFlight = plane.status === 'in_flight' && plane.activeFlight;
-    const flight = plane.activeFlight || {};
+    const flight = plane.currentFlight || plane.activeFlight || {};
+    const isFlight = plane.status === 'in_flight' && Boolean(flight.launchTime || flight.destinationName);
     const now = Date.now();
     const landingTime = Number(flight.landingTime || 0);
     const isLanded = isFlight && (now >= landingTime);
@@ -1040,29 +1040,42 @@ window.AirportUI = (() => {
   }
 
   function updateFlightTimers() {
-    const timerEls = document.querySelectorAll('[id^="timer-plane_"]');
+    const timerEls = document.querySelectorAll('[id^="timer-"]');
     const now = Date.now();
+    const liveState = getLiveGameState();
+    const ap = liveState.airport;
+
     timerEls.forEach(el => {
       const landingTime = Number(el.getAttribute('data-landing') || 0);
       const planeId = el.id.replace('timer-', '');
       const remSec = Math.max(0, Math.ceil((landingTime - now) / 1000));
+      const bar = document.getElementById(`bar-${planeId}`);
+
       if (remSec <= 0) {
         el.textContent = '🛬 وصلت الوجهة!';
         el.classList.add('text-emerald-400');
         el.classList.remove('text-sky-400');
+        if (bar) bar.style.width = '100%';
         const btnClaim = document.getElementById(`btn-claim-${planeId}`);
         if (btnClaim) btnClaim.style.display = 'flex';
       } else {
         el.textContent = `متبقي: ${formatSeconds(remSec)}`;
+        if (bar && ap && Array.isArray(ap.fleet)) {
+          const pl = ap.fleet.find(p => p.id === planeId);
+          const f = pl && (pl.currentFlight || pl.activeFlight);
+          if (f && f.launchTime && f.durationSec) {
+            const pct = Math.min(99, Math.max(5, Math.round(((now - f.launchTime) / (f.durationSec * 1000)) * 100)));
+            bar.style.width = `${pct}%`;
+          }
+        }
       }
     });
 
     // Update duty free display live
-    const state = (window.GameEngine && window.GameEngine.state) || {};
     const dutyFreeEl = document.getElementById('airport-duty-free-amount');
     const btnClaimDutyFree = document.getElementById('btn-claim-duty-free');
-    if (dutyFreeEl && state.airport) {
-      const amt = calculateDutyFreeClient(state.airport);
+    if (dutyFreeEl && ap) {
+      const amt = calculateDutyFreeClient(ap);
       dutyFreeEl.textContent = `+${amt.toLocaleString()} ج.م`;
       if (btnClaimDutyFree) btnClaimDutyFree.disabled = amt <= 0;
     }

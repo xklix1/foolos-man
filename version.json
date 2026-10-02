@@ -1,7 +1,7 @@
 {
-  "version": "v8.4.9",
-  "build": 1790903000000,
-  "timestamp": 1790900300000,
-  "notes": "Leaderboard Privacy & Whitelist Filter: Hide designated test accounts from public ranking.",
-  "releaseNotes": "Leaderboard update: Synchronized official ranking snapshot."
+  "version": "v8.5.0",
+  "build": 1790904000000,
+  "timestamp": 1790901000000,
+  "notes": "Airport Flight Visualizer Fix: Live in-flight radar, live countdown timers, progress bars, and instant claim upon landing.",
+  "releaseNotes": "Airport Flight Visualizer: Live in-flight radar, countdown timers, and speedup controls."
 }
