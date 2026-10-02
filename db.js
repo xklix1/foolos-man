@@ -653,7 +653,7 @@ var AppDB = (() => {
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
-        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.6.3';
+        const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v8.6.4';
         const isLatest = s.version === client;
         return {
           upToDate: isLatest,
@@ -662,7 +662,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v8.6.3', remoteVersion: 'v8.6.3' };
+    return { upToDate: true, clientVersion: 'v8.6.4', remoteVersion: 'v8.6.4' };
   }
 
   async function checkDeviceBan() {
@@ -2276,6 +2276,10 @@ var AppDB = (() => {
     }
   }
 
+  let _lastKnownCash = null;
+  let _lastKnownBank = null;
+  let _lastKnownGold = null;
+
   async function savePlayerState(username, state, forceCloud = false) {
     if (!username || !state) return;
     const u = username.trim();
@@ -2293,7 +2297,19 @@ var AppDB = (() => {
       return;
     }
 
-    if (forceCloud) {
+    // Auto-detect any financial spend or explicit transaction (Immediate 0s Cloud Save on Any Spend)
+    const curCash = Number(state.cash || 0);
+    const curBank = Number(state.bank || 0);
+    const curGold = Number(state.gold || 0);
+    const isFinancialSpend = (_lastKnownCash !== null && curCash < _lastKnownCash) ||
+                             (_lastKnownBank !== null && curBank < _lastKnownBank) ||
+                             (_lastKnownGold !== null && curGold < _lastKnownGold);
+
+    _lastKnownCash = curCash;
+    _lastKnownBank = curBank;
+    _lastKnownGold = curGold;
+
+    if (forceCloud || isFinancialSpend) {
       if (_cloudSyncDebounceTimer) {
         clearTimeout(_cloudSyncDebounceTimer);
         _cloudSyncDebounceTimer = null;
