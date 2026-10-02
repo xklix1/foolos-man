@@ -2155,6 +2155,27 @@ var AppDB = (() => {
           }
         }
       }
+    // 4. Currency sanity caps: prevent absurd nonillion console injections
+    const MAX_ALLOWED_CURRENCY = 100000000000000; // 100 Trillion EGP absolute cap
+    if (typeof payload.cash === 'number' && (payload.cash > MAX_ALLOWED_CURRENCY || !isFinite(payload.cash) || isNaN(payload.cash))) {
+      console.warn(`[AntiCheat] Clamping absurd cash injection for ${uLower}: ${payload.cash}`);
+      payload.cash = 500000;
+      state.cash = 500000;
+      state.underSuspicion = true;
+    }
+    if (typeof payload.bank === 'number' && (payload.bank > MAX_ALLOWED_CURRENCY || !isFinite(payload.bank) || isNaN(payload.bank))) {
+      console.warn(`[AntiCheat] Clamping absurd bank injection for ${uLower}: ${payload.bank}`);
+      payload.bank = 500000;
+      state.bank = 500000;
+      state.underSuspicion = true;
+    }
+    if (typeof payload.dirty_cash === 'number' && (payload.dirty_cash > MAX_ALLOWED_CURRENCY || !isFinite(payload.dirty_cash) || isNaN(payload.dirty_cash))) {
+      payload.dirty_cash = 0;
+      state.dirtyCash = 0;
+    }
+    if (typeof payload.net_worth === 'number' && (payload.net_worth > MAX_ALLOWED_CURRENCY * 2 || !isFinite(payload.net_worth) || isNaN(payload.net_worth))) {
+      payload.net_worth = Number(payload.cash || 0) + Number(payload.bank || 0) + Number(payload.dirty_cash || 0);
+      state.netWorth = payload.net_worth;
     }
 
     delete state._legitimateTransactionBypass;
