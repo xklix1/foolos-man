@@ -1399,7 +1399,8 @@ var AppDB = (() => {
       if (
         stored === hashed ||
         stored === 's256_' + hashed ||
-        stored.replace(/^s256_/, '') === hashed
+        stored.replace(/^s256_/, '') === hashed ||
+        stored === p
       ) {
         return true;
       }
