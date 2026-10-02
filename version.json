@@ -1,7 +1,7 @@
 {
-  "version": "v8.6.2",
-  "build": 1790915000000,
-  "timestamp": 1790915000000,
-  "notes": "Fix active flight destination persistence (Tokyo/Riyadh), session manager airport synchronization, and strict fleet preservation on reload.",
-  "releaseNotes": "Aviation Flight Persistence Patch: Fix flight destination preservation, session sync, and exact reload state."
+  "version": "v8.6.3",
+  "build": 1790918000000,
+  "timestamp": 1790918000000,
+  "notes": "Fix syntax error in index.html standby check and strengthen claim-flight state reconciliation.",
+  "releaseNotes": "Fix syntax error in index.html and ensure complete airport flight synchronization."
 }

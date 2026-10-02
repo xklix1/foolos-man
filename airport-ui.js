@@ -1408,7 +1408,19 @@ window.AirportUI = (() => {
     renderAirportPanel();
 
     if (window.ServerBridge && typeof window.ServerBridge.claimAirportFlight === 'function') {
-      try { await window.ServerBridge.claimAirportFlight(planeId); } catch (_) {}
+      try {
+        const res = await window.ServerBridge.claimAirportFlight(planeId);
+        if (res && res.success) {
+          if (res.cash !== undefined) liveState.cash = res.cash;
+          if (res.xp !== undefined) liveState.xp = res.xp;
+          if (res.airport) liveState.airport = res.airport;
+          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+          }
+          persistGameState();
+          renderAirportPanel();
+        }
+      } catch (_) {}
     }
   }
 
