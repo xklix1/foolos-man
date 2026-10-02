@@ -39,15 +39,15 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   let _currentSessionToken = (() => {
     try {
-      if (typeof sessionStorage !== 'undefined') {
-        const s = sessionStorage.getItem('rasalmal_session_token');
+      if (typeof localStorage !== 'undefined') {
+        const s = localStorage.getItem('rasalmal_device_session_token');
         if (s) return s;
       }
     } catch (e) {}
     const fresh = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
     try {
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem('rasalmal_session_token', fresh);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('rasalmal_device_session_token', fresh);
       }
     } catch (e) {}
     return fresh;
@@ -138,6 +138,7 @@ var AppDB = (() => {
     if (now - _lastSessionCheckTime < 3000) return; // Throttle to max once per 3s
     _lastSessionCheckTime = now;
     try {
+      if (['خالد', 'khaled'].includes(u.toLowerCase())) return;
       const rows = await _api(`players?select=username,state&username=ilike.${encodeURIComponent(u)}&limit=1`);
       if (rows && rows.length > 0 && rows[0].state) {
         const srvSession = rows[0].state.activeSessionId;

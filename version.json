@@ -1,7 +1,7 @@
 {
-  "version": "v8.7.2",
-  "build": 1790978000000,
-  "timestamp": 1790978000000,
-  "notes": "Fix ServiceWorker API interception for Supabase REST endpoints",
-  "releaseNotes": "Fix ServiceWorker API interception for Supabase REST endpoints"
+  "version": "v8.7.3",
+  "build": 1790978500000,
+  "timestamp": 1790978500000,
+  "notes": "Fix duplicate session looping and share session tokens across tabs",
+  "releaseNotes": "Fix duplicate session looping and share session tokens across tabs"
 }
