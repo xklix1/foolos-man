@@ -3189,10 +3189,8 @@ var AppDB = (() => {
   function _isStaging() {
     try {
       if (typeof window !== 'undefined' && window.IS_STAGING_ENV === true) return true;
-      const host = (typeof window !== 'undefined' && window.location && window.location.hostname) || '';
-      if (/(^|\.)(github\.io|pages\.dev|vercel\.app)$/i.test(host)) return true;
       const path = (typeof window !== 'undefined' && window.location && window.location.pathname) || '';
-      if (path.includes('stage-x91-k8q7') || path.includes('staging') || path.includes('test-sandbox')) return true;
+      if (path.includes('stage-x91-k8q7') || path.includes('test-sandbox')) return true;
       if (typeof window !== 'undefined' && window.location && window.location.search && window.location.search.includes('staging=1')) return true;
     } catch (e) {}
     return false;
