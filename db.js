@@ -423,6 +423,9 @@ var AppDB = (() => {
     if (window.Capacitor && window.Capacitor.isNativePlatform()) {
       console.log('[DB] Running inside Capacitor Native Engine.');
     }
+    try {
+      await fetchServerTime();
+    } catch (_) {}
 
     firebaseReady = true;
     return true;
@@ -2615,75 +2618,25 @@ var AppDB = (() => {
     const normalized = code.trim().toUpperCase();
     const u = username.trim();
 
-    const rows = await _api(`gift_codes?code=eq.${encodeURIComponent(normalized)}`);
-    if (!rows || rows.length === 0) {
-      throw new Error('كود الهدية غير موجود أو غير صالح.');
-    }
-
-    const gift = rows[0];
-    const usedBy = Array.isArray(gift.used_by) ? gift.used_by : [];
-    if (usedBy.includes(u.toLowerCase())) {
-      throw new Error('لقد قمت باستخدام كود الهدية هذا مسبقاً.');
-    }
-
-    if (usedBy.length >= (gift.max_uses || 10000)) {
-      throw new Error('تم بلوغ الحد الأقصى لعدد مرات استخدام هذا الكود.');
-    }
-
-    // Award player
-    const pRows = await _api(`players?username=eq.${encodeURIComponent(u)}&select=*`);
-    if (!pRows || pRows.length === 0) throw new Error('حساب اللاعب غير موجود.');
-    const p = pRows[0];
-    const pState = (typeof p.state === 'object' && p.state) ? { ...p.state } : {};
-
-    // Feeder / Multi-account promo code harvesting gate
-    const bizCount = Object.values(pState.businesses || {}).filter(b => (b.level || 0) > 0 || (b.workers || 0) > 0).length;
-    const rawCreatedAt = p.created_at || pState.createdAt || pState.created_at;
-    const createdMs = rawCreatedAt ? (typeof rawCreatedAt === 'string' ? new Date(rawCreatedAt).getTime() : Number(rawCreatedAt)) : getTrustedNow();
-    const ageHours = Math.max(0, (getTrustedNow() - createdMs) / (3600 * 1000));
-
-    if (bizCount === 0 && ageHours < 1) {
-      throw new Error('🚫 تنبيه أمني: لاسترداد هدايا وأكواد رأس المال، يجب تطوير مشروعك الأول على الأقل أو قضاء ساعة واحدة في بناء المشاريع لمنع الحسابات الوهمية.');
-    }
-
-    // 1. Immediately register usage in gift_codes table first (prevents race condition & parallel click spam)
-    usedBy.push(u.toLowerCase());
-    await _api(`gift_codes?code=eq.${encodeURIComponent(normalized)}`, {
-      method:'PATCH',
-      body: JSON.stringify({ used_by: usedBy })
-    });
-
-    const curCash = Number(p.cash || 0);
-    const curWorth = Number(p.net_worth || 0);
-    const reward = Number(gift.reward_cash || 100000);
-    const newCash = curCash + reward;
-    const newWorth = curWorth + reward;
-
-    pState.cash = newCash;
-    pState.netWorth = newWorth;
-    pState.hasRedeemedGiftCode = true;
-    pState.giftCodesRedeemed = (pState.giftCodesRedeemed || 0) + 1;
-    pState.totalGiftRewards = (pState.totalGiftRewards || 0) + reward;
-
-    await _api(`players?username=eq.${encodeURIComponent(u)}`, {
-      method:'PATCH',
+    // Atomic SQL Execution with row-level locking (immune to spam / race conditions)
+    const result = await _api('rpc/redeem_gift_code', {
+      method: 'POST',
       body: JSON.stringify({
-        cash: newCash,
-        net_worth: newWorth,
-        state: pState
+        p_code: normalized,
+        p_username: u
       })
     });
 
-    return {
-      success: true,
-      rewardType:'cash',
-      rewardText:`${reward.toLocaleString()} EGP كاش مالي`,
-      amount: reward,
-      playerUpdates: {
-        cash: newCash,
-        netWorth: newWorth
+    if (result && typeof result === 'object') {
+      if (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username === u) {
+        GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + Number(result.reward || 0);
+        GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + Number(result.reward || 0);
+        GameEngine.state.hasRedeemedGiftCode = true;
+        if (typeof window !== 'undefined' && typeof window.renderHeader === 'function') window.renderHeader();
       }
-    };
+      return result;
+    }
+    return { success: true, rewardType: 'cash', rewardText: 'تم استرداد الهدية بنجاح!' };
   }
 
   // ─────────────────────────────────────────────
