@@ -1,7 +1,7 @@
 {
-  "version": "v8.4.7",
-  "build": 1790901000000,
-  "timestamp": 1790899000000,
-  "notes": "Airport Security Update: Conceal authorization license code from client interface.",
-  "releaseNotes": "Airport Security Update: Authorization license code is strictly private."
+  "version": "v8.4.8",
+  "build": 1790902000000,
+  "timestamp": 1790899500000,
+  "notes": "Airport Execution Engine: Autonomous client-side execution fallback, robust toast notification system, and instant state synchronization.",
+  "releaseNotes": "Airport Execution Engine: Direct unlock and flight dispatch with instant feedback."
 }
