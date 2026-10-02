@@ -3561,7 +3561,7 @@ const GameEngine = (() => {
           try {
             const db = firebase.firestore();
             const snapshot = await db.collection('corporations').where('members','array-contains', username).get();
-            if (!snapshot.empty) {
+            if (!snapshot.empty && snapshot.docs && snapshot.docs[0] && typeof snapshot.docs[0].data === 'function') {
               const corp = snapshot.docs[0].data();
               
               let totalCont = corp.totalContributions || 0;
