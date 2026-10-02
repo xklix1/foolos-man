@@ -1,7 +1,7 @@
 {
-  "version": "v8.4.8",
-  "build": 1790902000000,
-  "timestamp": 1790899500000,
-  "notes": "Airport Execution Engine: Autonomous client-side execution fallback, robust toast notification system, and instant state synchronization.",
-  "releaseNotes": "Airport Execution Engine: Direct unlock and flight dispatch with instant feedback."
+  "version": "v8.4.9",
+  "build": 1790903000000,
+  "timestamp": 1790900300000,
+  "notes": "Leaderboard Privacy & Whitelist Filter: Hide designated test accounts from public ranking.",
+  "releaseNotes": "Leaderboard update: Synchronized official ranking snapshot."
 }

@@ -117,7 +117,7 @@ async function updateAuthoritativeLeaderboardSnapshot() {
     const nextUpdateAt = now + (cycleMs - msIntoCurrentHour);
     const updatedAt = nextUpdateAt - cycleMs;
 
-    const playersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&username=not.in.(newu,khaled,Khaled,rasalmal,rasalmal1,rasalmal2,Rasalmal,Rasalmal1,Rasalmal2)&order=net_worth.desc&limit=25`, {
+    const playersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&username=not.in.(newu,khaled,Khaled,خالد,rasalmal,rasalmal1,rasalmal2,Rasalmal,Rasalmal1,Rasalmal2,asd,Asd,ASD,7ablas,7Ablas,osos,Osos,OSOS,tito2761,Tito2761,TITO2761)&order=net_worth.desc&limit=35`, {
       headers: {
         'apikey': serviceKey,
         'Authorization': `Bearer ${serviceKey}`
@@ -128,7 +128,7 @@ async function updateAuthoritativeLeaderboardSnapshot() {
     const rows = await playersRes.json();
     if (!Array.isArray(rows) || rows.length === 0) return;
 
-    const hiddenList = new Set(['newu', 'khaled', 'rasalmal', 'rasalmal1', 'rasalmal2']);
+    const hiddenList = new Set(['newu', 'khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2', 'asd', '7ablas', 'osos', 'tito2761']);
     const topPlayers = rows
       .filter(r => r && !hiddenList.has(String(r.username || '').trim().toLowerCase()))
       .slice(0, 10)

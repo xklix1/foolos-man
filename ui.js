@@ -7144,7 +7144,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             if (!p || !p.username) return false;
             if (p.isAdmin) return false;
             const u = String(p.username).trim().toLowerCase();
-            return !['newu', 'khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(u) && !u.includes('khaled') && !u.includes('خالد');
+            return !['newu', 'khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2', 'asd', '7ablas', 'osos', 'tito2761'].includes(u) && !u.includes('khaled') && !u.includes('خالد');
           });
         }
         cachedLeaderboard = players;
@@ -11414,7 +11414,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       // 2. Render Top 5 Richest comparison
       const topRichestContainer = document.getElementById('adm-top-richest-container');
       if (topRichestContainer && stats.topRichest) {
-        const top5 = (stats.topRichest || []).filter(p => p && !['newu', 'khaled', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(String(p.username || '').trim().toLowerCase())).slice(0, 5);
+        const top5 = (stats.topRichest || []).filter(p => p && !['newu', 'khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2', 'asd', '7ablas', 'osos', 'tito2761'].includes(String(p.username || '').trim().toLowerCase())).slice(0, 5);
         const maxWorth = top5.length > 0 ? (top5[0].netWorth || 1) : 1;
 
         topRichestContainer.innerHTML ='';
@@ -23532,7 +23532,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.4.8');
+            const curVer = (window._CLIENT_VERSION || 'v8.4.9');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {
