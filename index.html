@@ -1548,44 +1548,79 @@
           جديد</button>
       </div>
 
-      <!-- Auth Inputs -->
-      <div class="space-y-4 w-full text-right mb-6">
-        <div>
-          <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">اسم المستخدم</label>
-          <input type="text" id="auth-username" class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold"
-            placeholder="مثال: abu_shehab" required autocomplete="username">
+      <!-- Step 1: Input Fields -->
+      <div id="auth-fields-step" class="w-full">
+        <!-- Auth Inputs -->
+        <div class="space-y-4 w-full text-right mb-6">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">اسم المستخدم</label>
+            <input type="text" id="auth-username" class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold"
+              placeholder="مثال: abu_shehab" required autocomplete="username">
+          </div>
+          <div id="auth-email-container" class="hidden">
+            <label class="block text-xs text-yellow-400 mb-1.5 font-bold mr-1">البريد الإلكتروني (لتوثيق واستعادة الحساب)</label>
+            <input type="email" id="auth-email" class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold text-white placeholder-slate-500 border-yellow-500/30 focus:border-yellow-400"
+              placeholder="مثال: player@example.com" autocomplete="email">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">كلمة السر / الرقم السري (PIN)</label>
+            <input type="password" id="auth-pin"
+              class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold tracking-widest" placeholder="••••"
+              required autocomplete="current-password">
+            <div id="auth-forgot-pin-container" class="mt-1.5 flex justify-end">
+              <button type="button" id="btn-open-forgot-pin-modal" class="text-[11px] text-yellow-400/90 hover:text-yellow-300 transition hover:underline font-bold flex items-center gap-1">
+                <i class="fa-solid fa-key text-[10px]"></i>
+                <span>نسيت كلمة السر (PIN)؟</span>
+              </button>
+            </div>
+          </div>
+          <div id="auth-referral-container" class="hidden">
+            <label class="block text-xs text-indigo-300 mb-1.5 font-bold mr-1">كود الدعوة (اختياري)</label>
+            <input type="text" id="auth-referral-code"
+              class="glass-input w-full p-3 rounded-lg text-sm text-center font-mono font-bold uppercase tracking-wider text-indigo-400 border-indigo-500/30 focus:border-indigo-400 placeholder-slate-600"
+              placeholder="مثال: REF-AB12">
+          </div>
         </div>
-        <div id="auth-email-container" class="hidden">
-          <label class="block text-xs text-yellow-400 mb-1.5 font-bold mr-1">البريد الإلكتروني (لتوثيق واستعادة الحساب)</label>
-          <input type="email" id="auth-email" class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold text-white placeholder-slate-500 border-yellow-500/30 focus:border-yellow-400"
-            placeholder="مثال: player@example.com" autocomplete="email">
+
+        <!-- Submit button -->
+        <button id="auth-submit"
+          class="w-full py-3.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-xl transition duration-300 flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 text-sm">
+          <span id="auth-action-text">دخول وتزامن الحساب</span>
+          <i id="auth-spinner" class="hidden fa-solid fa-spinner animate-spin text-slate-950 text-base"></i>
+        </button>
+      </div>
+
+      <!-- Step 2: Registration OTP Verification (Hidden by default) -->
+      <div id="auth-otp-step" class="hidden w-full text-right space-y-4">
+        <div class="p-3 bg-yellow-950/30 border border-yellow-500/30 rounded-xl text-center">
+          <span class="text-xs text-slate-400 block mb-1">تم إرسال رمز التحقق المكون من 6 أرقام إلى:</span>
+          <span id="auth-otp-target-email" class="text-sm font-bold text-yellow-400 numbers-font dir-ltr inline-block">player@example.com</span>
         </div>
+
         <div>
-          <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">كلمة السر / الرقم السري (PIN)</label>
-          <input type="password" id="auth-pin"
-            class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold tracking-widest" placeholder="••••"
-            required autocomplete="current-password">
-          <div id="auth-forgot-pin-container" class="mt-1.5 flex justify-end">
-            <button type="button" id="btn-open-forgot-pin-modal" class="text-[11px] text-yellow-400/90 hover:text-yellow-300 transition hover:underline font-bold flex items-center gap-1">
-              <i class="fa-solid fa-key text-[10px]"></i>
-              <span>نسيت كلمة السر (PIN)؟</span>
+          <label class="block text-xs text-slate-300 mb-1.5 font-bold text-center">أدخل رمز التحقق (OTP)</label>
+          <input type="text" id="auth-otp-code" maxlength="6"
+            class="glass-input w-full p-3 rounded-xl text-lg text-center font-mono font-black tracking-widest text-yellow-400 border-yellow-500/40 placeholder-slate-600 focus:border-yellow-400"
+            placeholder="••••••" autocomplete="one-time-code">
+          <div class="flex justify-between items-center mt-2 px-1 text-[11px] text-slate-400">
+            <span>صلاحية الرمز 5 دقائق</span>
+            <button id="btn-auth-resend-otp" type="button" class="text-yellow-400 hover:underline font-bold" disabled>
+              إعادة الإرسال (<span id="auth-resend-otp-timer">60</span>s)
             </button>
           </div>
         </div>
-        <div id="auth-referral-container" class="hidden">
-          <label class="block text-xs text-indigo-300 mb-1.5 font-bold mr-1">كود الدعوة (اختياري)</label>
-          <input type="text" id="auth-referral-code"
-            class="glass-input w-full p-3 rounded-lg text-sm text-center font-mono font-bold uppercase tracking-wider text-indigo-400 border-indigo-500/30 focus:border-indigo-400 placeholder-slate-600"
-            placeholder="مثال: REF-AB12">
-        </div>
-      </div>
 
-      <!-- Submit button -->
-      <button id="auth-submit"
-        class="w-full py-3.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-xl transition duration-300 flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 text-sm">
-        <span id="auth-action-text">دخول وتزامن الحساب</span>
-        <i id="auth-spinner" class="hidden fa-solid fa-spinner animate-spin text-slate-950 text-base"></i>
-      </button>
+        <button id="btn-auth-verify-otp" type="button"
+          class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl transition duration-300 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 text-sm">
+          <i class="fa-solid fa-check-double"></i>
+          <span id="text-auth-verify-otp">تحقق وتأكيد إنشاء الحساب</span>
+          <i id="spinner-auth-verify-otp" class="hidden fa-solid fa-spinner animate-spin text-slate-950 text-base"></i>
+        </button>
+
+        <button id="btn-auth-back-to-fields" type="button" class="w-full text-center text-xs text-slate-400 hover:text-white transition pt-2">
+          ← تعديل البيانات والبريد
+        </button>
+      </div>
 
       <!-- Quick Back link -->
       <button id="btn-auth-cancel-bottom" class="mt-4 text-xs text-slate-400 hover:text-white transition font-medium">

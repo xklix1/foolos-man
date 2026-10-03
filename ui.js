@@ -2252,9 +2252,28 @@ const UIController = (() => {
 
   let currentAuthMode ='login'; // Shared state across auth triggers
   let isAuthSubmitting = false;
+  let _stagedRegUsername = '';
+  let _stagedRegEmail = '';
+  let _stagedRegPin = '';
+  let _stagedRegRefCode = '';
+  let _regOtpTimer = null;
+
+  function resetAuthFormStep() {
+    const fieldsStep = document.getElementById('auth-fields-step');
+    const otpStep = document.getElementById('auth-otp-step');
+    if (fieldsStep) fieldsStep.classList.remove('hidden');
+    if (otpStep) otpStep.classList.add('hidden');
+    const otpInput = document.getElementById('auth-otp-code');
+    if (otpInput) otpInput.value = '';
+    if (_regOtpTimer) {
+      clearInterval(_regOtpTimer);
+      _regOtpTimer = null;
+    }
+  }
 
   function showAuthModal(mode ='login') {
     currentAuthMode = mode;
+    resetAuthFormStep();
     const authScreen = document.getElementById('auth-screen');
     const authRegBtn = document.getElementById('auth-switch-reg');
     const authLoginBtn = document.getElementById('auth-switch-login');
@@ -2265,7 +2284,7 @@ const UIController = (() => {
 
     if (mode ==='register') {
       if (authModeTitle) authModeTitle.textContent ='تسجيل حساب جديد';
-      if (authActionBtn) authActionBtn.textContent ='إنشاء حساب وبدء اللعب';
+      if (authActionBtn) authActionBtn.textContent ='إرسال رمز التحقق ومتابعة التسجيل';
       if (authRegBtn) authRegBtn.classList.add('border-yellow-500','text-yellow-500');
       if (authLoginBtn) authLoginBtn.classList.remove('border-yellow-500','text-yellow-500');
       if (emailCont) emailCont.classList.remove('hidden');
@@ -2286,6 +2305,7 @@ const UIController = (() => {
   }
 
   function closeAuthModal() {
+    resetAuthFormStep();
     const authScreen = document.getElementById('auth-screen');
     if (authScreen) authScreen.classList.add('hidden');
     document.getElementById('start-menu-screen').classList.remove('hidden');
@@ -2326,12 +2346,42 @@ const UIController = (() => {
     const emailCont = document.getElementById('auth-email-container');
     const refCont = document.getElementById('auth-referral-container');
 
+    const btnAuthVerifyOtp = document.getElementById('btn-auth-verify-otp');
+    const btnAuthResendOtp = document.getElementById('btn-auth-resend-otp');
+    const btnAuthBackToFields = document.getElementById('btn-auth-back-to-fields');
+
+    const getApiBase = () => (typeof window !== 'undefined' && window.SERVER_API_URL) 
+      ? window.SERVER_API_URL.replace(/\/$/, '') 
+      : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:3001' : '');
+
+    const startResendCountdown = () => {
+      let countdown = 60;
+      const timerSpan = document.getElementById('auth-resend-otp-timer');
+      if (timerSpan) timerSpan.textContent = String(countdown);
+      if (btnAuthResendOtp) btnAuthResendOtp.disabled = true;
+
+      if (_regOtpTimer) clearInterval(_regOtpTimer);
+      _regOtpTimer = setInterval(() => {
+        countdown -= 1;
+        if (timerSpan) timerSpan.textContent = String(countdown);
+        if (countdown <= 0) {
+          clearInterval(_regOtpTimer);
+          _regOtpTimer = null;
+          if (btnAuthResendOtp) {
+            btnAuthResendOtp.disabled = false;
+            btnAuthResendOtp.innerHTML = 'إعادة إرسال رمز جديد';
+          }
+        }
+      }, 1000);
+    };
+
     if (authRegBtn) {
       authRegBtn.addEventListener('click', () => {
         playMenuSound('click');
         currentAuthMode ='register';
+        resetAuthFormStep();
         if (authModeTitle) authModeTitle.textContent ='تسجيل حساب جديد';
-        if (authActionBtn) authActionBtn.textContent ='إنشاء حساب وبدء اللعب';
+        if (authActionBtn) authActionBtn.textContent ='إرسال رمز التحقق ومتابعة التسجيل';
         authRegBtn.classList.add('border-yellow-500','text-yellow-500');
         authLoginBtn.classList.remove('border-yellow-500','text-yellow-500');
         if (emailCont) emailCont.classList.remove('hidden');
@@ -2343,6 +2393,7 @@ const UIController = (() => {
       authLoginBtn.addEventListener('click', () => {
         playMenuSound('click');
         currentAuthMode ='login';
+        resetAuthFormStep();
         if (authModeTitle) authModeTitle.textContent ='تسجيل الدخول للمحفظة';
         if (authActionBtn) authActionBtn.textContent ='دخول وتزامن الحساب';
         authLoginBtn.classList.add('border-yellow-500','text-yellow-500');
@@ -2352,13 +2403,128 @@ const UIController = (() => {
       });
     }
 
+    if (btnAuthBackToFields) {
+      btnAuthBackToFields.addEventListener('click', () => {
+        playMenuSound('click');
+        resetAuthFormStep();
+      });
+    }
+
+    if (btnAuthResendOtp) {
+      btnAuthResendOtp.addEventListener('click', async () => {
+        if (!_stagedRegEmail) return;
+        try {
+          btnAuthResendOtp.disabled = true;
+          btnAuthResendOtp.textContent = 'جارٍ الإرسال...';
+          const apiBase = getApiBase();
+          const res = await fetch(`${apiBase}/api/auth/send-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: _stagedRegEmail,
+              username: _stagedRegUsername || 'المستثمر',
+              type: 'register'
+            })
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || 'فشل إعادة إرسال الرمز.');
+          }
+          showToast('تم الإرسال 📩', 'تم إرسال رمز تحقق جديد إلى بريدك الإلكتروني بنجاح.', 'success');
+          playMenuSound('success');
+          startResendCountdown();
+        } catch (err) {
+          showToast('خطأ', err.message || 'تعذر إرسال الرمز.', 'error');
+          btnAuthResendOtp.disabled = false;
+          btnAuthResendOtp.innerHTML = 'إعادة إرسال رمز جديد';
+        }
+      });
+    }
+
+    // Step 2: Verify OTP and finalize registration
+    if (btnAuthVerifyOtp) {
+      btnAuthVerifyOtp.addEventListener('click', async () => {
+        const otpInput = document.getElementById('auth-otp-code');
+        const otpVal = otpInput ? otpInput.value.trim() : '';
+        const verifyText = document.getElementById('text-auth-verify-otp');
+        const verifySpinner = document.getElementById('spinner-auth-verify-otp');
+
+        if (!otpVal || otpVal.length !== 6 || !/^\d{6}$/.test(otpVal)) {
+          showToast('خطأ', 'يرجى إدخال رمز التحقق المكون من 6 أرقام بدقة.', 'error');
+          if (otpInput) otpInput.focus();
+          return;
+        }
+
+        try {
+          btnAuthVerifyOtp.disabled = true;
+          if (verifyText) verifyText.textContent = 'جارٍ التحقق وتأكيد الحساب...';
+          if (verifySpinner) verifySpinner.classList.remove('hidden');
+
+          const apiBase = getApiBase();
+          const res = await fetch(`${apiBase}/api/auth/verify-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: _stagedRegEmail,
+              code: otpVal,
+              username: _stagedRegUsername
+            })
+          });
+
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || 'رمز التحقق غير صحيح أو منتهي الصلاحية.');
+          }
+
+          // Register player in Supabase / AppDB
+          await AppDB.registerPlayer(_stagedRegUsername, _stagedRegPin, _stagedRegRefCode, _stagedRegEmail);
+          const playerState = await GameEngine.loadUserSession(_stagedRegUsername, null, _stagedRegPin);
+          localStorage.setItem('rasalmal_active_session_user', _stagedRegUsername);
+
+          showToast('تم بنجاح 👑', 'تم تأكيد بريدك الإلكتروني وإنشاء إمبراطوريتك بنجاح!', 'success', 4000);
+          playMenuSound('start');
+
+          // Hide auth screen, start menu & maintenance overlay, show game
+          hideMaintenanceOverlay();
+          document.getElementById('auth-screen').classList.add('hidden');
+          document.getElementById('start-menu-screen').classList.add('hidden');
+          const mainLayout = document.getElementById('main-game-layout');
+          if (mainLayout) {
+            mainLayout.classList.remove('hidden');
+            mainLayout.classList.add('flex');
+          }
+          setFloatingChatVisibility(true);
+
+          setupRealTimeListeners(_stagedRegUsername);
+          startGameLoop();
+          renderAll();
+
+          if (playerState && playerState.offlineReport) {
+            const rep = playerState.offlineReport;
+            setTimeout(() => {
+              if (rep.seconds >= 10) showOfflineReportModal(rep);
+            }, 1000);
+            delete playerState.offlineReport;
+          }
+
+        } catch (err) {
+          showToast('فشل التحقق', err.message || 'تعذر تأكيد رمز التحقق.', 'error');
+          playMenuSound('back');
+        } finally {
+          btnAuthVerifyOtp.disabled = false;
+          if (verifyText) verifyText.textContent = 'تحقق وتأكيد إنشاء الحساب';
+          if (verifySpinner) verifySpinner.classList.add('hidden');
+        }
+      });
+    }
+
     if (authSubmitBtn) {
       authSubmitBtn.addEventListener('click', async () => {
         if (isAuthSubmitting) return; // Prevent concurrent duplicate submissions
 
         const usernameInput = document.getElementById('auth-username').value.trim();
         const pinInput = document.getElementById('auth-pin').value.trim();
-        const emailInput = (document.getElementById('auth-email')?.value || '').trim();
+        const emailInput = (document.getElementById('auth-email')?.value || '').trim().toLowerCase();
 
         if (!usernameInput || !pinInput) {
           showToast('خطأ','يرجى ملء جميع الحقول للمتابعة.','error');
@@ -2368,34 +2534,89 @@ const UIController = (() => {
 
         if (currentAuthMode === 'register') {
           if (!emailInput || !emailInput.includes('@') || !emailInput.includes('.') || emailInput.length < 5) {
-            showToast('خطأ', 'يرجى إدخال بريد إلكتروني صحيح لتأمين الحساب.', 'error');
+            showToast('خطأ', 'يرجى إدخال بريد إلكتروني صحيح لتأمين وتوثيق الحساب.', 'error');
             const emEl = document.getElementById('auth-email');
             if (emEl) emEl.focus();
             playMenuSound('back');
             return;
           }
+
+          if (usernameInput.length < 3) {
+            showToast('خطأ', 'اسم المستخدم يجب ألا يقل عن 3 أحرف.', 'error');
+            return;
+          }
+
+          if (pinInput.length < 4) {
+            showToast('خطأ', 'كلمة السر / PIN يجب ألا تقل عن 4 خانات.', 'error');
+            return;
+          }
+
+          // Step 1 of Register: Send OTP to email
+          try {
+            isAuthSubmitting = true;
+            setAuthLoading(true);
+
+            _stagedRegUsername = usernameInput;
+            _stagedRegEmail = emailInput;
+            _stagedRegPin = pinInput;
+            _stagedRegRefCode = document.getElementById('auth-referral-code')?.value?.trim() || '';
+
+            const apiBase = getApiBase();
+            const endpoint = `${apiBase}/api/auth/send-otp`;
+            const res = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: emailInput,
+                username: usernameInput,
+                type: 'register'
+              })
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+              throw new Error(data.error || 'فشل إرسال رمز التحقق إلى بريدك الإلكتروني.');
+            }
+
+            showToast('تم الإرسال 📩', 'تم إرسال رمز التحقق المكون من 6 أرقام إلى بريدك الإلكتروني.', 'success', 4000);
+            playMenuSound('success');
+
+            // Switch to Step 2: OTP Verification
+            const fieldsStep = document.getElementById('auth-fields-step');
+            const otpStep = document.getElementById('auth-otp-step');
+            const targetEmailDisplay = document.getElementById('auth-otp-target-email');
+            const otpInput = document.getElementById('auth-otp-code');
+
+            if (targetEmailDisplay) targetEmailDisplay.textContent = emailInput;
+            if (fieldsStep) fieldsStep.classList.add('hidden');
+            if (otpStep) otpStep.classList.remove('hidden');
+            if (otpInput) {
+              otpInput.value = '';
+              setTimeout(() => otpInput.focus(), 150);
+            }
+
+            startResendCountdown();
+
+          } catch (err) {
+            showToast('خطأ في الإرسال', err.message || 'حدث خطأ أثناء إرسال رمز التحقق.', 'error');
+            playMenuSound('back');
+          } finally {
+            isAuthSubmitting = false;
+            setAuthLoading(false);
+          }
+          return;
         }
 
+        // Login Mode
         try {
           isAuthSubmitting = true;
           setAuthLoading(true);
 
-          let playerState;
-
-          let canonicalUser = usernameInput;
-          if (currentAuthMode ==='register') {
-            const refCodeInput = document.getElementById('auth-referral-code')?.value?.trim() || '';
-            await AppDB.registerPlayer(usernameInput, pinInput, refCodeInput, emailInput);
-            playerState = await GameEngine.loadUserSession(usernameInput, null, pinInput);
-            localStorage.setItem('rasalmal_active_session_user', usernameInput);
-            showToast('نجاح','تم تسجيل حسابك الجديد وتوثيق البريد بنجاح! مرحباً بك.','success');
-          } else {
-            const loggedUser = await AppDB.loginPlayer(usernameInput, pinInput);
-            canonicalUser = (loggedUser && loggedUser.username) ? loggedUser.username : usernameInput;
-            playerState = await GameEngine.loadUserSession(canonicalUser, loggedUser, pinInput);
-            localStorage.setItem('rasalmal_active_session_user', canonicalUser);
-            showToast('أهلاً بك',`تم تحميل بيانات الحساب: ${canonicalUser}`,'success');
-          }
+          const loggedUser = await AppDB.loginPlayer(usernameInput, pinInput);
+          const canonicalUser = (loggedUser && loggedUser.username) ? loggedUser.username : usernameInput;
+          const playerState = await GameEngine.loadUserSession(canonicalUser, loggedUser, pinInput);
+          localStorage.setItem('rasalmal_active_session_user', canonicalUser);
+          showToast('أهلاً بك',`تم تحميل بيانات الحساب: ${canonicalUser}`,'success');
 
           playMenuSound('start');
 
@@ -2431,7 +2652,7 @@ const UIController = (() => {
             delete playerState.offlineReport;
           }
         } catch (err) {
-          showToast('فشل التحقق', err.message,'error');
+          showToast('فشل تسجيل الدخول', err.message,'error');
           playMenuSound('back');
         } finally {
           isAuthSubmitting = false;
