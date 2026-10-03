@@ -1414,7 +1414,7 @@
             timestamp: now
           };
 
-          await AppDB.sendMail('إدارة اللعبة (Admin)', canonicalUsername, 'admin_balance_grant', grantPayload);
+          try { await AppDB.sendMail('إدارة اللعبة (Admin)', canonicalUsername, 'admin_balance_grant', grantPayload); } catch(_) {}
 
           // 4. Ensure pendingAdminPopup is null so no disruptive modal appears to the player
           if (freshPlayer.pendingAdminPopup) delete freshPlayer.pendingAdminPopup;
@@ -1543,7 +1543,7 @@
             timestamp: now
           };
 
-          await AppDB.sendMail('إدارة اللعبة (Admin)', canonicalUsername, 'admin_gold_grant', grantPayload);
+          try { await AppDB.sendMail('إدارة اللعبة (Admin)', canonicalUsername, 'admin_gold_grant', grantPayload); } catch(_) {}
 
           // 4. Ensure pendingAdminPopup is null
           if (freshPlayer.pendingAdminPopup) delete freshPlayer.pendingAdminPopup;
@@ -2758,7 +2758,7 @@
         };
 
         // 1. Send via mailbox system (delivered in real-time)
-        await AppDB.sendMail('إدارة اللعبة (Admin)', targetUser, 'admin_popup', popupPayload);
+        try { await AppDB.sendMail('إدارة اللعبة (Admin)', targetUser, 'admin_popup', popupPayload); } catch(_) {}
 
         // 2. Also inject directly into player state if player exists in database
         try {
@@ -3105,11 +3105,13 @@
           reviewerNote: note
         };
 
+        try {
         await AppDB.sendMail('إدارة اللعبة (Financial Team)', targetUser, 'topup_receipt', {
           title: `🎉 تم استلام [${pkgName}] بنجاح!`,
           message: note || `مبروك! تم إرسال حزمة [${pkgName}] لحسابك بنجاح من قبل إدارة اللعبة.`,
           topupDetails: topupReceiptData
         });
+        } catch(_) {}
 
         // 4. Update in-memory GameEngine if this admin is the active user
         if (targetUser === GameEngine.activeUsername) {
