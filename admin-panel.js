@@ -10395,9 +10395,9 @@
     },
     gold_1000: {
       type: 'gold',
-      id: 'gold_pack_1000',
-      name: 'شحنة الذهب الملكية (1,000 سبيكة) 🥇',
-      description: '1,000 سبيكة ذهب نقي تمنحك قوة استثمارية وسيولة فورية ضخمة في البورصة',
+      id: 'gold_pack_custom',
+      name: 'احتياطي الذهب الملكي 🥇',
+      description: 'سبائك ذهب نقي تمنحك قوة استثمارية وسيولة فورية ضخمة في البورصة',
       icon: '🥇',
       badge: 'احتياطي ذهب ملكي',
       rewardData: { gold: 1000 },
@@ -10441,14 +10441,13 @@
         goldBox.classList.remove('opacity-40');
         goldBox.classList.add('ring-2', 'ring-amber-500/80', 'bg-amber-950/60');
       }
-      const g = goldAmountEl ? (Number(goldAmountEl.value) || 1000) : 1000;
       if (nameEl && (!nameEl.value || nameEl.value.includes('إطار') || nameEl.value.includes('طائرة'))) {
-        nameEl.value = `احتياطي الذهب الملكي (${g.toLocaleString()} سبيكة) 🥇`;
+        nameEl.value = 'احتياطي الذهب الملكي 🥇';
       }
       if (iconEl && (!iconEl.value || iconEl.value === '🔥' || iconEl.value === '✈️')) iconEl.value = '🥇';
       if (badgeEl && (!badgeEl.value || badgeEl.value.includes('إطار') || badgeEl.value.includes('أسطول'))) badgeEl.value = 'احتياطي ذهب ملكي';
       if (descEl && (!descEl.value || descEl.value.includes('إطار') || descEl.value.includes('طائرة'))) {
-        descEl.value = `${g.toLocaleString()} سبيكة ذهب نقي تمنحك سيولة فورية وقوة استثمارية كاسحة في البورصة والصفقات`;
+        descEl.value = 'سبائك ذهب نقي تمنحك سيولة فورية وقوة استثمارية كاسحة في البورصة والصفقات';
       }
     } else {
       if (goldBox) {
