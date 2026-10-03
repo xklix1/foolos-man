@@ -331,7 +331,7 @@ var PWAManager = (() => {
   }
 
   async function subscribeToPushServer(customUsername = null) {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || typeof Notification === 'undefined' || Notification.permission !== 'granted') {
       return;
     }
 
@@ -372,7 +372,8 @@ var PWAManager = (() => {
         console.log('[PWAManager] Push subscription synchronized with server for:', username);
       }
     } catch (err) {
-      console.warn('[PWAManager] Failed to synchronize push subscription:', err.message);
+      // Non-critical push subscription failure (e.g. Incognito / permission denial)
+      console.debug('[PWAManager] Push subscription notice:', err.message);
     }
   }
 
