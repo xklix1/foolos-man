@@ -1,7 +1,7 @@
 {
-  "version": "v8.9.0",
-  "build": 1791059000000,
-  "timestamp": 1791059000000,
-  "notes": "Royal Live Hosted Auctions, 60s hammer countdown, wealth requirement filters, spectator mode, and animated chat frames",
-  "releaseNotes": "Royal Live Hosted Auctions, 60s hammer countdown, wealth requirement filters, spectator mode, and animated chat frames"
+  "version": "v9.0.0",
+  "build": 1791060000000,
+  "timestamp": 1791060000000,
+  "notes": "The Grand Royal Museum & Antiquities, Relic Minting, Royal Auctions and Instant Buybacks",
+  "releaseNotes": "The Grand Royal Museum & Antiquities, Relic Minting, Royal Auctions and Instant Buybacks"
 }
