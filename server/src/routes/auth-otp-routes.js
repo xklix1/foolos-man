@@ -188,7 +188,7 @@ function buildOtpEmailHtml(otpCode, username, typeText) {
 /**
  * Send email via Resend REST API
  */
-async function sendEmailViaResend(toEmail, subject, htmlContent) {
+async function sendEmailViaResend(toEmail, subject, htmlContent, textContent = '') {
   const apiKey = (process.env.RESEND_API_KEY || config.RESEND_API_KEY || '').trim();
   if (!apiKey) {
     throw new Error('مفتاح RESEND_API_KEY غير موجود في إعدادات الخادم.');
@@ -197,18 +197,29 @@ async function sendEmailViaResend(toEmail, subject, htmlContent) {
   // Use verified sender auth@rasalmal.online
   const fromAddress = process.env.RESEND_FROM_EMAIL || config.RESEND_FROM_EMAIL || 'رأس المال <auth@rasalmal.online>';
 
+  const emailPayload = {
+    from: fromAddress,
+    to: [toEmail],
+    subject: subject,
+    html: htmlContent,
+    reply_to: 'support@rasalmal.online',
+    headers: {
+      'X-Entity-Ref-ID': crypto.randomUUID(),
+      'X-Auto-Response-Suppress': 'OOF, AutoReply'
+    }
+  };
+
+  if (textContent) {
+    emailPayload.text = textContent;
+  }
+
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      from: fromAddress,
-      to: [toEmail],
-      subject: subject,
-      html: htmlContent
-    })
+    body: JSON.stringify(emailPayload)
   });
 
   const resData = await response.json();
@@ -259,9 +270,10 @@ module.exports = async function authOtpRoutes(fastify, opts) {
 
     const emailSubject = `رمز التحقق الآمن: ${otpCode} - رأس المال`;
     const htmlBody = buildOtpEmailHtml(otpCode, cleanUsername, typeText);
+    const plainText = `مرحباً ${cleanUsername || 'المستثمر'}،\n\nرمز التحقق الخاص بك هو: ${otpCode}\n\nالغرض: ${typeText}\nصلاحية الرمز: 5 دقائق فقط.\n\nإذا لم تكن قد طلبت هذا الرمز، يمكنك تجاهل هذه الرسالة بأمان.\n\nرأس المال - Ras ALmal Tycoon\nhttps://rasalmal.online`;
 
     try {
-      await sendEmailViaResend(cleanEmail, emailSubject, htmlBody);
+      await sendEmailViaResend(cleanEmail, emailSubject, htmlBody, plainText);
 
       // Store in memory (5 minutes TTL)
       otpStore.set(cleanEmail, {
