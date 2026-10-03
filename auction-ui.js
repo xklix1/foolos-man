@@ -585,6 +585,12 @@
                     <span class="text-[10px] text-slate-500 font-mono">${new Date(b.time).toLocaleTimeString('ar-EG')}</span>
                   </div>
                 </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
       // --- 4. Registered Players Showcase List (During SCHEDULED & LIVE) ---
       const registrants = this.state.registrants || [];
       if (this.state.isScheduled || this.state.isLive) {

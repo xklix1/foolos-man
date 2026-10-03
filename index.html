@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v9.0.0';
+    window._CLIENT_VERSION = 'v9.0.1';
     (async function() {
-      const CURRENT_APP_BUILD = 'v9.0.0';
+      const CURRENT_APP_BUILD = 'v9.0.1';
       try {
         // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -7431,14 +7431,14 @@
   </div>
 
   <!-- Script Initializers -->
-  <script src="db.js?v=v9.0.0"></script>
-  <script src="server-client-bridge.js?v=v9.0.0"></script>
-  <script src="game.js?v=v9.0.0"></script>
-  <script src="ui.js?v=v9.0.0"></script>
-  <script src="airport-ui.js?v=v9.0.0"></script>
-  <script src="auction-ui.js?v=v9.0.0"></script>
-  <script src="museum-ui.js?v=v9.0.0"></script>
-  <script src="pwa-manager.js?v=v9.0.0"></script>
+  <script src="db.js?v=v9.0.1"></script>
+  <script src="server-client-bridge.js?v=v9.0.1"></script>
+  <script src="game.js?v=v9.0.1"></script>
+  <script src="ui.js?v=v9.0.1"></script>
+  <script src="airport-ui.js?v=v9.0.1"></script>
+  <script src="auction-ui.js?v=v9.0.1"></script>
+  <script src="museum-ui.js?v=v9.0.1"></script>
+  <script src="pwa-manager.js?v=v9.0.1"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

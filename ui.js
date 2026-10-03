@@ -23896,6 +23896,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       if (btnSaveAvatar) btnSaveAvatar.addEventListener('click', saveStagedAvatar);
       if (btnRemoveAvatar) btnRemoveAvatar.addEventListener('click', removeUserAvatar);
     });
+  }
+
   function openAuctionModal() {
     if (window.RoyalAuction && typeof window.RoyalAuction.openModal === 'function') {
       window.RoyalAuction.openModal();
