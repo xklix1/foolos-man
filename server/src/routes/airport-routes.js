@@ -67,14 +67,14 @@ async function airportRoutes(fastify, options) {
     }
     // Fallback if not configured
     return _cachedAirportSettings || {
-      unlock_code: 'SKY-ROYAL-2026',
-      unlock_cost: 50000000,
-      min_xp: 2500,
+      unlock_code: '',
+      unlock_cost: 30000000,
+      min_xp: 0,
       is_active: true
     };
   }
 
-  // 1. POST /api/airport/unlock (Unlock with Dynamic Access Code)
+  // 1. POST /api/airport/unlock (Unlock Airport Hub — 30M EGP, No code or XP barrier)
   fastify.post('/api/airport/unlock', async (request, reply) => {
     const session = await resolveSession(request, reply);
     if (!session) return;
@@ -84,29 +84,14 @@ async function airportRoutes(fastify, options) {
       return reply.code(400).send({ error: 'المطار مفعل بالفعل في حسابك!' });
     }
 
-    const { code, airportName } = request.body || {};
-    const inputCode = (code || '').toString().trim().toUpperCase();
+    const { airportName } = request.body || {};
 
     const settings = await getDynamicAirportSettings();
-    if (!settings.is_active) {
+    if (settings.is_active === false) {
       return reply.code(403).send({ error: 'مشروع المطار غير مفعل حالياً من إدارة اللعبة.' });
     }
 
-    const expectedCode = (settings.unlock_code || 'SKY-ROYAL-2026').trim().toUpperCase();
-    if (!inputCode || inputCode !== expectedCode) {
-      return reply.code(403).send({
-        error: '🚫 كود تصريح الطيران غير صحيح! يرجى الحصول على كود تفعيل المطار المعتمد.'
-      });
-    }
-
-    const minXp = Number(settings.min_xp || 2500);
-    if (Number(s.xp || 0) < minXp) {
-      return reply.code(400).send({
-        error: `🚫 يتطلب فتح المطار خبرة لا تقل عن ${minXp.toLocaleString()} XP (خبرتك الحالية: ${Number(s.xp || 0).toLocaleString()} XP)`
-      });
-    }
-
-    const cost = Number(settings.unlock_cost || 50000000);
+    const cost = Number(settings.unlock_cost || 30000000);
     const curCash = Number(s.cash || 0);
     const curBank = Number(s.bank || 0);
 

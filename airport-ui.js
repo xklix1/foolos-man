@@ -185,15 +185,12 @@ window.AirportUI = (() => {
    * Renders the Airport Unlock Licensing Gateway (Requires dynamic security code)
    */
   function renderUnlockGateway(container, state) {
-    const minXp = 2500;
-    const cost = 50000000;
+    const cost = 30000000;
     const curCash = Number(state.cash || 0);
     const curBank = Number(state.bank || 0);
     const totalLiquid = curCash + curBank;
-    const curXp = Number(state.xp || 0);
 
     const hasFunds = totalLiquid >= cost;
-    const hasXp = curXp >= minXp;
 
     container.innerHTML = `
       <div class="glass-panel p-6 sm:p-10 rounded-3xl border border-sky-500/30 relative overflow-hidden shadow-2xl text-center space-y-8"
@@ -229,7 +226,7 @@ window.AirportUI = (() => {
                 <i class="fa-solid fa-money-bill-wave"></i>
               </div>
               <div>
-                <div class="text-[11px] text-slate-400 font-bold">رسوم رخصة الطيران</div>
+                <div class="text-[11px] text-slate-400 font-bold">رسوم تدشين ورخصة المطار</div>
                 <div class="text-sm font-black text-emerald-400 numbers-font">${cost.toLocaleString()} ج.م</div>
               </div>
             </div>
@@ -240,38 +237,24 @@ window.AirportUI = (() => {
             </div>
           </div>
 
-          <div class="p-4 rounded-2xl bg-slate-900/80 border ${hasXp ? 'border-emerald-500/40 bg-emerald-950/20' : 'border-slate-800'} flex items-center justify-between">
+          <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/40 bg-emerald-950/20 flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg">
-                <i class="fa-solid fa-star"></i>
+              <div class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-unlock"></i>
               </div>
               <div>
-                <div class="text-[11px] text-slate-400 font-bold">الخبرة المطلوبة (XP)</div>
-                <div class="text-sm font-black text-amber-400 numbers-font">${minXp.toLocaleString()} XP</div>
+                <div class="text-[11px] text-slate-400 font-bold">شرط الترخيص والخبرة</div>
+                <div class="text-sm font-black text-sky-400">متاح ومفتوح للجميع</div>
               </div>
             </div>
             <div>
-              ${hasXp 
-                ? '<span class="text-xs font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-check"></i> مكتمل</span>' 
-                : `<span class="text-xs font-bold text-rose-400">${curXp.toLocaleString()} / ${minXp.toLocaleString()}</span>`}
+              <span class="text-xs font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-check"></i> متاح فوراً</span>
             </div>
           </div>
         </div>
 
         <!-- License Form Inputs -->
         <div class="max-w-md mx-auto space-y-4 p-5 sm:p-6 rounded-3xl bg-slate-950/80 border border-slate-800 relative z-10 text-right">
-          <div class="space-y-1.5">
-            <label class="block text-xs font-black text-sky-400 flex items-center gap-1.5">
-              <i class="fa-solid fa-key text-[11px]"></i>
-              <span>كود تصريح الطيران الأمني (Security License Code):</span>
-            </label>
-            <input type="text" id="airport-unlock-code-input" placeholder="اكتب كود تصريح الطيران هنا..."
-              class="w-full px-4 py-3 bg-slate-900 border border-slate-700 focus:border-sky-500 rounded-xl text-center text-sm font-bold text-white uppercase tracking-widest placeholder:normal-case placeholder:text-slate-600 outline-none transition shadow-inner">
-            <p class="text-[10px] text-slate-500 leading-tight">
-              * يتم الحصول على كود تصريح الطيران الأمني حصرياً من إدارة اللعبة.
-            </p>
-          </div>
-
           <div class="space-y-1.5">
             <label class="block text-xs font-black text-slate-300 flex items-center gap-1.5">
               <i class="fa-solid fa-signature text-[11px] text-amber-400"></i>
@@ -284,7 +267,7 @@ window.AirportUI = (() => {
           <button id="btn-airport-submit-unlock"
             class="w-full py-4 rounded-2xl bg-gradient-to-r from-sky-500 via-sky-600 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-black text-sm shadow-xl shadow-sky-500/25 transition active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
             <i class="fa-solid fa-passport"></i>
-            <span>تفعيل رخصة المطار وتدشين الأسطول الجوي 🛫</span>
+            <span>تدشين المطار ورخصة الطيران (30,000,000 ج.م) 🛫</span>
           </button>
         </div>
       </div>
@@ -302,7 +285,6 @@ window.AirportUI = (() => {
         }
       } catch (_) {}
 
-      // Standalone Floating Toast Notification
       let container = document.getElementById('airport-toast-container');
       if (!container) {
         container = document.createElement('div');
@@ -338,24 +320,17 @@ window.AirportUI = (() => {
     const btnUnlock = document.getElementById('btn-airport-submit-unlock');
     if (btnUnlock) {
       btnUnlock.addEventListener('click', async () => {
-        const codeInput = document.getElementById('airport-unlock-code-input');
         const nameInput = document.getElementById('airport-custom-name-input');
-        const code = (codeInput?.value || '').trim().toUpperCase();
         const airportName = (nameInput?.value || '').trim() || 'مطار رأس المال الدولي';
 
-        if (!code) {
-          showAirportToast('يرجى كتابة كود تصريح الطيران أولاً!', 'error');
-          return;
-        }
-
         btnUnlock.disabled = true;
-        btnUnlock.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري التحقق من السيرفر وتدشين المطار...';
+        btnUnlock.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري تدشين المطار وسداد الرسوم...';
 
         // 1. Try Server-Authoritative Bridge if active
         let serverSuccess = false;
         if (window.ServerBridge && typeof window.ServerBridge.unlockAirport === 'function') {
           try {
-            const res = await window.ServerBridge.unlockAirport(code, airportName);
+            const res = await window.ServerBridge.unlockAirport('', airportName);
             if (res && res.success) {
               serverSuccess = true;
               showAirportToast(res.message || 'تم تدشين المطار بنجاح!', 'success');
@@ -381,18 +356,7 @@ window.AirportUI = (() => {
           const uName = (liveState.username || '').toLowerCase();
           const isAdmin = uName === 'khaled' || uName === 'خالد' || liveState.isAdmin === true;
 
-          const expectedCode = 'SKY-ROYAL-2026';
-          if (!isAdmin && code !== expectedCode) {
-            throw new Error('🚫 كود تصريح الطيران غير صحيح! يرجى الحصول على كود تفعيل المطار المعتمد.');
-          }
-
-          const minXp = 2500;
-          const curXp = Number(liveState.xp || 0);
-          if (!isAdmin && curXp < minXp) {
-            throw new Error(`🚫 يتطلب فتح المطار خبرة لا تقل عن ${minXp.toLocaleString()} XP (خبرتك الحالية: ${curXp.toLocaleString()} XP)`);
-          }
-
-          const cost = 50000000;
+          const cost = 30000000;
           const curCash = Number(liveState.cash || 0);
           const curBank = Number(liveState.bank || 0);
           if (!isAdmin && (curCash + curBank) < cost) {
@@ -453,7 +417,7 @@ window.AirportUI = (() => {
         } catch (err) {
           showAirportToast(err.message || 'فشل تفعيل المطار', 'error');
           btnUnlock.disabled = false;
-          btnUnlock.innerHTML = '<i class="fa-solid fa-passport"></i> <span>تفعيل رخصة المطار وتدشين الأسطول الجوي 🛫</span>';
+          btnUnlock.innerHTML = '<i class="fa-solid fa-passport"></i> <span>تدشين المطار ورخصة الطيران (30,000,000 ج.م) 🛫</span>';
         }
       });
     }
