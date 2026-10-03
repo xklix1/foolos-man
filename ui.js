@@ -1692,6 +1692,8 @@ const UIController = (() => {
     let _targetLinkEmailUser = '';
     let _linkEmailCountdownTimer = null;
     let _lastSentLinkEmail = '';
+    let _isSendingLinkEmailOtp = false;
+    let _isVerifyingLinkEmailOtp = false;
 
     openLinkEmailModal = (targetUser) => {
       _targetLinkEmailUser = targetUser || getActiveUsernameSafe() || '';
@@ -1734,6 +1736,8 @@ const UIController = (() => {
     };
 
     sendLinkEmailOtp = async () => {
+      if (_isSendingLinkEmailOtp) return;
+      
       const emailInput = document.getElementById('input-link-player-email');
       const emailVal = emailInput ? emailInput.value.trim().toLowerCase() : '';
       const sendBtn = document.getElementById('btn-send-link-otp');
@@ -1748,6 +1752,7 @@ const UIController = (() => {
       }
 
       try {
+        _isSendingLinkEmailOtp = true;
         if (sendBtn) sendBtn.disabled = true;
         if (resendBtn) resendBtn.disabled = true;
         if (sendText) sendText.textContent = 'جارٍ إرسال الرمز...';
@@ -1827,6 +1832,7 @@ const UIController = (() => {
       } catch (err) {
         showToast('فشل الإرسال', err.message || 'حدث خطأ أثناء الاتصال بخدمة التحقق.', 'error');
       } finally {
+        _isSendingLinkEmailOtp = false;
         if (sendBtn) sendBtn.disabled = false;
         if (sendText) sendText.textContent = 'إرسال رمز التحقق (OTP)';
         if (sendSpinner) sendSpinner.classList.add('hidden');
@@ -1834,6 +1840,8 @@ const UIController = (() => {
     };
 
     verifyAndLinkEmail = async () => {
+      if (_isVerifyingLinkEmailOtp) return;
+
       const otpInput = document.getElementById('input-link-otp-code');
       const otpVal = otpInput ? otpInput.value.trim() : '';
       const emailVal = _lastSentLinkEmail || (document.getElementById('input-link-player-email')?.value?.trim()?.toLowerCase()) || '';
@@ -1848,6 +1856,7 @@ const UIController = (() => {
       }
 
       try {
+        _isVerifyingLinkEmailOtp = true;
         if (verifyBtn) verifyBtn.disabled = true;
         if (verifyText) verifyText.textContent = 'جارٍ التحقق والربط...';
         if (verifySpinner) verifySpinner.classList.remove('hidden');
@@ -1890,6 +1899,7 @@ const UIController = (() => {
       } catch (err) {
         showToast('فشل التحقق', err.message || 'تعذر التحقق من الرمز.', 'error');
       } finally {
+        _isVerifyingLinkEmailOtp = false;
         if (verifyBtn) verifyBtn.disabled = false;
         if (verifyText) verifyText.textContent = 'تحقق وربط الحساب ومتابعة اللعب';
         if (verifySpinner) verifySpinner.classList.add('hidden');
