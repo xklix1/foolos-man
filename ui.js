@@ -56,9 +56,6 @@ const UIController = (() => {
   let activeTab ='dashboard';
   let tickIntervalId = null;
 
-  // Forward declarations for modal and email link handlers
-  let openLinkEmailModal, closeLinkEmailModal, resetLinkEmailStep, sendLinkEmailOtp, verifyAndLinkEmail, skipLinkEmailAndContinue;
-
   // Translation System (New)
   const currentLang = localStorage.getItem('game_lang') ||'ar';
   window.currentLang = currentLang;
