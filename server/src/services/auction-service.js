@@ -118,12 +118,24 @@ class AuctionService {
         bidsCount: this.state.live.bidsHistory.length,
         recentBids: this.state.live.bidsHistory.slice(-10).reverse()
       },
+      registrants: this.state.registrants.map(r => ({
+        username: r.username,
+        registeredAt: r.registeredAt,
+        netWorth: r.netWorth
+      })),
       registrantsCount: this.state.registrants.length,
       isRegistered: isRegistered,
       isLive: this.state.status === 'LIVE',
       isScheduled: this.state.status === 'SCHEDULED',
       isEnded: this.state.status === 'ENDED',
       winner: this.state.winner
+    };
+  }
+
+  getAdminState() {
+    return {
+      ...this.state,
+      registrantsCount: this.state.registrants.length
     };
   }
 

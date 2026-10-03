@@ -2877,6 +2877,22 @@
               </button>
             </div>
           </div>
+
+          <!-- Live Registered Players Cockpit Table -->
+          <div class="p-4 rounded-2xl bg-slate-950/90 border border-slate-800/90 space-y-3 shadow-inner">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+              <h5 class="text-xs font-black text-amber-300 flex items-center gap-2">
+                <i class="fa-solid fa-users text-amber-400"></i>
+                <span>قائمة اللاعبين المسجلين في هذا المزاد (المزايدين المؤهلين)</span>
+              </h5>
+              <span id="adm-auc-registrants-badge" class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-mono font-black border border-amber-500/30">
+                0 لاعب مسجل
+              </span>
+            </div>
+            <div id="adm-auc-registrants-list" class="max-h-48 overflow-y-auto custom-scrollbar space-y-1.5">
+              <p class="text-[11px] text-slate-500 text-center py-3">لا يوجد لاعبين مسجلين حتى الآن.</p>
+            </div>
+          </div>
         </div>
 
         <!-- 2. CREATE / SCHEDULE NEW ROYAL AUCTION -->

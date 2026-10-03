@@ -10652,6 +10652,38 @@
         strikeBadge.textContent = `الضربة ${data.live?.hammerStrike || 0} / 3`;
       }
 
+      // Render Cockpit Registered Players List
+      const regBadge = document.getElementById('adm-auc-registrants-badge');
+      const regList = document.getElementById('adm-auc-registrants-list');
+      const registrants = data.registrants || [];
+
+      if (regBadge) {
+        regBadge.textContent = `${registrants.length} لاعب مسجل`;
+      }
+
+      if (regList) {
+        if (registrants.length === 0) {
+          regList.innerHTML = `<p class="text-[11px] text-slate-500 text-center py-3">لا يوجد لاعبين مسجلين حتى الآن.</p>`;
+        } else {
+          regList.innerHTML = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              ${registrants.map((r, i) => `
+                <div class="p-2 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-5 h-5 rounded-md bg-amber-500/15 text-amber-300 font-mono font-bold text-[10px] flex items-center justify-center shrink-0">${i + 1}</span>
+                    <div class="truncate">
+                      <strong class="text-white block truncate text-[11px]">${r.username}</strong>
+                      <span class="text-[9px] text-slate-400 font-mono block">ثروة: ${Number(r.netWorth || 0).toLocaleString()} ج.م</span>
+                    </div>
+                  </div>
+                  <span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[9px] font-bold shrink-0">مؤهل 🟢</span>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+      }
+
       if (timer) {
         const target = data.status === 'LIVE' ? data.live?.hammerExpiryTime : data.config?.scheduledStartTime;
         if (target) {

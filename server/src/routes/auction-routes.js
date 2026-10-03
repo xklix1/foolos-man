@@ -34,6 +34,15 @@ async function auctionRoutes(fastify, options) {
   });
 
   /**
+   * GET /api/auction/admin/state
+   * Admin full telemetry with registrants and security metadata
+   */
+  fastify.get('/api/auction/admin/state', async (req, reply) => {
+    if (!verifyAdminKey(req, reply)) return;
+    return auctionService.getAdminState();
+  });
+
+  /**
    * POST /api/auction/register
    * Player registers for upcoming auction
    */

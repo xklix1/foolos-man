@@ -568,8 +568,46 @@
                     <span class="text-[10px] text-slate-500 font-mono">${new Date(b.time).toLocaleTimeString('ar-EG')}</span>
                   </div>
                 </div>
-              `).join('')}
+      // --- 4. Registered Players Showcase List (During SCHEDULED & LIVE) ---
+      const registrants = this.state.registrants || [];
+      if (this.state.isScheduled || this.state.isLive) {
+        html += `
+          <div class="space-y-2 pt-2 border-t border-slate-800/80">
+            <div class="flex items-center justify-between text-xs pb-1">
+              <h4 class="font-bold text-slate-300 flex items-center gap-2">
+                <i class="fa-solid fa-users text-amber-400"></i>
+                <span>قائمة اللاعبين المسجلين في المزاد</span>
+              </h4>
+              <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/30 font-mono">
+                ${registrants.length} لاعب مسجل
+              </span>
             </div>
+
+            ${registrants.length === 0 ? `
+              <div class="p-3.5 rounded-xl bg-slate-900/50 border border-slate-800 text-center text-xs text-slate-400">
+                <i class="fa-regular fa-id-badge text-slate-500 text-base mb-1 block"></i>
+                لم يسجل أي لاعب بعد في هذا المزاد.
+              </div>
+            ` : `
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto custom-scrollbar p-1">
+                ${registrants.map((r, idx) => `
+                  <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs hover:border-amber-500/40 transition">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <div class="w-6 h-6 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-[10px] shrink-0 font-mono">
+                        ${idx + 1}
+                      </div>
+                      <div class="truncate">
+                        <span class="font-bold text-white block truncate text-[11px]">${r.username}</span>
+                        <span class="text-[9px] text-slate-400 block font-mono">صافي الثروة: ${Number(r.netWorth || 0).toLocaleString()} ج.م</span>
+                      </div>
+                    </div>
+                    <span class="px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold shrink-0">
+                      جاهز 🟢
+                    </span>
+                  </div>
+                `).join('')}
+              </div>
+            `}
           </div>
         `;
       }
