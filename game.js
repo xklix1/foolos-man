@@ -1898,14 +1898,64 @@ const GameEngine = (() => {
       }
     }
 
-    // 8. Liabilities: Active bank loan liabilities (True Net Worth = Assets - Liabilities)
+    // 8. International Airport Hub & Aircraft Fleet (سعر تملك المطار + الطائرات + تطويرات المرافق المشتراة)
+    let airportTotal = 0;
+    if (playerState.airport && playerState.airport.unlocked) {
+      airportTotal += 30000000; // Base airport license purchase cost (سعر شراء المطار)
+      
+      // Facility upgrades (ترقيات مرافق المطار)
+      const f = playerState.airport.facilities || {};
+      const FACILITY_LEVEL_COSTS = {
+        runway: { 1: 0, 2: 12000000, 3: 40000000, 4: 95000000 },
+        terminals: { 1: 0, 2: 10000000, 3: 35000000, 4: 85000000 },
+        hangar: { 1: 0, 2: 10000000, 3: 30000000, 4: 75000000 },
+        duty_free: { 1: 5000000, 2: 18000000, 3: 50000000, 4: 120000000 }
+      };
+      if (typeof f === 'object') {
+        Object.keys(f).forEach(fKey => {
+          const lvl = Number(f[fKey] || 0);
+          if (lvl >= 1 && FACILITY_LEVEL_COSTS[fKey]) {
+            for (let i = 1; i <= lvl; i++) {
+              airportTotal += Number(FACILITY_LEVEL_COSTS[fKey][i] || 0);
+            }
+          }
+        });
+      }
+
+      // Aircraft fleet (أسطول الطائرات المشتراة)
+      if (Array.isArray(playerState.airport.fleet)) {
+        playerState.airport.fleet.forEach(plane => {
+          const mId = plane && (plane.modelId || plane.id);
+          const meta = (typeof window !== 'undefined' && window.AirportUI && window.AirportUI.AIRCRAFT_META)
+            ? window.AirportUI.AIRCRAFT_META[mId]
+            : null;
+          if (meta && meta.cost) {
+            airportTotal += Number(meta.cost || 0);
+          } else {
+            const AIRCRAFT_COSTS = {
+              cessna_sky: 3000000,
+              airbus_a320: 15000000,
+              boeing_777: 55000000,
+              gulfstream_g650: 85000000,
+              cargo_beluga: 125000000,
+              airbus_a380: 220000000
+            };
+            if (mId && AIRCRAFT_COSTS[mId]) {
+              airportTotal += AIRCRAFT_COSTS[mId];
+            }
+          }
+        });
+      }
+    }
+
+    // 9. Liabilities: Active bank loan liabilities (True Net Worth = Assets - Liabilities)
     let loanDebt = 0;
     if (playerState.activeLoan) {
       loanDebt = Number(playerState.activeLoan.totalDue || playerState.activeLoan.amount || 0);
     }
 
-    // Comprehensive Net Worth: Liquid + Investments + Real Estate + Cars + Stocks + Industry + Trade + Farm - Loans
-    const total = Math.max(0, Math.floor(liquidTotal + investmentsTotal + assetsTotal + stocksTotal + industryTotal + tradeTotal + farmTotal - loanDebt));
+    // Comprehensive Net Worth: Liquid + Investments + Real Estate + Cars + Stocks + Industry + Trade + Farm + Airport - Loans
+    const total = Math.max(0, Math.floor(liquidTotal + investmentsTotal + assetsTotal + stocksTotal + industryTotal + tradeTotal + farmTotal + airportTotal - loanDebt));
 
     return {
       cash,
@@ -1920,6 +1970,7 @@ const GameEngine = (() => {
       industryTotal,
       tradeTotal,
       farmTotal,
+      airportTotal,
       loanDebt,
       total
     };

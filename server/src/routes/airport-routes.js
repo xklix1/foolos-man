@@ -67,14 +67,14 @@ async function airportRoutes(fastify, options) {
     }
     // Fallback if not configured
     return _cachedAirportSettings || {
-      unlock_code: '',
+      unlock_code: 'SKY-ROYAL-2026',
       unlock_cost: 30000000,
-      min_xp: 0,
+      min_xp: 2500,
       is_active: true
     };
   }
 
-  // 1. POST /api/airport/unlock (Unlock Airport Hub — 30M EGP, No code or XP barrier)
+  // 1. POST /api/airport/unlock (Direct purchase of airport license)
   fastify.post('/api/airport/unlock', async (request, reply) => {
     const session = await resolveSession(request, reply);
     if (!session) return;
@@ -89,6 +89,13 @@ async function airportRoutes(fastify, options) {
     const settings = await getDynamicAirportSettings();
     if (settings.is_active === false) {
       return reply.code(403).send({ error: 'مشروع المطار غير مفعل حالياً من إدارة اللعبة.' });
+    }
+
+    const minXp = Number(settings.min_xp || 2500);
+    if (Number(s.xp || 0) < minXp) {
+      return reply.code(400).send({
+        error: `🚫 يتطلب فتح المطار خبرة لا تقل عن ${minXp.toLocaleString()} XP (خبرتك الحالية: ${Number(s.xp || 0).toLocaleString()} XP)`
+      });
     }
 
     const cost = Number(settings.unlock_cost || 30000000);

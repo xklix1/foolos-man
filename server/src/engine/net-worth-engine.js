@@ -151,25 +151,26 @@ function calculateNetWorth(playerState) {
     }
   }
 
-  // 8. International Airport Hub & Aircraft Fleet valuation
+  // 8. International Airport Hub & Aircraft Fleet valuation (سعر شراء المطار + الطائرات + تطويرات المرافق المشتراة)
   if (playerState.airport && playerState.airport.unlocked) {
-    worth += 50000000; // Base airport license value
+    worth += 30000000; // Base airport license value (سعر شراء المطار)
     const f = playerState.airport.facilities || {};
     const { AIRPORT_FACILITIES, AIRCRAFT_MODELS } = require('./airport-engine');
-    if (AIRPORT_FACILITIES) {
+    if (AIRPORT_FACILITIES && typeof f === 'object') {
       Object.keys(f).forEach(fKey => {
         const lvl = Number(f[fKey] || 0);
-        if (lvl > 1 && AIRPORT_FACILITIES[fKey]?.levels) {
-          for (let i = 2; i <= lvl; i++) {
+        if (lvl >= 1 && AIRPORT_FACILITIES[fKey]?.levels) {
+          for (let i = 1; i <= lvl; i++) {
             worth += Number(AIRPORT_FACILITIES[fKey].levels[i]?.cost || 0);
           }
         }
       });
     }
-    if (Array.isArray(playerState.airport.fleet) && AIRCRAFT_MODELS) {
+    if (Array.isArray(playerState.airport.fleet)) {
       playerState.airport.fleet.forEach(plane => {
-        if (plane && plane.modelId && AIRCRAFT_MODELS[plane.modelId]) {
-          worth += Number(AIRCRAFT_MODELS[plane.modelId].cost || 0);
+        const modelId = plane && (plane.modelId || plane.id);
+        if (modelId && AIRCRAFT_MODELS && AIRCRAFT_MODELS[modelId]) {
+          worth += Number(AIRCRAFT_MODELS[modelId].cost || 0);
         }
       });
     }

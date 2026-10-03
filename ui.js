@@ -3408,6 +3408,7 @@ const UIController = (() => {
         `• محفظة البورصة: ${formatCompactNumber(b.stocksTotal)} EGP\n` +
         `• شهادات وصناديق الاستثمار: ${formatCompactNumber(b.investmentsTotal)} EGP\n` +
         `• العقارات والأسطول: ${formatCompactNumber(b.assetsTotal)} EGP` +
+        (b.airportTotal > 0 ? `\n• مطار رأس المال والأسطول: ${formatCompactNumber(b.airportTotal)} EGP` : '') +
         (b.industryTotal > 0 ? `\n• مجمع الصناعات: ${formatCompactNumber(b.industryTotal)} EGP` : '') +
         (b.tradeTotal > 0 ? `\n• المستودع الجمركي: ${formatCompactNumber(b.tradeTotal)} EGP` : '') +
         (b.loanDebt > 0 ? `\n• قروض بنكية مستحقة: -${formatCompactNumber(b.loanDebt)} EGP` : '') +
@@ -15873,6 +15874,9 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     const farmEl = document.getElementById('nw-modal-farm');
     if (farmEl) farmEl.textContent = `${(b.farmTotal || 0).toLocaleString()} EGP`;
+
+    const airportEl = document.getElementById('nw-modal-airport');
+    if (airportEl) airportEl.textContent = `${(b.airportTotal || 0).toLocaleString()} EGP`;
 
     const debtRow = document.getElementById('nw-modal-debt-row');
     const debtEl = document.getElementById('nw-modal-debt');

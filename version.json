@@ -1,7 +1,7 @@
 {
-  "version": "v8.8.1",
-  "build": 1790992000000,
-  "timestamp": 1790992000000,
-  "notes": "Authoritative Admin Topup approval bridge and RLS mutation fallback",
-  "releaseNotes": "Authoritative Admin Topup approval bridge and RLS mutation fallback"
+  "version": "v8.8.2",
+  "build": 1791055500000,
+  "timestamp": 1791055500000,
+  "notes": "Direct airport purchase enabled with 30M license and full facility net worth tracking",
+  "releaseNotes": "Direct airport purchase enabled with 30M license and full facility net worth tracking"
 }

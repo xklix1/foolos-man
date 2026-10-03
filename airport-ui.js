@@ -14,9 +14,9 @@ window.AirportUI = (() => {
       icon: 'fa-road text-sky-400',
       levels: {
         1: { name: 'مدرج إقليمي معبد', cost: 0, maxPlaneTier: 1, desc: 'يستوعب طائرات الفئة 1 (Cessna VIP)' },
-        2: { name: 'مدرج دولي عريض', cost: 35000000, maxPlaneTier: 2, desc: 'يستوعب طائرات الفئة 2 (Airbus A320)' },
-        3: { name: 'مدرج عابر للقارات متطور', cost: 120000000, maxPlaneTier: 3, desc: 'يستوعب طائرات الفئة 3 (Boeing 777 / A380)' },
-        4: { name: 'مجمع مدارج ذكي CAT III', cost: 450000000, maxPlaneTier: 4, desc: 'يستوعب طائرات الفئة 4 (Gulfstream VIP / Beluga Cargo)' }
+        2: { name: 'مدرج دولي عريض', cost: 12000000, maxPlaneTier: 2, desc: 'يستوعب طائرات الفئة 2 (Airbus A320)' },
+        3: { name: 'مدرج عابر للقارات متطور', cost: 40000000, maxPlaneTier: 3, desc: 'يستوعب طائرات الفئة 3 (Boeing 777 / A380)' },
+        4: { name: 'مجمع مدارج ذكي CAT III', cost: 95000000, maxPlaneTier: 4, desc: 'يستوعب طائرات الفئة 4 (Gulfstream VIP / Beluga Cargo)' }
       }
     },
     terminals: {
@@ -24,9 +24,9 @@ window.AirportUI = (() => {
       icon: 'fa-building-columns text-amber-400',
       levels: {
         1: { name: 'صالة ركاب أساسية', cost: 0, ticketBonus: 1.0, desc: 'رسوم تذاكر قياسية' },
-        2: { name: 'مبنى صالات دولي حديث', cost: 25000000, ticketBonus: 1.25, desc: '+25% أرباح تذاكر الرحلات' },
-        3: { name: 'صالة كبار الشخصيات VIP والدرجة الأولى', cost: 95000000, ticketBonus: 1.60, desc: '+60% أرباح تذاكر + بونص XP' },
-        4: { name: 'مدينة مطار عالمية متكاملة', cost: 350000000, ticketBonus: 2.10, desc: '+110% أرباح تذاكر مضاعفة' }
+        2: { name: 'مبنى صالات دولي حديث', cost: 10000000, ticketBonus: 1.30, desc: '+30% أرباح تذاكر الرحلات' },
+        3: { name: 'صالة كبار الشخصيات VIP والدرجة الأولى', cost: 35000000, ticketBonus: 1.70, desc: '+70% أرباح تذاكر + بونص XP' },
+        4: { name: 'مدينة مطار عالمية متكاملة', cost: 85000000, ticketBonus: 2.20, desc: '+120% أرباح تذاكر مضاعفة' }
       }
     },
     hangar: {
@@ -34,19 +34,19 @@ window.AirportUI = (() => {
       icon: 'fa-wrench text-emerald-400',
       levels: {
         1: { name: 'مرآب صيانة يدوي', cost: 0, timeReduction: 0, fuelDiscount: 0, desc: 'زمن رحلات وتكلفة وقود قياسية' },
-        2: { name: 'حوض فحص سريع ومضخات نفاثة', cost: 25000000, timeReduction: 0.15, fuelDiscount: 0.10, desc: '-15% زمن الرحلات و -10% تكلفة الوقود' },
-        3: { name: 'مركز نفاثات ومستودع وقود توربيني', cost: 85000000, timeReduction: 0.30, fuelDiscount: 0.20, desc: '-30% زمن الرحلات و -20% تكلفة الوقود' },
-        4: { name: 'روبوتات صيانة ومستودع وقود استراتيجي', cost: 280000000, timeReduction: 0.45, fuelDiscount: 0.30, desc: '-45% زمن الرحلات و -30% تكلفة الوقود' }
+        2: { name: 'حوض فحص سريع ومضخات نفاثة', cost: 10000000, timeReduction: 0.15, fuelDiscount: 0.10, desc: '-15% زمن الرحلات و -10% تكلفة الوقود' },
+        3: { name: 'مركز نفاثات ومستودع وقود توربيني', cost: 30000000, timeReduction: 0.30, fuelDiscount: 0.20, desc: '-30% زمن الرحلات و -20% تكلفة الوقود' },
+        4: { name: 'روبوتات صيانة ومستودع وقود استراتيجي', cost: 75000000, timeReduction: 0.45, fuelDiscount: 0.30, desc: '-45% زمن الرحلات و -30% تكلفة الوقود' }
       }
     },
     duty_free: {
       name: 'السوق الحرة ومتاجر الترانزيت 🛍️',
       icon: 'fa-store text-fuchsia-400',
       levels: {
-        1: { name: 'أكشاك هدايا وتذكارات', cost: 12000000, passivePerMin: 300, desc: 'دخل سلبي: 300 ج.م/دقيقة (18 ألف/ساعة)' },
-        2: { name: 'مجمع عطور وساعات سويسرية', cost: 45000000, passivePerMin: 1200, desc: 'دخل سلبي: 1,200 ج.م/دقيقة (72 ألف/ساعة)' },
-        3: { name: 'مول ماركات عالمية وأزياء راقية', cost: 140000000, passivePerMin: 3500, desc: 'دخل سلبي: 3,500 ج.م/دقيقة (210 ألف/ساعة)' },
-        4: { name: 'صالة مزادات مجوهرات وسيارات VIP', cost: 420000000, passivePerMin: 10000, desc: 'دخل سلبي: 10,000 ج.م/دقيقة (600 ألف/ساعة)' }
+        1: { name: 'أكشاك هدايا وتذكارات', cost: 5000000, passivePerMin: 500, desc: 'دخل سلبي: 500 ج.م/دقيقة (30 ألف/ساعة)' },
+        2: { name: 'مجمع عطور وساعات سويسرية', cost: 18000000, passivePerMin: 2000, desc: 'دخل سلبي: 2,000 ج.م/دقيقة (120 ألف/ساعة)' },
+        3: { name: 'مول ماركات عالمية وأزياء راقية', cost: 50000000, passivePerMin: 6000, desc: 'دخل سلبي: 6,000 ج.م/دقيقة (360 ألف/ساعة)' },
+        4: { name: 'صالة مزادات مجوهرات وسيارات VIP', cost: 120000000, passivePerMin: 15000, desc: 'دخل سلبي: 15,000 ج.م/دقيقة (900 ألف/ساعة)' }
       }
     }
   };
@@ -56,97 +56,97 @@ window.AirportUI = (() => {
       id: 'cessna_sky',
       name: 'Cessna Sky Courier 🛩️',
       tier: 1,
-      cost: 8000000,
+      cost: 3000000,
       capacity: '8 ركاب VIP',
-      flightTimeSec: 18000, // 5 hours
-      baseRevenue: 280000,
-      fuelCost: 60000,
-      crewCost: 35000,
+      flightTimeSec: 7200, // 2 hours
+      baseRevenue: 300000,
+      fuelCost: 45000,
+      crewCost: 30000,
       landingFee: 25000,
-      baseNetProfit: 160000,
+      baseNetProfit: 200000,
       xp: 75,
       speedupGold: 2,
-      desc: 'طائرة خفيفة للمسافات الإقليمية ورجال الأعمال (رحلة 5 ساعات)'
+      desc: 'طائرة خفيفة للمسافات الإقليمية ورجال الأعمال (رحلة ساعتان)'
     },
     airbus_a320: {
       id: 'airbus_a320',
       name: 'Airbus A320neo ✈️',
       tier: 2,
-      cost: 35000000,
+      cost: 15000000,
       capacity: '180 مسافر',
-      flightTimeSec: 36000, // 10 hours
+      flightTimeSec: 14400, // 4 hours
       baseRevenue: 1350000,
-      fuelCost: 320000,
-      crewCost: 160000,
+      fuelCost: 240000,
+      crewCost: 140000,
       landingFee: 120000,
-      baseNetProfit: 750000,
+      baseNetProfit: 850000,
       xp: 220,
       speedupGold: 5,
-      desc: 'طائرة ركاب دولية عالية الكفاءة للمسافات المتوسطة (رحلة 10 ساعات)'
+      desc: 'طائرة ركاب دولية عالية الكفاءة للمسافات المتوسطة (رحلة 4 ساعات)'
     },
     boeing_777: {
       id: 'boeing_777',
       name: 'Boeing 777-300ER 🌐',
       tier: 3,
-      cost: 120000000,
+      cost: 55000000,
       capacity: '390 مسافر',
-      flightTimeSec: 54000, // 15 hours
-      baseRevenue: 4600000,
-      fuelCost: 1100000,
-      crewCost: 480000,
-      landingFee: 320000,
-      baseNetProfit: 2700000,
+      flightTimeSec: 21600, // 6 hours
+      baseRevenue: 4800000,
+      fuelCost: 750000,
+      crewCost: 500000,
+      landingFee: 350000,
+      baseNetProfit: 3200000,
       xp: 800,
-      speedupGold: 12,
-      desc: 'طائر عملاق عابر للقارات للرحلات الدولية الطويلة (رحلة 15 ساعة)'
+      speedupGold: 10,
+      desc: 'طائر عملاق عابر للقارات للرحلات الدولية الطويلة (رحلة 6 ساعات)'
     },
     gulfstream_g650: {
       id: 'gulfstream_g650',
       name: 'Gulfstream G650 VIP 👑🛩️',
       tier: 4,
-      cost: 160000000,
+      cost: 85000000,
       capacity: 'نخبة رجال الأعمال والأمراء VIP',
-      flightTimeSec: 72000, // 20 hours
-      baseRevenue: 5600000,
-      fuelCost: 1100000,
-      crewCost: 550000,
-      landingFee: 350000,
-      baseNetProfit: 3600000,
+      flightTimeSec: 28800, // 8 hours
+      baseRevenue: 7000000,
+      fuelCost: 950000,
+      crewCost: 600000,
+      landingFee: 450000,
+      baseNetProfit: 5000000,
       xp: 650,
       speedupGold: 10,
-      desc: 'طائرة نفاثة فاخرة لنقل كبار الشخصيات بعوائد قياسية (رحلة 20 ساعة)'
+      desc: 'طائرة نفاثة فاخرة لنقل كبار الشخصيات بعوائد قياسية (رحلة 8 ساعات)'
     },
     cargo_beluga: {
       id: 'cargo_beluga',
       name: 'Airbus BelugaXL Heavy Cargo 📦✈️',
       tier: 4,
-      cost: 220000000,
+      cost: 125000000,
       capacity: '50 طن بضائع ومعدات ثقيلة',
-      flightTimeSec: 90000, // 25 hours
-      baseRevenue: 9000000,
-      fuelCost: 2100000,
-      crewCost: 850000,
-      landingFee: 550000,
-      baseNetProfit: 5500000,
+      flightTimeSec: 36000, // 10 hours
+      baseRevenue: 11000000,
+      fuelCost: 1800000,
+      crewCost: 950000,
+      landingFee: 750000,
+      baseNetProfit: 7500000,
       xp: 1200,
-      speedupGold: 16,
-      desc: 'وحش الشحن الجوي العملاق لنقل الشحنات الفاخرة حول العالم (رحلة 25 ساعة)'
+      speedupGold: 14,
+      desc: 'وحش الشحن الجوي العملاق لنقل الشحنات الفاخرة حول العالم (رحلة 10 ساعات)'
     },
     airbus_a380: {
       id: 'airbus_a380',
       name: 'Airbus A380 Superjumbo 🏰✈️',
       tier: 3,
-      cost: 400000000,
+      cost: 220000000,
       capacity: '615 مسافر (طابقين)',
-      flightTimeSec: 108000, // 30 hours
-      baseRevenue: 17500000,
-      fuelCost: 3800000,
-      crewCost: 1600000,
-      landingFee: 1100000,
-      baseNetProfit: 11000000,
+      flightTimeSec: 50400, // 14 hours
+      baseRevenue: 23000000,
+      fuelCost: 3400000,
+      crewCost: 2100000,
+      landingFee: 1500000,
+      baseNetProfit: 16000000,
       xp: 2000,
-      speedupGold: 22,
-      desc: 'القلعة الطائرة ذات الطابقين.. أضخم طائرة ركاب في العالم (رحلة 30 ساعة)'
+      speedupGold: 18,
+      desc: 'القلعة الطائرة ذات الطابقين.. أضخم طائرة ركاب في العالم (رحلة 14 ساعة)'
     }
   };
 
@@ -185,12 +185,15 @@ window.AirportUI = (() => {
    * Renders the Airport Unlock Licensing Gateway (Requires dynamic security code)
    */
   function renderUnlockGateway(container, state) {
+    const minXp = 2500;
     const cost = 30000000;
     const curCash = Number(state.cash || 0);
     const curBank = Number(state.bank || 0);
     const totalLiquid = curCash + curBank;
+    const curXp = Number(state.xp || 0);
 
     const hasFunds = totalLiquid >= cost;
+    const hasXp = curXp >= minXp;
 
     container.innerHTML = `
       <div class="glass-panel p-6 sm:p-10 rounded-3xl border border-sky-500/30 relative overflow-hidden shadow-2xl text-center space-y-8"
@@ -226,7 +229,7 @@ window.AirportUI = (() => {
                 <i class="fa-solid fa-money-bill-wave"></i>
               </div>
               <div>
-                <div class="text-[11px] text-slate-400 font-bold">رسوم تدشين ورخصة المطار</div>
+                <div class="text-[11px] text-slate-400 font-bold">رسوم رخصة الطيران</div>
                 <div class="text-sm font-black text-emerald-400 numbers-font">${cost.toLocaleString()} ج.م</div>
               </div>
             </div>
@@ -237,18 +240,20 @@ window.AirportUI = (() => {
             </div>
           </div>
 
-          <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/40 bg-emerald-950/20 flex items-center justify-between">
+          <div class="p-4 rounded-2xl bg-slate-900/80 border ${hasXp ? 'border-emerald-500/40 bg-emerald-950/20' : 'border-slate-800'} flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-lg">
-                <i class="fa-solid fa-unlock"></i>
+              <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-star"></i>
               </div>
               <div>
-                <div class="text-[11px] text-slate-400 font-bold">شرط الترخيص والخبرة</div>
-                <div class="text-sm font-black text-sky-400">متاح ومفتوح للجميع</div>
+                <div class="text-[11px] text-slate-400 font-bold">الخبرة المطلوبة (XP)</div>
+                <div class="text-sm font-black text-amber-400 numbers-font">${minXp.toLocaleString()} XP</div>
               </div>
             </div>
             <div>
-              <span class="text-xs font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-check"></i> متاح فوراً</span>
+              ${hasXp 
+                ? '<span class="text-xs font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-check"></i> مكتمل</span>' 
+                : `<span class="text-xs font-bold text-rose-400">${curXp.toLocaleString()} / ${minXp.toLocaleString()}</span>`}
             </div>
           </div>
         </div>
@@ -266,8 +271,8 @@ window.AirportUI = (() => {
 
           <button id="btn-airport-submit-unlock"
             class="w-full py-4 rounded-2xl bg-gradient-to-r from-sky-500 via-sky-600 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-black text-sm shadow-xl shadow-sky-500/25 transition active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
-            <i class="fa-solid fa-passport"></i>
-            <span>تدشين المطار ورخصة الطيران (30,000,000 ج.م) 🛫</span>
+            <i class="fa-solid fa-plane-departure"></i>
+            <span>شراء رخصة المطار وتدشين الأسطول الجوي 🛫</span>
           </button>
         </div>
       </div>
@@ -285,6 +290,7 @@ window.AirportUI = (() => {
         }
       } catch (_) {}
 
+      // Standalone Floating Toast Notification
       let container = document.getElementById('airport-toast-container');
       if (!container) {
         container = document.createElement('div');
@@ -324,7 +330,7 @@ window.AirportUI = (() => {
         const airportName = (nameInput?.value || '').trim() || 'مطار رأس المال الدولي';
 
         btnUnlock.disabled = true;
-        btnUnlock.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري تدشين المطار وسداد الرسوم...';
+        btnUnlock.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الشراء وتدشين المطار...';
 
         // 1. Try Server-Authoritative Bridge if active
         let serverSuccess = false;
@@ -355,6 +361,12 @@ window.AirportUI = (() => {
           const liveState = (typeof window.GameEngine?.getState === 'function') ? window.GameEngine.getState() : (window.GameEngine?.state || {});
           const uName = (liveState.username || '').toLowerCase();
           const isAdmin = uName === 'khaled' || uName === 'خالد' || liveState.isAdmin === true;
+
+          const minXp = 2500;
+          const curXp = Number(liveState.xp || 0);
+          if (!isAdmin && curXp < minXp) {
+            throw new Error(`🚫 يتطلب فتح المطار خبرة لا تقل عن ${minXp.toLocaleString()} XP (خبرتك الحالية: ${curXp.toLocaleString()} XP)`);
+          }
 
           const cost = 30000000;
           const curCash = Number(liveState.cash || 0);
@@ -417,7 +429,7 @@ window.AirportUI = (() => {
         } catch (err) {
           showAirportToast(err.message || 'فشل تفعيل المطار', 'error');
           btnUnlock.disabled = false;
-          btnUnlock.innerHTML = '<i class="fa-solid fa-passport"></i> <span>تدشين المطار ورخصة الطيران (30,000,000 ج.م) 🛫</span>';
+          btnUnlock.innerHTML = '<i class="fa-solid fa-passport"></i> <span>تفعيل رخصة المطار وتدشين الأسطول الجوي 🛫</span>';
         }
       });
     }
