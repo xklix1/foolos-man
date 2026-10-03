@@ -2154,7 +2154,7 @@ const UIController = (() => {
         if (authUserEl && authPinEl) {
           authUserEl.value = username;
           authPinEl.value = '';
-          showAuthScreen('login');
+          showAuthModal('login');
           showToast('تأكيد الدخول 🔒', 'يرجى إدخال الرقم السري لتأكيد حسابك وتفعيل الحفظ السحابي الفوري.', 'info');
           return;
         }
