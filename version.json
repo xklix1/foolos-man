@@ -1,7 +1,7 @@
 {
-  "version": "v8.7.5",
-  "build": 1790979000000,
-  "timestamp": 1790979000000,
-  "notes": "Completely remove blocking duplicate session overlays and eliminate reload looping for all players",
-  "releaseNotes": "Completely remove blocking duplicate session overlays and eliminate reload looping for all players"
+  "version": "v8.8.0",
+  "build": 1790989000000,
+  "timestamp": 1790989000000,
+  "notes": "CodeQL security hardening, push notification permission guard, and meta updates",
+  "releaseNotes": "CodeQL security hardening, push notification permission guard, and meta updates"
 }
