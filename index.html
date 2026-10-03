@@ -1949,20 +1949,27 @@
               </div>
             </div>
 
-            <!-- VIP Topup & Hall of Fame Primary Highlights -->
-            <div class="grid grid-cols-2 gap-2">
+            <!-- VIP Topup, Auctions & Hall of Fame Primary Highlights -->
+            <div class="grid grid-cols-3 gap-1.5">
               <!-- Top-Up & Support Store Desktop Button -->
               <button id="btn-desktop-topup-store" onclick="window.UI.openTopupModal()" title="متجر الشحن والدعم"
-                class="py-2 px-2.5 rounded-xl bg-gradient-to-br from-amber-500/20 via-yellow-500/25 to-amber-500/10 border border-amber-500/40 hover:border-yellow-400 text-amber-300 hover:text-yellow-200 transition-all font-black text-[11px] flex items-center justify-center gap-1.5 shadow-md hover:shadow-yellow-500/10 cursor-pointer active:scale-95">
-                <i class="fa-solid fa-gem text-amber-400 text-xs"></i>
+                class="py-2 px-1 rounded-xl bg-gradient-to-br from-amber-500/20 via-yellow-500/25 to-amber-500/10 border border-amber-500/40 hover:border-yellow-400 text-amber-300 hover:text-yellow-200 transition-all font-black text-[10px] flex items-center justify-center gap-1 shadow-md hover:shadow-yellow-500/10 cursor-pointer active:scale-95">
+                <i class="fa-solid fa-gem text-amber-400 text-[10px]"></i>
                 <span>متجر VIP</span>
+              </button>
+
+              <!-- Royal Auction Desktop Quick Button -->
+              <button id="btn-desktop-auction-quick" onclick="if(window.RoyalAuction) window.RoyalAuction.openModal(); else window.UI?.showToast?.('جاري فتح قاعة المزاد...', 'info');" title="قاعة المزادات الملكية المباشرة"
+                class="py-2 px-1 rounded-xl bg-gradient-to-br from-amber-600/25 via-yellow-600/30 to-amber-700/20 border border-amber-500/50 hover:border-amber-300 text-amber-300 hover:text-amber-100 transition-all font-black text-[10px] flex items-center justify-center gap-1 shadow-md hover:shadow-amber-500/20 cursor-pointer active:scale-95 relative overflow-hidden group">
+                <i class="fa-solid fa-gavel text-amber-400 text-[10px] group-hover:rotate-12 transition-transform"></i>
+                <span>المزاد الملكي</span>
                 <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
               </button>
 
               <!-- Hall of Fame / Leaderboard Ingame Button -->
               <button id="btn-ingame-leaderboard-sidebar" onclick="window.UI.switchTab('leaderboard')" title="عرش الأثرياء (توب 10)"
-                class="py-2 px-2.5 rounded-xl bg-gradient-to-br from-yellow-500/15 via-amber-500/20 to-yellow-500/10 border border-yellow-500/40 hover:border-yellow-400 text-yellow-400 hover:text-yellow-300 transition-all font-black text-[11px] flex items-center justify-center gap-1.5 shadow-md cursor-pointer active:scale-95">
-                <i class="fa-solid fa-trophy text-xs text-yellow-400"></i>
+                class="py-2 px-1 rounded-xl bg-gradient-to-br from-yellow-500/15 via-amber-500/20 to-yellow-500/10 border border-yellow-500/40 hover:border-yellow-400 text-yellow-400 hover:text-yellow-300 transition-all font-black text-[10px] flex items-center justify-center gap-1 shadow-md cursor-pointer active:scale-95">
+                <i class="fa-solid fa-trophy text-[10px] text-yellow-400"></i>
                 <span>توب 10</span>
               </button>
             </div>
@@ -2199,6 +2206,13 @@
               <span>مطار الطيران الدولي</span>
               <span class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold ml-auto border border-sky-500/30">جديد 🛫</span>
             </button>
+            <!-- Royal Auction tab -->
+            <button id="nav-tab-auctions" data-tab="auctions" onclick="if(window.RoyalAuction) window.RoyalAuction.openModal(); else window.UI?.showToast?.('جاري فتح قاعة المزاد...', 'info');"
+              class="nav-tab-btn flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-amber-300 transition duration-200 cursor-pointer">
+              <i class="fa-solid fa-gavel w-4 text-center text-amber-400 text-sm"></i>
+              <span>المزادات الملكية الحية</span>
+              <span id="nav-auc-badge" class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-black ml-auto border border-amber-500/30 animate-pulse">مباشر 🔨</span>
+            </button>
             <!-- Farm tab -->
             <button id="nav-tab-farm" data-tab="farm"
               class="nav-tab-btn flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200 cursor-pointer">
@@ -2282,6 +2296,12 @@
 
           <!-- Quick Top Utility Actions (Clean, spaced, no horizontal scroll) -->
           <div class="flex items-center gap-1.5 shrink-0">
+            <!-- Royal Auction Mobile Action -->
+            <button id="btn-open-auction-mobile" onclick="if(window.RoyalAuction) window.RoyalAuction.openModal(); else window.UI?.showToast?.('جاري فتح قاعة المزاد...', 'info');" title="قاعة المزادات الملكية الحية" type="button"
+              class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500/20 to-yellow-500/20 hover:bg-amber-500/30 active:bg-amber-500/40 text-amber-400 border border-amber-500/40 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
+              <i class="fa-solid fa-gavel text-xs"></i>
+              <span id="mobile-auction-live-dot" class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 border border-slate-950 animate-ping"></span>
+            </button>
             <!-- Gift Code Redeem Mobile -->
             <button id="btn-open-giftcode-mobile" onclick="window.UI.openGiftCodeModal()" title="استرداد أكواد الهدايا" type="button"
               class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-rose-400 border border-rose-500/30 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
