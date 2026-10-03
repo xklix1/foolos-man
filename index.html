@@ -2301,29 +2301,8 @@
             </div>
           </div>
 
-          <!-- Quick Top Utility Actions (Clean, spaced, no horizontal scroll) -->
-          <div class="flex items-center gap-1.5 shrink-0">
-            <!-- Royal Auction Mobile Action -->
-            <button id="btn-open-auction-mobile" onclick="if(window.RoyalAuction) window.RoyalAuction.openModal(); else window.UI?.showToast?.('جاري فتح قاعة المزاد...', 'info');" title="قاعة المزادات الملكية الحية" type="button"
-              class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500/20 to-yellow-500/20 hover:bg-amber-500/30 active:bg-amber-500/40 text-amber-400 border border-amber-500/40 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
-              <i class="fa-solid fa-gavel text-xs"></i>
-              <span id="mobile-auction-live-dot" class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 border border-slate-950 animate-ping"></span>
-            </button>
-            <!-- Royal Museum Mobile Action -->
-            <button id="btn-open-museum-mobile" onclick="if(window.RoyalMuseum) window.RoyalMuseum.openModal(); else window.UI?.showToast?.('جاري فتح المتحف الملكي...', 'info');" title="المتحف والآثار الملكية" type="button"
-              class="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 text-purple-400 border border-purple-500/40 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
-              <i class="fa-solid fa-landmark-dome text-xs"></i>
-            </button>
-            <!-- Gift Code Redeem Mobile -->
-            <button id="btn-open-giftcode-mobile" onclick="window.UI.openGiftCodeModal()" title="استرداد أكواد الهدايا" type="button"
-              class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-rose-400 border border-rose-500/30 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
-              <i class="fa-solid fa-gift text-xs"></i>
-            </button>
-            <!-- Referral System Mobile -->
-            <button id="btn-open-referral-mobile" onclick="window.UI.openReferralModal()" title="دعوة الأصدقاء والمكافآت" type="button"
-              class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-indigo-400 border border-indigo-500/30 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
-              <i class="fa-solid fa-users text-xs"></i>
-            </button>
+          <!-- Quick Top Utility Actions (Clean, minimal, spacious) -->
+          <div class="flex items-center gap-2 shrink-0">
             <!-- Player Tools / Inventory Mobile -->
             <button id="btn-open-inventory-mobile" onclick="window.UI.openPlayerInventoryModal()" title="حقيبة الأدوات والمقتنيات" type="button"
               class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-sky-400 border border-sky-500/30 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
@@ -5385,6 +5364,22 @@
           <i class="fa-solid fa-compass text-[10px] text-amber-400/70"></i>
           <span>الخدمات والمجتمع</span>
         </div>
+
+        <!-- Gift Code Redeem Mobile Drawer -->
+        <button id="btn-drawer-giftcode" onclick="if(window.UI?.closeMobileNav) window.UI.closeMobileNav(); if(window.UI?.openGiftCodeModal) window.UI.openGiftCodeModal();" type="button"
+          class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-rose-300 text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-gift w-5 text-center text-rose-400 text-sm"></i>
+          <span>استرداد أكواد الهدايا</span>
+          <span class="mr-auto text-[9px] px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">مكافآت 🎁</span>
+        </button>
+
+        <!-- Referral Mobile Drawer -->
+        <button id="btn-drawer-referral" onclick="if(window.UI?.closeMobileNav) window.UI.closeMobileNav(); if(window.UI?.openReferralModal) window.UI.openReferralModal();" type="button"
+          class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-indigo-300 text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-users w-5 text-center text-indigo-400 text-sm"></i>
+          <span>دعوة الأصدقاء والمكافآت</span>
+          <span class="mr-auto text-[9px] px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">أرباح 👥</span>
+        </button>
 
         <a id="btn-mobile-facebook" href="https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
           class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 text-xs font-bold transition duration-200 cursor-pointer">
