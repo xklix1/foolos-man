@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+  <script>window._IS_ADMIN_PAGE = true;</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>HQ Mobile • غرفة العمليات المتنقلة</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Cairo & Outfit Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="app.css?v=v8.8.1">
+
+  <style>
+    :root {
+      --cyber-bg: #030712;
+      --panel-card: rgba(15, 23, 42, 0.85);
+      --gold-primary: #f59e0b;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: var(--cyber-bg);
+      color: #f8fafc;
+      overflow-x: hidden;
+      padding-bottom: 80px; /* Space for bottom nav */
+    }
+    .numbers-font { font-family: 'Outfit', sans-serif; }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+    .glass-input {
+      background: rgba(3, 7, 18, 0.75);
+      border: 1px solid rgba(71, 85, 105, 0.5);
+      color: #fff;
+    }
+    .glass-input:focus {
+      border-color: #f59e0b;
+      outline: none;
+    }
+    /* Hide scrollbar for tabs */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen select-none">
+
+  <!-- ==================== 1. MASTER AUTH SCREEN ==================== -->
+  <div id="m-auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-xl">
+    <div class="glass-card w-full max-w-sm p-6 rounded-3xl border border-yellow-500/40 shadow-2xl text-center space-y-5">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-yellow-600 to-amber-400 p-0.5 shadow-lg shadow-yellow-500/20 flex items-center justify-center">
+        <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+          <i class="fa-solid fa-shield-halved text-yellow-400 text-2xl animate-pulse"></i>
+        </div>
+      </div>
+      <div>
+        <h1 class="text-lg font-black text-white">مركز القيادة المتنقل 📱</h1>
+        <p class="text-xs text-slate-400 mt-1">الوصول السري المباشر لغرفة العمليات</p>
+      </div>
+      
+      <form id="m-auth-form" onsubmit="return false;" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 mb-1 text-right">مفتاح الحماية المشفر (Master Key)</label>
+          <input type="password" id="m-auth-key-input" class="glass-input w-full p-3.5 rounded-xl text-center text-sm font-mono tracking-widest text-yellow-400"
+            placeholder="••••••••••••••••" autocomplete="current-password" required>
+        </div>
+        <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="m-auth-remember" checked class="rounded bg-slate-800 border-slate-700 text-yellow-500 focus:ring-0">
+            <span>تذكرني على هذا الهاتف</span>
+          </label>
+        </div>
+        <button id="btn-m-auth-submit" type="button" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 text-slate-950 font-black text-sm transition shadow-lg shadow-yellow-500/25 flex items-center justify-center gap-2 active:scale-98">
+          <i class="fa-solid fa-lock-open"></i>
+          <span id="text-m-auth-submit">دخول لوحة التحكم</span>
+        </button>
+        <div id="m-auth-err" class="hidden text-xs text-rose-400 font-bold p-2.5 rounded-xl bg-rose-950/50 border border-rose-500/30"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== 2. MAIN APP SHELL ==================== -->
+  <div id="m-main-shell" class="hidden">
+    
+    <!-- Top Fixed Mobile Header -->
+    <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-400">
+          <i class="fa-solid fa-crown text-base"></i>
+        </div>
+        <div>
+          <span class="text-xs font-black text-white block leading-tight">رأس المال • موبايل HQ</span>
+          <span id="m-live-status-pill" class="text-[10px] text-emerald-400 flex items-center gap-1 font-bold">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            متصل بالسيرفر السحابي
+          </span>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <button id="btn-m-refresh-all" class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-yellow-400 flex items-center justify-center transition active:scale-95">
+          <i class="fa-solid fa-rotate text-xs"></i>
+        </button>
+        <button id="btn-m-logout" class="w-9 h-9 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-400 hover:bg-rose-900/60 flex items-center justify-center transition active:scale-95">
+          <i class="fa-solid fa-power-off text-xs"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="p-4 space-y-4 max-w-lg mx-auto">
+
+      <!-- Quick KPI Stats Bar -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <div class="glass-card p-3 rounded-2xl border-yellow-500/20">
+          <span class="text-[10px] text-slate-400 block font-bold">إجمالي اللاعبين المسجلين</span>
+          <span id="stat-m-total-players" class="text-base font-black text-yellow-400 numbers-font mt-0.5 block">...</span>
+        </div>
+        <div class="glass-card p-3 rounded-2xl border-emerald-500/20">
+          <span class="text-[10px] text-slate-400 block font-bold">إجمالي طلبات الشحن</span>
+          <span id="stat-m-total-topups" class="text-base font-black text-emerald-400 numbers-font mt-0.5 block">...</span>
+        </div>
+      </div>
+
+      <!-- ==================== TAB 1: TOPUP STORE ==================== -->
+      <section id="m-tab-topups" class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-black text-white flex items-center gap-2">
+            <i class="fa-solid fa-gem text-yellow-400"></i>
+            طلبات الشحن والباقات
+          </h2>
+          <span id="badge-m-pending-count" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-black">
+            0 معلق
+          </span>
+        </div>
+
+        <!-- Topups Container List -->
+        <div id="m-topups-list" class="space-y-3">
+          <div class="text-center py-8 text-xs text-slate-500">
+            <i class="fa-solid fa-spinner fa-spin text-lg block mb-2 text-yellow-400"></i>
+            جاري جلب سجلات الشحن...
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 2: PLAYERS ==================== -->
+      <section id="m-tab-players" class="hidden space-y-3.5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-black text-white flex items-center gap-2">
+            <i class="fa-solid fa-users text-yellow-400"></i>
+            إدارة حسابات اللاعبين
+          </h2>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative">
+          <input type="text" id="m-player-search-input" class="glass-input w-full p-3.5 pr-10 rounded-2xl text-xs text-white" placeholder="ابحث باسم اللاعب (مثال: NewU)...">
+          <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-4 text-slate-400 text-xs"></i>
+        </div>
+
+        <!-- Selected Player Action Card -->
+        <div id="m-player-action-card" class="hidden glass-card p-4 rounded-2xl border-yellow-500/30 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+            <div>
+              <span id="m-sel-username" class="text-sm font-black text-yellow-400 block numbers-font">Player</span>
+              <span id="m-sel-details" class="text-[10px] text-slate-400 block">...</span>
+            </div>
+            <button id="btn-m-close-player-card" class="text-slate-400 hover:text-white text-xs p-1">
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+
+          <!-- Quick Balance Add -->
+          <div class="space-y-2">
+            <label class="block text-[11px] font-bold text-slate-300">إضافة مبلغ فوري لحساب اللاعب</label>
+            <div class="flex gap-2">
+              <input type="number" id="m-input-add-cash" class="glass-input flex-1 p-2.5 rounded-xl text-xs numbers-font" placeholder="المبلغ (مثال: 500000)">
+              <select id="m-select-add-target" class="glass-input px-2.5 py-2 rounded-xl text-xs">
+                <option value="bank">في البنك 🏦</option>
+                <option value="cash">كاش في اليد 💵</option>
+              </select>
+            </div>
+            <div class="flex gap-1.5 overflow-x-auto no-scrollbar py-1">
+              <button onclick="document.getElementById('m-input-add-cash').value=100000" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300 active:scale-95">+100K</button>
+              <button onclick="document.getElementById('m-input-add-cash').value=1000000" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300 active:scale-95">+1M</button>
+              <button onclick="document.getElementById('m-input-add-cash').value=10000000" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300 active:scale-95">+10M</button>
+              <button onclick="document.getElementById('m-input-add-cash').value=50000000" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300 active:scale-95">+50M</button>
+            </div>
+            <button id="btn-m-submit-add-cash" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 active:scale-98">
+              <i class="fa-solid fa-plus-circle"></i>
+              <span>إيداع المبلغ الآن</span>
+            </button>
+          </div>
+
+          <!-- Quick Gold Add -->
+          <div class="pt-2 border-t border-slate-800/80 space-y-2">
+            <label class="block text-[11px] font-bold text-slate-300">إضافة ذهب فوري 🪙</label>
+            <div class="flex gap-2">
+              <input type="number" id="m-input-add-gold" class="glass-input flex-1 p-2.5 rounded-xl text-xs numbers-font" placeholder="كمية الذهب (مثال: 100)">
+              <button id="btn-m-submit-add-gold" class="px-4 py-2.5 rounded-xl bg-yellow-600 hover:bg-yellow-500 text-slate-950 font-black text-xs transition flex items-center justify-center gap-1 shadow-lg shadow-yellow-600/20 active:scale-98">
+                <i class="fa-solid fa-coins"></i>
+                <span>إضافة</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Ban & Reset Actions -->
+          <div class="pt-2 border-t border-slate-800/80 grid grid-cols-2 gap-2">
+            <button id="btn-m-toggle-ban" class="py-2.5 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 font-black text-xs transition active:scale-98">
+              <i class="fa-solid fa-ban ml-1"></i>
+              <span id="text-m-ban">حظر الحساب</span>
+            </button>
+            <button id="btn-m-reset-player" class="py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 font-bold text-xs hover:text-white transition active:scale-98">
+              <i class="fa-solid fa-arrow-rotate-left ml-1"></i>
+              تصفير الحساب
+            </button>
+          </div>
+        </div>
+
+        <!-- Players List Results -->
+        <div id="m-players-list" class="space-y-2">
+          <!-- Dyn players -->
+        </div>
+      </section>
+
+      <!-- ==================== TAB 3: ECONOMY & SYSTEM ==================== -->
+      <section id="m-tab-system" class="hidden space-y-3.5">
+        <h2 class="text-sm font-black text-white flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-yellow-400"></i>
+          إدارة النظام والاقتصاد
+        </h2>
+
+        <!-- Maintenance Mode Card -->
+        <div class="glass-card p-4 rounded-2xl border-yellow-500/20 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-200">وضع الصيانة والتجهيز 🚀</span>
+            <span id="m-maint-status-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">الخادم متاح</span>
+          </div>
+          <button id="btn-m-toggle-maintenance" class="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-black text-xs transition active:scale-98">
+            تفعيل / إيقاف وضع الصيانة
+          </button>
+        </div>
+
+        <!-- Global Force Refresh Broadcast -->
+        <div class="glass-card p-4 rounded-2xl border-slate-800 space-y-3">
+          <span class="text-xs font-bold text-slate-200 block">إعادة تحميل إجباري لجميع المتصلين 🔄</span>
+          <button id="btn-m-force-reload-all" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-xs transition active:scale-98">
+            إرسال أمر تحديث فوري لكافة اللاعبين
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Sticky Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/90 px-4 py-2 flex items-center justify-around max-w-lg mx-auto">
+      <button onclick="switchTab('topups')" id="nav-m-topups" class="flex flex-col items-center gap-1 text-yellow-400 py-1 px-3 rounded-xl transition">
+        <i class="fa-solid fa-gem text-base"></i>
+        <span class="text-[10px] font-bold">الشحن</span>
+      </button>
+      <button onclick="switchTab('players')" id="nav-m-players" class="flex flex-col items-center gap-1 text-slate-400 py-1 px-3 rounded-xl transition">
+        <i class="fa-solid fa-users text-base"></i>
+        <span class="text-[10px] font-bold">اللاعبين</span>
+      </button>
+      <button onclick="switchTab('system')" id="nav-m-system" class="flex flex-col items-center gap-1 text-slate-400 py-1 px-3 rounded-xl transition">
+        <i class="fa-solid fa-sliders text-base"></i>
+        <span class="text-[10px] font-bold">النظام</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="m-toast-container" class="fixed top-3 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none w-[90vw] max-w-sm"></div>
+
+  <!-- Core Scripts -->
+  <script src="game.js?v=v8.8.1"></script>
+  <script src="db.js?v=v8.8.1"></script>
+
+  <script>
+    const MASTER_HASH = 'f7bd3e9d5f13264c2dcc635b0f0e7edd3cc732d23d86b1d642e20ce9bd43dd99';
+    let currentAuthToken = '';
+    let cachedTopups = [];
+    let cachedPlayers = [];
+    let activeSelectedPlayer = null;
+
+    // Sha256 helper
+    async function sha256(str) {
+      try {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (_) { return str; }
+    }
+
+    // Toast
+    function showToast(title, msg, type = 'info') {
+      const c = document.getElementById('m-toast-container');
+      if (!c) return;
+      const t = document.createElement('div');
+      t.className = `p-3 rounded-2xl border text-xs font-bold text-white shadow-2xl flex items-center gap-2.5 transition-all transform duration-300 translate-y-2 pointer-events-auto ${
+        type === 'success' ? 'bg-emerald-950/95 border-emerald-500/50 text-emerald-200' :
+        type === 'error' ? 'bg-rose-950/95 border-rose-500/50 text-rose-200' :
+        'bg-slate-900/95 border-yellow-500/40 text-yellow-200'
+      }`;
+      t.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-check-circle text-emerald-400' : type === 'error' ? 'fa-triangle-exclamation text-rose-400' : 'fa-info-circle text-yellow-400'} text-sm"></i><div><span class="block font-black">${title}</span><span class="text-[11px] opacity-90">${msg}</span></div>`;
+      c.appendChild(t);
+      requestAnimationFrame(() => t.classList.remove('translate-y-2'));
+      setTimeout(() => {
+        t.classList.add('opacity-0', '-translate-y-2');
+        setTimeout(() => t.remove(), 300);
+      }, 3500);
+    }
+
+    // Tab Navigation
+    function switchTab(tab) {
+      ['topups', 'players', 'system'].forEach(t => {
+        const sec = document.getElementById(`m-tab-${t}`);
+        const nav = document.getElementById(`nav-m-${t}`);
+        if (sec) sec.classList.toggle('hidden', t !== tab);
+        if (nav) {
+          if (t === tab) {
+            nav.className = 'flex flex-col items-center gap-1 text-yellow-400 py-1 px-3 rounded-xl transition';
+          } else {
+            nav.className = 'flex flex-col items-center gap-1 text-slate-400 py-1 px-3 rounded-xl transition';
+          }
+        }
+      });
+      if (tab === 'topups') renderTopups();
+      if (tab === 'players' && cachedPlayers.length === 0) loadPlayers();
+    }
+
+    // Auth Login
+    async function handleAuth() {
+      const inp = document.getElementById('m-auth-key-input');
+      const errBox = document.getElementById('m-auth-err');
+      const val = inp ? inp.value.trim() : '';
+      if (!val) return;
+
+      const hashed = /^[0-9a-fA-F]{64}$/.test(val) ? val.toLowerCase() : (await sha256(val)).toLowerCase();
+      if (hashed === MASTER_HASH) {
+        currentAuthToken = hashed;
+        window._ADMIN_MUTATE_TOKEN = hashed;
+        if (document.getElementById('m-auth-remember')?.checked) {
+          localStorage.setItem('rasalmal_m_admin_token', hashed);
+        }
+        document.getElementById('m-auth-screen').classList.add('hidden');
+        document.getElementById('m-main-shell').classList.remove('hidden');
+        initDashboard();
+      } else {
+        if (errBox) {
+          errBox.textContent = '🚫 مفتاح الإدارة غير صحيح!';
+          errBox.classList.remove('hidden');
+        }
+      }
+    }
+
+    // Load Topups
+    async function loadTopups() {
+      try {
+        const requests = await AppDB.getTopupRequests();
+        cachedTopups = Array.isArray(requests) ? requests : [];
+        renderTopups();
+      } catch (err) {
+        showToast('خطأ في جلب الطلبات', err.message, 'error');
+      }
+    }
+
+    function renderTopups() {
+      const container = document.getElementById('m-topups-list');
+      const pendingBadge = document.getElementById('badge-m-pending-count');
+      const statTotal = document.getElementById('stat-m-total-topups');
+      if (!container) return;
+
+      if (statTotal) statTotal.textContent = String(cachedTopups.length);
+
+      const pending = cachedTopups.filter(r => r.status === 'pending');
+      if (pendingBadge) pendingBadge.textContent = `${pending.length} معلق`;
+
+      if (cachedTopups.length === 0) {
+        container.innerHTML = '<div class="glass-card p-6 rounded-2xl text-center text-xs text-slate-500 font-bold">لا توجد طلبات شحن مسجلة حتى الآن.</div>';
+        return;
+      }
+
+      container.innerHTML = cachedTopups.map(req => {
+        const isPending = req.status === 'pending';
+        const dateStr = req.createdAt ? new Date(req.createdAt).toLocaleDateString('ar-EG', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+        return `
+          <div class="glass-card p-4 rounded-2xl border ${isPending ? 'border-amber-500/50 shadow-lg shadow-amber-500/10' : 'border-slate-800/80'} space-y-2.5">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-sm font-black text-white numbers-font block">@${req.username}</span>
+                <span class="text-xs text-yellow-400 font-bold block">${req.packageName || 'باقة مخصصة'}</span>
+              </div>
+              <div class="text-left">
+                <span class="text-sm font-black text-emerald-400 numbers-font block">${req.price} EGP</span>
+                <span class="text-[10px] text-slate-500 block">${dateStr}</span>
+              </div>
+            </div>
+
+            <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 text-xs space-y-1">
+              <div class="flex justify-between text-slate-300">
+                <span class="text-slate-500 text-[11px]">بيانات المحول:</span>
+                <span class="font-mono text-slate-200">${req.senderPhoneOrName || '-'}</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span class="text-slate-500 text-[11px]">رقم الوصل:</span>
+                <span class="font-mono text-yellow-300">${req.receiptNumber || '-'}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+              <span class="text-[10px] px-2.5 py-1 rounded-lg font-black ${
+                isPending ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                req.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+              }">
+                ${isPending ? '⏳ قيد المراجعة' : req.status === 'approved' ? '✅ معتمد ومضاف' : '❌ مرفوض'}
+              </span>
+
+              ${isPending ? `
+                <div class="flex gap-1.5">
+                  <button onclick="approveOrder('${req.id}', '${req.username}', '${req.packageName}', ${req.price})" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition flex items-center gap-1 shadow active:scale-95">
+                    <i class="fa-solid fa-check"></i> قبول
+                  </button>
+                  <button onclick="rejectOrder('${req.id}', '${req.username}')" class="px-3 py-1.5 rounded-xl bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-500/30 font-bold text-xs transition active:scale-95">
+                    رفض
+                  </button>
+                </div>
+              ` : `
+                <button onclick="deleteOrder('${req.id}')" class="text-slate-500 hover:text-rose-400 p-1 text-xs">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function approveOrder(id, username, pkgName, price) {
+      if (!confirm(`هل أنت متأكد من اعتماد وشحن باقة [${pkgName}] بمبلغ ${price} EGP لحساب اللاعب @${username}؟`)) return;
+      try {
+        await AppDB.processTopupRequest(id, 'approved', 'تم الاعتماد والشحن بنجاح من الموبايل');
+        showToast('تم الاعتماد بنجاح 💎', `تم شحن الباقة للاعب @${username} فوراً!`, 'success');
+        await loadTopups();
+      } catch (err) {
+        showToast('فشل الاعتماد', err.message, 'error');
+      }
+    }
+
+    async function rejectOrder(id, username) {
+      const reason = prompt('سبب رفض طلب الشحن:', 'عدم تطابق بيانات التحويل');
+      if (reason === null) return;
+      try {
+        await AppDB.processTopupRequest(id, 'rejected', reason.trim());
+        showToast('تم الرفض', `تم رفض طلب اللاعب @${username}.`, 'info');
+        await loadTopups();
+      } catch (err) {
+        showToast('فشل الرفض', err.message, 'error');
+      }
+    }
+
+    async function deleteOrder(id) {
+      if (!confirm('حذف سجل هذا الطلب نهائياً؟')) return;
+      try {
+        await AppDB.deleteTopupRequest(id);
+        showToast('تم الحذف', 'تم حذف السجل بنجاح.', 'info');
+        await loadTopups();
+      } catch (err) {
+        showToast('خطأ', err.message, 'error');
+      }
+    }
+
+    // Load Players
+    async function loadPlayers() {
+      try {
+        const rows = await AppDB.getAllPlayers();
+        cachedPlayers = Array.isArray(rows) ? rows : [];
+        const statEl = document.getElementById('stat-m-total-players');
+        if (statEl) statEl.textContent = String(cachedPlayers.length);
+        renderPlayersList(cachedPlayers.slice(0, 30));
+      } catch (err) {
+        showToast('خطأ في جلب اللاعبين', err.message, 'error');
+      }
+    }
+
+    function renderPlayersList(list) {
+      const c = document.getElementById('m-players-list');
+      if (!c) return;
+      if (list.length === 0) {
+        c.innerHTML = '<div class="text-center py-6 text-xs text-slate-500 font-bold">لا يوجد لاعبين مطابقين للبحث.</div>';
+        return;
+      }
+      c.innerHTML = list.map(p => {
+        const netWorth = (Number(p.cash || 0) + Number(p.bank || 0)).toLocaleString();
+        const isBanned = Boolean(p.is_banned || (p.state && p.state.isBanned));
+        return `
+          <div onclick="selectPlayer('${p.username}')" class="glass-card p-3.5 rounded-2xl border border-slate-800/80 hover:border-yellow-500/40 transition cursor-pointer flex items-center justify-between active:scale-98">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-xs font-bold text-yellow-400">
+                ${(p.username || '').slice(0, 2).toUpperCase()}
+              </div>
+              <div>
+                <span class="text-xs font-black text-white block numbers-font">${p.username}</span>
+                <span class="text-[10px] text-slate-400 block">${p.title || 'مستثمر'}</span>
+              </div>
+            </div>
+            <div class="text-left">
+              <span class="text-xs font-black text-emerald-400 numbers-font block">${netWorth} EGP</span>
+              ${isBanned ? '<span class="text-[9px] text-rose-400 font-bold block">محظور 🚫</span>' : '<span class="text-[9px] text-slate-500 block">نشط 🟢</span>'}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function selectPlayer(username) {
+      activeSelectedPlayer = cachedPlayers.find(p => p.username === username);
+      if (!activeSelectedPlayer) return;
+
+      const card = document.getElementById('m-player-action-card');
+      const uName = document.getElementById('m-sel-username');
+      const uDetails = document.getElementById('m-sel-details');
+      const isBanned = Boolean(activeSelectedPlayer.is_banned || (activeSelectedPlayer.state && activeSelectedPlayer.state.isBanned));
+      const textBan = document.getElementById('text-m-ban');
+
+      if (uName) uName.textContent = '@' + activeSelectedPlayer.username;
+      if (uDetails) uDetails.textContent = `الكاش: ${(Number(activeSelectedPlayer.cash)||0).toLocaleString()} | البنك: ${(Number(activeSelectedPlayer.bank)||0).toLocaleString()} | الذهب: ${activeSelectedPlayer.gold || 0}`;
+      if (textBan) textBan.textContent = isBanned ? 'فك الحظر 🟢' : 'حظر الحساب 🚫';
+
+      if (card) {
+        card.classList.remove('hidden');
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    // Balance Addition Event
+    document.getElementById('btn-m-submit-add-cash')?.addEventListener('click', async () => {
+      if (!activeSelectedPlayer) return;
+      const inp = document.getElementById('m-input-add-cash');
+      const target = document.getElementById('m-select-add-target')?.value || 'bank';
+      const amt = Number(inp?.value || 0);
+      if (amt <= 0) {
+        showToast('تنبيه', 'يرجى كتابة مبلغ صحيح أكبر من الصفر.', 'error');
+        return;
+      }
+
+      try {
+        const u = activeSelectedPlayer.username;
+        const fresh = await AppDB.adminGetPlayer(u);
+        const curCash = Number(fresh.cash || 0);
+        const curBank = Number(fresh.bank || 0);
+        const newCash = target === 'cash' ? curCash + amt : curCash;
+        const newBank = target === 'bank' ? curBank + amt : curBank;
+
+        await AppDB.adminSavePlayer(u, {
+          cash: newCash,
+          bank: newBank,
+          netWorth: newCash + newBank,
+          adminModifiedTimestamp: Date.now()
+        });
+
+        showToast('تم الإيداع بنجاح 💰', `تمت إضافة ${amt.toLocaleString()} EGP لحساب @${u}!`, 'success');
+        if (inp) inp.value = '';
+        await loadPlayers();
+        selectPlayer(u);
+      } catch (err) {
+        showToast('فشل الإيداع', err.message, 'error');
+      }
+    });
+
+    // Gold Addition Event
+    document.getElementById('btn-m-submit-add-gold')?.addEventListener('click', async () => {
+      if (!activeSelectedPlayer) return;
+      const inp = document.getElementById('m-input-add-gold');
+      const amt = Number(inp?.value || 0);
+      if (amt <= 0) {
+        showToast('تنبيه', 'يرجى كتابة كمية ذهب أكبر من الصفر.', 'error');
+        return;
+      }
+
+      try {
+        const u = activeSelectedPlayer.username;
+        const fresh = await AppDB.adminGetPlayer(u);
+        const curGold = Number(fresh.gold || 0);
+        const newGold = curGold + amt;
+
+        await AppDB.adminSavePlayer(u, {
+          gold: newGold,
+          adminModifiedTimestamp: Date.now()
+        });
+
+        showToast('تمت إضافة الذهب 🪙', `تمت إضافة ${amt} ذهبة لحساب @${u}!`, 'success');
+        if (inp) inp.value = '';
+        await loadPlayers();
+        selectPlayer(u);
+      } catch (err) {
+        showToast('فشل إضافة الذهب', err.message, 'error');
+      }
+    });
+
+    // Ban Toggle Event
+    document.getElementById('btn-m-toggle-ban')?.addEventListener('click', async () => {
+      if (!activeSelectedPlayer) return;
+      const u = activeSelectedPlayer.username;
+      const isBanned = Boolean(activeSelectedPlayer.is_banned || (activeSelectedPlayer.state && activeSelectedPlayer.state.isBanned));
+      const actionText = isBanned ? 'فك حظر' : 'حظر';
+
+      if (!confirm(`هل أنت متأكد من ${actionText} حساب @${u}؟`)) return;
+
+      try {
+        await AppDB.adminSavePlayer(u, {
+          isBanned: !isBanned,
+          is_banned: !isBanned,
+          adminModifiedTimestamp: Date.now()
+        });
+        showToast('تم التحديث', `تم ${actionText} حساب @${u} بنجاح.`, 'success');
+        await loadPlayers();
+        selectPlayer(u);
+      } catch (err) {
+        showToast('خطأ', err.message, 'error');
+      }
+    });
+
+    // Reset Player
+    document.getElementById('btn-m-reset-player')?.addEventListener('click', async () => {
+      if (!activeSelectedPlayer) return;
+      const u = activeSelectedPlayer.username;
+      if (!confirm(`⚠️ تصفير حساب @${u} بالكامل وإرجاعه لنقطة الصفر؟`)) return;
+
+      try {
+        await AppDB.adminSavePlayer(u, {
+          cash: 500,
+          bank: 0,
+          dirtyCash: 0,
+          netWorth: 500,
+          xp: 0,
+          gold: 0,
+          businesses: {},
+          assets: {},
+          stocks: {},
+          isReset: true,
+          adminModifiedTimestamp: Date.now()
+        });
+        showToast('تم التصفير', `تمت إعادة تعيين حساب @${u} لنقطة الصفر.`, 'info');
+        await loadPlayers();
+        selectPlayer(u);
+      } catch (err) {
+        showToast('خطأ', err.message, 'error');
+      }
+    });
+
+    // Close Player Card
+    document.getElementById('btn-m-close-player-card')?.addEventListener('click', () => {
+      document.getElementById('m-player-action-card')?.classList.add('hidden');
+    });
+
+    // Search Input Real-time Filter
+    document.getElementById('m-player-search-input')?.addEventListener('input', (e) => {
+      const q = (e.target.value || '').trim().toLowerCase();
+      if (!q) {
+        renderPlayersList(cachedPlayers.slice(0, 30));
+        return;
+      }
+      const filtered = cachedPlayers.filter(p => (p.username || '').toLowerCase().includes(q));
+      renderPlayersList(filtered.slice(0, 30));
+    });
+
+    // Maintenance Toggle
+    document.getElementById('btn-m-toggle-maintenance')?.addEventListener('click', async () => {
+      try {
+        const st = await AppDB.getMaintenanceStatus();
+        const currentActive = Boolean(st && (st.active || st.enabled));
+        const newActive = !currentActive;
+
+        await AppDB.setMaintenanceStatus({
+          active: newActive,
+          enabled: newActive,
+          timestamp: Date.now()
+        });
+
+        const badge = document.getElementById('m-maint-status-badge');
+        if (badge) {
+          badge.textContent = newActive ? 'الصيانة نشطة 🚀' : 'الخادم متاح 🟢';
+          badge.className = `text-[10px] px-2 py-0.5 rounded-full font-bold ${newActive ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`;
+        }
+        showToast('حالة الصيانة', newActive ? 'تم تفعيل وضع الصيانة 🚀' : 'تم إنهاء الصيانة وفتح الخوادم 🟢', 'success');
+      } catch (err) {
+        showToast('خطأ في الصيانة', err.message, 'error');
+      }
+    });
+
+    // Force Reload All Players
+    document.getElementById('btn-m-force-reload-all')?.addEventListener('click', async () => {
+      if (!confirm('هل تريد إرسال أمر إعادة تحميل وتحديث لجميع اللاعبين المتصلين الآن؟')) return;
+      try {
+        const ts = Date.now();
+        await AppDB.sendMail('إدارة اللعبة (Admin)', 'ALL', 'admin_force_reload', { timestamp: ts });
+        showToast('تم الإرسال 🔄', 'تم بث أمر التحديث الإجباري لجميع اللاعبين المتصلين بنجاح.', 'success');
+      } catch (err) {
+        showToast('خطأ', err.message, 'error');
+      }
+    });
+
+    // Refresh All Button
+    document.getElementById('btn-m-refresh-all')?.addEventListener('click', async () => {
+      showToast('جاري التحديث 🔄', 'جاري جلب أحدث البيانات من السيرفر...', 'info');
+      await Promise.all([loadTopups(), loadPlayers()]);
+    });
+
+    // Logout Button
+    document.getElementById('btn-m-logout')?.addEventListener('click', () => {
+      if (!confirm('تسجيل الخروج وقفل لوحة التحكم؟')) return;
+      localStorage.removeItem('rasalmal_m_admin_token');
+      sessionStorage.removeItem('rasalmal_admin_auth_token');
+      location.reload();
+    });
+
+    // Dashboard Init
+    async function initDashboard() {
+      await AppDB.init();
+      await Promise.all([loadTopups(), loadPlayers()]);
+    }
+
+    // Auto-login check
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('btn-m-auth-submit')?.addEventListener('click', handleAuth);
+      document.getElementById('m-auth-key-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleAuth();
+      });
+
+      const remembered = localStorage.getItem('rasalmal_m_admin_token');
+      if (remembered && remembered === MASTER_HASH) {
+        currentAuthToken = remembered;
+        window._ADMIN_MUTATE_TOKEN = remembered;
+        document.getElementById('m-auth-screen').classList.add('hidden');
+        document.getElementById('m-main-shell').classList.remove('hidden');
+        initDashboard();
+      }
+    });
+  </script>
+</body>
+</html>
