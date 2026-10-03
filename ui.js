@@ -24274,3 +24274,256 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
 
   initNetworkWatcher();
 }
+
+  // ==========================================
+  // ROYAL LIVE AUCTION CONTROLLER (ADMIN)
+  // ==========================================
+  const AUCTION_PRESETS = {
+    frame_fire_dragon: {
+      type: 'chat_frame',
+      id: 'frame_fire_dragon',
+      name: 'إطار التنين الناري الملكي 🔥',
+      description: 'إطار شات حصري مضيء ونادر جداً يمنح حسابك هيبة مطلقة في الشات العام وملف اللاعب',
+      icon: '🔥',
+      badge: 'إطار شات حصري',
+      rewardData: { frameId: 'frame_fire_dragon' },
+      startPrice: 15000000,
+      minStep: 1000000,
+      minNetWorth: 50000000
+    },
+    frame_diamond_whale: {
+      type: 'chat_frame',
+      id: 'frame_diamond_whale',
+      name: 'إطار الحوت الماسي المشع 💎',
+      description: 'إطار شات ناصع البياض والتوهج الماسي مخصص لكبار حيتان السيرفر',
+      icon: '💎',
+      badge: 'إطار شات حصري',
+      rewardData: { frameId: 'frame_diamond_whale' },
+      startPrice: 25000000,
+      minStep: 2000000,
+      minNetWorth: 100000000
+    },
+    gold_1000: {
+      type: 'gold',
+      id: 'gold_pack_1000',
+      name: 'شحنة الذهب الملكية (1,000 سبيكة) 🥇',
+      description: '1,000 سبيكة ذهب نقي تمنحك قوة استثمارية وسيولة فورية ضخمة في البورصة',
+      icon: '🥇',
+      badge: 'احتياطي ذهب ملكي',
+      rewardData: { gold: 1000 },
+      startPrice: 20000000,
+      minStep: 2000000,
+      minNetWorth: 50000000
+    },
+    concorde_royale: {
+      type: 'aircraft',
+      id: 'concorde_royale',
+      name: 'طائرة كونكورد الملكية الخارقة ✈️',
+      description: 'طائرة نفاثة خارقة تختصر زمن رحلات المطار والشحن بنسبة 50% مع أرباح مضاعفة',
+      icon: '✈️',
+      badge: 'أسطول حصري',
+      rewardData: { aircraftId: 'concorde_royale' },
+      startPrice: 50000000,
+      minStep: 5000000,
+      minNetWorth: 150000000
+    }
+  };
+
+  function getAdminApiMasterKey() {
+    return localStorage.getItem('admin_master_key') || localStorage.getItem('rasalmal_master_key') || 'sk_live_rasalmal_secret_admin_master_key_2026';
+  }
+
+  function getAdminApiUrl(endpoint) {
+    const base = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? '' : 'https://rasalmal.online';
+    return `${base}${endpoint}`;
+  }
+
+  window._adminApplyAuctionPreset = function(presetKey) {
+    const p = AUCTION_PRESETS[presetKey];
+    if (!p) return;
+    const nameEl = document.getElementById('adm-input-auc-name');
+    const typeEl = document.getElementById('adm-input-auc-type');
+    const iconEl = document.getElementById('adm-input-auc-icon');
+    const badgeEl = document.getElementById('adm-input-auc-badge');
+    const descEl = document.getElementById('adm-input-auc-desc');
+    const startPriceEl = document.getElementById('adm-input-auc-start-price');
+    const minStepEl = document.getElementById('adm-input-auc-min-step');
+    const minNetWorthEl = document.getElementById('adm-input-auc-min-networth');
+
+    if (nameEl) nameEl.value = p.name;
+    if (typeEl) typeEl.value = p.type;
+    if (iconEl) iconEl.value = p.icon;
+    if (badgeEl) badgeEl.value = p.badge;
+    if (descEl) descEl.value = p.description;
+    if (startPriceEl) startPriceEl.value = p.startPrice;
+    if (minStepEl) minStepEl.value = p.minStep;
+    if (minNetWorthEl) minNetWorthEl.value = p.minNetWorth;
+
+    if (typeof showToast === 'function') showToast('نموذج المزاد', `تم تطبيق إعدادات [${p.name}]`, 'info');
+  };
+
+  window._adminSubmitCreateAuction = async function() {
+    const name = (document.getElementById('adm-input-auc-name')?.value || '').trim();
+    const type = document.getElementById('adm-input-auc-type')?.value || 'chat_frame';
+    const icon = (document.getElementById('adm-input-auc-icon')?.value || '🏆').trim();
+    const badge = (document.getElementById('adm-input-auc-badge')?.value || 'مزاد رسمي').trim();
+    const desc = (document.getElementById('adm-input-auc-desc')?.value || '').trim();
+    const startPrice = Number(document.getElementById('adm-input-auc-start-price')?.value || 10000000);
+    const minStep = Number(document.getElementById('adm-input-auc-min-step')?.value || 1000000);
+    const minNetWorth = Number(document.getElementById('adm-input-auc-min-networth')?.value || 0);
+    const delayMins = Number(document.getElementById('adm-input-auc-delay-mins')?.value || 10);
+
+    if (!name) {
+      if (typeof showToast === 'function') showToast('خطأ', 'اسم المعروض مطلوب.', 'warning');
+      else alert('اسم المعروض مطلوب.');
+      return;
+    }
+
+    let rewardData = {};
+    if (type === 'chat_frame') rewardData.frameId = 'frame_custom_' + Date.now();
+    if (type === 'gold') rewardData.gold = 1000;
+    if (type === 'aircraft') rewardData.aircraftId = 'plane_custom_' + Date.now();
+
+    // Check if matching preset
+    for (const key in AUCTION_PRESETS) {
+      if (AUCTION_PRESETS[key].name === name || AUCTION_PRESETS[key].id === name) {
+        rewardData = AUCTION_PRESETS[key].rewardData;
+      }
+    }
+
+    try {
+      const res = await fetch(getAdminApiUrl('/api/auction/admin/create'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAdminApiMasterKey()}`
+        },
+        body: JSON.stringify({
+          item: { type, name, description: desc, icon, badge, rewardData },
+          config: { startingBid: startPrice, minBidStep: minStep, minNetWorth, hammerDurationSeconds: 60 },
+          startDelayMinutes: delayMins
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل جدولة المزاد.');
+
+      if (typeof showToast === 'function') showToast('نجاح الجدولة', 'تم إطلاق ونشر المزاد الملكي بنجاح!', 'success');
+      else alert('تم إطلاق ونشر المزاد الملكي بنجاح!');
+
+      if (typeof logAdminAction === 'function') logAdminAction(`جدولة مزاد ملكي جديد: ${name}`);
+      window._adminRefreshAuctionTelemetry();
+    } catch (e) {
+      if (typeof showToast === 'function') showToast('خطأ', e.message, 'error');
+      else alert(e.message);
+    }
+  };
+
+  window._adminForceStartAuction = async function() {
+    try {
+      const res = await fetch(getAdminApiUrl('/api/auction/admin/start'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAdminApiMasterKey()}`
+        },
+        body: JSON.stringify({})
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل بدء المزاد.');
+
+      if (typeof showToast === 'function') showToast('بدء المزاد الحي', 'تم فتح قاعة المزاد للمزايدات الحية الآن!', 'success');
+      if (typeof logAdminAction === 'function') logAdminAction('بدء البث الحي للمزاد الملكي فورياً');
+      window._adminRefreshAuctionTelemetry();
+    } catch (e) {
+      if (typeof showToast === 'function') showToast('خطأ', e.message, 'error');
+      else alert(e.message);
+    }
+  };
+
+  window._adminExecuteHammer = async function(action) {
+    try {
+      const res = await fetch(getAdminApiUrl('/api/auction/admin/hammer'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAdminApiMasterKey()}`
+        },
+        body: JSON.stringify({ action })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل تنفيذ ضربة المطرقة.');
+
+      if (typeof showToast === 'function') showToast('المطرقة الإدارية 🔨', data.message || 'تم تنفيذ الضربة بنجاح', 'success');
+      if (typeof logAdminAction === 'function') logAdminAction(`تنفيذ إجراء المطرقة: ${action}`);
+      window._adminRefreshAuctionTelemetry();
+    } catch (e) {
+      if (typeof showToast === 'function') showToast('خطأ', e.message, 'error');
+      else alert(e.message);
+    }
+  };
+
+  window._adminRefreshAuctionTelemetry = async function() {
+    try {
+      const res = await fetch(getAdminApiUrl('/api/auction/state?username=admin'), {
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+
+      const pill = document.getElementById('adm-auc-status-pill');
+      const timer = document.getElementById('adm-auc-live-timer');
+      const icon = document.getElementById('adm-auc-item-icon');
+      const name = document.getElementById('adm-auc-item-name');
+      const desc = document.getElementById('adm-auc-item-desc');
+      const bid = document.getElementById('adm-auc-current-bid');
+      const bidder = document.getElementById('adm-auc-highest-bidder');
+      const regCount = document.getElementById('adm-auc-registrants-count');
+      const minNw = document.getElementById('adm-auc-min-networth-display');
+      const hammerMsg = document.getElementById('adm-auc-hammer-msg');
+      const strikeBadge = document.getElementById('adm-auc-strike-badge');
+
+      if (pill) {
+        pill.textContent = data.status === 'LIVE' ? '🔴 بث حي مباشر' : (data.status === 'SCHEDULED' ? '⏳ مجدول وتنازلي' : (data.status === 'ENDED' ? '👑 تم البيع' : 'خامل'));
+        pill.className = `px-2 py-0.5 rounded-full text-[10px] font-black ${data.status === 'LIVE' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`;
+      }
+
+      if (data.item) {
+        if (icon) icon.textContent = data.item.icon || '🏆';
+        if (name) name.textContent = data.item.name || 'غرض ملكي';
+        if (desc) desc.textContent = data.item.description || '--';
+      }
+
+      if (bid) bid.textContent = `${Number(data.live?.currentBid || 0).toLocaleString()} EGP`;
+      if (bidder) bidder.textContent = data.live?.highestBidder ? data.live.highestBidder.username : 'لا يوجد مزايد بعد';
+      if (regCount) regCount.textContent = `${data.registrantsCount || 0} لاعب`;
+      if (minNw) minNw.textContent = `${Number(data.config?.minNetWorth || 0).toLocaleString()} EGP`;
+
+      if (hammerMsg) {
+        hammerMsg.innerHTML = `<i class="fa-solid fa-gavel text-amber-400"></i> <span>${data.live?.hammerStrikeMessage || 'جاهز لتلقي أوامر المطرقة...'}</span>`;
+      }
+      if (strikeBadge) {
+        strikeBadge.textContent = `الضربة ${data.live?.hammerStrike || 0} / 3`;
+      }
+
+      if (timer) {
+        const target = data.status === 'LIVE' ? data.live?.hammerExpiryTime : data.config?.scheduledStartTime;
+        if (target) {
+          const diff = Math.max(0, target - Date.now());
+          const m = Math.floor(diff / 60000);
+          const s = Math.floor((diff % 60000) / 1000);
+          timer.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        } else {
+          timer.textContent = '--:--';
+        }
+      }
+    } catch (e) {}
+  };
+
+  setInterval(() => {
+    const p = document.getElementById('admin-subpanel-auctions');
+    if (p && !p.classList.contains('hidden')) {
+      if (typeof window._adminRefreshAuctionTelemetry === 'function') {
+        window._adminRefreshAuctionTelemetry();
+      }
+    }
+  }, 2000);

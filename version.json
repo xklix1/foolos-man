@@ -1,7 +1,7 @@
 {
-  "version": "v8.8.2",
-  "build": 1791055500000,
-  "timestamp": 1791055500000,
-  "notes": "Direct airport purchase enabled with 30M license and full facility net worth tracking",
-  "releaseNotes": "Direct airport purchase enabled with 30M license and full facility net worth tracking"
+  "version": "v8.9.0",
+  "build": 1791059000000,
+  "timestamp": 1791059000000,
+  "notes": "Royal Live Hosted Auctions, 60s hammer countdown, wealth requirement filters, spectator mode, and animated chat frames",
+  "releaseNotes": "Royal Live Hosted Auctions, 60s hammer countdown, wealth requirement filters, spectator mode, and animated chat frames"
 }

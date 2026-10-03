@@ -2767,137 +2767,225 @@
             class="text-[11px] text-slate-400 space-y-1 h-28 overflow-y-auto bg-slate-950/90 p-3 rounded-xl border border-slate-800/80 text-right font-mono custom-scrollbar">
             <div>لا يوجد عمليات مسجلة في الجلسة الحالية.</div></div></div></div>
 
-      <!-- 7. PANEL AUCTIONS MANAGEMENT -->
+            <!-- 7. PANEL AUCTIONS MANAGEMENT -->
       <div id="admin-subpanel-auctions" class="hidden space-y-6">
         <!-- Auctions Header -->
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between flex-wrap gap-3">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-              <i class="fa-solid fa-gavel text-base"></i>
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-400 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/20">
+              <i class="fa-solid fa-gavel text-lg"></i>
             </div>
             <div>
-              <h3 class="text-sm font-black text-white">إدارة المزادات والصفقات الحية</h3>
-              <p class="text-[11px] text-slate-400">طرح مقتنيات نادرة، شركات، وعقارات للبيع المباشر أو المزايدة بالوقت الفعلي</p>
+              <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2">
+                <span>غرفة القيادة والتحكم في المزادات الملكية الحية</span>
+                <span id="adm-auc-status-pill" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">خامل</span>
+              </h3>
+              <p class="text-[11px] text-slate-400">جدولة المزادات، تحديد شروط الثروة، التحكم بالضربات الثلاث للمطرقة، والترسية الفورية</p>
+            </div>
+          </div>
+          <button onclick="if(window._adminRefreshAuctionTelemetry) window._adminRefreshAuctionTelemetry()" class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-rotate-right text-xs text-amber-400"></i>
+            <span>تحديث التيليمتري</span>
+          </button>
+        </div>
+
+        <!-- 1. LIVE AUCTION MONITOR & HAMMER STATION -->
+        <div id="adm-live-auction-card" class="glass-panel p-5 sm:p-6 rounded-2xl border border-amber-500/40 space-y-5 bg-gradient-to-b from-amber-950/20 via-slate-900/60 to-slate-950 shadow-2xl">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800/80 flex-wrap gap-2">
+            <div class="flex items-center gap-2.5">
+              <span class="w-3 h-3 rounded-full bg-amber-400 animate-ping"></span>
+              <h4 class="text-xs sm:text-sm font-black text-white">منصة المزاد الحي والمطرقة المركزية (The Auctioneer Cockpit)</h4>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-slate-400 text-[11px] font-bold">مؤقت المطرقة:</span>
+              <span id="adm-auc-live-timer" class="px-3 py-1 bg-black/80 rounded-xl font-mono font-black text-amber-400 text-xs border border-amber-500/30">--:--</span>
+            </div>
+          </div>
+
+          <!-- Active Item Telemetry Overview -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div class="p-3.5 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+              <span class="text-[10px] text-slate-400 block font-bold">الغرض المعروض</span>
+              <div class="flex items-center gap-2">
+                <span id="adm-auc-item-icon" class="text-xl">🏆</span>
+                <strong id="adm-auc-item-name" class="text-xs text-white truncate">لا يوجد مزاد نشط حالياً</strong>
+              </div>
+              <span id="adm-auc-item-desc" class="text-[10px] text-slate-400 block truncate">--</span>
+            </div>
+
+            <div class="p-3.5 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+              <span class="text-[10px] text-slate-400 block font-bold">أعلى مزايدة حالية</span>
+              <div class="text-base sm:text-lg font-black text-emerald-400 font-mono" id="adm-auc-current-bid">0 EGP</div>
+              <span class="text-[10px] text-slate-300 block truncate">صاحب المزايدة: <strong id="adm-auc-highest-bidder" class="text-white">--</strong></span>
+            </div>
+
+            <div class="p-3.5 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+              <span class="text-[10px] text-slate-400 block font-bold">المسجلون المؤهلون</span>
+              <div class="text-base sm:text-lg font-black text-amber-400 font-mono" id="adm-auc-registrants-count">0 لاعب</div>
+              <span class="text-[10px] text-slate-400 block truncate">شرط الثروة: <strong id="adm-auc-min-networth-display" class="text-slate-300">-- EGP</strong></span>
+            </div>
+          </div>
+
+          <!-- Live Hammer Strike Message Banner -->
+          <div id="adm-auc-hammer-banner" class="p-3 bg-slate-900/90 rounded-xl border border-slate-800 text-xs font-black text-amber-300 flex items-center justify-between flex-wrap gap-2">
+            <span id="adm-auc-hammer-msg" class="flex items-center gap-2">
+              <i class="fa-solid fa-gavel text-amber-400"></i>
+              <span>جاهز لتلقي أوامر المطرقة...</span>
+            </span>
+            <span id="adm-auc-strike-badge" class="px-2.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-400 border border-slate-700">الضربة 0 / 3</span>
+          </div>
+
+          <!-- Interactive Auctioneer Hammer Controls -->
+          <div class="space-y-2 pt-2 border-t border-slate-800/80">
+            <span class="text-[11px] font-bold text-slate-300 block">أزرار تحكم المطرقة الإدارية (تأثير صوتي ومرئي فوري لجميع اللاعبين):</span>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              <!-- Strike 1 -->
+              <button onclick="window._adminExecuteHammer('strike_1')" class="py-2.5 px-3 bg-yellow-950/50 hover:bg-yellow-900/70 text-yellow-300 border border-yellow-500/40 rounded-xl text-xs font-black transition flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95">
+                <span>⚡ النداء الأول</span>
+                <span class="text-[9px] text-yellow-400/80 font-normal">الأولى 🔨</span>
+              </button>
+
+              <!-- Strike 2 -->
+              <button onclick="window._adminExecuteHammer('strike_2')" class="py-2.5 px-3 bg-orange-950/50 hover:bg-orange-900/70 text-orange-300 border border-orange-500/40 rounded-xl text-xs font-black transition flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95">
+                <span>🔥 النداء الثاني</span>
+                <span class="text-[9px] text-orange-400/80 font-normal">الثانية 🔨🔨</span>
+              </button>
+
+              <!-- Final Strike: SOLD -->
+              <button onclick="window._adminExecuteHammer('strike_final')" class="py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black transition flex flex-col items-center justify-center gap-1 shadow-lg shadow-emerald-600/30 cursor-pointer active:scale-95">
+                <span>👑 الضربة النهائية</span>
+                <span class="text-[9px] text-emerald-200 font-normal">تم البيع! SOLD 🔨🔨🔨</span>
+              </button>
+
+              <!-- Extend Time -->
+              <button onclick="window._adminExecuteHammer('extend_time')" class="py-2.5 px-3 bg-sky-950/50 hover:bg-sky-900/70 text-sky-300 border border-sky-500/40 rounded-xl text-xs font-black transition flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95">
+                <span>⏱️ تمديد الوقت</span>
+                <span class="text-[9px] text-sky-400/80 font-normal">+30 ثانية</span>
+              </button>
+
+              <!-- Start Now -->
+              <button onclick="window._adminForceStartAuction()" class="py-2.5 px-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black transition flex flex-col items-center justify-center gap-1 shadow-lg shadow-amber-500/20 cursor-pointer active:scale-95">
+                <span>🟢 بدء المزاد فوراً</span>
+                <span class="text-[9px] text-slate-900 font-bold">فتح القاعة</span>
+              </button>
+
+              <!-- Cancel -->
+              <button onclick="window._adminExecuteHammer('cancel')" class="py-2.5 px-3 bg-rose-950/50 hover:bg-rose-900/70 text-rose-300 border border-rose-500/40 rounded-xl text-xs font-black transition flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95">
+                <span>❌ إلغاء المزاد</span>
+                <span class="text-[9px] text-rose-400/80 font-normal">إيقاف فوري</span>
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- Create Auction Item Card -->
-        <div class="glass-panel p-5 rounded-2xl border border-slate-800/80 space-y-4">
+        <!-- 2. CREATE / SCHEDULE NEW ROYAL AUCTION -->
+        <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-slate-800 space-y-4 shadow-xl">
           <div class="flex items-center gap-2 pb-3 border-b border-slate-800/60">
-            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-            <h4 class="text-xs font-black text-white">طرح غرض جديد للمزاد والصفقات الخاصة (Instant Store Auction)</h4>
-          </div>
-          <p class="text-[11px] text-slate-400">إنشاء غرض مخصص نادر بحد أقصى للكمية المتاحة وسعر محدد، ليتمكن اللاعبون من شرائه حياً من صفحة المزادات.</p>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-            <div>
-              <label class="block text-[11px] font-bold text-slate-400 mb-1">اسم الغرض (Item Name)</label>
-              <input type="text" id="admin-auction-name" placeholder="مثال: سيارة بوجاتي ملكية نادرة"
-                class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl"></div>
-            <div>
-              <label class="block text-[11px] font-bold text-slate-400 mb-1">وصف الغرض (Description)</label>
-              <input type="text" id="admin-auction-desc" placeholder="تفاصيل ووصف الغرض للمشترين"
-                class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl"></div></div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-            <div>
-              <label class="block text-[11px] font-bold text-slate-400 mb-1">السعر المطلوب (ج.م EGP)</label>
-              <input type="number" id="admin-auction-price" min="1" placeholder="سعر الشراء الفوري بالجنيه"
-                class="glass-input w-full p-2.5 text-xs text-center font-bold font-mono text-white rounded-xl"></div>
-            <div>
-              <label class="block text-[11px] font-bold text-slate-400 mb-1">الكمية المتاحة (Quantity)</label>
-              <input type="number" id="admin-auction-qty" min="1" placeholder="عدد القطع المتوفرة"
-                class="glass-input w-full p-2.5 text-xs text-center font-bold font-mono text-white rounded-xl"></div></div>
-
-          <button id="btn-admin-create-auction"
-            class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-amber-500/10 flex items-center justify-center gap-2 cursor-pointer">
-            <i class="fa-solid fa-plus"></i>
-            <span>طرح الغرض للبيع فوراً في المزادات</span></button></div>
-
-        <!-- Create Live Auction Card -->
-        <div class="glass-panel p-5 rounded-2xl border border-amber-500/30 space-y-4">
-          <div class="flex items-center gap-2 pb-3 border-b border-slate-800/60">
-            <i class="fa-solid fa-fire text-amber-500 animate-pulse"></i>
-            <h4 class="text-xs font-black text-amber-400">إطلاق مزاد حي تنافسي متزامن (V2 Live Sync Auction)</h4>
-          </div>
-          <p class="text-[11px] text-slate-400">اطرح مزاداً مباشراً يتنافس فيه اللاعبون بالوقت الفعلي. مع كل مزايدة جديدة يُعاد ضبط مؤقت المزاد لـ 30 ثانية.</p>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <div>
-              <label class="block text-[11px] font-bold text-slate-400 mb-1">اسم المزاد / الغرض (Item Name)</label>
-              <input type="text" id="admin-live-auction-name" placeholder="مثال: ترخيص علامة تجارية لشركة فود كارت"
-                class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl"></div>
-            <div>
-              <label class="block text-[11px] font-bold text-slate-400 mb-1">نوع المزاد (Item Type)</label>
-              <select id="admin-live-auction-type"
-                class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl">
-                <option value="item">غرض فريد / مقتنيات</option>
-                <option value="business">شركة تجارية</option>
-                <option value="property">عقار استثماري</option></select></div></div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-            <div>
-              <label class="block text-[11px] font-bold text-slate-400 mb-1">السعر الابتدائي (EGP)</label>
-              <input type="number" id="admin-live-auction-baseprice" min="1" placeholder="مثال: 500,000"
-                class="glass-input w-full p-2.5 text-xs text-center font-bold text-white rounded-xl"></div>
-            <div>
-              <label class="block text-[11px] font-bold text-slate-400 mb-1">شرط البدء (Condition Type)</label>
-              <select id="admin-live-auction-cond-type"
-                class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl">
-                <option value="players">بعدد اللاعبين المسجلين</option>
-                <option value="time">بعد مرور مؤقت زمني</option></select></div>
-            <div>
-              <label class="block text-[11px] font-bold text-slate-400 mb-1">قيمة الشرط (عدد أو دقائق)</label>
-              <input type="number" id="admin-live-auction-cond-value" min="1" placeholder="مثال: 3 لاعبين أو 5 دقائق"
-                class="glass-input w-full p-2.5 text-xs text-center font-bold text-white rounded-xl"></div></div>
-
-          <button id="btn-admin-create-live-auction"
-            class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer">
-            <i class="fa-solid fa-gavel"></i>
-            <span>طرح المزاد الحي الحصري للمسجلين</span></button></div>
-
-        <!-- Live Auctions Active & Pending List -->
-        <div class="glass-panel p-5 rounded-2xl border border-slate-800/80 space-y-4">
-          <div class="flex items-center gap-2 pb-3 border-b border-slate-800/60">
-            <i class="fa-solid fa-clock-rotate-left text-amber-400"></i>
-            <h4 class="text-xs font-black text-white">المزادات الحية المتزامنة في السيرفر (Live Auctions)</h4>
+            <i class="fa-solid fa-calendar-plus text-amber-400 text-sm"></i>
+            <h4 class="text-xs sm:text-sm font-black text-white">جدولة وإطلاق مزاد ملكي جديد (New Scheduled Auction)</h4>
           </div>
 
-          <div class="overflow-x-auto rounded-xl border border-slate-800/60">
-            <table class="w-full text-right text-xs">
-              <thead class="bg-slate-950/80 border-b border-slate-800/80 text-[11px] text-slate-400">
-                <tr>
-                  <th class="p-3">اسم المزاد / الغرض</th>
-                  <th class="p-3">نوع الغرض</th>
-                  <th class="p-3 text-center">السعر الابتدائي / الحالي</th>
-                  <th class="p-3 text-center">شرط البدء والمسجلين</th>
-                  <th class="p-3 text-center">الحالة</th>
-                  <th class="p-3 text-center">أعلى مزايد</th>
-                  <th class="p-3 text-left">إجراءات</th></tr></thead>
-              <tbody id="admin-live-auctions-list" class="divide-y divide-slate-800/40 bg-slate-900/40">
-                <tr>
-                  <td colspan="7" class="py-5 text-center text-slate-500">جاري تحميل المزادات الحية...</td></tr></tbody></table></div></div>
+          <!-- Preset Selector -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-bold text-slate-300">اختر من النماذج والجوائز النادرة الجاهزة (Preset Selection):</label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button type="button" onclick="window._adminApplyAuctionPreset('frame_fire_dragon')" class="btn-auc-preset p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/50 text-right text-xs transition cursor-pointer">
+                <span class="text-base block mb-0.5">🔥</span>
+                <strong class="text-amber-400 block text-[11px]">إطار التنين الناري</strong>
+                <span class="text-[9px] text-slate-400">إطار شات حصري</span>
+              </button>
 
-        <!-- Current Auction Items List -->
-        <div class="glass-panel p-5 rounded-2xl border border-slate-800/80 space-y-4">
-          <div class="flex items-center gap-2 pb-3 border-b border-slate-800/60">
-            <i class="fa-solid fa-boxes-stacked text-yellow-400"></i>
-            <h4 class="text-xs font-black text-white">الأغراض المعروضة حالياً في متجر المزادات</h4>
+              <button type="button" onclick="window._adminApplyAuctionPreset('frame_diamond_whale')" class="btn-auc-preset p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 text-right text-xs transition cursor-pointer">
+                <span class="text-base block mb-0.5">💎</span>
+                <strong class="text-cyan-400 block text-[11px]">إطار الحوت الماسي</strong>
+                <span class="text-[9px] text-slate-400">إطار شات مشع</span>
+              </button>
+
+              <button type="button" onclick="window._adminApplyAuctionPreset('gold_1000')" class="btn-auc-preset p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-yellow-500/50 text-right text-xs transition cursor-pointer">
+                <span class="text-base block mb-0.5">🥇</span>
+                <strong class="text-yellow-400 block text-[11px]">احتياطي الذهب الملكي</strong>
+                <span class="text-[9px] text-slate-400">1,000 سبيكة ذهب</span>
+              </button>
+
+              <button type="button" onclick="window._adminApplyAuctionPreset('concorde_royale')" class="btn-auc-preset p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500/50 text-right text-xs transition cursor-pointer">
+                <span class="text-base block mb-0.5">✈️</span>
+                <strong class="text-indigo-400 block text-[11px]">طائرة كونكورد الخارقة</strong>
+                <span class="text-[9px] text-slate-400">سرعة رحلات 2x</span>
+              </button>
+            </div>
           </div>
 
-          <div class="overflow-x-auto rounded-xl border border-slate-800/60">
-            <table class="w-full text-right text-xs">
-              <thead class="bg-slate-950/80 border-b border-slate-800/80 text-[11px] text-slate-400">
-                <tr>
-                  <th class="p-3">اسم الغرض</th>
-                  <th class="p-3">الوصف</th>
-                  <th class="p-3 text-center">السعر</th>
-                  <th class="p-3 text-center">المبيعات</th>
-                  <th class="p-3 text-left">إجراءات</th></tr></thead>
-              <tbody id="admin-auctions-list" class="divide-y divide-slate-800/40 bg-slate-900/40">
-                <tr>
-                  <td colspan="5" class="py-5 text-center text-slate-500">جاري تحميل الأغراض المعروضة...</td></tr></tbody></table></div></div></div>
+          <!-- Form Fields -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 mb-1">اسم المعروض (Item Name)</label>
+              <input type="text" id="adm-input-auc-name" placeholder="مثال: إطار التنين الناري الملكي 🔥" value="إطار التنين الناري الملكي 🔥"
+                class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl bg-slate-950 border border-slate-700/80">
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 mb-1">نوع الجائزة (Item Type)</label>
+              <select id="adm-input-auc-type" class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl bg-slate-950 border border-slate-700/80">
+                <option value="chat_frame">👑 إطار شات حصري (Chat Frame)</option>
+                <option value="gold">🥇 سبائك ذهب نقي (Gold Reserve)</option>
+                <option value="aircraft">✈️ طائرة خاصة نادرة (Rare Aircraft)</option>
+                <option value="custom">🏆 لقب / وسام مخصص (Custom VIP)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 mb-1">أيقونة المعروض (Icon / Emoji)</label>
+              <input type="text" id="adm-input-auc-icon" placeholder="🔥 أو 🥇 أو ✈️" value="🔥"
+                class="glass-input w-full p-2.5 text-xs text-center font-bold text-white rounded-xl bg-slate-950 border border-slate-700/80">
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 mb-1">شارة الغرض (Badge Text)</label>
+              <input type="text" id="adm-input-auc-badge" placeholder="مثال: إطار شات حصري" value="إطار شات حصري"
+                class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl bg-slate-950 border border-slate-700/80">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 mb-1">وصف تفصيلي للمزاد (Description)</label>
+            <input type="text" id="adm-input-auc-desc" placeholder="اكتب تفاصيل وميزات الغرض المعروض للمزايدة..." value="إطار شات حصري مضيء ونادر جداً يمنح حسابك هيبة مطلقة في الشات العام وملف اللاعب"
+              class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl bg-slate-950 border border-slate-700/80">
+          </div>
+
+          <!-- Financial & Timing Config -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-slate-800/80">
+            <div>
+              <label class="block text-[10px] font-bold text-amber-400 mb-1">السعر الافتتاحي (EGP)</label>
+              <input type="number" id="adm-input-auc-start-price" min="1000000" placeholder="10000000" value="10000000"
+                class="glass-input w-full p-2.5 text-xs text-center font-bold font-mono text-amber-400 rounded-xl bg-slate-950 border border-slate-700/80">
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-amber-400 mb-1">الحد الأدنى للزيادة (Step EGP)</label>
+              <input type="number" id="adm-input-auc-min-step" min="100000" placeholder="1000000" value="1000000"
+                class="glass-input w-full p-2.5 text-xs text-center font-bold font-mono text-amber-400 rounded-xl bg-slate-950 border border-slate-700/80">
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-cyan-400 mb-1">شرط صافي الثروة الأدنى للمزايدين (EGP)</label>
+              <input type="number" id="adm-input-auc-min-networth" min="0" placeholder="50000000" value="50000000"
+                class="glass-input w-full p-2.5 text-xs text-center font-bold font-mono text-cyan-400 rounded-xl bg-slate-950 border border-slate-700/80">
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 mb-1">يبدأ المزاد بعد (دقائق)</label>
+              <input type="number" id="adm-input-auc-delay-mins" min="1" placeholder="10" value="10"
+                class="glass-input w-full p-2.5 text-xs text-center font-bold font-mono text-white rounded-xl bg-slate-950 border border-slate-700/80">
+            </div>
+          </div>
+
+          <button onclick="window._adminSubmitCreateAuction()" class="w-full py-3.5 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs sm:text-sm transition shadow-xl shadow-amber-500/25 flex items-center justify-center gap-2 cursor-pointer active:scale-98">
+            <i class="fa-solid fa-rocket text-sm"></i>
+            <span>اعتماد وجدولة ونشر المزاد الملكي لجميع اللاعبين الآن</span>
+          </button>
+        </div>
+      </div>
 
       <!-- PANEL ONLINE GIFT — Send gifts to currently online players -->
       <div id="admin-subpanel-onlinegift" class="hidden space-y-6">

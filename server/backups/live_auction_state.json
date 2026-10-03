@@ -1,0 +1,39 @@
+{
+  "id": "auc_1791058498624_uzj31",
+  "status": "LIVE",
+  "item": {
+    "type": "chat_frame",
+    "id": "frame_fire_dragon",
+    "name": "إطار التنين الناري الملكي 🔥",
+    "description": "إطار شات حصري مضيء ونادر جداً يمنح حسابك هيبة مطلقة في الشات العام",
+    "icon": "🔥",
+    "badge": "إطار شات حصري",
+    "rewardData": {
+      "frameId": "frame_fire_dragon"
+    }
+  },
+  "config": {
+    "minNetWorth": 50000000,
+    "startingBid": 10000000,
+    "minBidStep": 1000000,
+    "scheduledStartTime": 1791058798624,
+    "hammerDurationSeconds": 60
+  },
+  "live": {
+    "currentBid": 10000000,
+    "highestBidder": null,
+    "hammerStrike": 2,
+    "hammerStrikeMessage": "🔨🔨 النداء الثاني على السعر الافتتاحي!",
+    "hammerExpiryTime": 1791058559201,
+    "bidsHistory": []
+  },
+  "registrants": [
+    {
+      "username": "Emad",
+      "registeredAt": 1791058499197,
+      "netWorth": 79961664
+    }
+  ],
+  "winner": null,
+  "lastUpdated": 1791058499209
+}
