@@ -319,10 +319,12 @@ window.AirportUI = (() => {
         isError ? 'bg-rose-950/95 border-rose-500/60 shadow-rose-900/50' :
         'bg-slate-900/95 border-sky-500/60 shadow-sky-900/50'
       }`;
-      toast.innerHTML = `
-        <i class="fa-solid ${isSuccess ? 'fa-circle-check text-emerald-400' : isError ? 'fa-triangle-exclamation text-rose-400' : 'fa-circle-info text-sky-400'} text-base"></i>
-        <span>${msg}</span>
-      `;
+      const icon = document.createElement('i');
+      icon.className = `fa-solid ${isSuccess ? 'fa-circle-check text-emerald-400' : isError ? 'fa-triangle-exclamation text-rose-400' : 'fa-circle-info text-sky-400'} text-base`;
+      const msgSpan = document.createElement('span');
+      msgSpan.textContent = String(msg || '');
+      toast.appendChild(icon);
+      toast.appendChild(msgSpan);
       container.appendChild(toast);
       requestAnimationFrame(() => {
         toast.classList.remove('translate-y-2', 'opacity-0');

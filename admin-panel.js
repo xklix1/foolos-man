@@ -2102,7 +2102,16 @@
           }
         }
       } catch (err) {
-        if (tbody) tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-rose-400">خطأ: ${err.message}</td></tr>`;
+        if (tbody) {
+          tbody.innerHTML = "";
+          const tr = document.createElement("tr");
+          const td = document.createElement("td");
+          td.colSpan = 8;
+          td.className = "p-6 text-center text-rose-400";
+          td.textContent = "خطأ: " + (err && err.message ? err.message : "تعذر التحميل");
+          tr.appendChild(td);
+          tbody.appendChild(tr);
+        }
       }
     }
     window.openAdminReferralModal = openAdminReferralModal;
@@ -4734,7 +4743,16 @@
         }
         try {
           revokeTesterBtn.disabled = true;
-          const newPass = 'S2_Test_' + Math.random().toString(36).substring(2, 8).toUpperCase();
+          let _sfx = '';
+          try {
+            if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+              const _b = new Uint8Array(4);
+              crypto.getRandomValues(_b);
+              _sfx = Array.from(_b, x => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+            }
+          } catch(_) {}
+          if (!_sfx) _sfx = Date.now().toString(36).slice(-4).toUpperCase();
+          const newPass = 'S2_Test_' + _sfx;
           const SUPABASE_URL = 'https://rasalmal.online';
           const _tok = (typeof AppDB !== 'undefined' && AppDB._getAnonKey ? AppDB._getAnonKey() : '');
 

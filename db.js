@@ -37,6 +37,17 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   //  CONCURRENT SESSION & MULTI-DEVICE PROTECTION
   // ─────────────────────────────────────────────
+  function _generateSecureRandomHex(byteCount = 16) {
+    try {
+      if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+        const buf = new Uint8Array(byteCount);
+        crypto.getRandomValues(buf);
+        return Array.from(buf, b => b.toString(16).padStart(2, '0')).join('');
+      }
+    } catch (_) {}
+    return Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 11);
+  }
+
   let _currentSessionToken = (() => {
     try {
       if (typeof localStorage !== 'undefined') {
@@ -44,7 +55,7 @@ var AppDB = (() => {
         if (s) return s;
       }
     } catch (e) {}
-    const fresh = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
+    const fresh = 'sess_' + Date.now() + '_' + _generateSecureRandomHex(12);
     try {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('rasalmal_device_session_token', fresh);
@@ -482,8 +493,7 @@ var AppDB = (() => {
           return 'dev_uuid_' + Array.from(buf).map(b => b.toString(16).padStart(2, '0')).join('');
         }
       } catch (e) {}
-      const s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-      return 'dev_uuid_' + s4() + s4() + s4() + s4() + s4() + s4() + s4() + s4();
+      return 'dev_uuid_' + _generateSecureRandomHex(16);
     }
 
     // Layer 1: LocalStorage
