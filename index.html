@@ -7479,6 +7479,8 @@
                 btnFU.disabled = true;
                 btnFU.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري تنظيف الكاش والتحديث...';
                 try {
+                  sessionStorage.setItem('rasalmal_skip_ver_check', vcheck.remoteVersion || 'v9.0.0');
+                  localStorage.setItem('rasalmal_last_known_ver', vcheck.remoteVersion || 'v9.0.0');
                   if ('caches' in window) {
                     const keys = await caches.keys();
                     await Promise.all(keys.map(k => caches.delete(k)));
@@ -7488,9 +7490,8 @@
                     await Promise.all(regs.map(r => r.unregister()));
                   }
                 } catch(e) {}
-                const url = new URL(window.location.href);
-                url.searchParams.set('v', (vcheck.remoteVersion || 'v8.6.5') + '_' + Date.now());
-                window.location.replace(url.toString());
+                const cleanUrl = window.location.origin + window.location.pathname + '?_t=' + Date.now();
+                window.location.replace(cleanUrl);
               };
             }
             return;
