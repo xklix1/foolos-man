@@ -3,7 +3,7 @@
  * Cache Strategy: Strict Network-Only for APIs & Backend, Strict Network-First for Static Game Assets.
  */
 
-const CACHE_NAME = 'rasalmal-v8.7.5';
+const CACHE_NAME = 'rasalmal-v8.7.6';
 
 // Essential static shell assets to pre-cache on install
 const PRECACHE_ASSETS = [
@@ -52,7 +52,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. Fetch Event: Strict Network-Only for APIs / Backend, Strict Network-First for Static Assets
+// 3. Fetch Event: Strict Network-Only for APIs / Backend / Admin Vaults, Strict Network-First for Static Assets
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
@@ -62,6 +62,12 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') {
     return; // Browser default direct fetch
   }
+
+  // Admin vault pages must NEVER be intercepted or redirected to the game shell
+  const isVaultOrAdmin = url.pathname.includes('vault') || 
+                         url.pathname.includes('admin') || 
+                         url.pathname.startsWith('/m-vault') ||
+                         url.pathname.startsWith('/hq-vault');
 
   // Authoritative server API endpoints, auth routes, and database connections
   const hostname = url.hostname.toLowerCase();
@@ -81,8 +87,8 @@ self.addEventListener('fetch', (event) => {
                 url.port === '8000' ||
                 isExternalApiHost;
 
-  if (isApi) {
-    // Network-Only: Direct fetch, zero caching intervention
+  if (isApi || isVaultOrAdmin) {
+    // Network-Only: Direct fetch, zero caching intervention, never fallback to /index.html
     event.respondWith(fetch(req));
     return;
   }
