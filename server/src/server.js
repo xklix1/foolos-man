@@ -81,6 +81,7 @@ app.register(require('./routes/session-routes'));
 app.register(require('./routes/action-routes'));
 app.register(require('./routes/airport-routes'));
 app.register(require('./routes/auction-routes'));
+app.register(require('./routes/museum-routes'));
 app.register(require('./routes/push-routes'));
 app.register(require('./routes/auth-otp-routes'));
 app.register(require('./routes/admin-routes'), { 

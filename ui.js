@@ -24419,6 +24419,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     if (type === 'chat_frame') rewardData.frameId = 'frame_custom_' + Date.now();
     if (type === 'gold') rewardData.gold = goldAmount;
     if (type === 'aircraft') rewardData.aircraftId = 'plane_custom_' + Date.now();
+    if (type === 'museum_item') rewardData.isMuseumRelic = true;
 
     // Check if matching preset
     for (const key in AUCTION_PRESETS) {
@@ -24430,6 +24431,9 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     // Always enforce the explicit gold amount if type is gold or reward has gold
     if (type === 'gold' || rewardData.gold) {
       rewardData.gold = goldAmount;
+    }
+    if (type === 'museum_item') {
+      rewardData.isMuseumRelic = true;
     }
 
     try {
@@ -24568,3 +24572,172 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
       }
     }
   }, 2000);
+
+  // ==========================================
+  // ROYAL MUSEUM ADMIN VAULT & RELIC MINTING
+  // ==========================================
+  window._adminRefreshMuseumCatalog = async function() {
+    const tbody = document.getElementById('adm-museum-items-tbody');
+    if (!tbody) return;
+
+    try {
+      const res = await fetch(getAdminApiUrl('/api/museum/items'), {
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const items = data.items || [];
+
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">لا توجد تحف مسجلة في المتحف حالياً.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = items.map(item => `
+        <tr class="hover:bg-slate-900/60 transition">
+          <td class="p-2.5">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">${item.icon || '🏺'}</span>
+              <div>
+                <strong class="text-white block font-bold text-xs">${item.name}</strong>
+                <span class="text-[10px] text-slate-400">${item.edition || 'إصدار ملكي'}</span>
+              </div>
+            </div>
+          </td>
+          <td class="p-2.5">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${item.rarity === 'mythic' ? 'bg-amber-500/20 text-amber-300' : 'bg-purple-500/20 text-purple-300'}">
+              ${item.rarityLabel || item.rarity}
+            </span>
+            <span class="text-[10px] text-slate-400 block mt-0.5">${item.category || 'آثار'}</span>
+          </td>
+          <td class="p-2.5 text-center font-bold text-xs ${item.stock > 0 ? 'text-amber-400' : 'text-rose-400'}">
+            ${item.stock} قطعة
+          </td>
+          <td class="p-2.5 text-center font-bold font-mono text-emerald-400 text-xs">
+            ${Number(item.buybackPrice || 0).toLocaleString()} EGP
+          </td>
+          <td class="p-2.5 text-left">
+            <div class="flex items-center justify-end gap-1.5">
+              <button onclick="window._adminLaunchAuctionForRelic('${item.id}')"
+                class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-bold border border-amber-500/40 transition cursor-pointer flex items-center gap-1">
+                <i class="fa-solid fa-gavel"></i>
+                <span>إطلاق مزاد 🔨</span>
+              </button>
+              <button onclick="window._adminDeleteMuseumRelic('${item.id}', '${(item.name || '').replace(/'/g, "\\'")}')"
+                class="w-7 h-7 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 flex items-center justify-center text-xs transition cursor-pointer" title="حذف التحفة">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    } catch (e) {}
+  };
+
+  window._adminSubmitMintMuseumRelic = async function() {
+    const name = (document.getElementById('adm-input-mus-name')?.value || '').trim();
+    const category = (document.getElementById('adm-input-mus-category')?.value || 'آثار فرعونية ملكية').trim();
+    const rarity = document.getElementById('adm-input-mus-rarity')?.value || 'epic';
+    const icon = (document.getElementById('adm-input-mus-icon')?.value || '🏺').trim();
+    const buybackPrice = Number(document.getElementById('adm-input-mus-buyback')?.value || 25000000);
+    const stock = Number(document.getElementById('adm-input-mus-stock')?.value || 1);
+    const edition = (document.getElementById('adm-input-mus-edition')?.value || 'نسخة فريدة 1/1').trim();
+    const description = (document.getElementById('adm-input-mus-desc')?.value || '').trim();
+
+    if (!name) {
+      if (typeof showToast === 'function') showToast('خطأ', 'اسم التحفة الأثرية مطلوب.', 'warning');
+      else alert('اسم التحفة الأثرية مطلوب.');
+      return;
+    }
+
+    try {
+      const res = await fetch(getAdminApiUrl('/api/museum/admin/mint'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAdminApiMasterKey()}`
+        },
+        body: JSON.stringify({ name, category, rarity, icon, buybackPrice, stock, edition, description })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل سك التحفة.');
+
+      if (typeof showToast === 'function') showToast('سك التحف الملكية 🏛️', `تم سك ونشر [${name}] في المتحف الملكي بنجاح!`, 'success');
+      else alert(`تم سك ونشر [${name}] في المتحف الملكي بنجاح!`);
+
+      if (typeof logAdminAction === 'function') logAdminAction(`سك تحفة جديدة بالمتحف: ${name}`);
+      window._adminRefreshMuseumCatalog();
+    } catch (e) {
+      if (typeof showToast === 'function') showToast('خطأ', e.message, 'error');
+      else alert(e.message);
+    }
+  };
+
+  window._adminDeleteMuseumRelic = async function(id, name) {
+    if (!confirm(`هل أنت متأكد من حذف [${name}] من المتحف؟`)) return;
+
+    try {
+      const res = await fetch(getAdminApiUrl('/api/museum/admin/delete'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAdminApiMasterKey()}`
+        },
+        body: JSON.stringify({ id })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل حذف التحفة.');
+
+      if (typeof showToast === 'function') showToast('حذف تحفة 🗑️', 'تم حذف التحفة من المتحف.', 'info');
+      window._adminRefreshMuseumCatalog();
+    } catch (e) {
+      if (typeof showToast === 'function') showToast('خطأ', e.message, 'error');
+      else alert(e.message);
+    }
+  };
+
+  window._adminLaunchAuctionForRelic = async function(relicId) {
+    try {
+      const res = await fetch(getAdminApiUrl('/api/museum/items'));
+      if (!res.ok) return;
+      const data = await res.json();
+      const item = (data.items || []).find(i => String(i.id) === String(relicId));
+      if (!item) return;
+
+      const nameEl = document.getElementById('adm-input-auc-name');
+      const typeEl = document.getElementById('adm-input-auc-type');
+      const iconEl = document.getElementById('adm-input-auc-icon');
+      const badgeEl = document.getElementById('adm-input-auc-badge');
+      const descEl = document.getElementById('adm-input-auc-desc');
+      const startPriceEl = document.getElementById('adm-input-auc-start-price');
+      const minStepEl = document.getElementById('adm-input-auc-min-step');
+      const minNetWorthEl = document.getElementById('adm-input-auc-min-networth');
+
+      if (nameEl) nameEl.value = item.name;
+      if (typeEl) typeEl.value = 'museum_item';
+      if (iconEl) iconEl.value = item.icon || '🏺';
+      if (badgeEl) badgeEl.value = item.edition || 'تحفة متحف ملكية';
+      if (descEl) descEl.value = item.description || 'تحفة أثرية نادرة مسجلة بالمتحف الملكي.';
+      if (startPriceEl) startPriceEl.value = Math.max(10000000, Math.floor(Number(item.buybackPrice || 25000000) * 0.8));
+      if (minStepEl) minStepEl.value = 1000000;
+      if (minNetWorthEl) minNetWorthEl.value = Math.max(20000000, Math.floor(Number(item.buybackPrice || 25000000) * 0.5));
+
+      // Scroll to auction form smoothly
+      document.getElementById('adm-input-auc-name')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (typeof showToast === 'function') showToast('تجهيز المزاد 🔨', `تم تجهيز إعدادات المزاد للتحفة [${item.name}]! اضغط على نشر المزاد.`, 'info');
+    } catch (e) {}
+  };
+
+  // Auto-load museum catalog when auctions tab is opened
+  document.addEventListener('DOMContentLoaded', () => {
+    const aucTab = document.getElementById('tab-admin-auctions');
+    if (aucTab) {
+      aucTab.addEventListener('click', () => {
+        setTimeout(() => {
+          if (typeof window._adminRefreshMuseumCatalog === 'function') {
+            window._adminRefreshMuseumCatalog();
+          }
+        }, 150);
+      });
+    }
+  });

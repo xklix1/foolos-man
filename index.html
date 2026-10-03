@@ -2213,6 +2213,13 @@
               <span>المزادات الملكية الحية</span>
               <span id="nav-auc-badge" class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-black ml-auto border border-amber-500/30 animate-pulse">مباشر 🔨</span>
             </button>
+            <!-- Royal Museum tab -->
+            <button id="nav-tab-museum" data-tab="museum" onclick="if(window.RoyalMuseum) window.RoyalMuseum.openModal(); else window.UI?.showToast?.('جاري فتح المتحف الملكي...', 'info');"
+              class="nav-tab-btn flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-amber-300 transition duration-200 cursor-pointer">
+              <i class="fa-solid fa-landmark-dome w-4 text-center text-amber-400 text-sm"></i>
+              <span>المتحف والآثار الملكية</span>
+              <span id="nav-mus-badge" class="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-black ml-auto border border-purple-500/30">تحف 🏺</span>
+            </button>
             <!-- Farm tab -->
             <button id="nav-tab-farm" data-tab="farm"
               class="nav-tab-btn flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-white transition duration-200 cursor-pointer">
@@ -7414,6 +7421,7 @@
   <script src="ui.js?v=v8.9.0"></script>
   <script src="airport-ui.js?v=v8.9.0"></script>
   <script src="auction-ui.js?v=v8.9.0"></script>
+  <script src="museum-ui.js?v=v8.9.0"></script>
   <script src="pwa-manager.js?v=v8.9.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────

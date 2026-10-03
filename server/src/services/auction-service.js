@@ -465,6 +465,32 @@ class AuctionService {
       rewardGrantedDesc = `طائرة خاصة: ${item.name}`;
     }
 
+    if (item.type === 'museum_item' || reward.relicId || reward.isMuseumRelic) {
+      const relicId = reward.relicId || item.id || `relic_${Date.now()}`;
+      if (!Array.isArray(rawState.museumRelics)) rawState.museumRelics = [];
+      const newRelic = {
+        id: `owned_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        relicId: relicId,
+        name: item.name,
+        icon: item.icon || '🏺',
+        rarity: reward.rarity || 'legendary',
+        rarityLabel: reward.rarityLabel || 'تحفة أثرية ملكية',
+        buybackPrice: Number(reward.buybackPrice || Math.floor(totalAmount * 0.9)),
+        description: item.description || '',
+        edition: reward.edition || 'إصدار مزاد ملكي',
+        acquiredAt: Date.now(),
+        auctionWinningBid: totalAmount
+      };
+      rawState.museumRelics.push(newRelic);
+      rewardGrantedDesc = `تحفة أثرية للمتحف: ${item.name}`;
+
+      // Decrement museum stock if registered
+      try {
+        const museumService = require('./museum-service');
+        museumService.decrementStock(relicId);
+      } catch (e) {}
+    }
+
     if (item.type === 'custom') {
       if (!Array.isArray(rawState.specialBadges)) rawState.specialBadges = [];
       rawState.specialBadges.push(item.name);

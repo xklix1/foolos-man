@@ -2930,6 +2930,7 @@
                 <option value="chat_frame">👑 إطار شات حصري (Chat Frame)</option>
                 <option value="gold">🥇 سبائك ذهب نقي (Gold Reserve)</option>
                 <option value="aircraft">✈️ طائرة خاصة نادرة (Rare Aircraft)</option>
+                <option value="museum_item">🏺 تحفة أثرية ملكية (Museum Relic)</option>
                 <option value="custom">🏆 لقب / وسام مخصص (Custom VIP)</option>
               </select>
             </div>
@@ -3000,6 +3001,111 @@
             <i class="fa-solid fa-rocket text-sm"></i>
             <span>اعتماد وجدولة ونشر المزاد الملكي لجميع اللاعبين الآن</span>
           </button>
+        </div>
+
+        <!-- 3. ROYAL MUSEUM RELICS MINTING & VAULT -->
+        <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-purple-500/40 bg-slate-950/70 space-y-4 shadow-xl">
+          <div class="flex items-center justify-between pb-3 border-b border-purple-500/30">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-landmark-dome text-purple-400 text-base"></i>
+              <div>
+                <h4 class="text-xs sm:text-sm font-black text-white">خزينة وسك الآثار والمقتنيات الملكية (Royal Museum Mint)</h4>
+                <p class="text-[10px] text-slate-400">إضافة وسك تحف أثرية نادرة، وتحديد قيمتها الاستردادية، وإطلاق مزادات عليها</p>
+              </div>
+            </div>
+            <button type="button" onclick="window._adminRefreshMuseumCatalog?.()" class="px-3 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-[11px] font-bold border border-purple-500/40 transition cursor-pointer flex items-center gap-1.5">
+              <i class="fa-solid fa-rotate-right"></i>
+              <span>تحديث الخزينة</span>
+            </button>
+          </div>
+
+          <!-- Mint Form -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 mb-1">اسم التحفة الأثرية (Relic Name)</label>
+              <input type="text" id="adm-input-mus-name" placeholder="مثال: ماسة الأمل الملكية 💎"
+                class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl bg-slate-950 border border-purple-500/40">
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 mb-1">تصنيف التحفة (Category)</label>
+              <input type="text" id="adm-input-mus-category" placeholder="مثال: آثار فرعونية ملكية" value="آثار فرعونية ملكية"
+                class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl bg-slate-950 border border-slate-700">
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 mb-1">درجة الندرة (Rarity Tier)</label>
+              <select id="adm-input-mus-rarity" class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl bg-slate-950 border border-slate-700 font-bold">
+                <option value="mythic">👑 أثرية أسطورية فريدة (Mythic 1/1)</option>
+                <option value="legendary">💎 جوهرة أسطورية (Legendary)</option>
+                <option value="epic" selected>🌟 تحفة ممتازة نادرة (Epic)</option>
+                <option value="rare">🏺 أثر كلاسيكي (Rare)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 mb-1">أيقونة التحفة (Icon / Emoji)</label>
+              <input type="text" id="adm-input-mus-icon" placeholder="🏺 أو 💎 أو 📜 أو 👑" value="🏺"
+                class="glass-input w-full p-2.5 text-xs text-center font-bold text-white rounded-xl bg-slate-950 border border-slate-700">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-emerald-400 mb-1">سعر تقييم واسترداد المتحف (Buyback EGP)</label>
+              <input type="number" id="adm-input-mus-buyback" min="1000000" placeholder="25000000" value="25000000"
+                class="glass-input w-full p-2.5 text-xs text-center font-bold font-mono text-emerald-400 rounded-xl bg-slate-950 border border-emerald-500/50">
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-amber-400 mb-1">الكمية المسكوكة المتاحة (Stock / Editions)</label>
+              <input type="number" id="adm-input-mus-stock" min="1" max="100" placeholder="1" value="1"
+                class="glass-input w-full p-2.5 text-xs text-center font-bold font-mono text-amber-400 rounded-xl bg-slate-950 border border-amber-500/50">
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 mb-1">شارة الإصدار (Edition Label)</label>
+              <input type="text" id="adm-input-mus-edition" placeholder="مثال: نسخة فريدة 1/1" value="نسخة فريدة 1/1"
+                class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl bg-slate-950 border border-slate-700">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-300 mb-1">وصف وتاريخ التحفة (Historical Story & Lore)</label>
+            <input type="text" id="adm-input-mus-desc" placeholder="اكتب نبذة عن تاريخ القطعة وأهميتها الاستثمارية..." value="تحفة أثرية نادرة ذات بريق أزلي تمنح صاحبها هيبة ومكانة أسطورية بين أثرياء السيرفر."
+              class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl bg-slate-950 border border-slate-700">
+          </div>
+
+          <div class="flex justify-end pt-1">
+            <button type="button" onclick="window._adminSubmitMintMuseumRelic?.()"
+              class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-purple-600 hover:from-purple-500 hover:to-fuchsia-500 text-white font-black text-xs shadow-lg shadow-purple-600/30 transition active:scale-95 cursor-pointer flex items-center justify-center gap-2">
+              <i class="fa-solid fa-gem"></i>
+              <span>سك ونشر التحفة في المتحف الملكي الآن 🏛️</span>
+            </button>
+          </div>
+
+          <!-- Museum Active Items Table -->
+          <div class="pt-3 border-t border-slate-800/80">
+            <h5 class="text-[11px] font-bold text-slate-300 mb-2">قائمة الآثار والمقتنيات الحالية بالمتحف (Current Catalog):</h5>
+            <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950">
+              <table class="w-full text-right text-xs">
+                <thead class="bg-slate-900/80 text-slate-400 text-[10px] border-b border-slate-800">
+                  <tr>
+                    <th class="p-2.5">التحفة</th>
+                    <th class="p-2.5">الندرة والتصنيف</th>
+                    <th class="p-2.5 text-center">الكمية المتاحة</th>
+                    <th class="p-2.5 text-center">سعر الاسترداد</th>
+                    <th class="p-2.5 text-left">إجراءات المزاد والتحكم</th>
+                  </tr>
+                </thead>
+                <tbody id="adm-museum-items-tbody" class="divide-y divide-slate-800/60">
+                  <tr>
+                    <td colspan="5" class="p-4 text-center text-slate-500">جاري تحميل مقتنيات المتحف...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
