@@ -1,7 +1,7 @@
 {
-  "version": "v8.8.0",
-  "build": 1790989000000,
-  "timestamp": 1790989000000,
-  "notes": "CodeQL security hardening, push notification permission guard, and meta updates",
-  "releaseNotes": "CodeQL security hardening, push notification permission guard, and meta updates"
+  "version": "v8.8.1",
+  "build": 1790992000000,
+  "timestamp": 1790992000000,
+  "notes": "Authoritative Admin Topup approval bridge and RLS mutation fallback",
+  "releaseNotes": "Authoritative Admin Topup approval bridge and RLS mutation fallback"
 }

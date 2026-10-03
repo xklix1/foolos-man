@@ -251,8 +251,8 @@ var AppDB = (() => {
     if (dateHeader) _updateServerTimeFromHeader(dateHeader);
 
     if (!res.ok) {
-      // If mutation was rejected due to RLS/permissions (401 or 403), try authoritative admin mutate endpoint
-      if ((res.status === 401 || res.status === 403 || res.status === 404) && (method === 'POST' || method === 'PATCH' || method === 'DELETE')) {
+      // If mutation was rejected due to RLS/permissions (4xx status), try authoritative admin mutate endpoint
+      if (res.status >= 400 && res.status < 500 && (method === 'POST' || method === 'PATCH' || method === 'DELETE')) {
         const adminTok = (typeof window !== 'undefined' && window._ADMIN_MUTATE_TOKEN)
           || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_admin_auth_token'))
           || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_admin_auth_token'))
@@ -262,7 +262,15 @@ var AppDB = (() => {
           try {
             const [table, ...queryParts] = endpoint.split('?');
             const query = queryParts.join('?');
-            const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) ? window.SERVER_API_URL.replace(/\/$/, '') : '';
+            const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
+              ? window.SERVER_API_URL.replace(/\/$/, '') 
+              : (typeof window !== 'undefined' ? window.location.origin : '');
+
+            let parsedBody = null;
+            if (options.body) {
+              parsedBody = typeof options.body === 'string' ? JSON.parse(options.body) : options.body;
+            }
+
             const adminRes = await fetch(`${apiBase}/api/admin/mutate`, {
               method: 'POST',
               headers: {
@@ -273,7 +281,7 @@ var AppDB = (() => {
                 table,
                 method,
                 query,
-                body: options.body ? JSON.parse(options.body) : null
+                body: parsedBody
               })
             });
             if (adminRes.ok) {
@@ -3828,17 +3836,14 @@ var AppDB = (() => {
 
       pState.adminModifiedTimestamp = ts;
 
-      await _api(`players?username=ilike.${encodeURIComponent(targetUser)}`, {
-        method:'PATCH',
-        body: JSON.stringify({
-          cash: updatedCash,
-          bank: updatedBank,
-          gold: updatedGold,
-          xp: updatedXP,
-          net_worth: updatedNetworth,
-          state: pState,
-          admin_modified_timestamp: ts
-        })
+      await adminSavePlayer(targetUser, {
+        cash: updatedCash,
+        bank: updatedBank,
+        gold: updatedGold,
+        xp: updatedXP,
+        netWorth: updatedNetworth,
+        state: pState,
+        adminModifiedTimestamp: ts
       });
 
       // Automatically backfill any existing messages in chat_feed so they glow immediately
