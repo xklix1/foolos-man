@@ -168,7 +168,7 @@ function buildOtpEmailHtml(otpCode, username, typeText) {
             <td align="center" bgcolor="#050812" style="padding:22px 25px; background-color:#050812 !important; background-image:linear-gradient(#050812, #050812) !important; border-top:1px solid #172338; text-align:center;">
               <div style="font-size:11px; color:#94a3b8 !important; line-height:1.9;">
                 <span style="color:#64748b !important;">تم الإرسال من النطاق الموثق: </span>
-                <span style="color:#fbbf24 !important; font-family:monospace; font-weight:bold;">auth.rasalmal.online</span><br>
+                <span style="color:#fbbf24 !important; font-family:monospace; font-weight:bold;">rasalmal.online</span><br>
                 <span style="color:#64748b !important;">جميع الحقوق محفوظة &copy; ${new Date().getFullYear()} لعبة رأس المال &bull; RA'S AL-MAL EMPIRE</span>
               </div>
             </td>
@@ -268,9 +268,9 @@ module.exports = async function authOtpRoutes(fastify, opts) {
     if (type === 'login') typeText = 'تسجيل الدخول الآمن';
     if (type === 'verify') typeText = 'توثيق البريد الإلكتروني';
 
-    const emailSubject = `رمز التحقق الآمن: ${otpCode} - رأس المال`;
+    const emailSubject = `${otpCode} هو رمز التحقق الخاص بك في رأس المال`;
     const htmlBody = buildOtpEmailHtml(otpCode, cleanUsername, typeText);
-    const plainText = `مرحباً ${cleanUsername || 'المستثمر'}،\n\nرمز التحقق الخاص بك هو: ${otpCode}\n\nالغرض: ${typeText}\nصلاحية الرمز: 5 دقائق فقط.\n\nإذا لم تكن قد طلبت هذا الرمز، يمكنك تجاهل هذه الرسالة بأمان.\n\nرأس المال - Ras ALmal Tycoon\nhttps://rasalmal.online`;
+    const plainText = `مرحباً ${cleanUsername || 'المستثمر'}،\n\nرمز التحقق الخاص بك هو: ${otpCode}\n\nالغرض: ${typeText}\nصلاحية الرمز: 5 دقائق فقط.\n\nإذا لم تكن أنت من طلب هذا الرمز، يمكنك تجاهل هذه الرسالة بأمان.\n\nرأس المال - Ras ALmal Tycoon\nhttps://rasalmal.online`;
 
     try {
       await sendEmailViaResend(cleanEmail, emailSubject, htmlBody, plainText);
