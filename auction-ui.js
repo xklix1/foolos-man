@@ -515,6 +515,11 @@
               </div>
             </div>
 
+            <!-- Free Registration Guarantee Note -->
+            <p class="text-[10px] text-amber-300/90 font-bold max-w-md mx-auto bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+              💡 <strong>تنبيه هام:</strong> التسجيل مجاني تماماً ولا يخصم أي قرش من حسابك. شرط الثروة هو إثبات قدرة مالية فقط، والخصم يتم فقط من الفائز الأخير بالضربة النهائية!
+            </p>
+
             <div>
               ${isRegistered 
                 ? '<div class="p-3 bg-emerald-950/50 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-black flex items-center justify-center gap-2"><i class="fa-solid fa-circle-check"></i><span>تم تسجيلك بنجاح! انتظر إشارة بدء المزاد لتدخل المزايدة.</span></div>'
