@@ -24338,6 +24338,35 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     return `${base}${endpoint}`;
   }
 
+  window._adminOnAuctionTypeChanged = function(type) {
+    const goldBox = document.getElementById('adm-box-auc-gold-amount');
+    const nameEl = document.getElementById('adm-input-auc-name');
+    const iconEl = document.getElementById('adm-input-auc-icon');
+    const badgeEl = document.getElementById('adm-input-auc-badge');
+    const descEl = document.getElementById('adm-input-auc-desc');
+    const goldAmountEl = document.getElementById('adm-input-auc-gold-amount');
+
+    if (type === 'gold') {
+      if (goldBox) {
+        goldBox.classList.remove('opacity-40');
+        goldBox.classList.add('ring-2', 'ring-amber-500/80', 'bg-amber-950/60');
+      }
+      const g = goldAmountEl ? (Number(goldAmountEl.value) || 1000) : 1000;
+      if (nameEl && (!nameEl.value || nameEl.value.includes('إطار') || nameEl.value.includes('طائرة'))) {
+        nameEl.value = `احتياطي الذهب الملكي (${g.toLocaleString()} سبيكة) 🥇`;
+      }
+      if (iconEl && (!iconEl.value || iconEl.value === '🔥' || iconEl.value === '✈️')) iconEl.value = '🥇';
+      if (badgeEl && (!badgeEl.value || badgeEl.value.includes('إطار') || badgeEl.value.includes('أسطول'))) badgeEl.value = 'احتياطي ذهب ملكي';
+      if (descEl && (!descEl.value || descEl.value.includes('إطار') || descEl.value.includes('طائرة'))) {
+        descEl.value = `${g.toLocaleString()} سبيكة ذهب نقي تمنحك سيولة فورية وقوة استثمارية كاسحة في البورصة والصفقات`;
+      }
+    } else {
+      if (goldBox) {
+        goldBox.classList.remove('ring-2', 'ring-amber-500/80', 'bg-amber-950/60');
+      }
+    }
+  };
+
   window._adminApplyAuctionPreset = function(presetKey) {
     const p = AUCTION_PRESETS[presetKey];
     if (!p) return;
@@ -24349,15 +24378,22 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     const startPriceEl = document.getElementById('adm-input-auc-start-price');
     const minStepEl = document.getElementById('adm-input-auc-min-step');
     const minNetWorthEl = document.getElementById('adm-input-auc-min-networth');
+    const goldAmountEl = document.getElementById('adm-input-auc-gold-amount');
 
     if (nameEl) nameEl.value = p.name;
-    if (typeEl) typeEl.value = p.type;
+    if (typeEl) {
+      typeEl.value = p.type;
+      window._adminOnAuctionTypeChanged(p.type);
+    }
     if (iconEl) iconEl.value = p.icon;
     if (badgeEl) badgeEl.value = p.badge;
     if (descEl) descEl.value = p.description;
     if (startPriceEl) startPriceEl.value = p.startPrice;
     if (minStepEl) minStepEl.value = p.minStep;
     if (minNetWorthEl) minNetWorthEl.value = p.minNetWorth;
+    if (goldAmountEl && p.rewardData && typeof p.rewardData.gold === 'number') {
+      goldAmountEl.value = p.rewardData.gold;
+    }
 
     if (typeof showToast === 'function') showToast('نموذج المزاد', `تم تطبيق إعدادات [${p.name}]`, 'info');
   };
@@ -24372,6 +24408,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     const minStep = Number(document.getElementById('adm-input-auc-min-step')?.value || 1000000);
     const minNetWorth = Number(document.getElementById('adm-input-auc-min-networth')?.value || 0);
     const delayMins = Number(document.getElementById('adm-input-auc-delay-mins')?.value || 10);
+    const goldAmount = Math.max(1, Number(document.getElementById('adm-input-auc-gold-amount')?.value || 1000));
 
     if (!name) {
       if (typeof showToast === 'function') showToast('خطأ', 'اسم المعروض مطلوب.', 'warning');
@@ -24381,14 +24418,19 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
 
     let rewardData = {};
     if (type === 'chat_frame') rewardData.frameId = 'frame_custom_' + Date.now();
-    if (type === 'gold') rewardData.gold = 1000;
+    if (type === 'gold') rewardData.gold = goldAmount;
     if (type === 'aircraft') rewardData.aircraftId = 'plane_custom_' + Date.now();
 
     // Check if matching preset
     for (const key in AUCTION_PRESETS) {
       if (AUCTION_PRESETS[key].name === name || AUCTION_PRESETS[key].id === name) {
-        rewardData = AUCTION_PRESETS[key].rewardData;
+        rewardData = { ...AUCTION_PRESETS[key].rewardData };
       }
+    }
+
+    // Always enforce the explicit gold amount if type is gold or reward has gold
+    if (type === 'gold' || rewardData.gold) {
+      rewardData.gold = goldAmount;
     }
 
     try {
@@ -24410,7 +24452,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
       if (typeof showToast === 'function') showToast('نجاح الجدولة', 'تم إطلاق ونشر المزاد الملكي بنجاح!', 'success');
       else alert('تم إطلاق ونشر المزاد الملكي بنجاح!');
 
-      if (typeof logAdminAction === 'function') logAdminAction(`جدولة مزاد ملكي جديد: ${name}`);
+      if (typeof logAdminAction === 'function') logAdminAction(`جدولة مزاد ملكي جديد: ${name} (${type === 'gold' ? goldAmount + ' سبيكة' : ''})`);
       window._adminRefreshAuctionTelemetry();
     } catch (e) {
       if (typeof showToast === 'function') showToast('خطأ', e.message, 'error');

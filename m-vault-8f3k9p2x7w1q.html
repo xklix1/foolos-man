@@ -2926,7 +2926,7 @@
 
             <div>
               <label class="block text-[10px] font-bold text-slate-400 mb-1">نوع الجائزة (Item Type)</label>
-              <select id="adm-input-auc-type" class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl bg-slate-950 border border-slate-700/80">
+              <select id="adm-input-auc-type" onchange="window._adminOnAuctionTypeChanged?.(this.value)" class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl bg-slate-950 border border-slate-700/80">
                 <option value="chat_frame">👑 إطار شات حصري (Chat Frame)</option>
                 <option value="gold">🥇 سبائك ذهب نقي (Gold Reserve)</option>
                 <option value="aircraft">✈️ طائرة خاصة نادرة (Rare Aircraft)</option>
@@ -2944,6 +2944,22 @@
               <label class="block text-[10px] font-bold text-slate-400 mb-1">شارة الغرض (Badge Text)</label>
               <input type="text" id="adm-input-auc-badge" placeholder="مثال: إطار شات حصري" value="إطار شات حصري"
                 class="glass-input w-full p-2.5 text-xs text-right text-white rounded-xl bg-slate-950 border border-slate-700/80">
+            </div>
+          </div>
+
+          <!-- Dynamic Gold Bars Quantity Controller -->
+          <div id="adm-box-auc-gold-amount" class="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-yellow-950/20 to-slate-950 border border-amber-500/40 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-inner">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl p-2 rounded-xl bg-amber-500/10 border border-amber-500/30">🥇</span>
+              <div>
+                <label class="block text-xs font-black text-amber-300">تحديد كمية سبائك الذهب المعروضة بالمزاد (Gold Bars Quantity):</label>
+                <span class="text-[10px] text-slate-400">حدد عدد سبائك الذهب المراد طرحها في المزاد وسيتم إيداعها آلياً في محفظة الفائز.</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <input type="number" id="adm-input-auc-gold-amount" min="1" max="100000000" step="10" placeholder="1000" value="1000"
+                class="glass-input w-full sm:w-44 p-2.5 text-center font-black font-mono text-amber-300 text-sm rounded-xl bg-slate-950 border border-amber-500/60 focus:border-yellow-400 shadow-md">
+              <span class="text-xs font-bold text-amber-400 whitespace-nowrap">سبيكة ذهب</span>
             </div>
           </div>
 
