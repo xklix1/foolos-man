@@ -173,13 +173,12 @@ class MuseumService {
   /**
    * Deduct stock when an item is won via auction or awarded
    */
-  decrementStock(itemId) {
+  decrementStock(itemId, count = 1) {
     const item = this.getItemById(itemId);
     if (!item) return;
-    if (item.stock > 0) {
-      item.stock -= 1;
-      this._savePersistedState();
-    }
+    const qty = Math.max(1, Number(count || 1));
+    item.stock = Math.max(0, item.stock - qty);
+    this._savePersistedState();
   }
 
   /**

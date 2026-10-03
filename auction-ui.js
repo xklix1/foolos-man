@@ -429,13 +429,16 @@
           </div>
         `;
 
-        // Bidding Actions Section (if registered/eligible)
-        if (isRegistered || isEligible) {
+        // Bidding Actions Section (STRICT: ONLY for registered bidders)
+        if (isRegistered) {
           const nextMinBid = (live.highestBidder ? live.currentBid : (config.startingBid - (config.minBidStep || 1000000))) + (config.minBidStep || 1000000);
           html += `
             <div class="glass-panel p-4 rounded-2xl border border-emerald-500/30 bg-slate-900/40 space-y-3">
               <div class="flex items-center justify-between text-xs">
-                <span class="font-bold text-white">لوحة المزايدة الحية</span>
+                <span class="font-bold text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-gavel text-emerald-400"></i>
+                  <span>لوحة المزايدة الحية</span>
+                </span>
                 <span class="text-slate-400">أقل مزايدة مسموحة: <strong class="text-emerald-400 font-mono">${nextMinBid.toLocaleString()} EGP</strong></span>
               </div>
 
@@ -466,14 +469,16 @@
             </div>
           `;
         } else {
+          // Spectator View (No bidding inputs)
           html += `
-            <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
-              <i class="fa-solid fa-eye text-amber-400 text-xl"></i>
-              <h4 class="text-xs font-bold text-white">أنت تشاهد البث الحي كجمهور (Spectator Mode)</h4>
-              <p class="text-[11px] text-slate-400">
-                للمشاركة في المزايدات الفعالة، يجب أن يبلغ صافي ثروتك 
-                <strong class="text-amber-400 font-mono">${Number(config.minNetWorth || 0).toLocaleString()} EGP</strong> 
-                (ثروتك الحالية: ${Number(myNetWorth).toLocaleString()} EGP).
+            <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900/90 via-slate-950 to-slate-900/90 border border-slate-700/80 text-center space-y-2.5 shadow-xl">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-xs font-bold">
+                <i class="fa-solid fa-eye"></i>
+                <span>أنت متواجد بصفة مشاهد فقط (Spectator)</span>
+              </div>
+              <h4 class="text-xs sm:text-sm font-black text-white">تتابع البث الحي للمزاد مباشرة 📺</h4>
+              <p class="text-[11px] sm:text-xs text-slate-300 leading-relaxed max-w-md mx-auto">
+                المزايدة التنافسية مقتصرة على المشتركين الذين سجلوا في فترة التسجيل المسبقة. يمكنك الاستمتاع بمشاهدة صراع المزايدات وتغير الأسعار وضربات المطرقة الملكية لحظة بلحظة!
               </p>
             </div>
           `;
@@ -611,6 +616,12 @@
     }
 
     async placeBidAction(amount) {
+      if (!this.state.isRegistered) {
+        if (window.showToast) window.showToast('مشاهد فقط', 'المزايدة مقتصرة فقط على المشتركين المسجلين في المزاد.', 'warning');
+        else alert('المزايدة مقتصرة فقط على المشتركين المسجلين في المزاد.');
+        return;
+      }
+
       const username = this.getCurrentUser();
       if (!username) {
         alert('يرجى تسجيل الدخول أولاً.');

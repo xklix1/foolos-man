@@ -10430,17 +10430,22 @@
 
   window._adminOnAuctionTypeChanged = function(type) {
     const goldBox = document.getElementById('adm-box-auc-gold-amount');
+    const musBox = document.getElementById('adm-box-auc-museum-amount');
     const nameEl = document.getElementById('adm-input-auc-name');
     const iconEl = document.getElementById('adm-input-auc-icon');
     const badgeEl = document.getElementById('adm-input-auc-badge');
     const descEl = document.getElementById('adm-input-auc-desc');
-    const goldAmountEl = document.getElementById('adm-input-auc-gold-amount');
+
+    if (goldBox) {
+      if (type === 'gold') goldBox.classList.remove('hidden');
+      else goldBox.classList.add('hidden');
+    }
+    if (musBox) {
+      if (type === 'museum_item') musBox.classList.remove('hidden');
+      else musBox.classList.add('hidden');
+    }
 
     if (type === 'gold') {
-      if (goldBox) {
-        goldBox.classList.remove('opacity-40');
-        goldBox.classList.add('ring-2', 'ring-amber-500/80', 'bg-amber-950/60');
-      }
       if (nameEl && (!nameEl.value || nameEl.value.includes('إطار') || nameEl.value.includes('طائرة'))) {
         nameEl.value = 'احتياطي الذهب الملكي 🥇';
       }
@@ -10449,10 +10454,9 @@
       if (descEl && (!descEl.value || descEl.value.includes('إطار') || descEl.value.includes('طائرة'))) {
         descEl.value = 'سبائك ذهب نقي تمنحك سيولة فورية وقوة استثمارية كاسحة في البورصة والصفقات';
       }
-    } else {
-      if (goldBox) {
-        goldBox.classList.remove('ring-2', 'ring-amber-500/80', 'bg-amber-950/60');
-      }
+    } else if (type === 'museum_item') {
+      if (iconEl && (!iconEl.value || iconEl.value === '🔥' || iconEl.value === '🥇')) iconEl.value = '🏺';
+      if (badgeEl && (!badgeEl.value || badgeEl.value.includes('إطار'))) badgeEl.value = 'تحفة أثرية ملكية';
     }
   };
 
@@ -10498,6 +10502,7 @@
     const minNetWorth = Number(document.getElementById('adm-input-auc-min-networth')?.value || 0);
     const delayMins = Number(document.getElementById('adm-input-auc-delay-mins')?.value || 10);
     const goldAmount = Math.max(1, Number(document.getElementById('adm-input-auc-gold-amount')?.value || 1000));
+    const museumQuantity = Math.max(1, Number(document.getElementById('adm-input-auc-museum-quantity')?.value || 1));
 
     if (!name) {
       if (typeof showToast === 'function') showToast('خطأ', 'اسم المعروض مطلوب.', 'warning');
@@ -10509,7 +10514,13 @@
     if (type === 'chat_frame') rewardData.frameId = 'frame_custom_' + Date.now();
     if (type === 'gold') rewardData.gold = goldAmount;
     if (type === 'aircraft') rewardData.aircraftId = 'plane_custom_' + Date.now();
-    if (type === 'museum_item') rewardData.isMuseumRelic = true;
+    if (type === 'museum_item') {
+      rewardData.isMuseumRelic = true;
+      rewardData.quantity = museumQuantity;
+      if (window._selectedAuctionRelicData) {
+        rewardData = { ...window._selectedAuctionRelicData, ...rewardData, quantity: museumQuantity };
+      }
+    }
 
     // Check if matching preset
     for (const key in AUCTION_PRESETS) {
@@ -10524,6 +10535,7 @@
     }
     if (type === 'museum_item') {
       rewardData.isMuseumRelic = true;
+      rewardData.quantity = museumQuantity;
     }
 
     try {
@@ -10794,6 +10806,14 @@
       const item = (data.items || []).find(i => String(i.id) === String(relicId));
       if (!item) return;
 
+      const maxStock = Number(item.stock || 1);
+      let chosenQty = 1;
+      if (maxStock > 1) {
+        const qtyPrompt = prompt(`كم عدد القطع من التحفة [${item.name}] المراد طرحها في هذا المزاد؟\n(الكمية المتوفرة بمخزون المتحف: ${maxStock} قطعة):`, '1');
+        if (qtyPrompt === null) return; // Admin cancelled
+        chosenQty = Math.max(1, Math.min(maxStock, parseInt(qtyPrompt) || 1));
+      }
+
       const nameEl = document.getElementById('adm-input-auc-name');
       const typeEl = document.getElementById('adm-input-auc-type');
       const iconEl = document.getElementById('adm-input-auc-icon');
@@ -10802,19 +10822,34 @@
       const startPriceEl = document.getElementById('adm-input-auc-start-price');
       const minStepEl = document.getElementById('adm-input-auc-min-step');
       const minNetWorthEl = document.getElementById('adm-input-auc-min-networth');
+      const museumQtyEl = document.getElementById('adm-input-auc-museum-quantity');
 
       if (nameEl) nameEl.value = item.name;
-      if (typeEl) typeEl.value = 'museum_item';
+      if (typeEl) {
+        typeEl.value = 'museum_item';
+        window._adminOnAuctionTypeChanged('museum_item');
+      }
+      if (museumQtyEl) museumQtyEl.value = chosenQty;
       if (iconEl) iconEl.value = item.icon || '🏺';
-      if (badgeEl) badgeEl.value = item.edition || 'تحفة متحف ملكية';
+      if (badgeEl) badgeEl.value = chosenQty > 1 ? `${chosenQty} قطع / ${item.edition || 'إصدار ملكي'}` : (item.edition || 'تحفة متحف ملكية');
       if (descEl) descEl.value = item.description || 'تحفة أثرية نادرة مسجلة بالمتحف الملكي.';
-      if (startPriceEl) startPriceEl.value = Math.max(10000000, Math.floor(Number(item.buybackPrice || 25000000) * 0.8));
+      if (startPriceEl) startPriceEl.value = Math.max(10000000, Math.floor(Number(item.buybackPrice || 25000000) * 0.8 * chosenQty));
       if (minStepEl) minStepEl.value = 1000000;
-      if (minNetWorthEl) minNetWorthEl.value = Math.max(20000000, Math.floor(Number(item.buybackPrice || 25000000) * 0.5));
+      if (minNetWorthEl) minNetWorthEl.value = Math.max(20000000, Math.floor(Number(item.buybackPrice || 25000000) * 0.5 * chosenQty));
+
+      window._selectedAuctionRelicData = {
+        relicId: item.id,
+        name: item.name,
+        rarity: item.rarity,
+        rarityLabel: item.rarityLabel,
+        buybackPrice: item.buybackPrice,
+        edition: item.edition,
+        quantity: chosenQty
+      };
 
       // Scroll to auction form smoothly
       document.getElementById('adm-input-auc-name')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      if (typeof showToast === 'function') showToast('تجهيز المزاد 🔨', `تم تجهيز إعدادات المزاد للتحفة [${item.name}]! اضغط على نشر المزاد.`, 'info');
+      if (typeof showToast === 'function') showToast('تجهيز المزاد 🔨', `تم تجهيز إعدادات المزاد لـ ${chosenQty} قطعة من [${item.name}]! اضغط على نشر المزاد.`, 'info');
     } catch (e) {}
   };
 

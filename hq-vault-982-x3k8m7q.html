@@ -2949,7 +2949,7 @@
           </div>
 
           <!-- Dynamic Gold Bars Quantity Controller -->
-          <div id="adm-box-auc-gold-amount" class="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-yellow-950/20 to-slate-950 border border-amber-500/40 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-inner">
+          <div id="adm-box-auc-gold-amount" class="hidden p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-yellow-950/20 to-slate-950 border border-amber-500/40 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-inner">
             <div class="flex items-center gap-3">
               <span class="text-2xl p-2 rounded-xl bg-amber-500/10 border border-amber-500/30">🥇</span>
               <div>
@@ -2961,6 +2961,22 @@
               <input type="number" id="adm-input-auc-gold-amount" min="1" max="100000000" step="10" placeholder="1000" value="1000"
                 class="glass-input w-full sm:w-44 p-2.5 text-center font-black font-mono text-amber-300 text-sm rounded-xl bg-slate-950 border border-amber-500/60 focus:border-yellow-400 shadow-md">
               <span class="text-xs font-bold text-amber-400 whitespace-nowrap">سبيكة ذهب</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Museum Relic Quantity Controller -->
+          <div id="adm-box-auc-museum-amount" class="hidden p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/40 via-fuchsia-950/20 to-slate-950 border border-purple-500/40 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-inner">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl p-2 rounded-xl bg-purple-500/10 border border-purple-500/30">🏺</span>
+              <div>
+                <label class="block text-xs font-black text-purple-300">تحديد عدد قطع التحفة المعروضة في المزاد (Relics Quantity):</label>
+                <span class="text-[10px] text-slate-400">كم عدد القطع من هذه التحفة الأثرية المراد طرحها في هذا المزاد؟ (تُسلّم للفائز وتُخصم من مخزون المتحف).</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <input type="number" id="adm-input-auc-museum-quantity" min="1" max="1000" step="1" placeholder="1" value="1"
+                class="glass-input w-full sm:w-36 p-2.5 text-center font-black font-mono text-purple-300 text-sm rounded-xl bg-slate-950 border border-purple-500/60 focus:border-purple-400 shadow-md">
+              <span class="text-xs font-bold text-purple-400 whitespace-nowrap">قطعة أثرية</span>
             </div>
           </div>
 

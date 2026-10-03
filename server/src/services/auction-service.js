@@ -252,14 +252,10 @@ class AuctionService {
       throw new Error('قيمة المزايدة غير صالحة.');
     }
 
-    // Check registration
+    // Check registration (Strict)
     const isRegistered = this.state.registrants.some(r => r.username.toLowerCase() === cleanUser.toLowerCase());
     if (!isRegistered) {
-      // Fallback: If net worth qualifies right now, auto-register
-      const playerRow = await dbService.getPlayerByUsername(cleanUser);
-      if (!playerRow || Number(playerRow.net_worth || 0) < Number(this.state.config.minNetWorth || 0)) {
-        throw new Error('أنت غير مسجل في هذا المزاد ولا تستوفي شرط صافي الثروة المطلوب.');
-      }
+      throw new Error('عذراً، أنت متواجد كـ (مشاهد فقط) ولم تقم بالتسجيل مسبقاً أثناء فترة العد التنازلي للمزاد.');
     }
 
     const currentHighest = this.state.live.currentBid;
@@ -467,27 +463,31 @@ class AuctionService {
 
     if (item.type === 'museum_item' || reward.relicId || reward.isMuseumRelic) {
       const relicId = reward.relicId || item.id || `relic_${Date.now()}`;
+      const quantity = Math.max(1, Number(reward.quantity || item.quantity || 1));
       if (!Array.isArray(rawState.museumRelics)) rawState.museumRelics = [];
-      const newRelic = {
-        id: `owned_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-        relicId: relicId,
-        name: item.name,
-        icon: item.icon || '🏺',
-        rarity: reward.rarity || 'legendary',
-        rarityLabel: reward.rarityLabel || 'تحفة أثرية ملكية',
-        buybackPrice: Number(reward.buybackPrice || Math.floor(totalAmount * 0.9)),
-        description: item.description || '',
-        edition: reward.edition || 'إصدار مزاد ملكي',
-        acquiredAt: Date.now(),
-        auctionWinningBid: totalAmount
-      };
-      rawState.museumRelics.push(newRelic);
-      rewardGrantedDesc = `تحفة أثرية للمتحف: ${item.name}`;
+      
+      for (let q = 0; q < quantity; q++) {
+        const newRelic = {
+          id: `owned_${Date.now()}_${q}_${Math.random().toString(36).substr(2, 4)}`,
+          relicId: relicId,
+          name: item.name,
+          icon: item.icon || '🏺',
+          rarity: reward.rarity || 'legendary',
+          rarityLabel: reward.rarityLabel || 'تحفة أثرية ملكية',
+          buybackPrice: Number(reward.buybackPrice || Math.floor(totalAmount * 0.9)),
+          description: item.description || '',
+          edition: reward.edition || (quantity > 1 ? `نسخة (${q + 1} من ${quantity})` : 'إصدار مزاد ملكي'),
+          acquiredAt: Date.now(),
+          auctionWinningBid: totalAmount
+        };
+        rawState.museumRelics.push(newRelic);
+      }
+      rewardGrantedDesc = `${quantity > 1 ? quantity + 'x ' : ''}تحفة أثرية للمتحف: ${item.name}`;
 
-      // Decrement museum stock if registered
+      // Decrement museum stock by specified quantity
       try {
         const museumService = require('./museum-service');
-        museumService.decrementStock(relicId);
+        museumService.decrementStock(relicId, quantity);
       } catch (e) {}
     }
 
