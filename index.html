@@ -1781,7 +1781,7 @@
           <input type="email" id="input-link-player-email" class="glass-input w-full p-3 rounded-xl text-xs text-center font-bold text-white border-yellow-500/30 focus:border-yellow-400"
             placeholder="مثال: player@example.com" autocomplete="email">
         </div>
-        <button id="btn-send-link-otp" type="button" onclick="window.UI?.sendLinkEmailOtp?.()"
+        <button id="btn-send-link-otp" type="button" onclick="(window.sendLinkEmailOtp || window.UI?.sendLinkEmailOtp)?.()"
           class="w-full py-3 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20">
           <i class="fa-solid fa-paper-plane"></i>
           <span id="text-send-link-otp">إرسال رمز التحقق (OTP)</span>
@@ -1802,30 +1802,30 @@
             placeholder="••••••" autocomplete="one-time-code">
           <div class="flex justify-between items-center mt-1.5 px-1 text-[10px] text-slate-400">
             <span>صلاحية الرمز 5 دقائق</span>
-            <button id="btn-resend-link-otp" type="button" onclick="window.UI?.sendLinkEmailOtp?.()" class="text-yellow-400 hover:underline font-bold" disabled>
+            <button id="btn-resend-link-otp" type="button" onclick="(window.sendLinkEmailOtp || window.UI?.sendLinkEmailOtp)?.()" class="text-yellow-400 hover:underline font-bold" disabled>
               إعادة الإرسال (<span id="resend-link-otp-timer">60</span>s)
             </button>
           </div>
         </div>
 
-        <button id="btn-verify-link-otp" type="button" onclick="window.UI?.verifyAndLinkEmail?.()"
+        <button id="btn-verify-link-otp" type="button" onclick="(window.verifyAndLinkEmail || window.UI?.verifyAndLinkEmail)?.()"
           class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
           <i class="fa-solid fa-check-double"></i>
           <span id="text-verify-link-otp">تحقق وربط الحساب ومتابعة اللعب</span>
           <i id="spinner-verify-link-otp" class="fa-solid fa-spinner fa-spin hidden"></i>
         </button>
 
-        <button id="btn-change-email-target" type="button" onclick="window.UI?.resetLinkEmailStep?.()" class="w-full text-center text-[11px] text-slate-400 hover:text-white transition">
+        <button id="btn-change-email-target" type="button" onclick="(window.resetLinkEmailStep || window.UI?.resetLinkEmailStep)?.()" class="w-full text-center text-[11px] text-slate-400 hover:text-white transition">
           ← تعديل البريد الإلكتروني
         </button>
       </div>
 
       <!-- Footer Buttons -->
       <div class="pt-4 border-t border-slate-800 mt-2 flex justify-between items-center gap-2">
-        <button id="btn-skip-link-email" type="button" onclick="window.UI?.skipLinkEmailAndContinue?.()" class="text-[11px] text-slate-500 hover:text-slate-300 font-bold transition">
+        <button id="btn-skip-link-email" type="button" onclick="(window.skipLinkEmailAndContinue || window.UI?.skipLinkEmailAndContinue)?.()" class="text-[11px] text-slate-500 hover:text-slate-300 font-bold transition">
           متابعة مؤقتاً بدون ربط ←
         </button>
-        <button type="button" onclick="window.UI?.closeLinkEmailModal?.()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">
+        <button type="button" onclick="(window.closeLinkEmailModal || window.UI?.closeLinkEmailModal)?.()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">
           إلغاء
         </button>
       </div>

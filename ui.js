@@ -56,6 +56,9 @@ const UIController = (() => {
   let activeTab ='dashboard';
   let tickIntervalId = null;
 
+  // Forward declarations for modal and email link handlers
+  let openLinkEmailModal, closeLinkEmailModal, resetLinkEmailStep, sendLinkEmailOtp, verifyAndLinkEmail, skipLinkEmailAndContinue;
+
   // Translation System (New)
   const currentLang = localStorage.getItem('game_lang') ||'ar';
   window.currentLang = currentLang;
@@ -1903,6 +1906,51 @@ const UIController = (() => {
         await launchGameSession(_targetLinkEmailUser);
       }
     };
+
+    // Attach explicit DOM event listeners for Link Email & OTP Modal
+    const sendLinkOtpBtn = document.getElementById('btn-send-link-otp');
+    const verifyLinkOtpBtn = document.getElementById('btn-verify-link-otp');
+    const closeLinkModalBtn = document.getElementById('btn-close-link-email-modal');
+    const skipLinkModalBtn = document.getElementById('btn-skip-link-email');
+    const changeEmailTargetBtn = document.getElementById('btn-change-email-target');
+    const resendLinkOtpBtn = document.getElementById('btn-resend-link-otp');
+    const inputLinkEmail = document.getElementById('input-link-player-email');
+    const inputLinkOtp = document.getElementById('input-link-otp-code');
+
+    if (sendLinkOtpBtn) sendLinkOtpBtn.addEventListener('click', (e) => { e.preventDefault(); sendLinkEmailOtp(); });
+    if (verifyLinkOtpBtn) verifyLinkOtpBtn.addEventListener('click', (e) => { e.preventDefault(); verifyAndLinkEmail(); });
+    if (closeLinkModalBtn) closeLinkModalBtn.addEventListener('click', (e) => { e.preventDefault(); closeLinkEmailModal(); });
+    if (skipLinkModalBtn) skipLinkModalBtn.addEventListener('click', (e) => { e.preventDefault(); skipLinkEmailAndContinue(); });
+    if (changeEmailTargetBtn) changeEmailTargetBtn.addEventListener('click', (e) => { e.preventDefault(); resetLinkEmailStep(); });
+    if (resendLinkOtpBtn) resendLinkOtpBtn.addEventListener('click', (e) => { e.preventDefault(); sendLinkEmailOtp(); });
+
+    if (inputLinkEmail) {
+      inputLinkEmail.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          sendLinkEmailOtp();
+        }
+      });
+    }
+
+    if (inputLinkOtp) {
+      inputLinkOtp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          verifyAndLinkEmail();
+        }
+      });
+    }
+
+    // Expose on window object directly
+    if (typeof window !== 'undefined') {
+      window.openLinkEmailModal = openLinkEmailModal;
+      window.closeLinkEmailModal = closeLinkEmailModal;
+      window.resetLinkEmailStep = resetLinkEmailStep;
+      window.sendLinkEmailOtp = sendLinkEmailOtp;
+      window.verifyAndLinkEmail = verifyAndLinkEmail;
+      window.skipLinkEmailAndContinue = skipLinkEmailAndContinue;
+    }
 
     if (saveSettingsBtn && startSettingsModal) {
       saveSettingsBtn.addEventListener('click', () => {
