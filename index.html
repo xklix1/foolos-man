@@ -2207,16 +2207,16 @@
               <span class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold ml-auto border border-sky-500/30">جديد 🛫</span>
             </button>
             <!-- Royal Auction tab -->
-            <button id="nav-tab-auctions" data-tab="auctions" onclick="if(window.RoyalAuction) window.RoyalAuction.openModal(); else window.UI?.showToast?.('جاري فتح قاعة المزاد...', 'info');"
-              class="nav-tab-btn flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-amber-300 transition duration-200 cursor-pointer">
+            <button id="nav-btn-auctions" type="button" onclick="if(window.RoyalAuction) window.RoyalAuction.openModal(); else window.UI?.showToast?.('جاري فتح قاعة المزاد...', 'info');"
+              class="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-amber-300 transition duration-200 cursor-pointer">
               <i class="fa-solid fa-gavel w-4 text-center text-amber-400 text-sm"></i>
               <span>المزادات الملكية الحية</span>
               <span id="nav-auc-badge" class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-black ml-auto border border-amber-500/30 animate-pulse">مباشر 🔨</span>
             </button>
             <!-- Royal Museum tab -->
-            <button id="nav-tab-museum" data-tab="museum" onclick="if(window.RoyalMuseum) window.RoyalMuseum.openModal(); else window.UI?.showToast?.('جاري فتح المتحف الملكي...', 'info');"
-              class="nav-tab-btn flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-amber-300 transition duration-200 cursor-pointer">
-              <i class="fa-solid fa-landmark-dome w-4 text-center text-amber-400 text-sm"></i>
+            <button id="nav-btn-museum" type="button" onclick="if(window.RoyalMuseum) window.RoyalMuseum.openModal(); else window.UI?.showToast?.('جاري فتح المتحف الملكي...', 'info');"
+              class="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-purple-300 transition duration-200 cursor-pointer">
+              <i class="fa-solid fa-landmark-dome w-4 text-center text-purple-400 text-sm"></i>
               <span>المتحف والآثار الملكية</span>
               <span id="nav-mus-badge" class="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-black ml-auto border border-purple-500/30">تحف 🏺</span>
             </button>
@@ -5318,16 +5318,16 @@
         </button>
 
         <!-- Royal Auctions mobile tab -->
-        <button id="nav-tab-auctions-mobile" data-tab="auctions" onclick="if(window.RoyalAuction) window.RoyalAuction.openModal(); if(window.UIController && window.UIController.closeMobileMenu) window.UIController.closeMobileMenu();"
-          class="nav-tab-btn flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-amber-300 text-xs font-bold transition duration-200 cursor-pointer">
+        <button id="nav-btn-auctions-mobile" type="button" onclick="if(window.UI?.closeMobileNav) window.UI.closeMobileNav(); if(window.RoyalAuction) window.RoyalAuction.openModal(); else window.UI?.showToast?.('جاري فتح قاعة المزاد...', 'info');"
+          class="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-amber-300 text-xs font-bold transition duration-200 cursor-pointer">
           <i class="fa-solid fa-gavel w-5 text-center text-amber-400 text-sm"></i>
           <span>المزادات الملكية الحية</span>
           <span id="nav-auc-badge-mobile" class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-black mr-auto border border-amber-500/30 animate-pulse">مباشر 🔨</span>
         </button>
 
         <!-- Royal Museum mobile tab -->
-        <button id="nav-tab-museum-mobile" data-tab="museum" onclick="if(window.RoyalMuseum) window.RoyalMuseum.openModal(); if(window.UIController && window.UIController.closeMobileMenu) window.UIController.closeMobileMenu();"
-          class="nav-tab-btn flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-purple-300 text-xs font-bold transition duration-200 cursor-pointer">
+        <button id="nav-btn-museum-mobile" type="button" onclick="if(window.UI?.closeMobileNav) window.UI.closeMobileNav(); if(window.RoyalMuseum) window.RoyalMuseum.openModal(); else window.UI?.showToast?.('جاري فتح المتحف الملكي...', 'info');"
+          class="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-purple-300 text-xs font-bold transition duration-200 cursor-pointer">
           <i class="fa-solid fa-landmark-dome w-5 text-center text-purple-400 text-sm"></i>
           <span>المتحف والآثار الملكية</span>
           <span id="nav-museum-badge-mobile" class="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-black mr-auto border border-purple-500/30">تحف 🏺</span>

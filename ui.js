@@ -23896,6 +23896,20 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       if (btnSaveAvatar) btnSaveAvatar.addEventListener('click', saveStagedAvatar);
       if (btnRemoveAvatar) btnRemoveAvatar.addEventListener('click', removeUserAvatar);
     });
+  function openAuctionModal() {
+    if (window.RoyalAuction && typeof window.RoyalAuction.openModal === 'function') {
+      window.RoyalAuction.openModal();
+    } else {
+      showToast('جاري فتح قاعة المزاد الملكي...', 'info');
+    }
+  }
+
+  function openMuseumModal() {
+    if (window.RoyalMuseum && typeof window.RoyalMuseum.openModal === 'function') {
+      window.RoyalMuseum.openModal();
+    } else {
+      showToast('جاري فتح المتحف والآثار الملكية...', 'info');
+    }
   }
 
   return {
@@ -23904,6 +23918,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     switchTab,
     openMobileNav,
     closeMobileNav,
+    openAuctionModal,
+    openMuseumModal,
     showToast,
     returnToStartMenu,
     playMenuSound,

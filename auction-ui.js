@@ -218,8 +218,10 @@
       if (document.getElementById('royal-auction-modal')) return;
       const modal = document.createElement('div');
       modal.id = 'royal-auction-modal';
+      modal.className = 'fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-4 select-none';
+      modal.style.display = 'none';
       modal.innerHTML = `
-        <div class="relative w-full max-w-4xl bg-slate-950/95 border border-amber-500/40 rounded-3xl p-4 sm:p-6 text-right text-slate-100 auction-gold-glow max-h-[92vh] flex flex-col justify-between overflow-hidden">
+        <div class="relative w-full max-w-4xl bg-slate-950/95 border border-amber-500/40 rounded-3xl p-4 sm:p-6 text-right text-slate-100 auction-gold-glow max-h-[92vh] flex flex-col justify-between overflow-hidden shadow-2xl">
           
           <!-- Modal Header -->
           <div class="flex items-center justify-between pb-3 border-b border-slate-800/80 shrink-0">
@@ -254,7 +256,7 @@
 
     bindEvents() {
       document.addEventListener('click', (e) => {
-        if (e.target.closest('#btn-open-royal-auction') || e.target.closest('#btn-open-auction-hall')) {
+        if (e.target.closest('#btn-open-royal-auction') || e.target.closest('#btn-open-auction-hall') || e.target.closest('#nav-btn-auctions') || e.target.closest('#nav-btn-auctions-mobile')) {
           this.openModal();
         }
         if (e.target.closest('#btn-close-royal-auction') || e.target.id === 'royal-auction-modal') {
@@ -265,8 +267,15 @@
 
     openModal() {
       this.isOpen = true;
-      const modal = document.getElementById('royal-auction-modal');
-      if (modal) modal.style.display = 'flex';
+      let modal = document.getElementById('royal-auction-modal');
+      if (!modal) {
+        this.injectModalDOM();
+        modal = document.getElementById('royal-auction-modal');
+      }
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+      }
       this.fetchState();
       this.renderModalContent();
     }
@@ -274,7 +283,10 @@
     closeModal() {
       this.isOpen = false;
       const modal = document.getElementById('royal-auction-modal');
-      if (modal) modal.style.display = 'none';
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+      }
     }
 
     // ==========================================
