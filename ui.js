@@ -1743,7 +1743,20 @@ const UIController = (() => {
           })
         });
 
-        const data = await res.json();
+        async function parseResponseJsonSafe(response, fallbackErr = 'حدث خطأ أثناء معالجة الطلب.') {
+          try {
+            const text = await response.text();
+            if (!text) return { success: false, error: fallbackErr };
+            return JSON.parse(text);
+          } catch (_) {
+            if (response.status === 502 || response.status === 503 || response.status === 504) {
+              return { success: false, error: 'الخادم الخلفي متوقف حالياً أو قيد إعادة التشغيل (502 Bad Gateway). يرجى المحاولة بعد لحظات.' };
+            }
+            return { success: false, error: fallbackErr };
+          }
+        }
+
+        const data = await parseResponseJsonSafe(res, 'فشل إرسال رمز التحقق. يرجى المحاولة لاحقاً.');
         if (!res.ok || !data.success) {
           throw new Error(data.error || 'فشل إرسال رمز التحقق. يرجى المحاولة لاحقاً.');
         }
@@ -2403,6 +2416,19 @@ const UIController = (() => {
       });
     }
 
+    const parseResponseJsonSafe = async (response, fallbackErr = 'حدث خطأ أثناء معالجة الطلب.') => {
+      try {
+        const text = await response.text();
+        if (!text) return { success: false, error: fallbackErr };
+        return JSON.parse(text);
+      } catch (_) {
+        if (response.status === 502 || response.status === 503 || response.status === 504) {
+          return { success: false, error: 'الخادم الخلفي متوقف حالياً أو قيد إعادة التشغيل (502 Bad Gateway). يرجى التأكد من تشغيل السيرفر.' };
+        }
+        return { success: false, error: fallbackErr };
+      }
+    };
+
     if (btnAuthBackToFields) {
       btnAuthBackToFields.addEventListener('click', () => {
         playMenuSound('click');
@@ -2426,7 +2452,7 @@ const UIController = (() => {
               type: 'register'
             })
           });
-          const data = await res.json();
+          const data = await parseResponseJsonSafe(res, 'فشل إعادة إرسال الرمز.');
           if (!res.ok || !data.success) {
             throw new Error(data.error || 'فشل إعادة إرسال الرمز.');
           }
@@ -2471,7 +2497,7 @@ const UIController = (() => {
             })
           });
 
-          const data = await res.json();
+          const data = await parseResponseJsonSafe(res, 'رمز التحقق غير صحيح أو منتهي الصلاحية.');
           if (!res.ok || !data.success) {
             throw new Error(data.error || 'رمز التحقق غير صحيح أو منتهي الصلاحية.');
           }
@@ -2573,7 +2599,7 @@ const UIController = (() => {
               })
             });
 
-            const data = await res.json();
+            const data = await parseResponseJsonSafe(res, 'فشل إرسال رمز التحقق إلى بريدك الإلكتروني.');
             if (!res.ok || !data.success) {
               throw new Error(data.error || 'فشل إرسال رمز التحقق إلى بريدك الإلكتروني.');
             }
