@@ -1124,6 +1124,33 @@ const UIController = (() => {
       });
     }
 
+    const startCardEl = document.getElementById('start-menu-player-card');
+    if (startCardEl) {
+      startCardEl.addEventListener('click', async (e) => {
+        if (e.target && (e.target.id === 'btn-start-card-switch' || e.target.closest('#btn-start-card-switch'))) return;
+        const isMaint = await checkMaintenanceMode();
+        if (isMaint) return;
+        const savedUser = localStorage.getItem('rasalmal_active_session_user');
+        if (savedUser) {
+          try {
+            let state = GameEngine.state;
+            if (!state || GameEngine.activeUsername !== savedUser) {
+              state = await AppDB.getPlayerState(savedUser);
+            }
+            const linkedEmail = (state && (state.email || (state.state && state.state.email))) || localStorage.getItem('rasalmal_player_email_' + savedUser);
+            if (!linkedEmail) {
+              openLinkEmailModal(savedUser);
+              return;
+            }
+          } catch (err) {
+            console.warn('[StartCard] Email check error:', err);
+          }
+          playMenuSound('start');
+          await launchGameSession(savedUser);
+        }
+      });
+    }
+
     // 4. Hall of Fame / Leaderboard Modal in Start Menu
     const menuLeaderboardBtn = document.getElementById('btn-menu-leaderboard');
     const startLeaderboardModal = document.getElementById('start-menu-leaderboard-modal');
@@ -2642,6 +2669,20 @@ const UIController = (() => {
           const canonicalUser = (loggedUser && loggedUser.username) ? loggedUser.username : usernameInput;
           const playerState = await GameEngine.loadUserSession(canonicalUser, loggedUser, pinInput);
           localStorage.setItem('rasalmal_active_session_user', canonicalUser);
+
+          const linkedEmail = (playerState && (playerState.email || (playerState.state && playerState.state.email))) 
+            || (loggedUser && (loggedUser.email || (loggedUser.state && loggedUser.state.email))) 
+            || localStorage.getItem('rasalmal_player_email_' + canonicalUser);
+
+          if (!linkedEmail) {
+            hideMaintenanceOverlay();
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('start-menu-screen').classList.remove('hidden');
+            openLinkEmailModal(canonicalUser);
+            showToast('توثيق الحساب 🛡️', 'يرجى إدخال بريدك الإلكتروني وتأكيده برمز التحقق لحماية حسابك واستعادته.', 'info', 5000);
+            return;
+          }
+
           showToast('أهلاً بك',`تم تحميل بيانات الحساب: ${canonicalUser}`,'success');
 
           playMenuSound('start');
