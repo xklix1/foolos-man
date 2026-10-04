@@ -13,27 +13,20 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v9.0.1';
+    window._CLIENT_VERSION = 'v9.1.0';
     (async function() {
-      const CURRENT_APP_BUILD = 'v9.0.1';
+      const CURRENT_APP_BUILD = 'v9.1.0';
       try {
-        // Check server version manifest directly with no-store
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
           const s = await res.json();
           if (s && s.version && s.version !== CURRENT_APP_BUILD) {
             const curParam = new URL(window.location.href).searchParams.get('_v');
-            if (curParam === s.version) {
-              return; // Already refreshed with current version query param
-            }
+            if (curParam === s.version) return;
             const reloadKey = 'rasalmal_reload_attempt_' + s.version;
             const attempts = Number(sessionStorage.getItem(reloadKey) || 0);
-            if (attempts >= 1) {
-              console.warn('[Version Sync] Max reload attempts reached for', s.version, 'Preventing loop.');
-              return;
-            }
+            if (attempts >= 1) return;
             sessionStorage.setItem(reloadKey, String(attempts + 1));
-            console.warn('[Version Sync] New game version available:', s.version, 'Current:', CURRENT_APP_BUILD);
             if ('caches' in window) {
               try {
                 const keys = await caches.keys();
@@ -47,6 +40,36 @@
           }
         }
       } catch (e) {}
+    })();
+
+    // 🛡️ High-Grade Anti-DevTools & Debugger Trap
+    (function() {
+      window.addEventListener('keydown', function(e) {
+        if (
+          e.key === 'F12' ||
+          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+          (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's'))
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      }, true);
+
+      window.addEventListener('contextmenu', function(e) {
+        const tag = e.target && e.target.tagName;
+        if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
+          e.preventDefault();
+        }
+      }, true);
+
+      // DevTools Freeze Loop: pauses debugger if DevTools is opened
+      function _trap() {
+        try {
+          (function() {}.constructor('debugger')());
+        } catch (_) {}
+      }
+      setInterval(_trap, 350);
     })();
   </script>
   <!-- Google Fonts (Cairo & Outfit) -->

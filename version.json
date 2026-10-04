@@ -1,7 +1,7 @@
 {
-  "version": "v9.0.1",
-  "build": 1791072000000,
-  "timestamp": 1791072000000,
-  "notes": "The Grand Royal Museum & Antiquities, Relic Minting, Royal Auctions and Instant Buybacks",
-  "releaseNotes": "The Grand Royal Museum & Antiquities, Relic Minting, Royal Auctions and Instant Buybacks"
+  "version": "v9.1.0",
+  "build": 1791140000000,
+  "timestamp": 1791140000000,
+  "notes": "Shielded Engine Core Bundle & Anti-DevTools Protection",
+  "releaseNotes": "Shielded Engine Core Bundle & Anti-DevTools Protection"
 }
