@@ -8342,19 +8342,31 @@ const GameEngine = (() => {
 if (typeof window !=="undefined") {
   // Expose a hardened proxy of GameEngine instead of the raw object
   // This prevents direct state mutation from the browser console
+  Object.freeze(GameEngine);
   const _safeGameEngine = new Proxy(GameEngine, {
     get(target, prop) {
-      // Block direct state mutation attempts via console
       if (prop === 'state') {
-        // Return a frozen shallow copy — changes won't affect the real state
         try { return Object.freeze(Object.assign({}, target.state)); } catch(e) { return {}; }
       }
       return target[prop];
     },
     set(target, prop, value) {
-      // Prevent writing directly to GameEngine via window.GameEngine.x = y
       console.warn('[Security] Direct mutation via window.GameEngine is blocked.');
-      return true; // silently ignore
+      return false;
+    },
+    defineProperty(target, prop, descriptor) {
+      console.warn('[Security] Object.defineProperty on GameEngine is strictly blocked.');
+      return false;
+    },
+    deleteProperty() {
+      return false;
+    },
+    getOwnPropertyDescriptor(target, prop) {
+      const desc = Object.getOwnPropertyDescriptor(target, prop);
+      if (desc) {
+        return { ...desc, configurable: false, writable: false };
+      }
+      return desc;
     }
   });
   window.GameEngine = _safeGameEngine;

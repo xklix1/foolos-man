@@ -2224,8 +2224,20 @@ var AppDB = (() => {
         }
       }
     }
-    // 4. Currency sanity caps: prevent absurd nonillion console injections
-    const MAX_ALLOWED_CURRENCY = 100000000000000; // 100 Trillion EGP absolute cap
+    // 4. Currency sanity caps & Velocity Clamping
+    const MAX_ALLOWED_CURRENCY = 50000000000; // 50 Billion EGP realistic absolute ceiling
+    const curTotal = (Number(payload.cash) || 0) + (Number(payload.bank) || 0);
+    const lastVerifiedTotal = (_lastVerifiedCloudWealth !== null) ? Number(_lastVerifiedCloudWealth) : curTotal;
+    const wealthJump = curTotal - lastVerifiedTotal;
+
+    // Detect abnormal jump without admin grant (> 50M jump in a single sync)
+    if (wealthJump > 50000000 && (!state.adminModifiedTimestamp || state.adminModifiedTimestamp <= _lastVerifiedCloudTime)) {
+      console.warn(`[AntiCheat] Abnormal wealth jump detected (${wealthJump}). Reverting excess flow injection.`);
+      const cappedBank = Math.max(0, Number(payload.bank || 0) - (wealthJump - 5000000));
+      payload.bank = cappedBank;
+      state.bank = cappedBank;
+    }
+
     if (typeof payload.cash === 'number' && (payload.cash > MAX_ALLOWED_CURRENCY || !isFinite(payload.cash) || isNaN(payload.cash))) {
       console.warn(`[AntiCheat] Clamping absurd cash injection for ${uLower}: ${payload.cash}`);
       payload.cash = 500000;
@@ -6801,16 +6813,33 @@ if (typeof module !=='undefined' && module.exports) {
 }
 
 if (typeof window !=="undefined") {
-  window.AppDB = AppDB;
-  if (!window.db) {
-    try {
-      if (window.firebase && typeof window.firebase.firestore === 'function') {
-        window.db = window.firebase.firestore();
-      } else {
-        window.db = AppDB;
+  Object.freeze(AppDB);
+  const _safeAppDB = new Proxy(AppDB, {
+    get(target, prop) {
+      return target[prop];
+    },
+    set() {
+      console.warn('[Security] Direct mutation of AppDB is blocked.');
+      return false;
+    },
+    defineProperty() {
+      console.warn('[Security] Redefining properties on AppDB is blocked.');
+      return false;
+    },
+    deleteProperty() {
+      return false;
+    },
+    getOwnPropertyDescriptor(target, prop) {
+      const desc = Object.getOwnPropertyDescriptor(target, prop);
+      if (desc) {
+        return { ...desc, configurable: false, writable: false };
       }
-    } catch (_) {
-      window.db = AppDB;
+      return desc;
     }
+  });
+
+  window.AppDB = _safeAppDB;
+  if (!window.db) {
+    window.db = _safeAppDB;
   }
 }
