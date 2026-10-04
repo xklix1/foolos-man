@@ -57,10 +57,34 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  -- الحسابات المالية
+  -- الحسابات المالية والأصول الحساسة
   v_now_ms := (EXTRACT(epoch FROM now()) * 1000)::bigint;
-  v_old_total := COALESCE(OLD.bank, 0) + COALESCE(OLD.cash, 0);
-  v_new_total := COALESCE(NEW.bank, 0) + COALESCE(NEW.cash, 0);
+
+  -- 1. حظر تصعيد الصلاحيات (Admin Role & Ban Bypass Guard)
+  NEW.is_admin := COALESCE(OLD.is_admin, false);
+  IF OLD.is_banned IS TRUE THEN
+    NEW.is_banned := true;
+  END IF;
+
+  -- 2. حظر حقن الجولد (Gold Injection Guard) - الجولد يضاف بالسيرفر أو الشحن فقط
+  IF NEW.gold IS NOT NULL AND OLD.gold IS NOT NULL AND NEW.gold > OLD.gold THEN
+    NEW.gold := OLD.gold;
+    IF NEW.state IS NOT NULL THEN
+      NEW.state := jsonb_set(NEW.state, '{gold}', to_jsonb(OLD.gold));
+    END IF;
+  END IF;
+
+  -- 3. حظر قفزات الـ XP الخيالية (XP Injection Guard)
+  IF NEW.xp IS NOT NULL AND OLD.xp IS NOT NULL AND (NEW.xp - OLD.xp) > 100000 THEN
+    NEW.xp := OLD.xp + 5000;
+    IF NEW.state IS NOT NULL THEN
+      NEW.state := jsonb_set(NEW.state, '{xp}', to_jsonb(NEW.xp));
+    END IF;
+  END IF;
+
+  -- 4. فحص مجموع الثروة النقدية (Bank + Cash + DirtyCash)
+  v_old_total := COALESCE(OLD.bank, 0) + COALESCE(OLD.cash, 0) + COALESCE(OLD.dirty_cash, 0);
+  v_new_total := COALESCE(NEW.bank, 0) + COALESCE(NEW.cash, 0) + COALESCE(NEW.dirty_cash, 0);
   v_wealth_diff := v_new_total - v_old_total;
 
   -- إذا لم تكن هناك زيادة مالية (صرف أو نقص أو ثبات)، اسمح بالتعديل
