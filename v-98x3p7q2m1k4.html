@@ -382,6 +382,9 @@
         <button onclick="switchInspectTab('airport')" id="itab_airport" class="px-3 sm:px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap shrink-0 transition">
           <i class="fa-solid fa-plane ml-1"></i> المطار
         </button>
+        <button onclick="switchInspectTab('farm')" id="itab_farm" class="px-3 sm:px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap shrink-0 transition">
+          <i class="fa-solid fa-wheat-awn text-emerald-400 ml-1"></i> المزرعة
+        </button>
         <button onclick="switchInspectTab('collectibles')" id="itab_collectibles" class="px-3 sm:px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap shrink-0 transition">
           <i class="fa-solid fa-gem text-purple-400 ml-1"></i> المقتنيات
         </button>
@@ -547,6 +550,26 @@
           <h3 class="text-xs font-bold text-slate-300">بيانات المطار وخطوط الطيران:</h3>
           <div id="p_airportInfo" class="space-y-3">
             <!-- Airport Data -->
+          </div>
+        </div>
+
+        <!-- Tab: Agro Farm Tycoon (المزرعة الاستثمارية) -->
+        <div id="tabContent_farm" class="hidden space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-sm">
+                <i class="fa-solid fa-wheat-awn"></i>
+              </div>
+              <div>
+                <h3 class="text-xs font-bold text-white">إمبراطورية المزرعة الاستثمارية (Agro Farm Tycoon)</h3>
+                <p class="text-[10px] text-slate-400">استصلاح الأراضي، المحاصيل، الإنتاج الحيواني، والتصنيع الغذائي</p>
+              </div>
+            </div>
+            <span id="p_farmStatusBadge" class="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-slate-800 text-slate-400 border border-slate-700">غير مفعلة</span>
+          </div>
+
+          <div id="p_farmDetailsContainer" class="space-y-4">
+            <!-- Injected Farm UI -->
           </div>
         </div>
 
@@ -1545,6 +1568,9 @@
         `;
       }
 
+      // Tab: Agro Farm Tycoon (المزرعة الاستثمارية)
+      renderFarmDetails(p.farm);
+
       // Tab: Collectibles & Rare Museum
       const mMus = document.getElementById('p_museumList');
       if (mMus) {
@@ -1777,6 +1803,259 @@
       }
     }
 
+    // ================= AGRO FARM TYCOON RENDERING =================
+    function renderFarmDetails(farm) {
+      const badge = document.getElementById('p_farmStatusBadge');
+      const container = document.getElementById('p_farmDetailsContainer');
+      if (!container) return;
+
+      if (!farm || !farm.unlocked) {
+        if (badge) {
+          badge.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-slate-800 text-slate-500 border border-slate-700';
+          badge.textContent = 'غير مفعلة';
+        }
+        container.innerHTML = `
+          <div class="text-center py-10 px-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 space-y-2">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-slate-800 text-slate-500 flex items-center justify-center text-2xl">
+              <i class="fa-solid fa-wheat-awn"></i>
+            </div>
+            <h4 class="text-sm font-bold text-slate-300">المزرعة غير مفعلة</h4>
+            <p class="text-xs text-slate-500 max-w-md mx-auto">لم يقم هذا اللاعب بشراء أو استصلاح المزرعة الاستثمارية حتى الآن.</p>
+          </div>
+        `;
+        return;
+      }
+
+      if (badge) {
+        badge.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 animate-pulse';
+        badge.textContent = 'مزرعة نشطة ومنتجة 🌾';
+      }
+
+      const CROP_DICT = {
+        wheat: { name: 'القمح الذهبي', icon: '🌾' },
+        tomatoes: { name: 'طماطم عضوية', icon: '🍅' },
+        strawberries: { name: 'فراولة فاخرة', icon: '🍓' },
+        coffee: { name: 'بن إثيوبي فاخر', icon: '☕' },
+        dates: { name: 'تمور المجدول الملكية', icon: '🌴' },
+        saffron: { name: 'زعفران سوبر نيجين', icon: '🌸' }
+      };
+
+      const PROCESSED_DICT = {
+        flour_bread: { name: 'دقيق فاخر ومخبوزات', icon: '🥖' },
+        tomato_paste: { name: 'صلصة ومعجون طماطم', icon: '🥫' },
+        strawberry_jam: { name: 'مربى فراولة طبيعي', icon: '🍯' },
+        premium_coffee: { name: 'إسبريسو وبن محمص', icon: '☕' },
+        stuffed_dates: { name: 'تمور محشوة فاخرة', icon: '🌴' },
+        saffron_essence: { name: 'مستخلص الزعفران الصافي', icon: '🧪' }
+      };
+
+      const landLvl = Number(farm.landLevel || 1);
+      const plotsCount = Number(farm.maxPlots || 4);
+      const waterLvl = Number(farm.irrigationLevel || farm.waterLevel || 1);
+      const fertLvl = Number(farm.fertilizerLevel || 1);
+      const workers = Number(farm.workers || 0);
+      const siloLvl = Number(farm.siloLevel || 1);
+      const totalHarvested = Number(farm.stats?.totalHarvested || 0);
+      const totalRevenue = Number(farm.stats?.totalRevenue || 0);
+
+      const ls = farm.livestock || {};
+      const cows = Number(ls.cows || 0);
+      const chickens = Number(ls.chickens || 0);
+      const milkStored = Number(ls.milk || 0);
+      const eggsStored = Number(ls.eggs || 0);
+      const compost = Number(ls.compost || 0);
+
+      const proc = farm.processing || {};
+      const procUnlocked = Boolean(proc.unlocked);
+      const procStorage = proc.storage || {};
+      const procStats = proc.stats || {};
+
+      const contracts = farm.contracts || {};
+      const rep = Number(contracts.reputation || 0);
+      const completedContracts = Number(contracts.completedCount || 0);
+      const bonusEarned = Number(contracts.totalBonusEarned || 0);
+
+      // Crops inventory
+      const cropInv = farm.inventory || {};
+      const cropKeys = Object.keys(cropInv).filter(k => (cropInv[k] || 0) > 0);
+
+      // Plots list
+      const plots = Array.isArray(farm.plots) ? farm.plots : [];
+
+      let html = `
+        <!-- Infrastructure Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          <div class="glass-card p-3 rounded-xl border border-slate-800">
+            <span class="text-[10px] text-slate-400 block mb-0.5">استصلاح الأراضي</span>
+            <span class="text-xs font-bold text-emerald-400">مستوى ${landLvl} (${plotsCount} قطع)</span>
+          </div>
+          <div class="glass-card p-3 rounded-xl border border-slate-800">
+            <span class="text-[10px] text-slate-400 block mb-0.5">شبكة الري والمياه</span>
+            <span class="text-xs font-bold text-cyan-400">مستوى ${waterLvl}</span>
+          </div>
+          <div class="glass-card p-3 rounded-xl border border-slate-800">
+            <span class="text-[10px] text-slate-400 block mb-0.5">المخصبات والتربة</span>
+            <span class="text-xs font-bold text-amber-400">مستوى ${fertLvl}</span>
+          </div>
+          <div class="glass-card p-3 rounded-xl border border-slate-800">
+            <span class="text-[10px] text-slate-400 block mb-0.5">عمالة الأتمتة</span>
+            <span class="text-xs font-bold text-purple-400">${workers} عمال</span>
+          </div>
+          <div class="glass-card p-3 rounded-xl border border-slate-800">
+            <span class="text-[10px] text-slate-400 block mb-0.5">سعة الصوامع</span>
+            <span class="text-xs font-bold text-sky-400">مستوى ${siloLvl}</span>
+          </div>
+          <div class="glass-card p-3 rounded-xl border border-emerald-500/30 bg-emerald-950/20">
+            <span class="text-[10px] text-emerald-400 font-bold block mb-0.5">عائدات الحصاد</span>
+            <span class="text-xs font-black numbers-font text-emerald-300">+${fmtMoney(totalRevenue)}</span>
+          </div>
+        </div>
+
+        <!-- Crops Cultivation & Current Plots -->
+        <div class="glass-card p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-white">
+              <i class="fa-solid fa-seedling text-emerald-400"></i>
+              <span>قطع الأراضي الزراعية (${plots.length} / ${plotsCount})</span>
+            </div>
+            <span class="text-[10px] text-slate-400">حصاد تراكمي: ${totalHarvested.toLocaleString()} وحدة</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 text-xs">
+            ${plots.length === 0 ? '<div class="text-xs text-slate-500 col-span-full py-2">لا توجد قطع أراضي مزروعة حالياً.</div>' : plots.map((pl, idx) => {
+              if (!pl) {
+                return `
+                  <div class="p-2.5 rounded-xl bg-slate-950/40 border border-slate-800/80 text-center text-slate-500">
+                    <span class="text-sm block mb-1">🟫</span>
+                    <span class="text-[10px] block">قطعة #${idx + 1}</span>
+                    <span class="text-[9px] text-slate-600">فارغة</span>
+                  </div>
+                `;
+              }
+              const crop = CROP_DICT[pl.cropId] || { name: pl.cropId || 'محصول', icon: '🌱' };
+              const isReady = Boolean(pl.ready);
+              return `
+                <div class="p-2.5 rounded-xl ${isReady ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300' : 'bg-slate-900 border-slate-800 text-slate-300'} border text-center">
+                  <span class="text-base block mb-0.5">${crop.icon}</span>
+                  <span class="text-[10px] font-bold block truncate">${crop.name}</span>
+                  <span class="text-[9px] ${isReady ? 'text-emerald-400 font-bold' : 'text-amber-400'}">${isReady ? 'جاهزة للحصاد ✨' : 'قيد النمو...'}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Silo Inventory & Livestock Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <!-- Silo Stored Crops -->
+          <div class="glass-card p-3.5 rounded-2xl border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <div class="flex items-center gap-1.5 text-xs font-bold text-white">
+                <i class="fa-solid fa-warehouse text-amber-400"></i>
+                <span>مخزون صوامع المحاصيل</span>
+              </div>
+              <span class="text-[10px] text-slate-400">${cropKeys.length} أنواع مخزنة</span>
+            </div>
+            ${cropKeys.length === 0 ? '<div class="text-xs text-slate-500 py-2">لا توجد محاصيل مخزنة في الصومعة حالياً.</div>' : `
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                ${cropKeys.map(k => {
+                  const crop = CROP_DICT[k] || { name: k, icon: '🌾' };
+                  return `
+                    <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs flex items-center justify-between">
+                      <span class="text-slate-300">${crop.icon} ${crop.name}</span>
+                      <span class="font-bold numbers-font text-emerald-400">${(cropInv[k] || 0).toLocaleString()}</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `}
+          </div>
+
+          <!-- Livestock Animals -->
+          <div class="glass-card p-3.5 rounded-2xl border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <div class="flex items-center gap-1.5 text-xs font-bold text-white">
+                <i class="fa-solid fa-cow text-cyan-400"></i>
+                <span>الإنتاج الحيواني والدواجن</span>
+              </div>
+              <span class="text-[10px] text-emerald-400 font-bold">عائدات: +${fmtMoney(ls.stats?.totalRevenue || 0)}</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+              <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                <span class="text-slate-400 block text-[10px]">الأبقار والماشية</span>
+                <span class="font-bold text-white text-xs">🐄 ${cows} رؤوس</span>
+                <span class="text-[9px] text-cyan-400 block mt-0.5">حليب: ${milkStored} لتر</span>
+              </div>
+              <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                <span class="text-slate-400 block text-[10px]">مزارع الدواجن</span>
+                <span class="font-bold text-white text-xs">🐔 ${chickens} دجاجات</span>
+                <span class="text-[9px] text-amber-400 block mt-0.5">بيض: ${eggsStored} بيضة</span>
+              </div>
+              <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                <span class="text-slate-400 block text-[10px]">السماد العضوي</span>
+                <span class="font-bold text-emerald-400 text-xs">🧪 ${compost} وحدة</span>
+                <span class="text-[9px] text-slate-400 block mt-0.5">تخمير دوري</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Processing Factory & Supply Contracts Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <!-- Food Processing Factory -->
+          <div class="glass-card p-3.5 rounded-2xl border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <div class="flex items-center gap-1.5 text-xs font-bold text-white">
+                <i class="fa-solid fa-industry text-purple-400"></i>
+                <span>مصنع الأغذية والتحويل</span>
+              </div>
+              <span class="text-[10px] ${procUnlocked ? 'text-purple-300 font-bold' : 'text-slate-500'}">${procUnlocked ? 'وحدة نشطة ✅' : 'مغلق'}</span>
+            </div>
+            ${!procUnlocked ? '<div class="text-xs text-slate-500 py-2">لم يقم اللاعب بفتح وحدة التصنيع الغذائي بعد.</div>' : `
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-xs">
+                ${Object.keys(PROCESSED_DICT).map(k => {
+                  const pItem = PROCESSED_DICT[k];
+                  const qty = Number(procStorage[k] || 0);
+                  return `
+                    <div class="p-1.5 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+                      <span class="text-slate-300 text-[11px] truncate">${pItem.icon} ${pItem.name}</span>
+                      <span class="font-bold numbers-font text-purple-300 text-xs">${qty}</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+              <div class="text-[10px] text-slate-400 pt-1 flex justify-between">
+                <span>إجمالي المصنع: ${(procStats.totalProcessed || 0).toLocaleString()} وحدة</span>
+                <span class="text-emerald-400 font-bold">عائدات: +${fmtMoney(procStats.totalRevenue || 0)}</span>
+              </div>
+            `}
+          </div>
+
+          <!-- Contracts & Agriculture Reputation -->
+          <div class="glass-card p-3.5 rounded-2xl border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <div class="flex items-center gap-1.5 text-xs font-bold text-white">
+                <i class="fa-solid fa-file-signature text-yellow-400"></i>
+                <span>عقود التوريد والسمعة</span>
+              </div>
+              <span class="text-[10px] text-yellow-300 font-bold">⭐ ${rep} نقطة سمعة</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                <span class="text-slate-400 block text-[10px]">العقود المكتملة</span>
+                <span class="font-bold text-white">${completedContracts} عقد توريد</span>
+              </div>
+              <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                <span class="text-slate-400 block text-[10px]">بونص الأرباح</span>
+                <span class="font-bold text-amber-300">+${fmtMoney(bonusEarned)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
     // Render Staff Secret Notes
     function renderStaffNotes(notes) {
       const container = document.getElementById('p_staffNotesTimeline');
@@ -1944,7 +2223,28 @@
       }
       report += `\n`;
 
-      report += `💸 [7] آخر الحوالات المالية المسجلة (P2P TRANSFERS):\n`;
+      report += `🌾 [7] المزرعة الاستثمارية والإنتاج الزراعي (AGRO FARM TYCOON):\n`;
+      if (p.farm && p.farm.unlocked) {
+        const f = p.farm;
+        const plotsCount = f.maxPlots || 4;
+        const waterLvl = f.irrigationLevel || f.waterLevel || 1;
+        const fertLvl = f.fertilizerLevel || 1;
+        const workers = f.workers || 0;
+        const siloLvl = f.siloLevel || 1;
+        const ls = f.livestock || {};
+        const proc = f.processing || {};
+        const contracts = f.contracts || {};
+        report += `   • البنية التحتية: أرض مستوى ${f.landLevel || 1} (${plotsCount} قطع) | شبكة ري مستوى ${waterLvl} | تسميد مستوى ${fertLvl} | عمال: ${workers} | صوامع مستوى ${siloLvl}\n`;
+        report += `   • إيرادات الحصاد الزراعي: +${fmtMoney(f.stats?.totalRevenue || 0)} (إجمالي حصاد: ${(f.stats?.totalHarvested || 0).toLocaleString()} وحدة)\n`;
+        report += `   • الثروة الحيوانية: أبقار (${ls.cows || 0} - حليب: ${ls.milk || 0}L) | دواجن (${ls.chickens || 0} - بيض: ${ls.eggs || 0}) | سماد: ${ls.compost || 0} | أرباح: +${fmtMoney(ls.stats?.totalRevenue || 0)}\n`;
+        report += `   • مصنع الأغذية: ${proc.unlocked ? `نشط ✅ | أرباح: +${fmtMoney(proc.stats?.totalRevenue || 0)}` : 'غير مفعل'}\n`;
+        report += `   • عقود التوريد: ${contracts.completedCount || 0} عقد منجز | سمعة: ${contracts.reputation || 0} ⭐ | بونص أرباح: +${fmtMoney(contracts.totalBonusEarned || 0)}\n`;
+      } else {
+        report += `   • لم يقم بتفعيل أو استصلاح المزرعة الاستثمارية.\n`;
+      }
+      report += `\n`;
+
+      report += `💸 [8] آخر الحوالات المالية المسجلة (P2P TRANSFERS):\n`;
       if (!p.transfers || !p.transfers.length) {
         report += `   • لا توجد حوالات مسجلة.\n`;
       } else {
@@ -1955,7 +2255,7 @@
       }
       report += `\n`;
 
-      report += `📔 [8] ملاحظات طاقم التحقيق والرقابة (INTERNAL STAFF NOTES):\n`;
+      report += `📔 [9] ملاحظات طاقم التحقيق والرقابة (INTERNAL STAFF NOTES):\n`;
       if (!p.staffNotes || !p.staffNotes.length) {
         report += `   • لا توجد ملاحظات سرية مدونة.\n`;
       } else {
@@ -1965,7 +2265,7 @@
       }
       report += `\n`;
 
-      report += `⚖️ [9] العقوبات والإجراءات الإدارية السابقة (SANCTIONS HISTORY):\n`;
+      report += `⚖️ [10] العقوبات والإجراءات الإدارية السابقة (SANCTIONS HISTORY):\n`;
       if (!p.moderatorNotes || !p.moderatorNotes.length) {
         report += `   • سجل الحساب نظيف من العقوبات الإدارية.\n`;
       } else {
@@ -2220,7 +2520,7 @@
         modChatPollInterval = null;
       }
 
-      ['economy', 'activity', 'notes', 'businesses', 'stocks', 'airport', 'collectibles', 'transfers', 'chat', 'moderation'].forEach(t => {
+      ['economy', 'activity', 'notes', 'businesses', 'stocks', 'airport', 'farm', 'collectibles', 'transfers', 'chat', 'moderation'].forEach(t => {
         const btn = document.getElementById(`itab_${t}`);
         const content = document.getElementById(`tabContent_${t}`);
         if (!btn || !content) return;
