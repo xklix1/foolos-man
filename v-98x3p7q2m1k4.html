@@ -1371,20 +1371,25 @@
         const atBottom = stream.scrollHeight - stream.scrollTop <= stream.clientHeight + 60;
 
         stream.innerHTML = messages.map(m => {
-          const isMod = m.isMod || m.isStaff;
+          const p = (m && typeof m.payload === 'object' && m.payload) ? m.payload : {};
+          const isMod = Boolean(p.isMod || m.isMod || m.recipient === inspectingPlayer.username || m.sender?.startsWith('MOD-') || m.sender?.includes('المحقق') || m.sender?.includes('إدارة'));
+          const text = p.message || m.message || '';
+          const senderName = p.senderName || m.sender || (isMod ? 'المحقق' : inspectingPlayer.username);
+          const ts = m.created_at || p.timestamp || Date.now();
+
           return `
             <div class="flex flex-col ${isMod ? 'items-end' : 'items-start'} my-1">
               <div class="flex items-center gap-1 text-[10px] text-slate-400 mb-0.5 ${isMod ? 'flex-row-reverse' : ''}">
-                <span class="font-bold ${isMod ? 'text-amber-300' : 'text-cyan-300'}">${m.senderName || (isMod ? 'المحقق' : inspectingPlayer.username)}</span>
+                <span class="font-bold ${isMod ? 'text-amber-300' : 'text-cyan-300'}">${senderName}</span>
                 <span>•</span>
-                <span>${fmtDate(m.timestamp || m.created_at)}</span>
+                <span>${fmtDate(ts)}</span>
               </div>
               <div class="max-w-[85%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed ${
                 isMod 
                   ? 'bg-gradient-to-r from-emerald-950/80 to-teal-900/80 border border-emerald-500/40 text-emerald-100 rounded-tr-none shadow-md' 
                   : 'bg-slate-800/90 border border-slate-700 text-slate-100 rounded-tl-none shadow-md'
               }">
-                ${m.message || ''}
+                ${text}
               </div>
             </div>
           `;

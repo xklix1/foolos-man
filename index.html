@@ -7863,7 +7863,7 @@
 
   <!-- ==================== INVESTIGATION LIVE CHAT MODAL (نافذة محادثة التحقيق المباشر مع اللاعب) ==================== -->
   <div id="modal-investigation-chat-player" dir="rtl"
-    class="hidden fixed inset-0 z-[9999999] flex items-center justify-center bg-black/90 backdrop-blur-xl p-3 sm:p-4 select-none">
+    class="hidden fixed inset-0 z-[999999999] flex items-center justify-center bg-black/90 backdrop-blur-xl p-3 sm:p-4 select-none">
     <div class="glass-panel w-full max-w-lg h-[85vh] max-h-[640px] flex flex-col rounded-3xl border-2 border-emerald-500/60 bg-gradient-to-b from-slate-900 via-slate-950 to-black text-right relative overflow-hidden shadow-2xl shadow-emerald-500/20">
       
       <!-- Top Ambient Glow -->
@@ -8580,13 +8580,27 @@
       // PLAYER INVESTIGATION LIVE CHAT CONTROLLER
       // =========================================================================
       let _playerChatPollTimer = null;
+
+      function _getInvestigationApiUrl(endpoint) {
+        if (typeof window !== 'undefined' && window.location.origin) {
+          const o = window.location.origin;
+          if (o.includes('rasalmal.online') || o.includes('localhost') || o.includes('127.0.0.1')) {
+            return o + '/api/mod/chat' + endpoint;
+          }
+        }
+        return 'https://rasalmal.online/api/mod/chat' + endpoint;
+      }
+
       window.openPlayerInvestigationChat = function() {
         const chatModal = document.getElementById('modal-investigation-chat-player');
         if (chatModal) {
           chatModal.classList.remove('hidden');
           chatModal.classList.add('flex');
           chatModal.style.setProperty('display', 'flex', 'important');
-          chatModal.style.setProperty('z-index', '99999999', 'important');
+          chatModal.style.setProperty('z-index', '999999999', 'important');
+          chatModal.style.setProperty('visibility', 'visible', 'important');
+          chatModal.style.setProperty('opacity', '1', 'important');
+          chatModal.style.setProperty('pointer-events', 'auto', 'important');
         }
         loadPlayerInvestigationChat();
         if (_playerChatPollTimer) clearInterval(_playerChatPollTimer);
@@ -8611,79 +8625,104 @@
       };
 
       window.loadPlayerInvestigationChat = async function() {
-        const u = (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '';
+        const u = (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || 
+                  (typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || '';
         const container = document.getElementById('player-mod-chat-messages');
         if (!container || !u) return;
 
+        let msgs = [];
         try {
-          const res = await fetch(SUPABASE_URL + '/api/mod/chat/player-history/' + encodeURIComponent(u), {
+          // 1. Try Fastify server endpoint first
+          const res = await fetch(_getInvestigationApiUrl('/player-history/' + encodeURIComponent(u)), {
             cache: 'no-store'
           });
-          if (!res.ok) return;
-          const data = await res.json();
-          const msgs = data.messages || [];
+          if (res.ok) {
+            const data = await res.json();
+            msgs = data.messages || [];
+          } else {
+            throw new Error('Server route returned ' + res.status);
+          }
+        } catch (serverErr) {
+          // 2. Direct Supabase Fallback
+          try {
+            const cleanU = encodeURIComponent(u.trim());
+            const qUrl = `${SUPABASE_URL}/rest/v1/mailbox?type=eq.investigation_chat&or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.asc&limit=100`;
+            const sRes = await fetch(qUrl, {
+              headers: {
+                'apikey': _getAnonKey(),
+                'Authorization': `Bearer ${_getAnonKey()}`,
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+              }
+            });
+            if (sRes.ok) {
+              const rows = await sRes.json();
+              msgs = Array.isArray(rows) ? rows : [];
+            }
+          } catch (dbErr) {
+            console.warn('[Investigation Chat] Load error:', dbErr);
+          }
+        }
 
-          if (msgs.length === 0) {
-            container.innerHTML = `
-              <div class="text-center py-8 space-y-2 text-slate-400">
-                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center text-xl">
-                  <i class="fa-solid fa-comments"></i>
+        if (msgs.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-8 space-y-2 text-slate-400">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center text-xl">
+                <i class="fa-solid fa-comments"></i>
+              </div>
+              <p class="text-xs font-bold text-slate-300">مرحباً بك في قناة التحقيق المباشر</p>
+              <p class="text-[11px] text-slate-500 max-w-xs mx-auto">يمكنك كتابة رسالتك وتوضيح نشاط حسابك للمحقق هنا وسيقوم بالرد عليك ومراجعة حسابك فوراً.</p>
+            </div>
+          `;
+          return;
+        }
+
+        const html = msgs.map(m => {
+          const p = (m && typeof m.payload === 'object' && m.payload) ? m.payload : {};
+          const isMod = Boolean(p.isMod || m.isMod || m.recipient === u || m.sender?.startsWith('MOD-') || m.sender?.includes('المحقق') || m.sender?.includes('إدارة'));
+          const text = p.message || m.message || '';
+          const senderName = p.senderName || m.sender || (isMod ? 'المحقق' : u);
+          const ts = Number(m.created_at || p.timestamp || Date.now());
+          const timeStr = new Date(ts).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+          if (isMod) {
+            return `
+              <div class="flex items-start gap-2.5 max-w-[85%]">
+                <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-xs shrink-0 font-bold">
+                  <i class="fa-solid fa-shield-halved"></i>
                 </div>
-                <p class="text-xs font-bold text-slate-300">مرحباً بك في قناة التحقيق المباشر</p>
-                <p class="text-[11px] text-slate-500 max-w-xs mx-auto">يمكنك كتابة رسالتك وتوضيح نشاط حسابك للمحقق هنا وسيقوم بالرد عليك ومراجعة حسابك فوراً.</p>
+                <div class="space-y-1">
+                  <div class="flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold">
+                    <span>${senderName}</span>
+                    <span class="text-[9px] text-slate-500">${timeStr}</span>
+                  </div>
+                  <div class="p-3 rounded-2xl rounded-tr-none bg-emerald-950/70 border border-emerald-500/40 text-xs text-white leading-relaxed">
+                    ${text}
+                  </div>
+                </div>
               </div>
             `;
-            return;
-          }
-
-          const html = msgs.map(m => {
-            const p = m.payload || {};
-            const isMod = Boolean(p.isMod || m.recipient === u || m.sender?.startsWith('MOD-') || m.sender?.includes('المحقق') || m.sender?.includes('إدارة'));
-            const text = p.message || m.message || '';
-            const senderName = p.senderName || m.sender || (isMod ? 'المحقق' : u);
-            const ts = Number(m.created_at || p.timestamp || Date.now());
-            const timeStr = new Date(ts).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-
-            if (isMod) {
-              return `
-                <div class="flex items-start gap-2.5 max-w-[85%]">
-                  <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-xs shrink-0 font-bold">
-                    <i class="fa-solid fa-shield-halved"></i>
+          } else {
+            return `
+              <div class="flex items-start gap-2.5 max-w-[85%] mr-auto justify-end">
+                <div class="space-y-1 text-left">
+                  <div class="flex items-center justify-end gap-1.5 text-[10px] text-slate-400">
+                    <span class="text-[9px] text-slate-500">${timeStr}</span>
+                    <span class="font-bold text-slate-300">أنت</span>
                   </div>
-                  <div class="space-y-1">
-                    <div class="flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold">
-                      <span>${senderName}</span>
-                      <span class="text-[9px] text-slate-500">${timeStr}</span>
-                    </div>
-                    <div class="p-3 rounded-2xl rounded-tr-none bg-emerald-950/70 border border-emerald-500/40 text-xs text-white leading-relaxed">
-                      ${text}
-                    </div>
+                  <div class="p-3 rounded-2xl rounded-tl-none bg-cyan-600 text-xs text-white leading-relaxed text-right">
+                    ${text}
                   </div>
                 </div>
-              `;
-            } else {
-              return `
-                <div class="flex items-start gap-2.5 max-w-[85%] mr-auto justify-end">
-                  <div class="space-y-1 text-left">
-                    <div class="flex items-center justify-end gap-1.5 text-[10px] text-slate-400">
-                      <span class="text-[9px] text-slate-500">${timeStr}</span>
-                      <span class="font-bold text-slate-300">أنت</span>
-                    </div>
-                    <div class="p-3 rounded-2xl rounded-tl-none bg-cyan-600 text-xs text-white leading-relaxed text-right">
-                      ${text}
-                    </div>
-                  </div>
-                </div>
-              `;
-            }
-          }).join('');
-
-          const isNearBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 80;
-          container.innerHTML = html;
-          if (isNearBottom) {
-            container.scrollTop = container.scrollHeight;
+              </div>
+            `;
           }
-        } catch (e) {}
+        }).join('');
+
+        const isNearBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 80;
+        container.innerHTML = html;
+        if (isNearBottom) {
+          container.scrollTop = container.scrollHeight;
+        }
       };
 
       window.sendPlayerInvestigationMessage = async function(e) {
@@ -8691,23 +8730,55 @@
         const inp = document.getElementById('player-mod-chat-input');
         const btn = document.getElementById('btn-player-mod-chat-send');
         const text = inp ? inp.value.trim() : '';
-        const u = (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '';
+        const u = (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || 
+                  (typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || '';
         if (!text || !u) return;
 
         inp.value = '';
         if (btn) btn.disabled = true;
 
         try {
-          const res = await fetch(SUPABASE_URL + '/api/mod/chat/player-send', {
+          // 1. Try Fastify endpoint
+          const res = await fetch(_getInvestigationApiUrl('/player-send'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: u, message: text })
           });
-          const data = await res.json();
-          if (res.ok && data.success) {
+          if (res.ok) {
             loadPlayerInvestigationChat();
+            return;
           }
-        } catch (err) {
+          throw new Error('Fastify returned ' + res.status);
+        } catch (serverErr) {
+          // 2. Direct Supabase Fallback
+          try {
+            const ts = Date.now();
+            await fetch(`${SUPABASE_URL}/rest/v1/mailbox`, {
+              method: 'POST',
+              headers: {
+                'apikey': _getAnonKey(),
+                'Authorization': `Bearer ${_getAnonKey()}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify({
+                sender: u.trim(),
+                recipient: 'MOD_STAFF_CHANNEL',
+                type: 'investigation_chat',
+                payload: {
+                  message: text.substring(0, 500),
+                  senderName: u.trim(),
+                  isMod: false,
+                  timestamp: ts
+                },
+                status: 'unread',
+                created_at: ts
+              })
+            });
+            loadPlayerInvestigationChat();
+          } catch (dbErr) {
+            console.error('[Investigation Chat] Send error:', dbErr);
+          }
         } finally {
           if (btn) btn.disabled = false;
           if (inp) inp.focus();
