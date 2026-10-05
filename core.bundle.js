@@ -24881,7 +24881,8 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const rEl = document.getElementById('suspicion-modal-reason') || modal.querySelector('p.font-bold');
       if (rEl) rEl.textContent = freezeReason || 'اشتباه أو مراجعة أمنية دورية.';
       const byEl = document.getElementById('suspicion-modal-by');
-      if (byEl) byEl.textContent = frozenBy || 'غرفة الرقابة والأمان';
+      const safeBy = String(frozenBy || 'غرفة الرقابة والتحقيق').replace(/المساعد/g, 'المحقق').replace(/مساعد/g, 'محقق');
+      if (byEl) byEl.textContent = safeBy;
       
       const timerBox = document.getElementById('suspicion-modal-timer-box');
       const timerEl = document.getElementById('suspicion-modal-timer');

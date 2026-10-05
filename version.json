@@ -1,7 +1,7 @@
 {
-  "version": "v9.2.0",
-  "build": 1791195000000,
-  "timestamp": 1791195000000,
-  "notes": "Moderator Security Portal & Instant Account Lockdown Enforcement",
-  "releaseNotes": "Moderator Security Portal & Instant Account Lockdown Enforcement"
+  "version": "v9.3.0",
+  "build": 1791196000000,
+  "timestamp": 1791196000000,
+  "notes": "Moderator Investigator Rename & Dynamic Cache Bust",
+  "releaseNotes": "Moderator Investigator Rename & Dynamic Cache Bust"
 }

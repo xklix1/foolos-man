@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v9.2.0';
+    window._CLIENT_VERSION = 'v9.3.0';
     (async function() {
-      const CURRENT_APP_BUILD = 'v9.2.0';
+      const CURRENT_APP_BUILD = 'v9.3.0';
       try {
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
@@ -8522,6 +8522,25 @@
               const pEl = modal.querySelector('p.font-bold') || document.getElementById('suspicion-modal-reason');
               if (pEl && pEl.textContent !== reason) pEl.textContent = reason;
               
+              const byVal = pState.frozenBy || p.frozenBy || 'غرفة الرقابة والتحقيق';
+              const safeBy = String(byVal).replace(/المساعد/g, 'المحقق').replace(/مساعد/g, 'محقق');
+              const byEl = document.getElementById('suspicion-modal-by');
+              if (byEl && byEl.textContent !== safeBy) byEl.textContent = safeBy;
+
+              const untilMs = Number(p.freezeUntil || pState.freezeUntil || 0);
+              const timerBox = document.getElementById('suspicion-modal-timer-box');
+              const timerEl = document.getElementById('suspicion-modal-timer');
+              if (untilMs > Date.now() && timerBox && timerEl) {
+                timerBox.classList.remove('hidden');
+                const remainingSec = Math.max(0, Math.floor((untilMs - Date.now()) / 1000));
+                const hrs = Math.floor(remainingSec / 3600);
+                const mins = Math.floor((remainingSec % 3600) / 60);
+                const secs = remainingSec % 60;
+                timerEl.textContent = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+              } else if (timerBox) {
+                timerBox.classList.add('hidden');
+              }
+
               window._isUnderSuspicionLocked = true;
               if (typeof GameEngine !== 'undefined' && GameEngine.state) GameEngine.state.underSuspicion = true;
 
