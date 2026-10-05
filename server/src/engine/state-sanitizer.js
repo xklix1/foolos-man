@@ -30,6 +30,12 @@ const DEFAULT_STATE = {
   workCooldownUntil: 0,
   casinoCooldownUntil: 0,
   jailTimer: 0,
+  underSuspicion: false,
+  freezeUntil: 0,
+  freezeReason: '',
+  mutedUntil: 0,
+  muteReason: '',
+  staffFlag: null,
   heatLevel: 0,
   underworldRep: 0,
   afkManagerExpiresAt: 0,
@@ -123,6 +129,14 @@ function sanitizePlayerState(dbRow) {
   cleanState.jailTimer = Number(dbRow.jail_timer !== undefined ? dbRow.jail_timer : cleanState.jailTimer) || 0;
   cleanState.afkManagerExpiresAt = Number(dbRow.afk_manager_expires_at !== undefined ? dbRow.afk_manager_expires_at : cleanState.afkManagerExpiresAt) || 0;
   cleanState.totalTaxesPaid = Number(dbRow.total_taxes_paid !== undefined ? dbRow.total_taxes_paid : cleanState.totalTaxesPaid) || 0;
+  
+  cleanState.underSuspicion = Boolean(dbRow.under_suspicion || dbRow.underSuspicion || rawState.underSuspicion);
+  cleanState.freezeUntil = Number(dbRow.freeze_until || dbRow.freezeUntil || rawState.freezeUntil || 0);
+  cleanState.freezeReason = String(dbRow.freeze_reason || dbRow.freezeReason || rawState.freezeReason || '').trim();
+  cleanState.mutedUntil = Number(dbRow.muted_until || dbRow.mutedUntil || rawState.mutedUntil || 0);
+  cleanState.muteReason = String(dbRow.mute_reason || dbRow.muteReason || rawState.muteReason || '').trim();
+  cleanState.staffFlag = (dbRow.staff_flag || dbRow.staffFlag || rawState.staffFlag) || null;
+  cleanState.isBanned = Boolean(dbRow.is_banned || dbRow.isBanned || rawState.isBanned);
   
   cleanState.lastSeen = Number(dbRow.last_seen || cleanState.lastSeen || Date.now());
   // CRITICAL: Preserve lastActiveTimestamp from the state JSON blob (where the client

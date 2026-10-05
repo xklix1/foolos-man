@@ -2171,14 +2171,27 @@ const UIController = (() => {
           handleBannedUser('تم حظر هذا الحساب نهائياً لمخالفة قواعد النزاهة.');
           return;
         }
+
+        const isSuspOrFrozen = Boolean(
+          state.underSuspicion === true ||
+          (state.state && state.state.underSuspicion === true) ||
+          (state.freezeUntil && state.freezeUntil > Date.now()) ||
+          (state.state && state.state.freezeUntil && state.state.freezeUntil > Date.now())
+        );
+        if (isSuspOrFrozen && savedUser.toLowerCase() !== 'khaled') {
+          const reasonText = (state.state && state.state.freezeReason) || state.freezeReason || 'تم تعليق نشاط حسابك مؤقتاً لوجود اشتباه يتطلب التحقق.';
+          enforceSuspicionStatus(true, reasonText);
+          return;
+        }
+
         const nameEl = document.getElementById('start-card-username');
         const titleEl = document.getElementById('start-card-title');
         const worthEl = document.getElementById('start-card-worth');
         const avatarEl = document.getElementById('start-card-avatar');
 
         if (nameEl) nameEl.textContent = savedUser;
-        if (titleEl) titleEl.textContent = state.title ||'مستثمر صاعد';
-        if (worthEl) worthEl.textContent =`${(state.netWorth || (state.cash + state.bank) || 0).toLocaleString()} EGP`;
+        if (titleEl) titleEl.textContent = state.title || 'مستثمر صاعد';
+        if (worthEl) worthEl.textContent = `${(state.netWorth || (state.cash + state.bank) || 0).toLocaleString()} EGP`;
         if (avatarEl) avatarEl.textContent = (savedUser.substring(0, 2)).toUpperCase();
 
         if (playerCard) playerCard.classList.remove('hidden');
@@ -2232,9 +2245,10 @@ const UIController = (() => {
         (playerState.freezeUntil && playerState.freezeUntil > Date.now()) ||
         (playerState.state && playerState.state.freezeUntil && playerState.state.freezeUntil > Date.now())
       );
-      if (playerState && isSuspOrFrozen) {
+      if (playerState && isSuspOrFrozen && canonicalUser.toLowerCase() !== 'khaled') {
         const reasonText = (playerState.state && playerState.state.freezeReason) || playerState.freezeReason || 'تم تعليق نشاط حسابك مؤقتاً لوجود اشتباه يتطلب التحقق.';
         enforceSuspicionStatus(true, reasonText);
+        return; // Halt game start immediately
       }
       localStorage.setItem('rasalmal_active_session_user', canonicalUser);
 
@@ -17678,20 +17692,41 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   function enforceSuspicionStatus(isUnderSuspicion, customReason = '') {
     const modal = document.getElementById('modal-account-under-suspicion');
     if (!modal) return;
+    const curUser = (typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '';
+    if (curUser && curUser.toLowerCase() === 'khaled') {
+      return; // Master admin immunity
+    }
+    if (typeof GameEngine !== 'undefined' && GameEngine.state && Boolean(GameEngine.state.isAdmin)) {
+      return;
+    }
     if (isUnderSuspicion === true) {
-      if (typeof GameEngine !== 'undefined' && GameEngine.state && Boolean(GameEngine.state.isAdmin)) {
-        return;
-      }
       if (customReason) {
         const pEl = modal.querySelector('p.font-bold') || document.getElementById('suspicion-modal-reason');
         if (pEl) pEl.textContent = customReason;
       }
       modal.classList.remove('hidden');
       modal.classList.add('flex');
+      modal.style.setProperty('display', 'flex', 'important');
+      modal.style.setProperty('z-index', '99999999', 'important');
+      modal.style.setProperty('visibility', 'visible', 'important');
+      modal.style.setProperty('opacity', '1', 'important');
+      modal.style.setProperty('pointer-events', 'auto', 'important');
+
+      const startMenu = document.getElementById('start-menu-screen');
+      const authScreen = document.getElementById('auth-screen');
+      const mainLayout = document.getElementById('main-game-layout');
+      if (startMenu) startMenu.classList.add('hidden');
+      if (authScreen) authScreen.classList.add('hidden');
+      if (mainLayout) {
+        mainLayout.classList.add('hidden');
+        mainLayout.classList.remove('flex');
+      }
+
       if (typeof window !== 'undefined') window._isUnderSuspicionLocked = true;
     } else {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
+      modal.style.display = 'none';
       if (typeof window !== 'undefined') window._isUnderSuspicionLocked = false;
     }
   }

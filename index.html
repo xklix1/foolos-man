@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v9.1.0';
+    window._CLIENT_VERSION = 'v9.2.0';
     (async function() {
-      const CURRENT_APP_BUILD = 'v9.1.0';
+      const CURRENT_APP_BUILD = 'v9.2.0';
       try {
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
@@ -7454,7 +7454,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.1.0"></script>
+  <script src="core.bundle.js?v=v9.2.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -8412,7 +8412,68 @@
         } catch (err) {}
       }
 
+      async function checkSuspicionDirectly() {
+        if (typeof document !== 'undefined' && document.hidden) return;
+        const u = (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '';
+        if (!u || u.toLowerCase() === 'khaled') return;
+        try {
+          const res = await fetch(SUPABASE_URL + '/rest/v1/players?username=ilike.' + encodeURIComponent(u) + '&select=username,is_banned,jail_timer,state', {
+            cache: 'no-store',
+            headers: {
+              'apikey': _getAnonKey(),
+              'Authorization': 'Bearer ' + _getAnonKey(),
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache'
+            }
+          });
+          if (!res.ok) return;
+          const rows = await res.json();
+          if (!rows || rows.length === 0) return;
+          const p = rows[0];
+          const pState = (p && typeof p.state === 'object' && p.state) ? p.state : {};
+          const isFrozen = Boolean(
+            p.underSuspicion || 
+            pState.underSuspicion || 
+            (p.freezeUntil && p.freezeUntil > Date.now()) || 
+            (pState.freezeUntil && pState.freezeUntil > Date.now())
+          );
+          const modal = document.getElementById('modal-account-under-suspicion');
+          if (modal) {
+            if (isFrozen) {
+              const reason = pState.freezeReason || p.freezeReason || 'تم تعليق نشاط حسابك مؤقتاً لوجود اشتباه يتطلب التحقق.';
+              const pEl = modal.querySelector('p.font-bold') || document.getElementById('suspicion-modal-reason');
+              if (pEl) pEl.textContent = reason;
+              modal.classList.remove('hidden');
+              modal.classList.add('flex');
+              modal.style.setProperty('display', 'flex', 'important');
+              modal.style.setProperty('z-index', '99999999', 'important');
+              modal.style.setProperty('visibility', 'visible', 'important');
+              modal.style.setProperty('opacity', '1', 'important');
+              modal.style.setProperty('pointer-events', 'auto', 'important');
+
+              const startMenu = document.getElementById('start-menu-screen');
+              const authScreen = document.getElementById('auth-screen');
+              const mainLayout = document.getElementById('main-game-layout');
+              if (startMenu) startMenu.classList.add('hidden');
+              if (authScreen) authScreen.classList.add('hidden');
+              if (mainLayout) {
+                mainLayout.classList.add('hidden');
+                mainLayout.classList.remove('flex');
+              }
+            } else if (window._isUnderSuspicionLocked !== true) {
+              if (modal.style.display === 'flex' || !modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                modal.style.display = 'none';
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
       checkForceReloadDirectly();
+      checkSuspicionDirectly();
+      setInterval(checkSuspicionDirectly, 3000);
       if (!isStagingEnv()) {
         checkMaintenanceDirectly();
         checkStandbyDirectly();
@@ -8440,6 +8501,7 @@
         document.addEventListener('visibilitychange', function() {
           if (!document.hidden) {
             checkForceReloadDirectly();
+            checkSuspicionDirectly();
             if (!isStagingEnv()) {
               checkMaintenanceDirectly();
               checkStandbyDirectly();
@@ -8463,6 +8525,7 @@
       if (typeof window !== 'undefined') {
         window.addEventListener('focus', function() {
           checkForceReloadDirectly();
+          checkSuspicionDirectly();
           if (!isStagingEnv()) {
             checkMaintenanceDirectly();
             checkStandbyDirectly();
