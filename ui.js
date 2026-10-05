@@ -9102,10 +9102,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }, 4000);
   }
 
-  // Intercept all keyboard shortcuts while freeze is active
+  // Intercept keyboard shortcuts while freeze is active (allow typing in inputs & chat)
   window.addEventListener('keydown', (e) => {
     if (!isFreezeActive) return;
     if (e.key === 'F5' || (e.ctrlKey && e.key.toLowerCase() === 'r')) return; // Allow page reload
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+    if (tag === 'input' || tag === 'textarea' || (e.target && e.target.isContentEditable)) {
+      return; // Allow typing in input fields and investigation chat!
+    }
     e.preventDefault();
     e.stopPropagation();
   }, true);
