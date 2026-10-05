@@ -555,10 +555,10 @@ async function airportRoutes(fastify, options) {
       return reply.code(400).send({ error: 'المطار غير مفعل.' });
     }
 
-    // Transit fee between 1,200,000 and 3,500,000
-    const fee = Math.floor(1200000 + Math.random() * 2300000);
+    // Transit fee between 3,000,000 and 7,000,000
+    const fee = Math.floor(3000000 + Math.random() * 4000000);
     s.cash = Math.max(0, Number(s.cash || 0)) + fee;
-    s.xp = Math.max(0, Number(s.xp || 0)) + 75;
+    s.xp = Math.max(0, Number(s.xp || 0)) + 250;
 
     if (!s.airport.stats) s.airport.stats = {};
     s.airport.stats.transitPermitsAccepted = (Number(s.airport.stats.transitPermitsAccepted) || 0) + 1;

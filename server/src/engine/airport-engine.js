@@ -41,16 +41,16 @@ const AIRPORT_FACILITIES = {
       4: { name: 'روبوتات صيانة ومستودع وقود استراتيجي', cost: 75000000, timeReduction: 0.15, fuelDiscount: 0.15, desc: '-15% زمن الرحلات و -15% تكلفة الوقود' }
     }
   },
-  duty_free: {
+    duty_free: {
     id: 'duty_free',
     name: 'السوق الحرة ومتاجر الترانزيت 🛍️',
     icon: 'fa-store',
     desc: 'تدر دخلاً سلبياً مستمراً ومتزناً على مدار الساعة',
     levels: {
-      1: { name: 'أكشاك هدايا وتذكارات', cost: 5000000, passivePerMin: 166, desc: 'دخل سلبي: 166 ج.م/دقيقة (10,000 ج.م/ساعة)' },
-      2: { name: 'مجمع عطور وساعات سويسرية', cost: 18000000, passivePerMin: 580, desc: 'دخل سلبي: 580 ج.م/دقيقة (35,000 ج.م/ساعة)' },
-      3: { name: 'مول ماركات عالمية وأزياء راقية', cost: 50000000, passivePerMin: 1500, desc: 'دخل سلبي: 1,500 ج.م/دقيقة (90,000 ج.م/ساعة)' },
-      4: { name: 'صالة مزادات مجوهرات وسيارات VIP', cost: 120000000, passivePerMin: 3330, desc: 'دخل سلبي: 3,330 ج.م/دقيقة (200,000 ج.م/ساعة)' }
+      1: { name: 'أكشاك هدايا وتذكارات', cost: 5000000, passivePerMin: 500, desc: 'دخل سلبي: 500 ج.م/دقيقة (30,000 ج.م/ساعة)' },
+      2: { name: 'مجمع عطور وساعات سويسرية', cost: 18000000, passivePerMin: 1500, desc: 'دخل سلبي: 1,500 ج.م/دقيقة (90,000 ج.م/ساعة)' },
+      3: { name: 'مول ماركات عالمية وأزياء راقية', cost: 50000000, passivePerMin: 4000, desc: 'دخل سلبي: 4,000 ج.م/دقيقة (240,000 ج.م/ساعة)' },
+      4: { name: 'صالة مزادات مجوهرات وسيارات VIP', cost: 120000000, passivePerMin: 8333, desc: 'دخل سلبي: 8,333 ج.م/دقيقة (500,000 ج.م/ساعة)' }
     }
   }
 };
@@ -63,16 +63,16 @@ const AIRCRAFT_MODELS = {
     cost: 3000000,
     goldCost: 0,
     capacity: '8 ركاب VIP',
-    baseFlightTimeSec: 7200, // 2 hours
-    baseRevenue: 180000,
-    fuelCost: 40000,
-    crewCost: 25000,
-    landingFee: 15000,
-    baseNetProfit: 100000,
-    baseXp: 75,
+    baseFlightTimeSec: 5400, // 1.5 hours
+    baseRevenue: 400000,
+    fuelCost: 50000,
+    crewCost: 30000,
+    landingFee: 20000,
+    baseNetProfit: 300000,
+    baseXp: 150,
     speedupGold: 2,
     icon: 'fa-plane',
-    desc: 'طائرة خفيفة للمسافات الإقليمية ورجال الأعمال (رحلة ساعتان)'
+    desc: 'طائرة خفيفة للمسافات الإقليمية ورجال الأعمال (رحلة ساعة ونصف)'
   },
   airbus_a320: {
     id: 'airbus_a320',
@@ -81,16 +81,16 @@ const AIRCRAFT_MODELS = {
     cost: 15000000,
     goldCost: 0,
     capacity: '180 مسافر',
-    baseFlightTimeSec: 14400, // 4 hours
-    baseRevenue: 620000,
-    fuelCost: 125000,
-    crewCost: 80000,
-    landingFee: 55000,
-    baseNetProfit: 360000,
-    baseXp: 220,
+    baseFlightTimeSec: 10800, // 3 hours
+    baseRevenue: 1350000,
+    fuelCost: 175000,
+    crewCost: 105000,
+    landingFee: 70000,
+    baseNetProfit: 1000000,
+    baseXp: 450,
     speedupGold: 5,
     icon: 'fa-plane-departure',
-    desc: 'طائرة ركاب دولية عالية الكفاءة للمسافات المتوسطة (رحلة 4 ساعات)'
+    desc: 'طائرة ركاب دولية عالية الكفاءة للمسافات المتوسطة (رحلة 3 ساعات)'
   },
   boeing_777: {
     id: 'boeing_777',
@@ -99,16 +99,16 @@ const AIRCRAFT_MODELS = {
     cost: 55000000,
     goldCost: 0,
     capacity: '390 مسافر',
-    baseFlightTimeSec: 21600, // 6 hours
-    baseRevenue: 1900000,
-    fuelCost: 480000,
-    crewCost: 310000,
-    landingFee: 210000,
-    baseNetProfit: 900000,
-    baseXp: 800,
+    baseFlightTimeSec: 16200, // 4.5 hours
+    baseRevenue: 3700000,
+    fuelCost: 500000,
+    crewCost: 320000,
+    landingFee: 180000,
+    baseNetProfit: 2700000,
+    baseXp: 1200,
     speedupGold: 10,
     icon: 'fa-plane',
-    desc: 'طائر عملاق عابر للقارات للرحلات الدولية الطويلة (رحلة 6 ساعات)'
+    desc: 'طائر عملاق عابر للقارات للرحلات الدولية الطويلة (رحلة 4.5 ساعات)'
   },
   gulfstream_g650: {
     id: 'gulfstream_g650',
@@ -117,16 +117,16 @@ const AIRCRAFT_MODELS = {
     cost: 85000000,
     goldCost: 0,
     capacity: 'نخبة رجال الأعمال والأمراء VIP',
-    baseFlightTimeSec: 28800, // 8 hours
-    baseRevenue: 2800000,
-    fuelCost: 700000,
+    baseFlightTimeSec: 21600, // 6 hours
+    baseRevenue: 6000000,
+    fuelCost: 750000,
     crewCost: 450000,
-    landingFee: 350000,
-    baseNetProfit: 1300000,
-    baseXp: 650,
+    landingFee: 300000,
+    baseNetProfit: 4500000,
+    baseXp: 1500,
     speedupGold: 10,
     icon: 'fa-crown',
-    desc: 'طائرة نفاثة فاخرة لنقل كبار الشخصيات بعوائد قياسية (رحلة 8 ساعات)'
+    desc: 'طائرة نفاثة فاخرة لنقل كبار الشخصيات بعوائد قياسية (رحلة 6 ساعات)'
   },
   cargo_beluga: {
     id: 'cargo_beluga',
@@ -135,16 +135,16 @@ const AIRCRAFT_MODELS = {
     cost: 125000000,
     goldCost: 0,
     capacity: '50 طن بضائع ومعدات ثقيلة',
-    baseFlightTimeSec: 36000, // 10 hours
-    baseRevenue: 4000000,
+    baseFlightTimeSec: 27000, // 7.5 hours
+    baseRevenue: 9000000,
     fuelCost: 1000000,
     crewCost: 600000,
     landingFee: 400000,
-    baseNetProfit: 2000000,
-    baseXp: 1200,
+    baseNetProfit: 7000000,
+    baseXp: 2200,
     speedupGold: 14,
     icon: 'fa-box-open',
-    desc: 'وحش الشحن الجوي العملاق لنقل الشحنات الفاخرة حول العالم (رحلة 10 ساعات)'
+    desc: 'وحش الشحن الجوي العملاق لنقل الشحنات الفاخرة حول العالم (رحلة 7.5 ساعات)'
   },
   airbus_a380: {
     id: 'airbus_a380',
@@ -153,16 +153,16 @@ const AIRCRAFT_MODELS = {
     cost: 220000000,
     goldCost: 0,
     capacity: '615 مسافر (طابقين)',
-    baseFlightTimeSec: 50400, // 14 hours
-    baseRevenue: 7500000,
-    fuelCost: 1800000,
-    crewCost: 1100000,
-    landingFee: 800000,
-    baseNetProfit: 3800000,
-    baseXp: 2000,
+    baseFlightTimeSec: 36000, // 10 hours
+    baseRevenue: 19500000,
+    fuelCost: 2200000,
+    crewCost: 1300000,
+    landingFee: 1000000,
+    baseNetProfit: 15000000,
+    baseXp: 4500,
     speedupGold: 18,
     icon: 'fa-jet-fighter-up',
-    desc: 'القلعة الطائرة ذات الطابقين.. أضخم طائرة ركاب في العالم (رحلة 14 ساعة)'
+    desc: 'القلعة الطائرة ذات الطابقين.. أضخم طائرة ركاب في العالم (رحلة 10 ساعات)'
   }
 };
 
