@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>بوابة الرقابة والتفتيش الإداري | Ras ALmal Staff Portal</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Google Fonts: Cairo & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --cyber-bg: #030712;
+      --panel-bg: rgba(11, 19, 43, 0.85);
+      --panel-border: rgba(30, 58, 138, 0.4);
+      --panel-border-hover: rgba(59, 130, 246, 0.6);
+      --cyan-glow: #06b6d4;
+      --gold-glow: #f59e0b;
+      --emerald-glow: #10b981;
+      --rose-glow: #f43f5e;
+    }
+
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: var(--cyber-bg);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 0% 0%, rgba(6, 182, 212, 0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 60% at 100% 100%, rgba(245, 158, 11, 0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 70% at 50% 20%, rgba(16, 185, 129, 0.04) 0%, transparent 50%),
+        linear-gradient(180deg, #030712 0%, #080e1e 100%);
+      background-attachment: fixed;
+      color: #f1f5f9;
+      min-height: 100vh;
+    }
+
+    .numbers-font {
+      font-family: 'JetBrains Mono', monospace;
+      font-feature-settings: "tnum" 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .glass-panel {
+      background: linear-gradient(145deg, rgba(13, 23, 42, 0.88) 0%, rgba(8, 14, 28, 0.85) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(51, 65, 85, 0.5);
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .glass-card {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(51, 65, 85, 0.4);
+      transition: all 0.25s ease;
+    }
+
+    .glass-card:hover {
+      border-color: rgba(59, 130, 246, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .glow-cyan {
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
+    }
+
+    .glow-gold {
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.8);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #06b6d4;
+    }
+
+    /* Modal Animation */
+    .modal-enter {
+      animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+  </style>
+</head>
+<body class="p-3 md:p-6 text-slate-100 selection:bg-cyan-500 selection:text-white">
+
+  <!-- ================= AUTH / LOGIN MODAL ================= -->
+  <div id="authOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-xl p-4">
+    <div class="glass-panel w-full max-w-md p-8 rounded-2xl border border-cyan-500/30 text-center glow-cyan modal-enter">
+      <div class="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+        <i class="fa-solid fa-shield-halved text-4xl text-white"></i>
+      </div>
+      <h1 class="text-2xl font-black tracking-wide text-white mb-2">بوابة الرقابة والتفتيش</h1>
+      <p class="text-xs text-slate-400 mb-6">Staff Inspector & Wealth Monitoring Portal</p>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-right text-xs font-bold text-slate-300 mb-2">
+            <i class="fa-solid fa-key text-cyan-400 ml-1"></i> مفتاح المساعد (Moderator Key):
+          </label>
+          <div class="relative">
+            <input type="password" id="modKeyInput" placeholder="MOD-ALPHA-XXXX-XX" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-3 text-center numbers-font text-cyan-300 placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-400 transition" />
+            <button onclick="toggleKeyVisibility()" class="absolute left-3 top-3 text-slate-400 hover:text-cyan-300 text-sm">
+              <i id="keyEyeIcon" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="authErrorMsg" class="hidden text-xs text-rose-400 bg-rose-950/40 border border-rose-800/60 rounded-lg p-2.5"></div>
+
+        <button onclick="submitLogin()" id="loginBtn" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-cyan-600 hover:from-cyan-500 to-blue-600 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-cyan-600/30 transition duration-200 flex items-center justify-center gap-2">
+          <span>دخول النظام</span>
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+
+        <div class="pt-3 border-t border-slate-800 text-[11px] text-slate-500 flex items-center justify-between">
+          <span><i class="fa-solid fa-lock text-emerald-400 ml-1"></i> جلسة مشفرة وآمنة</span>
+          <span>Ras ALmal Tycoon 2026</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN DASHBOARD APP ================= -->
+  <div id="mainDashboard" class="hidden max-w-7xl mx-auto space-y-6">
+
+    <!-- Top Navbar -->
+    <header class="glass-panel rounded-2xl p-4 md:p-5 flex flex-wrap items-center justify-between gap-4 border border-slate-800">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-md">
+          <i class="fa-solid fa-shield-halved text-2xl text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-black text-lg md:text-xl text-white">غرفة الرقابة وتدقيق اللاعبين</h1>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">MODERATION</span>
+          </div>
+          <p class="text-xs text-slate-400">نظام المراقبة الحية وكشف التلاعب وحماية الاقتصاد</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- Staff Badge -->
+        <div class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/60">
+          <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+          <div class="text-right">
+            <div id="staffNameDisplay" class="text-xs font-bold text-white">مساعد مناوب</div>
+            <div id="staffRoleDisplay" class="text-[10px] text-cyan-400">Moderator</div>
+          </div>
+        </div>
+
+        <button onclick="openAuditLogsModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-clipboard-list text-amber-400"></i>
+          <span>سجل التدقيق</span>
+        </button>
+
+        <button onclick="logoutStaff()" class="px-3 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 text-xs font-bold border border-rose-800/50 transition">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Quick Stats Cards Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+      <div class="glass-panel p-4 rounded-2xl border-l-4 border-l-cyan-500">
+        <div class="text-xs text-slate-400 mb-1 flex items-center justify-between">
+          <span>اللاعبين المتصلين</span>
+          <i class="fa-solid fa-users-rays text-cyan-400"></i>
+        </div>
+        <div id="statOnlinePlayers" class="text-2xl font-black numbers-font text-cyan-300">--</div>
+      </div>
+
+      <div class="glass-panel p-4 rounded-2xl border-l-4 border-l-blue-500">
+        <div class="text-xs text-slate-400 mb-1 flex items-center justify-between">
+          <span>إجمالي الحسابات</span>
+          <i class="fa-solid fa-address-book text-blue-400"></i>
+        </div>
+        <div id="statTotalPlayers" class="text-2xl font-black numbers-font text-blue-300">--</div>
+      </div>
+
+      <div class="glass-panel p-4 rounded-2xl border-l-4 border-l-amber-500">
+        <div class="text-xs text-slate-400 mb-1 flex items-center justify-between">
+          <span>تحت المراقبة</span>
+          <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+        </div>
+        <div id="statFlaggedPlayers" class="text-2xl font-black numbers-font text-amber-300">0</div>
+      </div>
+
+      <div class="glass-panel p-4 rounded-2xl border-l-4 border-l-rose-500">
+        <div class="text-xs text-slate-400 mb-1 flex items-center justify-between">
+          <span>الحسابات المجمدة</span>
+          <i class="fa-solid fa-snowflake text-rose-400"></i>
+        </div>
+        <div id="statFrozenPlayers" class="text-2xl font-black numbers-font text-rose-300">0</div>
+      </div>
+
+      <div class="glass-panel p-4 rounded-2xl border-l-4 border-l-purple-500 col-span-2 sm:col-span-1">
+        <div class="text-xs text-slate-400 mb-1 flex items-center justify-between">
+          <span>المكتومين بالشات</span>
+          <i class="fa-solid fa-comment-slash text-purple-400"></i>
+        </div>
+        <div id="statMutedPlayers" class="text-2xl font-black numbers-font text-purple-300">0</div>
+      </div>
+    </div>
+
+    <!-- Suspicious Activities & Alerts Feed -->
+    <div id="alertsContainer" class="glass-panel rounded-2xl p-4 md:p-5 border border-amber-500/30">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></div>
+          <h2 class="font-bold text-sm md:text-base text-amber-300">تنبيهات الأنشطة المشبوهة وقفزات الثروة (Live Risk Feed)</h2>
+        </div>
+        <button onclick="refreshOverview()" class="text-xs text-slate-400 hover:text-cyan-300 transition">
+          <i class="fa-solid fa-arrows-rotate ml-1"></i> تحديث
+        </button>
+      </div>
+      <div id="suspiciousFeed" class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+        <!-- Live Alert Cards Rendered Here -->
+        <div class="text-xs text-slate-500 py-2">جاري فحص مؤشرات الأمان...</div>
+      </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="glass-panel rounded-2xl p-4 md:p-5 border border-slate-800 space-y-4">
+      <div class="flex flex-col md:flex-row gap-3 items-center justify-between">
+        
+        <!-- Search Input -->
+        <div class="relative w-full md:w-96">
+          <input type="text" id="playerSearchInput" onkeyup="handleSearchInput(event)" placeholder="ابحث باسم المستخدم أو الـ ID..." class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-3 pl-10 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition" />
+          <button onclick="executeSearch()" class="absolute left-3 top-3.5 text-slate-400 hover:text-cyan-400 text-sm">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+        </div>
+
+        <!-- Filter Buttons -->
+        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+          <button onclick="setFilter('all')" id="filter_all" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-cyan-600 text-white border border-cyan-500 transition">الكل</button>
+          <button onclick="setFilter('flagged')" id="filter_flagged" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">⚠️ تحت المراقبة</button>
+          <button onclick="setFilter('frozen')" id="filter_frozen" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">🔒 المجمدين</button>
+          <button onclick="setFilter('muted')" id="filter_muted" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">🔇 المكتومين</button>
+        </div>
+      </div>
+
+      <!-- Player Cards Search Results -->
+      <div id="searchResultsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 pt-2">
+        <!-- Rendered Player Summary Cards -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PLAYER INSPECTION MODAL ================= -->
+  <div id="inspectorModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-2 sm:p-4 overflow-y-auto">
+    <div class="glass-panel w-full max-w-5xl my-auto rounded-2xl border border-cyan-500/40 p-4 md:p-6 glow-cyan modal-enter max-h-[92vh] flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between border-b border-slate-800 pb-4 mb-4">
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <div id="inspectAvatar" class="w-14 h-14 rounded-2xl bg-slate-800 border border-cyan-500/30 flex items-center justify-center text-2xl font-black text-cyan-300 overflow-hidden">
+              <i class="fa-solid fa-user"></i>
+            </div>
+            <div id="inspectOnlineDot" class="absolute -bottom-1 -left-1 w-4 h-4 rounded-full border-2 border-slate-900 bg-slate-500"></div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 id="inspectUsername" class="text-xl md:text-2xl font-black text-white">---</h2>
+              <span id="inspectStatusBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300">نشط</span>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-slate-400 mt-1">
+              <span id="inspectTitle"><i class="fa-solid fa-briefcase text-cyan-400 ml-1"></i> عامل</span>
+              <span id="inspectLastSeen"><i class="fa-regular fa-clock text-slate-400 ml-1"></i> آخر ظهور: --</span>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="closeInspectorModal()" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Inspector Tabs Header -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800/80 custom-scrollbar text-xs">
+        <button onclick="switchInspectTab('economy')" id="itab_economy" class="px-3.5 py-2 rounded-xl font-bold bg-cyan-600 text-white whitespace-nowrap transition">
+          <i class="fa-solid fa-coins ml-1"></i> المالية والثروة
+        </button>
+        <button onclick="switchInspectTab('businesses')" id="itab_businesses" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
+          <i class="fa-solid fa-building ml-1"></i> الممتلكات والشركات
+        </button>
+        <button onclick="switchInspectTab('stocks')" id="itab_stocks" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
+          <i class="fa-solid fa-chart-line ml-1"></i> محفظة الأسهم
+        </button>
+        <button onclick="switchInspectTab('airport')" id="itab_airport" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
+          <i class="fa-solid fa-plane ml-1"></i> المطار والأسطول
+        </button>
+        <button onclick="switchInspectTab('transfers')" id="itab_transfers" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
+          <i class="fa-solid fa-money-bill-transfer ml-1"></i> سجل الحوالات
+        </button>
+        <button onclick="switchInspectTab('moderation')" id="itab_moderation" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
+          <i class="fa-solid fa-shield text-amber-400 ml-1"></i> الإجراءات والملاحظات
+        </button>
+      </div>
+
+      <!-- Tab Contents Area -->
+      <div class="flex-1 overflow-y-auto py-4 custom-scrollbar space-y-4">
+        
+        <!-- Tab 1: Economy & Net Worth -->
+        <div id="tabContent_economy" class="space-y-4">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="glass-card p-3.5 rounded-xl">
+              <div class="text-[11px] text-slate-400 mb-1">الكاش السائل</div>
+              <div id="p_cash" class="text-lg font-black numbers-font text-emerald-400">$0</div>
+            </div>
+            <div class="glass-card p-3.5 rounded-xl">
+              <div class="text-[11px] text-slate-400 mb-1">رصيد البنك</div>
+              <div id="p_bank" class="text-lg font-black numbers-font text-cyan-400">$0</div>
+            </div>
+            <div class="glass-card p-3.5 rounded-xl">
+              <div class="text-[11px] text-slate-400 mb-1">صافي الثروة (Net Worth)</div>
+              <div id="p_networth" class="text-lg font-black numbers-font text-amber-400">$0</div>
+            </div>
+            <div class="glass-card p-3.5 rounded-xl">
+              <div class="text-[11px] text-slate-400 mb-1">سبائك الذهب</div>
+              <div id="p_gold" class="text-lg font-black numbers-font text-yellow-300">0 🪙</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="glass-card p-3.5 rounded-xl">
+              <div class="text-[11px] text-slate-400 mb-1">الأموال غير النظيفة</div>
+              <div id="p_dirtyCash" class="text-base font-bold numbers-font text-rose-400">$0</div>
+            </div>
+            <div class="glass-card p-3.5 rounded-xl">
+              <div class="text-[11px] text-slate-400 mb-1">إجمالي الضرائب المسددة</div>
+              <div id="p_taxes" class="text-base font-bold numbers-font text-slate-200">$0</div>
+            </div>
+            <div class="glass-card p-3.5 rounded-xl">
+              <div class="text-[11px] text-slate-400 mb-1">نقاط الخبرة (XP)</div>
+              <div id="p_xp" class="text-base font-bold numbers-font text-blue-400">0 XP</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Businesses & Real Estate -->
+        <div id="tabContent_businesses" class="hidden space-y-3">
+          <h3 class="text-xs font-bold text-slate-300">المشاريع والشركات المملوكة:</h3>
+          <div id="p_businessesList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <!-- Business Items -->
+          </div>
+        </div>
+
+        <!-- Tab 3: Stocks & Investments -->
+        <div id="tabContent_stocks" class="hidden space-y-3">
+          <h3 class="text-xs font-bold text-slate-300">محفظة الأسهم والعملات الرقمية:</h3>
+          <div id="p_stocksList" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Stock Items -->
+          </div>
+        </div>
+
+        <!-- Tab 4: Aviation & Airport -->
+        <div id="tabContent_airport" class="hidden space-y-3">
+          <h3 class="text-xs font-bold text-slate-300">بيانات المطار وخطوط الطيران:</h3>
+          <div id="p_airportInfo" class="space-y-3">
+            <!-- Airport Data -->
+          </div>
+        </div>
+
+        <!-- Tab 5: Transfers -->
+        <div id="tabContent_transfers" class="hidden space-y-3">
+          <h3 class="text-xs font-bold text-slate-300">آخر التحويلات المالية (P2P Transfers):</h3>
+          <div id="p_transfersList" class="space-y-2">
+            <!-- Transfer Items -->
+          </div>
+        </div>
+
+        <!-- Tab 6: Moderation & Actions -->
+        <div id="tabContent_moderation" class="hidden space-y-4">
+          <!-- Action Form Bar -->
+          <div class="glass-card p-4 rounded-xl border border-cyan-500/30 space-y-3">
+            <h4 class="text-xs font-bold text-cyan-300"><i class="fa-solid fa-gavel ml-1"></i> اتخاذ إجراء إداري فوري ضد الحساب:</h4>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-[11px] text-slate-300 mb-1">نوع الإجراء:</label>
+                <select id="actionTypeSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-400">
+                  <option value="freeze">🔒 تجميد مؤقت للحساب (Freeze)</option>
+                  <option value="unfreeze">🔓 فك تجميد الحساب (Unfreeze)</option>
+                  <option value="mute">🔇 كتم الشات العام (Mute)</option>
+                  <option value="unmute">🔊 إلغاء كتم الشات (Unmute)</option>
+                  <option value="flag">🏷️ وضع علامة "تحت المراقبة" (Flag)</option>
+                  <option value="unflag">🟢 إزالة علامة المراقبة (Clear Flag)</option>
+                  <option value="warn">⚠️ إرسال تحذير رسمي للاعب (Warning)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[11px] text-slate-300 mb-1">المدة (للتجميد أو الكتم):</label>
+                <select id="actionDurationSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-400">
+                  <option value="15">15 دقيقة</option>
+                  <option value="60" selected>1 ساعة (60 دقيقة)</option>
+                  <option value="360">6 ساعات</option>
+                  <option value="720">12 ساعة</option>
+                  <option value="1440">24 ساعة (يوم كامل)</option>
+                  <option value="2880">48 ساعة (يومان)</option>
+                </select>
+              </div>
+
+              <div class="sm:col-span-1">
+                <label class="block text-[11px] text-slate-300 mb-1">تنفيذ:</label>
+                <button onclick="executeModeratorAction()" id="execActionBtn" class="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white font-bold text-xs shadow-md transition">
+                  تنفيذ الإجراء
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[11px] text-slate-300 mb-1"><span class="text-rose-400">*</span> سبب الإجراء (إلزامي للتدقيق والرقابة):</label>
+              <input type="text" id="actionReasonInput" placeholder="اكتب السبب بالتفصيل (مثال: اشتباه في تحويلات متتالية غير مبررة)..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-cyan-400" />
+            </div>
+          </div>
+
+          <!-- Notes History -->
+          <div class="space-y-2">
+            <h4 class="text-xs font-bold text-slate-400">سجل الإجراءات السابقة على هذا الحساب:</h4>
+            <div id="p_moderatorNotesList" class="space-y-2">
+              <!-- Note Items -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= STAFF AUDIT LOGS MODAL ================= -->
+  <div id="auditLogsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto">
+    <div class="glass-panel w-full max-w-4xl my-auto rounded-2xl border border-amber-500/40 p-6 glow-gold modal-enter max-h-[88vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-list text-amber-400 text-xl"></i>
+          <h3 class="font-black text-lg text-white">سجل تدقيق عمليات المساعدين (Staff Audit Trail)</h3>
+        </div>
+        <button onclick="closeAuditLogsModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto custom-scrollbar">
+        <table class="w-full text-right text-xs">
+          <thead class="bg-slate-900/90 text-slate-400 border-b border-slate-800 sticky top-0">
+            <tr>
+              <th class="p-2.5">التوقيت</th>
+              <th class="p-2.5">المساعد</th>
+              <th class="p-2.5">اللاعب المستهدف</th>
+              <th class="p-2.5">الإجراء</th>
+              <th class="p-2.5">السبب والبيان</th>
+            </tr>
+          </thead>
+          <tbody id="auditLogsTableBody" class="divide-y divide-slate-800/60">
+            <!-- Rendered Logs -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
+  <script>
+    const API_BASE = window.location.origin.includes('rasalmal.online')
+      ? 'https://rasalmal.online/api/mod'
+      : (window.location.origin.includes('localhost') ? 'http://localhost:3001/api/mod' : '/api/mod');
+
+    let currentModToken = sessionStorage.getItem('rasalmal_mod_token') || '';
+    let currentModInfo = null;
+    let currentFilter = 'all';
+    let cachedPlayersList = [];
+    let inspectingPlayer = null;
+
+    // Format Money helper
+    function fmtMoney(amount) {
+      const n = Number(amount) || 0;
+      if (n >= 1e9) return '$' + (n / 1e9).toFixed(2) + ' مليار';
+      if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + ' مليون';
+      if (n >= 1e3) return '$' + (n / 1e3).toFixed(1) + ' ألف';
+      return '$' + n.toLocaleString('en-US');
+    }
+
+    function fmtDate(ts) {
+      if (!ts) return '--';
+      const d = new Date(Number(ts));
+      return d.toLocaleDateString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function toggleKeyVisibility() {
+      const inp = document.getElementById('modKeyInput');
+      const icon = document.getElementById('keyEyeIcon');
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash';
+      } else {
+        inp.type = 'password';
+        icon.className = 'fa-solid fa-eye';
+      }
+    }
+
+    // Auto-login on load if token exists
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (currentModToken) {
+        try {
+          const res = await fetch(`${API_BASE}/auth/verify`, {
+            headers: { 'Authorization': `Bearer ${currentModToken}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            currentModInfo = data.modInfo;
+            showDashboard();
+            return;
+          }
+        } catch (_) {}
+      }
+      document.getElementById('authOverlay').classList.remove('hidden');
+    });
+
+    async function submitLogin() {
+      const key = document.getElementById('modKeyInput').value.trim();
+      const errBox = document.getElementById('authErrorMsg');
+      const loginBtn = document.getElementById('loginBtn');
+      errBox.classList.add('hidden');
+
+      if (!key) {
+        errBox.textContent = 'يرجى إدخال مفتاح المساعد أولاً.';
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري التحقق...</span>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ modKey: key })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          currentModToken = data.token;
+          currentModInfo = data.modInfo;
+          sessionStorage.setItem('rasalmal_mod_token', currentModToken);
+          showDashboard();
+        } else {
+          errBox.textContent = data.message || 'مفتاح المساعد غير صحيح.';
+          errBox.classList.remove('hidden');
+        }
+      } catch (err) {
+        errBox.textContent = 'فشل الاتصال بالخادم: ' + err.message;
+        errBox.classList.remove('hidden');
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = `<span>دخول النظام</span> <i class="fa-solid fa-arrow-left"></i>`;
+      }
+    }
+
+    function showDashboard() {
+      document.getElementById('authOverlay').classList.add('hidden');
+      document.getElementById('mainDashboard').classList.remove('hidden');
+
+      if (currentModInfo) {
+        document.getElementById('staffNameDisplay').textContent = currentModInfo.name;
+        document.getElementById('staffRoleDisplay').textContent = currentModInfo.isSuperAdmin ? 'Super Admin' : 'Staff Inspector';
+      }
+
+      refreshOverview();
+      executeSearch();
+    }
+
+    function logoutStaff() {
+      sessionStorage.removeItem('rasalmal_mod_token');
+      currentModToken = '';
+      currentModInfo = null;
+      document.getElementById('mainDashboard').classList.add('hidden');
+      document.getElementById('authOverlay').classList.remove('hidden');
+    }
+
+    // Refresh Overview stats & risk feed
+    async function refreshOverview() {
+      try {
+        const res = await fetch(`${API_BASE}/overview`, {
+          headers: { 'Authorization': `Bearer ${currentModToken}` }
+        });
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (data.stats) {
+          document.getElementById('statOnlinePlayers').textContent = data.stats.onlinePlayers;
+          document.getElementById('statTotalPlayers').textContent = data.stats.totalPlayers;
+          document.getElementById('statFlaggedPlayers').textContent = data.stats.flaggedPlayers;
+          document.getElementById('statFrozenPlayers').textContent = data.stats.frozenPlayers;
+          document.getElementById('statMutedPlayers').textContent = data.stats.mutedPlayers;
+        }
+
+        renderRiskFeed(data.suspiciousAlerts || []);
+      } catch (err) {
+        console.error('refreshOverview error:', err);
+      }
+    }
+
+    function renderRiskFeed(alerts) {
+      const container = document.getElementById('suspiciousFeed');
+      if (!alerts.length) {
+        container.innerHTML = `<div class="text-xs text-emerald-400 py-2 col-span-2"><i class="fa-solid fa-circle-check ml-1"></i> لا توجد أي قفزات ثروة شاذة أو حسابات مجمدة حالياً. الاقتصاد مستقر.</div>`;
+        return;
+      }
+
+      container.innerHTML = alerts.map(a => `
+        <div class="glass-card p-3 rounded-xl border border-slate-700/60 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg ${a.severity === 'high' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'} flex items-center justify-center text-sm">
+              <i class="fa-solid ${a.type === 'frozen' ? 'fa-snowflake' : 'fa-chart-line'}"></i>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                <span>${a.username}</span>
+                <span class="text-[10px] text-slate-400">(${a.title})</span>
+              </div>
+              <div class="text-[11px] text-slate-300 mt-0.5">${a.message}</div>
+            </div>
+          </div>
+          <button onclick="inspectPlayer('${a.username}')" class="px-2.5 py-1.5 rounded-lg bg-cyan-600/30 hover:bg-cyan-600 text-cyan-300 hover:text-white text-xs font-bold transition">
+            فحص الحساب
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // Search and Filters
+    let searchDebounce = null;
+    function handleSearchInput(e) {
+      if (e.key === 'Enter') {
+        executeSearch();
+        return;
+      }
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(executeSearch, 400);
+    }
+
+    function setFilter(f) {
+      currentFilter = f;
+      ['all', 'flagged', 'frozen', 'muted'].forEach(k => {
+        const btn = document.getElementById(`filter_${k}`);
+        if (k === f) {
+          btn.className = 'px-3.5 py-2 rounded-xl text-xs font-bold bg-cyan-600 text-white border border-cyan-500 transition';
+        } else {
+          btn.className = 'px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition';
+        }
+      });
+      executeSearch();
+    }
+
+    async function executeSearch() {
+      const q = document.getElementById('playerSearchInput').value.trim();
+      const grid = document.getElementById('searchResultsGrid');
+      grid.innerHTML = `<div class="col-span-full text-center text-xs text-slate-400 py-6"><i class="fa-solid fa-spinner fa-spin text-cyan-400 text-lg mb-2 block"></i> جاري البحث...</div>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(q)}&filter=${currentFilter}`, {
+          headers: { 'Authorization': `Bearer ${currentModToken}` }
+        });
+        if (!res.ok) throw new Error('Search failed');
+
+        const data = await res.json();
+        cachedPlayersList = data.players || [];
+        renderPlayerCards(cachedPlayersList);
+      } catch (err) {
+        grid.innerHTML = `<div class="col-span-full text-center text-xs text-rose-400 py-4">فشل البحث: ${err.message}</div>`;
+      }
+    }
+
+    function renderPlayerCards(players) {
+      const grid = document.getElementById('searchResultsGrid');
+      if (!players.length) {
+        grid.innerHTML = `<div class="col-span-full text-center text-xs text-slate-500 py-8">لا توجد نتائج مطابقة للبحث أو الفلتر المختار.</div>`;
+        return;
+      }
+
+      grid.innerHTML = players.map(p => {
+        const statusBadges = [];
+        if (p.isBanned) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">محظور</span>`);
+        if (p.isFrozen) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">مجمد</span>`);
+        if (p.isMuted) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">مكتوم</span>`);
+        if (p.staffFlag) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">تحت المراقبة</span>`);
+        if (!statusBadges.length) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">طبيعي</span>`);
+
+        return `
+          <div class="glass-card p-4 rounded-2xl border border-slate-700/60 hover:border-cyan-500/50 flex flex-col justify-between gap-3">
+            <div>
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center font-bold text-cyan-300 text-sm">
+                    ${p.username.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div class="font-bold text-sm text-white flex items-center gap-1.5">
+                      <span>${p.username}</span>
+                      ${p.isOnline ? '<span class="w-2 h-2 rounded-full bg-emerald-400 inline-block" title="متصل الآن"></span>' : ''}
+                    </div>
+                    <div class="text-[11px] text-slate-400">${p.title}</div>
+                  </div>
+                </div>
+                <div class="flex flex-wrap gap-1 justify-end">
+                  ${statusBadges.join('')}
+                </div>
+              </div>
+
+              <!-- Mini Stats -->
+              <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-800 text-xs">
+                <div>
+                  <span class="text-[10px] text-slate-400 block">صافي الثروة</span>
+                  <span class="numbers-font font-bold text-amber-300">${fmtMoney(p.netWorth)}</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-400 block">الكاش + البنك</span>
+                  <span class="numbers-font font-bold text-cyan-300">${fmtMoney(p.cash + p.bank)}</span>
+                </div>
+              </div>
+            </div>
+
+            <button onclick="inspectPlayer('${p.username}')" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-cyan-600 text-slate-200 hover:text-white text-xs font-bold transition flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-fingerprint text-cyan-400"></i>
+              <span>فحص الحساب وتدقيق الأصول</span>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Inspect Player Deep Modal
+    async function inspectPlayer(username) {
+      const modal = document.getElementById('inspectorModal');
+      modal.classList.remove('hidden');
+
+      // Reset tabs to economy
+      switchInspectTab('economy');
+      document.getElementById('inspectUsername').textContent = username;
+      document.getElementById('p_cash').textContent = '...';
+
+      try {
+        const res = await fetch(`${API_BASE}/player/${encodeURIComponent(username)}`, {
+          headers: { 'Authorization': `Bearer ${currentModToken}` }
+        });
+        if (!res.ok) throw new Error('فشل جلب بيانات اللاعب');
+
+        const data = await res.json();
+        inspectingPlayer = data.profile;
+        populateInspector(inspectingPlayer);
+      } catch (err) {
+        alert(err.message);
+        closeInspectorModal();
+      }
+    }
+
+    function populateInspector(p) {
+      document.getElementById('inspectUsername').textContent = p.username;
+      document.getElementById('inspectTitle').innerHTML = `<i class="fa-solid fa-briefcase text-cyan-400 ml-1"></i> ${p.title} (${p.jobId})`;
+      document.getElementById('inspectLastSeen').innerHTML = `<i class="fa-regular fa-clock text-slate-400 ml-1"></i> آخر ظهور: ${fmtDate(p.lastSeen)}`;
+
+      const onlineDot = document.getElementById('inspectOnlineDot');
+      onlineDot.className = p.isOnline ? 'absolute -bottom-1 -left-1 w-4 h-4 rounded-full border-2 border-slate-900 bg-emerald-400' : 'absolute -bottom-1 -left-1 w-4 h-4 rounded-full border-2 border-slate-900 bg-slate-600';
+
+      const badge = document.getElementById('inspectStatusBadge');
+      if (p.isBanned) {
+        badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300';
+        badge.textContent = 'محظور';
+      } else if (p.isFrozen) {
+        badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300';
+        badge.textContent = 'مجمد مؤقتاً';
+      } else {
+        badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300';
+        badge.textContent = 'طبيعي';
+      }
+
+      // Tab 1: Economy
+      document.getElementById('p_cash').textContent = fmtMoney(p.cash);
+      document.getElementById('p_bank').textContent = fmtMoney(p.bank);
+      document.getElementById('p_networth').textContent = fmtMoney(p.netWorth);
+      document.getElementById('p_gold').textContent = (p.gold || 0).toLocaleString('en-US') + ' 🪙';
+      document.getElementById('p_dirtyCash').textContent = fmtMoney(p.dirtyCash);
+      document.getElementById('p_taxes').textContent = fmtMoney(p.totalTaxesPaid);
+      document.getElementById('p_xp').textContent = (p.xp || 0).toLocaleString('en-US') + ' XP';
+
+      // Tab 2: Businesses
+      const bList = document.getElementById('p_businessesList');
+      const bKeys = Object.keys(p.businesses || {});
+      if (!bKeys.length) {
+        bList.innerHTML = `<div class="text-xs text-slate-500 col-span-full py-4">لا يمتلك اللاعب أي مشاريع أو شركات تجارية حالياً.</div>`;
+      } else {
+        bList.innerHTML = bKeys.map(k => {
+          const b = p.businesses[k];
+          return `
+            <div class="glass-card p-3 rounded-xl">
+              <div class="font-bold text-xs text-white">${k}</div>
+              <div class="text-[11px] text-cyan-400 mt-1">المستوى: ${b.level || 1}</div>
+              <div class="text-[11px] text-slate-400">الدخل: ${fmtMoney(b.dailyIncome || 0)}/دورة</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Tab 3: Stocks
+      const sList = document.getElementById('p_stocksList');
+      const sKeys = Object.keys(p.stocks || {});
+      if (!sKeys.length) {
+        sList.innerHTML = `<div class="text-xs text-slate-500 col-span-full py-4">محفظة الأسهم خالية.</div>`;
+      } else {
+        sList.innerHTML = sKeys.map(k => {
+          const s = p.stocks[k];
+          return `
+            <div class="glass-card p-3 rounded-xl flex items-center justify-between">
+              <div>
+                <div class="font-bold text-xs text-white">${k}</div>
+                <div class="text-[11px] text-slate-400">الكمية: ${(s.shares || s.amount || 0).toLocaleString('en-US')} سهم</div>
+              </div>
+              <div class="text-right">
+                <div class="text-[11px] text-cyan-300">سعر الشراء: ${fmtMoney(s.buyPrice || s.avgPrice || 0)}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Tab 4: Airport
+      const aInfo = document.getElementById('p_airportInfo');
+      if (!p.airport) {
+        aInfo.innerHTML = `<div class="text-xs text-slate-500 py-4">اللاعب لم يقم ببناء أو تفعيل المطار بعد.</div>`;
+      } else {
+        aInfo.innerHTML = `
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+            <div class="glass-card p-3 rounded-xl">
+              <span class="text-slate-400 block text-[10px]">مستوى المطار</span>
+              <span class="font-bold text-cyan-300">مستوى ${p.airport.level || 1}</span>
+            </div>
+            <div class="glass-card p-3 rounded-xl">
+              <span class="text-slate-400 block text-[10px]">عدد الطائرات في الأسطول</span>
+              <span class="font-bold text-amber-300">${Object.keys(p.airport.fleet || {}).length} طائرة</span>
+            </div>
+            <div class="glass-card p-3 rounded-xl">
+              <span class="text-slate-400 block text-[10px]">الخطوط المفتوحة</span>
+              <span class="font-bold text-emerald-300">${(p.airport.routes || []).length} وجهة</span>
+            </div>
+          </div>
+        `;
+      }
+
+      // Tab 5: Transfers
+      const tList = document.getElementById('p_transfersList');
+      if (!p.transfers || !p.transfers.length) {
+        tList.innerHTML = `<div class="text-xs text-slate-500 py-4">لا توجد سجلات تحويلات P2P مسجلة لهذا اللاعب.</div>`;
+      } else {
+        tList.innerHTML = p.transfers.map(t => {
+          const isSender = String(t.sender).toLowerCase() === p.username.toLowerCase();
+          return `
+            <div class="glass-card p-2.5 rounded-xl flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid ${isSender ? 'fa-arrow-up text-rose-400' : 'fa-arrow-down text-emerald-400'}"></i>
+                <span>${isSender ? `تحويل إلى: <strong class="text-white">${t.recipient}</strong>` : `استلام من: <strong class="text-white">${t.sender}</strong>`}</span>
+              </div>
+              <div class="text-right">
+                <span class="font-bold numbers-font ${isSender ? 'text-rose-400' : 'text-emerald-400'}">${fmtMoney(t.amount)}</span>
+                <span class="text-[10px] text-slate-500 block">${fmtDate(t.created_at)}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Tab 6: Moderation Notes
+      const mList = document.getElementById('p_moderatorNotesList');
+      if (!p.moderatorNotes || !p.moderatorNotes.length) {
+        mList.innerHTML = `<div class="text-xs text-slate-500 py-2">لا توجد سجلات أو عقوبات سابقة مسجلة على هذا الحساب.</div>`;
+      } else {
+        mList.innerHTML = p.moderatorNotes.map(n => `
+          <div class="glass-card p-3 rounded-xl border border-slate-800 text-xs">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-cyan-300">${n.action ? n.action.toUpperCase() : 'إجراء'} (${n.modName || 'مساعد'})</span>
+              <span class="text-[10px] text-slate-400">${fmtDate(n.timestamp)}</span>
+            </div>
+            <div class="text-slate-300 text-[11px]">${n.reason || 'لا يوجد بيان'}</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function switchInspectTab(tabId) {
+      ['economy', 'businesses', 'stocks', 'airport', 'transfers', 'moderation'].forEach(t => {
+        const btn = document.getElementById(`itab_${t}`);
+        const content = document.getElementById(`tabContent_${t}`);
+        if (t === tabId) {
+          btn.className = 'px-3.5 py-2 rounded-xl font-bold bg-cyan-600 text-white whitespace-nowrap transition';
+          content.classList.remove('hidden');
+        } else {
+          btn.className = 'px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition';
+          content.classList.add('hidden');
+        }
+      });
+    }
+
+    function closeInspectorModal() {
+      document.getElementById('inspectorModal').classList.add('hidden');
+      inspectingPlayer = null;
+    }
+
+    // Execute Moderator Action
+    async function executeModeratorAction() {
+      if (!inspectingPlayer) return;
+
+      const action = document.getElementById('actionTypeSelect').value;
+      const duration = document.getElementById('actionDurationSelect').value;
+      const reason = document.getElementById('actionReasonInput').value.trim();
+      const btn = document.getElementById('execActionBtn');
+
+      if (!reason || reason.length < 3) {
+        alert('يجب كتابة سبب الإجراء بوضوح (3 أحرف على الأقل).');
+        return;
+      }
+
+      if (!confirm(`هل أنت متأكد من تنفيذ إجراء [${action}] على اللاعب "${inspectingPlayer.username}"؟`)) {
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري التنفيذ...`;
+
+      try {
+        const res = await fetch(`${API_BASE}/action`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentModToken}`
+          },
+          body: JSON.stringify({
+            targetUser: inspectingPlayer.username,
+            action: action,
+            durationMinutes: Number(duration),
+            reason: reason
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alert('✅ ' + data.message);
+          document.getElementById('actionReasonInput').value = '';
+          // Re-inspect to refresh view
+          inspectPlayer(inspectingPlayer.username);
+          refreshOverview();
+          executeSearch();
+        } else {
+          alert('❌ ' + (data.message || 'فشل تنفيذ الإجراء'));
+        }
+      } catch (err) {
+        alert('خطأ في الاتصال: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `تنفيذ الإجراء`;
+      }
+    }
+
+    // Audit Logs Modal
+    async function openAuditLogsModal() {
+      const modal = document.getElementById('auditLogsModal');
+      const tbody = document.getElementById('auditLogsTableBody');
+      modal.classList.remove('hidden');
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center p-6 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-amber-400"></i> جاري تحميل السجلات...</td></tr>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/audit-logs`, {
+          headers: { 'Authorization': `Bearer ${currentModToken}` }
+        });
+        if (!res.ok) throw new Error('فشل جلب سجلات التدقيق');
+
+        const data = await res.json();
+        const logs = data.logs || [];
+
+        if (!logs.length) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center p-6 text-slate-500">لا توجد سجلات تدقيق حتى الآن.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = logs.map(l => `
+          <tr class="hover:bg-slate-900/60 transition">
+            <td class="p-2.5 text-slate-400">${fmtDate(l.timestamp)}</td>
+            <td class="p-2.5 font-bold text-cyan-300">${l.modName || 'مساعد'}</td>
+            <td class="p-2.5 font-bold text-white">${l.targetUser || '--'}</td>
+            <td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300">${l.action}</span></td>
+            <td class="p-2.5 text-slate-300">${l.reason || '--'}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center p-6 text-rose-400">${err.message}</td></tr>`;
+      }
+    }
+
+    function closeAuditLogsModal() {
+      document.getElementById('auditLogsModal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

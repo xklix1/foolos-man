@@ -88,6 +88,10 @@ app.register(require('./routes/admin-routes'), {
   prefix: '/api/admin',
   sessionManager: require('./services/session-manager')
 });
+app.register(require('./routes/moderator-routes'), {
+  prefix: '/api/mod',
+  sessionManager: require('./services/session-manager')
+});
 
 // Background offline push notification checker (runs every 60 seconds)
 const pushService = require('./services/push-service');

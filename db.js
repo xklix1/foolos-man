@@ -5908,6 +5908,19 @@ var AppDB = (() => {
     if (!message || !message.trim()) return false;
     const trimmedMsg = String(message).trim().substring(0, 200);
 
+    // Enforce Staff Moderation Mute / Freeze
+    if (typeof GameEngine !== 'undefined' && GameEngine.state && sender !== 'الإدارة') {
+      const now = Date.now();
+      if (GameEngine.state.freezeUntil && GameEngine.state.freezeUntil > now) {
+        const remMins = Math.ceil((GameEngine.state.freezeUntil - now) / 60000);
+        throw new Error(`حسابك مجمد مؤقتاً للتحقيق والمراجعة (متبقي ${remMins} دقيقة).`);
+      }
+      if (GameEngine.state.mutedUntil && GameEngine.state.mutedUntil > now) {
+        const remMins = Math.ceil((GameEngine.state.mutedUntil - now) / 60000);
+        throw new Error(`تم كتمك في الشات العام بواسطة إدارة الرقابة (متبقي ${remMins} دقيقة).`);
+      }
+    }
+
     // Enforce anti-profanity shield (except official administration broadcasts)
     if (sender !== 'الإدارة') {
       const blockedWord = ProfanityFilter.findBlockedWord(trimmedMsg);
