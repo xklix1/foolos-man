@@ -168,6 +168,11 @@
           </div>
         </div>
 
+        <button onclick="openStaffChatThreadsModal()" class="px-3.5 py-2 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 text-xs font-bold border border-emerald-800/50 flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-comments text-emerald-400"></i>
+          <span>شات التحقيقات</span>
+        </button>
+
         <button onclick="openAuditLogsModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition">
           <i class="fa-solid fa-clipboard-list text-amber-400"></i>
           <span>سجل التدقيق</span>
@@ -317,6 +322,9 @@
         <button onclick="switchInspectTab('transfers')" id="itab_transfers" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
           <i class="fa-solid fa-money-bill-transfer ml-1"></i> سجل الحوالات
         </button>
+        <button onclick="switchInspectTab('chat')" id="itab_chat" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
+          <i class="fa-solid fa-comments text-emerald-400 ml-1"></i> محادثة التحقيق
+        </button>
         <button onclick="switchInspectTab('moderation')" id="itab_moderation" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
           <i class="fa-solid fa-shield text-amber-400 ml-1"></i> الإجراءات والملاحظات
         </button>
@@ -449,6 +457,50 @@
           </div>
         </div>
 
+          <!-- Tab 7: Investigation Chat Stream -->
+          <div id="tabContent_chat" class="hidden flex flex-col h-[480px] bg-slate-900/60 rounded-xl border border-slate-800 p-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+              <div class="flex items-center gap-2">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                <span class="text-xs font-bold text-white">جلسة استجواب / محادثة مع: <span id="modChatTargetUsername" class="text-emerald-400">--</span></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="loadModeratorChatMessages(true)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 transition">
+                  <i class="fa-solid fa-rotate text-cyan-400"></i> تحديث
+                </button>
+              </div>
+            </div>
+
+            <!-- Messages stream -->
+            <div id="modChatMessagesStream" class="flex-1 overflow-y-auto space-y-2 p-2 custom-scrollbar bg-slate-950/50 rounded-lg border border-slate-800/60 mb-3">
+              <!-- Messages injected dynamically -->
+            </div>
+
+            <!-- Canned Quick Responses -->
+            <div class="flex flex-wrap gap-1.5 mb-2">
+              <button type="button" onclick="applyModChatTemplate('يرجى توضيح مصدر هذه المبالغ أو التحويلات غير المعتادة للتحقق من نزاهة الحساب.')" class="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 transition">
+                طلب توضيح المصدر
+              </button>
+              <button type="button" onclick="applyModChatTemplate('تم فحص وتدقيق نشاط حسابك والتأكد من سلامة الإجراءات. شكراً لتعاونك.')" class="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-[10px] text-emerald-400 transition">
+                تأكيد النزاهة
+              </button>
+              <button type="button" onclick="applyModChatTemplate('يرجى الالتزام بقواعد اللعبة وتجنب أي استخدام لبرامج غير مصرح بها أو حسابات وهمية.')" class="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 transition">
+                تحذير
+              </button>
+            </div>
+
+            <!-- Message Input Form -->
+            <form onsubmit="sendModeratorChatMessage(event)" class="flex gap-2">
+              <input type="text" id="modChatMessageInput" placeholder="اكتب رسالة إلى اللاعب هنا (أو اختر رداً سريعاً)..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500" required autocomplete="off" />
+              <button type="submit" id="modChatSendBtn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg transition">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span>إرسال</span>
+              </button>
+            </form>
+          </div>
+
+        </div>
+
       </div>
 
     </div>
@@ -482,6 +534,33 @@
             <!-- Rendered Logs -->
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ALL STAFF CHAT THREADS MODAL ================= -->
+  <div id="staffChatThreadsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto">
+    <div class="glass-panel w-full max-w-3xl my-auto rounded-2xl border border-emerald-500/40 p-6 glow-cyan modal-enter max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-comments text-emerald-400 text-xl"></i>
+          <div>
+            <h3 class="font-black text-lg text-white">محادثات واستفسارات التحقيق المفتوحة</h3>
+            <p class="text-xs text-slate-400">قائمة اللاعبين الذين تواصلوا مع الرقابة والتحقيقات</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="loadStaffChatThreads()" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs">
+            <i class="fa-solid fa-rotate text-cyan-400"></i>
+          </button>
+          <button onclick="closeStaffChatThreadsModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <div id="staffChatThreadsList" class="flex-1 overflow-y-auto custom-scrollbar space-y-2.5 p-1">
+        <!-- Threads injected dynamically -->
       </div>
     </div>
   </div>
@@ -968,12 +1047,23 @@
           </div>
         `).join('');
       }
+      // Tab 7: Investigation Chat Username Init
+      const chatTarget = document.getElementById('modChatTargetUsername');
+      if (chatTarget) chatTarget.innerText = p.username;
     }
 
+    let modChatPollInterval = null;
+
     function switchInspectTab(tabId) {
-      ['economy', 'businesses', 'stocks', 'airport', 'transfers', 'moderation'].forEach(t => {
+      if (modChatPollInterval) {
+        clearInterval(modChatPollInterval);
+        modChatPollInterval = null;
+      }
+
+      ['economy', 'businesses', 'stocks', 'airport', 'transfers', 'chat', 'moderation'].forEach(t => {
         const btn = document.getElementById(`itab_${t}`);
         const content = document.getElementById(`tabContent_${t}`);
+        if (!btn || !content) return;
         if (t === tabId) {
           btn.className = 'px-3.5 py-2 rounded-xl font-bold bg-cyan-600 text-white whitespace-nowrap transition';
           content.classList.remove('hidden');
@@ -982,9 +1072,20 @@
           content.classList.add('hidden');
         }
       });
+
+      if (tabId === 'chat' && inspectingPlayer) {
+        loadModeratorChatMessages();
+        modChatPollInterval = setInterval(() => {
+          if (inspectingPlayer) loadModeratorChatMessages();
+        }, 2500);
+      }
     }
 
     function closeInspectorModal() {
+      if (modChatPollInterval) {
+        clearInterval(modChatPollInterval);
+        modChatPollInterval = null;
+      }
       document.getElementById('inspectorModal').classList.add('hidden');
       inspectingPlayer = null;
     }
@@ -1228,6 +1329,187 @@
 
     function closeAuditLogsModal() {
       document.getElementById('auditLogsModal').classList.add('hidden');
+    }
+
+    // ================= STAFF INVESTIGATION CHAT LOGIC =================
+    function applyModChatTemplate(text) {
+      const input = document.getElementById('modChatMessageInput');
+      if (input) {
+        input.value = text;
+        input.focus();
+      }
+    }
+
+    async function loadModeratorChatMessages(manual = false) {
+      if (!inspectingPlayer) return;
+      const stream = document.getElementById('modChatMessagesStream');
+      if (!stream) return;
+
+      if (manual) {
+        stream.innerHTML = `<div class="text-center py-6 text-slate-500 text-xs"><i class="fa-solid fa-spinner fa-spin text-emerald-400"></i> جاري تحديث المحادثة...</div>`;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/chat/messages/${encodeURIComponent(inspectingPlayer.username)}`, {
+          headers: { 'Authorization': `Bearer ${currentModToken}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const messages = data.messages || [];
+
+        if (!messages.length) {
+          stream.innerHTML = `
+            <div class="text-center py-10 text-slate-500 text-xs">
+              <i class="fa-regular fa-comments text-2xl mb-2 text-slate-600 block"></i>
+              لا توجد رسائل سابقة في جلسة التحقيق هذه.<br>
+              يمكنك كتابة رسالة أو تنبيه للاعب في الأسفل، وستظهر له مباشرة في حسابه.
+            </div>
+          `;
+          return;
+        }
+
+        const atBottom = stream.scrollHeight - stream.scrollTop <= stream.clientHeight + 60;
+
+        stream.innerHTML = messages.map(m => {
+          const isMod = m.isMod || m.isStaff;
+          return `
+            <div class="flex flex-col ${isMod ? 'items-end' : 'items-start'} my-1">
+              <div class="flex items-center gap-1 text-[10px] text-slate-400 mb-0.5 ${isMod ? 'flex-row-reverse' : ''}">
+                <span class="font-bold ${isMod ? 'text-amber-300' : 'text-cyan-300'}">${m.senderName || (isMod ? 'المحقق' : inspectingPlayer.username)}</span>
+                <span>•</span>
+                <span>${fmtDate(m.timestamp || m.created_at)}</span>
+              </div>
+              <div class="max-w-[85%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed ${
+                isMod 
+                  ? 'bg-gradient-to-r from-emerald-950/80 to-teal-900/80 border border-emerald-500/40 text-emerald-100 rounded-tr-none shadow-md' 
+                  : 'bg-slate-800/90 border border-slate-700 text-slate-100 rounded-tl-none shadow-md'
+              }">
+                ${m.message || ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        if (manual || atBottom) {
+          stream.scrollTop = stream.scrollHeight;
+        }
+      } catch (err) {
+        console.error('Chat load error:', err);
+      }
+    }
+
+    async function sendModeratorChatMessage(e) {
+      if (e) e.preventDefault();
+      if (!inspectingPlayer) return;
+
+      const input = document.getElementById('modChatMessageInput');
+      const btn = document.getElementById('modChatSendBtn');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/chat/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentModToken}`
+          },
+          body: JSON.stringify({
+            targetUsername: inspectingPlayer.username,
+            message: msg
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          input.value = '';
+          await loadModeratorChatMessages(true);
+        } else {
+          alert('❌ ' + (data.message || 'فشل إرسال الرسالة'));
+        }
+      } catch (err) {
+        alert('خطأ في الإرسال: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>إرسال</span>`;
+      }
+    }
+
+    // Staff Chat Threads Modal
+    function openStaffChatThreadsModal() {
+      document.getElementById('staffChatThreadsModal').classList.remove('hidden');
+      loadStaffChatThreads();
+    }
+
+    function closeStaffChatThreadsModal() {
+      document.getElementById('staffChatThreadsModal').classList.add('hidden');
+    }
+
+    async function loadStaffChatThreads() {
+      const container = document.getElementById('staffChatThreadsList');
+      if (!container) return;
+      container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs"><i class="fa-solid fa-spinner fa-spin text-emerald-400"></i> جاري جلب محادثات اللاعبين...</div>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/chat/threads`, {
+          headers: { 'Authorization': `Bearer ${currentModToken}` }
+        });
+        if (!res.ok) throw new Error('فشل جلب محادثات التحقيق');
+        const data = await res.json();
+        const threads = data.threads || [];
+
+        if (!threads.length) {
+          container.innerHTML = `
+            <div class="text-center py-10 text-slate-500 text-xs">
+              <i class="fa-regular fa-comments text-2xl mb-2 text-slate-600 block"></i>
+              لا توجد أي محادثات تحقيق نشطة حالياً.
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = threads.map(th => `
+          <div class="glass-card p-3 rounded-xl border border-slate-800 hover:border-emerald-500/50 flex items-center justify-between transition gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold">
+                <i class="fa-solid fa-user-shield"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-black text-sm text-white">${th.username}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${th.isSuspended ? 'bg-rose-500/20 text-rose-300' : 'bg-slate-700 text-slate-300'}">
+                    ${th.isSuspended ? 'قيد التدقيق / مجمد' : 'نشط'}
+                  </span>
+                </div>
+                <div class="text-[11px] text-slate-400 truncate max-w-xs md:max-w-md mt-0.5">
+                  <strong class="text-slate-300">${th.lastSender || ''}:</strong> ${th.lastMessage || 'لا توجد رسائل'}
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 text-right">
+              <div class="text-[10px] text-slate-500 hidden sm:block">${fmtDate(th.lastTimestamp)}</div>
+              <button onclick="openChatWithPlayer('${th.username}')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 shadow-md transition">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>فتح المحادثة</span>
+              </button>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = `<div class="text-center py-6 text-rose-400 text-xs">${err.message}</div>`;
+      }
+    }
+
+    function openChatWithPlayer(username) {
+      closeStaffChatThreadsModal();
+      inspectPlayer(username);
+      setTimeout(() => {
+        switchInspectTab('chat');
+      }, 350);
     }
   </script>
 </body>

@@ -7821,17 +7821,78 @@
         </p>
       </div>
 
-      <!-- Action Button (Facebook Link) -->
-      <div class="space-y-2 relative z-10">
+      <!-- Action Buttons -->
+      <div class="space-y-2.5 relative z-10">
+        <!-- Direct Live Chat with Investigator Button -->
+        <button id="btn-open-player-mod-chat" onclick="openPlayerInvestigationChat()" type="button"
+          class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 hover:from-emerald-400 hover:to-cyan-500 text-slate-950 font-black text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-emerald-500/25 transition transform active:scale-95 cursor-pointer">
+          <i class="fa-solid fa-comments text-base"></i>
+          <span>محادثة فورية مباشرة مع المحقق 💬</span>
+        </button>
+
+        <!-- Facebook Link -->
         <a href="https://www.facebook.com/profile.php?id=61578368735393" target="_blank" rel="noopener noreferrer"
-          class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-blue-600/30 transition transform active:scale-95 no-underline">
-          <i class="fa-brands fa-facebook text-base"></i>
-          <span>مراسلة صفحة الفيسبوك الرسمية 💬</span>
+          class="w-full py-3 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white font-bold text-xs flex items-center justify-center gap-2 transition transform active:scale-95 no-underline">
+          <i class="fa-brands fa-facebook text-sm text-blue-400"></i>
+          <span>مراسلة صفحة الفيسبوك الرسمية</span>
         </a>
         
-        <p class="text-[11px] text-center text-slate-500 font-medium">
+        <p class="text-[11px] text-center text-slate-500 font-medium pt-1">
           🔒 هذه الشاشة مثبتة إدارياً ولن يتم إغلاقها حتى مراجعة الحساب.
         </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== INVESTIGATION LIVE CHAT MODAL (نافذة محادثة التحقيق المباشر مع اللاعب) ==================== -->
+  <div id="modal-investigation-chat-player" dir="rtl"
+    class="hidden fixed inset-0 z-[9999999] flex items-center justify-center bg-black/90 backdrop-blur-xl p-3 sm:p-4 select-none">
+    <div class="glass-panel w-full max-w-lg h-[85vh] max-h-[640px] flex flex-col rounded-3xl border-2 border-emerald-500/60 bg-gradient-to-b from-slate-900 via-slate-950 to-black text-right relative overflow-hidden shadow-2xl shadow-emerald-500/20">
+      
+      <!-- Top Ambient Glow -->
+      <div class="absolute -top-20 left-1/2 -translate-x-1/2 w-72 h-28 bg-emerald-500/20 blur-3xl rounded-full pointer-events-none"></div>
+
+      <!-- Chat Header -->
+      <div class="flex items-center justify-between p-4 border-b border-slate-800 relative z-10 shrink-0 bg-slate-900/60">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center text-lg font-black shadow-lg shadow-emerald-500/20">
+            <i class="fa-solid fa-user-shield"></i>
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-1.5">
+              <span>فريق التحقيق والأمان المباشر</span>
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            </h3>
+            <p class="text-[11px] text-slate-400">قناة محادثة خاصة لتقديم التوضيحات وفك القيد</p>
+          </div>
+        </div>
+        <button onclick="closePlayerInvestigationChat()" type="button"
+          class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Chat Messages Container -->
+      <div id="player-mod-chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 relative z-10 custom-scrollbar">
+        <!-- Messages Injected Dynamically -->
+      </div>
+
+      <!-- Chat Input Area -->
+      <div class="p-3 border-t border-slate-800 relative z-10 bg-slate-900/80 shrink-0 space-y-2">
+        <form onsubmit="sendPlayerInvestigationMessage(event)" class="flex gap-2">
+          <input type="text" id="player-mod-chat-input" placeholder="اكتب ردك أو توضيحك للمحقق هنا..." maxlength="500"
+            class="flex-1 px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400" />
+          <button type="submit" id="btn-player-mod-chat-send"
+            class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/20">
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+            <span>إرسال</span>
+          </button>
+        </form>
+        <div class="text-[10px] text-slate-500 flex items-center justify-between px-1">
+          <span>🔒 المحادثة مشفرة ومسجلة بسجل الرقابة الإدارية</span>
+          <span id="player-mod-chat-status">متصل</span>
+        </div>
       </div>
 
     </div>
@@ -8470,6 +8531,144 @@
           }
         } catch (e) {}
       }
+
+      // =========================================================================
+      // PLAYER INVESTIGATION LIVE CHAT CONTROLLER
+      // =========================================================================
+      let _playerChatPollTimer = null;
+      window.openPlayerInvestigationChat = function() {
+        const chatModal = document.getElementById('modal-investigation-chat-player');
+        if (chatModal) {
+          chatModal.classList.remove('hidden');
+          chatModal.classList.add('flex');
+          chatModal.style.setProperty('display', 'flex', 'important');
+          chatModal.style.setProperty('z-index', '99999999', 'important');
+        }
+        loadPlayerInvestigationChat();
+        if (_playerChatPollTimer) clearInterval(_playerChatPollTimer);
+        _playerChatPollTimer = setInterval(loadPlayerInvestigationChat, 1800);
+        setTimeout(() => {
+          const inp = document.getElementById('player-mod-chat-input');
+          if (inp) inp.focus();
+        }, 150);
+      };
+
+      window.closePlayerInvestigationChat = function() {
+        const chatModal = document.getElementById('modal-investigation-chat-player');
+        if (chatModal) {
+          chatModal.classList.add('hidden');
+          chatModal.classList.remove('flex');
+          chatModal.style.display = 'none';
+        }
+        if (_playerChatPollTimer) {
+          clearInterval(_playerChatPollTimer);
+          _playerChatPollTimer = null;
+        }
+      };
+
+      window.loadPlayerInvestigationChat = async function() {
+        const u = (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '';
+        const container = document.getElementById('player-mod-chat-messages');
+        if (!container || !u) return;
+
+        try {
+          const res = await fetch(SUPABASE_URL + '/api/mod/chat/player-history/' + encodeURIComponent(u), {
+            cache: 'no-store'
+          });
+          if (!res.ok) return;
+          const data = await res.json();
+          const msgs = data.messages || [];
+
+          if (msgs.length === 0) {
+            container.innerHTML = `
+              <div class="text-center py-8 space-y-2 text-slate-400">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center text-xl">
+                  <i class="fa-solid fa-comments"></i>
+                </div>
+                <p class="text-xs font-bold text-slate-300">مرحباً بك في قناة التحقيق المباشر</p>
+                <p class="text-[11px] text-slate-500 max-w-xs mx-auto">يمكنك كتابة رسالتك وتوضيح نشاط حسابك للمحقق هنا وسيقوم بالرد عليك ومراجعة حسابك فوراً.</p>
+              </div>
+            `;
+            return;
+          }
+
+          const html = msgs.map(m => {
+            const p = m.payload || {};
+            const isMod = Boolean(p.isMod || m.recipient === u || m.sender?.startsWith('MOD-') || m.sender?.includes('المحقق') || m.sender?.includes('إدارة'));
+            const text = p.message || m.message || '';
+            const senderName = p.senderName || m.sender || (isMod ? 'المحقق' : u);
+            const ts = Number(m.created_at || p.timestamp || Date.now());
+            const timeStr = new Date(ts).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+            if (isMod) {
+              return `
+                <div class="flex items-start gap-2.5 max-w-[85%]">
+                  <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-xs shrink-0 font-bold">
+                    <i class="fa-solid fa-shield-halved"></i>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold">
+                      <span>${senderName}</span>
+                      <span class="text-[9px] text-slate-500">${timeStr}</span>
+                    </div>
+                    <div class="p-3 rounded-2xl rounded-tr-none bg-emerald-950/70 border border-emerald-500/40 text-xs text-white leading-relaxed">
+                      ${text}
+                    </div>
+                  </div>
+                </div>
+              `;
+            } else {
+              return `
+                <div class="flex items-start gap-2.5 max-w-[85%] mr-auto justify-end">
+                  <div class="space-y-1 text-left">
+                    <div class="flex items-center justify-end gap-1.5 text-[10px] text-slate-400">
+                      <span class="text-[9px] text-slate-500">${timeStr}</span>
+                      <span class="font-bold text-slate-300">أنت</span>
+                    </div>
+                    <div class="p-3 rounded-2xl rounded-tl-none bg-cyan-600 text-xs text-white leading-relaxed text-right">
+                      ${text}
+                    </div>
+                  </div>
+                </div>
+              `;
+            }
+          }).join('');
+
+          const isNearBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 80;
+          container.innerHTML = html;
+          if (isNearBottom) {
+            container.scrollTop = container.scrollHeight;
+          }
+        } catch (e) {}
+      };
+
+      window.sendPlayerInvestigationMessage = async function(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        const inp = document.getElementById('player-mod-chat-input');
+        const btn = document.getElementById('btn-player-mod-chat-send');
+        const text = inp ? inp.value.trim() : '';
+        const u = (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '';
+        if (!text || !u) return;
+
+        inp.value = '';
+        if (btn) btn.disabled = true;
+
+        try {
+          const res = await fetch(SUPABASE_URL + '/api/mod/chat/player-send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: u, message: text })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            loadPlayerInvestigationChat();
+          }
+        } catch (err) {
+        } finally {
+          if (btn) btn.disabled = false;
+          if (inp) inp.focus();
+        }
+      };
 
       checkForceReloadDirectly();
       checkSuspicionDirectly();

@@ -837,6 +837,228 @@ async function moderatorRoutes(fastify, options) {
       return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
     }
   });
+
+  // =========================================================================
+  // INVESTIGATION & STAFF-PLAYER LIVE CHAT SYSTEM (نظام محادثات التحقيق المباشر)
+  // =========================================================================
+
+  /**
+   * GET /api/mod/chat/threads
+   * Lists all players who have active investigation chats
+   */
+  fastify.get('/chat/threads', {
+    preHandler: [requireModAuth]
+  }, async (request, reply) => {
+    try {
+      const sKey = serviceKey();
+      const qUrl = `${config.SUPABASE_URL}/rest/v1/mailbox?type=eq.investigation_chat&select=*&order=created_at.desc&limit=100`;
+      const res = await fetch(qUrl, {
+        headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch chat threads');
+      const rows = await res.json();
+      
+      const threadsMap = new Map();
+      (Array.isArray(rows) ? rows : []).forEach(r => {
+        const player = (r.recipient === 'MOD_STAFF_CHANNEL' || r.recipient?.startsWith('MOD-') || r.recipient?.startsWith('المحقق'))
+          ? r.sender
+          : r.recipient;
+        if (!player || player === 'MOD_STAFF_CHANNEL') return;
+
+        const pKey = player.toLowerCase();
+        if (!threadsMap.has(pKey)) {
+          threadsMap.set(pKey, {
+            username: player,
+            lastMessage: (r.payload && r.payload.message) || '',
+            lastSender: r.sender,
+            timestamp: r.created_at || (r.payload && r.payload.timestamp) || Date.now(),
+            unread: r.status === 'unread' && r.recipient === 'MOD_STAFF_CHANNEL'
+          });
+        }
+      });
+
+      return reply.send({
+        success: true,
+        threads: Array.from(threadsMap.values())
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Chat Threads Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * GET /api/mod/chat/messages/:username
+   * Retrieves full conversation between staff and a player
+   */
+  fastify.get('/chat/messages/:username', {
+    preHandler: [requireModAuth]
+  }, async (request, reply) => {
+    const { username } = request.params || {};
+    if (!username) return reply.status(400).send({ error: 'Username is required' });
+
+    try {
+      const sKey = serviceKey();
+      const cleanU = encodeURIComponent(username.trim());
+      const qUrl = `${config.SUPABASE_URL}/rest/v1/mailbox?type=eq.investigation_chat&or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.asc&limit=150`;
+      const res = await fetch(qUrl, {
+        headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch messages');
+      const rows = await res.json();
+
+      return reply.send({
+        success: true,
+        username,
+        messages: Array.isArray(rows) ? rows : []
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Chat Messages Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * POST /api/mod/chat/send
+   * Moderator sends a message to the player
+   */
+  fastify.post('/chat/send', {
+    preHandler: [requireModAuth]
+  }, async (request, reply) => {
+    const { targetUser, message } = request.body || {};
+    if (!targetUser || !message || !message.trim()) {
+      return reply.status(400).send({ error: 'targetUser and message are required' });
+    }
+
+    try {
+      const sKey = serviceKey();
+      const ts = Date.now();
+      const cleanMsg = message.trim().substring(0, 500);
+
+      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+        method: 'POST',
+        headers: {
+          'apikey': sKey,
+          'Authorization': `Bearer ${sKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          sender: request.modSession.name,
+          recipient: targetUser.trim(),
+          type: 'investigation_chat',
+          payload: {
+            message: cleanMsg,
+            senderName: request.modSession.name,
+            isMod: true,
+            timestamp: ts
+          },
+          status: 'unread',
+          created_at: ts
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to send message');
+      const data = await res.json();
+
+      return reply.send({
+        success: true,
+        message: 'تم إرسال الرسالة للاعب بنجاح',
+        chatMessage: Array.isArray(data) ? data[0] : data
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Send Chat Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * POST /api/mod/chat/player-send
+   * Player sends message to the investigation channel
+   */
+  fastify.post('/chat/player-send', {
+    config: {
+      rateLimit: {
+        max: 20,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
+    const { username, message } = request.body || {};
+    if (!username || !message || !message.trim()) {
+      return reply.status(400).send({ error: 'username and message are required' });
+    }
+
+    try {
+      const sKey = serviceKey();
+      const ts = Date.now();
+      const cleanMsg = message.trim().substring(0, 500);
+
+      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+        method: 'POST',
+        headers: {
+          'apikey': sKey,
+          'Authorization': `Bearer ${sKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          sender: username.trim(),
+          recipient: 'MOD_STAFF_CHANNEL',
+          type: 'investigation_chat',
+          payload: {
+            message: cleanMsg,
+            senderName: username.trim(),
+            isMod: false,
+            timestamp: ts
+          },
+          status: 'unread',
+          created_at: ts
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to submit message');
+      const data = await res.json();
+
+      return reply.send({
+        success: true,
+        message: 'تم إرسال ردك للمحقق بنجاح',
+        chatMessage: Array.isArray(data) ? data[0] : data
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Player Send Chat Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * GET /api/mod/chat/player-history/:username
+   * Player retrieves their own investigation messages
+   */
+  fastify.get('/chat/player-history/:username', async (request, reply) => {
+    const { username } = request.params || {};
+    if (!username) return reply.status(400).send({ error: 'Username is required' });
+
+    try {
+      const sKey = serviceKey();
+      const cleanU = encodeURIComponent(username.trim());
+      const qUrl = `${config.SUPABASE_URL}/rest/v1/mailbox?type=eq.investigation_chat&or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.asc&limit=100`;
+      const res = await fetch(qUrl, {
+        headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch player messages');
+      const rows = await res.json();
+
+      return reply.send({
+        success: true,
+        username,
+        messages: Array.isArray(rows) ? rows : []
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Player Chat History Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
 }
 
 module.exports = moderatorRoutes;
