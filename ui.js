@@ -9041,95 +9041,47 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (chatDrawer) chatDrawer.classList.add('hidden');
     if (chatTrigger) chatTrigger.classList.add('hidden');
 
-    let freezeOverlay = document.getElementById('freeze-overlay');
-    if (!freezeOverlay) {
-      freezeOverlay = document.createElement('div');
-      freezeOverlay.id = 'freeze-overlay';
-      freezeOverlay.className = 'fixed inset-0 z-[999999999] flex items-center justify-center bg-slate-950/96 backdrop-blur-2xl p-4 select-none pointer-events-auto';
-      freezeOverlay.innerHTML = `
-        <div class="relative w-full max-w-md bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-500/80 rounded-3xl p-7 text-center shadow-2xl shadow-amber-500/30 animate-scale-in">
-          <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-amber-600 to-rose-600 flex items-center justify-center text-white text-3xl shadow-xl shadow-amber-500/30 border border-amber-400/40">
-            <i class="fa-solid fa-lock animate-pulse"></i>
-          </div>
-          
-          <div class="inline-block px-3.5 py-1 bg-amber-500/20 text-amber-300 text-xs font-black rounded-full border border-amber-500/40 mb-3 uppercase tracking-wider">
-            🔒 الحساب معلق ومجمد مؤقتاً
-          </div>
-
-          <h3 class="text-xl font-black text-white mb-1">حساب قيد المراجعة والتحقيق</h3>
-          <p class="text-xs text-slate-400 mb-4">تم إيقاف صلاحيات الحساب مؤقتاً بواسطة غرفة الرقابة لحماية النزاهة</p>
-
-          <div class="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 text-right text-xs space-y-2 mb-4">
-            <div class="text-slate-300 leading-relaxed">
-              <strong class="text-amber-400">بيان السبب:</strong> <span id="freeze-overlay-reason" class="text-slate-200">${freezeReason || 'اشتباه أو مراجعة أمنية دورية.'}</span>
-            </div>
-            <div class="text-slate-400 text-[11px] pt-1 border-t border-slate-800/80 flex items-center justify-between">
-              <span><strong>المسؤول:</strong> <span id="freeze-overlay-by" class="text-cyan-300">${frozenBy || 'إدارة الرقابة والأمان'}</span></span>
-              <span class="text-amber-400/80"><i class="fa-solid fa-shield-halved ml-1"></i> Staff Verified</span>
-            </div>
-          </div>
-
-          <div class="p-3.5 rounded-xl bg-amber-950/40 border border-amber-500/40 text-center mb-5 shadow-inner">
-            <div class="text-[11px] font-bold text-amber-300 mb-1">الوقت المتبقي لفك التجميد التلقائي:</div>
-            <div id="freeze-overlay-timer" class="text-2xl font-black numbers-font text-amber-400 tracking-wider">00:00:00</div>
-          </div>
-
-          <button onclick="window.location.reload()" class="w-full py-3.5 px-4 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-slate-200 hover:text-white text-xs font-bold rounded-xl border border-slate-700 transition flex items-center justify-center gap-2 cursor-pointer shadow-lg">
-            <i class="fa-solid fa-arrows-rotate text-cyan-400"></i>
-            <span>إعادة التحقق من حالة الحساب الآن</span>
-          </button>
-        </div>
-      `;
-      document.body.appendChild(freezeOverlay);
-
-      // Anti-escape event listeners
-      freezeOverlay.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
-
-      // Anti-tamper Observer: Re-attach and force show if removed or hidden
-      try {
-        freezeObserver = new MutationObserver(() => {
-          if (!isFreezeActive) return;
-          if (freezeOverlay.classList.contains('hidden')) {
-            freezeOverlay.classList.remove('hidden');
-          }
-          if (!document.body.contains(freezeOverlay)) {
-            document.body.appendChild(freezeOverlay);
-          }
-        });
-        freezeObserver.observe(freezeOverlay, { attributes: true, childList: true });
-        freezeObserver.observe(document.body, { childList: true });
-      } catch (_) {}
-    } else {
-      freezeOverlay.classList.remove('hidden');
-      freezeOverlay.classList.add('flex');
-      const rEl = document.getElementById('freeze-overlay-reason');
-      if (rEl) rEl.textContent = freezeReason || 'اشتباه أو مراجعة أمنية دورية.';
-      const byEl = document.getElementById('freeze-overlay-by');
-      if (byEl) byEl.textContent = frozenBy || 'إدارة الرقابة والأمان';
+    // Remove old duplicate freezeOverlay if it exists
+    const oldOverlay = document.getElementById('freeze-overlay');
+    if (oldOverlay) {
+      try { oldOverlay.remove(); } catch (e) {}
     }
 
-    // Countdown updater
-    if (freezeCountdownTimer) clearInterval(freezeCountdownTimer);
-    const updateCountdown = () => {
-      const remainingSec = Math.max(0, Math.floor((untilMs - Date.now()) / 1000));
-      if (remainingSec <= 0) {
-        clearInterval(freezeCountdownTimer);
-        clearFrozenUser();
-        window.location.reload();
-        return;
+    // Update details in modal-account-under-suspicion
+    const modal = document.getElementById('modal-account-under-suspicion');
+    if (modal) {
+      const rEl = document.getElementById('suspicion-modal-reason') || modal.querySelector('p.font-bold');
+      if (rEl) rEl.textContent = freezeReason || 'اشتباه أو مراجعة أمنية دورية.';
+      const byEl = document.getElementById('suspicion-modal-by');
+      if (byEl) byEl.textContent = frozenBy || 'غرفة الرقابة والأمان';
+      
+      const timerBox = document.getElementById('suspicion-modal-timer-box');
+      const timerEl = document.getElementById('suspicion-modal-timer');
+
+      if (untilMs > now && timerBox && timerEl) {
+        timerBox.classList.remove('hidden');
+        if (freezeCountdownTimer) clearInterval(freezeCountdownTimer);
+        const updateCountdown = () => {
+          const remainingSec = Math.max(0, Math.floor((untilMs - Date.now()) / 1000));
+          if (remainingSec <= 0) {
+            clearInterval(freezeCountdownTimer);
+            clearFrozenUser();
+            window.location.reload();
+            return;
+          }
+          const hrs = Math.floor(remainingSec / 3600);
+          const mins = Math.floor((remainingSec % 3600) / 60);
+          const secs = remainingSec % 60;
+          timerEl.textContent = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        };
+        updateCountdown();
+        freezeCountdownTimer = setInterval(updateCountdown, 1000);
+      } else if (timerBox) {
+        timerBox.classList.add('hidden');
       }
-      const hrs = Math.floor(remainingSec / 3600);
-      const mins = Math.floor((remainingSec % 3600) / 60);
-      const secs = remainingSec % 60;
-      const timerEl = document.getElementById('freeze-overlay-timer');
-      if (timerEl) {
-        timerEl.textContent = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-      }
-    };
-    updateCountdown();
-    freezeCountdownTimer = setInterval(updateCountdown, 1000);
+    }
+
+    enforceSuspicionStatus(true, freezeReason);
 
     // Background unfreeze live detector (checks every 5s if unfreezed by staff early)
     if (freezePollTimer) clearInterval(freezePollTimer);
@@ -9140,13 +9092,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         if (!u) return;
         if (typeof AppDB !== 'undefined' && typeof AppDB.getPlayerState === 'function') {
           const fresh = await AppDB.getPlayerState(u);
-          if (fresh && (!fresh.freezeUntil || fresh.freezeUntil <= Date.now())) {
+          if (fresh && (!fresh.freezeUntil || fresh.freezeUntil <= Date.now()) && !fresh.underSuspicion) {
             clearFrozenUser();
             window.location.reload();
           }
         }
       } catch (_) {}
-    }, 5000);
+    }, 4000);
   }
 
   // Intercept all keyboard shortcuts while freeze is active
@@ -9159,6 +9111,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
   function clearFrozenUser() {
     isFreezeActive = false;
+    if (typeof window !== 'undefined') window._isUnderSuspicionLocked = false;
     if (freezeCountdownTimer) {
       clearInterval(freezeCountdownTimer);
       freezeCountdownTimer = null;
@@ -9173,10 +9126,9 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
     const freezeOverlay = document.getElementById('freeze-overlay');
     if (freezeOverlay) {
-      freezeOverlay.classList.add('hidden');
-      freezeOverlay.classList.remove('flex');
-      freezeOverlay.remove();
+      try { freezeOverlay.remove(); } catch (e) {}
     }
+    enforceSuspicionStatus(false);
   }
 
   window.handleFrozenUser = handleFrozenUser;
