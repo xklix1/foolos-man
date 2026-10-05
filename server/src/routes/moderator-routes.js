@@ -10,13 +10,13 @@ const config = require('../config/env');
 const DEFAULT_MODERATOR_KEYS = {
   'MOD-ALPHA-9821-X1': {
     id: 'mod_assistant_1',
-    name: 'المساعد 1 (Alpha)',
+    name: 'المحقق 1 (Alpha)',
     role: 'moderator',
     active: true
   },
   'MOD-BRAVO-4412-X2': {
     id: 'mod_assistant_2',
-    name: 'المساعد 2 (Bravo)',
+    name: 'المحقق 2 (Bravo)',
     role: 'moderator',
     active: true
   }
@@ -132,7 +132,7 @@ async function moderatorRoutes(fastify, options) {
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader.trim();
 
     if (!token) {
-      return reply.status(401).send({ error: 'Unauthorized', message: 'يرجى تسجيل الدخول بمفتاح المساعد أولاً.' });
+      return reply.status(401).send({ error: 'Unauthorized', message: 'يرجى تسجيل الدخول بمفتاح المحقق أولاً.' });
     }
 
     // Check if token matches active session
@@ -154,7 +154,7 @@ async function moderatorRoutes(fastify, options) {
       return;
     }
 
-    return reply.status(401).send({ error: 'Unauthorized', message: 'جلسة المساعد غير صالحة أو منتهية الصلاحية.' });
+    return reply.status(401).send({ error: 'Unauthorized', message: 'جلسة المحقق غير صالحة أو منتهية الصلاحية.' });
   };
 
   /**
@@ -166,7 +166,7 @@ async function moderatorRoutes(fastify, options) {
   }, async (request, reply) => {
     const { modKey } = request.body || {};
     if (!modKey || typeof modKey !== 'string') {
-      return reply.status(400).send({ error: 'Bad Request', message: 'يرجى إدخال مفتاح المساعد (Moderator Key).' });
+      return reply.status(400).send({ error: 'Bad Request', message: 'يرجى إدخال مفتاح المحقق (Moderator Key).' });
     }
 
     const trimmedKey = modKey.trim();
@@ -194,8 +194,8 @@ async function moderatorRoutes(fastify, options) {
     if (matched && matched.active !== false) {
       const token = 'mod_sess_' + crypto.randomBytes(24).toString('hex');
       const modInfo = {
-        id: matched.id || 'assistant',
-        name: matched.name || 'مساعد معتمد',
+        id: matched.id || 'investigator',
+        name: matched.name || 'محقق معتمد',
         role: matched.role || 'moderator',
         isSuperAdmin: false,
         loginAt: Date.now(),
@@ -204,14 +204,14 @@ async function moderatorRoutes(fastify, options) {
       activeModSessions.set(token, modInfo);
 
       // Log login event
-      logStaffAudit(modInfo, 'SYSTEM', 'staff_login', 'تسجيل دخول إلى لوحة الرقابة والتفتيش');
+      logStaffAudit(modInfo, 'SYSTEM', 'staff_login', 'تسجيل دخول إلى لوحة الرقابة والتحقيق');
 
       return reply.send({ success: true, token, modInfo });
     }
 
     return reply.status(401).send({
       error: 'Unauthorized',
-      message: 'مفتاح المساعد غير صحيح أو تم إيقافه.'
+      message: 'مفتاح المحقق غير صحيح أو تم إيقافه.'
     });
   });
 
