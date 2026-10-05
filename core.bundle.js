@@ -24775,7 +24775,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   window.handleBannedUser = handleBannedUser;
 
   // ==================== TEMPORARY STAFF MODERATION FREEZE ====================
+  // ==================== TEMPORARY STAFF MODERATION FREEZE (INESCAPABLE MODAL) ====================
   let freezeCountdownTimer = null;
+  let freezePollTimer = null;
+  let isFreezeActive = false;
+  let freezeObserver = null;
 
   function handleFrozenUser(freezeUntil, freezeReason, frozenBy) {
     if (typeof GameEngine !== 'undefined' && GameEngine.state && Boolean(GameEngine.state.isAdmin)) {
@@ -24790,6 +24794,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       return;
     }
 
+    isFreezeActive = true;
     console.warn('[Moderation] Access suspended: Account is temporarily frozen by Staff.');
 
     // Halt tick loop
@@ -24818,41 +24823,62 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (!freezeOverlay) {
       freezeOverlay = document.createElement('div');
       freezeOverlay.id = 'freeze-overlay';
-      freezeOverlay.className = 'fixed inset-0 z-[999999999] flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl p-4 select-none pointer-events-auto';
+      freezeOverlay.className = 'fixed inset-0 z-[999999999] flex items-center justify-center bg-slate-950/96 backdrop-blur-2xl p-4 select-none pointer-events-auto';
       freezeOverlay.innerHTML = `
-        <div class="relative w-full max-w-md bg-slate-900 border-2 border-amber-500/70 rounded-3xl p-7 text-center shadow-2xl shadow-amber-500/20 animate-scale-in">
-          <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-amber-600 to-rose-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-amber-500/30">
+        <div class="relative w-full max-w-md bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-500/80 rounded-3xl p-7 text-center shadow-2xl shadow-amber-500/30 animate-scale-in">
+          <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-amber-600 to-rose-600 flex items-center justify-center text-white text-3xl shadow-xl shadow-amber-500/30 border border-amber-400/40">
             <i class="fa-solid fa-lock animate-pulse"></i>
           </div>
           
-          <div class="inline-block px-3 py-0.5 bg-amber-500/20 text-amber-300 text-xs font-black rounded-full border border-amber-500/40 mb-3">
-            🔒 تجميد مؤقت للحساب
+          <div class="inline-block px-3.5 py-1 bg-amber-500/20 text-amber-300 text-xs font-black rounded-full border border-amber-500/40 mb-3 uppercase tracking-wider">
+            🔒 الحساب معلق ومجمد مؤقتاً
           </div>
 
-          <h3 class="text-xl font-black text-white mb-1">الحساب قيد المراجعة والتحقيق</h3>
-          <p class="text-xs text-slate-400 mb-4">تم تعليق الوصول للحساب مؤقتاً بواسطة فريق الرقابة</p>
+          <h3 class="text-xl font-black text-white mb-1">حساب قيد المراجعة والتحقيق</h3>
+          <p class="text-xs text-slate-400 mb-4">تم إيقاف صلاحيات الحساب مؤقتاً بواسطة غرفة الرقابة لحماية النزاهة</p>
 
-          <div class="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-right text-xs space-y-2 mb-4">
-            <div class="text-slate-300">
-              <strong class="text-amber-400">السبب:</strong> <span id="freeze-overlay-reason">${freezeReason || 'اشتباه أو مراجعة أمنية دورية.'}</span>
+          <div class="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 text-right text-xs space-y-2 mb-4">
+            <div class="text-slate-300 leading-relaxed">
+              <strong class="text-amber-400">بيان السبب:</strong> <span id="freeze-overlay-reason" class="text-slate-200">${freezeReason || 'اشتباه أو مراجعة أمنية دورية.'}</span>
             </div>
-            <div class="text-slate-400 text-[11px]">
-              <strong>بواسطة:</strong> <span id="freeze-overlay-by">${frozenBy || 'إدارة الرقابة والأمان'}</span>
+            <div class="text-slate-400 text-[11px] pt-1 border-t border-slate-800/80 flex items-center justify-between">
+              <span><strong>المسؤول:</strong> <span id="freeze-overlay-by" class="text-cyan-300">${frozenBy || 'إدارة الرقابة والأمان'}</span></span>
+              <span class="text-amber-400/80"><i class="fa-solid fa-shield-halved ml-1"></i> Staff Verified</span>
             </div>
           </div>
 
-          <div class="p-3 rounded-xl bg-amber-950/30 border border-amber-800/40 text-center mb-5">
-            <div class="text-[11px] text-amber-300 mb-1">الوقت المتبقي لفك التجميد التلقائي:</div>
-            <div id="freeze-overlay-timer" class="text-lg font-black numbers-font text-amber-400">00:00:00</div>
+          <div class="p-3.5 rounded-xl bg-amber-950/40 border border-amber-500/40 text-center mb-5 shadow-inner">
+            <div class="text-[11px] font-bold text-amber-300 mb-1">الوقت المتبقي لفك التجميد التلقائي:</div>
+            <div id="freeze-overlay-timer" class="text-2xl font-black numbers-font text-amber-400 tracking-wider">00:00:00</div>
           </div>
 
-          <button onclick="window.location.reload()" class="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold rounded-xl border border-slate-700 transition flex items-center justify-center gap-2 cursor-pointer">
-            <i class="fa-solid fa-arrows-rotate"></i>
-            <span>إعادة التحقق من حالة الحساب</span>
+          <button onclick="window.location.reload()" class="w-full py-3.5 px-4 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-slate-200 hover:text-white text-xs font-bold rounded-xl border border-slate-700 transition flex items-center justify-center gap-2 cursor-pointer shadow-lg">
+            <i class="fa-solid fa-arrows-rotate text-cyan-400"></i>
+            <span>إعادة التحقق من حالة الحساب الآن</span>
           </button>
         </div>
       `;
       document.body.appendChild(freezeOverlay);
+
+      // Anti-escape event listeners
+      freezeOverlay.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
+      // Anti-tamper Observer: Re-attach and force show if removed or hidden
+      try {
+        freezeObserver = new MutationObserver(() => {
+          if (!isFreezeActive) return;
+          if (freezeOverlay.classList.contains('hidden')) {
+            freezeOverlay.classList.remove('hidden');
+          }
+          if (!document.body.contains(freezeOverlay)) {
+            document.body.appendChild(freezeOverlay);
+          }
+        });
+        freezeObserver.observe(freezeOverlay, { attributes: true, childList: true });
+        freezeObserver.observe(document.body, { childList: true });
+      } catch (_) {}
     } else {
       freezeOverlay.classList.remove('hidden');
       freezeOverlay.classList.add('flex');
@@ -24882,12 +24908,46 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     };
     updateCountdown();
     freezeCountdownTimer = setInterval(updateCountdown, 1000);
+
+    // Background unfreeze live detector (checks every 5s if unfreezed by staff early)
+    if (freezePollTimer) clearInterval(freezePollTimer);
+    freezePollTimer = setInterval(async () => {
+      if (!isFreezeActive) return;
+      try {
+        const u = typeof GameEngine !== 'undefined' && GameEngine.activeUsername ? GameEngine.activeUsername : (localStorage.getItem('rasalmal_active_session_user') || '');
+        if (!u) return;
+        if (typeof AppDB !== 'undefined' && typeof AppDB.getPlayerState === 'function') {
+          const fresh = await AppDB.getPlayerState(u);
+          if (fresh && (!fresh.freezeUntil || fresh.freezeUntil <= Date.now())) {
+            clearFrozenUser();
+            window.location.reload();
+          }
+        }
+      } catch (_) {}
+    }, 5000);
   }
 
+  // Intercept all keyboard shortcuts while freeze is active
+  window.addEventListener('keydown', (e) => {
+    if (!isFreezeActive) return;
+    if (e.key === 'F5' || (e.ctrlKey && e.key.toLowerCase() === 'r')) return; // Allow page reload
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
+
   function clearFrozenUser() {
+    isFreezeActive = false;
     if (freezeCountdownTimer) {
       clearInterval(freezeCountdownTimer);
       freezeCountdownTimer = null;
+    }
+    if (freezePollTimer) {
+      clearInterval(freezePollTimer);
+      freezePollTimer = null;
+    }
+    if (freezeObserver) {
+      try { freezeObserver.disconnect(); } catch (_) {}
+      freezeObserver = null;
     }
     const freezeOverlay = document.getElementById('freeze-overlay');
     if (freezeOverlay) {
