@@ -1832,8 +1832,15 @@ var AppDB = (() => {
           }
         }
 
-        // 4.95 Farm Empire Guard: NEVER downgrade or lose farm unlock, plots, or upgrades
-        if (local && local.farm && typeof local.farm === 'object' && local.farm.unlocked) {
+        // 4.95 Farm Empire Guard: NEVER downgrade or lose farm unlock, plots, or upgrades (unless administratively reset)
+        const isFarmReset = Boolean(
+          stateObj.farm && (
+            stateObj.farm.adminReset === true ||
+            (stateObj.farm.resetTimestamp && stateObj.farm.resetTimestamp > (local?.farm?.lastResetAck || 0))
+          )
+        );
+
+        if (!isFarmReset && local && local.farm && typeof local.farm === 'object' && local.farm.unlocked) {
           if (!stateObj.farm || !stateObj.farm.unlocked) {
             console.log(`[Sync] Preserving unlocked farm from local state safeguard for ${u}`);
             stateObj.farm = JSON.parse(JSON.stringify(local.farm));
@@ -1851,6 +1858,14 @@ var AppDB = (() => {
               shouldSyncCloud = true;
             }
           }
+        } else if (isFarmReset && local && local.farm) {
+          // Farm was administratively reset: overwrite local storage farm with the cloud zeroed farm
+          local.farm = JSON.parse(JSON.stringify(stateObj.farm));
+          try {
+            if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+              AppDB.setEncryptedLocalState(`rasalmal_state_${u}`, local);
+            }
+          } catch (_) {}
         }
 
         // 4.96 Industry Empire Guard: NEVER downgrade or lose industrial sector unlocks or factory stage upgrades

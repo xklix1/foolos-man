@@ -1835,8 +1835,15 @@ var AppDB = (() => {
           }
         }
 
-        // 4.95 Farm Empire Guard: NEVER downgrade or lose farm unlock, plots, or upgrades
-        if (local && local.farm && typeof local.farm === 'object' && local.farm.unlocked) {
+        // 4.95 Farm Empire Guard: NEVER downgrade or lose farm unlock, plots, or upgrades (unless administratively reset)
+        const isFarmReset = Boolean(
+          stateObj.farm && (
+            stateObj.farm.adminReset === true ||
+            (stateObj.farm.resetTimestamp && stateObj.farm.resetTimestamp > (local?.farm?.lastResetAck || 0))
+          )
+        );
+
+        if (!isFarmReset && local && local.farm && typeof local.farm === 'object' && local.farm.unlocked) {
           if (!stateObj.farm || !stateObj.farm.unlocked) {
             console.log(`[Sync] Preserving unlocked farm from local state safeguard for ${u}`);
             stateObj.farm = JSON.parse(JSON.stringify(local.farm));
@@ -1854,6 +1861,14 @@ var AppDB = (() => {
               shouldSyncCloud = true;
             }
           }
+        } else if (isFarmReset && local && local.farm) {
+          // Farm was administratively reset: overwrite local storage farm with the cloud zeroed farm
+          local.farm = JSON.parse(JSON.stringify(stateObj.farm));
+          try {
+            if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+              AppDB.setEncryptedLocalState(`rasalmal_state_${u}`, local);
+            }
+          } catch (_) {}
         }
 
         // 4.96 Industry Empire Guard: NEVER downgrade or lose industrial sector unlocks or factory stage upgrades
@@ -24362,6 +24377,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                 if (st.itemDurations) GameEngine.state.itemDurations = JSON.parse(JSON.stringify(st.itemDurations));
                 if (st.tradeCompany) GameEngine.state.tradeCompany = JSON.parse(JSON.stringify(st.tradeCompany));
                 if (st.industry) GameEngine.state.industry = JSON.parse(JSON.stringify(st.industry));
+                if (st.farm) {
+                  GameEngine.state.farm = JSON.parse(JSON.stringify(st.farm));
+                  if (typeof renderFarm === 'function') renderFarm();
+                }
                 if (st.smugglingFleet) GameEngine.state.smugglingFleet = JSON.parse(JSON.stringify(st.smugglingFleet));
                 if (st.underworldRep !== undefined) GameEngine.state.underworldRep = st.underworldRep;
                 if (st.heatLevel !== undefined) GameEngine.state.heatLevel = st.heatLevel;
@@ -24402,6 +24421,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                 if (typeof renderAssets === 'function') renderAssets();
                 if (typeof renderInventory === 'function') renderInventory();
                 if (typeof renderCars === 'function') renderCars();
+                if (typeof renderFarm === 'function') renderFarm();
                 if (typeof renderHeader === 'function') renderHeader();
               } catch (_) {}
             }
