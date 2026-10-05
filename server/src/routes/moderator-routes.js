@@ -1190,6 +1190,73 @@ async function moderatorRoutes(fastify, options) {
           break;
         }
 
+        case 'ban': {
+          pState.isBanned = true;
+          pState.banReason = cleanReason;
+          pState.bannedBy = request.modSession.name;
+          pState.bannedAt = ts;
+          actionDesc = `حظر الحساب نهائياً (${cleanReason})`;
+
+          pState.moderatorNotes.unshift({
+            timestamp: ts,
+            action: 'ban',
+            reason: cleanReason,
+            modName: request.modSession.name
+          });
+
+          // Send official mailbox notification
+          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+            method: 'POST',
+            headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({
+              sender: 'إدارة الرقابة والأمان',
+              recipient: pDoc.username,
+              type: 'system_warning',
+              payload: {
+                title: '⛔ تم حظر حسابك نهائياً',
+                message: `تم إصدار قرار حظر نهائي لحسابك بسبب مخالفة القواعد.\nالسبب: ${cleanReason}`,
+                timestamp: ts
+              },
+              status: 'unread',
+              created_at: ts
+            })
+          });
+          break;
+        }
+
+        case 'unban': {
+          pState.isBanned = false;
+          pState.banReason = '';
+          pState.bannedBy = '';
+          actionDesc = `فك الحظر عن الحساب (${cleanReason})`;
+
+          pState.moderatorNotes.unshift({
+            timestamp: ts,
+            action: 'unban',
+            reason: cleanReason,
+            modName: request.modSession.name
+          });
+
+          // Send official mailbox notification
+          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+            method: 'POST',
+            headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({
+              sender: 'إدارة الرقابة والأمان',
+              recipient: pDoc.username,
+              type: 'system_announcement',
+              payload: {
+                title: '🟢 تم فك الحظر عن حسابك',
+                message: `تمت مراجعة حسابك ورفع قرار الحظر بنجاح.\nالبيان: ${cleanReason}`,
+                timestamp: ts
+              },
+              status: 'unread',
+              created_at: ts
+            })
+          });
+          break;
+        }
+
         default:
           return reply.status(400).send({ error: 'Bad Request', message: `إجراء غير مدعوم: ${action}` });
       }
@@ -1201,6 +1268,17 @@ async function moderatorRoutes(fastify, options) {
 
       // 2. Persist to Database
       const patchUrl = `${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(target)}`;
+      const patchBody = {
+        jail_timer: updatedJailTimer,
+        state: pState,
+        admin_modified_timestamp: ts
+      };
+      if (action === 'ban') {
+        patchBody.is_banned = true;
+      } else if (action === 'unban') {
+        patchBody.is_banned = false;
+      }
+
       await fetch(patchUrl, {
         method: 'PATCH',
         headers: {
@@ -1209,11 +1287,7 @@ async function moderatorRoutes(fastify, options) {
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal'
         },
-        body: JSON.stringify({
-          jail_timer: updatedJailTimer,
-          state: pState,
-          admin_modified_timestamp: ts
-        })
+        body: JSON.stringify(patchBody)
       });
 
       // 3. Sync with in-memory session if active
@@ -1227,6 +1301,13 @@ async function moderatorRoutes(fastify, options) {
           session.state.muteReason = pState.muteReason;
           session.state.staffFlag = pState.staffFlag;
           session.state.jailTimer = updatedJailTimer;
+          session.state.isBanned = pState.isBanned;
+          session.state.banReason = pState.banReason;
+          if (action === 'ban') {
+            session.isBanned = true;
+          } else if (action === 'unban') {
+            session.isBanned = false;
+          }
           session.state.adminModifiedTimestamp = ts;
           session.dirty = false;
         }

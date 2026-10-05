@@ -621,6 +621,8 @@
                 <select id="actionTypeSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-400">
                   <option value="freeze">🔒 تجميد مؤقت للحساب (Freeze)</option>
                   <option value="unfreeze">🔓 فك تجميد الحساب (Unfreeze)</option>
+                  <option value="ban" class="text-rose-400 font-bold">⛔ حظر نهائي للحساب (Ban Account)</option>
+                  <option value="unban" class="text-emerald-400 font-bold">🟢 فك الحظر عن الحساب (Unban Account)</option>
                   <option value="mute">🔇 كتم الشات العام (Mute)</option>
                   <option value="unmute">🔊 إلغاء كتم الشات (Unmute)</option>
                   <option value="flag">🏷️ وضع علامة "تحت المراقبة" (Flag)</option>
@@ -1300,20 +1302,29 @@
               </div>
             </div>
 
-            <div class="flex gap-2">
-              <button onclick="inspectPlayer('${p.username}')" class="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-cyan-600 text-slate-200 hover:text-white text-xs font-bold transition flex items-center justify-center gap-1.5">
+            <div class="flex gap-1.5 sm:gap-2 flex-wrap">
+              <button onclick="inspectPlayer('${p.username}')" class="flex-1 min-w-[80px] py-2 rounded-xl bg-slate-800 hover:bg-cyan-600 text-slate-200 hover:text-white text-xs font-bold transition flex items-center justify-center gap-1.5">
                 <i class="fa-solid fa-fingerprint text-cyan-400"></i>
-                <span>فحص وتدقيق</span>
+                <span>فحص</span>
               </button>
-              ${p.isFrozen ? `
-                <button onclick="quickUnfreezePlayer('${p.username}')" class="py-2 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-xs font-black transition flex items-center justify-center gap-1 shadow-md shadow-emerald-500/20" title="فك تجميد ورفع القيد فوراً">
+              ${p.isBanned ? `
+                <button onclick="quickUnbanPlayer('${p.username}')" class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-xs font-black transition flex items-center justify-center gap-1 shadow-md shadow-emerald-500/20" title="فك الحظر عن الحساب">
+                  <i class="fa-solid fa-unlock text-xs"></i>
+                  <span>فك الحظر</span>
+                </button>
+              ` : p.isFrozen ? `
+                <button onclick="quickUnfreezePlayer('${p.username}')" class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-xs font-black transition flex items-center justify-center gap-1 shadow-md shadow-emerald-500/20" title="فك تجميد ورفع القيد فوراً">
                   <i class="fa-solid fa-lock-open text-xs"></i>
                   <span>فك القيد</span>
                 </button>
               ` : `
-                <button onclick="quickFreezePlayer('${p.username}')" class="py-2 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center justify-center gap-1" title="تجميد الحساب">
+                <button onclick="quickFreezePlayer('${p.username}')" class="py-2 px-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center justify-center gap-1" title="تجميد الحساب">
                   <i class="fa-solid fa-lock text-xs"></i>
                   <span>تجميد</span>
+                </button>
+                <button onclick="quickBanPlayer('${p.username}')" class="py-2 px-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/30 border border-rose-500/30 text-rose-300 text-xs font-bold transition flex items-center justify-center gap-1" title="حظر نهائي للحساب">
+                  <i class="fa-solid fa-ban text-xs"></i>
+                  <span>حظر</span>
                 </button>
               `}
             </div>
@@ -1403,22 +1414,49 @@
       // Quick Action Bar
       const actionBox = document.getElementById('inspectDynamicActionBar');
       if (actionBox) {
-        if (p.isFrozen) {
+        if (p.isBanned) {
           actionBox.innerHTML = `
-            <div class="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-emerald-950/80 border-2 border-emerald-500/60 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg shadow-emerald-500/10">
+            <div class="p-3.5 rounded-2xl bg-gradient-to-r from-rose-950/90 via-slate-900 to-rose-950/90 border-2 border-rose-500/80 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg shadow-rose-950/50">
               <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg shrink-0">
+                <div class="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-lg shrink-0">
+                  <i class="fa-solid fa-ban animate-pulse"></i>
+                </div>
+                <div>
+                  <div class="text-xs font-black text-rose-300 flex items-center gap-1.5">
+                    <span>الحساب محظور نهائياً من اللعبة ⛔</span>
+                    ${p.bannedBy ? `<span class="text-[10px] px-2 py-0.5 rounded-md bg-rose-500/20 border border-rose-500/40 text-rose-200 font-normal">بواسطة: ${p.bannedBy}</span>` : ''}
+                  </div>
+                  <div class="text-[11px] text-slate-300 mt-0.5">${p.banReason ? `السبب: ${p.banReason}` : 'تم الحظر لمخالفة قواعد النظام والنزاهة'}</div>
+                </div>
+              </div>
+              <button onclick="quickUnbanPlayer('${p.username}')" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/30 transition transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap">
+                <i class="fa-solid fa-key text-sm"></i>
+                <span>فك الحظر وإعادة تفعيل الحساب 🟢</span>
+              </button>
+            </div>
+          `;
+        } else if (p.isFrozen) {
+          actionBox.innerHTML = `
+            <div class="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/80 border-2 border-amber-500/60 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg shadow-amber-500/10">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg shrink-0">
                   <i class="fa-solid fa-lock-open animate-bounce"></i>
                 </div>
                 <div>
-                  <div class="text-xs font-black text-emerald-300">الحساب مجمد ومقيد حالياً ⚠️</div>
+                  <div class="text-xs font-black text-amber-300">الحساب مجمد ومقيد حالياً ⚠️</div>
                   <div class="text-[11px] text-slate-400">${p.freezeReason ? `السبب: ${p.freezeReason}` : 'تم التجميد بأمر إداري'}</div>
                 </div>
               </div>
-              <button onclick="quickUnfreezePlayer('${p.username}')" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/30 transition transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap">
-                <i class="fa-solid fa-key text-sm"></i>
-                <span>فك تجميد ورفع القيد فوراً 🔓</span>
-              </button>
+              <div class="flex items-center gap-2 w-full sm:w-auto">
+                <button onclick="quickUnfreezePlayer('${p.username}')" class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
+                  <i class="fa-solid fa-key text-xs"></i>
+                  <span>فك التجميد 🔓</span>
+                </button>
+                <button onclick="quickBanPlayer('${p.username}')" class="px-3.5 py-2.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/40 text-rose-300 border border-rose-500/40 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer">
+                  <i class="fa-solid fa-ban text-xs"></i>
+                  <span>حظر</span>
+                </button>
+              </div>
             </div>
           `;
         } else {
@@ -1426,6 +1464,10 @@
             <div class="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
               <span class="text-[11px] text-slate-400 font-bold"><i class="fa-solid fa-bolt text-cyan-400 ml-1"></i> إجراءات التدقيق السريعة:</span>
               <div class="flex flex-wrap items-center gap-2">
+                <button onclick="quickBanPlayer('${p.username}')" class="px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 font-bold text-xs transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-ban text-xs"></i>
+                  <span>حظر نهائي ⛔</span>
+                </button>
                 <button onclick="quickFreezePlayer('${p.username}')" class="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs transition flex items-center gap-1.5">
                   <i class="fa-solid fa-lock text-xs"></i>
                   <span>تجميد مؤقت (60د)</span>
@@ -2795,6 +2837,81 @@
       } finally {
         btn.disabled = false;
         btn.innerHTML = `تنفيذ الإجراء`;
+      }
+    }
+
+    // Quick 1-Click Ban Action
+    async function quickBanPlayer(username) {
+      if (!username) return;
+      const reason = prompt(`⚠️ هل أنت متأكد من حظر حساب "${username}" نهائياً؟\nاكتب سبب الحظر (إلزامي للرقابة):`, 'مخالفة شروط اللعبة والتلاعب بالثروات');
+      if (!reason || reason.trim().length < 3) {
+        alert('يجب كتابة سبب الحظر بوضوح (3 أحرف على الأقل).');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/action`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentModToken}`
+          },
+          body: JSON.stringify({
+            targetUser: username,
+            action: 'ban',
+            reason: reason.trim()
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alert('⛔ ' + data.message);
+          if (inspectingPlayer && inspectingPlayer.username.toLowerCase() === username.toLowerCase()) {
+            inspectPlayer(username);
+          }
+          refreshOverview();
+          executeSearch();
+        } else {
+          alert('❌ ' + (data.message || 'فشل تنفيذ الحظر'));
+        }
+      } catch (err) {
+        alert('خطأ في الاتصال: ' + err.message);
+      }
+    }
+
+    // Quick 1-Click Unban Action
+    async function quickUnbanPlayer(username) {
+      if (!username) return;
+      if (!confirm(`هل أنت متأكد من فك الحظر نهائياً عن حساب اللاعب "${username}" وإعادة تفعيله؟`)) {
+        return;
+      }
+      const reason = prompt('سبب فك الحظر (اختياري للتدقيق والرقابة):', 'قبول الالتماس ورفع الحظر بعد المراجعة') || 'قبول الالتماس ورفع الحظر بعد المراجعة';
+
+      try {
+        const res = await fetch(`${API_BASE}/action`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentModToken}`
+          },
+          body: JSON.stringify({
+            targetUser: username,
+            action: 'unban',
+            reason: reason.trim()
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alert('🟢 ' + (data.message || 'تم فك الحظر عن الحساب بنجاح.'));
+          if (inspectingPlayer && inspectingPlayer.username.toLowerCase() === username.toLowerCase()) {
+            inspectPlayer(username);
+          }
+          refreshOverview();
+          executeSearch();
+        } else {
+          alert('❌ ' + (data.message || 'فشل فك الحظر'));
+        }
+      } catch (err) {
+        alert('خطأ في الاتصال: ' + err.message);
       }
     }
 
