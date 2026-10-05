@@ -7792,7 +7792,7 @@
 
     <!-- ==================== ACCOUNT UNDER SUSPICION LOCKED MODAL (شاشة حسابك تحت الشبهة) ==================== -->
   <div id="modal-account-under-suspicion" dir="rtl"
-    class="hidden fixed inset-0 z-[999999] flex items-center justify-center bg-black/92 backdrop-blur-lg p-4 animate-fade-in text-right">
+    class="hidden fixed inset-0 z-[999999] flex items-center justify-center bg-black/92 backdrop-blur-lg p-4 text-right">
     <div class="glass-panel w-full max-w-md rounded-3xl border-2 border-amber-500/60 p-6 sm:p-7 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden space-y-5">
       
       <!-- Top Ambient Glow -->
@@ -8500,29 +8500,38 @@
           );
           const modal = document.getElementById('modal-account-under-suspicion');
           if (modal) {
+            const isCurrentlyVisible = (modal.style.display === 'flex' && !modal.classList.contains('hidden'));
             if (isFrozen) {
               const reason = pState.freezeReason || p.freezeReason || 'تم تعليق نشاط حسابك مؤقتاً لوجود اشتباه يتطلب التحقق.';
               const pEl = modal.querySelector('p.font-bold') || document.getElementById('suspicion-modal-reason');
-              if (pEl) pEl.textContent = reason;
-              modal.classList.remove('hidden');
-              modal.classList.add('flex');
-              modal.style.setProperty('display', 'flex', 'important');
-              modal.style.setProperty('z-index', '99999999', 'important');
-              modal.style.setProperty('visibility', 'visible', 'important');
-              modal.style.setProperty('opacity', '1', 'important');
-              modal.style.setProperty('pointer-events', 'auto', 'important');
+              if (pEl && pEl.textContent !== reason) pEl.textContent = reason;
+              
+              window._isUnderSuspicionLocked = true;
+              if (typeof GameEngine !== 'undefined' && GameEngine.state) GameEngine.state.underSuspicion = true;
 
-              const startMenu = document.getElementById('start-menu-screen');
-              const authScreen = document.getElementById('auth-screen');
-              const mainLayout = document.getElementById('main-game-layout');
-              if (startMenu) startMenu.classList.add('hidden');
-              if (authScreen) authScreen.classList.add('hidden');
-              if (mainLayout) {
-                mainLayout.classList.add('hidden');
-                mainLayout.classList.remove('flex');
+              if (!isCurrentlyVisible) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                modal.style.setProperty('display', 'flex', 'important');
+                modal.style.setProperty('z-index', '99999999', 'important');
+                modal.style.setProperty('visibility', 'visible', 'important');
+                modal.style.setProperty('opacity', '1', 'important');
+                modal.style.setProperty('pointer-events', 'auto', 'important');
+
+                const startMenu = document.getElementById('start-menu-screen');
+                const authScreen = document.getElementById('auth-screen');
+                const mainLayout = document.getElementById('main-game-layout');
+                if (startMenu) startMenu.classList.add('hidden');
+                if (authScreen) authScreen.classList.add('hidden');
+                if (mainLayout) {
+                  mainLayout.classList.add('hidden');
+                  mainLayout.classList.remove('flex');
+                }
               }
-            } else if (window._isUnderSuspicionLocked !== true) {
-              if (modal.style.display === 'flex' || !modal.classList.contains('hidden')) {
+            } else {
+              window._isUnderSuspicionLocked = false;
+              if (typeof GameEngine !== 'undefined' && GameEngine.state) GameEngine.state.underSuspicion = false;
+              if (isCurrentlyVisible) {
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
                 modal.style.display = 'none';

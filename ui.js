@@ -8339,9 +8339,32 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               if (data.title) GameEngine.state.title = data.title;
               if (data.isAdmin !== undefined) GameEngine.state.isAdmin = Boolean(data.isAdmin);
 
-              const isLiveSusp = Boolean(data.underSuspicion || (data.state && data.state.underSuspicion) || data.is_under_suspicion || data.isUnderSuspicion);
-              GameEngine.state.underSuspicion = isLiveSusp;
-              enforceSuspicionStatus(isLiveSusp);
+              const hasSuspField = Boolean(
+                data.underSuspicion !== undefined || 
+                (data.state && data.state.underSuspicion !== undefined) ||
+                data.freezeUntil !== undefined ||
+                (data.state && data.state.freezeUntil !== undefined) ||
+                data.is_under_suspicion !== undefined ||
+                data.isUnderSuspicion !== undefined
+              );
+              if (hasSuspField) {
+                const isLiveSusp = Boolean(
+                  data.underSuspicion || 
+                  (data.state && data.state.underSuspicion) || 
+                  (data.freezeUntil && data.freezeUntil > Date.now()) ||
+                  (data.state && data.state.freezeUntil && data.state.freezeUntil > Date.now()) ||
+                  data.is_under_suspicion || 
+                  data.isUnderSuspicion
+                );
+                GameEngine.state.underSuspicion = isLiveSusp;
+                if (isLiveSusp) {
+                  const reasonText = (data.state && data.state.freezeReason) || data.freezeReason || '';
+                  enforceSuspicionStatus(true, reasonText);
+                } else {
+                  if (typeof window !== 'undefined') window._isUnderSuspicionLocked = false;
+                  enforceSuspicionStatus(false);
+                }
+              }
 
               // Deep merge all possessions, businesses, assets, cars, items and perks from state
               if (data.state && typeof data.state === 'object') {
@@ -17699,35 +17722,52 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (typeof GameEngine !== 'undefined' && GameEngine.state && Boolean(GameEngine.state.isAdmin)) {
       return;
     }
+
+    const isCurrentlyVisible = (modal.style.display === 'flex' && !modal.classList.contains('hidden'));
+
     if (isUnderSuspicion === true) {
       if (customReason) {
         const pEl = modal.querySelector('p.font-bold') || document.getElementById('suspicion-modal-reason');
-        if (pEl) pEl.textContent = customReason;
+        if (pEl && pEl.textContent !== customReason) pEl.textContent = customReason;
       }
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      modal.style.setProperty('display', 'flex', 'important');
-      modal.style.setProperty('z-index', '99999999', 'important');
-      modal.style.setProperty('visibility', 'visible', 'important');
-      modal.style.setProperty('opacity', '1', 'important');
-      modal.style.setProperty('pointer-events', 'auto', 'important');
-
-      const startMenu = document.getElementById('start-menu-screen');
-      const authScreen = document.getElementById('auth-screen');
-      const mainLayout = document.getElementById('main-game-layout');
-      if (startMenu) startMenu.classList.add('hidden');
-      if (authScreen) authScreen.classList.add('hidden');
-      if (mainLayout) {
-        mainLayout.classList.add('hidden');
-        mainLayout.classList.remove('flex');
-      }
-
       if (typeof window !== 'undefined') window._isUnderSuspicionLocked = true;
+      if (typeof GameEngine !== 'undefined' && GameEngine.state) GameEngine.state.underSuspicion = true;
+
+      if (!isCurrentlyVisible) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('z-index', '99999999', 'important');
+        modal.style.setProperty('visibility', 'visible', 'important');
+        modal.style.setProperty('opacity', '1', 'important');
+        modal.style.setProperty('pointer-events', 'auto', 'important');
+
+        const startMenu = document.getElementById('start-menu-screen');
+        const authScreen = document.getElementById('auth-screen');
+        const mainLayout = document.getElementById('main-game-layout');
+        if (startMenu) startMenu.classList.add('hidden');
+        if (authScreen) authScreen.classList.add('hidden');
+        if (mainLayout) {
+          mainLayout.classList.add('hidden');
+          mainLayout.classList.remove('flex');
+        }
+      }
     } else {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-      modal.style.display = 'none';
-      if (typeof window !== 'undefined') window._isUnderSuspicionLocked = false;
+      if (typeof window !== 'undefined' && window._isUnderSuspicionLocked === true) {
+        return; // Protect against accidental dismissal
+      }
+      if (typeof GameEngine !== 'undefined' && GameEngine.state) {
+        const st = GameEngine.state;
+        if (st.underSuspicion || (st.state && st.state.underSuspicion) || (st.freezeUntil && st.freezeUntil > Date.now()) || (st.state && st.state.freezeUntil && st.state.freezeUntil > Date.now())) {
+          return;
+        }
+      }
+      if (isCurrentlyVisible) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        modal.style.display = 'none';
+        if (typeof window !== 'undefined') window._isUnderSuspicionLocked = false;
+      }
     }
   }
   if (typeof window !== 'undefined') window.enforceSuspicionStatus = enforceSuspicionStatus;
@@ -24377,10 +24417,17 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
         }
       }
 
-      // 2. Check Maintenance Mode status
+      // 2. Check Maintenance & Suspicion Mode status
       if (GameEngine.state) {
-        const isSusp = Boolean(GameEngine.state.underSuspicion || (GameEngine.state.state && GameEngine.state.state.underSuspicion));
-        enforceSuspicionStatus(isSusp);
+        const isSusp = Boolean(
+          GameEngine.state.underSuspicion || 
+          (GameEngine.state.state && GameEngine.state.state.underSuspicion) ||
+          (GameEngine.state.freezeUntil && GameEngine.state.freezeUntil > Date.now()) ||
+          (GameEngine.state.state && GameEngine.state.state.freezeUntil && GameEngine.state.state.freezeUntil > Date.now())
+        );
+        if (isSusp) {
+          enforceSuspicionStatus(true);
+        }
       }
       if (typeof checkMaintenanceMode === 'function') {
         await checkMaintenanceMode();
