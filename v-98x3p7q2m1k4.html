@@ -950,9 +950,42 @@
       }
     }
 
+    // Core Game Definitions Dictionary for Accurate Arabic Translation
+    const GAME_DICTIONARY = {
+      businesses: {
+        kiosk: { name: 'كشك حلوى وجرائد 🏪', icon: 'fa-shop', baseProfit: 190 },
+        coffee: { name: 'عربة قهوة ومشروبات ☕', icon: 'fa-mug-hot', baseProfit: 640 },
+        tech: { name: 'شركة برمجيات وتطبيقات 💻', icon: 'fa-laptop-code', baseProfit: 3900 },
+        logistics: { name: 'مجمع خدمات لوجستية 🚚', icon: 'fa-truck-fast', baseProfit: 14720 },
+        supermarket: { name: 'سلسلة سوبرماركت وتجزئة 🛒', icon: 'fa-cart-shopping', baseProfit: 48300 },
+        solar_factory: { name: 'مصنع ألواح الطاقة الشمسية ☀️', icon: 'fa-solar-panel', baseProfit: 164450 },
+        private_hospital: { name: 'مستشفى ومجمع طبي تخصصي 🏥', icon: 'fa-hospital', baseProfit: 562800 },
+        media_studio: { name: 'مؤسسة إنتاج إعلامي وسينمائي 🎬', icon: 'fa-film', baseProfit: 1495000 },
+        private_bank: { name: 'بنك استثماري ووساطة مالية 🏛️', icon: 'fa-building-columns', baseProfit: 4186000 },
+        oil_refinery: { name: 'مجمع مصافي البترول والطاقة 🛢️', icon: 'fa-oil-well', baseProfit: 7758000 },
+        space_tech: { name: 'مؤسسة استكشاف الفضاء 🚀', icon: 'fa-rocket', baseProfit: 14720000 }
+      },
+      stocks: {
+        ARAMCO: { name: 'أرامكو للنفط (ARAMCO)', icon: 'fa-droplet text-emerald-400' },
+        ALRAJHI: { name: 'مصرف الراجحي (ALRAJHI)', icon: 'fa-landmark text-cyan-400' },
+        STC: { name: 'إس تي سي اتصالات (STC)', icon: 'fa-tower-cell text-purple-400' },
+        SABIC: { name: 'سابك للصناعات (SABIC)', icon: 'fa-industry text-amber-400' },
+        BTC: { name: 'بيتكوين (Bitcoin BTC)', icon: 'fa-brands fa-bitcoin text-yellow-400' },
+        ETH: { name: 'إيثيريوم (Ethereum ETH)', icon: 'fa-brands fa-ethereum text-indigo-400' }
+      },
+      jobs: {
+        worker: 'عامل مبتدئ',
+        driver: 'سائق توصيل',
+        accountant: 'محاسب مالي',
+        manager: 'مدير تنفيذي',
+        bank_governor: 'حوت المال الدولي (محافظ البنك المركزي)'
+      }
+    };
+
     function populateInspector(p) {
       document.getElementById('inspectUsername').textContent = p.username;
-      document.getElementById('inspectTitle').innerHTML = `<i class="fa-solid fa-briefcase text-cyan-400 ml-1"></i> ${p.title} (${p.jobId})`;
+      const jobTitle = GAME_DICTIONARY.jobs[p.jobId] || p.jobId || 'وظيفة حرة';
+      document.getElementById('inspectTitle').innerHTML = `<i class="fa-solid fa-briefcase text-cyan-400 ml-1"></i> ${p.title} (${jobTitle})`;
       document.getElementById('inspectLastSeen').innerHTML = `<i class="fa-regular fa-clock text-slate-400 ml-1"></i> آخر ظهور: ${fmtDate(p.lastSeen)}`;
 
       const onlineDot = document.getElementById('inspectOnlineDot');
@@ -1041,19 +1074,48 @@
       window._currentInspectFeed = p.activityFeed || [];
       renderPlayerActivityFeed('all');
 
-      // Tab 2: Businesses
+      // Tab 2: Businesses (Rendered with Arabic Game Dictionary & Real Stats)
       const bList = document.getElementById('p_businessesList');
       const bKeys = Object.keys(p.businesses || {});
       if (!bKeys.length) {
         bList.innerHTML = `<div class="text-xs text-slate-500 col-span-full py-4">لا يمتلك اللاعب أي مشاريع أو شركات تجارية حالياً.</div>`;
       } else {
         bList.innerHTML = bKeys.map(k => {
-          const b = p.businesses[k];
+          const b = p.businesses[k] || {};
+          const bInfo = GAME_DICTIONARY.businesses[k] || { name: k, icon: 'fa-building', baseProfit: 500 };
+          const level = Number(b.level || 1);
+          const workers = Number(b.workers || 0);
+          const mult = Math.pow(1.08, workers);
+          const estCycleIncome = Math.round((bInfo.baseProfit || 500) * level * mult);
+          const hasManager = Boolean(b.manager);
+          const franchises = Number(b.franchises || 0);
+
           return `
-            <div class="glass-card p-3 rounded-xl">
-              <div class="font-bold text-xs text-white">${k}</div>
-              <div class="text-[11px] text-cyan-400 mt-1">المستوى: ${b.level || 1}</div>
-              <div class="text-[11px] text-slate-400">الدخل: ${fmtMoney(b.dailyIncome || 0)}/دورة</div>
+            <div class="glass-card p-3.5 rounded-2xl border border-slate-800 hover:border-slate-700 transition space-y-2">
+              <div class="flex items-center gap-2.5 pb-2 border-b border-slate-800/80">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-600/20 to-blue-600/20 text-cyan-400 flex items-center justify-center text-sm shrink-0">
+                  <i class="fa-solid ${bInfo.icon || 'fa-building'}"></i>
+                </div>
+                <div class="font-bold text-xs text-white leading-tight">${bInfo.name}</div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-[11px]">
+                <div class="bg-slate-900/70 p-2 rounded-xl border border-slate-800/60">
+                  <span class="text-slate-400 block text-[10px]">المستوى الحالي</span>
+                  <span class="text-cyan-300 font-bold">مستوى ${level}</span>
+                </div>
+                <div class="bg-slate-900/70 p-2 rounded-xl border border-slate-800/60">
+                  <span class="text-slate-400 block text-[10px]">العمالة</span>
+                  <span class="text-amber-300 font-bold">${workers} عمال</span>
+                </div>
+              </div>
+              <div class="flex items-center justify-between text-[11px] pt-1 text-slate-300">
+                <span>الدخل التقديري:</span>
+                <span class="font-black text-emerald-400 numbers-font">${fmtMoney(estCycleIncome)}/دورة</span>
+              </div>
+              <div class="flex items-center justify-between text-[10px] pt-1 border-t border-slate-800/40 text-slate-400">
+                <span>المدير الذاتي (AFK):</span>
+                <span>${hasManager ? '<strong class="text-emerald-400">✅ مفعل</strong>' : '<span class="text-slate-500">غير مفعل</span>'}</span>
+              </div>
             </div>
           `;
         }).join('');
@@ -1066,15 +1128,24 @@
         sList.innerHTML = `<div class="text-xs text-slate-500 col-span-full py-4">محفظة الأسهم خالية.</div>`;
       } else {
         sList.innerHTML = sKeys.map(k => {
-          const s = p.stocks[k];
+          const s = p.stocks[k] || {};
+          const sInfo = GAME_DICTIONARY.stocks[k] || { name: k, icon: 'fa-chart-line text-cyan-400' };
+          const shares = Number(s.shares || s.amount || 0);
+          const buyPrice = Number(s.buyPrice || s.avgPrice || 0);
+          const totalVal = shares * buyPrice;
+
           return `
-            <div class="glass-card p-3 rounded-xl flex items-center justify-between">
-              <div>
-                <div class="font-bold text-xs text-white">${k}</div>
-                <div class="text-[11px] text-slate-400">الكمية: ${(s.shares || s.amount || 0).toLocaleString('en-US')} سهم</div>
+            <div class="glass-card p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <i class="fa-solid ${sInfo.icon}"></i>
+                <div>
+                  <div class="font-bold text-xs text-white">${sInfo.name}</div>
+                  <div class="text-[11px] text-slate-400">الكمية: ${shares.toLocaleString('en-US')} سهم</div>
+                </div>
               </div>
               <div class="text-right">
-                <div class="text-[11px] text-cyan-300">سعر الشراء: ${fmtMoney(s.buyPrice || s.avgPrice || 0)}</div>
+                <div class="text-xs text-emerald-400 font-bold numbers-font">${fmtMoney(totalVal)}</div>
+                <div class="text-[10px] text-slate-400">متوسط الشراء: ${fmtMoney(buyPrice)}</div>
               </div>
             </div>
           `;
