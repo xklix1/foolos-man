@@ -5,6 +5,8 @@
 
 const crypto = require('crypto');
 const config = require('../config/env');
+const { BUSINESSES, ASSETS, CAR_TEMPLATES } = require('../engine/definitions');
+const { calculateSingleBusinessProfit } = require('../engine/business-engine');
 
 // Default Moderator Key configuration (Individual access keys)
 const DEFAULT_MODERATOR_KEYS = {
@@ -458,17 +460,163 @@ async function moderatorRoutes(fastify, options) {
         if (mbRes.ok) playerMailbox = await mbRes.json();
       } catch (_) {}
 
-      // 4. Calculate real-time estimated cashflow per minute
-      let incomePerMinute = 0;
-      if (state.businesses && typeof state.businesses === 'object') {
-        for (const [bId, bData] of Object.entries(state.businesses)) {
-          if (bData && typeof bData === 'object') {
-            const baseProfit = Number(bData.revenue || bData.profit || bData.income || 0);
-            const level = Number(bData.level || 1);
-            incomePerMinute += (baseProfit * level * 60);
+      // 4. Calculate comprehensive real-time Cashflow Report & Financial Audit
+      const cashflowReport = (() => {
+        const bank = Number(pDoc.bank || state.bank || 0);
+        
+        // A. Businesses Net Profit & Payroll
+        let totalBizGross = 0;
+        let totalBizPayroll = 0;
+        let totalBizNet = 0;
+        const bizList = [];
+
+        if (state.businesses && typeof state.businesses === 'object') {
+          for (const [key, bData] of Object.entries(state.businesses)) {
+            if (bData && typeof bData === 'object' && Number(bData.level || 0) > 0) {
+              const cfg = BUSINESSES[key] || { name: key, baseDemand: 30, optimumPrice: 20, costOfGoods: 10, workerWage: 5 };
+              const bRes = calculateSingleBusinessProfit(key, bData, state);
+              const gross = bRes.grossProfit || 0;
+              const payroll = bRes.payroll || 0;
+              const ownerNet = bRes.ownerProfit || Math.max(0, gross - payroll);
+
+              totalBizGross += gross;
+              totalBizPayroll += payroll;
+              totalBizNet += ownerNet;
+
+              bizList.push({
+                id: key,
+                name: cfg.name || key,
+                level: Number(bData.level || 1),
+                workers: Number(bData.workers || 0),
+                grossProfitPerHour: gross,
+                payrollPerHour: payroll,
+                netPerHour: ownerNet,
+                isFranchise: Boolean(bData.isFranchise),
+                hasSupplies: bRes.hasSupplies !== false,
+                marketingActive: Boolean(bData.marketingTicks && bData.marketingTicks > 0)
+              });
+            }
           }
         }
-      }
+
+        // B. Real Estate Rental Yields
+        let totalAssetRent = 0;
+        const assetsList = [];
+        if (state.assets && typeof state.assets === 'object') {
+          for (const [key, countVal] of Object.entries(state.assets)) {
+            const count = Number(countVal || 0);
+            const cfg = ASSETS[key];
+            if (count > 0 && cfg) {
+              const rentPerUnit = Math.floor((cfg.rent || 0) * 0.1);
+              const hourlyRent = count * rentPerUnit;
+              totalAssetRent += hourlyRent;
+              assetsList.push({
+                id: key,
+                name: cfg.name || key,
+                count,
+                rentPerUnit,
+                rentPerHour: hourlyRent
+              });
+            }
+          }
+        }
+
+        // C. Rented Cars Fleet
+        let totalCarGross = 0;
+        let totalCarMaintenance = 0;
+        let totalCarNet = 0;
+        const carsList = [];
+        const ownedCars = Array.isArray(state.ownedCars) ? state.ownedCars : (typeof state.ownedCars === 'object' ? Object.values(state.ownedCars) : []);
+        ownedCars.forEach(carRef => {
+          if (carRef && carRef.rentStatus === 'rented' && CAR_TEMPLATES[carRef.id]) {
+            const cCfg = CAR_TEMPLATES[carRef.id];
+            const cGross = cCfg.rentalIncomePerTick || 0;
+            const cMaint = cCfg.maintenanceCostPerTick || 0;
+            const cNet = Math.max(0, cGross - cMaint);
+            totalCarGross += cGross;
+            totalCarMaintenance += cMaint;
+            totalCarNet += cNet;
+            carsList.push({
+              id: carRef.id,
+              name: cCfg.name || carRef.id,
+              grossRentPerHour: cGross,
+              maintenancePerHour: cMaint,
+              netPerHour: cNet
+            });
+          }
+        });
+
+        // D. Bank Deposit Interest (0.015% per hour with rolls bonus & daily cap)
+        const hourlyBankRate = 0.00015;
+        const rollsBonus = (state.activeCar === 'rolls') ? 1.05 : 1.0;
+        const bankProfitPerHour = Math.min(250000 / 24, Math.floor((bank * hourlyBankRate) * rollsBonus));
+
+        // E. Airport & Aviation Hub
+        let airportProfitPerHour = 0;
+        let airportData = null;
+        if (state.airport && state.airport.unlocked) {
+          const fleetCount = Array.isArray(state.airport.fleet) ? state.airport.fleet.length : Object.keys(state.airport.fleet || {}).length;
+          const routesCount = Array.isArray(state.airport.routes) ? state.airport.routes.length : 0;
+          airportProfitPerHour = Math.round((routesCount * 45000) + (fleetCount * 30000));
+          airportData = {
+            level: Number(state.airport.level || 1),
+            fleetCount,
+            routesCount,
+            profitPerHour: airportProfitPerHour
+          };
+        }
+
+        // F. Tax Exemption (Tax Amnesty: 0% tax)
+        const taxPerHour = 0;
+
+        // G. Financial Statement Totals
+        const grossPerHour = totalBizGross + totalAssetRent + totalCarGross + bankProfitPerHour + airportProfitPerHour;
+        const deductionsPerHour = totalBizPayroll + totalCarMaintenance + taxPerHour;
+        const netPerHour = Math.max(0, grossPerHour - deductionsPerHour);
+
+        return {
+          summary: {
+            grossPerHour,
+            deductionsPerHour,
+            netPerHour,
+            netPerMinute: Math.round(netPerHour / 60),
+            netPerDay: Math.round(netPerHour * 24),
+            netPerSecond: Number((netPerHour / 3600).toFixed(2))
+          },
+          businesses: {
+            totalGrossPerHour: totalBizGross,
+            totalPayrollPerHour: totalBizPayroll,
+            totalNetPerHour: totalBizNet,
+            list: bizList
+          },
+          assets: {
+            totalRentPerHour: totalAssetRent,
+            list: assetsList
+          },
+          cars: {
+            totalGrossPerHour: totalCarGross,
+            totalMaintenancePerHour: totalCarMaintenance,
+            totalNetPerHour: totalCarNet,
+            list: carsList
+          },
+          bank: {
+            balance: bank,
+            hourlyRatePct: '0.015%',
+            dailyCap: 250000,
+            profitPerHour: bankProfitPerHour,
+            hasRollsBonus: (state.activeCar === 'rolls')
+          },
+          airport: airportData,
+          tax: {
+            isTaxAmnesty: true,
+            ratePct: '0%',
+            deductionPerHour: taxPerHour,
+            exemptReason: 'موسم العفو الضريبي - إعفاء شامل بنسبة 100%'
+          }
+        };
+      })();
+
+      const incomePerMinute = cashflowReport.summary.netPerMinute;
 
       // 5. Synthesize Unified Master Activity Feed (Merged & Sorted Chronologically)
       const masterFeed = [];
@@ -554,6 +702,7 @@ async function moderatorRoutes(fastify, options) {
         xp: Number(pDoc.xp || 0),
         totalTaxesPaid: Number(pDoc.total_taxes_paid || state.totalTaxesPaid || 0),
         incomePerMinute: Math.round(incomePerMinute),
+        cashflowReport: cashflowReport,
 
         // Real Estate, Businesses & Assets
         businesses: state.businesses || {},
