@@ -961,8 +961,8 @@
           </div>
         </div>
 
-        <!-- 5. Bank Interest & Aviation Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <!-- 5. Bank Interest, Aviation & Farm Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <!-- Bank Deposit Interest -->
           <div class="glass-card p-3.5 rounded-2xl border border-slate-800 space-y-2">
             <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
@@ -982,12 +982,26 @@
             <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
               <div class="flex items-center gap-1.5 text-xs font-bold text-white">
                 <i class="fa-solid fa-plane-departure text-sky-400"></i>
-                <span>عوائد المطار والأسطول الجوي</span>
+                <span>عوائد المطار والأسطول</span>
               </div>
               <span id="cf_airport_subtotal" class="text-xs font-black numbers-font text-sky-300">+$0/س</span>
             </div>
             <div id="cf_airport_details" class="text-[11px] text-slate-300 space-y-1">
               <!-- Airport details -->
+            </div>
+          </div>
+
+          <!-- Agro Farm Stream -->
+          <div class="glass-card p-3.5 rounded-2xl border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+              <div class="flex items-center gap-1.5 text-xs font-bold text-white">
+                <i class="fa-solid fa-wheat-awn text-emerald-400"></i>
+                <span>عوائد المزرعة والإنتاج</span>
+              </div>
+              <span id="cf_farm_subtotal" class="text-xs font-black numbers-font text-emerald-300">+$0/س</span>
+            </div>
+            <div id="cf_farm_details" class="text-[11px] text-slate-300 space-y-1">
+              <!-- Farm details -->
             </div>
           </div>
         </div>
@@ -1439,7 +1453,7 @@
       document.getElementById('p_taxes').textContent = fmtMoney(p.totalTaxesPaid);
       
       // Real-time Cashflow Stream Metrics
-      const cfData = p.cashflowReport || {};
+      const cfData = ensureCashflowReport(p) || {};
       const cfSummary = cfData.summary || {};
       const netPerHour = Number(cfSummary.netPerHour || 0);
       const netPerDay = Number(cfSummary.netPerDay || (netPerHour * 24));
@@ -1662,7 +1676,169 @@
       if (chatTarget) chatTarget.innerText = p.username;
     }
 
-    // ================= CASHFLOW REPORT MODAL RENDERING =================
+    // ================= CASHFLOW REPORT ENGINE & MODAL RENDERING =================
+    function ensureCashflowReport(p) {
+      if (!p) return null;
+      if (p.cashflowReport && p.cashflowReport.summary && (Number(p.cashflowReport.summary.grossPerHour || 0) > 0 || Number(p.cashflowReport.summary.netPerHour || 0) > 0)) {
+        return p.cashflowReport;
+      }
+
+      // Mathematical client-side fallback calculation
+      const bank = Number(p.bank || 0);
+      let totalBizGross = 0;
+      let totalBizPayroll = 0;
+      let totalBizNet = 0;
+      const bizList = [];
+
+      const businesses = p.businesses || {};
+      for (const [key, bData] of Object.entries(businesses)) {
+        if (bData && typeof bData === 'object' && Number(bData.level || 0) > 0) {
+          const bInfo = GAME_DICTIONARY.businesses[key] || { name: key, baseProfit: 500 };
+          const level = Number(bData.level || 1);
+          const workers = Number(bData.workers || 0);
+          const optPrice = Math.round((bInfo.baseProfit ? bInfo.baseProfit * 0.15 : 20) * (1 + (level - 1) * 0.05) * (bData.isFranchise ? 1.1 : 1.0));
+          const price = bData.price || optPrice;
+          const elasticity = price > optPrice ? Math.max(0.1, 1 - ((price - optPrice) / optPrice)) : 1 + ((optPrice - price) / optPrice) * 0.25;
+          const demand = Math.max(1, Math.floor((bInfo.baseProfit || 100) * (1 + (level - 1) * 0.25) * elasticity * (1 + workers * 0.08)));
+          const margin = Math.max(1, price - (bInfo.baseProfit ? Math.floor(bInfo.baseProfit * 0.05) : 5));
+          const hasSupplies = bData.suppliesTicks === undefined ? true : (bData.suppliesTicks > 0);
+          const gross = hasSupplies ? Math.floor(demand * margin * 0.85 * (bData.isFranchise ? 1.15 : 1.0)) : 0;
+          const payroll = hasSupplies ? (workers * 5) : 0;
+          const net = Math.max(0, gross - payroll);
+
+          totalBizGross += gross;
+          totalBizPayroll += payroll;
+          totalBizNet += net;
+
+          bizList.push({
+            id: key,
+            name: bInfo.name || key,
+            level,
+            workers,
+            grossProfitPerHour: gross,
+            payrollPerHour: payroll,
+            netPerHour: net,
+            isFranchise: Boolean(bData.isFranchise),
+            hasSupplies
+          });
+        }
+      }
+
+      // Assets
+      let totalAssetRent = 0;
+      const assetsList = [];
+      const assets = p.assets || {};
+      const ASSET_NAMES = {
+        office: { name: 'مكاتب تجارية', rent: 500 },
+        mansion: { name: 'قصر فخم', rent: 1800 },
+        apartment: { name: 'شقق سكنية', rent: 350 },
+        mega_yacht: { name: 'يخت فاخر', rent: 4500 },
+        luxury_resort: { name: 'منتجع سياحي', rent: 9000 },
+        skyline_tower: { name: 'برج ناطحة سحاب', rent: 22000 },
+        private_island: { name: 'جزيرة خاصة', rent: 55000 },
+        orbital_station: { name: 'محطة مدارية فضائية', rent: 180000 }
+      };
+      for (const [key, countVal] of Object.entries(assets)) {
+        const count = Number(countVal || 0);
+        const cfg = ASSET_NAMES[key];
+        if (count > 0 && cfg) {
+          const rentPerUnit = Math.floor(cfg.rent * 0.1);
+          const hourlyRent = count * rentPerUnit;
+          totalAssetRent += hourlyRent;
+          assetsList.push({
+            id: key,
+            name: cfg.name,
+            count,
+            rentPerUnit,
+            rentPerHour: hourlyRent
+          });
+        }
+      }
+
+      // Bank interest
+      const rollsBonus = (p.activeCar === 'rolls') ? 1.05 : 1.0;
+      const bankProfitPerHour = Math.min(250000 / 24, Math.floor((bank * 0.00015) * rollsBonus));
+
+      // Airport
+      let airportProfitPerHour = 0;
+      let airportData = null;
+      if (p.airport && (p.airport.unlocked || Number(p.airport.level || 0) > 0)) {
+        const fleetCount = Object.keys(p.airport.fleet || {}).length;
+        const routesCount = (p.airport.routes || []).length;
+        airportProfitPerHour = Math.round((routesCount * 45000) + (fleetCount * 30000));
+        airportData = {
+          level: Number(p.airport.level || 1),
+          fleetCount,
+          routesCount,
+          profitPerHour: airportProfitPerHour
+        };
+      }
+
+      // Farm
+      let farmProfitPerHour = 0;
+      let farmData = null;
+      if (p.farm && p.farm.unlocked) {
+        const ls = p.farm.livestock || {};
+        const cows = Number(ls.cows || 0);
+        const chickens = Number(ls.chickens || 0);
+        const workers = Number(p.farm.workers || 0);
+        const proc = p.farm.processing || {};
+        const isProc = Boolean(proc.unlocked);
+        farmProfitPerHour = Math.round((cows * 1200) + (chickens * 350) + (workers * 2000) + (isProc ? 5000 : 0));
+        farmData = {
+          landLevel: Number(p.farm.landLevel || 1),
+          cows,
+          chickens,
+          workers,
+          isProcessing: isProc,
+          profitPerHour: farmProfitPerHour
+        };
+      }
+
+      const grossPerHour = totalBizGross + totalAssetRent + bankProfitPerHour + airportProfitPerHour + farmProfitPerHour;
+      const deductionsPerHour = totalBizPayroll;
+      const netPerHour = Math.max(0, grossPerHour - deductionsPerHour);
+
+      const report = {
+        summary: {
+          grossPerHour,
+          deductionsPerHour,
+          netPerHour,
+          netPerMinute: Math.round(netPerHour / 60),
+          netPerDay: Math.round(netPerHour * 24),
+          netPerSecond: Number((netPerHour / 3600).toFixed(2))
+        },
+        businesses: {
+          totalGrossPerHour: totalBizGross,
+          totalPayrollPerHour: totalBizPayroll,
+          totalNetPerHour: totalBizNet,
+          list: bizList
+        },
+        assets: {
+          totalRentPerHour: totalAssetRent,
+          list: assetsList
+        },
+        bank: {
+          balance: bank,
+          hourlyRatePct: '0.015%',
+          dailyCap: 250000,
+          profitPerHour: bankProfitPerHour,
+          hasRollsBonus: (p.activeCar === 'rolls')
+        },
+        airport: airportData,
+        farm: farmData,
+        tax: {
+          isTaxAmnesty: true,
+          ratePct: '0%',
+          deductionPerHour: 0,
+          exemptReason: 'موسم العفو الضريبي - إعفاء شامل بنسبة 100%'
+        }
+      };
+
+      p.cashflowReport = report;
+      return report;
+    }
+
     function openCashflowDetailModal() {
       if (!inspectingPlayer) {
         alert('يرجى اختيار لاعب أولاً لعرض تقرير التدفق المالي.');
@@ -1680,7 +1856,7 @@
 
     function renderCashflowReportInModal(p) {
       if (!p) return;
-      const cf = p.cashflowReport || {};
+      const cf = ensureCashflowReport(p);
       const sum = cf.summary || {};
       const netHour = Number(sum.netPerHour || 0);
       const netDay = Number(sum.netPerDay || (netHour * 24));
@@ -1779,9 +1955,9 @@
       if (bankSubtotal) bankSubtotal.textContent = `+${fmtMoney(bData.profitPerHour || 0)}/س`;
       if (bankDetails) {
         bankDetails.innerHTML = `
-          <div>رصيد الودائع الخاضع للفائدة: <strong class="text-white">${fmtMoney(bData.balance || 0)}</strong></div>
-          <div>المعدل الساعي: <span class="text-cyan-300 font-bold">0.015%/س</span> ${bData.hasRollsBonus ? ' <span class="text-amber-400 font-bold">(+5% بونص رولز رويس)</span>' : ''}</div>
-          <div class="text-[10px] text-slate-400">سقف الفوائد اليومي المسموح به: $250,000 / يوم</div>
+          <div>رصيد الودائع: <strong class="text-white">${fmtMoney(bData.balance || 0)}</strong></div>
+          <div>المعدل الساعي: <span class="text-cyan-300 font-bold">0.015%/س</span> ${bData.hasRollsBonus ? ' <span class="text-amber-400 font-bold">(+5% بونص)</span>' : ''}</div>
+          <div class="text-[10px] text-slate-400">سقف الفوائد: $250,000 / يوم</div>
         `;
       }
 
@@ -1796,8 +1972,25 @@
         } else {
           airportDetails.innerHTML = `
             <div>مستوى المطار: <strong class="text-white">مستوى ${apData.level || 1}</strong></div>
-            <div>الأسطول والرحلات: <span class="text-sky-300 font-bold">${apData.fleetCount || 0} طائرة • ${apData.routesCount || 0} وجهة</span></div>
-            <div class="text-[10px] text-slate-400">عوائد ركاب وتشغيل خطوط طيران دولية</div>
+            <div>الأسطول: <span class="text-sky-300 font-bold">${apData.fleetCount || 0} طائرة • ${apData.routesCount || 0} وجهة</span></div>
+            <div class="text-[10px] text-slate-400">عوائد ركاب وخطوط طيران دولية</div>
+          `;
+        }
+      }
+
+      // Farm Stream
+      const farmSubtotal = document.getElementById('cf_farm_subtotal');
+      const farmDetails = document.getElementById('cf_farm_details');
+      const farmData = cf.farm;
+      if (farmSubtotal) farmSubtotal.textContent = `+${fmtMoney(farmData ? farmData.profitPerHour : 0)}/س`;
+      if (farmDetails) {
+        if (!farmData) {
+          farmDetails.innerHTML = `<span class="text-slate-500">المزرعة غير مفعلة لدى هذا اللاعب.</span>`;
+        } else {
+          farmDetails.innerHTML = `
+            <div>أرض زراعية: <strong class="text-white">مستوى ${farmData.landLevel || 1}</strong> (${farmData.workers || 0} عمال)</div>
+            <div>ثروة حيوانية: <span class="text-emerald-300 font-bold">${farmData.cows || 0} أبقار • ${farmData.chickens || 0} دواجن</span></div>
+            <div class="text-[10px] text-slate-400">${farmData.isProcessing ? 'مصنع الأغذية يعمل بكفاءة ✅' : 'إنتاج زراعي وحيواني مستمر'}</div>
           `;
         }
       }
@@ -2137,7 +2330,7 @@
       const investigatorName = currentModInfo ? currentModInfo.name : 'محقق الرقابة';
       const jobTitle = GAME_DICTIONARY.jobs[p.jobId] || p.jobId || 'وظيفة حرة';
 
-      const cf = p.cashflowReport || {};
+      const cf = ensureCashflowReport(p) || {};
       const sum = cf.summary || {};
       const netHour = Number(sum.netPerHour || 0);
       const netDay = Number(sum.netPerDay || (netHour * 24));

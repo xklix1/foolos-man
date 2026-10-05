@@ -554,7 +554,7 @@ async function moderatorRoutes(fastify, options) {
         // E. Airport & Aviation Hub
         let airportProfitPerHour = 0;
         let airportData = null;
-        if (state.airport && state.airport.unlocked) {
+        if (state.airport && (state.airport.unlocked || Number(state.airport.level || 0) > 0)) {
           const fleetCount = Array.isArray(state.airport.fleet) ? state.airport.fleet.length : Object.keys(state.airport.fleet || {}).length;
           const routesCount = Array.isArray(state.airport.routes) ? state.airport.routes.length : 0;
           airportProfitPerHour = Math.round((routesCount * 45000) + (fleetCount * 30000));
@@ -566,11 +566,33 @@ async function moderatorRoutes(fastify, options) {
           };
         }
 
-        // F. Tax Exemption (Tax Amnesty: 0% tax)
+        // F. Agro Farm Tycoon (المزرعة الاستثمارية)
+        let farmProfitPerHour = 0;
+        let farmData = null;
+        if (state.farm && state.farm.unlocked) {
+          const ls = state.farm.livestock || {};
+          const cows = Number(ls.cows || 0);
+          const chickens = Number(ls.chickens || 0);
+          const workers = Number(state.farm.workers || 0);
+          const proc = state.farm.processing || {};
+          const isProc = Boolean(proc.unlocked);
+          // Estimated hourly continuous agricultural yield
+          farmProfitPerHour = Math.round((cows * 1200) + (chickens * 350) + (workers * 2000) + (isProc ? 5000 : 0));
+          farmData = {
+            landLevel: Number(state.farm.landLevel || 1),
+            cows,
+            chickens,
+            workers,
+            isProcessing: isProc,
+            profitPerHour: farmProfitPerHour
+          };
+        }
+
+        // G. Tax Exemption (Tax Amnesty: 0% tax)
         const taxPerHour = 0;
 
-        // G. Financial Statement Totals
-        const grossPerHour = totalBizGross + totalAssetRent + totalCarGross + bankProfitPerHour + airportProfitPerHour;
+        // H. Financial Statement Totals
+        const grossPerHour = totalBizGross + totalAssetRent + totalCarGross + bankProfitPerHour + airportProfitPerHour + farmProfitPerHour;
         const deductionsPerHour = totalBizPayroll + totalCarMaintenance + taxPerHour;
         const netPerHour = Math.max(0, grossPerHour - deductionsPerHour);
 
@@ -607,6 +629,7 @@ async function moderatorRoutes(fastify, options) {
             hasRollsBonus: (state.activeCar === 'rolls')
           },
           airport: airportData,
+          farm: farmData,
           tax: {
             isTaxAmnesty: true,
             ratePct: '0%',
