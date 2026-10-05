@@ -597,6 +597,7 @@ async function moderatorRoutes(fastify, options) {
         staffFlag: state.staffFlag || null,
         flagReason: state.flagReason || '',
         moderatorNotes: Array.isArray(state.moderatorNotes) ? state.moderatorNotes : [],
+        staffNotes: Array.isArray(state.staffNotes) ? state.staffNotes : [],
 
         // Recent Activity & Transfers
         transfers: playerTransfers || [],
@@ -611,6 +612,177 @@ async function moderatorRoutes(fastify, options) {
       return reply.send({ success: true, profile: inspectionProfile });
     } catch (err) {
       fastify.log.error(err, '[Moderator Inspect Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * POST /api/mod/player/note
+   * Adds an internal staff note to player's private dossier
+   */
+  fastify.post('/player/note', {
+    preHandler: [requireModAuth]
+  }, async (request, reply) => {
+    const { targetUser, note } = request.body || {};
+    if (!targetUser || !note || typeof note !== 'string' || !note.trim()) {
+      return reply.status(400).send({ error: 'Bad Request', message: 'اسم اللاعب والملاحظة مطلوبان.' });
+    }
+
+    const cleanNote = note.trim().substring(0, 1000);
+    const target = targetUser.trim();
+    const sKey = serviceKey();
+    const ts = Date.now();
+
+    try {
+      const pRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(target)}&select=*`, {
+        headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+      });
+      const rows = await pRes.json();
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return reply.status(404).send({ error: 'Not Found', message: `اللاعب "${target}" غير موجود.` });
+      }
+
+      const pDoc = rows[0];
+      const pState = (typeof pDoc.state === 'object' && pDoc.state) ? pDoc.state : {};
+      if (!Array.isArray(pState.staffNotes)) pState.staffNotes = [];
+
+      const noteEntry = {
+        id: 'snote_' + ts + '_' + crypto.randomBytes(3).toString('hex'),
+        timestamp: ts,
+        modId: request.modSession.id,
+        modName: request.modSession.name,
+        note: cleanNote
+      };
+
+      pState.staffNotes.unshift(noteEntry);
+      if (pState.staffNotes.length > 50) pState.staffNotes = pState.staffNotes.slice(0, 50);
+
+      // Persist to Database
+      const patchUrl = `${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(target)}`;
+      await fetch(patchUrl, {
+        method: 'PATCH',
+        headers: {
+          'apikey': sKey,
+          'Authorization': `Bearer ${sKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          state: pState,
+          admin_modified_timestamp: ts
+        })
+      });
+
+      // Sync in-memory session if active
+      if (sessionManager) {
+        const session = sessionManager.getSession(target.toLowerCase());
+        if (session) {
+          session.state.staffNotes = pState.staffNotes;
+        }
+      }
+
+      // Record in audit logs
+      await logStaffAudit(request.modSession, target, 'add_staff_note', `إضافة ملاحظة سرية في دفتر اللاعب: "${cleanNote.substring(0, 60)}..."`, { noteLength: cleanNote.length });
+
+      return reply.send({
+        success: true,
+        message: 'تم حفظ الملاحظة في دفتر التحقيق بنجاح.',
+        note: noteEntry,
+        staffNotes: pState.staffNotes
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Staff Note Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * GET /api/mod/standby/status
+   * Retrieves current Standby Mode status
+   */
+  fastify.get('/standby/status', {
+    preHandler: [requireModAuth]
+  }, async (request, reply) => {
+    try {
+      const sKey = serviceKey();
+      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.standby_mode&select=*`, {
+        headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+      });
+      if (res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length > 0 && rows[0].data) {
+          return reply.send({ success: true, standby: rows[0].data });
+        }
+      }
+      return reply.send({
+        success: true,
+        standby: { active: false, enabled: false, message: '', facebook_url: '' }
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Standby Status Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * POST /api/mod/standby/toggle
+   * Toggles game-wide Standby Mode
+   */
+  fastify.post('/standby/toggle', {
+    preHandler: [requireModAuth]
+  }, async (request, reply) => {
+    const { active, message = '', facebookUrl = '' } = request.body || {};
+    const isActive = Boolean(active);
+    const cleanMsg = String(message || '').trim() || 'الخوادم رهن وضع الاستعداد والتجهيز.';
+    const cleanFb = String(facebookUrl || '').trim() || 'https://www.facebook.com';
+    const sKey = serviceKey();
+    const ts = Date.now();
+
+    try {
+      const standbyData = {
+        active: isActive,
+        enabled: isActive,
+        message: cleanMsg,
+        facebook_url: cleanFb,
+        timestamp: ts,
+        updated_by: request.modSession.name
+      };
+
+      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
+        method: 'POST',
+        headers: {
+          'apikey': sKey,
+          'Authorization': `Bearer ${sKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates, return=minimal'
+        },
+        body: JSON.stringify({
+          id: 'standby_mode',
+          data: standbyData,
+          updated_at: ts
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update standby_mode in globals table');
+      }
+
+      // Record to audit logs
+      await logStaffAudit(
+        request.modSession,
+        'SYSTEM',
+        isActive ? 'enable_standby' : 'disable_standby',
+        isActive ? `تفعيل وضع الستاند باي (Standby Mode) - رسالة: ${cleanMsg}` : 'تعطيل وضع الستاند باي وإعادة فتح اللعبة للجميع',
+        { message: cleanMsg, facebookUrl: cleanFb }
+      );
+
+      return reply.send({
+        success: true,
+        message: isActive ? 'تم تفعيل وضع الاستعداد (Standby) بنجاح.' : 'تم إلغاء وضع الاستعداد وفتح اللعبة.',
+        standby: standbyData
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Standby Toggle Error]');
       return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
     }
   });
@@ -1020,8 +1192,9 @@ async function moderatorRoutes(fastify, options) {
   fastify.post('/chat/send', {
     preHandler: [requireModAuth]
   }, async (request, reply) => {
-    const { targetUser, message } = request.body || {};
-    if (!targetUser || !message || !message.trim()) {
+    const { targetUser, targetUsername, message } = request.body || {};
+    const recipient = (targetUser || targetUsername || '').trim();
+    if (!recipient || !message || !message.trim()) {
       return reply.status(400).send({ error: 'targetUser and message are required' });
     }
 

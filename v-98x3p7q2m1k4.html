@@ -168,6 +168,12 @@
           </div>
         </div>
 
+        <!-- Global Standby Mode Toggle Button -->
+        <button onclick="openStandbyModal()" id="navStandbyBtn" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center gap-2 transition" title="التحكم في وضع الاستعداد العام للعبة">
+          <span id="navStandbyDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+          <span id="navStandbyText">وضع الستاند باي: مفتوح</span>
+        </button>
+
         <button onclick="openStaffChatThreadsModal()" class="px-3.5 py-2 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 text-xs font-bold border border-emerald-800/50 flex items-center gap-1.5 transition">
           <i class="fa-solid fa-comments text-emerald-400"></i>
           <span>شات التحقيقات</span>
@@ -297,9 +303,17 @@
           </div>
         </div>
 
-        <button onclick="closeInspectorModal()" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
+        <div class="flex items-center gap-2">
+          <!-- Export Report Button -->
+          <button onclick="openCaseReportModal()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-cyan-600/25 transition">
+            <i class="fa-solid fa-file-invoice"></i>
+            <span class="hidden sm:inline">تصدير تقرير التحقيق</span>
+          </button>
+          
+          <button onclick="closeInspectorModal()" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Quick Action Bar Banner -->
@@ -312,6 +326,9 @@
         </button>
         <button onclick="switchInspectTab('activity')" id="itab_activity" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
           <i class="fa-solid fa-clock-rotate-left text-amber-400 ml-1"></i> سجل الأنشطة والحركات
+        </button>
+        <button onclick="switchInspectTab('notes')" id="itab_notes" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
+          <i class="fa-solid fa-book-bookmark text-yellow-400 ml-1"></i> دفتر التحقيق السري
         </button>
         <button onclick="switchInspectTab('businesses')" id="itab_businesses" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
           <i class="fa-solid fa-building ml-1"></i> الممتلكات والشركات
@@ -332,7 +349,7 @@
           <i class="fa-solid fa-comments text-emerald-400 ml-1"></i> محادثة التحقيق
         </button>
         <button onclick="switchInspectTab('moderation')" id="itab_moderation" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
-          <i class="fa-solid fa-shield text-amber-400 ml-1"></i> الإجراءات والملاحظات
+          <i class="fa-solid fa-shield text-amber-400 ml-1"></i> الإجراءات والعقوبات
         </button>
       </div>
 
@@ -415,6 +432,34 @@
 
           <div id="p_activityFeedContainer" class="space-y-2 custom-scrollbar max-h-[520px] overflow-y-auto pr-1">
             <!-- Rendered Activity Items -->
+          </div>
+        </div>
+
+        <!-- NEW Tab: Secret Staff Dossier Notes (دفتر الملاحظات السري) -->
+        <div id="tabContent_notes" class="hidden space-y-4">
+          <div class="glass-card p-4 rounded-xl border border-yellow-500/30 space-y-3 bg-yellow-950/10">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-bold text-yellow-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-book-bookmark text-yellow-400"></i> تدوين ملاحظة سرية في ملف اللاعب:
+              </h4>
+              <span class="text-[10px] text-slate-400">🔒 خاصة بطاقم التحقيق والإدارة (لا تظهر للاعب)</span>
+            </div>
+            <textarea id="staffNoteInput" rows="3" placeholder="اكتب استنتاجاتك أو ملاحظاتك الاستخباراتية أو الشكوك حول هذا اللاعب وأنشطته..." class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-400 transition"></textarea>
+            <div class="flex justify-end">
+              <button onclick="saveStaffNote()" id="saveStaffNoteBtn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>حفظ في الدفتر</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <h4 class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-clock-rotate-left text-yellow-400"></i> أرشيف الملاحظات السرية المدونة:
+            </h4>
+            <div id="p_staffNotesTimeline" class="space-y-2 custom-scrollbar max-h-[380px] overflow-y-auto">
+              <!-- Rendered notes timeline -->
+            </div>
           </div>
         </div>
 
@@ -641,6 +686,99 @@
     </div>
   </div>
 
+  <!-- ================= STANDBY MODE CONTROL MODAL ================= -->
+  <div id="standbyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto">
+    <div class="glass-panel w-full max-w-lg my-auto rounded-2xl border border-rose-500/40 p-6 glow-cyan modal-enter flex flex-col space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-power-off"></i>
+          </div>
+          <div>
+            <h3 class="font-black text-lg text-white">التحكم في وضع الاستعداد (Standby)</h3>
+            <p class="text-xs text-slate-400">إيقاف مؤقت للعبة أو إعادة فتحها للاعبين</p>
+          </div>
+        </div>
+        <button onclick="closeStandbyModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Current Status Alert -->
+      <div id="standbyStatusDisplayBox" class="p-3.5 rounded-xl border flex items-center justify-between">
+        <!-- Injected via JS -->
+      </div>
+
+      <!-- Settings Form -->
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">رسالة وضع الاستعداد (تظهر لجميع اللاعبين):</label>
+          <textarea id="standbyMessageInput" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-cyan-400" placeholder="الخوادم رهن وضع الاستعداد والتجهيز."></textarea>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">رابط صفحة / مجموعة فيسبوك:</label>
+          <input type="url" id="standbyFacebookInput" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-cyan-400" placeholder="https://www.facebook.com" />
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-slate-800 flex gap-2">
+        <button onclick="toggleStandbyModeAction()" id="standbyActionBtn" class="flex-1 py-3 px-4 rounded-xl font-bold text-xs shadow-lg transition flex items-center justify-center gap-2">
+          <!-- Text/Icon injected dynamically -->
+        </button>
+        <button onclick="closeStandbyModal()" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">
+          إلغاء
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CASE DOSSIER EXPORT MODAL ================= -->
+  <div id="caseReportModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-5 overflow-y-auto">
+    <div class="glass-panel w-full max-w-4xl my-auto rounded-2xl border border-cyan-500/50 p-5 md:p-6 glow-cyan modal-enter max-h-[90vh] flex flex-col space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-file-contract"></i>
+          </div>
+          <div>
+            <h3 class="font-black text-lg text-white">تقرير التحقيق والتدقيق المالي الشامل (Case Dossier)</h3>
+            <p class="text-xs text-slate-400">ملف استخباراتي وتوثيقي كامل للرفع للإدارة العامة</p>
+          </div>
+        </div>
+        <button onclick="closeCaseReportModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Report Preview Area -->
+      <div class="flex-1 overflow-hidden flex flex-col space-y-2">
+        <div class="flex items-center justify-between text-xs text-slate-400">
+          <span>معاينة التقرير بصيغة Markdown المهيأة للطباعة والمشاركة:</span>
+          <span id="caseReportCharCount" class="font-mono text-cyan-400">0 حرف</span>
+        </div>
+        <textarea id="caseReportContentTextarea" readonly class="flex-1 min-h-[360px] bg-slate-950 border border-slate-800 rounded-xl p-4 numbers-font text-xs text-slate-200 focus:outline-none custom-scrollbar leading-relaxed selection:bg-cyan-500 selection:text-white"></textarea>
+      </div>
+
+      <!-- Actions Bar -->
+      <div class="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div class="text-[11px] text-slate-400">
+          <i class="fa-solid fa-shield-check text-emerald-400 ml-1"></i> تقرير معتمد صادر من بوابة الرقابة والتفتيش
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="copyCaseReport()" id="copyReportBtn" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-copy text-cyan-400"></i>
+            <span>نسخ للحافظة</span>
+          </button>
+          <button onclick="downloadCaseReport()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs shadow-md shadow-cyan-600/20 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-download"></i>
+            <span>تحميل كملف نصي (.txt)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= JAVASCRIPT LOGIC ================= -->
   <script>
     const API_BASE = window.location.origin.includes('rasalmal.online')
@@ -739,6 +877,8 @@
       }
     }
 
+    let standbyPollTimer = null;
+
     function showDashboard() {
       document.getElementById('authOverlay').classList.add('hidden');
       document.getElementById('mainDashboard').classList.remove('hidden');
@@ -750,6 +890,10 @@
 
       refreshOverview();
       executeSearch();
+      checkStandbyStatus();
+
+      if (standbyPollTimer) clearInterval(standbyPollTimer);
+      standbyPollTimer = setInterval(checkStandbyStatus, 6000);
     }
 
     function logoutStaff() {
@@ -1257,9 +1401,364 @@
           </div>
         `).join('');
       }
+
+      // Tab: Secret Staff Notes Timeline (دفتر الملاحظات السري)
+      renderStaffNotes(p.staffNotes || []);
+
       // Tab 7: Investigation Chat Username Init
       const chatTarget = document.getElementById('modChatTargetUsername');
       if (chatTarget) chatTarget.innerText = p.username;
+    }
+
+    // Render Staff Secret Notes
+    function renderStaffNotes(notes) {
+      const container = document.getElementById('p_staffNotesTimeline');
+      if (!container) return;
+
+      if (!notes || !notes.length) {
+        container.innerHTML = `
+          <div class="text-center py-6 text-xs text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800/60">
+            <i class="fa-solid fa-book-open text-xl mb-1.5 text-slate-600 block"></i>
+            دفتر هذا اللاعب فارغ حتى الآن. يمكنك تدوين أول ملاحظة في النموذج أعلاه.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = notes.map(n => `
+        <div class="glass-card p-3 rounded-xl border border-yellow-500/20 bg-yellow-950/5 space-y-1 text-xs">
+          <div class="flex items-center justify-between border-b border-slate-800/60 pb-1.5 mb-1.5">
+            <div class="flex items-center gap-1.5 text-yellow-300 font-bold">
+              <i class="fa-solid fa-user-pen text-yellow-400"></i>
+              <span>${n.modName || 'محقق'}</span>
+            </div>
+            <span class="text-[10px] text-slate-400">${fmtDate(n.timestamp)}</span>
+          </div>
+          <p class="text-slate-200 text-xs leading-relaxed whitespace-pre-wrap">${n.note}</p>
+        </div>
+      `).join('');
+    }
+
+    // Save Staff Note
+    async function saveStaffNote() {
+      if (!inspectingPlayer) return;
+      const input = document.getElementById('staffNoteInput');
+      const btn = document.getElementById('saveStaffNoteBtn');
+      const noteText = input.value.trim();
+
+      if (!noteText) {
+        alert('يرجى كتابة الملاحظة أولاً.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري الحفظ...</span>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/player/note`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentModToken}`
+          },
+          body: JSON.stringify({
+            targetUser: inspectingPlayer.username,
+            note: noteText
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          input.value = '';
+          inspectingPlayer.staffNotes = data.staffNotes || [data.note, ...(inspectingPlayer.staffNotes || [])];
+          renderStaffNotes(inspectingPlayer.staffNotes);
+          alert('✅ تم حفظ الملاحظة في دفتر التحقيق السري بنجاح.');
+        } else {
+          alert('❌ ' + (data.message || 'فشل حفظ الملاحظة'));
+        }
+      } catch (err) {
+        alert('خطأ في الاتصال: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> <span>حفظ في الدفتر</span>`;
+      }
+    }
+
+    // ================= CASE DOSSIER REPORT EXPORT SYSTEM =================
+    function generateCaseReportText(p) {
+      if (!p) return '';
+      const nowStr = new Date().toLocaleString('ar-EG', { dateStyle: 'full', timeStyle: 'medium' });
+      const investigatorName = currentModInfo ? currentModInfo.name : 'محقق الرقابة';
+      const jobTitle = GAME_DICTIONARY.jobs[p.jobId] || p.jobId || 'وظيفة حرة';
+
+      let report = `================================================================================\n`;
+      report += `                📄 تقرير التحقيق والتدقيق المالي الشامل (CASE DOSSIER)          \n`;
+      report += `                     بوابة الرقابة والتفتيش | RAS ALMAL TYCOON                  \n`;
+      report += `================================================================================\n\n`;
+
+      report += `📌 تاريخ إصدار التقرير: ${nowStr}\n`;
+      report += `🛡️ المحقق المسؤول: ${investigatorName}\n`;
+      report += `🏷️ الحالة العامة للحساب: ${p.isBanned ? 'محظور نهائياً ⛔' : (p.isFrozen ? 'مجمد ومقيد 🔒' : 'نشط وطبيعي 🟢')}\n`;
+      report += `--------------------------------------------------------------------------------\n\n`;
+
+      report += `👤 [1] بيانات الهوية والاتصال (IDENTITY & TELEMETRY):\n`;
+      report += `   • اسم اللاعب: ${p.username}\n`;
+      report += `   • اللقب والوظيفة: ${p.title} (${jobTitle})\n`;
+      report += `   • تاريخ التسجيل: ${p.createdAt ? fmtDate(p.createdAt) : 'غير مسجل'}\n`;
+      report += `   • حالة الاتصال الآن: ${p.isOnline ? 'متصل باللعبة حالياً (Online)' : 'غير متصل (آخر ظهور: ' + fmtDate(p.lastSeen) + ')'}\n`;
+      report += `   • العصابة / الانتماء: ${p.gang || 'لا يوجد'}\n`;
+      report += `   • نقاط الخبرة (XP): ${(p.xp || 0).toLocaleString('en-US')} XP\n\n`;
+
+      report += `💰 [2] المركز المالي والثروة (FINANCIAL BREAKDOWN):\n`;
+      report += `   • صافي الثروة (Net Worth): ${fmtMoney(p.netWorth)}\n`;
+      report += `   • الكاش السائل (Cash): ${fmtMoney(p.cash)}\n`;
+      report += `   • رصيد البنك (Bank): ${fmtMoney(p.bank)}\n`;
+      report += `   • سبائك الذهب: ${(p.gold || 0).toLocaleString('en-US')} سبيكة 🪙\n`;
+      report += `   • الأموال غير النظيفة (Dirty Cash): ${fmtMoney(p.dirtyCash)}\n`;
+      report += `   • إجمالي الضرائب المسددة: ${fmtMoney(p.totalTaxesPaid)}\n`;
+      report += `   • الدخل التقديري في الدقيقة: ${fmtMoney(p.incomePerMinute || 0)}/دقيقة\n\n`;
+
+      report += `🏢 [3] المشاريع والشركات التجارية (BUSINESS PORTFOLIO):\n`;
+      const bKeys = Object.keys(p.businesses || {});
+      if (!bKeys.length) {
+        report += `   • لا يمتلك أي مشاريع تجارية.\n`;
+      } else {
+        bKeys.forEach((k, idx) => {
+          const b = p.businesses[k] || {};
+          const bInfo = GAME_DICTIONARY.businesses[k] || { name: k, baseProfit: 500 };
+          report += `   ${idx + 1}. ${bInfo.name}: مستوى ${b.level || 1} | العمالة: ${b.workers || 0} | الإدارة الذاتية: ${b.manager ? 'نعم' : 'لا'}\n`;
+        });
+      }
+      report += `\n`;
+
+      report += `📈 [4] محفظة الأسهم والاستثمارات (STOCKS & ASSETS):\n`;
+      const sKeys = Object.keys(p.stocks || {});
+      if (!sKeys.length) {
+        report += `   • محفظة الأسهم فارغة.\n`;
+      } else {
+        sKeys.forEach(k => {
+          const s = p.stocks[k] || {};
+          const sInfo = GAME_DICTIONARY.stocks[k] || { name: k };
+          const shares = Number(s.shares || s.amount || 0);
+          const price = Number(s.buyPrice || s.avgPrice || 0);
+          report += `   • ${sInfo.name}: ${shares.toLocaleString('en-US')} سهم (القيمة: ${fmtMoney(shares * price)})\n`;
+        });
+      }
+      report += `\n`;
+
+      report += `✈️ [5] المطار والأسطول (AVIATION):\n`;
+      if (p.airport) {
+        report += `   • مستوى المطار: مستوى ${p.airport.level || 1} | عدد الطائرات: ${Object.keys(p.airport.fleet || {}).length} | الوجهات: ${(p.airport.routes || []).length}\n`;
+      } else {
+        report += `   • لم يقم بتفعيل المطار.\n`;
+      }
+      report += `\n`;
+
+      report += `💸 [6] آخر الحوالات المالية المسجلة (P2P TRANSFERS):\n`;
+      if (!p.transfers || !p.transfers.length) {
+        report += `   • لا توجد حوالات مسجلة.\n`;
+      } else {
+        p.transfers.slice(0, 15).forEach((t, i) => {
+          const isSender = String(t.sender).toLowerCase() === p.username.toLowerCase();
+          report += `   ${i + 1}. [${fmtDate(t.created_at)}] ${isSender ? 'صادرة إلى -> ' + t.recipient : 'واردة من <- ' + t.sender} | المبلغ: ${fmtMoney(t.amount)}\n`;
+        });
+      }
+      report += `\n`;
+
+      report += `📔 [7] ملاحظات طاقم التحقيق والرقابة (INTERNAL STAFF NOTES):\n`;
+      if (!p.staffNotes || !p.staffNotes.length) {
+        report += `   • لا توجد ملاحظات سرية مدونة.\n`;
+      } else {
+        p.staffNotes.forEach((n, i) => {
+          report += `   ${i + 1}. [${fmtDate(n.timestamp)}] (${n.modName || 'محقق'}): ${n.note}\n`;
+        });
+      }
+      report += `\n`;
+
+      report += `⚖️ [8] العقوبات والإجراءات الإدارية السابقة (SANCTIONS HISTORY):\n`;
+      if (!p.moderatorNotes || !p.moderatorNotes.length) {
+        report += `   • سجل الحساب نظيف من العقوبات الإدارية.\n`;
+      } else {
+        p.moderatorNotes.forEach((n, i) => {
+          report += `   ${i + 1}. [${fmtDate(n.timestamp)}] ${n.action ? n.action.toUpperCase() : 'إجراء'} بواسطة (${n.modName || 'محقق'}): ${n.reason || 'لا يوجد سبب'}\n`;
+        });
+      }
+
+      report += `\n================================================================================\n`;
+      report += `                          نهاية تقرير القضية المعتمد                           \n`;
+      report += `================================================================================\n`;
+
+      return report;
+    }
+
+    function openCaseReportModal() {
+      if (!inspectingPlayer) {
+        alert('يرجى اختيار وفحص لاعب أولاً لتصدير التقرير.');
+        return;
+      }
+      const reportText = generateCaseReportText(inspectingPlayer);
+      const textarea = document.getElementById('caseReportContentTextarea');
+      const countEl = document.getElementById('caseReportCharCount');
+      if (textarea) textarea.value = reportText;
+      if (countEl) countEl.textContent = `${reportText.length.toLocaleString('en-US')} حرف`;
+
+      document.getElementById('caseReportModal').classList.remove('hidden');
+    }
+
+    function closeCaseReportModal() {
+      document.getElementById('caseReportModal').classList.add('hidden');
+    }
+
+    async function copyCaseReport() {
+      const textarea = document.getElementById('caseReportContentTextarea');
+      const btn = document.getElementById('copyReportBtn');
+      if (!textarea) return;
+
+      try {
+        await navigator.clipboard.writeText(textarea.value);
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = `<i class="fa-solid fa-check text-emerald-400"></i> <span>تم النسخ بنجاح!</span>`;
+        setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
+      } catch (_) {
+        textarea.select();
+        document.execCommand('copy');
+        alert('تم نسخ التقرير إلى الحافظة.');
+      }
+    }
+
+    function downloadCaseReport() {
+      if (!inspectingPlayer) return;
+      const textarea = document.getElementById('caseReportContentTextarea');
+      const content = textarea ? textarea.value : '';
+      if (!content) return;
+
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `تقرير_تحقيق_${inspectingPlayer.username}_${new Date().toISOString().slice(0, 10)}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // ================= STANDBY MODE CONTROLS & MONITORING =================
+    let currentStandbyState = { active: false, enabled: false, message: '', facebook_url: '' };
+
+    async function checkStandbyStatus() {
+      if (!currentModToken) return;
+      try {
+        const res = await fetch(`${API_BASE}/standby/status`, {
+          headers: { 'Authorization': `Bearer ${currentModToken}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        currentStandbyState = data.standby || { active: false };
+
+        const dot = document.getElementById('navStandbyDot');
+        const text = document.getElementById('navStandbyText');
+        const btn = document.getElementById('navStandbyBtn');
+
+        const isActive = Boolean(currentStandbyState.active || currentStandbyState.enabled);
+        if (isActive) {
+          if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping';
+          if (text) text.innerHTML = '<span class="text-rose-400 font-black">وضع الستاند باي: مفعل ⚠️</span>';
+          if (btn) btn.className = 'px-3.5 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900/70 text-rose-200 text-xs font-bold border border-rose-600/60 flex items-center gap-2 transition shadow-md shadow-rose-900/30';
+        } else {
+          if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+          if (text) text.innerHTML = '<span class="text-slate-300">وضع الستاند باي: <strong class="text-emerald-400">مفتوح (شغال)</strong></span>';
+          if (btn) btn.className = 'px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center gap-2 transition';
+        }
+      } catch (err) {
+        console.error('Standby check error:', err);
+      }
+    }
+
+    function openStandbyModal() {
+      const modal = document.getElementById('standbyModal');
+      const box = document.getElementById('standbyStatusDisplayBox');
+      const msgInput = document.getElementById('standbyMessageInput');
+      const fbInput = document.getElementById('standbyFacebookInput');
+      const actionBtn = document.getElementById('standbyActionBtn');
+
+      const isActive = Boolean(currentStandbyState.active || currentStandbyState.enabled);
+      msgInput.value = currentStandbyState.message || 'الخوادم رهن وضع الاستعداد والتجهيز لانطلاق الموسم الثاني.';
+      fbInput.value = currentStandbyState.facebook_url || 'https://www.facebook.com';
+
+      if (isActive) {
+        box.className = 'p-3.5 rounded-xl border border-rose-500/40 bg-rose-950/30 flex items-center justify-between';
+        box.innerHTML = `
+          <div class="flex items-center gap-2 text-rose-300 font-bold text-xs">
+            <i class="fa-solid fa-triangle-exclamation text-rose-400 text-base"></i>
+            <span>وضع الستاند باي مفعل حالياً (اللعبة مغلقة أمام اللاعبين)</span>
+          </div>
+        `;
+        actionBtn.className = 'flex-1 py-3 px-4 rounded-xl font-bold text-xs shadow-lg transition flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white cursor-pointer';
+        actionBtn.innerHTML = `<i class="fa-solid fa-play"></i> <span>إلغاء الستاند باي وفتح اللعبة للجميع</span>`;
+      } else {
+        box.className = 'p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-950/30 flex items-center justify-between';
+        box.innerHTML = `
+          <div class="flex items-center gap-2 text-emerald-300 font-bold text-xs">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+            <span>اللعبة تعمل بصورة طبيعية (وضع الستاند باي غير مفعل)</span>
+          </div>
+        `;
+        actionBtn.className = 'flex-1 py-3 px-4 rounded-xl font-bold text-xs shadow-lg transition flex items-center justify-center gap-2 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white cursor-pointer';
+        actionBtn.innerHTML = `<i class="fa-solid fa-power-off"></i> <span>تفعيل وضع الستاند باي (إيقاف اللعبة)</span>`;
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeStandbyModal() {
+      document.getElementById('standbyModal').classList.add('hidden');
+    }
+
+    async function toggleStandbyModeAction() {
+      const isActive = Boolean(currentStandbyState.active || currentStandbyState.enabled);
+      const targetActive = !isActive;
+      const msg = document.getElementById('standbyMessageInput').value.trim();
+      const fb = document.getElementById('standbyFacebookInput').value.trim();
+      const btn = document.getElementById('standbyActionBtn');
+
+      const confirmMsg = targetActive
+        ? 'هل أنت متأكد من تفعيل وضع الاستعداد (Standby)؟ سيتم حجب اللعبة عن جميع اللاعبين وتحويلهم لصفحة الانتظار.'
+        : 'هل أنت متأكد من إلغاء وضع الاستعداد وفتح اللعبة فوراً لجميع اللاعبين؟';
+
+      if (!confirm(confirmMsg)) return;
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري المعالجة...</span>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/standby/toggle`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentModToken}`
+          },
+          body: JSON.stringify({
+            active: targetActive,
+            message: msg,
+            facebookUrl: fb
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alert('✅ ' + data.message);
+          currentStandbyState = data.standby || { active: targetActive };
+          closeStandbyModal();
+          checkStandbyStatus();
+        } else {
+          alert('❌ ' + (data.message || 'فشل تحديث وضع الاستعداد'));
+        }
+      } catch (err) {
+        alert('خطأ في الاتصال: ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     // Filter & Render Player Activity Feed
@@ -1331,7 +1830,7 @@
         modChatPollInterval = null;
       }
 
-      ['economy', 'activity', 'businesses', 'stocks', 'airport', 'collectibles', 'transfers', 'chat', 'moderation'].forEach(t => {
+      ['economy', 'activity', 'notes', 'businesses', 'stocks', 'airport', 'collectibles', 'transfers', 'chat', 'moderation'].forEach(t => {
         const btn = document.getElementById(`itab_${t}`);
         const content = document.getElementById(`tabContent_${t}`);
         if (!btn || !content) return;
