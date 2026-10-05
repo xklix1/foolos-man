@@ -572,6 +572,7 @@ async function moderatorRoutes(fastify, options) {
 
       switch (action) {
         case 'freeze': {
+          pState.underSuspicion = true;
           pState.freezeUntil = ts + durationMs;
           pState.freezeReason = cleanReason;
           pState.frozenBy = request.modSession.name;
@@ -608,6 +609,7 @@ async function moderatorRoutes(fastify, options) {
         }
 
         case 'unfreeze': {
+          pState.underSuspicion = false;
           pState.freezeUntil = 0;
           pState.freezeReason = '';
           pState.frozenBy = '';

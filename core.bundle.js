@@ -18054,8 +18054,15 @@ const UIController = (() => {
         return;
       }
       const canonicalUser = (playerState && playerState.username) ? playerState.username : username;
-      if (playerState && (playerState.underSuspicion === true || (playerState.state && playerState.state.underSuspicion === true))) {
-        enforceSuspicionStatus(true);
+      const isSuspOrFrozen = Boolean(
+        playerState.underSuspicion === true ||
+        (playerState.state && playerState.state.underSuspicion === true) ||
+        (playerState.freezeUntil && playerState.freezeUntil > Date.now()) ||
+        (playerState.state && playerState.state.freezeUntil && playerState.state.freezeUntil > Date.now())
+      );
+      if (playerState && isSuspOrFrozen) {
+        const reasonText = (playerState.state && playerState.state.freezeReason) || playerState.freezeReason || 'تم تعليق نشاط حسابك مؤقتاً لوجود اشتباه يتطلب التحقق.';
+        enforceSuspicionStatus(true, reasonText);
       }
       localStorage.setItem('rasalmal_active_session_user', canonicalUser);
 
@@ -24045,11 +24052,17 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           return;
         }
 
-        // Suspicion lock check
-        const isSusp = Boolean(fresh.underSuspicion || (fresh.state && fresh.state.underSuspicion));
+        // Suspicion & Freeze lock check
+        const isSusp = Boolean(
+          fresh.underSuspicion || 
+          (fresh.state && fresh.state.underSuspicion) || 
+          (fresh.freezeUntil && fresh.freezeUntil > Date.now()) || 
+          (fresh.state && fresh.state.freezeUntil && fresh.state.freezeUntil > Date.now())
+        );
         if (GameEngine.state) GameEngine.state.underSuspicion = isSusp;
         if (typeof enforceSuspicionStatus === 'function') {
-          enforceSuspicionStatus(isSusp);
+          const reasonText = (fresh.state && fresh.state.freezeReason) || fresh.freezeReason || '';
+          enforceSuspicionStatus(isSusp, reasonText);
         }
 
         // Jail check
@@ -33490,14 +33503,23 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   // Direct Admin Popup Modal Controller (شاشة منبثقة مباشرة من الإدارة)
   // =========================================================================
   
-  function enforceSuspicionStatus(isUnderSuspicion) {
+  function enforceSuspicionStatus(isUnderSuspicion, customReason = '') {
     const modal = document.getElementById('modal-account-under-suspicion');
     if (!modal) return;
     if (isUnderSuspicion === true) {
+      if (typeof GameEngine !== 'undefined' && GameEngine.state && Boolean(GameEngine.state.isAdmin)) {
+        return;
+      }
+      if (customReason) {
+        const pEl = modal.querySelector('p.font-bold') || document.getElementById('suspicion-modal-reason');
+        if (pEl) pEl.textContent = customReason;
+      }
       modal.classList.remove('hidden');
+      modal.classList.add('flex');
       if (typeof window !== 'undefined') window._isUnderSuspicionLocked = true;
     } else {
       modal.classList.add('hidden');
+      modal.classList.remove('flex');
       if (typeof window !== 'undefined') window._isUnderSuspicionLocked = false;
     }
   }
