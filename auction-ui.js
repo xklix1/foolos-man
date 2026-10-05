@@ -329,7 +329,8 @@
           badge.textContent = 'مزاد مرتقب';
         }
         if (title) title.textContent = `قريباً: ${this.state.item?.name || 'غرض ملكي'}`;
-        if (subtitle) subtitle.textContent = `المسجلين حتى الآن: ${this.state.registrantsCount || 0} لاعب (شرط الثروة: ${Number(this.state.config?.minNetWorth || 0).toLocaleString()} ج.م)`;
+        const minNwReq = Number(this.state.config?.minNetWorth || 0);
+        if (subtitle) subtitle.textContent = `المسجلين حتى الآن: ${this.state.registrantsCount || 0} لاعب (شرط الثروة: ${minNwReq > 0 ? minNwReq.toLocaleString() + ' ج.م' : 'متاح للجميع'})`;
         if (countdown) countdown.textContent = this.formatTimeRemaining(this.state.config?.scheduledStartTime);
       } else if (this.state.status === 'ENDED') {
         if (badge) badge.textContent = 'انتهى المزاد';
@@ -352,7 +353,8 @@
       const currentUser = this.getCurrentUser();
       const isRegistered = this.state.isRegistered;
       const myNetWorth = window.GameEngine?.state?.netWorth || 0;
-      const isEligible = myNetWorth >= (config.minNetWorth || 0);
+      const minNetWorthRequired = Number(config.minNetWorth || 0);
+      const isEligible = minNetWorthRequired <= 0 || myNetWorth >= minNetWorthRequired;
 
       let html = '';
 
@@ -378,7 +380,7 @@
             <span class="text-[10px] text-slate-400 block font-bold">السعر الافتتاحي</span>
             <span class="text-sm sm:text-base font-black text-amber-400 font-mono">${Number(config.startingBid || 0).toLocaleString()} EGP</span>
             <span class="text-[10px] text-slate-400 block mt-1 font-bold">الحد الأدنى لصافي الثروة</span>
-            <span class="text-xs font-bold text-slate-200 font-mono">${Number(config.minNetWorth || 0).toLocaleString()} EGP</span>
+            <span class="text-xs font-bold text-slate-200 font-mono">${minNetWorthRequired > 0 ? minNetWorthRequired.toLocaleString() + ' EGP' : 'متاح للجميع (بدون شرط)'}</span>
           </div>
         </div>
       `;
@@ -519,7 +521,7 @@
               </div>
               <div class="flex justify-between">
                 <span class="text-slate-400">الشرط المطلوب للتسجيل:</span>
-                <strong class="text-amber-400 font-mono">${Number(config.minNetWorth || 0).toLocaleString()} EGP</strong>
+                <strong class="text-amber-400 font-mono">${minNetWorthRequired > 0 ? minNetWorthRequired.toLocaleString() + ' EGP' : 'متاح للجميع (بدون شرط)'}</strong>
               </div>
               <div class="flex justify-between pt-1 border-t border-slate-800">
                 <span class="text-slate-400">المسجلين حالياً:</span>

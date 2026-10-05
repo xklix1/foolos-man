@@ -40521,6 +40521,32 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     }
   };
 
+  function parseSafeMoney(val, fallback = 0) {
+    if (val === null || val === undefined) return fallback;
+    if (typeof val === 'number') return isNaN(val) ? fallback : Math.max(0, Math.floor(val));
+    let s = String(val).trim();
+    if (!s) return fallback;
+    // Convert Arabic-Indic numerals
+    s = s.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+    s = s.replace(/،/g, ',');
+    let mult = 1;
+    if (/([kK]|الف|ألف)/i.test(s)) {
+      mult = 1000;
+      s = s.replace(/([kK]|الف|ألف)/gi, '');
+    } else if (/([mM]|مليون)/i.test(s)) {
+      mult = 1000000;
+      s = s.replace(/([mM]|مليون)/gi, '');
+    } else if (/([bB]|مليار)/i.test(s)) {
+      mult = 1000000000;
+      s = s.replace(/([bB]|مليار)/gi, '');
+    }
+    s = s.replace(/[^\d.-]/g, '');
+    const n = parseFloat(s);
+    if (isNaN(n)) return fallback;
+    return Math.max(0, Math.floor(n * mult));
+  }
+  window._parseSafeMoney = parseSafeMoney;
+
   window._adminApplyAuctionPreset = function(presetKey) {
     const p = AUCTION_PRESETS[presetKey];
     if (!p) return;
@@ -40542,9 +40568,9 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     if (iconEl) iconEl.value = p.icon;
     if (badgeEl) badgeEl.value = p.badge;
     if (descEl) descEl.value = p.description;
-    if (startPriceEl) startPriceEl.value = p.startPrice;
-    if (minStepEl) minStepEl.value = p.minStep;
-    if (minNetWorthEl) minNetWorthEl.value = p.minNetWorth;
+    if (startPriceEl) startPriceEl.value = p.startPrice.toLocaleString();
+    if (minStepEl) minStepEl.value = p.minStep.toLocaleString();
+    if (minNetWorthEl) minNetWorthEl.value = p.minNetWorth.toLocaleString();
     if (goldAmountEl && p.rewardData && typeof p.rewardData.gold === 'number') {
       goldAmountEl.value = p.rewardData.gold;
     }
@@ -40558,11 +40584,12 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     const icon = (document.getElementById('adm-input-auc-icon')?.value || '🏆').trim();
     const badge = (document.getElementById('adm-input-auc-badge')?.value || 'مزاد رسمي').trim();
     const desc = (document.getElementById('adm-input-auc-desc')?.value || '').trim();
-    const startPrice = Number(document.getElementById('adm-input-auc-start-price')?.value || 10000000);
-    const minStep = Number(document.getElementById('adm-input-auc-min-step')?.value || 1000000);
-    const minNetWorth = Number(document.getElementById('adm-input-auc-min-networth')?.value || 0);
-    const delayMins = Number(document.getElementById('adm-input-auc-delay-mins')?.value || 10);
-    const goldAmount = Math.max(1, Number(document.getElementById('adm-input-auc-gold-amount')?.value || 1000));
+    const startPrice = parseSafeMoney(document.getElementById('adm-input-auc-start-price')?.value, 10000000);
+    const minStep = Math.max(1000, parseSafeMoney(document.getElementById('adm-input-auc-min-step')?.value, 1000000));
+    const minNetWorth = parseSafeMoney(document.getElementById('adm-input-auc-min-networth')?.value, 0);
+    const delayMins = Math.max(1, parseSafeMoney(document.getElementById('adm-input-auc-delay-mins')?.value, 10));
+    const goldAmount = Math.max(1, parseSafeMoney(document.getElementById('adm-input-auc-gold-amount')?.value, 1000));
+    const museumQuantity = Math.max(1, parseSafeMoney(document.getElementById('adm-input-auc-museum-quantity')?.value, 1));
 
     if (!name) {
       if (typeof showToast === 'function') showToast('خطأ', 'اسم المعروض مطلوب.', 'warning');
@@ -40574,7 +40601,13 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     if (type === 'chat_frame') rewardData.frameId = 'frame_custom_' + Date.now();
     if (type === 'gold') rewardData.gold = goldAmount;
     if (type === 'aircraft') rewardData.aircraftId = 'plane_custom_' + Date.now();
-    if (type === 'museum_item') rewardData.isMuseumRelic = true;
+    if (type === 'museum_item') {
+      rewardData.isMuseumRelic = true;
+      rewardData.quantity = museumQuantity;
+      if (window._selectedAuctionRelicData) {
+        rewardData = { ...window._selectedAuctionRelicData, ...rewardData, quantity: museumQuantity };
+      }
+    }
 
     // Check if matching preset
     for (const key in AUCTION_PRESETS) {
@@ -40589,6 +40622,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     }
     if (type === 'museum_item') {
       rewardData.isMuseumRelic = true;
+      rewardData.quantity = museumQuantity;
     }
 
     try {
@@ -40607,10 +40641,10 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل جدولة المزاد.');
 
-      if (typeof showToast === 'function') showToast('نجاح الجدولة', 'تم إطلاق ونشر المزاد الملكي بنجاح!', 'success');
+      if (typeof showToast === 'function') showToast('نجاح الجدولة', `تم إطلاق المزاد الملكي بنجاح! السعر: ${startPrice.toLocaleString()} ج.م | شرط الثروة: ${minNetWorth.toLocaleString()} ج.م`, 'success');
       else alert('تم إطلاق ونشر المزاد الملكي بنجاح!');
 
-      if (typeof logAdminAction === 'function') logAdminAction(`جدولة مزاد ملكي جديد: ${name} (${type === 'gold' ? goldAmount + ' سبيكة' : ''})`);
+      if (typeof logAdminAction === 'function') logAdminAction(`جدولة مزاد ملكي جديد: ${name} (افتتاح: ${startPrice.toLocaleString()}، شرط: ${minNetWorth.toLocaleString()})`);
       window._adminRefreshAuctionTelemetry();
     } catch (e) {
       if (typeof showToast === 'function') showToast('خطأ', e.message, 'error');
@@ -42872,7 +42906,8 @@ if (typeof document !== 'undefined') {
           badge.textContent = 'مزاد مرتقب';
         }
         if (title) title.textContent = `قريباً: ${this.state.item?.name || 'غرض ملكي'}`;
-        if (subtitle) subtitle.textContent = `المسجلين حتى الآن: ${this.state.registrantsCount || 0} لاعب (شرط الثروة: ${Number(this.state.config?.minNetWorth || 0).toLocaleString()} ج.م)`;
+        const minNwReq = Number(this.state.config?.minNetWorth || 0);
+        if (subtitle) subtitle.textContent = `المسجلين حتى الآن: ${this.state.registrantsCount || 0} لاعب (شرط الثروة: ${minNwReq > 0 ? minNwReq.toLocaleString() + ' ج.م' : 'متاح للجميع'})`;
         if (countdown) countdown.textContent = this.formatTimeRemaining(this.state.config?.scheduledStartTime);
       } else if (this.state.status === 'ENDED') {
         if (badge) badge.textContent = 'انتهى المزاد';
@@ -42895,7 +42930,8 @@ if (typeof document !== 'undefined') {
       const currentUser = this.getCurrentUser();
       const isRegistered = this.state.isRegistered;
       const myNetWorth = window.GameEngine?.state?.netWorth || 0;
-      const isEligible = myNetWorth >= (config.minNetWorth || 0);
+      const minNetWorthRequired = Number(config.minNetWorth || 0);
+      const isEligible = minNetWorthRequired <= 0 || myNetWorth >= minNetWorthRequired;
 
       let html = '';
 
@@ -42921,7 +42957,7 @@ if (typeof document !== 'undefined') {
             <span class="text-[10px] text-slate-400 block font-bold">السعر الافتتاحي</span>
             <span class="text-sm sm:text-base font-black text-amber-400 font-mono">${Number(config.startingBid || 0).toLocaleString()} EGP</span>
             <span class="text-[10px] text-slate-400 block mt-1 font-bold">الحد الأدنى لصافي الثروة</span>
-            <span class="text-xs font-bold text-slate-200 font-mono">${Number(config.minNetWorth || 0).toLocaleString()} EGP</span>
+            <span class="text-xs font-bold text-slate-200 font-mono">${minNetWorthRequired > 0 ? minNetWorthRequired.toLocaleString() + ' EGP' : 'متاح للجميع (بدون شرط)'}</span>
           </div>
         </div>
       `;
@@ -43062,7 +43098,7 @@ if (typeof document !== 'undefined') {
               </div>
               <div class="flex justify-between">
                 <span class="text-slate-400">الشرط المطلوب للتسجيل:</span>
-                <strong class="text-amber-400 font-mono">${Number(config.minNetWorth || 0).toLocaleString()} EGP</strong>
+                <strong class="text-amber-400 font-mono">${minNetWorthRequired > 0 ? minNetWorthRequired.toLocaleString() + ' EGP' : 'متاح للجميع (بدون شرط)'}</strong>
               </div>
               <div class="flex justify-between pt-1 border-t border-slate-800">
                 <span class="text-slate-400">المسجلين حالياً:</span>

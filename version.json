@@ -1,7 +1,7 @@
 {
-  "version": "v9.4.0",
-  "build": 1791234000000,
-  "timestamp": 1791234000000,
-  "notes": "Fix Airport Flight Clock Manipulation, Prevent Multi-Claim, Fix Stock Daily Limit & Restore AFK Offline Earnings",
-  "releaseNotes": "Fix Airport Flight Clock Manipulation, Prevent Multi-Claim, Fix Stock Daily Limit & Restore AFK Offline Earnings"
+  "version": "v9.4.1",
+  "build": 1791236000000,
+  "timestamp": 1791236000000,
+  "notes": "Fix Live Auction Starting Price, Min Net Worth Condition & Number Formatting Parser",
+  "releaseNotes": "Fix Live Auction Starting Price, Min Net Worth Condition & Number Formatting Parser"
 }

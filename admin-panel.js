@@ -10419,6 +10419,32 @@
     }
   };
 
+  function parseSafeMoney(val, fallback = 0) {
+    if (val === null || val === undefined) return fallback;
+    if (typeof val === 'number') return isNaN(val) ? fallback : Math.max(0, Math.floor(val));
+    let s = String(val).trim();
+    if (!s) return fallback;
+    // Convert Arabic-Indic numerals
+    s = s.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+    s = s.replace(/،/g, ',');
+    let mult = 1;
+    if (/([kK]|الف|ألف)/i.test(s)) {
+      mult = 1000;
+      s = s.replace(/([kK]|الف|ألف)/gi, '');
+    } else if (/([mM]|مليون)/i.test(s)) {
+      mult = 1000000;
+      s = s.replace(/([mM]|مليون)/gi, '');
+    } else if (/([bB]|مليار)/i.test(s)) {
+      mult = 1000000000;
+      s = s.replace(/([bB]|مليار)/gi, '');
+    }
+    s = s.replace(/[^\d.-]/g, '');
+    const n = parseFloat(s);
+    if (isNaN(n)) return fallback;
+    return Math.max(0, Math.floor(n * mult));
+  }
+  window._parseSafeMoney = parseSafeMoney;
+
   function getAdminApiMasterKey() {
     return localStorage.getItem('admin_master_key') || localStorage.getItem('rasalmal_master_key') || 'sk_live_rasalmal_secret_admin_master_key_2026';
   }
@@ -10481,9 +10507,9 @@
     if (iconEl) iconEl.value = p.icon;
     if (badgeEl) badgeEl.value = p.badge;
     if (descEl) descEl.value = p.description;
-    if (startPriceEl) startPriceEl.value = p.startPrice;
-    if (minStepEl) minStepEl.value = p.minStep;
-    if (minNetWorthEl) minNetWorthEl.value = p.minNetWorth;
+    if (startPriceEl) startPriceEl.value = p.startPrice.toLocaleString();
+    if (minStepEl) minStepEl.value = p.minStep.toLocaleString();
+    if (minNetWorthEl) minNetWorthEl.value = p.minNetWorth.toLocaleString();
     if (goldAmountEl && p.rewardData && typeof p.rewardData.gold === 'number') {
       goldAmountEl.value = p.rewardData.gold;
     }
@@ -10497,12 +10523,12 @@
     const icon = (document.getElementById('adm-input-auc-icon')?.value || '🏆').trim();
     const badge = (document.getElementById('adm-input-auc-badge')?.value || 'مزاد رسمي').trim();
     const desc = (document.getElementById('adm-input-auc-desc')?.value || '').trim();
-    const startPrice = Number(document.getElementById('adm-input-auc-start-price')?.value || 10000000);
-    const minStep = Number(document.getElementById('adm-input-auc-min-step')?.value || 1000000);
-    const minNetWorth = Number(document.getElementById('adm-input-auc-min-networth')?.value || 0);
-    const delayMins = Number(document.getElementById('adm-input-auc-delay-mins')?.value || 10);
-    const goldAmount = Math.max(1, Number(document.getElementById('adm-input-auc-gold-amount')?.value || 1000));
-    const museumQuantity = Math.max(1, Number(document.getElementById('adm-input-auc-museum-quantity')?.value || 1));
+    const startPrice = parseSafeMoney(document.getElementById('adm-input-auc-start-price')?.value, 10000000);
+    const minStep = Math.max(1000, parseSafeMoney(document.getElementById('adm-input-auc-min-step')?.value, 1000000));
+    const minNetWorth = parseSafeMoney(document.getElementById('adm-input-auc-min-networth')?.value, 0);
+    const delayMins = Math.max(1, parseSafeMoney(document.getElementById('adm-input-auc-delay-mins')?.value, 10));
+    const goldAmount = Math.max(1, parseSafeMoney(document.getElementById('adm-input-auc-gold-amount')?.value, 1000));
+    const museumQuantity = Math.max(1, parseSafeMoney(document.getElementById('adm-input-auc-museum-quantity')?.value, 1));
 
     if (!name) {
       if (typeof showToast === 'function') showToast('خطأ', 'اسم المعروض مطلوب.', 'warning');
@@ -10554,10 +10580,10 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل جدولة المزاد.');
 
-      if (typeof showToast === 'function') showToast('نجاح الجدولة', 'تم إطلاق ونشر المزاد الملكي بنجاح!', 'success');
+      if (typeof showToast === 'function') showToast('نجاح الجدولة', `تم إطلاق المزاد الملكي بنجاح! السعر: ${startPrice.toLocaleString()} ج.م | شرط الثروة: ${minNetWorth.toLocaleString()} ج.م`, 'success');
       else alert('تم إطلاق ونشر المزاد الملكي بنجاح!');
 
-      if (typeof logAdminAction === 'function') logAdminAction(`جدولة مزاد ملكي جديد: ${name} (${type === 'gold' ? goldAmount + ' سبيكة' : ''})`);
+      if (typeof logAdminAction === 'function') logAdminAction(`جدولة مزاد ملكي جديد: ${name} (افتتاح: ${startPrice.toLocaleString()}، شرط: ${minNetWorth.toLocaleString()})`);
       window._adminRefreshAuctionTelemetry();
     } catch (e) {
       if (typeof showToast === 'function') showToast('خطأ', e.message, 'error');

@@ -11,6 +11,38 @@ const sessionManager = require('./session-manager');
 
 const PERSISTENCE_FILE = path.join(__dirname, '..', '..', 'backups', 'live_auction_state.json');
 
+/**
+ * Universal safe number parser for currency and net worth values.
+ * Accurately parses: numbers, formatted comma-separated strings (10,000,000),
+ * multiplier suffixes (10m, 10M, 100k, 1b, مليون, مليار), and Arabic digits (٠-٩).
+ */
+function parseSafeMoney(val, fallback = 0) {
+  if (val === null || val === undefined) return fallback;
+  if (typeof val === 'number') return isNaN(val) ? fallback : Math.max(0, Math.floor(val));
+  let s = String(val).trim();
+  if (!s) return fallback;
+  // Convert Arabic-Indic numerals
+  s = s.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+  // Replace arabic commas
+  s = s.replace(/،/g, ',');
+  let mult = 1;
+  if (/([kK]|الف|ألف)/i.test(s)) {
+    mult = 1000;
+    s = s.replace(/([kK]|الف|ألف)/gi, '');
+  } else if (/([mM]|مليون)/i.test(s)) {
+    mult = 1000000;
+    s = s.replace(/([mM]|مليون)/gi, '');
+  } else if (/([bB]|مليار)/i.test(s)) {
+    mult = 1000000000;
+    s = s.replace(/([bB]|مليار)/gi, '');
+  }
+  // Strip non-digit/dot characters
+  s = s.replace(/[^\d.-]/g, '');
+  const n = parseFloat(s);
+  if (isNaN(n)) return fallback;
+  return Math.max(0, Math.floor(n * mult));
+}
+
 class AuctionService {
   constructor() {
     this.state = this._getInitialState();
@@ -59,7 +91,7 @@ class AuctionService {
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object') {
           this.state = { ...this._getInitialState(), ...parsed };
-          console.log(`[AuctionService] Loaded persisted auction state: status=${this.state.status}, item=${this.state.item?.name}`);
+          console.log(`[AuctionService] Loaded persisted auction state: status=${this.state.status}, item=${this.state.item?.name}, startingBid=${this.state.config?.startingBid}, minNetWorth=${this.state.config?.minNetWorth}`);
         }
       }
     } catch (e) {
@@ -148,8 +180,22 @@ class AuctionService {
     const configData = params.config || {};
 
     const auctionId = `auc_${now}_${Math.random().toString(36).substring(2, 7)}`;
-    const startDelayMinutes = Number(params.startDelayMinutes || 10);
+    const startDelayMinutes = Math.max(1, parseSafeMoney(params.startDelayMinutes || configData.startDelayMinutes, 10));
     const scheduledStartTime = Number(params.scheduledStartTime || (now + startDelayMinutes * 60 * 1000));
+
+    // Flexible key extraction from nested config or top-level params
+    const rawMinNetWorth = configData.minNetWorth !== undefined ? configData.minNetWorth : params.minNetWorth;
+    const rawStartingBid = configData.startingBid !== undefined 
+      ? configData.startingBid 
+      : (configData.startPrice !== undefined ? configData.startPrice : (params.startingBid !== undefined ? params.startingBid : params.startPrice));
+    const rawMinStep = configData.minBidStep !== undefined 
+      ? configData.minBidStep 
+      : (configData.minStep !== undefined ? configData.minStep : (params.minBidStep !== undefined ? params.minBidStep : params.minStep));
+
+    const minNetWorth = parseSafeMoney(rawMinNetWorth, 0);
+    const startingBid = parseSafeMoney(rawStartingBid, 10000000);
+    const minBidStep = Math.max(1000, parseSafeMoney(rawMinStep, 1000000));
+    const hammerDuration = Math.max(20, parseSafeMoney(configData.hammerDurationSeconds || params.hammerDurationSeconds, 60));
 
     this.state = {
       id: auctionId,
@@ -164,14 +210,14 @@ class AuctionService {
         rewardData: item.rewardData || {}
       },
       config: {
-        minNetWorth: Math.max(0, Number(configData.minNetWorth || 0)),
-        startingBid: Math.max(1000000, Number(configData.startingBid || 5000000)),
-        minBidStep: Math.max(100000, Number(configData.minBidStep || 1000000)),
+        minNetWorth: minNetWorth,
+        startingBid: startingBid,
+        minBidStep: minBidStep,
         scheduledStartTime: scheduledStartTime,
-        hammerDurationSeconds: Math.max(20, Number(configData.hammerDurationSeconds || 60))
+        hammerDurationSeconds: hammerDuration
       },
       live: {
-        currentBid: Math.max(1000000, Number(configData.startingBid || 5000000)),
+        currentBid: startingBid,
         highestBidder: null,
         hammerStrike: 0,
         hammerStrikeMessage: '',
@@ -182,6 +228,8 @@ class AuctionService {
       winner: null,
       lastUpdated: now
     };
+
+    console.log(`[AuctionService] Created new auction [${this.state.item.name}]: startingBid=${startingBid} EGP, minNetWorth=${minNetWorth} EGP, minBidStep=${minBidStep} EGP, startsIn=${startDelayMinutes}m`);
 
     this._savePersistedState();
     return { success: true, state: this.getPublicState() };
@@ -225,10 +273,21 @@ class AuctionService {
     const playerRow = await dbService.getPlayerByUsername(cleanUser);
     if (!playerRow) throw new Error('تعذر العثور على بيانات اللاعب.');
 
-    const netWorth = Number(playerRow.net_worth || 0);
+    const activeSession = sessionManager.sessions.get(cleanUser.toLowerCase());
+    const sessionState = activeSession?.state || {};
+
+    const netWorth = Math.max(
+      0,
+      Number(
+        playerRow.net_worth ??
+        playerRow.state?.netWorth ??
+        sessionState.netWorth ??
+        ((playerRow.cash || sessionState.cash || 0) + (playerRow.bank || sessionState.bank || 0))
+      )
+    );
     const minRequired = Number(this.state.config.minNetWorth || 0);
 
-    if (netWorth < minRequired) {
+    if (minRequired > 0 && netWorth < minRequired) {
       throw new Error(`عذراً، هذا المزاد يتطلب صافي ثروة لا تقل عن ${minRequired.toLocaleString()} ج.م (ثروتك الحالية: ${netWorth.toLocaleString()} ج.م).`);
     }
 

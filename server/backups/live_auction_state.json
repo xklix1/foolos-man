@@ -1,39 +1,31 @@
 {
-  "id": "auc_1791058498624_uzj31",
-  "status": "LIVE",
+  "id": "auc_1791235245550_bbgyl",
+  "status": "SCHEDULED",
   "item": {
-    "type": "chat_frame",
-    "id": "frame_fire_dragon",
-    "name": "إطار التنين الناري الملكي 🔥",
-    "description": "إطار شات حصري مضيء ونادر جداً يمنح حسابك هيبة مطلقة في الشات العام",
-    "icon": "🔥",
-    "badge": "إطار شات حصري",
-    "rewardData": {
-      "frameId": "frame_fire_dragon"
-    }
+    "type": "aircraft",
+    "id": "custom_item_1791235245550",
+    "name": "طائرة نادرة",
+    "description": "عنصر نادر واستثنائي مقدم من إدارة اللعبة.",
+    "icon": "🏆",
+    "badge": "مزاد رسمي",
+    "rewardData": {}
   },
   "config": {
-    "minNetWorth": 50000000,
-    "startingBid": 10000000,
-    "minBidStep": 1000000,
-    "scheduledStartTime": 1791058798624,
+    "minNetWorth": 100000000,
+    "startingBid": 25000000,
+    "minBidStep": 2500000,
+    "scheduledStartTime": 1791235845550,
     "hammerDurationSeconds": 60
   },
   "live": {
-    "currentBid": 10000000,
+    "currentBid": 25000000,
     "highestBidder": null,
-    "hammerStrike": 2,
-    "hammerStrikeMessage": "🔨🔨 النداء الثاني على السعر الافتتاحي!",
-    "hammerExpiryTime": 1791058559201,
+    "hammerStrike": 0,
+    "hammerStrikeMessage": "",
+    "hammerExpiryTime": 0,
     "bidsHistory": []
   },
-  "registrants": [
-    {
-      "username": "Emad",
-      "registeredAt": 1791058499197,
-      "netWorth": 79961664
-    }
-  ],
+  "registrants": [],
   "winner": null,
-  "lastUpdated": 1791058499209
+  "lastUpdated": 1791235245550
 }
