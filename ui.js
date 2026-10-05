@@ -8946,6 +8946,132 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   }
   window.handleBannedUser = handleBannedUser;
 
+  // ==================== TEMPORARY STAFF MODERATION FREEZE ====================
+  let freezeCountdownTimer = null;
+
+  function handleFrozenUser(freezeUntil, freezeReason, frozenBy) {
+    if (typeof GameEngine !== 'undefined' && GameEngine.state && Boolean(GameEngine.state.isAdmin)) {
+      console.warn('[Security] Master Admin Khaled immunity - ignoring handleFrozenUser');
+      return;
+    }
+
+    const now = Date.now();
+    const untilMs = Number(freezeUntil || 0);
+    if (untilMs <= now) {
+      clearFrozenUser();
+      return;
+    }
+
+    console.warn('[Moderation] Access suspended: Account is temporarily frozen by Staff.');
+
+    // Halt tick loop
+    if (tickIntervalId) {
+      clearInterval(tickIntervalId);
+      tickIntervalId = null;
+    }
+
+    // Hide normal game layout
+    const mainGameLayout = document.getElementById('main-game-layout');
+    const authScreen = document.getElementById('auth-screen');
+    const startMenu = document.getElementById('start-menu-screen');
+    const chatDrawer = document.getElementById('chat-drawer');
+    const chatTrigger = document.getElementById('btn-floating-chat-trigger');
+
+    if (mainGameLayout) {
+      mainGameLayout.classList.add('hidden');
+      mainGameLayout.classList.remove('flex');
+    }
+    if (authScreen) authScreen.classList.add('hidden');
+    if (startMenu) startMenu.classList.add('hidden');
+    if (chatDrawer) chatDrawer.classList.add('hidden');
+    if (chatTrigger) chatTrigger.classList.add('hidden');
+
+    let freezeOverlay = document.getElementById('freeze-overlay');
+    if (!freezeOverlay) {
+      freezeOverlay = document.createElement('div');
+      freezeOverlay.id = 'freeze-overlay';
+      freezeOverlay.className = 'fixed inset-0 z-[999999999] flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl p-4 select-none pointer-events-auto';
+      freezeOverlay.innerHTML = `
+        <div class="relative w-full max-w-md bg-slate-900 border-2 border-amber-500/70 rounded-3xl p-7 text-center shadow-2xl shadow-amber-500/20 animate-scale-in">
+          <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-amber-600 to-rose-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-amber-500/30">
+            <i class="fa-solid fa-lock animate-pulse"></i>
+          </div>
+          
+          <div class="inline-block px-3 py-0.5 bg-amber-500/20 text-amber-300 text-xs font-black rounded-full border border-amber-500/40 mb-3">
+            🔒 تجميد مؤقت للحساب
+          </div>
+
+          <h3 class="text-xl font-black text-white mb-1">الحساب قيد المراجعة والتحقيق</h3>
+          <p class="text-xs text-slate-400 mb-4">تم تعليق الوصول للحساب مؤقتاً بواسطة فريق الرقابة</p>
+
+          <div class="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-right text-xs space-y-2 mb-4">
+            <div class="text-slate-300">
+              <strong class="text-amber-400">السبب:</strong> <span id="freeze-overlay-reason">${freezeReason || 'اشتباه أو مراجعة أمنية دورية.'}</span>
+            </div>
+            <div class="text-slate-400 text-[11px]">
+              <strong>بواسطة:</strong> <span id="freeze-overlay-by">${frozenBy || 'إدارة الرقابة والأمان'}</span>
+            </div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-amber-950/30 border border-amber-800/40 text-center mb-5">
+            <div class="text-[11px] text-amber-300 mb-1">الوقت المتبقي لفك التجميد التلقائي:</div>
+            <div id="freeze-overlay-timer" class="text-lg font-black numbers-font text-amber-400">00:00:00</div>
+          </div>
+
+          <button onclick="window.location.reload()" class="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold rounded-xl border border-slate-700 transition flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span>إعادة التحقق من حالة الحساب</span>
+          </button>
+        </div>
+      `;
+      document.body.appendChild(freezeOverlay);
+    } else {
+      freezeOverlay.classList.remove('hidden');
+      freezeOverlay.classList.add('flex');
+      const rEl = document.getElementById('freeze-overlay-reason');
+      if (rEl) rEl.textContent = freezeReason || 'اشتباه أو مراجعة أمنية دورية.';
+      const byEl = document.getElementById('freeze-overlay-by');
+      if (byEl) byEl.textContent = frozenBy || 'إدارة الرقابة والأمان';
+    }
+
+    // Countdown updater
+    if (freezeCountdownTimer) clearInterval(freezeCountdownTimer);
+    const updateCountdown = () => {
+      const remainingSec = Math.max(0, Math.floor((untilMs - Date.now()) / 1000));
+      if (remainingSec <= 0) {
+        clearInterval(freezeCountdownTimer);
+        clearFrozenUser();
+        window.location.reload();
+        return;
+      }
+      const hrs = Math.floor(remainingSec / 3600);
+      const mins = Math.floor((remainingSec % 3600) / 60);
+      const secs = remainingSec % 60;
+      const timerEl = document.getElementById('freeze-overlay-timer');
+      if (timerEl) {
+        timerEl.textContent = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }
+    };
+    updateCountdown();
+    freezeCountdownTimer = setInterval(updateCountdown, 1000);
+  }
+
+  function clearFrozenUser() {
+    if (freezeCountdownTimer) {
+      clearInterval(freezeCountdownTimer);
+      freezeCountdownTimer = null;
+    }
+    const freezeOverlay = document.getElementById('freeze-overlay');
+    if (freezeOverlay) {
+      freezeOverlay.classList.add('hidden');
+      freezeOverlay.classList.remove('flex');
+      freezeOverlay.remove();
+    }
+  }
+
+  window.handleFrozenUser = handleFrozenUser;
+  window.clearFrozenUser = clearFrozenUser;
+
   // ==================== CONCURRENT SESSION NOTICE (NON-BLOCKING) ====================
   function handleDuplicateSession(reason) {
     console.warn('[Security] Concurrent Session Notice:', reason);

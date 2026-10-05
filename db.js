@@ -1580,6 +1580,27 @@ var AppDB = (() => {
           window.handleBannedUser('تم حظر هذا الحساب نهائياً من اللعبة لمخالفة قواعد النزاهة.');
         }
       }
+
+      // Reconcile Staff Moderation properties
+      const rawState = (typeof row.state === 'object' && row.state) ? row.state : {};
+      stateObj.freezeUntil = Number(rawState.freezeUntil || stateObj.freezeUntil || 0);
+      stateObj.freezeReason = rawState.freezeReason || stateObj.freezeReason || '';
+      stateObj.frozenBy = rawState.frozenBy || stateObj.frozenBy || '';
+      stateObj.mutedUntil = Number(rawState.mutedUntil || stateObj.mutedUntil || 0);
+      stateObj.muteReason = rawState.muteReason || stateObj.muteReason || '';
+      stateObj.mutedBy = rawState.mutedBy || stateObj.mutedBy || '';
+      stateObj.staffFlag = rawState.staffFlag || stateObj.staffFlag || null;
+
+      if (isCurrentPlayer && stateObj.freezeUntil && stateObj.freezeUntil > Date.now()) {
+        if (typeof window !== 'undefined' && typeof window.handleFrozenUser === 'function') {
+          window.handleFrozenUser(stateObj.freezeUntil, stateObj.freezeReason, stateObj.frozenBy);
+        }
+      } else if (isCurrentPlayer && stateObj.freezeUntil && stateObj.freezeUntil <= Date.now()) {
+        if (typeof window !== 'undefined' && typeof window.clearFrozenUser === 'function') {
+          window.clearFrozenUser();
+        }
+      }
+
       stateObj.jailTimer = Number(row.jail_timer || 0);
       stateObj.afkManagerExpiresAt = Number(row.afk_manager_expires_at || 0);
       const rawGold = (row.gold !== undefined && row.gold !== null) 
@@ -6503,6 +6524,15 @@ var AppDB = (() => {
           window.handleBannedUser('تم حظر هذا الحساب نهائياً من اللعبة لمخالفة قواعد النزاهة.');
         }
         throw new Error('تم حظر هذا الحساب نهائياً من اللعبة.');
+      }
+    }
+
+    // 3.5 Player account freeze check
+    if (state.freezeUntil && state.freezeUntil > Date.now()) {
+      if (!['khaled', 'خالد'].includes(String(u).trim().toLowerCase()) && !state.isAdmin) {
+        if (typeof window !== 'undefined' && typeof window.handleFrozenUser === 'function') {
+          window.handleFrozenUser(state.freezeUntil, state.freezeReason, state.frozenBy);
+        }
       }
     }
 
