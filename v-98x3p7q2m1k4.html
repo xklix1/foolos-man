@@ -310,6 +310,9 @@
         <button onclick="switchInspectTab('economy')" id="itab_economy" class="px-3.5 py-2 rounded-xl font-bold bg-cyan-600 text-white whitespace-nowrap transition">
           <i class="fa-solid fa-coins ml-1"></i> المالية والثروة
         </button>
+        <button onclick="switchInspectTab('activity')" id="itab_activity" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
+          <i class="fa-solid fa-clock-rotate-left text-amber-400 ml-1"></i> سجل الأنشطة والحركات
+        </button>
         <button onclick="switchInspectTab('businesses')" id="itab_businesses" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
           <i class="fa-solid fa-building ml-1"></i> الممتلكات والشركات
         </button>
@@ -318,6 +321,9 @@
         </button>
         <button onclick="switchInspectTab('airport')" id="itab_airport" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
           <i class="fa-solid fa-plane ml-1"></i> المطار والأسطول
+        </button>
+        <button onclick="switchInspectTab('collectibles')" id="itab_collectibles" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
+          <i class="fa-solid fa-gem text-purple-400 ml-1"></i> المقتنيات والعصابة
         </button>
         <button onclick="switchInspectTab('transfers')" id="itab_transfers" class="px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition">
           <i class="fa-solid fa-money-bill-transfer ml-1"></i> سجل الحوالات
@@ -354,7 +360,11 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="glass-card p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-950/20">
+              <div class="text-[11px] text-emerald-400 mb-1 font-bold">الدخل التقديري / دقيقة</div>
+              <div id="p_incomePerMinute" class="text-base font-black numbers-font text-emerald-300">$0/د</div>
+            </div>
             <div class="glass-card p-3.5 rounded-xl">
               <div class="text-[11px] text-slate-400 mb-1">الأموال غير النظيفة</div>
               <div id="p_dirtyCash" class="text-base font-bold numbers-font text-rose-400">$0</div>
@@ -364,9 +374,47 @@
               <div id="p_taxes" class="text-base font-bold numbers-font text-slate-200">$0</div>
             </div>
             <div class="glass-card p-3.5 rounded-xl">
-              <div class="text-[11px] text-slate-400 mb-1">نقاط الخبرة (XP)</div>
+              <div class="text-[11px] text-slate-400 mb-1">نقاط الخبرة (XP) والوظيفة</div>
               <div id="p_xp" class="text-base font-bold numbers-font text-blue-400">0 XP</div>
             </div>
+          </div>
+
+          <!-- Account Identity & Telemetry Summary -->
+          <div class="glass-card p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
+            <h4 class="font-bold text-slate-300 flex items-center gap-1.5 border-b border-slate-800 pb-2">
+              <i class="fa-solid fa-fingerprint text-cyan-400"></i> بيانات الهوية والنزاهة وحالة الاتصال
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              <div>
+                <span class="text-slate-400">حالة الجلسة:</span>
+                <span id="p_telemetryOnline" class="font-bold text-white mr-1">--</span>
+              </div>
+              <div>
+                <span class="text-slate-400">العصابة / الانتماء:</span>
+                <span id="p_telemetryGang" class="font-bold text-amber-300 mr-1">لا يوجد</span>
+              </div>
+              <div>
+                <span class="text-slate-400">تاريخ التسجيل:</span>
+                <span id="p_telemetryCreatedAt" class="font-bold text-slate-200 mr-1">--</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NEW Tab: Full Player Activity Telemetry Feed -->
+        <div id="tabContent_activity" class="hidden space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
+            <div class="flex items-center gap-1 overflow-x-auto text-[11px]">
+              <button onclick="filterPlayerActivity('all')" id="actFilter_all" class="px-2.5 py-1 rounded-lg bg-cyan-600 text-white font-bold transition">الكل</button>
+              <button onclick="filterPlayerActivity('transfer')" id="actFilter_transfer" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">الحوالات</button>
+              <button onclick="filterPlayerActivity('stocks')" id="actFilter_stocks" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">البورصة</button>
+              <button onclick="filterPlayerActivity('gameplay')" id="actFilter_gameplay" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">العمليات والألعاب</button>
+            </div>
+            <span id="actFeedCountBadge" class="text-[11px] text-slate-400 font-bold">0 حركة مسجلة</span>
+          </div>
+
+          <div id="p_activityFeedContainer" class="space-y-2 custom-scrollbar max-h-[520px] overflow-y-auto pr-1">
+            <!-- Rendered Activity Items -->
           </div>
         </div>
 
@@ -394,7 +442,35 @@
           </div>
         </div>
 
-        <!-- Tab 5: Transfers -->
+        <!-- Tab 5: Collectibles & Rare Artifacts -->
+        <div id="tabContent_collectibles" class="hidden space-y-4">
+          <div>
+            <h3 class="text-xs font-bold text-purple-300 mb-2 flex items-center gap-1.5">
+              <i class="fa-solid fa-gem text-purple-400"></i> مقتنيات المتحف والقطع الأثرية النادرة:
+            </h3>
+            <div id="p_museumList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+              <!-- Museum items -->
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <div class="glass-card p-3.5 rounded-xl border border-slate-800">
+              <h4 class="text-xs font-bold text-amber-400 mb-2"><i class="fa-solid fa-car ml-1"></i> أسطول السيارات الفارهة:</h4>
+              <div id="p_carsList" class="space-y-1.5 text-xs text-slate-300">
+                <!-- Cars -->
+              </div>
+            </div>
+
+            <div class="glass-card p-3.5 rounded-xl border border-slate-800">
+              <h4 class="text-xs font-bold text-rose-400 mb-2"><i class="fa-solid fa-dice ml-1"></i> إحصائيات الكازينو والألعاب:</h4>
+              <div id="p_casinoStats" class="space-y-1 text-xs text-slate-300">
+                <!-- Casino Stats -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 6: Transfers -->
         <div id="tabContent_transfers" class="hidden space-y-3">
           <h3 class="text-xs font-bold text-slate-300">آخر التحويلات المالية (P2P Transfers):</h3>
           <div id="p_transfersList" class="space-y-2">
@@ -946,6 +1022,24 @@
       document.getElementById('p_dirtyCash').textContent = fmtMoney(p.dirtyCash);
       document.getElementById('p_taxes').textContent = fmtMoney(p.totalTaxesPaid);
       document.getElementById('p_xp').textContent = (p.xp || 0).toLocaleString('en-US') + ' XP';
+      
+      const incEl = document.getElementById('p_incomePerMinute');
+      if (incEl) incEl.textContent = fmtMoney(p.incomePerMinute || 0) + '/د';
+
+      const onlineEl = document.getElementById('p_telemetryOnline');
+      if (onlineEl) {
+        onlineEl.innerHTML = p.isOnline 
+          ? `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle text-[8px] animate-pulse"></i> متصل الآن باللعبة</span>`
+          : `<span class="text-slate-400">غير متصل (آخر ظهور: ${fmtDate(p.lastSeen)})</span>`;
+      }
+      const gangEl = document.getElementById('p_telemetryGang');
+      if (gangEl) gangEl.textContent = p.gang ? `🛡️ ${p.gang}` : 'لا ينتمي لأي عصابة';
+      const createdEl = document.getElementById('p_telemetryCreatedAt');
+      if (createdEl) createdEl.textContent = p.createdAt ? fmtDate(p.createdAt) : 'غير مسجل';
+
+      // Tab: Activity Feed Telemetry
+      window._currentInspectFeed = p.activityFeed || [];
+      renderPlayerActivityFeed('all');
 
       // Tab 2: Businesses
       const bList = document.getElementById('p_businessesList');
@@ -1010,6 +1104,51 @@
         `;
       }
 
+      // Tab: Collectibles & Rare Museum
+      const mMus = document.getElementById('p_museumList');
+      if (mMus) {
+        const mItems = Array.isArray(p.museum) ? p.museum : [];
+        if (!mItems.length) {
+          mMus.innerHTML = `<div class="text-xs text-slate-500 col-span-full py-2">لا يمتلك اللاعب تحف أو قطع نادرة في المتحف بعد.</div>`;
+        } else {
+          mMus.innerHTML = mItems.map(item => `
+            <div class="glass-card p-2.5 rounded-xl border border-purple-500/30 flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-gem text-purple-400"></i>
+                <span class="font-bold text-white">${item.name || item.title || item.id || 'قطعة نادرة'}</span>
+              </div>
+              <span class="text-[10px] text-amber-300 font-bold">${item.value ? fmtMoney(item.value) : ''}</span>
+            </div>
+          `).join('');
+        }
+      }
+
+      const cCars = document.getElementById('p_carsList');
+      if (cCars) {
+        const cars = p.ownedCars || {};
+        const cKeys = Object.keys(cars);
+        if (!cKeys.length) {
+          cCars.innerHTML = `<div class="text-slate-500 text-[11px]">لا توجد سيارات مملوكة.</div>`;
+        } else {
+          cCars.innerHTML = cKeys.map(c => `
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60 text-xs">
+              <span class="text-white font-medium">${c}</span>
+              <span class="text-cyan-400 font-bold">${p.activeCar === c ? '⭐ مستخدمة حالياً' : 'في المرآب'}</span>
+            </div>
+          `).join('');
+        }
+      }
+
+      const cStats = document.getElementById('p_casinoStats');
+      if (cStats) {
+        const cs = p.casinoStats || {};
+        cStats.innerHTML = `
+          <div class="flex justify-between py-0.5"><span class="text-slate-400">مرات الفوز:</span> <span class="font-bold text-emerald-400">${cs.totalWins || 0}</span></div>
+          <div class="flex justify-between py-0.5"><span class="text-slate-400">مرات الخسارة:</span> <span class="font-bold text-rose-400">${cs.totalLosses || 0}</span></div>
+          <div class="flex justify-between py-0.5"><span class="text-slate-400">دورات العجلة:</span> <span class="font-bold text-amber-300">${cs.totalSpins || 0}</span></div>
+        `;
+      }
+
       // Tab 5: Transfers
       const tList = document.getElementById('p_transfersList');
       if (!p.transfers || !p.transfers.length) {
@@ -1052,6 +1191,67 @@
       if (chatTarget) chatTarget.innerText = p.username;
     }
 
+    // Filter & Render Player Activity Feed
+    function filterPlayerActivity(category) {
+      ['all', 'transfer', 'stocks', 'gameplay'].forEach(c => {
+        const b = document.getElementById(`actFilter_${c}`);
+        if (b) {
+          b.className = (c === category)
+            ? 'px-2.5 py-1 rounded-lg bg-cyan-600 text-white font-bold transition'
+            : 'px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition';
+        }
+      });
+      renderPlayerActivityFeed(category);
+    }
+
+    function renderPlayerActivityFeed(category = 'all') {
+      const feed = window._currentInspectFeed || [];
+      const container = document.getElementById('p_activityFeedContainer');
+      const badge = document.getElementById('actFeedCountBadge');
+      if (!container) return;
+
+      const filtered = (category === 'all') ? feed : feed.filter(f => f.category === category);
+      if (badge) badge.textContent = `${filtered.length} حركة مسجلة`;
+
+      if (!filtered.length) {
+        container.innerHTML = `<div class="text-center py-8 text-xs text-slate-500">لا توجد حركات مسجلة تحت هذا التصنيف.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        const isPos = item.isPositive;
+        const icon = item.category === 'transfer' ? 'fa-money-bill-transfer text-emerald-400'
+                   : item.category === 'stocks' ? 'fa-chart-line text-cyan-400'
+                   : item.category === 'businesses' ? 'fa-building text-amber-400'
+                   : 'fa-bolt text-yellow-400';
+
+        return `
+          <div class="glass-card p-3 rounded-xl border border-slate-800/80 flex items-start justify-between gap-3 text-xs hover:border-slate-700 transition">
+            <div class="flex items-start gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0 text-sm">
+                <i class="fa-solid ${icon}"></i>
+              </div>
+              <div>
+                <div class="font-bold text-white leading-tight">${item.title}</div>
+                <div class="text-[11px] text-slate-400 mt-0.5 leading-relaxed">${item.desc}</div>
+                <div class="text-[10px] text-slate-500 mt-1 flex items-center gap-2">
+                  <span><i class="fa-regular fa-clock ml-0.5"></i> ${fmtDate(item.timestamp)}</span>
+                  <span class="px-1.5 py-0.2 rounded bg-slate-900 text-slate-400 font-medium">${item.category.toUpperCase()}</span>
+                </div>
+              </div>
+            </div>
+            ${item.amount ? `
+              <div class="text-left shrink-0">
+                <span class="font-black numbers-font text-xs ${isPos ? 'text-emerald-400' : 'text-rose-400'}">
+                  ${isPos ? '+' : '-'}${fmtMoney(item.amount)}
+                </span>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
     let modChatPollInterval = null;
 
     function switchInspectTab(tabId) {
@@ -1060,7 +1260,7 @@
         modChatPollInterval = null;
       }
 
-      ['economy', 'businesses', 'stocks', 'airport', 'transfers', 'chat', 'moderation'].forEach(t => {
+      ['economy', 'activity', 'businesses', 'stocks', 'airport', 'collectibles', 'transfers', 'chat', 'moderation'].forEach(t => {
         const btn = document.getElementById(`itab_${t}`);
         const content = document.getElementById(`tabContent_${t}`);
         if (!btn || !content) return;

@@ -443,12 +443,95 @@ async function moderatorRoutes(fastify, options) {
       const isOnline = inMemSession ? (now - inMemSession.lastActivity < 10 * 60 * 1000) : false;
 
       // 2. Fetch P2P transfers related to this player (sent & received)
-      const transfersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/transfers?or=(sender.ilike.${encodeURIComponent(u)},recipient.ilike.${encodeURIComponent(u)})&order=created_at.desc&limit=25`, {
+      const cleanU = encodeURIComponent(u);
+      const transfersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/transfers?or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.desc&limit=50`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       const playerTransfers = transfersRes.ok ? await transfersRes.json() : [];
 
-      // 3. Format complete detailed profile
+      // 3. Fetch recent Mailbox & DM interactions
+      let playerMailbox = [];
+      try {
+        const mbRes = await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox?or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.desc&limit=50`, {
+          headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+        });
+        if (mbRes.ok) playerMailbox = await mbRes.json();
+      } catch (_) {}
+
+      // 4. Calculate real-time estimated cashflow per minute
+      let incomePerMinute = 0;
+      if (state.businesses && typeof state.businesses === 'object') {
+        for (const [bId, bData] of Object.entries(state.businesses)) {
+          if (bData && typeof bData === 'object') {
+            const baseProfit = Number(bData.revenue || bData.profit || bData.income || 0);
+            const level = Number(bData.level || 1);
+            incomePerMinute += (baseProfit * level * 60);
+          }
+        }
+      }
+
+      // 5. Synthesize Unified Master Activity Feed (Merged & Sorted Chronologically)
+      const masterFeed = [];
+
+      // A. Explicit Activity Log from player state
+      const rawLogs = Array.isArray(state.activityLog) ? state.activityLog : 
+                      Array.isArray(state.logs) ? state.logs : 
+                      Array.isArray(state.history) ? state.history : [];
+      rawLogs.forEach(l => {
+        if (!l) return;
+        const ts = Number(l.timestamp || l.time || l.date || l.created_at || now);
+        masterFeed.push({
+          id: l.id || `act_${ts}_${Math.random()}`,
+          category: l.category || l.type || 'gameplay',
+          title: l.title || l.action || 'نشاط داخل اللعبة',
+          desc: l.desc || l.description || l.message || l.details || '',
+          amount: l.amount || l.delta || l.value || null,
+          isPositive: Boolean(l.isPositive || (l.amount && l.amount > 0)),
+          timestamp: ts,
+          source: 'state_log'
+        });
+      });
+
+      // B. Transfers injected into feed
+      playerTransfers.forEach(t => {
+        const isSender = (t.sender && t.sender.toLowerCase() === u.toLowerCase());
+        const otherParty = isSender ? (t.recipient || 'مجهول') : (t.sender || 'مجهول');
+        const ts = Number(t.created_at ? new Date(t.created_at).getTime() : now);
+        masterFeed.push({
+          id: `tr_${t.id || ts}`,
+          category: 'transfer',
+          title: isSender ? `حوالة مالية صادرة إلى ${otherParty}` : `حوالة مالية واردة من ${otherParty}`,
+          desc: t.message ? `ملاحظة الحوالة: "${t.message}"` : `تحويل بنكي مباشر عبر تطبيق البنك`,
+          amount: Number(t.amount || 0),
+          isPositive: !isSender,
+          counterparty: otherParty,
+          timestamp: ts,
+          source: 'p2p_transfer'
+        });
+      });
+
+      // C. Stock trades from state
+      if (Array.isArray(state.tradeHistory) || Array.isArray(state.stockHistory)) {
+        const stockHist = state.tradeHistory || state.stockHistory;
+        stockHist.forEach(st => {
+          const ts = Number(st.timestamp || st.time || now);
+          masterFeed.push({
+            id: `stk_${ts}_${Math.random()}`,
+            category: 'stocks',
+            title: `صفقة بورصة: ${st.type === 'buy' ? 'شراء' : 'بيع'} أسهم ${st.symbol || st.name || ''}`,
+            desc: `الكمية: ${st.shares || st.amount || 0} | السعر: $${Number(st.price || 0).toLocaleString()}`,
+            amount: Number(st.total || (st.shares * st.price) || 0),
+            isPositive: st.type === 'sell',
+            timestamp: ts,
+            source: 'stock_market'
+          });
+        });
+      }
+
+      // Sort full master feed descending by time
+      masterFeed.sort((a, b) => b.timestamp - a.timestamp);
+
+      // 6. Format complete detailed profile
       const isFrozen = Boolean((state.freezeUntil && state.freezeUntil > now) || Number(pDoc.jail_timer || 0) > 0);
       const isMuted = Boolean(state.mutedUntil && state.mutedUntil > now);
 
@@ -470,6 +553,7 @@ async function moderatorRoutes(fastify, options) {
         gold: Number(pDoc.gold || state.gold || 0),
         xp: Number(pDoc.xp || 0),
         totalTaxesPaid: Number(pDoc.total_taxes_paid || state.totalTaxesPaid || 0),
+        incomePerMinute: Math.round(incomePerMinute),
 
         // Real Estate, Businesses & Assets
         businesses: state.businesses || {},
@@ -477,6 +561,9 @@ async function moderatorRoutes(fastify, options) {
         ownedCars: state.ownedCars || {},
         activeCar: state.activeCar || null,
         assets: state.assets || {},
+
+        // Museum & Rare Collectibles
+        museum: state.museum || state.rareItems || state.artifacts || [],
 
         // Stocks & Investments
         stocks: state.stocks || {},
@@ -487,8 +574,14 @@ async function moderatorRoutes(fastify, options) {
         // Aviation & Airport
         airport: state.airport || null,
 
-        // Farm
+        // Farm & Agriculture
         farm: state.farm || null,
+
+        // Casino & Gambling Stats
+        casinoStats: state.casinoStats || { totalWins: 0, totalLosses: 0, totalSpins: 0 },
+
+        // Gang / Social
+        gang: state.gang || state.gangName || pDoc.gang || null,
 
         // Moderation & Security Status
         isBanned: Boolean(pDoc.is_banned),
@@ -507,11 +600,13 @@ async function moderatorRoutes(fastify, options) {
 
         // Recent Activity & Transfers
         transfers: playerTransfers || [],
-        activityLog: Array.isArray(state.activityLog) ? state.activityLog.slice(-15) : []
+        mailbox: playerMailbox || [],
+        activityFeed: masterFeed.slice(0, 100),
+        activityLog: rawLogs.slice(-25)
       };
 
       // Record inspector view in staff audit
-      logStaffAudit(request.modSession, u, 'inspect_player', `فحص ملف اللاعب بالكامل`);
+      logStaffAudit(request.modSession, u, 'inspect_player', `فحص ملف اللاعب بالتفصيل وسجل الأنشطة`);
 
       return reply.send({ success: true, profile: inspectionProfile });
     } catch (err) {
