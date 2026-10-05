@@ -8882,8 +8882,8 @@ const GameEngine = (() => {
       details: details,
       category: category //'work' |'business' |'stock' |'investment' |'banking' |'casino' |'blackmarket' |'store' |'trade'
     });
-    if (state.activityLog.length > 60) {
-      state.activityLog.length = 60; // Keep last 60 entries
+    if (state.activityLog.length > 300) {
+      state.activityLog.length = 300; // Keep extensive history of 300 entries for investigation & telemetry
     }
   }
 

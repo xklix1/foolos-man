@@ -214,6 +214,12 @@
           <span>شات التحقيقات</span>
         </button>
 
+        <button onclick="openGlobalChatModal()" class="px-2.5 sm:px-3.5 py-2 rounded-xl bg-blue-950/40 hover:bg-blue-900/50 text-blue-300 text-xs font-bold border border-blue-800/50 flex items-center justify-center gap-1.5 transition cursor-pointer" title="مراقبة الشات العام للعبة والرد على استفسارات ومشاكل اللاعبين">
+          <i class="fa-solid fa-earth-americas text-blue-400"></i>
+          <span>الشات العام</span>
+          <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+        </button>
+
         <button onclick="openAuditLogsModal()" class="px-2.5 sm:px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center justify-center gap-1.5 transition">
           <i class="fa-solid fa-clipboard-list text-amber-400"></i>
           <span>سجل التدقيق</span>
@@ -487,13 +493,28 @@
         <!-- NEW Tab: Full Player Activity Telemetry Feed -->
         <div id="tabContent_activity" class="hidden space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
+            <!-- Category Filters -->
             <div class="flex items-center gap-1 overflow-x-auto text-[11px]">
               <button onclick="filterPlayerActivity('all')" id="actFilter_all" class="px-2.5 py-1 rounded-lg bg-cyan-600 text-white font-bold transition">الكل</button>
+              <button onclick="filterPlayerActivity('notes')" id="actFilter_notes" class="px-2.5 py-1 rounded-lg bg-slate-800 text-yellow-300 font-bold hover:bg-slate-700 transition flex items-center gap-1 border border-yellow-500/20">
+                <i class="fa-solid fa-book-bookmark text-yellow-400"></i>
+                <span>الدفتر السري</span>
+              </button>
               <button onclick="filterPlayerActivity('transfer')" id="actFilter_transfer" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">الحوالات</button>
               <button onclick="filterPlayerActivity('stocks')" id="actFilter_stocks" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">البورصة</button>
               <button onclick="filterPlayerActivity('gameplay')" id="actFilter_gameplay" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">العمليات والألعاب</button>
             </div>
-            <span id="actFeedCountBadge" class="text-[11px] text-slate-400 font-bold">0 حركة مسجلة</span>
+
+            <!-- Timeframe Filters -->
+            <div class="flex items-center gap-1 text-[11px] bg-slate-950/60 p-0.5 rounded-lg border border-slate-800">
+              <span class="text-[10px] text-slate-500 px-1.5 hidden sm:inline">المدة:</span>
+              <button onclick="filterPlayerActivityTime('all')" id="actTime_all" class="px-2 py-0.5 rounded-md font-bold bg-cyan-600 text-white transition">الكل</button>
+              <button onclick="filterPlayerActivityTime('24h')" id="actTime_24h" class="px-2 py-0.5 rounded-md font-bold bg-slate-900 text-slate-400 hover:text-white transition">24 ساعة</button>
+              <button onclick="filterPlayerActivityTime('7d')" id="actTime_7d" class="px-2 py-0.5 rounded-md font-bold bg-slate-900 text-slate-400 hover:text-white transition">7 أيام</button>
+              <button onclick="filterPlayerActivityTime('30d')" id="actTime_30d" class="px-2 py-0.5 rounded-md font-bold bg-slate-900 text-slate-400 hover:text-white transition">30 يوماً</button>
+            </div>
+
+            <span id="actFeedCountBadge" class="text-[11px] text-cyan-300 font-bold">0 حركة مسجلة</span>
           </div>
 
           <div id="p_activityFeedContainer" class="space-y-2 custom-scrollbar max-h-[520px] overflow-y-auto pr-1">
@@ -674,6 +695,10 @@
                 <span class="text-xs font-bold text-white">جلسة استجواب / محادثة مع: <span id="modChatTargetUsername" class="text-emerald-400">--</span></span>
               </div>
               <div class="flex items-center gap-2">
+                <button type="button" onclick="sendOfficialGlobalReplyToInspectedPlayer()" class="px-2.5 py-1 rounded-lg bg-blue-600/30 hover:bg-blue-600 text-[11px] text-blue-200 hover:text-white font-bold border border-blue-500/40 transition flex items-center gap-1.5" title="نشر رد رسمي لهذا اللاعب في الشات العام لجميع اللاعبين">
+                  <i class="fa-solid fa-earth-americas text-blue-400"></i>
+                  <span>رد رسمي في الشات العام</span>
+                </button>
                 <button onclick="loadModeratorChatMessages(true)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 transition">
                   <i class="fa-solid fa-rotate text-cyan-400"></i> تحديث
                 </button>
@@ -770,6 +795,88 @@
 
       <div id="staffChatThreadsList" class="flex-1 overflow-y-auto custom-scrollbar space-y-2.5 p-1">
         <!-- Threads injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= GLOBAL PUBLIC CHAT HUB MODAL ================= -->
+  <div id="globalChatModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-5 overflow-y-auto">
+    <div class="glass-panel w-full max-w-4xl my-auto rounded-2xl border border-blue-500/40 p-4 sm:p-6 glow-cyan modal-enter max-h-[92vh] flex flex-col space-y-3">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl shrink-0">
+            <i class="fa-solid fa-earth-americas"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-black text-base sm:text-lg text-white">مركز مراقبة الشات العام والردود الرسمية</h3>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">PUBLIC CHAT</span>
+            </div>
+            <p class="text-xs text-slate-400">متابعة رسائل واستفسارات اللاعبين الحية والرد عليها بصوت الرقابة المعتمد</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>بث مباشر</span>
+          </div>
+          <button onclick="loadGlobalChatMessages(true)" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-1.5 transition cursor-pointer" title="تحديث الرسائل">
+            <i class="fa-solid fa-rotate text-cyan-400"></i>
+            <span class="hidden sm:inline">تحديث</span>
+          </button>
+          <button onclick="closeGlobalChatModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Search & Filter Bar -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-slate-900/70 p-2.5 rounded-xl border border-slate-800 text-xs">
+        <div class="flex-1 relative">
+          <i class="fa-solid fa-magnifying-glass absolute right-3 top-2.5 text-slate-500"></i>
+          <input type="text" id="globalChatSearchInput" oninput="filterGlobalChatMessages()" placeholder="بحث في رسائل الشات أو اسم اللاعب أو استفسار..." class="w-full bg-slate-950 border border-slate-700/80 rounded-lg pr-9 pl-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-400" />
+        </div>
+        <div class="flex items-center gap-1.5 text-[11px] shrink-0">
+          <span class="text-slate-400 text-[10px]">فلاتر سريعة:</span>
+          <button onclick="quickFilterChat('all')" id="chatFilter_all" class="px-2 py-1 rounded bg-blue-600 text-white font-bold transition">الكل</button>
+          <button onclick="quickFilterChat('inquiries')" id="chatFilter_inquiries" class="px-2 py-1 rounded bg-slate-800 text-slate-300 hover:text-white transition">استفسارات ومشاكل</button>
+          <button onclick="quickFilterChat('staff')" id="chatFilter_staff" class="px-2 py-1 rounded bg-slate-800 text-slate-300 hover:text-white transition">ردود الرقابة</button>
+        </div>
+      </div>
+
+      <!-- Messages Stream Container -->
+      <div id="globalChatMessagesContainer" class="flex-1 min-h-[300px] max-h-[440px] overflow-y-auto space-y-2 p-3 rounded-xl bg-slate-950/90 border border-slate-800 custom-scrollbar">
+        <!-- Rendered global chat messages -->
+      </div>
+
+      <!-- Verified Moderator Response Input Form -->
+      <div class="glass-card p-3 sm:p-3.5 rounded-xl border border-blue-500/30 bg-blue-950/15 space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-1.5 text-xs">
+          <div class="flex items-center gap-1.5 text-blue-300 font-bold">
+            <i class="fa-solid fa-shield-halved text-cyan-400"></i>
+            <span>إرسال رد رسمي باسم: <strong id="globalChatSenderBadge" class="text-white">مراقب معتمد 🛡️</strong></span>
+          </div>
+          <span class="text-[10px] text-slate-400">يظهر برتبة موثقة وتوهج مميز لجميع اللاعبين</span>
+        </div>
+
+        <!-- Canned Quick Official Replies -->
+        <div class="flex flex-wrap gap-1 text-[10px]">
+          <span class="text-slate-400 py-0.5">ردود معتمدة:</span>
+          <button type="button" onclick="applyGlobalChatTemplate('تم التحقق من المشكلة وجاري معالجتها فوراً ✅')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 transition">حل مشكلة</button>
+          <button type="button" onclick="applyGlobalChatTemplate('تم فحص وتدقيق الحساب والتأكد من سلامة وصحة كافة العمليات 🛡️')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 transition">تأكيد التدقيق</button>
+          <button type="button" onclick="applyGlobalChatTemplate('يرجى التواصل عبر الدعم الفني أو شات التحقيقات لتزويدنا بالتفاصيل 📩')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 transition">طلب تفاصيل</button>
+          <button type="button" onclick="applyGlobalChatTemplate('نرجو من جميع اللاعبين الالتزام بقواعد اللعبة للحفاظ على بيئة لعب عادلة للجميع ⚖️')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">تنبيه عام</button>
+        </div>
+
+        <!-- Input & Send Button -->
+        <form onsubmit="sendGlobalChatMessage(event)" class="flex gap-2">
+          <input type="text" id="globalChatMessageInput" placeholder="اكتب ردك الرسمي للاعبين أو رد على استفسار محدد..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-400" required autocomplete="off" />
+          <button type="submit" id="globalChatSendBtn" class="px-4 sm:px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/30 transition shrink-0 cursor-pointer">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>إرسال للشات</span>
+          </button>
+        </form>
       </div>
     </div>
   </div>
@@ -2389,7 +2496,24 @@
           input.value = '';
           inspectingPlayer.staffNotes = data.staffNotes || [data.note, ...(inspectingPlayer.staffNotes || [])];
           renderStaffNotes(inspectingPlayer.staffNotes);
-          alert('✅ تم حفظ الملاحظة في دفتر التحقيق السري بنجاح.');
+
+          // CRITICAL: Mirror into Activity Feed history immediately so it appears in the timeline!
+          const noteFeedItem = {
+            id: (data.note && data.note.id) || ('snote_' + Date.now()),
+            category: 'notes',
+            title: `ملاحظة سرية في الدفتر (${currentModInfo ? currentModInfo.name : 'محقق'})`,
+            desc: noteText,
+            amount: null,
+            isPositive: false,
+            timestamp: (data.note && data.note.timestamp) || Date.now(),
+            source: 'staff_notebook'
+          };
+          if (!window._currentInspectFeed) window._currentInspectFeed = [];
+          window._currentInspectFeed.unshift(noteFeedItem);
+          if (inspectingPlayer.activityFeed) inspectingPlayer.activityFeed.unshift(noteFeedItem);
+          renderPlayerActivityFeed();
+
+          alert('✅ تم حفظ الملاحظة في دفتر التحقيق السري وتسجيلها في الهيستوري بنجاح.');
         } else {
           alert('❌ ' + (data.message || 'فشل حفظ الملاحظة'));
         }
@@ -2724,51 +2848,120 @@
     }
 
     // Filter & Render Player Activity Feed
+    let currentActCategory = 'all';
+    let currentActTimeframe = 'all';
+
     function filterPlayerActivity(category) {
-      ['all', 'transfer', 'stocks', 'gameplay'].forEach(c => {
+      currentActCategory = category;
+      ['all', 'notes', 'transfer', 'stocks', 'gameplay'].forEach(c => {
         const b = document.getElementById(`actFilter_${c}`);
         if (b) {
-          b.className = (c === category)
-            ? 'px-2.5 py-1 rounded-lg bg-cyan-600 text-white font-bold transition'
-            : 'px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition';
+          if (c === category) {
+            b.className = (c === 'notes')
+              ? 'px-2.5 py-1 rounded-lg bg-yellow-500 text-slate-950 font-black transition flex items-center gap-1 shadow-md shadow-yellow-500/20'
+              : 'px-2.5 py-1 rounded-lg bg-cyan-600 text-white font-bold transition';
+          } else {
+            b.className = (c === 'notes')
+              ? 'px-2.5 py-1 rounded-lg bg-slate-800 text-yellow-300 font-bold hover:bg-slate-700 transition flex items-center gap-1 border border-yellow-500/20'
+              : 'px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition';
+          }
         }
       });
-      renderPlayerActivityFeed(category);
+      renderPlayerActivityFeed();
     }
 
-    function renderPlayerActivityFeed(category = 'all') {
+    function filterPlayerActivityTime(timeframe) {
+      currentActTimeframe = timeframe;
+      ['all', '24h', '7d', '30d'].forEach(t => {
+        const b = document.getElementById(`actTime_${t}`);
+        if (b) {
+          b.className = (t === timeframe)
+            ? 'px-2 py-0.5 rounded-md font-bold bg-cyan-600 text-white transition'
+            : 'px-2 py-0.5 rounded-md font-bold bg-slate-900 text-slate-400 hover:text-white transition';
+        }
+      });
+      renderPlayerActivityFeed();
+    }
+
+    function renderPlayerActivityFeed() {
       const feed = window._currentInspectFeed || [];
       const container = document.getElementById('p_activityFeedContainer');
       const badge = document.getElementById('actFeedCountBadge');
       if (!container) return;
 
-      const filtered = (category === 'all') ? feed : feed.filter(f => f.category === category);
-      if (badge) badge.textContent = `${filtered.length} حركة مسجلة`;
+      const now = Date.now();
+      let filtered = feed;
+
+      // 1. Filter by category
+      if (currentActCategory !== 'all') {
+        filtered = filtered.filter(f => f.category === currentActCategory);
+      }
+
+      // 2. Filter by timeframe
+      if (currentActTimeframe === '24h') {
+        const cutoff = now - (24 * 60 * 60 * 1000);
+        filtered = filtered.filter(f => Number(f.timestamp || 0) >= cutoff);
+      } else if (currentActTimeframe === '7d') {
+        const cutoff = now - (7 * 24 * 60 * 60 * 1000);
+        filtered = filtered.filter(f => Number(f.timestamp || 0) >= cutoff);
+      } else if (currentActTimeframe === '30d') {
+        const cutoff = now - (30 * 24 * 60 * 60 * 1000);
+        filtered = filtered.filter(f => Number(f.timestamp || 0) >= cutoff);
+      }
+
+      if (badge) {
+        const timeLabel = currentActTimeframe === '24h' ? 'خلال 24 ساعة'
+                        : currentActTimeframe === '7d' ? 'خلال 7 أيام'
+                        : currentActTimeframe === '30d' ? 'خلال 30 يوماً'
+                        : 'سجل ممتد';
+        badge.textContent = `${filtered.length} حركة مسجلة (${timeLabel})`;
+      }
 
       if (!filtered.length) {
-        container.innerHTML = `<div class="text-center py-8 text-xs text-slate-500">لا توجد حركات مسجلة تحت هذا التصنيف.</div>`;
+        container.innerHTML = `
+          <div class="text-center py-8 text-xs text-slate-500 bg-slate-900/30 rounded-xl border border-slate-800/50">
+            <i class="fa-solid fa-clock-rotate-left text-xl mb-1 text-slate-600 block"></i>
+            لا توجد حركات مسجلة مطابقة لهذا التصنيف والمدة الزمنية.
+          </div>
+        `;
         return;
       }
 
       container.innerHTML = filtered.map(item => {
         const isPos = item.isPositive;
-        const icon = item.category === 'transfer' ? 'fa-money-bill-transfer text-emerald-400'
-                   : item.category === 'stocks' ? 'fa-chart-line text-cyan-400'
-                   : item.category === 'businesses' ? 'fa-building text-amber-400'
-                   : 'fa-bolt text-yellow-400';
+        const isNote = (item.category === 'notes' || item.source === 'staff_notebook');
+        
+        let icon = 'fa-bolt text-yellow-400';
+        let cardBg = 'border border-slate-800/80 hover:border-slate-700';
+        let catBadge = `<span class="px-1.5 py-0.2 rounded bg-slate-900 text-slate-400 font-medium">${(item.category || 'LOG').toUpperCase()}</span>`;
+
+        if (isNote) {
+          icon = 'fa-book-bookmark text-yellow-400';
+          cardBg = 'border border-yellow-500/30 bg-yellow-950/15 shadow-sm shadow-yellow-950/20';
+          catBadge = `<span class="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 font-bold border border-yellow-500/40 text-[9px]"><i class="fa-solid fa-lock text-[8px] ml-0.5"></i> الدفتر السري</span>`;
+        } else if (item.category === 'transfer') {
+          icon = 'fa-money-bill-transfer text-emerald-400';
+          catBadge = `<span class="px-1.5 py-0.2 rounded bg-emerald-950/50 text-emerald-300 border border-emerald-800/40 font-medium">حوالة مالية</span>`;
+        } else if (item.category === 'stocks') {
+          icon = 'fa-chart-line text-cyan-400';
+          catBadge = `<span class="px-1.5 py-0.2 rounded bg-cyan-950/50 text-cyan-300 border border-cyan-800/40 font-medium">بورصة وأسهم</span>`;
+        } else if (item.category === 'businesses') {
+          icon = 'fa-building text-amber-400';
+        }
 
         return `
-          <div class="glass-card p-3 rounded-xl border border-slate-800/80 flex items-start justify-between gap-3 text-xs hover:border-slate-700 transition">
+          <div class="glass-card p-3 rounded-xl ${cardBg} flex items-start justify-between gap-3 text-xs transition">
             <div class="flex items-start gap-2.5">
-              <div class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0 text-sm">
+              <div class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700/80 flex items-center justify-center shrink-0 text-sm">
                 <i class="fa-solid ${icon}"></i>
               </div>
               <div>
-                <div class="font-bold text-white leading-tight">${item.title}</div>
-                <div class="text-[11px] text-slate-400 mt-0.5 leading-relaxed">${item.desc}</div>
-                <div class="text-[10px] text-slate-500 mt-1 flex items-center gap-2">
-                  <span><i class="fa-regular fa-clock ml-0.5"></i> ${fmtDate(item.timestamp)}</span>
-                  <span class="px-1.5 py-0.2 rounded bg-slate-900 text-slate-400 font-medium">${item.category.toUpperCase()}</span>
+                <div class="font-bold text-white leading-tight ${isNote ? 'text-yellow-200' : ''}">${item.title}</div>
+                <div class="text-[11px] text-slate-300 mt-0.5 leading-relaxed whitespace-pre-wrap">${item.desc}</div>
+                <div class="text-[10px] text-slate-500 mt-1.5 flex items-center gap-2 flex-wrap">
+                  <span class="text-slate-400"><i class="fa-regular fa-clock ml-0.5"></i> ${fmtDate(item.timestamp)}</span>
+                  ${catBadge}
+                  ${item.source ? `<span class="text-[9px] text-slate-500 font-mono">#${item.source}</span>` : ''}
                 </div>
               </div>
             </div>
@@ -3323,6 +3516,241 @@
       setTimeout(() => {
         switchInspectTab('chat');
       }, 350);
+    }
+
+    // ================= GLOBAL PUBLIC CHAT HUB LOGIC =================
+    let globalChatPollTimer = null;
+    let _cachedGlobalMessages = [];
+    let _chatActiveFilter = 'all';
+
+    function openGlobalChatModal() {
+      const modal = document.getElementById('globalChatModal');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+
+      const sName = currentModInfo ? currentModInfo.name : 'محقق';
+      const badgeEl = document.getElementById('globalChatSenderBadge');
+      if (badgeEl) badgeEl.textContent = `${sName} (مراقب معتمد 🛡️)`;
+
+      loadGlobalChatMessages(true);
+      if (globalChatPollTimer) clearInterval(globalChatPollTimer);
+      globalChatPollTimer = setInterval(() => {
+        loadGlobalChatMessages(false);
+      }, 3500);
+    }
+
+    function closeGlobalChatModal() {
+      if (globalChatPollTimer) {
+        clearInterval(globalChatPollTimer);
+        globalChatPollTimer = null;
+      }
+      const modal = document.getElementById('globalChatModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    async function loadGlobalChatMessages(manual = false) {
+      const container = document.getElementById('globalChatMessagesContainer');
+      if (!container) return;
+
+      if (manual && !_cachedGlobalMessages.length) {
+        container.innerHTML = `<div class="text-center text-slate-500 text-xs py-10"><i class="fa-solid fa-spinner fa-spin text-blue-400 text-lg mb-2 block"></i> جاري مزامنة الشات العام...</div>`;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/global-chat`, {
+          headers: { 'Authorization': `Bearer ${currentModToken}` }
+        });
+        if (!res.ok) return;
+
+        const data = await res.json();
+        const msgs = data.messages || [];
+        _cachedGlobalMessages = msgs;
+        renderGlobalChatMessages();
+      } catch (err) {
+        console.error('Error fetching global chat:', err);
+      }
+    }
+
+    function renderGlobalChatMessages() {
+      const container = document.getElementById('globalChatMessagesContainer');
+      if (!container) return;
+
+      const q = (document.getElementById('globalChatSearchInput')?.value || '').toLowerCase().trim();
+      let list = [..._cachedGlobalMessages];
+
+      // Quick filter
+      if (_chatActiveFilter === 'inquiries') {
+        const keywords = ['مشكلة', 'سؤال', 'استفسار', 'ليه', 'فين', 'كيف', 'فلوس', 'حساب', 'مساعدة', '؟', '!', 'تعليق'];
+        list = list.filter(m => {
+          const txt = (m.message || '').toLowerCase();
+          return keywords.some(k => txt.includes(k));
+        });
+      } else if (_chatActiveFilter === 'staff') {
+        list = list.filter(m => m.customBadge?.includes('مراقب') || m.senderTitle?.includes('مراقب') || m.sender === 'الإدارة');
+      }
+
+      // Search query
+      if (q) {
+        list = list.filter(m => (m.sender || '').toLowerCase().includes(q) || (m.message || '').toLowerCase().includes(q));
+      }
+
+      if (!list.length) {
+        container.innerHTML = `<div class="text-center text-slate-500 text-xs py-10">لا توجد رسائل مطابقة لفلتر البحث.</div>`;
+        return;
+      }
+
+      const isScrolledToBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 80;
+
+      container.innerHTML = list.map(m => {
+        const isStaff = Boolean(m.customBadge?.includes('مراقب') || m.senderTitle?.includes('مراقب') || m.sender === 'الإدارة');
+        const ts = m.timestamp ? fmtDate(m.timestamp) : '';
+        const glowClass = m.chatGlow === 'cyber_rainbow' ? 'border-cyan-500/50 bg-cyan-950/20' 
+                        : m.chatGlow === 'gold_neon' ? 'border-yellow-500/40 bg-yellow-950/20'
+                        : isStaff ? 'border-blue-500/40 bg-blue-950/30'
+                        : 'border-slate-800 bg-slate-900/60';
+
+        return `
+          <div class="p-2.5 rounded-xl border ${glowClass} space-y-1.5 transition text-xs">
+            <div class="flex items-center justify-between border-b border-slate-800/60 pb-1 flex-wrap gap-1">
+              <div class="flex items-center gap-1.5">
+                <strong class="text-white font-bold">${m.sender}</strong>
+                ${m.senderTitle ? `<span class="text-[10px] text-slate-400">(${m.senderTitle})</span>` : ''}
+                ${m.customBadge ? `<span class="text-[10px] px-1.5 py-0.2 rounded font-bold ${isStaff ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40' : 'bg-slate-800 text-yellow-300'}">${m.customBadge}</span>` : ''}
+                ${m.isVerified ? `<i class="fa-solid fa-circle-check text-cyan-400 text-[10px]" title="موثق"></i>` : ''}
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-slate-500 font-mono">${ts}</span>
+                <!-- Action Buttons: Inspect Player & Reply -->
+                ${!isStaff ? `
+                  <button type="button" onclick="inspectFromChat('${m.sender}')" class="px-2 py-0.5 rounded bg-cyan-900/40 hover:bg-cyan-600 text-cyan-200 hover:text-white text-[10px] font-bold border border-cyan-700/50 transition flex items-center gap-1 cursor-pointer">
+                    <i class="fa-solid fa-fingerprint text-[9px]"></i>
+                    <span>فحص الملف</span>
+                  </button>
+                  <button type="button" onclick="replyToChatSender('${m.sender}')" class="px-2 py-0.5 rounded bg-blue-900/40 hover:bg-blue-600 text-blue-200 hover:text-white text-[10px] font-bold border border-blue-700/50 transition flex items-center gap-1 cursor-pointer">
+                    <i class="fa-solid fa-reply text-[9px]"></i>
+                    <span>رد</span>
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+            <p class="text-slate-200 text-xs leading-relaxed whitespace-pre-wrap select-text">${m.message}</p>
+          </div>
+        `;
+      }).join('');
+
+      if (isScrolledToBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    function filterGlobalChatMessages() {
+      renderGlobalChatMessages();
+    }
+
+    function quickFilterChat(f) {
+      _chatActiveFilter = f;
+      ['all', 'inquiries', 'staff'].forEach(k => {
+        const btn = document.getElementById(`chatFilter_${k}`);
+        if (btn) {
+          btn.className = (k === f)
+            ? 'px-2 py-1 rounded bg-blue-600 text-white font-bold transition'
+            : 'px-2 py-1 rounded bg-slate-800 text-slate-300 hover:text-white transition';
+        }
+      });
+      renderGlobalChatMessages();
+    }
+
+    function applyGlobalChatTemplate(text) {
+      const input = document.getElementById('globalChatMessageInput');
+      if (input) {
+        input.value = text;
+        input.focus();
+      }
+    }
+
+    function replyToChatSender(senderName) {
+      const input = document.getElementById('globalChatMessageInput');
+      if (input) {
+        input.value = `@${senderName} `;
+        input.focus();
+      }
+    }
+
+    function inspectFromChat(username) {
+      closeGlobalChatModal();
+      inspectPlayer(username);
+    }
+
+    async function sendGlobalChatMessage(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('globalChatMessageInput');
+      const btn = document.getElementById('globalChatSendBtn');
+      const text = input ? input.value.trim() : '';
+
+      if (!text) return;
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/global-chat/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentModToken}`
+          },
+          body: JSON.stringify({ message: text })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          input.value = '';
+          if (Array.isArray(data.messages)) {
+            _cachedGlobalMessages = data.messages;
+            renderGlobalChatMessages();
+          } else {
+            await loadGlobalChatMessages(true);
+          }
+        } else {
+          alert('❌ ' + (data.message || 'فشل إرسال الرسالة للشات العام'));
+        }
+      } catch (err) {
+        alert('خطأ في الاتصال: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>إرسال للشات</span>`;
+      }
+    }
+
+    // Inside Inspector Chat: send official reply to the inspected player into Global Chat
+    async function sendOfficialGlobalReplyToInspectedPlayer() {
+      if (!inspectingPlayer) return;
+      const targetUser = inspectingPlayer.username;
+      const defaultText = `@${targetUser} مرحباً، تم فحص وتدقيق استفسارك/حسابك من قبل طاقم الرقابة والتأكد من سلامة وصحة العمليات ✅`;
+      const replyText = prompt(`كتابة رد رسمي لـ "${targetUser}" في الشات العام لجميع اللاعبين:`, defaultText);
+      if (!replyText || !replyText.trim()) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/global-chat/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentModToken}`
+          },
+          body: JSON.stringify({
+            message: replyText.trim(),
+            replyTo: targetUser
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alert(`✅ تم إرسال ردك الرسمي لـ "${targetUser}" في الشات العام بنجاح!`);
+        } else {
+          alert('❌ ' + (data.message || 'فشل إرسال الرد للشات العام'));
+        }
+      } catch (err) {
+        alert('خطأ: ' + err.message);
+      }
     }
   </script>
 </body>

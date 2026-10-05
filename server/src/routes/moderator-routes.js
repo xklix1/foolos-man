@@ -446,7 +446,7 @@ async function moderatorRoutes(fastify, options) {
 
       // 2. Fetch P2P transfers related to this player (sent & received)
       const cleanU = encodeURIComponent(u);
-      const transfersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/transfers?or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.desc&limit=50`, {
+      const transfersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/transfers?or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.desc&limit=250`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       const playerTransfers = transfersRes.ok ? await transfersRes.json() : [];
@@ -454,7 +454,7 @@ async function moderatorRoutes(fastify, options) {
       // 3. Fetch recent Mailbox & DM interactions
       let playerMailbox = [];
       try {
-        const mbRes = await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox?or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.desc&limit=50`, {
+        const mbRes = await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox?or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.desc&limit=250`, {
           headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
         });
         if (mbRes.ok) playerMailbox = await mbRes.json();
@@ -699,6 +699,23 @@ async function moderatorRoutes(fastify, options) {
         });
       }
 
+      // D. Secret Staff Dossier Notes injected into masterFeed
+      const staffNotesList = Array.isArray(state.staffNotes) ? state.staffNotes : [];
+      staffNotesList.forEach(sn => {
+        if (!sn) return;
+        const ts = Number(sn.timestamp || now);
+        masterFeed.push({
+          id: sn.id || `sn_${ts}_${Math.random().toString(36).substring(2, 6)}`,
+          category: 'notes',
+          title: `ملاحظة سرية في الدفتر (${sn.modName || 'محقق'})`,
+          desc: sn.note || '',
+          amount: null,
+          isPositive: false,
+          timestamp: ts,
+          source: 'staff_notebook'
+        });
+      });
+
       // Sort full master feed descending by time
       masterFeed.sort((a, b) => b.timestamp - a.timestamp);
 
@@ -771,11 +788,11 @@ async function moderatorRoutes(fastify, options) {
         moderatorNotes: Array.isArray(state.moderatorNotes) ? state.moderatorNotes : [],
         staffNotes: Array.isArray(state.staffNotes) ? state.staffNotes : [],
 
-        // Recent Activity & Transfers
+        // Recent Activity & Transfers (Extensive historical retention)
         transfers: playerTransfers || [],
         mailbox: playerMailbox || [],
-        activityFeed: masterFeed.slice(0, 100),
-        activityLog: rawLogs.slice(-25)
+        activityFeed: masterFeed.slice(0, 500),
+        activityLog: rawLogs.slice(-300)
       };
 
       // Record inspector view in staff audit
@@ -827,7 +844,17 @@ async function moderatorRoutes(fastify, options) {
       };
 
       pState.staffNotes.unshift(noteEntry);
-      if (pState.staffNotes.length > 50) pState.staffNotes = pState.staffNotes.slice(0, 50);
+      if (pState.staffNotes.length > 100) pState.staffNotes = pState.staffNotes.slice(0, 100);
+
+      // Also persist to activityLog so it is mirrored across activity feeds and history
+      if (!Array.isArray(pState.activityLog)) pState.activityLog = [];
+      pState.activityLog.unshift({
+        timestamp: ts,
+        action: `ملاحظة في الدفتر السري (${request.modSession.name})`,
+        details: cleanNote,
+        category: 'notes'
+      });
+      if (pState.activityLog.length > 300) pState.activityLog = pState.activityLog.slice(0, 300);
 
       // Persist to Database
       const patchUrl = `${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(target)}`;
@@ -850,6 +877,14 @@ async function moderatorRoutes(fastify, options) {
         const session = sessionManager.getSession(target.toLowerCase());
         if (session) {
           session.state.staffNotes = pState.staffNotes;
+          if (!Array.isArray(session.state.activityLog)) session.state.activityLog = [];
+          session.state.activityLog.unshift({
+            timestamp: ts,
+            action: `ملاحظة في الدفتر السري (${request.modSession.name})`,
+            details: cleanNote,
+            category: 'notes'
+          });
+          if (session.state.activityLog.length > 300) session.state.activityLog = session.state.activityLog.slice(0, 300);
         }
       }
 
@@ -1577,6 +1612,120 @@ async function moderatorRoutes(fastify, options) {
       });
     } catch (err) {
       fastify.log.error(err, '[Player Chat History Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * GET /api/moderator/global-chat
+   * Fetches recent 100 global public chat messages so staff can monitor inquiries and problems
+   */
+  fastify.get('/global-chat', { preHandler: [requireModAuth] }, async (request, reply) => {
+    try {
+      const sKey = serviceKey();
+      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.chat_feed&select=data,updated_at`, {
+        headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+      });
+      let messages = [];
+      if (res.ok) {
+        const rows = await res.json();
+        if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.messages)) {
+          messages = rows[0].data.messages;
+        }
+      }
+      return reply.send({
+        success: true,
+        messages: messages.slice(-100)
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Moderator Global Chat Fetch Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * POST /api/moderator/global-chat/send
+   * Allows authenticated investigators to broadcast verified official replies & answers in global chat
+   */
+  fastify.post('/global-chat/send', { preHandler: [requireModAuth] }, async (request, reply) => {
+    const { message, replyTo } = request.body || {};
+    if (!message || !message.trim()) {
+      return reply.status(400).send({ error: 'Bad Request', message: 'نص الرسالة مطلوب.' });
+    }
+
+    const cleanMsg = message.trim().substring(0, 500);
+    const ts = Date.now();
+    const sKey = serviceKey();
+
+    try {
+      // 1. Fetch current chat_feed
+      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.chat_feed&select=data,updated_at`, {
+        headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+      });
+      let currentFeed = [];
+      if (res.ok) {
+        const rows = await res.json();
+        if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.messages)) {
+          currentFeed = rows[0].data.messages;
+        }
+      }
+
+      // 2. Build verified staff message
+      const modMsg = {
+        id: 'msg_mod_' + ts + '_' + Math.random().toString(36).substring(2, 6),
+        sender: request.modSession.name || 'المحقق',
+        senderTitle: 'مراقب معتمد 🛡️',
+        message: cleanMsg,
+        facebookVerified: true,
+        isVerified: true,
+        customBadge: '🛡️ مراقب',
+        chatGlow: 'cyber_rainbow',
+        seasonBadge: 'badge_official_staff',
+        timestamp: ts
+      };
+
+      currentFeed.push(modMsg);
+      currentFeed.sort((a, b) => (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0));
+      const finalFeed = currentFeed.length > 100 ? currentFeed.slice(currentFeed.length - 100) : currentFeed;
+
+      // 3. Upsert into globals table
+      const saveRes = await fetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
+        method: 'POST',
+        headers: {
+          'apikey': sKey,
+          'Authorization': `Bearer ${sKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify({
+          id: 'chat_feed',
+          data: { messages: finalFeed },
+          updated_at: ts
+        })
+      });
+
+      if (!saveRes.ok) {
+        const errText = await saveRes.text();
+        throw new Error(`Failed to save chat message: ${errText}`);
+      }
+
+      // 4. Record in audit logs
+      await logStaffAudit(
+        request.modSession,
+        replyTo || 'global_chat',
+        'send_global_chat_message',
+        `إرسال رد رسمي في الشات العام: "${cleanMsg.substring(0, 60)}..."`,
+        { messageLength: cleanMsg.length, replyTo: replyTo || null }
+      );
+
+      return reply.send({
+        success: true,
+        message: 'تم إرسال رسالتك الرسمية في الشات العام بنجاح.',
+        chatMessage: modMsg,
+        messages: finalFeed
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Moderator Global Chat Send Error]');
       return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
     }
   });

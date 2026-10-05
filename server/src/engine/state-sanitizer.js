@@ -41,6 +41,8 @@ const DEFAULT_STATE = {
   afkManagerExpiresAt: 0,
   totalTaxesPaid: 0,
   activityLog: [],
+  staffNotes: [],
+  moderatorNotes: [],
   customItems: {},
   itemDurations: {},
   smugglingFleet: {},
@@ -141,6 +143,8 @@ function sanitizePlayerState(dbRow) {
   cleanState.muteReason = String(dbRow.mute_reason || dbRow.muteReason || rawState.muteReason || '').trim();
   cleanState.staffFlag = (dbRow.staff_flag || dbRow.staffFlag || rawState.staffFlag) || null;
   cleanState.isBanned = Boolean(dbRow.is_banned || dbRow.isBanned || rawState.isBanned);
+  cleanState.staffNotes = Array.isArray(rawState.staffNotes) ? rawState.staffNotes : (Array.isArray(dbRow.staff_notes) ? dbRow.staff_notes : []);
+  cleanState.moderatorNotes = Array.isArray(rawState.moderatorNotes) ? rawState.moderatorNotes : [];
   
   cleanState.lastSeen = Number(dbRow.last_seen || cleanState.lastSeen || Date.now());
   // CRITICAL: Preserve lastActiveTimestamp from the state JSON blob (where the client

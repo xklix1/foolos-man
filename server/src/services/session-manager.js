@@ -382,7 +382,11 @@ class SessionManager {
       s.inventory = clientState.inventory;
     }
     if (clientState.activityLog && Array.isArray(clientState.activityLog)) {
-      s.activityLog = clientState.activityLog.slice(0, 50);
+      s.activityLog = clientState.activityLog.slice(0, 300);
+    }
+    // Never allow client to overwrite secret staff notes; preserve server-authoritative notes
+    if (!Array.isArray(s.staffNotes)) {
+      s.staffNotes = [];
     }
     if (clientState.customItems && typeof clientState.customItems === 'object') {
       s.customItems = clientState.customItems;
