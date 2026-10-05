@@ -622,6 +622,24 @@ async function moderatorRoutes(fastify, options) {
             reason: cleanReason,
             modName: request.modSession.name
           });
+
+          // Send notification mail to player
+          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+            method: 'POST',
+            headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({
+              sender: 'إدارة الرقابة والأمان',
+              recipient: pDoc.username,
+              type: 'system_announcement',
+              payload: {
+                title: '🔓 تم فك تجميد ورفع القيد عن حسابك',
+                message: `تمت مراجعة وتدقيق حسابك بنجاح ورفع القيد والتجميد.\nالبيان: ${cleanReason}`,
+                timestamp: ts
+              },
+              status: 'unread',
+              created_at: ts
+            })
+          });
           break;
         }
 
@@ -763,6 +781,7 @@ async function moderatorRoutes(fastify, options) {
       if (sessionManager) {
         const session = sessionManager.getSession(targetLower);
         if (session) {
+          session.state.underSuspicion = pState.underSuspicion;
           session.state.freezeUntil = pState.freezeUntil;
           session.state.freezeReason = pState.freezeReason;
           session.state.mutedUntil = pState.mutedUntil;
