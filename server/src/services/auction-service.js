@@ -390,11 +390,20 @@ class AuctionService {
    * Admin controls the hammer strikes
    */
   async handleHammerAction(action) {
+    const now = Date.now();
+
+    if (action === 'cancel') {
+      this.state.status = 'CANCELLED';
+      this.state.live.hammerStrikeMessage = '❌ تم إلغاء المزاد بقرار من الإدارة.';
+      this.state.lastUpdated = now;
+      this._savePersistedState();
+      return { success: true, action: 'cancel', message: 'تم إلغاء المزاد بنجاح.' };
+    }
+
     if (this.state.status !== 'LIVE') {
       throw new Error('لا يمكن استخدام المطرقة لأن المزاد ليس في البث الحي.');
     }
 
-    const now = Date.now();
     const highest = this.state.live.highestBidder;
 
     if (action === 'strike_1') {
