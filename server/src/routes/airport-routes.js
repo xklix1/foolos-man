@@ -484,6 +484,8 @@ async function airportRoutes(fastify, options) {
     // Reset plane to idle
     plane.status = 'idle';
     plane.activeFlight = null;
+    plane.currentFlight = null;
+    session.dirty = true;
 
     s.netWorth = calculateNetWorth(s);
     s.title = getAppropriateTitle(s.netWorth, s.xp);

@@ -126,9 +126,13 @@ function sanitizePlayerState(dbRow) {
   }
   cleanState.title = String(dbRow.title || cleanState.title || 'عامل مبتدئ');
   cleanState.jobId = String(dbRow.job_id || cleanState.jobId || 'worker');
-  cleanState.jailTimer = Number(dbRow.jail_timer !== undefined ? dbRow.jail_timer : cleanState.jailTimer) || 0;
-  cleanState.afkManagerExpiresAt = Number(dbRow.afk_manager_expires_at !== undefined ? dbRow.afk_manager_expires_at : cleanState.afkManagerExpiresAt) || 0;
-  cleanState.totalTaxesPaid = Number(dbRow.total_taxes_paid !== undefined ? dbRow.total_taxes_paid : cleanState.totalTaxesPaid) || 0;
+  cleanState.jailTimer = Number(dbRow.jail_timer !== undefined && dbRow.jail_timer !== null ? dbRow.jail_timer : cleanState.jailTimer) || 0;
+  cleanState.afkManagerExpiresAt = (dbRow.afk_manager_expires_at !== null && dbRow.afk_manager_expires_at !== undefined)
+    ? Number(dbRow.afk_manager_expires_at)
+    : Number(rawState.afkManagerExpiresAt || rawState.afk_manager_expires_at || cleanState.afkManagerExpiresAt || 0);
+  cleanState.totalTaxesPaid = (dbRow.total_taxes_paid !== null && dbRow.total_taxes_paid !== undefined)
+    ? Number(dbRow.total_taxes_paid)
+    : Number(rawState.totalTaxesPaid || cleanState.totalTaxesPaid || 0);
   
   cleanState.underSuspicion = Boolean(dbRow.under_suspicion || dbRow.underSuspicion || rawState.underSuspicion);
   cleanState.freezeUntil = Number(dbRow.freeze_until || dbRow.freezeUntil || rawState.freezeUntil || 0);
@@ -142,7 +146,7 @@ function sanitizePlayerState(dbRow) {
   // CRITICAL: Preserve lastActiveTimestamp from the state JSON blob (where the client
   // stores the real exit moment). Only fall back to lastSeen if not found in state.
   // Overwriting with lastSeen here would corrupt the offline earnings calculation.
-  const embeddedLastActive = Number(rawState.lastActiveTimestamp || 0);
+  const embeddedLastActive = Number(rawState.lastActiveTimestamp || rawState.lastSeen || 0);
   cleanState.lastActiveTimestamp = embeddedLastActive > 0 ? embeddedLastActive : cleanState.lastSeen;
 
   // Ensure sub-objects are never null or primitive
@@ -166,11 +170,42 @@ function sanitizePlayerState(dbRow) {
   } else {
     cleanState.dailyStockProfit = { date: '', realizedProfit: 0 };
   }
+  if (rawState.dailyInvestments && typeof rawState.dailyInvestments === 'object') {
+    cleanState.dailyInvestments = {
+      date: String(rawState.dailyInvestments.date || ''),
+      count: Math.max(0, Number(rawState.dailyInvestments.count || 0))
+    };
+  }
+  if (rawState.dailyLoans && typeof rawState.dailyLoans === 'object') {
+    cleanState.dailyLoans = {
+      date: String(rawState.dailyLoans.date || ''),
+      count: Math.max(0, Number(rawState.dailyLoans.count || 0))
+    };
+  }
+  if (rawState.dailyWork && typeof rawState.dailyWork === 'object') {
+    cleanState.dailyWork = {
+      date: String(rawState.dailyWork.date || ''),
+      shifts: Math.max(0, Number(rawState.dailyWork.shifts || 0)),
+      overtimeShifts: Math.max(0, Number(rawState.dailyWork.overtimeShifts || 0))
+    };
+  }
+  if (rawState.dailyBlackMarket && typeof rawState.dailyBlackMarket === 'object') {
+    cleanState.dailyBlackMarket = {
+      date: String(rawState.dailyBlackMarket.date || ''),
+      count: Math.max(0, Number(rawState.dailyBlackMarket.count || 0))
+    };
+  }
+  if (rawState.dailyToolUses && typeof rawState.dailyToolUses === 'object') {
+    cleanState.dailyToolUses = {
+      date: String(rawState.dailyToolUses.date || ''),
+      uses: typeof rawState.dailyToolUses.uses === 'object' ? rawState.dailyToolUses.uses : {}
+    };
+  }
 
   // Security Hardening: Never leak PIN hash in client-facing state payloads
   delete cleanState.pin;
 
-    // Gold currency: Authoritative persistence from PostgreSQL row or state JSON
+  // Gold currency: Authoritative persistence from PostgreSQL row or state JSON
   if (dbRow && dbRow.gold !== undefined && dbRow.gold !== null) {
     cleanState.gold = Math.max(0, Number(dbRow.gold));
   } else if (rawState && rawState.gold !== undefined && rawState.gold !== null) {

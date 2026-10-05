@@ -1,7 +1,7 @@
 {
-  "version": "v9.3.0",
-  "build": 1791196000000,
-  "timestamp": 1791196000000,
-  "notes": "Moderator Investigator Rename & Dynamic Cache Bust",
-  "releaseNotes": "Moderator Investigator Rename & Dynamic Cache Bust"
+  "version": "v9.4.0",
+  "build": 1791234000000,
+  "timestamp": 1791234000000,
+  "notes": "Fix Airport Flight Clock Manipulation, Prevent Multi-Claim, Fix Stock Daily Limit & Restore AFK Offline Earnings",
+  "releaseNotes": "Fix Airport Flight Clock Manipulation, Prevent Multi-Claim, Fix Stock Daily Limit & Restore AFK Offline Earnings"
 }

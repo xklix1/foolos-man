@@ -8861,17 +8861,20 @@ const GameEngine = (() => {
   ];
 
   function getTodayDateString() {
-    const d = new Date(getTrustedNow());
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
+    const ts = getTrustedNow();
+    // Use fixed Cairo/Middle East timezone (UTC+3) to guarantee 100% consistency across devices and timezones
+    const cairoDate = new Date(ts + (3 * 3600 * 1000));
+    const year = cairoDate.getUTCFullYear();
+    const month = String(cairoDate.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(cairoDate.getUTCDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 
   function getDailyResetRemainingSeconds() {
-    const now = new Date(getTrustedNow());
-    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    return Math.max(0, Math.floor((tomorrow.getTime() - now.getTime()) / 1000));
+    const ts = getTrustedNow();
+    const cairoNow = new Date(ts + (3 * 3600 * 1000));
+    const cairoMidnight = new Date(Date.UTC(cairoNow.getUTCFullYear(), cairoNow.getUTCMonth(), cairoNow.getUTCDate() + 1, 0, 0, 0));
+    return Math.max(0, Math.floor((cairoMidnight.getTime() - (ts + (3 * 3600 * 1000))) / 1000));
   }
 
   function ensureDailyQuests() {
@@ -10717,15 +10720,68 @@ const GameEngine = (() => {
         _loadedFromCloud: true
       });
 
-      if (dbState.dailyStockProfit && typeof dbState.dailyStockProfit === 'object') {
+      // Restore AFK Manager Expiry timestamp
+      const rawAfkExpiry = (dbState.afk_manager_expires_at != null ? Number(dbState.afk_manager_expires_at) : (dbState.afkManagerExpiresAt != null ? Number(dbState.afkManagerExpiresAt) : (dbState.state && (dbState.state.afkManagerExpiresAt != null ? Number(dbState.state.afkManagerExpiresAt) : Number(dbState.state.afk_manager_expires_at || 0)))));
+      if (rawAfkExpiry > 0) {
+        state.afkManagerExpiresAt = rawAfkExpiry;
+      }
+
+      // Restore Daily Stock Profit tracker
+      const rawDailyStock = dbState.dailyStockProfit || (dbState.state && dbState.state.dailyStockProfit);
+      if (rawDailyStock && typeof rawDailyStock === 'object') {
         const today = getTodayDateString();
-        const savedDate = String(dbState.dailyStockProfit.date || '');
+        const savedDate = String(rawDailyStock.date || '');
         if (savedDate === today) {
           state.dailyStockProfit = {
             date: today,
-            realizedProfit: Math.max(0, Number(dbState.dailyStockProfit.realizedProfit || 0))
+            realizedProfit: Math.max(0, Number(rawDailyStock.realizedProfit || 0))
           };
         }
+      }
+
+      // Restore other daily trackers
+      const rawDailyInv = dbState.dailyInvestments || (dbState.state && dbState.state.dailyInvestments);
+      if (rawDailyInv && typeof rawDailyInv === 'object') {
+        const today = getTodayDateString();
+        if (String(rawDailyInv.date || '') === today) {
+          state.dailyInvestments = { date: today, count: Math.max(0, Number(rawDailyInv.count || 0)) };
+        }
+      }
+
+      const rawDailyLoans = dbState.dailyLoans || (dbState.state && dbState.state.dailyLoans);
+      if (rawDailyLoans && typeof rawDailyLoans === 'object') {
+        const today = getTodayDateString();
+        if (String(rawDailyLoans.date || '') === today) {
+          state.dailyLoans = { date: today, count: Math.max(0, Number(rawDailyLoans.count || 0)) };
+        }
+      }
+
+      const rawDailyWork = dbState.dailyWork || (dbState.state && dbState.state.dailyWork);
+      if (rawDailyWork && typeof rawDailyWork === 'object') {
+        const today = getTodayDateString();
+        if (String(rawDailyWork.date || '') === today) {
+          state.dailyWork = {
+            date: today,
+            shifts: Math.max(0, Number(rawDailyWork.shifts || 0)),
+            overtimeShifts: Math.max(0, Number(rawDailyWork.overtimeShifts || 0))
+          };
+        }
+      }
+
+      const rawDailyTools = dbState.dailyToolUses || (dbState.state && dbState.state.dailyToolUses);
+      if (rawDailyTools && typeof rawDailyTools === 'object') {
+        const today = getTodayDateString();
+        if (String(rawDailyTools.date || '') === today) {
+          state.dailyToolUses = {
+            date: today,
+            uses: typeof rawDailyTools.uses === 'object' ? rawDailyTools.uses : {}
+          };
+        }
+      }
+
+      const rawDailyQuests = dbState.dailyQuests || (dbState.state && dbState.state.dailyQuests);
+      if (rawDailyQuests && typeof rawDailyQuests === 'object') {
+        state.dailyQuests = rawDailyQuests;
       }
 
 
@@ -11023,7 +11079,13 @@ const GameEngine = (() => {
           timeTravelFlagged = true;
         }
 
-        const managerExpiry = dbState.afkManagerExpiresAt || 0;
+        const managerExpiry = Number(
+          (dbState.afk_manager_expires_at != null ? dbState.afk_manager_expires_at : null) ||
+          (dbState.afkManagerExpiresAt != null ? dbState.afkManagerExpiresAt : null) ||
+          (dbState.state && dbState.state.afkManagerExpiresAt != null ? dbState.state.afkManagerExpiresAt : null) ||
+          (dbState.state && dbState.state.afk_manager_expires_at != null ? dbState.state.afk_manager_expires_at : null) ||
+          state.afkManagerExpiresAt || 0
+        );
         const isManagerActive = managerExpiry > lastSeenServer; // manager was active when player left
 
         // Total real elapsed seconds since player was last seen (always computed, capped at 12h)
@@ -40846,6 +40908,14 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
 window.AirportUI = (() => {
   let _activeSubtab = 'flights'; // 'flights' | 'fleet' | 'facilities' | 'transit'
   let _flightTickerTimer = null;
+  const _claimingPlanes = new Set();
+
+  function getTrustedNow() {
+    if (typeof window !== 'undefined' && window.AppDB && typeof window.AppDB.getTrustedNow === 'function') {
+      return window.AppDB.getTrustedNow();
+    }
+    return Date.now();
+  }
 
   const FACILITY_META = {
     runway: {
@@ -41458,7 +41528,7 @@ window.AirportUI = (() => {
     const model = AIRCRAFT_META[plane.modelId] || AIRCRAFT_META.cessna_sky;
     const flight = plane.currentFlight || plane.activeFlight || {};
     const isFlight = plane.status === 'in_flight' && Boolean(flight.launchTime || flight.destinationName);
-    const now = Date.now();
+    const now = getTrustedNow();
     const landingTime = Number(flight.landingTime || 0);
     const isLanded = isFlight && (now >= landingTime);
     const remSec = Math.max(0, Math.ceil((landingTime - now) / 1000));
@@ -41887,7 +41957,7 @@ window.AirportUI = (() => {
 
   function updateFlightTimers() {
     const timerEls = document.querySelectorAll('[id^="timer-"]');
-    const now = Date.now();
+    const now = getTrustedNow();
     const liveState = getLiveGameState();
     const ap = liveState.airport;
 
@@ -41903,7 +41973,7 @@ window.AirportUI = (() => {
         el.classList.remove('text-sky-400');
         if (bar) bar.style.width = '100%';
         const btnClaim = document.getElementById(`btn-claim-${planeId}`);
-        if (btnClaim) btnClaim.style.display = 'flex';
+        if (btnClaim && !_claimingPlanes.has(planeId)) btnClaim.style.display = 'flex';
       } else {
         el.textContent = `متبقي: ${formatSeconds(remSec)}`;
         if (bar && ap && Array.isArray(ap.fleet)) {
@@ -42183,6 +42253,11 @@ window.AirportUI = (() => {
   }
 
   async function claimFlight(planeId) {
+    if (_claimingPlanes.has(planeId)) {
+      console.warn('[AirportUI] Claim already in progress for plane:', planeId);
+      return;
+    }
+
     const liveState = getLiveGameState();
     const ap = liveState.airport;
     if (!ap || !Array.isArray(ap.fleet)) return;
@@ -42192,8 +42267,56 @@ window.AirportUI = (() => {
     const f = plane.currentFlight || plane.activeFlight;
     if (!f) return;
 
-    if (Date.now() < Number(f.landingTime || 0)) {
-      showAirportToast('الطائرة لا تزال في الجو!', 'error');
+    _claimingPlanes.add(planeId);
+
+    // UI Loading state on button
+    const claimBtn = document.querySelector(`#card-plane-${planeId} button[onclick*="claimFlight"]`);
+    if (claimBtn) {
+      claimBtn.disabled = true;
+      claimBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري التحقق واستلام الأرباح...</span>';
+    }
+
+    // 1. Authoritative Server Claim (Primary Path)
+    if (window.ServerBridge && typeof window.ServerBridge.claimAirportFlight === 'function') {
+      try {
+        const res = await window.ServerBridge.claimAirportFlight(planeId);
+        if (res && res.success) {
+          if (res.cash !== undefined) liveState.cash = res.cash;
+          if (res.xp !== undefined) liveState.xp = res.xp;
+          if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
+          if (res.airport) liveState.airport = res.airport;
+
+          // Mark local plane idle immediately
+          plane.status = 'idle';
+          plane.currentFlight = null;
+          plane.activeFlight = null;
+
+          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+          }
+          persistGameState();
+          showAirportToast(res.message || '🛬 تم تحصيل عوائد الرحلة بنجاح!', 'success');
+          _claimingPlanes.delete(planeId);
+          renderAirportPanel();
+          return;
+        } else {
+          throw new Error((res && res.error) || 'فشل التحقق من السيرفر');
+        }
+      } catch (err) {
+        _claimingPlanes.delete(planeId);
+        showAirportToast(err.message || 'فشل تحصيل الرحلة: السيرفر يرفض الهبوط المبكر!', 'error');
+        renderAirportPanel();
+        return;
+      }
+    }
+
+    // 2. Resilient Offline Fallback (Only if ServerBridge is completely unreachable)
+    const trustedNow = getTrustedNow();
+    if (trustedNow < Number(f.landingTime || 0)) {
+      _claimingPlanes.delete(planeId);
+      const remSec = Math.ceil((Number(f.landingTime) - trustedNow) / 1000);
+      showAirportToast(`⏳ الطائرة لا تزال في الجو! متبقي: ${remSec} ثانية.`, 'error');
+      renderAirportPanel();
       return;
     }
 
@@ -42215,30 +42338,14 @@ window.AirportUI = (() => {
     ap.stats.totalRevenue = (Number(ap.stats.totalRevenue) || 0) + grossRev;
     ap.stats.totalNetProfit = (Number(ap.stats.totalNetProfit) || 0) + netProfit;
 
-    // Immediately update local encrypted cache synchronously to prevent any duplication on reload
     if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
       window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
     }
 
     persistGameState();
     showAirportToast(`🛬 هبطت الرحلة بسلام! تم تحصيل عوائد +${grossRev.toLocaleString()} ج.م (صافي ربح: +${netProfit.toLocaleString()} ج.م) و +${xp} XP`, 'success');
+    _claimingPlanes.delete(planeId);
     renderAirportPanel();
-
-    if (window.ServerBridge && typeof window.ServerBridge.claimAirportFlight === 'function') {
-      try {
-        const res = await window.ServerBridge.claimAirportFlight(planeId);
-        if (res && res.success) {
-          if (res.cash !== undefined) liveState.cash = res.cash;
-          if (res.xp !== undefined) liveState.xp = res.xp;
-          if (res.airport) liveState.airport = res.airport;
-          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
-            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
-          }
-          persistGameState();
-          renderAirportPanel();
-        }
-      } catch (_) {}
-    }
   }
 
   async function sellPlane(planeId) {
