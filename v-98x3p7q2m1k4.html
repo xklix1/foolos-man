@@ -3230,6 +3230,7 @@
             'Authorization': `Bearer ${currentModToken}`
           },
           body: JSON.stringify({
+            targetUser: inspectingPlayer.username,
             targetUsername: inspectingPlayer.username,
             message: msg
           })

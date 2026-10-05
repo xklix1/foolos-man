@@ -1466,7 +1466,7 @@ async function moderatorRoutes(fastify, options) {
         },
         body: JSON.stringify({
           sender: request.modSession.name,
-          recipient: targetUser.trim(),
+          recipient: recipient,
           type: 'investigation_chat',
           payload: {
             message: cleanMsg,
