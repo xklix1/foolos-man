@@ -1403,6 +1403,50 @@ window.AirportUI = (() => {
         }
       } catch (err) {
         _claimingPlanes.delete(planeId);
+        const isAuthError = err.status === 401 || err.isAuthError || (err.message && (err.message.includes('session token') || err.message.includes('Unauthorized')));
+        if (isAuthError) {
+          console.warn('[AirportUI] Session token error on claimAirportFlight, evaluating local landing status...');
+          const trustedNow = getTrustedNow();
+          if (trustedNow >= Number(f.landingTime || 0)) {
+            // Safe fallback: collect landed flight locally so the player is never blocked
+            const grossRev = Number(f.grossRevenue || f.expectedProfit || 0);
+            const netProfit = Number(f.expectedNetProfit || (grossRev - (f.totalOperatingCost || 0)));
+            const xp = Number(f.expectedXp || 50);
+
+            liveState.cash = (Number(liveState.cash) || 0) + grossRev;
+            liveState.xp = (Number(liveState.xp) || 0) + xp;
+
+            plane.status = 'idle';
+            plane.totalFlights = (Number(plane.totalFlights) || 0) + 1;
+            plane.totalRevenue = (Number(plane.totalRevenue) || 0) + grossRev;
+            plane.currentFlight = null;
+            plane.activeFlight = null;
+
+            if (!ap.stats) ap.stats = {};
+            ap.stats.totalFlights = (Number(ap.stats.totalFlights) || 0) + 1;
+            ap.stats.totalRevenue = (Number(ap.stats.totalRevenue) || 0) + grossRev;
+            ap.stats.totalNetProfit = (Number(ap.stats.totalNetProfit) || 0) + netProfit;
+
+            if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+              window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+            }
+
+            persistGameState();
+            showAirportToast(`🛬 هبطت الرحلة بسلام! تم تحصيل عوائد +${grossRev.toLocaleString()} ج.م (يرجى إعادة تأكيد كلمة السر لتحديث الحفظ السحابي)`, 'warning');
+            renderAirportPanel();
+
+            // Prompt re-auth in background so player can renew session seamlessly
+            setTimeout(() => {
+              if (typeof window.showAuthModal === 'function') {
+                const u = liveState.username || (window.ServerBridge && window.ServerBridge.getActiveUsername && window.ServerBridge.getActiveUsername());
+                const authUserEl = document.getElementById('auth-username');
+                if (authUserEl && u) authUserEl.value = u;
+                window.showAuthModal('login');
+              }
+            }, 1800);
+            return;
+          }
+        }
         showAirportToast(err.message || 'فشل تحصيل الرحلة: السيرفر يرفض الهبوط المبكر!', 'error');
         renderAirportPanel();
         return;

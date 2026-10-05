@@ -34,10 +34,27 @@ async function actionRoutes(fastify, options) {
       return null;
     }
 
-    // Strict Anti-IDOR Authentication Guard
-    if (session.sessionToken && (!effectiveToken || effectiveToken !== session.sessionToken)) {
-      reply.code(401).send({ error: 'Unauthorized: Invalid or expired session token' });
-      return null;
+    // Comprehensive Anti-IDOR Authentication Guard
+    const stateToken = session.state && session.state.sessionToken;
+    const activeSessId = session.sessionId || (session.state && session.state.activeSessionId);
+
+    const isValidToken = effectiveToken && (
+      (session.sessionToken && effectiveToken === session.sessionToken) ||
+      (stateToken && effectiveToken === stateToken) ||
+      (activeSessId && effectiveToken === activeSessId)
+    );
+
+    if (session.sessionToken || stateToken) {
+      if (!isValidToken) {
+        reply.code(401).send({ error: 'Unauthorized: Invalid or expired session token', code: 'INVALID_SESSION_TOKEN' });
+        return null;
+      }
+      if (!session.sessionToken && stateToken) {
+        session.sessionToken = stateToken;
+      }
+    } else if (effectiveToken) {
+      session.sessionToken = effectiveToken;
+      if (session.state) session.state.sessionToken = effectiveToken;
     }
 
     return session;

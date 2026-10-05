@@ -1,7 +1,7 @@
 {
-  "version": "v9.4.1",
-  "build": 1791236000000,
-  "timestamp": 1791236000000,
-  "notes": "Fix Live Auction Starting Price, Min Net Worth Condition & Number Formatting Parser",
-  "releaseNotes": "Fix Live Auction Starting Price, Min Net Worth Condition & Number Formatting Parser"
+  "version": "v9.4.2",
+  "build": 1791239800000,
+  "timestamp": 1791239800000,
+  "notes": "Fix Airport Flight Claim Session Token Authorization & Auto-Recovery Shield",
+  "releaseNotes": "Fix Airport Flight Claim Session Token Authorization & Auto-Recovery Shield"
 }

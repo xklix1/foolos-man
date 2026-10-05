@@ -1,6 +1,6 @@
 {
-  "id": null,
-  "status": "IDLE",
+  "id": "auc_1791235245550_bbgyl",
+  "status": "LIVE",
   "item": {
     "type": "aircraft",
     "id": "custom_item_1791235245550",
@@ -21,11 +21,11 @@
     "currentBid": 25000000,
     "highestBidder": null,
     "hammerStrike": 0,
-    "hammerStrikeMessage": "",
-    "hammerExpiryTime": 0,
+    "hammerStrikeMessage": "المزاد مفتوح للمزايدات الحية الآن!",
+    "hammerExpiryTime": 1791235905747,
     "bidsHistory": []
   },
   "registrants": [],
   "winner": null,
-  "lastUpdated": 1791235245550
+  "lastUpdated": 1791235845747
 }

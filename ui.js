@@ -2427,6 +2427,24 @@ const UIController = (() => {
     document.getElementById('start-menu-screen').classList.remove('hidden');
   }
 
+  // Handle Session Expiry Event from ServerBridge
+  if (typeof window !== 'undefined') {
+    window.addEventListener('rasalmal:session-expired', (e) => {
+      const u = (e.detail && e.detail.username) || (typeof activeUsername !== 'undefined' && activeUsername) || '';
+      console.warn('[UI] Auth session expired for user:', u);
+      if (typeof showToast === 'function') {
+        showToast('انتهت جلسة الأمان 🔒', 'انتهت صلاحية جلسة الاتصال بالسيرفر. يرجى تأكيد الدخول لتجديد التزامن الفوري.', 'warning', 4500);
+      }
+      const authUserEl = document.getElementById('auth-username');
+      if (authUserEl && u) authUserEl.value = u;
+      const authPinEl = document.getElementById('auth-pin');
+      if (authPinEl) authPinEl.value = '';
+      if (typeof showAuthModal === 'function') {
+        showAuthModal('login');
+      }
+    });
+  }
+
   async function renderStartMenuLeaderboard(forceRefresh = false) {
     const tbody = document.getElementById('start-menu-leaderboard-rows');
     if (!tbody) return;

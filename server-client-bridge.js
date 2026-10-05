@@ -30,14 +30,40 @@ var ServerBridge = (() => {
   let _clickBatchTimer = null;
   let _batchStartTime = 0;
 
+  function resolveEffectiveToken(targetUser = null) {
+    if (_sessionToken) return _sessionToken;
+    const user = targetUser || _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (user && typeof localStorage !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('rasalmal_auth_token_' + String(user).trim());
+        if (stored) {
+          _sessionToken = stored;
+          return stored;
+        }
+      } catch (_) {}
+    }
+    if (typeof window !== 'undefined' && window.AppDB && typeof window.AppDB.getActiveSessionToken === 'function') {
+      try {
+        const dbTok = window.AppDB.getActiveSessionToken();
+        if (dbTok) return dbTok;
+      } catch (_) {}
+    }
+    return null;
+  }
+
   async function _post(endpoint, body = {}) {
     const base = getApiBase();
     const url = `${base}${endpoint}`;
     const headers = {
       'Content-Type': 'application/json'
     };
-    if (_sessionToken) {
-      headers['Authorization'] = `Bearer ${_sessionToken}`;
+
+    const token = resolveEffectiveToken(body && body.username);
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      if (body && typeof body === 'object' && !body.token && endpoint !== '/api/session/start') {
+        body.token = token;
+      }
     }
 
     const res = await fetch(url, {
@@ -48,11 +74,35 @@ var ServerBridge = (() => {
 
     if (!res.ok) {
       let errMsg = `HTTP ${res.status}`;
+      let errCode = null;
       try {
         const errJson = await res.json();
-        errMsg = errJson.error || errMsg;
+        errMsg = errJson.error || errJson.message || errMsg;
+        errCode = errJson.code || null;
       } catch (e) {}
-      throw new Error(errMsg);
+
+      // Handle 401 Unauthorized / Expired session
+      if (res.status === 401 || errCode === 'INVALID_SESSION_TOKEN' || (typeof errMsg === 'string' && (errMsg.includes('Invalid session token') || errMsg.includes('expired session token')))) {
+        console.warn('[ServerBridge] 401 Session Token Unauthorized on:', endpoint, errMsg);
+        const user = _activeUsername || (body && body.username);
+        if (user && typeof localStorage !== 'undefined') {
+          try {
+            localStorage.removeItem('rasalmal_auth_token_' + String(user).trim());
+          } catch (_) {}
+        }
+        _sessionToken = null;
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('rasalmal:session-expired', {
+            detail: { username: user, endpoint, error: errMsg }
+          }));
+        }
+      }
+
+      const errorObj = new Error(errMsg);
+      errorObj.status = res.status;
+      errorObj.code = errCode;
+      errorObj.isAuthError = (res.status === 401);
+      throw errorObj;
     }
 
     return await res.json();
@@ -70,10 +120,7 @@ var ServerBridge = (() => {
         ? window.AppDB.getActiveSessionToken()
         : null;
 
-      let effectiveToken = token;
-      if (!effectiveToken && typeof localStorage !== 'undefined') {
-        effectiveToken = localStorage.getItem('rasalmal_auth_token_' + _activeUsername);
-      }
+      let effectiveToken = token || resolveEffectiveToken(_activeUsername);
       if (effectiveToken) {
         _sessionToken = effectiveToken;
       }
@@ -107,6 +154,12 @@ var ServerBridge = (() => {
       return data;
     } catch (err) {
       console.warn('[ServerBridge] Server session start failed, falling back to local adapter:', err.message);
+      if (err.status === 401 || (err.message && (err.message.includes('Invalid') || err.message.includes('expired')))) {
+        if (_activeUsername && typeof localStorage !== 'undefined') {
+          try { localStorage.removeItem('rasalmal_auth_token_' + _activeUsername); } catch (_) {}
+        }
+        _sessionToken = null;
+      }
       _isServerOnline = false;
       return null;
     }
@@ -405,8 +458,10 @@ var ServerBridge = (() => {
   async function unlockAirport(code, airportName) {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
     return await _post('/api/airport/unlock', {
       username: user,
+      token,
       code,
       airportName
     });
@@ -415,8 +470,10 @@ var ServerBridge = (() => {
   async function renameAirport(name) {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
     return await _post('/api/airport/rename', {
       username: user,
+      token,
       name
     });
   }
@@ -424,8 +481,10 @@ var ServerBridge = (() => {
   async function upgradeAirportFacility(facilityId) {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
     return await _post('/api/airport/upgrade', {
       username: user,
+      token,
       facilityId
     });
   }
@@ -433,8 +492,10 @@ var ServerBridge = (() => {
   async function buyAirportPlane(modelId, customName) {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
     return await _post('/api/airport/buy-plane', {
       username: user,
+      token,
       modelId,
       customName
     });
@@ -443,8 +504,10 @@ var ServerBridge = (() => {
   async function launchAirportFlight(planeId, destinationId) {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
     return await _post('/api/airport/launch-flight', {
       username: user,
+      token,
       planeId,
       destinationId
     });
@@ -453,8 +516,10 @@ var ServerBridge = (() => {
   async function speedupAirportFlight(planeId) {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
     return await _post('/api/airport/speedup-flight', {
       username: user,
+      token,
       planeId
     });
   }
@@ -462,8 +527,10 @@ var ServerBridge = (() => {
   async function claimAirportFlight(planeId) {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
     return await _post('/api/airport/claim-flight', {
       username: user,
+      token,
       planeId
     });
   }
@@ -471,24 +538,30 @@ var ServerBridge = (() => {
   async function claimDutyFree() {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
     return await _post('/api/airport/claim-duty-free', {
-      username: user
+      username: user,
+      token
     });
   }
 
   async function acceptAirportTransit() {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
     return await _post('/api/airport/transit', {
-      username: user
+      username: user,
+      token
     });
   }
 
   async function sellAirportPlane(planeId) {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
     return await _post('/api/airport/sell-plane', {
       username: user,
+      token,
       planeId
     });
   }
@@ -527,7 +600,8 @@ var ServerBridge = (() => {
     destroy: clearSession,
     isServerOnline: () => _isServerOnline,
     getActiveUsername: () => _activeUsername,
-    getSessionToken: () => _sessionToken
+    getSessionToken: () => _sessionToken,
+    resolveEffectiveToken
   };
 })();
 
