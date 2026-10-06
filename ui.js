@@ -24421,7 +24421,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.6.5');
+            const curVer = (window._CLIENT_VERSION || 'v9.4.4');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {
@@ -24444,6 +24444,12 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
                   try {
                     const keys = await caches.keys();
                     await Promise.all(keys.map(k => caches.delete(k)));
+                  } catch (_) {}
+                }
+                if ('serviceWorker' in navigator) {
+                  try {
+                    const regs = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(regs.map(r => r.unregister()));
                   } catch (_) {}
                 }
                 const url = new URL(window.location.href);

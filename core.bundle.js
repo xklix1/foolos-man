@@ -686,7 +686,7 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   async function checkVersion() {
     try {
-      const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.0.1';
+      const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.4.4';
       const lastKnown = (typeof localStorage !== 'undefined') ? localStorage.getItem('rasalmal_last_known_ver') : null;
       const skipVer = (typeof sessionStorage !== 'undefined') ? sessionStorage.getItem('rasalmal_skip_ver_check') : null;
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -703,7 +703,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v9.0.1', remoteVersion: 'v9.0.1' };
+    return { upToDate: true, clientVersion: 'v9.4.4', remoteVersion: 'v9.4.4' };
   }
 
   async function checkDeviceBan() {
@@ -40400,7 +40400,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v8.6.5');
+            const curVer = (window._CLIENT_VERSION || 'v9.4.4');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {
@@ -40423,6 +40423,12 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
                   try {
                     const keys = await caches.keys();
                     await Promise.all(keys.map(k => caches.delete(k)));
+                  } catch (_) {}
+                }
+                if ('serviceWorker' in navigator) {
+                  try {
+                    const regs = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(regs.map(r => r.unregister()));
                   } catch (_) {}
                 }
                 const url = new URL(window.location.href);

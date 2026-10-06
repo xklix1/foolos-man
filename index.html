@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v9.4.2';
+    window._CLIENT_VERSION = 'v9.4.4';
     (async function() {
-      const CURRENT_APP_BUILD = 'v9.4.2';
+      const CURRENT_APP_BUILD = 'v9.4.4';
       try {
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
@@ -31,6 +31,12 @@
               try {
                 const keys = await caches.keys();
                 await Promise.all(keys.map(k => caches.delete(k)));
+              } catch (_) {}
+            }
+            if ('serviceWorker' in navigator) {
+              try {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(regs.map(r => r.unregister()));
               } catch (_) {}
             }
             const url = new URL(window.location.href);
@@ -7454,7 +7460,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.4.3"></script>
+  <script src="core.bundle.js?v=v9.4.4"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

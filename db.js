@@ -683,7 +683,7 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   async function checkVersion() {
     try {
-      const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.0.1';
+      const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.4.4';
       const lastKnown = (typeof localStorage !== 'undefined') ? localStorage.getItem('rasalmal_last_known_ver') : null;
       const skipVer = (typeof sessionStorage !== 'undefined') ? sessionStorage.getItem('rasalmal_skip_ver_check') : null;
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -700,7 +700,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v9.0.1', remoteVersion: 'v9.0.1' };
+    return { upToDate: true, clientVersion: 'v9.4.4', remoteVersion: 'v9.4.4' };
   }
 
   async function checkDeviceBan() {

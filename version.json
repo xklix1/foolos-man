@@ -1,7 +1,7 @@
 {
-  "version": "v9.4.3",
-  "build": 1791247200000,
-  "timestamp": 1791247200000,
-  "notes": "Enforce Universal Dynamic Gold Speedup Economy (1 Gold per 10 Minutes) Across Entire Game & Airport Hub",
-  "releaseNotes": "Enforce Universal Dynamic Gold Speedup Economy (1 Gold per 10 Minutes) Across Entire Game & Airport Hub"
+  "version": "v9.4.4",
+  "build": 1791252000000,
+  "timestamp": 1791252000000,
+  "notes": "Mandatory Universal Cache-Purge & Universal Gold Economy Sync (1 Gold = 10 Minutes)",
+  "releaseNotes": "Mandatory Universal Cache-Purge & Universal Gold Economy Sync (1 Gold = 10 Minutes)"
 }
