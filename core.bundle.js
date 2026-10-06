@@ -41120,7 +41120,7 @@ window.AirportUI = (() => {
       landingFee: 20000,
       baseNetProfit: 300000,
       xp: 150,
-      speedupGold: 2,
+      speedupGold: 9, // 1 Gold per 10 minutes (90 min -> 9 Gold)
       desc: 'طائرة خفيفة للمسافات الإقليمية ورجال الأعمال (رحلة ساعة ونصف)'
     },
     airbus_a320: {
@@ -41136,7 +41136,7 @@ window.AirportUI = (() => {
       landingFee: 70000,
       baseNetProfit: 1000000,
       xp: 450,
-      speedupGold: 5,
+      speedupGold: 18, // 1 Gold per 10 minutes (180 min -> 18 Gold)
       desc: 'طائرة ركاب دولية عالية الكفاءة للمسافات المتوسطة (رحلة 3 ساعات)'
     },
     boeing_777: {
@@ -41152,7 +41152,7 @@ window.AirportUI = (() => {
       landingFee: 180000,
       baseNetProfit: 2700000,
       xp: 1200,
-      speedupGold: 10,
+      speedupGold: 27, // 1 Gold per 10 minutes (270 min -> 27 Gold)
       desc: 'طائر عملاق عابر للقارات للرحلات الدولية الطويلة (رحلة 4.5 ساعات)'
     },
     gulfstream_g650: {
@@ -41168,7 +41168,7 @@ window.AirportUI = (() => {
       landingFee: 300000,
       baseNetProfit: 4500000,
       xp: 1500,
-      speedupGold: 10,
+      speedupGold: 36, // 1 Gold per 10 minutes (360 min -> 36 Gold)
       desc: 'طائرة نفاثة فاخرة لنقل كبار الشخصيات بعوائد قياسية (رحلة 6 ساعات)'
     },
     cargo_beluga: {
@@ -41184,7 +41184,7 @@ window.AirportUI = (() => {
       landingFee: 400000,
       baseNetProfit: 7000000,
       xp: 2200,
-      speedupGold: 14,
+      speedupGold: 45, // 1 Gold per 10 minutes (450 min -> 45 Gold)
       desc: 'وحش الشحن الجوي العملاق لنقل الشحنات الفاخرة حول العالم (رحلة 7.5 ساعات)'
     },
     airbus_a380: {
@@ -41200,7 +41200,7 @@ window.AirportUI = (() => {
       landingFee: 1000000,
       baseNetProfit: 15000000,
       xp: 4500,
-      speedupGold: 18,
+      speedupGold: 60, // 1 Gold per 10 minutes (600 min -> 60 Gold)
       desc: 'القلعة الطائرة ذات الطابقين.. أضخم طائرة ركاب في العالم (رحلة 10 ساعات)'
     }
   };
@@ -41666,8 +41666,9 @@ window.AirportUI = (() => {
     const netProfit = Math.max(0, grossRevenue - totalOperatingCost);
     const baseDuration = model.flightTimeSec || 18000;
     const durationSec = Math.max(60, Math.floor(baseDuration * distMult * (1 - bonuses.timeReduction)));
+    const speedupGold = Math.max(1, Math.ceil(durationSec / 600)); // 1 Gold per 10 minutes (600s)
 
-    return { grossRevenue, fuelCost, fuelDiscountPct: Math.round(bonuses.fuelDiscount * 100), crewCost, landingFee, totalOperatingCost, netProfit, durationSec };
+    return { grossRevenue, fuelCost, fuelDiscountPct: Math.round(bonuses.fuelDiscount * 100), crewCost, landingFee, totalOperatingCost, netProfit, durationSec, speedupGold };
   }
 
   function renderPlaneCard(plane, airport, state) {
@@ -41678,6 +41679,7 @@ window.AirportUI = (() => {
     const landingTime = Number(flight.landingTime || 0);
     const isLanded = isFlight && (now >= landingTime);
     const remSec = Math.max(0, Math.ceil((landingTime - now) / 1000));
+    const currentSpeedupCost = Math.max(1, Math.ceil(remSec / 600));
 
     // Calculate initial preview economics for the default destination
     const availableDests = DESTINATIONS_META.filter(d => model.tier >= d.tier);
@@ -41749,10 +41751,10 @@ window.AirportUI = (() => {
                   <span>تحصيل عوائد الرحلة (+${(flight.grossRevenue || flight.expectedProfit || 0).toLocaleString()} ج.م)</span>
                 </button>
               ` : `
-                <button onclick="window.AirportUI.speedupFlight('${plane.id}')"
+                <button onclick="window.AirportUI.speedupFlight('${plane.id}')" id="btn-speedup-${plane.id}"
                   class="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-1.5">
                   <i class="fa-solid fa-bolt"></i>
-                  <span>تسريع فوري (${flight.speedupGold || 5} ذهب)</span>
+                  <span id="speedup-cost-${plane.id}">تسريع فوري (${currentSpeedupCost} ذهب)</span>
                 </button>
                 <button onclick="window.AirportUI.claimFlight('${plane.id}')" id="btn-claim-${plane.id}" style="display: none;"
                   class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5">
@@ -42120,8 +42122,14 @@ window.AirportUI = (() => {
         if (bar) bar.style.width = '100%';
         const btnClaim = document.getElementById(`btn-claim-${planeId}`);
         if (btnClaim && !_claimingPlanes.has(planeId)) btnClaim.style.display = 'flex';
+        const btnSpeedup = document.getElementById(`btn-speedup-${planeId}`);
+        if (btnSpeedup) btnSpeedup.style.display = 'none';
       } else {
         el.textContent = `متبقي: ${formatSeconds(remSec)}`;
+        const dynamicCost = Math.max(1, Math.ceil(remSec / 600));
+        const speedupCostEl = document.getElementById(`speedup-cost-${planeId}`);
+        if (speedupCostEl) speedupCostEl.textContent = `تسريع فوري (${dynamicCost} ذهب)`;
+
         if (bar && ap && Array.isArray(ap.fleet)) {
           const pl = ap.fleet.find(p => p.id === planeId);
           const f = pl && (pl.currentFlight || pl.activeFlight);
@@ -42329,7 +42337,7 @@ window.AirportUI = (() => {
       expectedProfit: eco.grossRevenue,
       expectedNetProfit: eco.netProfit,
       expectedXp: eco.xpReward,
-      speedupGold: model.speedupGold || 5
+      speedupGold: eco.speedupGold || Math.max(1, Math.ceil(eco.durationSec / 600))
     };
     plane.currentFlight = flightObj;
     plane.activeFlight = flightObj;
@@ -42372,11 +42380,17 @@ window.AirportUI = (() => {
     const flight = plane.currentFlight || plane.activeFlight;
     if (!flight) return;
 
-    const costGold = Number(flight.speedupGold || 5);
+    const now = getTrustedNow();
+    const landingTime = Number(flight.landingTime || 0);
+    const remSec = Math.max(0, Math.ceil((landingTime - now) / 1000));
+    if (remSec <= 0) return;
+
+    // 1 Gold per 10 minutes (600 seconds)
+    const costGold = Math.max(1, Math.ceil(remSec / 600));
     const curGold = Number(liveState.gold || 0);
 
     if (curGold < costGold) {
-      showAirportToast(`تحتاج إلى ${costGold} سبيكة ذهب للتسريع الفوري!`, 'error');
+      showAirportToast(`تحتاج إلى ${costGold} سبيكة ذهب للتسريع الفوري! (المتبقي: ${Math.ceil(remSec / 60)} دقيقة | رصيدك: ${curGold} 🪙)`, 'error');
       return;
     }
 

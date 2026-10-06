@@ -70,7 +70,7 @@ const AIRCRAFT_MODELS = {
     landingFee: 20000,
     baseNetProfit: 300000,
     baseXp: 150,
-    speedupGold: 2,
+    speedupGold: 9, // 1 Gold per 10 minutes (5400s = 90 min -> 9 Gold)
     icon: 'fa-plane',
     desc: 'طائرة خفيفة للمسافات الإقليمية ورجال الأعمال (رحلة ساعة ونصف)'
   },
@@ -88,7 +88,7 @@ const AIRCRAFT_MODELS = {
     landingFee: 70000,
     baseNetProfit: 1000000,
     baseXp: 450,
-    speedupGold: 5,
+    speedupGold: 18, // 1 Gold per 10 minutes (10800s = 180 min -> 18 Gold)
     icon: 'fa-plane-departure',
     desc: 'طائرة ركاب دولية عالية الكفاءة للمسافات المتوسطة (رحلة 3 ساعات)'
   },
@@ -106,7 +106,7 @@ const AIRCRAFT_MODELS = {
     landingFee: 180000,
     baseNetProfit: 2700000,
     baseXp: 1200,
-    speedupGold: 10,
+    speedupGold: 27, // 1 Gold per 10 minutes (16200s = 270 min -> 27 Gold)
     icon: 'fa-plane',
     desc: 'طائر عملاق عابر للقارات للرحلات الدولية الطويلة (رحلة 4.5 ساعات)'
   },
@@ -124,7 +124,7 @@ const AIRCRAFT_MODELS = {
     landingFee: 300000,
     baseNetProfit: 4500000,
     baseXp: 1500,
-    speedupGold: 10,
+    speedupGold: 36, // 1 Gold per 10 minutes (21600s = 360 min -> 36 Gold)
     icon: 'fa-crown',
     desc: 'طائرة نفاثة فاخرة لنقل كبار الشخصيات بعوائد قياسية (رحلة 6 ساعات)'
   },
@@ -142,7 +142,7 @@ const AIRCRAFT_MODELS = {
     landingFee: 400000,
     baseNetProfit: 7000000,
     baseXp: 2200,
-    speedupGold: 14,
+    speedupGold: 45, // 1 Gold per 10 minutes (27000s = 450 min -> 45 Gold)
     icon: 'fa-box-open',
     desc: 'وحش الشحن الجوي العملاق لنقل الشحنات الفاخرة حول العالم (رحلة 7.5 ساعات)'
   },
@@ -160,7 +160,7 @@ const AIRCRAFT_MODELS = {
     landingFee: 1000000,
     baseNetProfit: 15000000,
     baseXp: 4500,
-    speedupGold: 18,
+    speedupGold: 60, // 1 Gold per 10 minutes (36000s = 600 min -> 60 Gold)
     icon: 'fa-jet-fighter-up',
     desc: 'القلعة الطائرة ذات الطابقين.. أضخم طائرة ركاب في العالم (رحلة 10 ساعات)'
   }
@@ -298,6 +298,7 @@ function calculateFlightEconomics(model, dest, airportState) {
   // 3. Flight Duration & XP
   const durationSec = Math.max(60, Math.floor(model.baseFlightTimeSec * distMult * (1 - bonuses.timeReduction)));
   const xpReward = Math.floor(model.baseXp * distMult);
+  const speedupGold = Math.max(1, Math.ceil(durationSec / 600)); // 1 Gold per 10 minutes (600s)
 
   return {
     grossRevenue,
@@ -308,7 +309,8 @@ function calculateFlightEconomics(model, dest, airportState) {
     totalOperatingCost,
     netProfit,
     durationSec,
-    xpReward
+    xpReward,
+    speedupGold
   };
 }
 

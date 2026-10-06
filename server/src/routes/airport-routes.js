@@ -398,7 +398,7 @@ async function airportRoutes(fastify, options) {
       expectedProfit: eco.grossRevenue, // gross revenue added to cash on claim
       expectedNetProfit: eco.netProfit,
       expectedXp: eco.xpReward,
-      speedupGold: model.speedupGold || 5
+      speedupGold: eco.speedupGold || Math.max(1, Math.ceil(eco.durationSec / 600))
     };
 
     if (!s.airport.stats) s.airport.stats = {};
@@ -421,7 +421,7 @@ async function airportRoutes(fastify, options) {
     };
   });
 
-  // 6. POST /api/airport/speedup-flight (Speedup with Gold)
+  // 6. POST /api/airport/speedup-flight (Speedup with Gold - 1 Gold per 10 Minutes)
   fastify.post('/api/airport/speedup-flight', async (request, reply) => {
     const session = await resolveSession(request, reply);
     if (!session) return;
@@ -437,18 +437,27 @@ async function airportRoutes(fastify, options) {
       return reply.code(400).send({ error: 'لا توجد رحلة نشطة لهذه الطائرة لتسريعها.' });
     }
 
-    const goldCost = Number(plane.activeFlight.speedupGold || 5);
+    const now = Date.now();
+    const landingTime = Number(plane.activeFlight.landingTime || 0);
+    const remSec = Math.max(0, Math.ceil((landingTime - now) / 1000));
+    if (remSec <= 0) {
+      return reply.code(400).send({ error: 'الرحلة انتهت بالفعل وهبطت الطائرة وجاهزة للتحصيل.' });
+    }
+
+    // Universal Game Rule: 1 Gold per 10 minutes (600 seconds)
+    const goldCost = Math.max(1, Math.ceil(remSec / 600));
     const curGold = Number(s.gold || 0);
 
     if (curGold < goldCost) {
       return reply.code(400).send({
-        error: `🚫 رصيدك من الذهب غير كافٍ (${goldCost} سبيكة ذهب مطلوبة)`
+        error: `🚫 رصيدك من الذهب غير كافٍ (${goldCost} سبيكة ذهب مطلوبة لتسريع الوقت المتبقي: ${Math.ceil(remSec / 60)} دقيقة)`
       });
     }
 
     s.gold = curGold - goldCost;
     // Set landing time to past so it can be claimed immediately
     plane.activeFlight.landingTime = Date.now() - 1000;
+    plane.activeFlight.speedupGold = goldCost;
     s.lastActiveTimestamp = Date.now();
     s.lastSeen = Date.now();
 
@@ -458,6 +467,7 @@ async function airportRoutes(fastify, options) {
       success: true,
       message: `⚡ تم استخدام التوربين النفاث السريع بـ ${goldCost} ذهب! هبطت الطائرة فورياً وجاهزة للتحصيل.`,
       gold: s.gold,
+      goldCost,
       plane,
       airport: s.airport
     };
