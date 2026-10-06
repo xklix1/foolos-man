@@ -709,7 +709,12 @@ async function adminRoutes(fastify, options) {
   }, async (request, reply) => {
     const { execSync } = require('child_process');
     try {
-      const cwd = require('path').resolve(__dirname, '../../../../');
+      const p = require('path');
+      const fs = require('fs');
+      let cwd = p.resolve(__dirname, '../../../');
+      if (!fs.existsSync(p.join(cwd, '.git')) && fs.existsSync(p.join(cwd, '..', '.git'))) {
+        cwd = p.resolve(cwd, '..');
+      }
       const out = execSync('git pull origin main', { cwd, timeout: 30000 }).toString();
       reply.send({ success: true, output: out });
     } catch (err) {
