@@ -136,7 +136,16 @@
       <h1 class="text-xl sm:text-2xl font-black tracking-wide text-white mb-1">بوابة الرقابة والتفتيش</h1>
       <p class="text-[11px] sm:text-xs text-slate-400 mb-5 sm:mb-6">Staff Inspector & Wealth Monitoring Portal</p>
       
-      <div class="space-y-4">
+      <!-- Verifying state spinner (when auto-restoring 30-day session) -->
+      <div id="authVerifyingState" class="hidden py-6 text-center space-y-3">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-cyan-950/60 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-2xl shadow-lg shadow-cyan-500/20">
+          <i class="fa-solid fa-fingerprint animate-pulse"></i>
+        </div>
+        <div class="text-sm font-black text-white">جاري استعادة جلسة المحقق المعتمدة...</div>
+        <p class="text-xs text-slate-400">التحقق من صلاحية الجهاز الموثق (جلسة 30 يوماً)</p>
+      </div>
+
+      <div id="authFieldsContainer" class="space-y-4">
         <div>
           <label class="block text-right text-xs font-bold text-slate-300 mb-2">
             <i class="fa-solid fa-key text-cyan-400 ml-1"></i> مفتاح المحقق (Moderator Key):
@@ -149,7 +158,26 @@
           </div>
         </div>
 
-        <div id="authErrorMsg" class="hidden text-xs text-rose-400 bg-rose-950/40 border border-rose-800/60 rounded-lg p-2.5"></div>
+        <!-- خيار تذكر هذا الجهاز لمدة 30 يوم -->
+        <div class="bg-slate-900/70 border border-slate-800 hover:border-cyan-500/40 rounded-xl p-3 transition duration-200 text-right">
+          <label class="flex items-center justify-between cursor-pointer select-none" for="rememberDeviceCheckbox">
+            <div class="flex items-center gap-2.5">
+              <input type="checkbox" id="rememberDeviceCheckbox" checked class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-cyan-500 focus:ring-cyan-500/30 focus:ring-offset-0 cursor-pointer accent-cyan-500 transition" />
+              <span class="text-xs font-bold text-slate-200 hover:text-cyan-300 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-shield-halved text-cyan-400 text-xs"></i>
+                تذكر هذا الجهاز لمدة 30 يوماً
+              </span>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-950/70 border border-cyan-800/50 text-cyan-300">
+              30 يوم
+            </span>
+          </label>
+          <p class="text-[10px] text-slate-400 mt-1.5 pr-6 leading-relaxed">
+            لن يُطلب منك مفتاح المحقق عند الدخول من هذا المتصفح طوال 30 يوماً.
+          </p>
+        </div>
+
+        <div id="authErrorMsg" class="hidden text-xs text-rose-400 bg-rose-950/40 border border-rose-800/60 rounded-lg p-2.5 text-right"></div>
 
         <button onclick="submitLogin()" id="loginBtn" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-cyan-600 hover:from-cyan-500 to-blue-600 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-cyan-600/30 transition duration-200 flex items-center justify-center gap-2 min-h-[46px] cursor-pointer">
           <span>دخول النظام</span>
@@ -188,6 +216,7 @@
           <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
           <div class="text-right">
             <div id="staffNameDisplayMobile" class="text-[11px] font-bold text-white truncate max-w-[80px]">محقق</div>
+            <span id="deviceRememberBadgeMobile" class="hidden text-[9px] text-cyan-400 font-mono"><i class="fa-solid fa-shield-halved text-[8px]"></i> 30d</span>
           </div>
         </div>
       </div>
@@ -198,7 +227,12 @@
         <div class="hidden md:flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/60">
           <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
           <div class="text-right">
-            <div id="staffNameDisplay" class="text-xs font-bold text-white">محقق مناوب</div>
+            <div class="flex items-center gap-1.5">
+              <span id="staffNameDisplay" class="text-xs font-bold text-white">محقق مناوب</span>
+              <span id="deviceRememberBadge" class="hidden px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-800/60 items-center gap-1" title="تم توثيق وحفظ هذا الجهاز لمدة 30 يوماً">
+                <i class="fa-solid fa-shield-halved text-[8px] text-cyan-400"></i> موثق 30 يوم
+              </span>
+            </div>
             <div id="staffRoleDisplay" class="text-[10px] text-cyan-400">Moderator</div>
           </div>
         </div>
@@ -1258,7 +1292,15 @@
       ? 'https://rasalmal.online/api/mod'
       : (window.location.origin.includes('localhost') ? 'http://localhost:3001/api/mod' : '/api/mod');
 
-    let currentModToken = sessionStorage.getItem('rasalmal_mod_token') || '';
+    const TOKEN_KEY = 'rasalmal_mod_token';
+    const REMEMBER_KEY = 'rasalmal_mod_remember';
+    const INFO_KEY = 'rasalmal_mod_info';
+
+    function getSavedToken() {
+      return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY) || '';
+    }
+
+    let currentModToken = getSavedToken();
     let currentModInfo = null;
     let currentFilter = 'all';
     let cachedPlayersList = [];
@@ -1291,26 +1333,70 @@
       }
     }
 
-    // Auto-login on load if token exists
+    // Auto-login on load with 30-day remembered device check
     window.addEventListener('DOMContentLoaded', async () => {
-      if (currentModToken) {
+      const savedToken = getSavedToken();
+      const authOverlay = document.getElementById('authOverlay');
+      const authVerifyingState = document.getElementById('authVerifyingState');
+      const authFieldsContainer = document.getElementById('authFieldsContainer');
+      const authErrBox = document.getElementById('authErrorMsg');
+
+      if (savedToken) {
+        // Show seamless verifying state while retaining security
+        if (authVerifyingState) authVerifyingState.classList.remove('hidden');
+        if (authFieldsContainer) authFieldsContainer.classList.add('hidden');
+        authOverlay.classList.remove('hidden');
+
         try {
           const res = await fetch(`${API_BASE}/auth/verify`, {
-            headers: { 'Authorization': `Bearer ${currentModToken}` }
+            headers: { 'Authorization': `Bearer ${savedToken}` }
           });
           if (res.ok) {
             const data = await res.json();
-            currentModInfo = data.modInfo;
-            showDashboard();
-            return;
+            if (data.success && data.modInfo) {
+              currentModToken = savedToken;
+              currentModInfo = data.modInfo;
+              if (data.rememberDevice) {
+                localStorage.setItem(TOKEN_KEY, savedToken);
+                localStorage.setItem(REMEMBER_KEY, 'true');
+              }
+              if (authVerifyingState) authVerifyingState.classList.add('hidden');
+              showDashboard();
+              return;
+            }
+          } else {
+            // Token expired or invalid
+            const errData = await res.json().catch(() => ({}));
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(REMEMBER_KEY);
+            sessionStorage.removeItem(TOKEN_KEY);
+            currentModToken = '';
+            currentModInfo = null;
+            if (authErrBox) {
+              authErrBox.textContent = errData.message || 'انتهت صلاحية تذكر هذا الجهاز. يرجى تسجيل الدخول مجدداً.';
+              authErrBox.classList.remove('hidden');
+            }
           }
-        } catch (_) {}
+        } catch (_) {
+          // Fallback if offline/network hiccup
+          if (authErrBox) {
+            authErrBox.textContent = 'تعذر التحقق التلقائي من الجهاز. يرجى تسجيل الدخول.';
+            authErrBox.classList.remove('hidden');
+          }
+        } finally {
+          if (authVerifyingState) authVerifyingState.classList.add('hidden');
+          if (authFieldsContainer) authFieldsContainer.classList.remove('hidden');
+        }
       }
-      document.getElementById('authOverlay').classList.remove('hidden');
+
+      // If no token or verification failed, show login form
+      authOverlay.classList.remove('hidden');
     });
 
     async function submitLogin() {
       const key = document.getElementById('modKeyInput').value.trim();
+      const rememberCheckbox = document.getElementById('rememberDeviceCheckbox');
+      const rememberDevice = rememberCheckbox ? rememberCheckbox.checked : true;
       const errBox = document.getElementById('authErrorMsg');
       const loginBtn = document.getElementById('loginBtn');
       errBox.classList.add('hidden');
@@ -1322,20 +1408,30 @@
       }
 
       loginBtn.disabled = true;
-      loginBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري التحقق...</span>`;
+      loginBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري التحقق وتوثيق الجهاز...</span>`;
 
       try {
         const res = await fetch(`${API_BASE}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ modKey: key })
+          body: JSON.stringify({ modKey: key, rememberDevice })
         });
 
         const data = await res.json();
         if (res.ok && data.success) {
           currentModToken = data.token;
           currentModInfo = data.modInfo;
-          sessionStorage.setItem('rasalmal_mod_token', currentModToken);
+
+          if (rememberDevice) {
+            localStorage.setItem(TOKEN_KEY, currentModToken);
+            localStorage.setItem(REMEMBER_KEY, 'true');
+            sessionStorage.setItem(TOKEN_KEY, currentModToken);
+          } else {
+            sessionStorage.setItem(TOKEN_KEY, currentModToken);
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(REMEMBER_KEY);
+          }
+
           showDashboard();
         } else {
           errBox.textContent = data.message || 'مفتاح المحقق غير صحيح.';
@@ -1361,6 +1457,13 @@
         const mobEl = document.getElementById('staffNameDisplayMobile');
         if (mobEl) mobEl.textContent = currentModInfo.name;
         document.getElementById('staffRoleDisplay').textContent = currentModInfo.isSuperAdmin ? 'Super Admin' : 'Staff Inspector';
+
+        // Update 30-day device remember badge
+        const isRemembered = Boolean(currentModInfo.rememberDevice || localStorage.getItem(REMEMBER_KEY) === 'true');
+        const badgeDesktop = document.getElementById('deviceRememberBadge');
+        const badgeMobile = document.getElementById('deviceRememberBadgeMobile');
+        if (badgeDesktop) badgeDesktop.classList.toggle('hidden', !isRemembered);
+        if (badgeMobile) badgeMobile.classList.toggle('hidden', !isRemembered);
       }
 
       refreshOverview();
@@ -1371,10 +1474,35 @@
       standbyPollTimer = setInterval(checkStandbyStatus, 6000);
     }
 
-    function logoutStaff() {
-      sessionStorage.removeItem('rasalmal_mod_token');
+    async function logoutStaff() {
+      try {
+        if (currentModToken) {
+          fetch(`${API_BASE}/auth/logout`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${currentModToken}` }
+          }).catch(() => {});
+        }
+      } catch (_) {}
+
+      // Clear both storage layers thoroughly
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(REMEMBER_KEY);
+      localStorage.removeItem(INFO_KEY);
+      sessionStorage.removeItem(TOKEN_KEY);
       currentModToken = '';
       currentModInfo = null;
+
+      // Reset UI
+      const badgeDesktop = document.getElementById('deviceRememberBadge');
+      const badgeMobile = document.getElementById('deviceRememberBadgeMobile');
+      if (badgeDesktop) badgeDesktop.classList.add('hidden');
+      if (badgeMobile) badgeMobile.classList.add('hidden');
+
+      const authVerifyingState = document.getElementById('authVerifyingState');
+      const authFieldsContainer = document.getElementById('authFieldsContainer');
+      if (authVerifyingState) authVerifyingState.classList.add('hidden');
+      if (authFieldsContainer) authFieldsContainer.classList.remove('hidden');
+
       document.getElementById('mainDashboard').classList.add('hidden');
       document.getElementById('authOverlay').classList.remove('hidden');
     }

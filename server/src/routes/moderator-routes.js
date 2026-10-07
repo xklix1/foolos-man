@@ -43,8 +43,38 @@ function sanitizePayload(obj) {
   return clean;
 }
 
-// Active moderator sessions: token -> { id, name, role, loginAt, lastSeen }
+// Active moderator sessions: token -> { id, name, role, loginAt, lastSeen, rememberDevice, expiresAt }
 const activeModSessions = new Map();
+const revokedModTokens = new Set();
+const MOD_TOKEN_PREFIX = 'mod_30d_';
+const MOD_SIGNING_SECRET = crypto.createHash('sha256').update((config.ADMIN_KEY_SHA256 || 'rasalmal_mod_secret_2026') + '_device_30d_auth_v1').digest();
+
+function generate30DayModToken(modInfo, modKeyHash = '') {
+  const expiresAt = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 Days in ms
+  const payload = {
+    id: modInfo.id,
+    name: modInfo.name,
+    role: modInfo.role,
+    isSuperAdmin: Boolean(modInfo.isSuperAdmin),
+    modKeyHash: modKeyHash || '',
+    rememberDevice: true,
+    iat: Date.now(),
+    exp: expiresAt,
+    salt: crypto.randomBytes(12).toString('hex')
+  };
+  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = crypto.createHmac('sha256', MOD_SIGNING_SECRET).update(payloadB64).digest('base64url');
+  return {
+    token: `${MOD_TOKEN_PREFIX}${payloadB64}.${signature}`,
+    expiresAt
+  };
+}
+
+function generateStandardModToken(modInfo) {
+  const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 Hours in ms
+  const token = 'mod_sess_' + crypto.randomBytes(24).toString('hex');
+  return { token, expiresAt };
+}
 
 async function moderatorRoutes(fastify, options) {
   const sessionManager = options.sessionManager;
@@ -127,7 +157,7 @@ async function moderatorRoutes(fastify, options) {
   }
 
   /**
-   * Auth Middleware: Verify Moderator Token from Header
+   * Auth Middleware: Verify Moderator Token from Header (supports standard & 30-day remembered devices)
    */
   const requireModAuth = async (request, reply) => {
     const authHeader = request.headers['authorization'] || request.headers['x-mod-token'] || '';
@@ -137,23 +167,84 @@ async function moderatorRoutes(fastify, options) {
       return reply.status(401).send({ error: 'Unauthorized', message: 'يرجى تسجيل الدخول بمفتاح المحقق أولاً.' });
     }
 
-    // Check if token matches active session
+    // 0. Check revoked tokens blacklist
+    if (revokedModTokens.has(token)) {
+      return reply.status(401).send({ error: 'Unauthorized', message: 'تم إنهاء هذه الجلسة مسبقاً بعد تسجيل الخروج.' });
+    }
+
+    // 1. Check if token matches active in-memory session
     const session = activeModSessions.get(token);
     if (session) {
+      if (session.expiresAt && Date.now() > session.expiresAt) {
+        activeModSessions.delete(token);
+        return reply.status(401).send({ error: 'Unauthorized', message: 'انتهت صلاحية جلسة المحقق (30 يوماً). يرجى تسجيل الدخول مجدداً.' });
+      }
       session.lastSeen = Date.now();
       request.modSession = session;
       return;
     }
 
-    // Check if token matches Master Admin Key SHA256 directly
+    // 2. Check if token matches Master Admin Key SHA256 directly
     if (safeCompare(token, config.ADMIN_KEY_SHA256)) {
       request.modSession = {
         id: 'super_admin_root',
         name: 'المدير العام (Khaled)',
         role: 'super_admin',
-        isSuperAdmin: true
+        isSuperAdmin: true,
+        rememberDevice: true
       };
       return;
+    }
+
+    // 3. Cryptographic verification for 30-day remembered device tokens (survives PM2 server restarts)
+    if (token.startsWith(MOD_TOKEN_PREFIX)) {
+      const parts = token.slice(MOD_TOKEN_PREFIX.length).split('.');
+      if (parts.length === 2) {
+        const [payloadB64, sig] = parts;
+        const expectedSig = crypto.createHmac('sha256', MOD_SIGNING_SECRET).update(payloadB64).digest('base64url');
+        if (safeCompare(sig, expectedSig)) {
+          try {
+            const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+            if (!payload || !payload.exp || Date.now() > payload.exp) {
+              return reply.status(401).send({ error: 'Unauthorized', message: 'انتهت صلاحية تذكر هذا الجهاز (30 يوماً). يرجى تسجيل الدخول مجدداً.' });
+            }
+
+            // Verify moderator account is still active if not super_admin
+            if (!payload.isSuperAdmin) {
+              const availableKeys = await getDynamicModKeys();
+              const hasActiveKey = Object.values(availableKeys).some(k => 
+                (k.id === payload.id || (payload.modKeyHash && crypto.createHash('sha256').update(k.id || '').digest('hex') === payload.modKeyHash)) && 
+                k.active !== false
+              );
+              const hasActiveDefault = Object.entries(DEFAULT_MODERATOR_KEYS).some(([rawK, k]) => {
+                const h = crypto.createHash('sha256').update(rawK).digest('hex');
+                return (h === payload.modKeyHash || k.id === payload.id) && k.active !== false;
+              });
+
+              if (!hasActiveKey && !hasActiveDefault) {
+                return reply.status(401).send({ error: 'Unauthorized', message: 'مفتاح المحقق المرتبط بهذا الجهاز لم يعد فعالاً أو تم تعطيله.' });
+              }
+            }
+
+            const modSession = {
+              id: payload.id,
+              name: payload.name,
+              role: payload.role,
+              isSuperAdmin: Boolean(payload.isSuperAdmin),
+              rememberDevice: true,
+              expiresAt: payload.exp,
+              loginAt: payload.iat,
+              lastSeen: Date.now()
+            };
+            // Cache in memory for fast subsequent requests
+            activeModSessions.set(token, modSession);
+            request.modSession = modSession;
+            return;
+          } catch (e) {
+            fastify.log.warn('[ModeratorAuth] Failed to parse 30d token payload: ' + e.message);
+          }
+        }
+      }
     }
 
     return reply.status(401).send({ error: 'Unauthorized', message: 'جلسة المحقق غير صالحة أو منتهية الصلاحية.' });
@@ -161,32 +252,50 @@ async function moderatorRoutes(fastify, options) {
 
   /**
    * POST /api/mod/auth/login
-   * Authenticates Moderator Key and issues secure session token
+   * Authenticates Moderator Key and issues secure session token (supports 30-day device remember)
    */
   fastify.post('/auth/login', {
-    config: { rateLimit: { max: 15, timeWindow: 60000 } }
+    config: { rateLimit: { max: 20, timeWindow: 60000 } }
   }, async (request, reply) => {
-    const { modKey } = request.body || {};
+    const { modKey, rememberDevice } = request.body || {};
     if (!modKey || typeof modKey !== 'string') {
       return reply.status(400).send({ error: 'Bad Request', message: 'يرجى إدخال مفتاح المحقق (Moderator Key).' });
     }
 
     const trimmedKey = modKey.trim();
+    const isRemember = Boolean(rememberDevice);
 
     // 1. Check Master Admin Key SHA256
     const hashedInput = crypto.createHash('sha256').update(trimmedKey).digest('hex');
     if (safeCompare(trimmedKey, config.ADMIN_KEY_SHA256) || safeCompare(hashedInput, config.ADMIN_KEY_SHA256)) {
-      const token = 'mod_sess_' + crypto.randomBytes(24).toString('hex');
       const modInfo = {
         id: 'super_admin_root',
         name: 'المدير العام (Khaled)',
         role: 'super_admin',
         isSuperAdmin: true,
         loginAt: Date.now(),
-        lastSeen: Date.now()
+        lastSeen: Date.now(),
+        rememberDevice: isRemember
       };
-      activeModSessions.set(token, modInfo);
-      return reply.send({ success: true, token, modInfo });
+
+      const tokenObj = isRemember 
+        ? generate30DayModToken(modInfo, hashedInput) 
+        : generateStandardModToken(modInfo);
+
+      modInfo.expiresAt = tokenObj.expiresAt;
+      activeModSessions.set(tokenObj.token, modInfo);
+
+      logStaffAudit(modInfo, 'SYSTEM', 'staff_login', isRemember 
+        ? 'تسجيل دخول كمدير عام مع تفعيل تذكر الجهاز (30 يوماً)' 
+        : 'تسجيل دخول كمدير عام (جلسة مؤقتة)');
+
+      return reply.send({
+        success: true,
+        token: tokenObj.token,
+        modInfo,
+        rememberDevice: isRemember,
+        expiresAt: tokenObj.expiresAt
+      });
     }
 
     // 2. Check dynamic or default moderator keys
@@ -194,21 +303,35 @@ async function moderatorRoutes(fastify, options) {
     const matched = availableKeys[trimmedKey];
 
     if (matched && matched.active !== false) {
-      const token = 'mod_sess_' + crypto.randomBytes(24).toString('hex');
       const modInfo = {
         id: matched.id || 'investigator',
         name: matched.name || 'محقق معتمد',
         role: matched.role || 'moderator',
         isSuperAdmin: false,
         loginAt: Date.now(),
-        lastSeen: Date.now()
+        lastSeen: Date.now(),
+        rememberDevice: isRemember
       };
-      activeModSessions.set(token, modInfo);
+
+      const tokenObj = isRemember
+        ? generate30DayModToken(modInfo, hashedInput)
+        : generateStandardModToken(modInfo);
+
+      modInfo.expiresAt = tokenObj.expiresAt;
+      activeModSessions.set(tokenObj.token, modInfo);
 
       // Log login event
-      logStaffAudit(modInfo, 'SYSTEM', 'staff_login', 'تسجيل دخول إلى لوحة الرقابة والتحقيق');
+      logStaffAudit(modInfo, 'SYSTEM', 'staff_login', isRemember
+        ? 'تسجيل دخول إلى لوحة الرقابة مع تفعيل تذكر الجهاز (30 يوماً)'
+        : 'تسجيل دخول إلى لوحة الرقابة (جلسة مؤقتة)');
 
-      return reply.send({ success: true, token, modInfo });
+      return reply.send({
+        success: true,
+        token: tokenObj.token,
+        modInfo,
+        rememberDevice: isRemember,
+        expiresAt: tokenObj.expiresAt
+      });
     }
 
     return reply.status(401).send({
@@ -227,8 +350,33 @@ async function moderatorRoutes(fastify, options) {
     return reply.send({
       success: true,
       modInfo: request.modSession,
+      rememberDevice: Boolean(request.modSession.rememberDevice),
+      expiresAt: request.modSession.expiresAt || null,
       timestamp: Date.now()
     });
+  });
+
+  /**
+   * POST /api/mod/auth/logout
+   * Gracefully invalidates the active session token
+   */
+  fastify.post('/auth/logout', {
+    preHandler: [requireModAuth]
+  }, async (request, reply) => {
+    const authHeader = request.headers['authorization'] || request.headers['x-mod-token'] || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader.trim();
+    if (token) {
+      activeModSessions.delete(token);
+      revokedModTokens.add(token);
+      if (revokedModTokens.size > 2000) {
+        const oldest = revokedModTokens.values().next().value;
+        revokedModTokens.delete(oldest);
+      }
+    }
+    if (request.modSession) {
+      logStaffAudit(request.modSession, 'SYSTEM', 'staff_logout', 'تسجيل خروج يدوي من لوحة الرقابة والتحقيق');
+    }
+    return reply.send({ success: true, message: 'تم تسجيل الخروج بنجاح.' });
   });
 
   /**
