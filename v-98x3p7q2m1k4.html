@@ -480,7 +480,7 @@
                 <span>تصفير اللمت الآن 🔄</span>
               </button>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
               <div class="p-2 rounded-lg bg-slate-900/80 border border-slate-800">
                 <span class="text-[11px] text-slate-400 block mb-0.5">دورات العمل (اليوم)</span>
                 <span id="p_limitWork" class="text-sm font-black numbers-font text-cyan-300">0 / 100</span>
@@ -490,8 +490,12 @@
                 <span id="p_limitStock" class="text-sm font-black numbers-font text-amber-300">0 / 3M</span>
               </div>
               <div class="p-2 rounded-lg bg-slate-900/80 border border-slate-800">
+                <span class="text-[11px] text-slate-400 block mb-0.5">تصفية المزرعة (اليوم)</span>
+                <span id="p_limitFarm" class="text-sm font-black numbers-font text-emerald-300">0 / 20M</span>
+              </div>
+              <div class="p-2 rounded-lg bg-slate-900/80 border border-slate-800">
                 <span class="text-[11px] text-slate-400 block mb-0.5">حوالات صادرة (24 ساعة)</span>
-                <span id="p_limitTransfers" class="text-sm font-black numbers-font text-emerald-300">0 / 5M</span>
+                <span id="p_limitTransfers" class="text-sm font-black numbers-font text-purple-300">0 / 5M</span>
               </div>
             </div>
           </div>
@@ -1674,7 +1678,8 @@
       if (Array.isArray(p.transfers)) {
         p.transfers.forEach(t => {
           const tSender = (t.sender || '').toLowerCase();
-          const tTime = Number(t.created_at || t.timestamp || 0);
+          const rawTime = t.created_at || t.timestamp || 0;
+          const tTime = typeof rawTime === 'string' ? new Date(rawTime).getTime() : Number(rawTime);
           if (tSender === p.username.toLowerCase() && tTime > twentyFourHoursAgo) {
             outgoing24h += Number(t.amount || 0);
           }
@@ -1696,10 +1701,17 @@
         stockLimitEl.className = profit >= 3000000 ? 'text-sm font-black numbers-font text-rose-400' : 'text-sm font-black numbers-font text-amber-300';
       }
 
+      const farmLimitEl = document.getElementById('p_limitFarm');
+      if (farmLimitEl) {
+        const farmLiq = Number(p.farm?.dailyLiquidation?.totalLiquidated || 0);
+        farmLimitEl.textContent = `${fmtMoney(farmLiq)} / 20M`;
+        farmLimitEl.className = farmLiq >= 20000000 ? 'text-sm font-black numbers-font text-rose-400' : 'text-sm font-black numbers-font text-emerald-300';
+      }
+
       const transferLimitEl = document.getElementById('p_limitTransfers');
       if (transferLimitEl) {
         transferLimitEl.textContent = `${fmtMoney(outgoing24h)} / 5M`;
-        transferLimitEl.className = outgoing24h >= 5000000 ? 'text-sm font-black numbers-font text-rose-400' : 'text-sm font-black numbers-font text-emerald-300';
+        transferLimitEl.className = outgoing24h >= 5000000 ? 'text-sm font-black numbers-font text-rose-400' : 'text-sm font-black numbers-font text-purple-300';
       }
       
       // Real-time Cashflow Stream Metrics

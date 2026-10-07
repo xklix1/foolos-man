@@ -1316,7 +1316,10 @@ async function moderatorRoutes(fastify, options) {
           pState.dailyInvestments = { date: todayStr, count: 0 };
           pState.dailyLoans = { date: todayStr, count: 0 };
           pState.dailyCasinoNetProfit = 0;
+          if (!pState.farm) pState.farm = {};
+          pState.farm.dailyLiquidation = { date: todayStr, totalLiquidated: 0 };
           pState.workCooldownUntil = 0;
+          pState.overtimeCooldownUntil = 0;
           pState.stockTradeCooldownUntil = 0;
           pState.limitsResetAt = ts;
           pState.adminModifiedTimestamp = ts + 600000;
@@ -1424,7 +1427,10 @@ async function moderatorRoutes(fastify, options) {
             session.state.dailyInvestments = { ...pState.dailyInvestments };
             session.state.dailyLoans = { ...pState.dailyLoans };
             session.state.dailyCasinoNetProfit = 0;
+            if (!session.state.farm) session.state.farm = {};
+            session.state.farm.dailyLiquidation = { ...pState.farm.dailyLiquidation };
             session.state.workCooldownUntil = 0;
+            session.state.overtimeCooldownUntil = 0;
             session.state.stockTradeCooldownUntil = 0;
             session.state.limitsResetAt = ts;
           }

@@ -6755,11 +6755,11 @@ const GameEngine = (() => {
   const DAILY_FARM_LIQUIDATION_CAP = 20000000;
 
   function getFarmTodayDateStr() {
-    const d = new Date(getTrustedNow());
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return (typeof getTodayDateString === 'function') ? getTodayDateString() : (() => {
+      const ts = typeof getTrustedNow === 'function' ? getTrustedNow() : Date.now();
+      const d = new Date(ts + (3 * 3600 * 1000));
+      return d.toISOString().split('T')[0];
+    })();
   }
 
   function getFarmDailyLiquidationInfo(f) {

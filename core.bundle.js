@@ -1749,10 +1749,14 @@ var AppDB = (() => {
           stateObj.stockTradeCooldownUntil = 0;
           stateObj.lastLimitsResetAck = Math.max(srvResetAt, Date.now());
 
+          if (stateObj.farm) {
+            stateObj.farm.dailyLiquidation = { date: todayStr, totalLiquidated: 0 };
+          }
           if (local) {
             local.dailyWork = { ...stateObj.dailyWork };
             local.dailyStockProfit = { ...stateObj.dailyStockProfit };
             local.dailyBlackMarket = { ...stateObj.dailyBlackMarket };
+            if (local.farm) local.farm.dailyLiquidation = { date: todayStr, totalLiquidated: 0 };
             local.workCooldownUntil = 0;
             local.stockTradeCooldownUntil = 0;
             local.lastLimitsResetAck = stateObj.lastLimitsResetAck;
@@ -1802,7 +1806,24 @@ var AppDB = (() => {
               const locProfit = Number(local.dailyStockProfit.realizedProfit || 0);
               const srvProfit = Number(stateObj.dailyStockProfit.realizedProfit || 0);
               if (locProfit > srvProfit) {
-                stateObj.dailyStockProfit.realizedProfit = locProfit;
+                stateObj.dailyStockProfit.realizedProfit = Math.min(3000000, locProfit);
+                shouldSyncCloud = true;
+              }
+            }
+          }
+
+          // 4.855 Daily Farm Liquidation Guard:
+          // NEVER allow page reloading, multiple tabs or timezone tampering to reset the 20M farm liquidation cap
+          if (local && local.farm && local.farm.dailyLiquidation && local.farm.dailyLiquidation.date === todayStr) {
+            if (!stateObj.farm) stateObj.farm = {};
+            if (!stateObj.farm.dailyLiquidation || stateObj.farm.dailyLiquidation.date !== todayStr) {
+              stateObj.farm.dailyLiquidation = { ...local.farm.dailyLiquidation };
+              shouldSyncCloud = true;
+            } else {
+              const locLiq = Number(local.farm.dailyLiquidation.totalLiquidated || 0);
+              const srvLiq = Number(stateObj.farm.dailyLiquidation.totalLiquidated || 0);
+              if (locLiq > srvLiq) {
+                stateObj.farm.dailyLiquidation.totalLiquidated = Math.min(20000000, Math.max(locLiq, srvLiq));
                 shouldSyncCloud = true;
               }
             }
@@ -14306,11 +14327,11 @@ const GameEngine = (() => {
   const DAILY_FARM_LIQUIDATION_CAP = 20000000;
 
   function getFarmTodayDateStr() {
-    const d = new Date(getTrustedNow());
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return (typeof getTodayDateString === 'function') ? getTodayDateString() : (() => {
+      const ts = typeof getTrustedNow === 'function' ? getTrustedNow() : Date.now();
+      const d = new Date(ts + (3 * 3600 * 1000));
+      return d.toISOString().split('T')[0];
+    })();
   }
 
   function getFarmDailyLiquidationInfo(f) {

@@ -268,7 +268,11 @@ class SessionManager {
 
     // Agro Farm Tycoon (Officially open to all players)
     if (clientState.farm && typeof clientState.farm === 'object') {
+      const prevFarmLiq = s.farm && s.farm.dailyLiquidation ? { ...s.farm.dailyLiquidation } : null;
       s.farm = clientState.farm;
+      if (prevFarmLiq) {
+        s.farm.dailyLiquidation = prevFarmLiq;
+      }
     }
 
     // International Airport Hub & Fleet Synchronization
@@ -448,44 +452,107 @@ class SessionManager {
       };
     }
 
-    // Synchronize Daily Stock Profit (Prevent cap reset via device timezone manipulation & respect admin resets)
+    // Synchronize Daily Stock Profit, Work & Farm Liquidation (Prevent cap reset via device timezone manipulation & respect admin resets)
     if (isAuthoritativeLimitsReset) {
       s.dailyStockProfit = { date: serverToday, realizedProfit: 0 };
       s.dailyWork = { date: serverToday, shifts: 0, overtimeShifts: 0 };
       s.dailyBlackMarket = { date: serverToday, count: 0 };
+      if (!s.farm) s.farm = {};
+      s.farm.dailyLiquidation = { date: serverToday, totalLiquidated: 0 };
+      s.dailyLoans = { date: serverToday, count: 0 };
+      s.dailyInvestments = { date: serverToday, count: 0 };
+      s.dailyCasinoNetProfit = 0;
       s.workCooldownUntil = 0;
+      s.overtimeCooldownUntil = 0;
       s.stockTradeCooldownUntil = 0;
     } else {
       if (clientState.dailyStockProfit && typeof clientState.dailyStockProfit === 'object') {
         const sDate = s.dailyStockProfit ? String(s.dailyStockProfit.date || '') : '';
-        if (sDate === serverToday) {
+        const cDate = String(clientState.dailyStockProfit.date || '');
+        if (sDate === serverToday && cDate === serverToday) {
           s.dailyStockProfit = {
             date: serverToday,
-            realizedProfit: Math.max(Number(s.dailyStockProfit.realizedProfit || 0), Number(clientState.dailyStockProfit.realizedProfit || 0))
+            realizedProfit: Math.min(3000000, Math.max(Number(s.dailyStockProfit.realizedProfit || 0), Number(clientState.dailyStockProfit.realizedProfit || 0)))
+          };
+        } else if (cDate === serverToday) {
+          s.dailyStockProfit = {
+            date: serverToday,
+            realizedProfit: Math.min(3000000, Math.max(0, Number(clientState.dailyStockProfit.realizedProfit || 0)))
+          };
+        } else if (sDate === serverToday) {
+          s.dailyStockProfit = {
+            date: serverToday,
+            realizedProfit: Math.min(3000000, Math.max(0, Number(s.dailyStockProfit.realizedProfit || 0)))
           };
         } else {
           s.dailyStockProfit = {
             date: serverToday,
-            realizedProfit: Math.max(0, Number(clientState.dailyStockProfit.realizedProfit || 0))
+            realizedProfit: 0
           };
         }
+      } else if (s.dailyStockProfit && s.dailyStockProfit.date !== serverToday) {
+        s.dailyStockProfit = { date: serverToday, realizedProfit: 0 };
       }
 
       if (clientState.dailyWork && typeof clientState.dailyWork === 'object') {
         const sDate = s.dailyWork ? String(s.dailyWork.date || '') : '';
-        if (sDate === serverToday) {
+        const cDate = String(clientState.dailyWork.date || '');
+        if (sDate === serverToday && cDate === serverToday) {
           s.dailyWork = {
             date: serverToday,
             shifts: Math.min(100, Math.max(Number(s.dailyWork.shifts || 0), Number(clientState.dailyWork.shifts || 0))),
             overtimeShifts: Math.min(15, Math.max(Number(s.dailyWork.overtimeShifts || 0), Number(clientState.dailyWork.overtimeShifts || 0)))
           };
-        } else {
+        } else if (cDate === serverToday) {
           s.dailyWork = {
             date: serverToday,
             shifts: Math.min(100, Math.max(0, Number(clientState.dailyWork.shifts || 0))),
             overtimeShifts: Math.min(15, Math.max(0, Number(clientState.dailyWork.overtimeShifts || 0)))
           };
+        } else if (sDate === serverToday) {
+          s.dailyWork = {
+            date: serverToday,
+            shifts: Math.min(100, Math.max(0, Number(s.dailyWork.shifts || 0))),
+            overtimeShifts: Math.min(15, Math.max(0, Number(s.dailyWork.overtimeShifts || 0)))
+          };
+        } else {
+          s.dailyWork = {
+            date: serverToday,
+            shifts: 0,
+            overtimeShifts: 0
+          };
         }
+      } else if (s.dailyWork && s.dailyWork.date !== serverToday) {
+        s.dailyWork = { date: serverToday, shifts: 0, overtimeShifts: 0 };
+      }
+
+      // Synchronize Daily Farm Liquidation Cap (20,000,000 EGP per day)
+      if (!s.farm) s.farm = {};
+      const sFarmLiq = (s.farm && s.farm.dailyLiquidation && typeof s.farm.dailyLiquidation === 'object') ? s.farm.dailyLiquidation : null;
+      const cFarmLiq = (clientState.farm && clientState.farm.dailyLiquidation && typeof clientState.farm.dailyLiquidation === 'object') ? clientState.farm.dailyLiquidation : null;
+      const sFarmDate = sFarmLiq ? String(sFarmLiq.date || '') : '';
+      const cFarmDate = cFarmLiq ? String(cFarmLiq.date || '') : '';
+
+      if (sFarmDate === serverToday && cFarmDate === serverToday) {
+        s.farm.dailyLiquidation = {
+          date: serverToday,
+          totalLiquidated: Math.min(20000000, Math.max(Number(sFarmLiq.totalLiquidated || 0), Number(cFarmLiq.totalLiquidated || 0)))
+        };
+      } else if (cFarmDate === serverToday) {
+        s.farm.dailyLiquidation = {
+          date: serverToday,
+          totalLiquidated: Math.min(20000000, Math.max(0, Number(cFarmLiq.totalLiquidated || 0)))
+        };
+      } else if (sFarmDate === serverToday) {
+        s.farm.dailyLiquidation = {
+          date: serverToday,
+          totalLiquidated: Math.min(20000000, Math.max(0, Number(sFarmLiq.totalLiquidated || 0)))
+        };
+      } else {
+        s.farm.dailyLiquidation = {
+          date: serverToday,
+          totalLiquidated: 0
+        };
       }
     }
 
@@ -498,17 +565,29 @@ class SessionManager {
       const sDate = s.dailyBlackMarket ? String(s.dailyBlackMarket.date || '') : '';
       if (isAuthoritativeLimitsReset) {
         s.dailyBlackMarket = { date: serverToday, count: 0 };
-      } else if (cDate && cDate === sDate) {
+      } else if (cDate === serverToday && sDate === serverToday) {
         s.dailyBlackMarket = {
-          date: cDate,
+          date: serverToday,
           count: Math.min(15, Math.max(Number(s.dailyBlackMarket.count || 0), Number(clientState.dailyBlackMarket.count || 0)))
+        };
+      } else if (cDate === serverToday) {
+        s.dailyBlackMarket = {
+          date: serverToday,
+          count: Math.min(15, Math.max(0, Number(clientState.dailyBlackMarket.count || 0)))
+        };
+      } else if (sDate === serverToday) {
+        s.dailyBlackMarket = {
+          date: serverToday,
+          count: Math.min(15, Math.max(0, Number(s.dailyBlackMarket.count || 0)))
         };
       } else {
         s.dailyBlackMarket = {
-          date: cDate,
-          count: Math.min(15, Math.max(0, Number(clientState.dailyBlackMarket.count || 0)))
+          date: serverToday,
+          count: 0
         };
       }
+    } else if (s.dailyBlackMarket && s.dailyBlackMarket.date !== serverToday) {
+      s.dailyBlackMarket = { date: serverToday, count: 0 };
     }
     if (clientState.dailyToolUses && typeof clientState.dailyToolUses === 'object') {
       s.dailyToolUses = clientState.dailyToolUses;
@@ -535,9 +614,6 @@ class SessionManager {
       } else {
         s.dailyQuests = clientState.dailyQuests;
       }
-    }
-    if (clientState.dailyCasinoNetProfit !== undefined) {
-      s.dailyCasinoNetProfit = Number(clientState.dailyCasinoNetProfit) || 0;
     }
     if (clientState.dailyCasinoResetAt !== undefined) {
       s.dailyCasinoResetAt = Number(clientState.dailyCasinoResetAt) || 0;
