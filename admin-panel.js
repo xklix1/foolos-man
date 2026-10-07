@@ -2447,19 +2447,114 @@
       };
     }
 
+    let admLogSelectedDate = null; // null = all month (30 days), 'YYYY-MM-DD' = specific day
+
+    function formatAdmIsoDate(dateObj) {
+      if (!dateObj || !(dateObj instanceof Date) || isNaN(dateObj.getTime())) return '';
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatAdmArabicDateLabel(isoDateStr) {
+      if (!isoDateStr) return 'الشهر بالكامل (آخر 30 يوماً)';
+      try {
+        const [y, m, d] = isoDateStr.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d, 12, 0, 0);
+        const todayIso = formatAdmIsoDate(new Date());
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayIso = formatAdmIsoDate(yesterday);
+
+        let suffix = '';
+        if (isoDateStr === todayIso) suffix = ' (اليوم)';
+        else if (isoDateStr === yesterdayIso) suffix = ' (أمس)';
+
+        const formatted = dateObj.toLocaleDateString('ar-EG', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        return `${formatted}${suffix}`;
+      } catch (_) {
+        return isoDateStr;
+      }
+    }
+
     function renderPlayerLogFeed(pState) {
       if (!logFeed) return;
       const logs = (pState && (pState.combinedActivityLog || pState.activityLog)) || [];
-      const filtered = logs.filter(l => currentLogFilter ==='all' || l.category === currentLogFilter);
+      let filtered = logs.filter(l => currentLogFilter ==='all' || l.category === currentLogFilter);
+
+      // Date filtering
+      if (admLogSelectedDate) {
+        filtered = filtered.filter(l => {
+          if (!l.timestamp) return false;
+          return formatAdmIsoDate(new Date(Number(l.timestamp))) === admLogSelectedDate;
+        });
+      } else {
+        const cutoff = Date.now() - (31 * 24 * 60 * 60 * 1000);
+        filtered = filtered.filter(l => Number(l.timestamp || 0) >= cutoff);
+      }
+
+      // Update date picker & navigation buttons
+      const todayIso = formatAdmIsoDate(new Date());
+      const btnPrev = document.getElementById('btn-adm-log-prev-day');
+      const btnToday = document.getElementById('btn-adm-log-today');
+      const btnNext = document.getElementById('btn-adm-log-next-day');
+      const btnAll = document.getElementById('btn-adm-log-all-month');
+      const dateInput = document.getElementById('adm-log-date-picker');
+      const dayLabel = document.getElementById('adm-log-current-day-label');
+
+      if (dateInput) dateInput.value = admLogSelectedDate || '';
+
+      if (admLogSelectedDate === todayIso) {
+        if (btnToday) btnToday.className = 'px-2.5 py-1 rounded-lg font-bold bg-amber-500 text-slate-950 border border-amber-500/40 transition flex items-center gap-1 text-[11px] cursor-pointer shadow-sm';
+        if (btnAll) btnAll.className = 'px-2.5 py-1 rounded-lg font-bold bg-slate-950 text-slate-400 hover:text-white border border-slate-700 transition flex items-center gap-1 text-[11px] cursor-pointer';
+        if (btnNext) {
+          btnNext.disabled = true;
+          btnNext.className = 'px-2.5 py-1 rounded-lg font-bold bg-slate-950 text-slate-600 border border-slate-800 transition flex items-center gap-1 text-[11px] opacity-40 cursor-not-allowed pointer-events-none';
+        }
+      } else if (admLogSelectedDate) {
+        if (btnToday) btnToday.className = 'px-2.5 py-1 rounded-lg font-bold bg-slate-950 hover:bg-slate-800 text-amber-300 hover:text-white border border-slate-700 transition flex items-center gap-1 text-[11px] cursor-pointer';
+        if (btnAll) btnAll.className = 'px-2.5 py-1 rounded-lg font-bold bg-slate-950 text-slate-400 hover:text-white border border-slate-700 transition flex items-center gap-1 text-[11px] cursor-pointer';
+        if (btnNext) {
+          const isFuture = admLogSelectedDate >= todayIso;
+          btnNext.disabled = isFuture;
+          btnNext.className = isFuture
+            ? 'px-2.5 py-1 rounded-lg font-bold bg-slate-950 text-slate-600 border border-slate-800 transition flex items-center gap-1 text-[11px] opacity-40 cursor-not-allowed pointer-events-none'
+            : 'px-2.5 py-1 rounded-lg font-bold bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition flex items-center gap-1 text-[11px] cursor-pointer';
+        }
+      } else {
+        if (btnToday) btnToday.className = 'px-2.5 py-1 rounded-lg font-bold bg-slate-950 hover:bg-slate-800 text-amber-300 hover:text-white border border-slate-700 transition flex items-center gap-1 text-[11px] cursor-pointer';
+        if (btnAll) btnAll.className = 'px-2.5 py-1 rounded-lg font-bold bg-amber-500 text-slate-950 border border-amber-500/40 transition flex items-center gap-1 text-[11px] cursor-pointer shadow-sm';
+        if (btnNext) {
+          btnNext.disabled = false;
+          btnNext.className = 'px-2.5 py-1 rounded-lg font-bold bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition flex items-center gap-1 text-[11px] cursor-pointer';
+        }
+      }
+
+      if (dayLabel) {
+        if (admLogSelectedDate) {
+          dayLabel.innerHTML = `<i class="fa-solid fa-calendar-day text-amber-400"></i><span>سجل يوم: <strong class="text-white">${formatAdmArabicDateLabel(admLogSelectedDate)}</strong></span>`;
+        } else {
+          dayLabel.innerHTML = `<i class="fa-solid fa-calendar-days text-amber-400"></i><span>عرض السجل: <strong class="text-white">الشهر بالكامل (آخر 30 يوماً)</strong></span>`;
+        }
+      }
 
       const countBadge = document.getElementById('adm-log-count-badge');
-      if (countBadge) countBadge.textContent =`${filtered.length} حركة`;
+      if (countBadge) {
+        const timeLabel = admLogSelectedDate ? formatAdmArabicDateLabel(admLogSelectedDate) : '30 يوماً';
+        countBadge.textContent = `${filtered.length} حركة (${timeLabel})`;
+      }
 
       if (filtered.length === 0) {
         logFeed.innerHTML =`
           <div class="p-8 text-center text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">
             <i class="fa-solid fa-clipboard-list text-3xl mb-2 text-slate-600 block"></i>
-            <span class="text-xs">لا توجد حركات مسجلة لهذا اللاعب في تصنيف "${escapeHtml(currentLogFilter)}" حتى الآن.</span>
+            <span class="text-xs">لا توجد حركات مسجلة لهذا اللاعب في هذا التصنيف والتاريخ المحدد حتى الآن.</span>
           </div>`;
         return;
       }
@@ -2637,6 +2732,7 @@
           }
 
           currentLogFilter ='all';
+          admLogSelectedDate = null;
           const filterPills = document.querySelectorAll('.btn-log-filter');
           filterPills.forEach(b => {
             const f = b.getAttribute('data-log-filter');
@@ -2657,6 +2753,51 @@
         }
       });
     }
+
+    // Day Navigation Bar Event Handlers
+    document.getElementById('btn-adm-log-prev-day')?.addEventListener('click', () => {
+      let baseDate = new Date();
+      if (admLogSelectedDate) {
+        const [y, m, d] = admLogSelectedDate.split('-').map(Number);
+        baseDate = new Date(y, m - 1, d, 12, 0, 0);
+      }
+      baseDate.setDate(baseDate.getDate() - 1);
+      admLogSelectedDate = formatAdmIsoDate(baseDate);
+      if (selectedPlayerState) renderPlayerLogFeed(selectedPlayerState);
+    });
+
+    document.getElementById('btn-adm-log-today')?.addEventListener('click', () => {
+      admLogSelectedDate = formatAdmIsoDate(new Date());
+      if (selectedPlayerState) renderPlayerLogFeed(selectedPlayerState);
+    });
+
+    document.getElementById('btn-adm-log-next-day')?.addEventListener('click', () => {
+      const todayIso = formatAdmIsoDate(new Date());
+      let baseDate = new Date();
+      if (admLogSelectedDate) {
+        const [y, m, d] = admLogSelectedDate.split('-').map(Number);
+        baseDate = new Date(y, m - 1, d, 12, 0, 0);
+      }
+      baseDate.setDate(baseDate.getDate() + 1);
+      const newIso = formatAdmIsoDate(baseDate);
+      if (newIso <= todayIso) {
+        admLogSelectedDate = newIso;
+      } else {
+        admLogSelectedDate = todayIso;
+      }
+      if (selectedPlayerState) renderPlayerLogFeed(selectedPlayerState);
+    });
+
+    document.getElementById('btn-adm-log-all-month')?.addEventListener('click', () => {
+      admLogSelectedDate = null;
+      if (selectedPlayerState) renderPlayerLogFeed(selectedPlayerState);
+    });
+
+    document.getElementById('adm-log-date-picker')?.addEventListener('change', (e) => {
+      const val = (e.target.value || '').trim();
+      admLogSelectedDate = val ? val : null;
+      if (selectedPlayerState) renderPlayerLogFeed(selectedPlayerState);
+    });
 
     // Export / Copy player audit log
     if (exportLogBtn) {

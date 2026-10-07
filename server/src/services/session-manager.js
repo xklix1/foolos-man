@@ -382,7 +382,7 @@ class SessionManager {
       s.inventory = clientState.inventory;
     }
     if (clientState.activityLog && Array.isArray(clientState.activityLog)) {
-      s.activityLog = clientState.activityLog.slice(0, 300);
+      s.activityLog = clientState.activityLog.slice(0, 3500);
     }
     // Never allow client to overwrite secret staff notes; preserve server-authoritative notes
     if (!Array.isArray(s.staffNotes)) {

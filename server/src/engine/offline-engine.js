@@ -229,6 +229,7 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
           cash: Math.max(0, Math.round(Number(playerState.cash || 0))),
           bank: Math.max(0, Math.round(Number(playerState.bank || 0)))
         });
+        if (playerState.activityLog.length > 3500) playerState.activityLog.length = 3500;
       } else {
         if (maturesAt > 0) {
           inv.ticksRemaining = Math.max(0, Math.ceil((maturesAt - serverNow) / 1000));

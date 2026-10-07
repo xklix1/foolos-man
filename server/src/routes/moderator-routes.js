@@ -799,8 +799,8 @@ async function moderatorRoutes(fastify, options) {
         // Recent Activity & Transfers (Extensive historical retention)
         transfers: playerTransfers || [],
         mailbox: playerMailbox || [],
-        activityFeed: masterFeed.slice(0, 500),
-        activityLog: rawLogs.slice(-300)
+        activityFeed: masterFeed.slice(0, 3500),
+        activityLog: rawLogs.slice(-3500)
       };
 
       // Record inspector view in staff audit
@@ -864,7 +864,7 @@ async function moderatorRoutes(fastify, options) {
         cash: Math.max(0, Math.round(Number(pState.cash || 0))),
         bank: Math.max(0, Math.round(Number(pState.bank || 0)))
       });
-      if (pState.activityLog.length > 300) pState.activityLog = pState.activityLog.slice(0, 300);
+      if (pState.activityLog.length > 3500) pState.activityLog = pState.activityLog.slice(0, 3500);
 
       // Persist to Database
       const patchUrl = `${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(target)}`;
@@ -896,7 +896,7 @@ async function moderatorRoutes(fastify, options) {
             cash: Math.max(0, Math.round(Number(session.state.cash || pState.cash || 0))),
             bank: Math.max(0, Math.round(Number(session.state.bank || pState.bank || 0)))
           });
-          if (session.state.activityLog.length > 300) session.state.activityLog = session.state.activityLog.slice(0, 300);
+          if (session.state.activityLog.length > 3500) session.state.activityLog = session.state.activityLog.slice(0, 3500);
         }
       }
 

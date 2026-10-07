@@ -1380,8 +1380,8 @@ const GameEngine = (() => {
       bank: currentBank,
       ...extra
     });
-    if (state.activityLog.length > 300) {
-      state.activityLog.length = 300; // Keep extensive history of 300 entries for investigation & telemetry
+    if (state.activityLog.length > 3500) {
+      state.activityLog.length = 3500; // Keep extensive history of 3500 entries (covers full 30+ days)
     }
   }
 
@@ -7071,6 +7071,7 @@ const GameEngine = (() => {
     }
 
     state.netWorth = calculateNetWorth();
+    recordPlayerActivity('حصاد محاصيل المزرعة 🌾', `حصاد ${totalHarvestedCount} أحواض بإجمالي ${totalYield.toLocaleString()} وحدة محاصيل منوعة`, 'business');
     forceSaveState(true);
     return {
       totalHarvestedPlots: totalHarvestedCount,

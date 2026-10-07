@@ -437,6 +437,9 @@
           if (typeof data.newBankBalance === 'number') {
             window.GameEngine.state.bank = data.newBankBalance;
           }
+          if (typeof window.GameEngine.recordPlayerActivity === 'function') {
+            window.GameEngine.recordPlayerActivity('بيع تحفة للمتحف 🏛️', `بيع [${relicName}] للمتحف الملكي واستلام (+${buybackPrice.toLocaleString()} ج.م) في الحساب البنكي.`, 'investment');
+          }
           if (typeof window.UI?.renderAll === 'function') window.UI.renderAll();
           if (typeof window.UIController?.renderAll === 'function') window.UIController.renderAll();
         }

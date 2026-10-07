@@ -8905,8 +8905,8 @@ const GameEngine = (() => {
       bank: currentBank,
       ...extra
     });
-    if (state.activityLog.length > 300) {
-      state.activityLog.length = 300; // Keep extensive history of 300 entries for investigation & telemetry
+    if (state.activityLog.length > 3500) {
+      state.activityLog.length = 3500; // Keep extensive history of 3500 entries (covers full 30+ days)
     }
   }
 
@@ -14596,6 +14596,7 @@ const GameEngine = (() => {
     }
 
     state.netWorth = calculateNetWorth();
+    recordPlayerActivity('حصاد محاصيل المزرعة 🌾', `حصاد ${totalHarvestedCount} أحواض بإجمالي ${totalYield.toLocaleString()} وحدة محاصيل منوعة`, 'business');
     forceSaveState(true);
     return {
       totalHarvestedPlots: totalHarvestedCount,
@@ -41435,6 +41436,9 @@ window.AirportUI = (() => {
                 if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
                 if (window.renderHeader) window.renderHeader();
               }
+              if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+                window.GameEngine.recordPlayerActivity('افتتاح المطار الدولي 🛫', `دفع رسوم ترخيص وتدشين "${airportName}" بنجاح`, 'business');
+              }
               renderAirportPanel();
               return;
             }
@@ -41508,6 +41512,9 @@ window.AirportUI = (() => {
 
           if (typeof window.GameEngine?.saveState === 'function') {
             window.GameEngine.saveState();
+          }
+          if (typeof window.GameEngine?.recordPlayerActivity === 'function') {
+            window.GameEngine.recordPlayerActivity('افتتاح المطار الدولي 🛫', `دفع رسوم ترخيص وتدشين "${airportName}" بمبلغ ${(cost || 30000000).toLocaleString()} ج.م`, 'business');
           }
           if (window.renderHeader) window.renderHeader();
 
@@ -42303,6 +42310,9 @@ window.AirportUI = (() => {
         ap.stats.totalDutyFreeCollected = (Number(ap.stats.totalDutyFreeCollected) || 0) + amt;
 
         persistGameState();
+        if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+          window.GameEngine.recordPlayerActivity('تحصيل أرباح السوق الحرة بالمطار 🛍️', `تحصيل إيرادات السوق الحرة بالمطار بقيمة (+${amt.toLocaleString()} ج.م)`, 'business');
+        }
         showAirportToast(`🛍️ تم تحصيل +${amt.toLocaleString()} ج.م من أرباح السوق الحرة!`, 'success');
         renderAirportPanel();
 
@@ -42382,6 +42392,9 @@ window.AirportUI = (() => {
     }
 
     persistGameState();
+    if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+      window.GameEngine.recordPlayerActivity('إقلاع رحلة طيران 🛫', `تسيير رحلة طائرة (${plane.customName || model.name}) إلى وجهة ${dest.name} بتكاليف تجهيز ${eco.totalOperatingCost.toLocaleString()} ج.م`, 'business');
+    }
     const minStr = Math.floor(eco.durationSec / 60);
     showAirportToast(`🛫 أقلعت الرحلة إلى ${dest.name}! وقت الهبوط خلال ${minStr > 0 ? minStr + ' دقيقة' : eco.durationSec + ' ثانية'}. (صافي الربح: +${eco.netProfit.toLocaleString()} ج.م)`, 'success');
     renderAirportPanel();
@@ -42436,6 +42449,9 @@ window.AirportUI = (() => {
     }
 
     persistGameState();
+    if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+      window.GameEngine.recordPlayerActivity('تسريع رحلة طائرة ⚡', `تسريع فوري لهبوط طائرة (${plane.customName || planeId}) بالمطار مقابل ${costGold} سبيكة ذهب`, 'business');
+    }
     showAirportToast('⚡ تم تسريع الرحلة وهبوط الطائرة فوراً بنجاح!', 'success');
     renderAirportPanel();
 
@@ -42487,6 +42503,9 @@ window.AirportUI = (() => {
             window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
           }
           persistGameState();
+          if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+            window.GameEngine.recordPlayerActivity('تحصيل رحلة طيران ✈️', `تحصيل أرباح رحلة طائرة (${plane.customName || plane.modelId || 'طائرة'}) (${res.message || 'عوائد الرحلة'})`, 'business');
+          }
           showAirportToast(res.message || '🛬 تم تحصيل عوائد الرحلة بنجاح!', 'success');
           _claimingPlanes.delete(planeId);
           renderAirportPanel();
@@ -42525,6 +42544,9 @@ window.AirportUI = (() => {
             }
 
             persistGameState();
+            if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+              window.GameEngine.recordPlayerActivity('تحصيل رحلة طيران ✈️', `تحصيل أرباح رحلة طائرة (${plane.customName || plane.modelId || 'طائرة'}) بقيمة (+${grossRev.toLocaleString()} ج.م) و +${xp} XP`, 'business');
+            }
             showAirportToast(`🛬 هبطت الرحلة بسلام! تم تحصيل عوائد +${grossRev.toLocaleString()} ج.م (يرجى إعادة تأكيد كلمة السر لتحديث الحفظ السحابي)`, 'warning');
             renderAirportPanel();
 
@@ -42579,6 +42601,9 @@ window.AirportUI = (() => {
     }
 
     persistGameState();
+    if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+      window.GameEngine.recordPlayerActivity('تحصيل رحلة طيران ✈️', `تحصيل أرباح رحلة طائرة (${plane.customName || plane.modelId || 'طائرة'}) بقيمة (+${grossRev.toLocaleString()} ج.م) و +${xp} XP`, 'business');
+    }
     showAirportToast(`🛬 هبطت الرحلة بسلام! تم تحصيل عوائد +${grossRev.toLocaleString()} ج.م (صافي ربح: +${netProfit.toLocaleString()} ج.م) و +${xp} XP`, 'success');
     _claimingPlanes.delete(planeId);
     renderAirportPanel();
@@ -42612,6 +42637,9 @@ window.AirportUI = (() => {
     }
 
     persistGameState();
+    if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+      window.GameEngine.recordPlayerActivity('بيع طائرة 💸', `بيع طائرة (${plane.customName || model.name}) واسترداد (+${refund.toLocaleString()} ج.م) (50% من سعر الشراء)`, 'assets');
+    }
     showAirportToast(`💸 تم بيع طائرة ${model.name} واسترداد +${refund.toLocaleString()} ج.م بنجاح!`, 'success');
     renderAirportPanel();
 
@@ -42667,6 +42695,9 @@ window.AirportUI = (() => {
     }
 
     persistGameState();
+    if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+      window.GameEngine.recordPlayerActivity('شراء طائرة 🛩️', `شراء طائرة ${model.name} وإضافتها للأسطول الجوي بقيمة ${model.cost.toLocaleString()} ج.م`, 'assets');
+    }
     showAirportToast(`🎉 تم شراء وإضافة ${model.name} إلى أسطولك الجوي بنجاح!`, 'success');
     renderAirportPanel();
 
@@ -42713,6 +42744,9 @@ window.AirportUI = (() => {
 
     ap.facilities[facilityId] = nextLvl;
     persistGameState();
+    if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+      window.GameEngine.recordPlayerActivity('تطوير مرفق بالمطار 🏢', `ترقية مرفق (${fac.name}) بالمطار إلى المستوى ${nextLvl} بتكلفة ${cost.toLocaleString()} ج.م`, 'business');
+    }
     showAirportToast(`🏗️ تم ترقية ${fac.name} إلى المستوى ${nextLvl} بنجاح!`, 'success');
     renderAirportPanel();
 
@@ -42740,6 +42774,9 @@ window.AirportUI = (() => {
     ap.transitPermit = null;
 
     persistGameState();
+    if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+      window.GameEngine.recordPlayerActivity('استقبال رحلة ترانزيت 🛬', `منح تصريح هبوط رحلة ترانزيت دولية وتحصيل رسوم (+${fee.toLocaleString()} ج.م) و +${xp} XP`, 'business');
+    }
     showAirportToast(`🛬 تم منح تصريح الهبوط وتحصيل الرسوم (+${fee.toLocaleString()} ج.م) و +${xp} XP!`, 'success');
     renderAirportPanel();
 
@@ -43995,6 +44032,9 @@ if (typeof document !== 'undefined') {
           }
           if (typeof data.newBankBalance === 'number') {
             window.GameEngine.state.bank = data.newBankBalance;
+          }
+          if (typeof window.GameEngine.recordPlayerActivity === 'function') {
+            window.GameEngine.recordPlayerActivity('بيع تحفة للمتحف 🏛️', `بيع [${relicName}] للمتحف الملكي واستلام (+${buybackPrice.toLocaleString()} ج.م) في الحساب البنكي.`, 'investment');
           }
           if (typeof window.UI?.renderAll === 'function') window.UI.renderAll();
           if (typeof window.UIController?.renderAll === 'function') window.UIController.renderAll();
