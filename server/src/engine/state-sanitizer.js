@@ -85,7 +85,10 @@ const DEFAULT_STATE = {
   lastLoginDevice: null,
   lastLoginTime: 0,
   lastActiveTimestamp: 0,
-  lastSeen: 0
+  lastSeen: 0,
+  telegramClaimed: false,
+  telegramRewardClaimed: false,
+  telegramClaimedAt: 0
 };
 
 /**

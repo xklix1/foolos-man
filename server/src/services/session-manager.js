@@ -646,6 +646,22 @@ class SessionManager {
       s.afkManagerExpiresAt = Number(clientState.afkManagerExpiresAt) || 0;
     }
 
+    // Telegram Reward Claim Integrity Shield (Once true, NEVER reverts to false)
+    if (s.telegramClaimed || s.telegramRewardClaimed) {
+      s.telegramClaimed = true;
+      s.telegramRewardClaimed = true;
+    } else if (clientState.telegramClaimed || clientState.telegramRewardClaimed) {
+      s.telegramClaimed = true;
+      s.telegramRewardClaimed = true;
+      s.telegramClaimedAt = Number(clientState.telegramClaimedAt) || Date.now();
+    }
+    if (!Array.isArray(s.badges)) s.badges = [];
+    if (Array.isArray(clientState.badges)) {
+      clientState.badges.forEach(b => {
+        if (b && !s.badges.includes(b)) s.badges.push(b);
+      });
+    }
+
     s.netWorth = isClientStale ? Math.max(Number(s.netWorth || 0), Number(clientState.netWorth) || calculateNetWorth(s)) : (Number(clientState.netWorth) || calculateNetWorth(s));
     s.lastActiveTimestamp = Number(clientState.lastActiveTimestamp || Date.now());
     s.lastSeen = Date.now();

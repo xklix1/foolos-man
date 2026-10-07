@@ -14238,7 +14238,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
   }
 
-  // ── Telegram Official Community Link & Reward (50,000$ Bonus) ──
+  // ── Telegram Official Community Link & Reward (50,000$ Bonus - Strictly Once Per Account) ──
   async function claimTelegramReward(e) {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
@@ -14259,8 +14259,15 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
 
     const s = GameEngine.state;
-    // 3. Prevent duplicate claims
-    if (s.telegramClaimed || s.telegramRewardClaimed) {
+    // 3. Prevent duplicate claims locally
+    const alreadyClaimed = Boolean(
+      s && (
+        s.telegramClaimed || 
+        s.telegramRewardClaimed || 
+        (Array.isArray(s.badges) && s.badges.includes('telegram'))
+      )
+    );
+    if (alreadyClaimed) {
       if (typeof showToast === 'function') {
         showToast('قناة التليجرام', 'تم استلام مكافأة الـ 50,000$ مسبقاً لهذا الحساب. شكراً لدعمك ومتابعتك الدائمة!', 'info');
       }
@@ -14268,11 +14275,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       return;
     }
 
+    // In-flight guard to prevent rapid multi-clicks
+    if (window._isClaimingTelegramReward) return;
+    window._isClaimingTelegramReward = true;
+
     const u = GameEngine.activeUsername;
     const sessToken = (s && s.sessionToken) || (typeof AppDB !== 'undefined' && AppDB.getActiveSessionToken && AppDB.getActiveSessionToken());
-    let grantedOnServer = false;
 
-    // 4. Authoritative Server Claim
+    // 4. Authoritative Server Claim (Zero client-side monetary injection without server authorization)
     try {
       const res = await fetch('/api/action/claim-telegram', {
         method: 'POST',
@@ -14285,69 +14295,81 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           token: sessToken
         })
       });
+
       const data = await res.json();
       if (data && data.success) {
-        grantedOnServer = true;
         if (data.cash !== undefined) s.cash = Number(data.cash);
         else s.cash = (Number(s.cash) || 0) + 50000;
         if (data.netWorth !== undefined) s.netWorth = Number(data.netWorth);
         else s.netWorth = (Number(s.netWorth) || 0) + 50000;
         if (data.title) s.title = data.title;
+
+        s.telegramClaimed = true;
+        s.telegramRewardClaimed = true;
+        s.telegramClaimedAt = Date.now();
+        s.telegramVerified = true;
+        if (!Array.isArray(s.badges)) s.badges = [];
+        if (!s.badges.includes('telegram')) s.badges.push('telegram');
+
+        // 5. Local Persistence
+        if (typeof AppDB !== 'undefined') {
+          if (typeof AppDB.setEncryptedLocalState === 'function') {
+            AppDB.setEncryptedLocalState(u, s);
+          }
+          if (typeof AppDB.savePlayerState === 'function') {
+            AppDB.savePlayerState(u, s, true);
+          }
+        }
+
+        // 6. Audio-Visual Feedback
+        try {
+          if (typeof playMenuSound === 'function') playMenuSound('success');
+        } catch (sndErr) {}
+
+        if (typeof showToast === 'function') {
+          showToast('🎉 مكافأة التليجرام! 🎁', data.message || 'تهانينا! حصلت على 50,000$ كاش فوراً لانضمامك لقناة التليجرام الرسمية!', 'success');
+        }
+
+        // 7. Refresh UI states
+        updateTelegramButtonUI();
+        if (typeof renderAll === 'function') {
+          renderAll();
+        } else if (typeof window.renderHeader === 'function') {
+          window.renderHeader();
+        }
       } else if (data && data.alreadyClaimed) {
         s.telegramClaimed = true;
+        s.telegramRewardClaimed = true;
+        if (!Array.isArray(s.badges)) s.badges = [];
+        if (!s.badges.includes('telegram')) s.badges.push('telegram');
         if (typeof showToast === 'function') {
-          showToast('قناة التليجرام', data.message || 'تم استلام المكافأة مسبقاً!', 'info');
+          showToast('قناة التليجرام', data.message || 'تم استلام مكافأة التليجرام مسبقاً لهذا الحساب!', 'info');
         }
         updateTelegramButtonUI();
-        return;
+      } else {
+        if (typeof showToast === 'function') {
+          showToast('تنبيه', (data && data.message) || 'تعذر استلام المكافأة في الوقت الحالي، يرجى المحاولة لاحقاً.', 'warning');
+        }
       }
     } catch (err) {
-      console.warn('[TelegramReward] Server action endpoint unavailable, applying via client engine:', err.message);
-    }
-
-    // Fallback if offline or network glitch
-    if (!grantedOnServer) {
-      s.cash = (Number(s.cash) || 0) + 50000;
-      s.netWorth = (Number(s.netWorth) || 0) + 50000;
-    }
-
-    s.telegramClaimed = true;
-    s.telegramClaimedAt = Date.now();
-    s.telegramVerified = true;
-    if (!Array.isArray(s.badges)) s.badges = [];
-    if (!s.badges.includes('telegram')) s.badges.push('telegram');
-
-    // 5. Authoritative Persistence
-    if (typeof AppDB !== 'undefined') {
-      if (typeof AppDB.setEncryptedLocalState === 'function') {
-        AppDB.setEncryptedLocalState(u, s);
+      console.warn('[TelegramReward] Server action endpoint error:', err.message);
+      if (typeof showToast === 'function') {
+        showToast('خطأ في الاتصال', 'تعذر التحقق من المكافأة عبر الخادم، يرجى التأكد من اتصال الإنترنت.', 'warning');
       }
-      if (typeof AppDB.savePlayerState === 'function') {
-        AppDB.savePlayerState(u, s, true);
-      }
-    }
-
-    // 6. Audio-Visual Feedback
-    try {
-      if (typeof playMenuSound === 'function') playMenuSound('success');
-    } catch (sndErr) {}
-
-    if (typeof showToast === 'function') {
-      showToast('🎉 مكافأة التليجرام! 🎁', 'تهانينا! حصلت على 50,000$ كاش فوراً لانضمامك لقناة التليجرام الرسمية!', 'success');
-    }
-
-    // 7. Refresh UI states
-    updateTelegramButtonUI();
-    if (typeof renderAll === 'function') {
-      renderAll();
-    } else if (typeof window.renderHeader === 'function') {
-      window.renderHeader();
+    } finally {
+      window._isClaimingTelegramReward = false;
     }
   }
 
   function updateTelegramButtonUI() {
     const s = GameEngine.state;
-    const isClaimed = Boolean(s && (s.telegramClaimed || s.telegramRewardClaimed));
+    const isClaimed = Boolean(
+      s && (
+        s.telegramClaimed || 
+        s.telegramRewardClaimed || 
+        (Array.isArray(s.badges) && s.badges.includes('telegram'))
+      )
+    );
 
     // 1. Start Menu Quick Grid Badge
     const menuBadge = document.getElementById('badge-menu-telegram');

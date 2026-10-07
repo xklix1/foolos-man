@@ -1086,7 +1086,10 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
   fastify.get('/api/avatars/:filename', avatarServeHandler);
   fastify.get('/uploads/avatars/:filename', avatarServeHandler);
 
-  // 20. POST /api/action/claim-telegram (Claim Official Telegram Channel Reward - 50,000$)
+  // In-memory set to prevent duplicate telegram claims across memory cycles
+  const claimedTelegramUsers = new Set();
+
+  // 20. POST /api/action/claim-telegram (Claim Official Telegram Channel Reward - 50,000$ - Strictly ONCE per account)
   fastify.post('/api/action/claim-telegram', {
     config: {
       rateLimit: {
@@ -1098,45 +1101,117 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const session = await resolveSession(request, reply);
     if (!session) return;
 
+    const uKey = String(session.username || '').trim().toLowerCase();
     const s = session.state;
-    if (s.telegramClaimed || s.telegramRewardClaimed) {
+
+    // Concurrency Mutex: Prevent parallel race-condition claims
+    if (session._telegramClaimLock) {
       return reply.send({
         success: false,
         alreadyClaimed: true,
-        message: 'تم استلام مكافأة التليجرام (50,000$) مسبقاً لهذا الحساب!',
+        message: 'طلب استلام المكافأة قيد المعالجة بالفعل...',
         cash: s.cash,
         netWorth: s.netWorth
       });
     }
 
-    const reward = 50000;
-    s.cash = (Number(s.cash) || 0) + reward;
-    s.telegramClaimed = true;
-    s.telegramClaimedAt = Date.now();
-    s.telegramVerified = true;
-    if (!Array.isArray(s.badges)) s.badges = [];
-    if (!s.badges.includes('telegram')) s.badges.push('telegram');
-    s.netWorth = calculateNetWorth(s);
-    s.title = getAppropriateTitle(s.netWorth, s.xp || 0);
+    session._telegramClaimLock = true;
 
-    sessionManager.markDirty(session.username);
-
-    // Authoritative save to dbService
     try {
-      const dbService = require('../services/db-service');
-      await dbService.savePlayerState(session.username, s);
-    } catch (err) {
-      fastify.log.warn('[ActionRoutes] Save telegram reward error: ' + err.message);
-    }
+      // Guard Layer 1: In-Memory Global Set
+      if (claimedTelegramUsers.has(uKey)) {
+        s.telegramClaimed = true;
+        s.telegramRewardClaimed = true;
+        return reply.send({
+          success: false,
+          alreadyClaimed: true,
+          message: 'تم استلام مكافأة التليجرام (50,000$) مسبقاً لهذا الحساب!',
+          cash: s.cash,
+          netWorth: s.netWorth
+        });
+      }
 
-    return reply.send({
-      success: true,
-      reward,
-      cash: s.cash,
-      netWorth: s.netWorth,
-      title: s.title,
-      message: '🎉 تهانينا! استلمت مكافأة 50,000$ كاش لانضمامك لقناة التليجرام الرسمية!'
-    });
+      // Guard Layer 2: In-Memory Session State & Badges
+      const hasClaimedInSession = Boolean(
+        s.telegramClaimed || 
+        s.telegramRewardClaimed || 
+        (Array.isArray(s.badges) && s.badges.includes('telegram'))
+      );
+      if (hasClaimedInSession) {
+        claimedTelegramUsers.add(uKey);
+        s.telegramClaimed = true;
+        s.telegramRewardClaimed = true;
+        return reply.send({
+          success: false,
+          alreadyClaimed: true,
+          message: 'تم استلام مكافأة التليجرام (50,000$) مسبقاً لهذا الحساب!',
+          cash: s.cash,
+          netWorth: s.netWorth
+        });
+      }
+
+      // Guard Layer 3: Authoritative Database Verification (Supabase)
+      const dbService = require('../services/db-service');
+      try {
+        const dbRow = await dbService.getPlayerByUsername(session.username);
+        if (dbRow) {
+          const rawState = (typeof dbRow.state === 'object' && dbRow.state) ? dbRow.state : {};
+          const hasClaimedInDb = Boolean(
+            rawState.telegramClaimed || 
+            rawState.telegramRewardClaimed || 
+            (Array.isArray(rawState.badges) && rawState.badges.includes('telegram'))
+          );
+          if (hasClaimedInDb) {
+            claimedTelegramUsers.add(uKey);
+            s.telegramClaimed = true;
+            s.telegramRewardClaimed = true;
+            return reply.send({
+              success: false,
+              alreadyClaimed: true,
+              message: 'تم استلام مكافأة التليجرام (50,000$) مسبقاً لهذا الحساب!',
+              cash: s.cash,
+              netWorth: s.netWorth
+            });
+          }
+        }
+      } catch (dbErr) {
+        fastify.log.warn('[ActionRoutes] Supabase check warning: ' + dbErr.message);
+      }
+
+      // ── Award Reward Strictly ONCE ──
+      const reward = 50000;
+      s.cash = (Number(s.cash) || 0) + reward;
+      s.telegramClaimed = true;
+      s.telegramRewardClaimed = true;
+      s.telegramClaimedAt = Date.now();
+      s.telegramVerified = true;
+      if (!Array.isArray(s.badges)) s.badges = [];
+      if (!s.badges.includes('telegram')) s.badges.push('telegram');
+      claimedTelegramUsers.add(uKey);
+
+      s.netWorth = calculateNetWorth(s);
+      s.title = getAppropriateTitle(s.netWorth, s.xp || 0);
+
+      sessionManager.markDirty(session.username);
+
+      // Authoritative immediate persistence to Supabase
+      try {
+        await dbService.savePlayerState(session.username, s);
+      } catch (err) {
+        fastify.log.warn('[ActionRoutes] Save telegram reward error: ' + err.message);
+      }
+
+      return reply.send({
+        success: true,
+        reward,
+        cash: s.cash,
+        netWorth: s.netWorth,
+        title: s.title,
+        message: '🎉 تهانينا! استلمت مكافأة 50,000$ كاش لانضمامك لقناة التليجرام الرسمية!'
+      });
+    } finally {
+      session._telegramClaimLock = false;
+    }
   });
 }
 
