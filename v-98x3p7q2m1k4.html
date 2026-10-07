@@ -2504,6 +2504,8 @@
             title: `ملاحظة سرية في الدفتر (${currentModInfo ? currentModInfo.name : 'محقق'})`,
             desc: noteText,
             amount: null,
+            cash: inspectingPlayer ? inspectingPlayer.cash : null,
+            bank: inspectingPlayer ? inspectingPlayer.bank : null,
             isPositive: false,
             timestamp: (data.note && data.note.timestamp) || Date.now(),
             source: 'staff_notebook'
@@ -2949,29 +2951,52 @@
           icon = 'fa-building text-amber-400';
         }
 
+        const hasBalance = item.cash != null || item.bank != null;
+        const balanceHtml = hasBalance ? `
+          <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center gap-2 flex-wrap text-[11px]">
+            <span class="text-slate-400 font-bold flex items-center gap-1 text-[10px]">
+              <i class="fa-solid fa-wallet text-amber-400"></i> الرصيد بعد الحركة:
+            </span>
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono font-bold text-[10px] shadow-sm">
+              <i class="fa-solid fa-money-bill-wave text-[9px] text-emerald-400"></i> كاش: ${Number(item.cash != null ? item.cash : 0).toLocaleString()} ج.م
+            </span>
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-sky-500/15 text-sky-300 border border-sky-500/30 font-mono font-bold text-[10px] shadow-sm">
+              <i class="fa-solid fa-building-columns text-[9px] text-sky-400"></i> بنك: ${Number(item.bank != null ? item.bank : 0).toLocaleString()} ج.م
+            </span>
+          </div>
+        ` : `
+          <div class="mt-2 pt-1.5 border-t border-slate-800/50 flex items-center gap-1.5 text-[9px] text-slate-500 italic">
+            <i class="fa-solid fa-clock-rotate-left text-[8px]"></i>
+            <span>الرصيد: غير مسجل في أرشيف النسخ القديمة</span>
+          </div>
+        `;
+
         return `
-          <div class="glass-card p-3 rounded-xl ${cardBg} flex items-start justify-between gap-3 text-xs transition">
-            <div class="flex items-start gap-2.5">
-              <div class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700/80 flex items-center justify-center shrink-0 text-sm">
-                <i class="fa-solid ${icon}"></i>
-              </div>
-              <div>
-                <div class="font-bold text-white leading-tight ${isNote ? 'text-yellow-200' : ''}">${item.title}</div>
-                <div class="text-[11px] text-slate-300 mt-0.5 leading-relaxed whitespace-pre-wrap">${item.desc}</div>
-                <div class="text-[10px] text-slate-500 mt-1.5 flex items-center gap-2 flex-wrap">
-                  <span class="text-slate-400"><i class="fa-regular fa-clock ml-0.5"></i> ${fmtDate(item.timestamp)}</span>
-                  ${catBadge}
-                  ${item.source ? `<span class="text-[9px] text-slate-500 font-mono">#${item.source}</span>` : ''}
+          <div class="glass-card p-3 rounded-xl ${cardBg} flex flex-col gap-1 text-xs transition">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-start gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700/80 flex items-center justify-center shrink-0 text-sm">
+                  <i class="fa-solid ${icon}"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-white leading-tight ${isNote ? 'text-yellow-200' : ''}">${item.title}</div>
+                  <div class="text-[11px] text-slate-300 mt-0.5 leading-relaxed whitespace-pre-wrap">${item.desc}</div>
+                  <div class="text-[10px] text-slate-500 mt-1.5 flex items-center gap-2 flex-wrap">
+                    <span class="text-slate-400"><i class="fa-regular fa-clock ml-0.5"></i> ${fmtDate(item.timestamp)}</span>
+                    ${catBadge}
+                    ${item.source ? `<span class="text-[9px] text-slate-500 font-mono">#${item.source}</span>` : ''}
+                  </div>
                 </div>
               </div>
+              ${item.amount ? `
+                <div class="text-left shrink-0">
+                  <span class="font-black numbers-font text-xs ${isPos ? 'text-emerald-400' : 'text-rose-400'}">
+                    ${isPos ? '+' : '-'}${fmtMoney(item.amount)}
+                  </span>
+                </div>
+              ` : ''}
             </div>
-            ${item.amount ? `
-              <div class="text-left shrink-0">
-                <span class="font-black numbers-font text-xs ${isPos ? 'text-emerald-400' : 'text-rose-400'}">
-                  ${isPos ? '+' : '-'}${fmtMoney(item.amount)}
-                </span>
-              </div>
-            ` : ''}
+            ${balanceHtml}
           </div>
         `;
       }).join('');

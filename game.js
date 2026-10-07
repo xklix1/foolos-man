@@ -1366,14 +1366,19 @@ const GameEngine = (() => {
     }
   }
 
-  // Record player action in rolling audit log
-  function recordPlayerActivity(action, details, category ='info') {
+  // Record player action in rolling audit log with post-action cash and bank balances
+  function recordPlayerActivity(action, details, category = 'info', extra = {}) {
     if (!state.activityLog) state.activityLog = [];
+    const currentCash = Math.max(0, Math.round(Number(state.cash || 0)));
+    const currentBank = Math.max(0, Math.round(Number(state.bank || 0)));
     state.activityLog.unshift({
       timestamp: getTrustedNow(),
       action: action,
       details: details,
-      category: category //'work' |'business' |'stock' |'investment' |'banking' |'casino' |'blackmarket' |'store' |'trade'
+      category: category, //'work' |'business' |'stock' |'investment' |'banking' |'casino' |'blackmarket' |'store' |'trade'
+      cash: currentCash,
+      bank: currentBank,
+      ...extra
     });
     if (state.activityLog.length > 300) {
       state.activityLog.length = 300; // Keep extensive history of 300 entries for investigation & telemetry

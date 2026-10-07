@@ -225,7 +225,9 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
           action: 'استحقاق أرباح صندوق استثماري 🏛️',
           details: `اكتملت مدة الاستثمار في "${inv.name || 'الصندوق الاستثماري'}". تم إيداع رأس المال والأرباح بالكامل في حسابك البنكي (+${payout.toLocaleString()} EGP).`,
           category: 'banking',
-          timestamp: serverNow
+          timestamp: serverNow,
+          cash: Math.max(0, Math.round(Number(playerState.cash || 0))),
+          bank: Math.max(0, Math.round(Number(playerState.bank || 0)))
         });
       } else {
         if (maturesAt > 0) {

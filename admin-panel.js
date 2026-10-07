@@ -2467,7 +2467,7 @@
       logFeed.innerHTML ='';
       filtered.forEach(item => {
         const div = document.createElement('div');
-        div.className ='p-3 bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 rounded-xl flex items-center justify-between gap-3 transition shadow-sm';
+        div.className ='p-3 bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 rounded-xl flex flex-col gap-2 transition shadow-sm';
 
         let icon ='<i class="fa-solid fa-circle-info text-sky-400"></i>';
         let badgeColor ='bg-sky-500/10 text-sky-400 border-sky-500/20';
@@ -2507,23 +2507,46 @@
         const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit', second:'2-digit' }) :'--:--';
         const fullDateStr = item.timestamp ? new Date(item.timestamp).toLocaleDateString('ar-EG', { month:'numeric', day:'numeric' }) :'';
 
+        const hasBalance = item.cash != null || item.bank != null;
+        const balanceHtml = hasBalance ? `
+          <div class="pt-2 border-t border-slate-800/80 flex items-center gap-2 flex-wrap text-[11px]">
+            <span class="text-slate-400 font-bold flex items-center gap-1 text-[10px]">
+              <i class="fa-solid fa-wallet text-amber-400"></i> الرصيد بعد الحركة:
+            </span>
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono font-bold text-[10px] shadow-sm">
+              <i class="fa-solid fa-money-bill-wave text-[9px] text-emerald-400"></i> كاش: ${Number(item.cash != null ? item.cash : 0).toLocaleString()} ج.م
+            </span>
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-sky-500/15 text-sky-300 border border-sky-500/30 font-mono font-bold text-[10px] shadow-sm">
+              <i class="fa-solid fa-building-columns text-[9px] text-sky-400"></i> بنك: ${Number(item.bank != null ? item.bank : 0).toLocaleString()} ج.م
+            </span>
+          </div>
+        ` : `
+          <div class="pt-1.5 border-t border-slate-800/50 flex items-center gap-1.5 text-[9px] text-slate-500 italic">
+            <i class="fa-solid fa-clock-rotate-left text-[8px]"></i>
+            <span>الرصيد: غير مسجل في أرشيف النسخ القديمة</span>
+          </div>
+        `;
+
         div.innerHTML =`
-          <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center text-xs border border-slate-800 shrink-0">
-              ${icon}
-            </div>
-            <div class="min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="font-bold text-white text-xs truncate">${item.action}</span>
-                <span class="text-[9px] px-1.5 py-0.2 rounded border ${badgeColor} font-sans">${item.category}</span>
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center text-xs border border-slate-800 shrink-0">
+                ${icon}
               </div>
-              <div class="text-[11px] text-slate-300 mt-0.5 leading-tight">${item.details}</div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-bold text-white text-xs truncate">${item.action}</span>
+                  <span class="text-[9px] px-1.5 py-0.2 rounded border ${badgeColor} font-sans">${item.category}</span>
+                </div>
+                <div class="text-[11px] text-slate-300 mt-0.5 leading-tight">${item.details}</div>
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              <div class="text-[10px] text-slate-300 font-mono">${dateStr}</div>
+              <div class="text-[9px] text-slate-500">${fullDateStr}</div>
             </div>
           </div>
-          <div class="text-right shrink-0">
-            <div class="text-[10px] text-slate-300 font-mono">${dateStr}</div>
-            <div class="text-[9px] text-slate-500">${fullDateStr}</div>
-          </div>`;
+          ${balanceHtml}`;
         logFeed.appendChild(div);
       });
     }
@@ -2557,7 +2580,9 @@
               timestamp: Number(t.created_at || t.timestamp || Date.now()),
               action: isSender ?'إرسال تحويل بنكي' :'استلام تحويل بنكي',
               details: isSender ?`تحويل مبلغ ${amt} ج.م إلى @${t.recipient}` :`استلام مبلغ ${amt} ج.م من @${t.sender}`,
-              category:'transfers'
+              category:'transfers',
+              cash: isSender ? (t.sender_cash != null ? Number(t.sender_cash) : null) : (t.recipient_cash != null ? Number(t.recipient_cash) : null),
+              bank: isSender ? (t.sender_bank != null ? Number(t.sender_bank) : null) : (t.recipient_bank != null ? Number(t.recipient_bank) : null)
             };
           });
 
@@ -2663,7 +2688,11 @@
           reportText +=`سجل الحركات الزمنية (${logs.length} عملية):\n`;
           logs.forEach((l, idx) => {
             const time = l.timestamp ? new Date(l.timestamp).toLocaleString('ar-EG') :'غير محدد';
-            reportText +=`[${idx + 1}] ${time} | [${l.category}] ${l.action}: ${l.details}\n`;
+            let balInfo = '';
+            if (l.cash != null || l.bank != null) {
+              balInfo = ` [الرصيد بعد الحركة -> كاش: ${Number(l.cash != null ? l.cash : 0).toLocaleString()} ج.م | بنك: ${Number(l.bank != null ? l.bank : 0).toLocaleString()} ج.م]`;
+            }
+            reportText +=`[${idx + 1}] ${time} | [${l.category}] ${l.action}: ${l.details}${balInfo}\n`;
           });
 
           // Copy to clipboard

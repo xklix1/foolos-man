@@ -659,7 +659,9 @@ async function moderatorRoutes(fastify, options) {
           amount: l.amount || l.delta || l.value || null,
           isPositive: Boolean(l.isPositive || (l.amount && l.amount > 0)),
           timestamp: ts,
-          source: 'state_log'
+          source: 'state_log',
+          cash: l.cash !== undefined && l.cash !== null ? Number(l.cash) : null,
+          bank: l.bank !== undefined && l.bank !== null ? Number(l.bank) : null
         });
       });
 
@@ -677,7 +679,9 @@ async function moderatorRoutes(fastify, options) {
           isPositive: !isSender,
           counterparty: otherParty,
           timestamp: ts,
-          source: 'p2p_transfer'
+          source: 'p2p_transfer',
+          cash: isSender ? (t.sender_cash != null ? Number(t.sender_cash) : null) : (t.recipient_cash != null ? Number(t.recipient_cash) : null),
+          bank: isSender ? (t.sender_bank != null ? Number(t.sender_bank) : null) : (t.recipient_bank != null ? Number(t.recipient_bank) : null)
         });
       });
 
@@ -694,7 +698,9 @@ async function moderatorRoutes(fastify, options) {
             amount: Number(st.total || (st.shares * st.price) || 0),
             isPositive: st.type === 'sell',
             timestamp: ts,
-            source: 'stock_market'
+            source: 'stock_market',
+            cash: st.cash !== undefined && st.cash !== null ? Number(st.cash) : null,
+            bank: st.bank !== undefined && st.bank !== null ? Number(st.bank) : null
           });
         });
       }
@@ -712,7 +718,9 @@ async function moderatorRoutes(fastify, options) {
           amount: null,
           isPositive: false,
           timestamp: ts,
-          source: 'staff_notebook'
+          source: 'staff_notebook',
+          cash: sn.cash !== undefined && sn.cash !== null ? Number(sn.cash) : null,
+          bank: sn.bank !== undefined && sn.bank !== null ? Number(sn.bank) : null
         });
       });
 
@@ -852,7 +860,9 @@ async function moderatorRoutes(fastify, options) {
         timestamp: ts,
         action: `ملاحظة في الدفتر السري (${request.modSession.name})`,
         details: cleanNote,
-        category: 'notes'
+        category: 'notes',
+        cash: Math.max(0, Math.round(Number(pState.cash || 0))),
+        bank: Math.max(0, Math.round(Number(pState.bank || 0)))
       });
       if (pState.activityLog.length > 300) pState.activityLog = pState.activityLog.slice(0, 300);
 
@@ -882,7 +892,9 @@ async function moderatorRoutes(fastify, options) {
             timestamp: ts,
             action: `ملاحظة في الدفتر السري (${request.modSession.name})`,
             details: cleanNote,
-            category: 'notes'
+            category: 'notes',
+            cash: Math.max(0, Math.round(Number(session.state.cash || pState.cash || 0))),
+            bank: Math.max(0, Math.round(Number(session.state.bank || pState.bank || 0)))
           });
           if (session.state.activityLog.length > 300) session.state.activityLog = session.state.activityLog.slice(0, 300);
         }

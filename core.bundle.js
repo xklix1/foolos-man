@@ -2537,6 +2537,9 @@ var AppDB = (() => {
         GameEngine.state.bank = Math.max(0, sBank - deductBank);
         GameEngine.state.netWorth = Math.max(0, (Number(GameEngine.state.netWorth) || 0) - amt);
         GameEngine.state.adminModifiedTimestamp = lockTs;
+        if (typeof GameEngine.recordPlayerActivity === 'function') {
+          GameEngine.recordPlayerActivity('إرسال تحويل بنكي', `تحويل مبلغ ${amt.toLocaleString()} ج.م إلى @${cleanRecipient}`, 'banking');
+        }
         setEncryptedLocalState(`rasalmal_state_${cleanSender}`, GameEngine.state);
       }
     }
@@ -8888,14 +8891,19 @@ const GameEngine = (() => {
     }
   }
 
-  // Record player action in rolling audit log
-  function recordPlayerActivity(action, details, category ='info') {
+  // Record player action in rolling audit log with post-action cash and bank balances
+  function recordPlayerActivity(action, details, category = 'info', extra = {}) {
     if (!state.activityLog) state.activityLog = [];
+    const currentCash = Math.max(0, Math.round(Number(state.cash || 0)));
+    const currentBank = Math.max(0, Math.round(Number(state.bank || 0)));
     state.activityLog.unshift({
       timestamp: getTrustedNow(),
       action: action,
       details: details,
-      category: category //'work' |'business' |'stock' |'investment' |'banking' |'casino' |'blackmarket' |'store' |'trade'
+      category: category, //'work' |'business' |'stock' |'investment' |'banking' |'casino' |'blackmarket' |'store' |'trade'
+      cash: currentCash,
+      bank: currentBank,
+      ...extra
     });
     if (state.activityLog.length > 300) {
       state.activityLog.length = 300; // Keep extensive history of 300 entries for investigation & telemetry
@@ -26624,7 +26632,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       logFeed.innerHTML ='';
       filtered.forEach(item => {
         const div = document.createElement('div');
-        div.className ='p-2.5 bg-slate-900/70 hover:bg-slate-900 border border-slate-800/80 rounded-xl flex items-center justify-between gap-2 transition';
+        div.className ='p-2.5 bg-slate-900/70 hover:bg-slate-900 border border-slate-800/80 rounded-xl flex flex-col gap-2 transition';
 
         let icon ='<i class="fa-solid fa-circle-info text-sky-400"></i>';
         let badgeColor ='bg-sky-500/10 text-sky-400 border-sky-500/20';
@@ -26654,22 +26662,45 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
         const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit', second:'2-digit' }) :'--:--';
 
+        const hasBalance = item.cash != null || item.bank != null;
+        const balanceHtml = hasBalance ? `
+          <div class="pt-2 border-t border-slate-800/80 flex items-center gap-2 flex-wrap text-[11px]">
+            <span class="text-slate-400 font-bold flex items-center gap-1 text-[10px]">
+              <i class="fa-solid fa-wallet text-amber-400"></i> الرصيد بعد الحركة:
+            </span>
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono font-bold text-[10px] shadow-sm">
+              <i class="fa-solid fa-money-bill-wave text-[9px] text-emerald-400"></i> كاش: ${Number(item.cash != null ? item.cash : 0).toLocaleString()} ج.م
+            </span>
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-sky-500/15 text-sky-300 border border-sky-500/30 font-mono font-bold text-[10px] shadow-sm">
+              <i class="fa-solid fa-building-columns text-[9px] text-sky-400"></i> بنك: ${Number(item.bank != null ? item.bank : 0).toLocaleString()} ج.م
+            </span>
+          </div>
+        ` : `
+          <div class="pt-1.5 border-t border-slate-800/50 flex items-center gap-1.5 text-[9px] text-slate-500 italic">
+            <i class="fa-solid fa-clock-rotate-left text-[8px]"></i>
+            <span>الرصيد: غير مسجل في أرشيف النسخ القديمة</span>
+          </div>
+        `;
+
         div.innerHTML =`
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center text-xs border border-slate-800">
-              ${icon}
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="font-bold text-white">${item.action}</span>
-                <span class="text-[9px] px-1.5 py-0.2 rounded border ${badgeColor} font-sans">${item.category}</span>
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center text-xs border border-slate-800 shrink-0">
+                ${icon}
               </div>
-              <div class="text-[11px] text-slate-300 mt-0.5">${item.details}</div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-white text-xs">${item.action}</span>
+                  <span class="text-[9px] px-1.5 py-0.2 rounded border ${badgeColor} font-sans">${item.category}</span>
+                </div>
+                <div class="text-[11px] text-slate-300 mt-0.5">${item.details}</div>
+              </div>
+            </div>
+            <div class="text-[10px] text-slate-400 font-mono text-left shrink-0">
+              ${dateStr}
             </div>
           </div>
-          <div class="text-[10px] text-slate-400 font-mono text-left shrink-0">
-            ${dateStr}
-          </div>`;
+          ${balanceHtml}`;
         logFeed.appendChild(div);
       });
     }

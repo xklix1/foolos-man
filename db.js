@@ -2534,6 +2534,9 @@ var AppDB = (() => {
         GameEngine.state.bank = Math.max(0, sBank - deductBank);
         GameEngine.state.netWorth = Math.max(0, (Number(GameEngine.state.netWorth) || 0) - amt);
         GameEngine.state.adminModifiedTimestamp = lockTs;
+        if (typeof GameEngine.recordPlayerActivity === 'function') {
+          GameEngine.recordPlayerActivity('إرسال تحويل بنكي', `تحويل مبلغ ${amt.toLocaleString()} ج.م إلى @${cleanRecipient}`, 'banking');
+        }
         setEncryptedLocalState(`rasalmal_state_${cleanSender}`, GameEngine.state);
       }
     }
