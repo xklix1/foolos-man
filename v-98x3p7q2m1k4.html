@@ -1507,14 +1507,22 @@
     }
 
     // Inspect Player Deep Modal
-    async function inspectPlayer(username) {
+    async function inspectPlayer(username, initialTab = 'economy') {
       const modal = document.getElementById('inspectorModal');
       modal.classList.remove('hidden');
 
-      // Reset tabs to economy
-      switchInspectTab('economy');
       document.getElementById('inspectUsername').textContent = username;
+      const modChatTarget = document.getElementById('modChatTargetUsername');
+      if (modChatTarget) modChatTarget.textContent = username;
       document.getElementById('p_cash').textContent = '...';
+
+      // Switch to requested tab immediately
+      switchInspectTab(initialTab);
+
+      if (initialTab === 'chat') {
+        inspectingPlayer = { username: username };
+        loadModeratorChatMessages(true);
+      }
 
       try {
         const res = await fetch(`${API_BASE}/player/${encodeURIComponent(username)}`, {
@@ -1525,6 +1533,10 @@
         const data = await res.json();
         inspectingPlayer = data.profile;
         populateInspector(inspectingPlayer);
+
+        if (initialTab === 'chat') {
+          switchInspectTab('chat');
+        }
       } catch (err) {
         alert(err.message);
         closeInspectorModal();
@@ -3239,17 +3251,26 @@
         if (t === tabId) {
           btn.className = 'px-3.5 py-2 rounded-xl font-bold bg-cyan-600 text-white whitespace-nowrap transition';
           content.classList.remove('hidden');
+          try {
+            btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          } catch (_) {}
         } else {
           btn.className = 'px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition';
           content.classList.add('hidden');
         }
       });
 
-      if (tabId === 'chat' && inspectingPlayer) {
-        loadModeratorChatMessages();
-        modChatPollInterval = setInterval(() => {
-          if (inspectingPlayer) loadModeratorChatMessages();
-        }, 2500);
+      if (tabId === 'chat') {
+        const targetU = (inspectingPlayer && inspectingPlayer.username) || document.getElementById('inspectUsername')?.textContent || '';
+        if (targetU && targetU !== '---') {
+          if (!inspectingPlayer) inspectingPlayer = { username: targetU };
+          const modChatTarget = document.getElementById('modChatTargetUsername');
+          if (modChatTarget) modChatTarget.textContent = targetU;
+          loadModeratorChatMessages(true);
+          modChatPollInterval = setInterval(() => {
+            loadModeratorChatMessages();
+          }, 2500);
+        }
       }
     }
 
@@ -3627,16 +3648,20 @@
     }
 
     async function loadModeratorChatMessages(manual = false) {
-      if (!inspectingPlayer) return;
+      const targetUser = (inspectingPlayer && inspectingPlayer.username) || document.getElementById('inspectUsername')?.textContent || '';
+      if (!targetUser || targetUser === '---') return;
       const stream = document.getElementById('modChatMessagesStream');
       if (!stream) return;
 
+      const modChatTarget = document.getElementById('modChatTargetUsername');
+      if (modChatTarget) modChatTarget.textContent = targetUser;
+
       if (manual) {
-        stream.innerHTML = `<div class="text-center py-6 text-slate-500 text-xs"><i class="fa-solid fa-spinner fa-spin text-emerald-400"></i> جاري تحديث المحادثة...</div>`;
+        stream.innerHTML = `<div class="text-center py-6 text-slate-500 text-xs"><i class="fa-solid fa-spinner fa-spin text-emerald-400"></i> جاري تحديث المحادثة مع ${targetUser}...</div>`;
       }
 
       try {
-        const res = await fetch(`${API_BASE}/chat/messages/${encodeURIComponent(inspectingPlayer.username)}`, {
+        const res = await fetch(`${API_BASE}/chat/messages/${encodeURIComponent(targetUser)}`, {
           headers: { 'Authorization': `Bearer ${currentModToken}` }
         });
         if (!res.ok) return;
@@ -3658,9 +3683,9 @@
 
         stream.innerHTML = messages.map(m => {
           const p = (m && typeof m.payload === 'object' && m.payload) ? m.payload : {};
-          const isMod = Boolean(p.isMod || m.isMod || m.recipient === inspectingPlayer.username || m.sender?.startsWith('MOD-') || m.sender?.includes('المحقق') || m.sender?.includes('إدارة'));
+          const isMod = Boolean(p.isMod || m.isMod || m.recipient === targetUser || m.sender?.startsWith('MOD-') || m.sender?.includes('المحقق') || m.sender?.includes('إدارة'));
           const text = p.message || m.message || '';
-          const senderName = p.senderName || m.sender || (isMod ? 'المحقق' : inspectingPlayer.username);
+          const senderName = p.senderName || m.sender || (isMod ? 'المحقق' : targetUser);
           const ts = m.created_at || p.timestamp || Date.now();
 
           return `
@@ -3691,7 +3716,8 @@
 
     async function sendModeratorChatMessage(e) {
       if (e) e.preventDefault();
-      if (!inspectingPlayer) return;
+      const targetUser = (inspectingPlayer && inspectingPlayer.username) || document.getElementById('inspectUsername')?.textContent || '';
+      if (!targetUser || targetUser === '---') return;
 
       const input = document.getElementById('modChatMessageInput');
       const btn = document.getElementById('modChatSendBtn');
@@ -3709,8 +3735,8 @@
             'Authorization': `Bearer ${currentModToken}`
           },
           body: JSON.stringify({
-            targetUser: inspectingPlayer.username,
-            targetUsername: inspectingPlayer.username,
+            targetUser: targetUser,
+            targetUsername: targetUser,
             message: msg
           })
         });
@@ -3764,28 +3790,28 @@
         }
 
         container.innerHTML = threads.map(th => `
-          <div class="glass-card p-3 rounded-xl border border-slate-800 hover:border-emerald-500/50 flex items-center justify-between transition gap-3">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold">
+          <div onclick="openChatWithPlayer('${th.username}')" class="glass-card p-3 rounded-xl border border-slate-800 hover:border-emerald-500/50 flex items-center justify-between transition gap-2 sm:gap-3 cursor-pointer hover:bg-slate-800/40 active:scale-[0.99]">
+            <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold shrink-0">
                 <i class="fa-solid fa-user-shield"></i>
               </div>
-              <div>
+              <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2">
-                  <span class="font-black text-sm text-white">${th.username}</span>
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${th.isSuspended ? 'bg-rose-500/20 text-rose-300' : 'bg-slate-700 text-slate-300'}">
+                  <span class="font-black text-sm text-white truncate">${th.username}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${th.isSuspended ? 'bg-rose-500/20 text-rose-300' : 'bg-slate-700 text-slate-300'}">
                     ${th.isSuspended ? 'قيد التدقيق / مجمد' : 'نشط'}
                   </span>
                 </div>
-                <div class="text-[11px] text-slate-400 truncate max-w-xs md:max-w-md mt-0.5">
+                <div class="text-[11px] text-slate-400 truncate mt-0.5">
                   <strong class="text-slate-300">${th.lastSender || ''}:</strong> ${th.lastMessage || 'لا توجد رسائل'}
                 </div>
               </div>
             </div>
 
-            <div class="flex items-center gap-2 text-right">
-              <div class="text-[10px] text-slate-500 hidden sm:block">${fmtDate(th.lastTimestamp)}</div>
-              <button onclick="openChatWithPlayer('${th.username}')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 shadow-md transition">
-                <i class="fa-solid fa-arrow-left"></i>
+            <div class="flex items-center gap-2 text-right shrink-0">
+              <div class="text-[10px] text-slate-500 hidden md:block">${fmtDate(th.lastTimestamp)}</div>
+              <button type="button" onclick="event.stopPropagation(); openChatWithPlayer('${th.username}')" class="px-3 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-950/40 transition shrink-0 cursor-pointer">
+                <i class="fa-solid fa-comments"></i>
                 <span>فتح المحادثة</span>
               </button>
             </div>
@@ -3796,12 +3822,12 @@
       }
     }
 
-    function openChatWithPlayer(username) {
+    async function openChatWithPlayer(username) {
+      if (!username) return;
       closeStaffChatThreadsModal();
-      inspectPlayer(username);
-      setTimeout(() => {
-        switchInspectTab('chat');
-      }, 350);
+      
+      // Open player inspector immediately on the chat tab
+      await inspectPlayer(username, 'chat');
     }
 
     // ================= GLOBAL PUBLIC CHAT HUB LOGIC =================
