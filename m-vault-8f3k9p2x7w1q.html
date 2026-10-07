@@ -1303,6 +1303,14 @@
                 <span class="text-[10px] text-slate-400 block">صافي التدفق اللحظي:</span>
                 <strong id="admin-p-flow-net" class="text-sky-400 numbers-font font-bold text-[11px]">... EGP/ث</strong>
               </div>
+              <div class="space-y-0.5">
+                <span class="text-[10px] text-slate-400 block">آخر هاتف / جهاز:</span>
+                <strong id="admin-p-header-device" class="text-cyan-300 text-[11px] block truncate">غير مسجل</strong>
+              </div>
+              <div class="space-y-0.5">
+                <span class="text-[10px] text-slate-400 block">آخر عنوان IP:</span>
+                <strong id="admin-p-header-ip" class="text-indigo-300 font-mono text-[11px] block truncate">غير مسجل</strong>
+              </div>
             </div>
           </div>
 
@@ -1322,6 +1330,11 @@
               class="player-subtab-btn flex-1 min-w-[130px] py-2 px-3 rounded-lg text-xs font-bold text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-2 cursor-pointer">
               <i class="fa-solid fa-shield-halved text-rose-400"></i>
               <span>الأمان والقرارات</span>
+            </button>
+            <button type="button" onclick="window.switchPlayerSubTab('logins')" id="btn-player-subtab-logins"
+              class="player-subtab-btn flex-1 min-w-[130px] py-2 px-3 rounded-lg text-xs font-bold text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-2 cursor-pointer">
+              <i class="fa-solid fa-mobile-screen-button text-cyan-400"></i>
+              <span>سجل الدخول والأجهزة</span>
             </button>
             <button type="button" onclick="window.switchPlayerSubTab('logs')" id="btn-player-subtab-logs"
               class="player-subtab-btn flex-1 min-w-[130px] py-2 px-3 rounded-lg text-xs font-bold text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-2 cursor-pointer">
@@ -1782,6 +1795,52 @@
                 <i class="fa-solid fa-file-arrow-down text-sm"></i>
                 <span>تحميل تقرير كامل (Backup)</span>
               </button>
+            </div>
+          </div>
+
+          <!-- 7. SUBTAB PANEL 5: LOGINS & DEVICES -->
+          <div id="player-subtab-panel-logins" class="hidden space-y-4">
+            <!-- Current / Last Device & IP Status Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="glass-panel p-3.5 rounded-xl border border-cyan-500/30 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg shrink-0">
+                  <i class="fa-solid fa-mobile-screen"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <span class="text-[10px] text-slate-400 block font-bold">آخر هاتف / جهاز تم الدخول به:</span>
+                  <strong id="admin-p-last-device" class="text-xs text-cyan-300 font-black block truncate">غير مسجل</strong>
+                </div>
+              </div>
+
+              <div class="glass-panel p-3.5 rounded-xl border border-indigo-500/30 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-lg shrink-0">
+                  <i class="fa-solid fa-network-wired"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <span class="text-[10px] text-slate-400 block font-bold">آخر عنوان IP مسجل:</span>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <strong id="admin-p-last-ip" class="text-xs text-indigo-300 font-mono font-bold block truncate">غير مسجل</strong>
+                    <button type="button" id="btn-admin-copy-last-ip" onclick="window.adminCopyLastIp && window.adminCopyLastIp()" title="نسخ IP" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 transition cursor-pointer">
+                      <i class="fa-regular fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Login History Feed List -->
+            <div class="glass-panel p-4 rounded-xl border border-slate-800 space-y-3">
+              <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-list-timeline text-cyan-400"></i>
+                  <span>سجل جلسات الدخول ونوع الهواتف وعناوين الـ IP (آخر 50 عملية)</span>
+                </span>
+                <span id="admin-p-login-count-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold">0 تسجيل</span>
+              </div>
+
+              <div id="admin-player-logins-feed" class="space-y-2 max-h-[460px] overflow-y-auto custom-scrollbar">
+                <!-- Rendered dynamically -->
+              </div>
             </div>
           </div>
 

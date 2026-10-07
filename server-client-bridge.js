@@ -125,11 +125,32 @@ var ServerBridge = (() => {
         _sessionToken = effectiveToken;
       }
 
+      // Collect client device telemetry hints
+      let deviceInfo = {
+        screen: (typeof window !== 'undefined' && window.screen) ? `${window.screen.width}x${window.screen.height}` : null,
+        pixelRatio: (typeof window !== 'undefined') ? (window.devicePixelRatio || 1) : 1,
+        platform: (typeof navigator !== 'undefined') ? (navigator.platform || '') : '',
+        language: (typeof navigator !== 'undefined') ? (navigator.language || '') : ''
+      };
+
+      if (typeof navigator !== 'undefined' && navigator.userAgentData && typeof navigator.userAgentData.getHighEntropyValues === 'function') {
+        try {
+          const hints = await Promise.race([
+            navigator.userAgentData.getHighEntropyValues(['model', 'platform', 'platformVersion']),
+            new Promise(r => setTimeout(() => r(null), 120))
+          ]);
+          if (hints && hints.model) {
+            deviceInfo.model = hints.model;
+          }
+        } catch (_) {}
+      }
+
       const data = await _post('/api/session/start', {
         username: _activeUsername,
         pin: pin,
         token: effectiveToken,
-        sessionId: clientSessionToken
+        sessionId: clientSessionToken,
+        deviceInfo: deviceInfo
       });
 
       if (data && data.sessionToken) {
@@ -418,7 +439,12 @@ var ServerBridge = (() => {
   }
 
   async function registerAccount(playerRow) {
-    return await _post('/api/session/register', { playerRow });
+    let deviceInfo = {
+      screen: (typeof window !== 'undefined' && window.screen) ? `${window.screen.width}x${window.screen.height}` : null,
+      pixelRatio: (typeof window !== 'undefined') ? (window.devicePixelRatio || 1) : 1,
+      platform: (typeof navigator !== 'undefined') ? (navigator.platform || '') : ''
+    };
+    return await _post('/api/session/register', { playerRow, deviceInfo });
   }
 
   function formatAvatarUrl(url) {

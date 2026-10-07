@@ -80,6 +80,10 @@ const DEFAULT_STATE = {
       active: []
     }
   },
+  loginHistory: [],
+  lastLoginIp: null,
+  lastLoginDevice: null,
+  lastLoginTime: 0,
   lastActiveTimestamp: 0,
   lastSeen: 0
 };
@@ -222,6 +226,12 @@ function sanitizePlayerState(dbRow) {
   if (rawState.farm && typeof rawState.farm === 'object') {
     cleanState.farm = rawState.farm;
   }
+
+  // Device & Login Telemetry History (Authoritative)
+  cleanState.loginHistory = Array.isArray(rawState.loginHistory) ? rawState.loginHistory : [];
+  cleanState.lastLoginIp = rawState.lastLoginIp || null;
+  cleanState.lastLoginDevice = rawState.lastLoginDevice || null;
+  cleanState.lastLoginTime = Number(rawState.lastLoginTime || 0);
 
   // Strip sensitive security fields from state blob to prevent leaks in JSON column
   delete cleanState.pin;

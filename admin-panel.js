@@ -152,7 +152,7 @@
     const resultCard = document.getElementById('admin-player-result');
 
     function switchPlayerSubTab(subtabId) {
-      const tabs = ['finances', 'assets', 'security', 'logs'];
+      const tabs = ['finances', 'assets', 'security', 'logins', 'logs'];
       tabs.forEach(t => {
         const btn = document.getElementById(`btn-player-subtab-${t}`);
         const panel = document.getElementById(`player-subtab-panel-${t}`);
@@ -173,6 +173,15 @@
       });
     }
     window.switchPlayerSubTab = switchPlayerSubTab;
+
+    window.adminCopyLastIp = function() {
+      const ipEl = document.getElementById('admin-p-last-ip');
+      const ip = ipEl ? ipEl.textContent.trim() : '';
+      if (ip && ip !== 'غير مسجل') {
+        navigator.clipboard.writeText(ip);
+        alert('تم نسخ عنوان الـ IP: ' + ip);
+      }
+    };
 
     async function loadAdminPlayersDirectory(showToastNotice = false, forceRefresh = false) {
       if (!playersTableBody) return;
@@ -582,6 +591,92 @@
             switchPlayerSubTab('finances');
           }
           resultCard.scrollIntoView({ behavior:'smooth', block:'nearest' });
+        }
+
+        // Render Login History & Device/IP Telemetry (Authoritative)
+        const logins = Array.isArray(state.loginHistory) ? state.loginHistory : ((state.state && Array.isArray(state.state.loginHistory)) ? state.state.loginHistory : []);
+        const lastDev = state.lastLoginDevice || (state.state && state.state.lastLoginDevice) || (logins[0] && logins[0].device) || 'غير مسجل';
+        const lastIp = state.lastLoginIp || (state.state && state.state.lastLoginIp) || (logins[0] && logins[0].ip) || 'غير مسجل';
+
+        const lastDevEl = document.getElementById('admin-p-last-device');
+        if (lastDevEl) lastDevEl.textContent = lastDev;
+        const lastIpEl = document.getElementById('admin-p-last-ip');
+        if (lastIpEl) lastIpEl.textContent = lastIp;
+
+        const headerDevEl = document.getElementById('admin-p-header-device');
+        if (headerDevEl) headerDevEl.textContent = lastDev;
+        const headerIpEl = document.getElementById('admin-p-header-ip');
+        if (headerIpEl) headerIpEl.textContent = lastIp;
+
+        const countBadge = document.getElementById('admin-p-login-count-badge');
+        if (countBadge) countBadge.textContent = `${logins.length} عملية دخول`;
+
+        const feedEl = document.getElementById('admin-player-logins-feed');
+        if (feedEl) {
+          if (logins.length === 0) {
+            feedEl.innerHTML = `
+              <div class="text-center py-8 text-slate-500">
+                <i class="fa-solid fa-mobile-screen-button text-3xl mb-2 opacity-40"></i>
+                <div class="text-xs">لا يوجد سجل دخول مسجل لهذا اللاعب حتى الآن.</div>
+                <div class="text-[10px] text-slate-600 mt-1">سيتم تدوين نوع الهاتف وعنوان الـ IP تلقائياً عند دخوله القادم.</div>
+              </div>
+            `;
+          } else {
+            let html = '';
+            logins.forEach((item, idx) => {
+              const isLatest = idx === 0;
+              const cat = item.category || 'mobile';
+              let icon = 'fa-mobile-screen-button text-cyan-400';
+              if (cat === 'tablet') icon = 'fa-tablet-screen-button text-purple-400';
+              if (cat === 'desktop') icon = 'fa-desktop text-emerald-400';
+
+              let timeStr = 'غير معروف';
+              if (item.timestamp) {
+                const d = new Date(item.timestamp);
+                if (!isNaN(d.getTime())) {
+                  timeStr = d.toLocaleDateString('ar-EG') + ' ' + d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+                }
+              }
+
+              const ipStr = item.ip || '---';
+              const devStr = item.device || 'هاتف غير معروف';
+              const osBrowserStr = [item.os, item.browser].filter(Boolean).join(' • ') || 'متصفح النظام';
+
+              html += `
+                <div class="p-3 rounded-xl ${isLatest ? 'bg-cyan-950/30 border border-cyan-500/40' : 'bg-slate-900/60 border border-slate-800'} flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition hover:border-slate-700">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-xl ${isLatest ? 'bg-cyan-500/20' : 'bg-slate-800'} flex items-center justify-center text-base shrink-0">
+                      <i class="fa-solid ${icon}"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-xs font-black text-white truncate">${escapeHtml(devStr)}</span>
+                        ${isLatest ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/30 text-cyan-200 font-bold border border-cyan-500/40">الجلسة الأخيرة</span>' : ''}
+                        ${item.brand && item.brand !== 'Generic' ? `<span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 font-semibold">${escapeHtml(item.brand)}</span>` : ''}
+                      </div>
+                      <div class="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
+                        <span><i class="fa-solid fa-microchip text-slate-500 ml-1"></i>${escapeHtml(osBrowserStr)}</span>
+                        ${item.screen ? `<span class="hidden sm:inline text-slate-600">•</span><span class="hidden sm:inline">${escapeHtml(item.screen)}</span>` : ''}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1.5 sm:pt-0 border-t sm:border-0 border-slate-800/60">
+                    <div class="text-left">
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-mono text-xs font-bold text-indigo-300 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-500/30 select-all">${escapeHtml(ipStr)}</span>
+                        <button type="button" onclick="navigator.clipboard.writeText('${escapeHtml(ipStr)}'); alert('تم نسخ الـ IP: ${escapeHtml(ipStr)}');" title="نسخ الـ IP" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-[10px] transition cursor-pointer">
+                          <i class="fa-regular fa-copy"></i>
+                        </button>
+                      </div>
+                      <div class="text-[10px] text-slate-400 mt-0.5 text-right sm:text-left">${timeStr}</div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            });
+            feedEl.innerHTML = html;
+          }
         }
         
         const suspicionBtn = document.getElementById('btn-admin-toggle-suspicion-lock');

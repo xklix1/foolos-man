@@ -5,6 +5,7 @@
 const crypto = require('crypto');
 const sessionManager = require('../services/session-manager');
 const dbService = require('../services/db-service');
+const { extractClientIp, parseDeviceDetails } = require('../engine/device-parser');
 
 /**
  * Robust constant-time or hash-aware PIN verification against stored database PIN
@@ -83,7 +84,31 @@ async function sessionRoutes(fastify, options) {
         safeRow.state.cash = safeRow.cash;
         safeRow.state.bank = safeRow.bank;
         safeRow.state.netWorth = safeRow.net_worth;
+      } else {
+        safeRow.state = {};
       }
+
+      // Record initial registration device and IP
+      const regIp = extractClientIp(request);
+      const regDev = parseDeviceDetails({
+        userAgent: request.headers['user-agent'] || '',
+        headers: request.headers,
+        deviceInfo: request.body.deviceInfo || {}
+      });
+      safeRow.state.loginHistory = [{
+        id: 'log_' + Date.now() + '_' + crypto.randomBytes(3).toString('hex'),
+        timestamp: Date.now(),
+        ip: regIp,
+        device: regDev.deviceName,
+        category: regDev.category,
+        os: regDev.os,
+        browser: regDev.browser,
+        brand: regDev.brand,
+        screen: regDev.screen || null
+      }];
+      safeRow.state.lastLoginIp = regIp;
+      safeRow.state.lastLoginDevice = regDev.deviceName;
+      safeRow.state.lastLoginTime = Date.now();
 
       const created = await dbService.createPlayer(safeRow);
       return reply.code(201).send({ success: true, player: created });
@@ -142,7 +167,51 @@ async function sessionRoutes(fastify, options) {
         return reply.code(401).send({ error: 'Invalid PIN credentials or expired session token' });
       }
 
-      // 3. User is 100% verified -> NOW run authoritative offline catchup
+      // 3. User is 100% verified -> Record authoritative device and IP telemetry
+      try {
+        const clientIp = extractClientIp(request);
+        const parsedDev = parseDeviceDetails({
+          userAgent: request.headers['user-agent'] || '',
+          headers: request.headers,
+          deviceInfo: request.body.deviceInfo || {}
+        });
+
+        if (!Array.isArray(session.state.loginHistory)) {
+          session.state.loginHistory = [];
+        }
+
+        const now = Date.now();
+        const lastEntry = session.state.loginHistory[0];
+        // If logged in from the identical IP and device within 3 minutes, update lastSeen
+        if (lastEntry && lastEntry.ip === clientIp && lastEntry.device === parsedDev.deviceName && (now - Number(lastEntry.timestamp || 0) < 3 * 60 * 1000)) {
+          lastEntry.lastSeen = now;
+        } else {
+          const entry = {
+            id: 'log_' + now + '_' + crypto.randomBytes(3).toString('hex'),
+            timestamp: now,
+            ip: clientIp,
+            device: parsedDev.deviceName,
+            category: parsedDev.category,
+            os: parsedDev.os,
+            browser: parsedDev.browser,
+            brand: parsedDev.brand,
+            screen: parsedDev.screen || null
+          };
+          session.state.loginHistory.unshift(entry);
+          if (session.state.loginHistory.length > 50) {
+            session.state.loginHistory = session.state.loginHistory.slice(0, 50);
+          }
+        }
+
+        session.state.lastLoginIp = clientIp;
+        session.state.lastLoginDevice = parsedDev.deviceName;
+        session.state.lastLoginTime = now;
+        session.dirty = true;
+      } catch (devErr) {
+        fastify.log.warn('[DeviceLogger] Failed to record login telemetry: ' + devErr.message);
+      }
+
+      // 4. Run authoritative offline catchup
       const offlineReport = sessionManager.applyOfflineCatchup(session);
 
       return {

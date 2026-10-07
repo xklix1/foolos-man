@@ -802,7 +802,13 @@ async function moderatorRoutes(fastify, options) {
         transfers: playerTransfers || [],
         mailbox: playerMailbox || [],
         activityFeed: masterFeed.slice(0, 3500),
-        activityLog: rawLogs.slice(-3500)
+        activityLog: rawLogs.slice(-3500),
+
+        // Device & IP Login Telemetry History
+        lastLoginIp: state.lastLoginIp || pDoc.last_ip || null,
+        lastLoginDevice: state.lastLoginDevice || pDoc.last_device || null,
+        lastLoginTime: Number(state.lastLoginTime || 0),
+        loginHistory: Array.isArray(state.loginHistory) ? state.loginHistory : []
       };
 
       // Record inspector view in staff audit
