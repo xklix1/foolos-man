@@ -1728,57 +1728,83 @@ var AppDB = (() => {
           }
         }
 
-        // 4.7 Daily Work Shifts Guard:
-        // NEVER allow page reloading or reconnecting to roll back today's shift count or bypass the 100-shift limit
+        // 4.7 Daily Limits & Authoritative Server Reset Guard:
+        // Anchored strictly to Cairo timezone (UTC+3)
         const todayStr = (() => {
-          const d = new Date(typeof getTrustedNow === 'function' ? getTrustedNow() : Date.now());
-          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          const now = typeof getTrustedNow === 'function' ? getTrustedNow() : Date.now();
+          const d = new Date(now + (3 * 3600 * 1000));
+          return d.toISOString().split('T')[0];
         })();
-        if (local && local.dailyWork && local.dailyWork.date === todayStr) {
-          if (!stateObj.dailyWork || stateObj.dailyWork.date !== todayStr) {
-            stateObj.dailyWork = { ...local.dailyWork };
-            shouldSyncCloud = true;
-          } else {
-            const locShifts = Number(local.dailyWork.shifts || 0);
-            const srvShifts = Number(stateObj.dailyWork.shifts || 0);
-            const locOt = Number(local.dailyWork.overtimeShifts || 0);
-            const srvOt = Number(stateObj.dailyWork.overtimeShifts || 0);
-            if (locShifts > srvShifts || locOt > srvOt) {
-              stateObj.dailyWork.shifts = Math.min(100, Math.max(locShifts, srvShifts));
-              stateObj.dailyWork.overtimeShifts = Math.min(15, Math.max(locOt, srvOt));
+
+        const srvResetAt = Number(stateObj.limitsResetAt || (row.state && row.state.limitsResetAt) || 0);
+        const locResetAck = Number(local?.lastLimitsResetAck || 0);
+        const isAuthoritativeLimitsReset = (srvResetAt > 0 && srvResetAt > locResetAck) || isStaleLocalDueToAdmin;
+
+        if (isAuthoritativeLimitsReset) {
+          // Server has reset limits: wipe stale local limits and adopt server's reset state
+          stateObj.dailyWork = { date: todayStr, shifts: Number(stateObj.dailyWork?.shifts || 0), overtimeShifts: Number(stateObj.dailyWork?.overtimeShifts || 0) };
+          stateObj.dailyStockProfit = { date: todayStr, realizedProfit: Number(stateObj.dailyStockProfit?.realizedProfit || 0) };
+          stateObj.dailyBlackMarket = { date: todayStr, count: Number(stateObj.dailyBlackMarket?.count || 0) };
+          stateObj.workCooldownUntil = 0;
+          stateObj.stockTradeCooldownUntil = 0;
+          stateObj.lastLimitsResetAck = Math.max(srvResetAt, Date.now());
+
+          if (local) {
+            local.dailyWork = { ...stateObj.dailyWork };
+            local.dailyStockProfit = { ...stateObj.dailyStockProfit };
+            local.dailyBlackMarket = { ...stateObj.dailyBlackMarket };
+            local.workCooldownUntil = 0;
+            local.stockTradeCooldownUntil = 0;
+            local.lastLimitsResetAck = stateObj.lastLimitsResetAck;
+            setEncryptedLocalState(`rasalmal_state_${u}`, local);
+          }
+        } else {
+          if (local && local.dailyWork && local.dailyWork.date === todayStr) {
+            if (!stateObj.dailyWork || stateObj.dailyWork.date !== todayStr) {
+              stateObj.dailyWork = { ...local.dailyWork };
               shouldSyncCloud = true;
+            } else {
+              const locShifts = Number(local.dailyWork.shifts || 0);
+              const srvShifts = Number(stateObj.dailyWork.shifts || 0);
+              const locOt = Number(local.dailyWork.overtimeShifts || 0);
+              const srvOt = Number(stateObj.dailyWork.overtimeShifts || 0);
+              if (locShifts > srvShifts || locOt > srvOt) {
+                stateObj.dailyWork.shifts = Math.min(100, Math.max(locShifts, srvShifts));
+                stateObj.dailyWork.overtimeShifts = Math.min(15, Math.max(locOt, srvOt));
+                shouldSyncCloud = true;
+              }
             }
           }
-        }
 
-        // 4.8 Daily Black Market Deals Guard:
-        // NEVER allow page reloading or reconnecting to roll back today's black market deal count
-        if (local && local.dailyBlackMarket && local.dailyBlackMarket.date === todayStr) {
-          if (!stateObj.dailyBlackMarket || stateObj.dailyBlackMarket.date !== todayStr) {
-            stateObj.dailyBlackMarket = { ...local.dailyBlackMarket };
-            shouldSyncCloud = true;
-          } else {
-            const locCount = Number(local.dailyBlackMarket.count || 0);
-            const srvCount = Number(stateObj.dailyBlackMarket.count || 0);
-            if (locCount > srvCount) {
-              stateObj.dailyBlackMarket.count = Math.min(15, Math.max(locCount, srvCount));
+          // 4.8 Daily Black Market Deals Guard:
+          // NEVER allow page reloading or reconnecting to roll back today's black market deal count
+          if (local && local.dailyBlackMarket && local.dailyBlackMarket.date === todayStr) {
+            if (!stateObj.dailyBlackMarket || stateObj.dailyBlackMarket.date !== todayStr) {
+              stateObj.dailyBlackMarket = { ...local.dailyBlackMarket };
               shouldSyncCloud = true;
+            } else {
+              const locCount = Number(local.dailyBlackMarket.count || 0);
+              const srvCount = Number(stateObj.dailyBlackMarket.count || 0);
+              if (locCount > srvCount) {
+                stateObj.dailyBlackMarket.count = Math.min(15, Math.max(locCount, srvCount));
+                shouldSyncCloud = true;
+              }
             }
           }
-        }
 
-        // 4.85 Daily Stock Profit Guard:
-        // NEVER allow page reloading or reconnecting to roll back today's realized stock profit
-        if (local && local.dailyStockProfit && local.dailyStockProfit.date === todayStr) {
-          if (!stateObj.dailyStockProfit || stateObj.dailyStockProfit.date !== todayStr) {
-            stateObj.dailyStockProfit = { ...local.dailyStockProfit };
-            shouldSyncCloud = true;
-          } else {
-            const locProfit = Number(local.dailyStockProfit.realizedProfit || 0);
-            const srvProfit = Number(stateObj.dailyStockProfit.realizedProfit || 0);
-            if (locProfit > srvProfit) {
-              stateObj.dailyStockProfit.realizedProfit = locProfit;
+          // 4.85 Daily Stock Profit Guard:
+          // NEVER allow page reloading or reconnecting to roll back today's realized stock profit
+          if (local && local.dailyStockProfit && local.dailyStockProfit.date === todayStr) {
+            if (!stateObj.dailyStockProfit || stateObj.dailyStockProfit.date !== todayStr) {
+              stateObj.dailyStockProfit = { ...local.dailyStockProfit };
               shouldSyncCloud = true;
+            } else {
+              const locProfit = Number(local.dailyStockProfit.realizedProfit || 0);
+              const srvProfit = Number(stateObj.dailyStockProfit.realizedProfit || 0);
+              if (locProfit > srvProfit) {
+                stateObj.dailyStockProfit.realizedProfit = locProfit;
+                shouldSyncCloud = true;
+              }
             }
           }
         }
@@ -11049,15 +11075,37 @@ const GameEngine = (() => {
           
           const dbAdminTs = Number(dbState.admin_modified_timestamp || dbState.adminModifiedTimestamp || (dbState.state && dbState.state.adminModifiedTimestamp) || 0);
           const localAdminTs = Number(localS?.adminModifiedTimestamp || localS?.admin_modified_timestamp || 0);
-          const isServerAdminOverride = dbAdminTs > localAdminTs;
+          const srvLimitsResetAt = Number(state.limitsResetAt || dbState.limitsResetAt || (dbState.state && dbState.state.limitsResetAt) || 0);
+          const locLimitsResetAck = Number(localS?.lastLimitsResetAck || 0);
+          const isServerAdminOverride = dbAdminTs > localAdminTs || (srvLimitsResetAt > 0 && srvLimitsResetAt > locLimitsResetAck);
 
-          if (!isServerAdminOverride) {
+          if (isServerAdminOverride) {
+            // Authoritative server reset: ensure local cache does not keep old limit counters
+            if (localS) {
+              localS.dailyWork = { date: todayStr, shifts: Number(state.dailyWork?.shifts || 0), overtimeShifts: Number(state.dailyWork?.overtimeShifts || 0) };
+              localS.dailyStockProfit = { date: todayStr, realizedProfit: Number(state.dailyStockProfit?.realizedProfit || 0) };
+              localS.dailyBlackMarket = { date: todayStr, count: Number(state.dailyBlackMarket?.count || 0) };
+              localS.workCooldownUntil = 0;
+              localS.stockTradeCooldownUntil = 0;
+              localS.lastLimitsResetAck = Math.max(srvLimitsResetAt, Date.now());
+              if (typeof AppDB !== 'undefined' && AppDB.setEncryptedLocalState) {
+                AppDB.setEncryptedLocalState(`rasalmal_state_${username}`, localS);
+              }
+            }
+          } else {
             if (localS && localS.dailyWork && localS.dailyWork.date === todayStr) {
               if (!state.dailyWork || state.dailyWork.date !== todayStr) {
                 state.dailyWork = { ...localS.dailyWork };
               } else {
                 state.dailyWork.shifts = Math.min(100, Math.max(Number(state.dailyWork.shifts || 0), Number(localS.dailyWork.shifts || 0)));
                 state.dailyWork.overtimeShifts = Math.min(15, Math.max(Number(state.dailyWork.overtimeShifts || 0), Number(localS.dailyWork.overtimeShifts || 0)));
+              }
+            }
+            if (localS && localS.dailyStockProfit && localS.dailyStockProfit.date === todayStr) {
+              if (!state.dailyStockProfit || state.dailyStockProfit.date !== todayStr) {
+                state.dailyStockProfit = { ...localS.dailyStockProfit };
+              } else {
+                state.dailyStockProfit.realizedProfit = Math.max(Number(state.dailyStockProfit.realizedProfit || 0), Number(localS.dailyStockProfit.realizedProfit || 0));
               }
             }
             if (localS && localS.dailyBlackMarket && localS.dailyBlackMarket.date === todayStr) {

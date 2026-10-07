@@ -468,6 +468,34 @@
             </div>
           </div>
 
+          <!-- Daily Limits & Reset Status Card -->
+          <div class="glass-card p-3.5 rounded-xl border border-cyan-500/40 bg-gradient-to-br from-cyan-950/40 via-slate-900 to-cyan-950/20 shadow-lg shadow-cyan-950/30">
+            <div class="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-cyan-500/20">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-gauge-high text-cyan-400 text-sm"></i>
+                <span class="text-xs text-cyan-300 font-black">الحدود اليومية وسقف النشاط (Daily Limits)</span>
+              </div>
+              <button type="button" onclick="quickResetLimitsPlayer(inspectingPlayer?.username)" class="px-3 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>تصفير اللمت الآن 🔄</span>
+              </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
+              <div class="p-2 rounded-lg bg-slate-900/80 border border-slate-800">
+                <span class="text-[11px] text-slate-400 block mb-0.5">دورات العمل (اليوم)</span>
+                <span id="p_limitWork" class="text-sm font-black numbers-font text-cyan-300">0 / 100</span>
+              </div>
+              <div class="p-2 rounded-lg bg-slate-900/80 border border-slate-800">
+                <span class="text-[11px] text-slate-400 block mb-0.5">أرباح البورصة (اليوم)</span>
+                <span id="p_limitStock" class="text-sm font-black numbers-font text-amber-300">0 / 3M</span>
+              </div>
+              <div class="p-2 rounded-lg bg-slate-900/80 border border-slate-800">
+                <span class="text-[11px] text-slate-400 block mb-0.5">حوالات صادرة (24 ساعة)</span>
+                <span id="p_limitTransfers" class="text-sm font-black numbers-font text-emerald-300">0 / 5M</span>
+              </div>
+            </div>
+          </div>
+
           <!-- Account Identity & Telemetry Summary -->
           <div class="glass-card p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
             <h4 class="font-bold text-slate-300 flex items-center gap-1.5 border-b border-slate-800 pb-2">
@@ -673,6 +701,7 @@
               <div>
                 <label class="block text-[11px] text-slate-300 mb-1">نوع الإجراء:</label>
                 <select id="actionTypeSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-400">
+                  <option value="reset_limits" class="text-cyan-400 font-bold">🔄 تصفير اللمت اليومي بالكامل (شغل + بورصة + تحويلات)</option>
                   <option value="freeze">🔒 تجميد مؤقت للحساب (Freeze)</option>
                   <option value="unfreeze">🔓 فك تجميد الحساب (Unfreeze)</option>
                   <option value="ban" class="text-rose-400 font-bold">⛔ حظر نهائي للحساب (Ban Account)</option>
@@ -1620,6 +1649,10 @@
                   <i class="fa-solid fa-flag text-xs"></i>
                   <span>${p.staffFlag ? 'إزالة المراقبة' : 'وضع للمراقبة'}</span>
                 </button>
+                <button onclick="quickResetLimitsPlayer('${p.username}')" class="px-3 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-xs transition flex items-center gap-1.5" title="تصفير اللمت اليومي للعمل والبورصة وسقف التحويلات">
+                  <i class="fa-solid fa-arrows-rotate text-xs"></i>
+                  <span>تصفير اللمت 🔄</span>
+                </button>
               </div>
             </div>
           `;
@@ -1633,6 +1666,41 @@
       document.getElementById('p_gold').textContent = (p.gold || 0).toLocaleString('en-US') + ' 🪙';
       document.getElementById('p_dirtyCash').textContent = fmtMoney(p.dirtyCash);
       document.getElementById('p_taxes').textContent = fmtMoney(p.totalTaxesPaid);
+
+      // Populate Daily Limits Card
+      const nowTs = Date.now();
+      const twentyFourHoursAgo = nowTs - 86400000;
+      let outgoing24h = 0;
+      if (Array.isArray(p.transfers)) {
+        p.transfers.forEach(t => {
+          const tSender = (t.sender || '').toLowerCase();
+          const tTime = Number(t.created_at || t.timestamp || 0);
+          if (tSender === p.username.toLowerCase() && tTime > twentyFourHoursAgo) {
+            outgoing24h += Number(t.amount || 0);
+          }
+        });
+      }
+
+      const workLimitEl = document.getElementById('p_limitWork');
+      if (workLimitEl) {
+        const shifts = Number(p.dailyWork?.shifts || 0);
+        const ot = Number(p.dailyWork?.overtimeShifts || 0);
+        workLimitEl.textContent = `${shifts} / 100 (+${ot} إضافي)`;
+        workLimitEl.className = shifts >= 100 ? 'text-sm font-black numbers-font text-rose-400' : 'text-sm font-black numbers-font text-cyan-300';
+      }
+
+      const stockLimitEl = document.getElementById('p_limitStock');
+      if (stockLimitEl) {
+        const profit = Number(p.dailyStockProfit?.realizedProfit || 0);
+        stockLimitEl.textContent = `${fmtMoney(profit)} / 3M`;
+        stockLimitEl.className = profit >= 3000000 ? 'text-sm font-black numbers-font text-rose-400' : 'text-sm font-black numbers-font text-amber-300';
+      }
+
+      const transferLimitEl = document.getElementById('p_limitTransfers');
+      if (transferLimitEl) {
+        transferLimitEl.textContent = `${fmtMoney(outgoing24h)} / 5M`;
+        transferLimitEl.className = outgoing24h >= 5000000 ? 'text-sm font-black numbers-font text-rose-400' : 'text-sm font-black numbers-font text-emerald-300';
+      }
       
       // Real-time Cashflow Stream Metrics
       const cfData = ensureCashflowReport(p) || {};
@@ -3234,6 +3302,45 @@
       } finally {
         btn.disabled = false;
         btn.innerHTML = `تنفيذ الإجراء`;
+      }
+    }
+
+    // Quick 1-Click Reset Limits Action
+    async function quickResetLimitsPlayer(username) {
+      const target = username || (inspectingPlayer && inspectingPlayer.username);
+      if (!target) return;
+      const reason = prompt(`🔄 هل تريد تصفير اللمت اليومي بالكامل للاعب "${target}"؟\n(يشمل دورات العمل، أرباح البورصة، كولد داون العمل، وسقف التحويلات البنكية)\n\nاكتب سبب الإجراء:`, 'تصفير اللمت اليومي لفك تعليق النشاط وبطلب الإدارة');
+      if (!reason || reason.trim().length < 3) {
+        alert('يجب كتابة سبب الإجراء بوضوح (3 أحرف على الأقل).');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/action`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentModToken}`
+          },
+          body: JSON.stringify({
+            targetUser: target,
+            action: 'reset_limits',
+            reason: reason.trim()
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alert('✅ ' + data.message);
+          if (inspectingPlayer && inspectingPlayer.username.toLowerCase() === target.toLowerCase()) {
+            inspectPlayer(target);
+          }
+          refreshOverview();
+          executeSearch();
+        } else {
+          alert('❌ ' + (data.message || 'فشل تصفير اللمت'));
+        }
+      } catch (err) {
+        alert('خطأ في الاتصال: ' + err.message);
       }
     }
 

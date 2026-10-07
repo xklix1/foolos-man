@@ -420,64 +420,85 @@ class SessionManager {
     if (clientState.loanCooldownUntil !== undefined) {
       s.loanCooldownUntil = Number(clientState.loanCooldownUntil) || 0;
     }
-    const serverToday = new Date().toISOString().split('T')[0];
+    // Anchor daily tracking to official Cairo timezone (UTC+3)
+    const serverToday = (() => {
+      const d = new Date(Date.now() + (3 * 3600 * 1000));
+      return d.toISOString().split('T')[0];
+    })();
+
+    // Check if server has an active authoritative reset for daily limits
+    const sLimitsResetAt = Number(s.limitsResetAt || 0);
+    const cLimitsResetAck = Number(clientState.lastLimitsResetAck || 0);
+    const sAdminTs = Number(s.adminModifiedTimestamp || 0);
+    const cAdminTs = Number(clientState.adminModifiedTimestamp || 0);
+    const isAuthoritativeLimitsReset = (sLimitsResetAt > 0 && sLimitsResetAt > cLimitsResetAck) || (sAdminTs > 0 && sAdminTs > cAdminTs);
 
     if (clientState.dailyLoans && typeof clientState.dailyLoans === 'object') {
       s.dailyLoans = {
         date: serverToday,
-        count: Math.min(10, Math.max(0, Number(clientState.dailyLoans.count || 0)))
+        count: isAuthoritativeLimitsReset ? 0 : Math.min(10, Math.max(0, Number(clientState.dailyLoans.count || 0)))
       };
     }
 
-    // Synchronize daily activities & cooldowns (Anchored strictly to trusted server UTC date)
+    // Synchronize daily activities & cooldowns (Anchored strictly to trusted Cairo date)
     if (clientState.dailyInvestments && typeof clientState.dailyInvestments === 'object') {
       s.dailyInvestments = {
         date: serverToday,
-        count: Math.min(20, Math.max(0, Number(clientState.dailyInvestments.count || 0)))
+        count: isAuthoritativeLimitsReset ? 0 : Math.min(20, Math.max(0, Number(clientState.dailyInvestments.count || 0)))
       };
     }
 
-    // Synchronize Daily Stock Profit (Prevent cap reset via device timezone manipulation)
-    if (clientState.dailyStockProfit && typeof clientState.dailyStockProfit === 'object') {
-      const sDate = s.dailyStockProfit ? String(s.dailyStockProfit.date || '') : '';
-      if (sDate === serverToday) {
-        s.dailyStockProfit = {
-          date: serverToday,
-          realizedProfit: Math.max(Number(s.dailyStockProfit.realizedProfit || 0), Number(clientState.dailyStockProfit.realizedProfit || 0))
-        };
-      } else {
-        s.dailyStockProfit = {
-          date: serverToday,
-          realizedProfit: Math.max(0, Number(clientState.dailyStockProfit.realizedProfit || 0))
-        };
+    // Synchronize Daily Stock Profit (Prevent cap reset via device timezone manipulation & respect admin resets)
+    if (isAuthoritativeLimitsReset) {
+      s.dailyStockProfit = { date: serverToday, realizedProfit: 0 };
+      s.dailyWork = { date: serverToday, shifts: 0, overtimeShifts: 0 };
+      s.dailyBlackMarket = { date: serverToday, count: 0 };
+      s.workCooldownUntil = 0;
+      s.stockTradeCooldownUntil = 0;
+    } else {
+      if (clientState.dailyStockProfit && typeof clientState.dailyStockProfit === 'object') {
+        const sDate = s.dailyStockProfit ? String(s.dailyStockProfit.date || '') : '';
+        if (sDate === serverToday) {
+          s.dailyStockProfit = {
+            date: serverToday,
+            realizedProfit: Math.max(Number(s.dailyStockProfit.realizedProfit || 0), Number(clientState.dailyStockProfit.realizedProfit || 0))
+          };
+        } else {
+          s.dailyStockProfit = {
+            date: serverToday,
+            realizedProfit: Math.max(0, Number(clientState.dailyStockProfit.realizedProfit || 0))
+          };
+        }
       }
-    }
 
-    if (clientState.dailyWork && typeof clientState.dailyWork === 'object') {
-      const sDate = s.dailyWork ? String(s.dailyWork.date || '') : '';
-      if (sDate === serverToday) {
-        s.dailyWork = {
-          date: serverToday,
-          shifts: Math.min(100, Math.max(Number(s.dailyWork.shifts || 0), Number(clientState.dailyWork.shifts || 0))),
-          overtimeShifts: Math.min(15, Math.max(Number(s.dailyWork.overtimeShifts || 0), Number(clientState.dailyWork.overtimeShifts || 0)))
-        };
-      } else {
-        s.dailyWork = {
-          date: serverToday,
-          shifts: Math.min(100, Math.max(0, Number(clientState.dailyWork.shifts || 0))),
-          overtimeShifts: Math.min(15, Math.max(0, Number(clientState.dailyWork.overtimeShifts || 0)))
-        };
+      if (clientState.dailyWork && typeof clientState.dailyWork === 'object') {
+        const sDate = s.dailyWork ? String(s.dailyWork.date || '') : '';
+        if (sDate === serverToday) {
+          s.dailyWork = {
+            date: serverToday,
+            shifts: Math.min(100, Math.max(Number(s.dailyWork.shifts || 0), Number(clientState.dailyWork.shifts || 0))),
+            overtimeShifts: Math.min(15, Math.max(Number(s.dailyWork.overtimeShifts || 0), Number(clientState.dailyWork.overtimeShifts || 0)))
+          };
+        } else {
+          s.dailyWork = {
+            date: serverToday,
+            shifts: Math.min(100, Math.max(0, Number(clientState.dailyWork.shifts || 0))),
+            overtimeShifts: Math.min(15, Math.max(0, Number(clientState.dailyWork.overtimeShifts || 0)))
+          };
+        }
       }
     }
 
     // Enforce 5M server-authoritative casino daily net profit cap
     if (clientState.dailyCasinoNetProfit !== undefined) {
-      s.dailyCasinoNetProfit = Math.min(5000000, Math.max(0, Number(clientState.dailyCasinoNetProfit) || 0));
+      s.dailyCasinoNetProfit = isAuthoritativeLimitsReset ? 0 : Math.min(5000000, Math.max(0, Number(clientState.dailyCasinoNetProfit) || 0));
     }
     if (clientState.dailyBlackMarket && typeof clientState.dailyBlackMarket === 'object') {
       const cDate = String(clientState.dailyBlackMarket.date || '');
       const sDate = s.dailyBlackMarket ? String(s.dailyBlackMarket.date || '') : '';
-      if (cDate && cDate === sDate) {
+      if (isAuthoritativeLimitsReset) {
+        s.dailyBlackMarket = { date: serverToday, count: 0 };
+      } else if (cDate && cDate === sDate) {
         s.dailyBlackMarket = {
           date: cDate,
           count: Math.min(15, Math.max(Number(s.dailyBlackMarket.count || 0), Number(clientState.dailyBlackMarket.count || 0)))

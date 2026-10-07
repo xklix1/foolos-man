@@ -3524,15 +3524,37 @@ const GameEngine = (() => {
           
           const dbAdminTs = Number(dbState.admin_modified_timestamp || dbState.adminModifiedTimestamp || (dbState.state && dbState.state.adminModifiedTimestamp) || 0);
           const localAdminTs = Number(localS?.adminModifiedTimestamp || localS?.admin_modified_timestamp || 0);
-          const isServerAdminOverride = dbAdminTs > localAdminTs;
+          const srvLimitsResetAt = Number(state.limitsResetAt || dbState.limitsResetAt || (dbState.state && dbState.state.limitsResetAt) || 0);
+          const locLimitsResetAck = Number(localS?.lastLimitsResetAck || 0);
+          const isServerAdminOverride = dbAdminTs > localAdminTs || (srvLimitsResetAt > 0 && srvLimitsResetAt > locLimitsResetAck);
 
-          if (!isServerAdminOverride) {
+          if (isServerAdminOverride) {
+            // Authoritative server reset: ensure local cache does not keep old limit counters
+            if (localS) {
+              localS.dailyWork = { date: todayStr, shifts: Number(state.dailyWork?.shifts || 0), overtimeShifts: Number(state.dailyWork?.overtimeShifts || 0) };
+              localS.dailyStockProfit = { date: todayStr, realizedProfit: Number(state.dailyStockProfit?.realizedProfit || 0) };
+              localS.dailyBlackMarket = { date: todayStr, count: Number(state.dailyBlackMarket?.count || 0) };
+              localS.workCooldownUntil = 0;
+              localS.stockTradeCooldownUntil = 0;
+              localS.lastLimitsResetAck = Math.max(srvLimitsResetAt, Date.now());
+              if (typeof AppDB !== 'undefined' && AppDB.setEncryptedLocalState) {
+                AppDB.setEncryptedLocalState(`rasalmal_state_${username}`, localS);
+              }
+            }
+          } else {
             if (localS && localS.dailyWork && localS.dailyWork.date === todayStr) {
               if (!state.dailyWork || state.dailyWork.date !== todayStr) {
                 state.dailyWork = { ...localS.dailyWork };
               } else {
                 state.dailyWork.shifts = Math.min(100, Math.max(Number(state.dailyWork.shifts || 0), Number(localS.dailyWork.shifts || 0)));
                 state.dailyWork.overtimeShifts = Math.min(15, Math.max(Number(state.dailyWork.overtimeShifts || 0), Number(localS.dailyWork.overtimeShifts || 0)));
+              }
+            }
+            if (localS && localS.dailyStockProfit && localS.dailyStockProfit.date === todayStr) {
+              if (!state.dailyStockProfit || state.dailyStockProfit.date !== todayStr) {
+                state.dailyStockProfit = { ...localS.dailyStockProfit };
+              } else {
+                state.dailyStockProfit.realizedProfit = Math.max(Number(state.dailyStockProfit.realizedProfit || 0), Number(localS.dailyStockProfit.realizedProfit || 0));
               }
             }
             if (localS && localS.dailyBlackMarket && localS.dailyBlackMarket.date === todayStr) {

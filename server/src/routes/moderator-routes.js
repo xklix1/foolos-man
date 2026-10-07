@@ -767,6 +767,8 @@ async function moderatorRoutes(fastify, options) {
         crypto: state.crypto || {},
         investments: state.investments || [],
         dailyStockProfit: state.dailyStockProfit || null,
+        dailyWork: state.dailyWork || null,
+        limitsResetAt: state.limitsResetAt || null,
 
         // Aviation & Airport
         airport: state.airport || null,
@@ -1304,6 +1306,67 @@ async function moderatorRoutes(fastify, options) {
           break;
         }
 
+        case 'reset_limits': {
+          const cairoDate = new Date(ts + (3 * 3600 * 1000));
+          const todayStr = cairoDate.toISOString().split('T')[0];
+
+          pState.dailyWork = { date: todayStr, shifts: 0, overtimeShifts: 0 };
+          pState.dailyStockProfit = { date: todayStr, realizedProfit: 0 };
+          pState.dailyBlackMarket = { date: todayStr, count: 0 };
+          pState.dailyInvestments = { date: todayStr, count: 0 };
+          pState.dailyLoans = { date: todayStr, count: 0 };
+          pState.dailyCasinoNetProfit = 0;
+          pState.workCooldownUntil = 0;
+          pState.stockTradeCooldownUntil = 0;
+          pState.limitsResetAt = ts;
+          pState.adminModifiedTimestamp = ts + 600000;
+
+          // Age outgoing wire transfers so rolling 24h limit is completely cleared (reset to 0)
+          const twentyFiveHoursAgo = ts - (25 * 3600 * 1000);
+          await fetch(`${config.SUPABASE_URL}/rest/v1/transfers?sender=ilike.${encodeURIComponent(target)}&created_at=gt.${ts - 86400000}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': sKey,
+              'Authorization': `Bearer ${sKey}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+              created_at: twentyFiveHoursAgo
+            })
+          }).catch(err => {
+            console.warn('[reset_limits] Failed to age outgoing transfers:', err.message);
+          });
+
+          actionDesc = `تصفير اللمت اليومي بالكامل (دورات العمل + البورصة + التحويلات) (${cleanReason})`;
+
+          pState.moderatorNotes.unshift({
+            timestamp: ts,
+            action: 'reset_limits',
+            reason: cleanReason,
+            modName: request.modSession.name
+          });
+
+          // Send notification mailbox message
+          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+            method: 'POST',
+            headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({
+              sender: 'إدارة الرقابة والأمان',
+              recipient: pDoc.username,
+              type: 'system_announcement',
+              payload: {
+                title: '🔄 تم تصفير حدودك اليومية',
+                message: `تم تصفير عداد دورات العمل والبورصة وسقف التحويلات البنكية لحسابك بنجاح بواسطة الإدارة.\nالبيان: ${cleanReason}`,
+                timestamp: ts
+              },
+              status: 'unread',
+              created_at: ts
+            })
+          });
+          break;
+        }
+
         default:
           return reply.status(400).send({ error: 'Bad Request', message: `إجراء غير مدعوم: ${action}` });
       }
@@ -1318,7 +1381,7 @@ async function moderatorRoutes(fastify, options) {
       const patchBody = {
         jail_timer: updatedJailTimer,
         state: pState,
-        admin_modified_timestamp: ts
+        admin_modified_timestamp: (action === 'reset_limits' ? ts + 600000 : ts)
       };
       if (action === 'ban') {
         patchBody.is_banned = true;
@@ -1354,8 +1417,18 @@ async function moderatorRoutes(fastify, options) {
             session.isBanned = true;
           } else if (action === 'unban') {
             session.isBanned = false;
+          } else if (action === 'reset_limits') {
+            session.state.dailyWork = { ...pState.dailyWork };
+            session.state.dailyStockProfit = { ...pState.dailyStockProfit };
+            session.state.dailyBlackMarket = { ...pState.dailyBlackMarket };
+            session.state.dailyInvestments = { ...pState.dailyInvestments };
+            session.state.dailyLoans = { ...pState.dailyLoans };
+            session.state.dailyCasinoNetProfit = 0;
+            session.state.workCooldownUntil = 0;
+            session.state.stockTradeCooldownUntil = 0;
+            session.state.limitsResetAt = ts;
           }
-          session.state.adminModifiedTimestamp = ts;
+          session.state.adminModifiedTimestamp = (action === 'reset_limits' ? ts + 600000 : ts);
           session.dirty = false;
         }
       }
