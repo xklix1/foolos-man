@@ -715,6 +715,9 @@ async function adminRoutes(fastify, options) {
       if (!fs.existsSync(p.join(cwd, '.git')) && fs.existsSync(p.join(cwd, '..', '.git'))) {
         cwd = p.resolve(cwd, '..');
       }
+      try {
+        execSync('git checkout -- server/backups/', { cwd, timeout: 10000 });
+      } catch (e) {}
       const out = execSync('git pull origin main', { cwd, timeout: 30000 }).toString();
       reply.send({ success: true, output: out, message: 'Code pulled successfully. Server restarting automatically via PM2...' });
       setTimeout(() => {

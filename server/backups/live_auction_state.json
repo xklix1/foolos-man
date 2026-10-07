@@ -1,9 +1,9 @@
 {
-  "id": "auc_1791411011026_nijoo",
+  "id": "auc_1791404114349_qcvgl",
   "status": "SCHEDULED",
   "item": {
     "type": "aircraft",
-    "id": "custom_item_1791411011026",
+    "id": "custom_item_1791404114349",
     "name": "طائرة نادرة",
     "description": "عنصر نادر واستثنائي مقدم من إدارة اللعبة.",
     "icon": "🏆",
@@ -14,7 +14,7 @@
     "minNetWorth": 100000000,
     "startingBid": 25000000,
     "minBidStep": 2500000,
-    "scheduledStartTime": 1791411611026,
+    "scheduledStartTime": 1791404714349,
     "hammerDurationSeconds": 60
   },
   "live": {
@@ -27,5 +27,5 @@
   },
   "registrants": [],
   "winner": null,
-  "lastUpdated": 1791411011026
+  "lastUpdated": 1791404114349
 }
