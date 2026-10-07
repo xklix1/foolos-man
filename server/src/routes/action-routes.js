@@ -1085,6 +1085,59 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
 
   fastify.get('/api/avatars/:filename', avatarServeHandler);
   fastify.get('/uploads/avatars/:filename', avatarServeHandler);
+
+  // 20. POST /api/action/claim-telegram (Claim Official Telegram Channel Reward - 50,000$)
+  fastify.post('/api/action/claim-telegram', {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+
+    const s = session.state;
+    if (s.telegramClaimed || s.telegramRewardClaimed) {
+      return reply.send({
+        success: false,
+        alreadyClaimed: true,
+        message: 'تم استلام مكافأة التليجرام (50,000$) مسبقاً لهذا الحساب!',
+        cash: s.cash,
+        netWorth: s.netWorth
+      });
+    }
+
+    const reward = 50000;
+    s.cash = (Number(s.cash) || 0) + reward;
+    s.telegramClaimed = true;
+    s.telegramClaimedAt = Date.now();
+    s.telegramVerified = true;
+    if (!Array.isArray(s.badges)) s.badges = [];
+    if (!s.badges.includes('telegram')) s.badges.push('telegram');
+    s.netWorth = calculateNetWorth(s);
+    s.title = getAppropriateTitle(s.netWorth, s.xp || 0);
+
+    sessionManager.markDirty(session.username);
+
+    // Authoritative save to dbService
+    try {
+      const dbService = require('../services/db-service');
+      await dbService.savePlayerState(session.username, s);
+    } catch (err) {
+      fastify.log.warn('[ActionRoutes] Save telegram reward error: ' + err.message);
+    }
+
+    return reply.send({
+      success: true,
+      reward,
+      cash: s.cash,
+      netWorth: s.netWorth,
+      title: s.title,
+      message: '🎉 تهانينا! استلمت مكافأة 50,000$ كاش لانضمامك لقناة التليجرام الرسمية!'
+    });
+  });
 }
 
 module.exports = actionRoutes;

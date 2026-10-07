@@ -3539,8 +3539,11 @@ const UIController = (() => {
       }
     }
 
-    // Update Facebook Reward Button State
+    // Update Facebook & Telegram Reward Button State
     updateFacebookButtonUI();
+    if (typeof updateTelegramButtonUI === 'function') {
+      updateTelegramButtonUI();
+    }
 
     // Show/Hide Admin Buttons
     const adminBtn = document.getElementById('btn-admin-panel-trigger');
@@ -14234,6 +14237,208 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       mobileBadge.className = isVerified ? 'w-2 h-2 rounded-full bg-blue-400' : 'w-2 h-2 rounded-full bg-blue-500/60';
     }
   }
+
+  // ── Telegram Official Community Link & Reward (50,000$ Bonus) ──
+  async function claimTelegramReward(e) {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+
+    // 1. Open official Telegram Channel in a new tab immediately
+    try {
+      window.open('https://t.me/raasalmal', '_blank', 'noopener,noreferrer');
+    } catch (openErr) {
+      console.warn('[TelegramReward] window.open blocked or failed:', openErr);
+    }
+
+    // 2. Check login state
+    if (!GameEngine.activeUsername || !GameEngine.state) {
+      if (typeof showToast === 'function') {
+        showToast('سجل الدخول أولاً', 'يرجى تسجيل الدخول بحسابك في اللعبة لتتمكن من استلام مكافأة الـ 50,000$ كاش فوراً!', 'info');
+      }
+      return;
+    }
+
+    const s = GameEngine.state;
+    // 3. Prevent duplicate claims
+    if (s.telegramClaimed || s.telegramRewardClaimed) {
+      if (typeof showToast === 'function') {
+        showToast('قناة التليجرام', 'تم استلام مكافأة الـ 50,000$ مسبقاً لهذا الحساب. شكراً لدعمك ومتابعتك الدائمة!', 'info');
+      }
+      updateTelegramButtonUI();
+      return;
+    }
+
+    const u = GameEngine.activeUsername;
+    const sessToken = (s && s.sessionToken) || (typeof AppDB !== 'undefined' && AppDB.getActiveSessionToken && AppDB.getActiveSessionToken());
+    let grantedOnServer = false;
+
+    // 4. Authoritative Server Claim
+    try {
+      const res = await fetch('/api/action/claim-telegram', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(sessToken ? { 'Authorization': 'Bearer ' + sessToken } : {})
+        },
+        body: JSON.stringify({
+          username: u,
+          token: sessToken
+        })
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        grantedOnServer = true;
+        if (data.cash !== undefined) s.cash = Number(data.cash);
+        else s.cash = (Number(s.cash) || 0) + 50000;
+        if (data.netWorth !== undefined) s.netWorth = Number(data.netWorth);
+        else s.netWorth = (Number(s.netWorth) || 0) + 50000;
+        if (data.title) s.title = data.title;
+      } else if (data && data.alreadyClaimed) {
+        s.telegramClaimed = true;
+        if (typeof showToast === 'function') {
+          showToast('قناة التليجرام', data.message || 'تم استلام المكافأة مسبقاً!', 'info');
+        }
+        updateTelegramButtonUI();
+        return;
+      }
+    } catch (err) {
+      console.warn('[TelegramReward] Server action endpoint unavailable, applying via client engine:', err.message);
+    }
+
+    // Fallback if offline or network glitch
+    if (!grantedOnServer) {
+      s.cash = (Number(s.cash) || 0) + 50000;
+      s.netWorth = (Number(s.netWorth) || 0) + 50000;
+    }
+
+    s.telegramClaimed = true;
+    s.telegramClaimedAt = Date.now();
+    s.telegramVerified = true;
+    if (!Array.isArray(s.badges)) s.badges = [];
+    if (!s.badges.includes('telegram')) s.badges.push('telegram');
+
+    // 5. Authoritative Persistence
+    if (typeof AppDB !== 'undefined') {
+      if (typeof AppDB.setEncryptedLocalState === 'function') {
+        AppDB.setEncryptedLocalState(u, s);
+      }
+      if (typeof AppDB.savePlayerState === 'function') {
+        AppDB.savePlayerState(u, s, true);
+      }
+    }
+
+    // 6. Audio-Visual Feedback
+    try {
+      if (typeof playMenuSound === 'function') playMenuSound('success');
+    } catch (sndErr) {}
+
+    if (typeof showToast === 'function') {
+      showToast('🎉 مكافأة التليجرام! 🎁', 'تهانينا! حصلت على 50,000$ كاش فوراً لانضمامك لقناة التليجرام الرسمية!', 'success');
+    }
+
+    // 7. Refresh UI states
+    updateTelegramButtonUI();
+    if (typeof renderAll === 'function') {
+      renderAll();
+    } else if (typeof window.renderHeader === 'function') {
+      window.renderHeader();
+    }
+  }
+
+  function updateTelegramButtonUI() {
+    const s = GameEngine.state;
+    const isClaimed = Boolean(s && (s.telegramClaimed || s.telegramRewardClaimed));
+
+    // 1. Start Menu Quick Grid Badge
+    const menuBadge = document.getElementById('badge-menu-telegram');
+    if (menuBadge) {
+      if (isClaimed) {
+        menuBadge.className = 'text-[9px] px-1.5 py-0.5 rounded-full bg-sky-950/80 text-sky-300 font-bold border border-sky-500/30 shadow-sm';
+        menuBadge.innerHTML = '<i class="fa-solid fa-check mr-0.5"></i> مستلم';
+      } else {
+        menuBadge.className = 'text-[9px] px-1.5 py-0.5 rounded-full bg-sky-600/30 text-sky-300 font-bold border border-sky-400/50 shadow-sm animate-pulse';
+        menuBadge.innerHTML = '<i class="fa-solid fa-gift mr-0.5"></i> 50,000$';
+      }
+    }
+
+    // 2. Desktop Sidebar Banner Subtitle & Ping
+    const sidebarSub = document.getElementById('banner-telegram-sidebar-sub');
+    if (sidebarSub) {
+      if (isClaimed) {
+        sidebarSub.textContent = 'تم استلام 50,000$ ✓ • تسريبات ومزادات';
+        sidebarSub.className = 'text-[10px] text-slate-400 font-medium block truncate';
+      } else {
+        sidebarSub.innerHTML = '<span class="text-sky-300 font-bold">🎁 مكافأة 50,000$ فورية</span> • أكواد وتسريبات';
+        sidebarSub.className = 'text-[10px] text-sky-300/90 font-bold block truncate';
+      }
+    }
+    const sidebarPing = document.getElementById('banner-telegram-sidebar-ping');
+    if (sidebarPing) {
+      if (isClaimed) sidebarPing.classList.add('hidden');
+      else sidebarPing.classList.remove('hidden');
+    }
+
+    // 3. Dashboard Hero Card
+    const heroBtn = document.getElementById('btn-claim-telegram-hero');
+    const heroBadge = document.getElementById('badge-telegram-hero');
+    const heroTitle = document.getElementById('title-telegram-hero');
+    if (heroBtn) {
+      if (isClaimed) {
+        heroBtn.innerHTML = '<i class="fa-brands fa-telegram text-base"></i><span>تم الاستلام ✓ (زيارة القناة)</span><i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>';
+        heroBtn.className = 'w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-sky-300 font-bold rounded-xl text-xs flex items-center justify-center gap-2 border border-sky-500/30 transition active:scale-95 cursor-pointer whitespace-nowrap shadow';
+      } else {
+        heroBtn.innerHTML = '<i class="fa-brands fa-telegram text-base"></i><span>استلم 50,000$ وانضم للقناة</span><i class="fa-solid fa-gift text-xs animate-bounce"></i>';
+        heroBtn.className = 'w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25 transition active:scale-95 cursor-pointer whitespace-nowrap animate-pulse';
+      }
+    }
+    if (heroBadge) {
+      if (isClaimed) {
+        heroBadge.textContent = 'تم استلام 50,000$ ✓';
+        heroBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40';
+      } else {
+        heroBadge.textContent = 'هدية 50,000$ فورية 🎁';
+        heroBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-bold border border-sky-500/40 animate-bounce';
+      }
+    }
+    if (heroTitle) {
+      if (isClaimed) {
+        heroTitle.textContent = 'قناة رأس المال الرسمية على تليجرام 📢';
+      } else {
+        heroTitle.textContent = 'انضم لقناة رأس المال واستلم 50,000$ كاش 🎁';
+      }
+    }
+
+    // 4. Gift Modal Action Button
+    const modalBtn = document.getElementById('btn-claim-telegram-modal');
+    if (modalBtn) {
+      if (isClaimed) {
+        modalBtn.innerHTML = '<span>تم الاستلام ✓</span><i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>';
+        modalBtn.className = 'w-full sm:w-auto px-3.5 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs shrink-0 transition flex items-center justify-center gap-1.5 border border-slate-700 cursor-pointer whitespace-nowrap';
+      } else {
+        modalBtn.innerHTML = '<i class="fa-solid fa-gift text-xs"></i><span>استلم 50,000$ وانضم</span>';
+        modalBtn.className = 'w-full sm:w-auto px-3.5 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black text-xs shrink-0 transition flex items-center justify-center gap-1.5 shadow-lg shadow-sky-500/20 cursor-pointer active:scale-95 whitespace-nowrap animate-pulse';
+      }
+    }
+
+    // 5. Mobile Drawer Badge
+    const mobileDrawerBadge = document.getElementById('badge-mobile-telegram');
+    if (mobileDrawerBadge) {
+      if (isClaimed) {
+        mobileDrawerBadge.textContent = 'مستلم ✓';
+        mobileDrawerBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-bold border border-slate-700';
+      } else {
+        mobileDrawerBadge.textContent = '50,000$ 🎁';
+        mobileDrawerBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-300 font-bold border border-sky-500/40 animate-pulse';
+      }
+    }
+  }
+
+  // Global Event Delegation for Telegram Community & Reward Click
+  document.addEventListener('click', (e) => {
+    const tgBtn = e.target && e.target.closest && e.target.closest('#btn-menu-telegram, #btn-menu-telegram-top, #banner-telegram-sidebar, #btn-telegram-mobile, #btn-claim-telegram-hero, #btn-claim-telegram-modal, #btn-mobile-telegram, a[href*="t.me/raasalmal"]');
+    if (!tgBtn) return;
+    claimTelegramReward(e);
+  });
 
   function ensureChatListener() {
     if (typeof AppDB === 'undefined' || typeof AppDB.listenToChatMessages !== 'function') return;
