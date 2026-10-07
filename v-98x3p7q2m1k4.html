@@ -2964,12 +2964,7 @@
               <i class="fa-solid fa-building-columns text-[9px] text-sky-400"></i> بنك: ${Number(item.bank != null ? item.bank : 0).toLocaleString()} ج.م
             </span>
           </div>
-        ` : `
-          <div class="mt-2 pt-1.5 border-t border-slate-800/50 flex items-center gap-1.5 text-[9px] text-slate-500 italic">
-            <i class="fa-solid fa-clock-rotate-left text-[8px]"></i>
-            <span>الرصيد: غير مسجل في أرشيف النسخ القديمة</span>
-          </div>
-        `;
+        ` : '';
 
         return `
           <div class="glass-card p-3 rounded-xl ${cardBg} flex flex-col gap-1 text-xs transition">

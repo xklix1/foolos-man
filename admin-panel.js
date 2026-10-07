@@ -2520,12 +2520,7 @@
               <i class="fa-solid fa-building-columns text-[9px] text-sky-400"></i> بنك: ${Number(item.bank != null ? item.bank : 0).toLocaleString()} ج.م
             </span>
           </div>
-        ` : `
-          <div class="pt-1.5 border-t border-slate-800/50 flex items-center gap-1.5 text-[9px] text-slate-500 italic">
-            <i class="fa-solid fa-clock-rotate-left text-[8px]"></i>
-            <span>الرصيد: غير مسجل في أرشيف النسخ القديمة</span>
-          </div>
-        `;
+        ` : '';
 
         div.innerHTML =`
           <div class="flex items-center justify-between gap-3">

@@ -716,7 +716,10 @@ async function adminRoutes(fastify, options) {
         cwd = p.resolve(cwd, '..');
       }
       const out = execSync('git pull origin main', { cwd, timeout: 30000 }).toString();
-      reply.send({ success: true, output: out });
+      reply.send({ success: true, output: out, message: 'Code pulled successfully. Server restarting automatically via PM2...' });
+      setTimeout(() => {
+        process.exit(0);
+      }, 1000);
     } catch (err) {
       reply.status(500).send({ success: false, error: err.message });
     }
