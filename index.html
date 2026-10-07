@@ -260,6 +260,13 @@
       <!-- Quick Control Action Icons -->
       <div class="flex items-center gap-2">
 
+        <!-- Telegram Channel Button -->
+        <a id="btn-menu-telegram-top" href="https://t.me/raasalmal" target="_blank" rel="noopener noreferrer" title="قناة التليجرام الرسمية"
+          class="start-menu-icon-btn px-3 py-2.5 rounded-xl bg-sky-500/15 border border-sky-500/30 hover:border-sky-400 text-sky-400 hover:text-sky-300 transition font-bold text-xs flex items-center gap-1.5 shadow-md shadow-sky-500/10 cursor-pointer">
+          <i class="fa-brands fa-telegram text-sm"></i>
+          <span class="hidden sm:inline">قناة التليجرام</span>
+        </a>
+
         <!-- Language Switcher Button -->
         <button id="btn-lang-toggle" title="تغيير اللغة / Change Language"
           class="start-menu-icon-btn px-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-yellow-500/60 text-slate-300 hover:text-yellow-400 transition font-bold text-xs">
@@ -399,9 +406,9 @@
           <i class="fa-solid fa-chevron-left text-xs text-slate-400 group-hover:-translate-x-1 transition"></i>
         </button>
 
-        <!-- Secondary Grid: Hall of Fame, Guide, Settings -->
+        <!-- Secondary Grid: Hall of Fame, Guide, Facebook, Telegram, Settings -->
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-1">
 
           <!-- Hall of Fame / Leaderboard Button -->
           <button id="btn-menu-leaderboard"
@@ -432,6 +439,17 @@
             </div>
             <span class="text-xs font-bold text-slate-200 group-hover:text-blue-400 transition">صفحة الفيسبوك</span>
             <span id="badge-menu-facebook" class="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-600/30 text-blue-300 font-bold border border-blue-500/30 shadow-sm">رسمي</span>
+          </a>
+
+          <!-- Telegram Official Channel Button -->
+          <a id="btn-menu-telegram" href="https://t.me/raasalmal" target="_blank" rel="noopener noreferrer"
+            class="menu-btn-sub p-3 rounded-xl glass-panel border border-slate-800 hover:border-sky-500/50 flex flex-col items-center justify-center gap-1.5 transition duration-200 group relative cursor-pointer">
+            <div
+              class="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center group-hover:scale-110 transition relative">
+              <i class="fa-brands fa-telegram text-sm"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-200 group-hover:text-sky-400 transition">قناة التليجرام</span>
+            <span id="badge-menu-telegram" class="text-[9px] px-1.5 py-0.5 rounded-full bg-sky-600/30 text-sky-300 font-bold border border-sky-500/30 shadow-sm">أكواد وهدايا</span>
           </a>
 
           <!-- Settings & Audio Button -->
@@ -1956,6 +1974,24 @@
           <span id="hud-server-boost-val" class="numbers-font text-white font-black text-xs">1.0x أرباح وخبرة</span>
         </div>
 
+        <!-- Telegram Official Community Sidebar Banner -->
+        <a id="banner-telegram-sidebar" href="https://t.me/raasalmal" target="_blank" rel="noopener noreferrer"
+          class="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-sky-950/70 via-slate-900 to-sky-950/40 border border-sky-500/40 hover:border-sky-400 transition-all shadow-lg shadow-sky-950/50 group cursor-pointer active:scale-98">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 border border-sky-500/30 flex items-center justify-center text-lg shrink-0 group-hover:scale-110 transition-transform shadow-inner">
+              <i class="fa-brands fa-telegram"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-black text-white group-hover:text-sky-300 transition truncate">قناة التليجرام الرسمية</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping shrink-0"></span>
+              </div>
+              <span class="text-[10px] text-sky-300/80 font-bold block truncate">أكواد يومية • تسريبات ومزادات</span>
+            </div>
+          </div>
+          <i class="fa-solid fa-arrow-up-right-from-square text-sky-400/70 text-xs group-hover:text-sky-200 transition"></i>
+        </a>
+
         <!-- Player Quick Stats & Actions Hub -->
         <div class="space-y-3.5">
           <!-- 1. Player Identity Card -->
@@ -2332,6 +2368,12 @@
 
           <!-- Quick Top Utility Actions (Clean, minimal, spacious) -->
           <div class="flex items-center gap-2 shrink-0">
+            <!-- Telegram Official Channel Mobile Icon -->
+            <a id="btn-telegram-mobile" href="https://t.me/raasalmal" target="_blank" rel="noopener noreferrer" title="قناة التليجرام الرسمية (أكواد وهدايا)"
+              class="w-8 h-8 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 active:bg-sky-500/35 text-sky-400 border border-sky-400/40 flex items-center justify-center transition active:scale-95 shrink-0 cursor-pointer shadow-sm relative group">
+              <i class="fa-brands fa-telegram text-sm group-hover:scale-110 transition-transform"></i>
+              <span class="absolute -top-1 -right-1 w-2 h-2 bg-sky-400 rounded-full animate-ping opacity-75"></span>
+            </a>
             <!-- Player Tools / Inventory Mobile -->
             <button id="btn-open-inventory-mobile" onclick="window.UI.openPlayerInventoryModal()" title="حقيبة الأدوات والمقتنيات" type="button"
               class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-sky-400 border border-sky-500/30 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
@@ -2445,6 +2487,28 @@
             <span>دخول المزرعة الآن</span>
             <i class="fa-solid fa-arrow-left text-xs"></i>
           </button>
+        </div>
+
+        <!-- Telegram Community & Exclusive Gifts Hero Card -->
+        <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-sky-950/80 via-slate-900 to-sky-950/60 border border-sky-500/40 shadow-xl shadow-sky-950/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-400 text-2xl shrink-0 shadow-inner">
+              <i class="fa-brands fa-telegram animate-bounce"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="text-sm font-black text-white">انضم لقناة رأس المال الرسمية على تليجرام 📢</h4>
+                <span class="text-[9px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-bold border border-sky-500/40">مجتمع اللاعبين 🌟</span>
+              </div>
+              <p class="text-xs text-slate-300 mt-1">احصل على أكواد الهدايا الحصرية أولاً بأول، وشارك في تصويتات التحديثات وتسريبات المزادات الكبرى!</p>
+            </div>
+          </div>
+          <a href="https://t.me/raasalmal" target="_blank" rel="noopener noreferrer"
+            class="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25 transition active:scale-95 cursor-pointer whitespace-nowrap">
+            <i class="fa-brands fa-telegram text-base"></i>
+            <span>انضم للقناة الآن</span>
+            <i class="fa-solid fa-arrow-left text-xs"></i>
+          </a>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -5419,6 +5483,15 @@
           <span id="badge-mobile-facebook" class="text-[9px] px-2 py-0.5 rounded-full bg-blue-600/30 text-blue-300 font-bold border border-blue-500/30">رسمي</span>
         </a>
 
+        <a id="btn-mobile-telegram" href="https://t.me/raasalmal" target="_blank" rel="noopener noreferrer"
+          class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-sky-600/10 hover:bg-sky-600/20 text-sky-400 border border-sky-500/20 text-xs font-bold transition duration-200 cursor-pointer mt-1">
+          <div class="flex items-center gap-2.5">
+            <i class="fa-brands fa-telegram w-5 text-center text-sky-400 text-sm"></i>
+            <span>قناة التليجرام الرسمية</span>
+          </div>
+          <span class="text-[9px] px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-300 font-bold border border-sky-500/30">أكواد وهدايا 🚀</span>
+        </a>
+
         <button id="btn-ingame-guide-mobile" type="button"
           class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
           <i class="fa-solid fa-book-open w-5 text-center text-sky-400 text-sm"></i>
@@ -6718,6 +6791,22 @@
             <i class="fa-solid fa-gift text-sm"></i>
             <span>استرداد الهدية فوراً</span>
           </button>
+        </div>
+
+        <!-- Telegram Gift Codes Notice -->
+        <div class="p-3 rounded-xl bg-sky-950/40 border border-sky-500/30 flex items-center justify-between gap-2.5 mt-2">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <i class="fa-brands fa-telegram text-sky-400 text-lg shrink-0"></i>
+            <div class="text-[11px] text-slate-300">
+              <span class="font-bold text-white block">تبحث عن أكواد هدايا مجانية؟</span>
+              <span class="text-[10px] text-slate-400">يتم توزيع الأكواد الحصرية دورياً داخل قناتنا الرسمية على تليجرام.</span>
+            </div>
+          </div>
+          <a href="https://t.me/raasalmal" target="_blank" rel="noopener noreferrer"
+            class="px-2.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-white font-bold text-[10px] shrink-0 transition flex items-center gap-1 shadow cursor-pointer whitespace-nowrap">
+            <span>انضم للقناة</span>
+            <i class="fa-solid fa-arrow-left text-[9px]"></i>
+          </a>
         </div>
       </div>
     </div>
