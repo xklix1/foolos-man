@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v9.4.9';
+    window._CLIENT_VERSION = 'v9.5.0';
     (async function() {
-      const CURRENT_APP_BUILD = 'v9.4.9';
+      const CURRENT_APP_BUILD = 'v9.5.0';
       try {
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
@@ -1549,6 +1549,26 @@
           </div>
         </div>
 
+        <!-- Moderator / Staff Support Card -->
+        <div id="settings-mod-support-card" class="p-3.5 bg-gradient-to-r from-emerald-950/40 via-slate-900/60 to-teal-950/40 rounded-xl border border-emerald-500/30 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <i class="fa-solid fa-user-shield text-xs"></i>
+              </div>
+              <div>
+                <span class="font-bold text-white block">محادثة الرقابة والدعم الفني</span>
+                <span class="text-[10px] text-slate-400">تواصل مباشر مع مشرفي اللعبة للأسئلة أو الإبلاغ عن مشكلة</span>
+              </div>
+            </div>
+            <button type="button" id="btn-open-mod-chat-from-settings" onclick="openPlayerInvestigationChat()"
+              class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-emerald-950/40 cursor-pointer">
+              <i class="fa-solid fa-headset text-[11px]"></i>
+              <span>تواصل الآن</span>
+            </button>
+          </div>
+        </div>
+
       </div>
 
       <!-- Modal Footer -->
@@ -2103,9 +2123,10 @@
             <!-- Sub Utilities Row (Language, Mod Private Chat & Logout) -->
             <div class="flex items-center gap-1.5 pt-0.5">
               <button id="btn-open-private-mod-chat-ingame" onclick="openPlayerInvestigationChat()" title="محادثة خاصة ومباشرة مع الإدارة والرقابة"
-                class="flex-1 py-1 px-2 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/30 hover:border-emerald-500/60 rounded-lg text-[10px] font-bold text-emerald-300 hover:text-emerald-100 transition flex items-center justify-center gap-1 cursor-pointer">
-                <i class="fa-solid fa-user-shield text-[10px] text-emerald-400"></i>
-                <span>محادثة الإدارة 💬</span>
+                class="flex-1 py-1 px-2 bg-gradient-to-r from-emerald-950/70 to-teal-950/70 hover:from-emerald-900/90 hover:to-teal-900/90 border border-emerald-500/50 hover:border-emerald-400 rounded-lg text-[10px] font-bold text-emerald-300 hover:text-emerald-100 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm relative group">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <i class="fa-solid fa-user-shield text-[10px] text-emerald-400 group-hover:scale-110 transition-transform"></i>
+                <span>محادثة المراقبين 🛡️</span>
               </button>
 
               <button id="btn-lang-toggle-ingame" type="button"
@@ -2380,6 +2401,13 @@
               <i class="fa-brands fa-telegram text-sm group-hover:scale-110 transition-transform"></i>
               <span class="absolute -top-1 -right-1 w-2 h-2 bg-sky-400 rounded-full animate-ping opacity-75"></span>
             </a>
+            <!-- Contact Moderators Mobile Button -->
+            <button id="btn-open-mod-chat-mobile-bar" onclick="openPlayerInvestigationChat()" title="تواصل مباشر مع المراقبين والإدارة 🛡️" type="button"
+              class="w-8 h-8 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:bg-emerald-500/35 text-emerald-400 border border-emerald-500/40 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
+              <i class="fa-solid fa-user-shield text-xs"></i>
+              <span class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full animate-ping opacity-75"></span>
+              <span class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full"></span>
+            </button>
             <!-- Player Tools / Inventory Mobile -->
             <button id="btn-open-inventory-mobile" onclick="window.UI.openPlayerInventoryModal()" title="حقيبة الأدوات والمقتنيات" type="button"
               class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-sky-400 border border-sky-500/30 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
@@ -5480,6 +5508,16 @@
           <span class="mr-auto text-[9px] px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">أرباح 👥</span>
         </button>
 
+        <!-- Moderator Chat Mobile Drawer -->
+        <button id="btn-drawer-mod-chat" onclick="if(window.UI?.closeMobileNav) window.UI.closeMobileNav(); openPlayerInvestigationChat();" type="button"
+          class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-950/60 via-slate-900/80 to-teal-950/60 hover:bg-emerald-900/40 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition duration-200 cursor-pointer">
+          <div class="flex items-center gap-2.5">
+            <i class="fa-solid fa-user-shield w-5 text-center text-emerald-400 text-sm"></i>
+            <span>محادثة الإدارة والمراقبين</span>
+          </div>
+          <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">دردشة خاصة 💬</span>
+        </button>
+
         <a id="btn-mobile-facebook" href="https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
           class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 text-xs font-bold transition duration-200 cursor-pointer">
           <div class="flex items-center gap-2.5">
@@ -6515,6 +6553,18 @@
         <button class="mailbox-tab-btn px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs transition shrink-0 cursor-pointer" data-filter="requests">
           <i class="fa-solid fa-handshake text-emerald-400 text-[11px]"></i>
           <span>طلبات وحوالات</span>
+        </button>
+      </div>
+
+      <!-- Direct Moderator Contact Quick Banner -->
+      <div class="my-2 p-2.5 rounded-xl bg-gradient-to-r from-emerald-950/40 via-slate-900/60 to-teal-950/40 border border-emerald-500/30 flex items-center justify-between gap-2 shrink-0">
+        <div class="flex items-center gap-2 text-xs text-slate-300">
+          <i class="fa-solid fa-headset text-emerald-400 text-sm"></i>
+          <span class="text-[11px]">هل لديك استفسار أو بلاغ لفريق المراقبة والإدارة؟</span>
+        </div>
+        <button onclick="if(window.UI?.closeNotificationsModal) window.UI.closeNotificationsModal(); openPlayerInvestigationChat();" type="button"
+          class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] transition shrink-0 cursor-pointer shadow-sm">
+          مراسلة المراقبين 🛡️
         </button>
       </div>
 
@@ -7555,7 +7605,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.4.9"></script>
+  <script src="core.bundle.js?v=v9.5.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -8177,6 +8227,12 @@
               <i class="fa-solid fa-palette text-[9px]"></i>
               <span id="chat-current-frame-label">تغيير إطار الرسائل</span>
             </button>
+            <span class="text-slate-700">|</span>
+            <button id="btn-quick-contact-mods-chat" type="button" onclick="openPlayerInvestigationChat()"
+              class="text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-bold transition hover:underline cursor-pointer truncate">
+              <i class="fa-solid fa-user-shield text-[10px]"></i>
+              <span>مراسلة المراقبين 🛡️</span>
+            </button>
           </div>
           <span id="chat-cooldown-timer" class="text-yellow-500 font-bold hidden">الرجاء الانتظار ثانية واحدة...</span>
         </div>
@@ -8196,6 +8252,29 @@
       
       <!-- SUBVIEW 2A: CONVERSATIONS LIST -->
       <div id="dms-conversations-list-view" class="flex-1 flex flex-col min-h-0">
+        <!-- Pinned Official Staff Contact Hero Card -->
+        <div class="p-3 bg-gradient-to-r from-emerald-950/70 via-slate-900/80 to-teal-950/70 border-b border-emerald-500/30 flex items-center justify-between gap-2 shrink-0">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-300 text-sm shrink-0 shadow-sm relative">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping opacity-75"></span>
+              <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-slate-950"></span>
+            </div>
+            <div class="min-w-0">
+              <span class="font-black text-xs text-emerald-300 block truncate flex items-center gap-1">
+                <span>إدارة اللعبة وفريق المراقبة</span>
+                <span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">رسمي 🛡️</span>
+              </span>
+              <span class="text-[10px] text-slate-400 block truncate">محادثة خاصة ومباشرة للأسئلة والبلاغات</span>
+            </div>
+          </div>
+          <button id="btn-open-mod-chat-from-dms" onclick="openPlayerInvestigationChat()" type="button"
+            class="px-2.5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-[11px] rounded-xl transition flex items-center gap-1 shrink-0 shadow-md shadow-emerald-950/50 active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-comments text-xs"></i>
+            <span>تواصل الآن</span>
+          </button>
+        </div>
+
         <!-- Start New DM Bar -->
         <div class="p-3 border-b border-slate-800/80 bg-slate-900/30 shrink-0">
           <div class="flex gap-1.5">

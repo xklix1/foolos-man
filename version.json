@@ -1,7 +1,7 @@
 {
-  "version": "v9.4.9",
-  "build": 1791295000000,
-  "timestamp": 1791295000000,
-  "notes": "Route investigation chat directly to private chats UI and eliminate generic notification delivery",
-  "releaseNotes": "توجيه رسائل المحقق مباشرة كدردشة خاصة منبثقة وفي تبويب الدردشات الخاصة ومنع وصولها كإشعار بريد عام"
+  "version": "v9.5.0",
+  "build": 1791299000000,
+  "timestamp": 1791299000000,
+  "notes": "Add prominent contact moderator buttons in chat drawer, mobile header, navigation menu, and settings",
+  "releaseNotes": "إضافة أزرار تواصل مباشر وسريعة للاعب لمراسلة الإدارة والمراقبين من الشات والقائمة ورأس الصفحة والإعدادات"
 }
