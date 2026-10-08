@@ -63,11 +63,16 @@ function validateRasterImage(imageBuffer) {
   }
 
   // Deep inspection to reject embedded SVG, XML, HTML, or JavaScript strings
-  const checkSample = imageBuffer.subarray(0, Math.min(imageBuffer.length, 16384)).toString('ascii').toLowerCase();
-  if (checkSample.includes('<svg') || checkSample.includes('xmlns') || checkSample.includes('<script') ||
-      checkSample.includes('javascript:') || checkSample.includes('<?php') || checkSample.includes('onload=') ||
-      checkSample.includes('onerror=') || checkSample.includes('<!doctype svg')) {
-    return { valid: false, error: 'تم رفض الملف لاحتوائه على نصوص أو وسوم برمجية غير آمنة.' };
+  const checkSample = imageBuffer.subarray(0, Math.min(imageBuffer.length, 32768)).toString('ascii');
+  const lowerSample = checkSample.toLowerCase();
+  if (/<svg[\s>/]/i.test(checkSample) ||
+      /<script[\s>/]/i.test(checkSample) ||
+      lowerSample.includes('http://www.w3.org/2000/svg') ||
+      lowerSample.includes('<!doctype svg') ||
+      lowerSample.includes('javascript:') ||
+      lowerSample.includes('<?xml-stylesheet') ||
+      lowerSample.includes('<?php')) {
+    return { valid: false, error: 'تم رفض الملف لاحتوائه على وسوم SVG أو سكربتات غير آمنة.' };
   }
 
   return { valid: true, ext, mimeType };
