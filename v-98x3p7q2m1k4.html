@@ -395,6 +395,12 @@
             <span>تصدير تقرير التحقيق</span>
           </button>
           
+          <!-- Private Chat Quick Button -->
+          <button onclick="switchInspectTab('chat')" class="px-3 py-2 rounded-xl bg-emerald-950/70 hover:bg-emerald-900/80 border border-emerald-500/50 text-emerald-300 hover:text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-emerald-950/30 transition min-h-[38px] cursor-pointer" title="فتح المحادثة الخاصة المباشرة مع اللاعب">
+            <i class="fa-solid fa-comments text-emerald-400"></i>
+            <span>محادثة خاصة 💬</span>
+          </button>
+          
           <button onclick="closeInspectorModal()" class="hidden sm:flex w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white items-center justify-center transition">
             <i class="fa-solid fa-xmark text-lg"></i>
           </button>
@@ -828,13 +834,35 @@
               </button>
             </div>
 
-            <!-- Message Input Form -->
-            <form onsubmit="sendModeratorChatMessage(event)" class="flex gap-2">
-              <input type="text" id="modChatMessageInput" placeholder="اكتب رسالة إلى اللاعب هنا (أو اختر رداً سريعاً)..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500" required autocomplete="off" />
-              <button type="submit" id="modChatSendBtn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg transition">
-                <i class="fa-solid fa-paper-plane"></i>
-                <span>إرسال</span>
-              </button>
+            <!-- Message Input Form with Secure Image Attachment -->
+            <form onsubmit="sendModeratorChatMessage(event)" class="space-y-2">
+              <!-- Selected Image Attachment Preview Box -->
+              <div id="modChatImagePreviewContainer" class="hidden flex items-center gap-2.5 p-2 bg-slate-950/90 border border-emerald-500/50 rounded-xl animate-fade-in">
+                <img id="modChatImagePreviewImg" src="" class="w-12 h-12 rounded-lg object-cover border border-emerald-500/60 bg-black/60 shrink-0" alt="معاينة الصورة" />
+                <div class="flex-1 min-w-0 text-right">
+                  <div id="modChatImagePreviewName" class="text-[11px] text-emerald-300 truncate font-bold">صورة مرفقة</div>
+                  <div id="modChatImagePreviewSize" class="text-[10px] text-slate-400">0 KB</div>
+                </div>
+                <button type="button" onclick="clearModChatImage()" class="px-2.5 py-1.5 rounded-lg bg-rose-500/20 text-rose-300 hover:bg-rose-500/40 text-xs transition cursor-pointer flex items-center gap-1 shrink-0" title="إلغاء المرفق">
+                  <i class="fa-solid fa-trash-can"></i>
+                  <span class="text-[10px]">حذف</span>
+                </button>
+              </div>
+
+              <div class="flex gap-2 items-center">
+                <!-- Raster Only File Input (PNG, JPEG, WebP, GIF) - Strictly NO SVG -->
+                <input type="file" id="modChatImageFileInput" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" onchange="handleModChatImageSelected(event)" />
+                <button type="button" onclick="document.getElementById('modChatImageFileInput').click()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shrink-0" title="إرفاق صورة (PNG, JPG, WebP, GIF) - ممنوع SVG">
+                  <i class="fa-solid fa-image text-emerald-400 text-sm"></i>
+                  <span class="hidden sm:inline text-[11px]">صورة</span>
+                </button>
+
+                <input type="text" id="modChatMessageInput" placeholder="اكتب رسالة إلى اللاعب هنا (أو اختر رداً سريعاً)..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500" autocomplete="off" />
+                <button type="submit" id="modChatSendBtn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg transition cursor-pointer shrink-0">
+                  <i class="fa-solid fa-paper-plane"></i>
+                  <span>إرسال</span>
+                </button>
+              </div>
             </form>
           </div>
 
@@ -922,12 +950,12 @@
   <!-- ================= ALL STAFF CHAT THREADS MODAL ================= -->
   <div id="staffChatThreadsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto">
     <div class="glass-panel w-full max-w-3xl my-auto rounded-2xl border border-emerald-500/40 p-6 glow-cyan modal-enter max-h-[85vh] flex flex-col">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-comments text-emerald-400 text-xl"></i>
           <div>
             <h3 class="font-black text-lg text-white">محادثات واستفسارات التحقيق المفتوحة</h3>
-            <p class="text-xs text-slate-400">قائمة اللاعبين الذين تواصلوا مع الرقابة والتحقيقات</p>
+            <p class="text-xs text-slate-400">قائمة اللاعبين وإمكانية فتح محادثة خاصة فورية مع أي لاعب</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
@@ -938,6 +966,18 @@
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
+      </div>
+
+      <!-- Quick Start Chat with Any Player Input -->
+      <div class="mb-3 p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col sm:flex-row gap-2 items-center">
+        <div class="relative flex-1 w-full">
+          <i class="fa-solid fa-user absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+          <input type="text" id="startNewChatUsernameInput" placeholder="أدخل اسم أي لاعب لفتح محادثة خاصة معه فوراً..." class="w-full bg-slate-950 border border-slate-700 rounded-lg pr-8 pl-3 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none" onkeydown="if(event.key==='Enter') startNewChatWithEnteredUser()" />
+        </div>
+        <button type="button" onclick="startNewChatWithEnteredUser()" class="w-full sm:w-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition whitespace-nowrap cursor-pointer">
+          <i class="fa-solid fa-comment-dots"></i>
+          <span>بدء محادثة خاصة</span>
+        </button>
       </div>
 
       <div id="staffChatThreadsList" class="flex-1 overflow-y-auto custom-scrollbar space-y-2.5 p-1">
@@ -1283,6 +1323,24 @@
         </button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ================= CHAT IMAGE LIGHTBOX MODAL (معاينة الصور بكامل الحجم) ================= -->
+  <div id="chatImageViewerModal" class="hidden fixed inset-0 z-[999999] flex items-center justify-center bg-black/95 backdrop-blur-md p-3 sm:p-5" onclick="closeChatImageViewer()">
+    <div class="relative max-w-4xl w-full max-h-[92vh] flex flex-col items-center" onclick="event.stopPropagation()">
+      <div class="w-full flex items-center justify-between pb-2.5 px-2">
+        <a id="chatImageViewerDownloadBtn" href="#" target="_blank" download class="px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-download text-emerald-400"></i>
+          <span>تحميل الصورة</span>
+        </a>
+        <button onclick="closeChatImageViewer()" class="w-8 h-8 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white flex items-center justify-center border border-slate-700 transition cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="flex items-center justify-center w-full max-h-[82vh] overflow-hidden rounded-2xl border border-slate-800 bg-black/70 shadow-2xl p-1">
+        <img id="chatImageViewerImg" src="" class="max-w-full max-h-[80vh] rounded-xl object-contain" alt="معاينة الصورة" />
+      </div>
     </div>
   </div>
 
@@ -3916,6 +3974,115 @@
       }
     }
 
+    // ================= STAFF INVESTIGATION CHAT & IMAGE LOGIC =================
+    let _modPendingChatImage = null;
+
+    function handleModChatImageSelected(event) {
+      const fileInput = event.target;
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+
+      const lowerName = file.name.toLowerCase();
+      const lowerType = (file.type || '').toLowerCase();
+
+      // STRICT SVG REJECTION (منع صيغ SVG منعاً باتاً لحماية الأمان ومنع ثغرات XSS)
+      if (lowerName.endsWith('.svg') || lowerName.includes('.svg') || lowerType.includes('svg') || lowerType === 'image/svg+xml') {
+        alert('⚠️ غير مسموح باختيار أو رفع ملفات بصيغة SVG لدواعي الحماية ومنع الاختراق!\nيُسمح فقط بالصور النقطية المعتمدة (PNG, JPEG, WebP, GIF).');
+        fileInput.value = '';
+        clearModChatImage();
+        return;
+      }
+
+      // Size validation (Max 3.5MB)
+      if (file.size > 3.5 * 1024 * 1024) {
+        alert('⚠️ حجم الصورة كبير جداً! الحد الأقصى المسموح به هو 3.5 ميجابايت.');
+        fileInput.value = '';
+        return;
+      }
+
+      // Valid mime types check
+      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+      if (lowerType && !validTypes.includes(lowerType)) {
+        alert('⚠️ صيغة الملف غير مدعومة! يرجى اختيار صورة صالحة (PNG, JPG, WebP, GIF).');
+        fileInput.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const result = e.target.result;
+        if (typeof result === 'string' && (result.toLowerCase().startsWith('data:image/svg') || result.toLowerCase().includes('svg+xml'))) {
+          alert('❌ تم رفض الملف لأنه يحتوي على بيانات SVG غير آمنة!');
+          clearModChatImage();
+          return;
+        }
+
+        _modPendingChatImage = {
+          file: file,
+          base64: result
+        };
+
+        const previewContainer = document.getElementById('modChatImagePreviewContainer');
+        const previewImg = document.getElementById('modChatImagePreviewImg');
+        const previewName = document.getElementById('modChatImagePreviewName');
+        const previewSize = document.getElementById('modChatImagePreviewSize');
+
+        if (previewImg) previewImg.src = result;
+        if (previewName) previewName.textContent = file.name;
+        if (previewSize) previewSize.textContent = `${Math.round(file.size / 1024)} KB`;
+        if (previewContainer) previewContainer.classList.remove('hidden');
+      };
+
+      reader.onerror = function() {
+        alert('❌ تعذر قراءة ملف الصورة المختارة.');
+        clearModChatImage();
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    function clearModChatImage() {
+      _modPendingChatImage = null;
+      const fileInput = document.getElementById('modChatImageFileInput');
+      if (fileInput) fileInput.value = '';
+      const previewContainer = document.getElementById('modChatImagePreviewContainer');
+      if (previewContainer) previewContainer.classList.add('hidden');
+      const previewImg = document.getElementById('modChatImagePreviewImg');
+      if (previewImg) previewImg.src = '';
+    }
+
+    function openChatImageViewer(imgUrl) {
+      if (!imgUrl) return;
+      const modal = document.getElementById('chatImageViewerModal');
+      const img = document.getElementById('chatImageViewerImg');
+      const dlBtn = document.getElementById('chatImageViewerDownloadBtn');
+      if (img) img.src = imgUrl;
+      if (dlBtn) dlBtn.href = imgUrl;
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeChatImageViewer() {
+      const modal = document.getElementById('chatImageViewerModal');
+      if (modal) modal.classList.add('hidden');
+      const img = document.getElementById('chatImageViewerImg');
+      if (img) img.src = '';
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeChatImageViewer();
+    });
+
+    function startNewChatWithEnteredUser() {
+      const input = document.getElementById('startNewChatUsernameInput');
+      const username = input ? input.value.trim() : '';
+      if (!username) {
+        alert('⚠️ يرجى إدخال اسم اللاعب أولاً لفتح المحادثة معه.');
+        if (input) input.focus();
+        return;
+      }
+      openChatWithPlayer(username);
+    }
+
     async function loadModeratorChatMessages(manual = false) {
       const targetUser = (inspectingPlayer && inspectingPlayer.username) || document.getElementById('inspectUsername')?.textContent || '';
       if (!targetUser || targetUser === '---') return;
@@ -3942,7 +4109,7 @@
             <div class="text-center py-10 text-slate-500 text-xs">
               <i class="fa-regular fa-comments text-2xl mb-2 text-slate-600 block"></i>
               لا توجد رسائل سابقة في جلسة التحقيق هذه.<br>
-              يمكنك كتابة رسالة أو تنبيه للاعب في الأسفل، وستظهر له مباشرة في حسابه.
+              يمكنك كتابة رسالة أو إرفاق صورة للاعب في الأسفل، وستظهر له مباشرة في حسابه.
             </div>
           `;
           return;
@@ -3954,8 +4121,15 @@
           const p = (m && typeof m.payload === 'object' && m.payload) ? m.payload : {};
           const isMod = Boolean(p.isMod || m.isMod || m.recipient === targetUser || m.sender?.startsWith('MOD-') || m.sender?.includes('المحقق') || m.sender?.includes('إدارة'));
           const text = p.message || m.message || '';
+          const imageUrl = p.imageUrl || m.imageUrl || null;
           const senderName = p.senderName || m.sender || (isMod ? 'المحقق' : targetUser);
           const ts = m.created_at || p.timestamp || Date.now();
+
+          const imageBlock = imageUrl ? `
+            <div class="mt-2">
+              <img src="${escapeHtml(imageUrl)}" onclick="openChatImageViewer('${escapeHtml(imageUrl)}')" class="max-w-[240px] max-h-[190px] rounded-xl border border-slate-700/80 object-cover cursor-pointer hover:opacity-90 hover:scale-[1.02] transition shadow-md bg-black/40 block" alt="صورة مرفقة" loading="lazy" />
+            </div>
+          ` : '';
 
           return `
             <div class="flex flex-col ${isMod ? 'items-end' : 'items-start'} my-1">
@@ -3969,7 +4143,8 @@
                   ? 'bg-gradient-to-r from-emerald-950/80 to-teal-900/80 border border-emerald-500/40 text-emerald-100 rounded-tr-none shadow-md' 
                   : 'bg-slate-800/90 border border-slate-700 text-slate-100 rounded-tl-none shadow-md'
               }">
-                ${text}
+                ${text ? `<div>${escapeHtml(text)}</div>` : ''}
+                ${imageBlock}
               </div>
             </div>
           `;
@@ -3990,13 +4165,43 @@
 
       const input = document.getElementById('modChatMessageInput');
       const btn = document.getElementById('modChatSendBtn');
-      const msg = input.value.trim();
-      if (!msg) return;
+      const msg = input ? input.value.trim() : '';
+
+      if (!msg && !_modPendingChatImage) {
+        alert('⚠️ يرجى كتابة رسالة أو إرفاق صورة لإرسالها.');
+        return;
+      }
 
       btn.disabled = true;
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري الإرسال...</span>`;
 
       try {
+        let uploadedImageUrl = null;
+
+        // 1. If an image is attached, upload it first securely
+        if (_modPendingChatImage) {
+          btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>فحص ورفع الصورة...</span>`;
+          const upRes = await fetch(`${API_BASE}/chat/upload-image`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${currentModToken}`
+            },
+            body: JSON.stringify({
+              imageBase64: _modPendingChatImage.base64,
+              filename: _modPendingChatImage.file.name
+            })
+          });
+
+          const upData = await upRes.json();
+          if (!upRes.ok || !upData.success) {
+            throw new Error(upData.error || 'فشل رفع وفحص الصورة على الخادم');
+          }
+          uploadedImageUrl = upData.imageUrl;
+        }
+
+        // 2. Send the chat message with imageUrl
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>إرسال الرسالة...</span>`;
         const res = await fetch(`${API_BASE}/chat/send`, {
           method: 'POST',
           headers: {
@@ -4006,16 +4211,18 @@
           body: JSON.stringify({
             targetUser: targetUser,
             targetUsername: targetUser,
-            message: msg
+            message: msg,
+            imageUrl: uploadedImageUrl
           })
         });
 
         const data = await res.json();
         if (res.ok && data.success) {
-          input.value = '';
+          if (input) input.value = '';
+          clearModChatImage();
           await loadModeratorChatMessages(true);
         } else {
-          alert('❌ ' + (data.message || 'فشل إرسال الرسالة'));
+          alert('❌ ' + (data.message || data.error || 'فشل إرسال الرسالة'));
         }
       } catch (err) {
         alert('خطأ في الإرسال: ' + err.message);
@@ -4052,7 +4259,8 @@
           container.innerHTML = `
             <div class="text-center py-10 text-slate-500 text-xs">
               <i class="fa-regular fa-comments text-2xl mb-2 text-slate-600 block"></i>
-              لا توجد أي محادثات تحقيق نشطة حالياً.
+              لا توجد أي محادثات تحقيق نشطة حالياً.<br>
+              يمكنك كتابة اسم أي لاعب في الحقل أعلاه لبدء محادثة خاصة معه مباشرة.
             </div>
           `;
           return;

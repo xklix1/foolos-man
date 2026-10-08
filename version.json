@@ -1,7 +1,7 @@
 {
-  "version": "v9.4.4",
-  "build": 1791252000000,
-  "timestamp": 1791252000000,
-  "notes": "Mandatory Universal Cache-Purge & Universal Gold Economy Sync (1 Gold = 10 Minutes)",
-  "releaseNotes": "Mandatory Universal Cache-Purge & Universal Gold Economy Sync (1 Gold = 10 Minutes)"
+  "version": "v9.4.9",
+  "build": 1791295000000,
+  "timestamp": 1791295000000,
+  "notes": "Route investigation chat directly to private chats UI and eliminate generic notification delivery",
+  "releaseNotes": "توجيه رسائل المحقق مباشرة كدردشة خاصة منبثقة وفي تبويب الدردشات الخاصة ومنع وصولها كإشعار بريد عام"
 }

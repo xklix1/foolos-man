@@ -18,6 +18,9 @@ const dbService = require('../services/db-service');
 
 async function airportRoutes(fastify, options) {
 
+  // Global in-memory lock to prevent double claim / concurrent flight collection race conditions
+  const _flightClaimLocks = new Set();
+
   // Helper to authenticate and resolve session
   async function resolveSession(request, reply) {
     const authHeader = request.headers['authorization'] || '';
@@ -294,9 +297,13 @@ async function airportRoutes(fastify, options) {
       modelId: model.id,
       customName: (customName || '').trim() || `${model.name} #${fleet.length + 1}`,
       status: 'idle',
+      totalFlights: 0,
+      totalRevenue: 0,
+      currentFlight: null,
       activeFlight: null
     };
 
+    s.airport.fleet = fleet;
     s.airport.fleet.push(newPlane);
     s.netWorth = calculateNetWorth(s);
     s.lastActiveTimestamp = Date.now();
@@ -473,7 +480,7 @@ async function airportRoutes(fastify, options) {
     };
   });
 
-  // 7. POST /api/airport/claim-flight (Collect Flight Revenue)
+  // 7. POST /api/airport/claim-flight (Collect Flight Revenue - Strictly Deduplicated)
   fastify.post('/api/airport/claim-flight', async (request, reply) => {
     const session = await resolveSession(request, reply);
     if (!session) return;
@@ -484,56 +491,94 @@ async function airportRoutes(fastify, options) {
     }
 
     const { planeId } = request.body || {};
-    const plane = (s.airport.fleet || []).find(p => p.id === planeId);
-    if (!plane || plane.status !== 'in_flight' || !plane.activeFlight) {
-      return reply.code(400).send({ error: 'لا توجد رحلة جاهزة للهبوط والتحصيل.' });
+    if (!planeId) {
+      return reply.code(400).send({ error: 'معرف الطائرة مطلوب.' });
     }
 
-    const flight = plane.activeFlight;
-    const now = Date.now();
-
-    // Server-authoritative time check
-    if (now < Number(flight.landingTime || 0)) {
-      const remSec = Math.ceil((Number(flight.landingTime) - now) / 1000);
-      return reply.code(400).send({
-        error: `⏳ الطائرة لا تزال في الجو! متبقي على الهبوط: ${remSec} ثانية.`
-      });
+    // In-memory lock per user & plane to prevent concurrent lag/spam double claims
+    const lockKey = `${session.username}_${planeId}`;
+    if (_flightClaimLocks.has(lockKey)) {
+      return reply.code(429).send({ error: 'جاري معالجة تحصيل هذه الرحلة بالفعل، يرجى الانتظار...' });
     }
+    _flightClaimLocks.add(lockKey);
 
-    const profit = Number(flight.expectedProfit || 0);
-    const xpGain = Number(flight.expectedXp || 0);
+    try {
+      const plane = (s.airport.fleet || []).find(p => p.id === planeId);
+      if (!plane || plane.status !== 'in_flight' || !plane.activeFlight) {
+        return reply.code(400).send({ error: 'لا توجد رحلة جاهزة للهبوط والتحصيل.' });
+      }
 
-    s.cash = Math.max(0, Number(s.cash || 0)) + profit;
-    s.xp = Math.max(0, Number(s.xp || 0)) + xpGain;
+      const flight = plane.activeFlight;
+      const flightId = flight.flightId || ('flt_' + plane.id + '_' + flight.launchTime);
+      const now = Date.now();
 
-    if (!s.airport.stats) s.airport.stats = { totalFlights: 0, totalRevenue: 0 };
-    s.airport.stats.totalFlights = (Number(s.airport.stats.totalFlights) || 0) + 1;
-    s.airport.stats.totalRevenue = (Number(s.airport.stats.totalRevenue) || 0) + profit;
+      // Deduplication check: Has this specific flight already been collected?
+      s.airport.claimedFlightIds = Array.isArray(s.airport.claimedFlightIds) ? s.airport.claimedFlightIds : [];
+      if (s.airport.claimedFlightIds.includes(flightId) || (plane.lastClaimedFlightId && plane.lastClaimedFlightId === flightId)) {
+        plane.status = 'idle';
+        plane.activeFlight = null;
+        plane.currentFlight = null;
+        session.dirty = true;
+        await dbService.savePlayerState(session.username, s);
+        return reply.code(400).send({
+          error: 'تم تحصيل أرباح هذه الرحلة مسبقاً!',
+          alreadyClaimed: true,
+          airport: s.airport
+        });
+      }
 
-    // Reset plane to idle
-    plane.status = 'idle';
-    plane.activeFlight = null;
-    plane.currentFlight = null;
-    session.dirty = true;
+      // Server-authoritative time check
+      if (now < Number(flight.landingTime || 0)) {
+        const remSec = Math.ceil((Number(flight.landingTime) - now) / 1000);
+        return reply.code(400).send({
+          error: `⏳ الطائرة لا تزال في الجو! متبقي على الهبوط: ${remSec} ثانية.`
+        });
+      }
 
-    s.netWorth = calculateNetWorth(s);
-    s.title = getAppropriateTitle(s.netWorth, s.xp);
-    s.lastActiveTimestamp = Date.now();
-    s.lastSeen = Date.now();
+      const profit = Number(flight.expectedProfit || 0);
+      const xpGain = Number(flight.expectedXp || 0);
 
-    await dbService.savePlayerState(session.username, s);
+      s.cash = Math.max(0, Number(s.cash || 0)) + profit;
+      s.xp = Math.max(0, Number(s.xp || 0)) + xpGain;
 
-    return {
-      success: true,
-      message: `🛬 هبطت الرحلة بنجاح! تم تحصيل ${profit.toLocaleString()} ج.م و +${xpGain} XP`,
-      profit,
-      xpGain,
-      cash: s.cash,
-      xp: s.xp,
-      plane,
-      airport: s.airport,
-      netWorth: s.netWorth
-    };
+      if (!s.airport.stats) s.airport.stats = { totalFlights: 0, totalRevenue: 0 };
+      s.airport.stats.totalFlights = (Number(s.airport.stats.totalFlights) || 0) + 1;
+      s.airport.stats.totalRevenue = (Number(s.airport.stats.totalRevenue) || 0) + profit;
+
+      // Mark this flightId as claimed in ledger (keep last 100 flights)
+      s.airport.claimedFlightIds.push(flightId);
+      if (s.airport.claimedFlightIds.length > 100) {
+        s.airport.claimedFlightIds = s.airport.claimedFlightIds.slice(-100);
+      }
+
+      // Reset plane to idle with memory of last claimed flight
+      plane.lastClaimedFlightId = flightId;
+      plane.status = 'idle';
+      plane.activeFlight = null;
+      plane.currentFlight = null;
+      session.dirty = true;
+
+      s.netWorth = calculateNetWorth(s);
+      s.title = getAppropriateTitle(s.netWorth, s.xp);
+      s.lastActiveTimestamp = Date.now();
+      s.lastSeen = Date.now();
+
+      await dbService.savePlayerState(session.username, s);
+
+      return {
+        success: true,
+        message: `🛬 هبطت الرحلة بنجاح! تم تحصيل ${profit.toLocaleString()} ج.م و +${xpGain} XP`,
+        profit,
+        xpGain,
+        cash: s.cash,
+        xp: s.xp,
+        plane,
+        airport: s.airport,
+        netWorth: s.netWorth
+      };
+    } finally {
+      _flightClaimLocks.delete(lockKey);
+    }
   });
 
   // 8. POST /api/airport/claim-duty-free (Collect Duty Free Passive Income)
@@ -546,11 +591,30 @@ async function airportRoutes(fastify, options) {
       return reply.code(400).send({ error: 'المطار غير مفعل.' });
     }
 
+    const lvl = Number(s.airport.facilities?.duty_free || 0);
+    if (lvl <= 0) {
+      return reply.code(400).send({ error: 'لم يتم تفعيل أو بناء السوق الحرة بمطارك بعد!' });
+    }
+
     const now = Date.now();
+    const lastClaim = Number(s.airport.lastDutyFreeCollectionAt || s.airport.unlockedAt || now);
+    const elapsedMs = Math.max(0, now - lastClaim);
+    const minCooldownMs = 60 * 1000; // 60 seconds minimum interval between collections
+
+    if (s.airport.lastDutyFreeCollectionAt && elapsedMs < minCooldownMs) {
+      const remSec = Math.ceil((minCooldownMs - elapsedMs) / 1000);
+      return reply.code(400).send({
+        error: `⏳ يرجى الانتظار ${remSec} ثانية قبل تحصيل أرباح السوق الحرة التالية.`
+      });
+    }
+
     const dutyFreeEarnings = calculateDutyFreeAccumulated(s.airport, now);
 
-    if (dutyFreeEarnings <= 0) {
-      return reply.code(400).send({ error: 'لا توجد أرباح سوق حرة متراكمة حالياً للتحصيل.' });
+    // Strict minimum collection threshold: at least 1,000 EGP to prevent rapid spamming
+    if (dutyFreeEarnings < 1000) {
+      return reply.code(400).send({
+        error: `⏳ الحد الأدنى لتحصيل أرباح السوق الحرة هو 1,000 ج.م (المتراكم حالياً: ${dutyFreeEarnings.toLocaleString()} ج.م).`
+      });
     }
 
     s.cash = Math.max(0, Number(s.cash || 0)) + dutyFreeEarnings;
@@ -584,10 +648,24 @@ async function airportRoutes(fastify, options) {
       return reply.code(400).send({ error: 'المطار غير مفعل.' });
     }
 
+    const now = Date.now();
+    const lastTransit = Number(s.airport.lastTransitPermitAt || 0);
+    const minTransitCooldownMs = 10 * 60 * 1000; // 10 minutes between transit flight permits
+    const elapsedTransitMs = Math.max(0, now - lastTransit);
+
+    if (lastTransit > 0 && elapsedTransitMs < minTransitCooldownMs) {
+      const remSec = Math.ceil((minTransitCooldownMs - elapsedTransitMs) / 1000);
+      const remMin = Math.ceil(remSec / 60);
+      return reply.code(400).send({
+        error: `📡 رادار برج المراقبة يمسح الأجواء حالياً... لا توجد طائرات ترانزيت جديدة تطلب تصريح هبوط الآن (الإشارة القادمة خلال ${remMin} دقيقة).`
+      });
+    }
+
     // Transit fee between 3,000,000 and 7,000,000
     const fee = Math.floor(3000000 + Math.random() * 4000000);
     s.cash = Math.max(0, Number(s.cash || 0)) + fee;
     s.xp = Math.max(0, Number(s.xp || 0)) + 250;
+    s.airport.lastTransitPermitAt = now;
 
     if (!s.airport.stats) s.airport.stats = {};
     s.airport.stats.transitPermitsAccepted = (Number(s.airport.stats.transitPermitsAccepted) || 0) + 1;

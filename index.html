@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v9.4.4';
+    window._CLIENT_VERSION = 'v9.4.9';
     (async function() {
-      const CURRENT_APP_BUILD = 'v9.4.4';
+      const CURRENT_APP_BUILD = 'v9.4.9';
       try {
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
@@ -2100,12 +2100,18 @@
               </button>
             </div>
 
-            <!-- Sub Utilities Row (Language & Logout) -->
+            <!-- Sub Utilities Row (Language, Mod Private Chat & Logout) -->
             <div class="flex items-center gap-1.5 pt-0.5">
+              <button id="btn-open-private-mod-chat-ingame" onclick="openPlayerInvestigationChat()" title="محادثة خاصة ومباشرة مع الإدارة والرقابة"
+                class="flex-1 py-1 px-2 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/30 hover:border-emerald-500/60 rounded-lg text-[10px] font-bold text-emerald-300 hover:text-emerald-100 transition flex items-center justify-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-user-shield text-[10px] text-emerald-400"></i>
+                <span>محادثة الإدارة 💬</span>
+              </button>
+
               <button id="btn-lang-toggle-ingame" type="button"
-                class="flex-1 py-1 px-2 bg-slate-900/50 hover:bg-slate-800/80 border border-slate-800/60 rounded-lg text-[10px] font-bold text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1 cursor-pointer">
+                class="py-1 px-2 bg-slate-900/50 hover:bg-slate-800/80 border border-slate-800/60 rounded-lg text-[10px] font-bold text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1 cursor-pointer">
                 <i class="fa-solid fa-language text-[10px]"></i>
-                <span>Language: EN</span>
+                <span>EN</span>
               </button>
 
               <button id="btn-user-logout" title="تسجيل الخروج"
@@ -7549,7 +7555,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.4.4"></script>
+  <script src="core.bundle.js?v=v9.4.9"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -7956,7 +7962,7 @@
     </div>
   </div>
 
-  <!-- ==================== INVESTIGATION LIVE CHAT MODAL (نافذة محادثة التحقيق المباشر مع اللاعب) ==================== -->
+  <!-- ==================== INVESTIGATION LIVE CHAT MODAL (نافذة المحادثة الخاصة مع الإدارة والرقابة) ==================== -->
   <div id="modal-investigation-chat-player" dir="rtl"
     class="hidden fixed inset-0 z-[999999999] flex items-center justify-center bg-black/90 backdrop-blur-xl p-3 sm:p-4 pointer-events-auto">
     <div class="glass-panel w-full max-w-lg h-[85vh] max-h-[640px] flex flex-col rounded-3xl border-2 border-emerald-500/60 bg-gradient-to-b from-slate-900 via-slate-950 to-black text-right relative overflow-hidden shadow-2xl shadow-emerald-500/20 pointer-events-auto">
@@ -7972,10 +7978,10 @@
           </div>
           <div>
             <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-1.5">
-              <span>فريق التحقيق والأمان المباشر</span>
+              <span>المحادثة الخاصة مع الإدارة والرقابة</span>
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             </h3>
-            <p class="text-[11px] text-slate-400">قناة محادثة خاصة لتقديم التوضيحات وفك القيد</p>
+            <p class="text-[11px] text-slate-400">قناة محادثة خاصة لتبادل الرسائل والصور وحل المشكلات</p>
           </div>
         </div>
         <button onclick="closePlayerInvestigationChat()" type="button"
@@ -7989,13 +7995,32 @@
         <!-- Messages Injected Dynamically -->
       </div>
 
-      <!-- Chat Input Area -->
-      <div class="p-3 border-t border-slate-800 relative z-10 bg-slate-900/80 shrink-0 space-y-2">
-        <form onsubmit="sendPlayerInvestigationMessage(event)" class="flex gap-2">
-          <input type="text" id="player-mod-chat-input" placeholder="اكتب ردك أو توضيحك للمحقق هنا..." maxlength="500" autocomplete="off"
+      <!-- Chat Input Area with Secure Image Attachment -->
+      <div class="p-3 border-t border-slate-800 relative z-10 bg-slate-900/90 shrink-0 space-y-2">
+        <!-- Selected Image Attachment Preview Box -->
+        <div id="playerChatImagePreviewContainer" class="hidden flex items-center gap-2.5 p-2 bg-slate-950/90 border border-emerald-500/50 rounded-xl animate-fade-in">
+          <img id="playerChatImagePreviewImg" src="" class="w-12 h-12 rounded-lg object-cover border border-emerald-500/60 bg-black/60 shrink-0" alt="معاينة الصورة" />
+          <div class="flex-1 min-w-0 text-right">
+            <div id="playerChatImagePreviewName" class="text-[11px] text-emerald-300 truncate font-bold">صورة مرفقة</div>
+            <div id="playerChatImagePreviewSize" class="text-[10px] text-slate-400">0 KB</div>
+          </div>
+          <button type="button" onclick="clearPlayerChatImage()" class="px-2.5 py-1.5 rounded-lg bg-rose-500/20 text-rose-300 hover:bg-rose-500/40 text-xs transition cursor-pointer flex items-center gap-1 shrink-0" title="إلغاء المرفق">
+            <i class="fa-solid fa-trash-can"></i>
+            <span class="text-[10px]">حذف</span>
+          </button>
+        </div>
+
+        <form onsubmit="sendPlayerInvestigationMessage(event)" class="flex gap-2 items-center">
+          <!-- Raster Only Image File Input (PNG, JPEG, WebP, GIF) - STRICTLY NO SVG -->
+          <input type="file" id="playerChatImageFileInput" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" onchange="handlePlayerChatImageSelected(event)" />
+          <button type="button" onclick="document.getElementById('playerChatImageFileInput').click()" class="px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 hover:border-emerald-500/50 text-slate-300 hover:text-white text-xs flex items-center justify-center gap-1 transition cursor-pointer shrink-0" title="إرفاق صورة (PNG, JPG, WebP, GIF) - ممنوع SVG">
+            <i class="fa-solid fa-camera text-emerald-400 text-sm"></i>
+          </button>
+
+          <input type="text" id="player-mod-chat-input" placeholder="اكتب ردك أو استفسارك هنا..." maxlength="500" autocomplete="off"
             class="flex-1 px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 pointer-events-auto select-text" />
           <button type="submit" id="btn-player-mod-chat-send"
-            class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/20">
+            class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/20 shrink-0">
             <i class="fa-solid fa-paper-plane text-xs"></i>
             <span>إرسال</span>
           </button>
@@ -8007,6 +8032,44 @@
       </div>
 
     </div>
+  </div>
+
+  <!-- ================= PLAYER CHAT IMAGE LIGHTBOX MODAL ================= -->
+  <div id="modal-enlarged-chat-image" dir="rtl"
+    class="hidden fixed inset-0 z-[9999999999] flex items-center justify-center bg-black/95 backdrop-blur-md p-3 sm:p-5" onclick="closeEnlargedChatImage()">
+    <div class="relative max-w-4xl w-full max-h-[92vh] flex flex-col items-center" onclick="event.stopPropagation()">
+      <div class="w-full flex items-center justify-between pb-2.5 px-2">
+        <a id="enlargedChatImageDownloadBtn" href="#" target="_blank" download class="px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-download text-emerald-400"></i>
+          <span>تحميل الصورة</span>
+        </a>
+        <button onclick="closeEnlargedChatImage()" class="w-8 h-8 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white flex items-center justify-center border border-slate-700 transition cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="flex items-center justify-center w-full max-h-[82vh] overflow-hidden rounded-2xl border border-slate-800 bg-black/80 shadow-2xl p-1">
+        <img id="enlargedChatImageImg" src="" class="max-w-full max-h-[80vh] rounded-xl object-contain" alt="معاينة الصورة" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FLOATING PRIVATE MOD CHAT NOTIFICATION PILL ================= -->
+  <div id="floating-mod-chat-notify" dir="rtl"
+    class="hidden fixed bottom-20 left-4 z-[999999] max-w-sm bg-gradient-to-r from-emerald-950/95 via-slate-900/95 to-teal-950/95 border-2 border-emerald-500/80 rounded-2xl p-3 shadow-2xl shadow-emerald-500/30 backdrop-blur-md animate-bounce cursor-pointer flex items-center gap-3 transition-all hover:scale-105 active:scale-95"
+    onclick="openPlayerInvestigationChat()">
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center text-lg font-black shrink-0 shadow-md">
+      <i class="fa-solid fa-shield-halved"></i>
+    </div>
+    <div class="flex-1 min-w-0 text-right">
+      <div class="flex items-center justify-between gap-1">
+        <span class="text-xs font-black text-emerald-300">رسالة خاصة من المراقب 🛡️</span>
+        <span id="floating-mod-chat-badge" class="px-1.5 py-0.2 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black">جديدة</span>
+      </div>
+      <p id="floating-mod-chat-text" class="text-[11px] text-slate-200 truncate font-semibold mt-0.5">انقر هنا لفتح المحادثة والرد على المراقب</p>
+    </div>
+    <button onclick="event.stopPropagation(); dismissFloatingModChatNotify();" class="text-slate-400 hover:text-white p-1 text-xs">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
   </div>
 
 <!-- ==================== DIRECT ADMIN POPUP MODAL (شاشة منبثقة مباشرة من الإدارة) ==================== -->
@@ -8672,9 +8735,20 @@
       }
 
       // =========================================================================
-      // PLAYER INVESTIGATION LIVE CHAT CONTROLLER
+      // PLAYER INVESTIGATION & PRIVATE MOD CHAT CONTROLLER
       // =========================================================================
       let _playerChatPollTimer = null;
+      let _playerPendingChatImage = null;
+
+      function _escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
 
       function _getInvestigationApiUrl(endpoint) {
         if (typeof window !== 'undefined' && window.location.origin) {
@@ -8697,9 +8771,11 @@
           chatModal.style.setProperty('opacity', '1', 'important');
           chatModal.style.setProperty('pointer-events', 'auto', 'important');
         }
+        // Dismiss any floating notification badge
+        dismissFloatingModChatNotify();
         loadPlayerInvestigationChat();
         if (_playerChatPollTimer) clearInterval(_playerChatPollTimer);
-        _playerChatPollTimer = setInterval(loadPlayerInvestigationChat, 1800);
+        _playerChatPollTimer = setInterval(loadPlayerInvestigationChat, 2000);
         setTimeout(() => {
           const inp = document.getElementById('player-mod-chat-input');
           if (inp) inp.focus();
@@ -8718,6 +8794,150 @@
           _playerChatPollTimer = null;
         }
       };
+
+      // Player Raster Image Upload Handling (STRICTLY NO SVG)
+      window.handlePlayerChatImageSelected = function(event) {
+        const fileInput = event.target;
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+
+        const lowerName = file.name.toLowerCase();
+        const lowerType = (file.type || '').toLowerCase();
+
+        // STRICT SVG REJECTION (منع صيغ SVG منعاً باتاً لحماية أمان السيرفر واللاعبين)
+        if (lowerName.endsWith('.svg') || lowerName.includes('.svg') || lowerType.includes('svg') || lowerType === 'image/svg+xml') {
+          alert('⚠️ غير مسموح باختيار أو رفع صور بصيغة SVG لدواعي الحماية ومنع الاختراق!\nيُسمح فقط بالصور النقطية المعتمدة (PNG, JPEG, WebP, GIF).');
+          fileInput.value = '';
+          clearPlayerChatImage();
+          return;
+        }
+
+        // Size validation (Max 3.5MB)
+        if (file.size > 3.5 * 1024 * 1024) {
+          alert('⚠️ حجم الصورة كبير جداً! الحد الأقصى المسموح به هو 3.5 ميجابايت.');
+          fileInput.value = '';
+          return;
+        }
+
+        // Valid mime types check
+        const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+        if (lowerType && !validTypes.includes(lowerType)) {
+          alert('⚠️ صيغة الملف غير مدعومة! يرجى اختيار صورة عادية (PNG, JPG, WebP, GIF).');
+          fileInput.value = '';
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const result = e.target.result;
+          if (typeof result === 'string' && (result.toLowerCase().startsWith('data:image/svg') || result.toLowerCase().includes('svg+xml'))) {
+            alert('❌ تم رفض الملف لاحتوائه على بيانات SVG غير آمنة!');
+            clearPlayerChatImage();
+            return;
+          }
+
+          _playerPendingChatImage = {
+            file: file,
+            base64: result
+          };
+
+          const previewContainer = document.getElementById('playerChatImagePreviewContainer');
+          const previewImg = document.getElementById('playerChatImagePreviewImg');
+          const previewName = document.getElementById('playerChatImagePreviewName');
+          const previewSize = document.getElementById('playerChatImagePreviewSize');
+
+          if (previewImg) previewImg.src = result;
+          if (previewName) previewName.textContent = file.name;
+          if (previewSize) previewSize.textContent = `${Math.round(file.size / 1024)} KB`;
+          if (previewContainer) previewContainer.classList.remove('hidden');
+        };
+
+        reader.onerror = function() {
+          alert('❌ تعذر قراءة ملف الصورة المختارة.');
+          clearPlayerChatImage();
+        };
+
+        reader.readAsDataURL(file);
+      };
+
+      window.clearPlayerChatImage = function() {
+        _playerPendingChatImage = null;
+        const fileInput = document.getElementById('playerChatImageFileInput');
+        if (fileInput) fileInput.value = '';
+        const previewContainer = document.getElementById('playerChatImagePreviewContainer');
+        if (previewContainer) previewContainer.classList.add('hidden');
+        const previewImg = document.getElementById('playerChatImagePreviewImg');
+        if (previewImg) previewImg.src = '';
+      };
+
+      window.viewEnlargedChatImage = function(src) {
+        if (!src) return;
+        const modal = document.getElementById('modal-enlarged-chat-image');
+        const img = document.getElementById('enlargedChatImageImg');
+        const dlBtn = document.getElementById('enlargedChatImageDownloadBtn');
+        if (img) img.src = src;
+        if (dlBtn) dlBtn.href = src;
+        if (modal) modal.classList.remove('hidden');
+      };
+
+      window.closeEnlargedChatImage = function() {
+        const modal = document.getElementById('modal-enlarged-chat-image');
+        if (modal) modal.classList.add('hidden');
+        const img = document.getElementById('enlargedChatImageImg');
+        if (img) img.src = '';
+      };
+
+      window.dismissFloatingModChatNotify = function() {
+        const el = document.getElementById('floating-mod-chat-notify');
+        if (el) el.classList.add('hidden');
+      };
+
+      // Periodic check for unread moderator messages to notify the online player
+      let _lastPoppedModMsgId = null;
+      async function checkPlayerModeratorChatUnread() {
+        const u = (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || 
+                  (typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || '';
+        if (!u) return;
+
+        const chatModal = document.getElementById('modal-investigation-chat-player');
+        const isChatOpen = chatModal && !chatModal.classList.contains('hidden') && chatModal.style.display !== 'none';
+        if (isChatOpen) return;
+
+        try {
+          const res = await fetch(_getInvestigationApiUrl('/player-unread/' + encodeURIComponent(u)), {
+            cache: 'no-store'
+          });
+          if (!res.ok) return;
+          const data = await res.json();
+          const unreadCount = Number(data.unreadCount || 0);
+
+          const banner = document.getElementById('floating-mod-chat-notify');
+          const textEl = document.getElementById('floating-mod-chat-text');
+          const badgeEl = document.getElementById('floating-mod-chat-badge');
+
+          if (unreadCount > 0) {
+            const latestMsg = data.latestMessage;
+            const msgId = latestMsg ? (latestMsg.id || latestMsg.created_at) : null;
+            const preview = (latestMsg?.payload?.message) || (latestMsg?.payload?.imageUrl ? '📷 أرسل لك صورة مرفقة' : (data.lastMessage || 'أرسل المراقب رسالة خاصة إليك'));
+
+            if (badgeEl) badgeEl.textContent = `${unreadCount} جديدة`;
+            if (textEl) {
+              textEl.textContent = preview.length > 40 ? (preview.substring(0, 40) + '...') : preview;
+            }
+            if (banner) banner.classList.remove('hidden');
+
+            // Open private chat directly if newly detected unread message
+            if (msgId && msgId !== _lastPoppedModMsgId) {
+              _lastPoppedModMsgId = msgId;
+              if (typeof window.openPlayerInvestigationChat === 'function') {
+                window.openPlayerInvestigationChat();
+              }
+            }
+          } else if (banner) {
+            banner.classList.add('hidden');
+          }
+        } catch (_) {}
+      }
 
       window.loadPlayerInvestigationChat = async function() {
         const u = (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || 
@@ -8764,8 +8984,8 @@
               <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center text-xl">
                 <i class="fa-solid fa-comments"></i>
               </div>
-              <p class="text-xs font-bold text-slate-300">مرحباً بك في قناة التحقيق المباشر</p>
-              <p class="text-[11px] text-slate-500 max-w-xs mx-auto">يمكنك كتابة رسالتك وتوضيح نشاط حسابك للمحقق هنا وسيقوم بالرد عليك ومراجعة حسابك فوراً.</p>
+              <p class="text-xs font-bold text-slate-300">مرحباً بك في المحادثة الخاصة مع الإدارة</p>
+              <p class="text-[11px] text-slate-500 max-w-xs mx-auto">يمكنك كتابة رسالتك أو إرفاق صورة لتوضيح أي استفسار أو مشكلة وسيتم الرد عليك ومراجعة حسابك فوراً.</p>
             </div>
           `;
           return;
@@ -8775,9 +8995,16 @@
           const p = (m && typeof m.payload === 'object' && m.payload) ? m.payload : {};
           const isMod = Boolean(p.isMod || m.isMod || m.recipient === u || m.sender?.startsWith('MOD-') || m.sender?.includes('المحقق') || m.sender?.includes('إدارة'));
           const text = p.message || m.message || '';
+          const imageUrl = p.imageUrl || m.imageUrl || null;
           const senderName = p.senderName || m.sender || (isMod ? 'المحقق' : u);
           const ts = Number(m.created_at || p.timestamp || Date.now());
           const timeStr = new Date(ts).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+          const imageBlock = imageUrl ? `
+            <div class="mt-2">
+              <img src="${_escapeHtml(imageUrl)}" onclick="viewEnlargedChatImage('${_escapeHtml(imageUrl)}')" class="max-w-[220px] max-h-[180px] rounded-xl border border-slate-700/80 object-cover cursor-pointer hover:opacity-90 transition shadow-md bg-black/40 block" alt="صورة مرفقة" loading="lazy" />
+            </div>
+          ` : '';
 
           if (isMod) {
             return `
@@ -8787,11 +9014,12 @@
                 </div>
                 <div class="space-y-1">
                   <div class="flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold">
-                    <span>${senderName}</span>
+                    <span>${_escapeHtml(senderName)}</span>
                     <span class="text-[9px] text-slate-500">${timeStr}</span>
                   </div>
                   <div class="p-3 rounded-2xl rounded-tr-none bg-emerald-950/70 border border-emerald-500/40 text-xs text-white leading-relaxed">
-                    ${text}
+                    ${text ? `<div>${_escapeHtml(text)}</div>` : ''}
+                    ${imageBlock}
                   </div>
                 </div>
               </div>
@@ -8805,7 +9033,8 @@
                     <span class="font-bold text-slate-300">أنت</span>
                   </div>
                   <div class="p-3 rounded-2xl rounded-tl-none bg-cyan-600 text-xs text-white leading-relaxed text-right">
-                    ${text}
+                    ${text ? `<div>${_escapeHtml(text)}</div>` : ''}
+                    ${imageBlock}
                   </div>
                 </div>
               </div>
@@ -8827,25 +9056,56 @@
         const text = inp ? inp.value.trim() : '';
         const u = (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || 
                   (typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || '';
-        if (!text || !u) return;
+        
+        if ((!text && !_playerPendingChatImage) || !u) return;
 
-        inp.value = '';
-        if (btn) btn.disabled = true;
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs"></i> <span>جاري الإرسال...</span>`;
+        }
 
         try {
-          // 1. Try Fastify endpoint
+          let uploadedImageUrl = null;
+
+          // 1. If an image is selected, upload it first securely
+          if (_playerPendingChatImage) {
+            const upRes = await fetch(_getInvestigationApiUrl('/upload-image'), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                username: u,
+                imageBase64: _playerPendingChatImage.base64,
+                filename: _playerPendingChatImage.file.name
+              })
+            });
+
+            const upData = await upRes.json();
+            if (!upRes.ok || !upData.success) {
+              throw new Error(upData.error || 'فشل رفع وفحص الصورة على الخادم');
+            }
+            uploadedImageUrl = upData.imageUrl;
+          }
+
+          // 2. Try Fastify endpoint to send message
           const res = await fetch(_getInvestigationApiUrl('/player-send'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: u, message: text })
+            body: JSON.stringify({
+              username: u,
+              message: text,
+              imageUrl: uploadedImageUrl
+            })
           });
+
           if (res.ok) {
+            if (inp) inp.value = '';
+            clearPlayerChatImage();
             loadPlayerInvestigationChat();
             return;
           }
           throw new Error('Fastify returned ' + res.status);
         } catch (serverErr) {
-          // 2. Direct Supabase Fallback
+          // 3. Direct Supabase Fallback if server endpoint failed
           try {
             const ts = Date.now();
             await fetch(`${SUPABASE_URL}/rest/v1/mailbox`, {
@@ -8862,6 +9122,7 @@
                 type: 'investigation_chat',
                 payload: {
                   message: text.substring(0, 500),
+                  imageUrl: null,
                   senderName: u.trim(),
                   isMod: false,
                   timestamp: ts
@@ -8870,15 +9131,25 @@
                 created_at: ts
               })
             });
+            if (inp) inp.value = '';
+            clearPlayerChatImage();
             loadPlayerInvestigationChat();
           } catch (dbErr) {
             console.error('[Investigation Chat] Send error:', dbErr);
+            alert('❌ فشل إرسال الرسالة: ' + (serverErr.message || 'خطأ غير معروف'));
           }
         } finally {
-          if (btn) btn.disabled = false;
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-paper-plane text-xs"></i> <span>إرسال</span>`;
+          }
           if (inp) inp.focus();
         }
       };
+
+      // Poll unread messages from moderators every 5 seconds
+      setInterval(checkPlayerModeratorChatUnread, 5000);
+      setTimeout(checkPlayerModeratorChatUnread, 2000);
 
       checkForceReloadDirectly();
       checkSuspicionDirectly();

@@ -14960,7 +14960,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const counterEl = document.getElementById('modal-mailbox-counter');
 
     let pendingCount = 0;
-    const allRequests = (mails || []).filter(m => m.type !=='dm');
+    const allRequests = (mails || []).filter(m => m.type !== 'dm' && m.type !== 'investigation_chat');
 
     allRequests.forEach(m => {
       if (m.status ==='pending' || m.status ==='unread') pendingCount++;
@@ -15369,6 +15369,25 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           <button onclick="window.switchTab('bank')" class="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-bold transition flex items-center gap-1">
             <i class="fa-solid fa-building-columns"></i> فتح البنك
           </button>`;
+      } else if (mail.type === 'investigation_chat') {
+        const modName = (mail.payload && mail.payload.senderName) || mail.sender || 'المحقق';
+        const msgText = (mail.payload && mail.payload.message) || mail.message || '';
+        const imgUrl = (mail.payload && mail.payload.imageUrl) || mail.imageUrl;
+        contentHtml = `
+          <div class="space-y-1.5 p-1">
+            <div class="flex items-center gap-1.5 text-emerald-400 font-bold text-xs">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>محادثة خاصة ومباشرة من: ${modName}</span>
+            </div>
+            <p class="text-slate-200 text-xs leading-relaxed bg-slate-950/70 p-2.5 rounded-xl border border-emerald-500/30">
+              ${msgText || (imgUrl ? '📷 أرسل لك المحقق صورة مرفقة.' : 'رسالة خاصة من المحقق.')}
+            </p>
+          </div>`;
+        actionsHtml = `
+          <button onclick="if(typeof window.openPlayerInvestigationChat==='function') window.openPlayerInvestigationChat();" class="px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-xl text-xs transition flex items-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer">
+            <i class="fa-solid fa-comments"></i>
+            <span>فتح الدردشة الخاصة المباشرة 💬</span>
+          </button>`;
       }
 
       // Smart Fallback for any unknown / custom mail types so it NEVER renders blank!
@@ -15388,6 +15407,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                         mail.type === 'transfer_request' ? 'طلب تحويل أموال' :
                         mail.type === 'transfer_received' ? 'حوالة بنكية' :
                         mail.type === 'admin_popup' ? 'تنبيه إداري' :
+                        mail.type === 'investigation_chat' ? 'دردشة خاصة 🛡️' :
                         mail.type === 'admin_balance_grant' ? 'إيداع إداري' : 'رسالة';
 
       mailDiv.innerHTML = `
@@ -15478,7 +15498,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     let allDMs = [];
     if (mails && mails.length > 0) {
-      allDMs = mails.filter(m => m.type === 'dm');
+      allDMs = mails.filter(m => m.type === 'dm' || m.type === 'investigation_chat');
     }
 
     window._localDMs = window._localDMs || [];
@@ -15507,19 +15527,21 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     let totalUnread = 0;
 
     uniqueDMs.forEach(m => {
-      const partner = (m.sender === myUser ? m.recipient : m.sender);
+      const isModChat = (m.type === 'investigation_chat' || m.sender?.startsWith('MOD-') || m.sender?.includes('المحقق') || m.recipient === 'MOD_STAFF_CHANNEL');
+      const partner = isModChat ? 'إدارة اللعبة والرقابة 🛡️' : (m.sender === myUser ? m.recipient : m.sender);
       if (!partner) return;
       const ts = Number(m.created_at || m.timestamp || 0);
       const isUnread = (m.recipient === myUser && (m.status === 'unread' || m.status === 'pending'));
       if (isUnread) totalUnread++;
 
-      const msgText = (m.payload && m.payload.message) || m.message || '';
+      const msgText = (m.payload && m.payload.message) || (m.payload && m.payload.imageUrl ? '📷 صورة مرفقة' : m.message) || '';
       if (!chats[partner] || ts > chats[partner].timestamp) {
         chats[partner] = {
           username: partner,
+          isModChat: isModChat,
           lastMsg: msgText,
           timestamp: ts,
-          isSentByMe: m.sender === myUser,
+          isSentByMe: !isModChat && (m.sender === myUser),
           unreadCount: (chats[partner]?.unreadCount || 0) + (isUnread ? 1 : 0)
         };
       } else if (isUnread) {
@@ -15550,36 +15572,63 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const timeStr = c.timestamp > 0 ? new Date(c.timestamp).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '';
       const prefix = c.isSentByMe ? '<span class="text-slate-500 font-normal">أنت: </span>' : '';
       const isCurrentActive = currentActiveDMUser === c.username;
+      const isMod = Boolean(c.isModChat);
 
       const item = document.createElement('div');
-      item.className = `p-3 rounded-2xl border ${isCurrentActive ? 'bg-sky-500/10 border-sky-500/40 shadow-sm' : 'bg-slate-900/60 border-slate-800/80'} hover:border-sky-500/30 transition cursor-pointer flex items-center justify-between gap-2.5`;
+      item.className = `p-3 rounded-2xl border ${
+        isMod 
+          ? 'bg-gradient-to-r from-emerald-950/40 via-slate-900/80 to-teal-950/30 border-emerald-500/50 hover:border-emerald-400 shadow-md shadow-emerald-500/5'
+          : (isCurrentActive ? 'bg-sky-500/10 border-sky-500/40 shadow-sm' : 'bg-slate-900/60 border-slate-800/80')
+      } hover:border-sky-500/30 transition cursor-pointer flex items-center justify-between gap-2.5`;
       item.innerHTML = `
         <div class="flex items-center gap-2.5 min-w-0 flex-1">
-          <div class="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 text-sky-400 flex items-center justify-center text-xs font-black shrink-0">
-            <i class="fa-solid fa-user"></i>
+          <div class="w-9 h-9 rounded-xl ${
+            isMod 
+              ? 'bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-md shadow-emerald-500/20' 
+              : 'bg-slate-800 border border-slate-700 text-sky-400'
+          } flex items-center justify-center text-xs font-black shrink-0">
+            <i class="fa-solid ${isMod ? 'fa-user-shield' : 'fa-user'}"></i>
           </div>
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between gap-1">
-              <span class="font-bold text-white text-xs truncate">${c.username}</span>
+              <span class="font-bold ${isMod ? 'text-emerald-300' : 'text-white'} text-xs truncate flex items-center gap-1">
+                <span>${c.username}</span>
+                ${isMod ? '<span class="px-1.5 py-0.2 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[8px] font-black">رسمي</span>' : ''}
+              </span>
               <span class="text-[9px] text-slate-500 numbers-font shrink-0">${timeStr}</span>
             </div>
-            <p class="text-[11px] text-slate-400 truncate mt-0.5">${prefix}${c.lastMsg || 'محادثة جديدة...'}</p>
+            <p class="text-[11px] ${isMod ? 'text-emerald-200/80' : 'text-slate-400'} truncate mt-0.5">${prefix}${c.lastMsg || 'محادثة خاصة...'}</p>
           </div>
         </div>
         ${c.unreadCount > 0 ? `
-          <span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black shrink-0 animate-pulse">
+          <span class="px-1.5 py-0.5 rounded-full ${isMod ? 'bg-emerald-500 text-slate-950' : 'bg-rose-500 text-white'} text-[9px] font-black shrink-0 animate-pulse">
             ${c.unreadCount}
           </span>
         ` : ''}
       `;
-      item.addEventListener('click', () => openPrivateChatWith(c.username));
+      item.addEventListener('click', () => {
+        if (isMod) {
+          if (typeof window.openPlayerInvestigationChat === 'function') {
+            window.openPlayerInvestigationChat();
+          }
+        } else {
+          openPrivateChatWith(c.username);
+        }
+      });
       container.appendChild(item);
     });
   }
 
   async function openPrivateChatWith(partnerUsername) {
     if (!partnerUsername) return;
-    currentActiveDMUser = partnerUsername.trim();
+    const cleanName = partnerUsername.trim();
+    if (cleanName === 'إدارة اللعبة والرقابة 🛡️' || cleanName.includes('المحقق') || cleanName.startsWith('MOD-') || cleanName === 'MOD_STAFF_CHANNEL') {
+      if (typeof window.openPlayerInvestigationChat === 'function') {
+        window.openPlayerInvestigationChat();
+        return;
+      }
+    }
+    currentActiveDMUser = cleanName;
 
     const activeView = document.getElementById('dms-active-chat-view');
     const listView = document.getElementById('dms-conversations-list-view');
@@ -24666,7 +24715,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v9.4.4');
+            const curVer = (window._CLIENT_VERSION || 'v9.4.8');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {

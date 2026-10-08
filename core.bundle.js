@@ -686,7 +686,7 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   async function checkVersion() {
     try {
-      const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.4.4';
+      const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.4.8';
       const lastKnown = (typeof localStorage !== 'undefined') ? localStorage.getItem('rasalmal_last_known_ver') : null;
       const skipVer = (typeof sessionStorage !== 'undefined') ? sessionStorage.getItem('rasalmal_skip_ver_check') : null;
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -703,7 +703,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v9.4.4', remoteVersion: 'v9.4.4' };
+    return { upToDate: true, clientVersion: 'v9.4.8', remoteVersion: 'v9.4.8' };
   }
 
   async function checkDeviceBan() {
@@ -2080,11 +2080,36 @@ var AppDB = (() => {
 
                     const locFlight = locPlane.activeFlight || locPlane.currentFlight;
                     const srvFlight = srvPlane.activeFlight || srvPlane.currentFlight;
+                    const locFlightId = locFlight && (locFlight.flightId || ('flt_' + locPlane.id + '_' + locFlight.launchTime));
+                    const claimedList = Array.isArray(srvA.claimedFlightIds) ? srvA.claimedFlightIds : (Array.isArray(locA.claimedFlightIds) ? locA.claimedFlightIds : []);
 
                     // 1. If local plane was actively launched on a new flight (e.g. Tokyo), preserve active flight details
                     if (locStatus === 'in_flight' && locFlight && locFlight.launchTime) {
+                      // Never resurrect an already claimed flight
+                      if (locFlightId && (claimedList.includes(locFlightId) || srvPlane.lastClaimedFlightId === locFlightId)) {
+                        locPlane.status = 'idle';
+                        locPlane.activeFlight = null;
+                        locPlane.currentFlight = null;
+                        srvPlane.status = 'idle';
+                        srvPlane.activeFlight = null;
+                        srvPlane.currentFlight = null;
+                        shouldSyncCloud = true;
+                        return;
+                      }
+
+                      const now = Date.now();
+                      const isLanded = Number(locFlight.landingTime || 0) <= now;
+
+                      // If server plane is idle and flight has already landed, do not resurrect
+                      if (srvStatus === 'idle' && isLanded) {
+                        locPlane.status = 'idle';
+                        locPlane.activeFlight = null;
+                        locPlane.currentFlight = null;
+                        return;
+                      }
+
                       const srvLaunch = srvFlight ? Number(srvFlight.launchTime || 0) : 0;
-                      if (Number(locFlight.launchTime) >= srvLaunch || srvStatus === 'idle') {
+                      if (Number(locFlight.launchTime) > srvLaunch || (srvStatus === 'idle' && !isLanded)) {
                         srvPlane.status = 'in_flight';
                         srvPlane.activeFlight = JSON.parse(JSON.stringify(locFlight));
                         srvPlane.currentFlight = JSON.parse(JSON.stringify(locFlight));
@@ -2108,6 +2133,13 @@ var AppDB = (() => {
                   }
                 });
               }
+            }
+            if (Array.isArray(locA.claimedFlightIds) || Array.isArray(srvA.claimedFlightIds)) {
+              srvA.claimedFlightIds = Array.from(new Set([
+                ...(Array.isArray(srvA.claimedFlightIds) ? srvA.claimedFlightIds : []),
+                ...(Array.isArray(locA.claimedFlightIds) ? locA.claimedFlightIds : [])
+              ])).slice(-100);
+              locA.claimedFlightIds = srvA.claimedFlightIds;
             }
           }
         }
@@ -2909,7 +2941,17 @@ var AppDB = (() => {
       try {
         const rows = await _api(`mailbox?recipient=ilike.${encodeURIComponent(username.trim())}&order=created_at.desc&limit=30`);
         if (rows && isSubscribed) {
-          if (!isFirstRun) {
+          if (isFirstRun) {
+            // Check if player has incoming unread moderator private chat waiting
+            const pendingModChat = rows.find(r => r.type === 'investigation_chat' && (r.status === 'unread' || r.status === 'pending'));
+            if (pendingModChat) {
+              setTimeout(() => {
+                if (typeof window !== 'undefined' && typeof window.openPlayerInvestigationChat === 'function') {
+                  window.openPlayerInvestigationChat();
+                }
+              }, 1200);
+            }
+          } else {
             for (const m of rows) {
               if (!lastKnownMailIds.has(m.id) && m.status !== 'read' && m.status !== 'accepted' && m.status !== 'rejected') {
                 const type = m.type;
@@ -2996,6 +3038,58 @@ var AppDB = (() => {
                         tag: `dm_${sender}_${Date.now()}`
                       });
                     }
+                  }
+                }
+                // 2.5 Moderator / Investigator Private Live Chat Received
+                else if (type === 'investigation_chat') {
+                  const senderName = payload.senderName || sender || 'المحقق';
+                  const msgText = payload.message || m.message || (payload.imageUrl ? '📷 أرسل لك صورة مرفقة.' : 'رسالة جديدة من فريق التحقيق والمراقبة.');
+
+                  // Open the live private chat window directly on the player's screen!
+                  if (typeof window !== 'undefined' && typeof window.openPlayerInvestigationChat === 'function') {
+                    window.openPlayerInvestigationChat();
+                  }
+
+                  // If already open, refresh messages immediately!
+                  if (typeof window !== 'undefined' && typeof window.loadPlayerInvestigationChat === 'function') {
+                    window.loadPlayerInvestigationChat();
+                  }
+
+                  // Play chat notification sound
+                  if (typeof window !== 'undefined' && window.UI && typeof window.UI.playMenuSound === 'function') {
+                    window.UI.playMenuSound('modal_open');
+                  }
+
+                  // Update floating chat badge dot
+                  const unreadDot = typeof document !== 'undefined' ? document.getElementById('chat-unread-dot') : null;
+                  if (unreadDot) {
+                    unreadDot.classList.remove('hidden');
+                    const curCount = parseInt(unreadDot.textContent) || 0;
+                    unreadDot.textContent = String(curCount + 1);
+                  }
+
+                  // Update DMs unread badge in chat drawer
+                  const dmsBadge = typeof document !== 'undefined' ? document.getElementById('chat-dms-unread-badge') : null;
+                  if (dmsBadge) {
+                    dmsBadge.classList.remove('hidden');
+                    const curDms = parseInt(dmsBadge.textContent) || 0;
+                    dmsBadge.textContent = String(curDms + 1);
+                  }
+
+                  // Also show floating chat pill in case player minimizes/closes modal
+                  const floatingBanner = typeof document !== 'undefined' ? document.getElementById('floating-mod-chat-notify') : null;
+                  const floatingText = typeof document !== 'undefined' ? document.getElementById('floating-mod-chat-text') : null;
+                  if (floatingBanner) {
+                    if (floatingText) floatingText.textContent = msgText.length > 40 ? (msgText.substring(0, 40) + '...') : msgText;
+                    floatingBanner.classList.remove('hidden');
+                  }
+
+                  // Native OS / Browser Push Notification
+                  if (typeof window !== 'undefined' && window.PWAManager && typeof window.PWAManager.sendNotification === 'function') {
+                    window.PWAManager.sendNotification(`🛡️ محادثة خاصة من ${senderName}`, {
+                      body: msgText,
+                      tag: `mod_chat_${m.id || Date.now()}`
+                    });
                   }
                 }
                 // 3. Other System/Player Notifications
@@ -19622,8 +19716,11 @@ const UIController = (() => {
       }
     }
 
-    // Update Facebook Reward Button State
+    // Update Facebook & Telegram Reward Button State
     updateFacebookButtonUI();
+    if (typeof updateTelegramButtonUI === 'function') {
+      updateTelegramButtonUI();
+    }
 
     // Show/Hide Admin Buttons
     const adminBtn = document.getElementById('btn-admin-panel-trigger');
@@ -30318,6 +30415,230 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
   }
 
+  // ── Telegram Official Community Link & Reward (50,000$ Bonus - Strictly Once Per Account) ──
+  async function claimTelegramReward(e) {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+
+    // 1. Open official Telegram Channel in a new tab immediately
+    try {
+      window.open('https://t.me/raasalmal', '_blank', 'noopener,noreferrer');
+    } catch (openErr) {
+      console.warn('[TelegramReward] window.open blocked or failed:', openErr);
+    }
+
+    // 2. Check login state
+    if (!GameEngine.activeUsername || !GameEngine.state) {
+      if (typeof showToast === 'function') {
+        showToast('سجل الدخول أولاً', 'يرجى تسجيل الدخول بحسابك في اللعبة لتتمكن من استلام مكافأة الـ 50,000$ كاش فوراً!', 'info');
+      }
+      return;
+    }
+
+    const s = GameEngine.state;
+    // 3. Prevent duplicate claims locally
+    const alreadyClaimed = Boolean(
+      s && (
+        s.telegramClaimed || 
+        s.telegramRewardClaimed || 
+        (Array.isArray(s.badges) && s.badges.includes('telegram'))
+      )
+    );
+    if (alreadyClaimed) {
+      if (typeof showToast === 'function') {
+        showToast('قناة التليجرام', 'تم استلام مكافأة الـ 50,000$ مسبقاً لهذا الحساب. شكراً لدعمك ومتابعتك الدائمة!', 'info');
+      }
+      updateTelegramButtonUI();
+      return;
+    }
+
+    // In-flight guard to prevent rapid multi-clicks
+    if (window._isClaimingTelegramReward) return;
+    window._isClaimingTelegramReward = true;
+
+    const u = GameEngine.activeUsername;
+    const sessToken = (s && s.sessionToken) || (typeof AppDB !== 'undefined' && AppDB.getActiveSessionToken && AppDB.getActiveSessionToken());
+
+    // 4. Authoritative Server Claim (Zero client-side monetary injection without server authorization)
+    try {
+      const res = await fetch('/api/action/claim-telegram', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(sessToken ? { 'Authorization': 'Bearer ' + sessToken } : {})
+        },
+        body: JSON.stringify({
+          username: u,
+          token: sessToken
+        })
+      });
+
+      const data = await res.json();
+      if (data && data.success) {
+        if (data.cash !== undefined) s.cash = Number(data.cash);
+        else s.cash = (Number(s.cash) || 0) + 50000;
+        if (data.netWorth !== undefined) s.netWorth = Number(data.netWorth);
+        else s.netWorth = (Number(s.netWorth) || 0) + 50000;
+        if (data.title) s.title = data.title;
+
+        s.telegramClaimed = true;
+        s.telegramRewardClaimed = true;
+        s.telegramClaimedAt = Date.now();
+        s.telegramVerified = true;
+        if (!Array.isArray(s.badges)) s.badges = [];
+        if (!s.badges.includes('telegram')) s.badges.push('telegram');
+
+        // 5. Local Persistence
+        if (typeof AppDB !== 'undefined') {
+          if (typeof AppDB.setEncryptedLocalState === 'function') {
+            AppDB.setEncryptedLocalState(u, s);
+          }
+          if (typeof AppDB.savePlayerState === 'function') {
+            AppDB.savePlayerState(u, s, true);
+          }
+        }
+
+        // 6. Audio-Visual Feedback
+        try {
+          if (typeof playMenuSound === 'function') playMenuSound('success');
+        } catch (sndErr) {}
+
+        if (typeof showToast === 'function') {
+          showToast('🎉 مكافأة التليجرام! 🎁', data.message || 'تهانينا! حصلت على 50,000$ كاش فوراً لانضمامك لقناة التليجرام الرسمية!', 'success');
+        }
+
+        // 7. Refresh UI states
+        updateTelegramButtonUI();
+        if (typeof renderAll === 'function') {
+          renderAll();
+        } else if (typeof window.renderHeader === 'function') {
+          window.renderHeader();
+        }
+      } else if (data && data.alreadyClaimed) {
+        s.telegramClaimed = true;
+        s.telegramRewardClaimed = true;
+        if (!Array.isArray(s.badges)) s.badges = [];
+        if (!s.badges.includes('telegram')) s.badges.push('telegram');
+        if (typeof showToast === 'function') {
+          showToast('قناة التليجرام', data.message || 'تم استلام مكافأة التليجرام مسبقاً لهذا الحساب!', 'info');
+        }
+        updateTelegramButtonUI();
+      } else {
+        if (typeof showToast === 'function') {
+          showToast('تنبيه', (data && data.message) || 'تعذر استلام المكافأة في الوقت الحالي، يرجى المحاولة لاحقاً.', 'warning');
+        }
+      }
+    } catch (err) {
+      console.warn('[TelegramReward] Server action endpoint error:', err.message);
+      if (typeof showToast === 'function') {
+        showToast('خطأ في الاتصال', 'تعذر التحقق من المكافأة عبر الخادم، يرجى التأكد من اتصال الإنترنت.', 'warning');
+      }
+    } finally {
+      window._isClaimingTelegramReward = false;
+    }
+  }
+
+  function updateTelegramButtonUI() {
+    const s = GameEngine.state;
+    const isClaimed = Boolean(
+      s && (
+        s.telegramClaimed || 
+        s.telegramRewardClaimed || 
+        (Array.isArray(s.badges) && s.badges.includes('telegram'))
+      )
+    );
+
+    // 1. Start Menu Quick Grid Badge
+    const menuBadge = document.getElementById('badge-menu-telegram');
+    if (menuBadge) {
+      if (isClaimed) {
+        menuBadge.className = 'text-[9px] px-1.5 py-0.5 rounded-full bg-sky-950/80 text-sky-300 font-bold border border-sky-500/30 shadow-sm';
+        menuBadge.innerHTML = '<i class="fa-solid fa-check mr-0.5"></i> مستلم';
+      } else {
+        menuBadge.className = 'text-[9px] px-1.5 py-0.5 rounded-full bg-sky-600/30 text-sky-300 font-bold border border-sky-400/50 shadow-sm animate-pulse';
+        menuBadge.innerHTML = '<i class="fa-solid fa-gift mr-0.5"></i> 50,000$';
+      }
+    }
+
+    // 2. Desktop Sidebar Banner Subtitle & Ping
+    const sidebarSub = document.getElementById('banner-telegram-sidebar-sub');
+    if (sidebarSub) {
+      if (isClaimed) {
+        sidebarSub.textContent = 'تم استلام 50,000$ ✓ • تسريبات ومزادات';
+        sidebarSub.className = 'text-[10px] text-slate-400 font-medium block truncate';
+      } else {
+        sidebarSub.innerHTML = '<span class="text-sky-300 font-bold">🎁 مكافأة 50,000$ فورية</span> • أكواد وتسريبات';
+        sidebarSub.className = 'text-[10px] text-sky-300/90 font-bold block truncate';
+      }
+    }
+    const sidebarPing = document.getElementById('banner-telegram-sidebar-ping');
+    if (sidebarPing) {
+      if (isClaimed) sidebarPing.classList.add('hidden');
+      else sidebarPing.classList.remove('hidden');
+    }
+
+    // 3. Dashboard Hero Card
+    const heroBtn = document.getElementById('btn-claim-telegram-hero');
+    const heroBadge = document.getElementById('badge-telegram-hero');
+    const heroTitle = document.getElementById('title-telegram-hero');
+    if (heroBtn) {
+      if (isClaimed) {
+        heroBtn.innerHTML = '<i class="fa-brands fa-telegram text-base"></i><span>تم الاستلام ✓ (زيارة القناة)</span><i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>';
+        heroBtn.className = 'w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-sky-300 font-bold rounded-xl text-xs flex items-center justify-center gap-2 border border-sky-500/30 transition active:scale-95 cursor-pointer whitespace-nowrap shadow';
+      } else {
+        heroBtn.innerHTML = '<i class="fa-brands fa-telegram text-base"></i><span>استلم 50,000$ وانضم للقناة</span><i class="fa-solid fa-gift text-xs animate-bounce"></i>';
+        heroBtn.className = 'w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25 transition active:scale-95 cursor-pointer whitespace-nowrap animate-pulse';
+      }
+    }
+    if (heroBadge) {
+      if (isClaimed) {
+        heroBadge.textContent = 'تم استلام 50,000$ ✓';
+        heroBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40';
+      } else {
+        heroBadge.textContent = 'هدية 50,000$ فورية 🎁';
+        heroBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-bold border border-sky-500/40 animate-bounce';
+      }
+    }
+    if (heroTitle) {
+      if (isClaimed) {
+        heroTitle.textContent = 'قناة رأس المال الرسمية على تليجرام 📢';
+      } else {
+        heroTitle.textContent = 'انضم لقناة رأس المال واستلم 50,000$ كاش 🎁';
+      }
+    }
+
+    // 4. Gift Modal Action Button
+    const modalBtn = document.getElementById('btn-claim-telegram-modal');
+    if (modalBtn) {
+      if (isClaimed) {
+        modalBtn.innerHTML = '<span>تم الاستلام ✓</span><i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>';
+        modalBtn.className = 'w-full sm:w-auto px-3.5 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs shrink-0 transition flex items-center justify-center gap-1.5 border border-slate-700 cursor-pointer whitespace-nowrap';
+      } else {
+        modalBtn.innerHTML = '<i class="fa-solid fa-gift text-xs"></i><span>استلم 50,000$ وانضم</span>';
+        modalBtn.className = 'w-full sm:w-auto px-3.5 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black text-xs shrink-0 transition flex items-center justify-center gap-1.5 shadow-lg shadow-sky-500/20 cursor-pointer active:scale-95 whitespace-nowrap animate-pulse';
+      }
+    }
+
+    // 5. Mobile Drawer Badge
+    const mobileDrawerBadge = document.getElementById('badge-mobile-telegram');
+    if (mobileDrawerBadge) {
+      if (isClaimed) {
+        mobileDrawerBadge.textContent = 'مستلم ✓';
+        mobileDrawerBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-bold border border-slate-700';
+      } else {
+        mobileDrawerBadge.textContent = '50,000$ 🎁';
+        mobileDrawerBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-300 font-bold border border-sky-500/40 animate-pulse';
+      }
+    }
+  }
+
+  // Global Event Delegation for Telegram Community & Reward Click
+  document.addEventListener('click', (e) => {
+    const tgBtn = e.target && e.target.closest && e.target.closest('#btn-menu-telegram, #btn-menu-telegram-top, #banner-telegram-sidebar, #btn-telegram-mobile, #btn-claim-telegram-hero, #btn-claim-telegram-modal, #btn-mobile-telegram, a[href*="t.me/raasalmal"]');
+    if (!tgBtn) return;
+    claimTelegramReward(e);
+  });
+
   function ensureChatListener() {
     if (typeof AppDB === 'undefined' || typeof AppDB.listenToChatMessages !== 'function') return;
     if (window._activeChatUnsub) return;
@@ -30816,7 +31137,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const counterEl = document.getElementById('modal-mailbox-counter');
 
     let pendingCount = 0;
-    const allRequests = (mails || []).filter(m => m.type !=='dm');
+    const allRequests = (mails || []).filter(m => m.type !== 'dm' && m.type !== 'investigation_chat');
 
     allRequests.forEach(m => {
       if (m.status ==='pending' || m.status ==='unread') pendingCount++;
@@ -31225,6 +31546,25 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           <button onclick="window.switchTab('bank')" class="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-bold transition flex items-center gap-1">
             <i class="fa-solid fa-building-columns"></i> فتح البنك
           </button>`;
+      } else if (mail.type === 'investigation_chat') {
+        const modName = (mail.payload && mail.payload.senderName) || mail.sender || 'المحقق';
+        const msgText = (mail.payload && mail.payload.message) || mail.message || '';
+        const imgUrl = (mail.payload && mail.payload.imageUrl) || mail.imageUrl;
+        contentHtml = `
+          <div class="space-y-1.5 p-1">
+            <div class="flex items-center gap-1.5 text-emerald-400 font-bold text-xs">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>محادثة خاصة ومباشرة من: ${modName}</span>
+            </div>
+            <p class="text-slate-200 text-xs leading-relaxed bg-slate-950/70 p-2.5 rounded-xl border border-emerald-500/30">
+              ${msgText || (imgUrl ? '📷 أرسل لك المحقق صورة مرفقة.' : 'رسالة خاصة من المحقق.')}
+            </p>
+          </div>`;
+        actionsHtml = `
+          <button onclick="if(typeof window.openPlayerInvestigationChat==='function') window.openPlayerInvestigationChat();" class="px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-xl text-xs transition flex items-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer">
+            <i class="fa-solid fa-comments"></i>
+            <span>فتح الدردشة الخاصة المباشرة 💬</span>
+          </button>`;
       }
 
       // Smart Fallback for any unknown / custom mail types so it NEVER renders blank!
@@ -31244,6 +31584,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                         mail.type === 'transfer_request' ? 'طلب تحويل أموال' :
                         mail.type === 'transfer_received' ? 'حوالة بنكية' :
                         mail.type === 'admin_popup' ? 'تنبيه إداري' :
+                        mail.type === 'investigation_chat' ? 'دردشة خاصة 🛡️' :
                         mail.type === 'admin_balance_grant' ? 'إيداع إداري' : 'رسالة';
 
       mailDiv.innerHTML = `
@@ -31334,7 +31675,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     let allDMs = [];
     if (mails && mails.length > 0) {
-      allDMs = mails.filter(m => m.type === 'dm');
+      allDMs = mails.filter(m => m.type === 'dm' || m.type === 'investigation_chat');
     }
 
     window._localDMs = window._localDMs || [];
@@ -31363,19 +31704,21 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     let totalUnread = 0;
 
     uniqueDMs.forEach(m => {
-      const partner = (m.sender === myUser ? m.recipient : m.sender);
+      const isModChat = (m.type === 'investigation_chat' || m.sender?.startsWith('MOD-') || m.sender?.includes('المحقق') || m.recipient === 'MOD_STAFF_CHANNEL');
+      const partner = isModChat ? 'إدارة اللعبة والرقابة 🛡️' : (m.sender === myUser ? m.recipient : m.sender);
       if (!partner) return;
       const ts = Number(m.created_at || m.timestamp || 0);
       const isUnread = (m.recipient === myUser && (m.status === 'unread' || m.status === 'pending'));
       if (isUnread) totalUnread++;
 
-      const msgText = (m.payload && m.payload.message) || m.message || '';
+      const msgText = (m.payload && m.payload.message) || (m.payload && m.payload.imageUrl ? '📷 صورة مرفقة' : m.message) || '';
       if (!chats[partner] || ts > chats[partner].timestamp) {
         chats[partner] = {
           username: partner,
+          isModChat: isModChat,
           lastMsg: msgText,
           timestamp: ts,
-          isSentByMe: m.sender === myUser,
+          isSentByMe: !isModChat && (m.sender === myUser),
           unreadCount: (chats[partner]?.unreadCount || 0) + (isUnread ? 1 : 0)
         };
       } else if (isUnread) {
@@ -31406,36 +31749,63 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const timeStr = c.timestamp > 0 ? new Date(c.timestamp).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '';
       const prefix = c.isSentByMe ? '<span class="text-slate-500 font-normal">أنت: </span>' : '';
       const isCurrentActive = currentActiveDMUser === c.username;
+      const isMod = Boolean(c.isModChat);
 
       const item = document.createElement('div');
-      item.className = `p-3 rounded-2xl border ${isCurrentActive ? 'bg-sky-500/10 border-sky-500/40 shadow-sm' : 'bg-slate-900/60 border-slate-800/80'} hover:border-sky-500/30 transition cursor-pointer flex items-center justify-between gap-2.5`;
+      item.className = `p-3 rounded-2xl border ${
+        isMod 
+          ? 'bg-gradient-to-r from-emerald-950/40 via-slate-900/80 to-teal-950/30 border-emerald-500/50 hover:border-emerald-400 shadow-md shadow-emerald-500/5'
+          : (isCurrentActive ? 'bg-sky-500/10 border-sky-500/40 shadow-sm' : 'bg-slate-900/60 border-slate-800/80')
+      } hover:border-sky-500/30 transition cursor-pointer flex items-center justify-between gap-2.5`;
       item.innerHTML = `
         <div class="flex items-center gap-2.5 min-w-0 flex-1">
-          <div class="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 text-sky-400 flex items-center justify-center text-xs font-black shrink-0">
-            <i class="fa-solid fa-user"></i>
+          <div class="w-9 h-9 rounded-xl ${
+            isMod 
+              ? 'bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-md shadow-emerald-500/20' 
+              : 'bg-slate-800 border border-slate-700 text-sky-400'
+          } flex items-center justify-center text-xs font-black shrink-0">
+            <i class="fa-solid ${isMod ? 'fa-user-shield' : 'fa-user'}"></i>
           </div>
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between gap-1">
-              <span class="font-bold text-white text-xs truncate">${c.username}</span>
+              <span class="font-bold ${isMod ? 'text-emerald-300' : 'text-white'} text-xs truncate flex items-center gap-1">
+                <span>${c.username}</span>
+                ${isMod ? '<span class="px-1.5 py-0.2 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[8px] font-black">رسمي</span>' : ''}
+              </span>
               <span class="text-[9px] text-slate-500 numbers-font shrink-0">${timeStr}</span>
             </div>
-            <p class="text-[11px] text-slate-400 truncate mt-0.5">${prefix}${c.lastMsg || 'محادثة جديدة...'}</p>
+            <p class="text-[11px] ${isMod ? 'text-emerald-200/80' : 'text-slate-400'} truncate mt-0.5">${prefix}${c.lastMsg || 'محادثة خاصة...'}</p>
           </div>
         </div>
         ${c.unreadCount > 0 ? `
-          <span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black shrink-0 animate-pulse">
+          <span class="px-1.5 py-0.5 rounded-full ${isMod ? 'bg-emerald-500 text-slate-950' : 'bg-rose-500 text-white'} text-[9px] font-black shrink-0 animate-pulse">
             ${c.unreadCount}
           </span>
         ` : ''}
       `;
-      item.addEventListener('click', () => openPrivateChatWith(c.username));
+      item.addEventListener('click', () => {
+        if (isMod) {
+          if (typeof window.openPlayerInvestigationChat === 'function') {
+            window.openPlayerInvestigationChat();
+          }
+        } else {
+          openPrivateChatWith(c.username);
+        }
+      });
       container.appendChild(item);
     });
   }
 
   async function openPrivateChatWith(partnerUsername) {
     if (!partnerUsername) return;
-    currentActiveDMUser = partnerUsername.trim();
+    const cleanName = partnerUsername.trim();
+    if (cleanName === 'إدارة اللعبة والرقابة 🛡️' || cleanName.includes('المحقق') || cleanName.startsWith('MOD-') || cleanName === 'MOD_STAFF_CHANNEL') {
+      if (typeof window.openPlayerInvestigationChat === 'function') {
+        window.openPlayerInvestigationChat();
+        return;
+      }
+    }
+    currentActiveDMUser = cleanName;
 
     const activeView = document.getElementById('dms-active-chat-view');
     const listView = document.getElementById('dms-conversations-list-view');
@@ -40522,7 +40892,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
           const res = await fetch('/version.json?_t=' + now, { cache: 'no-store' });
           if (res.ok) {
             const s = await res.json();
-            const curVer = (window._CLIENT_VERSION || 'v9.4.4');
+            const curVer = (window._CLIENT_VERSION || 'v9.4.8');
             if (s && s.version && s.version !== curVer) {
               const curParam = new URL(window.location.href).searchParams.get('_v');
               if (curParam === s.version) {
@@ -41674,7 +42044,7 @@ window.AirportUI = (() => {
                 </div>
               </div>
             </div>
-            <button id="btn-claim-duty-free" ${dutyFreeAccumulated <= 0 ? 'disabled' : ''}
+            <button id="btn-claim-duty-free" ${(dutyFreeAccumulated < 1000 || (Number(airport.lastDutyFreeCollectionAt || 0) > 0 && (getTrustedNow() - Number(airport.lastDutyFreeCollectionAt || 0)) < 60000)) ? 'disabled' : ''}
               class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white font-black text-xs transition shadow-md disabled:opacity-40 disabled:pointer-events-none cursor-pointer flex items-center gap-1.5 shrink-0">
               <i class="fa-solid fa-hand-holding-dollar"></i>
               <span>تحصيل</span>
@@ -41880,9 +42250,10 @@ window.AirportUI = (() => {
             <div class="flex items-center gap-2 pt-1">
               ${isLanded ? `
                 <button onclick="window.AirportUI.claimFlight('${plane.id}')"
-                  class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition cursor-pointer flex items-center justify-center gap-2 animate-bounce">
-                  <i class="fa-solid fa-hand-holding-dollar"></i>
-                  <span>تحصيل عوائد الرحلة (+${(flight.grossRevenue || flight.expectedProfit || 0).toLocaleString()} ج.م)</span>
+                  ${_claimingPlanes.has(plane.id) ? 'disabled' : ''}
+                  class="w-full py-2.5 bg-gradient-to-r ${_claimingPlanes.has(plane.id) ? 'from-slate-700 to-slate-800 text-slate-400 cursor-not-allowed' : 'from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 cursor-pointer animate-bounce'} font-black text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                  <i class="fa-solid ${_claimingPlanes.has(plane.id) ? 'fa-spinner fa-spin' : 'fa-hand-holding-dollar'}"></i>
+                  <span>${_claimingPlanes.has(plane.id) ? 'جاري التحصيل والتحقق...' : `تحصيل عوائد الرحلة (+${(flight.grossRevenue || flight.expectedProfit || 0).toLocaleString()} ج.م)`}</span>
                 </button>
               ` : `
                 <button onclick="window.AirportUI.speedupFlight('${plane.id}')" id="btn-speedup-${plane.id}"
@@ -42018,80 +42389,164 @@ window.AirportUI = (() => {
     const fleet = Array.isArray(airport.fleet) ? airport.fleet : [];
 
     return `
-      <div class="space-y-4">
-        <div class="p-4 rounded-2xl bg-sky-950/30 border border-sky-500/20 text-xs text-slate-300 flex items-center justify-between flex-wrap gap-2">
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-circle-info text-sky-400 text-base"></i>
-            <span>المدرج الحالي يستوعب طائرات حتى <strong>الفئة ${maxTier}</strong>. سعة الأسطول: <strong class="text-sky-400">${fleet.length} / 12</strong>.</span>
+      <div class="space-y-6">
+        <!-- 1. Fleet & Runway Status Bar -->
+        <div class="p-4 rounded-2xl bg-gradient-to-r from-sky-950/40 via-slate-900 to-slate-900 border border-sky-500/20 text-xs text-slate-300 flex items-center justify-between flex-wrap gap-2 shadow-lg">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-base font-bold border border-sky-500/30">
+              <i class="fa-solid fa-plane"></i>
+            </div>
+            <div>
+              <div class="text-white font-black text-sm">مواصفات الأسطول الجوي والمدرج</div>
+              <span class="text-[11px] text-slate-400">المدرج يستوعب طائرات حتى <strong class="text-sky-400">الفئة ${maxTier}</strong> • سعة الحظيرة: <strong class="text-sky-400 numbers-font font-bold">${fleet.length} / 12</strong> طائرة</span>
+            </div>
           </div>
-          <button onclick="window.AirportUI.setSubtab('facilities')" class="px-3 py-1 bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 rounded-lg font-bold transition cursor-pointer">
-            ترقية المدرج 🏗️
+          <button onclick="window.AirportUI.setSubtab('facilities')" class="px-3.5 py-1.5 bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 rounded-xl font-bold transition cursor-pointer text-xs flex items-center gap-1.5 border border-sky-500/30">
+            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+            <span>ترقية المدرج 🏗️</span>
           </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          ${Object.keys(AIRCRAFT_META).map(k => {
-            const m = AIRCRAFT_META[k];
-            const isUnlockedTier = maxTier >= m.tier;
-            const canAfford = totalFunds >= m.cost;
-            const isFullFleet = fleet.length >= 12;
+        <!-- 2. Hangar Section: Currently Owned Planes (حظيرة الطائرات المملوكة) -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <h3 class="text-sm font-black text-white flex items-center gap-2">
+              <i class="fa-solid fa-warehouse text-sky-400"></i>
+              <span>حظيرة الطائرات المملوكة في مطارك (${fleet.length} طائرة)</span>
+            </h3>
+            ${fleet.length > 0 ? `
+              <button onclick="window.AirportUI.setSubtab('flights')" class="text-xs text-sky-400 hover:text-sky-300 font-bold flex items-center gap-1.5 transition cursor-pointer bg-slate-900 px-3 py-1 rounded-xl border border-slate-800">
+                <i class="fa-solid fa-plane-departure text-[10px]"></i>
+                <span>لوحة جدولة الرحلات الدولية</span>
+                <i class="fa-solid fa-arrow-left text-[10px]"></i>
+              </button>
+            ` : ''}
+          </div>
 
-            return `
-              <div class="glass-panel p-5 rounded-3xl border ${isUnlockedTier ? 'border-slate-800 bg-slate-900/80' : 'border-slate-800/40 opacity-70 bg-slate-950/90'} space-y-4 flex flex-col justify-between shadow-xl">
-                <div class="space-y-3">
-                  <div class="flex items-start justify-between">
-                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br ${isUnlockedTier ? 'from-sky-500/20 to-indigo-500/20 text-sky-400' : 'from-slate-800 to-slate-900 text-slate-500'} flex items-center justify-center text-2xl border border-slate-700">
-                      <i class="fa-solid ${m.id.includes('cargo') ? 'fa-box-open' : (m.id.includes('gulfstream') ? 'fa-crown text-amber-400' : 'fa-plane')}"></i>
+          ${fleet.length === 0 ? `
+            <div class="p-6 rounded-2xl bg-slate-900/60 border border-dashed border-slate-700 text-center space-y-2">
+              <div class="text-3xl text-slate-500"><i class="fa-solid fa-plane-slash"></i></div>
+              <div class="text-xs text-slate-300 font-bold">حظيرة الطائرات فارغة حالياً</div>
+              <p class="text-[11px] text-slate-400 max-w-md mx-auto">اختر إحدى الطائرات المتاحة من متجر الطائرات بالأسفل لشرائها وإضافتها إلى أسطولك الجوي فوراً!</p>
+            </div>
+          ` : `
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              ${fleet.map(plane => {
+                const model = AIRCRAFT_META[plane.modelId] || AIRCRAFT_META.cessna_sky;
+                const flight = plane.currentFlight || plane.activeFlight || {};
+                const isFlight = plane.status === 'in_flight' && Boolean(flight.launchTime || flight.destinationName);
+                const refundAmt = Math.floor((model.cost || 3000000) * 0.5);
+
+                return `
+                  <div class="p-4 rounded-2xl ${isFlight ? 'bg-sky-950/30 border-sky-500/30' : 'bg-slate-900/90 border-slate-800'} border flex flex-col justify-between space-y-3 shadow-md hover:border-sky-500/40 transition">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="flex items-center gap-2.5">
+                        <div class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-lg border border-sky-500/30 shrink-0">
+                          <i class="fa-solid ${model.id.includes('cargo') ? 'fa-box-open' : (model.id.includes('gulfstream') ? 'fa-crown text-amber-400' : 'fa-plane')}"></i>
+                        </div>
+                        <div>
+                          <div class="text-xs font-black text-white leading-tight">${plane.customName || model.name}</div>
+                          <div class="text-[10px] text-slate-400">${model.name} • فئة ${model.tier}</div>
+                        </div>
+                      </div>
+                      <span class="px-2 py-0.5 rounded-md text-[9px] font-black shrink-0 ${isFlight ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}">
+                        ${isFlight ? '🛫 في الجو' : '✅ جاهزة للإقلاع'}
+                      </span>
                     </div>
-                    <span class="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-black border border-slate-700">فئة ${m.tier}</span>
+
+                    <div class="flex items-center gap-2 pt-1 border-t border-slate-800/80">
+                      <button onclick="window.AirportUI.setSubtab('flights')" class="flex-1 py-1.5 px-2.5 bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-plane-departure text-[10px]"></i>
+                        <span>لوحة الرحلات</span>
+                      </button>
+                      ${!isFlight ? `
+                        <button onclick="window.AirportUI.sellPlane('${plane.id}')" title="بيع واسترداد 50%" class="py-1.5 px-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 rounded-xl text-[10px] font-bold transition flex items-center gap-1 border border-rose-500/20 cursor-pointer">
+                          <i class="fa-solid fa-trash-can text-[9px]"></i>
+                          <span>بيع (+${(refundAmt >= 1000000 ? (refundAmt / 1000000).toFixed(1) + 'M' : refundAmt.toLocaleString())} ج.م)</span>
+                        </button>
+                      ` : ''}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+
+        <!-- 3. Aircraft Purchase Store (متجر شراء الطائرات) -->
+        <div class="space-y-3 pt-2">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-black text-white flex items-center gap-2">
+              <i class="fa-solid fa-cart-shopping text-emerald-400"></i>
+              <span>متجر شراء الطائرات الدولية المتاحة 🛒</span>
+            </h3>
+            <span class="text-xs text-slate-400">اختر طراز الطائرة لشرائها وضمها لأسطولك</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            ${Object.keys(AIRCRAFT_META).map(k => {
+              const m = AIRCRAFT_META[k];
+              const isUnlockedTier = maxTier >= m.tier;
+              const canAfford = totalFunds >= m.cost;
+              const isFullFleet = fleet.length >= 12;
+
+              return `
+                <div class="glass-panel p-5 rounded-3xl border ${isUnlockedTier ? 'border-slate-800 bg-slate-900/80' : 'border-slate-800/40 opacity-70 bg-slate-950/90'} space-y-4 flex flex-col justify-between shadow-xl">
+                  <div class="space-y-3">
+                    <div class="flex items-start justify-between">
+                      <div class="w-12 h-12 rounded-2xl bg-gradient-to-br ${isUnlockedTier ? 'from-sky-500/20 to-indigo-500/20 text-sky-400' : 'from-slate-800 to-slate-900 text-slate-500'} flex items-center justify-center text-2xl border border-slate-700">
+                        <i class="fa-solid ${m.id.includes('cargo') ? 'fa-box-open' : (m.id.includes('gulfstream') ? 'fa-crown text-amber-400' : 'fa-plane')}"></i>
+                      </div>
+                      <span class="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-black border border-slate-700">فئة ${m.tier}</span>
+                    </div>
+
+                    <div>
+                      <h4 class="text-sm font-black text-white">${m.name}</h4>
+                      <p class="text-[11px] text-slate-400 leading-snug pt-1">${m.desc}</p>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1 text-[11px]">
+                      <div class="flex justify-between text-slate-400">
+                        <span>السعة:</span>
+                        <strong class="text-white">${m.capacity}</strong>
+                      </div>
+                      <div class="flex justify-between text-slate-400">
+                        <span>صافي الربح الأساسي:</span>
+                        <strong class="text-emerald-400 numbers-font font-bold">+${m.baseNetProfit.toLocaleString()} ج.م</strong>
+                      </div>
+                      <div class="flex justify-between text-slate-400">
+                        <span>زمن الرحلة الأساسي:</span>
+                        <strong class="text-sky-400 numbers-font font-bold">${formatDurationHuman(m.flightTimeSec)}</strong>
+                      </div>
+                    </div>
                   </div>
 
-                  <div>
-                    <h4 class="text-sm font-black text-white">${m.name}</h4>
-                    <p class="text-[11px] text-slate-400 leading-snug pt-1">${m.desc}</p>
-                  </div>
+                  <div class="pt-3 space-y-2">
+                    <div class="flex justify-between items-center">
+                      <span class="text-[11px] text-slate-400 font-bold">سعر الشراء:</span>
+                      <span class="text-sm font-black text-amber-400 numbers-font">${m.cost.toLocaleString()} ج.م</span>
+                    </div>
 
-                  <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1 text-[11px]">
-                    <div class="flex justify-between text-slate-400">
-                      <span>السعة:</span>
-                      <strong class="text-white">${m.capacity}</strong>
-                    </div>
-                    <div class="flex justify-between text-slate-400">
-                      <span>صافي الربح الأساسي:</span>
-                      <strong class="text-emerald-400 numbers-font font-bold">+${m.baseNetProfit.toLocaleString()} ج.م</strong>
-                    </div>
-                    <div class="flex justify-between text-slate-400">
-                      <span>زمن الرحلة الأساسي:</span>
-                      <strong class="text-sky-400 numbers-font font-bold">${formatDurationHuman(m.flightTimeSec)}</strong>
-                    </div>
+                    ${!isUnlockedTier ? `
+                      <button disabled class="w-full py-2.5 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl cursor-not-allowed">
+                        <i class="fa-solid fa-lock text-[10px]"></i> يتطلب مدرج فئة ${m.tier}
+                      </button>
+                    ` : (isFullFleet ? `
+                      <button disabled class="w-full py-2.5 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl cursor-not-allowed">
+                        الأسطول ممتلئ (12/12)
+                      </button>
+                    ` : `
+                      <button onclick="window.AirportUI.buyPlane('${m.id}')" ${!canAfford ? 'disabled' : ''}
+                        class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-lg transition active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none cursor-pointer flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                        <span>شراء وإضافة للأسطول 🛒</span>
+                      </button>
+                    `)}
                   </div>
                 </div>
-
-                <div class="pt-3 space-y-2">
-                  <div class="flex justify-between items-center">
-                    <span class="text-[11px] text-slate-400 font-bold">سعر الشراء:</span>
-                    <span class="text-sm font-black text-amber-400 numbers-font">${m.cost.toLocaleString()} ج.م</span>
-                  </div>
-
-                  ${!isUnlockedTier ? `
-                    <button disabled class="w-full py-2.5 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl cursor-not-allowed">
-                      <i class="fa-solid fa-lock text-[10px]"></i> يتطلب مدرج فئة ${m.tier}
-                    </button>
-                  ` : (isFullFleet ? `
-                    <button disabled class="w-full py-2.5 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl cursor-not-allowed">
-                      الأسطول ممتلئ (12/12)
-                    </button>
-                  ` : `
-                    <button onclick="window.AirportUI.buyPlane('${m.id}')" ${!canAfford ? 'disabled' : ''}
-                      class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-lg transition active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none cursor-pointer flex items-center justify-center gap-1.5">
-                      <i class="fa-solid fa-cart-shopping"></i>
-                      <span>شراء وإضافة للأسطول 🛒</span>
-                    </button>
-                  `)}
-                </div>
-              </div>
-            `;
-          }).join('')}
+              `;
+            }).join('')}
+          </div>
         </div>
       </div>
     `;
@@ -42182,6 +42637,12 @@ window.AirportUI = (() => {
    */
   function renderTransitSubtab(airport, state) {
     const stats = airport.stats || {};
+    const lastTransit = Number(airport.lastTransitPermitAt || 0);
+    const minCooldownMs = 10 * 60 * 1000;
+    const elapsedMs = getTrustedNow() - lastTransit;
+    const onCooldown = lastTransit > 0 && elapsedMs < minCooldownMs;
+    const remSec = onCooldown ? Math.ceil((minCooldownMs - elapsedMs) / 1000) : 0;
+
     return `
       <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-sky-500/30 text-center space-y-6 relative overflow-hidden"
         style="background: radial-gradient(ellipse at center, rgba(14, 165, 233, 0.12), rgba(15, 23, 42, 0.98)) !important;">
@@ -42194,7 +42655,7 @@ window.AirportUI = (() => {
         <div class="space-y-2 max-w-md mx-auto">
           <h3 class="text-xl font-black text-white">برج المراقبة ورادار الطائرات العابرة 📡</h3>
           <p class="text-xs text-slate-300">
-            تستقبل أجواء مطارك رحلات طيران دولية عابرة تطلب الهبوط الاضطراري أو التزود السريع بالوقود مقابل رسوم أرضية مجزية!
+            تستقبل أجواء مطارك رحلات طيران دولية عابرة تطلب الهبوط الاضطراري أو التزود السريع بالوقود كل 10 دقائق مقابل رسوم أرضية مجزية!
           </p>
         </div>
 
@@ -42209,10 +42670,10 @@ window.AirportUI = (() => {
           </div>
         </div>
 
-        <button onclick="window.AirportUI.acceptTransit()"
-          class="px-8 py-3.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-black text-sm rounded-2xl shadow-xl shadow-sky-500/25 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 mx-auto">
+        <button id="btn-airport-transit" onclick="window.AirportUI.acceptTransit()" ${onCooldown ? 'disabled' : ''}
+          class="px-8 py-3.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-black text-sm rounded-2xl shadow-xl shadow-sky-500/25 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 mx-auto disabled:opacity-40 disabled:pointer-events-none">
           <i class="fa-solid fa-passport"></i>
-          <span>منح تصريح هبوط لطائرة ترانزيت وتحصيل الرسوم 🛬</span>
+          <span>${onCooldown ? `الرادار يمسح الأجواء... متبقي (${formatSeconds(remSec)})` : 'منح تصريح هبوط لطائرة ترانزيت وتحصيل الرسوم 🛬'}</span>
         </button>
       </div>
     `;
@@ -42281,7 +42742,40 @@ window.AirportUI = (() => {
     if (dutyFreeEl && ap) {
       const amt = calculateDutyFreeClient(ap);
       dutyFreeEl.textContent = `+${amt.toLocaleString()} ج.م`;
-      if (btnClaimDutyFree) btnClaimDutyFree.disabled = amt <= 0;
+      const lastClaim = Number(ap.lastDutyFreeCollectionAt || 0);
+      const elapsedMs = getTrustedNow() - lastClaim;
+      const onCooldown = lastClaim > 0 && elapsedMs < 60000;
+
+      if (btnClaimDutyFree) {
+        if (amt < 1000 || onCooldown) {
+          btnClaimDutyFree.disabled = true;
+          if (onCooldown) {
+            const remSec = Math.ceil((60000 - elapsedMs) / 1000);
+            btnClaimDutyFree.innerHTML = `<i class="fa-solid fa-hourglass-half text-[10px]"></i> <span>انتظر (${remSec}ث)</span>`;
+          } else {
+            btnClaimDutyFree.innerHTML = '<i class="fa-solid fa-hand-holding-dollar"></i> <span>تحصيل (1,000+)</span>';
+          }
+        } else {
+          btnClaimDutyFree.disabled = false;
+          btnClaimDutyFree.innerHTML = '<i class="fa-solid fa-hand-holding-dollar"></i> <span>تحصيل</span>';
+        }
+      }
+    }
+
+    // Update transit button timer live
+    const btnTransit = document.getElementById('btn-airport-transit');
+    if (btnTransit && ap) {
+      const lastTransit = Number(ap.lastTransitPermitAt || 0);
+      const minTransitCooldown = 10 * 60 * 1000;
+      const elapsedTransitMs = getTrustedNow() - lastTransit;
+      if (lastTransit > 0 && elapsedTransitMs < minTransitCooldown) {
+        const remSec = Math.ceil((minTransitCooldown - elapsedTransitMs) / 1000);
+        btnTransit.disabled = true;
+        btnTransit.innerHTML = `<i class="fa-solid fa-tower-broadcast animate-pulse"></i> <span>الرادار يمسح الأجواء... متبقي (${formatSeconds(remSec)})</span>`;
+      } else {
+        btnTransit.disabled = false;
+        btnTransit.innerHTML = '<i class="fa-solid fa-passport"></i> <span>منح تصريح هبوط لطائرة ترانزيت وتحصيل الرسوم 🛬</span>';
+      }
     }
   }
 
@@ -42387,38 +42881,87 @@ window.AirportUI = (() => {
     const btnDutyFree = document.getElementById('btn-claim-duty-free');
     if (btnDutyFree) {
       btnDutyFree.addEventListener('click', async () => {
-        btnDutyFree.disabled = true;
         const liveState = getLiveGameState();
         const ap = liveState.airport;
         if (!ap) return;
 
         const amt = calculateDutyFreeClient(ap);
-        if (amt <= 0) {
-          showAirportToast('لا توجد إيرادات سوق حرة متراكمة بعد.', 'error');
-          btnDutyFree.disabled = false;
+        const lastClaim = Number(ap.lastDutyFreeCollectionAt || 0);
+        const elapsedMs = getTrustedNow() - lastClaim;
+
+        if (lastClaim > 0 && elapsedMs < 60000) {
+          const remSec = Math.ceil((60000 - elapsedMs) / 1000);
+          showAirportToast(`⏳ يرجى الانتظار ${remSec} ثانية قبل تحصيل أرباح السوق الحرة التالية.`, 'warning');
           return;
         }
 
-        liveState.cash = (Number(liveState.cash) || 0) + amt;
-        ap.lastDutyFreeCollectionAt = Date.now();
-        if (!ap.stats) ap.stats = {};
-        ap.stats.totalDutyFreeCollected = (Number(ap.stats.totalDutyFreeCollected) || 0) + amt;
-
-        persistGameState();
-        if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-          window.GameEngine.recordPlayerActivity('تحصيل أرباح السوق الحرة بالمطار 🛍️', `تحصيل إيرادات السوق الحرة بالمطار بقيمة (+${amt.toLocaleString()} ج.م)`, 'business');
+        if (amt < 1000) {
+          showAirportToast(`⏳ الحد الأدنى لتحصيل أرباح السوق الحرة هو 1,000 ج.م (المتراكم حالياً: ${amt.toLocaleString()} ج.م).`, 'error');
+          return;
         }
-        showAirportToast(`🛍️ تم تحصيل +${amt.toLocaleString()} ج.م من أرباح السوق الحرة!`, 'success');
-        renderAirportPanel();
 
+        btnDutyFree.disabled = true;
+        btnDutyFree.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[10px]"></i> <span>جاري التحصيل...</span>';
+
+        // Authoritative Server Claim
         if (window.ServerBridge && typeof window.ServerBridge.claimDutyFree === 'function') {
-          try { await window.ServerBridge.claimDutyFree(); } catch (_) {}
+          try {
+            const res = await window.ServerBridge.claimDutyFree();
+            if (res && res.success) {
+              if (res.airport) liveState.airport = res.airport;
+              if (res.cash !== undefined) liveState.cash = res.cash;
+              if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
+
+              if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+                window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+              }
+              persistGameState();
+              if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+                window.GameEngine.recordPlayerActivity('تحصيل أرباح السوق الحرة بالمطار 🛍️', `تحصيل إيرادات السوق الحرة بالمطار بقيمة (+${(res.earnings || amt).toLocaleString()} ج.م)`, 'business');
+              }
+              showAirportToast(res.message || `🛍️ تم تحصيل +${(res.earnings || amt).toLocaleString()} ج.م من أرباح السوق الحرة!`, 'success');
+              renderAirportPanel();
+              return;
+            } else {
+              showAirportToast(res?.error || 'تعذر تحصيل أرباح السوق الحرة', 'error');
+              renderAirportPanel();
+              return;
+            }
+          } catch (err) {
+            // CRITICAL: Block offline fallback on server business rejection!
+            const errMsg = err?.message || '';
+            if (err.status === 400 || err.status === 403 || errMsg.includes('الحد الأدنى') || errMsg.includes('الانتظار') || errMsg.includes('تتراكم') || errMsg.includes('تفعيل') || errMsg.includes('متراكمة')) {
+              showAirportToast(errMsg || 'تعذر تحصيل أرباح السوق الحرة', 'error');
+              renderAirportPanel();
+              return;
+            }
+            console.warn('[AirportUI] claimDutyFree network failed, evaluating offline fallback:', err);
+          }
         }
+
+        // Offline fallback (STRICT: only if server completely unreachable AND amt >= 1000 AND elapsed >= 60s)
+        if (amt >= 1000 && (!lastClaim || elapsedMs >= 60000)) {
+          liveState.cash = (Number(liveState.cash) || 0) + amt;
+          ap.lastDutyFreeCollectionAt = Date.now();
+          if (!ap.stats) ap.stats = {};
+          ap.stats.totalDutyFreeCollected = (Number(ap.stats.totalDutyFreeCollected) || 0) + amt;
+
+          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+          }
+
+          persistGameState();
+          if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+            window.GameEngine.recordPlayerActivity('تحصيل أرباح السوق الحرة بالمطار 🛍️', `تحصيل إيرادات السوق الحرة بالمطار بقيمة (+${amt.toLocaleString()} ج.م)`, 'business');
+          }
+          showAirportToast(`🛍️ تم تحصيل +${amt.toLocaleString()} ج.م من أرباح السوق الحرة!`, 'success');
+        }
+        renderAirportPanel();
       });
     }
   }
 
-  // Action methods with autonomous client fallback
+  // Action methods with authoritative server-first pattern and resilient client fallback
   async function launchFlight(planeId) {
     const liveState = getLiveGameState();
     const ap = liveState.airport;
@@ -42439,6 +42982,11 @@ window.AirportUI = (() => {
     const model = AIRCRAFT_META[plane.modelId];
     if (!model) return;
 
+    if (dest.requiredTier > model.tier) {
+      showAirportToast(`🚫 هذه الوجهة تتطلب طائرة من الفئة ${dest.requiredTier} أو أعلى للوصول إليها!`, 'error');
+      return;
+    }
+
     const eco = getEconomicsForDisplay(model, dest, ap);
     const curCash = Number(liveState.cash || 0);
     const curBank = Number(liveState.bank || 0);
@@ -42448,7 +42996,49 @@ window.AirportUI = (() => {
       return;
     }
 
-    // Deduct operating costs upfront
+    // 1. Authoritative Server Dispatch
+    if (window.ServerBridge && typeof window.ServerBridge.launchAirportFlight === 'function') {
+      try {
+        const res = await window.ServerBridge.launchAirportFlight(planeId, destId);
+        if (res && res.success) {
+          if (res.airport) liveState.airport = res.airport;
+          if (res.cash !== undefined) liveState.cash = res.cash;
+          if (res.bank !== undefined) liveState.bank = res.bank;
+          if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
+
+          const updatedPlane = liveState.airport?.fleet?.find(p => p.id === planeId);
+          if (updatedPlane && res.plane) {
+            updatedPlane.status = res.plane.status;
+            updatedPlane.activeFlight = res.plane.activeFlight;
+            updatedPlane.currentFlight = res.plane.activeFlight;
+          }
+
+          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+          }
+          persistGameState();
+          if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+            window.GameEngine.recordPlayerActivity('إقلاع رحلة طيران 🛫', `تسيير رحلة طائرة (${plane.customName || model.name}) إلى وجهة ${dest.name} بتكاليف تجهيز ${eco.totalOperatingCost.toLocaleString()} ج.م`, 'business');
+          }
+          const minStr = Math.floor(eco.durationSec / 60);
+          showAirportToast(res.message || `🛫 أقلعت الرحلة إلى ${dest.name}! وقت الهبوط خلال ${minStr > 0 ? minStr + ' دقيقة' : eco.durationSec + ' ثانية'}.`, 'success');
+          renderAirportPanel();
+          return;
+        } else {
+          showAirportToast(res?.error || 'تعذر إقلاع الرحلة من السيرفر', 'error');
+          return;
+        }
+      } catch (err) {
+        const errMsg = err?.message || '';
+        if (err.status === 400 || errMsg.includes('رصيدك غير كافٍ') || errMsg.includes('الحد الأقصى') || errMsg.includes('بالفعل')) {
+          showAirportToast(errMsg || 'تعذر إقلاع الرحلة', 'error');
+          return;
+        }
+        console.warn('[AirportUI] launchAirportFlight server bridge failed, using offline fallback:', err);
+      }
+    }
+
+    // 2. Offline Fallback
     if (curCash >= eco.totalOperatingCost) {
       liveState.cash = curCash - eco.totalOperatingCost;
     } else {
@@ -42461,6 +43051,7 @@ window.AirportUI = (() => {
     const durationMs = eco.durationSec * 1000;
     plane.status = 'in_flight';
     const flightObj = {
+      flightId: 'flt_' + now + '_' + Math.random().toString(36).slice(2, 7),
       destinationId: dest.id,
       destinationName: dest.name,
       launchTime: now,
@@ -42493,21 +43084,6 @@ window.AirportUI = (() => {
     const minStr = Math.floor(eco.durationSec / 60);
     showAirportToast(`🛫 أقلعت الرحلة إلى ${dest.name}! وقت الهبوط خلال ${minStr > 0 ? minStr + ' دقيقة' : eco.durationSec + ' ثانية'}. (صافي الربح: +${eco.netProfit.toLocaleString()} ج.م)`, 'success');
     renderAirportPanel();
-
-    if (window.ServerBridge && typeof window.ServerBridge.launchAirportFlight === 'function') {
-      try {
-        const res = await window.ServerBridge.launchAirportFlight(planeId, destId);
-        if (res && res.plane && res.plane.activeFlight) {
-          plane.activeFlight = res.plane.activeFlight;
-          plane.currentFlight = res.plane.activeFlight;
-          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
-            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
-          }
-          persistGameState();
-          renderAirportPanel();
-        }
-      } catch (_) {}
-    }
   }
 
   async function speedupFlight(planeId) {
@@ -42534,6 +43110,44 @@ window.AirportUI = (() => {
       return;
     }
 
+    // 1. Authoritative Server Speedup
+    if (window.ServerBridge && typeof window.ServerBridge.speedupAirportFlight === 'function') {
+      try {
+        const res = await window.ServerBridge.speedupAirportFlight(planeId);
+        if (res && res.success) {
+          if (res.gold !== undefined) liveState.gold = res.gold;
+          if (res.airport) liveState.airport = res.airport;
+          const updatedPlane = liveState.airport?.fleet?.find(p => p.id === planeId);
+          if (updatedPlane && res.plane) {
+            updatedPlane.activeFlight = res.plane.activeFlight;
+            updatedPlane.currentFlight = res.plane.activeFlight;
+          }
+
+          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+          }
+          persistGameState();
+          if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+            window.GameEngine.recordPlayerActivity('تسريع رحلة طائرة ⚡', `تسريع فوري لهبوط طائرة (${plane.customName || planeId}) بالمطار مقابل ${costGold} سبيكة ذهب`, 'business');
+          }
+          showAirportToast(res.message || '⚡ تم تسريع الرحلة وهبوط الطائرة فوراً بنجاح!', 'success');
+          renderAirportPanel();
+          return;
+        } else {
+          showAirportToast(res?.error || 'تعذر تسريع الرحلة', 'error');
+          return;
+        }
+      } catch (err) {
+        const errMsg = err?.message || '';
+        if (err.status === 400 || errMsg.includes('ذهب') || errMsg.includes('بالفعل')) {
+          showAirportToast(errMsg || 'تعذر تسريع الرحلة', 'error');
+          return;
+        }
+        console.warn('[AirportUI] speedupAirportFlight server bridge failed, using offline fallback:', err);
+      }
+    }
+
+    // 2. Offline Fallback
     liveState.gold = Math.max(0, curGold - costGold);
     flight.landingTime = Date.now() - 1000;
     plane.currentFlight = flight;
@@ -42549,10 +43163,6 @@ window.AirportUI = (() => {
     }
     showAirportToast('⚡ تم تسريع الرحلة وهبوط الطائرة فوراً بنجاح!', 'success');
     renderAirportPanel();
-
-    if (window.ServerBridge && typeof window.ServerBridge.speedupAirportFlight === 'function') {
-      try { await window.ServerBridge.speedupAirportFlight(planeId); } catch (_) {}
-    }
   }
 
   async function claimFlight(planeId) {
@@ -42570,14 +43180,28 @@ window.AirportUI = (() => {
     const f = plane.currentFlight || plane.activeFlight;
     if (!f) return;
 
+    const flightId = f.flightId || ('flt_' + plane.id + '_' + f.launchTime);
+    if (!Array.isArray(ap.claimedFlightIds)) ap.claimedFlightIds = [];
+
+    // Deduplication Guard: If this flight was already collected, clean up and exit!
+    if (ap.claimedFlightIds.includes(flightId) || (plane.lastClaimedFlightId && plane.lastClaimedFlightId === flightId)) {
+      plane.status = 'idle';
+      plane.currentFlight = null;
+      plane.activeFlight = null;
+      persistGameState();
+      showAirportToast('⚠️ عوائد هذه الرحلة تم تحصيلها مسبقاً!', 'info');
+      renderAirportPanel();
+      return;
+    }
+
     _claimingPlanes.add(planeId);
 
     // UI Loading state on button
-    const claimBtn = document.querySelector(`#card-plane-${planeId} button[onclick*="claimFlight"]`);
-    if (claimBtn) {
-      claimBtn.disabled = true;
-      claimBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري التحقق واستلام الأرباح...</span>';
-    }
+    const claimBtns = document.querySelectorAll(`#card-plane-${planeId} button`);
+    claimBtns.forEach(b => {
+      b.disabled = true;
+      b.classList.add('opacity-60', 'cursor-not-allowed');
+    });
 
     // 1. Authoritative Server Claim (Primary Path)
     if (window.ServerBridge && typeof window.ServerBridge.claimAirportFlight === 'function') {
@@ -42589,7 +43213,17 @@ window.AirportUI = (() => {
           if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
           if (res.airport) liveState.airport = res.airport;
 
+          // Record in local claimed ledger
+          if (!Array.isArray(liveState.airport.claimedFlightIds)) liveState.airport.claimedFlightIds = [];
+          if (!liveState.airport.claimedFlightIds.includes(flightId)) {
+            liveState.airport.claimedFlightIds.push(flightId);
+            if (liveState.airport.claimedFlightIds.length > 100) {
+              liveState.airport.claimedFlightIds = liveState.airport.claimedFlightIds.slice(-100);
+            }
+          }
+
           // Mark local plane idle immediately
+          plane.lastClaimedFlightId = flightId;
           plane.status = 'idle';
           plane.currentFlight = null;
           plane.activeFlight = null;
@@ -42610,12 +43244,38 @@ window.AirportUI = (() => {
         }
       } catch (err) {
         _claimingPlanes.delete(planeId);
-        const isAuthError = err.status === 401 || err.isAuthError || (err.message && (err.message.includes('session token') || err.message.includes('Unauthorized')));
+        const errMsg = err?.message || String(err || '');
+
+        // If the server rejected because it was already claimed, clean up state immediately!
+        if (errMsg.includes('مسبقاً') || errMsg.includes('بالفعل') || err.alreadyClaimed || errMsg.includes('لا توجد رحلة جاهزة')) {
+          if (!ap.claimedFlightIds.includes(flightId)) ap.claimedFlightIds.push(flightId);
+          plane.lastClaimedFlightId = flightId;
+          plane.status = 'idle';
+          plane.currentFlight = null;
+          plane.activeFlight = null;
+          persistGameState();
+          showAirportToast('⚠️ عوائد هذه الرحلة تم تحصيلها وتحديث رصيدك بالفعل.', 'info');
+          renderAirportPanel();
+          return;
+        }
+
+        const isAuthError = err.status === 401 || err.isAuthError || errMsg.includes('session token') || errMsg.includes('Unauthorized');
         if (isAuthError) {
           console.warn('[AirportUI] Session token error on claimAirportFlight, evaluating local landing status...');
           const trustedNow = getTrustedNow();
           if (trustedNow >= Number(f.landingTime || 0)) {
-            // Safe fallback: collect landed flight locally so the player is never blocked
+            // Guard against duplicate local credit
+            if (ap.claimedFlightIds.includes(flightId)) {
+              plane.status = 'idle';
+              plane.currentFlight = null;
+              plane.activeFlight = null;
+              renderAirportPanel();
+              return;
+            }
+
+            ap.claimedFlightIds.push(flightId);
+            plane.lastClaimedFlightId = flightId;
+
             const grossRev = Number(f.grossRevenue || f.expectedProfit || 0);
             const netProfit = Number(f.expectedNetProfit || (grossRev - (f.totalOperatingCost || 0)));
             const xp = Number(f.expectedXp || 50);
@@ -42645,7 +43305,6 @@ window.AirportUI = (() => {
             showAirportToast(`🛬 هبطت الرحلة بسلام! تم تحصيل عوائد +${grossRev.toLocaleString()} ج.م (يرجى إعادة تأكيد كلمة السر لتحديث الحفظ السحابي)`, 'warning');
             renderAirportPanel();
 
-            // Prompt re-auth in background so player can renew session seamlessly
             setTimeout(() => {
               if (typeof window.showAuthModal === 'function') {
                 const u = liveState.username || (window.ServerBridge && window.ServerBridge.getActiveUsername && window.ServerBridge.getActiveUsername());
@@ -42657,7 +43316,7 @@ window.AirportUI = (() => {
             return;
           }
         }
-        showAirportToast(err.message || 'فشل تحصيل الرحلة: السيرفر يرفض الهبوط المبكر!', 'error');
+        showAirportToast(errMsg || 'فشل تحصيل الرحلة: السيرفر يرفض الهبوط المبكر!', 'error');
         renderAirportPanel();
         return;
       }
@@ -42672,6 +43331,18 @@ window.AirportUI = (() => {
       renderAirportPanel();
       return;
     }
+
+    if (ap.claimedFlightIds.includes(flightId)) {
+      _claimingPlanes.delete(planeId);
+      plane.status = 'idle';
+      plane.currentFlight = null;
+      plane.activeFlight = null;
+      renderAirportPanel();
+      return;
+    }
+
+    ap.claimedFlightIds.push(flightId);
+    plane.lastClaimedFlightId = flightId;
 
     const grossRev = Number(f.grossRevenue || f.expectedProfit || 0);
     const netProfit = Number(f.expectedNetProfit || (grossRev - (f.totalOperatingCost || 0)));
@@ -42724,6 +43395,46 @@ window.AirportUI = (() => {
     const confirmed = confirm(`هل أنت متأكد من بيع طائرة "${plane.customName || model.name}" مقابل استرداد +${refund.toLocaleString()} ج.م (50% من سعر الشراء)؟`);
     if (!confirmed) return;
 
+    // 1. Authoritative Server Sale
+    if (window.ServerBridge && typeof window.ServerBridge.sellAirportPlane === 'function') {
+      try {
+        const res = await window.ServerBridge.sellAirportPlane(planeId);
+        if (res && res.success) {
+          if (res.airport) liveState.airport = res.airport;
+          if (res.cash !== undefined) liveState.cash = res.cash;
+          if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
+
+          // Double check plane removed from local fleet
+          if (Array.isArray(liveState.airport?.fleet)) {
+            const idx = liveState.airport.fleet.findIndex(p => p.id === planeId);
+            if (idx !== -1) liveState.airport.fleet.splice(idx, 1);
+          }
+
+          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+          }
+          persistGameState();
+          if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+            window.GameEngine.recordPlayerActivity('بيع طائرة 💸', `بيع طائرة (${plane.customName || model.name}) واسترداد (+${refund.toLocaleString()} ج.م) (50% من سعر الشراء)`, 'assets');
+          }
+          showAirportToast(res.message || `💸 تم بيع طائرة ${model.name} واسترداد +${refund.toLocaleString()} ج.م بنجاح!`, 'success');
+          renderAirportPanel();
+          return;
+        } else {
+          showAirportToast(res?.error || 'تعذر بيع الطائرة من السيرفر', 'error');
+          return;
+        }
+      } catch (err) {
+        const errMsg = err?.message || '';
+        if (err.status === 400 || errMsg.includes('الجو') || errMsg.includes('غير موجودة')) {
+          showAirportToast(errMsg || 'تعذر بيع الطائرة', 'error');
+          return;
+        }
+        console.warn('[AirportUI] sellAirportPlane server bridge failed, using offline fallback:', err);
+      }
+    }
+
+    // 2. Offline Fallback
     ap.fleet.splice(planeIdx, 1);
     liveState.cash = (Number(liveState.cash) || 0) + refund;
 
@@ -42737,10 +43448,6 @@ window.AirportUI = (() => {
     }
     showAirportToast(`💸 تم بيع طائرة ${model.name} واسترداد +${refund.toLocaleString()} ج.م بنجاح!`, 'success');
     renderAirportPanel();
-
-    if (window.ServerBridge && typeof window.ServerBridge.sellAirportPlane === 'function') {
-      try { await window.ServerBridge.sellAirportPlane(planeId); } catch (_) {}
-    }
   }
 
   async function buyPlane(modelId) {
@@ -42750,6 +43457,13 @@ window.AirportUI = (() => {
 
     const model = AIRCRAFT_META[modelId];
     if (!model) return;
+
+    const facilities = ap.facilities || {};
+    const maxTier = Number(facilities.runway || 1);
+    if (model.tier > maxTier) {
+      showAirportToast(`🚫 يتطلب شراء هذه الطائرة ترقية المدرج أولاً لاستيعاب الفئة ${model.tier}!`, 'error');
+      return;
+    }
 
     if (!Array.isArray(ap.fleet)) ap.fleet = [];
     if (ap.fleet.length >= 12) {
@@ -42766,6 +43480,49 @@ window.AirportUI = (() => {
       return;
     }
 
+    const customName = `${model.name} #${ap.fleet.length + 1}`;
+
+    // 1. Authoritative Server Purchase (Primary Path: server checks funds, deducts once, adds plane)
+    if (window.ServerBridge && typeof window.ServerBridge.buyAirportPlane === 'function') {
+      try {
+        const res = await window.ServerBridge.buyAirportPlane(modelId, customName);
+        if (res && res.success) {
+          if (res.airport) liveState.airport = res.airport;
+          if (res.cash !== undefined) liveState.cash = res.cash;
+          if (res.bank !== undefined) liveState.bank = res.bank;
+          if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
+
+          if (!Array.isArray(liveState.airport.fleet)) liveState.airport.fleet = [];
+          if (res.plane && !liveState.airport.fleet.some(p => p.id === res.plane.id)) {
+            liveState.airport.fleet.push(res.plane);
+          }
+
+          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+          }
+
+          persistGameState();
+          if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+            window.GameEngine.recordPlayerActivity('شراء طائرة 🛩️', `شراء طائرة ${model.name} وإضافتها للأسطول الجوي بقيمة ${model.cost.toLocaleString()} ج.م`, 'assets');
+          }
+          showAirportToast(res.message || `🎉 تم شراء وإضافة ${model.name} إلى أسطولك الجوي بنجاح!`, 'success');
+          renderAirportPanel();
+          return;
+        } else {
+          showAirportToast(res?.error || 'تعذر إتمام عملية شراء الطائرة', 'error');
+          return;
+        }
+      } catch (err) {
+        const errMsg = err?.message || '';
+        if (err.status === 400 || errMsg.includes('رصيدك غير كافٍ') || errMsg.includes('ترقية المدرج') || errMsg.includes('الحد الأقصى')) {
+          showAirportToast(errMsg || 'تعذر إتمام شراء الطائرة', 'error');
+          return;
+        }
+        console.warn('[AirportUI] buyAirportPlane server bridge failed, using offline fallback:', err);
+      }
+    }
+
+    // 2. Offline Fallback (Only if server is unreachable)
     if (curCash >= model.cost) {
       liveState.cash = curCash - model.cost;
     } else {
@@ -42777,8 +43534,10 @@ window.AirportUI = (() => {
     const newPlane = {
       id: 'plane_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
       modelId: model.id,
-      customName: `${model.name} #${ap.fleet.length + 1}`,
+      customName,
       status: 'idle',
+      totalFlights: 0,
+      totalRevenue: 0,
       currentFlight: null,
       activeFlight: null
     };
@@ -42795,10 +43554,6 @@ window.AirportUI = (() => {
     }
     showAirportToast(`🎉 تم شراء وإضافة ${model.name} إلى أسطولك الجوي بنجاح!`, 'success');
     renderAirportPanel();
-
-    if (window.ServerBridge && typeof window.ServerBridge.buyAirportPlane === 'function') {
-      try { await window.ServerBridge.buyAirportPlane(modelId, newPlane.customName); } catch (_) {}
-    }
   }
 
   async function upgradeFacility(facilityId) {
@@ -42810,7 +43565,7 @@ window.AirportUI = (() => {
     if (!fac) return;
 
     if (!ap.facilities) ap.facilities = { runway: 1, terminals: 1, hangar: 1, duty_free: 0 };
-    const curLvl = Number(ap.facilities[facilityId] || 0);
+    const curLvl = Number(ap.facilities[facilityId] || (facilityId === 'duty_free' ? 0 : 1));
     const nextLvl = curLvl + 1;
     const nextDef = fac.levels[nextLvl];
 
@@ -42829,6 +43584,41 @@ window.AirportUI = (() => {
       return;
     }
 
+    // 1. Authoritative Server Upgrade
+    if (window.ServerBridge && typeof window.ServerBridge.upgradeAirportFacility === 'function') {
+      try {
+        const res = await window.ServerBridge.upgradeAirportFacility(facilityId);
+        if (res && res.success) {
+          if (res.airport) liveState.airport = res.airport;
+          if (res.cash !== undefined) liveState.cash = res.cash;
+          if (res.bank !== undefined) liveState.bank = res.bank;
+          if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
+
+          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+          }
+          persistGameState();
+          if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+            window.GameEngine.recordPlayerActivity('تطوير مرفق بالمطار 🏢', `ترقية مرفق (${fac.name}) بالمطار إلى المستوى ${nextLvl} بتكلفة ${cost.toLocaleString()} ج.م`, 'business');
+          }
+          showAirportToast(res.message || `🏗️ تم ترقية ${fac.name} إلى المستوى ${nextLvl} بنجاح!`, 'success');
+          renderAirportPanel();
+          return;
+        } else {
+          showAirportToast(res?.error || 'تعذر ترقية المنشأة', 'error');
+          return;
+        }
+      } catch (err) {
+        const errMsg = err?.message || '';
+        if (err.status === 400 || errMsg.includes('رصيدك غير كافٍ') || errMsg.includes('أقصى مستوى')) {
+          showAirportToast(errMsg || 'تعذر ترقية المنشأة', 'error');
+          return;
+        }
+        console.warn('[AirportUI] upgradeAirportFacility server bridge failed, using offline fallback:', err);
+      }
+    }
+
+    // 2. Offline Fallback
     if (curCash >= cost) {
       liveState.cash = curCash - cost;
     } else {
@@ -42838,35 +43628,89 @@ window.AirportUI = (() => {
     }
 
     ap.facilities[facilityId] = nextLvl;
+    if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+      window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+    }
+
     persistGameState();
     if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
       window.GameEngine.recordPlayerActivity('تطوير مرفق بالمطار 🏢', `ترقية مرفق (${fac.name}) بالمطار إلى المستوى ${nextLvl} بتكلفة ${cost.toLocaleString()} ج.م`, 'business');
     }
     showAirportToast(`🏗️ تم ترقية ${fac.name} إلى المستوى ${nextLvl} بنجاح!`, 'success');
     renderAirportPanel();
-
-    if (window.ServerBridge && typeof window.ServerBridge.upgradeAirportFacility === 'function') {
-      try { await window.ServerBridge.upgradeAirportFacility(facilityId); } catch (_) {}
-    }
   }
 
   async function acceptTransit() {
     const liveState = getLiveGameState();
     const ap = liveState.airport;
-    if (!ap || !ap.transitPermit) {
-      showAirportToast('لا توجد طائرة ترانزيت تطلب الهبوط حالياً.', 'error');
+    if (!ap) return;
+
+    const lastTransit = Number(ap.lastTransitPermitAt || 0);
+    const cooldownMs = 10 * 60 * 1000;
+    const elapsed = Date.now() - lastTransit;
+    if (lastTransit > 0 && elapsed < cooldownMs) {
+      const remSec = Math.ceil((cooldownMs - elapsed) / 1000);
+      const remMin = Math.floor(remSec / 60);
+      const remSecOnly = remSec % 60;
+      showAirportToast(`⏳ لا توجد رحلات ترانزيت جديدة على الرادار حالياً. انتظر ${remMin > 0 ? remMin + ' دقيقة و ' : ''}${remSecOnly} ثانية.`, 'warning');
       return;
     }
 
-    const fee = Number(ap.transitPermit.fee || 350000);
-    const xp = Number(ap.transitPermit.xp || 50);
+    // 1. Authoritative Server Transit
+    if (window.ServerBridge && typeof window.ServerBridge.acceptAirportTransit === 'function') {
+      try {
+        const res = await window.ServerBridge.acceptAirportTransit();
+        if (res && res.success) {
+          if (res.airport) liveState.airport = res.airport;
+          if (res.cash !== undefined) liveState.cash = res.cash;
+          if (res.xp !== undefined) liveState.xp = res.xp;
+          if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
+
+          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+          }
+          persistGameState();
+          if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+            window.GameEngine.recordPlayerActivity('استقبال رحلة ترانزيت 🛬', `منح تصريح هبوط رحلة ترانزيت دولية وتحصيل رسوم (+${(res.fee || 3500000).toLocaleString()} ج.م)`, 'business');
+          }
+          showAirportToast(res.message || '🛬 تم منح تصريح الهبوط وتحصيل الرسوم بنجاح!', 'success');
+          renderAirportPanel();
+          return;
+        } else {
+          showAirportToast(res?.error || 'تعذر منح تصريح الترانزيت', 'error');
+          renderAirportPanel();
+          return;
+        }
+      } catch (err) {
+        const errMsg = err?.message || '';
+        // CRITICAL: Block offline fallback on server business rejection!
+        if (err?.status === 400 || err?.status === 403 || errMsg.includes('رادار') || errMsg.includes('انتظار') || errMsg.includes('دقيقة') || errMsg.includes('مستوى') || errMsg.includes('ترانزيت')) {
+          showAirportToast(errMsg || '⏳ لا توجد رحلات ترانزيت متاحة حالياً', 'warning');
+          renderAirportPanel();
+          return;
+        }
+        console.warn('[AirportUI] acceptAirportTransit server bridge failed, checking offline fallback:', err);
+      }
+    }
+
+    // 2. Offline Fallback (STRICT: only if server completely unreachable AND cooldown elapsed)
+    if (lastTransit > 0 && elapsed < cooldownMs) {
+      return;
+    }
+
+    const fee = Math.floor(3000000 + Math.random() * 4000000);
+    const xp = 250;
 
     liveState.cash = (Number(liveState.cash) || 0) + fee;
     liveState.xp = (Number(liveState.xp) || 0) + xp;
+    ap.lastTransitPermitAt = Date.now();
 
     if (!ap.stats) ap.stats = {};
     ap.stats.transitPermitsAccepted = (Number(ap.stats.transitPermitsAccepted) || 0) + 1;
-    ap.transitPermit = null;
+
+    if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+      window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+    }
 
     persistGameState();
     if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
@@ -42874,10 +43718,6 @@ window.AirportUI = (() => {
     }
     showAirportToast(`🛬 تم منح تصريح الهبوط وتحصيل الرسوم (+${fee.toLocaleString()} ج.م) و +${xp} XP!`, 'success');
     renderAirportPanel();
-
-    if (window.ServerBridge && typeof window.ServerBridge.acceptAirportTransit === 'function') {
-      try { await window.ServerBridge.acceptAirportTransit(); } catch (_) {}
-    }
   }
 
   function setSubtab(tab) {
@@ -42896,7 +43736,10 @@ window.AirportUI = (() => {
     sellPlane,
     upgradeFacility,
     acceptTransit,
-    updateEconomicsPreview
+    updateEconomicsPreview,
+    AIRCRAFT_META,
+    FACILITY_META,
+    DESTINATIONS_META
   };
 })();
 

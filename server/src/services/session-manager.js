@@ -14,6 +14,7 @@ const dbService = require('./db-service');
 const { sanitizePlayerState } = require('../engine/state-sanitizer');
 const { calculateAuthoritativeOfflineProgress } = require('../engine/offline-engine');
 const { calculateNetWorth } = require('../engine/net-worth-engine');
+const { AIRCRAFT_MODELS } = require('../engine/airport-engine');
 
 class SessionManager {
   constructor() {
@@ -303,9 +304,28 @@ class SessionManager {
               if (sPlane) {
                 const cFlight = cPlane.activeFlight || cPlane.currentFlight;
                 const sFlight = sPlane.activeFlight || sPlane.currentFlight;
+                const cFlightId = cFlight && (cFlight.flightId || ('flt_' + cPlane.id + '_' + cFlight.launchTime));
+                const claimedIds = Array.isArray(s.airport.claimedFlightIds) ? s.airport.claimedFlightIds : [];
+
                 if (cPlane.status === 'in_flight' && cFlight && cFlight.launchTime) {
+                  // Strict Check 1: If flight was already claimed, NEVER resurrect it!
+                  if (cFlightId && (claimedIds.includes(cFlightId) || sPlane.lastClaimedFlightId === cFlightId)) {
+                    sPlane.status = 'idle';
+                    sPlane.activeFlight = null;
+                    sPlane.currentFlight = null;
+                    return;
+                  }
+
+                  const now = Date.now();
+                  const isLanded = Number(cFlight.landingTime || 0) <= now;
+
+                  // Strict Check 2: If server plane is idle and flight has already landed, do NOT resurrect!
+                  if (sPlane.status === 'idle' && isLanded) {
+                    return;
+                  }
+
                   const sLaunch = sFlight ? Number(sFlight.launchTime || 0) : 0;
-                  if (Number(cFlight.launchTime) >= sLaunch || sPlane.status === 'idle') {
+                  if (Number(cFlight.launchTime) > sLaunch || (sPlane.status === 'idle' && !isLanded)) {
                     sPlane.status = 'in_flight';
                     sPlane.activeFlight = JSON.parse(JSON.stringify(cFlight));
                     sPlane.currentFlight = JSON.parse(JSON.stringify(cFlight));
@@ -319,15 +339,35 @@ class SessionManager {
                 }
                 sPlane.totalFlights = Math.max(Number(sPlane.totalFlights) || 0, Number(cPlane.totalFlights) || 0);
                 sPlane.totalRevenue = Math.max(Number(sPlane.totalRevenue) || 0, Number(cPlane.totalRevenue) || 0);
+              } else {
+                // Preserve newly bought plane from client (up to max fleet limit 12)
+                if (s.airport.fleet.length < 12 && cPlane && cPlane.modelId && (!AIRCRAFT_MODELS || AIRCRAFT_MODELS[cPlane.modelId])) {
+                  s.airport.fleet.push(JSON.parse(JSON.stringify(cPlane)));
+                  srvMap.set(cPlane.id, cPlane);
+                }
               }
             });
           }
+        }
+        if (Array.isArray(clientState.airport.claimedFlightIds)) {
+          const existingClaims = Array.isArray(s.airport.claimedFlightIds) ? s.airport.claimedFlightIds : [];
+          s.airport.claimedFlightIds = Array.from(new Set([...existingClaims, ...clientState.airport.claimedFlightIds])).slice(-100);
         }
         if (clientState.airport.stats) {
           s.airport.stats = s.airport.stats || {};
           ['totalFlights', 'totalRevenue', 'totalOperatingCost', 'totalNetProfit', 'totalDutyFreeCollected', 'transitPermitsAccepted'].forEach(statK => {
             s.airport.stats[statK] = Math.max(Number(s.airport.stats[statK]) || 0, Number(clientState.airport.stats[statK]) || 0);
           });
+        }
+        if (clientState.airport.lastDutyFreeCollectionAt) {
+          const cDuty = Number(clientState.airport.lastDutyFreeCollectionAt);
+          const sDuty = Number(s.airport.lastDutyFreeCollectionAt || 0);
+          if (cDuty > sDuty) s.airport.lastDutyFreeCollectionAt = cDuty;
+        }
+        if (clientState.airport.lastTransitPermitAt) {
+          const cTransit = Number(clientState.airport.lastTransitPermitAt);
+          const sTransit = Number(s.airport.lastTransitPermitAt || 0);
+          if (cTransit > sTransit) s.airport.lastTransitPermitAt = cTransit;
         }
       }
     }

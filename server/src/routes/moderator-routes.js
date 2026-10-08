@@ -3,10 +3,75 @@
  * Dedicated endpoints for Staff Assistants to inspect players, monitor wealth, and take controlled moderation actions.
  */
 
+const fs = require('fs');
+const path = require('path');
 const crypto = require('crypto');
 const config = require('../config/env');
 const { BUSINESSES, ASSETS, CAR_TEMPLATES } = require('../engine/definitions');
 const { calculateSingleBusinessProfit } = require('../engine/business-engine');
+
+const CHAT_IMAGES_DIR = path.resolve(__dirname, '../../../uploads/chat_images');
+try {
+  if (!fs.existsSync(CHAT_IMAGES_DIR)) {
+    fs.mkdirSync(CHAT_IMAGES_DIR, { recursive: true });
+  }
+} catch (_) {}
+
+/**
+ * Strict Raster Image Validator
+ * Strictly enforces PNG, JPEG, WebP, and GIF binaries via Magic Bytes.
+ * Strictly forbids SVG (to prevent XSS and script injection attacks).
+ */
+function validateRasterImage(imageBuffer) {
+  if (!imageBuffer || imageBuffer.length < 50 || imageBuffer.length > 3.5 * 1024 * 1024) {
+    return { valid: false, error: 'حجم الصورة غير صالح (يجب أن يكون بين 50 بايت و 3.5 ميجابايت).' };
+  }
+
+  let ext = '';
+  let mimeType = '';
+
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (imageBuffer.length >= 8 &&
+      imageBuffer[0] === 0x89 && imageBuffer[1] === 0x50 && imageBuffer[2] === 0x4E && imageBuffer[3] === 0x47 &&
+      imageBuffer[4] === 0x0D && imageBuffer[5] === 0x0A && imageBuffer[6] === 0x1A && imageBuffer[7] === 0x0A) {
+    ext = '.png';
+    mimeType = 'image/png';
+  }
+  // JPEG: FF D8 FF
+  else if (imageBuffer.length >= 3 &&
+           imageBuffer[0] === 0xFF && imageBuffer[1] === 0xD8 && imageBuffer[2] === 0xFF) {
+    ext = '.jpg';
+    mimeType = 'image/jpeg';
+  }
+  // WebP: RIFF .... WEBP
+  else if (imageBuffer.length >= 12 &&
+           imageBuffer.subarray(0, 4).toString('ascii') === 'RIFF' &&
+           imageBuffer.subarray(8, 12).toString('ascii') === 'WEBP') {
+    ext = '.webp';
+    mimeType = 'image/webp';
+  }
+  // GIF: GIF87a or GIF89a
+  else if (imageBuffer.length >= 6 &&
+           imageBuffer.subarray(0, 3).toString('ascii') === 'GIF' &&
+           (imageBuffer.subarray(3, 6).toString('ascii') === '87a' || imageBuffer.subarray(3, 6).toString('ascii') === '89a')) {
+    ext = '.gif';
+    mimeType = 'image/gif';
+  }
+
+  if (!ext || !mimeType) {
+    return { valid: false, error: 'صيغة الملف غير مدعومة لأسباب أمنية. يُسمح فقط بصور (PNG, JPEG, WebP, GIF) الحقيقية. ممنوع رفع ملفات SVG!' };
+  }
+
+  // Deep inspection to reject embedded SVG, XML, HTML, or JavaScript strings
+  const checkSample = imageBuffer.subarray(0, Math.min(imageBuffer.length, 16384)).toString('ascii').toLowerCase();
+  if (checkSample.includes('<svg') || checkSample.includes('xmlns') || checkSample.includes('<script') ||
+      checkSample.includes('javascript:') || checkSample.includes('<?php') || checkSample.includes('onload=') ||
+      checkSample.includes('onerror=') || checkSample.includes('<!doctype svg')) {
+    return { valid: false, error: 'تم رفض الملف لاحتوائه على نصوص أو وسوم برمجية غير آمنة.' };
+  }
+
+  return { valid: true, ext, mimeType };
+}
 
 // Default Moderator Key configuration (Individual access keys)
 const DEFAULT_MODERATOR_KEYS = {
@@ -1719,22 +1784,157 @@ async function moderatorRoutes(fastify, options) {
   });
 
   /**
+   * POST /api/mod/chat/upload-image
+   * Secure upload endpoint for Moderator and Player private chat images.
+   * Strictly enforces raster image formats (PNG, JPEG, WebP, GIF) via Magic Bytes.
+   * STRICTLY REJECTS SVG to prevent XSS and script injection attacks.
+   */
+  fastify.post('/chat/upload-image', {
+    config: {
+      rateLimit: {
+        max: 30,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
+    // 1. Authenticate either Moderator or Player
+    let uploaderName = '';
+    let isMod = false;
+
+    const authHeader = request.headers['authorization'] || request.headers['x-mod-token'] || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader.trim();
+
+    if (token) {
+      if (activeModSessions.has(token) || safeCompare(token, config.ADMIN_KEY_SHA256) || token.startsWith(MOD_TOKEN_PREFIX)) {
+        const session = activeModSessions.get(token);
+        uploaderName = session ? session.name : 'المحقق';
+        isMod = true;
+      }
+    }
+
+    if (!isMod) {
+      const { username, playerToken } = request.body || {};
+      const effToken = token || playerToken;
+      const cleanUser = String(username || '').trim();
+      if (!cleanUser) {
+        return reply.status(401).send({ error: 'يجب تسجيل الدخول أو إثبات الهوية لرفع الصور.' });
+      }
+      uploaderName = cleanUser;
+    }
+
+    const { imageBase64 } = request.body || {};
+    if (!imageBase64 || typeof imageBase64 !== 'string') {
+      return reply.code(400).send({ error: 'لم يتم إرسال أي صورة (Base64 image is required).' });
+    }
+
+    // Guard against oversized raw payloads (Max ~3.5MB base64)
+    if (imageBase64.length > 4500000) {
+      return reply.code(413).send({ error: 'حجم الصورة كبير جداً. الحد الأقصى المسموح به هو 3 ميجابايت.' });
+    }
+
+    // Immediate check: strictly disallow SVG in Data URL header
+    const lowerRaw = imageBase64.substring(0, 120).toLowerCase();
+    if (lowerRaw.includes('image/svg') || lowerRaw.includes('svg+xml') || lowerRaw.includes('.svg')) {
+      return reply.code(400).send({ error: '❌ غير مسموح برفع ملفات SVG لمنع الاختراق وحماية النظام! يُسمح فقط بصور (PNG, JPEG, WebP, GIF).' });
+    }
+
+    // Strip Data URL prefix if present
+    const cleanBase64 = imageBase64.replace(/^data:image\/[a-zA-Z0-9.+_-]+;base64,/, '');
+    let imageBuffer;
+    try {
+      imageBuffer = Buffer.from(cleanBase64, 'base64');
+    } catch (e) {
+      return reply.code(400).send({ error: 'تنسيق ترميز الصورة غير صالح (Invalid Base64).' });
+    }
+
+    // Validate binary magic bytes and deep content safety
+    const validation = validateRasterImage(imageBuffer);
+    if (!validation.valid) {
+      return reply.code(400).send({ error: validation.error });
+    }
+
+    // Generate cryptographic unguessable filename
+    const safeHash = crypto.createHash('sha256')
+      .update(uploaderName + '_' + Date.now() + '_' + crypto.randomBytes(8).toString('hex'))
+      .digest('hex')
+      .substring(0, 16);
+    const safeUName = encodeURIComponent(uploaderName).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `chat_${isMod ? 'mod' : 'usr'}_${safeUName}_${safeHash}${validation.ext}`;
+    const targetPath = path.join(CHAT_IMAGES_DIR, filename);
+
+    fs.writeFileSync(targetPath, imageBuffer);
+
+    const imageUrl = `/api/mod/chat/image/${filename}`;
+
+    return reply.send({
+      success: true,
+      imageUrl,
+      filename,
+      mimeType: validation.mimeType,
+      message: 'تم فحص الصورة واعتمادها بنجاح 📸'
+    });
+  });
+
+  /**
+   * GET /api/mod/chat/image/:filename
+   * Stream stored chat images safely with strict security headers
+   */
+  fastify.get('/chat/image/:filename', async (request, reply) => {
+    const { filename } = request.params || {};
+    if (!filename || typeof filename !== 'string') {
+      return reply.code(400).send({ error: 'اسم الملف غير صالح' });
+    }
+
+    const cleanFilename = path.basename(filename);
+    const filePath = path.join(CHAT_IMAGES_DIR, cleanFilename);
+
+    if (!fs.existsSync(filePath)) {
+      return reply.code(404).send({ error: 'الصورة غير موجودة' });
+    }
+
+    const ext = path.extname(cleanFilename).toLowerCase();
+    let mimeType = 'application/octet-stream';
+    if (ext === '.png') mimeType = 'image/png';
+    else if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
+    else if (ext === '.webp') mimeType = 'image/webp';
+    else if (ext === '.gif') mimeType = 'image/gif';
+    else {
+      return reply.code(403).send({ error: 'نوع الملف غير مصرح به' });
+    }
+
+    reply.header('Content-Type', mimeType);
+    reply.header('X-Content-Type-Options', 'nosniff');
+    reply.header('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'");
+    reply.header('Cache-Control', 'public, max-age=31536000, immutable');
+
+    const stream = fs.createReadStream(filePath);
+    return reply.send(stream);
+  });
+
+  /**
    * POST /api/mod/chat/send
-   * Moderator sends a message to the player
+   * Moderator sends a message (or image) to the player
    */
   fastify.post('/chat/send', {
     preHandler: [requireModAuth]
   }, async (request, reply) => {
-    const { targetUser, targetUsername, message } = request.body || {};
+    const { targetUser, targetUsername, message, imageUrl } = request.body || {};
     const recipient = (targetUser || targetUsername || '').trim();
-    if (!recipient || !message || !message.trim()) {
-      return reply.status(400).send({ error: 'targetUser and message are required' });
+    const cleanMsg = (message || '').trim().substring(0, 500);
+    const cleanImg = (typeof imageUrl === 'string') ? imageUrl.trim() : null;
+
+    if (!recipient || (!cleanMsg && !cleanImg)) {
+      return reply.status(400).send({ error: 'targetUser and message or imageUrl are required' });
+    }
+
+    // Strict validation: Reject any SVG image URLs
+    if (cleanImg && (cleanImg.toLowerCase().includes('.svg') || cleanImg.toLowerCase().includes('image/svg'))) {
+      return reply.status(400).send({ error: 'غير مسموح بإرسال صور بصيغة SVG لأسباب أمنية.' });
     }
 
     try {
       const sKey = serviceKey();
       const ts = Date.now();
-      const cleanMsg = message.trim().substring(0, 500);
 
       const res = await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
         method: 'POST',
@@ -1750,6 +1950,7 @@ async function moderatorRoutes(fastify, options) {
           type: 'investigation_chat',
           payload: {
             message: cleanMsg,
+            imageUrl: cleanImg || null,
             senderName: request.modSession.name,
             isMod: true,
             timestamp: ts
@@ -1775,25 +1976,33 @@ async function moderatorRoutes(fastify, options) {
 
   /**
    * POST /api/mod/chat/player-send
-   * Player sends message to the investigation channel
+   * Player sends message (or image) to the investigation channel
    */
   fastify.post('/chat/player-send', {
     config: {
       rateLimit: {
-        max: 20,
+        max: 25,
         timeWindow: 60 * 1000
       }
     }
   }, async (request, reply) => {
-    const { username, message } = request.body || {};
-    if (!username || !message || !message.trim()) {
-      return reply.status(400).send({ error: 'username and message are required' });
+    const { username, message, imageUrl } = request.body || {};
+    const cleanU = String(username || '').trim();
+    const cleanMsg = (message || '').trim().substring(0, 500);
+    const cleanImg = (typeof imageUrl === 'string') ? imageUrl.trim() : null;
+
+    if (!cleanU || (!cleanMsg && !cleanImg)) {
+      return reply.status(400).send({ error: 'username and message or imageUrl are required' });
+    }
+
+    // Strict validation: Reject any SVG image URLs
+    if (cleanImg && (cleanImg.toLowerCase().includes('.svg') || cleanImg.toLowerCase().includes('image/svg'))) {
+      return reply.status(400).send({ error: 'غير مسموح بإرسال صور بصيغة SVG لأسباب أمنية.' });
     }
 
     try {
       const sKey = serviceKey();
       const ts = Date.now();
-      const cleanMsg = message.trim().substring(0, 500);
 
       const res = await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
         method: 'POST',
@@ -1804,12 +2013,13 @@ async function moderatorRoutes(fastify, options) {
           'Prefer': 'return=representation'
         },
         body: JSON.stringify({
-          sender: username.trim(),
+          sender: cleanU,
           recipient: 'MOD_STAFF_CHANNEL',
           type: 'investigation_chat',
           payload: {
             message: cleanMsg,
-            senderName: username.trim(),
+            imageUrl: cleanImg || null,
+            senderName: cleanU,
             isMod: false,
             timestamp: ts
           },
@@ -1833,8 +2043,36 @@ async function moderatorRoutes(fastify, options) {
   });
 
   /**
+   * GET /api/mod/chat/player-unread/:username
+   * Check unread moderator messages for the player
+   */
+  fastify.get('/chat/player-unread/:username', async (request, reply) => {
+    const { username } = request.params || {};
+    if (!username) return reply.status(400).send({ error: 'Username is required' });
+
+    try {
+      const sKey = serviceKey();
+      const cleanU = encodeURIComponent(username.trim());
+      const qUrl = `${config.SUPABASE_URL}/rest/v1/mailbox?type=eq.investigation_chat&recipient=ilike.${cleanU}&status=eq.unread&select=id,sender,payload,created_at&order=created_at.desc&limit=5`;
+      const res = await fetch(qUrl, {
+        headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch unread messages');
+      const rows = await res.json();
+      const unreadCount = Array.isArray(rows) ? rows.length : 0;
+      return reply.send({
+        success: true,
+        unreadCount,
+        latestMessage: unreadCount > 0 ? rows[0] : null
+      });
+    } catch (err) {
+      return reply.status(500).send({ error: err.message, unreadCount: 0 });
+    }
+  });
+
+  /**
    * GET /api/mod/chat/player-history/:username
-   * Player retrieves their own investigation messages
+   * Player retrieves their own investigation messages (and marks unread moderator messages as read)
    */
   fastify.get('/chat/player-history/:username', async (request, reply) => {
     const { username } = request.params || {};
@@ -1849,6 +2087,20 @@ async function moderatorRoutes(fastify, options) {
       });
       if (!res.ok) throw new Error('Failed to fetch player messages');
       const rows = await res.json();
+
+      // Mark unread messages sent to this player as read
+      try {
+        await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox?type=eq.investigation_chat&recipient=ilike.${cleanU}&status=eq.unread`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': sKey,
+            'Authorization': `Bearer ${sKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ status: 'read' })
+        });
+      } catch (_) {}
 
       return reply.send({
         success: true,

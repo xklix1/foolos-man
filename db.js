@@ -683,7 +683,7 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   async function checkVersion() {
     try {
-      const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.4.4';
+      const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.4.8';
       const lastKnown = (typeof localStorage !== 'undefined') ? localStorage.getItem('rasalmal_last_known_ver') : null;
       const skipVer = (typeof sessionStorage !== 'undefined') ? sessionStorage.getItem('rasalmal_skip_ver_check') : null;
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -700,7 +700,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v9.4.4', remoteVersion: 'v9.4.4' };
+    return { upToDate: true, clientVersion: 'v9.4.8', remoteVersion: 'v9.4.8' };
   }
 
   async function checkDeviceBan() {
@@ -2077,11 +2077,36 @@ var AppDB = (() => {
 
                     const locFlight = locPlane.activeFlight || locPlane.currentFlight;
                     const srvFlight = srvPlane.activeFlight || srvPlane.currentFlight;
+                    const locFlightId = locFlight && (locFlight.flightId || ('flt_' + locPlane.id + '_' + locFlight.launchTime));
+                    const claimedList = Array.isArray(srvA.claimedFlightIds) ? srvA.claimedFlightIds : (Array.isArray(locA.claimedFlightIds) ? locA.claimedFlightIds : []);
 
                     // 1. If local plane was actively launched on a new flight (e.g. Tokyo), preserve active flight details
                     if (locStatus === 'in_flight' && locFlight && locFlight.launchTime) {
+                      // Never resurrect an already claimed flight
+                      if (locFlightId && (claimedList.includes(locFlightId) || srvPlane.lastClaimedFlightId === locFlightId)) {
+                        locPlane.status = 'idle';
+                        locPlane.activeFlight = null;
+                        locPlane.currentFlight = null;
+                        srvPlane.status = 'idle';
+                        srvPlane.activeFlight = null;
+                        srvPlane.currentFlight = null;
+                        shouldSyncCloud = true;
+                        return;
+                      }
+
+                      const now = Date.now();
+                      const isLanded = Number(locFlight.landingTime || 0) <= now;
+
+                      // If server plane is idle and flight has already landed, do not resurrect
+                      if (srvStatus === 'idle' && isLanded) {
+                        locPlane.status = 'idle';
+                        locPlane.activeFlight = null;
+                        locPlane.currentFlight = null;
+                        return;
+                      }
+
                       const srvLaunch = srvFlight ? Number(srvFlight.launchTime || 0) : 0;
-                      if (Number(locFlight.launchTime) >= srvLaunch || srvStatus === 'idle') {
+                      if (Number(locFlight.launchTime) > srvLaunch || (srvStatus === 'idle' && !isLanded)) {
                         srvPlane.status = 'in_flight';
                         srvPlane.activeFlight = JSON.parse(JSON.stringify(locFlight));
                         srvPlane.currentFlight = JSON.parse(JSON.stringify(locFlight));
@@ -2105,6 +2130,13 @@ var AppDB = (() => {
                   }
                 });
               }
+            }
+            if (Array.isArray(locA.claimedFlightIds) || Array.isArray(srvA.claimedFlightIds)) {
+              srvA.claimedFlightIds = Array.from(new Set([
+                ...(Array.isArray(srvA.claimedFlightIds) ? srvA.claimedFlightIds : []),
+                ...(Array.isArray(locA.claimedFlightIds) ? locA.claimedFlightIds : [])
+              ])).slice(-100);
+              locA.claimedFlightIds = srvA.claimedFlightIds;
             }
           }
         }
@@ -2906,7 +2938,17 @@ var AppDB = (() => {
       try {
         const rows = await _api(`mailbox?recipient=ilike.${encodeURIComponent(username.trim())}&order=created_at.desc&limit=30`);
         if (rows && isSubscribed) {
-          if (!isFirstRun) {
+          if (isFirstRun) {
+            // Check if player has incoming unread moderator private chat waiting
+            const pendingModChat = rows.find(r => r.type === 'investigation_chat' && (r.status === 'unread' || r.status === 'pending'));
+            if (pendingModChat) {
+              setTimeout(() => {
+                if (typeof window !== 'undefined' && typeof window.openPlayerInvestigationChat === 'function') {
+                  window.openPlayerInvestigationChat();
+                }
+              }, 1200);
+            }
+          } else {
             for (const m of rows) {
               if (!lastKnownMailIds.has(m.id) && m.status !== 'read' && m.status !== 'accepted' && m.status !== 'rejected') {
                 const type = m.type;
@@ -2993,6 +3035,58 @@ var AppDB = (() => {
                         tag: `dm_${sender}_${Date.now()}`
                       });
                     }
+                  }
+                }
+                // 2.5 Moderator / Investigator Private Live Chat Received
+                else if (type === 'investigation_chat') {
+                  const senderName = payload.senderName || sender || 'المحقق';
+                  const msgText = payload.message || m.message || (payload.imageUrl ? '📷 أرسل لك صورة مرفقة.' : 'رسالة جديدة من فريق التحقيق والمراقبة.');
+
+                  // Open the live private chat window directly on the player's screen!
+                  if (typeof window !== 'undefined' && typeof window.openPlayerInvestigationChat === 'function') {
+                    window.openPlayerInvestigationChat();
+                  }
+
+                  // If already open, refresh messages immediately!
+                  if (typeof window !== 'undefined' && typeof window.loadPlayerInvestigationChat === 'function') {
+                    window.loadPlayerInvestigationChat();
+                  }
+
+                  // Play chat notification sound
+                  if (typeof window !== 'undefined' && window.UI && typeof window.UI.playMenuSound === 'function') {
+                    window.UI.playMenuSound('modal_open');
+                  }
+
+                  // Update floating chat badge dot
+                  const unreadDot = typeof document !== 'undefined' ? document.getElementById('chat-unread-dot') : null;
+                  if (unreadDot) {
+                    unreadDot.classList.remove('hidden');
+                    const curCount = parseInt(unreadDot.textContent) || 0;
+                    unreadDot.textContent = String(curCount + 1);
+                  }
+
+                  // Update DMs unread badge in chat drawer
+                  const dmsBadge = typeof document !== 'undefined' ? document.getElementById('chat-dms-unread-badge') : null;
+                  if (dmsBadge) {
+                    dmsBadge.classList.remove('hidden');
+                    const curDms = parseInt(dmsBadge.textContent) || 0;
+                    dmsBadge.textContent = String(curDms + 1);
+                  }
+
+                  // Also show floating chat pill in case player minimizes/closes modal
+                  const floatingBanner = typeof document !== 'undefined' ? document.getElementById('floating-mod-chat-notify') : null;
+                  const floatingText = typeof document !== 'undefined' ? document.getElementById('floating-mod-chat-text') : null;
+                  if (floatingBanner) {
+                    if (floatingText) floatingText.textContent = msgText.length > 40 ? (msgText.substring(0, 40) + '...') : msgText;
+                    floatingBanner.classList.remove('hidden');
+                  }
+
+                  // Native OS / Browser Push Notification
+                  if (typeof window !== 'undefined' && window.PWAManager && typeof window.PWAManager.sendNotification === 'function') {
+                    window.PWAManager.sendNotification(`🛡️ محادثة خاصة من ${senderName}`, {
+                      body: msgText,
+                      tag: `mod_chat_${m.id || Date.now()}`
+                    });
                   }
                 }
                 // 3. Other System/Player Notifications
