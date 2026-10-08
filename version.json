@@ -1,7 +1,7 @@
 {
-  "version": "v9.5.0",
-  "build": 1791299000000,
-  "timestamp": 1791299000000,
-  "notes": "Add prominent contact moderator buttons in chat drawer, mobile header, navigation menu, and settings",
-  "releaseNotes": "إضافة أزرار تواصل مباشر وسريعة للاعب لمراسلة الإدارة والمراقبين من الشات والقائمة ورأس الصفحة والإعدادات"
+  "version": "v9.5.1",
+  "build": 1791305000000,
+  "timestamp": 1791305000000,
+  "notes": "Record and display admin cash, gold grants and approved topups in player audit logs across Admin and Moderator dashboards",
+  "releaseNotes": "عرض وتوثيق المنح الإدارية (كاش وذهب) والشحنات المعتمدة من الإدارة في سجل اللاعب بلوحة الأدمن وبوابة المراقبين"
 }

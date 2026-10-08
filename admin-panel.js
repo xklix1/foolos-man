@@ -1479,6 +1479,31 @@
             delete freshPlayer.state.resetTimestamp;
           }
 
+          // Record permanent Admin Grant in player's activity log and adminGrants
+          const grantEntry = {
+            id: `adm_bal_${now}_${Math.random().toString(36).substring(2, 6)}`,
+            timestamp: now,
+            action: `إيداع مالي مباشر من الإدارة 💰`,
+            category: 'admin',
+            details: `إيداع فوري بقيمة ${amount.toLocaleString()} EGP في [${targetLabel}] بواسطة إدارة اللعبة`,
+            amount: amount,
+            cash: newCash,
+            bank: newBank
+          };
+          if (!Array.isArray(freshPlayer.activityLog)) freshPlayer.activityLog = [];
+          freshPlayer.activityLog.unshift(grantEntry);
+          if (!Array.isArray(freshPlayer.adminGrants)) freshPlayer.adminGrants = [];
+          freshPlayer.adminGrants.unshift({
+            id: grantEntry.id,
+            type: 'balance_grant',
+            title: `إيداع فوري (${targetLabel})`,
+            amount: amount,
+            cash: addCash,
+            bank: addBank,
+            timestamp: now,
+            target: target
+          });
+
           if (selectedPlayerState) {
             selectedPlayerState.cash = newCash;
             selectedPlayerState.bank = newBank;
@@ -1490,6 +1515,10 @@
               selectedPlayerState.state.isReset = false;
               delete selectedPlayerState.state.resetTimestamp;
             }
+            if (!Array.isArray(selectedPlayerState.activityLog)) selectedPlayerState.activityLog = [];
+            selectedPlayerState.activityLog.unshift(grantEntry);
+            if (!Array.isArray(selectedPlayerState.adminGrants)) selectedPlayerState.adminGrants = [];
+            selectedPlayerState.adminGrants.unshift(freshPlayer.adminGrants[0]);
           }
 
           const canonicalUsername = freshPlayer.username || selectedPlayer;
@@ -1613,6 +1642,28 @@
             delete freshPlayer.state.resetTimestamp;
           }
 
+          // Record permanent Admin Gold Grant in player's activity log and adminGrants
+          const goldGrantEntry = {
+            id: `adm_gold_${now}_${Math.random().toString(36).substring(2, 6)}`,
+            timestamp: now,
+            action: `منحة ذهب مباشرة من الإدارة 🪙`,
+            category: 'admin',
+            details: `إضافة فورية بقيمة ${amount.toLocaleString()} ذهبة لحساب اللاعب بواسطة إدارة اللعبة`,
+            gold: amount,
+            amount: null
+          };
+          if (!Array.isArray(freshPlayer.activityLog)) freshPlayer.activityLog = [];
+          freshPlayer.activityLog.unshift(goldGrantEntry);
+          if (!Array.isArray(freshPlayer.adminGrants)) freshPlayer.adminGrants = [];
+          freshPlayer.adminGrants.unshift({
+            id: goldGrantEntry.id,
+            type: 'gold_grant',
+            title: `منح ${amount.toLocaleString()} ذهبة`,
+            gold: amount,
+            amount: 0,
+            timestamp: now
+          });
+
           if (selectedPlayerState) {
             selectedPlayerState.gold = newGold;
             selectedPlayerState.adminModifiedTimestamp = now;
@@ -1623,6 +1674,10 @@
               selectedPlayerState.state.isReset = false;
               delete selectedPlayerState.state.resetTimestamp;
             }
+            if (!Array.isArray(selectedPlayerState.activityLog)) selectedPlayerState.activityLog = [];
+            selectedPlayerState.activityLog.unshift(goldGrantEntry);
+            if (!Array.isArray(selectedPlayerState.adminGrants)) selectedPlayerState.adminGrants = [];
+            selectedPlayerState.adminGrants.unshift(freshPlayer.adminGrants[0]);
           }
 
           const canonicalUsername = freshPlayer.username || selectedPlayer;
@@ -2692,6 +2747,9 @@
         } else if (item.category ==='store') {
           icon ='<i class="fa-solid fa-bag-shopping text-cyan-400"></i>';
           badgeColor ='bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
+        } else if (item.category ==='admin' || item.category ==='admin_grant') {
+          icon = item.gold ? '<i class="fa-solid fa-coins text-yellow-400"></i>' : '<i class="fa-solid fa-crown text-amber-400"></i>';
+          badgeColor ='bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold';
         }
 
         const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit', second:'2-digit' }) :'--:--';
@@ -2712,6 +2770,14 @@
           </div>
         ` : '';
 
+        const goldBadgeHtml = item.gold ? `
+          <div class="mt-1">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold text-[10px]">
+              <i class="fa-solid fa-coins text-yellow-400"></i> +${Number(item.gold).toLocaleString()} ذهبة 🪙
+            </span>
+          </div>
+        ` : '';
+
         div.innerHTML =`
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2.5 min-w-0">
@@ -2720,10 +2786,11 @@
               </div>
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="font-bold text-white text-xs truncate">${item.action}</span>
-                  <span class="text-[9px] px-1.5 py-0.2 rounded border ${badgeColor} font-sans">${item.category}</span>
+                  <span class="font-bold text-white text-xs truncate ${item.category === 'admin' ? 'text-amber-200' : ''}">${item.action}</span>
+                  <span class="text-[9px] px-1.5 py-0.2 rounded border ${badgeColor} font-sans">${item.category === 'admin' ? 'شحن ومنح الإدارة 👑' : item.category}</span>
                 </div>
                 <div class="text-[11px] text-slate-300 mt-0.5 leading-tight">${item.details}</div>
+                ${goldBadgeHtml}
               </div>
             </div>
             <div class="text-right shrink-0">
@@ -2749,15 +2816,17 @@
         inspectLogsBtn.innerHTML =`<i class="fa-solid fa-spinner fa-spin text-sm"></i><span>جاري الفحص...</span>`;
 
         try {
-          // Strictly single, on-demand query for selected player
-          const [pState, transfers] = await Promise.all([
+          // Strictly single, on-demand query for selected player, transfers, topups, and mailbox grants
+          const [pState, transfers, topupRes, mailboxRes] = await Promise.all([
             AppDB.adminGetPlayer(targetUser),
-            AppDB.getPlayerTransfers(targetUser, 40).catch(() => [])
+            AppDB.getPlayerTransfers(targetUser, 50).catch(() => []),
+            (typeof AppDB._api === 'function' ? AppDB._api('globals?id=eq.topup_requests&select=data') : Promise.resolve([])).catch(() => []),
+            (typeof AppDB._api === 'function' ? AppDB._api('mailbox?recipient=eq.' + encodeURIComponent(targetUser) + '&order=created_at.desc&limit=100') : Promise.resolve([])).catch(() => [])
           ]);
 
           if (!pState) throw new Error("تعذر جلب بيانات اللاعب من الخادم.");
 
-          // Map transfers into activity log entries
+          // 1. Map transfers into activity log entries
           const transferLogs = (transfers || []).map(t => {
             const isSender = (t.sender ||'').toLowerCase() === targetUser.toLowerCase();
             const amt = Number(t.amount || 0).toLocaleString();
@@ -2771,10 +2840,102 @@
             };
           });
 
-          // Merge player activities and wire transfers
-          const rawLogs = (pState.activityLog || []).concat(transferLogs);
+          // 2. Map Approved Top-Up Packages into activity log entries
+          const topupLogs = [];
+          if (topupRes && topupRes.length > 0 && topupRes[0].data && Array.isArray(topupRes[0].data.requests)) {
+            topupRes[0].data.requests.forEach(tp => {
+              if (tp && tp.username && tp.username.toLowerCase() === targetUser.toLowerCase()) {
+                const isApproved = tp.status === 'approved';
+                const ts = Number(tp.reviewedAt || tp.timestamp || (tp.created_at ? new Date(tp.created_at).getTime() : Date.now()));
+                const cashReward = tp.rewards?.cash || 0;
+                const bankReward = tp.rewards?.bank || 0;
+                const goldReward = tp.rewards?.gold || 0;
+                const totalCash = cashReward + bankReward;
+
+                let rewardsSummary = [];
+                if (totalCash > 0) rewardsSummary.push(`+${totalCash.toLocaleString()} ج.م`);
+                if (goldReward > 0) rewardsSummary.push(`+${goldReward.toLocaleString()} ذهبة 🪙`);
+                if (tp.rewards?.xp) rewardsSummary.push(`+${tp.rewards.xp} XP`);
+                if (tp.rewards?.customBadge) rewardsSummary.push(`وسام [${tp.rewards.customBadge}]`);
+
+                topupLogs.push({
+                  id: `topup_${tp.id || ts}`,
+                  timestamp: ts,
+                  action: isApproved ? `شحنة معتمدة من الإدارة 👑 (${tp.packageName || 'باقة متجر'})` : `طلب شحن (${tp.status === 'pending' ? 'قيد المراجعة' : 'مرفوض'}): ${tp.packageName || 'متجر'}`,
+                  category: 'admin',
+                  details: `المبلغ: ${Number(tp.price || 0).toLocaleString()} ج.م • الحالة: ${isApproved ? 'تم الشحن والاعتماد بنجاح ✅' : tp.status}` +
+                           (rewardsSummary.length ? ` • المكافآت: ${rewardsSummary.join(' | ')}` : '') +
+                           (tp.reviewerNote ? ` • بيان الإدارة: "${tp.reviewerNote}"` : ''),
+                  amount: totalCash > 0 ? totalCash : null,
+                  gold: goldReward > 0 ? goldReward : null
+                });
+              }
+            });
+          }
+
+          // 3. Map Admin Mailbox Grants (Balance & Gold) into activity log entries
+          const adminMailLogs = [];
+          if (Array.isArray(mailboxRes)) {
+            mailboxRes.forEach(mb => {
+              const isFromAdmin = (mb.sender && (mb.sender.includes('Admin') || mb.sender.includes('الإدارة') || mb.sender.includes('admin')));
+              const isAdminGrantType = mb.type === 'admin_balance_grant' || mb.type === 'admin_gold_grant';
+              if (isFromAdmin || isAdminGrantType) {
+                const ts = Number(mb.created_at ? new Date(mb.created_at).getTime() : (mb.timestamp || Date.now()));
+                const pld = mb.payload || {};
+                const isGold = mb.type === 'admin_gold_grant' || pld.addedGold != null;
+                const goldAmt = Number(pld.addedGold || 0);
+                const cashAmt = Number(pld.totalAmount || pld.addedCash || pld.addedBank || mb.amount || 0);
+
+                adminMailLogs.push({
+                  id: `adm_mail_${mb.id || ts}`,
+                  timestamp: ts,
+                  action: isGold ? `منحة ذهب مباشرة من الإدارة 🪙 (+${goldAmt.toLocaleString()} ذهبة)` : `إيداع مالي مباشر من الإدارة 💰 (+${cashAmt.toLocaleString()} ج.م)`,
+                  category: 'admin',
+                  details: `إيداع فوري بحساب اللاعب من قبل الإدارة` + (pld.target ? ` في [${pld.target}]` : '') + (mb.message ? ` • الملاحظة: "${mb.message}"` : ''),
+                  amount: cashAmt > 0 ? cashAmt : null,
+                  gold: goldAmt > 0 ? goldAmt : null,
+                  cash: pld.newCash != null ? Number(pld.newCash) : null,
+                  bank: pld.newBank != null ? Number(pld.newBank) : null
+                });
+              }
+            });
+          }
+
+          // 4. Map any admin grants recorded in state.adminGrants
+          const stateAdminGrants = [];
+          if (Array.isArray(pState.adminGrants)) {
+            pState.adminGrants.forEach(ag => {
+              if (!ag) return;
+              stateAdminGrants.push({
+                id: ag.id || `ag_${ag.timestamp}`,
+                timestamp: Number(ag.timestamp || Date.now()),
+                action: ag.gold ? `منحة ذهب من الإدارة 🪙` : `إيداع رصيد من الإدارة 💰`,
+                category: 'admin',
+                details: ag.details || ag.note || 'منحة إدارية مسجلة في ملف اللاعب',
+                amount: Number(ag.amount || ag.cash || 0) || null,
+                gold: Number(ag.gold || 0) || null
+              });
+            });
+          }
+
+          // Merge all activities, transfers, topups, and admin grants
+          const rawLogs = (pState.activityLog || [])
+            .concat(transferLogs)
+            .concat(topupLogs)
+            .concat(adminMailLogs)
+            .concat(stateAdminGrants);
+
+          // Deduplicate items with same id if present
+          const seenIds = new Set();
+          const dedupedLogs = rawLogs.filter(item => {
+            if (!item.id) return true;
+            if (seenIds.has(item.id)) return false;
+            seenIds.add(item.id);
+            return true;
+          });
+
           // Sort descending by timestamp
-          pState.combinedActivityLog = rawLogs.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+          pState.combinedActivityLog = dedupedLogs.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
 
           selectedPlayerState = pState;
           document.getElementById('adm-log-modal-username').textContent =`@${targetUser}`;

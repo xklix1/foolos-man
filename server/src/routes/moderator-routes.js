@@ -678,6 +678,22 @@ async function moderatorRoutes(fastify, options) {
         if (mbRes.ok) playerMailbox = await mbRes.json();
       } catch (_) {}
 
+      // 3B. Fetch Official Top-Up Requests & Admin Injections for this Player
+      let playerTopups = [];
+      try {
+        const topupRes = await fetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.topup_requests&select=data`, {
+          headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+        });
+        if (topupRes.ok) {
+          const tRows = await topupRes.json();
+          if (tRows && tRows.length > 0 && tRows[0].data && Array.isArray(tRows[0].data.requests)) {
+            playerTopups = tRows[0].data.requests.filter(r => 
+              r && r.username && r.username.toLowerCase() === u.toLowerCase()
+            );
+          }
+        }
+      } catch (_) {}
+
       // 4. Calculate comprehensive real-time Cashflow Report & Financial Audit
       const cashflowReport = (() => {
         const bank = Number(pDoc.bank || state.bank || 0);
@@ -942,8 +958,122 @@ async function moderatorRoutes(fastify, options) {
         });
       });
 
+      // E. Official Top-Up Packages & Recharges injected into masterFeed
+      const adminGrantsAndTopupsList = [];
+      playerTopups.forEach(tp => {
+        const isApproved = tp.status === 'approved';
+        const ts = Number(tp.reviewedAt || tp.timestamp || (tp.created_at ? new Date(tp.created_at).getTime() : now));
+        const cashReward = tp.rewards?.cash || 0;
+        const bankReward = tp.rewards?.bank || 0;
+        const goldReward = tp.rewards?.gold || 0;
+        const totalCash = cashReward + bankReward;
+
+        let rewardsSummary = [];
+        if (totalCash > 0) rewardsSummary.push(`+${totalCash.toLocaleString()} ج.م`);
+        if (goldReward > 0) rewardsSummary.push(`+${goldReward.toLocaleString()} 🪙 ذهب`);
+        if (tp.rewards?.xp) rewardsSummary.push(`+${tp.rewards.xp} XP`);
+        if (tp.rewards?.customBadge) rewardsSummary.push(`وسام [${tp.rewards.customBadge}]`);
+
+        const topupFeedItem = {
+          id: `topup_${tp.id || ts}`,
+          category: 'admin_grant',
+          title: isApproved ? `شحنة معتمدة من الإدارة 👑 (${tp.packageName || 'باقة متجر'})` : `طلب شحن (${tp.status === 'pending' ? 'قيد المراجعة' : 'مرفوض'}): ${tp.packageName || 'متجر'}`,
+          desc: `المبلغ: ${Number(tp.price || 0).toLocaleString()} ج.م • الحالة: ${isApproved ? 'تم الشحن والاعتماد ✅' : tp.status}` +
+                (rewardsSummary.length ? ` • المكافآت: ${rewardsSummary.join(' | ')}` : '') +
+                (tp.reviewerNote ? ` • بيان الإدارة: "${tp.reviewerNote}"` : ''),
+          amount: totalCash > 0 ? totalCash : null,
+          gold: goldReward > 0 ? goldReward : null,
+          isPositive: isApproved,
+          counterparty: 'إدارة اللعبة (Admin)',
+          timestamp: ts,
+          source: 'admin_topup'
+        };
+        masterFeed.push(topupFeedItem);
+        adminGrantsAndTopupsList.push({
+          id: tp.id || `topup_${ts}`,
+          type: 'topup',
+          title: tp.packageName || 'باقة شحن متجر',
+          price: tp.price || 0,
+          cash: totalCash,
+          gold: goldReward,
+          status: tp.status,
+          note: tp.reviewerNote || '',
+          timestamp: ts
+        });
+      });
+
+      // F. Admin Direct Balance Grants & Gold Grants from Mailbox
+      playerMailbox.forEach(mb => {
+        const isFromAdmin = (mb.sender && (mb.sender.includes('Admin') || mb.sender.includes('الإدارة') || mb.sender.includes('admin')));
+        const isAdminGrantType = mb.type === 'admin_balance_grant' || mb.type === 'admin_gold_grant';
+        if (isFromAdmin || isAdminGrantType) {
+          const ts = Number(mb.created_at ? new Date(mb.created_at).getTime() : (mb.timestamp || now));
+          const pld = mb.payload || {};
+          const isGold = mb.type === 'admin_gold_grant' || pld.addedGold != null;
+          const goldAmt = Number(pld.addedGold || 0);
+          const cashAmt = Number(pld.totalAmount || pld.addedCash || pld.addedBank || mb.amount || 0);
+
+          const mailGrantItem = {
+            id: `adm_mail_${mb.id || ts}`,
+            category: 'admin_grant',
+            title: isGold ? `منحة ذهب مباشرة من الإدارة 🪙 (+${goldAmt.toLocaleString()} ذهبة)` : `منحة مالية مباشرة من الإدارة 💰 (+${cashAmt.toLocaleString()} ج.م)`,
+            desc: `إيداع فوري بحساب اللاعب من قبل الإدارة` + (pld.target ? ` في [${pld.target}]` : '') + (mb.message ? ` • الملاحظة: "${mb.message}"` : ''),
+            amount: cashAmt > 0 ? cashAmt : null,
+            gold: goldAmt > 0 ? goldAmt : null,
+            isPositive: true,
+            counterparty: mb.sender || 'إدارة اللعبة (Admin)',
+            timestamp: ts,
+            source: 'admin_grant',
+            cash: pld.newCash != null ? Number(pld.newCash) : null,
+            bank: pld.newBank != null ? Number(pld.newBank) : null
+          };
+          masterFeed.push(mailGrantItem);
+          adminGrantsAndTopupsList.push({
+            id: mb.id || `grant_${ts}`,
+            type: isGold ? 'gold_grant' : 'balance_grant',
+            title: isGold ? `منح ${goldAmt.toLocaleString()} ذهبة` : `إيداع ${cashAmt.toLocaleString()} ج.م`,
+            cash: cashAmt,
+            gold: goldAmt,
+            status: 'approved',
+            note: mb.message || pld.target || 'إيداع إداري مباشر',
+            timestamp: ts
+          });
+        }
+      });
+
+      // G. Admin Grants from Player State (if recorded in state.adminGrants)
+      if (Array.isArray(state.adminGrants)) {
+        state.adminGrants.forEach(ag => {
+          if (!ag) return;
+          const ts = Number(ag.timestamp || now);
+          masterFeed.push({
+            id: ag.id || `ag_${ts}`,
+            category: 'admin_grant',
+            title: ag.gold ? `منحة ذهب من الإدارة 🪙 (+${ag.gold} ذهبة)` : `منحة رصيد من الإدارة 💰 (+${Number(ag.amount || ag.cash || 0).toLocaleString()} ج.م)`,
+            desc: ag.details || ag.note || 'منحة إدارية مسجلة في ملف اللاعب',
+            amount: Number(ag.amount || ag.cash || 0) || null,
+            gold: Number(ag.gold || 0) || null,
+            isPositive: true,
+            counterparty: 'إدارة اللعبة (Admin)',
+            timestamp: ts,
+            source: 'admin_grant'
+          });
+          adminGrantsAndTopupsList.push({
+            id: ag.id || `ag_${ts}`,
+            type: ag.gold ? 'gold_grant' : 'balance_grant',
+            title: ag.title || (ag.gold ? `منح ${ag.gold} ذهبة` : `إيداع ${ag.amount || ag.cash} ج.م`),
+            cash: Number(ag.amount || ag.cash || 0),
+            gold: Number(ag.gold || 0),
+            status: 'approved',
+            note: ag.details || ag.note || '',
+            timestamp: ts
+          });
+        });
+      }
+
       // Sort full master feed descending by time
       masterFeed.sort((a, b) => b.timestamp - a.timestamp);
+      adminGrantsAndTopupsList.sort((a, b) => b.timestamp - a.timestamp);
 
       // 6. Format complete detailed profile
       const isFrozen = Boolean((state.freezeUntil && state.freezeUntil > now) || Number(pDoc.jail_timer || 0) > 0);
@@ -1019,6 +1149,7 @@ async function moderatorRoutes(fastify, options) {
         // Recent Activity & Transfers (Extensive historical retention)
         transfers: playerTransfers || [],
         mailbox: playerMailbox || [],
+        adminGrantsAndTopups: adminGrantsAndTopupsList || [],
         activityFeed: masterFeed.slice(0, 3500),
         activityLog: rawLogs.slice(-3500),
 

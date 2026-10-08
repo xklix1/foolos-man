@@ -4034,6 +4034,34 @@ var AppDB = (() => {
         }
       }
 
+      // Record permanent approved top-up in player activityLog and adminGrants
+      const topupEntry = {
+        id: `topup_${requestId}`,
+        timestamp: ts,
+        action: `شحنة معتمدة من الإدارة 👑 (${req.packageName || 'باقة متجر'})`,
+        category: 'admin',
+        details: `تم اعتماد وشحن باقة "${req.packageName}" بنجاح (${reviewerNote || 'معتمد بواسطة الإدارة'})`,
+        amount: addedCash + addedBank,
+        gold: addedGold || null,
+        cash: updatedCash,
+        bank: updatedBank
+      };
+      if (!Array.isArray(pState.activityLog)) pState.activityLog = [];
+      pState.activityLog.unshift(topupEntry);
+      if (!Array.isArray(pState.adminGrants)) pState.adminGrants = [];
+      pState.adminGrants.unshift({
+        id: topupEntry.id,
+        type: 'topup',
+        packageId: req.packageId,
+        packageName: req.packageName,
+        price: req.price,
+        cash: addedCash + addedBank,
+        gold: addedGold || 0,
+        status: 'approved',
+        note: reviewerNote || '',
+        timestamp: ts
+      });
+
       pState.adminModifiedTimestamp = ts;
 
       await adminSavePlayer(targetUser, {
