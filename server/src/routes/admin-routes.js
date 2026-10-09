@@ -742,7 +742,7 @@ async function adminRoutes(fastify, options) {
       const whoami = execSync('whoami').toString().trim();
       let nginxFiles = [];
       try {
-        const findOut = execSync('find /etc/nginx/sites-enabled /etc/nginx/sites-available /etc/nginx/conf.d -type f 2>/dev/null').toString().trim();
+        const findOut = execSync('find /etc/nginx/sites-enabled /etc/nginx/sites-available /etc/nginx/conf.d -type f ! -name "*bak*" ! -name "*~*" 2>/dev/null').toString().trim();
         nginxFiles = findOut.split('\n').filter(Boolean);
       } catch (e) {}
 
@@ -753,7 +753,7 @@ async function adminRoutes(fastify, options) {
       for (const file of nginxFiles) {
         try {
           const content = fs.readFileSync(file, 'utf8');
-          if (content.includes('location') && (content.includes('proxy_pass') || content.includes('try_files') || content.includes('root'))) {
+          if (file.includes('rasalmal') && (content.includes('proxy_pass') || content.includes('try_files') || content.includes('root') || content.includes('server_name'))) {
             // Check if it already has strict cache-control
             if (!content.includes('no-store, must-revalidate')) {
               // Inject cache control block before the last closing bracket of server { ... }
