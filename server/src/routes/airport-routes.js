@@ -661,8 +661,16 @@ async function airportRoutes(fastify, options) {
       });
     }
 
-    // Transit fee between 3,000,000 and 7,000,000
-    const fee = Math.floor(3000000 + Math.random() * 4000000);
+    // Balanced transit fee scaled by runway level (Level 1..4)
+    const runwayLvl = Math.max(1, Math.min(4, Number(s.airport.facilities?.runway || 1)));
+    const transitFeeTable = {
+      1: { min: 35000, max: 65000 },
+      2: { min: 70000, max: 130000 },
+      3: { min: 130000, max: 220000 },
+      4: { min: 220000, max: 350000 }
+    };
+    const tier = transitFeeTable[runwayLvl] || transitFeeTable[1];
+    const fee = Math.floor(tier.min + Math.random() * (tier.max - tier.min + 1));
     s.cash = Math.max(0, Number(s.cash || 0)) + fee;
     s.xp = Math.max(0, Number(s.xp || 0)) + 250;
     s.airport.lastTransitPermitAt = now;

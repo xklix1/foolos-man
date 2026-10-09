@@ -41624,10 +41624,10 @@ window.AirportUI = (() => {
       name: 'السوق الحرة ومتاجر الترانزيت 🛍️',
       icon: 'fa-store text-fuchsia-400',
       levels: {
-        1: { name: 'أكشاك هدايا وتذكارات', cost: 5000000, passivePerMin: 500, desc: 'دخل سلبي: 500 ج.م/دقيقة (30 ألف/ساعة)' },
-        2: { name: 'مجمع عطور وساعات سويسرية', cost: 18000000, passivePerMin: 1500, desc: 'دخل سلبي: 1,500 ج.م/دقيقة (90 ألف/ساعة)' },
-        3: { name: 'مول ماركات عالمية وأزياء راقية', cost: 50000000, passivePerMin: 4000, desc: 'دخل سلبي: 4,000 ج.م/دقيقة (240 ألف/ساعة)' },
-        4: { name: 'صالة مزادات مجوهرات وسيارات VIP', cost: 120000000, passivePerMin: 8333, desc: 'دخل سلبي: 8,333 ج.م/دقيقة (500 ألف/ساعة)' }
+        1: { name: 'أكشاك هدايا وتذكارات', cost: 5000000, passivePerMin: 100, desc: 'دخل سلبي: 100 ج.م/دقيقة (6 آلاف/ساعة)' },
+        2: { name: 'مجمع عطور وساعات سويسرية', cost: 18000000, passivePerMin: 300, desc: 'دخل سلبي: 300 ج.م/دقيقة (18 ألف/ساعة)' },
+        3: { name: 'مول ماركات عالمية وأزياء راقية', cost: 50000000, passivePerMin: 750, desc: 'دخل سلبي: 750 ج.م/دقيقة (45 ألف/ساعة)' },
+        4: { name: 'صالة مزادات مجوهرات وسيارات VIP', cost: 120000000, passivePerMin: 1500, desc: 'دخل سلبي: 1,500 ج.م/دقيقة (90 ألف/ساعة)' }
       }
     }
   };
@@ -42693,8 +42693,13 @@ window.AirportUI = (() => {
             <strong class="text-amber-400 numbers-font font-bold">${(stats.transitPermitsAccepted || 0).toLocaleString()} تصريح</strong>
           </div>
           <div class="flex justify-between items-center text-xs">
-            <span class="text-slate-400">عائد رسوم الهبوط المقدر:</span>
-            <strong class="text-emerald-400 numbers-font font-bold">3,000,000 ~ 7,000,000 ج.م</strong>
+            <span class="text-slate-400">عائد رسوم الهبوط المقدر (المدرج لفل ${Math.max(1, Math.min(4, Number(airport.facilities?.runway || 1)))}):</span>
+            <strong class="text-emerald-400 numbers-font font-bold">${{
+              1: '35,000 ~ 65,000 ج.م',
+              2: '70,000 ~ 130,000 ج.م',
+              3: '130,000 ~ 220,000 ج.م',
+              4: '220,000 ~ 350,000 ج.م'
+            }[Math.max(1, Math.min(4, Number(airport.facilities?.runway || 1)))] || '35,000 ~ 65,000 ج.م'}</strong>
           </div>
         </div>
 
@@ -42710,7 +42715,7 @@ window.AirportUI = (() => {
   function calculateDutyFreeClient(airport) {
     if (!airport || !airport.unlocked || !airport.facilities?.duty_free) return 0;
     const lvl = airport.facilities.duty_free;
-    const rates = { 1: 500, 2: 1500, 3: 4000, 4: 8333 };
+    const rates = { 1: 100, 2: 300, 3: 750, 4: 1500 };
     const rate = rates[lvl] || 0;
     if (rate <= 0) return 0;
     const lastTime = Number(airport.lastDutyFreeCollectionAt || airport.unlockedAt || getTrustedNow());
@@ -43726,7 +43731,15 @@ window.AirportUI = (() => {
       return;
     }
 
-    const fee = Math.floor(3000000 + Math.random() * 4000000);
+    const runwayLvl = Math.max(1, Math.min(4, Number(ap.facilities?.runway || 1)));
+    const transitFeeRanges = {
+      1: [35000, 65000],
+      2: [70000, 130000],
+      3: [130000, 220000],
+      4: [220000, 350000]
+    };
+    const [minF, maxF] = transitFeeRanges[runwayLvl] || transitFeeRanges[1];
+    const fee = Math.floor(minF + Math.random() * (maxF - minF + 1));
     const xp = 250;
 
     liveState.cash = (Number(liveState.cash) || 0) + fee;

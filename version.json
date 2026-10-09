@@ -1,7 +1,7 @@
 {
-  "version": "v9.5.1",
-  "build": 1791305000000,
-  "timestamp": 1791305000000,
-  "notes": "Record and display admin cash, gold grants and approved topups in player audit logs across Admin and Moderator dashboards",
-  "releaseNotes": "عرض وتوثيق المنح الإدارية (كاش وذهب) والشحنات المعتمدة من الإدارة في سجل اللاعب بلوحة الأدمن وبوابة المراقبين"
+  "version": "v9.5.2",
+  "build": 1791307000000,
+  "timestamp": 1791307000000,
+  "notes": "Rebalance airport control tower transit permit landing fees and duty-free passive revenue to prevent economic hyperinflation",
+  "releaseNotes": "موازنة اقتصادية دقيقة لبرج المراقبة (تصاريح الترانزيت بحسب مستوى المدرج) وعوائد السوق الحرة لمنع التضخم المالي والحفاظ على توازن اللعبة"
 }
