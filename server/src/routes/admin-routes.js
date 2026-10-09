@@ -752,13 +752,13 @@ async function adminRoutes(fastify, options) {
 
       for (const file of nginxFiles) {
         try {
-          const content = fs.readFileSync(file, 'utf8');
-          if (file.includes('rasalmal') && (content.includes('proxy_pass') || content.includes('try_files') || content.includes('root') || content.includes('server_name'))) {
-            // Check if it already has strict cache-control
-            if (!content.includes('no-store, must-revalidate')) {
-              // Inject cache control block before the last closing bracket of server { ... }
-              const cacheBlock = `
-    # Strict Cache-Busting for HTML, JSON, and ServiceWorker
+          let content = fs.readFileSync(file, 'utf8');
+          if (file.includes('rasalmal') && content.includes('listen 443 ssl')) {
+            // Remove any misplaced block from listen 80
+            content = content.replace(/# Strict Cache-Busting for HTML, JSON, and ServiceWorker[\s\S]*?location = \/sw\.js \{[\s\S]*?\}\n/g, '');
+
+            const cacheBlock = `
+    # Strict Cache-Busting for HTML, JSON, and ServiceWorker (HTTPS)
     location ~* \\.(?:html|json)$ {
         add_header Cache-Control "no-cache, no-store, must-revalidate, max-age=0" always;
         add_header Pragma "no-cache" always;
@@ -771,35 +771,30 @@ async function adminRoutes(fastify, options) {
         add_header Expires "0" always;
     }
 `;
-              // Insert inside server { block
-              const serverIdx = content.lastIndexOf('}');
-              if (serverIdx !== -1) {
-                const newContent = content.slice(0, serverIdx) + cacheBlock + '\n' + content.slice(serverIdx);
-                fs.writeFileSync(file + '.bak', content, 'utf8');
-                fs.writeFileSync(file, newContent, 'utf8');
-                modifiedFile = file;
+            // Insert inside the 443 server block, right after "location / { try_files $uri $uri/ /index.html; }"
+            if (content.includes('try_files $uri $uri/ /index.html;')) {
+              content = content.replace(
+                'try_files $uri $uri/ /index.html;\n    }',
+                'try_files $uri $uri/ /index.html;\n    }\n' + cacheBlock
+              );
+            }
 
-                // Validate nginx syntax
-                try {
-                  testOutput = execSync('nginx -t 2>&1').toString();
-                  // Reload nginx
-                  execSync('systemctl reload nginx || nginx -s reload');
-                  diffOrStatus = 'Nginx successfully configured and reloaded with strict cache-control headers.';
-                } catch (tErr) {
-                  // Rollback on syntax error
-                  fs.writeFileSync(file, content, 'utf8');
-                  diffOrStatus = 'Rolled back due to syntax test failure: ' + tErr.message;
-                }
-              }
-            } else {
-              diffOrStatus = 'Nginx already contains strict cache-control headers.';
-              modifiedFile = file;
+            fs.writeFileSync(file + '.bak', fs.readFileSync(file, 'utf8'), 'utf8');
+            fs.writeFileSync(file, content, 'utf8');
+            modifiedFile = file;
+
+            // Validate nginx syntax
+            try {
+              testOutput = execSync('nginx -t 2>&1').toString();
+              execSync('systemctl reload nginx || nginx -s reload');
+              diffOrStatus = 'Nginx 443 SSL block successfully configured with strict cache-control headers.';
+            } catch (tErr) {
+              fs.writeFileSync(file, fs.readFileSync(file + '.bak', 'utf8'), 'utf8');
+              diffOrStatus = 'Rolled back due to syntax test failure: ' + tErr.message;
             }
             break;
           }
-        } catch (readErr) {
-          // Continue to next file if permission denied
-        }
+        } catch (readErr) {}
       }
 
       return reply.send({
