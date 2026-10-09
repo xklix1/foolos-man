@@ -1,7 +1,7 @@
 {
-  "version": "v9.5.5",
-  "build": 1791320000000,
-  "timestamp": 1791320000000,
+  "version": "v9.5.6",
+  "build": 1791330000000,
+  "timestamp": 1791330000000,
   "notes": "Rebalance Airport Control Tower & Duty Free profits, add comprehensive Airport inspector to admin panel",
   "releaseNotes": "موازنة اقتصادية دقيقة لأرباح برج المراقبة ورسوم الترانزيت والسوق الحرة بالمطار لمنع التضخم، وإضافة فاحص المطار الشامل للوحة الإدارة"
 }

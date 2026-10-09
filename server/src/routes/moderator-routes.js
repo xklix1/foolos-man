@@ -11,8 +11,7 @@ const { BUSINESSES, ASSETS, CAR_TEMPLATES } = require('../engine/definitions');
 const { calculateSingleBusinessProfit } = require('../engine/business-engine');
 const { sanitizePlayerState } = require('../engine/state-sanitizer');
 const { calculateAuthoritativeOfflineProgress } = require('../engine/offline-engine');
-const { calculateNetWorth } = require('../engine/net-worth-engine');
-const { AIRCRAFT_MODELS, AIRPORT_FACILITIES } = require('../engine/airport-engine');
+const { AIRCRAFT_MODELS, AIRPORT_FACILITIES, CONTROL_TOWER_CONFIG, calculateDutyFreeAccumulated, calculateTransitAccumulated } = require('../engine/airport-engine');
 
 const CHAT_IMAGES_DIR = path.resolve(__dirname, '../../../uploads/chat_images');
 try {
@@ -470,22 +469,49 @@ async function moderatorRoutes(fastify, options) {
       });
       const totalPlayersCount = parseInt(countRes.headers.get('content-range')?.split('/')[1] || '0', 10);
 
-      // 1B. Fetch exact counts of Flagged, Frozen, and Muted players across the whole database
-      const [flaggedCountRes, frozenCountRes, mutedCountRes] = await Promise.all([
-        fetch(`${config.SUPABASE_URL}/rest/v1/players?state->>staffFlag=not.is.null&select=username`, {
-          headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Range': '0-0', 'Prefer': 'count=exact' }
-        }),
-        fetch(`${config.SUPABASE_URL}/rest/v1/players?or=(jail_timer.gt.0,state->>freezeUntil.gt.${now})&select=username`, {
-          headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Range': '0-0', 'Prefer': 'count=exact' }
-        }),
-        fetch(`${config.SUPABASE_URL}/rest/v1/players?state->>mutedUntil.gt.${now}&select=username`, {
-          headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Range': '0-0', 'Prefer': 'count=exact' }
-        })
-      ]);
+      // 1B. Fetch players to compute exact counts of Flagged, Frozen, and Muted players across the whole database
+      const allPlayersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?select=username,title,net_worth,jail_timer,state,last_seen&limit=1000`, {
+        headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+      });
+      const allPlayersRows = allPlayersRes.ok ? await allPlayersRes.json() : [];
 
-      const flaggedCount = parseInt(flaggedCountRes.headers.get('content-range')?.split('/')[1] || '0', 10);
-      const frozenCount = parseInt(frozenCountRes.headers.get('content-range')?.split('/')[1] || '0', 10);
-      const mutedCount = parseInt(mutedCountRes.headers.get('content-range')?.split('/')[1] || '0', 10);
+      let flaggedCount = 0;
+      let frozenCount = 0;
+      let mutedCount = 0;
+      const flaggedList = [];
+      const frozenList = [];
+
+      allPlayersRows.forEach(p => {
+        const uLower = String(p.username || '').toLowerCase();
+        const inMem = (sessionManager && sessionManager.sessions.has(uLower)) ? sessionManager.sessions.get(uLower) : null;
+        const rawState = (typeof p.state === 'object' && p.state) ? p.state : {};
+        const state = (inMem && inMem.state) ? inMem.state : rawState;
+
+        const isFrozen = Boolean(
+          (Number(state.freezeUntil || 0) > now) ||
+          (state.freezeReason && Number(p.jail_timer || state.jailTimer || 0) > 0) ||
+          state.isFrozen === true
+        );
+        const isFlagged = Boolean(
+          state.staffFlag ||
+          state.underSuspicion === true ||
+          state.flagReason ||
+          isFrozen
+        );
+        const isMuted = Boolean(Number(state.mutedUntil || 0) > now || state.isMuted === true);
+
+        if (isFrozen) {
+          frozenCount++;
+          frozenList.push({ p, state });
+        }
+        if (isFlagged) {
+          flaggedCount++;
+          flaggedList.push({ p, state });
+        }
+        if (isMuted) {
+          mutedCount++;
+        }
+      });
 
       // 2. Fetch top 30 wealthiest players for wealth analysis
       const topWealthRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?select=username,cash,bank,net_worth,gold,title,is_banned,jail_timer,last_seen,state&order=net_worth.desc&limit=30`, {
@@ -505,6 +531,35 @@ async function moderatorRoutes(fastify, options) {
 
       // 4. Identify suspicious flags / alerts
       const suspiciousAlerts = [];
+
+      // A. Frozen accounts in Risk Feed
+      frozenList.slice(0, 10).forEach(({ p, state }) => {
+        const remainingMins = Math.max(1, Math.round(((Number(state.freezeUntil || 0) - now) / 60000) || (Number(p.jail_timer || 0) / 60)));
+        suspiciousAlerts.push({
+          type: 'frozen',
+          severity: 'high',
+          username: p.username,
+          title: p.title || 'لاعب',
+          netWorth: Number(p.net_worth || state.netWorth || 0),
+          message: `الحساب مجمد حالياً (متبقي ${remainingMins} دقيقة) — ${state.freezeReason || 'أمر إداري'}`
+        });
+      });
+
+      // B. Flagged / Under Surveillance accounts in Risk Feed
+      flaggedList.slice(0, 10).forEach(({ p, state }) => {
+        if (!state.freezeUntil || Number(state.freezeUntil) <= now) {
+          suspiciousAlerts.push({
+            type: 'flagged',
+            severity: 'medium',
+            username: p.username,
+            title: p.title || 'لاعب',
+            netWorth: Number(p.net_worth || state.netWorth || 0),
+            message: `الحساب موضوع تحت المراقبة — ${state.flagReason || 'قيد المتابعة والتدقيق الإداري'}`
+          });
+        }
+      });
+
+      // C. High wealth anomalies
       for (const p of topRows) {
         const netWorth = Number(p.net_worth || 0);
         if (netWorth > 5000000000 && !p.username.toLowerCase().includes('khaled')) {
@@ -519,28 +574,6 @@ async function moderatorRoutes(fastify, options) {
         }
       }
 
-      // Fetch all currently frozen players for the Risk Feed
-      try {
-        const frozenPlayersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?or=(jail_timer.gt.0,state->>freezeUntil.gt.${now})&select=username,title,net_worth,jail_timer,state&limit=10`, {
-          headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
-        });
-        if (frozenPlayersRes.ok) {
-          const fRows = await frozenPlayersRes.json();
-          fRows.forEach(f => {
-            const fState = (typeof f.state === 'object' && f.state) ? f.state : {};
-            const remainingMins = Math.max(1, Math.round(((Number(fState.freezeUntil || 0) - now) / 60000) || (Number(f.jail_timer || 0) / 60)));
-            suspiciousAlerts.push({
-              type: 'frozen',
-              severity: 'medium',
-              username: f.username,
-              title: f.title || 'لاعب',
-              netWorth: Number(f.net_worth || 0),
-              message: `الحساب مجمد حالياً (متبقي ${remainingMins} دقيقة) — ${fState.freezeReason || 'أمر إداري'}`
-            });
-          });
-        }
-      } catch (_) {}
-
       // 5. Fetch recent 15 transfers for rapid movement monitoring
       const transfersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/transfers?order=created_at.desc&limit=15`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
@@ -550,13 +583,13 @@ async function moderatorRoutes(fastify, options) {
       return reply.send({
         success: true,
         stats: {
-          totalPlayers: totalPlayersCount || topRows.length,
+          totalPlayers: totalPlayersCount || allPlayersRows.length,
           onlinePlayers: Math.max(activeOnlineCount, 1),
           flaggedPlayers: flaggedCount,
           frozenPlayers: frozenCount,
           mutedPlayers: mutedCount
         },
-        suspiciousAlerts: suspiciousAlerts.slice(0, 15),
+        suspiciousAlerts: suspiciousAlerts.slice(0, 20),
         recentTransfers: recentTransfers || []
       });
     } catch (err) {
@@ -567,51 +600,49 @@ async function moderatorRoutes(fastify, options) {
 
   /**
    * GET /api/mod/search
-   * Fast multi-filter search for players
+   * Fast multi-filter search for players with authoritative live calculation
    */
   fastify.get('/search', {
     preHandler: [requireModAuth]
   }, async (request, reply) => {
-    const { q = '', filter = 'all', limit = 50 } = request.query || {};
+    const { q = '', filter = 'all', limit = 100 } = request.query || {};
     const cleanQ = String(q).trim();
     const sKey = serviceKey();
     const now = Date.now();
 
     try {
-      let queryParams = `select=username,cash,bank,net_worth,gold,title,job_id,is_banned,jail_timer,last_seen,state&limit=${Math.min(100, Number(limit) || 50)}`;
+      let rows = [];
 
-      if (filter === 'flagged') {
-        queryParams += `&state->>staffFlag=not.is.null`;
-      } else if (filter === 'frozen') {
-        queryParams += `&or=(jail_timer.gt.0,state->>freezeUntil.gt.${now})`;
-      } else if (filter === 'muted') {
-        queryParams += `&state->>mutedUntil.gt.${now}`;
-      }
-
-      if (cleanQ) {
-        queryParams += `&username=ilike.*${encodeURIComponent(cleanQ)}*`;
+      if (filter === 'flagged' || filter === 'frozen' || filter === 'muted') {
+        // Retrieve full dataset to ensure zero false-negatives across complex JSON subkeys
+        const res = await fetch(`${config.SUPABASE_URL}/rest/v1/players?select=username,cash,bank,net_worth,gold,title,job_id,is_banned,jail_timer,last_seen,state&limit=1000`, {
+          headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+        });
+        if (res.ok) {
+          rows = await res.json();
+        }
       } else {
-        if (filter === 'flagged' || filter === 'frozen' || filter === 'muted') {
-          queryParams += `&order=last_seen.desc`;
+        // Standard search / All filter
+        let queryParams = `select=username,cash,bank,net_worth,gold,title,job_id,is_banned,jail_timer,last_seen,state&limit=${Math.min(200, Number(limit) || 100)}`;
+        if (cleanQ) {
+          queryParams += `&username=ilike.*${encodeURIComponent(cleanQ)}*`;
         } else {
           queryParams += `&order=net_worth.desc`;
         }
+
+        const res = await fetch(`${config.SUPABASE_URL}/rest/v1/players?${queryParams}`, {
+          headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+        });
+        if (res.ok) {
+          rows = await res.json();
+        }
       }
 
-      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/players?${queryParams}`, {
-        headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
-      });
-
-      if (!res.ok) {
-        return reply.status(500).send({ error: 'Failed to query players', details: await res.text() });
-      }
-
-      let rows = await res.json();
       if (!Array.isArray(rows)) rows = [];
 
-      // Transform rows into clean player summary cards, merging with live in-memory session if active
+      // Transform rows into clean player summary cards, authoritatively recalculating offline progress
       let results = rows.map(r => {
-        const uLower = String(r.username).toLowerCase();
+        const uLower = String(r.username || '').toLowerCase();
         const inMem = (sessionManager && sessionManager.sessions.has(uLower))
           ? sessionManager.sessions.get(uLower)
           : null;
@@ -621,37 +652,69 @@ async function moderatorRoutes(fastify, options) {
           : false;
 
         const rawState = (typeof r.state === 'object' && r.state) ? r.state : {};
-        const state = (inMem && inMem.state) ? inMem.state : rawState;
+        let state = (inMem && inMem.state) ? inMem.state : rawState;
 
-        const isFrozen = Boolean((state.freezeUntil && state.freezeUntil > now) || Number(r.jail_timer || 0) > 0);
-        const isMuted = Boolean(state.mutedUntil && state.mutedUntil > now);
+        // If player is offline, calculate authoritative offline progress on the server
+        // so the moderator panel displays 100% current, up-to-the-second wealth without waiting for player login
+        if (!inMem) {
+          state = sanitizePlayerState({ ...r, state: rawState });
+          calculateAuthoritativeOfflineProgress(state, now);
+        }
+
+        const isFrozen = Boolean(
+          (Number(state.freezeUntil || 0) > now) ||
+          (state.freezeReason && Number(r.jail_timer || state.jailTimer || 0) > 0) ||
+          state.isFrozen === true
+        );
+        const isMuted = Boolean(Number(state.mutedUntil || 0) > now || state.isMuted === true);
+        const isFlagged = Boolean(
+          state.staffFlag ||
+          state.underSuspicion === true ||
+          state.flagReason ||
+          isFrozen
+        );
 
         return {
           username: r.username,
-          title: r.title || 'عامل مبتدئ',
-          jobId: r.job_id || 'worker',
+          title: state.title || r.title || 'عامل مبتدئ',
+          jobId: state.jobId || r.job_id || 'worker',
           cash: Number(state.cash !== undefined ? state.cash : (r.cash || 0)),
           bank: Number(state.bank !== undefined ? state.bank : (r.bank || 0)),
           netWorth: Number(state.netWorth !== undefined ? state.netWorth : (r.net_worth || 0)),
           gold: Number(state.gold !== undefined ? state.gold : (r.gold || 0)),
-          lastSeen: Number(r.last_seen || 0),
+          lastSeen: Number(state.lastSeen || r.last_seen || 0),
           isOnline,
-          isBanned: Boolean(r.is_banned),
+          isBanned: Boolean(r.is_banned || state.isBanned),
           isFrozen,
           isMuted,
+          isFlagged,
+          underSuspicion: Boolean(state.underSuspicion),
           freezeUntil: Number(state.freezeUntil || 0),
+          freezeReason: state.freezeReason || '',
           mutedUntil: Number(state.mutedUntil || 0),
-          staffFlag: state.staffFlag || null
+          muteReason: state.muteReason || '',
+          staffFlag: state.staffFlag || (state.underSuspicion ? 'under_investigation' : (isFrozen ? 'frozen' : null))
         };
       });
 
-      // Post-filter safety check
+      // Filter by category
       if (filter === 'flagged') {
-        results = results.filter(p => Boolean(p.staffFlag));
+        results = results.filter(p => p.isFlagged);
       } else if (filter === 'frozen') {
         results = results.filter(p => p.isFrozen);
       } else if (filter === 'muted') {
         results = results.filter(p => p.isMuted);
+      }
+
+      // If user provided search text, filter matching usernames
+      if (cleanQ) {
+        const qLower = cleanQ.toLowerCase();
+        results = results.filter(p => p.username.toLowerCase().includes(qLower));
+      }
+
+      // Default sorting: if category filtered, sort by most recent activity/modification
+      if (filter === 'flagged' || filter === 'frozen' || filter === 'muted') {
+        results.sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
       }
 
       return reply.send({ success: true, count: results.length, players: results });
@@ -707,6 +770,20 @@ async function moderatorRoutes(fastify, options) {
         liveState = sanitizePlayerState({ ...pDoc, state: rawState });
         // Calculate authoritative offline progress on the server right now so inspector shows real current values
         calculateAuthoritativeOfflineProgress(liveState, now);
+
+        // Immediately update Supabase with fresh authoritative numbers so the database remains 100% current
+        fetch(`${config.SUPABASE_URL}/rest/v1/players?username=eq.${encodeURIComponent(pDoc.username)}`, {
+          method: 'PATCH',
+          headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            cash: Number(liveState.cash || 0),
+            bank: Number(liveState.bank || 0),
+            net_worth: Number(liveState.netWorth || 0),
+            title: liveState.title || pDoc.title,
+            jail_timer: Number(liveState.jailTimer || 0),
+            state: liveState
+          })
+        }).catch(err => console.warn('[Inspect Offline Catchup Save]:', err.message));
       }
 
       // Sync computed values back to pDoc for consistent financial reports
@@ -1196,15 +1273,17 @@ async function moderatorRoutes(fastify, options) {
           };
         });
 
-        const dutyFreeAccumulated = Number(ap.dutyFreeAccumulated || 0);
+        const dutyFreeAccumulated = calculateDutyFreeAccumulated(ap, now);
         const passivePerMin = dutyFreeLvl > 0 ? (dutyFreeCfg.passivePerMin || 0) : 0;
         const maxCapacity8h = passivePerMin * 60 * 8;
 
-        const lastTransitAt = Number(ap.lastTransitAt || 0);
-        const transitCooldownSec = 10 * 60;
+        const transitAccumulated = calculateTransitAccumulated(ap, now);
+        const towerCfg = (CONTROL_TOWER_CONFIG && CONTROL_TOWER_CONFIG.levels && CONTROL_TOWER_CONFIG.levels[runwayLvl]) || { perHour: 3000 };
+        const lastTransitAt = Number(ap.lastTransitCollectionAt || ap.lastTransitPermitAt || ap.unlockedAt || now);
+        const transitCooldownSec = 60;
         const transitElapsedSec = Math.floor((now - lastTransitAt) / 1000);
-        const isTransitReady = transitElapsedSec >= transitCooldownSec;
-        const transitRemainingSec = isTransitReady ? 0 : (transitCooldownSec - transitElapsedSec);
+        const isTransitReady = transitAccumulated >= 500 && (transitElapsedSec >= transitCooldownSec);
+        const transitRemainingSec = isTransitReady ? 0 : Math.max(0, transitCooldownSec - transitElapsedSec);
 
         return {
           unlocked: true,
@@ -1225,6 +1304,9 @@ async function moderatorRoutes(fastify, options) {
             lastTransitAt,
             isReady: isTransitReady,
             remainingSec: transitRemainingSec,
+            accumulated: transitAccumulated,
+            perHour: towerCfg.perHour || 3000,
+            maxCapacity8h: (towerCfg.perHour || 3000) * 8,
             transitPermitsAccepted: Number(ap.stats?.transitPermitsAccepted || 0)
           },
           stats: {
@@ -1301,8 +1383,16 @@ async function moderatorRoutes(fastify, options) {
         mutedUntil: Number(state.mutedUntil || 0),
         muteReason: state.muteReason || '',
         mutedBy: state.mutedBy || '',
-        staffFlag: state.staffFlag || null,
+        isFlagged: Boolean(
+          state.staffFlag ||
+          state.underSuspicion === true ||
+          state.flagReason ||
+          isFrozen
+        ),
+        underSuspicion: Boolean(state.underSuspicion),
+        staffFlag: state.staffFlag || (state.underSuspicion ? 'under_investigation' : (isFrozen ? 'frozen' : null)),
         flagReason: state.flagReason || '',
+        flaggedBy: state.flaggedBy || '',
         moderatorNotes: Array.isArray(state.moderatorNotes) ? state.moderatorNotes : [],
         staffNotes: Array.isArray(state.staffNotes) ? state.staffNotes : [],
 
@@ -1579,6 +1669,7 @@ async function moderatorRoutes(fastify, options) {
           pState.freezeUntil = ts + durationMs;
           pState.freezeReason = cleanReason;
           pState.frozenBy = request.modSession.name;
+          pState.staffFlag = 'frozen';
           updatedJailTimer = Math.ceil(durationMs / 1000);
           actionDesc = `تجميد الحساب لمدة ${durationMinutes} دقيقة (${cleanReason})`;
 
@@ -1612,10 +1703,13 @@ async function moderatorRoutes(fastify, options) {
         }
 
         case 'unfreeze': {
-          pState.underSuspicion = false;
           pState.freezeUntil = 0;
           pState.freezeReason = '';
           pState.frozenBy = '';
+          if (pState.staffFlag === 'frozen') {
+            pState.staffFlag = null;
+            pState.underSuspicion = false;
+          }
           updatedJailTimer = 0;
           actionDesc = `فك تجميد الحساب (${cleanReason})`;
 
@@ -1697,6 +1791,7 @@ async function moderatorRoutes(fastify, options) {
 
         case 'flag': {
           pState.staffFlag = 'under_investigation';
+          pState.underSuspicion = true;
           pState.flagReason = cleanReason;
           pState.flaggedBy = request.modSession.name;
           actionDesc = `وضع علامة "تحت المراقبة" (${cleanReason})`;
@@ -1712,7 +1807,9 @@ async function moderatorRoutes(fastify, options) {
 
         case 'unflag': {
           pState.staffFlag = null;
+          pState.underSuspicion = false;
           pState.flagReason = '';
+          pState.flaggedBy = '';
           actionDesc = `إزالة علامة المراقبة (${cleanReason})`;
 
           pState.moderatorNotes.unshift({
@@ -1925,12 +2022,17 @@ async function moderatorRoutes(fastify, options) {
           session.state.underSuspicion = pState.underSuspicion;
           session.state.freezeUntil = pState.freezeUntil;
           session.state.freezeReason = pState.freezeReason;
+          session.state.frozenBy = pState.frozenBy;
           session.state.mutedUntil = pState.mutedUntil;
           session.state.muteReason = pState.muteReason;
+          session.state.mutedBy = pState.mutedBy;
           session.state.staffFlag = pState.staffFlag;
+          session.state.flagReason = pState.flagReason;
+          session.state.flaggedBy = pState.flaggedBy;
           session.state.jailTimer = updatedJailTimer;
           session.state.isBanned = pState.isBanned;
           session.state.banReason = pState.banReason;
+          session.dirty = true;
           if (action === 'ban') {
             session.isBanned = true;
           } else if (action === 'unban') {

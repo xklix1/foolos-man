@@ -272,7 +272,7 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
     // B. Duty Free Passive Income accumulation
     const dutyFreeLvl = Number(ap.facilities?.duty_free || 0);
     if (dutyFreeLvl > 0) {
-      const passivePerMin = dutyFreeLvl === 1 ? 150 : dutyFreeLvl === 2 ? 450 : dutyFreeLvl === 3 ? 1200 : 2500;
+      const passivePerMin = dutyFreeLvl === 1 ? 100 : dutyFreeLvl === 2 ? 300 : dutyFreeLvl === 3 ? 750 : 1500;
       const lastDutyCollect = Number(ap.lastDutyFreeCollectionAt || lastActive);
       const dutyElapsedMin = Math.min(8 * 60, Math.max(0, Math.floor((serverNow - lastDutyCollect) / 60000)));
       if (dutyElapsedMin > 0) {

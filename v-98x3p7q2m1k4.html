@@ -1691,7 +1691,7 @@
         if (p.isBanned) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">محظور</span>`);
         if (p.isFrozen) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">مجمد</span>`);
         if (p.isMuted) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">مكتوم</span>`);
-        if (p.staffFlag) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">تحت المراقبة</span>`);
+        if (p.staffFlag === 'under_investigation' || (p.staffFlag && p.staffFlag !== 'frozen')) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">تحت المراقبة</span>`);
         if (!statusBadges.length) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">طبيعي</span>`);
 
         return `
@@ -2830,13 +2830,13 @@
             </div>
             <div>
               <div class="font-bold text-white flex items-center gap-2">
-                <span>برج المراقبة ورادار الترانزيت</span>
+                <span>برج المراقبة ورسوم الترانزيت بالساعة</span>
                 <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${radar.isReady ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}">
-                  ${radar.isReady ? 'تصريح هبوط متاح الآن ✅' : 'في انتظار طائرة عابرة ⏳'}
+                  ${radar.isReady ? 'رسوم ترانزيت جاهزة للتحصيل ✅' : 'جاري تجميع رسوم الهبوط ⏳'}
                 </span>
               </div>
               <div class="text-[10px] text-slate-400">
-                ${radar.isReady ? 'عائد رسوم الهبوط الترانزيت جاهز للقبول (120,000 ~ 250,000 ج.م)' : `الوقت المتبقي لظهور الطائرة التالية: ${Math.ceil((radar.remainingSec || 0) / 60)} دقيقة`}
+                المعدل: <strong class="text-amber-300 font-bold">${fmtMoney(radar.perHour || 3000)}/ساعة</strong> (سقف 8 س: ${fmtMoney(radar.maxCapacity8h || 24000)}) | المتراكم حالياً: <strong class="text-emerald-400 font-bold">${fmtMoney(radar.accumulated || 0)}</strong>
               </div>
             </div>
           </div>
