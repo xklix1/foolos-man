@@ -808,7 +808,8 @@ async function adminRoutes(fastify, options) {
         nginxFiles,
         modifiedFile,
         diffOrStatus,
-        testOutput
+        testOutput,
+        fileContent: modifiedFile ? fs.readFileSync(modifiedFile, 'utf8') : null
       });
     } catch (err) {
       return reply.status(500).send({ success: false, error: err.message });
