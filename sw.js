@@ -5,10 +5,8 @@
 
 const CACHE_NAME = 'rasalmal-v9.5.3';
 
-// Essential static shell assets to pre-cache on install
+// Essential static shell assets to pre-cache on install (NEVER precache HTML or version.json)
 const PRECACHE_ASSETS = [
-  '/',
-  '/index.html',
   '/app.css',
   '/manifest.webmanifest',
   '/assets/icon-192.png',
@@ -52,7 +50,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. Fetch Event: Strict Network-Only for APIs / Backend / Admin Vaults, Strict Network-First for Static Assets
+// 3. Fetch Event: Strict Network-Only for APIs, Admin, version.json, and HTML Navigation
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
@@ -87,23 +85,41 @@ self.addEventListener('fetch', (event) => {
                 url.port === '8000' ||
                 isExternalApiHost;
 
-  if (isApi || isVaultOrAdmin) {
+  const isBusterOrVersion = url.pathname.endsWith('version.json') || 
+                            url.pathname.endsWith('sw.js') || 
+                            url.searchParams.has('_t') ||
+                            url.searchParams.has('_hard_reload');
+
+  if (isApi || isVaultOrAdmin || isBusterOrVersion) {
     // Network-Only: Direct fetch, zero caching intervention, never fallback to /index.html
-    event.respondWith(fetch(req));
+    event.respondWith(fetch(req, { cache: 'no-store' }));
     return;
   }
 
-  // RULE 2: STRICT NETWORK-FIRST (For HTML, JS, CSS, fonts, audio, images)
-  // Guarantees players always receive fresh code and prevents client-server version mismatch
+  // HTML Page Navigation: ALWAYS load live from network to guarantee fresh build
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      fetch(req, { cache: 'no-cache' }).catch(() => {
+        // Fallback to cache ONLY when truly offline
+        return caches.match('/index.html').then(res => res || new Response('Offline', { status: 503 }));
+      })
+    );
+    return;
+  }
+
+  // RULE 2: STRICT NETWORK-FIRST (For static assets like CSS, JS bundles, images)
   event.respondWith(
     fetch(req)
       .then((networkResponse) => {
-        // If response is valid, update the cache with the newest version in background
+        // Only cache successful basic GET responses that are NOT HTML
         if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(req, responseClone);
-          });
+          const contentType = networkResponse.headers.get('content-type') || '';
+          if (!contentType.includes('text/html')) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(req, responseClone);
+            });
+          }
         }
         return networkResponse;
       })
@@ -112,10 +128,6 @@ self.addEventListener('fetch', (event) => {
         return caches.match(req).then((cachedResponse) => {
           if (cachedResponse) {
             return cachedResponse;
-          }
-          // If HTML navigation request fails and isn't in cache, fallback to index.html
-          if (req.mode === 'navigate') {
-            return caches.match('/index.html');
           }
           return new Response('Network unavailable and resource not cached.', {
             status: 503,

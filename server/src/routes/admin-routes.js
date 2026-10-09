@@ -727,6 +727,94 @@ async function adminRoutes(fastify, options) {
       reply.status(500).send({ success: false, error: err.message });
     }
   });
+
+  /**
+   * POST /api/admin/nginx-fix
+   * Inspects and enforces strict Cache-Control headers on Nginx for html, json, and sw.js
+   */
+  fastify.post('/nginx-fix', {
+    config: { rateLimit: adminRateLimit },
+    preHandler: [requireAdminAuth]
+  }, async (request, reply) => {
+    const { execSync } = require('child_process');
+    const fs = require('fs');
+    try {
+      const whoami = execSync('whoami').toString().trim();
+      let nginxFiles = [];
+      try {
+        const findOut = execSync('find /etc/nginx -maxdepth 3 -type f \\( -name "*.conf" -o -name "*rasalmal*" \\) 2>/dev/null').toString().trim();
+        nginxFiles = findOut.split('\n').filter(Boolean);
+      } catch (e) {}
+
+      let modifiedFile = null;
+      let diffOrStatus = '';
+      let testOutput = '';
+
+      // Look for the site config (e.g. rasalmal.online, default, or site config)
+      for (const file of nginxFiles) {
+        try {
+          const content = fs.readFileSync(file, 'utf8');
+          if (content.includes('rasalmal.online') || content.includes('root') && content.includes('server_name')) {
+            // Check if it already has strict cache-control
+            if (!content.includes('no-store, must-revalidate')) {
+              // Inject cache control block before the last closing bracket of server { ... }
+              const cacheBlock = `
+    # Strict Cache-Busting for HTML, JSON, and ServiceWorker
+    location ~* \\.(?:html|json)$ {
+        add_header Cache-Control "no-cache, no-store, must-revalidate, max-age=0" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+    }
+
+    location = /sw.js {
+        add_header Cache-Control "no-cache, no-store, must-revalidate, max-age=0" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+    }
+`;
+              // Insert inside server { block
+              const serverIdx = content.lastIndexOf('}');
+              if (serverIdx !== -1) {
+                const newContent = content.slice(0, serverIdx) + cacheBlock + '\n' + content.slice(serverIdx);
+                fs.writeFileSync(file + '.bak', content, 'utf8');
+                fs.writeFileSync(file, newContent, 'utf8');
+                modifiedFile = file;
+
+                // Validate nginx syntax
+                try {
+                  testOutput = execSync('nginx -t 2>&1').toString();
+                  // Reload nginx
+                  execSync('systemctl reload nginx || nginx -s reload');
+                  diffOrStatus = 'Nginx successfully configured and reloaded with strict cache-control headers.';
+                } catch (tErr) {
+                  // Rollback on syntax error
+                  fs.writeFileSync(file, content, 'utf8');
+                  diffOrStatus = 'Rolled back due to syntax test failure: ' + tErr.message;
+                }
+              }
+            } else {
+              diffOrStatus = 'Nginx already contains strict cache-control headers.';
+              modifiedFile = file;
+            }
+            break;
+          }
+        } catch (readErr) {
+          // Continue to next file if permission denied
+        }
+      }
+
+      return reply.send({
+        success: true,
+        whoami,
+        nginxFiles,
+        modifiedFile,
+        diffOrStatus,
+        testOutput
+      });
+    } catch (err) {
+      return reply.status(500).send({ success: false, error: err.message });
+    }
+  });
 }
 
 module.exports = adminRoutes;

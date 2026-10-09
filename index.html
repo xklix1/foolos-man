@@ -12,36 +12,38 @@
     if (window.location.hostname.endsWith('vercel.app')) {
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
-    // Hard Build Version Enforcement with Loop Prevention Guard
-    window._CLIENT_VERSION = 'v9.5.3';
+    // Hard Build Version Enforcement & Aggressive Cache Purge Guard
+    window._CLIENT_VERSION = 'v9.5.4';
     (async function() {
-      const CURRENT_APP_BUILD = 'v9.5.3';
+      const CURRENT_APP_BUILD = 'v9.5.4';
       try {
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
           const s = await res.json();
           if (s && s.version && s.version !== CURRENT_APP_BUILD) {
-            const curParam = new URL(window.location.href).searchParams.get('_v');
-            if (curParam === s.version) return;
-            const reloadKey = 'rasalmal_reload_attempt_' + s.version;
-            const attempts = Number(sessionStorage.getItem(reloadKey) || 0);
-            if (attempts >= 1) return;
-            sessionStorage.setItem(reloadKey, String(attempts + 1));
+            console.warn('[CacheBuster] Stale build detected: ' + CURRENT_APP_BUILD + ' -> Target: ' + s.version);
+            const bustKey = 'rasalmal_bust_' + s.version;
+            const attempts = Number(sessionStorage.getItem(bustKey) || 0);
+            if (attempts >= 2) return;
+            sessionStorage.setItem(bustKey, String(attempts + 1));
+            
+            // Wipe CacheStorage API
             if ('caches' in window) {
               try {
                 const keys = await caches.keys();
                 await Promise.all(keys.map(k => caches.delete(k)));
               } catch (_) {}
             }
+            // Unregister obsolete Service Workers
             if ('serviceWorker' in navigator) {
               try {
                 const regs = await navigator.serviceWorker.getRegistrations();
                 await Promise.all(regs.map(r => r.unregister()));
               } catch (_) {}
             }
-            const url = new URL(window.location.href);
-            url.searchParams.set('_v', s.version);
-            window.location.replace(url.toString());
+            // Force hard reload bypassing browser disk cache
+            const target = window.location.origin + window.location.pathname + '?_bust=' + Date.now();
+            window.location.replace(target);
             return;
           }
         }
@@ -7605,7 +7607,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.5.3"></script>
+  <script src="core.bundle.js?v=v9.5.4"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -7656,27 +7658,31 @@
             overlay.classList.remove('hidden');
             overlay.classList.add('flex');
 
+            const doPurgeAndReload = async () => {
+              try {
+                if ('caches' in window) {
+                  const keys = await caches.keys();
+                  await Promise.all(keys.map(k => caches.delete(k)));
+                }
+                if ('serviceWorker' in navigator) {
+                  const regs = await navigator.serviceWorker.getRegistrations();
+                  await Promise.all(regs.map(r => r.unregister()));
+                }
+              } catch(e) {}
+              const cleanUrl = window.location.origin + window.location.pathname + '?_bust=' + Date.now();
+              window.location.replace(cleanUrl);
+            };
+
             const btnFU = document.getElementById('btn-force-update');
             if (btnFU) {
               btnFU.onclick = async () => {
                 btnFU.disabled = true;
                 btnFU.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري تنظيف الكاش والتحديث...';
-                try {
-                  sessionStorage.setItem('rasalmal_skip_ver_check', vcheck.remoteVersion || 'v9.0.0');
-                  localStorage.setItem('rasalmal_last_known_ver', vcheck.remoteVersion || 'v9.0.0');
-                  if ('caches' in window) {
-                    const keys = await caches.keys();
-                    await Promise.all(keys.map(k => caches.delete(k)));
-                  }
-                  if ('serviceWorker' in navigator) {
-                    const regs = await navigator.serviceWorker.getRegistrations();
-                    await Promise.all(regs.map(r => r.unregister()));
-                  }
-                } catch(e) {}
-                const cleanUrl = window.location.origin + window.location.pathname + '?_t=' + Date.now();
-                window.location.replace(cleanUrl);
+                await doPurgeAndReload();
               };
             }
+            // Auto trigger after 1.5 seconds if user didn't tap
+            setTimeout(doPurgeAndReload, 1500);
             return;
           }
         }

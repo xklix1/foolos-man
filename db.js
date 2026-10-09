@@ -683,16 +683,15 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   async function checkVersion() {
     try {
-      const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.4.8';
-      const lastKnown = (typeof localStorage !== 'undefined') ? localStorage.getItem('rasalmal_last_known_ver') : null;
-      const skipVer = (typeof sessionStorage !== 'undefined') ? sessionStorage.getItem('rasalmal_skip_ver_check') : null;
+      const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.5.4';
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
         const remote = s.version || client;
-        if (skipVer === remote || lastKnown === remote || client === remote) {
+        if (client === remote) {
           return { upToDate: true, clientVersion: remote, remoteVersion: remote };
         }
+        console.warn(`[AppDB] Client version mismatch: running ${client}, remote is ${remote}`);
         return {
           upToDate: false,
           clientVersion: client,
@@ -700,7 +699,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v9.4.8', remoteVersion: 'v9.4.8' };
+    return { upToDate: true, clientVersion: 'v9.5.4', remoteVersion: 'v9.5.4' };
   }
 
   async function checkDeviceBan() {

@@ -44,11 +44,12 @@ var PWAManager = (() => {
     // 1. Register Service Worker (Production & Local)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js?v=8.7.6')
+        const swVer = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.5.3';
+        navigator.serviceWorker.register('/sw.js?v=' + swVer, { updateViaCache: 'none' })
           .then((registration) => {
             console.log('[PWAManager] ServiceWorker registered with scope:', registration.scope);
             
-            // Force SW to check for updates immediately
+            // Force SW to check for updates immediately bypassing cache
             try { registration.update(); } catch(e) {}
 
             // Check for updates
