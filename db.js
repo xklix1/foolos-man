@@ -683,7 +683,7 @@ var AppDB = (() => {
   // ─────────────────────────────────────────────
   async function checkVersion() {
     try {
-      const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.5.4';
+      const client = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.5.5';
       const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const s = await res.json();
@@ -699,7 +699,7 @@ var AppDB = (() => {
         };
       }
     } catch (_) {}
-    return { upToDate: true, clientVersion: 'v9.5.4', remoteVersion: 'v9.5.4' };
+    return { upToDate: true, clientVersion: 'v9.5.5', remoteVersion: 'v9.5.5' };
   }
 
   async function checkDeviceBan() {

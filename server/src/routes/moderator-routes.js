@@ -9,6 +9,10 @@ const crypto = require('crypto');
 const config = require('../config/env');
 const { BUSINESSES, ASSETS, CAR_TEMPLATES } = require('../engine/definitions');
 const { calculateSingleBusinessProfit } = require('../engine/business-engine');
+const { sanitizePlayerState } = require('../engine/state-sanitizer');
+const { calculateAuthoritativeOfflineProgress } = require('../engine/offline-engine');
+const { calculateNetWorth } = require('../engine/net-worth-engine');
+const { AIRCRAFT_MODELS, AIRPORT_FACILITIES } = require('../engine/airport-engine');
 
 const CHAT_IMAGES_DIR = path.resolve(__dirname, '../../../uploads/chat_images');
 try {
@@ -458,12 +462,30 @@ async function moderatorRoutes(fastify, options) {
   }, async (request, reply) => {
     try {
       const sKey = serviceKey();
+      const now = Date.now();
 
-      // 1. Fetch count of total players
+      // 1. Fetch exact count of total players
       const countRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?select=username`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Range': '0-0', 'Prefer': 'count=exact' }
       });
       const totalPlayersCount = parseInt(countRes.headers.get('content-range')?.split('/')[1] || '0', 10);
+
+      // 1B. Fetch exact counts of Flagged, Frozen, and Muted players across the whole database
+      const [flaggedCountRes, frozenCountRes, mutedCountRes] = await Promise.all([
+        fetch(`${config.SUPABASE_URL}/rest/v1/players?state->>staffFlag=not.is.null&select=username`, {
+          headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Range': '0-0', 'Prefer': 'count=exact' }
+        }),
+        fetch(`${config.SUPABASE_URL}/rest/v1/players?or=(jail_timer.gt.0,state->>freezeUntil.gt.${now})&select=username`, {
+          headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Range': '0-0', 'Prefer': 'count=exact' }
+        }),
+        fetch(`${config.SUPABASE_URL}/rest/v1/players?state->>mutedUntil.gt.${now}&select=username`, {
+          headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Range': '0-0', 'Prefer': 'count=exact' }
+        })
+      ]);
+
+      const flaggedCount = parseInt(flaggedCountRes.headers.get('content-range')?.split('/')[1] || '0', 10);
+      const frozenCount = parseInt(frozenCountRes.headers.get('content-range')?.split('/')[1] || '0', 10);
+      const mutedCount = parseInt(mutedCountRes.headers.get('content-range')?.split('/')[1] || '0', 10);
 
       // 2. Fetch top 30 wealthiest players for wealth analysis
       const topWealthRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?select=username,cash,bank,net_worth,gold,title,is_banned,jail_timer,last_seen,state&order=net_worth.desc&limit=30`, {
@@ -473,7 +495,6 @@ async function moderatorRoutes(fastify, options) {
 
       // 3. Count in-memory active sessions
       let activeOnlineCount = 0;
-      const now = Date.now();
       if (sessionManager && sessionManager.sessions) {
         for (const [_, sess] of sessionManager.sessions.entries()) {
           if (sess && sess.lastActivity && (now - sess.lastActivity < 10 * 60 * 1000)) {
@@ -484,21 +505,7 @@ async function moderatorRoutes(fastify, options) {
 
       // 4. Identify suspicious flags / alerts
       const suspiciousAlerts = [];
-      let flaggedCount = 0;
-      let frozenCount = 0;
-      let mutedCount = 0;
-
       for (const p of topRows) {
-        const state = (typeof p.state === 'object' && p.state) ? p.state : {};
-        const isFrozen = (state.freezeUntil && state.freezeUntil > now) || Number(p.jail_timer || 0) > 0;
-        const isMuted = state.mutedUntil && state.mutedUntil > now;
-        const staffFlag = state.staffFlag;
-
-        if (staffFlag) flaggedCount++;
-        if (isFrozen) frozenCount++;
-        if (isMuted) mutedCount++;
-
-        // Auto wealth threshold alert (> 5 Billion)
         const netWorth = Number(p.net_worth || 0);
         if (netWorth > 5000000000 && !p.username.toLowerCase().includes('khaled')) {
           suspiciousAlerts.push({
@@ -510,20 +517,31 @@ async function moderatorRoutes(fastify, options) {
             message: `ثروة ضخمة تتجاوز ${Math.round(netWorth / 1000000).toLocaleString('en-US')} مليون`
           });
         }
-
-        if (isFrozen) {
-          suspiciousAlerts.push({
-            type: 'frozen',
-            severity: 'medium',
-            username: p.username,
-            title: p.title || 'لاعب',
-            netWorth: netWorth,
-            message: `الحساب مجمد حالياً (متبقي ${Math.max(1, Math.round((Number(state.freezeUntil || 0) - now) / 60000))} دقيقة)`
-          });
-        }
       }
 
-      // 5. Fetch recent 10 transfers for rapid movement monitoring
+      // Fetch all currently frozen players for the Risk Feed
+      try {
+        const frozenPlayersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?or=(jail_timer.gt.0,state->>freezeUntil.gt.${now})&select=username,title,net_worth,jail_timer,state&limit=10`, {
+          headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+        });
+        if (frozenPlayersRes.ok) {
+          const fRows = await frozenPlayersRes.json();
+          fRows.forEach(f => {
+            const fState = (typeof f.state === 'object' && f.state) ? f.state : {};
+            const remainingMins = Math.max(1, Math.round(((Number(fState.freezeUntil || 0) - now) / 60000) || (Number(f.jail_timer || 0) / 60)));
+            suspiciousAlerts.push({
+              type: 'frozen',
+              severity: 'medium',
+              username: f.username,
+              title: f.title || 'لاعب',
+              netWorth: Number(f.net_worth || 0),
+              message: `الحساب مجمد حالياً (متبقي ${remainingMins} دقيقة) — ${fState.freezeReason || 'أمر إداري'}`
+            });
+          });
+        }
+      } catch (_) {}
+
+      // 5. Fetch recent 15 transfers for rapid movement monitoring
       const transfersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/transfers?order=created_at.desc&limit=15`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
@@ -538,7 +556,7 @@ async function moderatorRoutes(fastify, options) {
           frozenPlayers: frozenCount,
           mutedPlayers: mutedCount
         },
-        suspiciousAlerts: suspiciousAlerts.slice(0, 10),
+        suspiciousAlerts: suspiciousAlerts.slice(0, 15),
         recentTransfers: recentTransfers || []
       });
     } catch (err) {
@@ -554,17 +572,30 @@ async function moderatorRoutes(fastify, options) {
   fastify.get('/search', {
     preHandler: [requireModAuth]
   }, async (request, reply) => {
-    const { q = '', filter = 'all', limit = 25 } = request.query || {};
+    const { q = '', filter = 'all', limit = 50 } = request.query || {};
     const cleanQ = String(q).trim();
     const sKey = serviceKey();
+    const now = Date.now();
 
     try {
-      let queryParams = `select=username,cash,bank,net_worth,gold,title,job_id,is_banned,jail_timer,last_seen,state&limit=${Math.min(50, Number(limit) || 25)}`;
+      let queryParams = `select=username,cash,bank,net_worth,gold,title,job_id,is_banned,jail_timer,last_seen,state&limit=${Math.min(100, Number(limit) || 50)}`;
+
+      if (filter === 'flagged') {
+        queryParams += `&state->>staffFlag=not.is.null`;
+      } else if (filter === 'frozen') {
+        queryParams += `&or=(jail_timer.gt.0,state->>freezeUntil.gt.${now})`;
+      } else if (filter === 'muted') {
+        queryParams += `&state->>mutedUntil.gt.${now}`;
+      }
 
       if (cleanQ) {
         queryParams += `&username=ilike.*${encodeURIComponent(cleanQ)}*`;
       } else {
-        queryParams += `&order=net_worth.desc`;
+        if (filter === 'flagged' || filter === 'frozen' || filter === 'muted') {
+          queryParams += `&order=last_seen.desc`;
+        } else {
+          queryParams += `&order=net_worth.desc`;
+        }
       }
 
       const res = await fetch(`${config.SUPABASE_URL}/rest/v1/players?${queryParams}`, {
@@ -578,14 +609,19 @@ async function moderatorRoutes(fastify, options) {
       let rows = await res.json();
       if (!Array.isArray(rows)) rows = [];
 
-      const now = Date.now();
-
-      // Transform rows into clean player summary cards
+      // Transform rows into clean player summary cards, merging with live in-memory session if active
       let results = rows.map(r => {
-        const state = (typeof r.state === 'object' && r.state) ? r.state : {};
-        const isOnline = sessionManager && sessionManager.sessions.has(String(r.username).toLowerCase())
-          ? (now - (sessionManager.sessions.get(String(r.username).toLowerCase()).lastActivity || 0) < 10 * 60 * 1000)
+        const uLower = String(r.username).toLowerCase();
+        const inMem = (sessionManager && sessionManager.sessions.has(uLower))
+          ? sessionManager.sessions.get(uLower)
+          : null;
+
+        const isOnline = inMem
+          ? (now - (inMem.lastActivity || 0) < 10 * 60 * 1000)
           : false;
+
+        const rawState = (typeof r.state === 'object' && r.state) ? r.state : {};
+        const state = (inMem && inMem.state) ? inMem.state : rawState;
 
         const isFrozen = Boolean((state.freezeUntil && state.freezeUntil > now) || Number(r.jail_timer || 0) > 0);
         const isMuted = Boolean(state.mutedUntil && state.mutedUntil > now);
@@ -594,10 +630,10 @@ async function moderatorRoutes(fastify, options) {
           username: r.username,
           title: r.title || 'عامل مبتدئ',
           jobId: r.job_id || 'worker',
-          cash: Number(r.cash || 0),
-          bank: Number(r.bank || 0),
-          netWorth: Number(r.net_worth || 0),
-          gold: Number(r.gold || 0),
+          cash: Number(state.cash !== undefined ? state.cash : (r.cash || 0)),
+          bank: Number(state.bank !== undefined ? state.bank : (r.bank || 0)),
+          netWorth: Number(state.netWorth !== undefined ? state.netWorth : (r.net_worth || 0)),
+          gold: Number(state.gold !== undefined ? state.gold : (r.gold || 0)),
           lastSeen: Number(r.last_seen || 0),
           isOnline,
           isBanned: Boolean(r.is_banned),
@@ -609,7 +645,7 @@ async function moderatorRoutes(fastify, options) {
         };
       });
 
-      // Apply filter
+      // Post-filter safety check
       if (filter === 'flagged') {
         results = results.filter(p => Boolean(p.staffFlag));
       } else if (filter === 'frozen') {
@@ -654,13 +690,32 @@ async function moderatorRoutes(fastify, options) {
       }
 
       const pDoc = rows[0];
-      const state = (typeof pDoc.state === 'object' && pDoc.state) ? pDoc.state : {};
       const now = Date.now();
 
       // Check if player is online in memory
       const uKey = u.toLowerCase();
       const inMemSession = sessionManager ? sessionManager.getSession(uKey) : null;
-      const isOnline = inMemSession ? (now - inMemSession.lastActivity < 10 * 60 * 1000) : false;
+      const isOnline = inMemSession ? (now - (inMemSession.lastActivity || 0) < 10 * 60 * 1000) : false;
+
+      // 1B. Synchronize live state: if player has active in-memory session, use live memory state!
+      // If player is offline, calculate authoritative offline progress immediately on the server!
+      let liveState = null;
+      if (inMemSession && inMemSession.state) {
+        liveState = inMemSession.state;
+      } else {
+        const rawState = (typeof pDoc.state === 'object' && pDoc.state) ? pDoc.state : {};
+        liveState = sanitizePlayerState({ ...pDoc, state: rawState });
+        // Calculate authoritative offline progress on the server right now so inspector shows real current values
+        calculateAuthoritativeOfflineProgress(liveState, now);
+      }
+
+      // Sync computed values back to pDoc for consistent financial reports
+      pDoc.cash = Number(liveState.cash !== undefined ? liveState.cash : (pDoc.cash || 0));
+      pDoc.bank = Number(liveState.bank !== undefined ? liveState.bank : (pDoc.bank || 0));
+      pDoc.net_worth = Number(liveState.netWorth !== undefined ? liveState.netWorth : (pDoc.net_worth || 0));
+      pDoc.gold = Number(liveState.gold !== undefined ? liveState.gold : (pDoc.gold || 0));
+      pDoc.title = liveState.title || pDoc.title;
+      const state = liveState;
 
       // 2. Fetch P2P transfers related to this player (sent & received)
       const cleanU = encodeURIComponent(u);
@@ -1079,6 +1134,111 @@ async function moderatorRoutes(fastify, options) {
       const isFrozen = Boolean((state.freezeUntil && state.freezeUntil > now) || Number(pDoc.jail_timer || 0) > 0);
       const isMuted = Boolean(state.mutedUntil && state.mutedUntil > now);
 
+      // Enrich airport information with complete facility, fleet, economics, and valuation details
+      const enrichedAirport = (() => {
+        if (!state.airport || !state.airport.unlocked) return null;
+        const ap = state.airport;
+        const f = ap.facilities || {};
+        const runwayLvl = Math.max(1, Math.min(4, Number(f.runway || 1)));
+        const terminalLvl = Math.max(1, Math.min(4, Number(f.terminals || 1)));
+        const hangarLvl = Math.max(1, Math.min(4, Number(f.hangar || 1)));
+        const dutyFreeLvl = Math.max(0, Math.min(4, Number(f.duty_free || 0)));
+
+        const runwayCfg = (AIRPORT_FACILITIES.runway && AIRPORT_FACILITIES.runway.levels[runwayLvl]) || {};
+        const terminalCfg = (AIRPORT_FACILITIES.terminals && AIRPORT_FACILITIES.terminals.levels[terminalLvl]) || {};
+        const hangarCfg = (AIRPORT_FACILITIES.hangar && AIRPORT_FACILITIES.hangar.levels[hangarLvl]) || {};
+        const dutyFreeCfg = (AIRPORT_FACILITIES.duty_free && AIRPORT_FACILITIES.duty_free.levels[dutyFreeLvl]) || {};
+
+        let totalFacilitiesCost = 0;
+        for (let l = 2; l <= runwayLvl; l++) totalFacilitiesCost += (AIRPORT_FACILITIES.runway.levels[l]?.cost || 0);
+        for (let l = 2; l <= terminalLvl; l++) totalFacilitiesCost += (AIRPORT_FACILITIES.terminals.levels[l]?.cost || 0);
+        for (let l = 2; l <= hangarLvl; l++) totalFacilitiesCost += (AIRPORT_FACILITIES.hangar.levels[l]?.cost || 0);
+        for (let l = 1; l <= dutyFreeLvl; l++) totalFacilitiesCost += (AIRPORT_FACILITIES.duty_free.levels[l]?.cost || 0);
+
+        let totalFleetCost = 0;
+        const fleetList = (Array.isArray(ap.fleet) ? ap.fleet : []).map(p => {
+          const mCfg = AIRCRAFT_MODELS[p.modelId] || {};
+          const planeCost = Number(mCfg.cost || 0);
+          totalFleetCost += planeCost;
+
+          const flightObj = p.activeFlight || (p.flight ? p.flight : null);
+          const activeFlight = flightObj ? {
+            destinationId: flightObj.destinationId,
+            destinationName: flightObj.destinationName || 'وجهة دولية',
+            departureTime: Number(flightObj.departureTime || 0),
+            arrivalTime: Number(flightObj.arrivalTime || 0),
+            durationSec: Number(flightObj.durationSec || 0),
+            timeRemainingSec: Math.max(0, Math.ceil((Number(flightObj.arrivalTime || 0) - now) / 1000)),
+            isArrived: now >= Number(flightObj.arrivalTime || 0),
+            progressPercent: (() => {
+              const dep = Number(flightObj.departureTime || 0);
+              const arr = Number(flightObj.arrivalTime || 0);
+              if (arr <= dep) return 100;
+              return Math.min(100, Math.max(0, Math.round(((now - dep) / (arr - dep)) * 100)));
+            })(),
+            expectedNetProfit: Number(flightObj.economics?.netProfit || flightObj.netProfit || 0),
+            expectedXp: Number(flightObj.xpReward || 0)
+          } : null;
+
+          return {
+            id: p.id,
+            modelId: p.modelId,
+            modelName: mCfg.name || p.modelId,
+            tier: mCfg.tier || 1,
+            capacity: mCfg.capacity || 'ركاب',
+            icon: mCfg.icon || 'fa-plane',
+            customName: p.customName || mCfg.name || 'طائرة خاصة',
+            status: p.status || (activeFlight ? 'in_flight' : 'idle'),
+            cost: planeCost,
+            flightsCompleted: Number(p.flightsCompleted || 0),
+            totalProfitEarned: Number(p.totalProfitEarned || 0),
+            activeFlight
+          };
+        });
+
+        const dutyFreeAccumulated = Number(ap.dutyFreeAccumulated || 0);
+        const passivePerMin = dutyFreeLvl > 0 ? (dutyFreeCfg.passivePerMin || 0) : 0;
+        const maxCapacity8h = passivePerMin * 60 * 8;
+
+        const lastTransitAt = Number(ap.lastTransitAt || 0);
+        const transitCooldownSec = 10 * 60;
+        const transitElapsedSec = Math.floor((now - lastTransitAt) / 1000);
+        const isTransitReady = transitElapsedSec >= transitCooldownSec;
+        const transitRemainingSec = isTransitReady ? 0 : (transitCooldownSec - transitElapsedSec);
+
+        return {
+          unlocked: true,
+          unlockedAt: Number(ap.unlockedAt || 0),
+          name: ap.name || 'مطار رأس المال الدولي',
+          valuation: {
+            fleetValue: totalFleetCost,
+            facilitiesValue: totalFacilitiesCost,
+            totalAirportCapital: totalFleetCost + totalFacilitiesCost
+          },
+          facilities: {
+            runway: { level: runwayLvl, name: runwayCfg.name || 'مدرج إقليمي', maxPlaneTier: runwayCfg.maxPlaneTier || 1 },
+            terminals: { level: terminalLvl, name: terminalCfg.name || 'صالات ركاب', ticketBonus: terminalCfg.ticketBonus || 1.0 },
+            hangar: { level: hangarLvl, name: hangarCfg.name || 'حوض صيانة', timeReduction: hangarCfg.timeReduction || 0, fuelDiscount: hangarCfg.fuelDiscount || 0 },
+            duty_free: { level: dutyFreeLvl, name: dutyFreeCfg.name || 'غير مشيدة', passivePerMin, accumulated: dutyFreeAccumulated, maxCapacity8h, lastCollectedAt: Number(ap.lastDutyFreeCollectionAt || 0) }
+          },
+          transitRadar: {
+            lastTransitAt,
+            isReady: isTransitReady,
+            remainingSec: transitRemainingSec,
+            transitPermitsAccepted: Number(ap.stats?.transitPermitsAccepted || 0)
+          },
+          stats: {
+            totalFlights: Number(ap.stats?.totalFlights || 0),
+            totalRevenue: Number(ap.stats?.totalRevenue || 0),
+            totalOperatingCost: Number(ap.stats?.totalOperatingCost || 0),
+            totalNetProfit: Number(ap.stats?.totalNetProfit || 0),
+            totalDutyFreeCollected: Number(ap.stats?.totalDutyFreeCollected || 0),
+            transitPermitsAccepted: Number(ap.stats?.transitPermitsAccepted || 0)
+          },
+          fleet: fleetList
+        };
+      })();
+
       const inspectionProfile = {
         // Core Identity
         username: pDoc.username,
@@ -1119,7 +1279,7 @@ async function moderatorRoutes(fastify, options) {
         limitsResetAt: state.limitsResetAt || null,
 
         // Aviation & Airport
-        airport: state.airport || null,
+        airport: enrichedAirport,
 
         // Farm & Agriculture
         farm: state.farm || null,

@@ -276,7 +276,7 @@
         <div id="statOnlinePlayers" class="text-xl sm:text-2xl font-black numbers-font text-cyan-300">--</div>
       </div>
 
-      <div class="glass-panel p-3 sm:p-4 rounded-xl sm:rounded-2xl border-l-4 border-l-blue-500">
+      <div onclick="setFilter('all')" class="glass-panel p-3 sm:p-4 rounded-xl sm:rounded-2xl border-l-4 border-l-blue-500 cursor-pointer hover:bg-slate-800/80 transition" title="عرض جميع الحسابات">
         <div class="text-[11px] sm:text-xs text-slate-400 mb-0.5 sm:mb-1 flex items-center justify-between">
           <span>إجمالي الحسابات</span>
           <i class="fa-solid fa-address-book text-blue-400"></i>
@@ -284,7 +284,7 @@
         <div id="statTotalPlayers" class="text-xl sm:text-2xl font-black numbers-font text-blue-300">--</div>
       </div>
 
-      <div class="glass-panel p-3 sm:p-4 rounded-xl sm:rounded-2xl border-l-4 border-l-amber-500">
+      <div onclick="setFilter('flagged')" class="glass-panel p-3 sm:p-4 rounded-xl sm:rounded-2xl border-l-4 border-l-amber-500 cursor-pointer hover:bg-slate-800/80 transition" title="عرض الحسابات الموضوعة تحت المراقبة">
         <div class="text-[11px] sm:text-xs text-slate-400 mb-0.5 sm:mb-1 flex items-center justify-between">
           <span>تحت المراقبة</span>
           <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
@@ -292,7 +292,7 @@
         <div id="statFlaggedPlayers" class="text-xl sm:text-2xl font-black numbers-font text-amber-300">0</div>
       </div>
 
-      <div class="glass-panel p-3 sm:p-4 rounded-xl sm:rounded-2xl border-l-4 border-l-rose-500">
+      <div onclick="setFilter('frozen')" class="glass-panel p-3 sm:p-4 rounded-xl sm:rounded-2xl border-l-4 border-l-rose-500 cursor-pointer hover:bg-slate-800/80 transition" title="عرض الحسابات المجمدة حالياً">
         <div class="text-[11px] sm:text-xs text-slate-400 mb-0.5 sm:mb-1 flex items-center justify-between">
           <span>المجمدين</span>
           <i class="fa-solid fa-snowflake text-rose-400"></i>
@@ -300,7 +300,7 @@
         <div id="statFrozenPlayers" class="text-xl sm:text-2xl font-black numbers-font text-rose-300">0</div>
       </div>
 
-      <div class="glass-panel p-3 sm:p-4 rounded-xl sm:rounded-2xl border-l-4 border-l-purple-500 col-span-2 sm:col-span-1">
+      <div onclick="setFilter('muted')" class="glass-panel p-3 sm:p-4 rounded-xl sm:rounded-2xl border-l-4 border-l-purple-500 col-span-2 sm:col-span-1 cursor-pointer hover:bg-slate-800/80 transition" title="عرض المكتومين في الشات">
         <div class="text-[11px] sm:text-xs text-slate-400 mb-0.5 sm:mb-1 flex items-center justify-between">
           <span>المكتومين بالشات</span>
           <i class="fa-solid fa-comment-slash text-purple-400"></i>
@@ -2123,28 +2123,8 @@
         }).join('');
       }
 
-      // Tab 4: Airport
-      const aInfo = document.getElementById('p_airportInfo');
-      if (!p.airport) {
-        aInfo.innerHTML = `<div class="text-xs text-slate-500 py-4">اللاعب لم يقم ببناء أو تفعيل المطار بعد.</div>`;
-      } else {
-        aInfo.innerHTML = `
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-            <div class="glass-card p-3 rounded-xl">
-              <span class="text-slate-400 block text-[10px]">مستوى المطار</span>
-              <span class="font-bold text-cyan-300">مستوى ${p.airport.level || 1}</span>
-            </div>
-            <div class="glass-card p-3 rounded-xl">
-              <span class="text-slate-400 block text-[10px]">عدد الطائرات في الأسطول</span>
-              <span class="font-bold text-amber-300">${Object.keys(p.airport.fleet || {}).length} طائرة</span>
-            </div>
-            <div class="glass-card p-3 rounded-xl">
-              <span class="text-slate-400 block text-[10px]">الخطوط المفتوحة</span>
-              <span class="font-bold text-emerald-300">${(p.airport.routes || []).length} وجهة</span>
-            </div>
-          </div>
-        `;
-      }
+      // Tab 4: Airport & Aviation Tycoon
+      renderAirportDetails(p.airport);
 
       // Tab: Agro Farm Tycoon (المزرعة الاستثمارية)
       renderFarmDetails(p.farm);
@@ -2696,6 +2676,254 @@
           `;
         }
       }
+    }
+
+    // ================= AIRPORT & AVIATION TYCOON RENDERING =================
+    function renderAirportDetails(airport) {
+      const container = document.getElementById('p_airportInfo');
+      if (!container) return;
+
+      if (!airport || !airport.unlocked) {
+        container.innerHTML = `
+          <div class="text-center py-10 px-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 space-y-2">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-slate-800 text-slate-500 flex items-center justify-center text-2xl">
+              <i class="fa-solid fa-plane-slash"></i>
+            </div>
+            <h4 class="text-sm font-bold text-slate-300">المطار غير مفعل</h4>
+            <p class="text-xs text-slate-500 max-w-md mx-auto">لم يقم هذا اللاعب بإنشاء أو تفعيل مطار رأس المال الدولي بعد.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const val = airport.valuation || {};
+      const f = airport.facilities || {};
+      const fleet = Array.isArray(airport.fleet) ? airport.fleet : [];
+      const stats = airport.stats || {};
+      const radar = airport.transitRadar || {};
+
+      const runway = f.runway || { level: 1, name: 'مدرج إقليمي', maxPlaneTier: 1 };
+      const terminals = f.terminals || { level: 1, name: 'صالات ركاب', ticketBonus: 1.0 };
+      const hangar = f.hangar || { level: 1, name: 'حوض صيانة', timeReduction: 0, fuelDiscount: 0 };
+      const dutyFree = f.duty_free || { level: 0, name: 'غير مشيدة', passivePerMin: 0, accumulated: 0 };
+
+      const activeFlightsCount = fleet.filter(p => p.status === 'in_flight' || p.activeFlight).length;
+
+      let html = `
+        <!-- Airport Header & Valuation Summary -->
+        <div class="glass-panel p-4 rounded-2xl border border-sky-500/30 bg-gradient-to-r from-sky-950/40 via-slate-900/60 to-slate-900/40 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-sky-500/20 pb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-500/40 text-sky-400 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-plane-departure"></i>
+              </div>
+              <div>
+                <h4 class="text-sm font-black text-white flex items-center gap-2">
+                  <span>${escapeHtml(airport.name || 'مطار رأس المال الدولي')}</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40">مطار دولي نشط</span>
+                </h4>
+                <div class="text-[11px] text-slate-400">إمبراطورية الملاحة الجوية والرحلات الدولية والسوق الحرة</div>
+              </div>
+            </div>
+            <div class="text-left">
+              <span class="text-[10px] text-slate-400 block">إجمالي رأس مال المطار (طائرات + منشآت)</span>
+              <span class="text-base font-black text-emerald-400 numbers-font">${fmtMoney(val.totalAirportCapital || 0)}</span>
+            </div>
+          </div>
+
+          <!-- Quick Metrics Bar -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+              <span class="text-[10px] text-slate-400 block">قيمة أسطول الطائرات</span>
+              <span class="font-bold text-sky-300 numbers-font">${fmtMoney(val.fleetValue || 0)}</span>
+              <span class="text-[9px] text-slate-500 block">${fleet.length} طائرة مسجلة</span>
+            </div>
+            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+              <span class="text-[10px] text-slate-400 block">استثمارات المنشآت</span>
+              <span class="font-bold text-amber-300 numbers-font">${fmtMoney(val.facilitiesValue || 0)}</span>
+              <span class="text-[9px] text-slate-500 block">4 مرافق مطورة</span>
+            </div>
+            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+              <span class="text-[10px] text-slate-400 block">أرباح الرحلات الصافية</span>
+              <span class="font-bold text-emerald-300 numbers-font">${fmtMoney(stats.totalNetProfit || 0)}</span>
+              <span class="text-[9px] text-slate-500 block">${stats.totalFlights || 0} رحلة منجزة</span>
+            </div>
+            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+              <span class="text-[10px] text-slate-400 block">أرباح السوق الحرة المحصلة</span>
+              <span class="font-bold text-purple-300 numbers-font">${fmtMoney(stats.totalDutyFreeCollected || 0)}</span>
+              <span class="text-[9px] text-slate-500 block">${dutyFree.passivePerMin ? fmtMoney(dutyFree.passivePerMin) + '/د' : 'غير مشيدة'}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Facilities & Concessions Overview -->
+        <div>
+          <h4 class="text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
+            <i class="fa-solid fa-building-columns text-sky-400"></i>
+            <span>منشآت ومرافق المطار:</span>
+          </h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+            <!-- Runway -->
+            <div class="glass-card p-3 rounded-xl border border-slate-800 space-y-1">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="font-bold text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-road text-slate-400"></i>
+                  <span>المدرج الجوي</span>
+                </span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-sky-500/20 text-sky-300 font-bold">مستوى ${runway.level}</span>
+              </div>
+              <div class="text-[10px] text-slate-300 font-medium">${runway.name}</div>
+              <div class="text-[10px] text-slate-400">أقصى فئة طائرات: <span class="text-sky-300 font-bold">Tier ${runway.maxPlaneTier}</span></div>
+            </div>
+
+            <!-- Terminals -->
+            <div class="glass-card p-3 rounded-xl border border-slate-800 space-y-1">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="font-bold text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-users-line text-blue-400"></i>
+                  <span>صالات الركاب</span>
+                </span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-300 font-bold">مستوى ${terminals.level}</span>
+              </div>
+              <div class="text-[10px] text-slate-300 font-medium">${terminals.name}</div>
+              <div class="text-[10px] text-slate-400">بونص التذاكر: <span class="text-emerald-300 font-bold">+${Math.round(((terminals.ticketBonus || 1) - 1) * 100)}%</span></div>
+            </div>
+
+            <!-- Hangar -->
+            <div class="glass-card p-3 rounded-xl border border-slate-800 space-y-1">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="font-bold text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-wrench text-amber-400"></i>
+                  <span>حوض الصيانة</span>
+                </span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 font-bold">مستوى ${hangar.level}</span>
+              </div>
+              <div class="text-[10px] text-slate-300 font-medium">${hangar.name}</div>
+              <div class="text-[10px] text-slate-400">تسريع: <span class="text-amber-300 font-bold">-${hangar.timeReduction || 0}%</span> | خصم: <span class="text-amber-300 font-bold">-${hangar.fuelDiscount || 0}%</span></div>
+            </div>
+
+            <!-- Duty Free -->
+            <div class="glass-card p-3 rounded-xl border border-purple-500/30 space-y-1 bg-purple-950/10">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="font-bold text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-bag-shopping text-purple-400"></i>
+                  <span>السوق الحرة</span>
+                </span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300 font-bold">${dutyFree.level > 0 ? 'مستوى ' + dutyFree.level : 'غير مشيدة'}</span>
+              </div>
+              <div class="text-[10px] text-purple-200 font-medium">${dutyFree.name}</div>
+              <div class="text-[10px] text-slate-400">
+                دخل بالدقيقة: <span class="text-purple-300 font-bold numbers-font">${dutyFree.passivePerMin ? fmtMoney(dutyFree.passivePerMin) : '0'}</span>
+              </div>
+              <div class="text-[10px] text-slate-400">
+                جاهز للجمع: <span class="text-emerald-400 font-black numbers-font">${fmtMoney(dutyFree.accumulated || 0)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transit Radar & Tower Status -->
+        <div class="glass-card p-3 rounded-xl border border-slate-800 bg-slate-900/50 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg ${radar.isReady ? 'bg-emerald-500/20 text-emerald-400 animate-pulse' : 'bg-slate-800 text-slate-400'} flex items-center justify-center text-sm">
+              <i class="fa-solid fa-tower-broadcast"></i>
+            </div>
+            <div>
+              <div class="font-bold text-white flex items-center gap-2">
+                <span>برج المراقبة ورادار الترانزيت</span>
+                <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${radar.isReady ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}">
+                  ${radar.isReady ? 'تصريح هبوط متاح الآن ✅' : 'في انتظار طائرة عابرة ⏳'}
+                </span>
+              </div>
+              <div class="text-[10px] text-slate-400">
+                ${radar.isReady ? 'عائد رسوم الهبوط الترانزيت جاهز للقبول (120,000 ~ 250,000 ج.م)' : `الوقت المتبقي لظهور الطائرة التالية: ${Math.ceil((radar.remainingSec || 0) / 60)} دقيقة`}
+              </div>
+            </div>
+          </div>
+          <div class="text-left text-[11px]">
+            <span class="text-slate-400 block text-[10px]">إجمالي تصاريح الترانزيت المقبولة</span>
+            <span class="font-bold text-cyan-300 numbers-font">${radar.transitPermitsAccepted || 0} تصريح</span>
+          </div>
+        </div>
+
+        <!-- Fleet & Live Aviation Movements -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-plane text-sky-400"></i>
+              <span>أسطول الطائرات والرحلات الحالية (${fleet.length}):</span>
+            </h4>
+            <span class="text-[10px] text-slate-400 font-medium">الرحلات النشطة في الجو: <strong class="text-sky-300 font-bold">${activeFlightsCount}</strong></span>
+          </div>
+
+          ${fleet.length === 0 ? `
+            <div class="text-xs text-slate-500 py-4 text-center glass-card rounded-xl border border-slate-800">لا توجد طائرات في أسطول اللاعب حالياً.</div>
+          ` : `
+            <div class="space-y-2">
+              ${fleet.map(plane => {
+                const flight = plane.activeFlight;
+                const isInFlight = Boolean(flight);
+                const isArrived = flight && flight.isArrived;
+
+                return `
+                  <div class="glass-card p-3 rounded-xl border ${isInFlight ? 'border-sky-500/40 bg-sky-950/10' : 'border-slate-800'} space-y-2">
+                    <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg ${isInFlight ? 'bg-sky-500/20 text-sky-400' : 'bg-slate-800 text-slate-400'} flex items-center justify-center text-sm">
+                          <i class="fa-solid ${escapeHtml(plane.icon || 'fa-plane')}"></i>
+                        </div>
+                        <div>
+                          <div class="font-bold text-white flex items-center gap-1.5">
+                            <span>${escapeHtml(plane.customName || plane.modelName)}</span>
+                            <span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-slate-700 font-mono">Tier ${plane.tier}</span>
+                            ${isInFlight ? (isArrived ? 
+                              '<span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold animate-pulse">وصلت الوجهة ✅</span>' : 
+                              '<span class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold">في الجو ✈️</span>') : 
+                              '<span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-bold">متوقفة بالهنجار</span>'
+                            }
+                          </div>
+                          <div class="text-[10px] text-slate-400">
+                            ${escapeHtml(plane.modelName)} | السعة: ${escapeHtml(plane.capacity || 'ركاب')} | التكلفة: <span class="numbers-font text-slate-300">${fmtMoney(plane.cost || 0)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="text-left text-[11px]">
+                        <span class="text-[10px] text-slate-400 block">إجمالي أرباح الطائرة</span>
+                        <span class="font-bold text-emerald-400 numbers-font">${fmtMoney(plane.totalProfitEarned || 0)}</span>
+                        <span class="text-[9px] text-slate-500 block">${plane.flightsCompleted || 0} رحلة منجزة</span>
+                      </div>
+                    </div>
+
+                    ${isInFlight ? `
+                      <div class="bg-slate-900/80 p-2 rounded-lg border border-sky-500/20 space-y-1.5 text-xs">
+                        <div class="flex items-center justify-between text-[11px]">
+                          <span class="text-slate-300 font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-location-dot text-rose-400"></i>
+                            <span>الوجهة: <strong>${escapeHtml(flight.destinationName)}</strong></span>
+                          </span>
+                          <span class="text-sky-300 font-bold text-[10px]">
+                            ${isArrived ? 'بانتظار تأكيد الهبوط وتحصيل الأرباح' : `متبقي: ${Math.ceil(flight.timeRemainingSec / 60)} دقيقة (${flight.progressPercent}%)`}
+                          </span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                          <div class="bg-gradient-to-r from-sky-500 to-emerald-400 h-full rounded-full transition-all duration-500" style="width: ${flight.progressPercent}%"></div>
+                        </div>
+                        <div class="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
+                          <span>الربح المتوقع: <strong class="text-emerald-400 numbers-font">${fmtMoney(flight.expectedNetProfit || 0)}</strong></span>
+                          <span>مكافأة الخبرة: <strong class="text-cyan-400 numbers-font">+${flight.expectedXp || 0} XP</strong></span>
+                        </div>
+                      </div>
+                    ` : ''}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+      `;
+
+      container.innerHTML = html;
     }
 
     // ================= AGRO FARM TYCOON RENDERING =================

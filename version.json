@@ -1,7 +1,7 @@
 {
-  "version": "v9.5.4",
-  "build": 1791310000000,
-  "timestamp": 1791310000000,
-  "notes": "Force-purge caches, auto-update on version mismatch, rebalance Control Tower transit fees and Duty Free profits",
-  "releaseNotes": "تحديث فوري وتنظيف شامل للكاش، وموازنة أرباح برج المراقبة والسوق الحرة بالمطار لحماية الاقتصاد من التضخم"
+  "version": "v9.5.5",
+  "build": 1791320000000,
+  "timestamp": 1791320000000,
+  "notes": "Rebalance Airport Control Tower & Duty Free profits, add comprehensive Airport inspector to admin panel",
+  "releaseNotes": "موازنة اقتصادية دقيقة لأرباح برج المراقبة ورسوم الترانزيت والسوق الحرة بالمطار لمنع التضخم، وإضافة فاحص المطار الشامل للوحة الإدارة"
 }

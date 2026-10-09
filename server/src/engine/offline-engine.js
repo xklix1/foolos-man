@@ -242,6 +242,46 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
     playerState.investments = remainingInvestments;
   }
 
+  // 9. Airport & Aviation Hub (المطار والأسطول الجوي): Resolve completed flights and accumulate duty-free
+  if (playerState.airport && playerState.airport.unlocked) {
+    const ap = playerState.airport;
+    // A. Resolve arriving flights
+    if (Array.isArray(ap.fleet)) {
+      ap.fleet.forEach(plane => {
+        if (plane && plane.status === 'in_flight' && plane.activeFlight) {
+          const arrTime = Number(plane.activeFlight.arrivalTime || 0);
+          if (arrTime > 0 && serverNow >= arrTime) {
+            plane.status = 'idle';
+            const profit = Number(plane.activeFlight.economics?.netProfit || plane.activeFlight.netProfit || 0);
+            const xp = Number(plane.activeFlight.xpReward || 0);
+            if (profit > 0) {
+              playerState.bank = (Number(playerState.bank) || 0) + profit;
+              if (!ap.stats) ap.stats = {};
+              ap.stats.totalFlights = (Number(ap.stats.totalFlights) || 0) + 1;
+              ap.stats.totalNetProfit = (Number(ap.stats.totalNetProfit) || 0) + profit;
+              plane.flightsCompleted = (Number(plane.flightsCompleted) || 0) + 1;
+              plane.totalProfitEarned = (Number(plane.totalProfitEarned) || 0) + profit;
+              playerState.xp = (Number(playerState.xp) || 0) + xp;
+            }
+            plane.activeFlight = null;
+          }
+        }
+      });
+    }
+
+    // B. Duty Free Passive Income accumulation
+    const dutyFreeLvl = Number(ap.facilities?.duty_free || 0);
+    if (dutyFreeLvl > 0) {
+      const passivePerMin = dutyFreeLvl === 1 ? 150 : dutyFreeLvl === 2 ? 450 : dutyFreeLvl === 3 ? 1200 : 2500;
+      const lastDutyCollect = Number(ap.lastDutyFreeCollectionAt || lastActive);
+      const dutyElapsedMin = Math.min(8 * 60, Math.max(0, Math.floor((serverNow - lastDutyCollect) / 60000)));
+      if (dutyElapsedMin > 0) {
+        const dutyCap = passivePerMin * 60 * 8;
+        ap.dutyFreeAccumulated = Math.min(dutyCap, (Number(ap.dutyFreeAccumulated) || 0) + (dutyElapsedMin * passivePerMin));
+      }
+    }
+  }
+
   // Re-evaluate net worth and title
   playerState.netWorth = calculateNetWorth(playerState);
   playerState.title = getAppropriateTitle(playerState.netWorth, playerState.xp);
