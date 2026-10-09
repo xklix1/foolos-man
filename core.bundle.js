@@ -42660,16 +42660,41 @@ window.AirportUI = (() => {
     `;
   }
 
+  const TOWER_TRANSIT_RATES = {
+    1: { perHour: 3000, perMin: 50, label: '3,000 ج.م/ساعة (أقصى تراكم 24 ألف ج.م)' },
+    2: { perHour: 7500, perMin: 125, label: '7,500 ج.م/ساعة (أقصى تراكم 60 ألف ج.م)' },
+    3: { perHour: 15000, perMin: 250, label: '15,000 ج.م/ساعة (أقصى تراكم 120 ألف ج.م)' },
+    4: { perHour: 25000, perMin: 416.67, label: '25,000 ج.م/ساعة (أقصى تراكم 200 ألف ج.م)' }
+  };
+
+  function calculateTransitClient(airport) {
+    if (!airport || !airport.unlocked) return 0;
+    const runwayLvl = Math.max(1, Math.min(4, Number(airport.facilities?.runway || 1)));
+    const rate = TOWER_TRANSIT_RATES[runwayLvl]?.perMin || 50;
+    const lastTime = Number(airport.lastTransitCollectionAt || airport.lastTransitPermitAt || airport.unlockedAt || getTrustedNow());
+    const elapsedMinutes = Math.max(0, (getTrustedNow() - lastTime) / (60 * 1000));
+    return Math.floor(Math.min(8 * 60, elapsedMinutes) * rate);
+  }
+
   /**
-   * Subtab 4: Control Tower & Transit Permits
+   * Subtab 4: Control Tower & Transit Permits (Hourly Accumulation, 8h Max)
    */
   function renderTransitSubtab(airport, state) {
     const stats = airport.stats || {};
-    const lastTransit = Number(airport.lastTransitPermitAt || 0);
-    const minCooldownMs = 10 * 60 * 1000;
-    const elapsedMs = getTrustedNow() - lastTransit;
-    const onCooldown = lastTransit > 0 && elapsedMs < minCooldownMs;
-    const remSec = onCooldown ? Math.ceil((minCooldownMs - elapsedMs) / 1000) : 0;
+    const runwayLvl = Math.max(1, Math.min(4, Number(airport.facilities?.runway || 1)));
+    const rateCfg = TOWER_TRANSIT_RATES[runwayLvl] || TOWER_TRANSIT_RATES[1];
+
+    const accumulatedFee = calculateTransitClient(airport);
+    const lastCollect = Number(airport.lastTransitCollectionAt || airport.lastTransitPermitAt || airport.unlockedAt || getTrustedNow());
+    const elapsedMin = Math.max(0, (getTrustedNow() - lastCollect) / (60 * 1000));
+    const cappedMin = Math.min(8 * 60, elapsedMin);
+    const percentFilled = Math.min(100, Math.round((cappedMin / (8 * 60)) * 100));
+    const hoursAccumulated = (cappedMin / 60).toFixed(1);
+
+    const elapsedMs = getTrustedNow() - Number(airport.lastTransitCollectionAt || 0);
+    const onCooldown = Number(airport.lastTransitCollectionAt || 0) > 0 && elapsedMs < 60000;
+    const remSec = onCooldown ? Math.ceil((60000 - elapsedMs) / 1000) : 0;
+    const canCollect = accumulatedFee >= 500 && !onCooldown;
 
     return `
       <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-sky-500/30 text-center space-y-6 relative overflow-hidden"
@@ -42683,31 +42708,47 @@ window.AirportUI = (() => {
         <div class="space-y-2 max-w-md mx-auto">
           <h3 class="text-xl font-black text-white">برج المراقبة ورادار الطائرات العابرة 📡</h3>
           <p class="text-xs text-slate-300">
-            تستقبل أجواء مطارك رحلات طيران دولية عابرة تطلب الهبوط الاضطراري أو التزود السريع بالوقود كل 10 دقائق مقابل رسوم أرضية مجزية!
+            تستقبل أجواء مطارك رحلات طيران دولية عابرة تطلب الهبوط والتزود بالوقود. تتراكم رسوم الترانزيت بالساعة تلقائياً بحد أقصى 8 ساعات!
           </p>
         </div>
 
-        <div class="p-4 rounded-2xl bg-slate-950/90 border border-slate-800 max-w-md mx-auto space-y-2 text-right">
+        <!-- Accumulated Display Card -->
+        <div class="p-5 rounded-2xl bg-slate-950/90 border border-slate-800 max-w-md mx-auto space-y-4 text-right">
           <div class="flex justify-between items-center text-xs">
-            <span class="text-slate-400">إجمالي تصاريح الترانزيت الممنوحة:</span>
-            <strong class="text-amber-400 numbers-font font-bold">${(stats.transitPermitsAccepted || 0).toLocaleString()} تصريح</strong>
+            <span class="text-slate-400">معدل العائد (مدرج لفل ${runwayLvl}):</span>
+            <strong class="text-sky-400 numbers-font font-bold">${rateCfg.perHour.toLocaleString()} ج.م / ساعة</strong>
           </div>
+
           <div class="flex justify-between items-center text-xs">
-            <span class="text-slate-400">عائد رسوم الهبوط المقدر (المدرج لفل ${Math.max(1, Math.min(4, Number(airport.facilities?.runway || 1)))}):</span>
-            <strong class="text-emerald-400 numbers-font font-bold">${{
-              1: '35,000 ~ 65,000 ج.م',
-              2: '70,000 ~ 130,000 ج.م',
-              3: '130,000 ~ 220,000 ج.م',
-              4: '220,000 ~ 350,000 ج.م'
-            }[Math.max(1, Math.min(4, Number(airport.facilities?.runway || 1)))] || '35,000 ~ 65,000 ج.م'}</strong>
+            <span class="text-slate-400">فترة التراكم الحالية:</span>
+            <span id="airport-transit-accumulated-time" class="text-slate-300 font-bold numbers-font">${hoursAccumulated} / 8 ساعات (${percentFilled}%)</span>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-800">
+            <div id="airport-transit-progress-bar" class="h-full bg-gradient-to-r from-sky-500 via-indigo-500 to-emerald-400 transition-all duration-500" style="width: ${percentFilled}%;"></div>
+          </div>
+
+          <div class="pt-2 border-t border-slate-800/80 flex justify-between items-center">
+            <span class="text-xs font-bold text-slate-300">الرصيد المتراكم للتحصيل:</span>
+            <span id="airport-transit-accumulated-amount" class="text-2xl font-black text-emerald-400 numbers-font drop-shadow-sm">+${accumulatedFee.toLocaleString()} ج.م</span>
+          </div>
+
+          <div class="flex justify-between items-center text-[11px] text-slate-500 pt-1">
+            <span>إجمالي تحصيلات الترانزيت:</span>
+            <span class="text-amber-400 font-bold numbers-font">${(stats.transitPermitsAccepted || 0).toLocaleString()} عملية</span>
           </div>
         </div>
 
-        <button id="btn-airport-transit" onclick="window.AirportUI.acceptTransit()" ${onCooldown ? 'disabled' : ''}
+        <button id="btn-airport-transit" onclick="window.AirportUI.acceptTransit()" ${canCollect ? '' : 'disabled'}
           class="px-8 py-3.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-black text-sm rounded-2xl shadow-xl shadow-sky-500/25 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 mx-auto disabled:opacity-40 disabled:pointer-events-none">
           <i class="fa-solid fa-passport"></i>
-          <span>${onCooldown ? `الرادار يمسح الأجواء... متبقي (${formatSeconds(remSec)})` : 'منح تصريح هبوط لطائرة ترانزيت وتحصيل الرسوم 🛬'}</span>
+          <span>${onCooldown ? `يرجى الانتظار (${remSec}ث)` : (accumulatedFee < 500 ? 'جاري تتبع الرحلات (الحد الأدنى 500 ج.م)' : `تحصيل رسوم الترانزيت المتراكمة (+${accumulatedFee.toLocaleString()} ج.م) 🛬`)}</span>
         </button>
+
+        <p class="text-[10px] text-slate-400 max-w-sm mx-auto">
+          💡 تتراكم الأرباح تلقائياً في السيرفر وتتوقف عند بلوغ 8 ساعات حتى تقوم بالتحصيل. ترقية مدرج المطار ترفع العائد بالساعة.
+        </p>
       </div>
     `;
   }
@@ -42795,19 +42836,39 @@ window.AirportUI = (() => {
       }
     }
 
-    // Update transit button timer live
+    // Update transit accumulation live
+    const transitEl = document.getElementById('airport-transit-accumulated-amount');
+    const transitTimeEl = document.getElementById('airport-transit-accumulated-time');
+    const transitBarEl = document.getElementById('airport-transit-progress-bar');
     const btnTransit = document.getElementById('btn-airport-transit');
-    if (btnTransit && ap) {
-      const lastTransit = Number(ap.lastTransitPermitAt || 0);
-      const minTransitCooldown = 10 * 60 * 1000;
-      const elapsedTransitMs = getTrustedNow() - lastTransit;
-      if (lastTransit > 0 && elapsedTransitMs < minTransitCooldown) {
-        const remSec = Math.ceil((minTransitCooldown - elapsedTransitMs) / 1000);
-        btnTransit.disabled = true;
-        btnTransit.innerHTML = `<i class="fa-solid fa-tower-broadcast animate-pulse"></i> <span>الرادار يمسح الأجواء... متبقي (${formatSeconds(remSec)})</span>`;
-      } else {
-        btnTransit.disabled = false;
-        btnTransit.innerHTML = '<i class="fa-solid fa-passport"></i> <span>منح تصريح هبوط لطائرة ترانزيت وتحصيل الرسوم 🛬</span>';
+    if (ap) {
+      const amt = calculateTransitClient(ap);
+      if (transitEl) transitEl.textContent = `+${amt.toLocaleString()} ج.م`;
+
+      const lastCollect = Number(ap.lastTransitCollectionAt || ap.lastTransitPermitAt || ap.unlockedAt || getTrustedNow());
+      const elapsedMin = Math.max(0, (getTrustedNow() - lastCollect) / (60 * 1000));
+      const cappedMin = Math.min(8 * 60, elapsedMin);
+      const pct = Math.min(100, Math.round((cappedMin / (8 * 60)) * 100));
+
+      if (transitTimeEl) transitTimeEl.textContent = `${(cappedMin / 60).toFixed(1)} / 8 ساعات (${pct}%)`;
+      if (transitBarEl) transitBarEl.style.width = `${pct}%`;
+
+      if (btnTransit) {
+        const lastClaim = Number(ap.lastTransitCollectionAt || 0);
+        const elapsedMs = getTrustedNow() - lastClaim;
+        const onCooldown = lastClaim > 0 && elapsedMs < 60000;
+        if (amt < 500 || onCooldown) {
+          btnTransit.disabled = true;
+          if (onCooldown) {
+            const remSec = Math.ceil((60000 - elapsedMs) / 1000);
+            btnTransit.innerHTML = `<i class="fa-solid fa-hourglass-half text-xs"></i> <span>يرجى الانتظار (${remSec}ث)</span>`;
+          } else {
+            btnTransit.innerHTML = `<i class="fa-solid fa-tower-broadcast animate-pulse"></i> <span>جاري تتبع الرحلات (الحد الأدنى 500 ج.م)</span>`;
+          }
+        } else {
+          btnTransit.disabled = false;
+          btnTransit.innerHTML = `<i class="fa-solid fa-passport"></i> <span>تحصيل رسوم الترانزيت المتراكمة (+${amt.toLocaleString()} ج.م) 🛬</span>`;
+        }
       }
     }
   }
@@ -43678,14 +43739,18 @@ window.AirportUI = (() => {
     const ap = liveState.airport;
     if (!ap) return;
 
-    const lastTransit = Number(ap.lastTransitPermitAt || 0);
-    const cooldownMs = 10 * 60 * 1000;
-    const elapsed = Date.now() - lastTransit;
-    if (lastTransit > 0 && elapsed < cooldownMs) {
+    const amt = calculateTransitClient(ap);
+    const lastCollect = Number(ap.lastTransitCollectionAt || 0);
+    const elapsed = getTrustedNow() - lastCollect;
+    const cooldownMs = 60 * 1000; // 60s minimum interval
+    if (lastCollect > 0 && elapsed < cooldownMs) {
       const remSec = Math.ceil((cooldownMs - elapsed) / 1000);
-      const remMin = Math.floor(remSec / 60);
-      const remSecOnly = remSec % 60;
-      showAirportToast(`⏳ لا توجد رحلات ترانزيت جديدة على الرادار حالياً. انتظر ${remMin > 0 ? remMin + ' دقيقة و ' : ''}${remSecOnly} ثانية.`, 'warning');
+      showAirportToast(`⏳ يرجى الانتظار ${remSec} ثانية قبل تحصيل رسوم الترانزيت التالية.`, 'warning');
+      return;
+    }
+
+    if (amt < 500) {
+      showAirportToast(`⏳ الحد الأدنى لتحصيل رسوم الترانزيت هو 500 ج.م (المتراكم حالياً: ${amt.toLocaleString()} ج.م).`, 'warning');
       return;
     }
 
@@ -43704,21 +43769,21 @@ window.AirportUI = (() => {
           }
           persistGameState();
           if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-            window.GameEngine.recordPlayerActivity('استقبال رحلة ترانزيت 🛬', `منح تصريح هبوط رحلة ترانزيت دولية وتحصيل رسوم (+${(res.fee || 3500000).toLocaleString()} ج.م)`, 'business');
+            window.GameEngine.recordPlayerActivity('تحصيل رسوم ترانزيت 🛬', `تحصيل رسوم هبوط الترانزيت المتراكمة بالساعة (+${(res.fee || amt).toLocaleString()} ج.م)`, 'business');
           }
-          showAirportToast(res.message || '🛬 تم منح تصريح الهبوط وتحصيل الرسوم بنجاح!', 'success');
+          showAirportToast(res.message || `🛬 تم تحصيل رسوم الترانزيت المتراكمة بنجاح (+${(res.fee || amt).toLocaleString()} ج.م)!`, 'success');
           renderAirportPanel();
           return;
         } else {
-          showAirportToast(res?.error || 'تعذر منح تصريح الترانزيت', 'error');
+          showAirportToast(res?.error || 'تعذر تحصيل رسوم الترانزيت', 'error');
           renderAirportPanel();
           return;
         }
       } catch (err) {
         const errMsg = err?.message || '';
         // CRITICAL: Block offline fallback on server business rejection!
-        if (err?.status === 400 || err?.status === 403 || errMsg.includes('رادار') || errMsg.includes('انتظار') || errMsg.includes('دقيقة') || errMsg.includes('مستوى') || errMsg.includes('ترانزيت')) {
-          showAirportToast(errMsg || '⏳ لا توجد رحلات ترانزيت متاحة حالياً', 'warning');
+        if (err?.status === 400 || err?.status === 403 || errMsg.includes('رادار') || errMsg.includes('انتظار') || errMsg.includes('دقيقة') || errMsg.includes('ثانية') || errMsg.includes('أدنى') || errMsg.includes('ترانزيت')) {
+          showAirportToast(errMsg || '⏳ لا توجد رسوم ترانزيت قابلة للتحصيل حالياً', 'warning');
           renderAirportPanel();
           return;
         }
@@ -43726,28 +43791,22 @@ window.AirportUI = (() => {
       }
     }
 
-    // 2. Offline Fallback (STRICT: only if server completely unreachable AND cooldown elapsed)
-    if (lastTransit > 0 && elapsed < cooldownMs) {
+    // 2. Offline Fallback (STRICT: only if server completely unreachable)
+    if (lastCollect > 0 && elapsed < cooldownMs) {
       return;
     }
 
-    const runwayLvl = Math.max(1, Math.min(4, Number(ap.facilities?.runway || 1)));
-    const transitFeeRanges = {
-      1: [35000, 65000],
-      2: [70000, 130000],
-      3: [130000, 220000],
-      4: [220000, 350000]
-    };
-    const [minF, maxF] = transitFeeRanges[runwayLvl] || transitFeeRanges[1];
-    const fee = Math.floor(minF + Math.random() * (maxF - minF + 1));
-    const xp = 250;
+    const fee = amt;
+    const xp = 50;
 
     liveState.cash = (Number(liveState.cash) || 0) + fee;
     liveState.xp = (Number(liveState.xp) || 0) + xp;
+    ap.lastTransitCollectionAt = Date.now();
     ap.lastTransitPermitAt = Date.now();
 
     if (!ap.stats) ap.stats = {};
     ap.stats.transitPermitsAccepted = (Number(ap.stats.transitPermitsAccepted) || 0) + 1;
+    ap.stats.totalTransitFeesCollected = (Number(ap.stats.totalTransitFeesCollected) || 0) + fee;
 
     if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
       window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
@@ -43755,9 +43814,9 @@ window.AirportUI = (() => {
 
     persistGameState();
     if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-      window.GameEngine.recordPlayerActivity('استقبال رحلة ترانزيت 🛬', `منح تصريح هبوط رحلة ترانزيت دولية وتحصيل رسوم (+${fee.toLocaleString()} ج.م) و +${xp} XP`, 'business');
+      window.GameEngine.recordPlayerActivity('تحصيل رسوم ترانزيت 🛬', `تحصيل رسوم هبوط الترانزيت المتراكمة بالساعة (+${fee.toLocaleString()} ج.م) و +${xp} XP`, 'business');
     }
-    showAirportToast(`🛬 تم منح تصريح الهبوط وتحصيل الرسوم (+${fee.toLocaleString()} ج.م) و +${xp} XP!`, 'success');
+    showAirportToast(`🛬 تم تحصيل رسوم الترانزيت المتراكمة (+${fee.toLocaleString()} ج.م) و +${xp} XP!`, 'success');
     renderAirportPanel();
   }
 

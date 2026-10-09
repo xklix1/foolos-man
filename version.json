@@ -1,7 +1,7 @@
 {
-  "version": "v9.5.2",
-  "build": 1791307000000,
-  "timestamp": 1791307000000,
-  "notes": "Rebalance airport control tower transit permit landing fees and duty-free passive revenue to prevent economic hyperinflation",
-  "releaseNotes": "موازنة اقتصادية دقيقة لبرج المراقبة (تصاريح الترانزيت بحسب مستوى المدرج) وعوائد السوق الحرة لمنع التضخم المالي والحفاظ على توازن اللعبة"
+  "version": "v9.5.3",
+  "build": 1791309000000,
+  "timestamp": 1791309000000,
+  "notes": "Transition Control Tower transit permit revenue to hourly accumulation capped at 8 hours with balanced realistic landing fees",
+  "releaseNotes": "تحويل أرباح برج المراقبة وتصاريح الترانزيت إلى نظام تراكم بالساعة بحد أقصى 8 ساعات مع تخفيض العوائد لأرقام واقعية متزنة"
 }

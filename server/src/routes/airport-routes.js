@@ -10,7 +10,8 @@ const {
   createInitialAirportState,
   getAirportBonuses,
   calculateFlightEconomics,
-  calculateDutyFreeAccumulated
+  calculateDutyFreeAccumulated,
+  calculateTransitAccumulated
 } = require('../engine/airport-engine');
 const { calculateNetWorth, getAppropriateTitle } = require('../engine/net-worth-engine');
 const sessionManager = require('../services/session-manager');
@@ -638,7 +639,7 @@ async function airportRoutes(fastify, options) {
     };
   });
 
-  // 9. POST /api/airport/transit (Accept Transit Flight Permit)
+  // 9. POST /api/airport/transit (Claim Accumulated Control Tower Transit Fees - 8h Max)
   fastify.post('/api/airport/transit', async (request, reply) => {
     const session = await resolveSession(request, reply);
     if (!session) return;
@@ -649,34 +650,34 @@ async function airportRoutes(fastify, options) {
     }
 
     const now = Date.now();
-    const lastTransit = Number(s.airport.lastTransitPermitAt || 0);
-    const minTransitCooldownMs = 10 * 60 * 1000; // 10 minutes between transit flight permits
-    const elapsedTransitMs = Math.max(0, now - lastTransit);
+    const lastCollect = Number(s.airport.lastTransitCollectionAt || s.airport.lastTransitPermitAt || s.airport.unlockedAt || now);
+    const elapsedMs = Math.max(0, now - lastCollect);
+    const minCooldownMs = 60 * 1000; // 60 seconds minimum interval between collections
 
-    if (lastTransit > 0 && elapsedTransitMs < minTransitCooldownMs) {
-      const remSec = Math.ceil((minTransitCooldownMs - elapsedTransitMs) / 1000);
-      const remMin = Math.ceil(remSec / 60);
+    if (s.airport.lastTransitCollectionAt && elapsedMs < minCooldownMs) {
+      const remSec = Math.ceil((minCooldownMs - elapsedMs) / 1000);
       return reply.code(400).send({
-        error: `📡 رادار برج المراقبة يمسح الأجواء حالياً... لا توجد طائرات ترانزيت جديدة تطلب تصريح هبوط الآن (الإشارة القادمة خلال ${remMin} دقيقة).`
+        error: `⏳ يرجى الانتظار ${remSec} ثانية قبل تحصيل رسوم الترانزيت التالية.`
       });
     }
 
-    // Balanced transit fee scaled by runway level (Level 1..4)
-    const runwayLvl = Math.max(1, Math.min(4, Number(s.airport.facilities?.runway || 1)));
-    const transitFeeTable = {
-      1: { min: 35000, max: 65000 },
-      2: { min: 70000, max: 130000 },
-      3: { min: 130000, max: 220000 },
-      4: { min: 220000, max: 350000 }
-    };
-    const tier = transitFeeTable[runwayLvl] || transitFeeTable[1];
-    const fee = Math.floor(tier.min + Math.random() * (tier.max - tier.min + 1));
-    s.cash = Math.max(0, Number(s.cash || 0)) + fee;
-    s.xp = Math.max(0, Number(s.xp || 0)) + 250;
+    const accumulatedFee = calculateTransitAccumulated(s.airport, now);
+
+    // Minimum collection threshold: 500 EGP
+    if (accumulatedFee < 500) {
+      return reply.code(400).send({
+        error: `⏳ الحد الأدنى لتحصيل رسوم الترانزيت هو 500 ج.م (المتراكم حالياً: ${accumulatedFee.toLocaleString()} ج.م).`
+      });
+    }
+
+    s.cash = Math.max(0, Number(s.cash || 0)) + accumulatedFee;
+    s.xp = Math.max(0, Number(s.xp || 0)) + 50;
+    s.airport.lastTransitCollectionAt = now;
     s.airport.lastTransitPermitAt = now;
 
     if (!s.airport.stats) s.airport.stats = {};
     s.airport.stats.transitPermitsAccepted = (Number(s.airport.stats.transitPermitsAccepted) || 0) + 1;
+    s.airport.stats.totalTransitFeesCollected = (Number(s.airport.stats.totalTransitFeesCollected) || 0) + accumulatedFee;
 
     s.netWorth = calculateNetWorth(s);
     s.lastActiveTimestamp = Date.now();
@@ -686,8 +687,9 @@ async function airportRoutes(fastify, options) {
 
     return {
       success: true,
-      message: `✈️ تم منح تصريح الهبوط والتزود بالوقود للطائرة الدولية! تم تحصيل رسوم ترانزيت: +${fee.toLocaleString()} ج.م`,
-      fee,
+      message: `✈️ تم تحصيل رسوم هبوط الترانزيت المتراكمة: +${accumulatedFee.toLocaleString()} ج.م!`,
+      fee: accumulatedFee,
+      earnings: accumulatedFee,
       cash: s.cash,
       xp: s.xp,
       airport: s.airport,

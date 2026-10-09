@@ -330,12 +330,49 @@ function calculateDutyFreeAccumulated(airportState, nowMs = Date.now()) {
   return Math.floor(cappedMinutes * ratePerMin);
 }
 
+/**
+ * Control Tower Transit Hourly Rates by Runway Level (8h Max Accumulation):
+ * Level 1: 3,000 EGP / hr (max 8h: 24,000 EGP)
+ * Level 2: 7,500 EGP / hr (max 8h: 60,000 EGP)
+ * Level 3: 15,000 EGP / hr (max 8h: 120,000 EGP)
+ * Level 4: 25,000 EGP / hr (max 8h: 200,000 EGP)
+ */
+const CONTROL_TOWER_CONFIG = {
+  maxAccumulationHours: 8,
+  minCollectionEgp: 500,
+  minCooldownMs: 60 * 1000,
+  levels: {
+    1: { name: 'مدرج إقليمي', perHour: 3000, perMin: 50, desc: 'دخل ترانزيت: 3,000 ج.م/ساعة (أقصى تراكم 24 ألف ج.م)' },
+    2: { name: 'مدرج دولي', perHour: 7500, perMin: 125, desc: 'دخل ترانزيت: 7,500 ج.م/ساعة (أقصى تراكم 60 ألف ج.م)' },
+    3: { name: 'مدرج عابر للقارات', perHour: 15000, perMin: 250, desc: 'دخل ترانزيت: 15,000 ج.م/ساعة (أقصى تراكم 120 ألف ج.م)' },
+    4: { name: 'مجمع مدارج ذكي CAT III', perHour: 25000, perMin: 416.67, desc: 'دخل ترانزيت: 25,000 ج.م/ساعة (أقصى تراكم 200 ألف ج.م)' }
+  }
+};
+
+/**
+ * Calculates accumulated Control Tower transit fees (capped at 8 hours)
+ */
+function calculateTransitAccumulated(airportState, nowMs = Date.now()) {
+  if (!airportState || !airportState.unlocked) return 0;
+  const runwayLvl = Math.max(1, Math.min(4, Number(airportState.facilities?.runway || 1)));
+  const rateConfig = CONTROL_TOWER_CONFIG.levels[runwayLvl] || CONTROL_TOWER_CONFIG.levels[1];
+  if (!rateConfig || rateConfig.perMin <= 0) return 0;
+
+  const lastTime = Number(airportState.lastTransitCollectionAt || airportState.lastTransitPermitAt || airportState.unlockedAt || nowMs);
+  const elapsedMinutes = Math.max(0, (nowMs - lastTime) / (60 * 1000));
+  // Cap at 8 hours max accumulation
+  const cappedMinutes = Math.min(8 * 60, elapsedMinutes);
+  return Math.floor(cappedMinutes * rateConfig.perMin);
+}
+
 module.exports = {
   AIRPORT_FACILITIES,
   AIRCRAFT_MODELS,
   FLIGHT_DESTINATIONS,
+  CONTROL_TOWER_CONFIG,
   createInitialAirportState,
   getAirportBonuses,
   calculateFlightEconomics,
-  calculateDutyFreeAccumulated
+  calculateDutyFreeAccumulated,
+  calculateTransitAccumulated
 };

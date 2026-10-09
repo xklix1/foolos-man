@@ -369,6 +369,11 @@ class SessionManager {
           const sTransit = Number(s.airport.lastTransitPermitAt || 0);
           if (cTransit > sTransit) s.airport.lastTransitPermitAt = cTransit;
         }
+        if (clientState.airport.lastTransitCollectionAt) {
+          const cColl = Number(clientState.airport.lastTransitCollectionAt);
+          const sColl = Number(s.airport.lastTransitCollectionAt || 0);
+          if (cColl > sColl) s.airport.lastTransitCollectionAt = cColl;
+        }
       }
     }
 
