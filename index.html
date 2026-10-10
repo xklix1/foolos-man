@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Aggressive Cache Purge Guard
-    window._CLIENT_VERSION = 'v9.5.8';
+    window._CLIENT_VERSION = 'v9.6.0';
     (async function() {
-      const CURRENT_APP_BUILD = 'v9.5.8';
+      const CURRENT_APP_BUILD = 'v9.6.0';
       try {
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
@@ -148,7 +148,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v8.8.0">
+  <link rel="stylesheet" href="app.css?v=v9.6.0">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -7606,7 +7606,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.5.8"></script>
+  <script src="core.bundle.js?v=v9.6.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

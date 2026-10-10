@@ -1,7 +1,7 @@
 {
-  "version": "v9.5.8",
-  "build": 1791330600000,
-  "timestamp": 1791330600000,
-  "notes": "Upgrade business product price controls to direct manual numeric input with step buttons, optimum reset, slider sync, and anti-inspect protection",
-  "releaseNotes": "تطوير نظام تسعير منتجات المشاريع: إمكانية كتابة السعر يدوياً بدقة مع أزرار الزيادة والنقصان والضبط التلقائي على السعر المثالي مع حماية تامة ضد التلاعب"
+  "version": "v9.6.0",
+  "build": 1791619300000,
+  "timestamp": 1791619300000,
+  "notes": "Airport Managers System (Liam, Captain Alpha, Alexander), 72-Hour Smart Auto-Pilot, VIP packages integration, complete UI icon standardization, and cache purge optimization",
+  "releaseNotes": "إطلاق نظام مدراء المطار (المدير ليام، كابتن ألفا، إمبراطور الطيران ألكسندر) مع الطيار الآلي الذكي 72 ساعة وربط باقات كبار الشخصيات وترقية الأداء وتفريغ الذاكرة المؤقتة"
 }

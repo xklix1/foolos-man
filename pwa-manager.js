@@ -44,7 +44,7 @@ var PWAManager = (() => {
     // 1. Register Service Worker (Production & Local)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        const swVer = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.5.3';
+        const swVer = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.6.0';
         navigator.serviceWorker.register('/sw.js?v=' + swVer, { updateViaCache: 'none' })
           .then((registration) => {
             console.log('[PWAManager] ServiceWorker registered with scope:', registration.scope);
@@ -69,14 +69,21 @@ var PWAManager = (() => {
             console.warn('[PWAManager] ServiceWorker registration failed:', err);
           });
 
-        // When the active controller changes (new version took over), refresh cleanly once
+        // When the active controller changes (new version took over), refresh cleanly once with loop protection
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (!refreshing) {
-            refreshing = true;
-            console.log('[PWAManager] Controller changed. Reloading for newest game build...');
-            window.location.reload();
-          }
+          if (refreshing) return;
+          try {
+            const lastReload = Number(sessionStorage.getItem('rasalmal_sw_reload_ts') || 0);
+            if (Date.now() - lastReload < 15000) {
+              console.log('[PWAManager] Controller changed but reloaded recently (debounced).');
+              return;
+            }
+            sessionStorage.setItem('rasalmal_sw_reload_ts', String(Date.now()));
+          } catch (_) {}
+          refreshing = true;
+          console.log('[PWAManager] Controller changed. Reloading for newest game build...');
+          window.location.reload();
         });
       });
     }
