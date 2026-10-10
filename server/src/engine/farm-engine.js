@@ -5,6 +5,7 @@
  */
 
 const DAILY_FARM_LIQUIDATION_CAP = 20000000; // 20M EGP per calendar day (Cairo time)
+const { calculateNetWorth, getAppropriateTitle } = require('./net-worth-engine');
 
 const FARM_CONFIG = {
   unlockCost: 1000000,
@@ -671,6 +672,105 @@ function sellAllFarmCrops(state, serverNow = Date.now()) {
   };
 }
 
+/**
+ * Fulfills a B2B supply farm contract authoritatively on the server.
+ * Credits payout into state.cash, advances reputation and liquidation limits.
+ */
+function fulfillFarmContract(state, contractId, contractData = null) {
+  const f = ensureFarmState(state);
+  if (!f.unlocked) throw new Error('المزرعة غير مفعلة.');
+
+  f.contracts = f.contracts || {};
+  if (!Array.isArray(f.contracts.active)) {
+    f.contracts.active = [];
+  }
+
+  let contract = f.contracts.active.find(c => c && c.id === contractId);
+
+  // If contract not yet in server list but valid contractData provided by client, adopt it
+  if (!contract && contractData && typeof contractData === 'object' && contractData.id === contractId) {
+    contract = contractData;
+    f.contracts.active.push(contract);
+  }
+
+  if (!contract) {
+    throw new Error('العقد غير موجود أو غير صالح.');
+  }
+
+  if (contract.fulfilled) {
+    throw new Error('تم تسليم هذا العقد واستلام أرباحه بالفعل!');
+  }
+
+  const payout = Math.max(0, Number(contract.payout || 0));
+  const repReward = Math.max(0, Number(contract.repReward || 0));
+
+  // Verify daily liquidation cap
+  const cairoToday = getCairoTodayStr();
+  if (!f.dailyLiquidation || f.dailyLiquidation.date !== cairoToday) {
+    f.dailyLiquidation = { date: cairoToday, totalLiquidated: 0 };
+  }
+
+  if (f.dailyLiquidation.totalLiquidated + payout > DAILY_FARM_LIQUIDATION_CAP) {
+    const remaining = Math.max(0, DAILY_FARM_LIQUIDATION_CAP - f.dailyLiquidation.totalLiquidated);
+    throw new Error(`مكافأة العقد (${payout.toLocaleString()} EGP) تتجاوز سقف التسييل اليومي المتبقي (${remaining.toLocaleString()} EGP).`);
+  }
+
+  // Deduct inventory items if present
+  const reqs = Array.isArray(contract.requirements) && contract.requirements.length > 0
+    ? contract.requirements
+    : [{
+        itemType: contract.itemType || 'crop',
+        itemId: contract.itemId,
+        quantityNeeded: Number(contract.quantityNeeded || 0)
+      }];
+
+  f.inventory = f.inventory || {};
+  f.processing = f.processing || { storage: {} };
+  f.processing.storage = f.processing.storage || {};
+  f.livestock = f.livestock || {};
+
+  for (const req of reqs) {
+    const qty = Number(req.quantityNeeded || 0);
+    if (qty > 0 && req.itemId) {
+      if (req.itemType === 'crop' && f.inventory[req.itemId] !== undefined) {
+        f.inventory[req.itemId] = Math.max(0, Number(f.inventory[req.itemId] || 0) - qty);
+      } else if (req.itemType === 'processed' && f.processing.storage[req.itemId] !== undefined) {
+        f.processing.storage[req.itemId] = Math.max(0, Number(f.processing.storage[req.itemId] || 0) - qty);
+      } else if (req.itemType === 'livestock' && f.livestock[req.itemId] !== undefined) {
+        f.livestock[req.itemId] = Math.max(0, Number(f.livestock[req.itemId] || 0) - qty);
+      }
+    }
+  }
+
+  // Fulfill contract and add cash authoritatively
+  contract.fulfilled = true;
+  contract.fulfilledAt = Date.now();
+
+  f.dailyLiquidation.totalLiquidated += payout;
+  state.cash = (Number(state.cash) || 0) + payout;
+
+  f.contracts.reputation = (Number(f.contracts.reputation) || 0) + repReward;
+  f.contracts.completedCount = (Number(f.contracts.completedCount) || 0) + 1;
+  f.contracts.revenueToday = (Number(f.contracts.revenueToday) || 0) + payout;
+  f.contracts.totalBonusEarned = (Number(f.contracts.totalBonusEarned) || 0) + payout;
+
+  f.stats = f.stats || { totalHarvested: 0, totalRevenue: 0 };
+  f.stats.totalRevenue = (Number(f.stats.totalRevenue) || 0) + payout;
+
+  state.netWorth = calculateNetWorth(state);
+  state.title = getAppropriateTitle(state.netWorth, state.xp || 0);
+
+  return {
+    contract,
+    payout,
+    repReward,
+    newReputation: f.contracts.reputation,
+    cash: state.cash,
+    netWorth: state.netWorth,
+    farm: f
+  };
+}
+
 module.exports = {
   DAILY_FARM_LIQUIDATION_CAP,
   FARM_CONFIG,
@@ -693,5 +793,6 @@ module.exports = {
   harvestFarmCrop,
   harvestAllFarmPlots,
   sellFarmCrop,
-  sellAllFarmCrops
+  sellAllFarmCrops,
+  fulfillFarmContract
 };

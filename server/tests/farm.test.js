@@ -109,6 +109,49 @@ test('Server-Authoritative Farm Engine & Anti-Cheat Tests', async () => {
     assert.strictEqual(workerRes.success, true);
     assert.strictEqual(workerRes.farm.workers, 1);
 
+    // 10. Authoritative B2B Farm Contract Fulfillment Test
+    // Add inventory for fulfilling contract
+    activeSess.state.farm.inventory.wheat = 50;
+    const initialCash = activeSess.state.cash;
+    const testContract = {
+      id: 'contract_b2b_test_101',
+      clientName: 'شركة النيل للصناعات الغذائية',
+      payout: 750000,
+      repReward: 15,
+      bonusPercent: 10,
+      requirements: [{
+        itemType: 'crop',
+        itemId: 'wheat',
+        itemName: 'قمح بلدي فاخر',
+        quantityNeeded: 20
+      }]
+    };
+
+    const contractRes = await ServerBridge.fulfillFarmContract('contract_b2b_test_101', testContract);
+    assert.strictEqual(contractRes.success, true);
+    assert.strictEqual(contractRes.cash, initialCash + 750000, 'Server cash must be authoritatively credited with contract payout');
+    assert.strictEqual(contractRes.farm.inventory.wheat, 30, 'Inventory must be deducted correctly');
+    assert.strictEqual(contractRes.result.contract.fulfilled, true);
+
+    // Verify double-fulfillment is strictly rejected
+    let doubleFulfillBlocked = false;
+    try {
+      await ServerBridge.fulfillFarmContract('contract_b2b_test_101', testContract);
+    } catch (err) {
+      doubleFulfillBlocked = true;
+      assert.ok(err.message.includes('بالفعل'), 'Error must report already fulfilled');
+    }
+    assert.strictEqual(doubleFulfillBlocked, true, 'Double fulfillment must be rejected');
+
+    // 11. Crucial Bug Fix Test: Verify client state sync preserves the authoritative payout
+    // When client syncs state, the server authoritative state MUST retain the 750k payout
+    const syncRes = await ServerBridge.syncState({
+      username: testUser,
+      cash: 0 // Client trying to send outdated or different cash
+    });
+    assert.ok(syncRes && syncRes.authoritativeState, 'Sync response returned authoritative state');
+    assert.strictEqual(syncRes.authoritativeState.cash, initialCash + 750000, 'Authoritative cash must NEVER disappear on subsequent sync cycles!');
+
     console.log('[Test] All Farm Server-Authoritative & Anti-Cheat tests PASSED!');
   } finally {
     sessionManager.sessions.delete('farm_tycoon_tester');

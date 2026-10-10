@@ -1508,6 +1508,29 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     }
   });
 
+  fastify.post('/api/action/farm/fulfill-contract', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { contractId, contractData } = request.body || {};
+    if (!contractId) {
+      return reply.code(400).send({ error: 'مُعرف العقد مطلوب.' });
+    }
+    try {
+      const result = farmEngine.fulfillFarmContract(session.state, contractId, contractData);
+      finalizeFarmAction(session);
+      return reply.send({
+        success: true,
+        result,
+        farm: session.state.farm,
+        cash: session.state.cash,
+        bank: session.state.bank,
+        netWorth: session.state.netWorth
+      });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
   // ── Authoritative Income Vault & Real Estate / Vehicles (Phase 1) ──
 
   fastify.post('/api/action/claim-income', async (request, reply) => {

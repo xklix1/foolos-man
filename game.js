@@ -8213,6 +8213,11 @@ const GameEngine = (() => {
     recordPlayerActivity('إنجاز عقد توريد تجاري ', `تم توريد طلبية (${summaryText}) لـ "${contract.clientName}" وقبض ${contract.payout.toLocaleString()} EGP (+${contract.bonusPercent}% بونص | +${contract.repReward} سمعة)!`, 'business');
 
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.fulfillFarmContract(contractId, contract).catch(e => console.warn('[FarmEngine] Server contract sync warning:', e.message));
+    }
+
     forceSaveState(true);
 
     return {

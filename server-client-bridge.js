@@ -796,6 +796,14 @@ var ServerBridge = (() => {
     return _reconcileFarmResponse(res);
   }
 
+  async function fulfillFarmContract(contractId, contractData = null) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/fulfill-contract', { username: user, token, contractId, contractData });
+    return _reconcileFarmResponse(res);
+  }
+
   // ── Authoritative Income Vault & Real Estate / Vehicles (Phase 1) ──
   async function claimIncome() {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
@@ -994,6 +1002,7 @@ var ServerBridge = (() => {
     harvestAllFarmPlots,
     sellFarmCrop,
     sellAllFarmCrops,
+    fulfillFarmContract,
     claimIncome,
     buyProperty,
     sellProperty,
