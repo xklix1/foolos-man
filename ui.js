@@ -3498,6 +3498,8 @@ const UIController = (() => {
       goldMobileContainer.style.display = 'flex';
       const gmEl = document.getElementById('stat-gold-mobile');
       if (gmEl) gmEl.textContent = goldVal.toLocaleString();
+      const miniGoldEl = document.getElementById('stat-mini-gold');
+      if (miniGoldEl) miniGoldEl.textContent = goldVal.toLocaleString();
     }
 
     // Update Speed-Up buttons across panels (Bank Loan & Casino)

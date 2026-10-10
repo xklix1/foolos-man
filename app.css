@@ -2272,22 +2272,75 @@ html[dir="ltr"] .chat-bubble-glow-blue-flame[data-vip-tag=""]::before {
   box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.9), 0 0 30px rgba(6, 182, 212, 0.2) !important;
 }
 
-/* Adaptive Collapsible Mobile HUD */
+/* ══════════════════════════════════════════════════════════════
+   ADAPTIVE COLLAPSIBLE MOBILE HUD & BUTTERY SMOOTH ANIMATIONS
+   ══════════════════════════════════════════════════════════════ */
 .mobile-top-bar {
-  transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease !important;
+  transition: padding 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, background 0.35s ease !important;
+  will-change: padding, box-shadow;
 }
 
 .mobile-top-bar.is-collapsed {
   padding-top: 0.45rem !important;
   padding-bottom: 0.45rem !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.85), 0 0 15px rgba(6, 182, 212, 0.15) !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.9), 0 0 15px rgba(6, 182, 212, 0.18) !important;
+}
+
+#mobile-header-identity {
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.3s ease;
+  transform-origin: right center;
+  max-width: 400px;
+  opacity: 1;
+}
+
+.mobile-top-bar.is-collapsed #mobile-header-identity {
+  opacity: 0 !important;
+  max-width: 0px !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  transform: scale(0.9) translateX(10px) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#mobile-collapsed-chips {
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 0px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  display: flex;
+  transform: scale(0.92);
+}
+
+.mobile-top-bar.is-collapsed #mobile-collapsed-chips {
+  max-width: 100% !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: scale(1) !important;
+  flex: 1;
+  justify-content: center;
+}
+
+.mini-chip-pill {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(2, 6, 23, 0.95) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s ease, border-color 0.2s ease;
+}
+
+.mini-chip-pill:active {
+  transform: scale(0.94);
 }
 
 #mobile-hub-collapsible {
-  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, margin 0.3s ease;
-  max-height: 400px;
+  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), margin 0.3s ease;
+  max-height: 420px;
   opacity: 1;
   overflow: hidden;
+  transform: translateY(0);
+  transform-origin: top center;
+  will-change: max-height, opacity, transform;
 }
 
 .mobile-top-bar.is-collapsed #mobile-hub-collapsible {
@@ -2295,24 +2348,6 @@ html[dir="ltr"] .chat-bubble-glow-blue-flame[data-vip-tag=""]::before {
   opacity: 0 !important;
   margin-top: 0px !important;
   margin-bottom: 0px !important;
+  transform: translateY(-8px) scaleY(0.95) !important;
   pointer-events: none !important;
-}
-
-#mobile-collapsed-chips {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  max-width: 0px;
-  opacity: 0;
-  overflow: hidden;
-  pointer-events: none;
-  display: flex;
-}
-
-.mobile-top-bar.is-collapsed #mobile-collapsed-chips {
-  max-width: 260px !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
-}
-
-.mobile-top-bar.is-collapsed #stat-title-mobile {
-  display: none !important;
 }

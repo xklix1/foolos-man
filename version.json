@@ -1,7 +1,7 @@
 {
-  "version": "v9.9.2",
-  "build": 1791627000000,
-  "timestamp": 1791627000000,
-  "notes": "Adaptive dynamic collapsible mobile HUD with smooth scroll transitions and inline mini-chips",
-  "releaseNotes": "هيدر الموبايل الذكي المتكيف: انكماش انسيابي ناعم للوحة المالية عند التمرير والنزول لأسفل وتحولها لشريط نحيف مدمج (كاش وبنك)، وتمددها تلقائياً عند الصعود للأعلى"
+  "version": "v9.9.3",
+  "build": 1791628000000,
+  "timestamp": 1791628000000,
+  "notes": "Premium buttery-smooth animated HUD collapse: dedicated clean financial chips (Cash, Bank, Gold) without clutter",
+  "releaseNotes": "شريط الهيدر المنكمش الذكي: أنيميشن انسيابي ناعم جداً وإخفاء الاسم والرتبة أثناء الانكماش لإتاحة المساحة الكاملة لـ (الكاش، البنك، الذهب) بتنسيق راقي وأنيق"
 }

@@ -2427,33 +2427,39 @@
       <div
         class="lg:hidden mobile-top-bar p-3 mb-4 rounded-2xl flex flex-col gap-2.5 sticky top-2 z-30 shadow-2xl relative">
         
-        <!-- Row 1: Player Identity + Compact Actions + Collapsed Mini Chips -->
-        <div class="flex items-center justify-between gap-2">
-          <!-- Profile & Identity Section (Clickable to open profile) -->
-          <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <!-- Mobile Menu Drawer Toggle Button -->
-            <button id="btn-mobile-nav-toggle" type="button" title="قائمة الأقسام والتنقل"
-              class="w-9 h-9 rounded-xl bg-gradient-to-r from-yellow-500/20 to-amber-500/20 hover:from-yellow-500/30 hover:to-amber-500/30 border border-yellow-500/40 text-yellow-400 flex items-center justify-center transition active:scale-95 shrink-0 shadow-sm cursor-pointer">
-              <i class="fa-solid fa-bars text-sm"></i>
-            </button>
-            <div class="flex flex-col min-w-0 justify-center cursor-pointer group flex-1" onclick="window.UI?.openPlayerProfile?.()" title="اضغط لعرض ملفك الشخصي التنفيذي">
-              <div class="flex items-center gap-1.5 min-w-0">
-                <span id="stat-username-mobile" class="text-xs font-black text-white group-hover:text-cyan-300 transition flex items-center gap-1.5 flex-nowrap">تحميل...</span>
-                <span id="stat-fb-badge-mobile" class="hidden fb-vip-badge shrink-0" title="عضو رسمي موثق في مجتمع فيسبوك">f</span>
-              </div>
-              <span id="stat-title-mobile" class="text-[10px] font-bold text-yellow-400/90 leading-tight mt-0.5">...</span>
+        <!-- Row 1: Player Identity (Expanded) OR Clean Financial Chips (Collapsed) + Actions -->
+        <div class="flex items-center justify-between gap-2 relative">
+          <!-- Mobile Menu Drawer Toggle Button -->
+          <button id="btn-mobile-nav-toggle" type="button" title="قائمة الأقسام والتنقل"
+            class="w-9 h-9 rounded-xl bg-gradient-to-r from-yellow-500/20 to-amber-500/20 hover:from-yellow-500/30 hover:to-amber-500/30 border border-yellow-500/40 text-yellow-400 flex items-center justify-center transition active:scale-95 shrink-0 shadow-sm cursor-pointer">
+            <i class="fa-solid fa-bars text-sm"></i>
+          </button>
+
+          <!-- Profile & Identity Section (Visible in expanded state, smoothly hides in collapsed state) -->
+          <div id="mobile-header-identity" class="flex flex-col min-w-0 justify-center cursor-pointer group flex-1" onclick="window.UI?.openPlayerProfile?.()" title="اضغط لعرض ملفك الشخصي التنفيذي">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span id="stat-username-mobile" class="text-xs font-black text-white group-hover:text-cyan-300 transition flex items-center gap-1.5 flex-nowrap">تحميل...</span>
+              <span id="stat-fb-badge-mobile" class="hidden fb-vip-badge shrink-0" title="عضو رسمي موثق في مجتمع فيسبوك">f</span>
             </div>
+            <span id="stat-title-mobile" class="text-[10px] font-bold text-yellow-400/90 leading-tight mt-0.5">...</span>
           </div>
 
-          <!-- Collapsed Mini Balance Chips (Smoothly slides in when scrolled down) -->
-          <div id="mobile-collapsed-chips" class="items-center gap-1.5 min-w-0">
-            <div class="px-2 py-0.5 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-1 text-[11px] font-black text-yellow-400 numbers-font shrink-0" title="الكاش المتاح">
-              <i class="fa-solid fa-money-bill-wave text-[10px]"></i>
+          <!-- Collapsed Mini Balance Chips (Smoothly expands in the center when scrolled down: Cash, Bank, Gold) -->
+          <div id="mobile-collapsed-chips" class="items-center gap-1.5">
+            <!-- Mini Cash -->
+            <div class="mini-chip-pill px-2 py-1 rounded-lg flex items-center gap-1 text-[11px] font-black text-yellow-400 numbers-font shrink-0" title="الكاش المتاح">
+              <i class="fa-solid fa-money-bill-wave text-[10px] text-yellow-400"></i>
               <span id="stat-mini-cash">0</span>
             </div>
-            <div class="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-1 text-[11px] font-black text-emerald-400 numbers-font shrink-0" title="رصيد البنك">
-              <i class="fa-solid fa-building-columns text-[10px]"></i>
+            <!-- Mini Bank -->
+            <div class="mini-chip-pill px-2 py-1 rounded-lg flex items-center gap-1 text-[11px] font-black text-emerald-400 numbers-font shrink-0" title="رصيد البنك">
+              <i class="fa-solid fa-building-columns text-[10px] text-emerald-400"></i>
               <span id="stat-mini-bank">0</span>
+            </div>
+            <!-- Mini Gold -->
+            <div class="mini-chip-pill px-2 py-1 rounded-lg flex items-center gap-1 text-[11px] font-black text-amber-300 numbers-font shrink-0" title="سبائك الذهب">
+              <i class="fa-solid fa-coins text-[10px] text-amber-400"></i>
+              <span id="stat-mini-gold">0</span>
             </div>
           </div>
 
@@ -7901,7 +7907,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.9.2"></script>
+  <script src="core.bundle.js?v=v9.9.3"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
