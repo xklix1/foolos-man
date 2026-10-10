@@ -5900,10 +5900,10 @@
   </div>
 
   <!-- ==================== V3: CYBER-TYCOON PLAYER PROFILE MODAL ==================== -->
-  <div id="player-profile-modal" dir="rtl"
+  <div id="player-profile-modal" dir="rtl" onclick="if(event.target === this) this.classList.add('hidden')"
     class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-black/85 backdrop-blur-md p-2 sm:p-4 animate-fade-in">
     <div
-      class="cyber-profile-panel w-full max-w-lg max-h-[92vh] flex flex-col rounded-3xl text-right relative overflow-hidden shadow-2xl">
+      class="cyber-profile-panel w-full max-w-lg max-h-[92vh] flex flex-col rounded-3xl text-right relative overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
       
       <!-- Top Cyber Header -->
       <div class="flex items-center justify-between gap-2 p-3.5 sm:p-4 border-b border-cyan-500/30 bg-slate-950/90 backdrop-blur shrink-0 relative z-20">
@@ -6116,12 +6116,12 @@
   </div>
 
   <!-- ==================== CHARACTER SELECTOR MODAL (6 TYCOON AVATARS) ==================== -->
-  <div id="character-selector-modal" dir="rtl"
+  <div id="character-selector-modal" dir="rtl" onclick="if(event.target === this) this.classList.add('hidden')"
     class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in">
     <div
-      class="cyber-profile-panel w-full max-w-lg max-h-[90vh] flex flex-col rounded-3xl text-right relative overflow-hidden shadow-2xl">
+      class="cyber-profile-panel w-full max-w-lg max-h-[90vh] flex flex-col rounded-3xl text-right relative overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
       
-      <div class="flex items-center justify-between p-4 border-b border-cyan-500/30 bg-slate-950/90 shrink-0">
+      <div class="flex items-center justify-between p-4 border-b border-cyan-500/30 bg-slate-950/90 shrink-0 sticky top-0 z-20">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-sm">
             <i class="fa-solid fa-users"></i>
@@ -6143,16 +6143,26 @@
         </div>
       </div>
 
+      <!-- Footer Close -->
+      <div class="p-3 border-t border-cyan-500/20 bg-slate-950/90 flex justify-end shrink-0">
+        <button onclick="document.getElementById('character-selector-modal').classList.add('hidden')"
+          class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-xmark text-xs"></i>
+          <span>إغلاق</span>
+        </button>
+      </div>
+
     </div>
   </div>
 
   <!-- ==================== EXECUTIVE GEAR UPGRADE & INSPECT MODAL ==================== -->
-  <div id="executive-gear-modal" dir="rtl"
+  <div id="executive-gear-modal" dir="rtl" onclick="if(event.target === this) this.classList.add('hidden')"
     class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in">
     <div
-      class="cyber-profile-panel w-full max-w-sm flex flex-col rounded-3xl text-right relative overflow-hidden shadow-2xl">
+      class="cyber-profile-panel w-full max-w-sm max-h-[92vh] flex flex-col rounded-3xl text-right relative overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
       
-      <div class="flex items-center justify-between p-4 border-b border-cyan-500/30 bg-slate-950/90 shrink-0">
+      <!-- Sticky Header with Close Button -->
+      <div class="flex items-center justify-between p-3.5 sm:p-4 border-b border-cyan-500/30 bg-slate-950/95 shrink-0 sticky top-0 z-30">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-sm">
             <i class="fa-solid fa-shield-halved"></i>
@@ -6165,7 +6175,8 @@
         </button>
       </div>
 
-      <div class="p-4 space-y-3.5 text-xs">
+      <!-- Scrollable Body -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs custom-scrollbar">
         <div class="flex items-center gap-3 bg-slate-900/80 p-3 rounded-2xl border border-cyan-500/30">
           <div class="w-16 h-16 rounded-2xl overflow-hidden border border-cyan-400/50 shrink-0 shadow-lg shadow-cyan-500/20">
             <img id="gear-modal-icon" src="assets/gear_ledger.jpg" class="w-full h-full object-cover" alt="عتاد">
@@ -6204,6 +6215,15 @@
             <span>ترقية الأداة الآن بالذهب</span>
           </button>
         </div>
+      </div>
+
+      <!-- Footer Close Button -->
+      <div class="p-3 border-t border-cyan-500/20 bg-slate-950/95 shrink-0">
+        <button onclick="document.getElementById('executive-gear-modal').classList.add('hidden')"
+          class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-xmark text-xs"></i>
+          <span>إغلاق النافذة</span>
+        </button>
       </div>
 
     </div>
