@@ -12,20 +12,55 @@
     if (window.location.hostname.endsWith('vercel.app')) {
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
-    // Hard Build Version Enforcement & Aggressive Cache Purge Guard
-    window._CLIENT_VERSION = 'v9.9.6';
+    // Hard Build Version Enforcement & Loop-Safe Cache Purge Guard
+    window._CLIENT_VERSION = 'v9.9.7';
     (async function() {
-      const CURRENT_APP_BUILD = 'v9.9.6';
+      const CURRENT_APP_BUILD = 'v9.9.7';
       try {
+        // Clean any stale _bust parameter from URL bar to prevent perpetual dirty URLs
+        if (window.location.search.includes('_bust=')) {
+          try {
+            const cleanUrl = window.location.pathname + (window.location.hash || '');
+            window.history.replaceState({}, document.title, cleanUrl);
+          } catch (_) {}
+        }
+
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
           const s = await res.json();
           if (s && s.version && s.version !== CURRENT_APP_BUILD) {
             console.warn('[CacheBuster] Stale build detected: ' + CURRENT_APP_BUILD + ' -> Target: ' + s.version);
+            
+            // STRICT ANTI-LOOP PROTECTION:
+            // 1. Time cooldown: Max 1 reload per 45s across all tabs & sessions
+            // 2. Strict attempt limit: Max 1 reload per version
+            // 3. Fallback to localStorage + sessionStorage so private browsing/webviews are safe
+            let lastBust = 0;
+            let attempts = 0;
             const bustKey = 'rasalmal_bust_' + s.version;
-            const attempts = Number(sessionStorage.getItem(bustKey) || 0);
-            if (attempts >= 2) return;
-            sessionStorage.setItem(bustKey, String(attempts + 1));
+            try {
+              lastBust = Math.max(
+                Number(localStorage.getItem('rasalmal_last_bust_ts') || 0),
+                Number(sessionStorage.getItem('rasalmal_last_bust_ts') || 0)
+              );
+              attempts = Math.max(
+                Number(localStorage.getItem(bustKey) || 0),
+                Number(sessionStorage.getItem(bustKey) || 0)
+              );
+            } catch (_) {}
+
+            const now = Date.now();
+            if (now - lastBust < 45000 || attempts >= 1) {
+              console.warn('[CacheBuster] Loop shield triggered: Cooldown active or already reloaded for ' + s.version + '. Halting auto-reload.');
+              return;
+            }
+
+            try {
+              localStorage.setItem('rasalmal_last_bust_ts', String(now));
+              localStorage.setItem(bustKey, '1');
+              sessionStorage.setItem('rasalmal_last_bust_ts', String(now));
+              sessionStorage.setItem(bustKey, '1');
+            } catch (_) {}
             
             // Wipe CacheStorage API
             if ('caches' in window) {
@@ -42,7 +77,7 @@
               } catch (_) {}
             }
             // Force hard reload bypassing browser disk cache
-            const target = window.location.origin + window.location.pathname + '?_bust=' + Date.now();
+            const target = window.location.origin + window.location.pathname + '?_bust=' + now;
             window.location.replace(target);
             return;
           }
@@ -148,7 +183,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v9.9.6">
+  <link rel="stylesheet" href="app.css?v=v9.9.7">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -7907,7 +7942,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.9.6"></script>
+  <script src="core.bundle.js?v=v9.9.7"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -7951,9 +7986,13 @@
         if (!vcheck.upToDate) {
           const overlay = document.getElementById('force-update-overlay');
           const bustKey = 'rasalmal_force_update_attempts';
-          const attempts = Number(sessionStorage.getItem(bustKey) || 0);
+          const lastForceTime = Number(localStorage.getItem('rasalmal_last_bust_ts') || 0);
+          const attempts = Math.max(
+            Number(localStorage.getItem(bustKey) || 0),
+            Number(sessionStorage.getItem(bustKey) || 0)
+          );
 
-          if (overlay && attempts < 2) {
+          if (overlay && attempts < 1 && (Date.now() - lastForceTime > 45000)) {
             const clientVerEl = document.getElementById('fu-client-ver');
             const remoteVerEl = document.getElementById('fu-remote-ver');
             if (clientVerEl) clientVerEl.textContent = vcheck.clientVersion;
@@ -7962,7 +8001,13 @@
             overlay.classList.add('flex');
 
             const doPurgeAndReload = async () => {
-              sessionStorage.setItem(bustKey, String(attempts + 1));
+              const now = Date.now();
+              try {
+                localStorage.setItem(bustKey, '1');
+                sessionStorage.setItem(bustKey, '1');
+                localStorage.setItem('rasalmal_last_bust_ts', String(now));
+                sessionStorage.setItem('rasalmal_last_bust_ts', String(now));
+              } catch (_) {}
               try {
                 if ('caches' in window) {
                   const keys = await caches.keys();
@@ -7973,7 +8018,7 @@
                   await Promise.all(regs.map(r => r.unregister()));
                 }
               } catch(e) {}
-              const cleanUrl = window.location.origin + window.location.pathname + '?_bust=' + Date.now();
+              const cleanUrl = window.location.origin + window.location.pathname + '?_bust=' + now;
               window.location.replace(cleanUrl);
             };
 
@@ -7989,7 +8034,7 @@
             setTimeout(doPurgeAndReload, 1500);
             return;
           } else {
-            sessionStorage.removeItem(bustKey);
+            console.log('[Boot] Force update bypassed or already attempted once to prevent loops.');
           }
         } else {
           sessionStorage.removeItem('rasalmal_force_update_attempts');

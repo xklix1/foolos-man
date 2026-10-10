@@ -1,7 +1,7 @@
 {
-  "version": "v9.9.6",
-  "build": 1791632000000,
-  "timestamp": 1791632000000,
-  "notes": "High performance server in-memory optimizations and farm limit fix",
-  "releaseNotes": "تحسين فائق لأداء وسرعة السيرفر وتأمين ليمت المزرعة اليومي من التصفير"
+  "version": "v9.9.7",
+  "build": 1791635000000,
+  "timestamp": 1791635000000,
+  "notes": "Mandatory loop-safe cache purge: bank sync, airport manager fix, and cloud save overhaul",
+  "releaseNotes": "تحديث إجباري آمن: تنظيف الكاش وإصلاحات البنك ومساعد المطار وحفظ السحابة الفوري"
 }
