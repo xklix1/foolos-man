@@ -2311,8 +2311,8 @@ async function moderatorRoutes(fastify, options) {
 
       await saveResolvedChatThreads(resolvedMap);
 
-      await recordStaffAuditLog(
-        request.modSession?.name || 'مراقب',
+      await logStaffAudit(
+        request.modSession || { id: 'mod', name: 'مراقب' },
         username,
         shouldResolve ? 'resolve_chat_thread' : 'reopen_chat_thread',
         shouldResolve ? `تعليم محادثة اللاعب كـ (تم الحل) ونقلها للأرشيف` : `إعادة فتح محادثة اللاعب ونقلها للمحادثات النشطة`
