@@ -2604,7 +2604,7 @@
                   </div>
                 </div>
                 <div class="pt-1.5 border-t border-slate-800/80 flex items-center gap-2 flex-wrap">
-                  ${g.cash ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono font-bold text-[10px]"><i class="fa-solid fa-money-bill-wave text-[9px]"></i> +${fmtMoney(g.cash)}</span>` : ''}
+                  ${(g.cash || g.bank || g.amount) ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono font-bold text-[10px]"><i class="fa-solid fa-money-bill-wave text-[9px]"></i> +${fmtMoney(g.cash || g.bank || g.amount)}</span>` : ''}
                   ${g.gold ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono font-bold text-[10px]"><i class="fa-solid fa-coins text-[9px]"></i> +${Number(g.gold).toLocaleString()} ذهبة 🪙</span>` : ''}
                   ${g.price ? `<span class="text-[10px] text-slate-400 font-mono">قيمة الباقة: ${Number(g.price).toLocaleString()} EGP</span>` : ''}
                 </div>
@@ -3800,7 +3800,7 @@
       } else {
         p.adminGrantsAndTopups.forEach((g, i) => {
           const goldStr = g.gold ? ` | ذهب: +${g.gold} 🪙` : '';
-          const cashStr = g.cash ? ` | كاش: +${fmtMoney(g.cash)}` : '';
+          const cashStr = (g.cash || g.bank || g.amount) ? ` | رصيد: +${fmtMoney(g.cash || g.bank || g.amount)}` : '';
           report += `   ${i + 1}. [${fmtDate(g.timestamp)}] (${g.title || 'منحة إدارية'})${cashStr}${goldStr} | الحالة: [${g.status || 'معتمد'}]${g.note ? ' | بيان: ' + g.note : ''}\n`;
         });
       }
@@ -4236,11 +4236,12 @@
           </div>
         ` : '';
 
+        const effectiveAmount = item.amount != null ? Number(item.amount) : ((item.category === 'admin_grant' || item.category === 'admin') ? (Number(item.bank || item.cash || 0)) : null);
         const amountBlocks = [];
-        if (item.amount) {
+        if (effectiveAmount) {
           amountBlocks.push(`
             <span class="font-black numbers-font text-xs ${isPos ? 'text-emerald-400' : 'text-rose-400'} block">
-              ${isPos ? '+' : '-'}${fmtMoney(item.amount)}
+              ${isPos ? '+' : '-'}${fmtMoney(effectiveAmount)}
             </span>
           `);
         }
@@ -4252,6 +4253,11 @@
           `);
         }
 
+        let displayTitle = item.title || '';
+        if (effectiveAmount && displayTitle && displayTitle.includes('(+0 ج.م)')) {
+          displayTitle = displayTitle.replace('(+0 ج.م)', `(+${fmtMoney(effectiveAmount)})`);
+        }
+
         return `
           <div class="glass-card p-3 rounded-xl ${cardBg} flex flex-col gap-1 text-xs transition">
             <div class="flex items-start justify-between gap-3">
@@ -4260,7 +4266,7 @@
                   <i class="fa-solid ${icon}"></i>
                 </div>
                 <div>
-                  <div class="font-bold text-white leading-tight ${isNote ? 'text-yellow-200' : (item.category === 'admin_grant' ? 'text-amber-200' : '')}">${item.title}</div>
+                  <div class="font-bold text-white leading-tight ${isNote ? 'text-yellow-200' : (item.category === 'admin_grant' ? 'text-amber-200' : '')}">${displayTitle}</div>
                   <div class="text-[11px] text-slate-300 mt-0.5 leading-relaxed whitespace-pre-wrap">${item.desc}</div>
                   <div class="text-[10px] text-slate-500 mt-1.5 flex items-center gap-2 flex-wrap">
                     <span class="text-slate-400"><i class="fa-regular fa-clock ml-0.5"></i> ${fmtDate(item.timestamp)}</span>

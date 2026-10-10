@@ -1178,25 +1178,30 @@ async function moderatorRoutes(fastify, options) {
         state.adminGrants.forEach(ag => {
           if (!ag) return;
           const ts = Number(ag.timestamp || now);
+          const val = Number(ag.amount || ag.cash || ag.bank || 0);
           masterFeed.push({
             id: ag.id || `ag_${ts}`,
             category: 'admin_grant',
-            title: ag.gold ? `منحة ذهب من الإدارة 🪙 (+${ag.gold} ذهبة)` : `منحة رصيد من الإدارة 💰 (+${Number(ag.amount || ag.cash || 0).toLocaleString()} ج.م)`,
-            desc: ag.details || ag.note || 'منحة إدارية مسجلة في ملف اللاعب',
-            amount: Number(ag.amount || ag.cash || 0) || null,
+            title: ag.gold ? `منحة ذهب من الإدارة 🪙 (+${ag.gold} ذهبة)` : `منحة رصيد من الإدارة 💰 (+${val > 0 ? Number(val).toLocaleString() : '0'} ج.م)`,
+            desc: (ag.title ? `${ag.title} / ` : '') + (ag.note || ag.details || 'منحة إدارية مسجلة في ملف اللاعب'),
+            amount: val || null,
             gold: Number(ag.gold || 0) || null,
             isPositive: true,
-            counterparty: 'إدارة اللعبة (Admin)',
+            counterparty: ag.grantedBy || 'إدارة اللعبة (Admin)',
             timestamp: ts,
-            source: 'admin_grant'
+            source: 'admin_grant',
+            cash: ag.newCash != null ? Number(ag.newCash) : (ag.cash != null && ag.cash > 0 ? Number(ag.cash) : null),
+            bank: ag.newBank != null ? Number(ag.newBank) : (ag.bank != null && ag.bank > 0 ? Number(ag.bank) : null)
           });
           adminGrantsAndTopupsList.push({
             id: ag.id || `ag_${ts}`,
             type: ag.gold ? 'gold_grant' : 'balance_grant',
-            title: ag.title || (ag.gold ? `منح ${ag.gold} ذهبة` : `إيداع ${ag.amount || ag.cash} ج.م`),
-            cash: Number(ag.amount || ag.cash || 0),
+            title: ag.title || (ag.gold ? `منح ${ag.gold} ذهبة` : `إيداع ${Number(val).toLocaleString()} ج.م`),
+            cash: Number(ag.cash || 0),
+            bank: Number(ag.bank || 0),
+            amount: val,
             gold: Number(ag.gold || 0),
-            status: 'approved',
+            status: ag.status || 'approved',
             note: ag.details || ag.note || '',
             timestamp: ts
           });
@@ -2011,11 +2016,15 @@ async function moderatorRoutes(fastify, options) {
           // Record in admin grants & topups history if available
           if (!Array.isArray(pState.adminGrants)) pState.adminGrants = [];
           pState.adminGrants.unshift({
+            id: `grant_${ts}`,
             timestamp: ts,
+            amount: addAmount,
             cash: 0,
             bank: addAmount,
+            newBank: updatedBank,
+            newCash: currentCash,
             gold: 0,
-            title: 'إيداع بنكي معتمد من الرقابة',
+            title: 'إيداع بنكي معتمد من الرقابة / تعويض',
             note: cleanReason,
             status: 'معتمد',
             grantedBy: request.modSession.name
