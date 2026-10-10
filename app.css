@@ -2273,10 +2273,10 @@ html[dir="ltr"] .chat-bubble-glow-blue-flame[data-vip-tag=""]::before {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ADAPTIVE COLLAPSIBLE MOBILE HUD & BUTTERY SMOOTH ANIMATIONS
+   ADAPTIVE COLLAPSIBLE MOBILE HUD & LUXURIOUS 0.65s ANIMATIONS
    ══════════════════════════════════════════════════════════════ */
 .mobile-top-bar {
-  transition: padding 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, background 0.35s ease !important;
+  transition: padding 0.65s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.65s ease, background 0.65s ease !important;
   will-change: padding, box-shadow;
 }
 
@@ -2287,7 +2287,7 @@ html[dir="ltr"] .chat-bubble-glow-blue-flame[data-vip-tag=""]::before {
 }
 
 #mobile-header-identity {
-  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.3s ease;
+  transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1), transform 0.65s cubic-bezier(0.25, 1, 0.5, 1), max-width 0.65s cubic-bezier(0.25, 1, 0.5, 1);
   transform-origin: right center;
   max-width: 400px;
   opacity: 1;
@@ -2304,7 +2304,7 @@ html[dir="ltr"] .chat-bubble-glow-blue-flame[data-vip-tag=""]::before {
 }
 
 #mobile-collapsed-chips {
-  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.55s cubic-bezier(0.25, 1, 0.5, 1), transform 0.65s cubic-bezier(0.25, 1, 0.5, 1), max-width 0.65s cubic-bezier(0.25, 1, 0.5, 1);
   max-width: 0px;
   opacity: 0;
   overflow: hidden;
@@ -2326,7 +2326,7 @@ html[dir="ltr"] .chat-bubble-glow-blue-flame[data-vip-tag=""]::before {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(2, 6, 23, 0.95) 100%);
   border: 1px solid rgba(148, 163, 184, 0.2);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-  transition: transform 0.15s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.25s ease;
 }
 
 .mini-chip-pill:active {
@@ -2334,7 +2334,7 @@ html[dir="ltr"] .chat-bubble-glow-blue-flame[data-vip-tag=""]::before {
 }
 
 #mobile-hub-collapsible {
-  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), margin 0.3s ease;
+  transition: max-height 0.65s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1), transform 0.65s cubic-bezier(0.25, 1, 0.5, 1), margin 0.65s ease;
   max-height: 420px;
   opacity: 1;
   overflow: hidden;

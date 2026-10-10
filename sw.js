@@ -3,7 +3,7 @@
  * Cache Strategy: Strict Network-Only for APIs & Backend, Strict Network-First for Static Game Assets.
  */
 
-const CACHE_NAME = 'rasalmal-v9.9.3';
+const CACHE_NAME = 'rasalmal-v9.9.4';
 
 // Essential static shell assets to pre-cache on install (NEVER precache HTML or version.json)
 const PRECACHE_ASSETS = [
