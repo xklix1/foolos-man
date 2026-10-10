@@ -23,8 +23,8 @@
   <style>
     :root {
       --cyber-bg: #030712;
-      --panel-bg: rgba(11, 19, 43, 0.85);
-      --panel-border: rgba(30, 58, 138, 0.4);
+      --panel-bg: rgba(11, 19, 43, 0.88);
+      --panel-border: rgba(30, 58, 138, 0.35);
       --panel-border-hover: rgba(59, 130, 246, 0.6);
       --cyan-glow: #06b6d4;
       --gold-glow: #f59e0b;
@@ -41,17 +41,18 @@
       font-family: 'Cairo', sans-serif;
       background-color: var(--cyber-bg);
       background-image:
-        radial-gradient(ellipse 80% 50% at 0% 0%, rgba(6, 182, 212, 0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 70% 60% at 100% 100%, rgba(245, 158, 11, 0.06) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 70% at 50% 20%, rgba(16, 185, 129, 0.04) 0%, transparent 50%),
-        linear-gradient(180deg, #030712 0%, #080e1e 100%);
+        radial-gradient(ellipse 90% 60% at 0% 0%, rgba(6, 182, 212, 0.09) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 70% at 100% 100%, rgba(245, 158, 11, 0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 80% at 50% 15%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+        linear-gradient(180deg, #030712 0%, #080f24 100%);
       background-attachment: fixed;
       color: #f1f5f9;
       min-height: 100vh;
       padding-top: env(safe-area-inset-top, 0px);
-      padding-bottom: env(safe-area-inset-bottom, 12px);
+      padding-bottom: env(safe-area-inset-bottom, 16px);
       padding-left: env(safe-area-inset-left, 0px);
       padding-right: env(safe-area-inset-right, 0px);
+      -webkit-font-smoothing: antialiased;
     }
 
     .numbers-font {
@@ -61,54 +62,60 @@
     }
 
     .glass-panel {
-      background: linear-gradient(145deg, rgba(13, 23, 42, 0.92) 0%, rgba(8, 14, 28, 0.88) 100%);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(51, 65, 85, 0.5);
-      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+      background: linear-gradient(145deg, rgba(13, 23, 42, 0.94) 0%, rgba(8, 14, 28, 0.90) 100%);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(51, 65, 85, 0.45);
+      box-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.03);
     }
 
     .glass-card {
-      background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(51, 65, 85, 0.4);
-      transition: all 0.25s ease;
+      background: rgba(15, 23, 42, 0.80);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(51, 65, 85, 0.45);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .glass-card:hover {
-      border-color: rgba(59, 130, 246, 0.5);
+      border-color: rgba(59, 130, 246, 0.55);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
     }
 
     .glow-cyan {
-      box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
+      box-shadow: 0 0 25px rgba(6, 182, 212, 0.22);
     }
 
     .glow-gold {
-      box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.22);
     }
 
-    /* Momentum Scrolling on iOS */
+    .glow-emerald {
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.22);
+    }
+
+    /* Modern scrollbar */
     .custom-scrollbar {
       -webkit-overflow-scrolling: touch;
     }
-
     .custom-scrollbar::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
+      width: 6px;
+      height: 6px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(15, 23, 42, 0.4);
+      border-radius: 999px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(51, 65, 85, 0.8);
-      border-radius: 4px;
+      background: rgba(51, 65, 85, 0.7);
+      border-radius: 999px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background: #06b6d4;
     }
 
-    /* Inputs on Mobile: font-size 16px to stop iOS zooming */
+    /* Inputs on Mobile */
     @media (max-width: 640px) {
       input, textarea, select {
         font-size: 16px !important;
@@ -117,26 +124,48 @@
 
     /* Modal Animation */
     .modal-enter {
-      animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: modalFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     @keyframes modalFadeIn {
-      from { opacity: 0; transform: scale(0.96) translateY(8px); }
+      from { opacity: 0; transform: scale(0.97) translateY(8px); }
       to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* Nav Action Button Styling */
+    .nav-action-btn {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .nav-action-btn:hover {
+      transform: translateY(-1px);
+    }
+    .nav-action-btn:active {
+      transform: scale(0.97);
+    }
+
+    /* Segmented Tab Pill Active Effect */
+    .active-pill-glow {
+      background: linear-gradient(135deg, #0891b2 0%, #2563eb 100%) !important;
+      color: #ffffff !important;
+      border-color: #38bdf8 !important;
+      box-shadow: 0 0 16px rgba(6, 182, 212, 0.35) !important;
     }
   </style>
 </head>
-<body class="p-2 sm:p-4 md:p-6 text-slate-100 selection:bg-cyan-500 selection:text-white">
+<body class="p-2.5 sm:p-4 md:p-6 text-slate-100 selection:bg-cyan-500 selection:text-white">
 
   <!-- ================= AUTH / LOGIN MODAL ================= -->
-  <div id="authOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-xl p-3 sm:p-4">
+  <div id="authOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/92 backdrop-blur-2xl p-3 sm:p-4">
     <div class="glass-panel w-full max-w-md p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-cyan-500/30 text-center glow-cyan modal-enter">
-      <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-5 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-        <i class="fa-solid fa-shield-halved text-3xl sm:text-4xl text-white"></i>
+      <div class="relative w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-5">
+        <div class="absolute inset-0 rounded-2xl bg-cyan-500/20 blur-xl animate-pulse"></div>
+        <div class="relative w-full h-full rounded-2xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 border border-cyan-400/30">
+          <i class="fa-solid fa-shield-halved text-3xl sm:text-4xl text-white"></i>
+        </div>
       </div>
       <h1 class="text-xl sm:text-2xl font-black tracking-wide text-white mb-1">بوابة الرقابة والتفتيش</h1>
-      <p class="text-[11px] sm:text-xs text-slate-400 mb-5 sm:mb-6">Staff Inspector & Wealth Monitoring Portal</p>
+      <p class="text-[11px] sm:text-xs text-cyan-300/80 mb-5 sm:mb-6 font-medium">Staff Sentinel & Wealth Integrity Command</p>
       
-      <!-- Verifying state spinner (when auto-restoring 30-day session) -->
+      <!-- Verifying state spinner -->
       <div id="authVerifyingState" class="hidden py-6 text-center space-y-3">
         <div class="w-14 h-14 mx-auto rounded-2xl bg-cyan-950/60 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-2xl shadow-lg shadow-cyan-500/20">
           <i class="fa-solid fa-fingerprint animate-pulse"></i>
@@ -147,19 +176,20 @@
 
       <div id="authFieldsContainer" class="space-y-4">
         <div>
-          <label class="block text-right text-xs font-bold text-slate-300 mb-2">
-            <i class="fa-solid fa-key text-cyan-400 ml-1"></i> مفتاح المحقق (Moderator Key):
+          <label class="block text-right text-xs font-bold text-slate-300 mb-2 flex items-center justify-between">
+            <span><i class="fa-solid fa-key text-cyan-400 ml-1"></i> مفتاح المحقق (Moderator Key):</span>
+            <span class="text-[10px] text-slate-500 font-mono">ENCRYPTED</span>
           </label>
           <div class="relative">
-            <input type="password" id="modKeyInput" placeholder="MOD-ALPHA-XXXX-XX" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-3 text-center numbers-font text-cyan-300 placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-400 transition" />
-            <button onclick="toggleKeyVisibility()" class="absolute left-3 top-3 text-slate-400 hover:text-cyan-300 text-sm p-1">
+            <input type="password" id="modKeyInput" placeholder="MOD-ALPHA-XXXX-XX" class="w-full bg-slate-900/95 border border-slate-700/80 focus:border-cyan-400 rounded-xl px-4 py-3.5 text-center numbers-font text-cyan-300 placeholder-slate-500 text-sm focus:outline-none transition shadow-inner" />
+            <button onclick="toggleKeyVisibility()" class="absolute left-3 top-3.5 text-slate-400 hover:text-cyan-300 text-sm p-1 transition cursor-pointer">
               <i id="keyEyeIcon" class="fa-solid fa-eye"></i>
             </button>
           </div>
         </div>
 
-        <!-- خيار تذكر هذا الجهاز لمدة 30 يوم -->
-        <div class="bg-slate-900/70 border border-slate-800 hover:border-cyan-500/40 rounded-xl p-3 transition duration-200 text-right">
+        <!-- تذكر هذا الجهاز لمدة 30 يوم -->
+        <div class="bg-slate-900/75 border border-slate-800 hover:border-cyan-500/40 rounded-xl p-3 transition duration-200 text-right">
           <label class="flex items-center justify-between cursor-pointer select-none" for="rememberDeviceCheckbox">
             <div class="flex items-center gap-2.5">
               <input type="checkbox" id="rememberDeviceCheckbox" checked class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-cyan-500 focus:ring-cyan-500/30 focus:ring-offset-0 cursor-pointer accent-cyan-500 transition" />
@@ -177,16 +207,16 @@
           </p>
         </div>
 
-        <div id="authErrorMsg" class="hidden text-xs text-rose-400 bg-rose-950/40 border border-rose-800/60 rounded-lg p-2.5 text-right"></div>
+        <div id="authErrorMsg" class="hidden text-xs text-rose-300 bg-rose-950/60 border border-rose-800/80 rounded-xl p-3 text-right"></div>
 
-        <button onclick="submitLogin()" id="loginBtn" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-cyan-600 hover:from-cyan-500 to-blue-600 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-cyan-600/30 transition duration-200 flex items-center justify-center gap-2 min-h-[46px] cursor-pointer">
-          <span>دخول النظام</span>
+        <button onclick="submitLogin()" id="loginBtn" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-cyan-600/30 transition duration-200 flex items-center justify-center gap-2 min-h-[46px] cursor-pointer">
+          <span>دخول النظام الآمن</span>
           <i class="fa-solid fa-arrow-left"></i>
         </button>
 
-        <div class="pt-3 border-t border-slate-800 text-[11px] text-slate-500 flex items-center justify-between">
-          <span><i class="fa-solid fa-lock text-emerald-400 ml-1"></i> جلسة مشفرة وآمنة</span>
-          <span>Ras ALmal Tycoon 2026</span>
+        <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-500 flex items-center justify-between">
+          <span class="flex items-center gap-1"><i class="fa-solid fa-lock text-emerald-400"></i> جلسة مشفرة وموثقة</span>
+          <span class="font-mono text-[10px]">Ras ALmal Tycoon 2026</span>
         </div>
       </div>
     </div>
@@ -196,36 +226,47 @@
   <div id="mainDashboard" class="hidden max-w-7xl mx-auto space-y-4 sm:space-y-6">
 
     <!-- Top Navbar -->
-    <header class="glass-panel rounded-2xl p-3 sm:p-5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4 border border-slate-800">
+    <header class="glass-panel rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4 border border-slate-800/80">
+      
+      <!-- Brand & Identity Info -->
       <div class="flex items-center justify-between md:justify-start gap-3">
-        <div class="flex items-center gap-2.5 sm:gap-3">
-          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-md shrink-0">
-            <i class="fa-solid fa-shield-halved text-xl sm:text-2xl text-white"></i>
+        <div class="flex items-center gap-3">
+          <div class="relative shrink-0">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-600/25 border border-cyan-400/30">
+              <i class="fa-solid fa-shield-halved text-xl sm:text-2xl text-white"></i>
+            </div>
+            <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-950 flex items-center justify-center" title="خوادم الرقابة متصلة">
+              <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+            </div>
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <h1 class="font-black text-base sm:text-lg md:text-xl text-white">غرفة الرقابة وتدقيق اللاعبين</h1>
-              <span class="hidden sm:inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">MOD</span>
+              <h1 class="font-black text-base sm:text-lg md:text-xl text-white tracking-wide">غرفة الرقابة وتدقيق اللاعبين</h1>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">SENTINEL</span>
             </div>
-            <p class="text-[11px] sm:text-xs text-slate-400">نظام المراقبة الحية وكشف التلاعب وحماية الاقتصاد</p>
+            <p class="text-[11px] sm:text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+              <span>نظام المراقبة الحية وكشف التلاعب وحماية الاقتصاد</span>
+            </p>
           </div>
         </div>
 
-        <!-- Staff Badge (Mobile Top) -->
-        <div class="flex md:hidden items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-900/80 border border-slate-700/60 shrink-0">
+        <!-- Staff Badge (Mobile) -->
+        <div class="flex md:hidden items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80 shrink-0">
           <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
           <div class="text-right">
-            <div id="staffNameDisplayMobile" class="text-[11px] font-bold text-white truncate max-w-[80px]">محقق</div>
+            <div id="staffNameDisplayMobile" class="text-xs font-bold text-white truncate max-w-[85px]">محقق</div>
             <span id="deviceRememberBadgeMobile" class="hidden text-[9px] text-cyan-400 font-mono"><i class="fa-solid fa-shield-halved text-[8px]"></i> 30d</span>
           </div>
         </div>
       </div>
 
-      <!-- Actions Bar (Responsive Grid on Mobile) -->
+      <!-- Actions Toolbar (Grouped for High Ergonomics) -->
       <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
         <!-- Staff Badge (Desktop) -->
-        <div class="hidden md:flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/60">
-          <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+        <div class="hidden md:flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-slate-900/90 border border-slate-700/80 shadow-inner">
+          <div class="relative">
+            <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+          </div>
           <div class="text-right">
             <div class="flex items-center gap-1.5">
               <span id="staffNameDisplay" class="text-xs font-bold text-white">محقق مناوب</span>
@@ -233,130 +274,178 @@
                 <i class="fa-solid fa-shield-halved text-[8px] text-cyan-400"></i> موثق 30 يوم
               </span>
             </div>
-            <div id="staffRoleDisplay" class="text-[10px] text-cyan-400">Moderator</div>
+            <div id="staffRoleDisplay" class="text-[10px] text-cyan-400 font-medium">Staff Inspector</div>
           </div>
         </div>
 
         <!-- Global Standby Mode Toggle Button -->
-        <button onclick="openStandbyModal()" id="navStandbyBtn" class="px-2.5 sm:px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center justify-center gap-1.5 transition col-span-2 sm:col-span-1" title="التحكم في وضع الاستعداد العام للعبة">
+        <button onclick="openStandbyModal()" id="navStandbyBtn" class="nav-action-btn px-3 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center justify-center gap-2 col-span-2 sm:col-span-1 cursor-pointer shadow-sm" title="التحكم في وضع الاستعداد العام للعبة">
           <span id="navStandbyDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
           <span id="navStandbyText">وضع الستاند باي: مفتوح</span>
         </button>
 
-        <button onclick="openStaffChatThreadsModal()" class="px-2.5 sm:px-3.5 py-2 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 text-xs font-bold border border-emerald-800/50 flex items-center justify-center gap-1.5 transition">
+        <!-- Investigation Chats Button -->
+        <button onclick="openStaffChatThreadsModal()" class="nav-action-btn px-3 py-2 rounded-xl bg-emerald-950/50 hover:bg-emerald-900/60 text-emerald-300 text-xs font-bold border border-emerald-700/50 flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
           <i class="fa-solid fa-comments text-emerald-400"></i>
           <span>شات التحقيقات</span>
         </button>
 
-        <button onclick="openGlobalChatModal()" class="px-2.5 sm:px-3.5 py-2 rounded-xl bg-blue-950/40 hover:bg-blue-900/50 text-blue-300 text-xs font-bold border border-blue-800/50 flex items-center justify-center gap-1.5 transition cursor-pointer" title="مراقبة الشات العام للعبة والرد على استفسارات ومشاكل اللاعبين">
+        <!-- Public Chat Live Hub Button -->
+        <button onclick="openGlobalChatModal()" class="nav-action-btn px-3 py-2 rounded-xl bg-blue-950/50 hover:bg-blue-900/60 text-blue-300 text-xs font-bold border border-blue-700/50 flex items-center justify-center gap-1.5 shadow-sm cursor-pointer" title="مراقبة الشات العام للعبة والرد على استفسارات ومشاكل اللاعبين">
           <i class="fa-solid fa-earth-americas text-blue-400"></i>
           <span>الشات العام</span>
           <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
         </button>
 
-        <button onclick="openAuditLogsModal()" class="px-2.5 sm:px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center justify-center gap-1.5 transition">
+        <!-- Audit Trail Button -->
+        <button onclick="openAuditLogsModal()" class="nav-action-btn px-3 py-2 rounded-xl bg-amber-950/40 hover:bg-amber-900/50 text-amber-300 text-xs font-bold border border-amber-700/50 flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
           <i class="fa-solid fa-clipboard-list text-amber-400"></i>
           <span>سجل التدقيق</span>
         </button>
 
-        <button onclick="logoutStaff()" class="px-3 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 text-xs font-bold border border-rose-800/50 transition col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5">
+        <!-- Logout Button -->
+        <button onclick="logoutStaff()" class="nav-action-btn px-3.5 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 text-xs font-bold border border-rose-800/50 col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 cursor-pointer">
           <i class="fa-solid fa-arrow-right-from-bracket"></i>
           <span class="sm:hidden">تسجيل الخروج</span>
         </button>
       </div>
     </header>
 
-    <!-- Quick Stats Cards Grid -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
-      <div class="glass-panel p-3 sm:p-4 rounded-xl sm:rounded-2xl border-l-4 border-l-cyan-500">
-        <div class="text-[11px] sm:text-xs text-slate-400 mb-0.5 sm:mb-1 flex items-center justify-between">
-          <span>اللاعبين المتصلين</span>
-          <i class="fa-solid fa-users-rays text-cyan-400"></i>
+    <!-- Quick Stats Cards Grid (Interactive KPI Dashboard) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3 md:gap-4">
+      
+      <!-- Online Players -->
+      <div class="glass-card p-3.5 sm:p-4 rounded-2xl border-l-4 border-l-cyan-500 bg-gradient-to-br from-cyan-950/20 via-slate-900 to-slate-900 shadow-md">
+        <div class="text-[11px] sm:text-xs text-slate-400 mb-1 flex items-center justify-between">
+          <span class="font-bold">اللاعبين المتصلين</span>
+          <div class="w-6 h-6 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs">
+            <i class="fa-solid fa-users-rays"></i>
+          </div>
         </div>
-        <div id="statOnlinePlayers" class="text-xl sm:text-2xl font-black numbers-font text-cyan-300">--</div>
+        <div id="statOnlinePlayers" class="text-xl sm:text-2xl font-black numbers-font text-cyan-300 flex items-center gap-2">
+          <span>--</span>
+        </div>
+        <div class="text-[10px] text-cyan-400/80 mt-1 font-medium flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>بث مباشر لحظي</span>
+        </div>
       </div>
 
-      <div onclick="setFilter('all')" class="glass-panel p-3 sm:p-4 rounded-xl sm:rounded-2xl border-l-4 border-l-blue-500 cursor-pointer hover:bg-slate-800/80 transition" title="عرض جميع الحسابات">
-        <div class="text-[11px] sm:text-xs text-slate-400 mb-0.5 sm:mb-1 flex items-center justify-between">
-          <span>إجمالي الحسابات</span>
-          <i class="fa-solid fa-address-book text-blue-400"></i>
+      <!-- Total Accounts -->
+      <div onclick="setFilter('all')" class="glass-card p-3.5 sm:p-4 rounded-2xl border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-950/20 via-slate-900 to-slate-900 shadow-md cursor-pointer hover:border-blue-400 transition" title="عرض جميع الحسابات">
+        <div class="text-[11px] sm:text-xs text-slate-400 mb-1 flex items-center justify-between">
+          <span class="font-bold">إجمالي الحسابات</span>
+          <div class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">
+            <i class="fa-solid fa-address-book"></i>
+          </div>
         </div>
         <div id="statTotalPlayers" class="text-xl sm:text-2xl font-black numbers-font text-blue-300">--</div>
+        <div class="text-[10px] text-slate-400 mt-1">اضغط لعرض الكل 🔍</div>
       </div>
 
-      <div onclick="setFilter('flagged')" class="glass-panel p-3 sm:p-4 rounded-xl sm:rounded-2xl border-l-4 border-l-amber-500 cursor-pointer hover:bg-slate-800/80 transition" title="عرض الحسابات الموضوعة تحت المراقبة">
-        <div class="text-[11px] sm:text-xs text-slate-400 mb-0.5 sm:mb-1 flex items-center justify-between">
-          <span>تحت المراقبة</span>
-          <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+      <!-- Under Investigation / Flagged -->
+      <div onclick="setFilter('flagged')" class="glass-card p-3.5 sm:p-4 rounded-2xl border-l-4 border-l-amber-500 bg-gradient-to-br from-amber-950/20 via-slate-900 to-slate-900 shadow-md cursor-pointer hover:border-amber-400 transition" title="عرض الحسابات الموضوعة تحت المراقبة">
+        <div class="text-[11px] sm:text-xs text-slate-400 mb-1 flex items-center justify-between">
+          <span class="font-bold">تحت المراقبة</span>
+          <div class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
         </div>
         <div id="statFlaggedPlayers" class="text-xl sm:text-2xl font-black numbers-font text-amber-300">0</div>
+        <div class="text-[10px] text-amber-400/80 mt-1">حسابات مشبوهة ⚠️</div>
       </div>
 
-      <div onclick="setFilter('frozen')" class="glass-panel p-3 sm:p-4 rounded-xl sm:rounded-2xl border-l-4 border-l-rose-500 cursor-pointer hover:bg-slate-800/80 transition" title="عرض الحسابات المجمدة حالياً">
-        <div class="text-[11px] sm:text-xs text-slate-400 mb-0.5 sm:mb-1 flex items-center justify-between">
-          <span>المجمدين</span>
-          <i class="fa-solid fa-snowflake text-rose-400"></i>
+      <!-- Frozen Players -->
+      <div onclick="setFilter('frozen')" class="glass-card p-3.5 sm:p-4 rounded-2xl border-l-4 border-l-rose-500 bg-gradient-to-br from-rose-950/20 via-slate-900 to-slate-900 shadow-md cursor-pointer hover:border-rose-400 transition" title="عرض الحسابات المجمدة حالياً">
+        <div class="text-[11px] sm:text-xs text-slate-400 mb-1 flex items-center justify-between">
+          <span class="font-bold">الحسابات المجمدة</span>
+          <div class="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center text-xs">
+            <i class="fa-solid fa-snowflake"></i>
+          </div>
         </div>
         <div id="statFrozenPlayers" class="text-xl sm:text-2xl font-black numbers-font text-rose-300">0</div>
+        <div class="text-[10px] text-rose-400/80 mt-1">مقيدة بأمر إداري 🔒</div>
       </div>
 
-      <div onclick="setFilter('muted')" class="glass-panel p-3 sm:p-4 rounded-xl sm:rounded-2xl border-l-4 border-l-purple-500 col-span-2 sm:col-span-1 cursor-pointer hover:bg-slate-800/80 transition" title="عرض المكتومين في الشات">
-        <div class="text-[11px] sm:text-xs text-slate-400 mb-0.5 sm:mb-1 flex items-center justify-between">
-          <span>المكتومين بالشات</span>
-          <i class="fa-solid fa-comment-slash text-purple-400"></i>
+      <!-- Muted in Chat -->
+      <div onclick="setFilter('muted')" class="glass-card p-3.5 sm:p-4 rounded-2xl border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-950/20 via-slate-900 to-slate-900 col-span-2 sm:col-span-1 shadow-md cursor-pointer hover:border-purple-400 transition" title="عرض المكتومين في الشات">
+        <div class="text-[11px] sm:text-xs text-slate-400 mb-1 flex items-center justify-between">
+          <span class="font-bold">المكتومين بالشات</span>
+          <div class="w-6 h-6 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs">
+            <i class="fa-solid fa-comment-slash"></i>
+          </div>
         </div>
         <div id="statMutedPlayers" class="text-xl sm:text-2xl font-black numbers-font text-purple-300">0</div>
+        <div class="text-[10px] text-purple-400/80 mt-1">ممنوعين من الإرسال 🔇</div>
       </div>
     </div>
 
-    <!-- Suspicious Activities & Alerts Feed -->
-    <div id="alertsContainer" class="glass-panel rounded-2xl p-3 sm:p-5 border border-amber-500/30">
-      <div class="flex items-center justify-between mb-2 sm:mb-3">
-        <div class="flex items-center gap-2">
-          <div class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></div>
-          <h2 class="font-bold text-xs sm:text-sm md:text-base text-amber-300">تنبيهات الأنشطة المشبوهة وقفزات الثروة (Risk Feed)</h2>
+    <!-- Suspicious Activities & Alerts Feed (Radar Anomaly Watch) -->
+    <div id="alertsContainer" class="glass-panel rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-amber-500/30">
+      <div class="flex items-center justify-between mb-3 pb-2 border-b border-amber-500/20">
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs">
+            <i class="fa-solid fa-radar animate-spin"></i>
+          </div>
+          <div>
+            <h2 class="font-black text-xs sm:text-sm md:text-base text-amber-300 flex items-center gap-2">
+              <span>تنبيهات الأنشطة المشبوهة وقفزات الثروة</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">Risk Feed</span>
+            </h2>
+            <p class="text-[10px] text-slate-400">كشف فوري ومباشر لأي نمو مالي غير متوازن أو تحويلات مريبة</p>
+          </div>
         </div>
-        <button onclick="refreshOverview()" class="text-[11px] sm:text-xs text-slate-400 hover:text-cyan-300 transition">
-          <i class="fa-solid fa-arrows-rotate ml-1"></i> تحديث
+        <button onclick="refreshOverview()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] sm:text-xs text-slate-300 hover:text-cyan-300 transition flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-arrows-rotate text-cyan-400"></i>
+          <span>تحديث الرادار</span>
         </button>
       </div>
-      <div id="suspiciousFeed" class="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-2.5">
+      <div id="suspiciousFeed" class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <!-- Live Alert Cards Rendered Here -->
-        <div class="text-xs text-slate-500 py-2">جاري فحص مؤشرات الأمان...</div>
+        <div class="text-xs text-slate-500 py-3">جاري فحص مؤشرات الأمان ونزاهة الحسابات...</div>
       </div>
     </div>
 
-    <!-- Search & Filter Controls -->
-    <div class="glass-panel rounded-2xl p-3 sm:p-5 border border-slate-800 space-y-3 sm:space-y-4">
-      <div class="flex flex-col md:flex-row gap-2.5 sm:gap-3 items-stretch md:items-center justify-between">
+    <!-- Search & Filter Command Bar -->
+    <div class="glass-panel rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-800 space-y-3 sm:space-y-4">
+      <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         
-        <!-- Search Input -->
-        <div class="relative w-full md:w-96">
-          <input type="text" id="playerSearchInput" onkeyup="handleSearchInput(event)" placeholder="ابحث باسم المستخدم أو الـ ID..." class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-2.5 sm:py-3 pl-10 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition" />
-          <button onclick="executeSearch()" class="absolute left-3 top-3 text-slate-400 hover:text-cyan-400 text-sm">
-            <i class="fa-solid fa-magnifying-glass"></i>
+        <!-- Search Input with Clear Button -->
+        <div class="relative w-full md:w-[420px]">
+          <input type="text" id="playerSearchInput" onkeyup="handleSearchInput(event)" placeholder="ابحث باسم المستخدم، الوظيفة، أو الـ ID..." class="w-full bg-slate-900/95 border border-slate-700/90 focus:border-cyan-400 rounded-xl px-4 py-2.5 sm:py-3 pl-10 pr-10 text-sm text-slate-100 placeholder-slate-500 focus:outline-none transition shadow-inner" />
+          <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-3.5 text-slate-500 text-sm"></i>
+          <button onclick="document.getElementById('playerSearchInput').value=''; executeSearch();" class="absolute left-3 top-3 text-slate-500 hover:text-slate-300 text-xs p-1" title="مسح البحث">
+            <i class="fa-solid fa-circle-xmark"></i>
           </button>
         </div>
 
-        <!-- Filter Buttons (Scrollable on mobile) -->
+        <!-- Segmented Filter Pills -->
         <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 w-full md:w-auto custom-scrollbar flex-nowrap">
-          <button onclick="setFilter('all')" id="filter_all" class="px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold bg-cyan-600 text-white border border-cyan-500 transition whitespace-nowrap shrink-0">الكل</button>
-          <button onclick="setFilter('flagged')" id="filter_flagged" class="px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition whitespace-nowrap shrink-0">⚠️ مراقبة</button>
-          <button onclick="setFilter('frozen')" id="filter_frozen" class="px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition whitespace-nowrap shrink-0">🔒 مجمدين</button>
-          <button onclick="setFilter('muted')" id="filter_muted" class="px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition whitespace-nowrap shrink-0">🔇 مكتومين</button>
+          <button onclick="setFilter('all')" id="filter_all" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-cyan-600 text-white border border-cyan-500 transition whitespace-nowrap shrink-0 cursor-pointer">
+            <i class="fa-solid fa-list ml-1"></i> الكل
+          </button>
+          <button onclick="setFilter('flagged')" id="filter_flagged" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition whitespace-nowrap shrink-0 cursor-pointer">
+            <i class="fa-solid fa-triangle-exclamation text-amber-400 ml-1"></i> تحت المراقبة
+          </button>
+          <button onclick="setFilter('frozen')" id="filter_frozen" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition whitespace-nowrap shrink-0 cursor-pointer">
+            <i class="fa-solid fa-snowflake text-rose-400 ml-1"></i> المجمدين
+          </button>
+          <button onclick="setFilter('muted')" id="filter_muted" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition whitespace-nowrap shrink-0 cursor-pointer">
+            <i class="fa-solid fa-comment-slash text-purple-400 ml-1"></i> المكتومين
+          </button>
         </div>
       </div>
 
-      <!-- Player Cards Search Results -->
-      <div id="searchResultsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4 pt-1">
+      <!-- Player Cards Search Results Grid -->
+      <div id="searchResultsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pt-1">
         <!-- Rendered Player Summary Cards -->
       </div>
     </div>
   </div>
 
   <!-- ================= PLAYER INSPECTION MODAL ================= -->
-  <div id="inspectorModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-1 sm:p-4 overflow-y-auto">
-    <div class="glass-panel w-full max-w-5xl my-auto rounded-2xl sm:rounded-3xl border border-cyan-500/40 p-3 sm:p-5 md:p-6 glow-cyan modal-enter h-[95vh] sm:h-auto sm:max-h-[92vh] flex flex-col">
+  <div id="inspectorModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/92 backdrop-blur-xl p-1 sm:p-4 overflow-y-auto">
+    <div class="glass-panel w-full max-w-5xl my-auto rounded-2xl sm:rounded-3xl border border-cyan-500/40 p-3.5 sm:p-5 md:p-6 glow-cyan modal-enter h-[95vh] sm:h-auto sm:max-h-[92vh] flex flex-col">
       
       <!-- Modal Header -->
       <div class="flex flex-col sm:flex-row sm:items-start justify-between border-b border-slate-800 pb-3 sm:pb-4 mb-3 sm:mb-4 gap-2.5">
@@ -1711,30 +1800,53 @@
 
     function renderRiskFeed(alerts) {
       const container = document.getElementById('suspiciousFeed');
-      if (!alerts.length) {
-        container.innerHTML = `<div class="text-xs text-emerald-400 py-2 col-span-2"><i class="fa-solid fa-circle-check ml-1"></i> لا توجد أي قفزات ثروة شاذة أو حسابات مجمدة حالياً. الاقتصاد مستقر.</div>`;
+      if (!alerts || !alerts.length) {
+        container.innerHTML = `
+          <div class="col-span-full p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                <i class="fa-solid fa-circle-check text-base"></i>
+              </div>
+              <div>
+                <div class="font-bold text-white">الاقتصاد متزن وآمن 100%</div>
+                <div class="text-[11px] text-emerald-400/80">لا توجد قفزات ثروة شاذة أو حسابات معلقة تحت الاشتباه حالياً.</div>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-[10px] font-bold border border-emerald-500/40">مستقر</span>
+          </div>
+        `;
         return;
       }
 
-      container.innerHTML = alerts.map(a => `
-        <div class="glass-card p-3 rounded-xl border border-slate-700/60 flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg ${a.severity === 'high' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'} flex items-center justify-center text-sm">
-              <i class="fa-solid ${a.type === 'frozen' ? 'fa-snowflake' : 'fa-chart-line'}"></i>
-            </div>
-            <div>
-              <div class="text-xs font-bold text-white flex items-center gap-1.5">
-                <span>${a.username}</span>
-                <span class="text-[10px] text-slate-400">(${a.title})</span>
+      container.innerHTML = alerts.map(a => {
+        const isHigh = a.severity === 'high';
+        const isFrozen = a.type === 'frozen';
+        const borderClass = isHigh ? 'border-rose-500/40 bg-gradient-to-r from-rose-950/30 via-slate-900 to-slate-900' : 'border-amber-500/40 bg-gradient-to-r from-amber-950/30 via-slate-900 to-slate-900';
+        const iconClass = isFrozen ? 'fa-snowflake text-rose-400' : (isHigh ? 'fa-triangle-exclamation text-rose-400 animate-pulse' : 'fa-chart-line text-amber-400');
+        const badgeText = isFrozen ? 'حساب مجمد 🔒' : (isHigh ? '🚨 خطر مرتفع' : '⚠️ اشتباه');
+        const badgeColor = isHigh ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+
+        return `
+          <div class="glass-card p-3.5 rounded-2xl border ${borderClass} flex items-center justify-between gap-3 shadow-md">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-9 h-9 rounded-xl ${isHigh ? 'bg-rose-500/20' : 'bg-amber-500/20'} flex items-center justify-center text-sm shrink-0 border ${isHigh ? 'border-rose-500/40' : 'border-amber-500/40'}">
+                <i class="fa-solid ${iconClass}"></i>
               </div>
-              <div class="text-[11px] text-slate-300 mt-0.5">${a.message}</div>
+              <div class="min-w-0">
+                <div class="text-xs font-black text-white flex items-center gap-2">
+                  <span class="truncate">${escapeHtml(a.username)}</span>
+                  <span class="text-[9px] px-2 py-0.5 rounded-full font-bold border ${badgeColor} shrink-0">${badgeText}</span>
+                </div>
+                <div class="text-[11px] text-slate-300 mt-0.5 truncate">${escapeHtml(a.message)}</div>
+              </div>
             </div>
+            <button onclick="inspectPlayer('${escapeHtml(a.username)}')" class="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition flex items-center gap-1.5 shrink-0 shadow-md shadow-cyan-600/20 cursor-pointer">
+              <i class="fa-solid fa-magnifying-glass text-[10px]"></i>
+              <span>فحص</span>
+            </button>
           </div>
-          <button onclick="inspectPlayer('${a.username}')" class="px-2.5 py-1.5 rounded-lg bg-cyan-600/30 hover:bg-cyan-600 text-cyan-300 hover:text-white text-xs font-bold transition">
-            فحص الحساب
-          </button>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     // Search and Filters
@@ -1745,17 +1857,18 @@
         return;
       }
       clearTimeout(searchDebounce);
-      searchDebounce = setTimeout(executeSearch, 400);
+      searchDebounce = setTimeout(executeSearch, 350);
     }
 
     function setFilter(f) {
       currentFilter = f;
       ['all', 'flagged', 'frozen', 'muted'].forEach(k => {
         const btn = document.getElementById(`filter_${k}`);
+        if (!btn) return;
         if (k === f) {
-          btn.className = 'px-3.5 py-2 rounded-xl text-xs font-bold bg-cyan-600 text-white border border-cyan-500 transition';
+          btn.className = 'px-3.5 py-2 rounded-xl text-xs font-bold bg-cyan-600 text-white border border-cyan-500 transition whitespace-nowrap shrink-0 shadow-md shadow-cyan-600/20';
         } else {
-          btn.className = 'px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition';
+          btn.className = 'px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700/80 transition whitespace-nowrap shrink-0';
         }
       });
       executeSearch();
@@ -1764,7 +1877,12 @@
     async function executeSearch() {
       const q = document.getElementById('playerSearchInput').value.trim();
       const grid = document.getElementById('searchResultsGrid');
-      grid.innerHTML = `<div class="col-span-full text-center text-xs text-slate-400 py-6"><i class="fa-solid fa-spinner fa-spin text-cyan-400 text-lg mb-2 block"></i> جاري البحث...</div>`;
+      grid.innerHTML = `
+        <div class="col-span-full text-center text-xs text-slate-400 py-10">
+          <i class="fa-solid fa-circle-notch fa-spin text-cyan-400 text-2xl mb-2.5 block"></i>
+          <span class="font-bold text-slate-300">جاري استعلام وتدقيق قاعدة البيانات...</span>
+        </div>
+      `;
 
       try {
         const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(q)}&filter=${currentFilter}`, {
@@ -1776,84 +1894,95 @@
         cachedPlayersList = data.players || [];
         renderPlayerCards(cachedPlayersList);
       } catch (err) {
-        grid.innerHTML = `<div class="col-span-full text-center text-xs text-rose-400 py-4">فشل البحث: ${err.message}</div>`;
+        grid.innerHTML = `<div class="col-span-full text-center text-xs text-rose-400 py-6">فشل البحث: ${err.message}</div>`;
       }
     }
 
     function renderPlayerCards(players) {
       const grid = document.getElementById('searchResultsGrid');
-      if (!players.length) {
-        grid.innerHTML = `<div class="col-span-full text-center text-xs text-slate-500 py-8">لا توجد نتائج مطابقة للبحث أو الفلتر المختار.</div>`;
+      if (!players || !players.length) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-12 glass-card rounded-2xl border border-slate-800/80">
+            <i class="fa-solid fa-user-slash text-3xl text-slate-600 mb-2.5 block"></i>
+            <div class="text-sm font-bold text-slate-300">لا توجد حسابات مطابقة للبحث أو الفلتر المختار.</div>
+            <div class="text-xs text-slate-500 mt-1">تأكد من كتابة اسم اللاعب بشكل صحيح أو اختر فلتر "الكل".</div>
+          </div>
+        `;
         return;
       }
 
       grid.innerHTML = players.map(p => {
         const statusBadges = [];
-        if (p.isBanned) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">محظور</span>`);
-        if (p.isFrozen) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">مجمد</span>`);
-        if (p.isMuted) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">مكتوم</span>`);
-        if (p.staffFlag === 'under_investigation' || (p.staffFlag && p.staffFlag !== 'frozen')) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">تحت المراقبة</span>`);
-        if (!statusBadges.length) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">طبيعي</span>`);
+        if (p.isBanned) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">محظور ⛔</span>`);
+        if (p.isFrozen) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">مجمد 🔒</span>`);
+        if (p.isMuted) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">مكتوم 🔇</span>`);
+        if (p.staffFlag === 'under_investigation' || (p.staffFlag && p.staffFlag !== 'frozen')) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">مراقبة ⚠️</span>`);
+        if (!statusBadges.length) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">سليم 🟢</span>`);
+
+        const initial = (p.username || '?').charAt(0).toUpperCase();
 
         return `
-          <div class="glass-card p-4 rounded-2xl border border-slate-700/60 hover:border-cyan-500/50 flex flex-col justify-between gap-3">
+          <div class="glass-card p-4 rounded-2xl border border-slate-700/60 hover:border-cyan-500/50 flex flex-col justify-between gap-3 shadow-md group">
+            
+            <!-- Card Header: Avatar, Name, Online Dot, Badges -->
             <div>
-              <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="flex items-start justify-between gap-2 mb-2.5">
                 <div class="flex items-center gap-2.5">
-                  <div class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center font-bold text-cyan-300 text-sm">
-                    ${p.username.charAt(0).toUpperCase()}
+                  <div class="relative shrink-0">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-800 to-slate-700 border border-slate-600 flex items-center justify-center font-black text-cyan-300 text-sm shadow-inner group-hover:border-cyan-400/50 transition">
+                      ${initial}
+                    </div>
+                    ${p.isOnline ? '<span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-900" title="متصل الآن"></span>' : ''}
                   </div>
                   <div>
-                    <div class="font-bold text-sm text-white flex items-center gap-1.5">
-                      <span>${p.username}</span>
-                      ${p.isOnline ? '<span class="w-2 h-2 rounded-full bg-emerald-400 inline-block" title="متصل الآن"></span>' : ''}
+                    <div class="font-black text-sm text-white flex items-center gap-1.5">
+                      <span class="truncate max-w-[140px]">${escapeHtml(p.username)}</span>
+                      ${p.isOnline ? '<span class="text-[9px] text-emerald-400 font-bold font-mono">LIVE</span>' : ''}
                     </div>
-                    <div class="text-[11px] text-slate-400">${p.title}</div>
+                    <div class="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                      <i class="fa-solid fa-briefcase text-[10px] text-cyan-400"></i>
+                      <span>${escapeHtml(p.title || 'لاعب')}</span>
+                    </div>
                   </div>
                 </div>
-                <div class="flex flex-wrap gap-1 justify-end">
+                <div class="flex flex-wrap gap-1 justify-end shrink-0">
                   ${statusBadges.join('')}
                 </div>
               </div>
 
-              <!-- Mini Stats -->
-              <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-800 text-xs">
-                <div>
-                  <span class="text-[10px] text-slate-400 block">صافي الثروة</span>
-                  <span class="numbers-font font-bold text-amber-300">${fmtMoney(p.netWorth)}</span>
+              <!-- Financial Breakdown Snapshot (3 Tiles) -->
+              <div class="grid grid-cols-3 gap-1.5 mt-2.5 pt-2.5 border-t border-slate-800/80 text-center">
+                <div class="bg-slate-900/70 p-2 rounded-xl border border-slate-800/60">
+                  <span class="text-[10px] text-slate-400 block mb-0.5 font-medium">الكاش</span>
+                  <span class="numbers-font font-black text-xs text-emerald-400">${fmtMoney(p.cash || 0)}</span>
                 </div>
-                <div>
-                  <span class="text-[10px] text-slate-400 block">الكاش + البنك</span>
-                  <span class="numbers-font font-bold text-cyan-300">${fmtMoney(p.cash + p.bank)}</span>
+                <div class="bg-slate-900/70 p-2 rounded-xl border border-slate-800/60">
+                  <span class="text-[10px] text-slate-400 block mb-0.5 font-medium">البنك</span>
+                  <span class="numbers-font font-black text-xs text-cyan-400">${fmtMoney(p.bank || 0)}</span>
+                </div>
+                <div class="bg-slate-900/70 p-2 rounded-xl border border-slate-800/60">
+                  <span class="text-[10px] text-slate-400 block mb-0.5 font-medium">الثروة</span>
+                  <span class="numbers-font font-black text-xs text-amber-300">${fmtMoney(p.netWorth || 0)}</span>
                 </div>
               </div>
             </div>
 
-            <div class="flex gap-1.5 sm:gap-2 flex-wrap">
-              <button onclick="inspectPlayer('${p.username}')" class="flex-1 min-w-[80px] py-2 rounded-xl bg-slate-800 hover:bg-cyan-600 text-slate-200 hover:text-white text-xs font-bold transition flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-fingerprint text-cyan-400"></i>
+            <!-- Action Toolbar Footer -->
+            <div class="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-800/60">
+              <button onclick="inspectPlayer('${escapeHtml(p.username)}')" class="py-2 px-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition flex items-center justify-center gap-1 shadow-md shadow-cyan-600/20 cursor-pointer" title="فحص الحساب الشامل">
+                <i class="fa-solid fa-fingerprint text-xs"></i>
                 <span>فحص</span>
               </button>
-              ${p.isBanned ? `
-                <button onclick="quickUnbanPlayer('${p.username}')" class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-xs font-black transition flex items-center justify-center gap-1 shadow-md shadow-emerald-500/20" title="فك الحظر عن الحساب">
-                  <i class="fa-solid fa-unlock text-xs"></i>
-                  <span>فك الحظر</span>
-                </button>
-              ` : p.isFrozen ? `
-                <button onclick="quickUnfreezePlayer('${p.username}')" class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-xs font-black transition flex items-center justify-center gap-1 shadow-md shadow-emerald-500/20" title="فك تجميد ورفع القيد فوراً">
-                  <i class="fa-solid fa-lock-open text-xs"></i>
-                  <span>فك القيد</span>
-                </button>
-              ` : `
-                <button onclick="quickFreezePlayer('${p.username}')" class="py-2 px-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center justify-center gap-1" title="تجميد الحساب">
-                  <i class="fa-solid fa-lock text-xs"></i>
-                  <span>تجميد</span>
-                </button>
-                <button onclick="quickBanPlayer('${p.username}')" class="py-2 px-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/30 border border-rose-500/30 text-rose-300 text-xs font-bold transition flex items-center justify-center gap-1" title="حظر نهائي للحساب">
-                  <i class="fa-solid fa-ban text-xs"></i>
-                  <span>حظر</span>
-                </button>
-              `}
+
+              <button onclick="openAddBankModal('${escapeHtml(p.username)}')" class="py-2 px-2 rounded-xl bg-emerald-950/60 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer" title="إيداع كاش فوري في البنك">
+                <i class="fa-solid fa-building-columns text-xs"></i>
+                <span>إيداع</span>
+              </button>
+
+              <button onclick="inspectPlayer('${escapeHtml(p.username)}', 'chat')" class="py-2 px-2 rounded-xl bg-blue-950/60 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer" title="فتح شات التحقيق المباشر">
+                <i class="fa-solid fa-comments text-xs"></i>
+                <span>محادثة</span>
+              </button>
             </div>
           </div>
         `;
@@ -3999,13 +4128,13 @@
         const content = document.getElementById(`tabContent_${t}`);
         if (!btn || !content) return;
         if (t === tabId) {
-          btn.className = 'px-3.5 py-2 rounded-xl font-bold bg-cyan-600 text-white whitespace-nowrap transition';
+          btn.className = 'px-3.5 py-2 rounded-xl font-black bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 text-white shadow-lg shadow-cyan-600/30 border border-cyan-400/60 whitespace-nowrap transition transform scale-105 shrink-0 cursor-pointer';
           content.classList.remove('hidden');
           try {
             btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
           } catch (_) {}
         } else {
-          btn.className = 'px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap transition';
+          btn.className = 'px-3.5 py-2 rounded-xl font-bold bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800/80 whitespace-nowrap transition shrink-0 cursor-pointer';
           content.classList.add('hidden');
         }
       });
