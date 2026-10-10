@@ -1,7 +1,7 @@
 {
   "version": "v9.5.7",
-  "build": 1791330100000,
-  "timestamp": 1791330100000,
-  "notes": "Optimize network consumption, CPU performance, Stale-While-Revalidate caching, safe bundle minification, and consolidated polling",
-  "releaseNotes": "تحسين شامل وسريع لاستهلاك باقة الإنترنت وسلاسة الأداء، تسريع فتح اللعبة، تقليل حرارة المعالج، وإلغاء الاستعلامات المتكررة"
+  "build": 1791330200000,
+  "timestamp": 1791330200000,
+  "notes": "Optimize network consumption, CPU performance, Stale-While-Revalidate caching, safe bundle minification, and exempt Cash-Bank transfers from wealth clamps",
+  "releaseNotes": "تحسين شامل لاستهلاك باقة الإنترنت وسلاسة الأداء، وإلغاء قيود التحويل بين الكاش والبنك لمنع اختفاء المبالغ الضخمة نهائياً"
 }

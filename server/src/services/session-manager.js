@@ -236,9 +236,22 @@ class SessionManager {
     let incomingCash = Number(clientState.cash) || 0;
     let incomingBank = Number(clientState.bank) || 0;
 
-    // Anti-Tamper Wealth Velocity Shield: clamp impossible wealth leaps on normal accounts
-    if (!isLiteralKhaled && incomingCash > 50000000 && incomingCash > (Number(s.cash || 0) + 25000000)) {
-      incomingCash = Math.min(incomingCash, Number(s.cash || 0) + 25000000);
+    // Zero-Sum Internal Asset Transfer: Cash <-> Bank transfers are completely exempt from velocity clamps
+    const prevLiquidTotal = (Number(s.cash) || 0) + (Number(s.bank) || 0);
+    const newLiquidTotal = incomingCash + incomingBank;
+    const liquidJump = newLiquidTotal - prevLiquidTotal;
+
+    // Only clamp if there is an unexplainable massive jump in TOTAL new wealth (> 50M growth in single tick without admin grant)
+    if (!isLiteralKhaled && liquidJump > 50000000 && !isClientStale) {
+      const allowedGrowth = 25000000;
+      const excess = liquidJump - allowedGrowth;
+      if (incomingCash >= excess) {
+        incomingCash -= excess;
+      } else {
+        const rem = excess - incomingCash;
+        incomingCash = 0;
+        incomingBank = Math.max(0, incomingBank - rem);
+      }
     }
 
     if (clientState.cash !== undefined) {
