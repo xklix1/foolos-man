@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Aggressive Cache Purge Guard
-    window._CLIENT_VERSION = 'v9.6.0';
+    window._CLIENT_VERSION = 'v9.7.0';
     (async function() {
-      const CURRENT_APP_BUILD = 'v9.6.0';
+      const CURRENT_APP_BUILD = 'v9.7.0';
       try {
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
@@ -5918,6 +5918,7 @@
           <i class="fa-solid fa-crown text-yellow-400 text-xs animate-pulse"></i>
           <h3 id="profile-card-username" class="text-xs sm:text-sm font-black text-cyan-300 truncate">NewU</h3>
           <span id="profile-card-title-badge" class="text-[10px] text-yellow-400 font-bold truncate">عامل مبتدئ</span>
+          <span id="profile-card-title" class="hidden"></span>
         </div>
 
         <!-- Online Status Indicator -->
@@ -7801,7 +7802,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.6.0"></script>
+  <script src="core.bundle.js?v=v9.7.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

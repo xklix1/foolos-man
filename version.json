@@ -1,7 +1,7 @@
 {
-  "version": "v9.6.0",
-  "build": 1791619300000,
-  "timestamp": 1791619300000,
-  "notes": "Airport Managers System (Liam, Captain Alpha, Alexander), 72-Hour Smart Auto-Pilot, VIP packages integration, complete UI icon standardization, and cache purge optimization",
-  "releaseNotes": "إطلاق نظام مدراء المطار (المدير ليام، كابتن ألفا، إمبراطور الطيران ألكسندر) مع الطيار الآلي الذكي 72 ساعة وربط باقات كبار الشخصيات وترقية الأداء وتفريغ الذاكرة المؤقتة"
+  "version": "v9.7.0",
+  "build": 1791621000000,
+  "timestamp": 1791621000000,
+  "notes": "Cyber-Tycoon Player Profile overhaul, 6 selectable executive characters, 4 upgradeable executive gear slots across 5 tiers, and full cache-busting sync",
+  "releaseNotes": "إطلاق بروفايل اللاعبين السايبر المتطور، 6 شخصيات تنفيذية قابلة للاختيار، ونظام العتاد التنفيذي بـ 5 رتب جودة و15 مستوى وتحديث فوري للذاكرة المؤقتة"
 }
