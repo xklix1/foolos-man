@@ -5230,34 +5230,68 @@ const UIController = (() => {
     // Bank Actions (Depositing)
     const depositBtn = document.getElementById('btn-bank-deposit');
     if (depositBtn) {
-      depositBtn.addEventListener('click', () => {
+      depositBtn.addEventListener('click', async () => {
         const input = document.getElementById('bank-amount-input');
         const val = parseInt(input.value);
         try {
           if (!val || val <= 0) throw new Error("يرجى إدخال مبلغ صحيح للإيداع.");
-          GameEngine.depositToBank(val);
-          input.value ='';
-          showToast('إيداع بنكي',`تم إيداع ${val.toLocaleString()} EGP بنجاح في حسابك البنكي.`,'success');
-          renderAll();
+          if (GameEngine.state.cash < val) throw new Error("رصيدك النقدي (الكاش) لا يكفي لإتمام هذا الإيداع.");
+
+          depositBtn.disabled = true;
+          if (!window.ServerBridge || !window.ServerBridge.isServerOnline()) {
+            throw new Error("العمليات المصرفية تتطلب اتصالاً بالإنترنت لتأكيد الرصيد وضمان الحفظ.");
+          }
+          const res = await window.ServerBridge.bankAction('deposit', val);
+          if (res && res.success) {
+            if (res.cash !== undefined) GameEngine.state.cash = res.cash;
+            if (res.bank !== undefined) GameEngine.state.bank = res.bank;
+            if (res.netWorth !== undefined) GameEngine.state.netWorth = res.netWorth;
+            if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
+            input.value = '';
+            showToast('إيداع بنكي', `تم إيداع ${val.toLocaleString()} EGP بنجاح في حسابك المصرفي.`, 'success');
+            renderAll();
+            return;
+          } else if (res && res.error) {
+            throw new Error(res.error);
+          }
         } catch (err) {
-          showToast('فشل الإيداع', err.message,'error');
+          showToast('فشل الإيداع', err.message, 'error');
+        } finally {
+          depositBtn.disabled = false;
         }
       });
     }
 
     const withdrawBtn = document.getElementById('btn-bank-withdraw');
     if (withdrawBtn) {
-      withdrawBtn.addEventListener('click', () => {
+      withdrawBtn.addEventListener('click', async () => {
         const input = document.getElementById('bank-amount-input');
         const val = parseInt(input.value);
         try {
           if (!val || val <= 0) throw new Error("يرجى إدخال مبلغ صحيح للسحب.");
-          GameEngine.withdrawFromBank(val);
-          input.value ='';
-          showToast('سحب بنكي',`تم سحب ${val.toLocaleString()} EGP نقدية بنجاح.`,'success');
-          renderAll();
+          if (GameEngine.state.bank < val) throw new Error("رصيدك في حساب البنك لا يكفي لإتمام هذا السحب.");
+
+          withdrawBtn.disabled = true;
+          if (!window.ServerBridge || !window.ServerBridge.isServerOnline()) {
+            throw new Error("العمليات المصرفية تتطلب اتصالاً بالإنترنت لتأكيد الرصيد وضمان الحفظ.");
+          }
+          const res = await window.ServerBridge.bankAction('withdraw', val);
+          if (res && res.success) {
+            if (res.cash !== undefined) GameEngine.state.cash = res.cash;
+            if (res.bank !== undefined) GameEngine.state.bank = res.bank;
+            if (res.netWorth !== undefined) GameEngine.state.netWorth = res.netWorth;
+            if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
+            input.value = '';
+            showToast('سحب بنكي', `تم سحب ${val.toLocaleString()} EGP نقدية بنجاح من البنك.`, 'success');
+            renderAll();
+            return;
+          } else if (res && res.error) {
+            throw new Error(res.error);
+          }
         } catch (err) {
-          showToast('فشل السحب', err.message,'error');
+          showToast('فشل السحب', err.message, 'error');
+        } finally {
+          withdrawBtn.disabled = false;
         }
       });
     }
@@ -17339,12 +17373,12 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     }
   }
 
-  function unlockActiveExecutiveGear(gearId) {
+  async function unlockActiveExecutiveGear(gearId) {
     try {
       if (typeof GameEngine === 'undefined' || !GameEngine.unlockExecutiveGear) {
         throw new Error('محرك اللعبة غير متاح.');
       }
-      const res = GameEngine.unlockExecutiveGear(gearId);
+      const res = await GameEngine.unlockExecutiveGear(gearId);
       if (res && res.success) {
         showToast('تم تفعيل الأداة بنجاح!', `تم فتح وتفعيل الأداة التنفيذية بنجاح! الرصيد المتبقي: ${res.remainingGold.toLocaleString()} سبيكة ذهب.`, 'success');
         openExecutiveGearModal(gearId, null);
@@ -17355,12 +17389,12 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     }
   }
 
-  function upgradeActiveExecutiveGear(gearId) {
+  async function upgradeActiveExecutiveGear(gearId) {
     try {
       if (typeof GameEngine === 'undefined' || !GameEngine.upgradeExecutiveGear) {
         throw new Error('محرك اللعبة غير متاح.');
       }
-      const res = GameEngine.upgradeExecutiveGear(gearId);
+      const res = await GameEngine.upgradeExecutiveGear(gearId);
       if (res && res.success) {
         const lvlEl = document.getElementById(`gear-lvl-${gearId}`);
         const starsEl = document.getElementById(`gear-stars-${gearId}`);

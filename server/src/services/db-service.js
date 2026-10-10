@@ -77,25 +77,32 @@ class DbService {
     };
 
     const adminTs = Number(state.adminModifiedTimestamp || 0);
-    // ALWAYS apply lte guard: only write to DB if our session's adminTs >= DB value.
-    // When adminTs=0 the filter is "lte.0" — this safely blocks overwrites on any row
-    // that a wire-transfer SQL just bumped to now_ms (now_ms > 0 → filter rejects stale flush).
-    // When adminTs=now_ms the filter passes normally and the write succeeds.
-    const endpoint = `${this.url}/rest/v1/players?username=ilike.${encodeURIComponent(u)}&admin_modified_timestamp=lte.${adminTs}`;
+    // Apply lte guard only when adminTs > 0 to protect against overwriting active wire-transfers.
+    // If adminTs <= 0, do not filter by lte.0 so normal player state isn't permanently locked out.
+    const filter = adminTs > 0 ? `&admin_modified_timestamp=lte.${adminTs}` : '';
+    const endpoint = `${this.url}/rest/v1/players?username=ilike.${encodeURIComponent(u)}${filter}`;
 
-    
     try {
       const res = await fetch(endpoint, {
         method: 'PATCH',
         headers: {
           ...this.getHeaders(),
-          'Prefer': 'return=minimal'
+          'Prefer': 'return=representation'
         },
         body: JSON.stringify(payload)
       });
 
       if (!res.ok) {
         throw new Error(`Save state failed (${res.status}): ${await res.text()}`);
+      }
+      const updatedRows = await res.json();
+      if (Array.isArray(updatedRows) && updatedRows.length === 0) {
+        if (adminTs > 0) {
+          console.warn(`[DbService] Save state skipped for ${u}: DB has newer admin_modified_timestamp than session (${adminTs})`);
+        } else {
+          console.warn(`[DbService] Save state: No database row found for ${u}`);
+        }
+        return false;
       }
       return true;
     } catch (err) {

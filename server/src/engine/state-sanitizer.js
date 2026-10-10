@@ -88,7 +88,26 @@ const DEFAULT_STATE = {
   lastSeen: 0,
   telegramClaimed: false,
   telegramRewardClaimed: false,
-  telegramClaimedAt: 0
+  telegramClaimedAt: 0,
+  airport: {
+    unlocked: false,
+    name: 'مطار العاصمة الدولي',
+    code: 'CAI',
+    facilities: { runway: 1, terminals: 1, hangar: 1, duty_free: 0 },
+    fleet: [],
+    manager: null,
+    claimedFlightIds: [],
+    stats: { totalFlights: 0, totalRevenue: 0, totalOperatingCost: 0, totalNetProfit: 0, totalDutyFreeCollected: 0, transitPermitsAccepted: 0 },
+    lastDutyFreeCollectionAt: 0,
+    lastTransitPermitAt: 0,
+    lastTransitCollectionAt: 0
+  },
+  executiveGear: {
+    ledger: { unlocked: false, level: 1, stars: 1 },
+    laptop: { unlocked: false, level: 1, stars: 1 },
+    pen: { unlocked: false, level: 1, stars: 1 },
+    terminal: { unlocked: false, level: 1, stars: 1 }
+  }
 };
 
 /**
@@ -234,6 +253,28 @@ function sanitizePlayerState(dbRow) {
     if (!Array.isArray(cleanState.farm.plots)) cleanState.farm.plots = [];
     while (cleanState.farm.plots.length < cleanState.farm.maxPlots) cleanState.farm.plots.push(null);
     if (cleanState.farm.plots.length > cleanState.farm.maxPlots) cleanState.farm.plots = cleanState.farm.plots.slice(0, cleanState.farm.maxPlots);
+  }
+
+  // International Airport & Manager Preservation
+  if (rawState.airport && typeof rawState.airport === 'object') {
+    cleanState.airport = {
+      ...DEFAULT_STATE.airport,
+      ...rawState.airport,
+      facilities: {
+        ...(DEFAULT_STATE.airport.facilities),
+        ...(rawState.airport.facilities || {})
+      },
+      fleet: Array.isArray(rawState.airport.fleet) ? rawState.airport.fleet : [],
+      manager: (rawState.airport.manager && typeof rawState.airport.manager === 'object') ? rawState.airport.manager : null
+    };
+  }
+
+  // Executive Gear Preservation
+  if (rawState.executiveGear && typeof rawState.executiveGear === 'object') {
+    cleanState.executiveGear = {
+      ...DEFAULT_STATE.executiveGear,
+      ...rawState.executiveGear
+    };
   }
 
   // Device & Login Telemetry History (Authoritative)

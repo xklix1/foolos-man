@@ -2577,67 +2577,49 @@ window.AirportUI = (() => {
     }
 
     // 1. Authoritative Server Hire
-    if (window.ServerBridge && typeof window.ServerBridge.hireAirportManager === 'function') {
-      try {
-        const res = await window.ServerBridge.hireAirportManager(tier);
-        if (res && res.success) {
-          if (res.airport) liveState.airport = res.airport;
-          if (res.cash !== undefined) liveState.cash = res.cash;
-          if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
-
-          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
-            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
-          }
-          persistGameState();
-          if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-            window.GameEngine.recordPlayerActivity('توظيف مساعد مدير المطار ', `تعيين كابتن ليام كمساعد لمدير العمليات الجوية (+5% أرباح على كافة الرحلات)`, 'business');
-          }
-          showAirportToast(res.message || ' تهانينا! تم تعيين كابتن ليام بنجاح وبونص +5% أرباح!', 'success');
-          renderAirportPanel();
-          return;
-        } else {
-          showAirportToast(res?.error || 'تعذر توظيف مدير المطار', 'error');
-          if (btnHire) {
-            btnHire.disabled = false;
-            btnHire.innerHTML = `<i class="fa-solid fa-user-plus"></i> <span>توظيف بالكاش (${HIRE_COST.toLocaleString()} ج.م)</span>`;
-          }
-          return;
-        }
-      } catch (err) {
-        const errMsg = err?.message || '';
-        if (err.status === 400 || errMsg.includes('رصيدك') || errMsg.includes('بالفعل')) {
-          showAirportToast(errMsg || 'تعذر توظيف مدير المطار', 'error');
-          if (btnHire) {
-            btnHire.disabled = false;
-            btnHire.innerHTML = `<i class="fa-solid fa-user-plus"></i> <span>توظيف بالكاش (${HIRE_COST.toLocaleString()} ج.م)</span>`;
-          }
-          return;
-        }
-        console.warn('[AirportUI] hireAirportManager server bridge failed, using offline fallback:', err);
+    if (!window.ServerBridge || !window.ServerBridge.isServerOnline()) {
+      showAirportToast(' توظيف واعتماد مدراء المطار يتطلب اتصالاً بالإنترنت لتوثيق العقد.', 'error');
+      if (btnHire) {
+        btnHire.disabled = false;
+        btnHire.innerHTML = `<i class="fa-solid fa-user-plus"></i> <span>توظيف بالكاش (${HIRE_COST.toLocaleString()} ج.م)</span>`;
       }
+      return;
     }
 
-    // 2. Offline Fallback
-    liveState.cash = curCash - HIRE_COST;
-    ap.manager = {
-      tier: 1,
-      name: 'كابتن ليام - مساعد مدير العمليات ',
-      title: 'مساعد مدير العمليات الجوية',
-      profitBonusPct: 5,
-      costDiscountPct: 0,
-      autoPilot: false,
-      hiredAt: Date.now()
-    };
+    try {
+      const res = await window.ServerBridge.hireAirportManager(tier);
+      if (res && res.success) {
+        if (res.airport) liveState.airport = res.airport;
+        if (res.cash !== undefined) liveState.cash = res.cash;
+        if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
 
-    if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
-      window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+        if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+          window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+        }
+        persistGameState();
+        if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+          window.GameEngine.recordPlayerActivity('توظيف مساعد مدير المطار ', `تعيين كابتن ليام كمساعد لمدير العمليات الجوية (+5% أرباح على كافة الرحلات)`, 'business');
+        }
+        showAirportToast(res.message || ' تهانينا! تم تعيين كابتن ليام بنجاح وبونص +5% أرباح!', 'success');
+        renderAirportPanel();
+        return;
+      } else {
+        showAirportToast(res?.error || 'تعذر توظيف مدير المطار', 'error');
+        if (btnHire) {
+          btnHire.disabled = false;
+          btnHire.innerHTML = `<i class="fa-solid fa-user-plus"></i> <span>توظيف بالكاش (${HIRE_COST.toLocaleString()} ج.م)</span>`;
+        }
+        return;
+      }
+    } catch (err) {
+      const errMsg = err?.message || '';
+      showAirportToast(errMsg || 'تعذر توظيف مدير المطار', 'error');
+      if (btnHire) {
+        btnHire.disabled = false;
+        btnHire.innerHTML = `<i class="fa-solid fa-user-plus"></i> <span>توظيف بالكاش (${HIRE_COST.toLocaleString()} ج.م)</span>`;
+      }
+      return;
     }
-    persistGameState();
-    if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-      window.GameEngine.recordPlayerActivity('توظيف مساعد مدير المطار ', `تعيين كابتن ليام كمساعد لمدير العمليات الجوية (+5% أرباح على كافة الرحلات)`, 'business');
-    }
-    showAirportToast(' تهانينا! تم تعيين كابتن ليام بنجاح وبونص +5% أرباح على كافة الرحلات!', 'success');
-    renderAirportPanel();
   }
 
   async function toggleAutopilot(enabled = null) {

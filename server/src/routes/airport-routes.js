@@ -797,6 +797,7 @@ async function airportRoutes(fastify, options) {
     });
     if (s.activityLog.length > 3500) s.activityLog.length = 3500;
 
+    sessionManager.markDirty(session.username);
     await dbService.savePlayerState(session.username, s);
 
     return {

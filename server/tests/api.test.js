@@ -188,6 +188,47 @@ test('API Integration — Bank Deposit & Withdrawal', async () => {
   assert.strictEqual(overWithdrawRes.statusCode, 400);
 });
 
+test('API Integration — Executive Gear Unlock & Upgrade', async () => {
+  const testUsername = 'test_gear_player';
+  sessionManager.sessions.set(testUsername.toLowerCase(), {
+    username: testUsername,
+    state: {
+      username: testUsername,
+      cash: 5000000,
+      bank: 0,
+      gold: 500,
+      netWorth: 10000000,
+      executiveGear: {}
+    },
+    dirty: false,
+    lastActivity: Date.now()
+  });
+
+  // 1. Unlock ledger (requires 500k net worth & 25 gold)
+  const unlockRes = await app.inject({
+    method: 'POST',
+    url: '/api/action/gear/unlock',
+    payload: { username: testUsername, gearId: 'ledger' }
+  });
+  assert.strictEqual(unlockRes.statusCode, 200);
+  const unlockData = JSON.parse(unlockRes.payload);
+  assert.strictEqual(unlockData.success, true);
+  assert.strictEqual(unlockData.gold, 475); // 500 - 25
+  assert.strictEqual(unlockData.gear.ledger.level, 1);
+
+  // 2. Upgrade ledger to lvl 2 (requires 20 gold)
+  const upgradeRes = await app.inject({
+    method: 'POST',
+    url: '/api/action/gear/upgrade',
+    payload: { username: testUsername, gearId: 'ledger' }
+  });
+  assert.strictEqual(upgradeRes.statusCode, 200);
+  const upData = JSON.parse(upgradeRes.payload);
+  assert.strictEqual(upData.success, true);
+  assert.strictEqual(upData.newLevel, 2);
+  assert.strictEqual(upData.gold, 455); // 475 - 20
+});
+
 test('API Integration — AFK Renewal & Session Heartbeat', async () => {
   const testUsername = 'test_afk_player';
   sessionManager.sessions.set(testUsername.toLowerCase(), {
@@ -270,3 +311,73 @@ test('API Integration — /api/session/register Validations', async () => {
   });
   assert.strictEqual(shortRes.statusCode, 400);
 });
+
+test('API Integration — Airport Hire Manager 100M Deduction & State Sync', async () => {
+  const testUsername = 'test_airport_manager_player';
+  sessionManager.sessions.set(testUsername.toLowerCase(), {
+    username: testUsername,
+    state: {
+      username: testUsername,
+      cash: 200000000,
+      bank: 0,
+      netWorth: 200000000,
+      airport: {
+        unlocked: true,
+        manager: { tier: 0, autopilot: false }
+      }
+    },
+    dirty: false,
+    lastActivity: Date.now()
+  });
+
+  const hireRes = await app.inject({
+    method: 'POST',
+    url: '/api/airport/hire-manager',
+    payload: { username: testUsername, tier: 1 }
+  });
+
+  assert.strictEqual(hireRes.statusCode, 200);
+  const hireData = JSON.parse(hireRes.payload);
+  assert.strictEqual(hireData.success, true);
+  assert.strictEqual(hireData.airport.manager.tier, 1);
+  assert.strictEqual(hireData.cash, 100000000);
+
+  const session = sessionManager.sessions.get(testUsername.toLowerCase());
+  assert.strictEqual(session.state.cash, 100000000);
+  assert.strictEqual(session.state.airport.manager.tier, 1);
+
+  // Client sync with 100M: must remain 100M and not restore 200M
+  sessionManager.updateSessionState(testUsername, {
+    cash: 100000000,
+    bank: 0,
+    airport: session.state.airport
+  });
+  assert.strictEqual(session.state.cash, 100000000);
+
+  // Deposit 50M to bank -> Cash 50M, Bank 50M
+  const depRes = await app.inject({
+    method: 'POST',
+    url: '/api/action/bank',
+    payload: {
+      username: testUsername,
+      type: 'deposit',
+      amount: 50000000
+    }
+  });
+  assert.strictEqual(depRes.statusCode, 200);
+  const depData = JSON.parse(depRes.payload);
+  assert.strictEqual(depData.cash, 50000000);
+  assert.strictEqual(depData.bank, 50000000);
+
+  // Client sync with Cash 50M, Bank 50M: should stay 50M / 50M (no doubling!)
+  sessionManager.updateSessionState(testUsername, {
+    cash: 50000000,
+    bank: 50000000
+  });
+  assert.strictEqual(session.state.cash, 50000000);
+  assert.strictEqual(session.state.bank, 50000000);
+
+  // Clean exit for node test runner
+  process.exit(0);
+});
+

@@ -614,6 +614,28 @@ var ServerBridge = (() => {
     });
   }
 
+  async function unlockGear(gearId) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    return await _post('/api/action/gear/unlock', {
+      username: user,
+      token,
+      gearId
+    });
+  }
+
+  async function upgradeGear(gearId) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    return await _post('/api/action/gear/upgrade', {
+      username: user,
+      token,
+      gearId
+    });
+  }
+
   return {
     getApiBase,
     formatAvatarUrl,
@@ -631,6 +653,8 @@ var ServerBridge = (() => {
     acceptAirportTransit,
     hireAirportManager,
     toggleAirportAutopilot,
+    unlockGear,
+    upgradeGear,
     registerAccount,
     startSession,
     dispatchClick,

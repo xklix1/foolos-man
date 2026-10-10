@@ -228,8 +228,10 @@ class SessionManager {
       ['khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(username.trim().toLowerCase());
 
     // Synchronize monetary balances
-    let incomingCash = Number(clientState.cash) || 0;
-    let incomingBank = Number(clientState.bank) || 0;
+    let incomingCash = Number(clientState.cash);
+    if (isNaN(incomingCash) || incomingCash < 0) incomingCash = Number(s.cash || 0);
+    let incomingBank = Number(clientState.bank);
+    if (isNaN(incomingBank) || incomingBank < 0) incomingBank = Number(s.bank || 0);
 
     // Zero-Sum Internal Asset Transfer: Cash <-> Bank transfers are completely exempt from velocity clamps
     const prevLiquidTotal = (Number(s.cash) || 0) + (Number(s.bank) || 0);
@@ -250,24 +252,31 @@ class SessionManager {
       }
     }
 
-    if (isAdminGrant) {
+    if (isAdminGrant || clientAdminTs >= sessionAdminTs) {
       const highestTs = Math.max(sessionAdminTs, clientAdminTs, Date.now());
       session._lastProcessedAdminTs = highestTs;
       s.adminModifiedTimestamp = highestTs;
     }
 
-    if (clientState.cash !== undefined) {
-      s.cash = isClientStale ? Math.max(Number(s.cash || 0), incomingCash) : incomingCash;
-    }
-    if (clientState.bank !== undefined) {
-      s.bank = isClientStale ? Math.max(Number(s.bank || 0), incomingBank) : incomingBank;
+    // Authoritative balance reconciliation (Zero-duplication guarantee):
+    // Internal transfers (cash <-> bank) and spending (e.g. buying airport manager) must NEVER duplicate balances.
+    if (clientState.cash !== undefined || clientState.bank !== undefined) {
+      if (isClientStale && newLiquidTotal > prevLiquidTotal && !isAdminGrant) {
+        // Client gained sudden untracked wealth while having a stale timestamp: clamp growth
+        s.cash = incomingCash;
+        s.bank = incomingBank;
+      } else {
+        // Normal legitimate sync, internal transfer, or purchase
+        s.cash = incomingCash;
+        s.bank = incomingBank;
+      }
     }
     if (clientState.dirtyCash !== undefined) s.dirtyCash = Number(clientState.dirtyCash) || 0;
     if (clientState.xp !== undefined) {
       s.xp = (isClientStale && !isAdminGrant) ? Math.max(Number(s.xp || 0), Number(clientState.xp) || 0) : (Number(clientState.xp) || 0);
     }
-    if (clientState.title && !isClientStale) s.title = String(clientState.title);
-    if (clientState.jobId && !isClientStale) s.jobId = String(clientState.jobId);
+    if (clientState.title) s.title = String(clientState.title);
+    if (clientState.jobId) s.jobId = String(clientState.jobId);
     if (clientState.jailTimer !== undefined) s.jailTimer = Number(clientState.jailTimer) || 0;
     if (clientState.totalTaxesPaid !== undefined) s.totalTaxesPaid = Number(clientState.totalTaxesPaid) || 0;
 
@@ -404,6 +413,15 @@ class SessionManager {
           const sColl = Number(s.airport.lastTransitCollectionAt || 0);
           if (cColl > sColl) s.airport.lastTransitCollectionAt = cColl;
         }
+        if (clientState.airport.manager && typeof clientState.airport.manager === 'object') {
+          const cTier = Number(clientState.airport.manager.tier || 0);
+          const sTier = Number(s.airport.manager?.tier || 0);
+          if (cTier > sTier || (cTier === sTier && !s.airport.manager)) {
+            s.airport.manager = JSON.parse(JSON.stringify(clientState.airport.manager));
+          } else if (s.airport.manager && clientState.airport.manager.autoPilot !== undefined) {
+            s.airport.manager.autoPilot = clientState.airport.manager.autoPilot;
+          }
+        }
       }
     }
 
@@ -459,6 +477,24 @@ class SessionManager {
     }
     if (clientState.inventory && typeof clientState.inventory === 'object') {
       s.inventory = clientState.inventory;
+    }
+    if (clientState.executiveGear && typeof clientState.executiveGear === 'object') {
+      s.executiveGear = s.executiveGear || {
+        ledger: { unlocked: false, level: 1, stars: 1 },
+        laptop: { unlocked: false, level: 1, stars: 1 },
+        pen: { unlocked: false, level: 1, stars: 1 },
+        terminal: { unlocked: false, level: 1, stars: 1 }
+      };
+      ['ledger', 'laptop', 'pen', 'terminal'].forEach(gKey => {
+        const cG = clientState.executiveGear[gKey];
+        if (cG && typeof cG === 'object') {
+          const sG = s.executiveGear[gKey] || { unlocked: false, level: 1, stars: 1 };
+          sG.unlocked = sG.unlocked || Boolean(cG.unlocked);
+          sG.level = Math.max(Number(sG.level || 1), Number(cG.level || 1));
+          sG.stars = Math.max(Number(sG.stars || 1), Number(cG.stars || 1));
+          s.executiveGear[gKey] = sG;
+        }
+      });
     }
     if (clientState.activityLog && Array.isArray(clientState.activityLog)) {
       s.activityLog = clientState.activityLog.slice(0, 3500);
@@ -741,11 +777,11 @@ class SessionManager {
     session.lastActivity = Date.now();
 
     if (immediate) {
-      return await this.forceSaveSession(username);
+      await this.forceSaveSession(username);
     } else {
       this.markDirty(username);
-      return true;
     }
+    return true;
   }
 
   /**

@@ -1556,6 +1556,7 @@ var AppDB = (() => {
         stateObj.netWorth = (row.net_worth !== null && row.net_worth !== undefined) ? Number(row.net_worth) : Number((row.state && row.state.netWorth) || 0);
         stateObj.xp = (row.xp !== null && row.xp !== undefined) ? Number(row.xp) : Number((row.state && row.state.xp) || 0);
       }
+      stateObj.adminModifiedTimestamp = Number(row.admin_modified_timestamp || (row.state && row.state.adminModifiedTimestamp) || 0);
       stateObj.title = row.title || stateObj.title ||'عامل مبتدئ';
       stateObj.isAdmin = row.is_admin === true;
       if (typeof window !== 'undefined' && isCurrentPlayer) {
@@ -2285,9 +2286,7 @@ var AppDB = (() => {
       _sanitizePayloadBeforeCloudPush(payload, state);
 
       const adminTs = Number(state.adminModifiedTimestamp || 0);
-      const tsFilter = adminTs > 0 
-        ? `&admin_modified_timestamp=lte.${adminTs}` 
-        : `&or=(admin_modified_timestamp.is.null,admin_modified_timestamp.eq.0)`;
+      const tsFilter = adminTs > 0 ? `&admin_modified_timestamp=lte.${adminTs}` : '';
       fetch(`${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
         method: 'PATCH',
         headers: {

@@ -8,6 +8,7 @@ const path = require('path');
 const crypto = require('crypto');
 const config = require('../config/env');
 const sessionManager = require('../services/session-manager');
+const dbService = require('../services/db-service');
 const { BUSINESSES } = require('../engine/definitions');
 const { getBusinessUpgradeCost } = require('../engine/business-engine');
 const { calculateNetWorth, getAppropriateTitle } = require('../engine/net-worth-engine');
@@ -285,7 +286,26 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     }
 
     s.netWorth = calculateNetWorth(s);
+    s.lastActiveTimestamp = Date.now();
+    s.lastSeen = Date.now();
+
+    // Log activity
+    if (!Array.isArray(s.activityLog)) s.activityLog = [];
+    s.activityLog.unshift({
+      action: type === 'deposit' ? 'إيداع بنكي ' : 'سحب بنكي ',
+      details: type === 'deposit'
+        ? `إيداع نقدي موثق بقيمة ${val.toLocaleString()} ج.م في الحساب المصرفي`
+        : `سحب نقدي موثق بقيمة ${val.toLocaleString()} ج.م من الحساب المصرفي`,
+      category: 'banking',
+      timestamp: Date.now(),
+      amount: type === 'deposit' ? -val : val,
+      cash: s.cash,
+      bank: s.bank
+    });
+    if (s.activityLog.length > 3500) s.activityLog.length = 3500;
+
     sessionManager.markDirty(session.username);
+    await dbService.savePlayerState(session.username, s);
 
     return {
       success: true,
@@ -293,6 +313,105 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       amount: val,
       cash: s.cash,
       bank: s.bank,
+      netWorth: s.netWorth
+    };
+  });
+
+  const EXECUTIVE_GEAR_CONFIG = {
+    ledger: { unlockNetWorth: 500000, unlockGoldCost: 25, baseUpgradeCostGold: 20, maxLevel: 15 },
+    laptop: { unlockNetWorth: 5000000, unlockGoldCost: 50, baseUpgradeCostGold: 30, maxLevel: 15 },
+    pen: { unlockNetWorth: 25000000, unlockGoldCost: 100, baseUpgradeCostGold: 45, maxLevel: 15 },
+    terminal: { unlockNetWorth: 100000000, unlockGoldCost: 200, baseUpgradeCostGold: 60, maxLevel: 15 }
+  };
+
+  // 5.1 POST /api/action/gear/unlock (Authoritative Executive Gear Unlock)
+  fastify.post('/api/action/gear/unlock', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { gearId } = request.body || {};
+    const cfg = EXECUTIVE_GEAR_CONFIG[gearId];
+    if (!cfg) return reply.code(400).send({ error: 'أداة غير صالحة' });
+
+    const s = session.state;
+    if (!s.executiveGear) s.executiveGear = {};
+    if (s.executiveGear[gearId]?.unlocked) {
+      return reply.code(400).send({ error: 'هذه الأداة مفتوحة بالفعل' });
+    }
+
+    const nw = Number(s.netWorth || 0);
+    if (nw < cfg.unlockNetWorth) {
+      return reply.code(400).send({
+        error: `شرط الثروة غير مكتمل. تحتاج ${cfg.unlockNetWorth.toLocaleString()} ج.م (ثروتك الحالية: ${nw.toLocaleString()} ج.م)`
+      });
+    }
+
+    const gold = Math.max(0, Number(s.gold || 0));
+    if (gold < cfg.unlockGoldCost) {
+      return reply.code(400).send({
+        error: `رصيد الذهب غير كافٍ. تحتاج ${cfg.unlockGoldCost} سبيكة (رصيدك: ${gold})`
+      });
+    }
+
+    s.gold = gold - cfg.unlockGoldCost;
+    s.executiveGear[gearId] = { unlocked: true, level: 1, stars: 1 };
+    s.lastActiveTimestamp = Date.now();
+    s.lastSeen = Date.now();
+    sessionManager.markDirty(session.username);
+    await dbService.savePlayerState(session.username, s);
+
+    return {
+      success: true,
+      gearId,
+      gear: s.executiveGear,
+      gold: s.gold,
+      netWorth: s.netWorth
+    };
+  });
+
+  // 5.2 POST /api/action/gear/upgrade (Authoritative Executive Gear Upgrade)
+  fastify.post('/api/action/gear/upgrade', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { gearId } = request.body || {};
+    const cfg = EXECUTIVE_GEAR_CONFIG[gearId];
+    if (!cfg) return reply.code(400).send({ error: 'أداة غير صالحة' });
+
+    const s = session.state;
+    if (!s.executiveGear) s.executiveGear = {};
+    const current = s.executiveGear[gearId] || {};
+    if (!current.unlocked) {
+      return reply.code(400).send({ error: 'يجب فتح الأداة أولاً قبل ترقيتها' });
+    }
+
+    const curLvl = Number(current.level || 1);
+    if (curLvl >= cfg.maxLevel) {
+      return reply.code(400).send({ error: `وصلت الأداة إلى الحد الأقصى من الترقية (${cfg.maxLevel})` });
+    }
+
+    const costGold = Math.round(cfg.baseUpgradeCostGold * Math.pow(1.15, curLvl - 1));
+    const playerGold = Math.max(0, Number(s.gold || 0));
+    if (playerGold < costGold) {
+      return reply.code(400).send({
+        error: `رصيد الذهب غير كافٍ. تحتاج ${costGold.toLocaleString()} سبيكة (رصيدك: ${playerGold})`
+      });
+    }
+
+    s.gold = playerGold - costGold;
+    const nextLvl = curLvl + 1;
+    const nextStars = Math.min(5, Math.ceil(nextLvl / 3));
+    s.executiveGear[gearId] = { unlocked: true, level: nextLvl, stars: nextStars };
+    s.lastActiveTimestamp = Date.now();
+    s.lastSeen = Date.now();
+    sessionManager.markDirty(session.username);
+    await dbService.savePlayerState(session.username, s);
+
+    return {
+      success: true,
+      gearId,
+      newLevel: nextLvl,
+      newStars: nextStars,
+      gear: s.executiveGear,
+      gold: s.gold,
       netWorth: s.netWorth
     };
   });

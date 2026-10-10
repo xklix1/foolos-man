@@ -3284,6 +3284,7 @@ const GameEngine = (() => {
         pin: dbState.pin ||'',
         isAdmin: dbState.isAdmin === true,
         dirtyCash: Number(dbState.dirtyCash || 0),
+        adminModifiedTimestamp: Math.max(Number(dbState.admin_modified_timestamp || 0), Number(dbState.adminModifiedTimestamp || 0)),
         underSuspicion: Boolean(dbState.underSuspicion || (dbState.state && dbState.state.underSuspicion)),
         businesses: mergedBusinesses,
         assets: mergedAssets,
@@ -8409,7 +8410,7 @@ const GameEngine = (() => {
     return { active: false, tier: null, bonusPct: 0, minLevel: minLvl, text: `المستوى الأدنى لعتادك: ${minLvl} / 10 (يتطلب وصول جميع الأدوات للمستوى 10 لفتح البونص الأسطوري)` };
   }
 
-  function unlockExecutiveGear(gearId) {
+  async function unlockExecutiveGear(gearId) {
     if (!activeUsername) throw new Error('لا توجد جلسة لاعب نشطة.');
     const def = EXECUTIVE_GEAR[gearId];
     if (!def) throw new Error('أداة غير صالحة.');
@@ -8428,29 +8429,34 @@ const GameEngine = (() => {
       throw new Error(`رصيدك من الذهب غير كافٍ. تحتاج إلى ${def.unlockGoldCost} سبيكة ذهب للفتح (رصيدك الحالي: ${currentGold}).`);
     }
 
-    state.gold = currentGold - def.unlockGoldCost;
-    state.executiveGear[gearId] = {
-      unlocked: true,
-      level: 1,
-      stars: 1
-    };
-
-    if (typeof AppDB !== 'undefined' && AppDB.savePlayerState) {
-      AppDB.savePlayerState(activeUsername, state, true);
+    // Authoritative server unlock
+    if (typeof ServerBridge === 'undefined' || !ServerBridge.isServerOnline()) {
+      throw new Error('فتح وتفعيل العتاد التنفيذي يتطلب اتصالاً بالإنترنت لتأكيد الرصيد وتوثيق الملكية.');
     }
 
-    return {
-      success: true,
-      gearId,
-      spentGold: def.unlockGoldCost,
-      remainingGold: state.gold,
-      level: 1,
-      stars: 1,
-      tier: getGearTierInfo(1)
-    };
+    const sRes = await ServerBridge.unlockGear(gearId);
+    if (sRes && sRes.success) {
+      if (sRes.gold !== undefined) state.gold = sRes.gold;
+      if (sRes.gear) state.executiveGear = sRes.gear;
+      else state.executiveGear[gearId] = { unlocked: true, level: 1, stars: 1 };
+      if (typeof AppDB !== 'undefined' && AppDB.savePlayerState) {
+        AppDB.savePlayerState(activeUsername, state, true);
+      }
+      return {
+        success: true,
+        gearId,
+        spentGold: def.unlockGoldCost,
+        remainingGold: state.gold,
+        level: 1,
+        stars: 1,
+        tier: getGearTierInfo(1)
+      };
+    } else {
+      throw new Error(sRes?.error || 'تعذر فتح الأداة التنفيذية.');
+    }
   }
 
-  function upgradeExecutiveGear(gearId) {
+  async function upgradeExecutiveGear(gearId) {
     if (!activeUsername) throw new Error('لا توجد جلسة لاعب نشطة.');
     const def = EXECUTIVE_GEAR[gearId];
     if (!def) throw new Error('أداة غير صالحة.');
@@ -8472,30 +8478,40 @@ const GameEngine = (() => {
       throw new Error(`رصيدك من الذهب غير كافٍ. تحتاج إلى ${costGold.toLocaleString()} سبيكة ذهب (رصيدك الحالي: ${playerGold.toLocaleString()}).`);
     }
 
-    state.gold = playerGold - costGold;
-    const nextLvl = curLvl + 1;
-    const nextStars = Math.min(5, Math.ceil(nextLvl / 3));
-
-    state.executiveGear[gearId] = {
-      unlocked: true,
-      level: nextLvl,
-      stars: nextStars
-    };
-
-    if (typeof AppDB !== 'undefined' && AppDB.savePlayerState) {
-      AppDB.savePlayerState(activeUsername, state, true);
+    // Authoritative server upgrade
+    if (typeof ServerBridge === 'undefined' || !ServerBridge.isServerOnline()) {
+      throw new Error('ترقية العتاد التنفيذي تتطلب اتصالاً بالإنترنت لتأكيد الرصيد وتوثيق الترقية.');
     }
 
-    return {
-      success: true,
-      gearId,
-      newLevel: nextLvl,
-      newStars: nextStars,
-      tier: getGearTierInfo(nextLvl),
-      spentGold: costGold,
-      remainingGold: state.gold,
-      bonus: def.getBonus(nextLvl)
-    };
+    const sRes = await ServerBridge.upgradeGear(gearId);
+    if (sRes && sRes.success) {
+      if (sRes.gold !== undefined) state.gold = sRes.gold;
+      if (sRes.gear) state.executiveGear = sRes.gear;
+      else {
+        const nextLvl = curLvl + 1;
+        state.executiveGear[gearId] = {
+          unlocked: true,
+          level: nextLvl,
+          stars: Math.min(5, Math.ceil(nextLvl / 3))
+        };
+      }
+      const finalLvl = Number(state.executiveGear[gearId]?.level || curLvl + 1);
+      if (typeof AppDB !== 'undefined' && AppDB.savePlayerState) {
+        AppDB.savePlayerState(activeUsername, state, true);
+      }
+      return {
+        success: true,
+        gearId,
+        newLevel: finalLvl,
+        newStars: Math.min(5, Math.ceil(finalLvl / 3)),
+        tier: getGearTierInfo(finalLvl),
+        spentGold: costGold,
+        remainingGold: state.gold,
+        bonus: def.getBonus(finalLvl)
+      };
+    } else {
+      throw new Error(sRes?.error || 'تعذر ترقية الأداة التنفيذية.');
+    }
   }
 
   function setCharacterAvatar(avatarId) {

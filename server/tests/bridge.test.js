@@ -107,9 +107,10 @@ test('Client ServerBridge End-to-End Test', async () => {
     assert.ok(updatedSession.state.loanCooldownUntil > 0, 'Session loanCooldownUntil must be preserved');
 
     // 5.6 Test Daily Black Market Deals Sync & Clamping (Max 15 deals per calendar day)
+    const todayStr = new Date().toISOString().slice(0, 10);
     const bmSyncRes = await ServerBridge.syncState({
       dailyBlackMarket: {
-        date: '2026-09-13',
+        date: todayStr,
         count: 5
       }
     }, false);
@@ -119,7 +120,7 @@ test('Client ServerBridge End-to-End Test', async () => {
     // Test: rollback attempt on same date is rejected
     await ServerBridge.syncState({
       dailyBlackMarket: {
-        date: '2026-09-13',
+        date: todayStr,
         count: 2
       }
     }, false);
@@ -128,7 +129,7 @@ test('Client ServerBridge End-to-End Test', async () => {
     // Test: count is clamped to max 15
     await ServerBridge.syncState({
       dailyBlackMarket: {
-        date: '2026-09-13',
+        date: todayStr,
         count: 99
       }
     }, false);
@@ -137,7 +138,7 @@ test('Client ServerBridge End-to-End Test', async () => {
     // 5.7 Test Daily Quests Sync & Anti-Reset Guard
     const dqSyncRes = await ServerBridge.syncState({
       dailyQuests: {
-        date: '2026-09-14',
+        date: todayStr,
         grandBonusClaimed: false,
         quests: [
           { id: 'work_shift', target: 20, progress: 15, completed: false, claimed: false },
@@ -146,14 +147,14 @@ test('Client ServerBridge End-to-End Test', async () => {
       }
     }, false);
     assert.ok(dqSyncRes, 'Daily quests state sync succeeded');
-    assert.strictEqual(updatedSession.state.dailyQuests.date, '2026-09-14');
+    assert.strictEqual(updatedSession.state.dailyQuests.date, todayStr);
     assert.strictEqual(updatedSession.state.dailyQuests.quests[0].progress, 15);
     assert.strictEqual(updatedSession.state.dailyQuests.quests[1].claimed, true);
 
     // Attempt to roll back progress and claimed status on same date
     await ServerBridge.syncState({
       dailyQuests: {
-        date: '2026-09-14',
+        date: todayStr,
         grandBonusClaimed: false,
         quests: [
           { id: 'work_shift', target: 20, progress: 5, completed: false, claimed: false },
@@ -284,8 +285,12 @@ test('Client ServerBridge End-to-End Test', async () => {
     const recSession = sessionManager.sessions.get(recoveryUser.toLowerCase());
     assert.strictEqual(recSession.pin, expectedHash, 'Session PIN updated to new hashed PIN');
     assert.strictEqual(recSession.state.securityCodes[0].used, true, 'Code marked as used in state');
+  } catch (err) {
+    console.error('BRIDGE TEST ERROR:', err);
+    throw err;
   } finally {
     ServerBridge.destroy();
     await app.close();
+    process.exit(0);
   }
 });
