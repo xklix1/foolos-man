@@ -259,6 +259,41 @@ class SessionManager {
       s.adminModifiedTimestamp = clientAdminTs;
       session._lastProcessedAdminTs = clientAdminTs;
     }
+
+    // Accrue Server-Authoritative Compound Bank Interest (Zero-overhead Delta-Time Math: O(1))
+    const nowTs = Date.now();
+    const lastBankTs = Number(s.lastBankInterestAt || session.lastActivity || nowTs);
+    const bankElapsedSec = Math.max(0, Math.min(86400, Math.floor((nowTs - lastBankTs) / 1000)));
+    s.lastBankInterestAt = nowTs;
+
+    if (bankElapsedSec >= 1 && Number(s.bank || 0) > 0) {
+      const dailyCap = 250000;
+      const serverToday = new Date(nowTs).toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });
+      if (!s.dailyBankInterest || typeof s.dailyBankInterest !== 'object' || s.dailyBankInterest.date !== serverToday) {
+        s.dailyBankInterest = { date: serverToday, earned: 0 };
+      }
+      const currentEarned = Number(s.dailyBankInterest.earned || 0);
+      if (currentEarned < dailyCap) {
+        const bal = Number(s.bank || 0);
+        let baseRate = 0.00015; // 0.015% per hour (~0.36% per day)
+        if (s.activeCar === 'rolls') baseRate *= 1.05;
+        if (s.inventory && s.inventory.diamond_card > 0) baseRate *= 1.10;
+
+        let effBalance = Math.min(bal, 5000000);
+        if (bal > 5000000) effBalance += Math.min(bal - 5000000, 20000000) * 0.40;
+        if (bal > 25000000) effBalance += Math.min(bal - 25000000, 75000000) * 0.15;
+
+        const hourlyEst = effBalance * baseRate;
+        const earned = Math.floor((hourlyEst / 3600) * bankElapsedSec);
+        const toAdd = Math.min(dailyCap - currentEarned, earned);
+
+        if (toAdd > 0) {
+          s.bank = (Number(s.bank) || 0) + toAdd;
+          s.dailyBankInterest.earned = currentEarned + toAdd;
+        }
+      }
+    }
+
     if (clientState.xp !== undefined) {
       s.xp = (isClientStale && !isAdminGrant) ? Math.max(Number(s.xp || 0), Number(clientState.xp) || 0) : (Number(clientState.xp) || 0);
     }
