@@ -1069,7 +1069,7 @@
   </div>
 
   <!-- ================= SHARED STAFF TASKS MODAL (لوحة المهام المشتركة) ================= -->
-  <div id="staffTasksModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-5 overflow-y-auto">
+  <div id="staffTasksModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-5 overflow-y-auto">
     <div class="glass-panel w-full max-w-4xl my-auto rounded-2xl sm:rounded-3xl border border-indigo-500/40 p-4 sm:p-6 glow-cyan modal-enter max-h-[92vh] flex flex-col space-y-4 shadow-2xl">
       
       <!-- Modal Header -->
@@ -5602,7 +5602,11 @@
 
     function openStaffTasksModal() {
       const modal = document.getElementById('staffTasksModal');
-      if (modal) modal.classList.remove('hidden');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+        modal.style.zIndex = '99999999';
+      }
       loadStaffTasks();
       if (_staffTasksPollTimer) clearInterval(_staffTasksPollTimer);
       _staffTasksPollTimer = setInterval(() => loadStaffTasks(true), 10000);
@@ -5616,6 +5620,9 @@
                      document.getElementById('inspectUsername')?.textContent?.trim() || '';
       }
       if (targetUser === '--' || targetUser === '---') targetUser = '';
+
+      // Close chat threads list modal so tasks modal is front and center
+      closeStaffChatThreadsModal();
 
       openStaffTasksModal();
 
@@ -5639,7 +5646,10 @@
 
     function closeStaffTasksModal() {
       const modal = document.getElementById('staffTasksModal');
-      if (modal) modal.classList.add('hidden');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+      }
       if (_staffTasksPollTimer) {
         clearInterval(_staffTasksPollTimer);
         _staffTasksPollTimer = null;
