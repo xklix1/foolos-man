@@ -278,6 +278,13 @@
           </div>
         </div>
 
+        <!-- Shared Staff Tasks Button -->
+        <button onclick="openStaffTasksModal()" class="nav-action-btn px-3 py-2 rounded-xl bg-indigo-950/50 hover:bg-indigo-900/60 text-indigo-300 text-xs font-bold border border-indigo-700/50 flex items-center justify-center gap-1.5 shadow-sm cursor-pointer" title="لوحة المهام والتحريات المشتركة بين طاقم الرقابة">
+          <i class="fa-solid fa-list-check text-indigo-400"></i>
+          <span>المهام المشتركة</span>
+          <span id="navTasksCountBadge" class="hidden px-1.5 py-0.2 rounded-full text-[9px] font-black bg-indigo-500 text-white shadow-sm">0</span>
+        </button>
+
         <!-- Global Standby Mode Toggle Button -->
         <button onclick="openStandbyModal()" id="navStandbyBtn" class="nav-action-btn px-3 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center justify-center gap-2 col-span-2 sm:col-span-1 cursor-pointer shadow-sm" title="التحكم في وضع الاستعداد العام للعبة">
           <span id="navStandbyDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
@@ -1052,6 +1059,112 @@
     </div>
   </div>
 
+  <!-- ================= SHARED STAFF TASKS MODAL (لوحة المهام المشتركة) ================= -->
+  <div id="staffTasksModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-5 overflow-y-auto">
+    <div class="glass-panel w-full max-w-4xl my-auto rounded-2xl sm:rounded-3xl border border-indigo-500/40 p-4 sm:p-6 glow-cyan modal-enter max-h-[92vh] flex flex-col space-y-4 shadow-2xl">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 via-blue-600 to-cyan-600 flex items-center justify-center text-xl text-white shadow-lg shadow-indigo-600/30 shrink-0 border border-indigo-400/30">
+            <i class="fa-solid fa-list-check"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-black text-base sm:text-lg text-white">لوحة المهام والتحريات المشتركة</h3>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">STAFF BOARD</span>
+            </div>
+            <p class="text-[11px] sm:text-xs text-slate-400">قائمة مهام وتوجيهات موحدة ومزامنة لحظياً بين جميع المحققين والإدارة</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="loadStaffTasks(true)" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-1.5 transition cursor-pointer" title="تحديث قائمة المهام">
+            <i class="fa-solid fa-rotate text-cyan-400"></i>
+            <span class="hidden sm:inline">تحديث</span>
+          </button>
+          <button onclick="closeStaffTasksModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Add Task Form Box -->
+      <form onsubmit="submitNewStaffTask(event)" class="glass-card p-3.5 sm:p-4 rounded-2xl border border-indigo-500/30 bg-indigo-950/15 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black text-indigo-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-plus-circle text-indigo-400"></i>
+            <span>إسناد مهمة جديدة للوحة المشتركة:</span>
+          </span>
+          <span class="text-[10px] text-slate-400 font-mono">تظهر فوراً لجميع المحققين</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+          <!-- Task Text Input -->
+          <div class="sm:col-span-6">
+            <input type="text" id="newTaskTextInput" placeholder="اكتب تفاصيل المهمة (مثال: متابعة تحويلات الحساب X، تدقيق أسعار المزاد...)" required class="w-full bg-slate-900 border border-slate-700/80 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition shadow-inner" />
+          </div>
+
+          <!-- Priority Select -->
+          <div class="sm:col-span-3">
+            <select id="newTaskPrioritySelect" class="w-full bg-slate-900 border border-slate-700/80 focus:border-indigo-400 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none transition cursor-pointer">
+              <option value="urgent" class="text-rose-400 font-bold">🚨 عاجل جداً (أولوية قصوى)</option>
+              <option value="normal" class="text-amber-300 font-bold" selected>⚠️ متابعة وتحري (عادي)</option>
+              <option value="low" class="text-slate-300">ℹ️ روتيني / غير عاجل</option>
+            </select>
+          </div>
+
+          <!-- Target Player Input (Optional) -->
+          <div class="sm:col-span-3">
+            <div class="relative">
+              <i class="fa-solid fa-user absolute right-3 top-3 text-slate-500 text-xs"></i>
+              <input type="text" id="newTaskTargetPlayerInput" placeholder="اللاعب المستهدف (اختياري)" class="w-full bg-slate-900 border border-slate-700/80 focus:border-indigo-400 rounded-xl pr-8 pl-3 py-2.5 text-xs text-cyan-300 placeholder-slate-500 focus:outline-none transition" />
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-1">
+          <button type="submit" id="submitNewTaskBtn" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-black text-xs shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+            <span>إضافة المهمة للوحة المشتركة</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Filter Controls & Task Summary Counters -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 text-xs">
+        <div class="flex items-center gap-1.5 overflow-x-auto text-[11px] custom-scrollbar pb-1 sm:pb-0">
+          <button onclick="filterStaffTasks('pending')" id="taskFilter_pending" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-black transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>قيد المتابعة</span>
+            <span id="taskCountPendingBadge" class="px-1.5 py-0.2 rounded-full bg-white/20 text-white text-[10px]">0</span>
+          </button>
+          <button onclick="filterStaffTasks('completed')" id="taskFilter_completed" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white font-bold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-circle-check text-emerald-400"></i>
+            <span>المنجزة (Done)</span>
+            <span id="taskCountCompletedBadge" class="px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-300 text-[10px]">0</span>
+          </button>
+          <button onclick="filterStaffTasks('all')" id="taskFilter_all" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white font-bold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
+            <span>الكل</span>
+            <span id="taskCountTotalBadge" class="px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-300 text-[10px]">0</span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2 justify-end">
+          <button onclick="clearCompletedStaffTasks()" class="text-[11px] text-slate-400 hover:text-rose-400 transition flex items-center gap-1 cursor-pointer">
+            <i class="fa-solid fa-trash-can text-[10px]"></i>
+            <span>مسح المهام المنجزة</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tasks Stream Container -->
+      <div id="staffTasksListContainer" class="flex-1 min-h-[260px] max-h-[420px] overflow-y-auto space-y-2.5 p-1 custom-scrollbar">
+        <!-- Rendered tasks injected here -->
+      </div>
+
+    </div>
+  </div>
+
   <!-- ================= STAFF AUDIT LOGS MODAL ================= -->
   <div id="auditLogsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto">
     <div class="glass-panel w-full max-w-4xl my-auto rounded-2xl border border-amber-500/40 p-6 glow-gold modal-enter max-h-[88vh] flex flex-col">
@@ -1554,6 +1667,131 @@
     </div>
   </div>
 
+  <!-- ================= SHARED STAFF TASKS MODAL (لوحة المهام والتحريات المشتركة) ================= -->
+  <div id="staffTasksModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-5 overflow-y-auto">
+    <div class="glass-panel w-full max-w-3xl my-auto rounded-2xl sm:rounded-3xl border border-indigo-500/40 p-4 sm:p-6 glow-cyan modal-enter flex flex-col space-y-4 shadow-2xl shadow-indigo-950/50 max-h-[92vh]">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3.5">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 flex items-center justify-center text-xl text-white shadow-lg shadow-indigo-600/30 shrink-0">
+            <i class="fa-solid fa-list-check"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-black text-base sm:text-lg text-white">لوحة المهام المشتركة للمحققين</h3>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">SHARED BOARD</span>
+            </div>
+            <p class="text-[11px] text-slate-400">قائمة مهام وتحريات موحدة ومتزامنة لحظياً بين جميع المشرفين والمحققين</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="loadStaffTasks()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer" title="تحديث القائمة">
+            <i class="fa-solid fa-arrows-rotate text-xs"></i>
+          </button>
+          <button onclick="closeStaffTasksModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Add New Task Form Card -->
+      <div class="glass-card p-3.5 sm:p-4 rounded-2xl border border-indigo-500/30 bg-indigo-950/20 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-plus-circle text-indigo-400"></i>
+            <span>إسناد / إضافة مهمة تحقيق جديدة:</span>
+          </span>
+          <span class="text-[10px] text-slate-400">تظهر فوراً لجميع المحققين</span>
+        </div>
+
+        <form id="newStaffTaskForm" onsubmit="submitNewStaffTask(event)" class="space-y-3">
+          <div class="relative">
+            <textarea id="staffTaskInputText" rows="2" placeholder="اكتب تفاصيل المهمة أو الإجراء المطلوب... (مثال: مراجعة حركة الحوالات للاعب @Ahmed والتأكد من مصدر الأموال)" required class="w-full bg-slate-900/90 border border-slate-700/80 focus:border-indigo-400 rounded-xl p-3 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none transition resize-none"></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <!-- Target Player (Optional) -->
+            <div>
+              <div class="relative">
+                <input type="text" id="staffTaskTargetPlayer" placeholder="اسم اللاعب (اختياري)..." class="w-full bg-slate-900 border border-slate-700/80 focus:border-indigo-400 rounded-xl px-3 py-2 text-xs text-cyan-300 placeholder-slate-500 focus:outline-none transition numbers-font" />
+                <span class="absolute left-3 top-2 text-xs text-slate-500 font-mono">@</span>
+              </div>
+            </div>
+
+            <!-- Priority -->
+            <div>
+              <select id="staffTaskPriority" class="w-full bg-slate-900 border border-slate-700/80 focus:border-indigo-400 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition cursor-pointer">
+                <option value="urgent">🔴 أولوية عاجلة جداً</option>
+                <option value="normal" selected>🟡 أولوية عادية / متوسطة</option>
+                <option value="low">🔵 للمتابعة الروتينية</option>
+              </select>
+            </div>
+
+            <!-- Submit Button -->
+            <div>
+              <button type="submit" id="staffTaskSubmitBtn" class="w-full py-2 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition duration-200 flex items-center justify-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span>إضافة للمشترك</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Filters & Counter Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+        <!-- Filter Tabs -->
+        <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+          <button type="button" onclick="setStaffTasksFilter('pending')" id="taskFilterBtn_pending" class="px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer bg-indigo-600 text-white shadow-sm flex items-center gap-1.5">
+            <i class="fa-regular fa-clock"></i>
+            <span>قيد المتابعة</span>
+            <span id="staffTasksPendingCountBadge" class="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-indigo-900/80 text-indigo-200">0</span>
+          </button>
+          <button type="button" onclick="setStaffTasksFilter('completed')" id="taskFilterBtn_completed" class="px-3 py-1 rounded-lg text-xs font-bold text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>المنجزة (Done)</span>
+            <span id="staffTasksCompletedCountBadge" class="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-slate-800 text-slate-300">0</span>
+          </button>
+          <button type="button" onclick="setStaffTasksFilter('all')" id="taskFilterBtn_all" class="px-3 py-1 rounded-lg text-xs font-bold text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>الكل</span>
+            <span id="staffTasksTotalCountBadge" class="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-slate-800 text-slate-300">0</span>
+          </button>
+        </div>
+
+        <!-- Search & Clear Actions -->
+        <div class="flex items-center gap-2">
+          <div class="relative">
+            <input type="text" id="staffTasksSearchInput" oninput="renderStaffTasks()" placeholder="بحث في المهام..." class="bg-slate-900 border border-slate-800 focus:border-indigo-400 rounded-xl px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none w-36 sm:w-44 transition" />
+            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-[10px] text-slate-500"></i>
+          </div>
+          <button type="button" onclick="clearCompletedStaffTasks()" class="px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 border border-slate-700/60 hover:border-rose-800/60 text-xs font-bold transition flex items-center gap-1 cursor-pointer" title="حذف جميع المهام المنجزة">
+            <i class="fa-solid fa-trash-can text-[10px]"></i>
+            <span class="hidden sm:inline">مسح المنجزة</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tasks List Container (Scrollable) -->
+      <div id="staffTasksListContainer" class="flex-1 overflow-y-auto space-y-2.5 pr-1 max-h-[46vh] min-h-[160px]">
+        <!-- Dynamic Task Cards Rendered Here -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+        <div class="flex items-center gap-1.5">
+          <i class="fa-solid fa-rotate text-indigo-400 animate-spin-slow"></i>
+          <span>مزامنة تلقائية كل 10 ثوانٍ</span>
+        </div>
+        <button onclick="closeStaffTasksModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition cursor-pointer">
+          إغلاق
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ================= JAVASCRIPT LOGIC ================= -->
   <script>
     const API_BASE = window.location.origin.includes('rasalmal.online')
@@ -1737,9 +1975,13 @@
       refreshOverview();
       executeSearch();
       checkStandbyStatus();
+      loadStaffTasks(true);
 
       if (standbyPollTimer) clearInterval(standbyPollTimer);
-      standbyPollTimer = setInterval(checkStandbyStatus, 6000);
+      standbyPollTimer = setInterval(() => {
+        checkStandbyStatus();
+        loadStaffTasks(true);
+      }, 8000);
     }
 
     async function logoutStaff() {
@@ -5462,6 +5704,349 @@
         alert(`✅ تم إرسال ردك الرسمي لـ "${targetUser}" في الشات العام بنجاح!`);
       } else {
         alert('❌ فشل إرسال الرد للشات العام.');
+      }
+    }
+
+    // ================= SHARED STAFF TASKS (لوحة المهام والتحريات المشتركة) =================
+    let _cachedStaffTasks = [];
+    let _staffTasksFilter = 'pending'; // 'pending' | 'completed' | 'all'
+    let _staffTasksPollTimer = null;
+
+    function openStaffTasksModal() {
+      const modal = document.getElementById('staffTasksModal');
+      if (modal) modal.classList.remove('hidden');
+      loadStaffTasks();
+      if (_staffTasksPollTimer) clearInterval(_staffTasksPollTimer);
+      _staffTasksPollTimer = setInterval(() => loadStaffTasks(true), 10000);
+    }
+
+    function closeStaffTasksModal() {
+      const modal = document.getElementById('staffTasksModal');
+      if (modal) modal.classList.add('hidden');
+      if (_staffTasksPollTimer) {
+        clearInterval(_staffTasksPollTimer);
+        _staffTasksPollTimer = null;
+      }
+    }
+
+    function setStaffTasksFilter(filter) {
+      _staffTasksFilter = filter;
+      ['pending', 'completed', 'all'].forEach(f => {
+        const btn = document.getElementById(`taskFilterBtn_${f}`);
+        if (btn) {
+          if (f === filter) {
+            btn.className = 'px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer bg-indigo-600 text-white shadow-sm flex items-center gap-1.5';
+          } else {
+            btn.className = 'px-3 py-1 rounded-lg text-xs font-bold text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5';
+          }
+        }
+      });
+      renderStaffTasks();
+    }
+
+    async function loadStaffTasks(silent = false) {
+      const container = document.getElementById('staffTasksListContainer');
+      if (!silent && container && (!_cachedStaffTasks || _cachedStaffTasks.length === 0)) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-slate-400">
+            <i class="fa-solid fa-spinner fa-spin text-2xl text-indigo-400 mb-2"></i>
+            <p class="text-xs">جاري تحميل وتحديث قائمة المهام المشتركة...</p>
+          </div>
+        `;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/tasks`, {
+          headers: { 'Authorization': `Bearer ${currentModToken}` }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.success && Array.isArray(data.tasks)) {
+            _cachedStaffTasks = data.tasks;
+            updateStaffTasksCounters(data.pendingCount, data.completedCount, data.totalCount);
+            renderStaffTasks();
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('[Load Staff Tasks Failed]:', err.message);
+      }
+    }
+
+    function updateStaffTasksCounters(pending, completed, total) {
+      const pCount = pending !== undefined ? pending : _cachedStaffTasks.filter(t => !t.completed).length;
+      const cCount = completed !== undefined ? completed : _cachedStaffTasks.filter(t => t.completed).length;
+      const tCount = total !== undefined ? total : _cachedStaffTasks.length;
+
+      // Update Nav Badge
+      const navBadge = document.getElementById('navTasksCountBadge');
+      if (navBadge) {
+        navBadge.textContent = pCount;
+        navBadge.classList.toggle('hidden', pCount === 0);
+      }
+
+      // Update Modal Counters
+      const pendingBadge = document.getElementById('staffTasksPendingCountBadge');
+      if (pendingBadge) pendingBadge.textContent = pCount;
+
+      const completedBadge = document.getElementById('staffTasksCompletedCountBadge');
+      if (completedBadge) completedBadge.textContent = cCount;
+
+      const totalBadge = document.getElementById('staffTasksTotalCountBadge');
+      if (totalBadge) totalBadge.textContent = tCount;
+    }
+
+    function renderStaffTasks() {
+      const container = document.getElementById('staffTasksListContainer');
+      if (!container) return;
+
+      const searchInput = document.getElementById('staffTasksSearchInput');
+      const searchQuery = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+      let filtered = [..._cachedStaffTasks];
+
+      // Apply tab filter
+      if (_staffTasksFilter === 'pending') {
+        filtered = filtered.filter(t => !t.completed);
+      } else if (_staffTasksFilter === 'completed') {
+        filtered = filtered.filter(t => t.completed);
+      }
+
+      // Apply search query
+      if (searchQuery) {
+        filtered = filtered.filter(t => 
+          (t.text && t.text.toLowerCase().includes(searchQuery)) ||
+          (t.targetPlayer && t.targetPlayer.toLowerCase().includes(searchQuery)) ||
+          (t.createdBy && t.createdBy.toLowerCase().includes(searchQuery)) ||
+          (t.completedBy && t.completedBy.toLowerCase().includes(searchQuery))
+        );
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-slate-500 glass-card rounded-2xl border border-slate-800/80 p-6">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-950/40 text-indigo-400 flex items-center justify-center mx-auto mb-2 text-xl border border-indigo-500/20">
+              <i class="fa-solid fa-clipboard-check"></i>
+            </div>
+            <p class="text-xs font-bold text-slate-300">لا توجد مهام ${
+              _staffTasksFilter === 'pending' ? 'معلقة حالياً' : (_staffTasksFilter === 'completed' ? 'منجزة في السجل' : 'مطابقة')
+            }</p>
+            <p class="text-[11px] text-slate-500 mt-1">يمكنك إضافة مهمة تحقيق جديدة من النموذج أعلاه ليراها الجميع</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(task => {
+        const isDone = Boolean(task.completed);
+        const prio = task.priority || 'normal';
+        
+        let prioBadge = '';
+        if (prio === 'urgent') {
+          prioBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/70 text-rose-300 border border-rose-700/60 flex items-center gap-1"><i class="fa-solid fa-bolt text-rose-400 text-[9px]"></i> عاجل</span>`;
+        } else if (prio === 'low') {
+          prioBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-950/70 text-sky-300 border border-sky-700/60 flex items-center gap-1"><i class="fa-solid fa-note-sticky text-sky-400 text-[9px]"></i> روتيني</span>`;
+        } else {
+          prioBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950/70 text-amber-300 border border-amber-700/60 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation text-amber-400 text-[9px]"></i> متوسط</span>`;
+        }
+
+        const targetPlayerBadge = task.targetPlayer ? `
+          <button type="button" onclick="inspectPlayer('${task.targetPlayer}'); closeStaffTasksModal();" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-700/60 hover:border-cyan-400 flex items-center gap-1 transition cursor-pointer" title="انقر لفحص هذا اللاعب مباشرة">
+            <i class="fa-solid fa-user-shield text-cyan-400 text-[9px]"></i>
+            <span class="numbers-font font-mono">@${task.targetPlayer}</span>
+          </button>
+        ` : '';
+
+        const createdDateStr = fmtDate(task.createdAt);
+        const completedDateStr = task.completedAt ? fmtDate(task.completedAt) : '';
+
+        return `
+          <div class="glass-card p-3.5 rounded-2xl border transition duration-200 ${
+            isDone 
+              ? 'border-slate-800 bg-slate-900/40 opacity-75' 
+              : (prio === 'urgent' ? 'border-rose-500/40 bg-rose-950/10' : 'border-indigo-500/30 bg-slate-900/80 hover:border-indigo-500/60')
+          }">
+            <div class="flex items-start justify-between gap-3">
+              
+              <!-- Checkbox / Toggle Action -->
+              <div class="flex items-start gap-3 flex-1">
+                <button type="button" onclick="toggleStaffTaskDone('${task.id}')" class="mt-0.5 shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition cursor-pointer ${
+                  isDone 
+                    ? 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-500' 
+                    : 'border-2 border-slate-600 hover:border-emerald-400 text-transparent hover:text-emerald-400'
+                }" title="${isDone ? 'إلغاء الإنجاز وإعادة الفتح' : 'تعليم كمكتمل (Mark as Done)'}">
+                  <i class="fa-solid fa-check text-xs"></i>
+                </button>
+
+                <!-- Task Details -->
+                <div class="flex-1 space-y-1.5">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    ${prioBadge}
+                    ${targetPlayerBadge}
+                    ${isDone ? '<span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-950/80 text-emerald-300 border border-emerald-700/60">منجزة ✅</span>' : ''}
+                  </div>
+
+                  <p class="text-xs sm:text-sm font-medium leading-relaxed ${isDone ? 'line-through text-slate-400' : 'text-slate-100'}">
+                    ${task.text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                  </p>
+
+                  <!-- Metadata Footer -->
+                  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-400 pt-0.5">
+                    <span class="flex items-center gap-1">
+                      <i class="fa-solid fa-user-pen text-slate-500"></i>
+                      <span>أضافها: <strong class="text-slate-300">${task.createdBy || 'محقق'}</strong></span>
+                    </span>
+                    <span class="flex items-center gap-1">
+                      <i class="fa-regular fa-clock text-slate-500"></i>
+                      <span>${createdDateStr}</span>
+                    </span>
+                    ${isDone && task.completedBy ? `
+                      <span class="flex items-center gap-1 text-emerald-400/90 font-medium">
+                        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                        <span>أنجزها: <strong>${task.completedBy}</strong> (${completedDateStr})</span>
+                      </span>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Delete / Action Button -->
+              <button type="button" onclick="deleteStaffTask('${task.id}')" class="text-slate-500 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-950/40 transition cursor-pointer shrink-0" title="حذف المهمة">
+                <i class="fa-solid fa-trash text-xs"></i>
+              </button>
+
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function submitNewStaffTask(e) {
+      if (e) e.preventDefault();
+      const textInput = document.getElementById('staffTaskInputText');
+      const targetInput = document.getElementById('staffTaskTargetPlayer');
+      const prioritySelect = document.getElementById('staffTaskPriority');
+      const submitBtn = document.getElementById('staffTaskSubmitBtn');
+
+      const text = textInput ? textInput.value.trim() : '';
+      const targetPlayer = targetInput ? targetInput.value.trim().replace(/^@/, '') : '';
+      const priority = prioritySelect ? prioritySelect.value : 'normal';
+
+      if (!text) return;
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري الإضافة...</span>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/tasks`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentModToken}`
+          },
+          body: JSON.stringify({ text, targetPlayer, priority })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          textInput.value = '';
+          if (targetInput) targetInput.value = '';
+          if (Array.isArray(data.tasks)) {
+            _cachedStaffTasks = data.tasks;
+            updateStaffTasksCounters(data.pendingCount, data.completedCount, _cachedStaffTasks.length);
+            renderStaffTasks();
+          } else {
+            await loadStaffTasks(true);
+          }
+        } else {
+          alert('خطأ: ' + (data.message || 'فشل إضافة المهمة'));
+        }
+      } catch (err) {
+        alert('خطأ في الاتصال: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>إضافة للمشترك</span>`;
+      }
+    }
+
+    async function toggleStaffTaskDone(taskId) {
+      try {
+        const res = await fetch(`${API_BASE}/tasks/${encodeURIComponent(taskId)}/toggle`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${currentModToken}` }
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (Array.isArray(data.tasks)) {
+            _cachedStaffTasks = data.tasks;
+            updateStaffTasksCounters(data.pendingCount, data.completedCount, _cachedStaffTasks.length);
+            renderStaffTasks();
+          } else {
+            await loadStaffTasks(true);
+          }
+        } else {
+          alert('خطأ: ' + (data.message || 'فشل تحديث حالة المهمة'));
+        }
+      } catch (err) {
+        alert('خطأ في الاتصال: ' + err.message);
+      }
+    }
+
+    async function deleteStaffTask(taskId) {
+      if (!confirm('هل أنت متأكد من رغبتك في حذف هذه المهمة من اللوحة المشتركة؟')) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/tasks/${encodeURIComponent(taskId)}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${currentModToken}` }
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (Array.isArray(data.tasks)) {
+            _cachedStaffTasks = data.tasks;
+            updateStaffTasksCounters(data.pendingCount, data.completedCount, _cachedStaffTasks.length);
+            renderStaffTasks();
+          } else {
+            await loadStaffTasks(true);
+          }
+        } else {
+          alert('خطأ: ' + (data.message || 'فشل حذف المهمة'));
+        }
+      } catch (err) {
+        alert('خطأ في الاتصال: ' + err.message);
+      }
+    }
+
+    async function clearCompletedStaffTasks() {
+      const completedCount = _cachedStaffTasks.filter(t => t.completed).length;
+      if (completedCount === 0) {
+        alert('لا توجد مهام منجزة لحذفها.');
+        return;
+      }
+
+      if (!confirm(`هل أنت متأكد من مسح وحذف جميع المهام المنجزة (${completedCount} مهمة) نهائياً؟`)) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/tasks/clear-completed`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${currentModToken}` }
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (Array.isArray(data.tasks)) {
+            _cachedStaffTasks = data.tasks;
+            updateStaffTasksCounters(data.pendingCount, data.completedCount, _cachedStaffTasks.length);
+            renderStaffTasks();
+          } else {
+            await loadStaffTasks(true);
+          }
+        }
+      } catch (err) {
+        alert('خطأ في الاتصال: ' + err.message);
       }
     }
   </script>

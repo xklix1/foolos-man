@@ -2697,6 +2697,218 @@ async function moderatorRoutes(fastify, options) {
       return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
     }
   });
+  // ================= SHARED STAFF TASKS (لوحة المهام المشتركة) =================
+
+  /**
+   * Helper to retrieve current shared staff tasks
+   */
+  async function getSharedStaffTasks() {
+    const sKey = serviceKey();
+    const gUrl = `${config.SUPABASE_URL}/rest/v1/globals?id=eq.staff_shared_tasks&select=*`;
+    const res = await fetch(gUrl, {
+      headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+    });
+    if (res.ok) {
+      const rows = await res.json();
+      if (Array.isArray(rows) && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.tasks)) {
+        return rows[0].data.tasks;
+      }
+    }
+    return [];
+  }
+
+  /**
+   * Helper to persist shared staff tasks
+   */
+  async function saveSharedStaffTasks(tasks) {
+    const sKey = serviceKey();
+    const ts = Date.now();
+    const saveRes = await fetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
+      method: 'POST',
+      headers: {
+        'apikey': sKey,
+        'Authorization': `Bearer ${sKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({
+        id: 'staff_shared_tasks',
+        data: { tasks, lastUpdated: ts },
+        updated_at: ts
+      })
+    });
+    if (!saveRes.ok) {
+      const errTxt = await saveRes.text();
+      throw new Error(`Failed to save staff tasks: ${errTxt}`);
+    }
+    return tasks;
+  }
+
+  /**
+   * GET /api/mod/tasks
+   * Retrieves all shared investigation tasks for moderators
+   */
+  fastify.get('/tasks', { preHandler: requireModAuth }, async (request, reply) => {
+    try {
+      const tasks = await getSharedStaffTasks();
+      const pendingCount = tasks.filter(t => !t.completed).length;
+      const completedCount = tasks.filter(t => t.completed).length;
+
+      return reply.send({
+        success: true,
+        tasks,
+        pendingCount,
+        completedCount,
+        totalCount: tasks.length
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Get Staff Tasks Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * POST /api/mod/tasks
+   * Adds a new shared investigation task
+   */
+  fastify.post('/tasks', { preHandler: requireModAuth }, async (request, reply) => {
+    try {
+      const { text, priority, targetPlayer } = request.body || {};
+      const cleanText = String(text || '').trim();
+      if (!cleanText) {
+        return reply.status(400).send({ error: 'Bad Request', message: 'يرجى كتابة نص أو تفاصيل المهمة.' });
+      }
+
+      const tasks = await getSharedStaffTasks();
+      const ts = Date.now();
+      const newTask = {
+        id: 'task_' + ts + '_' + crypto.randomBytes(3).toString('hex'),
+        text: cleanText,
+        priority: ['urgent', 'high', 'normal', 'low'].includes(priority) ? priority : 'normal',
+        targetPlayer: targetPlayer ? String(targetPlayer).trim() : null,
+        createdBy: request.modSession.name || 'محقق',
+        createdAt: ts,
+        completed: false,
+        completedBy: null,
+        completedAt: null
+      };
+
+      tasks.unshift(newTask);
+      // Cap at 200 tasks
+      const capped = tasks.slice(0, 200);
+      await saveSharedStaffTasks(capped);
+
+      await logStaffAudit(
+        request.modSession,
+        newTask.targetPlayer || 'staff_tasks',
+        'create_staff_task',
+        `إضافة مهمة تحقيق مشتركة: "${cleanText.substring(0, 50)}..."`,
+        { taskId: newTask.id, priority: newTask.priority }
+      );
+
+      const pendingCount = capped.filter(t => !t.completed).length;
+      const completedCount = capped.filter(t => t.completed).length;
+
+      return reply.send({
+        success: true,
+        message: 'تمت إضافة المهمة للوحة المشتركة بنجاح.',
+        task: newTask,
+        tasks: capped,
+        pendingCount,
+        completedCount
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Create Staff Task Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * PATCH /api/mod/tasks/:taskId/toggle
+   * Toggles task completion status (Mark as Done / Reopen)
+   */
+  fastify.patch('/tasks/:taskId/toggle', { preHandler: requireModAuth }, async (request, reply) => {
+    try {
+      const { taskId } = request.params;
+      const tasks = await getSharedStaffTasks();
+      const taskIndex = tasks.findIndex(t => t.id === taskId);
+
+      if (taskIndex === -1) {
+        return reply.status(404).send({ error: 'Not Found', message: 'المهمة غير موجودة.' });
+      }
+
+      const task = tasks[taskIndex];
+      const newStatus = !task.completed;
+      task.completed = newStatus;
+
+      if (newStatus) {
+        task.completedBy = request.modSession.name || 'محقق';
+        task.completedAt = Date.now();
+      } else {
+        task.completedBy = null;
+        task.completedAt = null;
+      }
+
+      await saveSharedStaffTasks(tasks);
+
+      await logStaffAudit(
+        request.modSession,
+        task.targetPlayer || 'staff_tasks',
+        'toggle_staff_task',
+        newStatus ? `إنجاز مهمة تحقيق (Mark as Done): "${task.text.substring(0, 50)}..."` : `إعادة فتح مهمة تحقيق: "${task.text.substring(0, 50)}..."`,
+        { taskId: task.id, completed: newStatus }
+      );
+
+      const pendingCount = tasks.filter(t => !t.completed).length;
+      const completedCount = tasks.filter(t => t.completed).length;
+
+      return reply.send({
+        success: true,
+        message: newStatus ? 'تم تعليم المهمة كمنجزة بنجاح ✅' : 'تمت إعادة فتح المهمة 🔄',
+        task,
+        tasks,
+        pendingCount,
+        completedCount
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Toggle Staff Task Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * DELETE /api/mod/tasks/:taskId
+   * Deletes a specific task or clears all completed tasks
+   */
+  fastify.delete('/tasks/:taskId', { preHandler: requireModAuth }, async (request, reply) => {
+    try {
+      const { taskId } = request.params;
+      let tasks = await getSharedStaffTasks();
+
+      if (taskId === 'clear-completed') {
+        tasks = tasks.filter(t => !t.completed);
+      } else {
+        tasks = tasks.filter(t => t.id !== taskId);
+      }
+
+      await saveSharedStaffTasks(tasks);
+
+      const pendingCount = tasks.filter(t => !t.completed).length;
+      const completedCount = tasks.filter(t => t.completed).length;
+
+      return reply.send({
+        success: true,
+        message: 'تم حذف المهمة بنجاح.',
+        tasks,
+        pendingCount,
+        completedCount
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Delete Staff Task Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
 }
 
 module.exports = moderatorRoutes;
+
