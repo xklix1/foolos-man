@@ -1,7 +1,7 @@
 {
-  "version": "v9.7.0",
-  "build": 1791621000000,
-  "timestamp": 1791621000000,
-  "notes": "Cyber-Tycoon Player Profile overhaul, 6 selectable executive characters, 4 upgradeable executive gear slots across 5 tiers, and full cache-busting sync",
-  "releaseNotes": "إطلاق بروفايل اللاعبين السايبر المتطور، 6 شخصيات تنفيذية قابلة للاختيار، ونظام العتاد التنفيذي بـ 5 رتب جودة و15 مستوى وتحديث فوري للذاكرة المؤقتة"
+  "version": "v9.8.0",
+  "build": 1791623000000,
+  "timestamp": 1791623000000,
+  "notes": "Streamlined navigation drawer, added general settings button to player profile, unified settings modal with legal and official social communities",
+  "releaseNotes": "تنظيف وتنسيق القائمة الجانبية للموبايل، استبدال زر اختيار الشخصية في البروفايل بزر الإعدادات العامة، ودمج السياسات والروابط الرسمية داخل نافذة الإعدادات"
 }

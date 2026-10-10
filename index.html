@@ -1340,33 +1340,33 @@
   </div>
 
   <!-- ==================== START MENU: SETTINGS & AUDIO MODAL ==================== -->
-  <div id="start-menu-settings-modal"
-    class="hidden fixed inset-0 z-[350] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+  <div id="start-menu-settings-modal" onclick="if(event.target === this) this.classList.add('hidden')"
+    class="hidden fixed inset-0 z-[350] flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in">
     <div
-      class="glass-panel w-full max-w-md flex flex-col rounded-3xl border border-purple-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
+      class="glass-panel w-full max-w-md max-h-[90vh] flex flex-col rounded-3xl border border-purple-500/40 p-5 sm:p-6 shadow-2xl bg-slate-950/95 overflow-hidden text-right" onclick="event.stopPropagation()">
       <!-- Modal Header -->
-      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+      <div class="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-800 shrink-0">
         <div class="flex items-center gap-3">
           <div
-            class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+            class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
             <i class="fa-solid fa-sliders text-lg"></i>
           </div>
           <div>
-            <h2 class="text-lg font-black text-white">إعدادات اللعبة والصوت</h2>
-            <p class="text-xs text-slate-400">تخصيص التجربة والمؤثرات الصوتية والبصرية</p>
+            <h2 class="text-base sm:text-lg font-black text-white">إعدادات اللعبة والنظام</h2>
+            <p class="text-[10px] sm:text-xs text-slate-400">تخصيص التجربة، الصوت، الأمان، والسياسات</p>
           </div>
         </div>
         <button id="btn-close-menu-settings"
-          class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+          class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <!-- Settings Items -->
-      <div class="space-y-4 my-5 text-xs text-slate-300">
+      <!-- Settings Items (Scrollable Body) -->
+      <div class="flex-1 overflow-y-auto space-y-3.5 my-3 sm:my-4 text-xs text-slate-300 custom-scrollbar pr-1">
 
         <!-- Sound FX Toggle -->
-        <div class="flex items-center justify-between p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
+        <div class="flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-slate-800">
           <div class="flex items-center gap-3">
             <i class="fa-solid fa-volume-high text-yellow-400 text-base"></i>
             <div>
@@ -1383,7 +1383,7 @@
         </div>
 
         <!-- Ambient Synth / Music Toggle -->
-        <div class="flex items-center justify-between p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
+        <div class="flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-slate-800">
           <div class="flex items-center gap-3">
             <i class="fa-solid fa-music text-sky-400 text-base"></i>
             <div>
@@ -1400,7 +1400,7 @@
         </div>
 
         <!-- Glow & Visual FX Toggle -->
-        <div class="flex items-center justify-between p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
+        <div class="flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-slate-800">
           <div class="flex items-center gap-3">
             <i class="fa-solid fa-wand-magic-sparkles text-purple-400 text-base"></i>
             <div>
@@ -1417,7 +1417,7 @@
         </div>
 
         <!-- In-game Notifications Toggle -->
-        <div class="flex items-center justify-between p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
+        <div class="flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-slate-800">
           <div class="flex items-center gap-3">
             <i class="fa-solid fa-bell text-amber-400 text-base"></i>
             <div>
@@ -1434,7 +1434,7 @@
         </div>
 
         <!-- App & Browser Notifications Card -->
-        <div class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 space-y-3">
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <i class="fa-solid fa-mobile-screen text-yellow-400 text-base"></i>
@@ -1478,7 +1478,7 @@
         </div>
 
         <!-- Account Security / Change PIN Card -->
-        <div id="settings-account-security-card" class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 space-y-3">
+        <div id="settings-account-security-card" class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-3">
           <div class="flex items-center justify-between cursor-pointer" id="btn-toggle-change-pin-section" onclick="window.UI?.toggleChangePinForm?.()">
             <div class="flex items-center gap-3">
               <div class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
@@ -1531,7 +1531,7 @@
         </div>
 
         <!-- Security Backup Codes Card -->
-        <div id="settings-security-codes-card" class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">
+        <div id="settings-security-codes-card" class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
@@ -1551,7 +1551,7 @@
         </div>
 
         <!-- Moderator / Staff Support Card -->
-        <div id="settings-mod-support-card" class="p-3.5 bg-gradient-to-r from-emerald-950/40 via-slate-900/60 to-teal-950/40 rounded-xl border border-emerald-500/30 space-y-2">
+        <div id="settings-mod-support-card" class="p-3 bg-gradient-to-r from-emerald-950/40 via-slate-900/60 to-teal-950/40 rounded-xl border border-emerald-500/30 space-y-2">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
@@ -1570,15 +1570,65 @@
           </div>
         </div>
 
+        <!-- Social Community Channels Section -->
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2.5">
+          <span class="font-bold text-white block text-xs flex items-center gap-1.5">
+            <i class="fa-solid fa-globe text-cyan-400"></i>
+            <span>مجتمع اللعبة الرسمي</span>
+          </span>
+          <div class="grid grid-cols-2 gap-2">
+            <a href="https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
+              class="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 border border-blue-500/30 font-bold text-xs transition">
+              <i class="fa-brands fa-facebook text-sm"></i>
+              <span>فيسبوك</span>
+            </a>
+            <a href="https://t.me/raasalmal" target="_blank" rel="noopener noreferrer"
+              class="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-sky-600/15 hover:bg-sky-600/25 text-sky-400 border border-sky-500/30 font-bold text-xs transition">
+              <i class="fa-brands fa-telegram text-sm"></i>
+              <span>تليجرام</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Compliance & Legal Links Section -->
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">
+          <span class="font-bold text-white block text-xs flex items-center gap-1.5">
+            <i class="fa-solid fa-scale-balanced text-yellow-400"></i>
+            <span>السياسات والشروط والدعم</span>
+          </span>
+          <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+            <button type="button" onclick="window.UI?.openLegalModal?.('terms')"
+              class="flex items-center gap-1.5 p-2 rounded-lg bg-slate-950/60 hover:bg-slate-800 hover:text-yellow-400 text-slate-300 transition border border-slate-800/80 cursor-pointer">
+              <i class="fa-solid fa-file-contract text-yellow-500 text-xs"></i>
+              <span>الشروط والأحكام</span>
+            </button>
+            <button type="button" onclick="window.UI?.openLegalModal?.('refund')"
+              class="flex items-center gap-1.5 p-2 rounded-lg bg-slate-950/60 hover:bg-slate-800 hover:text-yellow-400 text-slate-300 transition border border-slate-800/80 cursor-pointer">
+              <i class="fa-solid fa-arrow-rotate-left text-yellow-500 text-xs"></i>
+              <span>سياسة الاسترجاع</span>
+            </button>
+            <button type="button" onclick="window.UI?.openLegalModal?.('privacy')"
+              class="flex items-center gap-1.5 p-2 rounded-lg bg-slate-950/60 hover:bg-slate-800 hover:text-yellow-400 text-slate-300 transition border border-slate-800/80 cursor-pointer">
+              <i class="fa-solid fa-user-shield text-yellow-500 text-xs"></i>
+              <span>سياسة الخصوصية</span>
+            </button>
+            <button type="button" onclick="window.UI?.openLegalModal?.('contact')"
+              class="flex items-center gap-1.5 p-2 rounded-lg bg-slate-950/60 hover:bg-slate-800 hover:text-yellow-400 text-slate-300 transition border border-slate-800/80 cursor-pointer">
+              <i class="fa-solid fa-headset text-yellow-500 text-xs"></i>
+              <span>اتصل بنا والمعلومات</span>
+            </button>
+          </div>
+        </div>
+
       </div>
 
       <!-- Modal Footer -->
-      <div class="pt-4 border-t border-slate-800 mt-2 flex justify-between items-center">
-        <button id="btn-settings-test-sound" class="text-xs text-yellow-400 hover:underline font-bold">
+      <div class="pt-3 border-t border-slate-800 mt-1 flex justify-between items-center shrink-0">
+        <button id="btn-settings-test-sound" class="text-xs text-yellow-400 hover:underline font-bold cursor-pointer">
           <i class="fa-solid fa-play mr-1"></i> تجربة نغمة الصوت
         </button>
         <button id="btn-save-settings"
-          class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold transition text-xs">
+          class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold transition text-xs cursor-pointer shadow-lg shadow-purple-900/30">
           حفظ التفضيلات
         </button>
       </div>
@@ -5519,53 +5569,11 @@
           <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">دردشة خاصة </span>
         </button>
 
-        <a id="btn-mobile-facebook" href="https://www.facebook.com/share/19CbNbzR2k/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
-          class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 text-xs font-bold transition duration-200 cursor-pointer">
-          <div class="flex items-center gap-2.5">
-            <i class="fa-brands fa-facebook w-5 text-center text-blue-400 text-sm"></i>
-            <span>مجتمع فيسبوك الرسمي</span>
-          </div>
-          <span id="badge-mobile-facebook" class="text-[9px] px-2 py-0.5 rounded-full bg-blue-600/30 text-blue-300 font-bold border border-blue-500/30">رسمي</span>
-        </a>
-
-        <a id="btn-mobile-telegram" href="https://t.me/raasalmal" target="_blank" rel="noopener noreferrer"
-          class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-sky-600/10 hover:bg-sky-600/20 text-sky-400 border border-sky-500/20 text-xs font-bold transition duration-200 cursor-pointer mt-1">
-          <div class="flex items-center gap-2.5">
-            <i class="fa-brands fa-telegram w-5 text-center text-sky-400 text-sm"></i>
-            <span>قناة التليجرام الرسمية</span>
-          </div>
-          <span id="badge-mobile-telegram" class="text-[9px] px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-300 font-bold border border-sky-500/30">أكواد وهدايا </span>
-        </a>
-
         <button id="btn-ingame-guide-mobile" type="button"
           class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white text-xs font-bold transition duration-200 cursor-pointer">
           <i class="fa-solid fa-book-open w-5 text-center text-sky-400 text-sm"></i>
           <span>دليل الملياردير الشامل</span>
         </button>
-
-        <!-- Compliance & Legal Mobile Links -->
-        <div class="pt-2 border-t border-slate-800/70 space-y-1 text-slate-400 text-xs">
-          <button type="button" onclick="window.UI?.closeMobileNav?.(); window.UI?.openLegalModal?.('terms');"
-            class="w-full flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg hover:bg-slate-800/40 hover:text-yellow-400 transition cursor-pointer text-right">
-            <i class="fa-solid fa-file-contract text-yellow-500/80 text-xs w-4 text-center"></i>
-            <span>الشروط والأحكام</span>
-          </button>
-          <button type="button" onclick="window.UI?.closeMobileNav?.(); window.UI?.openLegalModal?.('refund');"
-            class="w-full flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg hover:bg-slate-800/40 hover:text-yellow-400 transition cursor-pointer text-right">
-            <i class="fa-solid fa-arrow-rotate-left text-yellow-500/80 text-xs w-4 text-center"></i>
-            <span>سياسة الاسترجاع</span>
-          </button>
-          <button type="button" onclick="window.UI?.closeMobileNav?.(); window.UI?.openLegalModal?.('privacy');"
-            class="w-full flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg hover:bg-slate-800/40 hover:text-yellow-400 transition cursor-pointer text-right">
-            <i class="fa-solid fa-user-shield text-yellow-500/80 text-xs w-4 text-center"></i>
-            <span>سياسة الخصوصية</span>
-          </button>
-          <button type="button" onclick="window.UI?.closeMobileNav?.(); window.UI?.openLegalModal?.('contact');"
-            class="w-full flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg hover:bg-slate-800/40 hover:text-yellow-400 transition cursor-pointer text-right">
-            <i class="fa-solid fa-headset text-yellow-500/80 text-xs w-4 text-center"></i>
-            <span>اتصل بنا والمعلومات</span>
-          </button>
-        </div>
       </div>
 
       <!-- Drawer Footer Utilities -->
@@ -6072,10 +6080,10 @@
       <!-- Action Buttons Footer -->
       <div class="shrink-0 p-3 sm:p-4 border-t border-cyan-500/30 bg-slate-950/95 space-y-2 relative z-20">
         <div id="profile-self-actions" class="hidden grid grid-cols-2 gap-2">
-          <button onclick="window.UI.openCharacterSelectorModal()"
-            class="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 active:scale-95 cursor-pointer">
-            <i class="fa-solid fa-users text-sm"></i>
-            <span>اختيار الشخصية (6 شخصيات)</span>
+          <button onclick="window.UI.openSettingsModal()"
+            class="w-full py-2.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-purple-500/25 active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-gear text-sm"></i>
+            <span>الإعدادات العامة</span>
           </button>
           <button onclick="window.UI.openAvatarModal()"
             class="w-full py-2.5 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 active:scale-95 cursor-pointer">
@@ -7822,7 +7830,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.7.0"></script>
+  <script src="core.bundle.js?v=v9.8.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
