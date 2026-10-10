@@ -2892,9 +2892,10 @@ async function moderatorRoutes(fastify, options) {
    */
   fastify.post('/tasks', { preHandler: requireModAuth }, async (request, reply) => {
     try {
-      const { text, priority, targetPlayer } = request.body || {};
+      const { text, details, description, priority, targetPlayer } = request.body || {};
       const cleanText = String(text || '').trim();
-      if (!cleanText) {
+      const cleanDetails = String(details || description || '').trim();
+      if (!cleanText && !cleanDetails) {
         return reply.status(400).send({ error: 'Bad Request', message: 'يرجى كتابة نص أو تفاصيل المهمة.' });
       }
 
@@ -2902,7 +2903,8 @@ async function moderatorRoutes(fastify, options) {
       const ts = Date.now();
       const newTask = {
         id: 'task_' + ts + '_' + crypto.randomBytes(3).toString('hex'),
-        text: cleanText,
+        text: cleanText || cleanDetails.substring(0, 80),
+        details: cleanDetails || null,
         priority: ['urgent', 'high', 'normal', 'low'].includes(priority) ? priority : 'normal',
         targetPlayer: targetPlayer ? String(targetPlayer).trim() : null,
         createdBy: request.modSession.name || 'محقق',

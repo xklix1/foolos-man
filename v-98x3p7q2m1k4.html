@@ -1107,39 +1107,57 @@
         <div class="flex items-center justify-between">
           <span class="text-xs font-black text-indigo-300 flex items-center gap-1.5">
             <i class="fa-solid fa-plus-circle text-indigo-400"></i>
-            <span>إسناد مهمة جديدة للوحة المشتركة:</span>
+            <span>إسناد مهمة وتحري جديد للوحة المشتركة:</span>
           </span>
           <span class="text-[10px] text-slate-400 font-mono">تظهر فوراً لجميع المحققين</span>
         </div>
 
+        <!-- Top Inputs Row -->
         <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-          <!-- Task Text Input -->
-          <div class="sm:col-span-6">
-            <input type="text" id="newTaskTextInput" placeholder="اكتب تفاصيل المهمة (مثال: متابعة تحويلات الحساب X، تدقيق أسعار المزاد...)" required class="w-full bg-slate-900 border border-slate-700/80 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition shadow-inner" />
+          <!-- Task Title / Topic -->
+          <div class="sm:col-span-5">
+            <label class="block text-[11px] text-slate-300 font-bold mb-1">
+              <i class="fa-solid fa-heading text-indigo-400 ml-1"></i> عنوان المهمة / الموضوع:
+            </label>
+            <input type="text" id="newTaskTextInput" placeholder="مثال: فحص تكرار IP، تدقيق تحويلات مشبوهة..." required class="w-full bg-slate-900 border border-slate-700/80 focus:border-indigo-400 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none transition shadow-inner" />
+          </div>
+
+          <!-- Target Player Input (Optional) -->
+          <div class="sm:col-span-4">
+            <label class="block text-[11px] text-slate-300 font-bold mb-1">
+              <i class="fa-solid fa-user text-cyan-400 ml-1"></i> اسم اللاعب المستهدف:
+            </label>
+            <div class="relative">
+              <i class="fa-solid fa-at absolute right-3 top-2.5 text-slate-500 text-xs"></i>
+              <input type="text" id="newTaskTargetPlayerInput" placeholder="اسم المستخدم (اختياري)" class="w-full bg-slate-900 border border-slate-700/80 focus:border-indigo-400 rounded-xl pr-8 pl-3 py-2 text-xs text-cyan-300 placeholder-slate-500 focus:outline-none transition font-mono font-bold" />
+            </div>
           </div>
 
           <!-- Priority Select -->
           <div class="sm:col-span-3">
-            <select id="newTaskPrioritySelect" class="w-full bg-slate-900 border border-slate-700/80 focus:border-indigo-400 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none transition cursor-pointer">
+            <label class="block text-[11px] text-slate-300 font-bold mb-1">
+              <i class="fa-solid fa-layer-group text-amber-400 ml-1"></i> مستوى الأولوية:
+            </label>
+            <select id="newTaskPrioritySelect" class="w-full bg-slate-900 border border-slate-700/80 focus:border-indigo-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition cursor-pointer">
               <option value="urgent" class="text-rose-400 font-bold">🚨 عاجل جداً (أولوية قصوى)</option>
               <option value="normal" class="text-amber-300 font-bold" selected>⚠️ متابعة وتحري (عادي)</option>
               <option value="low" class="text-slate-300">ℹ️ روتيني / غير عاجل</option>
             </select>
           </div>
-
-          <!-- Target Player Input (Optional) -->
-          <div class="sm:col-span-3">
-            <div class="relative">
-              <i class="fa-solid fa-user absolute right-3 top-3 text-slate-500 text-xs"></i>
-              <input type="text" id="newTaskTargetPlayerInput" placeholder="اللاعب المستهدف (اختياري)" class="w-full bg-slate-900 border border-slate-700/80 focus:border-indigo-400 rounded-xl pr-8 pl-3 py-2.5 text-xs text-cyan-300 placeholder-slate-500 focus:outline-none transition" />
-            </div>
-          </div>
         </div>
 
-        <div class="flex justify-end pt-1">
+        <!-- Problem Details Textarea (تفاصيل المشكلة وبيان الحالة) -->
+        <div>
+          <label class="block text-[11px] text-slate-300 font-bold mb-1">
+            <i class="fa-solid fa-file-lines text-emerald-400 ml-1"></i> تفاصيل وبيان المشكلة / ملاحظات المحقق:
+          </label>
+          <textarea id="newTaskDetailsInput" rows="2" placeholder="اكتب هنا شرح المشكلة بالتفصيل (مثل: ملاحظة مبالغ محولة في أوقات متقاربة، شكوى اللاعب في الشات، الإجراءات المطلوب اتخاذها من المحققين...)" class="w-full bg-slate-900 border border-slate-700/80 focus:border-indigo-400 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none transition custom-scrollbar leading-relaxed"></textarea>
+        </div>
+
+        <div class="flex justify-end pt-0.5">
           <button type="submit" id="submitNewTaskBtn" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-black text-xs shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-1.5 cursor-pointer">
             <i class="fa-solid fa-paper-plane text-xs"></i>
-            <span>إضافة المهمة للوحة المشتركة</span>
+            <span>إضافة المهمة وشرح المشكلة للوحة المشتركة</span>
           </button>
         </div>
       </form>
@@ -5748,16 +5766,24 @@
 
       const targetInput = document.getElementById('newTaskTargetPlayerInput') || document.getElementById('staffTaskTargetPlayer');
       const textInput = document.getElementById('newTaskTextInput') || document.getElementById('staffTaskInputText');
+      const detailsInput = document.getElementById('newTaskDetailsInput');
       const prioritySelect = document.getElementById('newTaskPrioritySelect') || document.getElementById('staffTaskPriority');
 
       if (targetInput && targetUser) {
         targetInput.value = targetUser;
       }
+      if (textInput && targetUser) {
+        textInput.value = `متابعة وتدقيق حساب @${targetUser}`;
+      }
       if (prioritySelect) {
         prioritySelect.value = 'urgent';
       }
-      if (textInput) {
-        textInput.placeholder = targetUser ? `اكتب تفاصيل الإجراء أو التحري المطلوب بخصوص @${targetUser}...` : 'اكتب تفاصيل المهمة...';
+      if (detailsInput) {
+        detailsInput.placeholder = targetUser ? `اكتب تفاصيل وشرح المشكلة أو الإجراء المطلوب بخصوص @${targetUser}...` : 'اكتب تفاصيل وبيان المشكلة...';
+        setTimeout(() => {
+          detailsInput.focus();
+        }, 150);
+      } else if (textInput) {
         setTimeout(() => {
           textInput.focus();
         }, 150);
@@ -5865,6 +5891,7 @@
       if (searchQuery) {
         filtered = filtered.filter(t => 
           (t.text && t.text.toLowerCase().includes(searchQuery)) ||
+          (t.details && t.details.toLowerCase().includes(searchQuery)) ||
           (t.targetPlayer && t.targetPlayer.toLowerCase().includes(searchQuery)) ||
           (t.createdBy && t.createdBy.toLowerCase().includes(searchQuery)) ||
           (t.completedBy && t.completedBy.toLowerCase().includes(searchQuery))
@@ -5880,7 +5907,7 @@
             <p class="text-xs font-bold text-slate-300">لا توجد مهام ${
               _staffTasksFilter === 'pending' ? 'معلقة حالياً' : (_staffTasksFilter === 'completed' ? 'منجزة في السجل' : 'مطابقة')
             }</p>
-            <p class="text-[11px] text-slate-500 mt-1">يمكنك إضافة مهمة تحقيق جديدة من النموذج أعلاه ليراها الجميع</p>
+            <p class="text-[11px] text-slate-500 mt-1">يمكنك إضافة مهمة تحقيق جديدة وشرح المشكلة من النموذج أعلاه ليراها الجميع</p>
           </div>
         `;
         return;
@@ -5910,7 +5937,7 @@
         const completedDateStr = task.completedAt ? fmtDate(task.completedAt) : '';
 
         return `
-          <div class="glass-card p-3.5 rounded-2xl border transition duration-200 ${
+          <div class="glass-card p-3.5 sm:p-4 rounded-2xl border transition duration-200 ${
             isDone 
               ? 'border-slate-800 bg-slate-900/40 opacity-75' 
               : (prio === 'urgent' ? 'border-rose-500/40 bg-rose-950/10' : 'border-indigo-500/30 bg-slate-900/80 hover:border-indigo-500/60')
@@ -5918,7 +5945,7 @@
             <div class="flex items-start justify-between gap-3">
               
               <!-- Checkbox / Toggle Action -->
-              <div class="flex items-start gap-3 flex-1">
+              <div class="flex items-start gap-3 flex-1 min-w-0">
                 <button type="button" onclick="toggleStaffTaskDone('${task.id}')" class="mt-0.5 shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition cursor-pointer ${
                   isDone 
                     ? 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-500' 
@@ -5927,17 +5954,29 @@
                   <i class="fa-solid fa-check text-xs"></i>
                 </button>
 
-                <!-- Task Details -->
-                <div class="flex-1 space-y-1.5">
+                <!-- Task Details & Body -->
+                <div class="flex-1 space-y-2 min-w-0">
                   <div class="flex flex-wrap items-center gap-1.5">
                     ${prioBadge}
                     ${targetPlayerBadge}
                     ${isDone ? '<span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-950/80 text-emerald-300 border border-emerald-700/60">منجزة ✅</span>' : ''}
                   </div>
 
-                  <p class="text-xs sm:text-sm font-medium leading-relaxed ${isDone ? 'line-through text-slate-400' : 'text-slate-100'}">
-                    ${task.text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
-                  </p>
+                  <!-- Task Title -->
+                  <h4 class="text-xs sm:text-sm font-black leading-snug break-words ${isDone ? 'line-through text-slate-400' : 'text-white'}">
+                    ${escapeHtml(task.text || '')}
+                  </h4>
+
+                  <!-- Problem Details Box (إذا كانت موجودة) -->
+                  ${task.details ? `
+                    <div class="p-2.5 sm:p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 text-xs text-slate-200 leading-relaxed font-normal whitespace-pre-wrap break-words">
+                      <div class="text-[10px] text-indigo-400 font-bold mb-1 flex items-center gap-1">
+                        <i class="fa-solid fa-file-lines text-[10px]"></i>
+                        <span>شرح وتفاصيل المشكلة:</span>
+                      </div>
+                      <div>${escapeHtml(task.details)}</div>
+                    </div>
+                  ` : ''}
 
                   <!-- Metadata Footer -->
                   <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-400 pt-0.5">
@@ -5973,15 +6012,20 @@
     async function submitNewStaffTask(e) {
       if (e) e.preventDefault();
       const textInput = document.getElementById('newTaskTextInput') || document.getElementById('staffTaskInputText');
+      const detailsInput = document.getElementById('newTaskDetailsInput');
       const targetInput = document.getElementById('newTaskTargetPlayerInput') || document.getElementById('staffTaskTargetPlayer');
       const prioritySelect = document.getElementById('newTaskPrioritySelect') || document.getElementById('staffTaskPriority');
       const submitBtn = document.getElementById('submitNewTaskBtn') || document.getElementById('staffTaskSubmitBtn');
 
       const text = textInput ? textInput.value.trim() : '';
+      const details = detailsInput ? detailsInput.value.trim() : '';
       const targetPlayer = targetInput ? targetInput.value.trim().replace(/^@/, '') : '';
       const priority = prioritySelect ? prioritySelect.value : 'normal';
 
-      if (!text) return;
+      if (!text && !details) {
+        alert('⚠️ يرجى كتابة عنوان المهمة أو شرح المشكلة.');
+        return;
+      }
 
       if (submitBtn) {
         submitBtn.disabled = true;
@@ -5995,12 +6039,13 @@
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${currentModToken}`
           },
-          body: JSON.stringify({ text, targetPlayer, priority })
+          body: JSON.stringify({ text, details, targetPlayer, priority })
         });
 
         const data = await res.json();
         if (res.ok && data.success) {
           if (textInput) textInput.value = '';
+          if (detailsInput) detailsInput.value = '';
           if (targetInput) targetInput.value = '';
           if (Array.isArray(data.tasks)) {
             _cachedStaffTasks = data.tasks;
@@ -6017,7 +6062,7 @@
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane text-xs"></i> <span>إضافة المهمة للوحة المشتركة</span>`;
+          submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane text-xs"></i> <span>إضافة المهمة وشرح المشكلة للوحة المشتركة</span>`;
         }
       }
     }
