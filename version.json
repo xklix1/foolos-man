@@ -1,7 +1,7 @@
 {
-  "version": "v9.9.0",
-  "build": 1791625000000,
-  "timestamp": 1791625000000,
-  "notes": "Mobile Cyber HUD overhaul, sleek 2x2 financial grid, streamlined quick action tools hub, zero-clutter layout",
-  "releaseNotes": "إعادة تصميم الهيدر واللوحة المالية للموبايل بالكامل: شبكة مالية 2×2 سايبر موحدة، مركز أدوات سريع منسدل لمنع التداخل، وتصميم مريح للعين فائق السرعة"
+  "version": "v9.9.1",
+  "build": 1791626000000,
+  "timestamp": 1791626000000,
+  "notes": "Fix mobile username truncation and expand identity badge container across available width",
+  "releaseNotes": "إصلاح اقتصاص اسم اللاعب ووسام التميز في الهيدر العلوي وإتاحة المساحة الكاملة لعرض الاسم بوضوح"
 }

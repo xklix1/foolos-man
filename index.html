@@ -2430,18 +2430,18 @@
         <!-- Row 1: Player Identity + Compact Actions (Menu, Profile, Notifications, Quick Tools) -->
         <div class="flex items-center justify-between gap-2">
           <!-- Profile & Identity Section (Clickable to open profile) -->
-          <div class="flex items-center gap-2 min-w-0 flex-1">
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
             <!-- Mobile Menu Drawer Toggle Button -->
             <button id="btn-mobile-nav-toggle" type="button" title="قائمة الأقسام والتنقل"
-              class="w-8 h-8 rounded-xl bg-gradient-to-r from-yellow-500/20 to-amber-500/20 hover:from-yellow-500/30 hover:to-amber-500/30 border border-yellow-500/40 text-yellow-400 flex items-center justify-center transition active:scale-95 shrink-0 shadow-sm cursor-pointer">
-              <i class="fa-solid fa-bars text-xs"></i>
+              class="w-9 h-9 rounded-xl bg-gradient-to-r from-yellow-500/20 to-amber-500/20 hover:from-yellow-500/30 hover:to-amber-500/30 border border-yellow-500/40 text-yellow-400 flex items-center justify-center transition active:scale-95 shrink-0 shadow-sm cursor-pointer">
+              <i class="fa-solid fa-bars text-sm"></i>
             </button>
             <div class="flex flex-col min-w-0 justify-center cursor-pointer group" onclick="window.UI?.openPlayerProfile?.()" title="اضغط لعرض ملفك الشخصي التنفيذي">
               <div class="flex items-center gap-1.5 min-w-0">
-                <span id="stat-username-mobile" class="text-xs font-black text-white truncate max-w-[130px] sm:max-w-[180px] group-hover:text-cyan-300 transition">تحميل...</span>
+                <span id="stat-username-mobile" class="text-xs font-black text-white group-hover:text-cyan-300 transition flex items-center gap-1.5 flex-nowrap">تحميل...</span>
                 <span id="stat-fb-badge-mobile" class="hidden fb-vip-badge shrink-0" title="عضو رسمي موثق في مجتمع فيسبوك">f</span>
               </div>
-              <span id="stat-title-mobile" class="text-[9px] font-bold text-yellow-400/90 truncate max-w-[140px] sm:max-w-[200px] leading-tight">...</span>
+              <span id="stat-title-mobile" class="text-[10px] font-bold text-yellow-400/90 leading-tight mt-0.5">...</span>
             </div>
           </div>
 
@@ -7886,7 +7886,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.9.0"></script>
+  <script src="core.bundle.js?v=v9.9.1"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
