@@ -227,6 +227,9 @@ class SessionManager {
     const sessionAdminTs = Number(s.adminModifiedTimestamp || 0);
     const clientAdminTs = Number(clientState.adminModifiedTimestamp || 0);
     const isClientStale = sessionAdminTs > 0 && clientAdminTs < sessionAdminTs;
+    const isAdminGrant = (clientAdminTs > 0 && clientAdminTs >= sessionAdminTs) || 
+                         (clientAdminTs > Number(session._lastProcessedAdminTs || 0)) ||
+                         clientState._adminGrantBypass === true;
 
     // Beta Features (Gold currency - strictly gated to literal developer account 'Khaled' / 'خالد' only)
     const isLiteralKhaled = typeof username === 'string' &&
@@ -242,7 +245,8 @@ class SessionManager {
     const liquidJump = newLiquidTotal - prevLiquidTotal;
 
     // Only clamp if there is an unexplainable massive jump in TOTAL new wealth (> 50M growth in single tick without admin grant)
-    if (!isLiteralKhaled && liquidJump > 50000000 && !isClientStale) {
+    // ADMIN EXEMPTION: All funds/grants sent from Admin Panel or with admin timestamps are 100% EXEMPT from clamps!
+    if (!isLiteralKhaled && !isAdminGrant && liquidJump > 50000000 && !isClientStale) {
       const allowedGrowth = 25000000;
       const excess = liquidJump - allowedGrowth;
       if (incomingCash >= excess) {
@@ -254,6 +258,12 @@ class SessionManager {
       }
     }
 
+    if (isAdminGrant) {
+      const highestTs = Math.max(sessionAdminTs, clientAdminTs, Date.now());
+      session._lastProcessedAdminTs = highestTs;
+      s.adminModifiedTimestamp = highestTs;
+    }
+
     if (clientState.cash !== undefined) {
       s.cash = isClientStale ? Math.max(Number(s.cash || 0), incomingCash) : incomingCash;
     }
@@ -262,7 +272,7 @@ class SessionManager {
     }
     if (clientState.dirtyCash !== undefined) s.dirtyCash = Number(clientState.dirtyCash) || 0;
     if (clientState.xp !== undefined) {
-      s.xp = isClientStale ? Math.max(Number(s.xp || 0), Number(clientState.xp) || 0) : (Number(clientState.xp) || 0);
+      s.xp = (isClientStale && !isAdminGrant) ? Math.max(Number(s.xp || 0), Number(clientState.xp) || 0) : (Number(clientState.xp) || 0);
     }
     if (clientState.title && !isClientStale) s.title = String(clientState.title);
     if (clientState.jobId && !isClientStale) s.jobId = String(clientState.jobId);

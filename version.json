@@ -1,7 +1,7 @@
 {
   "version": "v9.5.7",
-  "build": 1791330200000,
-  "timestamp": 1791330200000,
-  "notes": "Optimize network consumption, CPU performance, Stale-While-Revalidate caching, safe bundle minification, and exempt Cash-Bank transfers from wealth clamps",
-  "releaseNotes": "تحسين شامل لاستهلاك باقة الإنترنت وسلاسة الأداء، وإلغاء قيود التحويل بين الكاش والبنك لمنع اختفاء المبالغ الضخمة نهائياً"
+  "build": 1791330300000,
+  "timestamp": 1791330300000,
+  "notes": "Optimize network consumption, CPU performance, Stale-While-Revalidate caching, safe bundle minification, exempt Cash-Bank transfers and Admin Grants from wealth clamps",
+  "releaseNotes": "استثناء كامل للتحويلات الداخلية ومنح لوحة الإدارة من حماية القفزات المالية لمنع اختفاء المبالغ الضخمة، مع تحسين استهلاك الإنترنت وسرعة الأداء"
 }

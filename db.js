@@ -2345,7 +2345,12 @@ var AppDB = (() => {
     const wealthJump = curTotal - lastVerifiedTotal;
 
     // Detect abnormal jump without admin grant (> 50M jump in a single sync)
-    if (wealthJump > 50000000 && (!state.adminModifiedTimestamp || state.adminModifiedTimestamp <= _lastVerifiedCloudTime)) {
+    const hasAdminGrant = Boolean(
+      (state.adminModifiedTimestamp && state.adminModifiedTimestamp > _lastVerifiedCloudTime) ||
+      state._adminGrantBypass ||
+      payload._adminGrantBypass
+    );
+    if (wealthJump > 50000000 && !hasAdminGrant) {
       console.warn(`[AntiCheat] Abnormal wealth jump detected (${wealthJump}). Reverting excess flow injection.`);
       const cappedBank = Math.max(0, Number(payload.bank || 0) - (wealthJump - 5000000));
       payload.bank = cappedBank;
