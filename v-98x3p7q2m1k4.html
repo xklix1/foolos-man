@@ -868,34 +868,26 @@
           <div class="glass-card p-4 rounded-xl border border-cyan-500/30 space-y-3">
             <h4 class="text-xs font-bold text-cyan-300"><i class="fa-solid fa-gavel ml-1"></i> اتخاذ إجراء إداري فوري ضد الحساب:</h4>
             
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label class="block text-[11px] text-slate-300 mb-1">نوع الإجراء:</label>
+                <label class="block text-[11px] text-slate-300 mb-1 font-bold">نوع العقوبة / الإجراء:</label>
                 <select id="actionTypeSelect" onchange="onActionTypeChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-400">
-                  <option value="add_bank" class="text-emerald-400 font-bold" selected> إضافة كاش في بنك اللاعب (Add Cash to Bank)</option>
-                  <option value="reset_limits" class="text-cyan-400 font-bold"> تصفير اللمت اليومي بالكامل (شغل + بورصة + تحويلات)</option>
-                  <option value="freeze"> تجميد مؤقت للحساب (Freeze)</option>
-                  <option value="unfreeze"> فك تجميد الحساب (Unfreeze)</option>
-                  <option value="ban" class="text-rose-400 font-bold"> حظر نهائي للحساب (Ban Account)</option>
-                  <option value="unban" class="text-emerald-400 font-bold"> فك الحظر عن الحساب (Unban Account)</option>
-                  <option value="mute"> كتم الشات العام (Mute)</option>
-                  <option value="unmute"> إلغاء كتم الشات (Unmute)</option>
-                  <option value="flag"> وضع علامة "تحت المراقبة" (Flag)</option>
-                  <option value="unflag"> إزالة علامة المراقبة (Clear Flag)</option>
-                  <option value="warn"> إرسال تحذير رسمي للاعب (Warning)</option>
+                  <option value="freeze" class="text-amber-400 font-bold" selected>🔒 تجميد مؤقت للحساب (Freeze)</option>
+                  <option value="unfreeze" class="text-emerald-400 font-bold">🔓 فك تجميد الحساب (Unfreeze)</option>
+                  <option value="ban" class="text-rose-400 font-bold">🚫 حظر نهائي للحساب (Ban Account)</option>
+                  <option value="unban" class="text-emerald-400 font-bold">✅ فك الحظر عن الحساب (Unban Account)</option>
+                  <option value="mute" class="text-yellow-400 font-bold">🔇 كتم الشات العام (Mute)</option>
+                  <option value="unmute" class="text-teal-400 font-bold">🔊 إلغاء كتم الشات (Unmute)</option>
+                  <option value="flag" class="text-indigo-400 font-bold">👁️ وضع علامة "تحت المراقبة" (Flag)</option>
+                  <option value="unflag" class="text-slate-400 font-bold">🧹 إزالة علامة المراقبة (Clear Flag)</option>
+                  <option value="warn" class="text-orange-400 font-bold">⚠️ إرسال تحذير رسمي للاعب (Warning)</option>
+                  <option value="reset_limits" class="text-cyan-400 font-bold">🔄 تصفير اللمت اليومي بالكامل (شغل + بورصة + تحويلات)</option>
                 </select>
               </div>
 
-              <!-- Amount Input for add_bank -->
-              <div id="actionAmountContainer">
-                <label class="block text-[11px] text-slate-300 mb-1">المبلغ المراد إيداعه (EGP):</label>
-                <input type="number" id="actionAmountInput" placeholder="مثال: 1000000" oninput="updateActionAmountPreview(this.value)" class="w-full bg-slate-900 border border-emerald-500/50 rounded-lg px-3 py-2 text-xs font-mono font-bold text-emerald-400 focus:border-emerald-400" />
-                <span id="actionAmountPreviewText" class="text-[10px] text-emerald-300 mt-1 block truncate"></span>
-              </div>
-
               <!-- Duration Select for freeze/mute -->
-              <div id="actionDurationContainer" class="hidden">
-                <label class="block text-[11px] text-slate-300 mb-1">المدة (للتجميد أو الكتم):</label>
+              <div id="actionDurationContainer">
+                <label class="block text-[11px] text-slate-300 mb-1 font-bold">المدة (للتجميد أو الكتم):</label>
                 <select id="actionDurationSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-400">
                   <option value="15">15 دقيقة</option>
                   <option value="60" selected>1 ساعة (60 دقيقة)</option>
@@ -905,31 +897,18 @@
                   <option value="2880">48 ساعة (يومان)</option>
                 </select>
               </div>
-
-              <div class="sm:col-span-1">
-                <label class="block text-[11px] text-slate-300 mb-1">تنفيذ:</label>
-                <button onclick="executeModeratorAction()" id="execActionBtn" class="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md transition cursor-pointer">
-                  تنفيذ الإجراء
-                </button>
-              </div>
-            </div>
-
-            <!-- Quick Amount Preset Chips for add_bank -->
-            <div id="actionAmountPresets" class="flex flex-wrap gap-1.5 pt-1 text-[10px]">
-              <span class="text-slate-400 py-0.5">مبالغ سريعة:</span>
-              <button type="button" onclick="setActionAmountPreset(100000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+100 ألف</button>
-              <button type="button" onclick="setActionAmountPreset(1000000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+1 مليون</button>
-              <button type="button" onclick="setActionAmountPreset(5000000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+5 مليون</button>
-              <button type="button" onclick="setActionAmountPreset(10000000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+10 مليون</button>
-              <button type="button" onclick="setActionAmountPreset(50000000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+50 مليون</button>
-              <button type="button" onclick="setActionAmountPreset(100000000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+100 مليون</button>
-              <button type="button" onclick="setActionAmountPreset(500000000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+500 مليون</button>
-              <button type="button" onclick="setActionAmountPreset(1000000000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+1 مليار</button>
             </div>
 
             <div>
-              <label class="block text-[11px] text-slate-300 mb-1"><span class="text-rose-400">*</span> سبب الإجراء / بيان الإيداع (إلزامي للتدقيق والرقابة):</label>
-              <input type="text" id="actionReasonInput" value="إيداع معتمد من الرقابة / تعويض أو مكافأة" placeholder="اكتب السبب بالتفصيل (مثال: تعويض عن خطأ تقني أو مكافأة)..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-cyan-400" />
+              <label class="block text-[11px] text-slate-300 mb-1 font-bold"><span class="text-rose-400">*</span> سبب العقوبة / الإجراء الإداري (إلزامي للتدقيق والرقابة):</label>
+              <input type="text" id="actionReasonInput" placeholder="اكتب سبب العقوبة بوضوح (مثال: اشتباه في غش أو استخدام بوت أو استغلال ثغرة)..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-cyan-400" />
+            </div>
+
+            <div class="pt-1">
+              <button onclick="executeModeratorAction()" id="execActionBtn" class="w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2">
+                <i class="fa-solid fa-lock"></i>
+                <span>تنفيذ التجميد المؤقت</span>
+              </button>
             </div>
           </div>
 
@@ -4324,6 +4303,10 @@
           }, 3500);
         }
       }
+
+      if (tabId === 'moderation') {
+        onActionTypeChange();
+      }
     }
 
     function closeInspectorModal() {
@@ -4340,56 +4323,53 @@
       const select = document.getElementById('actionTypeSelect');
       if (!select) return;
       const action = select.value;
-      const amountCont = document.getElementById('actionAmountContainer');
-      const amountPresets = document.getElementById('actionAmountPresets');
       const durationCont = document.getElementById('actionDurationContainer');
       const btn = document.getElementById('execActionBtn');
 
-      if (action === 'add_bank') {
-        if (amountCont) amountCont.classList.remove('hidden');
-        if (amountPresets) amountPresets.classList.remove('hidden');
-        if (durationCont) durationCont.classList.add('hidden');
-        if (btn) {
-          btn.className = 'w-full py-2 px-4 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md transition cursor-pointer';
-          btn.innerHTML = `<i class="fa-solid fa-plus-circle"></i> <span>إيداع في البنك</span>`;
-        }
-      } else if (action === 'freeze' || action === 'mute') {
-        if (amountCont) amountCont.classList.add('hidden');
-        if (amountPresets) amountPresets.classList.add('hidden');
+      if (action === 'freeze' || action === 'mute') {
         if (durationCont) durationCont.classList.remove('hidden');
-        if (btn) {
-          btn.className = 'w-full py-2 px-4 rounded-lg bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white font-bold text-xs shadow-md transition cursor-pointer';
-          btn.innerHTML = `<span>تنفيذ الإجراء</span>`;
-        }
       } else {
-        if (amountCont) amountCont.classList.add('hidden');
-        if (amountPresets) amountPresets.classList.add('hidden');
         if (durationCont) durationCont.classList.add('hidden');
-        if (btn) {
-          btn.className = 'w-full py-2 px-4 rounded-lg bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white font-bold text-xs shadow-md transition cursor-pointer';
-          btn.innerHTML = `<span>تنفيذ الإجراء</span>`;
+      }
+
+      if (btn) {
+        if (action === 'ban') {
+          btn.className = 'w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-rose-700 to-red-600 hover:from-rose-600 hover:to-red-500 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2';
+          btn.innerHTML = `<i class="fa-solid fa-ban"></i> <span>تنفيذ الحظر النهائي للحساب</span>`;
+        } else if (action === 'freeze') {
+          btn.className = 'w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2';
+          btn.innerHTML = `<i class="fa-solid fa-lock"></i> <span>تنفيذ التجميد المؤقت</span>`;
+        } else if (action === 'unfreeze') {
+          btn.className = 'w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2';
+          btn.innerHTML = `<i class="fa-solid fa-unlock"></i> <span>تنفيذ فك تجميد الحساب</span>`;
+        } else if (action === 'unban') {
+          btn.className = 'w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2';
+          btn.innerHTML = `<i class="fa-solid fa-user-check"></i> <span>تنفيذ فك الحظر عن الحساب</span>`;
+        } else if (action === 'mute') {
+          btn.className = 'w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2';
+          btn.innerHTML = `<i class="fa-solid fa-volume-xmark"></i> <span>تنفيذ كتم الشات</span>`;
+        } else if (action === 'unmute') {
+          btn.className = 'w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2';
+          btn.innerHTML = `<i class="fa-solid fa-volume-high"></i> <span>تنفيذ إلغاء كتم الشات</span>`;
+        } else if (action === 'flag') {
+          btn.className = 'w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2';
+          btn.innerHTML = `<i class="fa-solid fa-eye"></i> <span>وضع الحساب تحت المراقبة</span>`;
+        } else if (action === 'unflag') {
+          btn.className = 'w-full py-2.5 px-4 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2 border border-slate-700';
+          btn.innerHTML = `<i class="fa-solid fa-broom"></i> <span>إزالة علامة المراقبة</span>`;
+        } else if (action === 'warn') {
+          btn.className = 'w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2';
+          btn.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <span>إرسال إنذار رسمي</span>`;
+        } else if (action === 'reset_limits') {
+          btn.className = 'w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2';
+          btn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> <span>تصفير اللمت اليومي</span>`;
+        } else {
+          btn.className = 'w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2';
+          btn.innerHTML = `<i class="fa-solid fa-gavel"></i> <span>تنفيذ الإجراء</span>`;
         }
       }
     }
 
-    function setActionAmountPreset(val) {
-      const inp = document.getElementById('actionAmountInput');
-      if (inp) {
-        inp.value = val;
-        updateActionAmountPreview(val);
-      }
-    }
-
-    function updateActionAmountPreview(val) {
-      const preview = document.getElementById('actionAmountPreviewText');
-      if (!preview) return;
-      const num = Number(val) || 0;
-      if (num <= 0) {
-        preview.textContent = '';
-        return;
-      }
-      preview.textContent = `المبلغ: ${num.toLocaleString('en-US')} EGP (${fmtMoney(num)})`;
-    }
 
     // ================= QUICK ADD BANK MODAL LOGIC =================
     let targetAddBankUsername = '';
@@ -4523,31 +4503,36 @@
 
       const action = document.getElementById('actionTypeSelect').value;
       const duration = document.getElementById('actionDurationSelect')?.value || 60;
-      const amountInp = document.getElementById('actionAmountInput');
-      const amount = amountInp ? Math.floor(Number(amountInp.value || 0)) : 0;
-      const reason = document.getElementById('actionReasonInput').value.trim();
+      const reasonInp = document.getElementById('actionReasonInput');
+      const reason = (reasonInp ? reasonInp.value : '').trim();
       const btn = document.getElementById('execActionBtn');
-
-      if (action === 'add_bank') {
-        if (!amount || isNaN(amount) || amount <= 0) {
-          alert('يرجى إدخال مبلغ صحيح لإيداعه في بنك اللاعب (أكبر من صفر).');
-          if (amountInp) amountInp.focus();
-          return;
-        }
-      }
 
       if (!reason || reason.length < 3) {
         alert('يجب كتابة سبب الإجراء بوضوح (3 أحرف على الأقل).');
+        if (reasonInp) reasonInp.focus();
         return;
       }
 
-      const actionLabel = action === 'add_bank' ? `إيداع مبلغ $${amount.toLocaleString('en-US')} في البنك` : `إجراء [${action}]`;
+      const actionNames = {
+        freeze: `تجميد الحساب مؤقتاً لمدة (${duration} دقيقة)`,
+        unfreeze: 'فك تجميد الحساب',
+        ban: 'حظر نهائي للحساب',
+        unban: 'فك الحظر عن الحساب',
+        mute: `كتم الشات لمدة (${duration} دقيقة)`,
+        unmute: 'إلغاء كتم الشات',
+        flag: 'وضع علامة تحت المراقبة',
+        unflag: 'إزالة علامة المراقبة',
+        warn: 'إرسال تحذير رسمي',
+        reset_limits: 'تصفير اللمت اليومي بالكامل'
+      };
+      const actionLabel = actionNames[action] || `إجراء [${action}]`;
+
       if (!confirm(`هل أنت متأكد من تنفيذ ${actionLabel} على اللاعب "${inspectingPlayer.username}"؟`)) {
         return;
       }
 
       btn.disabled = true;
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري التنفيذ...`;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري التنفيذ...</span>`;
 
       try {
         const payload = {
@@ -4556,9 +4541,6 @@
           durationMinutes: Number(duration),
           reason: reason
         };
-        if (action === 'add_bank') {
-          payload.amount = amount;
-        }
 
         const res = await fetch(`${API_BASE}/action`, {
           method: 'POST',
@@ -4572,9 +4554,7 @@
         const data = await res.json();
         if (res.ok && data.success) {
           alert(' ' + data.message);
-          if (amountInp) amountInp.value = '';
-          const preview = document.getElementById('actionAmountPreviewText');
-          if (preview) preview.textContent = '';
+          if (reasonInp) reasonInp.value = '';
           // Re-inspect to refresh view
           inspectPlayer(inspectingPlayer.username);
           refreshOverview();
@@ -4589,6 +4569,7 @@
         onActionTypeChange();
       }
     }
+
 
     // Quick 1-Click Reset Limits Action
     async function quickResetLimitsPlayer(username) {
